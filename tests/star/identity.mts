@@ -386,6 +386,9 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // The star rating now starts at 1.0 rather than 2.0 (Mikey, 29 Sep 2026),
     // and the opening manager is drawn from a seed that includes it.
     delete rest.manager;
+    // The career star rating (starPoints.ts, 30 Sep 2026) added three fields
+    // the fixture predates.
+    for (const k of ["stars", "starLedger", "starBest"]) delete rest[k];
     return JSON.stringify(rest);
   };
 

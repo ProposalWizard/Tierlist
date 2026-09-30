@@ -400,18 +400,18 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "rating.offset", category: "Rating", label: "Star rating — taken off first",
-    description: "Taken off (overall + honours) before dividing, so a new player (every skill 40) starts on 1.0★ and a fully-trained one still reaches 5★. (Mikey, 29 Sep 2026: start at 1.0, simpler to understand.)",
-    default: 25, min: 0, max: 60, step: 1,
+    description: "Taken off (overall + honours) before dividing. 0 since 30 Sep 2026: this number is now ABILITY only (shown as Overall); the star rating players see starts at 1.0 on its own scale (starPoints.ts).",
+    default: 0, min: 0, max: 60, step: 1,
   },
   {
     key: "rating.divisor", category: "Rating", label: "Star rating — total ÷ this",
-    description: "(Attribute overall + honour points − the offset above), divided by this, gives your star rating out of 5. 15 with offset 25: skills 40 → 1.0★, skills 100 → 5★.",
-    default: 15, min: 1, max: 100, step: 1,
+    description: "(Attribute overall + honour points − the offset above), divided by this, gives your ability out of 5 (what selection, wages and set pieces read).",
+    default: 20, min: 1, max: 100, step: 1,
   },
   {
     key: "rating.floor", category: "Rating", label: "Star rating — floor",
-    description: "The lowest a star rating can ever read (1.0, the starting rating).",
-    default: 1, min: 0, max: 5, step: 0.1,
+    description: "The lowest the ability rating can ever read.",
+    default: 0.5, min: 0, max: 5, step: 0.1,
   },
   {
     key: "rating.displayBase", category: "Rating", label: "Display overall — base",

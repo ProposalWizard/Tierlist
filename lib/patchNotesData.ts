@@ -27,6 +27,174 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "1.2",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-30T16:00:00Z",
+      "updatedAt": "2026-09-30T16:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
+      "summary": "The headline: a new star rating, 1.0 to 10.0, that is your career and never goes down, separate from your overall. Plus 7 boots instead of 14, dearer top-level Style items, 2 training sessions a week, training screens restyled, and your real terms on the contract.",
+      "stats": [
+        {
+          "value": "1.0 → 10.0★",
+          "label": "the new star rating: your career, never goes down"
+        },
+        {
+          "value": "×1 → ×5",
+          "label": "match points, National League up to the Champions League"
+        },
+        {
+          "value": "14 → 7",
+          "label": "boot types, each with one job"
+        },
+        {
+          "value": "★1.3m → ★10m",
+          "label": "a level-5 Private Island"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Star rating starts at 1.0 with a bar under it, and Overall beneath",
+              "detail": "Home."
+            },
+            {
+              "title": "Tapping the rating opens the star rating screen",
+              "detail": "Home → Rating."
+            },
+            {
+              "title": "The after-match card shows Star Points earned",
+              "detail": "After any match."
+            },
+            {
+              "title": "Seven boots: Pure, Flash, Thunder, Control, Elite, Swerve, Maestro",
+              "detail": "Shop → Boots."
+            },
+            {
+              "title": "Level 3–5 Style items cost far more",
+              "detail": "Shop → Style."
+            },
+            {
+              "title": "2 training sessions a week, back after your Saturday match",
+              "detail": "Training."
+            },
+            {
+              "title": "The level picker and drills are in the Home-screen style",
+              "detail": "Training → any skill."
+            },
+            {
+              "title": "The contract shows your name and real terms",
+              "detail": "After the trial, and any transfer."
+            },
+            {
+              "title": "Their long shots in five-a-side are played out",
+              "detail": "Trial → five-a-side."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The headline: a new star rating, separate from your overall",
+          "items": [
+            {
+              "title": "Star rating is now your career, 1.0 to 10.0★; Overall is how good you are",
+              "detail": "Problem: the star rating was just skills divided by 20, so everyone started on 2.0★ and only training moved it. Fix: Overall is your skill average and everything that used the old rating still uses it, so matches play the same. The star rating is new: Star Points for everything you do, starts at 1.0★, never goes down."
+            },
+            {
+              "title": "What earns Star Points",
+              "detail": "A match: play 5, start +3, win +3, draw +1, goal 12, assist 8, hat-trick +20, Star Man 20, rating 8.0+ +8, multiplied by the stage (National League ×1 up to Premier League ×4 and Europe ×5). Trophies 250 to 3,000, promotions 300, awards, milestones, achievements, records, fame and owning things."
+            },
+            {
+              "title": "Star gates, and the last star",
+              "detail": "You can't pass 2.9, 3.9, 4.9 or 5.9★ until you have played 10 league games at that level or higher; a jump of two divisions opens two gates. Points above a gate are banked. 9.0 to 10.0★ is ten Legend tasks, 0.1★ each."
+            },
+            {
+              "title": "Old saves keep their career",
+              "detail": "Their Star Points are worked out from what they already hold; past matches count at the league they are in now."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Boots: 14 types down to 7",
+              "detail": "Pure (starter), Flash (pace), Thunder (power), Control (technique), Elite (all-rounder), Swerve (curl), Maestro (extra touch). Each still has 5 levels."
+            },
+            {
+              "title": "Style: the top levels cost far more",
+              "detail": "Level 5 ×7.5 (Private Island ★1.33m → ★10m), level 4 ×12, level 3 ×4. Levels 1–2 unchanged."
+            },
+            {
+              "title": "Training: 2 sessions a week instead of days",
+              "detail": "They come back only after your Saturday match."
+            },
+            {
+              "title": "Training screens in the Home-screen style",
+              "detail": "Level picker and drills restyled; the drills themselves are unchanged."
+            },
+            {
+              "title": "Home screen tidy-up",
+              "detail": "Name centred with the badge on its left, age and money in the corners, shop items moved to the Shop page, PK and FK tags."
+            },
+            {
+              "title": "Preferred number is earned",
+              "detail": "Manager and team-mates both 90+ at the start of a season; a club that signs you later gives it about 8 times in 10."
+            },
+            {
+              "title": "Trial marking",
+              "detail": "Free kicks: goal 1, save ½. Penalties: goals out of 5, countdown 1.8 s (was 1.0, in matches too)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The contract shows your real terms",
+              "detail": "Name, club, length, shirt number, position, wage and bonuses."
+            },
+            {
+              "title": "Spin your player (test page)",
+              "detail": "Admin menu → Spin your player. The back view is a stand-in."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Five-a-side: the other team's long shots are shown",
+              "detail": "Goals conceded stay about the same: 1.20 → 1.16 a match over 300 matches."
+            },
+            {
+              "title": "Smaller fixes",
+              "detail": "Ball grab zone 28% → 10% of the screen; deleting a save keeps full screen; Settings text white; trial Start buttons; long club names fit; shop lists scroll with the page."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen on a screen yet",
+              "detail": "The after-match Star Points line, the new-star full screen, the 7 boots, Style prices and training sessions text were checked by tests, not by eye."
+            },
+            {
+              "title": "Three tests fail on main too",
+              "detail": "authoredChance, freeKickRules and longRangeRules; not from these changes."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "1.1",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-27T12:00:00Z",

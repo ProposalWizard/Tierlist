@@ -1096,7 +1096,19 @@ export interface CareerState {
    *  transfer at the rollover still files the season under the right club. */
   thisSeasonClub?: string;
   /** Individual honours. The Ballon d'Or was the only one that existed. */
-  awards?: { season: number; kind: string; week?: number; detail: string }[];
+  awards?: { season: number; kind: string; week?: number; detail: string;
+    /** The division it was won in (starPoints.ts pays more the higher it is). */
+    division?: import("./calendar").CareerDivision }[];
+  /**
+   * THE STAR RATING players see: your career, 1.0-10.0★, never goes down
+   * (lib/star/starPoints.ts). `starRating` above is your ABILITY on the old
+   * 1-5 scale and is shown as "Overall"; everything that read it still does.
+   */
+  stars?: number;
+  /** What the star rating needs remembering (matches by division, etc.). */
+  starLedger?: import("./starPoints").StarLedger;
+  /** High-water marks, so the star rating can never drop. */
+  starBest?: import("./starPoints").StarBest;
   /** Wearing the armband at your current club. */
   captain?: boolean;
   /** The number on your back. Reassigned when you sign for someone. */

@@ -34,6 +34,8 @@ interface Props {
    *  match's result (item 36). */
   starBefore?: number;
   starAfter?: number;
+  /** Star Points this match earned, and the way to the next 0.1★ (starPoints.ts). */
+  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string };
 }
 
 // The same black outline the live scoreboard puts on its club-name text —
@@ -59,7 +61,7 @@ const RESULT_LOOK: Record<Result, { word: string; color: string }> = {
  * counts up big, then the money and the relationship changes float up off
  * their rows. For a phone set to reduce motion every beat lands at once.
  */
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
   const kits = kitsFor(homeTeam, awayTeam);
@@ -141,7 +143,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             <StatTile label="Assists" value={stats.assists} on={ratingIn} highlight={stats.assists > 0} />
           </div>
           <RatingHero value={stats.rating} on={ratingIn} starMan={stats.starMan} />
-          <StarBar before={starBefore} after={starAfter} on={moneyIn} />
+          <StarBar before={starBefore} after={starAfter} on={moneyIn} star={star} />
         </ClubCard>
       ) : (<>
         <div className="mt-2.5 grid grid-cols-4 gap-1.5">
@@ -185,7 +187,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
 
         {starAfter !== undefined && (
           <ClubCard glow="#fbbf24" strength={0.2} className="mt-2 overflow-hidden">
-            <StarBar before={starBefore} after={starAfter} on={moneyIn} />
+            <StarBar before={starBefore} after={starAfter} on={moneyIn} star={star} />
           </ClubCard>
         )}
       </>)}
@@ -300,14 +302,16 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
  * Item 36: your star rating and how far it has come towards the next tenth —
  * the one progress number a simmed match shows (and now the full match too).
  */
-function StarBar({ before, after, on }: { before?: number; after?: number; on: boolean }) {
+function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
   if (after === undefined) return null;
   const from = before ?? after;
   const tenth = (r: number) => Math.floor(r * 10 + 1e-9);
   const frac = (r: number) => Math.max(0, Math.min(1, r * 10 - tenth(r)));
   const up = tenth(after) > tenth(from);
-  const startPct = up ? 0 : frac(from) * 100;
-  const endPct = frac(after) * 100;
+  // The career star rating moves in whole tenths, so the bar is the way to
+  // the next one, handed in; without it, fall back to the old fraction.
+  const startPct = star ? 0 : up ? 0 : frac(from) * 100;
+  const endPct = star ? star.toNext * 100 : frac(after) * 100;
   return (
     <div className="relative px-3 py-2.5">
       <div className="flex items-center gap-2">
@@ -327,8 +331,10 @@ function StarBar({ before, after, on }: { before?: number; after?: number; on: b
           <div className="absolute inset-x-0 top-0 h-1/2 bg-white/35" />
         </div>
       </div>
-      <div className="mt-1 text-[10px] font-bold text-white/80">
-        {up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}
+      <div className="mt-1 text-[10px] font-bold text-white">
+        {star
+          ? <><span className="font-black text-amber-300">+{star.sp.toLocaleString("en-GB")} Star Points</span>{star.mult !== 1 ? ` (${star.base} × ${star.mult})` : ""} · {star.gate ? `held at a gate: ${star.gate}` : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}</>
+          : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}
       </div>
     </div>
   );

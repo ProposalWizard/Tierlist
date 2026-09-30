@@ -1,3 +1,4 @@
+import { withStars } from "./starPoints";
 import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
@@ -218,7 +219,9 @@ export function loadStarPhase(scope: string): SavedPhase | null {
 
 export function saveCareer(state: CareerState, scope: string) {
   try {
-    localStorage.setItem(scoped(KEY, scope), JSON.stringify(state));
+    // The star rating is banked on every save, so it can never drop and a
+    // save from before Star Points picks its ledger up here (starPoints.ts).
+    localStorage.setItem(scoped(KEY, scope), JSON.stringify(withStars(state)));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
   } catch {}
 }
@@ -398,7 +401,8 @@ function backfill(c: CareerState): CareerState {
     }));
     if (won.length) out.awards = [...(out.awards ?? []), ...won];
   }
-  return out;
+  // A save from before Star Points gets its ledger and star rating here.
+  return out.stars === undefined ? withStars(out) : out;
 }
 
 export function clearCareer(scope: string) {
@@ -471,7 +475,8 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
       club: signed ? career.player.club : undefined,
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
-      starRating: career.starRating,
+      // The star rating players see is the career one (starPoints.ts).
+      starRating: career.stars ?? 1,
       retired: !!career.retired,
     });
   }
