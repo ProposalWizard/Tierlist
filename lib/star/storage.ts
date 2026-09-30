@@ -660,6 +660,18 @@ export async function saveCareerToCloud(
   } catch {}
 }
 
+/**
+ * Does this device hold progress the cloud hasn't confirmed? True when no
+ * upload of this save has ever been confirmed, or the last confirmed one
+ * was of different progress. Used to upload the moment signal comes back
+ * (Harry, 30 Sep 2026: "upload first thing the moment you reopen with
+ * signal") instead of waiting for the next change to trigger a save.
+ */
+export function hasUnsyncedProgress(scope: string, state: CareerState): boolean {
+  const base = loadSyncRecord(scope).base;
+  return !base || base.progress !== progressFingerprint(state);
+}
+
 /** Just under the ~64 KB cap browsers put on keepalive/sendBeacon bodies. */
 export const KEEPALIVE_BODY_LIMIT = 60_000;
 

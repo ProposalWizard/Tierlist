@@ -232,6 +232,10 @@ const S1 = storage.slotScope(ACCOUNT, 1);
   await storage.saveCareerToCloud(phonePlayed, 1, { scope: S1 });
   offline = false;
   check(storage.loadSyncRecord(S1).pending.length === 1, "phone: the failed upload is remembered as pending, not as synced");
+  // Signal comes back (page.tsx uploads when this says so): the offline
+  // progress is unsynced; a copy the cloud already confirmed is not.
+  check(storage.hasUnsyncedProgress(S1, phonePlayed), "phone: offline progress reads as unsynced, so it uploads when signal returns");
+  check(!storage.hasUnsyncedProgress(S1, start), "phone: the copy the cloud confirmed reads as synced, so nothing is re-sent");
 
   // PC, online: plays on too; the cloud gets the PC's copy.
   on(pcDisk);

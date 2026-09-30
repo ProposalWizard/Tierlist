@@ -95,9 +95,9 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
     <Screen glow={glow} className="max-w-sm px-4 pb-6 pt-5">
       <div data-testid="save-clash-prompt" className="w-full">
         <Kicker color="#fcd34d">Save clash</Kicker>
-        <div className="mt-2 text-[22px] font-black leading-tight text-white">Two different saves</div>
+        <div className="mt-2 text-[22px] font-black leading-tight text-white">Which progress do you want to keep?</div>
         <p className="mt-1 text-[13px] font-bold leading-snug text-white/85">
-          This career was played on two devices without syncing. Which one do you want to keep?
+          This career was played on two devices without syncing, so there are two different saves.
         </p>
         <div
           className="mt-2.5 rounded-xl px-3 py-2 text-[12px] font-bold leading-snug"

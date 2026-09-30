@@ -8,7 +8,7 @@ import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/g
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
-  reconcileCareerLoad, resolveSaveClash, deferSaveClash, type SaveClash,
+  reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
 } from "@/lib/star/storage";
 import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
@@ -447,12 +447,38 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // not whichever slot happens to be active three seconds from now.
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     const slotAtSaveTime = activeSlotRef.current;
+    latestCareerRef.current = { career, slot: slotAtSaveTime };
     pendingCloudSave.current = { career, slot: slotAtSaveTime };
     cloudSaveTimer.current = setTimeout(() => {
       pendingCloudSave.current = null;
       saveCareerToCloud(career, slotAtSaveTime, { scope: slotScope(scopeRef.current, slotAtSaveTime) });
     }, 3000);
   }, [career]);
+
+  // ── Signal comes back: upload what this device has that the cloud hasn't ──
+  //
+  // Played underground or offline, the uploads failed; before this, nothing
+  // was sent again until the next change. Now it goes the moment the phone
+  // is back online, or the app is reopened with signal — only when this
+  // device really holds unconfirmed progress (hasUnsyncedProgress).
+  const latestCareerRef = useRef<{ career: CareerState; slot: number } | null>(null);
+  useEffect(() => {
+    const uploadIfBehind = () => {
+      const latest = latestCareerRef.current;
+      if (!latest || pendingCloudSave.current) return; // a save is already on its way
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+      const scope = slotScope(scopeRef.current, latest.slot);
+      if (!hasUnsyncedProgress(scope, latest.career)) return;
+      saveCareerToCloud(latest.career, latest.slot, { scope });
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") uploadIfBehind(); };
+    window.addEventListener("online", uploadIfBehind);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", uploadIfBehind);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   // ── Leaving the page must not lose the last few seconds ──
   //

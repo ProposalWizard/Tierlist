@@ -49,11 +49,11 @@ export default function OtherDeviceBanner() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-black leading-snug">
-              This career is open on {where} right now
-              <span className="font-bold text-amber-200"> (saved {ago})</span>.
+              You&apos;re mid-session on {where}
+              <span className="font-bold text-amber-200"> (saved {ago})</span>. Carry on here anyway?
             </div>
             <div className="mt-0.5 text-[12px] font-bold leading-snug text-amber-50/90">
-              Playing here too can create two different saves.
+              Nothing is lost: next time, you&apos;ll pick which progress to keep.
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function OtherDeviceBanner() {
           className="mt-2.5 w-full rounded-xl py-2 text-[12.5px] font-black uppercase tracking-wide text-amber-950 active:scale-95"
           style={{ background: "linear-gradient(180deg, #fde68a, #fbbf24 55%, #d97706)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.6)" }}
         >
-          Continue
+          Carry on here
         </button>
       </div>
     </div>
