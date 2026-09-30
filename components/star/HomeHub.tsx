@@ -36,6 +36,9 @@ import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar
 import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import { starStatus } from "@/lib/star/starPoints";
+import { attributeOverall } from "@/lib/star/rating";
+import StarRatingSheet from "./StarRatingSheet";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import FigureSkinToggle from "./FigureSkinToggle";
 import {
@@ -220,7 +223,9 @@ function LastFive({ five }: { five: FormResult[] }) {
 
 function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
   const look = useAvatarStyle();
-  const rating = useCountUp(career.starRating);
+  // The star rating is the CAREER one (starPoints.ts); ability shows as Overall.
+  const star = starStatus(career);
+  const rating = useCountUp(star.stars);
   const money = useCountUp(career.money, 900);
   // A win in your last match: a hop, the arms up, confetti — once per match
   // per visit, not every time the page is swiped past.
@@ -250,7 +255,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
       {/* Age top-left, money top-right (Mikey, 28 Sep 2026). */}
       <div className="absolute left-3 top-[46px] z-10"><Pill label="Age" value={String(career.player.age)} /></div>
       <div className="absolute right-3 top-[46px] z-10"><Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" /></div>
-      {starPass && <StarPassSoon onClose={() => setStarPass(false)} rating={career.starRating} />}
+      {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
       {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026.
           Under Mikey's money pill (it covered the right floodlight at top-2),
           and 32px tall so a thumb can hit it. */}
@@ -296,10 +301,17 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
         <button
           onClick={() => setStarPass(true)}
           className="kib-press mt-1.5 inline-flex"
-          aria-label="Star rating — open the Star Pass"
+          aria-label="Star rating — see how it is made up"
         >
           <Pill gold label="Rating ›" value={`★ ${rating.toFixed(1)}`} />
         </button>
+        {/* The way to the next 0.1★, and your overall (how good you are now). */}
+        <div className="mx-auto mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-black/60">
+          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-200" style={{ width: `${Math.max(3, star.toNext * 100)}%` }} />
+        </div>
+        <div className="mt-1 text-[10.5px] font-black uppercase tracking-wider text-white">
+          {star.gate ? `🔒 ★${star.gate.cap.toFixed(1)} gate · ` : ""}Overall {Math.round(attributeOverall(career.skills))}
+        </div>
       </div>
     </ClubCard>
   );
@@ -410,34 +422,6 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { 
 /** Where the Star Pass will live (Mikey, 28 Sep 2026: "your star rating is
  *  clickable… it would take you to that star pass"). Not built yet — this
  *  says what it will be. */
-function StarPassSoon({ onClose, rating }: { onClose: () => void; rating: number }) {
-  const tiers = [
-    { star: 1, gift: "Starter celebration" },
-    { star: 2, gift: "Energy can bundle" },
-    { star: 3, gift: "New boots colour" },
-    { star: 4, gift: "Signature celebration" },
-    { star: 5, gift: "Legend kit & coins" },
-  ];
-  return (
-    <div className="absolute inset-0 z-20 grid place-items-center bg-black/75 p-4" onClick={onClose}>
-      <div className="w-full max-w-xs rounded-2xl border border-amber-300/60 bg-gray-950/95 p-4 text-center" onClick={(e) => e.stopPropagation()}>
-        <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">Coming soon</div>
-        <div className="mt-1 text-xl font-black text-white">★ Star Pass</div>
-        <p className="mt-1 text-[11px] font-bold text-white">Every star you earn unlocks rewards. You are on ★{rating.toFixed(1)}.</p>
-        <div className="mt-3 space-y-1.5 text-left">
-          {tiers.map((t) => (
-            <div key={t.star} className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 ${rating >= t.star ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white"}`}>
-              <span className="text-[12px] font-black">{"★".repeat(t.star)}</span>
-              <span className="text-[11px] font-black">{t.gift}</span>
-            </div>
-          ))}
-        </div>
-        <button onClick={onClose} className="mt-3 w-full rounded-xl bg-white/15 py-2 text-sm font-black text-white">Close</button>
-      </div>
-    </div>
-  );
-}
-
 /** A set-piece duty you've earned: just the short code, a small gold tag
  *  (Mikey, 29 Sep 2026: "it should just say PK and it should just say FK"). */
 function DutyTag({ code, label }: { code: string; label: string }) {

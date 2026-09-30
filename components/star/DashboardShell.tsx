@@ -1,4 +1,5 @@
 "use client";
+import { starsNow } from "@/lib/star/starPoints";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { formatMoney } from "@/lib/star/money";
@@ -111,7 +112,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
               <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
                 <StarIcon />
                 <span className="text-white font-black text-sm">Star Rating</span>
-                <span className="ml-auto text-white font-black text-sm">{career.starRating.toFixed(1)}</span>
+                <span className="ml-auto text-white font-black text-sm">{starsNow(career).toFixed(1)}</span>
               </div>
               <div className="relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500" style={{ width: `${energyPct}%` }} />

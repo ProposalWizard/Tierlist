@@ -234,8 +234,9 @@ console.log("\nWHERE YOU STAND, WHERE YOU GO");
   ok(Math.abs(goalLineX(ball, nudgedDir(ball, dir0, 2)) - 33.5) < 1e-9, "a 2 m nudge moves it exactly 2 m along the line");
   ok(Math.abs(goalLineX(ball, nudgedDir(ball, dir0, 9)) - (31.5 + RUNUP.nudgeMaxM)) < 1e-9, `…and never more than ${RUNUP.nudgeMaxM} m`);
   ok(Math.abs(nudgeFromDrag(100, 366, 26.25) - (100 / 366) * 26.25 / RUNUP.nudgeFingerRatio) < 1e-12, "a finger movement maps to metres on this phone's own scale");
-  ok(RUNUP.timerS === 1, "the strike screen's countdown is 1.0 s");
-ok(strikeTimerFor("penalty") === 1 && strikeTimerFor("free_kick") === 3, "a free kick gives you 3 s, a penalty 1 s (Harry, 27 Sep)");
+  // 1.0 s (Harry, 27 Sep) became 1.8 s: Mikey's playtest, 28 Sep 2026, ran out of time on it.
+  ok(RUNUP.timerS === 1.8, "the strike screen's countdown is 1.8 s");
+ok(strikeTimerFor("penalty") === 1.8 && strikeTimerFor("free_kick") === 3, "a free kick gives you 3 s, a penalty 1.8 s (Harry 27 Sep; penalty lengthened for Mikey 28 Sep)");
 }
 
 // ─────────────────────────────────────────────────────────────────────────

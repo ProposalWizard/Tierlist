@@ -1,3 +1,4 @@
+import { withStars } from "./starPoints";
 import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
@@ -285,8 +286,10 @@ function isSignedInScope(scope: string): boolean {
  */
 export function saveCareer(state: CareerState, scope: string): boolean {
   try {
+    // The star rating is banked on every save, so it can never drop and a
+    // save from before Star Points picks its ledger up here (starPoints.ts).
     // The other clubs' squads go in thin — see lib/star/squadSaveCodec.ts.
-    localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(state)));
+    localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(withStars(state))));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
     if (saveFailure) setSaveFailure(null);
     return true;
@@ -487,7 +490,8 @@ function backfill(c: CareerState): CareerState {
   // rollover gets the same trim now (see compactPotmHistory): last season
   // and this one whole, older seasons only the months you won.
   out.potm = compactPotmHistory(out.potm, out.season - 1);
-  return out;
+  // A save from before Star Points gets its ledger and star rating here.
+  return out.stars === undefined ? withStars(out) : out;
 }
 
 export function clearCareer(scope: string) {
@@ -560,7 +564,8 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
       club: signed ? career.player.club : undefined,
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
-      starRating: career.starRating,
+      // The star rating players see is the career one (starPoints.ts).
+      starRating: career.stars ?? 1,
       retired: !!career.retired,
     });
   }

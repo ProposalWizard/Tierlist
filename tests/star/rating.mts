@@ -56,7 +56,7 @@ const EMPTY_SKILLS: Skills = { pace: 0, power: 0, technique: 0, vision: 0, freeK
   check(computeStarRating(maxed) === 5, `every skill maxed alone reaches the full 5★ ceiling (${computeStarRating(maxed)})`);
 
   const nothing: CareerState = { ...c, skills: EMPTY_SKILLS, trophies: [], achievements: [], ballonDorWins: 0 };
-  check(computeStarRating(nothing) === 1, `nothing trained, nothing won, floors at 1.0 (the starting rating, Mikey 29 Sep 2026) (${computeStarRating(nothing)})`);
+  check(computeStarRating(nothing) === 0.5, `nothing trained, nothing won, floors at 0.5 rather than 0 (${computeStarRating(nothing)})`);
 }
 
 // ── Trophies, honours, records and a body of work all move the rating ──────

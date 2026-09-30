@@ -5,6 +5,8 @@
 // phase routing and toasts; this owns the numbers.
 
 import { bestsAfterMatch, archiveRowFor } from "./careerRecords";
+import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
+import { computeBallonDorShortlist } from "./ballonDor";
 import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
 import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
@@ -277,7 +279,7 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
   // you actually are yet. Nothing in this computation touches a club, so it
   // is the same number before and after signing for one.
   state.starRating = computeStarRating(state);
-  return state;
+  return withStars(state);
 }
 
 /**
@@ -486,7 +488,7 @@ export function attachClub(
   // touches a club, so this is still "the rating his own skills and honours
   // give him", not a club bonus.
   state.starRating = computeStarRating(state);
-  return state;
+  return withStars(state);
 }
 
 /** Re-exported so the career module answers the question it is asked about
@@ -1075,9 +1077,11 @@ export function creditMatchResult(
     // …and on the honours list beside the Ballon d'Or, but only when it is
     // yours. A month somebody else won is a fact about the league, not an
     // individual honour of yours.
+    // Star Points: this match, filed under the stage it was played on.
+    starLedger: alreadyPlayed ? career.starLedger : ledgerAfterMatch(career, fixture, stats),
     awards: potmJustAwarded?.isYou
       ? [...(career.awards ?? []), {
-        season: career.season, kind: "Player of the Month", week: fixture.week,
+        season: career.season, kind: "Player of the Month", week: fixture.week, division: divisionOf(career),
         detail: `${potmJustAwarded.monthName} — ${potmJustAwarded.goals} goals, ${potmJustAwarded.assists} assists`,
       }]
       : career.awards,
@@ -1277,7 +1281,7 @@ export function creditMatchResult(
 
   const settled = applyAchievements(next);
   return {
-    career: { ...settled.career, starRating: computeStarRating(settled.career) },
+    career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
     newlyUnlocked: settled.newlyUnlocked,
     potmAwarded: potmJustAwarded ?? undefined,
   };
@@ -1504,6 +1508,12 @@ export function advanceSeason(
   // Individual honours for the season that has just finished, taken BEFORE the
   // stats are reset — they are a verdict on those numbers.
   const honours = seasonAwards(career);
+  // 1 = won it, 2-10 = on the shortlist, 0 = not nominated.
+  const shortlist = computeBallonDorShortlist(career);
+  // Only a top-flight season can put you on it: the shortlist is the world's
+  // best, and a lower-league season is not in that conversation.
+  const ballonRank = userWonBallonDor ? 1
+    : shortlist.playerNominated && divisionOf(career) === "premier" ? Math.max(2, shortlist.playerRank) : 0;
 
   // How the season went by the club's own standards, not by whether you won the
   // league. The same finish is a triumph at one club and a sacking offence at
@@ -1655,7 +1665,13 @@ export function advanceSeason(
     // Everything you own wears down a season (fame.ts).
     ownedItems: wearItems(career.ownedItems),
     lastSeasonJudgement: judgement,
-    awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
+    awards: honours.length > 0 ? [...(career.awards ?? []), ...honours.map(h => ({ ...h, division: divisionOf(career) }))] : career.awards,
+    // Star Points: a promotion, and where you finished in the Ballon d'Or.
+    starLedger: {
+      ...ledgerOf(career),
+      promotions: ledgerOf(career).promotions + (ladder.yourMove === "promoted" ? 1 : 0),
+      ballonRanks: ballonRank > 0 ? [...ledgerOf(career).ballonRanks, ballonRank] : ledgerOf(career).ballonRanks,
+    },
     sponsors: sponsorRoll.sponsors,
     // Both halves of what a sponsor did to you this rollover — a deal that
     // lapsed, and a deal that just paid its "start of the season" fee — on
@@ -1749,7 +1765,7 @@ export function advanceSeason(
   // exactly the moment computeStarRating should read them from.
   const settled = applyAchievements(next);
   return {
-    career: { ...settled.career, starRating: computeStarRating(settled.career) },
+    career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
     newlyUnlocked: settled.newlyUnlocked,
   };
 }
@@ -1974,7 +1990,7 @@ export function simulateMissedFixture(
   // trophies count toward it whether or not you were the one who lifted it
   // in person.
   return {
-    career: { ...withAchievements, starRating: computeStarRating(withAchievements) },
+    career: withStars({ ...withAchievements, starRating: computeStarRating(withAchievements) }),
     newlyUnlocked, homeScore: userScore, awayScore: oppScore,
   };
 }
