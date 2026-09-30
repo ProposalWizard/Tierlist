@@ -372,6 +372,10 @@ not by version number, so it doesn't go stale at the next release.
   expensive model.
 - If a task straddles both, do the building on the top model and hand the
   checking and writing-up to the everyday one.
+- **Playtest/walkthrough videos (Harry, 30 Sep 2026):** the everyday model at
+  medium effort does the breakdown (download, transcript, pictures, a
+  timestamped list of every point); the top model does the analysis and the
+  answers. Never the other way round.
 
 ### The agent skills, and when each fires
 
