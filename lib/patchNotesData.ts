@@ -805,7 +805,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "updatedAt": null
     },
     {
-      "version": "1.1",
+      "version": "0.19",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-27T12:00:00Z",
       "summary": "The headline: five levels of every boot and lifestyle item, each priced for its league. Plus a moving ball on the strike screen (headers float, volleys bounce, ground balls bobble), commentary that barely repeats, and new chants.",
@@ -1174,30 +1174,77 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "1.0",
       "title": "V1: every problem and its fix",
       "publishedAt": "2026-09-26T18:00:00Z",
-      "summary": "Every change from every patch notes version so far (v0.1 to v0.13), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The guard is the headline.",
+      "summary": "Every change from every patch notes version so far (v0.1 to v0.19), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The headlines are the drawing is the team (v0.16) and the guard (v0.10). v0.15 is the plan that v0.16 built; v0.19 is Mikey's page, first published as 1.1.",
       "stats": [
         {
-          "value": "143",
-          "label": "problems fixed or features added, 21–26 Sep"
+          "value": "252",
+          "label": "problems fixed or features added, 21–28 Sep"
         },
         {
-          "value": "15",
+          "value": "20",
           "label": "patch notes versions folded into this one"
         },
         {
-          "value": "85 · 13 · 46",
+          "value": "188 · 13 · 51",
           "label": "changes by Harry · Leo · Mikey"
         },
         {
-          "value": "35",
-          "label": "known issues still open (16 raised along the way are now fixed)"
+          "value": "57",
+          "label": "known issues still open (21 raised along the way are now fixed), plus 13 decisions for Harry"
         }
       ],
       "sections": [
         {
           "kind": "changed",
-          "title": "The headline: the guard",
+          "title": "The headlines: the drawing is the team, and the guard",
           "items": [
+            {
+              "title": "The drawing is the team: every player you drew now plays (v0.16 · Harry)",
+              "detail": "Problem: you drew a cutback with 5 defenders and the game served 4, and it invented men you never drew.",
+              "bars": [
+                {
+                  "label": "Cutback missing a drawn defender (%)",
+                  "was": 77,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Midfield pass missing one (%)",
+                  "was": 79,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Byline cross missing one (%)",
+                  "was": 59,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Corner keeper moved off your spot (%)",
+                  "was": 100,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: months of hand-written \"always\" rules piled on top of your drawings: keeper never on his line, pick some defenders, nudge the ball, move you after a pass, move the free-kick team-mate.",
+                  "Fix: all of them deleted. The same men, keeper spot and ball you drew. Extra team-mates you drew become real runners with a name and a face.",
+                  "Penalty ball moved off the spot 100% → 0; you moved after a pass 100% → 0; stacked players in through balls 75 → 0 per 400.",
+                  "Left for you: 23 older drawings still carry the old keeper spots."
+                ]
+              }
+            },
             {
               "title": "The guard: the game can't quietly split into copies again (v0.10 · Harry)",
               "detail": "The trial, training and five-a-side felt slightly different from a real match: the keeper dived differently, kicks came out harder or softer, and five-a-side's arrow pointed a bit off.",
@@ -2262,6 +2309,290 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "Fix: Vision now works on a smooth curve: 40 plays as before, and every 10 points after that adds a quarter of a man. Over 1,500 chances: 3.18 team-mates per chance at 40, 4.18 at 80, 4.69 at 100."
                 ]
               }
+            },
+            {
+              "title": "Penalties went in 44% of the time; real ones go in about 82% (v0.14 · Harry)",
+              "detail": "With a normal spread of kicks (mostly placed, some down the middle, a few chipped), only 44% went in and the keeper saved 53%. Real Premier League keepers save about 16%. A shot down the middle went in 13%, when in real football it scores about as often as one in the corner.",
+              "bars": [
+                {
+                  "label": "Penalties scored",
+                  "was": 44,
+                  "now": 80,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Keeper saves",
+                  "was": 53,
+                  "now": 15,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The keeper was built to be beatable, not realistic. He dived only 80% of the time and only ever 1.4 m, so he never left the middle: that's why the middle was nearly always saved, and why he could still reach balls he'd guessed wrong on.",
+                  "Fix: Harry's rule stays: he waits in the middle until you strike, then reads your kick. Now he goes 96% of the time (real keepers almost always dive), guesses your side about half the time (a top keeper 59%, never worse than a coin flip), dives a real 1 to 2.5 m, and can't reach back once he's committed."
+                ]
+              }
+            },
+            {
+              "title": "Half of all corners were filmed from the wrong side (v0.14 · Harry)",
+              "detail": "The camera problem Harry and Mikey saw: in a real match, 50.2% of corners were filmed as if from the other corner, with the taker up in the top third of the screen. A third of corners (34%) had the ball nudged off the pitch, and every corner was zoomed out 1.4 times, so everyone looked about 28% smaller.",
+              "bars": [
+                {
+                  "label": "Corners filmed from the wrong side",
+                  "was": 50.2,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Three slips. The match picks a corner flag at random, then lays a drawing over it; the drawing moved the ball to its own flag, but the camera stayed turned for the match's flag. The small random nudge that stops a drawing repeating exactly was meant for open play, and at a corner it pushed the ball over the line.",
+                  "Fix: When a drawing is from the other flag, the match mirrors it onto the match's flag, so the camera, the ball and everyone agree. Every corner drawing now plays from both flags, which doubles the variety from the same 9 drawings. No nudge moves the ball at a corner, and the sideways view keeps its true size."
+                ]
+              }
+            },
+            {
+              "title": "Three in four direct free kicks went in; real ones about 4% (v0.14 · Harry)",
+              "detail": "Nobody had measured it: a sensible player scored 74% of direct free kicks (real Premier League 2023/24: 3.9%; Ward-Prowse, the best, 12.4%). The wall was always 3 or 4 men, centred on the middle of the goal whatever the angle, and a team-mate stood offside on the penalty spot.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The keeper stood still wherever he was dropped, often on the same side as the wall, so anything that cleared the wall and wasn't straight at him went in.",
+                  "Fix: The wall stands 9.15 m away: 4 or 5 men from the middle, 3 or 4 from a half angle, 2 or 3 from a tight angle, with the end man just outside the near post. It jumps 85% of the time and stays down 15%, so going under it is a gamble. The keeper stands on his line shading to the far post, can't see through his wall, and reacts a fifth of a second after the ball clears it."
+                ]
+              }
+            },
+            {
+              "title": "A third of saved cards opened with players in the wrong places (v0.14 · Harry)",
+              "detail": "Found by the new screenshot check: 2 of 16 simulated long shots had a team-mate standing in the goal, the keeper out in midfield and YOU nowhere near the ball. Checking every saved card, 31 of 91 were opening wrong, mostly one-on-ones with YOU on the poacher's spot.",
+              "bars": [
+                {
+                  "label": "Saved cards that open exactly as saved (of 91)",
+                  "was": 60,
+                  "now": 91,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A saved card remembers who stood where by slot number (slot 7 is the keeper, and so on), then lays that over a fresh build of the same picture. When the fresh build changes shape, the slots shift and the keeper's spot lands on a team-mate.",
+                  "Fix: If a card's slots still line up, nothing changes. If they don't, it's matched by role: keeper to keeper, YOU to YOU, defenders to defenders, team-mates by name then in order. A test now opens all 91 committed cards and checks everyone is back where he was saved."
+                ]
+              }
+            },
+            {
+              "title": "Half the admin tabs were off the side of a phone screen (v0.14 · Harry)",
+              "detail": "On a phone, the admin tabs from Blind Rankings to Export Backup were off the edge with no way to reach them. Across 33 admin screens, 181 things ran off the edge, 671 buttons were too small to tap, and 94 text boxes made an iPhone zoom in.",
+              "bars": [
+                {
+                  "label": "Things running off the edge",
+                  "was": 181,
+                  "now": 16,
+                  "state": "good",
+                  "unit": ""
+                },
+                {
+                  "label": "Buttons too small to tap",
+                  "was": 671,
+                  "now": 67,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The admin area was only ever laid out for a laptop.",
+                  "Fix: Tabs wrap; rows put their buttons under the title; the image ✕ shows on touch screens (it was hover-only); images reorder by press and hold, then drag; text boxes are 16 px, so an iPhone stops zooming. The laptop look is unchanged. Seen in a phone-sized browser; the iPhone zoom can only be tried in Safari."
+                ]
+              }
+            },
+            {
+              "title": "Test screens on a phone: the ball, pinned bars, buttons and the scoreboard (v0.14 · Harry)",
+              "detail": "The ball you strike was below the bottom of the screen, pinned bars scrolled away, Next and Save needed scrolling, the scoreboard's labels were 8 px, and dribble runs started under their how-to card.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The test screens were built on a laptop and never checked at phone size.",
+                  "Fix: The pitch scrolls on screen whenever a chance is served, bars pin on the test screens only, Next sits in the top bar, tap targets are 40 px, scoreboard labels are 11 px, and dribble runs open ready behind a Tap to start button."
+                ]
+              }
+            },
+            {
+              "title": "The site's patch notes lost the pictures (v0.14 · Harry)",
+              "detail": "Harry: the patch notes page on the site didn't look like the artifacts, and lost the pictures.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The site only ever stored each version's text, redrawn in the site's own style. Pictures, diagrams and layout were never saved.",
+                  "Fix: Each version's real page, pictures included, is now kept in the code, and the site shows it exactly as published in a Page tab; the old view is the Text tab. All 15 versions and V1 are there, and V1 gained Mikey's v0.11 to v0.13 (143 changes at the time)."
+                ]
+              }
+            },
+            {
+              "title": "Penalties: a run-up, one dive, and a keeper who can read you (v0.16 · Harry)",
+              "detail": "Problem: penalties into the corners went in 88% of the time, the keeper dived and then dived back, and there was no run-up.",
+              "bars": [
+                {
+                  "label": "Corner penalties scored (%)",
+                  "was": 87.6,
+                  "now": 75,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "All penalties scored (%)",
+                  "was": 82.3,
+                  "now": 76,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the keeper could change his mind mid-dive, and the strike happened the instant you let go.",
+                  "Fix: you stand 1.8 m behind the ball, aim, then jog in for 2.4 s with a 1-second countdown. Run out of time and you scuff it. He makes one dive and finishes it, and about half the time hops to a side first and dives that way.",
+                  "Open question: watching the hop and aiming the other way scores 81.7% against 74.3% if you ignore it."
+                ]
+              }
+            },
+            {
+              "title": "Corners and byline crosses cut the goal off (v0.16 · Harry)",
+              "detail": "The view widens a little when it needs to: whole goal in view 0 → 300 of 300 corners, 113 → 300 byline crosses."
+            },
+            {
+              "title": "Test screens: a foul said PENALTY, then reloaded the same picture (v0.16 · Harry)",
+              "detail": "It now serves the penalty straight away (3 of 3)."
+            },
+            {
+              "title": "Test screens: every penalty was the same (v0.16 · Harry)",
+              "detail": "The keeper now varies and hops there too (hop 0% → 51.5%)."
+            },
+            {
+              "title": "Shootouts: you never got to kick, and a loss said \"Won 2–4\" (v0.16 · Harry)",
+              "detail": "You're always one of the five takers and the result reads your score first."
+            },
+            {
+              "title": "The ball started off the bottom of the screen (v0.16 · Harry)",
+              "detail": "The pitch is scrolled into view when a chance starts: 44% → 0."
+            },
+            {
+              "title": "Buildup: two team-mates standing 0.33 m apart (v0.16 · Harry)",
+              "detail": "That's how the drawing was made, not a code bug.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Your club now plays at its real strength (v0.16 · Harry)",
+              "detail": "The unseen match was told 60 for every club. Strongest clubs win 38–49% → 71–78% (planned figure, not re-measured after the build)."
+            },
+            {
+              "title": "You can shoot past a man, and team-mates curl round him (v0.16 · Harry)",
+              "detail": "A body is 0.7 m wide now. Long-range shots blocked 26% → 18%, cutbacks 45% → 37%.",
+              "bars": [
+                {
+                  "label": "Long range shots blocked (%)",
+                  "was": 26,
+                  "now": 18,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "A team-mate no longer takes your shot (v0.16 · Harry)",
+              "detail": "A team-mate right on your shot's line lets it go. Through balls he took 60% → 33%."
+            },
+            {
+              "title": "The whole goal is always on screen (v0.16 · Harry)",
+              "detail": "The camera slides or zooms out instead of moving the chance closer. Through balls now score 21.8% → 25.2%."
+            },
+            {
+              "title": "Subbed on, then subbed off: gone (v0.16 · Harry)",
+              "detail": "A sub only comes off for energy now."
+            },
+            {
+              "title": "The dribble: 3D and three new cameras (v0.17 · Harry)",
+              "detail": "Your old complaint, the ball sitting on your body instead of in front, was measured over 42 ball positions.",
+              "bars": [
+                {
+                  "label": "Ball drawn over your body, of 42",
+                  "was": 12,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "The four views",
+                "points": [
+                  "Today: 12 of 42. C1 low over the shoulder: 0. C2 higher from behind: 0. C3 closing in near a defender: 0–2.",
+                  "The cameras change the view only, not the difficulty. In the C1 view the legs look like a normal stride."
+                ]
+              }
+            },
+            {
+              "title": "Swiping between home pages didn't work with a finger (v0.17 · Harry)",
+              "detail": "It only worked with a mouse. Tested with real touch events now."
+            },
+            {
+              "title": "Post-match always said your stars went up by +0.1 (v0.17 · Harry)",
+              "detail": "It shows the real jump now."
+            },
+            {
+              "title": "Two old display bugs in Settings (v0.17 · Harry)",
+              "detail": "A switch's knob sat outside its track, and the current save was cut off."
+            },
+            {
+              "title": "The match lag: each face was drawn 13 times from the full-size photo, every frame (v0.18 · Harry)",
+              "detail": "Now drawn once and reused. The fake-face pictures went from 1.9 MB to about 95 KB each. Faces look identical.",
+              "bars": [
+                {
+                  "label": "Aiming, 2D look (ms a frame)",
+                  "was": 124.5,
+                  "now": 44.2,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Aiming, 3D look (ms a frame)",
+                  "was": 155.1,
+                  "now": 45.2,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Five-a-side (ms a frame)",
+                  "was": 48.9,
+                  "now": 31.7,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Ball in flight (ms a frame)",
+                  "was": 50,
+                  "now": 40.2,
+                  "state": "good",
+                  "unit": "ms"
+                }
+              ],
+              "more": {
+                "summary": "How it was measured",
+                "points": [
+                  "A real browser at phone size, processor slowed 6×, average of 2 runs. Lower is smoother."
+                ]
+              }
             }
           ]
         },
@@ -2613,7 +2944,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                 "summary": "Why, and the fix",
                 "points": [
                   "Why: Copies are how the trial, training and test screens ended up feeling different.",
-                  "Fix: A check inside every deploy: the site won't go live with a new copy of the match, and the build log says what to fix. Fable 5.1 tried to break it; the first version missed 21 of 31 tricks, so it now reads the code the way the compiler does. It caught all 10 planted copies and left 2 harmless look-alikes alone. It also found Goalie Mode's own ball physics and the team-understanding gap. Adds about 20 seconds to each deploy."
+                  "Fix: A check inside every deploy: the site won't go live with a new copy of the match, and the build log says what to fix. A second review tried to break it; the first version missed 21 of 31 tricks, so it now reads the code the way the compiler does. It caught all 10 planted copies and left 2 harmless look-alikes alone. It also found Goalie Mode's own ball physics and the team-understanding gap. Adds about 20 seconds to each deploy."
                 ]
               }
             },
@@ -2724,6 +3055,156 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "Fix: A player who isn't a regular now starts about 60% of early cup rounds (anything before the quarter-final). A regular is never rotated out."
                 ]
               }
+            },
+            {
+              "title": "Penalties, free kicks, corners, cutbacks and byline crosses now come from Harry's drawings (drawings · Mikey)",
+              "detail": "Only four chance kinds were built from the team's drawings. Every penalty, free kick, corner, cutback and byline cross was still laid out by the game's own builder.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Six commits by Mikey put Harry's drawings into the game: 10 penalties, 12 free kicks, 9 corners, 5 cutbacks and 5 byline crosses. In real matches all five kinds are now one of Harry's drawings."
+                ]
+              }
+            },
+            {
+              "title": "No way to choose which flag a corner is taken from (v0.14 · Harry)",
+              "detail": "Harry asked for a way to pick the side in the editor. The side came from the card's random seed, with no button for it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Nobody had needed it: corner drawings were only ever looked at from whichever side they came up on.",
+                  "Fix: A Swap flag ⇄ button on corner and byline cross cards mirrors the whole picture onto the other corner, camera and all. Press it again to swap back. It survives Save and a reload."
+                ]
+              }
+            },
+            {
+              "title": "No way into the test screens from a phone (v0.14 · Harry)",
+              "detail": "On a phone the menu only linked the Admin page: the gallery, Play Area, training and every other test screen had no link, and the full-screen pages (gallery, Play Area, highlights) hid the menu with no way out.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The list of test screens only existed as a tab on the edge of a laptop screen.",
+                  "Fix: The phone menu has \"Admin & Dev tools →\", which opens the same list (40 px rows), and full-screen test pages show the Admin tab on a phone too. Seen in an iPhone 13-sized browser."
+                ]
+              }
+            },
+            {
+              "title": "Free-kick run-up (v0.16 · Harry)",
+              "detail": "Same jog and 1-second countdown as penalties."
+            },
+            {
+              "title": "Shootouts and penalties won without you are played live (v0.16 · Harry)",
+              "detail": "Every kick on the real pitch. A top side wins one about every 6 games."
+            },
+            {
+              "title": "A cheeky miss costs reputation (v0.16 · Harry)",
+              "detail": "A missed penalty down the middle or a missed chip: -1 each, at most -2 a match."
+            },
+            {
+              "title": "Late subs get chances (v0.16 · Harry)",
+              "detail": "A 99 striker on at 80': 0.75 → 2.15 chances a cameo.",
+              "bars": [
+                {
+                  "label": "Chances, on at 80'",
+                  "was": 0.75,
+                  "now": 2.15,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Live scores during your match (v0.16 · Harry)",
+              "detail": "Cards only for clubs you tick, one at a time, and a Scores panel with every game."
+            },
+            {
+              "title": "Sim this match (v0.16 · Harry)",
+              "detail": "Score, your goals and assists, rating and star bar. Deliberately a bit worse than playing."
+            },
+            {
+              "title": "Real players in League One and Two (v0.16 · Harry)",
+              "detail": "43 clubs, 1,154 players copied from last season a year older. Needs a database step run first.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Match Radar (v0.16 · Harry)",
+              "detail": "Watch the unseen 90 minutes, with injuries and energy at kick-off."
+            },
+            {
+              "title": "A playtest recording can be read, and three standing rules for pages and plans (Harry's branch · Harry)",
+              "detail": "A tool turns a screen recording into a picture each time the screen changes plus a transcript, so a plan can't paraphrase away what was on screen.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Harry's 40-minute spoken playtest became a plan that got two things wrong, because his words were paraphrased without the picture.",
+                  "Fix: Recordings go in a Drive folder and are broken down by time. Three standing rules came with it: plan changes are built as throwaway test versions and filmed, pages stack their text in one full-width column, and the two match files are called sensitive, never by a person's name."
+                ]
+              }
+            },
+            {
+              "title": "3D players on the pitch (v0.17 · Harry)",
+              "detail": "Shaded kits, boots, a soft shadow and a fitted face. A player with no photo gets drawn hair in 5 styles, so nobody is bald.",
+              "more": {
+                "summary": "How it works",
+                "points": [
+                  "They use the same skeleton as today's players, so every run, kick and dive moves exactly as before; only the drawing on top is new.",
+                  "Off by default, tried from Settings → Player look. It's no slower: 67–69 ms a frame against Classic's 74–79 ms on a slowed-down phone test."
+                ]
+              }
+            },
+            {
+              "title": "Face scan: your photo becomes your face (v0.17 · Harry)",
+              "detail": "Problem: \"still an issue when the player takes a picture\", and \"everyone can't be bald\". An uploaded photo is now cut out, straightened and fitted once, with a scan animation, and the hair is recreated.",
+              "more": {
+                "summary": "How it works",
+                "points": [
+                  "A face-finding tool that runs on the phone itself finds the face and outline, lines up the eyes, removes the background and redraws the hair. It works on busy backgrounds.",
+                  "Your own photo has only been tested from a screenshot crop."
+                ]
+              }
+            },
+            {
+              "title": "Recording tool: video links, and YouTube from your own Mac (v0.17 · Harry)",
+              "detail": "Problem: the tool only took files, and YouTube blocks cloud servers, so a pasted YouTube link failed every way it was tried.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "From the cloud: TikTok, Drive, Dropbox and about 1,000 other video sites now work from a link.",
+                  "From your Mac: a one-click Download YouTube button on the desktop. You tested it: \"unreal, it worked\".",
+                  "720p is the default; a 25-minute video is 133 MB at 720p against 263 MB at 1080p."
+                ]
+              }
+            },
+            {
+              "title": "Blender: a real 3D footballer, for celebrations and cut-scenes (v0.17 · Harry)",
+              "detail": "5 stills, hair in several styles and 3 animation loops, on its own test page. Nothing reaches the game yet."
+            },
+            {
+              "title": "Run-ups: 7 for penalties, 7 for free kicks (v0.17 · Harry)",
+              "detail": "Chosen in Settings. Free kicks include Ronaldo's power stance, Bale, Messi's calm curl, Neymar, Maddison and Trent."
+            },
+            {
+              "title": "The penalty keeper sometimes leans (v0.17 · Harry)",
+              "detail": "About 35% of penalties. Right-corner penalties score 86.1% if he leans left, 72.3% with no lean and 55.7% if he leans right."
+            },
+            {
+              "title": "The Store and Coins, inside the career (v0.17 · Harry)",
+              "detail": "Daily specials, run-up animations, accessories and boosts. Coin packs say \"Coming soon\": there is no real payment."
+            },
+            {
+              "title": "National League North and South player names (v0.18 · Harry)",
+              "detail": "1,540 players at 63 clubs, from Wikipedia. Stored only; nothing plays with them yet. The ratings (42–56) are estimates, not real ratings."
+            },
+            {
+              "title": "The ball moves on the strike screen (v0.19 · Mikey)",
+              "detail": "Headers float across in an arc (\"Head it?\"), volleys bounce across, a ball at your feet bobbles about a third of the time. Dead balls stay still. Only where you tap counts; higher technique makes it slower."
+            },
+            {
+              "title": "New chants (v0.19 · Mikey)",
+              "detail": "Ronaldo, Messi, Wan-Bissaka, Rogers, João Pedro, Brobbey, Calvert-Lewin, Lukaku, plus Saka and Pogba. Names match despite accents and hyphens."
             }
           ]
         },
@@ -3451,6 +3932,160 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "Fix: From the 50th minute, the sub now comes on when the game needs him: 2 down 50', 1 down 56', level 64', 1 up 72', well ahead 80', give or take up to 4 minutes. The pre-match screen says \"Bench (on when the game needs you)\"."
                 ]
               }
+            },
+            {
+              "title": "Hand-written corner rules made the pictures worse than the drawings (v0.14 · Harry)",
+              "detail": "Harry: \"the corner and long range highlight sims suck.\" Earlier that evening, hand-written corner rules (who marks whom, where the keeper stands) had brought corners down to real-football numbers, but the pictures showed players stacked on each other, a stray team-mate nowhere near the play, and a defender standing on the goal l…",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The rules moved people away from where Harry had drawn them. Underneath, three more slips: the builder's own spare men were left wherever it put them (about one per picture), a corner came out a defender short of its drawing (4.9 against 6.0), and the random nudge could push two men into each other.",
+                  "Fix: The rules are deleted: corners now work like one-on-ones, the drawings plus the rules scanned off them (a rule only counts if 90% of the drawings agree). A corner or long shot carries exactly its drawing's men, and no nudge brings two players closer than the drawing's own closest pair. Standing rule from now on: anything outside the drawings is checked by eye, on a sheet of screenshots, before it ships."
+                ]
+              }
+            },
+            {
+              "title": "Hand-written long-shot rules bent every drawing (v0.14 · Harry)",
+              "detail": "Same as corners: the long-shot pictures looked worse than the drawings. Earlier that evening a set of long-shot rules had brought an ordinary player's long shots from 13.6% down to a real-football 4.5%.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The rules pulled every drawing closer to goal, closed up the back line, put a man in the shooting lane and moved team-mates. The 24 long-shot drawings are all 23 to 33 m out, so nearly every picture was bent away from what was drawn.",
+                  "Fix: Rules deleted: a long shot is its drawing, as drawn, like a one-on-one. The cost: an ordinary player's long shot scores 13.8% again, about 3 times real football (4 to 6%). Harry's call: fun over real-life numbers, changed only if it feels wrong in play."
+                ]
+              }
+            },
+            {
+              "title": "Being behind, or much stronger, didn't bring more long shots (v0.14 · Harry)",
+              "detail": "Losing late made no difference to how often you got a long shot, and a much stronger side got fewer (a striker at 85 against 60: 4.7%, against 7.1% at 60 against 85). Real football is the other way round: a side facing a deep defence shoots from range more.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Nothing that picks the kind of chance looked at the score or the strength gap.",
+                  "Fix: From the 60th minute when you're losing, or when your side is 15+ points better, a long shot is twice as likely wherever it's already an option. Overall it moves only 0.1 to 0.3 points, so long shots don't take over."
+                ]
+              }
+            },
+            {
+              "title": "A drawing's camera fed into the chances a match serves (v0.14 · Harry)",
+              "detail": "Harry: a camera change on one highlight must stay on that card, not feed the chances a match serves. The framing also cut off part of the goal on 29 of 300 served corners.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Served chances could take their frame from a drawing's camera.",
+                  "Fix: A served chance now gets its kind's standard frame, fitted to the players in it: sideways it's centred on everyone, the ball and you stay 3 m clear of the edge, and the goal is never cut off. Corners keep today's frame, Harry's pick. Frames move 1 to 2 m on average, so chances look the same. Checked by eye on sheets of 16 pictures."
+                ]
+              }
+            },
+            {
+              "title": "One keeper everywhere, set to Middle (v0.16 · Harry)",
+              "detail": "He walks up to 2.2 m while you aim, then dives once, paced to arrive with the ball. Keepers who are 88 rated now concede fewer than 45-rated ones in every kind of chance; the Hard / Middle / Easier setting is a test-screen dial only."
+            },
+            {
+              "title": "Every chance is made the same way: your drawings, varied (v0.16 · Harry)",
+              "detail": "Mirrored half the time and never one of the last 5. One-on-ones a match 0.34 → 1.85."
+            },
+            {
+              "title": "The drag is 25% shorter, measured from your thumb (v0.16 · Harry)",
+              "detail": "Full power at power 55: 12.6% → 9.5% of the screen."
+            },
+            {
+              "title": "Figures are the same size in training, trial and the match (v0.16 · Harry)",
+              "detail": "Drills were up to 46% too big; now within 2.3%."
+            },
+            {
+              "title": "Problem: the home screen was \"all messed up\" and every other screen looked like an older game (v0.17 · Harry)",
+              "detail": "Flat cans, six squashed buttons, a 2D avatar with no flash, and uploaded photos sitting on it like a sticker.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: each screen was built on its own over the months with its own colours and buttons, so there was no single place to change the look.",
+                  "Fix: one shared design kit (club-lit glass cards, pills, buttons that press in, bursts, count-ups) with every screen rebuilt on it, and 3D-look players.",
+                  "A real title screen, and Home with you in the middle and Play raised in the middle.",
+                  "Matchday: Play, role, energy, Sharpness and all three cans now fit above the pinned bar (the match box went from about 245 px tall to 80).",
+                  "League, Stats, Training, Relations, Phone, Shop, Store, Casino, awards, transfers, votes, team sheets, cup draw and Settings all rebuilt. Every number stays on screen."
+                ]
+              }
+            },
+            {
+              "title": "Fitness is now called Sharpness (v0.17 · Harry)",
+              "detail": "Same number; it goes up by playing and drops each week you don't."
+            },
+            {
+              "title": "League table zones follow each division (v0.17 · Harry)",
+              "detail": "The Premier League shows title, Champions League, Europa League and relegation; lower divisions show promotion and play-offs."
+            },
+            {
+              "title": "Settings, reorganised (v0.17 · Harry)",
+              "detail": "Game, You, Player graphics, Saves, Developer tools, then Exit career. Main menu is at the top right."
+            },
+            {
+              "title": "2 of 8 steps done: smooth on slow phones, and 3D players as standard (v0.18 · Harry)",
+              "detail": "Step 3, safe saves, is ready and waiting on your yes."
+            },
+            {
+              "title": "Safe saves come next (v0.18 · Harry)",
+              "detail": "Stop careers being lost between phone and PC. Saves shrink from 1.4 MB to about 300 KB, so about 400 careers fit in the free database instead of about 85."
+            },
+            {
+              "title": "Then accounts, the app itself, testing, 12 testers for 14 days, and store review (v0.18 · Harry)",
+              "detail": "Apple is $99 a year (1–3 days to approve); Google is $25 once. The 12-testers step is the slowest, so start it early.",
+              "more": {
+                "summary": "The rest of the steps",
+                "points": [
+                  "The app itself wraps the real game and adds what Apple requires: Sign in with Apple, a phone-style Google sign-in, saves kept on the phone, an offline screen and the back button.",
+                  "Apple review takes about 1.5 days; Google's first review takes 7–14 days.",
+                  "After it's live: no store review for game changes. The app opens the live game from the website, so anything pushed there reaches everyone next time they open it. Worked out from Apple's and Google's rules; not tested yet because the app doesn't exist yet."
+                ]
+              }
+            },
+            {
+              "title": "Problem: 4 ways a player can lose a career today (v0.18 · Harry)",
+              "detail": "Offline on the phone then PC (the PC save wins with no warning), closing within 3 seconds of a change, an iPhone clearing website storage after 7 days, and a full phone silently dropping the save.",
+              "more": {
+                "summary": "Fixes, and how sure we are",
+                "points": [
+                  "Fixes: ask which save to keep, save the moment the app is hidden, keep saves on the phone in the app, smaller saves plus a storage warning.",
+                  "Read from the save code, not reproduced on two real devices."
+                ]
+              }
+            },
+            {
+              "title": "3D is the default look (v0.18 · Harry)",
+              "detail": "Your answer in v0.17. Classic 2D is one tap away."
+            },
+            {
+              "title": "Dribble camera C1, a smoother 3D kick, League Two's top 3 go straight up (v0.18 · Harry)",
+              "detail": "Your answers to the v0.17 questions."
+            },
+            {
+              "title": "Live scores are the pop-up card again (v0.18 · Harry)",
+              "detail": "\"Fit the aesthetic more.\""
+            },
+            {
+              "title": "Every boot and lifestyle item comes in 5 levels (v0.19 · Mikey)",
+              "detail": "Problem: each item had one price and sat in one money tier. Fix: level 1 priced for National League money up to level 5 for the Premier League; boots about 25% more power and technique per level, lifestyle about 40% more fame. You own one level of each item; a higher one replaces it. Old saves keep what they own.",
+              "bars": [
+                {
+                  "label": "Phone price, L1 → L5",
+                  "was": 30,
+                  "now": 920,
+                  "state": "good",
+                  "unit": "★"
+                }
+              ]
+            },
+            {
+              "title": "Commentary barely repeats (v0.19 · Mikey)",
+              "detail": "About 300 new lines, and a line isn't reused while unused ones remain. Repeats per match: 8.3 → 0.1 (200 simulated matches).",
+              "bars": [
+                {
+                  "label": "Repeated lines per match",
+                  "was": 8.3,
+                  "now": 0.1,
+                  "state": "good"
+                }
+              ]
             }
           ]
         },
@@ -3580,7 +4215,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               }
             },
             {
-              "title": "One number was changed in the engine file Mikey said never to touch (raised in v0.4 · Harry)",
+              "title": "One number was changed in the core engine file (sensitive) (raised in v0.4 · Harry)",
               "detail": "A striker's long-range weighting went from 6 to 3. It can be undone in one character and needs Mikey's call.",
               "more": {
                 "summary": "Why, and where it stands",
@@ -3762,7 +4397,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                 "summary": "Why, and where it stands",
                 "points": [
                   "Why: Analytics loads on every copy of the site, including local test copies.",
-                  "Status: Still open as of v0.13. A fix is ready, waiting on a yes."
+                  "Status: Still open as of v0.13. A fix is ready, waiting on a yes. Mikey's v0.19 lists it as high priority: the fix is ready and waiting on a yes."
                 ]
               }
             },
@@ -3842,12 +4477,389 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "Status: Still open."
                 ]
               }
+            },
+            {
+              "title": "A penalty 2 m inside the post is the weakest place to aim (raised in v0.14 · Harry)",
+              "detail": "Corners and the middle score about 85%, but a kick 2 m inside the post only 55 to 62%.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The match's keeper has one fixed body size, so when he guesses right he nearly always reaches a ball that close to him.",
+                  "Status: Still inside Harry's 50% floor. Changing it needs the core engine file (sensitive), so Mikey's go-ahead. Not re-measured since v0.16's one-dive keeper and run-up."
+                ]
+              }
+            },
+            {
+              "title": "Three shooting quirks sit in the core engine file (sensitive) (raised in v0.14 · Harry)",
+              "detail": "Free kicks over the wall rarely go in (2.7%). Curl is strong even for an ordinary player: 10.7% of his curled long shots go in, twice his driven ones. A specialist's hard, low long shot hits the bar 12.6% of the time.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The ball has no dip in the air, so one that clears the wall arrives slow and high and the keeper gets there. How much a player can bend it, and how a hard strike lifts, are set inside the core engine file.",
+                  "Status: Not started. Each needs a change to the core engine file (sensitive), so Mikey's go-ahead."
+                ]
+              }
+            },
+            {
+              "title": "Harry's free-kick test still fails (raised in v0.16 · Harry)",
+              "detail": "3 of 190 test files fail after v0.16: authoredChance, freeKickRules and longRangeRules. Two are the ones above (raised in v0.9 and v0.12); the free-kick one is the test that started failing when free kicks came from the drawings.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not caused by v0.16: all three fail on the live version too.",
+                  "Status: Still failing. 187 of 190 pass. Still failing in v0.17 and v0.18: 198 of 201 test files pass. (still failing)"
+                ]
+              }
+            },
+            {
+              "title": "23 drawings still carry the old keeper spots (raised in v0.16 · Harry)",
+              "detail": "Saved while the keeper rules were on, these drawings have the keeper exactly where the old rules put him. Now that the drawing is the team, that's where he stands.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Drawings weren't edited by the build.",
+                  "Status: Harry to fix them in the gallery when ready. (awaiting Harry)"
+                ]
+              }
+            },
+            {
+              "title": "None of the 10 penalty drawings obey the penalty rules (raised in v0.16 · Harry)",
+              "detail": "The keeper is drawn 0.38 to 0.84 m behind his line in all 10, you're 1.3 m to the side of the ball, and in most, other players are 0.01 to 0.35 m inside the box. Worst: 7907 (POACH 0.35 m inside the box), 7906 (POACH 0.33 m inside), gallery-main-penalty (POACH/T1 2.77 m behind the line).",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The drawings were made before the rules; the game corrects them when a penalty is played, so nothing looks wrong in a match.",
+                  "Status: Not edited. In the gallery they still show the old positions. (awaiting Harry)"
+                ]
+              }
+            },
+            {
+              "title": "A buildup drawing has two team-mates 0.33 m apart (raised in v0.16 · Harry)",
+              "detail": "Seen in the final playtest: two of your players almost on top of each other.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: That's how the drawing was made, and the drawing is now the team.",
+                  "Status: Harry to fix it in the drawings, as he said. (awaiting Harry)"
+                ]
+              }
+            },
+            {
+              "title": "Fouls when closed down, and OFF THE WALL labels, not seen by a person (raised in v0.16 · Harry)",
+              "detail": "Both are built and measured, but nobody has played them yet.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Play a Premier League chance and hold the ball until you're closed down (about 1 in 3 should be a foul); hit a free kick into the wall. (not seen yet)"
+                ]
+              }
+            },
+            {
+              "title": "Real League One and Two players need a database step (raised in v0.16 · Harry)",
+              "detail": "fc27_clone_lower_leagues.sql hasn't been run in Supabase.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Pending. Until it's run, League One and Two keep invented players. (awaiting Harry)"
+                ]
+              }
+            },
+            {
+              "title": "Changes to the core engine file (sensitive) for Mikey to see (raised in v0.16 · Harry)",
+              "detail": "Each only switches on when its new setting is there, so old behaviour is unchanged without it.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Mikey to see them."
+                ]
+              }
+            },
+            {
+              "title": "Much of the new look hasn't been seen on a real phone or in a real career (raised in v0.17 · Harry)",
+              "detail": "Not seen on a screen: the Ballon d'Or countdown and final-two reveal (the test save had no shortlist), a signing reached through a real transfer window, reduce-motion on a real phone, and the photo picker's camera and crop stages. Most reskinned screens were filmed on a test page that uses the real screens with a test save;",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Worked out from the code, but not played.",
+                  "Status: Open. Swipe with a finger, tap Play on a small phone, play a match and watch the post-match screen. (not seen yet)"
+                ]
+              }
+            },
+            {
+              "title": "The Phone button's red dot doesn't pop (raised in v0.17 · Harry)",
+              "detail": "Badges only pop on the app icons inside the phone, not on the Phone button in the bottom bar.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Open. (small)"
+                ]
+              }
+            },
+            {
+              "title": "Goalie Mode keeps its old top bar (raised in v0.17 · Harry)",
+              "detail": "It lives inside the game canvas, which the reskin left alone.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Open. (small)"
+                ]
+              }
+            },
+            {
+              "title": "\"Since you last looked\" is forgotten when you close the tab (raised in v0.17 · Harry)",
+              "detail": "The League rows sliding and the Relations bars moving only happen within one visit.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Open. (small)"
+                ]
+              }
+            },
+            {
+              "title": "There are two drawings of every player (raised in v0.17 · Harry)",
+              "detail": "Classic and 3D share one skeleton but are drawn separately, so a change to body proportions has to be made twice.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Open. Nobody has asked to change it yet. (to remember)"
+                ]
+              }
+            },
+            {
+              "title": "Blender's first clip and the Mac buttons are undecided (raised in v0.17 · Harry)",
+              "detail": "The first Blender clip could be a goal celebration, a tunnel walk-out, or parked. The next Mac button could be a database checker (the security one first), a player-faces tool, or recordings copying themselves into the Drive folder.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Undecided in v0.18: Blender's first clip is open, and there are no Mac buttons for now. The database checker matters because 6 known security holes sit behind one database step. (your call)"
+                ]
+              }
+            },
+            {
+              "title": "The face scan has only been tested on a screenshot crop of your photo (raised in v0.17 · Harry)",
+              "detail": "The photo you use has only been tried from a screenshot crop.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: You're testing it in the game. (being tested)"
+                ]
+              }
+            },
+            {
+              "title": "Shared files changed, for Mikey to see (raised in v0.17 · Harry)",
+              "detail": "The title screen, Home button and exit wiring in the star-dev page, a new package (the face-scan library), and a new face-fitting file. The core engine file (sensitive) is untouched.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Mikey to see them."
+                ]
+              }
+            },
+            {
+              "title": "The 3D / 2D button sits on the card's dotted light icon (raised in v0.18 · Harry)",
+              "detail": "Seen at both phone sizes: the button overlaps the small dotted light on the Home card.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Quick fix, not done. (small)"
+                ]
+              }
+            },
+            {
+              "title": "On small Androids the match bar reads \"ASSISTSPASS\" (raised in v0.18 · Harry)",
+              "detail": "At 360 px wide the labels touch.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Quick fix, not done. (small)"
+                ]
+              }
+            },
+            {
+              "title": "Aiming is still about 20 frames a second on a slow phone (raised in v0.18 · Harry)",
+              "detail": "Aiming is three times faster than before, but not smooth on the slowest phones.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The pitch is repainted while nothing moves.",
+                  "Status: Half fixed. The next step is to stop repainting the pitch while nothing moves, only if players notice. (half fixed)"
+                ]
+              }
+            },
+            {
+              "title": "NS-Swerve and NS-Maestro abilities come with every level (raised in v0.19 · Mikey)",
+              "detail": "Touch Mode costs about ★1,200 at level 1, so the abilities come with every level of those boots.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Waiting on a decision. Low priority. (low)"
+                ]
+              }
+            },
+            {
+              "title": "Floating and bouncing balls don't appear in matches yet (raised in v0.19 · Mikey)",
+              "detail": "Headers and volleys are switched off in matches, so the new moving balls only show on the test page.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Status: Open. Low priority. (low)"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Decisions waiting on Harry",
+          "items": [
+            {
+              "title": "(a) The penalty hop can be beaten (v0.16 · Harry)",
+              "detail": "Watch the hop and aim the other way: 81.7% scored. Ignore it: 74.3%.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Smaller, later hop: less time to see it; 2. Sometimes a fake hop: he hops one way and dives the other (breaks Harry's \"no change of direction after the hop\"); 3. Leave it: reading the keeper is a skill",
+                  "Recommended: Smaller, later hop. It keeps Harry's rule and closes most of the gap."
+                ]
+              }
+            },
+            {
+              "title": "(b) Tight angles are now the most common striker chance (v0.16 · Harry)",
+              "detail": "25.8% of a striker's chances (was 13.7%).",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Leave it; 2. Cap at about 15%; 3. Draw more of the other kinds so the drawings balance it",
+                  "Recommended: Cap at about 15% now; drawing more is the long-term fix."
+                ]
+              }
+            },
+            {
+              "title": "(c) Vision no longer changes how many team-mates a drawn chance has (v0.16 · Harry)",
+              "detail": "The drawing now decides who's there.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Drawing wins: vision does nothing here; 2. Vision removes or adds a runner; 3. Vision changes which runners react: same men, better vision means more of them make a run",
+                  "Recommended: Vision changes which runners react. The drawing stays intact and vision still matters."
+                ]
+              }
+            },
+            {
+              "title": "(d) The 6.5 pull on short cameos (v0.16 · Harry)",
+              "detail": "A sub's rating is pulled toward 6.5.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Keep; 2. Drop; 3. Smaller",
+                  "Recommended: Smaller. Late subs now get 2+ chances, so there's more to judge them on."
+                ]
+              }
+            },
+            {
+              "title": "(e) Saves (item 33) were left out: what should they be? (v0.16 · Harry)",
+              "detail": "Harry wants other options.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. This device only; 2. Your account, 3 slots; 3. Both",
+                  "Recommended: Your account, 3 slots. That mostly exists already and needs one database step."
+                ]
+              }
+            },
+            {
+              "title": "(f) The National League has no player data (v0.16 · Harry)",
+              "detail": "16 clubs play invented players.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Look for Football Manager / FM Scout data packs; 2. Keep invented players with fake faces",
+                  "Recommended: Look, as Harry asked; keep fake faces meanwhile."
+                ]
+              }
+            },
+            {
+              "title": "(g) Shootouts: as 5th taker you still miss about 44% of them (v0.16 · Harry)",
+              "detail": "The shootout ends before your kick.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Keep your place by rating; 2. Always 1st to 3rd; 3. Choose your slot before it starts",
+                  "Recommended: Always 1st to 3rd. You always get to kick, with no extra screen."
+                ]
+              }
+            },
+            {
+              "title": "(h) The Home screen has no layout switch any more (v0.16 · Harry)",
+              "detail": "Only \"you first\" was built.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Keep \"you first\" only; 2. Bring the switch back",
+                  "Recommended: Keep."
+                ]
+              }
+            },
+            {
+              "title": "(i) Keeper antics on his line (Harry's idea) (v0.16 · Harry)",
+              "detail": "Not built.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Later; 2. Now",
+                  "Recommended: Later, after the highlight-choosing redesign."
+                ]
+              }
+            },
+            {
+              "title": "(A) Start safe saves now? (v0.18 · Harry)",
+              "detail": "Safe saves are ready (see the App Store road map). They protect players today and the app needs them anyway.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. yes; 2. wait",
+                  "Recommended: yes. It protects players today, and the app needs it anyway."
+                ]
+              }
+            },
+            {
+              "title": "(B) Apple account: you, or a company? (v0.18 · Harry)",
+              "detail": "The App Store account decides whose name shows as the seller.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Individual: your name shows as the seller, 1 to 3 days; 2. Company: \"Knowitball\" shows, needs a company and a free D-U-N-S number, 1 to 2 weeks",
+                  "Recommended: company if you have or plan one, otherwise individual now."
+                ]
+              }
+            },
+            {
+              "title": "(C) Who are the 12 testers? (v0.18 · Harry)",
+              "detail": "Google requires 12 testers for 14 days before a new account's first app can go public. They must opt in and play for 14 days in a row.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. Friends; 2. The site's regulars; 3. A paid testing service (about $10 to $30, but Google checks for real use)",
+                  "No recommendation given. Start early: it's the slowest step."
+                ]
+              }
+            },
+            {
+              "title": "(D) Will coins ever cost real money? (v0.18 · Harry)",
+              "detail": "If yes, Apple and Google require their own payment system and take 15 to 30%.",
+              "more": {
+                "summary": "Options and my pick",
+                "points": [
+                  "Options: 1. no; 2. later",
+                  "No recommendation given."
+                ]
+              }
             }
           ]
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR",
-      "updatedAt": null
+      "updatedAt": "2026-09-30T12:00:00Z"
     },
     {
       "version": "0.13",
