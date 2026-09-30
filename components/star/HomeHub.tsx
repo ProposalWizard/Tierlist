@@ -35,8 +35,8 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar";
 import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
+import { setPieceDuties } from "@/lib/star/setPieces";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
-import ShopItemsCard from "./ShopItemsCard";
 import FigureSkinToggle from "./FigureSkinToggle";
 import {
   ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
@@ -97,10 +97,11 @@ export default function HomeHub(p: Props) {
     <div className="space-y-2.5 pb-3">
       <RiseIn onPageActive index={0}><Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} /></RiseIn>
       <RiseIn onPageActive index={1}><NextMatchCard {...p} glow={glow} /></RiseIn>
-      <RiseIn onPageActive index={2}><Energy {...p} glow={glow} /></RiseIn>
-      <RiseIn onPageActive index={3}>
-        <ShopItemsCard career={career} onOpenShop={() => p.onOpen("shop-kib")} showCans={false} glow={glow} />
-      </RiseIn>
+      {/* KIB cans, then energy. "Your shop items" moved back to the Shop
+          page (Mikey, 28 Sep 2026: "get rid of the shop thing at the bottom
+          of like what you currently own"). */}
+      <RiseIn onPageActive index={2}><Cans {...p} glow={glow} /></RiseIn>
+      <RiseIn onPageActive index={3}><EnergyBar {...p} glow={glow} /></RiseIn>
     </div>
   );
 }
@@ -132,19 +133,25 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
         <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-300/30">Next match</span>
         <span className="truncate pl-2 text-[10px] font-black uppercase tracking-wider text-white/60">{comp}</span>
       </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-2 pb-1.5 pt-1">
+      {/* Two equal columns either side of a fixed-width middle, crests on one
+          line and VS dead centre between them (Mikey, 28 Sep 2026: "the VS
+          doesn't look centered… they're on different levels"). Your club is
+          outlined instead of a "YOU" label under it. */}
+      <div className="grid grid-cols-[1fr_64px_1fr] items-start gap-1 px-2 pt-1">
         <TeamSide club={home} kitShirt={homeKit.shirt} kitTrim={homeKit.trim} you={home === myTeam} />
-        <div className="flex flex-col items-center px-1">
+        <div className="flex h-[50px] items-center justify-center">
           <span
             className="bg-gradient-to-b from-white to-white/50 bg-clip-text text-[26px] font-black italic leading-none tracking-tighter text-transparent"
             style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.6))" }}
           >VS</span>
-          <span className="mt-1 whitespace-nowrap text-[11px] font-black text-white">{nextMatchDate ?? `Week ${nextFixture.week}`}</span>
-          <span className={`mt-0.5 whitespace-nowrap rounded-full px-2 py-[1px] text-[10px] font-black ${days <= 1 ? "bg-amber-400 text-gray-950" : "bg-white/12 text-amber-200 ring-1 ring-white/15"}`}>
-            ⏱ {when}
-          </span>
         </div>
         <TeamSide club={away} kitShirt={awayKit.shirt} kitTrim={awayKit.trim} you={away === myTeam} />
+      </div>
+      <div className="flex items-center justify-center gap-2 pb-1.5 pt-0.5">
+        <span className="whitespace-nowrap text-[11px] font-black text-white">{nextMatchDate ?? `Week ${nextFixture.week}`}</span>
+        <span className={`whitespace-nowrap rounded-full px-2 py-[1px] text-[10px] font-black ${days <= 1 ? "bg-amber-400 text-gray-950" : "bg-white/12 text-amber-200 ring-1 ring-white/15"}`}>
+          ⏱ {when}
+        </span>
       </div>
       <div className="border-t border-white/10 bg-black/25 px-2.5 pb-2 pt-1.5">
         <LastFive five={five} />
@@ -156,14 +163,13 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
 function TeamSide({ club, kitShirt, kitTrim, you }: { club: string; kitShirt: string; kitTrim: string; you: boolean }) {
   return (
     <div className="flex min-w-0 flex-col items-center">
-      <div className="relative grid h-[50px] w-[50px] place-items-center">
+      <div className={`relative grid h-[50px] w-[50px] place-items-center rounded-full ${you ? "ring-2 ring-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.7)]" : ""}`}>
         <Glow color={glowOf(kitShirt, kitTrim)} alpha={0.55} className="inset-1 blur-md" />
         <div className="relative" style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,.55))" }}>
           <ClubBadge club={club} kit={{ shirt: kitShirt, trim: kitTrim }} size={44} />
         </div>
       </div>
-      <div className="mt-0.5 w-full truncate text-center text-[12px] font-black text-white">{short(club)}</div>
-      {you && <div className="text-[8.5px] font-black uppercase tracking-widest text-emerald-300">You</div>}
+      <div className={`mt-0.5 w-full truncate text-center text-[12px] font-black ${you ? "text-emerald-300" : "text-white"}`}>{short(club)}</div>
     </div>
   );
 }
@@ -177,7 +183,7 @@ function LastFive({ five }: { five: FormResult[] }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Last 5</span>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Last 5</span>
         {five.some((f) => f.rating !== undefined) && (
           <span className="text-[9px] font-black text-white/45">
             avg rating <span className="text-amber-300">{(five.filter((f) => f.rating !== undefined).reduce((s, f) => s + (f.rating ?? 0), 0) / five.filter((f) => f.rating !== undefined).length).toFixed(1)}</span>
@@ -185,7 +191,7 @@ function LastFive({ five }: { five: FormResult[] }) {
         )}
       </div>
       {five.length === 0 ? (
-        <div className="text-[11px] font-bold text-white/50">No matches yet — your first is up next.</div>
+        <div className="text-[11px] font-bold text-white">No matches yet — your first is up next.</div>
       ) : (
         <div className="grid grid-cols-5 gap-1">
           {Array.from({ length: 5 }, (_, i) => five[i - (5 - five.length)]).map((f, i) => f ? (
@@ -220,6 +226,8 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   // per visit, not every time the page is swiped past.
   const last = lastFive(career).at(-1);
   const [celebrate, setCelebrate] = useState(false);
+  const [starPass, setStarPass] = useState(false);
+  const duties = setPieceDuties(career);
   useEffect(() => {
     if (!last || last.res !== "W") return;
     const key = `kib-celebrated-${career.season}-${last.week}`;
@@ -239,12 +247,17 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   return (
     <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
       <Stadium glow={glow} />
+      {/* Age top-left, money top-right (Mikey, 28 Sep 2026). */}
+      <div className="absolute left-3 top-[46px] z-10"><Pill label="Age" value={String(career.player.age)} /></div>
+      <div className="absolute right-3 top-[46px] z-10"><Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" /></div>
+      {starPass && <StarPassSoon onClose={() => setStarPass(false)} rating={career.starRating} />}
       {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026.
-          Sits below the right floodlight (at top-2 it covered the lamp), and
-          is 32px tall so a thumb can hit it. */}
-      <FigureSkinToggle className="absolute right-2 top-[30px] z-10 min-h-[32px]" />
+          Under Mikey's money pill (it covered the right floodlight at top-2),
+          and 32px tall so a thumb can hit it. */}
+      <FigureSkinToggle className="absolute right-3 top-[90px] z-10 min-h-[32px]" />
       <div className="relative flex justify-center pt-1.5">
-        {/* 204 tall (was 236) so that on an iPhone 13 the next-match card
+        {/* 184 tall (was 204, 236 before that), halfway to the 164 tried on
+            28 Sep 2026 (Mikey: "go in between those two figures"). 204 tall (was 236) so that on an iPhone 13 the next-match card
             under this hero shows its crests above the bottom bar, not just
             its label. The figure crops its empty top strip to stay big. */}
         <div className={celebrate ? "kib-hop" : "kib-breathe"}>
@@ -253,24 +266,40 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
         {celebrate && <Burst colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} className="left-1/2 top-[38%]" />}
       </div>
       <div className="relative -mt-4 bg-gradient-to-b from-transparent via-black/45 to-black/70 px-3 pb-2.5 pt-3 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <div style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
+        {/* The NAME is centred; the badge hangs off its left (Mikey, 28 Sep
+            2026: "the name should be centered and then the club badge should
+            just be on the left of the name"). */}
+        <div className="relative mx-auto w-fit max-w-[80%]">
+          <div className="absolute right-full top-1/2 mr-2 -translate-y-1/2" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
             <ClubBadge club={career.player.club} kit={{ shirt: kitShirt, trim: kitTrim }} size={28} />
           </div>
           {/* A dark plate behind the name: on the club-colour glow a bare
               white name washed out (Harry's Plymouth screenshot, 28 Sep). */}
-          <div className="min-w-0 truncate rounded-lg bg-black/60 px-2.5 py-0.5 text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,.9), 0 2px 8px rgba(0,0,0,.8)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)" }}>
+          {/* No dark box behind the name (Mikey: "why does it have a black
+              translucent colour behind it"); a heavier shadow keeps it
+              readable on any club's glow. */}
+          <div className="min-w-0 truncate px-1 text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,1), 0 2px 10px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9)" }}>
             {career.player.firstName} {career.player.lastName}
           </div>
         </div>
-        <div className="mt-0.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/65">
-          {short(career.player.club)} · #{career.squadNumber ?? "—"} · {POS_NAME[career.player.position] ?? career.player.position}{career.captain ? " · 🅲 Captain" : ""}
-        </div>
-        <div className="mt-1.5 flex justify-center gap-1.5">
-          <Pill gold label="Rating" value={`★ ${rating.toFixed(1)}`} />
-          <Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" />
-          <Pill label="Age" value={String(career.player.age)} />
-        </div>
+        {/* The club · number · position line is gone (Mikey: the badge, the
+            shirt number and the club are already on screen). Rating sits
+            under the name and opens the Star Pass. */}
+        {/* Set-piece tags you've earned: PK = penalty taker, FK = free-kick
+            taker (Mikey, 29 Sep 2026: "like a tag that you've earned"). */}
+        {(duties.penalties || duties.freeKicks) && (
+          <div className="mt-1 flex justify-center gap-1.5">
+            {duties.penalties && <DutyTag code="PK" label="Penalty taker" />}
+            {duties.freeKicks && <DutyTag code="FK" label="Free-kick taker" />}
+          </div>
+        )}
+        <button
+          onClick={() => setStarPass(true)}
+          className="kib-press mt-1.5 inline-flex"
+          aria-label="Star rating — open the Star Pass"
+        >
+          <Pill gold label="Rating ›" value={`★ ${rating.toFixed(1)}`} />
+        </button>
       </div>
     </ClubCard>
   );
@@ -278,22 +307,30 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
 
 // ── 3. Energy and the cans ──────────────────────────────────────────────────
 
-function Energy({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
+function Cans({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
+  const e = Math.max(0, Math.min(100, Math.round(career.energy)));
+  return (
+    <ClubCard glow={glow} className="rounded-2xl p-3">
+      <div className="text-[12px] font-black uppercase tracking-[0.16em] text-white">KIB cans</div>
+      <div className="mt-1.5 grid grid-cols-3 gap-2">
+        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} />)}
+      </div>
+    </ClubCard>
+  );
+}
+
+function EnergyBar({ career, glow }: Props & { glow: string }) {
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
   const shown = useCountUp(e, 900);
   const fill = levelColors(e);
   return (
     <ClubCard glow={glow} className="rounded-2xl p-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">⚡ Energy</span>
+        <span className="text-[12px] font-black uppercase tracking-[0.16em] text-white">⚡ Energy</span>
         <span className="text-[20px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 12px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
       </div>
       {/* A sheen races along the bar the moment energy goes UP (a can was drunk). */}
       <StatBar value={e} colors={fill} className="mt-1.5 h-4" />
-      <div className="mt-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</div>
-      <div className="mt-1 grid grid-cols-3 gap-2">
-        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} />)}
-      </div>
     </ClubCard>
   );
 }
@@ -367,5 +404,46 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { 
         Buy ★{formatMoney(price)}
       </PressButton>
     </div>
+  );
+}
+
+/** Where the Star Pass will live (Mikey, 28 Sep 2026: "your star rating is
+ *  clickable… it would take you to that star pass"). Not built yet — this
+ *  says what it will be. */
+function StarPassSoon({ onClose, rating }: { onClose: () => void; rating: number }) {
+  const tiers = [
+    { star: 1, gift: "Starter celebration" },
+    { star: 2, gift: "Energy can bundle" },
+    { star: 3, gift: "New boots colour" },
+    { star: 4, gift: "Signature celebration" },
+    { star: 5, gift: "Legend kit & coins" },
+  ];
+  return (
+    <div className="absolute inset-0 z-20 grid place-items-center bg-black/75 p-4" onClick={onClose}>
+      <div className="w-full max-w-xs rounded-2xl border border-amber-300/60 bg-gray-950/95 p-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">Coming soon</div>
+        <div className="mt-1 text-xl font-black text-white">★ Star Pass</div>
+        <p className="mt-1 text-[11px] font-bold text-white">Every star you earn unlocks rewards. You are on ★{rating.toFixed(1)}.</p>
+        <div className="mt-3 space-y-1.5 text-left">
+          {tiers.map((t) => (
+            <div key={t.star} className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 ${rating >= t.star ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white"}`}>
+              <span className="text-[12px] font-black">{"★".repeat(t.star)}</span>
+              <span className="text-[11px] font-black">{t.gift}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} className="mt-3 w-full rounded-xl bg-white/15 py-2 text-sm font-black text-white">Close</button>
+      </div>
+    </div>
+  );
+}
+
+/** A set-piece duty you've earned: just the short code, a small gold tag
+ *  (Mikey, 29 Sep 2026: "it should just say PK and it should just say FK"). */
+function DutyTag({ code, label }: { code: string; label: string }) {
+  return (
+    <span className="rounded-md border border-amber-200 bg-amber-400 px-1.5 py-[1px] text-[11px] font-black leading-tight text-gray-950 shadow-[0_0_10px_rgba(251,191,36,.45)]" title={label} aria-label={label}>
+      {code}
+    </span>
   );
 }

@@ -39,7 +39,7 @@ const TABS: { id: StoreTab; label: string }[] = [
   { id: "daily", label: "Daily" },
   { id: "animations", label: "Animations" },
   { id: "accessories", label: "Accessories" },
-  { id: "boosts", label: "Boosts" },
+  { id: "boosts", label: "Boots" },
   { id: "coins", label: "Coins" },
 ];
 
@@ -331,13 +331,16 @@ export default function StoreView(p: StoreViewProps) {
 
           {tab === "boosts" && (
             <>
-              <SectionNote left="Boosts" right="These help you win" warn />
-              <div className="grid gap-2.5">
-                {BOOSTS.filter(shown).map((b, i) => <RiseIn key={b.id} index={i} step={50}><BoostRow item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} /></RiseIn>)}
+              {/* Cans live under KIB Cans in the Shop, so this tab is Boots only.
+                  Marked as a future update: how the store's boots and the
+                  Shop's Boots (five levels each) fit together isn't decided
+                  yet (Mikey, 28 Sep 2026). */}
+              <div className="mb-3 rounded-xl border border-amber-300/60 bg-amber-400/15 px-3 py-2 text-[12px] font-black text-white">
+                🚧 Future update — boots here are a preview. Buy and level boots in Shop → Boots.
               </div>
-              <div className="mt-5 mb-2 flex items-baseline justify-between">
-                <div className="text-[12px] font-black uppercase tracking-wider text-slate-400">Boots · level {ctx.level}</div>
-                <div className="text-[11px] font-semibold text-slate-500">the real shop&apos;s boots and prices</div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <div className="text-[12px] font-black uppercase tracking-wider text-white">Boots · level {ctx.level}</div>
+                <div className="text-[11px] font-semibold text-white">the real shop&apos;s boots and prices</div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {boots.map((b, i) => <RiseIn key={b.id} index={i} step={50}><ItemCard item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} bootStatus={p.bootStatus} /></RiseIn>)}

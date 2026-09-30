@@ -5,7 +5,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX } from "@/lib/star/pitch";
 import {
   REPS, penaltySetup, penaltyRampFor, trialInvisibleStats,
-  strikeQuality, weightedQuality, teachSeen, markTeachSeen, type TeachableDrill,
+  strikeQuality, teachSeen, markTeachSeen, type TeachableDrill,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { buildScenario, initDefenders } from "@/lib/star/canvasEngine";
@@ -257,7 +257,10 @@ export function TeachCard(
   const panel = (
     <div
       className={
-        "teach-card w-full rounded-xl border border-amber-300/40 bg-black/85 shadow-lg "
+        // A solid card that is one piece: its own cursor (not the pitch's),
+        // and the button inside its edge rather than poking out of it
+        // (Mikey, 28 Sep 2026: "the got it button is like hovering over").
+        "teach-card pointer-events-auto cursor-default w-full rounded-xl border border-amber-300/60 bg-gray-950/95 shadow-lg "
         + (compact ? "px-2 py-1" : "px-3 py-2")
       }
     >
@@ -286,7 +289,7 @@ export function TeachCard(
               <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
                 How to play
               </span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white">
                 It counts
               </span>
             </>
@@ -294,7 +297,7 @@ export function TeachCard(
         <button
           type="button"
           onClick={onDismiss}
-          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto min-h-[40px] shrink-0 rounded-lg border border-amber-300/50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
+          className="teach-dismiss pointer-events-auto ml-auto min-h-[36px] shrink-0 cursor-pointer rounded-lg bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300"
         >
           Got it ✕
         </button>
@@ -304,7 +307,7 @@ export function TeachCard(
         <>
           <div className="mt-1.5 text-[12px] font-black leading-tight text-white">{headline}</div>
           {lines.map(l => (
-            <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
+            <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white">{l}</p>
           ))}
         </>
       )}
@@ -314,7 +317,9 @@ export function TeachCard(
   if (inline) return panel;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-2">
+    // Inset well inside the pitch's own edge, so it reads as part of the
+    // screen rather than hanging off the bottom of it.
+    <div className="pointer-events-none absolute inset-x-3 bottom-4 z-20 flex justify-center">
       {panel}
     </div>
   );
@@ -457,6 +462,7 @@ export function StrikeStage({
   }, [seed]);
 
   /** One attempt is over — scored off the engine's own result. */
+  const pointsRef = useRef<number[]>([]);
   const onChanceResolved = useCallback((info: ChanceResolved) => {
     if (doneRef.current) return;
     setStruckOnce(true);
@@ -468,20 +474,34 @@ export function StrikeStage({
     const yours = !info.teammateShot;
     const q = yours ? strikeQuality(info.outcome, crossX) : strikeQuality("saved", null);
     scoresRef.current = [...scoresRef.current, q];
+    // Free kicks are marked by what happened, so the score can be explained
+    // in one line (Mikey, 28 Sep 2026: "33 out of 100… I didn't score any"):
+    // a goal is a full mark, a shot the keeper had to save is half.
+    const pts = !yours ? 0
+      : info.outcome === "goal" || info.outcome === "rebound" ? 1
+      : info.outcome === "saved" || info.outcome === "tipped" ? 0.5 : 0;
+    pointsRef.current = [...pointsRef.current, pts];
     setScores(scoresRef.current);
     setResultText(!yours ? "A team-mate gets on the end of it." : (OUTCOME_LINE[info.outcome] ?? "Away."));
 
     const next = repRef.current + 1;
     if (next >= reps) {
       doneRef.current = true;
-      window.setTimeout(() => onDone(weightedQuality(scoresRef.current)), LAST_RESULT_HOLD_MS);
+      // Penalties: the share you scored (goal = a quality of 0.55 or more in
+      // strikeQuality). Free kicks keep the graded quality, where a good
+      // save still counts for something.
+      const goals = scoresRef.current.filter(q => q >= 0.55).length;
+      const quality = drill === "penalties"
+        ? goals / scoresRef.current.length
+        : pointsRef.current.reduce((a, b) => a + b, 0) / pointsRef.current.length;
+      window.setTimeout(() => onDone(quality), LAST_RESULT_HOLD_MS);
     } else {
       // The engine asks for the next picture after its own result pause —
       // by then this is the rep it builds.
       repRef.current = next;
       setRep(next);
     }
-  }, [onDone, reps]);
+  }, [onDone, reps, drill]);
 
   const trial = trialInvisibleStats();
   const showTeach = !struckOnce && rep === 0 && !!teach && !teachDone;

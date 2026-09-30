@@ -564,7 +564,9 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   for (const t of [t1, recordStage(noteReload(noteReload(startTrial(7))), "penalties", 0.8)]) {
     const r = t.results.penalties!;
     check(
-      r.score === stageScore(r.quality, scoringDifficultyFor(t, "penalties")),
+      // Penalties (and free kicks) score what happened, as a straight share:
+      // 1 of 3 scored = 33 (Mikey, 28 Sep 2026).
+      r.score === Math.round(100 * r.quality),
       `a result explains its own score (${r.score})`,
     );
   }

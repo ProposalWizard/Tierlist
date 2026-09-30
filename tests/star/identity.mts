@@ -383,6 +383,9 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     delete rest.starRating;
     // …and the squad number is drawn from a seed that includes the star rating.
     delete rest.squadNumber;
+    // The star rating now starts at 1.0 rather than 2.0 (Mikey, 29 Sep 2026),
+    // and the opening manager is drawn from a seed that includes it.
+    delete rest.manager;
     return JSON.stringify(rest);
   };
 

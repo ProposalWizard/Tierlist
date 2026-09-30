@@ -305,6 +305,8 @@ function LoadSheet({ saves, activeSlot, full, career, onClose, onLoad, onNew, on
   saves: SaveSlotSummary[]; activeSlot: number; full: boolean; career: CareerState | null;
   onClose: () => void; onLoad: (slot: number) => void; onNew: (slot: number) => void; onDelete: (slot: number) => void;
 }) {
+  // Delete asks "Sure?" here instead of a browser box (which exits full screen).
+  const [armed, setArmed] = useState<number | null>(null);
   return (
     <Sheet title="Load Game" onClose={onClose}>
       {full && (
@@ -346,7 +348,14 @@ function LoadSheet({ saves, activeSlot, full, career, onClose, onLoad, onNew, on
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">
                     <PressButton variant="primary" size="sm" onClick={() => onLoad(s.slot)}>Play</PressButton>
-                    <button onClick={() => onDelete(s.slot)} className="kib-press text-[10px] font-black uppercase tracking-wider text-red-300/80 hover:text-red-200">Delete</button>
+                    {armed === s.slot ? (
+                      <div className="flex gap-1">
+                        <button onClick={() => { setArmed(null); onDelete(s.slot); }} className="kib-press rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">Sure?</button>
+                        <button onClick={() => setArmed(null)} className="kib-press rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-black uppercase text-white">No</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setArmed(s.slot)} className="kib-press text-[10px] font-black uppercase tracking-wider text-red-300 hover:text-red-200">Delete</button>
+                    )}
                   </div>
                 </ClubCard>
               )}

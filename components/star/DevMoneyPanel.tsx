@@ -51,7 +51,7 @@ export default function DevMoneyPanel({
       <SetHead tone={TONE}>Dev — Add Money</SetHead>
       <SetNote>For testing Investments/Boardroom without grinding for it.</SetNote>
       <div className="relative mt-2 flex items-center justify-between rounded-xl bg-black/30 px-3 py-2" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(253,224,71,.18)" }}>
-        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Current balance</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white">Current balance</span>
         <span className="text-[16px] font-black tabular-nums text-yellow-200">★<CountUp value={career.money} ms={800} format={(n) => formatMoney(Math.round(n))} /></span>
         <FloatText trigger={added} text={addedText} color="#fde047" className="right-6 top-0" size={14} />
       </div>

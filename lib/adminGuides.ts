@@ -592,6 +592,28 @@ export const ADMIN_GUIDES = {
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
+  "/star-spin-dev": {
+    title: "Spin your player",
+    what: "A test of spinning your player round 360° by dragging, before it goes on the Home screen and in the store. Nothing here reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹ Play Area", "Back to the Play Area."],
+          ["Drag on the player", "Turns him. About 300px of drag is one full turn."],
+          ["Flick and let go", "He keeps turning, slows down, then turns back to face you."],
+          ["Club", "Every club with kit colours. Changes the kit, front and back."],
+          ["Number", "The number on his back."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "Not in the game yet. If it is kept, it goes on the Home screen and in the store when trying on accessories.",
+      "The front is the real home-screen player. The back is a simple stand-in drawn on this page, because the game has no back view yet. A real turn needs the Blender player rendered from about 24 angles.",
+    ],
+    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · tools/blender-footballer/",
+  },
+
   "/star-blender-dev": {
     title: "Blender 3D",
     what: "The 3D footballer built in Blender, to judge by eye. He was rendered once with a grey kit; this page recolours that render into any club's kit, in your browser, when you pick the club. Nothing here reaches a career.",

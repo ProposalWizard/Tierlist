@@ -97,3 +97,28 @@ export function projectedEnergy(career: CareerState): number {
 export function startNewWeek(): { weekActions: number } {
   return { weekActions: WEEK_ACTIONS };
 }
+
+// ── Training sessions (Mikey, 29 Sep 2026) ──────────────────────────────────
+//
+// "You get two sessions available every week. It resets after your game on
+// the Saturday." The game skips straight from match day to match day, so a
+// week with a midweek game shares its 2 sessions across both matches, and a
+// week with no midweek game has them all before Saturday. Unused ones don't
+// carry over: after the Saturday game it's back to 2 either way.
+
+export const TRAINING_SESSIONS_PER_WEEK = 2;
+
+export function trainingLeft(career: CareerState): number {
+  return career.trainingSessions ?? TRAINING_SESSIONS_PER_WEEK;
+}
+
+export function spendTrainingSession(career: CareerState): CareerState {
+  const left = trainingLeft(career);
+  if (left <= 0) return career;
+  return { ...career, trainingSessions: left - 1 };
+}
+
+/** After a match: back to 2 if it was a Saturday match, otherwise unchanged. */
+export function sessionsAfterMatch(career: CareerState, matchDay: string): { trainingSessions: number } {
+  return { trainingSessions: matchDay === "saturday" ? TRAINING_SESSIONS_PER_WEEK : trainingLeft(career) };
+}

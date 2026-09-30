@@ -67,8 +67,11 @@ export const RUNUP = {
    */
   nudgeFingerRatio: 1.5,
 
-  /** The strike screen's countdown for a penalty, seconds — the same everywhere. */
-  timerS: 1.0,
+  /** The strike screen's countdown for a penalty, seconds — the same everywhere.
+   *  1.8 (was 1.0): Mikey, 28 Sep 2026, "make it 1.8 times slower… someone
+   *  who's 55 should still be able to react… a penalty still favours the
+   *  attacker." */
+  timerS: 1.8,
   /** A free kick's countdown, seconds (Harry, 27 Sep 2026: "increase the
    *  timer on free kicks to around 3 seconds"). */
   freeKickTimerS: 3.0,

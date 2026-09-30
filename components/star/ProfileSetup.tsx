@@ -13,6 +13,9 @@ import PortraitPicker from "./PortraitPicker";
 
 interface Props {
   onComplete: (player: StarPlayer, clubs: string[], division: CareerDivision) => void;
+  /** Back to the main menu (Mikey, 28 Sep 2026: "there's no back button on
+   *  here… can't go back without refreshing the page"). */
+  onMainMenu?: () => void;
 }
 
 /**
@@ -101,7 +104,7 @@ const DEFAULT_PREFERRED_NUMBER = 9;
  */
 type SetupPane = "who" | "style";
 
-export default function ProfileSetup({ onComplete }: Props) {
+export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [pane, setPane] = useState<SetupPane>("who");
   const [firstName, setFirstName] = useState("");
@@ -232,6 +235,14 @@ export default function ProfileSetup({ onComplete }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
+        {onMainMenu && (
+          <button
+            onClick={onMainMenu}
+            className="mb-1 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-black text-white"
+          >
+            ‹ Main menu
+          </button>
+        )}
         <div className="text-center mb-3">
           <div className="inline-block px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold tracking-widest uppercase">
             Star Career

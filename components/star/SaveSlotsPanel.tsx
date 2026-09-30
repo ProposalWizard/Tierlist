@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { PressButton, rgba } from "./ui";
 import { SetCard, SetHead, SetNote } from "./settingsKit";
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew, onDelete, glow = "#10b981" }: Props) {
+  // Two taps to delete, on the screen — no browser box, which exits full screen.
+  const [armed, setArmed] = useState<number | null>(null);
   return (
     <SetCard tone={glow}>
       <SetHead>Saves</SetHead>
@@ -60,7 +63,7 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Save {save.slot}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">Save {save.slot}</span>
                     {isActive && (
                       <span className="rounded-full bg-emerald-400/25 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-200" style={{ boxShadow: "inset 0 0 0 1px rgba(52,211,153,.45)" }}>
                         Playing
@@ -73,11 +76,11 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                     )}
                   </div>
                   {save.empty ? (
-                    <div className="mt-0.5 text-[11px] text-white/50">Empty</div>
+                    <div className="mt-0.5 text-[11px] text-white">Empty</div>
                   ) : (
                     <>
                       <div className="mt-0.5 truncate text-[12px] font-black text-white">{save.playerName}</div>
-                      <div className="text-[10.5px] font-bold leading-snug text-white/70">
+                      <div className="text-[10.5px] font-bold leading-snug text-white">
                         {/* A save with no club is a trial in progress — a real
                             career nobody has signed yet (see hasClub,
                             calendar.ts). Naming it rather than printing an
@@ -105,11 +108,11 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                       )}
                       <PressButton
                         size="none"
-                        onClick={() => onDelete(save.slot)}
+                        onClick={() => { if (armed === save.slot) { setArmed(null); onDelete(save.slot); } else setArmed(save.slot); }}
                         className="rounded-lg px-2.5 py-1.5 text-[10px] font-black text-red-100"
                         style={{ background: "linear-gradient(180deg, rgba(248,113,113,.28), rgba(220,38,38,.14))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(248,113,113,.55)" }}
                       >
-                        {isActive ? "Delete & start over" : "Delete"}
+                        {armed === save.slot ? "Sure? Tap again" : isActive ? "Delete & start over" : "Delete"}
                       </PressButton>
                     </>
                   )}

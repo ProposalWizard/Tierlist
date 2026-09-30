@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CongratulationsBanner, SignaturePad } from "./TrialReward";
+import { CongratulationsBanner, SignaturePad, type ContractTerms } from "./TrialReward";
 import ClubBadge from "./ClubBadge";
 import { Burst, PressButton, Shine, clubTheme } from "./ui";
 import { Screen, Rays } from "./ui/Screen";
@@ -34,10 +34,13 @@ export default function TransferSigning({
   playerName,
   club,
   onDone,
+  terms,
 }: {
   playerName: string;
   club: string;
   onDone: () => void;
+  /** What the new contract says, written onto it. */
+  terms?: ContractTerms;
 }) {
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
@@ -71,7 +74,7 @@ export default function TransferSigning({
         />
 
         <div className="relative">
-          <SignaturePad name={playerName} club={club} signing={signing} onFinished={() => setSigned(true)} />
+          <SignaturePad name={playerName} club={club} signing={signing} onFinished={() => setSigned(true)} terms={terms} />
 
           {signed && (
             <div ref={celebrateRef} className="absolute inset-0 z-10 grid place-items-center rounded-2xl" style={{ background: "radial-gradient(closest-side, rgba(5,7,13,.72), rgba(5,7,13,.35))" }}>
