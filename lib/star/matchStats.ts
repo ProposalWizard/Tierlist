@@ -1,6 +1,6 @@
 import type { CareerState, MatchStats, GoalEvent, OppGoalEvent, Fixture } from "./types";
 import { wageForFixture } from "./wages";
-import { sponsorPayPerMatch } from "./economy";
+import { sponsorPayFor } from "./sponsorDeals";
 import { getTuning } from "./tuningStore";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
@@ -166,7 +166,9 @@ export function finaliseMatch(
   // Premier League season, out of one line. It is now exactly the share
   // `TOTAL_INCOME_SHARES.sponsorPerMatch` always claimed it was, scaled by
   // how well the sponsors are actually being served.
-  const sponsorPay = sponsorPayPerMatch(wage, career.relationships.sponsors);
+  // 30 Sep 2026: sponsor money is now your deals' weekly fees, paid with the
+  // wage on the same fixture (lib/star/sponsorDeals.ts). No deals, no money.
+  const sponsorPay = sponsorPayFor(career, fixture);
   const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
 
   let boss = 0, team = 0, fans = 0;

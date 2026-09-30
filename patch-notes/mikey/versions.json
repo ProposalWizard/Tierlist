@@ -51,8 +51,16 @@
     "version": "0.7",
     "date": "2026-09-30",
     "fromCommit": "a7017811",
-    "toCommit": "HEAD",
+    "toCommit": "bffca8f7",
     "url": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
     "headline": "A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms"
+  },
+  {
+    "version": "0.8",
+    "date": "2026-09-30",
+    "fromCommit": "bffca8f7",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
+    "headline": "Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals"
   }
 ]

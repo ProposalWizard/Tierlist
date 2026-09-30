@@ -1,3 +1,4 @@
+import { brandScandal } from "./sponsorDeals";
 import { REPUTATION_EVENTS } from "./reputation";
 import { addFame, scandalFame } from "./fame";
 import type { CareerState } from "./types";
@@ -142,8 +143,10 @@ function consequenceFor(act: CorruptAct, amountInvolved: number): CaughtConseque
  * matches doesn't care WHY you can't play, and a save built before this
  * feature existed already has an honest `null` there to work from.
  */
-export function applyGettingCaught(career: CareerState, act: CorruptAct, amountInvolved: number, note: string): CareerState {
+export function applyGettingCaught(career0: CareerState, act: CorruptAct, amountInvolved: number, note: string): CareerState {
   const c = consequenceFor(act, amountInvolved);
+  // A corruption story is a scandal to your sponsors (sponsorDeals.ts).
+  const career = brandScandal(career0, "a corruption story");
   return {
     ...career,
     money: Math.max(0, career.money - c.fine),

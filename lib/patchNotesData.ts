@@ -27,6 +27,122 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.21",
+      "title": "Mikey's patch notes — Sponsors Revamp",
+      "publishedAt": "2026-09-30T20:00:00Z",
+      "updatedAt": "2026-09-30T20:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
+      "summary": "Sponsors rebuilt: brands send you offers, you have deal slots that grow with fame, deals pay every week with your wage, targets only ever add a bonus, and each brand's happiness decides the renewal. Plus bidding wars, buy-outs, scandals, one-off adverts and 25% off boots with a boots deal.",
+      "stats": [
+        {
+          "value": "1 → 5",
+          "label": "deal slots, Local Name to Icon"
+        },
+        {
+          "value": "13",
+          "label": "kinds of brand"
+        },
+        {
+          "value": "every week",
+          "label": "sponsor money, paid with your wage"
+        },
+        {
+          "value": "25% off",
+          "label": "boots with a boots deal"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The Sponsors screen: Deals, Offers and Brands",
+              "detail": "Shop → Sponsors, or Phone → Sponsors."
+            },
+            {
+              "title": "Offers arrive while you are playing well",
+              "detail": "A badge on the Phone."
+            },
+            {
+              "title": "Sign, Decline, More money, Longer deal, Easier target",
+              "detail": "Sponsors → Offers."
+            },
+            {
+              "title": "Sponsor money on the after-match card",
+              "detail": "After a weekend match."
+            },
+            {
+              "title": "Targets fill up and pay a bonus; the brand's face shows its mood",
+              "detail": "Sponsors → Deals."
+            },
+            {
+              "title": "Boots 25% cheaper with a boots deal",
+              "detail": "Shop → Boots."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The headline: brands come to you",
+          "items": [
+            {
+              "title": "Sponsors rebuilt",
+              "detail": "Problem: a list of ten categories you signed yourself, paid once a season. Fix: invented brands send offers with a weekly fee, 1-3 seasons, one or two targets and sometimes a clause. Deal slots 1 (Local Name) to 5 (Icon), one per kind of brand; offers last 2 weeks; signing pays two weeks' fee."
+            },
+            {
+              "title": "Who gets offers",
+              "detail": "Only a player in the squad with recent ratings of 6.2 or better; more fame and form bring more, and each kind of brand wants something that fits it."
+            },
+            {
+              "title": "Targets only ever add",
+              "detail": "Hit one: a bonus and a happier brand. Miss one: no money lost, a little happiness."
+            },
+            {
+              "title": "Brand happiness decides the renewal",
+              "detail": "Happy: renewal with a 15-30% raise. On the fence: raise, same or a cut. Unhappy: they walk."
+            },
+            {
+              "title": "Bidding wars, buy-outs, scandals, one-off adverts",
+              "detail": "Two brands bid at once; a rival can buy you out (your brand may match); a corruption or casino story ends behaviour-clause deals; milestone adverts pay cash without a slot."
+            },
+            {
+              "title": "Negotiating and walking away",
+              "detail": "More money uses the transfer negotiation screen; leaving early costs every week the deal promised."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Sponsor money is weekly",
+              "detail": "Your deals' weekly fees, paid with the wage on the weekend match. The old per-match image-rights money is gone."
+            },
+            {
+              "title": "Headphones and a football video game",
+              "detail": "Two new kinds of brand."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not played through on a screen",
+              "detail": "The screens were seen with example deals; the rest is checked by tests and a played-through test career."
+            },
+            {
+              "title": "The old Sponsors relationship bar",
+              "detail": "Still on Relations, but it no longer changes your money."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.20",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-30T16:00:00Z",
