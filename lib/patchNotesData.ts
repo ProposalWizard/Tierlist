@@ -27,6 +27,784 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.18",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-28T14:00:00Z",
+      "summary": "The game is now the base for a real App Store and Play Store app. The headline is the road map to it (step 3 of 8), plus what shipped since v0.17: aiming three times smoother on a slow phone, a smaller download, and 3D as everyone's look.",
+      "stats": [
+        {
+          "value": "3× faster",
+          "label": "while aiming on a slow phone (124 → 44 ms a frame)"
+        },
+        {
+          "value": "4.9 → 2.6 MB",
+          "label": "to open the game"
+        },
+        {
+          "value": "3D",
+          "label": "is now everyone's look, with a 3D/2D button to flip it back"
+        },
+        {
+          "value": "0",
+          "label": "store reviews needed to ship a game change to the app"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open Home and tap the 3D / 2D button",
+              "detail": "Top right of your player card. Your player flips look straight away."
+            },
+            {
+              "title": "Play a chance: does aiming feel smoother?",
+              "detail": "Most noticeable on an older phone."
+            },
+            {
+              "title": "Score updates during your match",
+              "detail": "Back to the old pop-up card, not lines in the commentary."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The headline: the road to the App Store and Play Store",
+          "items": [
+            {
+              "title": "2 of 8 steps done: smooth on slow phones, and 3D players as standard",
+              "detail": "Step 3, safe saves, is ready and waiting on your yes."
+            },
+            {
+              "title": "Safe saves come next",
+              "detail": "Stop careers being lost between phone and PC. Saves shrink from 1.4 MB to about 300 KB, so about 400 careers fit in the free database instead of about 85."
+            },
+            {
+              "title": "Then accounts, the app itself, testing, 12 testers for 14 days, and store review",
+              "detail": "Apple is $99 a year (1–3 days to approve); Google is $25 once. The 12-testers step is the slowest, so start it early.",
+              "more": {
+                "summary": "The rest of the steps",
+                "points": [
+                  "The app itself wraps the real game and adds what Apple requires: Sign in with Apple, a phone-style Google sign-in, saves kept on the phone, an offline screen and the back button.",
+                  "Apple review takes about 1.5 days; Google's first review takes 7–14 days.",
+                  "After it's live: no store review for game changes. The app opens the live game from the website, so anything pushed there reaches everyone next time they open it. Worked out from Apple's and Google's rules; not tested yet because the app doesn't exist yet."
+                ]
+              }
+            },
+            {
+              "title": "Problem: 4 ways a player can lose a career today",
+              "detail": "Offline on the phone then PC (the PC save wins with no warning), closing within 3 seconds of a change, an iPhone clearing website storage after 7 days, and a full phone silently dropping the save.",
+              "more": {
+                "summary": "Fixes, and how sure we are",
+                "points": [
+                  "Fixes: ask which save to keep, save the moment the app is hidden, keep saves on the phone in the app, smaller saves plus a storage warning.",
+                  "Read from the save code, not reproduced on two real devices."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Shipped since v0.17",
+          "items": [
+            {
+              "title": "The match lag: each face was drawn 13 times from the full-size photo, every frame",
+              "detail": "Now drawn once and reused. The fake-face pictures went from 1.9 MB to about 95 KB each. Faces look identical.",
+              "bars": [
+                {
+                  "label": "Aiming, 2D look (ms a frame)",
+                  "was": 124.5,
+                  "now": 44.2,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Aiming, 3D look (ms a frame)",
+                  "was": 155.1,
+                  "now": 45.2,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Five-a-side (ms a frame)",
+                  "was": 48.9,
+                  "now": 31.7,
+                  "state": "good",
+                  "unit": "ms"
+                },
+                {
+                  "label": "Ball in flight (ms a frame)",
+                  "was": 50,
+                  "now": 40.2,
+                  "state": "good",
+                  "unit": "ms"
+                }
+              ],
+              "more": {
+                "summary": "How it was measured",
+                "points": [
+                  "A real browser at phone size, processor slowed 6×, average of 2 runs. Lower is smoother."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "3D is the default look",
+              "detail": "Your answer in v0.17. Classic 2D is one tap away."
+            },
+            {
+              "title": "Dribble camera C1, a smoother 3D kick, League Two's top 3 go straight up",
+              "detail": "Your answers to the v0.17 questions."
+            },
+            {
+              "title": "Live scores are the pop-up card again",
+              "detail": "\"Fit the aesthetic more.\""
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "National League North and South player names",
+              "detail": "1,540 players at 63 clubs, from Wikipedia. Stored only; nothing plays with them yet. The ratings (42–56) are estimates, not real ratings."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The 3D / 2D button sits on the card's dotted light icon",
+              "detail": "Seen at both phone sizes. Quick fix."
+            },
+            {
+              "title": "On small Androids (360 px) the match bar reads \"ASSISTSPASS\"",
+              "detail": "The labels touch. Quick fix."
+            },
+            {
+              "title": "Aiming is still about 20 frames a second on a slow phone",
+              "detail": "The next step is to stop repainting the pitch while nothing moves, only if players notice.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "3 test files fail",
+              "detail": "They fail on the live version too."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Start safe saves now?",
+              "detail": "Recommended: yes. It protects players today, and the app needs it anyway."
+            },
+            {
+              "title": "Apple account: you, or a company?",
+              "detail": "Individual: your name shows as the seller, 1–3 days. Company: \"Knowitball\" shows, needs a company and a free D-U-N-S number, 1–2 weeks."
+            },
+            {
+              "title": "Who are the 12 testers?",
+              "detail": "They must opt in and play for 14 days in a row."
+            },
+            {
+              "title": "Will coins ever cost real money?",
+              "detail": "If yes, Apple and Google require their own payment system and take 15–30%."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/HvagWBceebfaR9KmxRKhgh",
+      "updatedAt": null
+    },
+    {
+      "version": "0.17",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-28T11:00:00Z",
+      "summary": "The whole game reskinned in the new home-screen look, 3D players, face scans, a Blender footballer for later, run-ups and the Store, and YouTube links finally working. The headline is the look: every screen rebuilt on one shared kit.",
+      "stats": [
+        {
+          "value": "40+",
+          "label": "screens rebuilt in the new look, each filmed before and after at two phone sizes"
+        },
+        {
+          "value": "12 → 0",
+          "label": "of 42 dribble positions where the ball sat on your body (new C1 camera)"
+        },
+        {
+          "value": "7 + 7",
+          "label": "run-ups: penalties, and free kicks modelled on Ronaldo, Bale, Messi, Neymar, Maddison and Trent"
+        },
+        {
+          "value": "198 / 201",
+          "label": "tests pass. The 3 that fail also fail on the live version"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open the game on your phone",
+              "detail": "The new title screen: Continue, New Game, Load Game, Settings."
+            },
+            {
+              "title": "Swipe Home, Stats and Shop with your finger",
+              "detail": "It was filmed with a mouse drag, not a finger."
+            },
+            {
+              "title": "Tap Play: can you see Play, energy, Sharpness and the three cans without scrolling?",
+              "detail": "44 px spare on an iPhone 13, 9 px on a small Android."
+            },
+            {
+              "title": "Play one match, then watch the post-match screen",
+              "detail": "The score slams in, the rating counts up, pay and relationships float up."
+            },
+            {
+              "title": "Settings → Player look → 3D, then play a chance",
+              "detail": "Do the players look right on your phone, and does the kick look smooth?"
+            },
+            {
+              "title": "Upload your own photo in Settings → Photo",
+              "detail": "The scan animation runs, then your face sits on the avatar with hair."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The headlines",
+          "items": [
+            {
+              "title": "Problem: the home screen was \"all messed up\" and every other screen looked like an older game",
+              "detail": "Flat cans, six squashed buttons, a 2D avatar with no flash, and uploaded photos sitting on it like a sticker.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: each screen was built on its own over the months with its own colours and buttons, so there was no single place to change the look.",
+                  "Fix: one shared design kit (club-lit glass cards, pills, buttons that press in, bursts, count-ups) with every screen rebuilt on it, and 3D-look players.",
+                  "A real title screen, and Home with you in the middle and Play raised in the middle.",
+                  "Matchday: Play, role, energy, Sharpness and all three cans now fit above the pinned bar (the match box went from about 245 px tall to 80).",
+                  "League, Stats, Training, Relations, Phone, Shop, Store, Casino, awards, transfers, votes, team sheets, cup draw and Settings all rebuilt. Every number stays on screen."
+                ]
+              }
+            },
+            {
+              "title": "3D players on the pitch",
+              "detail": "Shaded kits, boots, a soft shadow and a fitted face. A player with no photo gets drawn hair in 5 styles, so nobody is bald.",
+              "more": {
+                "summary": "How it works",
+                "points": [
+                  "They use the same skeleton as today's players, so every run, kick and dive moves exactly as before; only the drawing on top is new.",
+                  "Off by default, tried from Settings → Player look. It's no slower: 67–69 ms a frame against Classic's 74–79 ms on a slowed-down phone test."
+                ]
+              }
+            },
+            {
+              "title": "The dribble: 3D and three new cameras",
+              "detail": "Your old complaint, the ball sitting on your body instead of in front, was measured over 42 ball positions.",
+              "bars": [
+                {
+                  "label": "Ball drawn over your body, of 42",
+                  "was": 12,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "The four views",
+                "points": [
+                  "Today: 12 of 42. C1 low over the shoulder: 0. C2 higher from behind: 0. C3 closing in near a defender: 0–2.",
+                  "The cameras change the view only, not the difficulty. In the C1 view the legs look like a normal stride."
+                ]
+              }
+            },
+            {
+              "title": "Face scan: your photo becomes your face",
+              "detail": "Problem: \"still an issue when the player takes a picture\", and \"everyone can't be bald\". An uploaded photo is now cut out, straightened and fitted once, with a scan animation, and the hair is recreated.",
+              "more": {
+                "summary": "How it works",
+                "points": [
+                  "A face-finding tool that runs on the phone itself finds the face and outline, lines up the eyes, removes the background and redraws the hair. It works on busy backgrounds.",
+                  "Your own photo has only been tested from a screenshot crop."
+                ]
+              }
+            },
+            {
+              "title": "Recording tool: video links, and YouTube from your own Mac",
+              "detail": "Problem: the tool only took files, and YouTube blocks cloud servers, so a pasted YouTube link failed every way it was tried.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "From the cloud: TikTok, Drive, Dropbox and about 1,000 other video sites now work from a link.",
+                  "From your Mac: a one-click Download YouTube button on the desktop. You tested it: \"unreal, it worked\".",
+                  "720p is the default; a 25-minute video is 133 MB at 720p against 263 MB at 1080p."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Blender: a real 3D footballer, for celebrations and cut-scenes",
+              "detail": "5 stills, hair in several styles and 3 animation loops, on its own test page. Nothing reaches the game yet."
+            },
+            {
+              "title": "Run-ups: 7 for penalties, 7 for free kicks",
+              "detail": "Chosen in Settings. Free kicks include Ronaldo's power stance, Bale, Messi's calm curl, Neymar, Maddison and Trent."
+            },
+            {
+              "title": "The penalty keeper sometimes leans",
+              "detail": "About 35% of penalties. Right-corner penalties score 86.1% if he leans left, 72.3% with no lean and 55.7% if he leans right."
+            },
+            {
+              "title": "The Store and Coins, inside the career",
+              "detail": "Daily specials, run-up animations, accessories and boosts. Coin packs say \"Coming soon\": there is no real payment."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Swiping between home pages didn't work with a finger",
+              "detail": "It only worked with a mouse. Tested with real touch events now."
+            },
+            {
+              "title": "Post-match always said your stars went up by +0.1",
+              "detail": "It shows the real jump now."
+            },
+            {
+              "title": "Two old display bugs in Settings",
+              "detail": "A switch's knob sat outside its track, and the current save was cut off."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Fitness is now called Sharpness",
+              "detail": "Same number; it goes up by playing and drops each week you don't."
+            },
+            {
+              "title": "League table zones follow each division",
+              "detail": "The Premier League shows title, Champions League, Europa League and relegation; lower divisions show promotion and play-offs."
+            },
+            {
+              "title": "Settings, reorganised",
+              "detail": "Game, You, Player graphics, Saves, Developer tools, then Exit career. Main menu is at the top right."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "3 test files fail",
+              "detail": "They fail on the live version too. 198 of 201 pass."
+            },
+            {
+              "title": "Not seen on a screen",
+              "detail": "The Ballon d'Or countdown, a signing through a real transfer window, reduce-motion on a real phone, and the photo picker's camera and crop stages.",
+              "pill": {
+                "text": "not played",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Most reskinned screens were filmed on a test page",
+              "detail": "Only Sim this match was filmed inside a real career.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The 3D test switch is visible to real players",
+              "detail": "Settings → Player look (test)."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Push the UI rebuild?",
+              "detail": "Recommended: push, so it goes up to your branch for you to merge."
+            },
+            {
+              "title": "Which dribble camera does the real game use?",
+              "detail": "Recommended: C1, the ball is always clearly in front of you."
+            },
+            {
+              "title": "When do the 3D players become everyone's look?",
+              "detail": "Recommended: later. Check the kick first, then switch."
+            },
+            {
+              "title": "Blender: what next?",
+              "detail": "Recommended: a goal celebration clip after you score."
+            },
+            {
+              "title": "League Two: is 3rd place promoted or in the play-offs?",
+              "detail": "The reskinned table marks 3rd as promoted; the season code puts it in the play-offs. Recommended: real, top 3 promoted."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S",
+      "updatedAt": null
+    },
+    {
+      "version": "0.16",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-27T21:00:00Z",
+      "summary": "The v0.15 plan, built for real, tested and filmed at phone size. The headline: the drawing is the team, so every player you drew now plays. Penalties get a run-up, a keeper who dives once and can read you, and your club plays at its real strength.",
+      "stats": [
+        {
+          "value": "77% → 0",
+          "label": "cutback chances that left out a defender you drew"
+        },
+        {
+          "value": "88% → 75%",
+          "label": "penalties into the corners that go in (all penalties 82% → 76%)"
+        },
+        {
+          "value": "0.75 → 2.15",
+          "label": "chances for a sub coming on at 80'"
+        },
+        {
+          "value": "187 / 190",
+          "label": "tests pass. The 3 that fail also fail on the live version"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Corners and byline crosses: is the whole goal on screen?",
+              "detail": "Try any career match with a corner or byline cross."
+            },
+            {
+              "title": "The penalty run-up and the keeper's hop",
+              "detail": "Try any career penalty."
+            },
+            {
+              "title": "Get closed down while holding the ball: about 1 in 3 should be a foul",
+              "detail": "Pull back and wait on a Premier League side."
+            },
+            {
+              "title": "Shootout: you take a kick and the result reads your score first",
+              "detail": "A cup match that goes to penalties."
+            },
+            {
+              "title": "Faces on a real phone: nobody has a blank head",
+              "detail": "Any career match."
+            },
+            {
+              "title": "Late subs get chances, and a sub only comes off for energy",
+              "detail": "Settings → Energy low, get benched, come on late."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headlines",
+          "items": [
+            {
+              "title": "The drawing is the team: every player you drew now plays",
+              "detail": "Problem: you drew a cutback with 5 defenders and the game served 4, and it invented men you never drew.",
+              "bars": [
+                {
+                  "label": "Cutback missing a drawn defender (%)",
+                  "was": 77,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Midfield pass missing one (%)",
+                  "was": 79,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Byline cross missing one (%)",
+                  "was": 59,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Corner keeper moved off your spot (%)",
+                  "was": 100,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: months of hand-written \"always\" rules piled on top of your drawings: keeper never on his line, pick some defenders, nudge the ball, move you after a pass, move the free-kick team-mate.",
+                  "Fix: all of them deleted. The same men, keeper spot and ball you drew. Extra team-mates you drew become real runners with a name and a face.",
+                  "Penalty ball moved off the spot 100% → 0; you moved after a pass 100% → 0; stacked players in through balls 75 → 0 per 400.",
+                  "Left for you: 23 older drawings still carry the old keeper spots."
+                ]
+              }
+            },
+            {
+              "title": "Penalties: a run-up, one dive, and a keeper who can read you",
+              "detail": "Problem: penalties into the corners went in 88% of the time, the keeper dived and then dived back, and there was no run-up.",
+              "bars": [
+                {
+                  "label": "Corner penalties scored (%)",
+                  "was": 87.6,
+                  "now": 75,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "All penalties scored (%)",
+                  "was": 82.3,
+                  "now": 76,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the keeper could change his mind mid-dive, and the strike happened the instant you let go.",
+                  "Fix: you stand 1.8 m behind the ball, aim, then jog in for 2.4 s with a 1-second countdown. Run out of time and you scuff it. He makes one dive and finishes it, and about half the time hops to a side first and dives that way.",
+                  "Open question: watching the hop and aiming the other way scores 81.7% against 74.3% if you ignore it."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Caught in the final playtest",
+          "items": [
+            {
+              "title": "Corners and byline crosses cut the goal off",
+              "detail": "The view widens a little when it needs to: whole goal in view 0 → 300 of 300 corners, 113 → 300 byline crosses."
+            },
+            {
+              "title": "Test screens: a foul said PENALTY, then reloaded the same picture",
+              "detail": "It now serves the penalty straight away (3 of 3)."
+            },
+            {
+              "title": "Test screens: every penalty was the same",
+              "detail": "The keeper now varies and hops there too (hop 0% → 51.5%)."
+            },
+            {
+              "title": "Shootouts: you never got to kick, and a loss said \"Won 2–4\"",
+              "detail": "You're always one of the five takers and the result reads your score first."
+            },
+            {
+              "title": "The ball started off the bottom of the screen",
+              "detail": "The pitch is scrolled into view when a chance starts: 44% → 0."
+            },
+            {
+              "title": "Buildup: two team-mates standing 0.33 m apart",
+              "detail": "That's how the drawing was made, not a code bug.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Match, camera and shots",
+          "items": [
+            {
+              "title": "Your club now plays at its real strength",
+              "detail": "The unseen match was told 60 for every club. Strongest clubs win 38–49% → 71–78% (planned figure, not re-measured after the build)."
+            },
+            {
+              "title": "You can shoot past a man, and team-mates curl round him",
+              "detail": "A body is 0.7 m wide now. Long-range shots blocked 26% → 18%, cutbacks 45% → 37%.",
+              "bars": [
+                {
+                  "label": "Long range shots blocked (%)",
+                  "was": 26,
+                  "now": 18,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "A team-mate no longer takes your shot",
+              "detail": "A team-mate right on your shot's line lets it go. Through balls he took 60% → 33%."
+            },
+            {
+              "title": "The whole goal is always on screen",
+              "detail": "The camera slides or zooms out instead of moving the chance closer. Through balls now score 21.8% → 25.2%."
+            },
+            {
+              "title": "Subbed on, then subbed off: gone",
+              "detail": "A sub only comes off for energy now."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Free-kick run-up",
+              "detail": "Same jog and 1-second countdown as penalties."
+            },
+            {
+              "title": "Shootouts and penalties won without you are played live",
+              "detail": "Every kick on the real pitch. A top side wins one about every 6 games."
+            },
+            {
+              "title": "A cheeky miss costs reputation",
+              "detail": "A missed penalty down the middle or a missed chip: -1 each, at most -2 a match."
+            },
+            {
+              "title": "Late subs get chances",
+              "detail": "A 99 striker on at 80': 0.75 → 2.15 chances a cameo.",
+              "bars": [
+                {
+                  "label": "Chances, on at 80'",
+                  "was": 0.75,
+                  "now": 2.15,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Live scores during your match",
+              "detail": "Cards only for clubs you tick, one at a time, and a Scores panel with every game."
+            },
+            {
+              "title": "Sim this match",
+              "detail": "Score, your goals and assists, rating and star bar. Deliberately a bit worse than playing."
+            },
+            {
+              "title": "Real players in League One and Two",
+              "detail": "43 clubs, 1,154 players copied from last season a year older. Needs a database step run first.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Match Radar",
+              "detail": "Watch the unseen 90 minutes, with injuries and energy at kick-off."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "One keeper everywhere, set to Middle",
+              "detail": "He walks up to 2.2 m while you aim, then dives once, paced to arrive with the ball. Keepers who are 88 rated now concede fewer than 45-rated ones in every kind of chance; the Hard / Middle / Easier setting is a test-screen dial only."
+            },
+            {
+              "title": "Every chance is made the same way: your drawings, varied",
+              "detail": "Mirrored half the time and never one of the last 5. One-on-ones a match 0.34 → 1.85."
+            },
+            {
+              "title": "The drag is 25% shorter, measured from your thumb",
+              "detail": "Full power at power 55: 12.6% → 9.5% of the screen."
+            },
+            {
+              "title": "Figures are the same size in training, trial and the match",
+              "detail": "Drills were up to 46% too big; now within 2.3%."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "3 test files fail",
+              "detail": "authoredChance, freeKickRules and longRangeRules. They fail on the live version too."
+            },
+            {
+              "title": "23 drawings still carry the old keeper spots, and none of the 10 penalty drawings obey the penalty rules",
+              "detail": "The game corrects the penalties when played, so nothing looks wrong in a match.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Fouls when closed down and OFF THE WALL labels haven't been seen by a person",
+              "pill": {
+                "text": "not played",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Blank faces were seen only on the test machine",
+              "detail": "A failed photo now shows a fake face. Not checked on a real phone.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Your answers to decisions (a) to (i)",
+              "detail": "The penalty hop can be beaten, tight angles are now the most common striker chance, the 6.5 pull on short cameos, saves, National League data, shootout slot."
+            },
+            {
+              "title": "Highlight choosing, redesigned",
+              "detail": "\"The last big hurdle\": fun over realism, different kinds of striker."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/A9gwVhtt8dAVBwddYgrh7A",
+      "updatedAt": null
+    },
+    {
       "version": "1.1",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-27T12:00:00Z",
@@ -163,6 +941,233 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
+      "updatedAt": null
+    },
+    {
+      "version": "0.15",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-27T11:00:00Z",
+      "summary": "The plan from your 40-minute playtest: every problem you raised and what we'd do about it, with 35 of the 38 changes built as a test version and filmed. The headline is that every match you play has told your club it was a 60-rated side.",
+      "stats": [
+        {
+          "value": "60 → 83",
+          "label": "the strength a Chelsea match was told, against Chelsea's real one"
+        },
+        {
+          "value": "38–49% → 71–78%",
+          "label": "wins for the strongest clubs once the real strength is used"
+        },
+        {
+          "value": "35 of 38",
+          "label": "changes built as a test version and filmed in the real game"
+        },
+        {
+          "value": "7 of 11",
+          "label": "hand-written rules nobody asked for, found moving your drawn chances"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Nothing on this page is kept until you say so",
+              "detail": "It is a plan, filmed from a test version that was never saved to the project. Tick each change once you have looked at its pictures."
+            },
+            {
+              "title": "Corner penalties would score 88%, not 79%",
+              "detail": "With the keeper back on his line he reaches less of the angle. Your research says a bit more than 70%, so the plan tunes it with the new keeper."
+            },
+            {
+              "title": "Trial gets easier with one dive",
+              "detail": "Turning back was how the trial keeper saved kicks down the middle. Hardest kick goes 25% → 50% scored unless he sometimes reads a middle kick."
+            },
+            {
+              "title": "A 99 power strike would look like an 82",
+              "detail": "Was \"too strong\" about how fast it looks, or how often it scores? A 99 would still score slightly more, so the thing to change is the keeper."
+            },
+            {
+              "title": "About 30 more one-word questions, each with a recommended answer",
+              "detail": "Camera, drag length, run-up timer, live scores, cans, added time, home layout, lower-league faces."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The four headlines",
+          "items": [
+            {
+              "title": "Problem: in every match you play, your club has played like a 60-rated side",
+              "detail": "Whatever club you're at you win about 4 in 10, top or bottom of the table. That's why a max-stat Chelsea striker went 20+ games without a penalty.",
+              "bars": [
+                {
+                  "label": "Chelsea 99 striker, wins (%)",
+                  "was": 30,
+                  "now": 61,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Goals against a game",
+                  "was": 1.78,
+                  "now": 1.06,
+                  "state": "good"
+                },
+                {
+                  "label": "Games between penalties",
+                  "was": 12.2,
+                  "now": 6.1,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the unseen part of the match was told your relationship with team-mates (60 for everyone) instead of your club's strength (Chelsea: 83). It has been like that in every match, every career, as far back as the history goes. Matches you don't play used real strengths, so the rest of the table was right.",
+                  "Fix: tell the match your club's real strength. Team-mate relationship keeps its real job, how well team-mates combine inside a chance. It goes in first because it changes every other number.",
+                  "Strongest clubs win 38–49% → 71–78%; middle 38–43% → 49–57%; weakest 34–42% → 30–36%."
+                ]
+              }
+            },
+            {
+              "title": "Problem: a rule nobody asked for moved every drawn keeper at least 1.6 m off his line",
+              "detail": "You drew all 10 penalty keepers on the line; the real match started him 1.6 m out every time (200 of 200). It also moved every cutback keeper and 44% of tight-angle keepers.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: one line added on 21 Sep, while all the drawings were one-on-ones, went into the shared step that places every drawn keeper. Nothing was measured. As more kinds got drawings it moved all of them, and it had been writing itself into saved drawings.",
+                  "Fix: delete it. Each kind's keeper comes from its own drawings; penalties come from the penalty rules.",
+                  "Correction: an earlier check said the penalty keeper wasn't off his line. That was wrong; the check didn't go through the real match.",
+                  "A search found 11 rules sitting between your drawings and the screen: you asked for 3, one is a missing line, seven nobody asked for.",
+                  "Free kicks: an ordinary taker scored 18% with him 1.6 m out against 6% on his line; your target is 4–7%."
+                ]
+              }
+            },
+            {
+              "title": "Problem: the keeper moves differently in every kind of chance, and a 45 and an 88 are almost the same",
+              "detail": "On your shots he stands still until the ball arrives (he moves early in 1% of one-on-ones); on penalties he dives, then dives back.",
+              "bars": [
+                {
+                  "label": "One-on-ones conceded vs an 88 keeper (%)",
+                  "was": 28,
+                  "now": 17,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: several separate keeper rulebooks, one per situation, each hand-tuned.",
+                  "Fix: one keeper who gets set while you aim, reacts in 0.29 s (45 rated) to 0.21 s (90), reads where the ball will cross, dives once and never turns round. Built from your idea.",
+                  "He moves before the ball arrives in 71–93% of one-on-ones, up from 1%.",
+                  "He deliberately does not read your arrow: that turns aiming into a feint game."
+                ]
+              }
+            },
+            {
+              "title": "Problem: highlights look alike: 85% of tight angles look like one from your last 20",
+              "detail": "Long shots are a straight copy of one drawing every time, and a striker gets 1.8 one-on-ones a match.",
+              "bars": [
+                {
+                  "label": "Tight angles like one of your last 5 (%)",
+                  "was": 51,
+                  "now": 13,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: 68% of highlights are one of your drawings nudged up to 2 m, your 12 tight angles sit within about 2 m of each other, and the memory of recent pictures is wiped every match.",
+                  "Fix: both ways built and switchable. (A) your drawings, cleaned up and mirrored half the time. (B) a true generator built from the spread of all your drawings.",
+                  "Straight copies of a drawing: tight angles 31% → 2%, one-on-ones 48% → 7%, long shots 100% → 0% with (B)."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The rest of the plan",
+          "items": [
+            {
+              "title": "Penalties",
+              "detail": "Goal drawn where the real one is, hard penalty rules nobody can edit, a run-up and 1-second timer, one dive, 99 power capped near 102 km/h, a reputation hit for a cheeky miss."
+            },
+            {
+              "title": "Shootouts and penalties won without you",
+              "detail": "Every kick played live on the real pitch, a Shootout button in the highlights, and penalties won at about one every 6 games for a top side."
+            },
+            {
+              "title": "The keeper's pieces",
+              "detail": "A dive that shows why he was beaten, and his lean set from where you drew him (8 of 10 dives leaned the wrong way first)."
+            },
+            {
+              "title": "Around the shot",
+              "detail": "A team-mate no longer takes your shot, you can shoot past a man, team-mates curl round one, and a block can go in."
+            },
+            {
+              "title": "Camera and the drag",
+              "detail": "The whole goal always on screen, byline crosses filmed from the corner flag, room near the side, a shorter drag, and captain runs that start when you pull back."
+            },
+            {
+              "title": "Subs, ratings and energy",
+              "detail": "Late subs get chances, a sub isn't taken off again, a ratings list, and a can button that fits kick-off."
+            },
+            {
+              "title": "Match day and the season",
+              "detail": "Added time and Fergie time, a cup tab that names the right round, no draw after you're out, live scores, and a Sim this match button."
+            },
+            {
+              "title": "Screens and tools",
+              "detail": "Swipe pages for Stats, Home and Training, real League One and Two players, and a Match Radar to watch the unseen 90 minutes."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The keeper fixes and \"nobody moves after a pass\" are measured, not seen on screen",
+              "pill": {
+                "text": "not filmed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Some drawings always carry a fault and would be served as drawn",
+              "detail": "Byline crosses, cutbacks, corners and one one-on-one (offside 12 of 14 times).",
+              "pill": {
+                "text": "yours to fix",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "60 of your 120 drawings have the keeper nearer than 1.6 m",
+              "detail": "They'll look different once the 1.6 m rule goes."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Build order once you approve",
+          "items": [
+            {
+              "title": "First and alone: your club's real strength",
+              "detail": "It changes every other number on the page."
+            },
+            {
+              "title": "Then the keeper rules, penalties, highlights, camera, around the shot, the new keeper, subs, season and screens",
+              "detail": "Each step is built only after you approve its pictures, then filmed again in the real game."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": null,
       "updatedAt": null
     },
     {
