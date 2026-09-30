@@ -6,9 +6,11 @@ import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type Free
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import {
-  loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud,
-  clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
+  saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
+  clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
+  reconcileCareerLoad, resolveSaveClash, deferSaveClash, type SaveClash,
 } from "@/lib/star/storage";
+import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
@@ -318,6 +320,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Stays true while we check for a cloud save, so we show a spinner rather
   // than the new-career setup screen during the async fetch.
   const [cloudLoading, setCloudLoading] = useState(true);
+  /** This device's copy and the cloud's went different ways — the player
+   *  picks one (SaveClashPrompt; the rule is lib/star/saveClash.ts). */
+  const [saveClash, setSaveClash] = useState<SaveClash | null>(null);
   /**
    * A career only ever exists tied to an account now — see the "sign in to
    * play" gate below. Reported directly, after the cross-account save
@@ -445,7 +450,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     pendingCloudSave.current = { career, slot: slotAtSaveTime };
     cloudSaveTimer.current = setTimeout(() => {
       pendingCloudSave.current = null;
-      saveCareerToCloud(career, slotAtSaveTime);
+      saveCareerToCloud(career, slotAtSaveTime, { scope: slotScope(scopeRef.current, slotAtSaveTime) });
     }, 3000);
   }, [career]);
 
@@ -465,7 +470,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       pendingCloudSave.current = null;
       if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
       saveCareer(pending.career, slotScope(scopeRef.current, pending.slot));
-      saveCareerToCloud(pending.career, pending.slot, { leavingPage: true });
+      saveCareerToCloud(pending.career, pending.slot, { leavingPage: true, scope: slotScope(scopeRef.current, pending.slot) });
     };
     const onVisibility = () => { if (document.visibilityState === "hidden") flushOnHide(); };
     document.addEventListener("visibilitychange", onVisibility);
@@ -1722,14 +1727,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * (fetchRealSquad, externalClubsFor, …) is a plain imported function, not
    * component state — so this itself never needs to be recreated.
    */
-  const loadCareerIntoState = useCallback(async (slot: number) => {
+  // `chosen`: the copy the player picked on SaveClashPrompt — load exactly
+  // that, without asking the cloud again.
+  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
     setCloudLoading(true);
     resetTransientState();
     const scope = slotScope(scopeRef.current, slot);
-    const local = loadCareer(scope);
-    const localAt = local ? loadCareerSavedAt(scope) : -1;
-    const cloud = await loadCareerFromCloud(slot);
-    const saved = cloud && cloud.savedAt > localAt ? cloud.career : local;
+    // Which copy — this device's or the cloud's — is lib/star/saveClash.ts's
+    // call now (it used to be "whichever was written later"). When both have
+    // progress the other lacks, nothing loads until the player picks one.
+    let saved: CareerState | null;
+    if (chosen) {
+      saved = chosen;
+    } else {
+      const outcome = await reconcileCareerLoad(scopeRef.current, slot);
+      if (outcome.kind === "clash") {
+        setCareer(null);
+        setSaveClash(outcome.clash);
+        setCloudLoading(false);
+        return;
+      }
+      saved = outcome.career;
+    }
     setCloudLoading(false);
     setCareer(saved ?? null);
     if (!saved) { setPhase("profile-setup"); return; }
@@ -1933,7 +1952,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       clearTimeout(cloudSaveTimer.current);
       cloudSaveTimer.current = null;
     }
-    if (career) saveCareerToCloud(career, activeSlotRef.current);
+    if (career) saveCareerToCloud(career, activeSlotRef.current, { scope: slotScope(scopeRef.current, activeSlotRef.current) });
   }, [career]);
 
   /** Switch which save is on screen — see SaveSlotsPanel in Settings. */
@@ -2588,6 +2607,26 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </a>
         </div>
       </div>
+    );
+  }
+
+  if (saveClash) {
+    return (
+      <SaveClashPrompt
+        clash={saveClash}
+        onKeep={(keep) => {
+          const clash = saveClash;
+          const chosen = resolveSaveClash(scopeRef.current, clash, keep);
+          setSaveClash(null);
+          loadCareerIntoState(clash.slot, chosen);
+        }}
+        onLater={() => {
+          const clash = saveClash;
+          const chosen = deferSaveClash(scopeRef.current, clash);
+          setSaveClash(null);
+          loadCareerIntoState(clash.slot, chosen);
+        }}
+      />
     );
   }
 
