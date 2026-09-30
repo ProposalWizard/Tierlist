@@ -21,6 +21,7 @@
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
   "1.0": "pages/1.0/index.html",
+  "0.19": "mikey/v0.6.html",
   "0.13": "mikey/v0.5.html",
   "0.12": "mikey/v0.4.html",
   "0.11": "mikey/v0.3.html",

@@ -5740,7 +5740,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "A guard inside every deploy",
-              "detail": "The site won't deploy with a new copy of the match. Fable 5.1 tried to break it, and the gaps it found are closed or listed.",
+              "detail": "The site won't deploy with a new copy of the match. A second review tried to break it, and the gaps it found are closed or listed.",
               "more": {
                 "summary": "What it checks",
                 "points": [
