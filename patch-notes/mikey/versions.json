@@ -43,8 +43,16 @@
     "version": "0.6",
     "date": "2026-09-27",
     "fromCommit": "210ad41",
-    "toCommit": "HEAD",
+    "toCommit": "a7017811",
     "url": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
     "headline": "Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants"
+  },
+  {
+    "version": "0.7",
+    "date": "2026-09-30",
+    "fromCommit": "a7017811",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo",
+    "headline": "A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms"
   }
 ]

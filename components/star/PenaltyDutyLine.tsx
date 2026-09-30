@@ -25,7 +25,8 @@ export default function PenaltyDutyLine({ career, fixture, status }: {
   })));
   const mate = taker?.shortName ?? "A team-mate";
   const stars = Math.round(career.starRating * 10) / 10;
-  const sum = `free kick ${career.skills.freeKick} + ${stars}★ × ${PENALTY_STAR_WEIGHT} = ${Math.round(duties.penaltyStanding)}`;
+  // `stars` here is ability (career.starRating), not the career star rating.
+  const sum = `free kick ${career.skills.freeKick} + ability ${stars} × ${PENALTY_STAR_WEIGHT} = ${Math.round(duties.penaltyStanding)}`;
   const onPitch = status !== "Squad" && status !== "Injured";
   return (
     <div className="mt-2.5 rounded-lg bg-black/25 px-2.5 py-2 text-left">

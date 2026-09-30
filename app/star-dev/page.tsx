@@ -73,6 +73,8 @@ import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
+import { starsNow, starStatus, matchStarPoints, withStars } from "@/lib/star/starPoints";
+import { STAR_TITLES } from "@/components/star/StarRatingSheet";
 import { clubTheme } from "@/components/star/ui";
 import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
@@ -279,6 +281,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   /** Your star rating before and after the last match — the bar on a simmed result (item 36). */
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
+  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string } | null>(null);
+  /** A whole new star: the full-screen moment. */
+  const [newStar, setNewStar] = useState<number | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
   /** Set right before jumping to "investments" from the Ownership hub, so a
@@ -438,6 +443,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   useEffect(() => {
     if (!career) return;
+    // Bank the star rating into the live career first (starPoints.ts): its
+    // high-water marks have to travel with the state, or something bought
+    // and then lost between two saves would take its points with it. This
+    // re-runs the effect once with the banked career, which then saves.
+    const banked = withStars(career);
+    if (JSON.stringify([banked.stars, banked.starBest, banked.starLedger, banked.awards]) !== JSON.stringify([career.stars, career.starBest, career.starLedger, career.awards])) {
+      setCareer(banked);
+      return;
+    }
     saveCareer(career, slotScope(scopeRef.current, activeSlotRef.current)); // localStorage — immediate
     // Debounced cloud save: waits 3 s after the last change so a burst of
     // state updates (end of match, season rollover) produces one write, not
@@ -816,7 +830,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     };
     checkAndSetAchievements(updated);
     updated.starRating = computeStarRating(updated);
-    toastRatingChange(career.starRating, updated.starRating);
+    toastRatingChange(starsNow(career), starsNow(updated));
     // A training session, not one of the week's actions (week.ts).
     setCareer(spendTrainingSession(updated));
     setTrainingSkill(null);
@@ -846,7 +860,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career || !nextFixture) return;
     const { career: next, newlyUnlocked } = simulateMissedFixture(career, nextFixture);
     toastAchievements(newlyUnlocked);
-    toastRatingChange(career.starRating, next.starRating);
+    toastRatingChange(starsNow(career), starsNow(next));
     setCareer(next);
     setActiveNav("home");
     setPhase("dashboard");
@@ -1017,6 +1031,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const fromShown = Math.round(from * 10) / 10;
     const toShown = Math.round(to * 10) / 10;
     if (toShown <= fromShown) return;
+    // A whole new star gets the full screen; anything less, the banner.
+    if (Math.floor(toShown + 1e-9) > Math.floor(fromShown + 1e-9)) setNewStar(Math.floor(toShown + 1e-9));
     setRatingChange({ from: fromShown, to: toShown });
     setTimeout(() => setRatingChange(null), 3000);
   };
@@ -1031,9 +1047,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setLastMatchStats(stats);
     setPlayedFixture(nextFixture);
     const { career: next, newlyUnlocked, potmAwarded } = creditMatchResult(career, nextFixture, stats);
-    setLastStarChange({ from: career.starRating, to: next.starRating });
+    // The star rating shown is the career one (starPoints.ts).
+    const starNext = starStatus(next);
+    const earned = matchStarPoints(career, nextFixture, stats);
+    setLastStarChange({ from: starsNow(career), to: starNext.stars });
+    setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, gate: starNext.gate?.need });
     toastAchievements(newlyUnlocked);
-    toastRatingChange(career.starRating, next.starRating);
+    toastRatingChange(starsNow(career), starNext.stars);
     // The world reacts. Generated once, here, from the career on both sides of
     // the match — "went top" is a comparison and the after state cannot make it.
     next.media = generateForMatch(career, next, nextFixture, stats);
@@ -1410,7 +1430,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // for somebody who is genuinely still at the club he was loaned to.
     const next = endLoan(rolled);
     toastAchievements(newlyUnlocked);
-    toastRatingChange(from.starRating, next.starRating);
+    toastRatingChange(starsNow(from), starsNow(next));
     // ── A club you just SIGNED for is not "promoted" ──
     //
     // Getting here via a forced relegation move means `from.player.club` is
@@ -3176,7 +3196,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
         starBefore={lastStarChange?.from}
-        starAfter={lastStarChange?.to ?? career.starRating}
+        starAfter={lastStarChange?.to ?? starsNow(career)}
+        star={lastMatchStar ?? undefined}
         onContinue={handlePostMatchContinue}
       />
     );
@@ -3545,9 +3566,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
         </div>
       )}
+      {newStar !== null && (
+        <button onClick={() => setNewStar(null)} className="fixed inset-0 z-[80] grid place-items-center bg-black/90 p-6 text-center" aria-label="Close">
+          <div>
+            <div className="text-[34px] leading-none text-amber-300" style={{ textShadow: "0 0 20px rgba(251,191,36,.8)" }}>{"★".repeat(newStar)}</div>
+            <div className="mt-3 text-[40px] font-black italic leading-none text-white">{newStar} STARS</div>
+            <div className="mt-2 text-[15px] font-black text-amber-300">{STAR_TITLES[newStar] ?? ""}</div>
+            <div className="mt-6 inline-block rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-gray-950">Continue</div>
+          </div>
+        </button>
+      )}
       {ratingChange && (
         <div className="mb-2 bg-emerald-500 border border-emerald-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
-          ▲ Rating Up: {ratingChange.from.toFixed(1)}★ → {ratingChange.to.toFixed(1)}★
+          ▲ Star rating up: {ratingChange.from.toFixed(1)}★ → {ratingChange.to.toFixed(1)}★
         </div>
       )}
       {phase === "dashboard" && career.managerNews && (
