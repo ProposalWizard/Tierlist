@@ -1,8 +1,9 @@
 "use client";
 import { fameGainFromBuying, isWornOut, itemLifeSeasons } from "@/lib/star/fame";
 import { useRef, useState } from "react";
+import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, SHOP_LEVEL_COUNT, baseIdOf, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, LIFESTYLE_ALL_LEVELS, SHOP_LEVEL_COUNT, baseIdOf, type KibCan } from "@/lib/star/shopData";
 import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
@@ -74,6 +75,9 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
   // Five levels of everything (27 Sep 2026). The shop opens on the level
   // priced for the league you're in: National League level 1 … Premier League 5.
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
+  // A boots sponsor takes 25% off every pair (sponsorDeals.ts).
+  const bootDeal = hasBootDeal(career);
+  const BOOTS_ALL_LEVELS = bootDeal ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE;
   const bootBases = Array.from(new Set(BOOTS_ALL_LEVELS.map((b) => baseIdOf(b))));
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(
     BOOTS_ALL_LEVELS.find((b) => baseIdOf(b) === bootBases[0] && b.level === homeLevel) ?? BOOTS_ALL_LEVELS[0],
@@ -202,7 +206,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
 
       {kind === "boots" && (
         <>
-          <div className="mb-2 text-[11px] font-bold text-white/85">
+          {bootDeal && <div className="mb-2 rounded-xl border border-emerald-300/70 bg-emerald-500/15 px-3 py-2 text-[12px] font-black text-white">👟 Boot sponsor: 25% off every pair.</div>}
+          <div className="mb-2 text-[11px] font-bold text-white">
             Every boot comes in 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level has better stats.
           </div>
           <ClubCard glow={theme.glow} className="mb-3 rounded-2xl">

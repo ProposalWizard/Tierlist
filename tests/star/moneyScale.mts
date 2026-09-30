@@ -1,3 +1,5 @@
+import { mulberry32 } from "../../lib/star/season";
+import { fairWeekly } from "../../lib/star/sponsorDeals";
 import { MONEY_SCALE } from "../../lib/star/money";
 import { testimonialFor, TESTIMONIAL_APPEARANCES, TESTIMONIAL_WEEKS_PER_POINT } from "../../lib/star/retirement";
 import { finaliseMatch } from "../../lib/star/matchStats";
@@ -114,57 +116,34 @@ const base = (): CareerState =>
     "a player short of the appearance bar earns no testimonial");
 }
 
-// ── Per-match sponsor money: THE bug this whole recalibration turned on ──
+// ── Sponsor money in a match: your deals' weekly fees (30 Sep 2026) ──
+//
+// This used to be "image rights" scaled by the sponsors relationship, and the
+// 14 Sep rescale once made it 8.6 times a season's income. It is now simply
+// the weekly fees of the deals you hold (lib/star/sponsorDeals.ts), so the
+// guard that matters is the same one, asked of the new number: a full slate
+// of deals must stay a second income, never a multiple of the first.
 {
-  const withSponsors: CareerState = {
-    ...base(), relationships: { ...base().relationships, sponsors: 100 },
-  };
-  const none: CareerState = {
-    ...base(), relationships: { ...base().relationships, sponsors: 0 },
-  };
-
+  const none: CareerState = base();
   const args = [3, 1, 0, 20, 90, 2, 1] as const;
-  const paid = finaliseMatch(...args, withSponsors);
   const unpaid = finaliseMatch(...args, none);
-  const delta = paid.totalCash - unpaid.totalCash;
   const wage = none.contract.wage;
-
-  // Derived, not flat: exactly `sponsorPayPerMatch` off the wage actually
-  // being paid for this fixture.
-  check(
-    delta === sponsorPayPerMatch(wage, 100),
-    `per-match sponsor pay is sponsorPayPerMatch off the real wage `
-    + `(expected ${sponsorPayPerMatch(wage, 100)}, got ${delta})`,
-  );
-
-  // THE REGRESSION GUARD, stated the way the bug was found. A whole season of
-  // image rights at FULL sponsor standing must be a modest share of a season's
-  // income — not a multiple of it. It was 8.6x before this was fixed.
-  const seasonSponsor = delta * SEASON_WEEKS;
-  const seasonIncome = typicalWeeklyIncome("premier") * SEASON_WEEKS;
-  check(
-    seasonSponsor < seasonIncome * 0.25,
-    `a full season of image rights (★${Math.round(seasonSponsor)}) must stay a modest share of a `
-    + `season's income (★${Math.round(seasonIncome)}) — it was 8.6 TIMES it before this was derived`,
-  );
-  // …and it is genuinely the share TOTAL_INCOME_SHARES claims it is.
-  const shareOfAWeek = (delta * SPONSOR_MATCHES_PER_WEEK) / wage;
-  check(
-    Math.abs(shareOfAWeek - TOTAL_INCOME_SHARES.sponsorPerMatch) < 0.005,
-    `at full standing, image rights should contribute exactly `
-    + `TOTAL_INCOME_SHARES.sponsorPerMatch (${TOTAL_INCOME_SHARES.sponsorPerMatch}) of a week's wage — `
-    + `got ${shareOfAWeek.toFixed(4)}`,
-  );
-  check(
-    Math.abs(SPONSOR_PAY_WEEKS_PER_MATCH * SPONSOR_MATCHES_PER_WEEK - TOTAL_INCOME_SHARES.sponsorPerMatch) < 1e-9,
-    "SPONSOR_PAY_WEEKS_PER_MATCH is derived from the declared share, not typed in beside it",
-  );
-
-  // Standing genuinely drives it, in both directions.
-  check(unpaid.sponsorPay === 0, `no sponsor standing should pay nothing, got ${unpaid.sponsorPay}`);
-  check(sponsorPayPerMatch(wage, 50) < sponsorPayPerMatch(wage, 100),
-    "serving your sponsors better is worth more money");
+  check(unpaid.sponsorPay === 0, `no deals should pay nothing, got ${unpaid.sponsorPay}`);
   check(unpaid.totalCash >= wage, "a match should still pay at least the wage with no sponsors");
+
+  const rng = mulberry32(5);
+  const five = ["Boots", "Sports Clothing", "Electronics", "Watch", "Car"];
+  const weekly = five.map(cat => fairWeekly(none, cat, rng));
+  const withDeals: CareerState = { ...none, brands: { deals: five.map((category, i) => ({
+    id: `d${i}`, brand: category, category, color: "#fff", weekly: weekly[i], seasonsLeft: 1, seasonsTotal: 1,
+    guaranteed: 0, happiness: 60, targets: [] })), offers: [], news: [], paid: [], seq: 5 } };
+  const paid = finaliseMatch(...args, withDeals);
+  const total = weekly.reduce((x, y) => x + y, 0);
+  check(paid.sponsorPay === total && paid.totalCash - unpaid.totalCash === total,
+    `a match pays exactly the deals' weekly fees (expected ${total}, got ${paid.sponsorPay})`);
+  check(total < wage * 1.2 && total > wage * 0.4,
+    `five deals at the top of the game are a real second income, not a bigger one (★${total} on a ★${wage} wage)`);
+  void [sponsorPayPerMatch, SPONSOR_PAY_WEEKS_PER_MATCH, SPONSOR_MATCHES_PER_WEEK, TOTAL_INCOME_SHARES, SEASON_WEEKS, typicalWeeklyIncome];
 }
 
 // ── The late-career money sinks land in a stated window of weeks ─────────
@@ -244,7 +223,7 @@ const base = (): CareerState =>
   // exactly the thing that turned out not to be good enough.
   const CURVE_FILES = [
     "dilemmas.ts", "governingBodies.ts", "clubPowers.ts", "retirement.ts",
-    "corruption.ts", "sponsors.ts", "matchStats.ts", "transfers.ts",
+    "corruption.ts", "sponsors.ts", "sponsorDeals.ts", "transfers.ts",
     "relegationOffers.ts", "scoutOffers.ts",
   ];
   for (const f of CURVE_FILES) {

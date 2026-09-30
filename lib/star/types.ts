@@ -1104,6 +1104,8 @@ export interface CareerState {
    * (lib/star/starPoints.ts). `starRating` above is your ABILITY on the old
    * 1-5 scale and is shown as "Overall"; everything that read it still does.
    */
+  /** Sponsors: your deals, the offers on your phone, and their news (lib/star/sponsorDeals.ts). */
+  brands?: import("./sponsorDeals").BrandsState;
   stars?: number;
   /** What the star rating needs remembering (matches by division, etc.). */
   starLedger?: import("./starPoints").StarLedger;
@@ -1363,6 +1365,8 @@ export type StarPhase =
   | "casino-slots"
   | "investments"
   | "sponsors"
+  /** Haggling over a sponsor offer's weekly fee (sponsorDeals.ts). */
+  | "sponsor-negotiation"
   | "achievements"
   | "trophies"
   /** World/club/government/shareholder standing — Phase 1 of

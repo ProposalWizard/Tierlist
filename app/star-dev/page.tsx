@@ -30,7 +30,8 @@ import ManagerTalk from "@/components/star/ManagerTalk";
 import YouthTeam from "@/components/star/YouthTeam";
 import LoanBrief from "@/components/star/LoanBrief";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
-import { signSponsor } from "@/lib/star/sponsors";
+import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, brandScandal } from "@/lib/star/sponsorDeals";
+import SponsorsScreen from "@/components/star/SponsorsScreen";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
@@ -151,7 +152,7 @@ import { createCompetition, playCompetitionToWinner, type NewCompetitionState } 
 import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
-import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import { AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
@@ -2110,10 +2111,39 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     });
   }, [career]);
 
-  const handleSignSponsor = useCallback((category: string) => {
-    if (!career) return;
-    setCareer(signSponsor(career, category));
-  }, [career]);
+  // ── Sponsors (lib/star/sponsorDeals.ts) ──
+  const [sponsorNote, setSponsorNote] = useState<string | null>(null);
+  const [sponsorNegId, setSponsorNegId] = useState<string | null>(null);
+  const noteSponsor = (msg: string) => { setSponsorNote(msg); setTimeout(() => setSponsorNote(null), 4000); };
+  const sponsorActions = {
+    onSign: (id: string) => {
+      if (!career) return;
+      const r = signOffer(career, id);
+      if (r.ok) { setCareer(r.career); noteSponsor(r.message); } else noteSponsor(r.reason);
+    },
+    onDecline: (id: string) => { if (career) setCareer(declineOffer(career, id)); },
+    onNegotiate: (id: string) => { setSponsorNegId(id); setPhase("sponsor-negotiation"); },
+    onAskLonger: (id: string) => {
+      if (!career) return;
+      const r = askLonger(career, id, Math.random());
+      setCareer(r.career); noteSponsor(r.yes ? "They agreed: one more season." : "They said no to a longer deal.");
+    },
+    onAskEasier: (id: string) => {
+      if (!career) return;
+      const r = askEasier(career, id, Math.random());
+      setCareer(r.career); noteSponsor(r.yes ? "They agreed: easier targets." : "They said no to easier targets.");
+    },
+    onCounter: (id: string) => {
+      if (!career) return;
+      const r = counterPoach(career, id, Math.random());
+      setCareer(r.career); noteSponsor(r.matched ? "Your sponsor matched the offer." : "Your sponsor would not match it.");
+    },
+    onWalkAway: (id: string) => {
+      if (!career) return;
+      const r = walkAway(career, id);
+      if (r.ok) { setCareer(r.career); noteSponsor(r.message); } else noteSponsor(r.reason);
+    },
+  };
 
   const handleBuyHorse = useCallback((horse: Horse, price: number) => {
     if (!career || career.money < price || career.horse) return;
@@ -2525,7 +2555,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career) return;
     // Clamped: the casino owns the bank for the length of a session and hands
     // back a number, and a career with negative money has no way to recover.
-    setCareer({ ...career, money: Math.max(0, Math.round(finalBank)) });
+    // A heavy night at the tables is a story: lose more than eight weeks' wages
+    // in one visit and one time in four it reaches your sponsors.
+    const banked = { ...career, money: Math.max(0, Math.round(finalBank)) };
+    const lost = career.money - banked.money;
+    const story = lost > Math.max(1, career.contract.wage) * 8 && Math.random() < 0.25;
+    setCareer(story ? brandScandal(banked, "a casino story") : banked);
     setActiveNav("home");
     setPhase("dashboard");
   }, [career]);
@@ -3304,7 +3339,38 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
-  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
+  if (phase === "sponsors") return (
+    <>
+      <SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />
+      {sponsorNote && (
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] mx-auto w-fit max-w-[90%] rounded-xl border border-amber-300 bg-gray-950 px-4 py-2 text-center text-[13px] font-black text-white shadow-[0_0_18px_rgba(251,191,36,.45)]">{sponsorNote}</div>
+      )}
+    </>
+  );
+  if (phase === "sponsor-negotiation") {
+    const o = brandsOf(career).offers.find(x => x.id === sponsorNegId);
+    if (!o) { setPhase("sponsors"); return null; }
+    return (
+      <NegotiationScreen
+        mode="selling"
+        playerName={`${o.brand} — weekly fee`}
+        marketValue={Math.round(o.weekly * 1.2)}
+        counterpartLabel={o.brand}
+        initialState={{
+          marketValue: Math.round(o.weekly * 1.2), mode: "selling", round: 0,
+          yourPosition: Math.round(o.weekly * 1.35), theirPosition: o.weekly,
+          moodScore: 60, status: "negotiating",
+          log: [`${o.brand} open at ★${o.weekly.toLocaleString()} a week.`],
+        }}
+        onDone={(weekly) => {
+          setCareer(settleNegotiation(career, o.id, weekly));
+          noteSponsor(weekly === null ? `${o.brand} walked away.` : `Agreed: ★${Math.round(weekly).toLocaleString()} a week. Sign it to make it yours.`);
+          setSponsorNegId(null);
+          setPhase("sponsors");
+        }}
+      />
+    );
+  }
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
   if (phase === "garden") return <GardenScreen career={career} onBack={handleBackToDashboard} />;
@@ -3484,7 +3550,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       onNavigate={handleNavigate}
       onSettings={() => setPhase("settings")}
       activeNav={phase === "skills" ? (trainingTab === "life" ? "life" : "skills") : activeNav}
-      mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
+      mediaUnread={(hasFreshMedia(career) || brandsOf(career).offers.length > 0) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
