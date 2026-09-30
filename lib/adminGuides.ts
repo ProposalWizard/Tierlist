@@ -282,6 +282,7 @@ export const ADMIN_GUIDES = {
           ["Version list", "Tap a version to read it."],
           ["Page", "The version's artifact exactly as it was published, pictures and all. Kept in the code, so it works even if the link changes."],
           ["Text", "The same notes as plain data, in the site's own style."],
+          ["Harry's notes", "Only on versions Harry has reviewed: his spoken notes from his recordings (likes, concerns, questions), each with the video and timestamp. Written in by Claude, not typed on this page."],
           ["Open the original artifact ↗", "Opens the shareable page on claude.ai for that version, if it has one."],
         ],
       },
@@ -289,7 +290,7 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing here saves. New patch notes are added by Claude as part of shipping a change."],
     commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · patch-notes/",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
   },
 
   // ════════════════════════════════════════════════════════════════════

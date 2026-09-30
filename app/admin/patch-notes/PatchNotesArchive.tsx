@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
 import { PATCH_NOTE_PAGES, patchNotePageUrl } from "@/lib/patchNotePages";
+import { PATCH_NOTE_REVIEWS, type PatchNoteReview } from "@/lib/patchNoteReviews";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -164,8 +165,12 @@ function VersionRail({
  */
 function VersionView({ note }: { note: PatchNote }) {
   const hasPage = !!PATCH_NOTE_PAGES[note.version];
-  const [view, setView] = useState<"page" | "text">(hasPage ? "page" : "text");
-  const tab = (v: "page" | "text", label: string) => (
+  // A third tab, "Harry's notes", on any version Harry has reviewed
+  // (lib/patchNoteReviews.ts) — his spoken notes, written in by Claude.
+  const review = PATCH_NOTE_REVIEWS[note.version];
+  type View = "page" | "text" | "notes";
+  const [view, setView] = useState<View>(hasPage ? "page" : "text");
+  const tab = (v: View, label: string) => (
     <button
       type="button"
       onClick={() => setView(v)}
@@ -177,19 +182,52 @@ function VersionView({ note }: { note: PatchNote }) {
       {label}
     </button>
   );
+  const hint =
+    view === "page" ? "The artifact exactly as it was published, pictures and all."
+    : view === "notes" ? `${review?.by ?? "Harry"}'s notes on this version, from his recordings.`
+    : "The same notes as plain data.";
   return (
     <>
-      {hasPage && (
+      {(hasPage || review) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          {tab("page", "Page")}
+          {hasPage && tab("page", "Page")}
           {tab("text", "Text")}
-          <span className={`text-[12px] ${INK3}`}>
-            {view === "page" ? "The artifact exactly as it was published, pictures and all." : "The same notes as plain data."}
-          </span>
+          {review && tab("notes", `${review.by}'s notes`)}
+          <span className={`text-[12px] ${INK3}`}>{hint}</span>
         </div>
       )}
-      {view === "page" && hasPage ? <PageFrame note={note} /> : <NoteBody note={note} />}
+      {view === "notes" && review ? <ReviewView review={review} />
+        : view === "page" && hasPage ? <PageFrame note={note} />
+        : <NoteBody note={note} />}
     </>
+  );
+}
+
+const REVIEW_TONE: Record<PatchNoteReview["notes"][number]["tone"], { dot: string; label: string }> = {
+  like: { dot: "bg-[#3ddc84]", label: "Likes" },
+  concern: { dot: "bg-[#f5b942]", label: "Concern" },
+  question: { dot: "bg-[#6fb8ff]", label: "Question" },
+};
+
+function ReviewView({ review }: { review: PatchNoteReview }) {
+  return (
+    <div className="space-y-2.5">
+      {review.notes.map((n, i) => {
+        const tone = REVIEW_TONE[n.tone];
+        return (
+          <div key={i} className={`rounded-xl border ${LINE} ${CARD} p-3.5`}>
+            <div className="flex items-center gap-2">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} aria-hidden />
+              <span className={`text-[11px] font-extrabold uppercase tracking-[0.08em] ${INK3}`}>{tone.label}</span>
+              <span className={`text-[13px] font-bold ${INK}`}>{n.about}</span>
+            </div>
+            <p className={`mt-1.5 text-[14px] leading-snug ${INK}`}>&ldquo;{n.said}&rdquo;</p>
+            <p className={`mt-1 text-[12px] ${INK3}`}>{n.source}</p>
+          </div>
+        );
+      })}
+      <p className={`pt-1 text-[12px] ${INK3}`}>Last updated {review.updatedAt}.</p>
+    </div>
   );
 }
 
