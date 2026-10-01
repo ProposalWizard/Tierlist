@@ -248,7 +248,7 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
     <div className="relative flex min-h-0 flex-1 items-end">
       {/* the pitch is sized to him (the goal line sits just above his head)
           and fades out upwards into the stand, under the league table */}
-      <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30) }}><HomeBackdrop glow={glow} /></div>
+      <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30), maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
       <div className="relative flex w-full items-end gap-2 px-3 pb-2 pt-1">
         <div className="relative shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
