@@ -51,7 +51,7 @@ Newest first. Each is something that was actually said.
   in from Home, not only from a menu two taps deep.
 - **A card cut in half by the bottom bar is "jarring".** Said of the KIB cans
   on Home. Keep a card short enough that it reads as whole, not a title with
-  its contents chopped off (cans + energy went from 303px to 126px).
+  its contents chopped off (cans + energy went from 303px to about 130px).
 
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
