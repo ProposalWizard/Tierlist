@@ -146,6 +146,9 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   const avg = (v: number) => [0.1, 0.3, 0.6, 0.9].reduce((s, r) => s + relationshipGameGain(true, v, r), 0) / 4;
   let prev = Infinity;
   for (let v = 0; v <= 100; v += 5) { check(avg(v) <= prev, `a win at ${v} is worth no more than one lower down`); prev = avg(v); }
+  // The boss meeting has its own flat numbers (P41, v0.23.1): +3 win, −2 loss, at any rating.
+  for (const v of [0, 50, 95]) check(relationshipGameGain(true, v, 0.9, "boss") === 3 && relationshipGameGain(false, v, 0.9, "boss") === -2, `boss meeting at ${v}: win +3, loss −2`);
+  check(relationshipGameGain(false, 50, 0.5, "team") === -4 && relationshipGameGain(true, 30, 0.5, "fans") === 2, "the other games keep their numbers");
   check(applyGameGain(3, -8) === 0 && applyGameGain(99, 2) === 100, "stays between 0 and 100");
 }
 

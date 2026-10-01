@@ -7,7 +7,7 @@ import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { fitImage, getFittedHead } from "@/lib/star/faceFit";
-import { skinFor, drawStyledHead } from "@/lib/star/figure3d";
+import { managerLook, drawManagerHead } from "@/lib/star/managerFace";
 import { paintHeroFigure, tint, rgba, luminance, HERO_CHIN_Y, HERO_FACE_H, type HeroLook, type P } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import { Burst, KitStyles } from "./ui";
@@ -47,9 +47,9 @@ const BOSS_AT: P = [268, 172];
 /** Where the desk's back edge is: everything below is desk. */
 const DESK_Y = 240;
 /** The contract on the desk, in stage units. */
-const PAPER = { x: 78, y: 262, w: 204, h: 142 };
+const PAPER = { x: 54, y: 250, w: 242, h: 176 };
 /** The signature line on the contract (paper units): where the pen writes. */
-const SIG = { x: 112, y: 100, w: 80, h: 22 };
+const SIG = { x: 132, y: 134, w: 80, h: 22 };
 /** The handshake: the far arm held out, in figure design units. */
 const REACH = { elbow: [171, 140] as P, hand: [196, 150] as P };
 /** Timings, ms. */
@@ -192,9 +192,31 @@ export default function SigningScene({
   const youFace = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
   // Harry, 1 Oct 2026 (P49): "Let's stop with the real faces, unless it's your
   // guy ... that's not Keith Andrews." Only YOUR face is a photo; the manager
-  // is a drawn head (figure3d's drawStyledHead), the same man every time.
+  // is a drawn head, the same man every time and a different one from the next
+  // club's (P72, P90: lib/star/managerFace.ts, skin and hair loosely his own).
+  const bossLook = managerLook(managerName);
   const tick = useFaceTicks([youFace]);
+  // The paper must show the whole deal even when the caller sent none (P56:
+  // "the only thing on the contract is shirt number 19").
+  const c = career.contract;
+  const t: ContractTerms = {
+    wage: terms?.wage ?? c?.wage, seasons: terms?.seasons ?? c?.seasonsRemaining,
+    goalBonus: terms?.goalBonus ?? c?.goalBonus, assistBonus: terms?.assistBonus ?? c?.assistBonus,
+    appearanceFee: terms?.appearanceFee ?? c?.appearanceFee, loyaltyBonus: terms?.loyaltyBonus ?? c?.loyaltyBonus,
+    position: terms?.position ?? career.player.position,
+  };
   const number = terms?.squadNumber ?? career.squadNumber ?? null;
+  const rows: [string, string][] = [
+    ["Length", t.seasons ? `${t.seasons} season${t.seasons === 1 ? "" : "s"}` : ""],
+    ["Wage", t.wage ? `${money(t.wage)} / wk` : ""],
+    ["Shirt", number != null ? `#${number}` : ""],
+    ["Position", t.position ?? ""],
+    ["Goal bonus", t.goalBonus ? money(t.goalBonus) : ""],
+    ["Assist bonus", t.assistBonus ? money(t.assistBonus) : ""],
+    ["Appearance", t.appearanceFee ? money(t.appearanceFee) : ""],
+    ["Loyalty", t.loyaltyBonus ? money(t.loyaltyBonus) : ""],
+  ];
+  const shown = rows.filter(([, v]) => v).slice(0, 8);
 
   // The stage scales to the column's width.
   useLayoutEffect(() => {
@@ -230,12 +252,12 @@ export default function SigningScene({
       },
       boss: {
         shirt: "#1d2430", shorts: "#141922", trim: "#e9edf2",
-        skin: skinFor(managerName),
+        skin: bossLook.skin,
         number: null, fitted: null,
-        drawHead: (c) => drawStyledHead(c, 101, HERO_CHIN_Y, HERO_FACE_H, skinFor(managerName), `manager:${managerName}`),
+        drawHead: (c) => drawManagerHead(c, 101, HERO_CHIN_Y, HERO_FACE_H, bossLook),
       },
     });
-  }, [k, tick, shake, kit.shirt, kit.trim, youFace, number, career.player.skinTone, managerName, kit]);
+  }, [k, tick, shake, kit.shirt, kit.trim, youFace, number, career.player.skinTone, managerName, kit, bossLook]);
 
   useEffect(() => () => { timers.current.forEach((t) => window.clearTimeout(t)); }, []);
 
@@ -253,7 +275,7 @@ export default function SigningScene({
 
   // ── The camera: onto the signature line, then back out ──
   // Close enough that the contract fills the frame, the whole of it in view.
-  const zoomK = 1.65;
+  const zoomK = 1.42;
   const focusX = PAPER.x + PAPER.w / 2, focusY = PAPER.y + PAPER.h / 2;
   const zoomed = beat === "zoom" || beat === "sign";
   const tx = Math.min(0, Math.max(SW - SW * zoomK, SW / 2 - focusX * zoomK));
@@ -301,7 +323,7 @@ export default function SigningScene({
 
               {/* The manager's name plate on the desk. */}
               <div className="absolute rounded-[3px] px-1.5 py-[2px] text-center font-serif text-[8.5px] font-bold leading-tight"
-                style={{ left: 284, top: DESK_Y + 8, width: 72, background: "linear-gradient(180deg,#e7c86f,#b8913d)", color: "#2a1c08", boxShadow: "0 2px 3px rgba(0,0,0,.5)" }}>
+                style={{ left: 300, top: DESK_Y + 6, width: 58, background: "linear-gradient(180deg,#e7c86f,#b8913d)", color: "#2a1c08", boxShadow: "0 2px 3px rgba(0,0,0,.5)" }}>
                 <div className="truncate">{plateName(managerName)}</div>
                 <div className="text-[6.5px] uppercase tracking-[0.12em] opacity-80">Manager</div>
               </div>
@@ -314,22 +336,20 @@ export default function SigningScene({
                     boxShadow: "0 10px 18px -6px rgba(0,0,0,.75), inset 0 0 0 1px rgba(160,120,40,.35)",
                     transform: "rotateX(12deg)", transformOrigin: "50% 100%",
                   }}>
-                  <div className="text-center text-[6.5px] font-bold uppercase tracking-[0.3em] text-[#8a6a23]">Professional contract</div>
+                  <div className="text-center text-[7px] font-bold uppercase tracking-[0.3em] text-[#8a6a23]">Professional contract</div>
                   <div className="mt-1 flex items-center justify-center gap-1.5">
-                    <ClubBadge club={club} kit={kit} size={17} />
-                    <span className="truncate text-[15px] font-black leading-none">{club}</span>
+                    <ClubBadge club={club} kit={kit} size={20} />
+                    <span className="truncate text-[17px] font-black leading-none">{club}</span>
                   </div>
-                  <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11.5px] font-bold leading-tight">
-                    <span>{terms?.seasons ? `${terms.seasons} season${terms.seasons === 1 ? "" : "s"}` : "—"}</span>
-                    <span className="text-right">{terms?.wage ? `${money(terms.wage)}/wk` : ""}</span>
-                    <span>{number != null ? `Shirt #${number}` : ""}</span>
-                    <span className="truncate text-right">{terms?.position ?? ""}</span>
+                  {/* The whole deal: length, wage, shirt, position and every bonus. */}
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                    {shown.map(([label, value]) => (
+                      <div key={label} className="flex items-baseline justify-between gap-1 border-b border-[#3b2f1c]/20 pb-px leading-none">
+                        <span className="text-[7.5px] font-bold uppercase tracking-wide text-[#6b5630]">{label}</span>
+                        <span className="truncate text-[11.5px] font-black tabular-nums">{value}</span>
+                      </div>
+                    ))}
                   </div>
-                  {(terms?.goalBonus || terms?.assistBonus) ? (
-                    <div className="mt-1 truncate text-center text-[7.5px] font-semibold text-[#5b4a2c]">
-                      Bonus {terms.goalBonus ? `${money(terms.goalBonus)} a goal` : ""}{terms.goalBonus && terms.assistBonus ? " · " : ""}{terms.assistBonus ? `${money(terms.assistBonus)} an assist` : ""}
-                    </div>
-                  ) : null}
 
                   {/* Two signature lines: the club has signed; yours waits. */}
                   <div className="absolute inset-x-3" style={{ top: SIG.y - 2 }}>

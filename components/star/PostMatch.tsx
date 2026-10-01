@@ -348,19 +348,16 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
     return () => clearTimeout(t1);
   }, [on, up]);
   if (after === undefined) return null;
-  const shownLevel = up && stage < 2 ? from : to;
   const value = stage === 0 ? 0 : up && stage === 1 ? 100 : endPct;
   return (
     <div className="relative px-3 py-2.5">
-      <div className="flex items-center gap-2.5">
-        <div className="relative flex h-[30px] shrink-0 items-center gap-1 px-2 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
-          <span className="text-[15px] leading-none">★</span>
-          <Pop value={shownLevel}><span className="min-w-[22px] text-center text-[21px] font-black leading-none tabular-nums">{shownLevel}</span></Pop>
-          {up && stage >= 2 && <FloatText trigger={1} text="LEVEL UP" color="#fde047" className="left-1/2 -top-3" size={12} />}
-        </div>
-        <div className="min-w-0 flex-1" role="meter" aria-label="Star rating progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
-          <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} />
-        </div>
+      {/* P35: no numbers, just the words and the bar. */}
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Pop value={up && stage >= 2 ? 1 : 0}><StarIcon /></Pop>
+        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Star rating</span>
+      </div>
+      <div role="meter" aria-label="Star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
+        <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} />
       </div>
     </div>
   );
