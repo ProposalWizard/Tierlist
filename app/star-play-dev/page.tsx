@@ -178,6 +178,14 @@ export default function PlayAreaPage() {
           </div>
         </Link>
 
+        <Link href="/star-shop3d-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>3D Shop &#8594;</div>
+          <div style={tileSub}>
+            Walk a 3D footballer round a shop — boots wall, a car, the KIB fridge, the
+            counter — and buy things. Pretend buying; nothing reaches a career.
+          </div>
+        </Link>
+
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>

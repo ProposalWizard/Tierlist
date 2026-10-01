@@ -474,6 +474,7 @@ export const ADMIN_GUIDES = {
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
           ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
+          ["3D Shop →", "Walk a 3D footballer round a shop and pretend-buy boots, a car, KIB cans and watches."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -643,6 +644,39 @@ export const ADMIN_GUIDES = {
       "The crest is the club's real badge when it loads here, otherwise the same initials disc the game uses; the line under the hero says which.",
     ],
     dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
+  },
+
+  "/star-shop3d-dev": {
+    title: "3D Shop",
+    what: "A test of shopping as a 3D player: you walk a footballer in your club's kit round a small shop and buy things from the displays. Nothing reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
+          ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
+          ["Drag the view", "Swings the camera round him."],
+          ["Walk up to a display", "Boots wall, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+        ],
+      },
+      {
+        group: "The card",
+        items: [
+          ["‹ / ›", "The other items on that display (the boots wall lights up the pair you're on; the car repaints)."],
+          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans instead."],
+          ["Buy …", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
+          ["✕", "Closes the card. It opens again the next time you walk up."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. What you \"bought\" is forgotten when you leave.",
+    ],
+    inGame: [
+      "Not in the game. The real shop is still the screen in a career.",
+      "KIB can prices are the shop's starting price; in a career a can costs a slice of your own wage.",
+    ],
+    dev: "app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/ (character.glb, anims.glb, LICENSE.txt) · tools/shop3d/build_assets.py · three.js from cdn.jsdelivr.net at runtime",
   },
 
   "/star-3d-dev": {
