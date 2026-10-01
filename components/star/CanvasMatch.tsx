@@ -96,7 +96,7 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { useFitWidth } from "./useFitWidth";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
-import { creditChance, type CreditDelta } from "@/lib/star/credit";
+import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { matchTeamStrength } from "@/lib/star/matchday";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
@@ -1098,6 +1098,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** v0.15 item 16: blocks deflected this strike (one per strike; the next
    *  defender to get to it wins it, as today). */
   const deflectionsRef = useRef(0);
+  /** Every team-mate lay-off and shot since your strike, in order — who the
+   *  assist belongs to (lib/star/credit.ts assistFor). Reset at each strike. */
+  const matePlaysRef = useRef<MatePlay[]>([]);
   /**
    * The banner for a ball that reached a team-mate. A strike that came off a
    * defender first was not a pass: a free kick into the wall that fell to a
@@ -1995,6 +1998,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const replayRng = countedRng(r.seed, rngCallCountRef);
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
+      matePlaysRef.current = [];
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
@@ -3655,7 +3659,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // v0.15 item 16: the ball a moment before a defender gets to it.
           const bIn = ballRef.current;
           const incoming = { vx: bIn.vel.x, vy: bIn.vel.y, vz: bIn.vz, z: bIn.z, spin: bIn.spin };
+          const mateProbe = probeMatePlays(scenarioRef.current);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          noteMatePlays(matePlaysRef.current, mateProbe, scenarioRef.current);
           // ── v0.15 item 16: a block deflects instead of ending the chance ──
           // The engine has already cleared it; put it back into play off the
           // defender at a new angle, loose, and let the normal rules decide
@@ -3897,7 +3903,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
     // back off React state would risk under-counting the final chance. State is
     // just a mirror for the HUD.
-    const d = creditChance(res, { youShot, receiverShot, isSimplePass });
+    // Whose assist a team-mate's goal is: yours only if nobody else in your
+    // shirt played it between your touch and his strike (Harry, 1 Oct 2026:
+    // "I still get an assist for that even though I wasn't the one who
+    // actually assisted him").
+    const assist = assistFor(matePlaysRef.current);
+    const d = creditChance(res, { youShot, receiverShot, isSimplePass, assistYours: assist.yours });
     const t = tallyRef.current;
     if (!isShootoutKick && !auto) {
       t.shots += d.shots;
@@ -4017,7 +4028,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const how = res === "rebound" ? "rebound" : sc.kind;
       const distance = Math.hypot(sc.ball.x - (sc.goal.x1 + sc.goal.x2) / 2, sc.ball.y);
 
-      if (d.assists === 1 && sc.receiver) {
+      // A team-mate's goal: either you assisted it, or another team-mate did.
+      const mateGoal = d.assists === 1 || (receiverShot && !assist.yours);
+      if (mateGoal && sc.receiver) {
         // ── The man who scored it is the man who scored it ──
         //
         // He is decided on the pitch, at the moment the ball reaches him, and
@@ -4040,17 +4053,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           })();
         if (scorer) commentaryRoleLabel = scorer.shortName;
         const scorerLabel = scorer?.shortName ?? sc.receiver.roleLabel ?? "Team-mate";
+        // The assist: you, or the team-mate who played it last before him
+        // (his lay-off, or his shot that came back) — named when we know him.
+        const mateAssist = assist.yours ? undefined : assist.by?.who;
         goalEventsRef.current.push({
           minute: matchMinuteRef.current,
           scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
-          assist: playerName,
+          assist: assist.yours ? playerName : mateAssist?.name,
           isUserGoal: false, how, distance: Math.round(distance),
           // PROTOTYPE (home-screen proto): how far YOUR pass went — from where
           // you played it to where he took it. Feeds "furthest assist".
-          ...(sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
+          ...(assist.yours && sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
         });
         logMoment(`⚽ ${scorerLabel} scores!`, "goal");
-        logMoment(`🎯 ${playerLabel()} assists!`, "assist");
+        if (assist.yours) logMoment(`🎯 ${playerLabel()} assists!`, "assist");
+        else if (mateAssist) logMoment(`🎯 ${mateAssist.shortName} assists!`, "assist");
       } else if (d.goals === 1) {
         // ── And an assist is somebody who was actually in the move ──
         //
@@ -4087,7 +4104,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // capture. `pendingReplayRef` is only ever set right before a real
       // strike (handleContact), so it is naturally absent for anything that
       // scored without you having personally struck it.
-      if (!(d.assists === 1 && sc.receiver) && pendingReplayRef.current && !replayOfRef.current) {
+      if (!(mateGoal && sc.receiver) && pendingReplayRef.current && !replayOfRef.current) {
         const verb = SCENARIO_LABEL[sc.kind]?.verb.replace("!", "") ?? sc.kind;
         onGoalScoredRef.current?.({
           id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -5718,6 +5735,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     deflectionsRef.current = 0;
+    matePlaysRef.current = [];
     ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
