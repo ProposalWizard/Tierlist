@@ -49,7 +49,7 @@ interface Props {
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -188,7 +188,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
           <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
           <PlayBtn active={activeNav === "play"} onClick={() => onNavigate("play")} />
           <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => onNavigate("life")} />
-          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
+          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} />
         </div>
       </div>
     </div>

@@ -3694,7 +3694,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <LeagueScreen career={career} />
       )}
       {phase === "media" && activeNav === "media" && (
-        <PhoneHome career={career} onToggleLike={handleToggleLike} onLeave={(ph) => setPhase(ph)} />
+        <PhoneHome career={career} onToggleLike={handleToggleLike} onLeave={(ph) => setPhase(ph)} onClose={() => handleNavigate("home")} />
       )}
       {/* ── The swipe home screens: Stats · Home · Training ──
           Harry, 27 Sep 2026: stats on the left, training on the right, the

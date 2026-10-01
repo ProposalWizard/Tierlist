@@ -6138,6 +6138,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             regulation={MATCH_DURATION}
             onOpenScores={liveWeekRef.current && liveWeekRef.current.fixtures.length ? () => setScoresOpen(true) : undefined}
             homeTeam={homeTeam}
+            userIsHome={fixture ? !!fixture.home : true}
             awayTeam={awayTeam}
             homeScore={homeScore}
             awayScore={awayScore}

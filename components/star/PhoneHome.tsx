@@ -94,10 +94,13 @@ function buildMessages(career: CareerState): Msg[] {
 }
 const msgKey = (m: Msg) => `${m.from}|${m.text}`;
 
-export default function PhoneHome({ career, onToggleLike, onLeave }: {
+export default function PhoneHome({ career, onToggleLike, onLeave, onClose }: {
   career: CareerState;
   onToggleLike?: (postId: string) => void;
   onLeave: (ph: Leave) => void;
+  /** Put the phone down: back to Home. Harry got stuck on the phone's home
+   *  screen with no way out (1 Oct 2026, 04:36). */
+  onClose?: () => void;
 }) {
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
@@ -184,7 +187,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
         <div style={{ width: size.w, height: size.h }}>
           <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
-              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} />}
+              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} />}
               {app !== null && (
                 <div
                   key={app}
@@ -256,9 +259,10 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true }:
   );
 }
 
-function Grid({ career, glow, badges, onOpen }: {
+function Grid({ career, glow, badges, onOpen, onClose }: {
   career: CareerState; glow: string; badges: Partial<Record<AppId, number>>;
   onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
+  onClose?: () => void;
 }) {
   const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
   const grid = APPS.filter((a) => !DOCK.has(a.id));
@@ -287,6 +291,19 @@ function Grid({ career, glow, badges, onOpen }: {
           <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
         ))}
       </div>
+      {onClose && (
+        <div className="flex shrink-0 justify-center pb-1.5 pt-0.5">
+          <PressButton
+            variant="secondary"
+            size="none"
+            onClick={onClose}
+            aria-label="Close phone"
+            className="rounded-full px-5 py-1.5 text-[11px] font-black uppercase tracking-widest text-white"
+          >
+            ✕ Close phone
+          </PressButton>
+        </div>
+      )}
     </div>
   );
 }

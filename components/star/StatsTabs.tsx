@@ -74,11 +74,21 @@ function LeagueCard({ career, onLeague, glow }: { career: CareerState; onLeague?
   const pos = me + 1;
   const suffix = pos % 10 === 1 && pos !== 11 ? "st" : pos % 10 === 2 && pos !== 12 ? "nd" : pos % 10 === 3 && pos !== 13 ? "rd" : "th";
   return (
+    // The whole card opens the League screen (Harry, 1 Oct 2026, 07:40: "make
+    // this League clickable, the whole thing").
+    <div
+      role={onLeague ? "button" : undefined}
+      tabIndex={onLeague ? 0 : undefined}
+      aria-label={onLeague ? "Open the league table" : undefined}
+      onClick={onLeague}
+      onKeyDown={onLeague ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onLeague(); } } : undefined}
+      className={onLeague ? "kib-press cursor-pointer" : undefined}
+    >
     <ClubCard glow={glow} className="mt-2 p-2.5">
       <div className="flex items-center justify-between">
         <CardTitle>🏆 {leagueNameFor(divisionOf(career))}</CardTitle>
         {onLeague && (
-          <PressButton variant="secondary" size="none" onClick={onLeague} className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Full table →</PressButton>
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ring-1 ring-white/15">Full table →</span>
         )}
       </div>
       <div className="mt-1.5 flex items-center gap-3">
@@ -109,6 +119,7 @@ function LeagueCard({ career, onLeague, glow }: { career: CareerState; onLeague?
         </div>
       </div>
     </ClubCard>
+    </div>
   );
 }
 

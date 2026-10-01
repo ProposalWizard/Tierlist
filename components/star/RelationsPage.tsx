@@ -22,7 +22,7 @@
 import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
-import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
+import { actionsLeft } from "@/lib/star/week";
 import { reputationLabel } from "@/lib/star/reputation";
 import { reputationTier, styleBlurb } from "@/lib/star/manager";
 import { fameOf, fameLevel } from "@/lib/star/fame";
@@ -31,10 +31,11 @@ import { kitsOf } from "@/lib/star/kits";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import ClubBadge from "./ClubBadge";
-import { ClubCard, PressButton, StatBar, Glow, Pop, rgba, levelColors, cardStyle, useClubTheme } from "./ui";
+import { ClubCard, PressButton, StatBar, Pop, rgba, cardStyle, useClubTheme } from "./ui";
 import { CardTitle, DeltaBar, useSeen, seenScope } from "./screenKit";
 
-type Open = "reputation" | "garden" | "casino-menu" | "shop-lifestyle" | "sponsors";
+
+type Open = "reputation" | "sponsors";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 
@@ -59,10 +60,11 @@ const CARD_TONE: Record<RelationshipKind, string> = {
   boss: "#60a5fa", team: "#34d399", fans: "#f472b6", sponsors: "#f59e0b", happiness: "#c084fc",
 };
 
-export default function RelationsPage({ career, onPlayRelationshipGame, onRest, onOpen }: {
+export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }: {
   career: CareerState;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
-  onRest: () => void;
+  /** No longer used here: the week and Rest left this page (Harry, 1 Oct 2026, 08:22). */
+  onRest?: () => void;
   onOpen: (ph: Open) => void;
 }) {
   const left = actionsLeft(career);
@@ -80,7 +82,6 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
   const activeDeals = brands.deals;
   const offers = brands.offers.length;
   const gf = career.girlfriend;
-  const energy = useSeen(`${scope}:energy`, Math.round(career.energy));
   const game = (k: RelationshipKind) => (
     <PressButton
       variant="accent"
@@ -95,35 +96,6 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
 
   return (
     <div className="space-y-2 pb-2">
-      {/* The week — unchanged from LifeScreen. */}
-      <ClubCard glow={glow} className="relative overflow-hidden p-2.5">
-        <div className="flex items-center justify-between">
-          <CardTitle tone="text-emerald-300">This week</CardTitle>
-          <span className="text-[10px] font-bold text-white/80"><Pop value={left}>{left}</Pop> of {WEEK_ACTIONS} days left</span>
-        </div>
-        <div className="mt-1.5 flex gap-1.5">
-          {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
-            <span
-              key={i}
-              className={`h-2.5 flex-1 rounded-full ${i < left ? "bg-gradient-to-b from-emerald-300 to-emerald-500" : "bg-black/45"}`}
-              style={i < left ? { boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), 0 0 8px rgba(52,211,153,.55)" } : { boxShadow: "inset 0 1px 3px rgba(0,0,0,.6)" }}
-            />
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/75">⚡ Energy</span>
-              <span className="text-[15px] font-black tabular-nums text-white"><Pop value={energy.shown}>{energy.shown}</Pop></span>
-            </div>
-            <DeltaBar seen={energy} colors={levelColors(energy.shown)} className="mt-1 h-3.5" />
-          </div>
-          <PressButton variant="primary" size="none" onClick={onRest} disabled={left === 0} className="h-10 shrink-0 rounded-xl px-3.5 text-[12px] font-black">
-            Rest 😴
-          </PressButton>
-        </div>
-      </ClubCard>
-
       {/* Your manager */}
       <Card
         face={<Face src={m ? managerFace(m.name, career.player.portrait ?? DEFAULT_FAKE_FACE) : undefined} tone={CARD_TONE.boss} />}
@@ -133,6 +105,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
         kind="boss"
         seenKey={`${scope}:rel:boss`}
         note={m ? styleBlurb(m.style) : undefined}
+        does="Helps decide if you start, sit on the bench or miss the squad on match day. Penalties and free kicks: coming."
         moves="Up: match ratings 7+ (+3, +6 at 8+), Star Man +4. Down: ratings under 5 (−2 to −5)."
         action={game("boss")}
       />
@@ -150,6 +123,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
             {mates.map((p) => <Face key={p.id} src={p.imageUrl} fallback={fakeFaceFor(p.id)} small title={p.shortName} tone={CARD_TONE.team} />)}
           </div>
         )}
+        does="How well they combine when a chance falls to a team-mate. More highlights, passes back to you and team chemistry: coming."
         moves="Up: assists (+3 each), good ratings, Star Man. Down: ratings under 5."
         action={game("team")}
       />
@@ -162,6 +136,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
         value={r.fans}
         kind="fans"
         seenKey={`${scope}:rel:fans`}
+        does="Unlocks fan mail and some sponsor deals. What else the fans do is not decided yet."
         moves="Up: goals (+3 each), ratings 8+ (+8), Star Man (+5). Down: poor ratings."
         action={game("fans")}
       />
@@ -174,7 +149,8 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
         value={r.sponsors}
         kind="sponsors"
         seenKey={`${scope}:rel:sponsors`}
-        moves="Up: good matches. Higher = more money every match."
+        does="Brands pay you a weekly fee. Keep them happy with good matches; posts and press events for them: coming."
+        moves="Up: good matches."
         action={<div className="flex gap-1.5"><PressButton variant="secondary" size="none" onClick={() => onOpen("sponsors")} className={`rounded-lg px-2 py-1.5 text-[10px] font-black ${offers ? "ring-2 ring-emerald-300/80" : ""}`}>{offers ? `${offers} offer${offers === 1 ? "" : "s"} →` : "Deals →"}</PressButton>{game("sponsors")}</div>}
       />
 
@@ -194,6 +170,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
             <span className="text-[10px] font-black tabular-nums text-pink-200">{gf.happiness}</span>
           </div>
         )}
+        does="How you are feeling. How it feeds into your energy: coming."
         moves="Up: resting, the break minigame, some choices in the week's dilemmas."
         action={game("happiness")}
       />
@@ -220,30 +197,6 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
         </ClubCard>
       </div>
 
-      {/* Lifestyle */}
-      <ClubCard glow={glow} className="p-2.5">
-        <div className="mb-1.5 flex items-center justify-between">
-          <CardTitle>Lifestyle</CardTitle>
-          <PressButton variant="secondary" size="none" onClick={() => onOpen("shop-lifestyle")} className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Shop →</PressButton>
-        </div>
-        {career.ownedItems.length === 0 ? (
-          <div className="text-[11px] font-bold text-white/60">Nothing bought yet — no house, no car.</div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {[...career.ownedItems].sort((a, b) => order(a.category) - order(b.category)).map((it) => (
-              <span key={it.id} className="rounded-lg bg-black/30 px-2 py-1 text-[11px] font-black text-white ring-1 ring-white/10">
-                {it.category === "property" ? "🏠" : it.category === "vehicle" ? "🚗" : "💎"} {it.name}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="mt-2 grid grid-cols-2 gap-1.5">
-          <PressButton variant="accent" accent="#16a34a" onClick={() => onOpen("garden")} className="rounded-lg py-2 text-[11px] font-black">🌳 Garden</PressButton>
-          <PressButton variant="accent" accent="#d97706" onClick={() => onOpen("casino-menu")} className="truncate rounded-lg px-1 py-2 text-[11px] font-black">
-            🐎 {career.horse ? `${career.horse.name} · ${career.horse.racesWon}/${career.horse.racesRun} won` : "Buy a horse"}
-          </PressButton>
-        </div>
-      </ClubCard>
       {!canPlay && <div className="text-center text-[10px] font-bold text-white/60">No days left this week — the minigames open again after the next match.</div>}
     </div>
   );
@@ -254,8 +207,6 @@ function managerFace(name: string, yours: string) {
   const f = fakeFaceFor(`manager:${name}`);
   return f === yours ? fakeFaceFor(`gaffer:${name}:2`) : f;
 }
-
-const order = (c: string) => (c === "property" ? 0 : c === "vehicle" ? 1 : 2);
 
 function Face({ src, fallback, small, title, tone }: { src?: string; fallback?: string; small?: boolean; title?: string; tone?: string }) {
   const s = small ? 26 : 40;
@@ -273,9 +224,9 @@ function Face({ src, fallback, small, title, tone }: { src?: string; fallback?: 
   );
 }
 
-function Card({ face, title, sub, value, kind, seenKey, note, moves, extra, action }: {
+function Card({ face, title, sub, value, kind, seenKey, note, does, moves, extra, action }: {
   face: React.ReactNode; title: string; sub: string; value: number; kind: RelationshipKind; seenKey: string;
-  note?: string; moves: string; extra?: React.ReactNode; action: React.ReactNode;
+  note?: string; does: string; moves: string; extra?: React.ReactNode; action: React.ReactNode;
 }) {
   const v = Math.round(value);
   // The minigame is played on another screen: when you come back the bar
@@ -283,12 +234,12 @@ function Card({ face, title, sub, value, kind, seenKey, note, moves, extra, acti
   const seen = useSeen(seenKey, v);
   const tone = CARD_TONE[kind];
   return (
-    <ClubCard glow={tone} className="relative overflow-hidden p-2.5">
+    <div
+      className="rounded-xl bg-white/[0.045] p-3 ring-1 ring-white/10"
+      style={{ borderLeft: `3px solid ${rgba(tone, 0.85)}` }}
+    >
       <div className="flex items-center gap-2.5">
-        <div className="relative shrink-0">
-          <Glow color={tone} alpha={0.35} className="-inset-1 blur-md" />
-          <div className="relative">{face}</div>
-        </div>
+        <div className="shrink-0">{face}</div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-black leading-tight text-white">{title}</div>
           <div className="truncate text-[10.5px] font-bold text-white/65">{sub}</div>
@@ -299,14 +250,16 @@ function Card({ face, title, sub, value, kind, seenKey, note, moves, extra, acti
         </div>
       </div>
       <div className="mt-2">
-        <DeltaBar seen={seen} colors={toneColors(seen.shown)} className="h-3" />
+        <DeltaBar seen={seen} colors={toneColors(seen.shown)} className="h-2" />
       </div>
       {extra}
-      {note && <div className="mt-1.5 text-[10.5px] font-bold italic text-white/65">&ldquo;{note}&rdquo;</div>}
+      {/* What this relationship does, in one plain line. */}
+      <div className="mt-2 text-[12px] font-bold leading-snug text-white">{does}</div>
+      {note && <div className="mt-1 text-[10.5px] font-bold italic text-white/60">&ldquo;{note}&rdquo;</div>}
       <div className="mt-1.5 flex items-center gap-2">
-        <div className="min-w-0 flex-1 text-[10px] font-bold leading-snug text-white/60">{moves}</div>
+        <div className="min-w-0 flex-1 text-[10px] font-bold leading-snug text-white/50">{moves}</div>
         {action}
       </div>
-    </ClubCard>
+    </div>
   );
 }
