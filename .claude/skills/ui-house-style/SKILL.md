@@ -70,7 +70,7 @@ Newest first. Each is something that was actually said.
   tutorial is done.
 - **After a match the order is:** star bar rises, match rating, relationships,
   pay, achievements one at a time; Continue is shut until all are seen (P27).
-- **News is a headline and one line** (P28), not a page.
+- **News is a headline and one line** (P28) — but on its own full-screen page, TV-style (Harry, 1 Oct 2026, v0.23): an animated BREAKING NEWS band on top, a scrolling ticker band along the bottom, the picture (face + crest), tap to continue. "Some stuff clean, some stuff a bit not clean": crisp type and layout, crooked bands, a torn headline strip, scan-lines. Not a small pop-up over Home.
 
 - **1 Oct 2026 (HUGE UPDATES review, v0.23): the game must feel like an app, not a
   website.** Four rulings, all built as shared pieces in `components/star/ui/`, so
