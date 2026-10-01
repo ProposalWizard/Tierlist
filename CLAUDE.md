@@ -379,6 +379,10 @@ not by version number, so it doesn't go stale at the next release.
   expensive model.
 - If a task straddles both, do the building on the top model and hand the
   checking and writing-up to the everyday one.
+- **Update (Harry, 1 Oct 2026), overrides the lines above where they differ:**
+  the everyday model at **medium** effort for reviewing recordings, building
+  from recordings, and **building artifacts/pages**; the top model for the
+  **logic** tasks (game rules, curves, maths, engine behaviour, hard bugs).
 - **Playtest/walkthrough videos (Harry, 30 Sep 2026):** the everyday model at
   medium effort does the breakdown (download, transcript, pictures, a
   timestamped list of every point); the top model does the analysis and the
