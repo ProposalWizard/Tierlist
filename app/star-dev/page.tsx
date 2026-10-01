@@ -96,12 +96,13 @@ import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
 import PhoneHome from "@/components/star/PhoneHome";
 import RelationsPage from "@/components/star/RelationsPage";
-import LeagueScreen from "@/components/star/LeagueScreen";
 import LadderScreen from "@/components/star/LadderScreen";
 import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import LineupIntro from "@/components/star/LineupIntro";
+import PitchScope from "@/components/star/ui/PitchScope";
+import MatchWeek from "@/components/star/MatchWeek";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
@@ -3171,26 +3172,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // strike it would be in a match.
     if (trainingLevel === null) {
       return (
-        <TrainingLevelSelect
-          career={career}
-          skill={trainingSkill}
-          onPlay={setTrainingLevel}
-          onBack={() => {
-            setTrainingSkill(null);
-            setPhase(career.placement?.kind === "youth" ? "youth" : "skills");
-          }}
-        />
+        <PitchScope>
+          <TrainingLevelSelect
+            career={career}
+            skill={trainingSkill}
+            onPlay={setTrainingLevel}
+            onBack={() => {
+              setTrainingSkill(null);
+              setPhase(career.placement?.kind === "youth" ? "youth" : "skills");
+            }}
+          />
+        </PitchScope>
       );
     }
     return (
-      <TrainingMinigame
-        key={`${trainingSkill}-${trainingLevel}`}
-        skill={trainingSkill}
-        trainingLevel={trainingLevel}
-        skills={career.skills}
-        glow={clubTheme(career.player.club, career).glow}
-        onComplete={handleTrainingComplete}
-      />
+      <PitchScope>
+        <TrainingMinigame
+          key={`${trainingSkill}-${trainingLevel}`}
+          skill={trainingSkill}
+          trainingLevel={trainingLevel}
+          skills={career.skills}
+          glow={clubTheme(career.player.club, career).glow}
+          onComplete={handleTrainingComplete}
+        />
+      </PitchScope>
     );
   }
 
@@ -3217,10 +3222,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const canCurve = (bootMatchesLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve;
     const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
     return (
-      <div
-        className="min-h-screen bg-gray-950 text-white py-4 px-3"
-        style={{ backgroundImage: "radial-gradient(70% 45% at 50% 0%, rgba(16,185,129,0.16), transparent 70%)" }}
-      >
+      <PitchScope>
+       <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
@@ -3243,7 +3246,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             freeKickRunup={careerFreeKickRunup(career)}
           />
         </div>
-      </div>
+       </div>
+      </PitchScope>
     );
   }
 
@@ -3396,6 +3400,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const screenHud = (screen: HudScreen) => (
     <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
   );
+  // The league and the fixtures on ONE page, with the live-score bell in the
+  // bottom bar (v0.23 W7, P90) — components/star/MatchWeek.tsx. A full screen
+  // like the shop: it carries its own HUD and bottom bar.
+  if (phase === "league") {
+    return (
+      <>
+        <MatchWeek
+          career={career}
+          hud={screenHud("league")}
+          nextFixture={nextFixture}
+          onBack={handleBackToDashboard}
+          onPlay={() => handleNavigate("play")}
+        />
+        {career.unlocks && !hasSeen(career, "league-intro") && (
+          <LeagueIntro onClose={() => {
+            setCareer(c => (c ? recordLeagueVisit(markSeen(c, "league-intro")) : c));
+            setChainPop({ label: "Complete your first two training sessions", unlocked: "Achievements and the Shop unlocked" });
+          }} />
+        )}
+        {chainPop && <AchievementPop label={chainPop.label} unlocked={chainPop.unlocked} onClose={() => setChainPop(null)} />}
+      </>
+    );
+  }
+
   if (phase === "store") {
     return <CareerStore career={career} onChange={setCareer} onBack={handleBackToDashboard} hud={screenHud("shop")} />;
   }
@@ -3619,6 +3647,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         preMatchEnergy={preMatchEnergy}
         preMatchSelection={preMatchSelection}
         playAs={playAs}
+        onPlayAs={setPlayAs}
         onBack={handleBackToDashboard}
         onPlayMatch={handlePlayMatch}
         onWatchFromStands={handleWatchFromStands}
@@ -3674,6 +3703,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   );
 
   return (
+    <PitchScope on={phase === "skills" && trainingTab === "training"}>
     <DashboardShell
       career={career}
       onExit={handleExit}
@@ -3696,7 +3726,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           screen={((): HudScreen => {
             if (swipeActive) return homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop";
             if (phase === "skills") return trainingTab === "life" ? "relations" : "training";
-            if (phase === "league") return "league";
             return "other";
           })()}
           onUseCan={handleUseCan}
@@ -3732,12 +3761,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           to={starsNow(career)}
           onClose={() => setCareer(c => (c ? markSeen(c, "drills-msg") : c))}
         />
-      )}
-      {phase === "league" && career.unlocks && !hasSeen(career, "league-intro") && (
-        <LeagueIntro onClose={() => {
-          setCareer(c => (c ? recordLeagueVisit(markSeen(c, "league-intro")) : c));
-          setChainPop({ label: "Complete your first two training sessions", unlocked: "Achievements and the Shop unlocked" });
-        }} />
       )}
       {swipeActive && homePage === 2 && isOpen(career, "shop") && !hasSeen(career, "shop-intro") && (
         <ShopIntro onClose={() => setCareer(c => (c ? markSeen(c, "shop-intro") : c))} />
@@ -3801,9 +3824,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </button>
         </div>
       )}
-      {phase === "league" && (
-        <LeagueScreen career={career} />
-      )}
       {phase === "media" && activeNav === "media" && (
         <PhoneHome
           career={career}
@@ -3860,6 +3880,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <PotmWinModal award={potmWin} career={career} onClose={() => setPotmWin(null)} />
       )}
     </DashboardShell>
+    </PitchScope>
   );
 }
 

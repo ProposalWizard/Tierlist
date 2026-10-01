@@ -103,6 +103,23 @@ bottom bar for Back / the page's switch / Home, and a `?` for any explaining.
 A thing you do not have yet is shown blacked out (`filter: brightness(.18)`),
 never hidden and never explained in a paragraph.
 
+## Football screens are always the pitch (v0.23, P92)
+
+```tsx
+<PitchScope><TrainingMinigame … /></PitchScope>          {/* green, chalk, Anton, square corners — in BOTH looks */}
+<PitchScope on={onTrainingPage}><DashboardShell … /></PitchScope>   {/* same wrapper, switched off elsewhere (no remount) */}
+```
+
+Training, the drills and the match chrome (scoreboard, bars, buttons around the
+canvas) use the Pitch look whichever look Settings has chosen. `PitchScope`
+adds the one `star-look-pitch` class; the canvas itself is untouched.
+
+## The match-week page (v0.23, P90)
+
+`components/star/MatchWeek.tsx` is the League screen: edge arrows flip Results ·
+Fixtures · Table · Scout · Awards · Squad, the bottom bar is Back · 🔔 · Play,
+and the bell opens the live-score list (the same clubs as Settings → Live scores).
+
 ## Rules
 
 - No animation loops on a canvas: the one-engine guard fails the build on

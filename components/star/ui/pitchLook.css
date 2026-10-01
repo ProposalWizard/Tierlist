@@ -464,3 +464,11 @@
 .star-look-pitch .home-sky { display: none; }
 .star-look-pitch .sk-versus-pitch { background: transparent !important; box-shadow: none !important; border-color: var(--sk-chalk) !important; }
 .star-look-pitch .sk-versus-pitch > div:nth-child(-n+2) { display: none; }
+
+/* v0.23 W7 (P92): training, drills and the match chrome are ALWAYS the pitch
+   (PitchScope.tsx). Inside that scope the cards and bars drop their rounded
+   "pill" corners for the flat square corners of the rest of v0.23, and the
+   chrome gets a chalk line under the scoreboard like a touchline. Avatars,
+   crests and the round bolt buttons (rounded-full) are left alone. */
+[data-pitch-scope="on"] :is(.rounded-2xl, .rounded-xl, .rounded-lg, .rounded-md) { border-radius: 2px !important; }
+[data-pitch-scope="on"] canvas { border-radius: 0; }

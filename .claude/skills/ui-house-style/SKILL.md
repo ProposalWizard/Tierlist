@@ -39,6 +39,25 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 1 Oct 2026 — football screens, the title, the league page (v0.23 W7)
+- **"When it's in the training or drills or match, we definitely use the pitch
+  kind of UI."** (P92) Training, the drills and the match chrome are green with
+  chalk lines in BOTH looks: wrap them in `ui/PitchScope.tsx`, never a second
+  stylesheet. The canvas is not touched.
+- **Title screen: "this whole pitch with the football, the name of it, the
+  background's like a net. Our guy should be standing … on the left."** (P82)
+  Net behind, pitch under, a ball at his feet, the menu flush to the right
+  edge, no store badges. "I don't want you to just look at NSS and do exactly
+  what it is": our own Anton wordmark and club-colour light, slanted buttons.
+- **"We could do this fixture page with the league, and you have a bell, like
+  maybe in the middle somewhere … straight in, no yap at all."** (P90) The
+  League screen is one page (`MatchWeek.tsx`): edge arrows flip Results ·
+  Fixtures · Table · Scout · Awards · Squad; bottom bar Back · 🔔 · Play. The
+  bell is the middle of the bar and opens the live-score clubs.
+- **Play as ▾ sits on the line-up animation** (it opens the position choices
+  and stops the auto-kick-off while open). Inferred from P91/P93 (the line-up
+  replaced the match-day page, which used to hold the picker).
+
 - **1 Oct 2026 (HUGE UPDATES review, v0.23): the game must feel like an app, not a
   website.** Four rulings, all built as shared pieces in `components/star/ui/`, so
   use them rather than drawing your own:

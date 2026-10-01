@@ -45,6 +45,9 @@ interface Props {
    * leaves it off and looks exactly as before.
    */
   compact?: boolean;
+  /** The match-week page drives the view itself (its edge arrows) and hides this screen's own tab row. */
+  view?: "table" | "results" | "fixtures" | "awards" | "squad";
+  hideTabs?: boolean;
 }
 
 /** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
@@ -169,7 +172,7 @@ function ovrStyle(o?: number): string {
     : "bg-gradient-to-b from-gray-500 to-gray-700 text-white";
 }
 
-export default function LeagueScreen({ career, compact = false }: Props) {
+export default function LeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
   const { glow } = useClubTheme(career);
   // The league tables' columns and club names (see `compact`).
   const tableCols = compact
@@ -185,7 +188,8 @@ export default function LeagueScreen({ career, compact = false }: Props) {
   // "transfers" moved to the Media screen — see TransfersPanel.tsx, and
   // "cups" folded into "table" — see the competition switcher below. Five
   // tabs now, not seven.
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "awards" | "squad">("table");
+  const [ownView, setView] = useState<"table" | "results" | "fixtures" | "awards" | "squad">("table");
+  const view = forcedView ?? ownView;
   const [compIndex, setCompIndex] = useState(0);
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
@@ -244,13 +248,15 @@ export default function LeagueScreen({ career, compact = false }: Props) {
 
   return (
     <div className="mt-2">
-      <SegTabs
-        className="mb-2"
-        small={compact}
-        value={view}
-        onChange={setView}
-        tabs={[["table", "Table"], ["results", "Results"], ["fixtures", "Fixtures"], ["awards", "Awards"], ["squad", "Squad"]] as const}
-      />
+      {!hideTabs && (
+        <SegTabs
+          className="mb-2"
+          small={compact}
+          value={view}
+          onChange={setView}
+          tabs={[["table", "Table"], ["results", "Results"], ["fixtures", "Fixtures"], ["awards", "Awards"], ["squad", "Squad"]] as const}
+        />
+      )}
 
       {view === "results" && (
         <RiseIn key="results">
