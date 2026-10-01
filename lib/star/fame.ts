@@ -176,6 +176,8 @@ export const FAME_EVENTS = {
  * you BELOW it.
  */
 export const DIVISION_FAME_LEVEL: Record<CareerDivision, number> = {
+  national_league_north: 10,
+  national_league_south: 10,
   national_league: 15,
   league_two: 25,
   league_one: 35,

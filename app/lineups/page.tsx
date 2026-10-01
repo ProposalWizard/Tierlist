@@ -6,7 +6,7 @@ import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
   CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS,
-  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
   divisionOf,
   type Division,
 } from "@/lib/star/clubs";
@@ -35,12 +35,9 @@ const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
   { key: "championship", label: "Championship", clubs: CHAMPIONSHIP_CLUBS },
   { key: "league_one", label: "League One", clubs: LEAGUE_ONE_CLUBS },
   { key: "league_two", label: "League Two", clubs: LEAGUE_TWO_CLUBS },
-  {
-    key: "national_league", label: "National League",
-    // The four-club "waiting to be promoted" pool below the National League
-    // shares its tab — same idea as Other/the old promotion pool below.
-    clubs: [...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_POOL_CLUBS],
-  },
+  { key: "national_league", label: "National League", clubs: NATIONAL_LEAGUE_CLUBS },
+  { key: "national_league_north", label: "National League North", clubs: NATIONAL_LEAGUE_NORTH_CLUBS },
+  { key: "national_league_south", label: "National League South", clubs: NATIONAL_LEAGUE_SOUTH_CLUBS },
   { key: "champions", label: "Champions League", clubs: CHAMPIONS_LEAGUE_CLUBS },
   { key: "europa", label: "Europa League", clubs: EUROPA_LEAGUE_CLUBS },
   // The promotion pool and the standalone clubs are different things
@@ -65,13 +62,7 @@ function clubFromQuery(): string | null {
 
 function divisionForQuery(club: string | null): Division {
   if (!club) return "premier";
-  const div = divisionOf(club);
-  if (!div) return "premier";
-  // The Lineups screen folds the National League's own standalone pool into
-  // the "national_league" tab (see TABS above) — divisionOf's own, more
-  // granular "national_league_pool" tag doesn't have a matching tab of its
-  // own here.
-  return div === "national_league_pool" ? "national_league" : div;
+  return divisionOf(club) ?? "premier";
 }
 
 export default function LineupsPage() {

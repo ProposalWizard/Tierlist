@@ -807,7 +807,9 @@ export interface CareerState {
      *  ignored) — `membershipOf` fills all four of these in fresh from
      *  clubs.ts's season-1 lists the first time such a save rolls over. */
     leagueOne?: string[]; leagueTwo?: string[];
-    nationalLeague?: string[]; nationalLeaguePool?: string[];
+    nationalLeague?: string[];
+    /** The two regional divisions under the National League (P62, 1 Oct 2026). */
+    nationalLeagueNorth?: string[]; nationalLeagueSouth?: string[];
   };
   /**
    * The Championship play-offs, once your club has reached them.
@@ -833,6 +835,9 @@ export interface CareerState {
     relegatedFromLeagueTwo?: string[];
     promotedToNationalLeague?: string[];
     relegatedFromNationalLeague?: string[];
+    /** The National League's relegated clubs, by which region they went to. */
+    relegatedToNorth?: string[];
+    relegatedToSouth?: string[];
     playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
   };
   week: number;

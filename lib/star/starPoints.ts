@@ -52,6 +52,10 @@ export type StarTier = CareerDivision | "cup" | "intl" | "europe";
 
 /** A match's points are multiplied by where it was played. */
 export const TIER_MULT: Record<StarTier, number> = {
+  // North and South (1 Oct 2026) count like the National League: ×1 is the
+  // floor of the scale, and a lower multiplier would make the bottom of the
+  // ladder slower still than the curve was tuned on.
+  national_league_north: 1, national_league_south: 1,
   national_league: 1, league_two: 1.5, league_one: 2, championship: 3, premier: 4,
   cup: 4, intl: 4, europe: 5,
 };
@@ -172,6 +176,7 @@ const scaleAll = <T extends Record<string, number>>(o: T): T =>
   Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v * S])) as T;
 
 export const TROPHY_SP: Record<string, number> = scaleAll({
+  "National League North": 180, "National League South": 180,
   "National League": 250, "League Two": 350, "League One": 500, "Championship": 800,
   "Premier League": 2000,
   "Community Shield": 150, "Super Cup": 150,
@@ -243,6 +248,7 @@ export interface StarLine {
 }
 
 const TIER_NAME: Record<StarTier, string> = {
+  national_league_north: "National League North", national_league_south: "National League South",
   national_league: "National League", league_two: "League Two", league_one: "League One",
   championship: "Championship", premier: "Premier League", cup: "Cups", intl: "Internationals", europe: "Europe",
 };

@@ -1501,28 +1501,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, continueAfterRollover]);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
-    // ── Relegated out of the National League ──
-    //
-    // The four-club pool the old club drops into has no fixtures, no table,
-    // no season — so this cannot be the ordinary optional window
-    // (TransferWindow, with its "stay put" button). A new club has to be
-    // chosen before the season can roll over at all, because advanceSeason
-    // needs to know which real division to build next season's fixtures in.
-    // Every OTHER boundary (including Championship -> League One) now just
-    // carries on into next season's real fixtures, since League One, League
-    // Two and the National League are all real playable divisions.
-    if (divisionOf(from) === "national_league"
-      && sortLeague(from.league).slice(-4).map(t => t.name).includes(from.player.club)) {
-      const offers = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
-      // Guaranteed non-empty in the normal game — a division this small only
-      // happens in a test fixture, and rolling over rather than showing an
-      // empty offer screen is the safer failure.
-      if (offers.length > 0) {
-        setTransferOffers(offers);
-        setPhase("relegation-move");
-        return;
-      }
-    }
+    // Relegation out of the National League used to force a move here (its
+    // old four-club pool had no fixtures). It now drops into National League
+    // North or South, which are real divisions (1 Oct 2026, P62), so every
+    // boundary carries on into next season's real fixtures.
     // ── A loan that hit its number ──
     //
     // The parent club's interest is a real `TransferOffer` in the ordinary
