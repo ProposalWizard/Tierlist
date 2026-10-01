@@ -71,6 +71,26 @@ was said during it and the sheet of pictures that shows it.
   (every frame of those three seconds, sixteen to a sheet).
 - Chatter that isn't about the game is ignored — they've said so.
 
+## 3b. Match the mouse to every "here", "there", "this" (standing rule)
+
+Harry, 1 Oct 2026: *"I was using my mouse to point at things whilst saying
+this should go 'here' or 'there', so maybe match that with the transcript"* —
+then: *"add this to rules for analysis of recordings."*
+
+- Find EVERY pointing word in the transcript ("here", "there", "this",
+  "these", "that one", "up here", "over here", "to the left", "top right",
+  "this guy"…) with its time (word-level timing where possible).
+- Take frames from 0.5 s before to 1 s after; find the cursor; pick the
+  frame where it rests or clicks as the word is said.
+- Save an annotated keyframe per moment (game column crop, a ring + arrow on
+  the cursor) and a `pointing.md` table: time, his words with the pointing
+  word in bold, the exact on-screen element under the cursor, the resolved
+  meaning in plain English, and CLEAR / LIKELY / UNCLEAR.
+- Put the resolved meaning into each point in `points.md`. Never leave
+  "where is 'here'?" as an open question when the cursor answers it; if
+  the cursor can't be found, say so instead of guessing.
+- Do this BEFORE deleting the video.
+
 ## 4. Check before you report
 
 A frame shows what happened; it doesn't show why. Before any claim about the
