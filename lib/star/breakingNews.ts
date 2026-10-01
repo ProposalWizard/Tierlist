@@ -11,8 +11,17 @@
 import type { CareerState, Fixture } from "./types";
 import { divisionOf, leagueNameFor } from "./calendar";
 import { shortClub } from "./media/grammar";
+import { faceOrFake } from "./fakeFaces";
 
-export interface BreakingNews { headline: string; line: string }
+/**
+ * `club` and `face` are the picture on the full-screen page: the club's crest
+ * and the player's face (his own photo, else his stable fake face). Both are
+ * optional — a news item with neither still shows.
+ */
+export interface BreakingNews { headline: string; line: string; club?: string; face?: string }
+
+const faceOf = (career: CareerState) =>
+  faceOrFake(career.player.portrait, `${career.player.firstName} ${career.player.lastName}`);
 
 const upper = (s: string) => s.toUpperCase();
 
@@ -24,6 +33,7 @@ export function signingNews(career: CareerState, club: string): BreakingNews {
   return {
     headline: upper(`${who} signs for ${shortClub(club)}`),
     line: `${p.firstName} ${p.lastName}, ${p.age}, has joined ${shortClub(club)} and wants to take charge of the ${league}.`,
+    club, face: faceOf(career),
   };
 }
 
@@ -32,6 +42,7 @@ export function firstGoalNews(career: CareerState): BreakingNews {
   return {
     headline: upper(`${career.player.lastName} opens his account`),
     line: `A first senior goal for ${shortClub(career.player.club)}.`,
+    club: career.player.club, face: faceOf(career),
   };
 }
 
@@ -40,6 +51,7 @@ export function trophyNews(career: CareerState, competition: string): BreakingNe
   return {
     headline: upper(`${shortClub(career.player.club)} win the ${competition}`),
     line: `${career.player.firstName} ${career.player.lastName} lifts the trophy.`,
+    club: career.player.club, face: faceOf(career),
   };
 }
 
