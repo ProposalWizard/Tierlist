@@ -1,13 +1,11 @@
 "use client";
-import { useState } from "react";
 import type { ScoutOffer } from "@/lib/star/scoutOffers";
 import { offerLeagueName } from "@/lib/star/scoutOffers";
 import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import type { TrialProgress } from "@/lib/star/trial";
-import { trialStagesFor, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
-import { CountUp, Glow, PressButton, clubTheme } from "./ui";
-import { Screen, Kicker, useLater } from "./ui/Screen";
+import { Glow, PressButton, clubTheme } from "./ui";
+import { Screen, Kicker } from "./ui/Screen";
 
 const PITCH_GREEN = "#2F6F4E";
 
@@ -59,73 +57,19 @@ export interface ScoutOffersProps {
 export default function ScoutOffers({
   trial, offers, playerName, youthClub, onAccept, onNoOffers,
 }: ScoutOffersProps) {
-  const [open, setOpen] = useState(false);
-  const score = trialScore(trial);
-  const scoreIn = useLater(250);
+  // v0.23 (Harry, 1 Oct 2026): "you don't get a trial rating, you just get
+  // scouted" and "this whole no contract thing, don't put this in the game".
+  // So the trial's score and its per-stage bars are not shown any more (the
+  // numbers are still worked out and kept; nothing on screen is built from
+  // them), and the no-offer card no longer says "No contract".
+  void trial;
 
-  const breakdown = (
-    <div className="mt-3 space-y-1.5">
-      {trialStagesFor(trial).map(s => {
-        const r = trial.results[s];
-        return (
-          <div key={s} className="flex items-center gap-2">
-            <span className="w-28 shrink-0 text-[10px] font-black uppercase tracking-widest text-white/50">
-              {STAGE_LABEL[s]}
-            </span>
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.7)" }}>
-              <div
-                className="kit-grow-x h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-300"
-                style={{ width: `${r?.score ?? 0}%`, boxShadow: "0 0 8px rgba(52,211,153,.6)" }}
-              />
-            </div>
-            <span className="w-7 shrink-0 text-right text-[11px] font-black tabular-nums">
-              {r?.score ?? 0}
-            </span>
-          </div>
-        );
-      })}
-      {/* ── Whatever went on that day, not just the one event ──
-          This used to read `trial.adversity === "sharp-keeper"` with the
-          label hardcoded beside it, which was fine while a sharp keeper was
-          the only event there was. There are eleven now, so a hardcoded
-          check would have silently hidden ten of them — the whole catalogue
-          drawn, rolled onto a stage, genuinely changing the football, and
-          never once mentioned. The event carries its own label; the pill
-          just prints it.
-
-          The two flavour events show here too, on purpose. Somebody famous
-          on the touchline changed no football at all and is worth exactly
-          nothing (`weight: 0`, so `scoringDifficultyFor` ignores it) — but it
-          is still a true thing about the afternoon, and this pill is a
-          description of the day rather than a claim about the score. */}
-      {(() => {
-        const ev = adversityFor(trial);
-        if (!ev || !trial.adversityStage) return null;
-        return (
-          <div
-            className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
-              ev.flavour ? "bg-white/10 text-white/70" : "bg-amber-500/20 text-amber-200"
-            }`}
-          >
-            {ev.label}{ev.flavour ? "" : ` · ${STAGE_LABEL[trial.adversityStage]}`}
-          </div>
-        );
-      })()}
-    </div>
-  );
-
-  // ── Nobody came ────────────────────────────────────────────────────────
   if (!offers.length) {
     return (
       <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-8">
-        <div className="text-center">
-          <Kicker color="#fcd34d">Your trial</Kicker>
-          <div className="kit-slam mt-1 text-6xl font-black tabular-nums" style={{ textShadow: "0 0 24px rgba(255,255,255,.25)" }}><CountUp value={scoreIn ? score : 0} ms={900} /></div>
-        </div>
-        {breakdown}
         <div className="kit-card mt-6 p-5">
           <div className="text-sm font-black uppercase tracking-widest text-amber-300">
-            No contract
+            Not this time
           </div>
           {youthClub ? (
             <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
@@ -158,16 +102,8 @@ export default function ScoutOffers({
   return (
     <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-6">
       <div className="text-center">
-        <Kicker color="#fcd34d">Your trial</Kicker>
-        <div className="kit-slam mt-1 text-6xl font-black tabular-nums" style={{ textShadow: "0 0 24px rgba(255,255,255,.25)" }}><CountUp value={scoreIn ? score : 0} ms={900} /></div>
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="mt-1 text-[11px] font-bold text-white/50 underline"
-        >
-          {open ? "Hide the breakdown" : "How did they work that out?"}
-        </button>
+        <Kicker color="#fcd34d">A scout has spotted you</Kicker>
       </div>
-      {open && breakdown}
 
       <div className="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">
         {offers.length === 1 ? "One club came in" : `${offers.length} clubs came in`}
