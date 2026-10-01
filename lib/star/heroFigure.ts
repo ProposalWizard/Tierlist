@@ -132,6 +132,8 @@ export interface HeroLook {
   number?: number | null;
   /** The face-fit head (faceFit.ts). When set it replaces the pasted photo. */
   fitted?: FittedHead | null;
+  /** A drawn head instead of any photo (the manager in the signing scene — no real faces on a figure but your own). */
+  drawHead?: (ctx: CanvasRenderingContext2D) => void;
 }
 
 /** Design space: 200 wide, 300 tall, boots on y = 290. */
@@ -414,6 +416,7 @@ export function paintHeroFigure(
     // The figure unit r puts the head where render.ts puts it relative to
     // the shoulders (HEAD_ANCHOR − SHOULDER_Y = −0.184 r, base radius 0.114 r).
     const r = 104;
-    drawPlayerHead(ctx, 101, 86 - 0.184 * r, 0.114 * r, r, look.face, faceStyle, fakeFaceStyle);
+    if (look.drawHead) look.drawHead(ctx);
+    else drawPlayerHead(ctx, 101, 86 - 0.184 * r, 0.114 * r, r, look.face, faceStyle, fakeFaceStyle);
   }
 }

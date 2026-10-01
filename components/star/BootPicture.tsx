@@ -12,6 +12,7 @@
  * and sparkle. Generic shapes only — no real makers' marks.
  */
 import { useId } from "react";
+import { Sparkles, useRenderFailed } from "./StylePicture";
 
 interface BootLook { upper: string; accent: string; sole: string }
 
@@ -36,6 +37,18 @@ function dull(hex: string, k: number): string {
 export default function BootPicture({ base, level, className = "" }: { base: string; level: number; className?: string }) {
   const uid = useId().replace(/:/g, "");
   const lv = Math.max(1, Math.min(5, Math.round(level || 1)));
+  // Harry, 1 Oct 2026: every shop picture is a Blender render now (public/shop/boot-<type>-L<n>.webp).
+  // The drawing below is the fallback if one fails to load.
+  const src = base in BOOT_LOOK ? `/shop/boot-${base}-L${lv}.webp` : "";
+  const failed = useRenderFailed(src);
+  if (src && !failed) {
+    return (
+      <svg viewBox="0 0 100 64" className={className} role="img" aria-hidden>
+        <image href={src} x="0" y="0" width="100" height="64" preserveAspectRatio="xMidYMid slice" />
+        {lv === 5 && <Sparkles />}
+      </svg>
+    );
+  }
   const look = BOOT_LOOK[base] ?? BOOT_LOOK.starter;
   const upper = lv === 1 ? dull(look.upper, 0.35) : look.upper;
   const accent = lv === 5 ? "#fbbf24" : look.accent;
