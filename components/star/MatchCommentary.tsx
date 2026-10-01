@@ -58,12 +58,14 @@ interface Props {
   regulation?: number;
   /** Item 35: opens every live score in the division. Absent: no button. */
   onOpenScores?: () => void;
+  /** Which side is yours, so the kick-off card can colour each name. */
+  userIsHome?: boolean;
 }
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
   speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
-  minuteLabel, added = 0, regulation = 90, onOpenScores,
+  minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -137,6 +139,16 @@ export default function MatchCommentary({
             still run the full width; only the words stop short of it. */}
         <div className="flex min-h-full flex-col justify-start [&>div]:pr-16">
           {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
+          {/* Until the first real line lands the panel was only the "Kick Off"
+              strip over a black screen for a couple of seconds (Harry's 1 Oct
+              2026 recording, 14:59). This is the kick-off itself: who is
+              playing, in whose colours, and that the first chance is coming. */}
+          {lines.length <= 1 && (
+            <KickOffCard
+              homeTeam={homeTeam} awayTeam={awayTeam}
+              homeKit={userIsHome ? userKit : oppKit} awayKit={userIsHome ? oppKit : userKit}
+            />
+          )}
         </div>
       </div>
 
@@ -247,6 +259,29 @@ export default function MatchCommentary({
         </div>
       </div>
       )}
+    </div>
+  );
+}
+
+/** The opening beat: the two sides in their colours, before the first line. */
+function KickOffCard({ homeTeam, awayTeam, homeKit, awayKit }: { homeTeam: string; awayTeam: string; homeKit: Kit; awayKit: Kit }) {
+  const chip = (name: string, kit: Kit) => (
+    <div
+      className="min-w-0 flex-1 truncate rounded-lg px-2 py-2 text-center text-[13px] font-black uppercase tracking-wide"
+      style={{ backgroundColor: kit.shirt, color: labelInk(kit.shirt), boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), 0 4px 12px -6px rgba(0,0,0,.8)" }}
+    >
+      {name}
+    </div>
+  );
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-8 pr-16 text-center" style={{ paddingRight: "1rem" }}>
+      <div className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60">The teams are out</div>
+      <div className="flex w-full items-center gap-2">
+        {chip(homeTeam, homeKit)}
+        <span className="shrink-0 text-[15px] font-black italic text-white/70">v</span>
+        {chip(awayTeam, awayKit)}
+      </div>
+      <div className="text-[12px] font-bold text-white/70">The referee blows the whistle. Waiting for the first chance&hellip;</div>
     </div>
   );
 }

@@ -14,13 +14,11 @@
  * them, side by side. "My stuff" (everything you own) is last.
  */
 import type { CareerState } from "@/lib/star/types";
-import ShopItemsCard from "./ShopItemsCard";
 import { formatMoney } from "@/lib/star/money";
 import { KIB_CANS, baseIdOf } from "@/lib/star/shopData";
 import { ownedFame, isWornOut } from "@/lib/star/fame";
 import { fameText } from "@/lib/star/lifestyleLevels";
 import { brandsOf } from "@/lib/star/sponsorDeals";
-import { openStyleOn } from "@/lib/star/shopNav";
 import type { HubPhase } from "./HomeHub";
 import KibCanIcon from "./KibCanIcon";
 import BootPicture from "./BootPicture";
@@ -101,11 +99,8 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
           <SmallHero onClick={() => onOpen("casino-menu")} icon="🎰" title="Casino" sub="Slots, cards, racing" colors={["#facc15", "#dc2626"]} />
         </div>
       </RiseIn>
-
-      {/* Everything you own — taps through to the full "My stuff" view. */}
-      <RiseIn onPageActive index={3}>
-        <ShopItemsCard career={career} onOpenShop={() => { openStyleOn("mine"); onOpen("shop-lifestyle"); }} glow={glow} />
-      </RiseIn>
+      {/* "My stuff" no longer sits here (Harry, 1 Oct 2026, 05:22): it lives on
+          the Style page, behind its My stuff button. */}
     </div>
   );
 }
