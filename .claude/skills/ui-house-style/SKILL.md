@@ -39,6 +39,20 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 30 Sep 2026 — sponsors, fame and Home
+- **Never show the exact amount needed to unlock something — show a bar.**
+  Harry, on "Needs Icon (80 fame)": *"I don't like the idea that we tell them
+  exact amounts that are needed. To me that kind of just kills the game…
+  I'd rather a progress bar than 'you need 80'. That makes them kind of want
+  to work towards it."* Name the level ("Needs Icon"), draw how far you are,
+  leave the number out.
+- **A feature people can't find is a broken feature.** "How do I even get
+  there? … That feels quite hidden away." If a screen matters, it gets a way
+  in from Home, not only from a menu two taps deep.
+- **A card cut in half by the bottom bar is "jarring".** Said of the KIB cans
+  on Home. Keep a card short enough that it reads as whole, not a title with
+  its contents chopped off (cans + energy went from 303px to 126px).
+
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
   short, small tutorial or pop-up… doesn't have to be many words, just
