@@ -40,8 +40,11 @@ export default function StatsTabs({ career, onRenew, onOpen, onLeague }: { caree
       <SegTabs value={tab} onChange={setTab} tabs={[["season", "Season"], ["all", "All seasons"], ["records", "Records"]] as const} />
       {tab === "season" && (
         <div className="space-y-2">
-          <RiseIn onPageActive index={0}><LeagueCard career={career} onLeague={onLeague} glow={glow} /></RiseIn>
-          <RiseIn onPageActive index={1}><DashboardStats career={career} onRenew={onRenew} /></RiseIn>
+          {/* Your season first, the league under it (Harry, 30 Sep 2026: "in
+              season this should be the first thing you see and then maybe
+              underneath that you would have the Prem"). */}
+          <RiseIn onPageActive index={0}><DashboardStats career={career} onRenew={onRenew} /></RiseIn>
+          <RiseIn onPageActive index={1}><LeagueCard career={career} onLeague={onLeague} glow={glow} /></RiseIn>
         </div>
       )}
       {tab === "all" && <RiseIn key="all"><AllSeasons career={career} glow={glow} /></RiseIn>}

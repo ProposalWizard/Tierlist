@@ -28,6 +28,7 @@ import { reputationTier, styleBlurb } from "@/lib/star/manager";
 import { fameOf, fameLevel } from "@/lib/star/fame";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { kitsOf } from "@/lib/star/kits";
+import { brandsOf } from "@/lib/star/sponsorDeals";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import ClubBadge from "./ClubBadge";
 import { ClubCard, PressButton, StatBar, Glow, Pop, rgba, levelColors, cardStyle, useClubTheme } from "./ui";
@@ -73,7 +74,11 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
   const m = career.manager;
   const seasonsIn = m ? career.season - m.since + 1 : 0;
   const mates = (career.squad ?? []).filter((p) => p.imageUrl).slice(0, 5);
-  const activeDeals = (career.sponsors ?? []).filter((s) => s.active);
+  // The brand deals (sponsorDeals.ts). The old career.sponsors list is no
+  // longer signed from any screen, so reading it always said "No deals".
+  const brands = brandsOf(career);
+  const activeDeals = brands.deals;
+  const offers = brands.offers.length;
   const gf = career.girlfriend;
   const energy = useSeen(`${scope}:energy`, Math.round(career.energy));
   const game = (k: RelationshipKind) => (
@@ -165,12 +170,12 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onRest, 
       <Card
         face={<div className="grid h-[40px] w-[40px] place-items-center rounded-full bg-gradient-to-b from-amber-300/45 to-amber-700/35 text-[20px] ring-1 ring-amber-200/40">🤝</div>}
         title="Sponsors"
-        sub={activeDeals.length ? `${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}: ${activeDeals.map((s) => s.category).join(", ")}` : "No deals signed yet"}
+        sub={activeDeals.length ? `${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}: ${activeDeals.map((d) => d.brand).join(", ")}` : "No deals signed yet"}
         value={r.sponsors}
         kind="sponsors"
         seenKey={`${scope}:rel:sponsors`}
         moves="Up: good matches. Higher = more money every match."
-        action={<div className="flex gap-1.5"><PressButton variant="secondary" size="none" onClick={() => onOpen("sponsors")} className="rounded-lg px-2 py-1.5 text-[10px] font-black">Deals →</PressButton>{game("sponsors")}</div>}
+        action={<div className="flex gap-1.5"><PressButton variant="secondary" size="none" onClick={() => onOpen("sponsors")} className={`rounded-lg px-2 py-1.5 text-[10px] font-black ${offers ? "ring-2 ring-emerald-300/80" : ""}`}>{offers ? `${offers} offer${offers === 1 ? "" : "s"} →` : "Deals →"}</PressButton>{game("sponsors")}</div>}
       />
 
       {/* You, and a partner if you have one */}

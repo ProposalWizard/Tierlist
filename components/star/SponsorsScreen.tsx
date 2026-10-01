@@ -12,7 +12,7 @@ import {
   brandsOf, slotsFor, weeklySponsorTotal, targetLabel, moodOf, categoryStatus, BRAND_CATEGORIES,
   BOOT_DEAL_DISCOUNT, OFFER_WEEKS, type BrandDeal, type BrandOffer, type BrandTarget,
 } from "@/lib/star/sponsorDeals";
-import { fameOf, fameLevel } from "@/lib/star/fame";
+import { fameOf, fameLevel, nextFameLevel } from "@/lib/star/fame";
 import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
 import { ClubCard, PressButton, Shine, StatBar, clubTheme, rgba } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
@@ -38,6 +38,14 @@ const CLAUSE = {
   exclusive: (cat: string) => `Exclusive: no other ${cat.toLowerCase()} brand`,
   behaviour: () => "Behaviour clause: a scandal ends the deal",
 };
+
+/** How far you are towards a fame level, 0-100 — a bar, never the number
+ *  (Harry, 30 Sep 2026: "I don't like the idea that we tell them exact
+ *  amounts that are needed… I'd rather a progress bar"). */
+function towards(fame: number, target: number): number {
+  return Math.max(0, Math.min(100, (fame / Math.max(1, target)) * 100));
+}
+const FAME_BAR: [string, string] = ["#fbbf24", "#fde68a"];
 
 function brandStyle(color: string, strength = 0.3): React.CSSProperties {
   return {
@@ -187,6 +195,10 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
   const slots = slotsFor(career);
   const fame = fameOf(career);
   const total = weeklySponsorTotal(career);
+  // Progress to the next fame level, which is also the next deal slot.
+  const next = nextFameLevel(fame);
+  const cur = fameLevel(fame);
+  const nextPct = next ? Math.max(0, Math.min(100, ((fame - cur.min) / Math.max(1, next.min - cur.min)) * 100)) : 100;
   return (
     <Screen glow={theme.glow}>
       <div className="w-full flex-1">
@@ -201,8 +213,8 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
               <div className="text-[26px] font-black leading-none text-yellow-300" style={{ textShadow: "0 0 12px rgba(251,191,36,.5)" }}>★{formatMoney(total)}</div>
               <div className="text-[10.5px] font-bold text-white">a week, paid with your wage</div>
             </div>
-            <div className="text-right">
-              <div className="text-[10px] font-black uppercase tracking-wider text-white">Deal slots · {fameLevel(fame).name}</div>
+            <div className="w-[46%] text-right">
+              <div className="text-[10px] font-black uppercase tracking-wider text-white">Deal slots</div>
               <div className="mt-1 flex justify-end gap-1">
                 {Array.from({ length: 5 }, (_, i) => (
                   <span key={i} className="h-3 w-6 rounded-full"
@@ -211,7 +223,15 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
                         : { background: "rgba(0,0,0,.5)", boxShadow: "inset 0 1px 3px rgba(0,0,0,.6)" }} />
                 ))}
               </div>
-              <div className="mt-1 text-[10.5px] font-bold text-white">{b.deals.length} of {slots} used{slots < 5 ? " · more with fame" : ""}</div>
+              {/* A fresh career is Unknown, which has no slot yet: say what
+                  opens the first one, not "Unknown, 0 of 0 used". */}
+              <div className="mt-1 text-[10.5px] font-bold text-white">{slots === 0 ? "Your first slot opens at Local Name" : `${b.deals.length} of ${slots} used`}</div>
+              {next && slots < 5 && (
+                <div className="mt-1">
+                  <StatBar value={nextPct} colors={FAME_BAR} className="h-1.5" sheen={false} />
+                  <div className="mt-0.5 text-[9.5px] font-black uppercase tracking-wider text-amber-300">{slots === 0 ? "Fame" : `Next slot · ${next.name}`}</div>
+                </div>
+              )}
             </div>
           </div>
         </ClubCard>
@@ -227,7 +247,7 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
                 <div className="text-[28px]">🤝</div>
                 <div className="mt-1 text-[14px] font-black text-white">No deals yet</div>
                 <div className="mt-1 text-[11.5px] font-bold text-white">
-                  {slots === 0 ? "Brands start to notice you at Local Name (10 fame)." : "Play well and brands will send offers to your phone."}
+                  {slots === 0 ? "Brands start to notice you once you are a Local Name. Big moments build your fame." : "Play well and brands will send offers to your phone."}
                 </div>
               </ClubCard>
             )}
@@ -260,12 +280,20 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
               const status = deal ? `Signed with ${deal.brand}` : categoryStatus(career, c);
               const open = !deal && status === "Could send an offer";
               const color = c.brands[0][1];
+              const needsFame = !deal && fame < c.fame;
               return (
                 <div key={c.category} className="flex items-center gap-3 rounded-xl p-2.5" style={brandStyle(color, deal ? 0.34 : open ? 0.2 : 0.06)}>
                   <BrandMark category={c.category} color={color} />
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-black text-white">{c.category}</div>
-                    <div className={`text-[11px] font-bold ${deal ? "text-yellow-300" : open ? "text-emerald-300" : "text-white"}`}>{status}</div>
+                    {needsFame ? (
+                      <>
+                        <div className="text-[11px] font-bold text-white">Needs {fameLevel(c.fame).name}</div>
+                        <StatBar value={towards(fame, c.fame)} colors={FAME_BAR} className="mt-1 h-1.5" sheen={false} />
+                      </>
+                    ) : (
+                      <div className={`text-[11px] font-bold ${deal ? "text-yellow-300" : open ? "text-emerald-300" : "text-white"}`}>{status}</div>
+                    )}
                   </div>
                   <span className="text-[16px]">{deal ? "✅" : open ? "📨" : "🔒"}</span>
                 </div>
