@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import "./flat.css";
 import { prefersReducedMotion } from "./motion";
 
 /** Green when healthy, amber when low, red when nearly empty — the energy

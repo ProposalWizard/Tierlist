@@ -1,7 +1,6 @@
 "use client";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import "./flat.css";
 
 /**
  * NAVIGATION THE NSS WAY (Harry, 1 Oct 2026 review: P41 "your bottom should
