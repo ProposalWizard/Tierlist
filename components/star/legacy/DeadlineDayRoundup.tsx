@@ -1,0 +1,345 @@
+"use client";
+import { useMemo, useState } from "react";
+import type { CareerState } from "@/lib/star/types";
+import { kitsOf } from "@/lib/star/kits";
+import { seasonStartYear } from "@/lib/star/calendar";
+import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { shortClub } from "@/lib/star/media/grammar";
+import { formatMoneyPrecise } from "@/lib/star/money";
+import { KitStyles, PressButton, Shine, CountUp } from "@/components/star/legacy/ui";
+import { useLater } from "@/components/star/legacy/ui/Screen";
+
+/**
+ * DEADLINE DAY.
+ *
+ * The whole division's business, revealed once the moment a transfer window
+ * actually closes — club by club, who came in and who went out. The data was
+ * always there (leagueTransferNews/leagueLoanNews, "what just happened",
+ * replaced whole every window — see LeagueScreen's own quieter "This Window"
+ * list) but nothing ever made an occasion of it. This is that occasion:
+ * requested with a real transfer-deadline broadcast graphic as the reference
+ * for the vibe — dark ground, a bold diagonal gold panel, big condensed
+ * type — built in this game's own voice rather than copying anyone's actual
+ * branding.
+ *
+ * Shown exactly once per window (app/star-dev/page.tsx tracks that via
+ * `deadlineDayShownFor`), and never for a window that never ran at all — a
+ * fresh career's very first (summer) window is deliberately skipped so the
+ * hand-curated starting rosters aren't immediately overwritten, and both
+ * tracking fields are seeded to the same value for exactly that reason.
+ */
+
+interface Deal {
+  player: string;
+  counterpart: string;
+  overall: number;
+  detail: string; // "£28m" / "Free Transfer" / "Loan, back 2028/29"
+  loan: boolean;
+  unhappy: boolean;
+}
+
+interface ClubBusiness {
+  club: string;
+  in: Deal[];
+  out: Deal[];
+}
+
+function loanReturnLabel(career: CareerState, returnSeason: number): string {
+  const y = seasonStartYear(career.player.startYear, returnSeason + 1);
+  return `${y}/${String((y + 1) % 100).padStart(2, "0")}`;
+}
+
+/**
+ * Every club, not just the ones that happened to do business.
+ *
+ * Reported directly: the selector used to list only clubs that appeared in
+ * `leagueTransferNews`/`leagueLoanNews` — so a quiet window for, say,
+ * Everton meant Everton was simply not there to click on at all, with no
+ * way to confirm "nothing happened" versus "this list doesn't cover them."
+ * Seeded from `career.league` (the player's own division, all twenty or all
+ * twenty-four) so every real club has a tile, empty or not — a business a
+ * club with an actual deal still sorts to the top, ahead of the honestly
+ * quiet ones. `FREE_AGENTS_CLUB` is excluded on purpose: it is a pool, not
+ * a club, and never earns a tile of its own — a signing FROM it already
+ * shows up on the real signing club's own incomings card either way.
+ */
+function buildBusiness(career: CareerState): ClubBusiness[] {
+  const inDivision = new Set(career.league.map(t => t.name));
+  const byClub = new Map<string, ClubBusiness>();
+  // Only ever creates a TILE for a club in the player's own division — a
+  // counterpart outside it (Real Sociedad, say, on the other end of an
+  // international-window deal) still shows up correctly by name on the
+  // in-division club's own card, it just never gets a selectable tile of
+  // its own. Reported directly: Real Sociedad, who play in neither the
+  // Premier League nor the Championship, had one anyway.
+  const get = (club: string): ClubBusiness | null => {
+    if (!inDivision.has(club)) return null;
+    let b = byClub.get(club);
+    if (!b) { b = { club, in: [], out: [] }; byClub.set(club, b); }
+    return b;
+  };
+
+  for (const t of career.league) get(t.name);
+
+  for (const m of career.leagueTransferNews ?? []) {
+    const detail = m.fee > 0 ? `£${formatMoneyPrecise(m.fee)}` : "Free Transfer";
+    if (m.to !== FREE_AGENTS_CLUB) get(m.to)?.in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+    if (m.from !== FREE_AGENTS_CLUB) get(m.from)?.out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
+  }
+  for (const l of career.leagueLoanNews ?? []) {
+    const detail = `Loan · back ${loanReturnLabel(career, l.returnSeason)}`;
+    get(l.loanClub)?.in.push({ player: l.player, counterpart: l.parentClub, overall: l.overall, detail, loan: true, unhappy: false });
+    get(l.parentClub)?.out.push({ player: l.player, counterpart: l.loanClub, overall: l.overall, detail, loan: true, unhappy: false });
+  }
+
+  const list = Array.from(byClub.values());
+  list.sort((a, b) => {
+    if (a.club === career.player.club) return -1;
+    if (b.club === career.player.club) return 1;
+    const byBusiness = (b.in.length + b.out.length) - (a.in.length + a.out.length);
+    return byBusiness !== 0 ? byBusiness : a.club.localeCompare(b.club);
+  });
+  return list;
+}
+
+const WINDOW_LABEL: Record<string, string> = {
+  summer: "Summer Window",
+  january: "January Window",
+};
+
+/** A crisp black outline around the gold title, so it reads over black
+ *  ground and the gold panel alike — see the note above the title itself. */
+const TITLE_OUTLINE =
+  "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 6px rgba(0,0,0,0.5)";
+
+/**
+ * The same black outline, sized for the smaller text on an In/Out card —
+ * reported directly: the tinted green/red card backgrounds made a player's
+ * name and the club he moved from/to hard to read. A thinner outline than
+ * the title's (this text is much smaller) around solid white, rather than
+ * a translucent white, is what actually holds up over either tint.
+ */
+const NAME_OUTLINE =
+  "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 3px rgba(0,0,0,0.6)";
+
+export default function DeadlineDayRoundup({ career, onContinue }: { career: CareerState; onContinue: () => void }) {
+  const business = useMemo(() => buildBusiness(career), [career]);
+  const [selected, setSelected] = useState(() => business[0]?.club ?? career.player.club);
+  const active = business.find(b => b.club === selected) ?? business[0];
+
+  const totalDeals = (career.leagueTransferNews?.length ?? 0) + (career.leagueLoanNews?.length ?? 0);
+  // Individual fees are already one-decimal (see feeFor in leagueTransfers.ts),
+  // but summing several of them hits ordinary float noise — a real window
+  // reproduced this as literally "£31.700000000000003m changed hands."
+  const totalSpend = Math.round((career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0) * 10) / 10;
+  const windowKind = (career.lastTransferWindowKey ?? "").split("-")[1];
+  const windowLabel = WINDOW_LABEL[windowKind] ?? "Transfer Window";
+  const countIn = useLater(500);
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#070b16]">
+      <KitStyles />
+      {/*
+        Everything below lives inside this one narrow column — the same
+        max-w-md rectangle every other screen in this game mode runs in
+        (DashboardShell, VersusScreen). Reported directly: built and
+        screenshotted at desktop width, where the diagonal gold panel below
+        (sized as a % of the *viewport*) sprawled into a slab wide enough to
+        sit behind the header no matter where it wrapped — so "DAY" being
+        dark text depended on the panel reaching it, which broke as soon as
+        this was actually seen at the width the game is played at. Confining
+        the whole scene to this column fixes both the sizing AND makes the
+        panel's own width % mean something real again; the title itself no
+        longer depends on the panel at all — see below.
+      */}
+      <div className="relative mx-auto flex h-full w-full max-w-md flex-col overflow-hidden">
+        {/* ── The diagonal gold panel and background chevrons — the
+            reference's whole visual signature: a dark ground, a slab of
+            gold cut across it at an angle, arrow shapes reinforcing the
+            same diagonal. ── */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* The night sky and crowd of the home screen, under the gold. */}
+          <div className="absolute inset-0" style={{ background: "radial-gradient(90% 50% at 30% -5%, rgba(245,197,24,.22), transparent 70%), linear-gradient(180deg,#070b16,#0a1020 60%,#05070d)" }} />
+          <div className="absolute inset-x-0 top-[4%] h-[30%] opacity-30" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,.3) 0.9px, transparent 1.4px)", backgroundSize: "7px 6px", maskImage: "linear-gradient(180deg, transparent, #000 30%, #000 50%, transparent)", WebkitMaskImage: "linear-gradient(180deg, transparent, #000 30%, #000 50%, transparent)" }} />
+          <div
+            className="kit-fade absolute inset-y-0 right-0 w-[52%] overflow-hidden"
+            style={{
+              background: "linear-gradient(115deg, #d99a00 0%, #f5c518 38%, #ffe066 62%, #f0b400 100%)",
+              clipPath: "polygon(22% 0, 100% 0, 100% 100%, 0% 100%)",
+            }}
+          >
+            <Shine loop every={6} className="w-1/2" />
+          </div>
+          <div
+            className="absolute inset-y-0 right-0 w-[52%] opacity-40"
+            style={{
+              background: "linear-gradient(115deg, transparent 60%, rgba(0,0,0,0.35) 100%)",
+              clipPath: "polygon(22% 0, 100% 0, 100% 100%, 0% 100%)",
+            }}
+          />
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="absolute top-1/2 h-[70vh] w-[70vh] -translate-y-1/2 border-r-[3px] border-amber-400/25"
+              style={{ right: `${-30 + i * 16}%`, transform: `translateY(-50%) rotate(${18}deg)` }}
+            />
+          ))}
+        </div>
+
+        {/* Vertical edge tab, matching the reference's rotated sidebar label. */}
+        <div className="pointer-events-none absolute left-0 top-0 flex h-full w-7 flex-col items-center justify-start bg-black/70 pt-4">
+          <span className="rotate-180 text-[9px] font-black uppercase tracking-[0.3em] text-amber-300" style={{ writingMode: "vertical-rl" }}>
+            Transfers
+          </span>
+        </div>
+
+        {/* ── Header ── */}
+        <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-9 pl-9">
+          <span className="kit-rise rounded-full border border-amber-400/50 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
+            Season {career.season} · {windowLabel} Closed
+          </span>
+          {/*
+            Both words the same solid gold now — no more "DAY" set in a
+            colour meant to disappear into the panel behind it, which only
+            worked when the panel actually reached that far. A black outline
+            (the same layered-shadow trick VersusScreen's player names use,
+            not a background-clip gradient — that combined with a text-shadow
+            outline into something unreadable in testing) keeps it legible
+            over black ground OR gold panel, wherever the line wraps on a
+            given screen, rather than needing the two to line up by luck.
+          */}
+          <h1
+            className="kit-drop-in mt-2 whitespace-nowrap text-[2.15rem] font-black italic leading-[0.85] tracking-tight text-[#ffd23f]"
+            style={{ textShadow: TITLE_OUTLINE, animationDelay: "150ms" }}
+          >
+            DEADLINE DAY
+          </h1>
+          <p className="mt-1.5 text-[11px] font-bold text-white/80" style={{ textShadow: NAME_OUTLINE }}>
+            <span className="font-black text-amber-300"><CountUp value={countIn ? totalDeals : 0} ms={700} /></span> deal{totalDeals === 1 ? "" : "s"} done across the division
+            {totalSpend > 0 ? ` · £${totalSpend}m changed hands` : ""}.
+          </p>
+        </div>
+
+        {/* ── Club selector — every club in the division, not just the ones
+            with a deal to show. See buildBusiness above.
+            A single horizontal-scrolling row used to hold all of these —
+            reported directly: "I can only see three clubs to click on." Then
+            a wrapping grid with its own capped-height scroll — reported
+            again: still a scrollbar, still not all of them visible at once.
+            No cap now: the grid just takes whatever height a full division
+            (twenty clubs, or twenty-four in the Championship) needs, and the
+            deals list below (its own flex-1 + scroll) gives up the room. ── */}
+        <div className="relative z-10 mt-1 flex flex-wrap content-start gap-1.5 px-3 pb-2 pl-9">
+          {business.map(b => {
+            const isActive = b.club === selected;
+            const kit = kitsOf(b.club).home;
+            const count = b.in.length + b.out.length;
+            return (
+              <button
+                key={b.club}
+                onClick={() => setSelected(b.club)}
+                className={`kib-press flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                  isActive
+                    ? "border-amber-300/60 bg-black text-amber-300 shadow-[0_0_12px_rgba(251,191,36,.45)]"
+                    : count > 0
+                      ? "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+                      : "border-white/10 bg-white/[0.02] text-white/45 hover:bg-white/10"
+                }`}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full border border-white/30" style={{ backgroundColor: kit.shirt }} />
+                {/* The active chip is already solid black behind amber text,
+                    plenty legible on its own — the outline is only for the
+                    white/grey text of the inactive chips, which wrap onto
+                    the gold panel as often as the black ground and vanish
+                    into it without one. Same trick as NAME_OUTLINE, applied
+                    unconditionally: a black shadow on a black background is
+                    simply invisible, so it costs the active chip nothing. */}
+                <span className="max-w-[5.5rem] truncate" style={isActive ? undefined : { textShadow: NAME_OUTLINE }}>
+                  {shortClub(b.club)}
+                </span>
+                <span
+                  className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : count > 0 ? "bg-white/10 text-white/60" : "bg-white/5 text-white/35"}`}
+                  style={isActive ? undefined : { textShadow: NAME_OUTLINE }}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Selected club: incomings and outgoings, stacked — a phone-
+            width column has no room for the two side by side. ── */}
+        <div className="relative z-10 flex-1 overflow-y-auto px-3 pb-28 pt-2 pl-9">
+          {active && (
+            <div key={active.club} className="flex flex-col gap-4">
+              <div>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400">
+                  <span className="inline-block h-2 w-2 rounded-sm bg-emerald-400" /> In — {active.in.length}
+                </div>
+                <div className="space-y-1.5">
+                  {active.in.length === 0 && <div className="text-xs font-bold text-white/40">No incomings.</div>}
+                  {active.in.map((d, i) => (
+                    <div key={`in-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${i * 60}ms`, background: "linear-gradient(180deg, rgba(6,78,59,.85), rgba(4,47,36,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(52,211,153,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
+                        <span className="whitespace-nowrap rounded-full bg-emerald-300 px-1.5 text-[10px] font-black tabular-nums text-emerald-950">{d.detail}</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-white">
+                        from <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-rose-400">
+                  <span className="inline-block h-2 w-2 rounded-sm bg-rose-400" /> Out — {active.out.length}
+                </div>
+                <div className="space-y-1.5">
+                  {active.out.length === 0 && <div className="text-xs font-bold text-white/40">No outgoings.</div>}
+                  {active.out.map((d, i) => (
+                    <div key={`out-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${120 + i * 60}ms`, background: "linear-gradient(180deg, rgba(136,19,55,.85), rgba(76,5,25,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(251,113,133,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
+                        <span className="whitespace-nowrap rounded-full bg-rose-300 px-1.5 text-[10px] font-black tabular-nums text-rose-950">{d.detail}</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-white">
+                        to <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Ticker + Continue ── */}
+        <div className="relative z-10 border-t border-white/10 bg-black/70 px-3 py-3 pl-9">
+          {/* The ticker scrolls, like the real transfer-centre banner; the
+              same text twice so the loop is seamless. Still for reduced motion. */}
+          <div className="mb-2 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-amber-300/80">
+            <div className="kit-marquee inline-block">
+              {[0, 1].map(k => (
+                <span key={k} className="pr-6">
+                  Transfer Centre · {totalDeals} Deals This Window · {WINDOW_LABEL[windowKind] ?? "Transfer Window"} ·
+                  Transfer Centre · {totalDeals} Deals This Window ·{" "}
+                </span>
+              ))}
+            </div>
+          </div>
+          <PressButton
+            variant="gold"
+            pulse
+            onClick={onContinue}
+            className="relative overflow-hidden px-6"
+          >
+            <Shine loop every={4} />
+            Continue →
+          </PressButton>
+        </div>
+      </div>
+    </div>
+  );
+}

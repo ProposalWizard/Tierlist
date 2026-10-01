@@ -1,5 +1,4 @@
 "use client";
-import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -8,21 +7,22 @@ import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/li
 import { followedClubs, toggleFollowedClub, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
-import DevSkipPanel from "./DevSkipPanel";
-import DevMoneyPanel from "./DevMoneyPanel";
-import DevCareerPanel from "./DevCareerPanel";
-import PortraitPicker from "./PortraitPicker";
-import GoalReplaysPanel from "./GoalReplaysPanel";
-import SaveSlotsPanel from "./SaveSlotsPanel";
-import RefreshPhotosPanel from "./RefreshPhotosPanel";
+import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
+import DevSkipPanel from "@/components/star/legacy/DevSkipPanel";
+import DevMoneyPanel from "@/components/star/legacy/DevMoneyPanel";
+import DevCareerPanel from "@/components/star/legacy/DevCareerPanel";
+import PortraitPicker from "@/components/star/legacy/PortraitPicker";
+import GoalReplaysPanel from "@/components/star/legacy/GoalReplaysPanel";
+import SaveSlotsPanel from "@/components/star/legacy/SaveSlotsPanel";
+import RefreshPhotosPanel from "@/components/star/legacy/RefreshPhotosPanel";
 import {
   ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
   type PenaltyRunupId, type FreeKickRunupId, type RunupId, type RunupStyle,
 } from "@/lib/star/runupStyles";
-import { PressButton, RiseIn, Pop, tint, useClubTheme } from "./ui";
-import { Screen, ScreenHeader } from "./ui/Screen";
-import { SegTabs } from "./screenKit";
-import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch } from "./settingsKit";
+import { PressButton, RiseIn, Pop, tint, useClubTheme } from "@/components/star/legacy/ui";
+import { Screen, ScreenHeader } from "@/components/star/legacy/ui/Screen";
+import { SegTabs } from "@/components/star/legacy/screenKit";
+import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch } from "@/components/star/legacy/settingsKit";
 
 /**
  * SETTINGS — reskinned 28 Sep 2026 to the home screen's look (Harry: "all
@@ -35,8 +35,6 @@ import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch 
 
 interface Props {
   career: CareerState;
-  /** The top HUD (ui/TopHud.tsx): energy never leaves (Harry, P86). */
-  hud?: React.ReactNode;
   onBack: () => void;
   /** Back to the title screen (Continue / New Game / Load Game). */
   onExitToTitle?: () => void;
@@ -87,7 +85,7 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
+  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer,
 }: Props) {
   const { glow } = useClubTheme(career);
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
@@ -129,7 +127,6 @@ export default function SettingsScreen({
 
   return (
     <Screen glow={glow} className="max-w-md px-3 pb-10 pt-3">
-      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <ScreenHeader
         title="Settings"
         kicker={career.player.club || undefined}
@@ -150,7 +147,7 @@ export default function SettingsScreen({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <SetHead>Full Screen</SetHead>
-              <SetNote>The game already hides the site menu. This also hides your browser bar, where it can.</SetNote>
+              <SetNote>Hide the site&apos;s top bar and footer, and go full screen where your browser supports it.</SetNote>
             </div>
             <Switch on={immersiveActive} onClick={onToggleImmersive} />
           </div>
@@ -211,14 +208,10 @@ export default function SettingsScreen({
         </SetCard>
       </RiseIn>
 
-      {/* Moved here from the middle of Settings (Harry, 1 Oct 2026, P84: "I
-          don't think the penalty run-up and three-kick run-up should be in
-          your settings. It should probably be in like a play style section"). */}
-      {(onSetPenaltyRunup || onSetFreeKickRunup) && <RiseIn index={next()}><SetSection>Play style</SetSection></RiseIn>}
       {(onSetPenaltyRunup || onSetFreeKickRunup) && (
         <RiseIn index={next()} className="mt-2.5">
           <SetCard tone={glow}>
-            <SetHead>Penalties and free kicks</SetHead>
+            <SetHead>Run-ups</SetHead>
             <SetNote>How you run up to the ball. Looks only — the kick is the same.</SetNote>
             {onSetPenaltyRunup && (
               <RunupPicker
@@ -271,9 +264,11 @@ export default function SettingsScreen({
             />
           </div>
           <SetNote dim className="mt-1 text-[10px]">
-            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Applies to the home screen and the match bar too. This phone only.
+            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Also on the home screen and in the match bar. This phone only.
           </SetNote>
 
+          {/* [legacy addition] The one thing the Old UI has that it did not
+              have before: the way back to the New UI (lib/star/uiLook.ts). */}
           <SetDivider />
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-white/90">UI</span>
