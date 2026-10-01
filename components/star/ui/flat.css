@@ -21,8 +21,7 @@
   --sk-edge: rgba(255, 255, 255, .22);
 }
 .star-look-pitch {
-  --sk-flat-rgb: 3, 32, 15;
-  --sk-flat-alpha: .5;
+  /* the wash colour/strength are set with the rest of the lightness in pitchLook.css */
   --sk-edge: rgba(255, 255, 255, .42);
 }
 

@@ -11,9 +11,11 @@
  *   0. above this page: the top bar (name, age, money) and the HUD (star
  *      rating + energy with its can) — ui/GameBar.tsx, ui/TopHud.tsx;
  *   1. Next match, right under them: both crests, VS, the date and your form;
- *   2. you, high on a football pitch with the goal behind you — drag to turn
- *      him, tap for a celebration — and reputation, fame, goals and assists
- *      beside you. No card: the pitch fades up into the stand.
+ *   2. you, standing low on a football pitch (bottom left) with the goal
+ *      behind you — drag to turn him, tap for a celebration — and reputation,
+ *      fame, goals and assists to your right (v0.23, Harry's screenshot: "the
+ *      actual structure of where the player is standing … that is how we want
+ *      it"). No card: the pitch fades up into the stand.
  * The bottom edge carries a small arrow to each neighbouring page (Stats on
  * the left, Shop on the right — SwipePages) and Sponsors between them. The
  * mini league table is gone (the League screen has the full one). The 3D / 2D
@@ -117,29 +119,22 @@ function useRoom() {
 
 /** The Next match panel's height. */
 const NEXT_H = 86;
-const FIG_MAX_W = 218;
 const FIG_ASPECT = 172 / 204;
 /** The bottom strip that carries the edge arrows and Sponsors. */
 export const ARROW_STRIP = 34;
-/** Rooms this tall (a normal phone, 390x844) stack the player over his four
- *  stat blocks instead of putting them side by side. */
-const STACK_FROM = 520;
-/** The four stat blocks, stacked under him: two rows. */
-const STACK_STATS_H = 118;
-/** The player's box, from the height of the pitch area under Next match. He is
- *  as big as that area allows; beside him the stat blocks keep at least 130px,
- *  and in a tall room they go underneath him and he can be bigger. */
-export function playerSizeFor(hero: number | null, width = 390): { w: number; h: number; stacked: boolean } {
-  if (hero === null) return { w: 130, h: 154, stacked: false };
-  const stacked = hero >= STACK_FROM;
-  const maxW = stacked ? 262 : FIG_MAX_W;
-  const byH = stacked
-    ? Math.round((hero - ARROW_STRIP - STACK_STATS_H) * 0.72)
-    : Math.round((hero - ARROW_STRIP) * 0.66);
-  const hCap = Math.round(maxW / FIG_ASPECT);
-  const h0 = Math.max(104, Math.min(hCap, byH));
-  const w = Math.min(maxW, stacked ? width - 24 : Math.max(100, width - 24 - 8 - 132), Math.round(h0 * FIG_ASPECT));
-  return { w, h: Math.round(w / FIG_ASPECT), stacked };
+/** The four stat blocks keep at least this much width beside him. */
+const STATS_MIN_W = 150;
+/** The player's box, from the height of the pitch area under Next match. He
+ *  stands low on the grass, bottom-left (Harry, 1 Oct 2026: "the actual
+ *  structure of where the player is standing … that is how we want it"), as big
+ *  as the height and the width beside the stat blocks allow. */
+export function playerSizeFor(hero: number | null, width = 390): { w: number; h: number } {
+  if (hero === null) return { w: 130, h: 154 };
+  const byH = Math.round((hero - ARROW_STRIP - 8) * 0.5);
+  const maxW = Math.min(216, width - 24 - 8 - STATS_MIN_W);
+  const h0 = Math.max(104, Math.min(byH, Math.round(maxW / FIG_ASPECT)));
+  const w = Math.min(maxW, Math.round(h0 * FIG_ASPECT));
+  return { w, h: Math.round(w / FIG_ASPECT) };
 }
 
 export default function HomeHub(p: Props) {
@@ -155,7 +150,7 @@ export default function HomeHub(p: Props) {
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
       <div className="home-sky"><Stadium glow={glow} pitch={false} floods={false} /></div>
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} hero={hero} stacked={size.stacked} />
+      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} hero={hero} />
       {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
     </div>
   );
@@ -225,7 +220,7 @@ function TeamSide({ club, kit, you }: { club: string; kit: { shirt: string; trim
 
 // ── 2. You, on the pitch ────────────────────────────────────────────────────
 
-function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero, stacked }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number; hero: number | null; stacked: boolean }) {
+function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number; hero: number | null }) {
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -253,19 +248,12 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero, stacked }: Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [career.season, last?.week, last?.res]);
 
-  // The pitch fills the whole area under Next match; the goal line sits at 27%
-  // of it, and he stands just in front of it with his head against it — high on
-  // the screen, the grass running on below his feet to the arrows.
+  // The pitch fills the whole area under Next match. He stands at the bottom
+  // left, his feet just above the arrows; the goal stands on the goal line a
+  // little above his head; the four blocks sit to his right.
   const H = hero ?? 0;
-  const top = hero === null ? 6 : Math.max(6, Math.round(H * 0.27 - figH * 0.16));
-  const stats = (
-    <>
-      <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
-      <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
-      <SeasonStat label="Goals" value={ps.goals} />
-      <SeasonStat label="Assists" value={ps.assists} />
-    </>
-  );
+  const top = hero === null ? 6 : Math.max(6, H - ARROW_STRIP - 6 - figH);
+  const line = hero === null ? 0.3 : Math.max(0.2, (top - 0.04 * H) / H);
   const player = (
     <div data-tour="player" className="relative shrink-0" style={{ width: figW }}>
       <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
@@ -273,27 +261,19 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero, stacked }: Pr
   );
   return (
     <div className="relative min-h-0 flex-1">
-      <div className="absolute inset-0"><HomeBackdrop glow={glow} centered={stacked} /></div>
-      {stacked ? (
-        // A tall screen: he stands centred under the goal, the four blocks in two rows under his feet.
-        <div className="absolute inset-x-0 flex flex-col items-center px-3" style={{ top }}>
-          {player}
-          <div className="mt-1.5 grid w-full grid-cols-2 gap-1.5">{stats}</div>
-        </div>
-      ) : (
-        <div className="absolute inset-x-0 flex items-center gap-2 px-3" style={{ top }}>
-          {player}
-          <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">
-            <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
-            <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
-            <div className="grid grid-cols-2 gap-1.5">
-              <SeasonStat label="Goals" value={ps.goals} />
-              <SeasonStat label="Assists" value={ps.assists} />
-            </div>
-            <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
+      <div className="absolute inset-0"><HomeBackdrop glow={glow} line={line} goalH={0.32} /></div>
+      <div className="absolute inset-x-0 flex items-center gap-2 px-3" style={{ top }}>
+        {player}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">
+          <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
+          <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
+          <div className="grid grid-cols-2 gap-1.5">
+            <SeasonStat label="Goals" value={ps.goals} />
+            <SeasonStat label="Assists" value={ps.assists} />
           </div>
+          <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
