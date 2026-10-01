@@ -153,7 +153,7 @@ function OfferCard({ o, career, act }: { o: BrandOffer; career: CareerState; act
           <Row label="Weekly fee" value={`★${formatMoney(o.weekly)}${current ? ` (now ★${formatMoney(current.weekly)})` : ""}`} gold />
           <Row label="Length" value={seasonsText(o.seasons)} />
           <Row label="Signing-on payment" value={`★${formatMoney(o.signingOn)}`} />
-          {o.targets.map((t, i) => <Row key={i} label={i === 0 ? (o.targets.length > 1 ? "Targets" : "Target") : ""} value={`${targetLabel(t)} · +★${formatMoney(t.bonus)}`} />)}
+          {o.targets.map((t, i) => <Row key={i} label={i === 0 ? (o.targets.length > 1 ? "Targets" : "Target") : ""} value={`${targetLabel(t)} · bonus ★${formatMoney(t.bonus)}`} />)}
           {o.clause && <Row label="Clause" value={o.clause === "exclusive" ? CLAUSE.exclusive(o.category) : CLAUSE.behaviour()} />}
         </div>
       )}
