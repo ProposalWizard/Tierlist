@@ -150,7 +150,7 @@ export default function HomeHub(p: Props) {
     // pitch and the panels touch both edges, and the page is at least as tall
     // as its box so the pitch reaches the bottom bar.
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
-      <HomeScene rootRef={ref} sky={homeSkyFor(career, p.nextFixture)} />
+      <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
       <div className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
@@ -236,10 +236,15 @@ const SCENE_ASPECT = 1344 / 752;
  * match's kick-off (lib/star/kickoff.ts) and lined up so its hoardings sit on
  * the goal line Hero marks, whatever the phone's size.
  */
-function HomeScene({ rootRef, sky }: { rootRef: React.RefObject<HTMLDivElement>; sky: HomeSky }) {
+function HomeScene({ sky }: { sky: HomeSky }) {
+  // Its own box is measured, and Home's root is its parent. (It used to be
+  // handed Home's root ref, but a child's layout effect runs before its
+  // parent's ref is attached, so on a live build — no Strict Mode second
+  // pass — that ref was still empty and the picture never drew.)
+  const own = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ w: number; h: number; goal: number } | null>(null);
   useLayoutEffect(() => {
-    const root = rootRef.current;
+    const root = own.current?.parentElement;
     if (!root) return;
     const read = () => {
       const r = root.getBoundingClientRect();
@@ -250,21 +255,22 @@ function HomeScene({ rootRef, sky }: { rootRef: React.RefObject<HTMLDivElement>;
     const ro = new ResizeObserver(read);
     ro.observe(root);
     return () => ro.disconnect();
-  }, [rootRef]);
-  if (!box) return null;
+  }, []);
   const f = SCENE_LINE[sky];
   // As small as it can be while covering the screen, with its line on the goal line.
-  const imgH = Math.max(box.w * SCENE_ASPECT, box.goal / f, (box.h - box.goal) / (1 - f));
+  const imgH = box ? Math.max(box.w * SCENE_ASPECT, box.goal / f, (box.h - box.goal) / (1 - f)) : 0;
   const imgW = imgH / SCENE_ASPECT;
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div
-        className="absolute"
-        style={{
-          width: imgW, height: imgH, left: (box.w - imgW) / 2, top: box.goal - f * imgH,
-          backgroundImage: `url(/home/scene-${sky}.webp)`, backgroundSize: "100% 100%",
-        }}
-      />
+    <div ref={own} aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {box && box.w > 0 && (
+        <div
+          className="absolute"
+          style={{
+            width: imgW, height: imgH, left: (box.w - imgW) / 2, top: box.goal - f * imgH,
+            backgroundImage: `url(/home/scene-${sky}.webp)`, backgroundSize: "100% 100%",
+          }}
+        />
+      )}
     </div>
   );
 }
