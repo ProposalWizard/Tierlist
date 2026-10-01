@@ -137,7 +137,7 @@ export default function ManagerTalk({
             </button>
           )}
           <p className="mt-1.5 text-center text-[10.5px] font-bold text-white">
-            Negotiate for more money — push too hard and he can walk away.
+            Negotiate for more money — push too hard and he comes back with a worse, final offer.
           </p>
         </div>
       )}

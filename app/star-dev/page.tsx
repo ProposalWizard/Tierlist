@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
-import { generateScoutOffers, clubsForDivision, type ScoutOffer } from "@/lib/star/scoutOffers";
+import { trialOffers, clubsForDivision, SOURED_OFFER_SHARE, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
 import ScoutOffers from "@/components/star/ScoutOffers";
 // ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
 // Added as new phases beside the existing ones; nothing in the phase machine
@@ -170,7 +170,9 @@ import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
  */
 function offersForTrial(career: CareerState): ScoutOffer[] {
   if (!career.trial) return [];
-  return generateScoutOffers(
+  // At least one club, usually two: a trial no longer ends in the youth team
+  // or the free-agent life (trialOffers, scoutOffers.ts).
+  return trialOffers(
     trialScore(career.trial),
     mulberry32(career.trial.seed ^ 0x5c0a7),
     // A second look is judged against a lower bar and a ladder shifted a
@@ -239,9 +241,15 @@ function clublessPhaseFor(career: CareerState): StarPhase {
 function offersWithAgreedTerms(career: CareerState, offers: ScoutOffer[]): ScoutOffer[] {
   const agreed = career.agreedTerms;
   if (!agreed) return offers;
-  if (agreed.wage <= 0) return offers.filter(o => o.club !== agreed.club);
+  // A walkout from a save made before the club stopped walking away: that
+  // club is off the paper. Never removes the last club — a trial always ends
+  // with one.
+  if (agreed.wage <= 0) {
+    const rest = offers.filter(o => o.club !== agreed.club);
+    return rest.length ? rest : offers;
+  }
   return offers.map(o => (o.club === agreed.club
-    ? { ...o, wage: agreed.wage, goalBonus: goalBonusFor(agreed.wage), assistBonus: assistBonusFor(agreed.wage) }
+    ? { ...o, wage: agreed.wage, goalBonus: goalBonusFor(agreed.wage), assistBonus: assistBonusFor(agreed.wage), ...(agreed.soured ? { pitch: SOURED_PITCH } : {}) }
     : o));
 }
 
@@ -2824,10 +2832,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         initialState={talk.negotiation}
         onDone={(finalSeasonPrice) => {
           const weekly = agreedWeeklyWage(finalSeasonPrice, talk.club, talk.division);
-          // A walkout is recorded as a wage of 0, which takes that club off
-          // the newspaper entirely — see `offersWithAgreedTerms`. Pushing a
-          // manager too far genuinely costs you the contract.
-          setCareer({ ...career, agreedTerms: { club: talk.club, wage: weekly ?? 0 } });
+          // Push a manager too far and he no longer walks away (Mikey, 1 Oct
+          // 2026): the club comes back with a worse, final offer — the only
+          // one on the table if it is the only club. The offer screen marks it.
+          setCareer({ ...career, agreedTerms: weekly === null
+            ? { club: talk.club, wage: Math.max(1, Math.round(talking.wage * SOURED_OFFER_SHARE)), soured: true }
+            : { club: talk.club, wage: weekly } });
           setPhase("scout-offers");
         }}
       />
