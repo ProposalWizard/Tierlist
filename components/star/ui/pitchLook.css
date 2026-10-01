@@ -35,11 +35,6 @@
   background: var(--sk-page) !important;
   background-attachment: fixed !important;
 }
-/* The match screen: the pitch card sits on a dark night page, not on more grass
-   (v0.23.1, P69: "I don't like the grass behind the pitch"). */
-.star-look-pitch .sk-shell.sk-nograss {
-  background: radial-gradient(120% 50% at 50% -6%, rgba(40,90,60,.35), transparent 70%), linear-gradient(180deg, #0a1322 0%, #05080f 100%) !important;
-}
 .star-look-pitch .sk-bar,
 .star-look-pitch .sk-nav {
   background: linear-gradient(180deg, #1c6a3b, #14562e) !important;

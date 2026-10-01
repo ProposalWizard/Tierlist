@@ -3287,7 +3287,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
     return (
       <PitchScope>
-       <div className="min-h-screen sk-shell sk-nograss bg-gray-950 text-white py-4 px-3">
+       <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
