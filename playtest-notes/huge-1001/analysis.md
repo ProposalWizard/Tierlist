@@ -58,6 +58,12 @@ He calls this batch "0.22" (42:09, 42:57). His rule in chat was "chronologically
 - **W6, pictures (everyday model):**
   - Every shop picture becomes a Blender render, with no mix of drawings and renders (P56, P57).
   - No real photo faces on 3D figures unless it's your own player (P49).
+- **W7, the rest of the UI points (everyday model, after W4/W5):**
+  - Star gates open a scrolling level 1–5 view showing what each level unlocks (P11).
+  - NSS-like title screen: pitch, ball and net, your player standing on the left (P82).
+  - Fixtures and league on one page, with a notification bell in the middle of the bottom bar (P90).
+  - The Pitch look used in training, drills and the match screens (P92).
+  - The boss-meeting game and the phone purchase shown in the rendered style (P70).
 - **Side project (later):** the 3D walk-around for the manager signing and a 3D home/garage (P59, P60, P97).
 - **Separate page (later):** the gameplay look. The NSS comparisons are listed at the bottom of points.md.
 
