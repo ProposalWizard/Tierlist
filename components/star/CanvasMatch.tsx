@@ -2504,8 +2504,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.fillRect(c.px - rx * unit * 1.2, c.py - rx * unit * 1.2, rx * unit * 2.4, rx * unit * 2.4);
         ctx.restore();
       };
-      wear(CX, 1.9, 6.2, 2.4, 0.22);      // the goalmouth
-      wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16); // the penalty spot
+      if (sceneRef.current?.box !== false) {
+        wear(CX, 1.9, 6.2, 2.4, 0.22);      // the goalmouth
+        wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16); // the penalty spot
+      }
       wear(CX, HALF_LEN, 3.4, 2.4, 0.14);   // the centre
     }
 
@@ -2536,11 +2538,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     pLine(0, 0, PITCH_W, 0);
     pLine(0, 0, 0, HALF_LEN);
     pLine(PITCH_W, 0, PITCH_W, HALF_LEN);
-    // Penalty area (40.32 x 16.5) and six-yard box (18.32 x 5.5)
-    pRect(BOX_L, 0, BOX_R, BOX_DEPTH);
-    pRect(SIX_L, 0, SIX_R, SIX_DEPTH);
+    // Penalty area (40.32 x 16.5) and six-yard box (18.32 x 5.5) — a feature
+    // can leave them off (`scene.box === false`, the trial's gate drill).
+    const drawBox = sceneRef.current?.box !== false;
+    if (drawBox) {
+      pRect(BOX_L, 0, BOX_R, BOX_DEPTH);
+      pRect(SIX_L, 0, SIX_R, SIX_DEPTH);
+    }
     // Penalty spot + the D (an arc of radius 9.15 m clipped to outside the box)
-    {
+    if (drawBox) {
       const spot = P(CX, PEN_SPOT_Y);
       ctx.beginPath();
       ctx.arc(spot.px, spot.py, Math.max(1.5, unit * 0.11), 0, Math.PI * 2);
@@ -3009,10 +3015,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
-    } else
+    } else if (sceneRef.current?.you !== false)
     // You wear the same shirt as everybody else on your side — you are one of
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
+    // (A feature can leave you off the picture: `scene.you === false`.)
     footballer(sc.player.x, sc.player.y, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.

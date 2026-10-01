@@ -11,10 +11,10 @@ import {
 import { simRemaining, TRIAL_SIM_QUALITY, type TrialSimLevel } from "@/lib/star/trialDev";
 import DevTrialPanel from "./DevTrialPanel";
 import FirstPersonDribble from "./FirstPersonDribble";
-import TrialPenalties from "./stages/TrialPenalties";
 import TrialFreeKicks from "./stages/TrialFreeKicks";
 import TrialTechnique from "./stages/TrialTechnique";
 import TrialShootout from "./stages/TrialShootout";
+import TrialVision from "./stages/TrialVision";
 import { TeachCard } from "./stages/TrialPenalties";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 
@@ -33,9 +33,28 @@ import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
  * summary on the offers screen still shows the lot.
  */
 export const COUNTDOWN_FROM = 3;
-export const COUNTDOWN_STEP_MS = 700;
-/** After the last stage: one line, then the offers. */
-const FINAL_BEAT_MS = 1400;
+export const COUNTDOWN_STEP_MS = 550;
+/** After the last stage: "A scout has spotted you", then on (a tap skips the wait). */
+const FINAL_BEAT_MS = 2600;
+
+/**
+ * ── v0.23: A TUTORIAL, THEN A SHOOTOUT, THEN "A SCOUT HAS SPOTTED YOU" ──
+ *
+ * Harry (1 Oct 2026, reviewing v0.20): "it's just a tutorial on how to play the
+ * game" (every drill is ONE attempt), "I like Find the Pass as well, so I
+ * think Find the Pass could stay as a fifth drill" (five stages again), "this
+ * whole no contract thing, don't put this in the game right now. And you don't
+ * get a trial rating, you just get scouted. That's it, like a scout has spotted
+ * you. It doesn't have to be complicated." And on the look: "I like the pitch
+ * and the white and the basic. The animations and the feel of it are good" —
+ * so the trial sits on a white card instead of dark ones, and keeps its
+ * countdown animation.
+ *
+ * The scores are still worked out and written to the career (the score drives
+ * a free agent's second look); nothing here puts one on screen. What the
+ * shootout hands on is whether the winning penalty went in — see
+ * `TrialProgress.finalPenScored`.
+ */
 
 /**
  * THE TRIAL, STAGE BY STAGE.
@@ -65,6 +84,10 @@ export interface TrialSequenceProps {
   onTrial: (trial: TrialProgress) => void;
   /** The whole trial is done, here is what the scouts saw (0-100). */
   onComplete: (score: number, trial: TrialProgress) => void;
+  /** The closing "A scout has spotted you" card goes up (true) and comes down
+   *  (false). The last result is already saved when it goes up; the caller's
+   *  "finished trial goes straight on" guard must leave the card alone. */
+  onEnding?: (showing: boolean) => void;
   playerName: string;
   /** Pace is here because the dribbling stage is entirely about it — see the
    *  note at its call site. */
@@ -75,7 +98,7 @@ export interface TrialSequenceProps {
 }
 
 export default function TrialSequence({
-  trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40, pace: 40 }, penaltyRunup, freeKickRunup,
+  trial, onTrial, onComplete, onEnding, playerName, skills = { power: 40, technique: 40, pace: 40 }, penaltyRunup, freeKickRunup,
 }: TrialSequenceProps) {
   const stage = nextStage(trial);
   const stages = trialStagesFor(trial);
@@ -116,21 +139,38 @@ export default function TrialSequence({
   }, [open]);
 
   /** One stage is over. Record it, show what it was worth, move on. */
-  const finishStage = useCallback((which: TrialStage, quality: number) => {
+  // Never leave the page's guard switched off if this unmounts mid-card.
+  useEffect(() => () => onEnding?.(false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []);
+  const completedRef = useRef(false);
+  const completeOnce = useCallback((t: TrialProgress) => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    onEnding?.(false);
+    onComplete(trialScore(t), t);
+  }, [onComplete, onEnding]);
+  const finishStage = useCallback((which: TrialStage, quality: number, finalPenScored?: boolean) => {
     // Any half-played five-a-side is dropped once a stage is recorded. The
     // five-a-side left the trial on 1 Oct 2026, so the only snapshot that
     // can still be here is an old save's, and it would otherwise ride on the
     // career into every cloud save forever.
     const from = trial.fiveASide !== undefined ? { ...trial, fiveASide: undefined } : trial;
-    const next = recordStage(from, which, quality);
+    const recorded = recordStage(from, which, quality);
+    // Whether the winning penalty went in — the one thing the scout who spotted
+    // you takes into account (lib/star/scoutedPlacement.ts).
+    const next = finalPenScored === undefined ? recorded : { ...recorded, finalPenScored };
+    // Before the result is written: the page's "finished trial" guard reads the
+    // flag on the render that write causes.
+    if (trialComplete(next)) onEnding?.(true);
     onTrial(next);
     setCount(COUNTDOWN_FROM);
     setShowingResult(which);
     if (trialComplete(next)) {
-      // One line, then the offers — the summary of every stage lives there.
-      window.setTimeout(() => onComplete(trialScore(next), next), FINAL_BEAT_MS);
+      // "A scout has spotted you", then on.
+      window.setTimeout(() => completeOnce(next), FINAL_BEAT_MS);
     }
-  }, [trial, onTrial, onComplete]);
+  }, [trial, onTrial, completeOnce, onEnding]);
 
   // The 3-2-1 between stages: ticks down, then walks into the next stage.
   // Nothing to press — "just keep it moving".
@@ -161,8 +201,8 @@ export default function TrialSequence({
     const next = simRemaining(trial, level);
     onTrial(next);
     setShowingResult(null);
-    onComplete(trialScore(next), next);
-  }, [trial, onTrial, onComplete]);
+    completeOnce(next);
+  }, [trial, onTrial, completeOnce]);
 
   /** The dev tool, on every stage screen and on the between-stages card, so it
    *  is never more than one tap away from wherever the trial has stalled. */
@@ -222,20 +262,20 @@ export default function TrialSequence({
   const event = stage ? adversityOn(trial, stage) : null;
   const eventBanner = event && (
     <div
-      className={`mb-3 rounded-xl border px-3 py-2 ${
+      className={`mb-2 rounded-xl border px-3 py-2 ${
         event.flavour
-          ? "border-white/15 bg-white/5"
-          : "border-amber-400/30 bg-amber-500/10"
+          ? "border-gray-200 bg-gray-50"
+          : "border-amber-300 bg-amber-50"
       }`}
     >
       <div
         className={`text-[10px] font-black uppercase tracking-widest ${
-          event.flavour ? "text-white/50" : "text-amber-300"
+          event.flavour ? "text-gray-500" : "text-amber-700"
         }`}
       >
         {event.flavour ? "Trial day" : "That's not ideal"} · {event.label}
       </div>
-      <p className="mt-1 text-[11px] font-bold leading-snug text-white/80">{event.blurb}</p>
+      <p className="mt-1 text-[11px] font-bold leading-snug text-gray-700">{event.blurb}</p>
     </div>
   );
 
@@ -262,95 +302,97 @@ export default function TrialSequence({
             <div
               key={s}
               className={`h-1.5 flex-1 rounded-full ${
-                r ? "bg-emerald-400" : current ? "bg-white/70" : "bg-white/15"
+                r ? "bg-emerald-500" : current ? "bg-gray-800" : "bg-gray-200"
               }`}
             />
           );
         })}
       </div>
-      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-white/45">
+      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-gray-400">
         {stage ? `${done.length + 1}/${stages.length}` : "Done"}
       </span>
+    </div>
+  );
+
+  /**
+   * The white card every stage sits on (Harry: "I like the pitch and the white
+   * and the basic"). The dev panel stays above it, on the page's own dark.
+   */
+  const shell = (children: React.ReactNode) => (
+    <div className="mx-auto w-full max-w-md px-3 pt-2 pb-3">
+      {devPanel}
+      <div className="rounded-2xl bg-white p-2.5 text-gray-900 shadow-xl">
+        {progress}
+        {children}
+      </div>
     </div>
   );
 
   // ── Between stages: 3-2-1 into the next one — no score on screen ──────
   if (showingResult && trial.results[showingResult]) {
     const finished = trialComplete(trial);
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
-        {/* Deliberately no `eventBanner` here. On this card `stage` is the one
-            you have not walked into yet, so printing it would announce the bad
-            break before the stage it belongs to, and then print it again on
-            arrival. It belongs on the stage, once. */}
-        {finished ? (
-          <div className="mt-10 text-center text-sm font-bold text-white/80">
-            That&apos;s the lot, {playerName}. They&apos;re talking about you…
+    return shell(
+      finished ? (
+        // ── No trial score, no "No contract" card (Harry, P36) ──
+        // The whole trial ends on this: a scout has spotted you.
+        <button
+          type="button"
+          onClick={() => completeOnce(trial)}
+          className="scout-card mt-4 flex w-full flex-col items-center rounded-2xl bg-emerald-50 px-5 py-10 text-center"
+          aria-live="polite"
+        >
+          <svg viewBox="0 0 48 48" className="h-14 w-14" aria-hidden="true">
+            <circle cx="20" cy="20" r="12" fill="none" stroke="#059669" strokeWidth="4" />
+            <line x1="29" y1="29" x2="42" y2="42" stroke="#059669" strokeWidth="5" strokeLinecap="round" />
+            <circle cx="20" cy="20" r="4" fill="#34d399" />
+          </svg>
+          <div className="mt-4 text-2xl font-black leading-tight text-gray-900">A scout has spotted you.</div>
+          <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-emerald-700">Tap to carry on</div>
+          <style>{`@keyframes scoutIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}.scout-card{animation:scoutIn .45s cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.scout-card{animation:none}}`}</style>
+        </button>
+      ) : (
+        // Deliberately no `eventBanner` here. On this card `stage` is the one
+        // you have not walked into yet, so printing it would announce the bad
+        // break before the stage it belongs to, and then print it again on
+        // arrival. It belongs on the stage, once.
+        <div className="mt-4 flex flex-col items-center rounded-2xl bg-emerald-50 px-5 py-8 text-center" aria-live="polite">
+          <div className="text-[11px] font-black uppercase tracking-widest text-gray-500">Next up</div>
+          <div className="mt-1 text-xl font-black uppercase tracking-wide text-gray-900">{stage ? STAGE_LABEL[stage] : ""}</div>
+          <div key={count} className="trial-count mt-4 text-7xl font-black tabular-nums text-emerald-600">
+            {Math.max(1, count)}
           </div>
-        ) : (
-          <div className="mt-6 flex flex-col items-center rounded-2xl bg-white/5 px-5 py-8 text-center" aria-live="polite">
-            <div className="text-[11px] font-black uppercase tracking-widest text-white/60">Next up</div>
-            <div className="mt-1 text-xl font-black uppercase tracking-wide">{stage ? STAGE_LABEL[stage] : ""}</div>
-            <div key={count} className="trial-count mt-4 text-7xl font-black tabular-nums text-emerald-300">
-              {Math.max(1, count)}
-            </div>
-            <style>{`@keyframes trialCount{0%{opacity:0;transform:scale(.55)}35%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}.trial-count{animation:trialCount ${COUNTDOWN_STEP_MS}ms cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.trial-count{animation:none}}`}</style>
-          </div>
-        )}
-      </div>
+          <style>{`@keyframes trialCount{0%{opacity:0;transform:scale(.55)}35%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}.trial-count{animation:trialCount ${COUNTDOWN_STEP_MS}ms cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.trial-count{animation:none}}`}</style>
+        </div>
+      ),
     );
   }
 
   if (!stage) return null;
 
-  // ── Taking a man on — the existing first-person run, unmodified ────────
+  // ── Taking a man on — the existing first-person run ────────────────────
   if (stage === "dribbling") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
+    return shell(
+      <>
         {eventBanner}
-        {/* `pace` is RUNNING SPEED — the run's own header says so. This used
-            to be handed `skills.power`, which is a different stat and meant
-            your actual pace never reached the one stage that is entirely
-            about it. And `waveSizes` is passed so the men you are scored
-            against are the men actually on the screen: without it the run
-            picks its own waves and `dribbleQuality` divided by a number
-            unrelated to them, so beating everyone could score 0.72 while
-            beating three of nine scored 1.0. Both caught in review. */}
-        {/* ── Seeded, like everything else in the trial ──
-            `trial.ts`'s own header says it outright: "one seed on the career,
-            every roll derived from it, nothing regenerated." The dribbling
-            stage was the one place that was not true — with no `seed` prop the
-            run falls back to `Date.now() ^ Math.random()`, so it re-rolled on
-            every attempt and the file's claim was false for a fifth of the
-            trial.
-            `attemptSeed` rather than `trial.seed` for the same reason as the
-            vision and penalty stages: the run is reproducible while you are
-            playing it, and a resume genuinely gets new waves at the bumped
-            difficulty rather than a replay of the run you just watched. */}
-        {/* ── `embedded` needs a box, and never had one here ──
-            `FirstPersonDribble`'s embedded branch renders `absolute inset-0`
-            — by design, so it fills whatever the caller already sized (in a
-            real match that is CanvasMatch's own `aspect-[5/8]` wrapper). This
-            call site never gave it one, so it was positioning itself against
-            whatever happened to be the nearest positioned ancestor up the
-            page rather than against the stage. The wrapper is the same shape
-            the penalty and free-kick stages use, so all three stages are now
-            the same size box. */}
-        <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15">
+        {/* `pace` is RUNNING SPEED — the run's own header says so. `waveSizes`
+            is passed so the men you are scored against are the men actually on
+            the screen. `attemptSeed` rather than `trial.seed`, like the vision
+            and penalty stages: reproducible while you play it, and a resume
+            gets new waves at the bumped difficulty. `embedded` needs a box, and
+            this is the same shape the striking stages use. Your figure is not
+            drawn (`hideYou`): Harry, "on penalties I like our guy being there,
+            and maybe free kick … outside of that we just don't have him". */}
+        <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-gray-200">
           <FirstPersonDribble
             embedded
+            hideYou
             seed={attemptSeed(trial)}
             pace={skills.pace}
             oppStrength={dribble.oppStrength}
             waveSizes={dribble.waveSizes}
             hideHint={!dribbleTeachDone}
-            // Nobody moves while the card is up — the run used to start
-            // underneath it and was over ~1.2 s after NEXT. After the card,
-            // the run waits for its own "Tap to start".
+            // Nobody moves while the card is up. After the card, the run waits
+            // for its own "Tap to start".
             hold={!dribbleTeachDone}
             onComplete={(res: { cleared: boolean; beaten: number }) =>
               finishStage("dribbling", dribbleQuality(res, dribble))}
@@ -368,69 +410,61 @@ export default function TrialSequence({
             />
           )}
         </div>
-      </div>
+      </>,
     );
   }
 
-  // ── Free kicks, the gate, the shootout (and an old save's penalties) ───
+  // ── Free kicks, the gate, finding the pass, the shootout ───────────────
   //
   // Each one reports a 0-1 mean quality for the whole stage and nothing else —
   // the difficulty scaling is `recordStage`'s job, and a screen that applied
-  // it too would apply it twice (the mistake the five-a-side's own scoring
-  // already had to have measured out of it).
-  if (stage === "penalties") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
-        {eventBanner}
-        <TrialPenalties trial={trial} skills={skills} penaltyRunup={penaltyRunup} onDone={q => finishStage("penalties", q)} />
-      </div>
-    );
-  }
-
+  // it too would apply it twice. Every drill is ONE attempt (Harry: "it's just
+  // a tutorial on how to play the game"); only the shootout has more.
   if (stage === "freeKicks") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
+    return shell(
+      <>
         {eventBanner}
         <TrialFreeKicks trial={trial} skills={skills} freeKickRunup={freeKickRunup} onDone={q => finishStage("freeKicks", q)} />
-      </div>
+      </>,
     );
   }
 
   if (stage === "technique") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
+    return shell(
+      <>
         {eventBanner}
         <TrialTechnique trial={trial} skills={skills} onDone={q => finishStage("technique", q)} />
-      </div>
+      </>,
+    );
+  }
+
+  if (stage === "vision") {
+    return shell(
+      <>
+        {eventBanner}
+        <TrialVision trial={trial} onDone={q => finishStage("vision", q)} />
+      </>,
     );
   }
 
   if (stage === "shootout") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
+    return shell(
+      <>
         {eventBanner}
         <TrialShootout
           trial={trial}
           skills={skills}
           playerName={playerName}
           penaltyRunup={penaltyRunup}
-          onDone={q => finishStage("shootout", q)}
+          onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
         />
-      </div>
+      </>,
     );
   }
 
-  // Every stage in TRIAL_STAGES is handled above. The two retired ones
-  // (finding the pass, the five-a-side) can never be `stage`: `nextStage`
-  // only walks them for a trial that already has a result for every one of
-  // its five, which is a finished trial.
+  // Every stage in TRIAL_STAGES is handled above. The retired ones (penalties,
+  // the five-a-side) can never be `stage`: `nextStage` only walks them for a
+  // trial that already has a result for every one of its five, which is a
+  // finished trial.
   return null;
 }

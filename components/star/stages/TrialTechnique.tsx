@@ -25,9 +25,10 @@ import { StrikeStage } from "./TrialPenalties";
  *
  * The football is the real match, through `EngineFeature` inside the trial's
  * `StrikeStage` (the same frame, rep counter, pips and teaching card the free
- * kicks use). What differs from training is only what a trial needs: three
- * balls at a rising gate rather than three tries at one fixed one, and a
- * 0-1 mark for each rather than a pass or a fail.
+ * kicks use). What differs from training is only what a trial needs: one ball
+ * at the gate rather than three tries at a rising one (v0.23: "it's just a
+ * tutorial on how to play the game"), and a 0-1 mark for it rather than a pass
+ * or a fail.
  */
 
 export interface TrialTechniqueProps {
@@ -100,7 +101,12 @@ export default function TrialTechnique({
       skills={skills}
       seed={seed}
       drill="technique"
-      scene={DRILL_SCENE.technique}
+      // No man on the pitch and no penalty box drawn (Harry, 1 Oct 2026: "let's
+      // remove the guy" outside penalties and free kicks, and "the pitch
+      // doesn't need to have the box in it at all times"): you, a ball, two
+      // cones. Only what is drawn changes — the ball and the strike are the
+      // real match's.
+      scene={{ ...DRILL_SCENE.technique, you: false, box: false }}
       markersFor={markersFor}
       onBallStep={onBallStep}
       judge={judge}

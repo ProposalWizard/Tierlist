@@ -54,7 +54,7 @@ check(techniqueSetup(withDay(0.9), 0).gateWidth < techniqueSetup(withDay(0), 0).
     check(JSON.stringify(theirs) === JSON.stringify(ours), `both keepers are on the same ramp at kick ${k + 1}`);
   }
   check(shootoutKeeperFor(t, 0).keeperStrength === PENALTY_RAMP_FIRST.keeperStrength, "kick 1: a fair keeper");
-  check(shootoutKeeperFor(t, REPS.shootout - 1).keeperStrength === PENALTY_RAMP_LAST.keeperStrength, "kick 5: his best");
+  check(shootoutKeeperFor(t, REPS.shootout - 1).keeperStrength === PENALTY_RAMP_LAST.keeperStrength, `kick ${REPS.shootout}: his best`);
   check(shootoutKeeperFor(t, 9).keeperStrength === PENALTY_RAMP_LAST.keeperStrength, "sudden death stays at his best");
   check(shootoutKeeperFor(t, 2).keeperStrength === penaltyRampFor(2, REPS.shootout).keeperStrength, "the ramp is the trial's own");
 
@@ -112,8 +112,12 @@ function kick(seed: number, rating: number, ks: number, read: { commitChance: nu
     if (kick(3000 + i * 7919, 60, kp.keeperStrength, kp.read)) you++;
     if (kick(8000 + i * 7919, shootoutTheirRating(t), ko.keeperStrength, ko.read)) them++;
   }
-  console.log(`  over five kicks: a 60-rated stand-in for you ${pct(you / N)}, their takers ${pct(them / N)}`);
-  check(Math.abs(you - them) / N <= 0.1, `neither side starts well ahead (${pct(you / N)} vs ${pct(them / N)})`);
+  console.log(`  over the shootout's kicks: a 60-rated stand-in for you ${pct(you / N)}, their takers ${pct(them / N)}`);
+  // Their kicks are rigged in the trial now (lib/star/trialShootoutRig.ts,
+  // tests/star/trialShootoutRig.mts), so "neither side starts well ahead" is no
+  // longer a claim about the trial; the keepers still ramp together, and your
+  // kicks are still genuinely uncertain (below).
+  console.log(`  (their side, unrigged, for reference: ${pct(them / N)})`);
   check(you / N > 0.35 && you / N < 0.8, `a shootout kick is genuinely uncertain (${pct(you / N)})`);
 }
 
@@ -122,4 +126,4 @@ if (problems.length) {
   for (const p of problems) console.log("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS  the gate is training's gate, the shootout keepers ramp together, and it is close to even");
+console.log("PASS  the gate is training's gate, the shootout keepers ramp together, and your kicks are genuinely uncertain");

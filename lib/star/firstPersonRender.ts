@@ -979,6 +979,10 @@ export interface RenderFirstPersonOptions {
    * the open-run mode still uses.
    */
   own?: { x: number; y: number } | null;
+  /** Leave your own figure out — the ball, the men and the camera are unchanged
+   *  (the v0.23 trial: "outside of penalties and free kicks we just don't have
+   *  him"). Off by default; the real match never sets it. */
+  hideYou?: boolean;
   /**
    * Lean the "own" figure sideways — reuses the same lateral `shear` a
    * defender's telegraph already draws with, driven instead by which way
@@ -1020,7 +1024,10 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
 
   for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle);
 
-  if (opts.own) {
+  if (opts.own && opts.hideYou) {
+    // Just the ball, on the grass in front of the camera.
+    if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+  } else if (opts.own) {
     const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;
     const lean = opts.ownLean ?? 0;
     // The near leg visibly reaches toward the ball while it's being

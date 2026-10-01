@@ -274,7 +274,7 @@ export function TeachCard(
         // A solid card that is one piece: its own cursor (not the pitch's),
         // and the button inside its edge rather than poking out of it
         // (Mikey, 28 Sep 2026: "the got it button is like hovering over").
-        "teach-card pointer-events-auto cursor-default w-full rounded-xl border border-amber-300/60 bg-gray-950/95 shadow-lg "
+        "teach-card pointer-events-auto cursor-default w-full rounded-xl border-2 border-amber-400 bg-white shadow-xl "
         + (compact ? "px-2 py-1" : "px-3 py-2")
       }
     >
@@ -294,7 +294,7 @@ export function TeachCard(
           // statement of what the drill wants, and a label above it saying
           // "how to play" is a second line to say what the first line says.
           ? (
-            <span className="min-w-0 flex-1 truncate text-[11.5px] font-black leading-tight text-white">
+            <span className="min-w-0 flex-1 truncate text-[11.5px] font-black leading-tight text-gray-900">
               {short ?? headline}
             </span>
           )
@@ -302,9 +302,6 @@ export function TeachCard(
             <>
               <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
                 How to play
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                It counts
               </span>
             </>
           )}
@@ -319,9 +316,9 @@ export function TeachCard(
 
       {!compact && (
         <>
-          <div className="mt-1.5 text-[12px] font-black leading-tight text-white">{headline}</div>
+          <div className="mt-1.5 text-[12px] font-black leading-tight text-gray-900">{headline}</div>
           {lines.map(l => (
-            <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white">{l}</p>
+            <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-gray-700">{l}</p>
           ))}
         </>
       )}
@@ -444,7 +441,7 @@ export const TEACH_PERSISTS = false;
 
 /** How long the last attempt's result shows before the stage moves on — the
  *  engine's own result banner plays out first. */
-const LAST_RESULT_HOLD_MS = 1700;
+const LAST_RESULT_HOLD_MS = 1400;
 
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, keeperStrengthFor,
@@ -543,13 +540,16 @@ export function StrikeStage({
   return (
     <div className="w-full">
       <div className="mb-1 flex items-baseline justify-between">
-        <span className="text-[11px] font-black uppercase tracking-widest text-white/80">{title}</span>
-        <span className="text-[11px] font-black tabular-nums text-white/60">
-          {Math.min(rep + 1, reps)} / {reps}
-        </span>
+        <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">{title}</span>
+        {/* One attempt (the v0.23 trial): nothing to count. */}
+        {reps > 1 && (
+          <span className="text-[11px] font-black tabular-nums text-gray-500">
+            {Math.min(rep + 1, reps)} / {reps}
+          </span>
+        )}
       </div>
       {subtitle && (
-        <div className="mb-1 text-[11px] font-bold text-white/55">{subtitle(rep)}</div>
+        <div className="mb-1 text-[11px] font-bold text-gray-500">{subtitle(rep)}</div>
       )}
 
       <div className="relative">
@@ -581,11 +581,11 @@ export function StrikeStage({
         )}
       </div>
 
-      <div className="mt-1 flex items-center gap-1">
+      {reps > 1 && <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: reps }, (_, i) => {
           const q = scores[i];
           return (
-            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
               {q !== undefined && (
                 <div
                   className={`h-full ${q >= 0.55 ? "bg-emerald-400" : q >= 0.3 ? "bg-amber-400" : "bg-rose-500"}`}
@@ -595,8 +595,8 @@ export function StrikeStage({
             </div>
           );
         })}
-      </div>
-      <p className="mt-1 min-h-[16px] text-center text-[11px] font-bold text-white/70">
+      </div>}
+      <p className="mt-1 min-h-[16px] text-center text-[11px] font-bold text-gray-600">
         {resultText || (showTeach ? "" : hint)}
       </p>
     </div>
