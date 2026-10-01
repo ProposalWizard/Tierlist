@@ -233,7 +233,7 @@ export default function PlayAreaPage() {
             ))}
           </Row>
 
-          <Row label="Pressure" hint="While you pull back, the nearest opponent closes you down; if he gets there you're tackled, or fouled about 1 time in 3 (a free kick, or a penalty in the box). Real: Premier League full, Championship light, lower none.">
+          <Row label="Pressure" hint="While you pull back, the nearest opponent closes you down; if he gets there you're tackled, or fouled about 1 time in 3 (2 in 3 if he comes from behind you — he goes round you, never through) — a free kick, or a penalty in the box. Real: Premier League full, Championship light, lower none.">
             {PRESSURE_DIALS.map((d) => (
               <Toggle key={d.id} on={settings.pressure === d.id} onClick={() => set("pressure", d.id)}>
                 {d.label}
