@@ -45,11 +45,29 @@ interface Props {
   /** On one of the three swipe screens already. Off them, the house button
    *  lights up green so the way back is obvious. */
   atHome?: boolean;
+  /** Unlock chain (lib/star/unlocks.ts): buttons still locked, each with the
+   *  one line that says how to open it. Absent = everything open. */
+  locked?: Partial<Record<NavTab, string>>;
+  /** Unlock chain: Achievements takes the League button's place on the bar
+   *  (Harry, 1 Oct 2026, 07:58). League is then reached from Stats or the phone. */
+  achievementsSlot?: { active: boolean; onClick: () => void };
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot }: Props) {
+  // A locked button answers a tap with its "how to unlock" line.
+  const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
+  const tap = (tab: NavTab, label: string) => {
+    const hint = locked?.[tab];
+    if (hint) {
+      const at = Date.now();
+      setLockNote({ label, hint, at });
+      setTimeout(() => setLockNote((n) => (n && n.at === at ? null : n)), 2600);
+      return;
+    }
+    onNavigate(tab);
+  };
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -177,18 +195,48 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
             and the name pill up top take you home). Play is the biggest
             thing on the bar: raised, green, with a slow pulse. */}
         <div className="relative grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]">
-          <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
-          <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
-          <PlayBtn active={activeNav === "play"} onClick={() => onNavigate("play")} />
-          <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => onNavigate("life")} />
-          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
+          {lockNote && (
+            <div className="pointer-events-none absolute inset-x-3 bottom-full mb-2 flex items-center gap-2 rounded-xl bg-gray-950/95 px-3 py-2 ring-1 ring-amber-300/40 shadow-lg">
+              <span className="text-amber-300"><LockGlyph /></span>
+              <span className="text-[12px] font-black text-white">{lockNote.label} is locked —</span>
+              <span className="text-[12px] font-bold text-amber-300">{lockNote.hint}</span>
+            </div>
+          )}
+          {achievementsSlot
+            ? <NavBtn label="Achievements" icon="⭐" active={achievementsSlot.active} onClick={achievementsSlot.onClick} tight />
+            : <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
+          <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
+          <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />
+          <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} />
+          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} dot={mediaUnread && !locked?.media} lockHint={locked?.media} />
         </div>
       </div>
     </div>
   );
 }
 
-function NavBtn({ label, icon, active, onClick, dot }: { label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean }) {
+function LockGlyph({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="currentColor" fillOpacity=".25" />
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+function NavBtn({ label, icon, active, onClick, dot, lockHint, tight }: { label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean; lockHint?: string; /** A long label ("Achievements") set smaller so it is not cut off. */ tight?: boolean }) {
+  if (lockHint) return (
+    <button
+      onClick={onClick}
+      aria-label={`${label} — locked: ${lockHint}`}
+      className="kib-press relative min-w-0 h-[50px] rounded-xl font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 bg-gray-800 text-gray-400"
+      style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
+    >
+      <span className="text-[18px] leading-none opacity-30 grayscale">{icon}</span>
+      <span className="max-w-full truncate opacity-60">{label}</span>
+      <span className="absolute right-1.5 top-1.5 text-gray-300"><LockGlyph size={12} /></span>
+    </button>
+  );
   return (
     <button
       onClick={onClick}
@@ -200,7 +248,7 @@ function NavBtn({ label, icon, active, onClick, dot }: { label: string; icon: st
       style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.10), 0 2px 4px rgba(0,0,0,.35)" }}
     >
       <span className="text-[18px] leading-none">{icon}</span>
-      <span className="max-w-full truncate">{label}</span>
+      <span className={`max-w-full truncate ${tight ? "!text-[9px] min-[380px]:!text-[9.5px] tracking-[-0.03em]" : ""}`}>{label}</span>
       {active && <span className="absolute bottom-1 h-[3px] w-5 rounded-full bg-emerald-400" />}
       {dot && <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-gray-700" />}
     </button>
@@ -209,7 +257,19 @@ function NavBtn({ label, icon, active, onClick, dot }: { label: string; icon: st
 
 /** The centre button: bigger than the rest, raised above the bar, green, and
  *  breathing slowly so the eye goes to it. */
-function PlayBtn({ active, onClick }: { active: boolean; onClick: () => void }) {
+function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick: () => void; locked?: boolean }) {
+  if (locked) return (
+    <div className="relative flex justify-center">
+      <button
+        onClick={onClick}
+        aria-label="Play — locked"
+        className="kib-press -mt-5 flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full border-[3px] border-gray-800 bg-gray-700 font-black text-gray-300"
+      >
+        <LockGlyph size={22} />
+        <span className="text-[11px] uppercase tracking-wider leading-none">Play</span>
+      </button>
+    </div>
+  );
   return (
     <div className="relative flex justify-center">
       <button

@@ -657,6 +657,22 @@ export interface Horse {
   earnings: number; // lifetime prize money won
 }
 
+/** See CareerState.unlocks and lib/star/unlocks.ts. */
+export interface CareerUnlocks {
+  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone". */
+  open: string[];
+  /** One-off screens already shown: "tutorial", "drills-msg", "league-intro", "shop-intro", pop-ups. */
+  seen: string[];
+  /** Training drills finished since the career began (the chain needs 2). */
+  drills: number;
+  /** Star points when the chain began, for "your star rating went up by X from training". */
+  pointsAtStart: number;
+  /** Star rating when the chain began (same reason). */
+  starsAtStart?: number;
+  /** Phone apps installed from the App Store. */
+  apps: string[];
+}
+
 export interface CareerState {
   version: 2;
   player: StarPlayer;
@@ -872,6 +888,13 @@ export interface CareerState {
    * Optional: absent on every older save, which reads as nothing active.
    */
   kibAbility?: { curve?: boolean; extraTouch?: boolean };
+  /**
+   * The unlock chain a NEW career walks through (Harry, 1 Oct 2026, P13-P40):
+   * Home and Training open, everything else locked until it is earned.
+   * Absent on every save from before it, which reads as everything open —
+   * see lib/star/unlocks.ts.
+   */
+  unlocks?: CareerUnlocks;
   /**
    * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
    * for penalties and one for direct free kicks. Looks only, never who

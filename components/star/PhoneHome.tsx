@@ -36,6 +36,7 @@ import { formatMoney } from "@/lib/star/money";
 import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
+import { AppStore } from "./UnlockChain";
 import MediaFeed from "./MediaFeed";
 import LeagueScreen from "./LeagueScreen";
 import EnginePlay from "./EnginePlay";
@@ -44,7 +45,7 @@ import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
 import { ClubCard, CountUp, PressButton, RiseIn, Glow, Badge, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
 
-type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages";
+type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
 type Leave = HubPhase | "settings";
 interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string] }
 
@@ -65,9 +66,12 @@ const APPS: App[] = [
 ];
 /** The dock: the four apps that open inside the phone and get used most. */
 const DOCK = new Set<string>(["social", "messages", "fixtures", "kickabout"]);
-const INSIDE = new Set<string>(["social", "kickabout", "league", "fixtures", "messages"]);
+const INSIDE = new Set<string>(["social", "kickabout", "league", "fixtures", "messages", "appstore"]);
+/** Unlock chain (lib/star/unlocks.ts): the App Store, shown only on a new
+ *  career's phone, where the apps it does not start with are added. */
+const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-const appOf = (id: AppId) => APPS.find((a) => a.id === id)!;
+const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : APPS.find((a) => a.id === id)!);
 
 // ── What is unread (per phone, in this browser — a convenience, not state) ──
 const SOCIAL_SEEN = "star-phone-social-seen";
@@ -94,10 +98,13 @@ function buildMessages(career: CareerState): Msg[] {
 }
 const msgKey = (m: Msg) => `${m.from}|${m.text}`;
 
-export default function PhoneHome({ career, onToggleLike, onLeave }: {
+export default function PhoneHome({ career, onToggleLike, onLeave, installed, onInstall }: {
   career: CareerState;
   onToggleLike?: (postId: string) => void;
   onLeave: (ph: Leave) => void;
+  /** Unlock chain: which apps are on the phone yet. Absent = all of them. */
+  installed?: (id: string) => boolean;
+  onInstall?: (id: string) => void;
 }) {
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
@@ -184,7 +191,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
         <div style={{ width: size.w, height: size.h }}>
           <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
-              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} />}
+              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} installed={installed} />}
               {app !== null && (
                 <div
                   key={app}
@@ -200,6 +207,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
                   )}
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
                   {app === "messages" && <Messages msgs={msgs} />}
+                  {app === "appstore" && <AppStore career={career} onInstall={(id) => onInstall?.(id)} />}
                   <div className="flex shrink-0 justify-center pb-0.5 pt-1">
                     <PressButton
                       variant="secondary"
@@ -256,12 +264,15 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true }:
   );
 }
 
-function Grid({ career, glow, badges, onOpen }: {
+function Grid({ career, glow, badges, onOpen, installed }: {
   career: CareerState; glow: string; badges: Partial<Record<AppId, number>>;
   onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
+  installed?: (id: string) => boolean;
 }) {
   const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
-  const grid = APPS.filter((a) => !DOCK.has(a.id));
+  const grid = installed
+    ? [...APPS.filter((a) => !DOCK.has(a.id) && installed(a.id)), APP_STORE_ICON]
+    : APPS.filter((a) => !DOCK.has(a.id));
   const dock = APPS.filter((a) => DOCK.has(a.id));
   return (
     <div className="flex min-h-0 flex-1 flex-col px-3 pt-2">

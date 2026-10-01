@@ -96,7 +96,8 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
 {
   // Rescaled 14 Sep 2026 alongside corruption.ts's own fine cap (★50,000 →
   // ★100,000,000, same ×2000 personal-money multiplier as everywhere else).
-  const career = freshCareer();
+  // Reputation 20, not a new career's 0 (1 Oct 2026) — 0 has nowhere to fall.
+  const career = { ...freshCareer(), reputation: 20 };
   const caught = applyGettingCaught(career, "bribery", 40_000_000, "Caught bribing officials");
   check(caught.money < career.money, "getting caught genuinely costs real money");
   check(career.money - caught.money <= 100_000_000, "…but the fine is capped, not unbounded");

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { shuffle } from "@/lib/shuffle";
+import { relationshipGameGain } from "@/lib/star/relationshipGame";
 
 export type RelationshipKind = "boss" | "team" | "fans" | "sponsors" | "happiness";
 
@@ -26,6 +27,10 @@ const LABELS: Record<RelationshipKind, string> = {
   fans:      "Meet the Fans",
   sponsors:  "Sponsor Event",
   happiness: "Take a Break",
+};
+
+const WHO: Record<RelationshipKind, string> = {
+  boss: "boss", team: "team-mates", fans: "fans", sponsors: "sponsors", happiness: "happiness",
 };
 
 interface CardState {
@@ -87,9 +92,13 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
     }
   };
 
+  // What the game is worth, rolled once when it ends (lib/star/relationshipGame.ts):
+  // a loss costs 8; a win is +2 low down, +1 higher up, and near the top only
+  // sometimes +1. Was +4 for losing and +14 to +18 for winning.
+  const [roll] = useState(() => Math.random());
+  const gain = phase === "playing" ? 0 : relationshipGameGain(phase === "won", currentValue, roll);
+  const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
   const finalise = () => {
-    // Reward: 15 on win, 5 on loss (participation), scale by remaining lives
-    const gain = phase === "won" ? 12 + lives * 2 : 4;
     onComplete(gain);
   };
 
@@ -144,7 +153,9 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
         {phase === "won" && (
           <div className="mt-3 bg-emerald-800 border-2 border-emerald-400 rounded-xl p-4 text-center animate-pulse">
             <div className="text-lg font-black text-white">All matches found!</div>
-            <div className="text-xs text-emerald-200 mt-1">+{12 + lives * 2} {kind}</div>
+            <div className="text-xs text-emerald-200 mt-1">
+              {gain > 0 ? `${sign(gain)} ${WHO[kind]} — ${currentValue} → ${currentValue + gain}` : `Already ${currentValue} — no change this time. The higher it is, the harder it moves.`}
+            </div>
             <button onClick={finalise} className="mt-3 w-full py-2 bg-emerald-500 rounded-lg font-black">
               Continue →
             </button>
@@ -153,7 +164,7 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
         {phase === "lost" && (
           <div className="mt-3 bg-red-900 border-2 border-red-500 rounded-xl p-4 text-center">
             <div className="text-lg font-black text-white">Ran out of tries</div>
-            <div className="text-xs text-red-200 mt-1">Still got a small +4 boost for trying.</div>
+            <div className="text-xs text-red-200 mt-1">That went badly: {sign(gain)} — {currentValue} → {Math.max(0, currentValue + gain)}</div>
             <button onClick={finalise} className="mt-3 w-full py-2 bg-red-600 rounded-lg font-black">
               Continue →
             </button>

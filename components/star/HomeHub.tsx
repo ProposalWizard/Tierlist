@@ -388,7 +388,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
   const canUse = count > 0 && !ready && !full;
   const canBuy = career.money >= price;
   const [drinking, setDrinking] = useState(0);
-  const effect = c.effect === "curve" ? "Curve shots" : c.effect === "extraTouch" ? "Extra touch" : `+${c.restore} energy`;
+  const effect = c.effect === "curve" ? `Curve shots${c.restore ? ` +${c.restore}` : ""}` : c.effect === "extraTouch" ? `Extra touch${c.restore ? ` +${c.restore}` : ""}` : `+${c.restore} energy`;
   const use = () => {
     if (!canUse) return;
     setDrinking((d) => d + 1);

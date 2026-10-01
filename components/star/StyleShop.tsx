@@ -46,12 +46,15 @@ function ownedLevelOf(mine: OwnedItem | undefined): number {
   return mine.level ?? LIFESTYLE_ALL_LEVELS.find((l) => l.id === mine.id)?.level ?? 1;
 }
 
-export default function StyleShop({ career, onBuyItem, reward, landed, landKey }: {
+export default function StyleShop({ career, onBuyItem, reward, landed, landKey, lockOf }: {
   career: CareerState;
   onBuyItem: (item: OwnedItem) => void;
   reward: Reward;
   landed: number;
   landKey: string;
+  /** Unlock chain: how far towards an item's star rating you are (0-1), or
+   *  null when it is open. Absent = everything open. */
+  lockOf?: (base: string) => number | null;
 }) {
   const [view, setView] = useState(() => takeStyleView());
   const [group, setGroup] = useState<StyleGroup>("drip");
@@ -128,6 +131,7 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey }
               const item = levels.find((l) => l.level === showLv) ?? levels[0];
               return (
                 <ItemCard
+                  lock={lockOf?.(base) ?? null}
                   key={base}
                   base={base}
                   item={item}
@@ -169,11 +173,34 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey }
 }
 
 /** One picture card in the grid. */
-function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen }: {
+function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = null }: {
   base: string; item: OwnedItem; mine?: OwnedItem; ownLv: number; worn: boolean; fame: number; price: number | null; onOpen: () => void;
+  /** Locked behind a star rating: how far there you are, 0-1. A bar, never
+   *  the number (house style, 30 Sep 2026). */
+  lock?: number | null;
 }) {
   const lv = item.level ?? 1;
   const yours = !!mine && !worn;
+  if (lock !== null) return (
+    <div
+      data-item-card={base}
+      data-locked
+      className="relative flex flex-col overflow-hidden rounded-2xl text-left"
+      style={{ background: "linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
+    >
+      <div className="relative" style={{ background: tileBg(lv) }}>
+        <StylePicture base={base} level={lv} className="block aspect-[100/64] w-full opacity-30 grayscale" />
+        <span className="absolute inset-0 grid place-items-center text-[22px]">🔒</span>
+      </div>
+      <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-1">
+        <div className="line-clamp-2 min-h-[26px] text-[11px] font-black leading-[13px] text-white/70">{familyName(item)}</div>
+        <div className="text-[9.5px] font-black text-amber-300">Higher star rating</div>
+        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style={{ width: `${Math.max(4, Math.round(lock * 100))}%` }} />
+        </div>
+      </div>
+    </div>
+  );
   return (
     <button
       data-item-card={base}
