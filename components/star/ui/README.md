@@ -114,8 +114,10 @@ never hidden and never explained in a paragraph.
 ```
 
 Training, the drills and the match chrome (scoreboard, bars, buttons around the
-canvas) use the Pitch look whichever look Settings has chosen. `PitchScope`
-adds the one `star-look-pitch` class; the canvas itself is untouched.
+canvas) use the Pitch look. The New UI is the Pitch look throughout (Settings →
+UI: New); the Old UI is frozen in `components/star/legacy/` and never uses
+any of this. `PitchScope` adds the one `star-look-pitch` class; the canvas
+itself is untouched.
 
 ## The match-week page (v0.23, P90)
 

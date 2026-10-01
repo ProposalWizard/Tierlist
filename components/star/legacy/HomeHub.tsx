@@ -36,7 +36,7 @@ import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar
 import ClubBadge from "@/components/star/ClubBadge";
 import KibCanIcon from "@/components/star/KibCanIcon";
 import { setPieceDuties } from "@/lib/star/setPieces";
-import { starStatus } from "@/lib/star/starPoints";
+import { starStatus } from "@/components/star/legacy/oldStarScale";
 import { attributeOverall } from "@/lib/star/rating";
 import StarRatingSheet from "@/components/star/legacy/StarRatingSheet";
 import PlayerAvatar, { useAvatarStyle } from "@/components/star/legacy/PlayerAvatar";

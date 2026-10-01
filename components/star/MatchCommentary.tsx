@@ -7,6 +7,7 @@ import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
 import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
+import { useUiVersion } from "@/lib/star/uiLook";
 
 /**
  * THE MATCH, AS IT IS BEING PLAYED.
@@ -68,6 +69,9 @@ export default function MatchCommentary({
   minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  // Settings → UI: Old keeps this panel as it was before v0.23 — no kick-off
+  // pitch card, the old energy-ring colours (lib/star/uiLook.ts).
+  const oldUi = useUiVersion() === "old";
 
   // Pinned to the newest line. `scrollTop = scrollHeight` rather than
   // `scrollIntoView` on the last child: the latter scrolls the PAGE as well
@@ -143,7 +147,7 @@ export default function MatchCommentary({
               strip over a black screen for a couple of seconds (Harry's 1 Oct
               2026 recording, 14:59). This is the kick-off itself: who is
               playing, in whose colours, and that the first chance is coming. */}
-          {lines.length <= 1 && (
+          {lines.length <= 1 && !oldUi && (
             <KickOffCard
               homeTeam={homeTeam} awayTeam={awayTeam}
               homeKit={userIsHome ? userKit : oppKit} awayKit={userIsHome ? oppKit : userKit}
@@ -241,7 +245,9 @@ export default function MatchCommentary({
             // Icons, not words (owners, 23 Sep 2026). Green Low, amber
             // Medium, red High — red is the most intense (Harry, 1 Oct 2026,
             // P95); see EnergyModeIcon.
-            const ring = m === "low" ? "ring-green-500/70" : m === "high" ? "ring-red-500/70" : "ring-amber-400/70";
+            const ring = oldUi
+              ? (m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70")
+              : (m === "low" ? "ring-green-500/70" : m === "high" ? "ring-red-500/70" : "ring-amber-400/70");
             return (
               <button
                 key={m}

@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useUiVersion } from "@/lib/star/uiLook";
 
 /**
  * THE GAME FILLS THE PHONE (Harry, 1 Oct 2026: "maybe you need to remember to
@@ -12,5 +13,7 @@ import { usePathname } from "next/navigation";
  */
 export default function GameFullScreen() {
   const path = usePathname();
-  return path === "/star-dev" ? <div data-star-game hidden /> : null;
+  // Settings → UI: Old keeps the site menu, as the game had it before v0.23.
+  const ui = useUiVersion();
+  return path === "/star-dev" && ui === "new" ? <div data-star-game hidden /> : null;
 }

@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
-import { starStatus, STAR_GATES, LEGEND_TASKS, ledgerOf } from "@/lib/star/starPoints";
+import { starStatus, STAR_GATES, LEGEND_TASKS, ledgerOf } from "@/components/star/legacy/oldStarScale";
 import { attributeOverall } from "@/lib/star/rating";
 
 export const STAR_TITLES = ["", "Non-league hopeful", "Non-league regular", "Football League pro", "League One standout", "Championship star", "Premier League player", "Winner", "Elite", "Ballon d'Or winner", "The Complete Career"];

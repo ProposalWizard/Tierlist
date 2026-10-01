@@ -1,5 +1,5 @@
 "use client";
-import { starsNow } from "@/lib/star/starPoints";
+import { starsNow } from "@/components/star/legacy/oldStarScale";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { formatMoney } from "@/lib/star/money";

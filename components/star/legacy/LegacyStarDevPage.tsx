@@ -40,7 +40,7 @@ import {
 import { managerTalkFor, agreedWeeklyWage, weeklyToSeason } from "@/lib/star/signingTalk";
 import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
 import NegotiationScreen from "@/components/star/legacy/NegotiationScreen";
-import ManagerTalk from "@/components/star/ManagerTalk";
+import ManagerTalk from "@/components/star/legacy/ManagerTalk";
 import YouthTeam from "@/components/star/YouthTeam";
 import LoanBrief from "@/components/star/LoanBrief";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -86,7 +86,7 @@ import ProfileSetup from "@/components/star/legacy/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/legacy/TrialReward";
-import { starsNow, starStatus, matchStarPoints, withStars } from "@/lib/star/starPoints";
+import { starsNow, starStatus, matchStarPoints, withStars } from "@/components/star/legacy/oldStarScale";
 import { STAR_TITLES } from "@/components/star/legacy/StarRatingSheet";
 import { clubTheme } from "@/components/star/legacy/ui";
 import { POSITION_NAMES } from "@/lib/star/teamsheet";
