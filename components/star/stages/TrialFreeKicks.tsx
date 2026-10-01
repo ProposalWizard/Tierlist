@@ -169,7 +169,7 @@ export default function TrialFreeKicks({
         // clipping.
         short: "Round the wall, or over it.",
         lines: [
-          "Drag back to aim, pull further for power — same as the penalties.",
+          "Drag back from the ball to aim, and pull further for more power.",
           "Then you run up. Strike the SIDE of the ball to bend it round them, or the bottom to lift it over — before the ring runs out.",
         ],
       }}

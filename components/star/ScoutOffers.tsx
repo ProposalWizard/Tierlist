@@ -5,7 +5,7 @@ import { offerLeagueName } from "@/lib/star/scoutOffers";
 import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import type { TrialProgress } from "@/lib/star/trial";
-import { TRIAL_STAGES, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
+import { trialStagesFor, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
 import { CountUp, Glow, PressButton, clubTheme } from "./ui";
 import { Screen, Kicker, useLater } from "./ui/Screen";
 
@@ -65,7 +65,7 @@ export default function ScoutOffers({
 
   const breakdown = (
     <div className="mt-3 space-y-1.5">
-      {TRIAL_STAGES.map(s => {
+      {trialStagesFor(trial).map(s => {
         const r = trial.results[s];
         return (
           <div key={s} className="flex items-center gap-2">

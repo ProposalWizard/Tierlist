@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  TRIAL_STAGES, STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
-  trialComplete, difficultyFor, keeperBonusFor, adversityOn,
+  STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
+  trialComplete, adversityOn, trialStagesFor,
   type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
 import {
@@ -10,20 +10,37 @@ import {
 } from "@/lib/star/trialStages";
 import { simRemaining, TRIAL_SIM_QUALITY, type TrialSimLevel } from "@/lib/star/trialDev";
 import DevTrialPanel from "./DevTrialPanel";
-import FiveASide from "./FiveASide";
 import FirstPersonDribble from "./FirstPersonDribble";
 import TrialPenalties from "./stages/TrialPenalties";
 import TrialFreeKicks from "./stages/TrialFreeKicks";
-import TrialVision from "./stages/TrialVision";
+import TrialTechnique from "./stages/TrialTechnique";
+import TrialShootout from "./stages/TrialShootout";
 import { TeachCard } from "./stages/TrialPenalties";
-import { stageQualityFrom, type FiveASideSummary } from "@/lib/star/fiveASide/score";
-import type { FiveMatchState } from "@/lib/star/fiveASide/match";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
+
+/**
+ * ── NO SCORE BETWEEN DRILLS: 3-2-1 AND ON (1 Oct 2026) ──
+ *
+ * Harry: "remove the section of the drill that gives them a score of 100
+ * after each drill... literally go 3-2-1 drill, 3-2-1 drill, just keep it
+ * moving... even if we were going to calculate that in the background, we
+ * don't need it to be shown to them because the score pulls them out."
+ *
+ * So between stages there is a short countdown naming what is next, and then
+ * the next stage simply starts. Every result is still worked out and written
+ * to the career the instant it exists — the offers are decided by exactly the
+ * same number — it is just never put on screen mid-trial. The scouts'
+ * summary on the offers screen still shows the lot.
+ */
+export const COUNTDOWN_FROM = 3;
+export const COUNTDOWN_STEP_MS = 700;
+/** After the last stage: one line, then the offers. */
+const FINAL_BEAT_MS = 1400;
 
 /**
  * THE TRIAL, STAGE BY STAGE.
  *
- * Walks you through the five stages in order, writes each result onto the
+ * Walks you through the stages in order, writes each result onto the
  * career THE INSTANT it is decided, and hands the final number to whatever
  * decides who signs you.
  *
@@ -61,7 +78,10 @@ export default function TrialSequence({
   trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40, pace: 40 }, penaltyRunup, freeKickRunup,
 }: TrialSequenceProps) {
   const stage = nextStage(trial);
+  const stages = trialStagesFor(trial);
+  /** The stage just finished, while the 3-2-1 into the next one runs. */
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
+  const [count, setCount] = useState(COUNTDOWN_FROM);
 
   /**
    * ── SAY WHICH STAGE IS ACTUALLY OPEN ──
@@ -97,20 +117,30 @@ export default function TrialSequence({
 
   /** One stage is over. Record it, show what it was worth, move on. */
   const finishStage = useCallback((which: TrialStage, quality: number) => {
-    // The half-played five-a-side is dropped once the stage is over. It only
-    // ever existed so closing the app mid-match did not lose it; kept, it
-    // rides on the career into every cloud save forever, and the last
-    // passage's snapshot is stale anyway (this runs in the same tick as the
-    // one that wrote it).
-    const from = which === "fiveASide" ? { ...trial, fiveASide: undefined } : trial;
+    // Any half-played five-a-side is dropped once a stage is recorded. The
+    // five-a-side left the trial on 1 Oct 2026, so the only snapshot that
+    // can still be here is an old save's, and it would otherwise ride on the
+    // career into every cloud save forever.
+    const from = trial.fiveASide !== undefined ? { ...trial, fiveASide: undefined } : trial;
     const next = recordStage(from, which, quality);
     onTrial(next);
+    setCount(COUNTDOWN_FROM);
     setShowingResult(which);
     if (trialComplete(next)) {
-      // Shown for a beat first — the number is the whole point of the day.
-      window.setTimeout(() => onComplete(trialScore(next), next), 1400);
+      // One line, then the offers — the summary of every stage lives there.
+      window.setTimeout(() => onComplete(trialScore(next), next), FINAL_BEAT_MS);
     }
   }, [trial, onTrial, onComplete]);
+
+  // The 3-2-1 between stages: ticks down, then walks into the next stage.
+  // Nothing to press — "just keep it moving".
+  const finishedAll = trialComplete(trial);
+  useEffect(() => {
+    if (!showingResult || finishedAll) return;
+    if (count <= 0) { setShowingResult(null); return; }
+    const t = window.setTimeout(() => setCount(c => c - 1), COUNTDOWN_STEP_MS);
+    return () => window.clearTimeout(t);
+  }, [showingResult, count, finishedAll]);
 
   /**
    * ── DEV ONLY: fill every remaining stage and go straight to the offers ──
@@ -209,7 +239,7 @@ export default function TrialSequence({
     </div>
   );
 
-  const done = TRIAL_STAGES.filter(s => trial.results[s]);
+  const done = stages.filter(s => trial.results[s]);
   // ── ONE row, not two ──
   //
   // This used to be the pip strip plus a whole second line underneath it
@@ -225,7 +255,7 @@ export default function TrialSequence({
   const progress = (
     <div className="mb-2 flex items-center gap-2">
       <div className="flex flex-1 items-center gap-1">
-        {TRIAL_STAGES.map(s => {
+        {stages.map(s => {
           const r = trial.results[s];
           const current = s === stage;
           return (
@@ -239,59 +269,35 @@ export default function TrialSequence({
         })}
       </div>
       <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-white/45">
-        {stage ? `${done.length + 1}/${TRIAL_STAGES.length}` : "Done"}
+        {stage ? `${done.length + 1}/${stages.length}` : "Done"}
       </span>
     </div>
   );
 
-  // ── Between stages: what that one was worth ────────────────────────────
+  // ── Between stages: 3-2-1 into the next one — no score on screen ──────
   if (showingResult && trial.results[showingResult]) {
-    const r = trial.results[showingResult]!;
     const finished = trialComplete(trial);
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-6 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {/* Deliberately no `eventBanner` here. On this card `stage` is the one
             you have not walked into yet, so printing it would announce the bad
             break before the stage it belongs to, and then print it again on
             arrival. It belongs on the stage, once. */}
-        <div className="rounded-2xl bg-white/5 p-5 text-center">
-          <div className="text-[11px] font-black uppercase tracking-widest text-white/60">
-            {STAGE_LABEL[showingResult]}
-          </div>
-          <div className="mt-2 text-5xl font-black tabular-nums">{r.score}</div>
-          <div className="mt-1 text-[11px] font-bold text-white/60">out of 100</div>
-          {/* ── What this line is, now that the score is not difficulty-scaled ──
-              It used to be load-bearing: the score really was `quality ×
-              (0.70 + 0.60 × difficulty)`, so a 70 on a hard afternoon and a 70
-              on an easy one were different performances and hiding which was
-              which made the number feel arbitrary. `stageScore` is now
-              `100 × quality × (0.95 + 0.05 × difficulty)` — perfect play is
-              worth 95-100 whatever the day — so difficulty barely moves the
-              score at all and this is no longer an explanation of it.
-              It stays because it is still TRUE and still worth saying: it
-              reads `TrialStageResult.difficulty`, which still stores the full
-              difficulty the stage was actually played at, reload bump and all.
-              It tells you what the afternoon asked of you, not how the number
-              was arrived at. */}
-          <div className="mt-3 text-[11px] font-bold text-white/50">
-            {r.difficulty > 0.66 ? "They made that hard."
-              : r.difficulty > 0.33 ? "A fair test."
-              : "They went easy on you."}
-          </div>
-        </div>
         {finished ? (
-          <div className="mt-5 text-center text-sm font-bold text-white/70">
+          <div className="mt-10 text-center text-sm font-bold text-white/80">
             That&apos;s the lot, {playerName}. They&apos;re talking about you…
           </div>
         ) : (
-          <button
-            onClick={() => setShowingResult(null)}
-            className="mt-5 w-full rounded-xl bg-emerald-500 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-emerald-400"
-          >
-            Next: {stage ? STAGE_LABEL[stage] : ""} →
-          </button>
+          <div className="mt-6 flex flex-col items-center rounded-2xl bg-white/5 px-5 py-8 text-center" aria-live="polite">
+            <div className="text-[11px] font-black uppercase tracking-widest text-white/60">Next up</div>
+            <div className="mt-1 text-xl font-black uppercase tracking-wide">{stage ? STAGE_LABEL[stage] : ""}</div>
+            <div key={count} className="trial-count mt-4 text-7xl font-black tabular-nums text-emerald-300">
+              {Math.max(1, count)}
+            </div>
+            <style>{`@keyframes trialCount{0%{opacity:0;transform:scale(.55)}35%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}.trial-count{animation:trialCount ${COUNTDOWN_STEP_MS}ms cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.trial-count{animation:none}}`}</style>
+          </div>
         )}
       </div>
     );
@@ -366,39 +372,7 @@ export default function TrialSequence({
     );
   }
 
-  // ── The five-a-side ────────────────────────────────────────────────────
-  if (stage === "fiveASide") {
-    return (
-      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
-        {progress}
-        {devPanel}
-        {eventBanner}
-        {/* THEIR keeper carries the adversity, not yours — passing it as
-            `keeperStrength` made a sharp keeper defend YOUR goal, so a player
-            who drew the bad break was helped by it. Caught in review. */}
-        <FiveASide
-          embedded
-          seed={trial.seed}
-          difficulty={difficultyFor(trial, "fiveASide")}
-          oppKeeperStrength={40 + difficultyFor(trial, "fiveASide") * 45 + keeperBonusFor(trial, "fiveASide")}
-          keeperStrength={55}
-          skills={skills}
-          resumeFrom={(trial.fiveASide as FiveMatchState | undefined) ?? null}
-          onProgress={state => onTrial({ ...trial, fiveASide: state })}
-          onComplete={(_summary: FiveASideSummary, state: FiveMatchState) => {
-            // `stageQualityFrom` IS the unscaled quality — the trial applies
-            // its own difficulty scaling and applying it twice would punish a
-            // hard trial twice over. This used to divide the rounded, clamped
-            // score back out by the same factor, which is exactly the mistake
-            // score.ts's own note describes and is lossy by up to a point.
-            finishStage("fiveASide", stageQualityFrom(state));
-          }}
-        />
-      </div>
-    );
-  }
-
-  // ── Penalties, free kicks, finding the pass ────────────────────────────
+  // ── Free kicks, the gate, the shootout (and an old save's penalties) ───
   //
   // Each one reports a 0-1 mean quality for the whole stage and nothing else —
   // the difficulty scaling is `recordStage`'s job, and a screen that applied
@@ -426,18 +400,37 @@ export default function TrialSequence({
     );
   }
 
-  if (stage === "vision") {
+  if (stage === "technique") {
     return (
       <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
-        <TrialVision trial={trial} onDone={q => finishStage("vision", q)} />
+        <TrialTechnique trial={trial} skills={skills} onDone={q => finishStage("technique", q)} />
       </div>
     );
   }
 
-  // Every stage in TRIAL_STAGES is handled above; this is the unreachable
-  // arm that keeps the switch honest if a sixth is ever added.
+  if (stage === "shootout") {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
+        {progress}
+        {devPanel}
+        {eventBanner}
+        <TrialShootout
+          trial={trial}
+          skills={skills}
+          playerName={playerName}
+          penaltyRunup={penaltyRunup}
+          onDone={q => finishStage("shootout", q)}
+        />
+      </div>
+    );
+  }
+
+  // Every stage in TRIAL_STAGES is handled above. The two retired ones
+  // (finding the pass, the five-a-side) can never be `stage`: `nextStage`
+  // only walks them for a trial that already has a result for every one of
+  // its five, which is a finished trial.
   return null;
 }

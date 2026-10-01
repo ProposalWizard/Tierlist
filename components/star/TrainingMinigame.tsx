@@ -291,7 +291,7 @@ function useCanvasSize(canvasRef: React.RefObject<HTMLCanvasElement>, wrapRef: R
 // STRIKING — power, technique and free kick share this one drill
 // ═══════════════════════════════════════════════════════════════════════════
 
-type StrikeKind = "power" | "technique" | "freeKick";
+export type StrikeKind = "power" | "technique" | "freeKick";
 
 /**
  * What each drill puts on the pitch. The ball, the kick and the flight are the
@@ -303,13 +303,13 @@ type StrikeKind = "power" | "technique" | "freeKick";
  * - Free kick: the wall and the keeper, but no poacher either.
  * No drill shows the match's own GOAL/PASS text; the drill's flash says it.
  */
-const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
+export const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
   technique: { keeper: false, goal: false, teammates: false, banners: false },
   power: { teammates: false, banners: false },
   freeKick: { teammates: false, banners: false },
 };
 
-interface StrikeSetup {
+export interface StrikeSetup {
   scenario: Scenario;
   viewport: TrainingViewport;
   gate: { left: { x: number; y: number }; right: { x: number; y: number }; centre: { x: number; y: number } } | null;
@@ -318,7 +318,7 @@ interface StrikeSetup {
   brief: string;
 }
 
-function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => number): StrikeSetup {
+export function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => number): StrikeSetup {
   if (kind === "technique") {
     const cfg = techniqueDrill(level, rep);
     // The ball sits far enough back that the gate always stands about six

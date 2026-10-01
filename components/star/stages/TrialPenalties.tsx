@@ -13,6 +13,7 @@ import { EngineFeature } from "@/components/star/EnginePlay";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
+import type { ScenePicture } from "@/lib/star/scenePicture";
 
 /**
  * THE PENALTIES STAGE — and the striking stage the FREE KICKS stage runs on.
@@ -126,6 +127,19 @@ export interface StrikeStageProps {
   /** Your penalty and free-kick run-ups (lib/star/runupStyles.ts) — looks only. */
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
+  /**
+   * ── For a stage that is not a shot at goal (the gate, 1 Oct 2026) ──
+   *
+   * What is on the pitch (the gate has no keeper and no goal), the cones for
+   * this rep, a watch on the ball, and how an attempt is marked. All optional:
+   * absent, the stage is the penalty/free-kick stage it has always been.
+   */
+  scene?: ScenePicture;
+  markersFor?: (rep: number) => { x: number; y: number; color?: string }[];
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /** Marks one attempt: its 0-1 quality and the line shown under the pitch.
+   *  The stage's quality is then the mean of these. */
+  judge?: (info: ChanceResolved) => { quality: number; text: string };
 }
 
 
@@ -435,6 +449,7 @@ const LAST_RESULT_HOLD_MS = 1700;
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, keeperStrengthFor,
   penaltyRead, penaltyReadFor, onDone, forceCompactTeach = false, penaltyRunup, freeKickRunup,
+  scene, markersFor, onBallStep, judge,
 }: StrikeStageProps) {
   const [rep, setRep] = useState(0);
   const repRef = useRef(0);
@@ -463,9 +478,28 @@ export function StrikeStage({
 
   /** One attempt is over — scored off the engine's own result. */
   const pointsRef = useRef<number[]>([]);
+  const judgeRef = useRef(judge);
+  judgeRef.current = judge;
   const onChanceResolved = useCallback((info: ChanceResolved) => {
     if (doneRef.current) return;
     setStruckOnce(true);
+    const judged = judgeRef.current?.(info);
+    if (judged) {
+      scoresRef.current = [...scoresRef.current, judged.quality];
+      pointsRef.current = [...pointsRef.current, judged.quality];
+      setScores(scoresRef.current);
+      setResultText(judged.text);
+      const nextRep = repRef.current + 1;
+      if (nextRep >= reps) {
+        doneRef.current = true;
+        const quality = pointsRef.current.reduce((a, b) => a + b, 0) / pointsRef.current.length;
+        window.setTimeout(() => onDone(quality), LAST_RESULT_HOLD_MS);
+      } else {
+        repRef.current = nextRep;
+        setRep(nextRep);
+      }
+      return;
+    }
     // Placement only means something for a ball that reached the goal line.
     const reached = info.outcome === "goal" || info.outcome === "rebound"
       || info.outcome === "wide" || info.outcome === "over" || info.outcome === "post";
@@ -528,8 +562,11 @@ export function StrikeStage({
           penaltyRead={penaltyReadFor ? penaltyReadFor(rep) : penaltyRead}
           seed={seed}
           // A trial is you against the keeper (and the wall): no team-mate
-          // following in to tidy up a rebound. Harry, 24 Sep 2026.
-          scene={{ teammates: false }}
+          // following in to tidy up a rebound. Harry, 24 Sep 2026. The gate
+          // takes the keeper and the goal off as well (its own `scene`).
+          scene={scene ?? { teammates: false }}
+          markers={markersFor?.(rep)}
+          onBallStep={onBallStep}
           penaltyRunup={penaltyRunup}
           freeKickRunup={freeKickRunup}
         />
