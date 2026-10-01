@@ -1,0 +1,156 @@
+{
+  "sounds": [
+    {
+      "name": "kick-soft",
+      "file": "/sfx/kick-soft.mp3",
+      "duration": 0.52,
+      "kb": 6.5,
+      "purpose": "A pass or a soft touch",
+      "prompt": "Single soft football pass, side of boot on a leather ball, short thud on grass."
+    },
+    {
+      "name": "kick-hard",
+      "file": "/sfx/kick-hard.mp3",
+      "duration": 0.52,
+      "kb": 6.5,
+      "purpose": "A struck shot",
+      "prompt": "Single powerful football shot, boot smashing a leather ball, sharp punchy thump."
+    },
+    {
+      "name": "goal-net",
+      "file": "/sfx/goal-net.mp3",
+      "duration": 1.23,
+      "kb": 14.7,
+      "purpose": "Ball hits the back of the net",
+      "prompt": "Football ball hitting the back of a goal net, rope net ripple and rustle, short."
+    },
+    {
+      "name": "crowd-cheer-small",
+      "file": "/sfx/crowd-cheer-small.mp3",
+      "duration": 3.03,
+      "kb": 35.9,
+      "purpose": "Goal at a small non-league ground",
+      "prompt": "Small crowd of a few hundred at a non-league football ground cheering a goal, claps and shouts, short."
+    },
+    {
+      "name": "crowd-cheer-stadium",
+      "file": "/sfx/crowd-cheer-stadium.mp3",
+      "duration": 4.05,
+      "kb": 47.8,
+      "purpose": "Goal in a big stadium",
+      "prompt": "Huge football stadium crowd erupting for a goal, roar swelling then fading, short."
+    },
+    {
+      "name": "crowd-groan",
+      "file": "/sfx/crowd-groan.mp3",
+      "duration": 2.04,
+      "kb": 24.2,
+      "purpose": "A near miss or a save",
+      "prompt": "Football stadium crowd groaning 'ohhh' after a near miss, short."
+    },
+    {
+      "name": "keeper-save",
+      "file": "/sfx/keeper-save.mp3",
+      "duration": 0.63,
+      "kb": 7.7,
+      "purpose": "Keeper catches or parries",
+      "prompt": "Goalkeeper gloves catching a football hard, padded leather slap thud."
+    },
+    {
+      "name": "whistle-start",
+      "file": "/sfx/whistle-start.mp3",
+      "duration": 1.04,
+      "kb": 12.6,
+      "purpose": "Kick-off",
+      "prompt": "Referee whistle, one short sharp blast."
+    },
+    {
+      "name": "whistle-half",
+      "file": "/sfx/whistle-half.mp3",
+      "duration": 1.65,
+      "kb": 19.6,
+      "purpose": "Half time",
+      "prompt": "Referee whistle, two short blasts."
+    },
+    {
+      "name": "whistle-full",
+      "file": "/sfx/whistle-full.mp3",
+      "duration": 2.43,
+      "kb": 28.8,
+      "purpose": "Full time",
+      "prompt": "Referee whistle, three blasts, the last one long."
+    },
+    {
+      "name": "ui-tap",
+      "file": "/sfx/ui-tap.mp3",
+      "duration": 0.52,
+      "kb": 6.5,
+      "purpose": "Any button tap",
+      "prompt": "Tiny soft UI tap click for a mobile game menu."
+    },
+    {
+      "name": "ui-confirm",
+      "file": "/sfx/ui-confirm.mp3",
+      "duration": 0.63,
+      "kb": 7.7,
+      "purpose": "Confirm / continue",
+      "prompt": "Short bright positive mobile game UI confirm blip, two rising notes."
+    },
+    {
+      "name": "coin-in",
+      "file": "/sfx/coin-in.mp3",
+      "duration": 0.84,
+      "kb": 10.1,
+      "purpose": "Money paid in",
+      "prompt": "Coins dropping into a pile, bright cash register ching, mobile game reward."
+    },
+    {
+      "name": "star-tick",
+      "file": "/sfx/star-tick.mp3",
+      "duration": 0.52,
+      "kb": 6.5,
+      "purpose": "Star bar filling, one tick",
+      "prompt": "Single tiny bright sparkle tick, mobile game progress bar."
+    },
+    {
+      "name": "level-up",
+      "file": "/sfx/level-up.mp3",
+      "duration": 1.65,
+      "kb": 19.6,
+      "purpose": "Star rating goes up",
+      "prompt": "Triumphant short mobile game level-up sting, rising shimmer and chime."
+    },
+    {
+      "name": "achievement-pop",
+      "file": "/sfx/achievement-pop.mp3",
+      "duration": 1.04,
+      "kb": 12.6,
+      "purpose": "Achievement unlocked",
+      "prompt": "Satisfying achievement unlocked pop with a sparkle chime, mobile game."
+    },
+    {
+      "name": "breaking-news",
+      "file": "/sfx/breaking-news.mp3",
+      "duration": 2.04,
+      "kb": 24.2,
+      "purpose": "Breaking news headline",
+      "prompt": "Short TV sports news breaking-news sting, dramatic whoosh and hit."
+    },
+    {
+      "name": "phone-notification",
+      "file": "/sfx/phone-notification.mp3",
+      "duration": 0.84,
+      "kb": 10.1,
+      "purpose": "New post on the phone feed",
+      "prompt": "Smartphone notification ping, clean two-tone chime."
+    },
+    {
+      "name": "can-open",
+      "file": "/sfx/can-open.mp3",
+      "duration": 0.97,
+      "kb": 11.7,
+      "purpose": "Opening an energy drink",
+      "prompt": "Aluminium drink can cracking open with a fizz hiss."
+    }
+  ]
+}

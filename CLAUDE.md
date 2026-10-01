@@ -159,6 +159,7 @@ Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset
 - [x] ~~**Run `tierlist_tiers.sql` migration**~~ — Done (April 2026)
 - [ ] **Online multiplayer draft** — Multiple players draft from the same PL pool (first come first served, no duplicate picks). Needs Supabase Realtime for turn sync. Relegated players get sacked; remaining players continue.
 - [ ] **Player trait system (PL Draft)** — Traits that players can have or be assigned: Captain, Wonderkid, Timeless, Big Game Player, Reckless, Selfish. Not yet designed — just an idea to explore.
+- [ ] **Professional pictures for shop items and figures (Harry, 1 Oct 2026)** — "the pictures look unprofessional, I guess we can use higgsfield image gen at some point for that." The shop's per-level drawings (cars, jets, homes, boots), the signing-scene figures and similar are home-made vector drawings. Plan: generate them with Higgsfield image gen later, one consistent style across all 155 shop levels. Not started.
 - [ ] **Star career: random/triggered life events** — a big brainstormed idea bank of football/footballer-life events (match-fixing bribes, doping temptation, scandal, investments, injuries, family, media, wheel-spin/coin-flip/guaranteed mechanics alongside choice-based ones) meant to keep the player always half-expecting something. Not designed against real code yet — full list captured in `STAR_LIFE_EVENTS.md`. Most natural fit is extending `lib/star/dilemmas.ts`'s choice-event shape, plus a new non-decision event shape for the wheel/coin/guaranteed ones.
 - [ ] **Star career: more sponsorship types** — asked directly for a brainstorm of every plausible type of sponsorship a footballer picks up, not just the ten categories `lib/star/sponsors.ts` already has (Boots, Sports Drink, Food, Sports Clothing, Casual Clothing, Electronics, Cosmetics, Watch, Jewelry, Car). Full idea bank — new ongoing categories (position-gated, nation-gated, league-gated — three axes the current ten don't touch at all), one-off milestone deals (first goal, international debut, Ballon d'Or), and mechanic ideas beyond the current fee+objective shape (bidding wars, exclusivity, rival poaching, scandal-by-association, renewal roulette) — captured in `STAR_SPONSOR_IDEAS.md`, same brainstorm-idea-bank spirit as `STAR_LIFE_EVENTS.md`. All brand names in it are invented, not real companies.
 - [x] ~~**Star career: Power & Politics ("the Rule Book")**~~ — ALL 7 PHASES of the rollout plan done, plus an unplanned Phase 8 (11 Sep 2026). Reputation, a generic voting/ceremony engine, deepened club ownership (recommendations, formations, kit vote, presidency, the §4.5 son mechanic, mergers), the Rule Book (points per result, no-draws-to-penalties, match length, offside toggle, European slot reallocation, forced league movement, new competition creation), corruption (bribery, lawyers, the black market), club facilities (real per-club stadium/training-ground/youth-academy, majority-owner upgrades, stadium revenue), and — Phase 8 — becoming president of a real governing body (`lib/star/leadership.ts`; two real thresholds, a real vote, and it genuinely bypasses the ordinary influence gate on three real powers once won) are all real and tested. Two rule fields (squad size, Champions League format) stay real, votable data by DELIBERATE CHOICE, not oversight — asked directly to wire real hooks for these, and concluded a safe partial hook doesn't exist for squad size (the only safe option, roster/bench size, would misrepresent what the rule means: on-pitch numbers) and the Champions League rewrite is genuinely multi-session-scale (`euro.ts` is 731 lines tightly keyed to a single league-table phase). Both stay open, honestly scoped, concrete next steps. Full brief and the rollout plan (with each phase's real implementation notes and every honest simplification) are in `STAR_POWER_POLITICS.md` — read that file before extending any of this further.
@@ -226,6 +227,15 @@ used the base engine … extra stuff built on top of the base engine."*
   named dial (`TEST_ONLY` in the guard), never a copy.
 - **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
   and 2 dev prototypes. The live list is in the guard.
+
+## OLD UI / NEW UI — Settings → UI: Old | New (Harry, 1 Oct 2026)
+
+*"keep the old ui exactly how it is as a backup … old ui is current and new ui
+is whatever we eventually land on."* Old UI = the career screens frozen as on
+branch Harry at 4f2e839, in `components/star/legacy/` (read its README). Never
+restyle or "fix" anything there. New UI = `app/star-dev/page.tsx` +
+`components/star/`. Both share the save, `lib/star`, the match, training
+drills and the trial. Setting: `lib/star/uiLook.ts` (per device, default New).
 
 ## SCENARIO RULES COME FROM THE DRAWINGS — the one-on-one way, for every kind
 
@@ -346,6 +356,33 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
+patch-notes or review page: a before and an after clip of the whole phone
+screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
+full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
+or two phone shots squeezed side by side. `scripts/film/README.md`.
+**Build first, film once at the end (Harry, 1 Oct 2026: "yes standing rule
+that please, we are wasting time and tokens").** While building, builders check
+their work with STILLS only — no MP4 recording, no second "before" server.
+Merge every part into one copy, then do ONE filming pass: every "before" on the
+shared base, every "after" on the merged copy. The only exception: things Harry
+judges by eye before they're built for real (a size, a camera, a figure) still
+get a quick prototype he can see first.
+
+**Film the "after" on the final combined copy (Harry, 1 Oct 2026).** When a
+batch is built in parallel parts, every "after" clip on the page is filmed on
+the ONE merged copy with all changes in, and every "before" on the same base,
+so each picture shows everything together. *"How am I meant to analyse if
+you've recorded everything separately? … put the patch notes together in a
+way where you can see everything, apply all the changes, and then record."*
+
+**Perfection with efficiency (Harry, 1 Oct 2026).** *"we have to combine
+perfection with efficiency. If its gonna take 30 mins less to get to the same
+outcome at some points you can use a bit less effort but the layout should
+always be the same."* Cut effort where it doesn't change the outcome (fewer
+re-takes, lighter checks on small items); never cut the page layout — the
+same cards, clips, speed buttons and toggles every time.
+
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
@@ -372,6 +409,10 @@ not by version number, so it doesn't go stale at the next release.
   expensive model.
 - If a task straddles both, do the building on the top model and hand the
   checking and writing-up to the everyday one.
+- **Update (Harry, 1 Oct 2026), overrides the lines above where they differ:**
+  the everyday model at **medium** effort for reviewing recordings, building
+  from recordings, and **building artifacts/pages**; the top model for the
+  **logic** tasks (game rules, curves, maths, engine behaviour, hard bugs).
 - **Playtest/walkthrough videos (Harry, 30 Sep 2026):** the everyday model at
   medium effort does the breakdown (download, transcript, pictures, a
   timestamped list of every point); the top model does the analysis and the

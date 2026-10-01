@@ -57,7 +57,9 @@ function strengthOf(league: LeagueTeam[], club: string): number {
  * (LeagueScreen LADDER).
  */
 export function autoPromotionPlaces(division: ReturnType<typeof divisionOf>): number {
-  return division === "league_two" ? 3 : division === "national_league" ? 1 : 2;
+  return division === "league_two" ? 3
+    : division === "national_league" || division === "national_league_north" || division === "national_league_south" ? 1
+    : 2;
 }
 
 /** Higher seed at home in the second leg, which is what finishing above

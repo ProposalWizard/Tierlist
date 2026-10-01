@@ -1,6 +1,7 @@
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS,
   LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
 import { leagueNameFor, type CareerDivision } from "./calendar";
 import { weeklyWageFor, goalBonusFor, assistBonusFor } from "./economy";
@@ -56,6 +57,25 @@ const LADDER: { division: CareerDivision; clubs: readonly string[]; strength: nu
   { division: "league_two", clubs: LEAGUE_TWO_CLUBS, strength: 50 },
   { division: "national_league", clubs: NATIONAL_LEAGUE_CLUBS, strength: 42 },
 ];
+
+/**
+ * The two regional divisions under the National League (1 Oct 2026, P62).
+ * Kept out of LADDER on purpose: LADDER is what a trial SCORE is read
+ * against (retrials, see generateScoutOffers), and that bell curve was tuned
+ * on five rungs. The first trial now places you through
+ * scoutedPlacement.ts instead, which is where these two are reached from.
+ */
+const REGIONAL_RUNGS: { division: CareerDivision; clubs: readonly string[]; strength: number }[] = [
+  { division: "national_league_north", clubs: NATIONAL_LEAGUE_NORTH_CLUBS, strength: 36 },
+  { division: "national_league_south", clubs: NATIONAL_LEAGUE_SOUTH_CLUBS, strength: 36 },
+];
+
+/** How good a club is, 0-100, from its division's middle and its own
+ *  standing — the number a ScoutOffer carries. */
+export function scoutedClubStrength(club: string, division: CareerDivision): number {
+  const rung = [...LADDER, ...REGIONAL_RUNGS].find(r => r.division === division);
+  return clubStrength(club, division, rung?.strength ?? 36);
+}
 
 /**
  * Below this, nobody signs you — at all, on any roll.
@@ -185,6 +205,8 @@ function clubStrength(club: string, division: CareerDivision, divisionStrength: 
 /** Where on the 0-100 score range each rung is most interested. */
 const PEAK: Record<CareerDivision, number> = {
   premier: 96, championship: 80, league_one: 64, league_two: 48, national_league: 32,
+  // Not in LADDER, so never read; here because the record is total.
+  national_league_north: 16, national_league_south: 16,
 };
 
 /** How wide each rung's interest runs either side of its peak. */
@@ -222,6 +244,7 @@ const SPREAD = 22;
  */
 const RETRIAL_PEAK: Record<CareerDivision, number> = {
   premier: 110, championship: 94, league_one: 76, league_two: 56, national_league: 26,
+  national_league_north: 10, national_league_south: 10,
 };
 
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
@@ -406,5 +429,5 @@ export function offerLeagueName(offer: ScoutOffer): string {
 
 /** Every club in a division — what `attachClub` needs to build the league. */
 export function clubsForDivision(division: CareerDivision): string[] {
-  return [...(LADDER.find(r => r.division === division)?.clubs ?? PREMIER_LEAGUE_CLUBS)];
+  return [...([...LADDER, ...REGIONAL_RUNGS].find(r => r.division === division)?.clubs ?? PREMIER_LEAGUE_CLUBS)];
 }

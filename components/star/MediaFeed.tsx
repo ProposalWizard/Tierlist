@@ -8,7 +8,7 @@ import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar"
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
-import { KitStyles, PressButton, ClubCard, RiseIn, useClubTheme, rgba } from "./ui";
+import { KitStyles, PressButton, ClubCard, RiseIn, EmptySlots, useClubTheme, rgba } from "./ui";
 
 /**
  * THE FEED — ON YOUR PHONE.
@@ -197,15 +197,9 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                 ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} /></RiseIn>
                 : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
               {shown.length === 0 && (
-                <ClubCard glow={glow} className="kit-rise mx-3 mt-3 rounded-2xl px-3 py-8 text-center">
-                  <div className="text-[30px] leading-none">📭</div>
-                  <div className="mt-1 text-sm font-black text-white">Quiet out there.</div>
-                  <p className="mt-1 text-[11px] font-bold text-white/60">
-                    {posts.length === 0
-                      ? "Play a match and the world will have something to say about it."
-                      : "Nothing under this filter."}
-                  </p>
-                </ClubCard>
+                // Not a blank page: blacked-out posts where posts will be
+                // (Harry, 1 Oct 2026, P90). No words.
+                <EmptySlots rows={4} icon="📭" className="mt-2" />
               )}
               {/* The end of the list — without it there is nothing to tell
                   a reader they have actually reached the bottom rather than

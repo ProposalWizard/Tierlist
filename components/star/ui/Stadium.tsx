@@ -11,9 +11,11 @@ import { rgba } from "./theme";
  *
  * `intro` flickers the floodlights on as the screen opens (the title
  * screen); `big` makes the banks larger for a full-screen backdrop; `pitch`
- * off when the screen puts its own <Pitch> under the player.
+ * off when the screen puts its own <Pitch> under the player; `floods` off
+ * leaves the sky and the stand without the two lamp banks (Home, where they
+ * sat under the Next match label).
  */
-export default function Stadium({ glow, intro = false, big = false, pitch = true }: { glow: string; intro?: boolean; big?: boolean; pitch?: boolean }) {
+export default function Stadium({ glow, intro = false, big = false, pitch = true, floods: showFloods = true }: { glow: string; intro?: boolean; big?: boolean; pitch?: boolean; floods?: boolean }) {
   const floods = big
     ? [{ side: "left", x: "14%", rot: -30, delay: 0 }, { side: "right", x: "86%", rot: 30, delay: 260 }]
     : [{ side: "left", x: "10%", rot: -26, delay: 0 }, { side: "right", x: "90%", rot: 26, delay: 260 }];
@@ -37,7 +39,7 @@ export default function Stadium({ glow, intro = false, big = false, pitch = true
       <div className="absolute inset-x-0 top-[8%] h-[2px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       {/* Two floodlight banks: a grid of lamps, a soft halo, and a faint
           blurred beam falling towards him. */}
-      {floods.map((f) => {
+      {showFloods && floods.map((f) => {
         const bank = (
           <>
             <div className={`absolute rounded-full ${big ? "-left-28 -top-24 h-56 w-56" : "-left-16 -top-14 h-32 w-32"}`} style={{ background: "radial-gradient(closest-side, rgba(220,235,255,.40), rgba(220,235,255,0))" }} />

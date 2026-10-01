@@ -1,0 +1,1806 @@
+"use client";
+import { useState } from "react";
+import type { CareerState, LeagueSquad } from "@/lib/star/types";
+import {
+  allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
+  ownedClubState,
+} from "@/lib/star/investments";
+import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
+import { loadLineup } from "@/lib/star/lineupStore";
+import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, type Pickable } from "@/lib/star/formations";
+import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
+import { kitsOf, type Kit } from "@/lib/star/kits";
+import { facilitiesFor } from "@/lib/star/facilities";
+import { playerMarketValue } from "@/lib/star/marketValue";
+import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
+import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
+import NegotiationScreen from "@/components/star/legacy/NegotiationScreen";
+import OwnedLineupEditor from "@/components/star/OwnedLineupEditor";
+import type { NegotiationState } from "@/lib/star/negotiation";
+import { Burst, CountUp, FloatText, PressButton, clubTheme, useTrigger } from "@/components/star/legacy/ui";
+import { Screen } from "@/components/star/legacy/ui/Screen";
+
+/**
+ * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
+ *
+ * Requested directly: buy a percentage stake in any club, priced off real
+ * reputation/league position/squad rating (lib/star/investments.ts), and
+ * past majority ownership, real control — sign and sell players, appoint a
+ * manager, fund the club. Three tabs: browse the market and buy in, track
+ * what you already own, and — only for clubs you actually control — the
+ * Boardroom, where every action genuinely rewrites that club's real squad
+ * (career.leagueSquads) and the money genuinely leaves your own balance.
+ */
+
+interface ActionResult {
+  ok: boolean;
+  reason?: string;
+}
+
+interface Props {
+  career: CareerState;
+  onBack: () => void;
+  /** Deep-link straight into a tab (and, for "boardroom", a specific club)
+   *  instead of always opening on Market — lets OwnershipScreen's hub jump a
+   *  club card straight to that club's boardroom rather than making the
+   *  player re-navigate through tabs they just came from. */
+  initialTab?: "market" | "portfolio" | "boardroom";
+  initialBoardroomClub?: string;
+  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers" | "history";
+  onBuyStake: (club: string, percent: number) => void;
+  onSellStake: (club: string, percent: number) => void;
+  onTopUpBudget: (club: string, amount: number) => void;
+  onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
+  /** Optional, reported directly 14 Sep 2026: selling used to FORCE a
+   *  shareholder vote even for a 100% owner — a real obstacle, not a real
+   *  choice. `onSellPlayer` now sells directly; this is offered as its own
+   *  button on the same confirmation screen for anyone who actually wants
+   *  to see fan reaction (and can still overrule a bad result exactly as
+   *  before) rather than the only path to a sale. */
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string, agreedFee?: number) => ActionResult;
+  onManagerNegotiationFailed: (club: string, managerName: string) => void;
+  /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
+  onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
+  onSetFormation: (club: string, formationId: string) => ActionResult;
+  /** Save-scoped lineup override — writes to THIS career's own
+   *  `ownedLineups`, never the shared global `lineupStore.ts` table. See
+   *  types.ts's `ownedLineups` doc and clubPowers.ts's `setOwnedLineup`. */
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
+  /** Owning the club you actually play for — more power, not less. See
+   *  clubPowers.ts's appointSelfCaptain/setTalisman/transferSelfTo. */
+  onAppointSelfCaptain: (club: string) => ActionResult;
+  onSetTalisman: (club: string, on: boolean) => ActionResult;
+  onTransferSelfTo: (toClub: string) => ActionResult;
+  onSetKit: (club: string, kit: ClubKit) => ActionResult;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
+  onStandForPresident: (club: string) => ActionResult;
+  onSetPresidentWage: (club: string, wage: number) => ActionResult;
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => ActionResult;
+  onHaveASon: () => ActionResult;
+  onAgeUpSon: () => ActionResult;
+  onPromoteSon: (club: string) => ActionResult;
+  onTransferSon: (toClub: string) => ActionResult;
+  /** Phase 7 of STAR_POWER_POLITICS.md — club facilities. */
+  onRenameStadium: (club: string, name: string) => ActionResult;
+  onUpgradeStadiumCapacity: (club: string) => ActionResult;
+  onUpgradeTrainingGround: (club: string) => ActionResult;
+  onUpgradeYouthAcademy: (club: string) => ActionResult;
+}
+
+function StarIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+}
+
+function money(n: number): string {
+  return formatMoney(n);
+}
+
+/** A real, if simple, jersey shape in the club's actual colours — requested
+ *  directly: "there should be an area somewhere which shows the kit of that
+ *  club because we don't always know what exactly the colors of that kit
+ *  and what they look like." Takes a single real Kit (shirt + trim) — a
+ *  club now has a real home AND away kit (kits.ts's own shape), rebuilt
+ *  15 Sep 2026 after it was rightly pointed out that real football has kit
+ *  clashes and away strips, which the old single-design vote ignored. */
+export function KitSwatch({ kit, size = 44 }: { kit: Kit; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className="shrink-0">
+      <path d="M8 6 L1 15 L7 20 L11 13 Z" fill={kit.trim} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M32 6 L39 15 L33 20 L29 13 Z" fill={kit.trim} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M11 7 Q20 12 29 7 L32 35 Q20 38.5 8 35 Z" fill={kit.shirt} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M15.5 5.5 Q20 9.5 24.5 5.5 L22.5 3 Q20 5.5 17.5 3 Z" fill={kit.trim} />
+    </svg>
+  );
+}
+
+export default function Investments(props: Props) {
+  const { career } = props;
+  const [tab, setTab] = useState<"market" | "portfolio" | "boardroom">(props.initialTab ?? "market");
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [boardroomClub, setBoardroomClub] = useState<string | null>(props.initialBoardroomClub ?? null);
+
+  const owned = (career.investments ?? []).filter(i => i.percent > 0);
+  const majorityClubs = owned.filter(i => isMajorityOwner(career, i.club));
+  const theme = clubTheme(boardroomClub ?? career.player.club, career);
+
+  return (
+    <Screen glow={theme.glow}>
+      <div className="w-full">
+        <div className="flex items-center gap-2 mb-3">
+          <PressButton variant="secondary" size="sm" onClick={props.onBack} className="normal-case tracking-normal">← Back</PressButton>
+          <div className="flex-1 kit-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ ["--kit-glow" as string]: "#f59e0b" } as React.CSSProperties}>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Balance</span>
+            {/* The balance counts to its new value after a buy or a sale. */}
+            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon /><CountUp value={career.money} format={(n) => money(Math.round(n))} /></span>
+          </div>
+        </div>
+
+        <div className="kit-tabs mb-3">
+          {(["market", "portfolio", "boardroom"] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setBoardroomClub(null); }}
+              className={`kit-tab text-[10.5px] ${tab === t ? "kit-tab-on" : ""}`} style={{ letterSpacing: ".05em" }}
+            >
+              {t === "boardroom" ? `Boardroom${majorityClubs.length ? ` (${majorityClubs.length})` : ""}` : t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "market" && (
+          <Market
+            career={career} search={search} onSearch={setSearch}
+            expanded={expanded} onExpand={setExpanded}
+            onBuyStake={props.onBuyStake} onSellStake={props.onSellStake}
+          />
+        )}
+
+        {tab === "portfolio" && (
+          <Portfolio career={career} owned={owned} onBuyStake={props.onBuyStake} onSellStake={props.onSellStake} onRecommend={props.onRecommend} />
+        )}
+
+        {tab === "boardroom" && (
+          boardroomClub
+            ? (
+              <Boardroom
+                career={career} club={boardroomClub} onBack={() => setBoardroomClub(null)}
+                initialSection={boardroomClub === props.initialBoardroomClub ? props.initialBoardroomSection : undefined}
+                onTopUpBudget={props.onTopUpBudget} onSignPlayer={props.onSignPlayer}
+                onSellPlayer={props.onSellPlayer} onProposeSellVote={props.onProposeSellVote} onReplaceManager={props.onReplaceManager}
+                onManagerNegotiationFailed={props.onManagerNegotiationFailed}
+                onSetFormation={props.onSetFormation} onSetOwnedLineup={props.onSetOwnedLineup} onSetKit={props.onSetKit}
+                onAppointSelfCaptain={props.onAppointSelfCaptain} onSetTalisman={props.onSetTalisman}
+                onTransferSelfTo={props.onTransferSelfTo}
+                onProposeKitVote={props.onProposeKitVote} onStandForPresident={props.onStandForPresident}
+                onSetPresidentWage={props.onSetPresidentWage}
+                otherOwnedClubs={owned.map(i => i.club).filter(c => c !== boardroomClub && c !== career.player.club)}
+                onMergeClubs={props.onMergeClubs}
+                son={career.son} onHaveASon={props.onHaveASon} onAgeUpSon={props.onAgeUpSon}
+                onPromoteSon={props.onPromoteSon} onTransferSon={props.onTransferSon}
+                onRenameStadium={props.onRenameStadium} onUpgradeStadiumCapacity={props.onUpgradeStadiumCapacity}
+                onUpgradeTrainingGround={props.onUpgradeTrainingGround} onUpgradeYouthAcademy={props.onUpgradeYouthAcademy}
+              />
+            )
+            : <BoardroomList clubs={majorityClubs.map(i => i.club)} career={career} onOpen={setBoardroomClub} />
+        )}
+      </div>
+    </Screen>
+  );
+}
+
+// ── MARKET ───────────────────────────────────────────────────────────────
+
+function Market({
+  career, search, onSearch, expanded, onExpand, onBuyStake, onSellStake,
+}: {
+  career: CareerState; search: string; onSearch: (s: string) => void;
+  expanded: string | null; onExpand: (c: string | null) => void;
+  onBuyStake: (club: string, percent: number) => void; onSellStake: (club: string, percent: number) => void;
+}) {
+  // Reported directly: the market only ever sorted A-Z, with no way to see
+  // the biggest (or smallest) clubs at a glance without reading every row.
+  const [sortBy, setSortBy] = useState<"name" | "value">("name");
+  const clubs = allInvestableClubs()
+    .filter(c => canInvestIn(career, c))
+    .filter(c => c.toLowerCase().includes(search.toLowerCase()));
+  // Computed once per club, up front, so sorting by value doesn't call
+  // clubValuation (a real, non-trivial calculation) a second time per
+  // comparison on top of the one render already needs below.
+  const valuations = new Map(clubs.map(c => [c, clubValuation(c, career)]));
+  const sortedClubs = sortBy === "value"
+    ? [...clubs].sort((a, b) => (valuations.get(b) ?? 0) - (valuations.get(a) ?? 0))
+    : [...clubs].sort((a, b) => a.localeCompare(b));
+
+  return (
+    <>
+      <div className="mb-2 flex gap-2">
+        <input
+          value={search}
+          onChange={e => onSearch(e.target.value)}
+          placeholder="Search clubs…"
+          className="flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
+        />
+        <div className="flex rounded-lg overflow-hidden border border-gray-700 shrink-0">
+          <button
+            onClick={() => setSortBy("name")}
+            className={`px-2.5 py-2 text-[10px] font-black ${sortBy === "name" ? "bg-emerald-600 text-white" : "bg-gray-800 text-white/70"}`}
+          >
+            A–Z
+          </button>
+          <button
+            onClick={() => setSortBy("value")}
+            className={`px-2.5 py-2 text-[10px] font-black ${sortBy === "value" ? "bg-emerald-600 text-white" : "bg-gray-800 text-white/70"}`}
+          >
+            ★ High→Low
+          </button>
+        </div>
+      </div>
+      <div className="kit-card overflow-hidden max-h-[60vh] overflow-y-auto">
+        {sortedClubs.map(club => {
+          const valuation = valuations.get(club) ?? clubValuation(club, career);
+          const stake = stakeIn(career, club);
+          const isOpen = expanded === club;
+          return (
+            <div key={club} className="border-b border-white/[0.06] last:border-b-0">
+              <button
+                onClick={() => onExpand(isOpen ? null : club)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-700 text-left"
+              >
+                <div className="min-w-0">
+                  <div className="font-bold text-white text-sm truncate">{club}</div>
+                  {stake && (
+                    <div className="text-[10px] text-emerald-300 font-bold">
+                      You own {stake.percent.toFixed(stake.percent < 1 ? 3 : 1)}%
+                      {stake.percent >= MAJORITY_THRESHOLD ? " · Majority" : ""}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="font-black text-yellow-300 text-sm tabular-nums flex items-center gap-1 justify-end">
+                    <StarIcon />{money(valuation)}
+                  </div>
+                  <div className="text-[9px] text-white font-semibold">full value</div>
+                </div>
+              </button>
+              {isOpen && (
+                <StakeControls
+                  club={club} valuation={valuation} money={career.money} stake={stake}
+                  onBuy={pct => onBuyStake(club, pct)} onSell={pct => onSellStake(club, pct)}
+                />
+              )}
+            </div>
+          );
+        })}
+        {clubs.length === 0 && (
+          <div className="px-3 py-6 text-center text-xs text-white font-semibold">No clubs match &ldquo;{search}&rdquo;.</div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
+ * BUY/SELL, BY AMOUNT — NOT A 0-100% WHEEL.
+ *
+ * Requested directly: the old control was a single 0.01%-100% slider, which
+ * has two real problems at once. First, it let you drag straight past what
+ * you could actually afford — "buying" 2.83% of a club when you can afford
+ * exactly that reads as a target you have to hit with a thumb on a slider a
+ * pixel wide. Second, "I want to spend roughly ★2,000" is a much more
+ * natural way to think about an investment than "I want 2.83%" — money is
+ * hard enough to come by in this game that overshooting a good buy, or
+ * undershooting one, is a real cost, and a percentage-only control makes
+ * that mistake easy. A star-money amount, capped at what the bank can pay,
+ * is both.
+ */
+function StakeControls({
+  club, valuation, money: bank, stake, onBuy, onSell, mode = "both",
+}: {
+  club: string; valuation: number; money: number;
+  stake?: { percent: number; avgBuyValuation: number };
+  onBuy: (percent: number) => void; onSell: (percent: number) => void;
+  /** Portfolio opens this for one job at a time: just buying, or just selling. */
+  mode?: "both" | "buy" | "sell";
+}) {
+  // Every buy and sell asks first (owners, 21 Sep 2026: a confirm button so
+  // you cannot press it by mistake).
+  const [pending, setPending] = useState<{ kind: "buy" | "sell"; pct: number; amount: number } | null>(null);
+  // What buying up to 100% TOTAL would cost you, capped by what's actually
+  // in the bank and by whatever room is left above what you already own —
+  // reported directly, from a real save: buying 100% and still being
+  // offered more let one club end up 200%-owned. `buyStake` itself now
+  // clamps too (the real backstop), but the control shouldn't dangle a
+  // bigger purchase than is actually possible in the first place.
+  const stakePct = stake?.percent ?? 0;
+  const roomPct = Math.max(0, 100 - stakePct);
+  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation * (roomPct / 100))));
+  const [buyAmount, setBuyAmount] = useState(() => Math.max(1, Math.min(maxBuySpend, Math.round(valuation * 0.001))));
+  const clampedBuy = Math.max(0, Math.min(maxBuySpend, Math.round(buyAmount) || 0));
+  const buyPct = valuation > 0 ? (clampedBuy / valuation) * 100 : 0;
+  const canAfford = clampedBuy > 0 && clampedBuy <= bank;
+
+  const [sellFraction, setSellFraction] = useState(mode === "sell" ? 0.5 : 1); // of your OWN holding
+  const sellPct = stakePct * sellFraction;
+  const sellAmount = Math.round(valuation * (sellPct / 100));
+
+  const profit = stake ? Math.round((valuation - stake.avgBuyValuation) * (stakePct / 100)) : 0;
+  // A confirmed buy bursts and floats the stake it bought; a sale floats down.
+  const [dealAt, fireDeal] = useTrigger();
+  const [lastDeal, setLastDeal] = useState<{ kind: "buy" | "sell"; pct: number } | null>(null);
+
+  return (
+    <div className="relative bg-black/30 px-3 py-3 space-y-3">
+      {lastDeal?.kind === "buy" && <Burst trigger={dealAt} colors={["#34d399", "#fde047", "#ffffff"]} count={20} spread={0.8} className="left-1/2 top-6" />}
+      {lastDeal && <FloatText trigger={dealAt} text={`${lastDeal.kind === "buy" ? "+" : "−"}${lastDeal.pct.toFixed(lastDeal.pct < 1 ? 3 : 1)}%`} color={lastDeal.kind === "buy" ? "#34d399" : "#f87171"} className="left-1/2 top-2" size={16} />}
+      {stake && (
+        <div className="text-[11px] text-white font-semibold">
+          You own <span className="text-white font-bold">{stakePct.toFixed(stakePct < 1 ? 3 : 1)}%</span>, bought in at{" "}
+          <span className="text-white font-bold">★{money(stake.avgBuyValuation)}</span> full value —
+          {" "}
+          <span className={profit >= 0 ? "text-emerald-300 font-bold" : "text-red-300 font-bold"}>
+            {profit >= 0 ? "+" : ""}★{money(Math.abs(profit))} unrealised
+          </span>
+        </div>
+      )}
+
+      {pending && (
+        <div className="kit-slam rounded-xl bg-amber-950/70 p-3 space-y-2" style={{ boxShadow: "inset 0 0 0 2px rgba(251,191,36,.8), 0 0 22px rgba(251,191,36,.25)" }}>
+          <div className="text-sm font-black text-white text-center">
+            {pending.kind === "buy" ? "Buy" : "Sell"} {pending.pct.toFixed(pending.pct < 1 ? 3 : 1)}% of {club} for ★{money(pending.amount)}?
+          </div>
+          {pending.kind === "buy" && stakePct + pending.pct >= MAJORITY_THRESHOLD && stakePct < MAJORITY_THRESHOLD && (
+            <div className="text-[11px] font-black text-emerald-300 text-center">This makes you the majority owner.</div>
+          )}
+          {pending.kind === "sell" && stakePct >= MAJORITY_THRESHOLD && stakePct - pending.pct < MAJORITY_THRESHOLD && (
+            <div className="text-[11px] font-black text-red-300 text-center">You will lose majority control of this club.</div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { (pending.kind === "buy" ? onBuy : onSell)(pending.pct); setLastDeal({ kind: pending.kind, pct: pending.pct }); fireDeal(); setPending(null); }}
+              className={`kit-btn flex-1 py-2 rounded-lg text-xs ${pending.kind === "buy" ? "kit-btn-green" : "kit-btn-red"}`}
+            >
+              Confirm
+            </button>
+            <button onClick={() => setPending(null)} className="flex-1 py-2 rounded-lg kit-btn kit-btn-glass font-black text-xs text-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Buy, by amount ── */}
+      {mode !== "sell" && roomPct > 0 && (
+      <div>
+        <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Buy</div>
+        <div className="flex items-center gap-2">
+          <span className="text-yellow-300 font-black text-sm">★</span>
+          {/* Reported directly: a plain `type="number"` input can never
+              show thousands separators at all — a browser number input
+              rejects any non-digit character in its own displayed value,
+              so a real amount like 1,000,000 always showed as a bare
+              "1000000". Text + inputMode="numeric" instead: the same
+              numeric keyboard on mobile, but the displayed value is free
+              to be comma-formatted like every other money figure in this
+              game (see money.ts's own `money()`). Typed input is parsed by
+              stripping anything that isn't a digit before it ever reaches
+              the real numeric state. */}
+          <input
+            type="text" inputMode="numeric"
+            value={clampedBuy.toLocaleString()}
+            onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value.replace(/[^\d]/g, "")) || 0))))}
+            className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white tabular-nums"
+          />
+          <span className="w-16 text-right text-xs font-black text-white font-semibold tabular-nums">
+            = {buyPct.toFixed(buyPct < 1 ? 3 : 1)}%
+          </span>
+        </div>
+        <div className="mt-1.5 grid grid-cols-4 gap-1">
+          {[0.1, 0.25, 0.5, 1].map(f => {
+            const amt = Math.round(maxBuySpend * f);
+            return (
+              <button
+                key={f}
+                onClick={() => setBuyAmount(amt)}
+                disabled={maxBuySpend <= 0}
+                className="py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-[10px] font-black text-white/80"
+              >
+                {f === 1 ? "MAX" : `${Math.round(f * 100)}%`}
+              </button>
+            );
+          })}
+        </div>
+        {buyPct >= MAJORITY_THRESHOLD && (
+          <div className="mt-1 text-[10px] font-black text-emerald-300">→ MAJORITY at this amount</div>
+        )}
+        <button
+          disabled={!canAfford}
+          onClick={() => setPending({ kind: "buy", pct: buyPct, amount: clampedBuy })}
+          className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs"
+        >
+          Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
+        </button>
+        {maxBuySpend < Math.round(valuation) && (
+          <div className="mt-1 text-[9px] text-center text-white font-semibold">
+            Most you can afford: ★{money(maxBuySpend)} ({((maxBuySpend / valuation) * 100).toFixed(2)}%)
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* ── Sell, by share of what you own ── */}
+      {mode !== "buy" && stakePct > 0 && (
+        <div>
+          <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Sell</div>
+          {/* Any amount, not just the presets below. */}
+          <input
+            type="range" min={1} max={100} step={1}
+            value={Math.round(sellFraction * 100)}
+            onChange={e => setSellFraction(Number(e.target.value) / 100)}
+            aria-label="How much of your stake to sell"
+            className="w-full mb-1.5 accent-red-500"
+          />
+          <div className="grid grid-cols-4 gap-1">
+            {[0.25, 0.5, 0.75, 1].map(f => (
+              <button
+                key={f}
+                onClick={() => setSellFraction(f)}
+                className={`py-1.5 rounded-md text-[10px] font-black ${
+                  sellFraction === f ? "bg-red-600 text-white" : "bg-gray-800 hover:bg-gray-700 text-white/80"
+                }`}
+              >
+                {f === 1 ? "ALL" : `${Math.round(f * 100)}%`}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setPending({ kind: "sell", pct: sellPct, amount: sellAmount })}
+            className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-red font-black text-xs"
+          >
+            Sell {Math.round(sellFraction * 100)}% of your stake ({sellPct.toFixed(sellPct < 1 ? 3 : 1)}% of the club) for ★{money(sellAmount)}
+          </button>
+        </div>
+      )}
+
+      <div className="text-[9px] text-center text-white font-semibold">Club: {club}</div>
+    </div>
+  );
+}
+
+// ── PORTFOLIO ────────────────────────────────────────────────────────────
+
+function Portfolio({
+  career, owned, onBuyStake, onSellStake, onRecommend,
+}: {
+  career: CareerState; owned: { club: string; percent: number; avgBuyValuation: number }[];
+  onBuyStake: (club: string, percent: number) => void;
+  onSellStake: (club: string, percent: number) => void;
+  onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
+}) {
+  const [recommendClub, setRecommendClub] = useState<string | null>(null);
+  const [recommendKind, setRecommendKind] = useState<RecommendationKind>("sign");
+  const [recommendDetail, setRecommendDetail] = useState("");
+  const [recommendMessage, setRecommendMessage] = useState<string | null>(null);
+  const [trade, setTrade] = useState<{ club: string; mode: "buy" | "sell" } | null>(null);
+  const totalValue = owned.reduce((s, i) => s + clubValuation(i.club, career) * (i.percent / 100), 0);
+  const totalCost = owned.reduce((s, i) => s + i.avgBuyValuation * (i.percent / 100), 0);
+  const totalProfit = totalValue - totalCost;
+
+  if (owned.length === 0) {
+    return (
+      <div className="kit-card px-4 py-8 text-center text-sm text-white/90">
+        No stakes yet — buy into a club from the Market tab.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="kit-card px-3 py-3 mb-2 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/60">Portfolio value</div>
+          <div className="text-lg font-black text-yellow-300 flex items-center gap-1"><StarIcon />{money(totalValue)}</div>
+        </div>
+        <div className={`text-sm font-black ${totalProfit >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+          {totalProfit >= 0 ? "+" : ""}★{money(Math.abs(totalProfit))}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {owned.map(i => {
+          const value = clubValuation(i.club, career);
+          const profit = (value - i.avgBuyValuation) * (i.percent / 100);
+          return (
+            <div key={i.club} className="kit-card rounded-xl px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-white text-sm">{i.club}</div>
+                  <div className="text-[10px] text-white/90">
+                    {i.percent.toFixed(i.percent < 1 ? 3 : 1)}%
+                    {i.percent >= MAJORITY_THRESHOLD && <span className="ml-1 text-emerald-300 font-black">MAJORITY</span>}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-black text-yellow-300">★{money(value * (i.percent / 100))}</div>
+                  <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                    {profit >= 0 ? "+" : ""}★{money(Math.abs(profit))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-1.5 grid grid-cols-2 gap-1">
+                {i.percent < 100 ? (
+                  <button
+                    onClick={() => setTrade(trade?.club === i.club && trade.mode === "buy" ? null : { club: i.club, mode: "buy" })}
+                    className="py-1.5 rounded-lg kit-btn kit-btn-green text-[10px] font-black text-white"
+                  >
+                    Buy more
+                  </button>
+                ) : (
+                  <div className="py-1.5 rounded-md bg-gray-700 text-center text-[10px] font-black text-white">100% owned</div>
+                )}
+                <button
+                  onClick={() => setTrade(trade?.club === i.club && trade.mode === "sell" ? null : { club: i.club, mode: "sell" })}
+                  className="py-1.5 rounded-lg kit-btn kit-btn-red text-[10px] font-black text-white"
+                >
+                  Sell some
+                </button>
+              </div>
+              {trade?.club === i.club && (
+                <div className="mt-1.5 overflow-hidden rounded-md">
+                  <StakeControls
+                    key={`${i.club}-${trade.mode}`}
+                    club={i.club} valuation={value} money={career.money}
+                    stake={{ percent: i.percent, avgBuyValuation: i.avgBuyValuation }}
+                    mode={trade.mode}
+                    onBuy={pct => { onBuyStake(i.club, pct); setTrade(null); }}
+                    onSell={pct => { onSellStake(i.club, pct); setTrade(null); }}
+                  />
+                </div>
+              )}
+              {i.percent < MAJORITY_THRESHOLD && (
+                <div className="mt-1.5">
+                  {recommendClub === i.club ? (
+                    <div className="space-y-1">
+                      <select
+                        value={recommendKind}
+                        onChange={e => setRecommendKind(e.target.value as RecommendationKind)}
+                        className="w-full rounded-md kit-input px-2 py-1 text-[10px] text-white"
+                      >
+                        <option value="sign">Sign a player</option>
+                        <option value="formation">Change formation</option>
+                        <option value="manager">Change manager</option>
+                        <option value="wage">Adjust wages</option>
+                      </select>
+                      <input
+                        value={recommendDetail} onChange={e => setRecommendDetail(e.target.value)}
+                        placeholder="What would you suggest?"
+                        className="w-full rounded-md kit-input px-2 py-1 text-[10px] text-white"
+                      />
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => {
+                            const result = onRecommend(i.club, recommendKind, recommendDetail || "No detail given");
+                            setRecommendMessage(result.ok ? "Recommendation filed — the board will consider it." : (result.reason ?? "Failed"));
+                            if (result.ok) { setRecommendClub(null); setRecommendDetail(""); }
+                          }}
+                          className="flex-1 py-1 rounded-lg kit-btn kit-btn-green text-[10px] font-black"
+                        >
+                          Submit
+                        </button>
+                        <button
+                          onClick={() => setRecommendClub(null)}
+                          className="px-2 py-1 rounded-lg kit-btn kit-btn-glass text-[10px] font-black"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setRecommendClub(i.club); setRecommendMessage(null); }}
+                      className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black"
+                    >
+                      Recommend to the board
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {recommendMessage && (
+        <div className="mt-2 rounded-lg kit-input px-3 py-2 text-center text-[11px] font-bold text-white/80">
+          {recommendMessage}
+        </div>
+      )}
+      {(career.recommendations ?? []).length > 0 && (
+        <div className="mt-3 kit-card rounded-xl overflow-hidden">
+          <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-white/[0.06]">
+            Your recommendations
+          </div>
+          {[...(career.recommendations ?? [])].reverse().slice(0, 8).map(r => (
+            <div key={r.id} className="px-3 py-1.5 border-b border-black/10 last:border-b-0 flex items-center justify-between gap-2">
+              <div className="text-[10px] text-white/80 truncate">{r.club}: {r.detail}</div>
+              <span className={`text-[9px] font-black uppercase shrink-0 ${
+                r.status === "adopted" ? "text-emerald-300" : r.status === "dismissed" ? "text-white font-semibold" : "text-yellow-300"
+              }`}>{r.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── BOARDROOM ────────────────────────────────────────────────────────────
+
+function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: CareerState; onOpen: (c: string) => void }) {
+  if (clubs.length === 0) {
+    return (
+      <div className="kit-card px-4 py-8 text-center text-sm text-white/90">
+        Own {MAJORITY_THRESHOLD}% or more of a club to take a seat on its board.
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      {clubs.map(club => (
+        <button
+          key={club}
+          onClick={() => onOpen(club)}
+          className="w-full flex items-center justify-between gap-2 px-3 py-3 kit-card kib-press text-left"
+        >
+          <div>
+            <div className="font-black text-white text-sm">{club}</div>
+            <div className="text-[10px] text-white/90">Budget: ★{money(ownedClubState(career, club).budget)}</div>
+          </div>
+          <span className="text-white font-semibold">→</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Wherever the game actually filed this club's real squad — see
+ *  investments.ts's own `findSquadEntry` for why it can't only be
+ *  `leagueSquads`: that array is only the OTHER clubs in the player's
+ *  current division, and every club outside it (Europe, the other
+ *  division, Other clubs) lives in `externalSquads` instead. */
+function squadFor(career: CareerState, club: string) {
+  return (career.leagueSquads ?? []).find(s => s.club === club)
+    ?? (career.externalSquads ?? []).find(s => s.club === club);
+}
+
+function Boardroom({
+  career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onProposeSellVote, onReplaceManager,
+  onManagerNegotiationFailed,
+  onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  onAppointSelfCaptain, onSetTalisman, onTransferSelfTo,
+  otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
+  onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
+}: {
+  career: CareerState; club: string; onBack: () => void;
+  initialSection?: "squad" | "sign" | "manager" | "powers" | "history";
+  onTopUpBudget: (club: string, amount: number) => void;
+  onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string, agreedFee?: number) => ActionResult;
+  onManagerNegotiationFailed: (club: string, managerName: string) => void;
+  onSetFormation: (club: string, formationId: string) => ActionResult;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
+  onAppointSelfCaptain: (club: string) => ActionResult;
+  onSetTalisman: (club: string, on: boolean) => ActionResult;
+  onTransferSelfTo: (toClub: string) => ActionResult;
+  onSetKit: (club: string, kit: ClubKit) => ActionResult;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
+  onStandForPresident: (club: string) => ActionResult;
+  onSetPresidentWage: (club: string, wage: number) => ActionResult;
+  otherOwnedClubs: string[];
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => ActionResult;
+  son: CareerState["son"];
+  onHaveASon: () => ActionResult;
+  onAgeUpSon: () => ActionResult;
+  onPromoteSon: (club: string) => ActionResult;
+  onTransferSon: (toClub: string) => ActionResult;
+  onRenameStadium: (club: string, name: string) => ActionResult;
+  onUpgradeStadiumCapacity: (club: string) => ActionResult;
+  onUpgradeTrainingGround: (club: string) => ActionResult;
+  onUpgradeYouthAcademy: (club: string) => ActionResult;
+}) {
+  const isOwnClub = club === career.player.club;
+  // Squad/Sign genuinely can't work here yet — see the note above the
+  // manager-appointment own-club branch in investments.ts — so this never
+  // defaults into a tab that would just show "No squad data on file."
+  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers" | "history">(initialSection ?? (isOwnClub ? "manager" : "squad"));
+  const [topUp, setTopUp] = useState(1000);
+  const [message, setMessage] = useState<string | null>(null);
+  const state = ownedClubState(career, club);
+  const squad = squadFor(career, club);
+
+  const runAction = (result: ActionResult) => {
+    setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
+  };
+
+  // Negotiating a real fee (negotiation.ts) before either action actually
+  // fires — a free-agent signing has no seller to negotiate with, so that
+  // one path still goes straight through as before. A "sell" negotiation
+  // now always names a real buyer club (`buyerClub`) — see `interestList`
+  // below, the real destination this whole flow was built around.
+  const [negotiating, setNegotiating] = useState<
+    | { kind: "sign"; playerId: string; fromClub: string; playerName: string; marketValue: number }
+    | { kind: "sell"; playerId: string; playerName: string; buyerClub: string; marketValue: number }
+    | { kind: "manager"; club: string; managerName: string; marketValue: number }
+    | null
+  >(null);
+  // A completed sale negotiation waits here for one more real choice —
+  // reported directly, 14 Sep 2026: selling used to fire the moment
+  // negotiation ended, with no chance to put it to a fan vote first (and no
+  // way to skip the vote either, before that same fix). Only "sell" needs
+  // this extra step; a completed sign negotiates once and is done.
+  const [pendingSale, setPendingSale] = useState<{ playerId: string; playerName: string; fee: number; buyerClub: string } | null>(null);
+  // The realistic destination market itself — reported directly, 14 Sep
+  // 2026: selling used to just remove a player with nowhere to go. Clicking
+  // Sell now opens this instead of going straight to a negotiation:
+  // transferMarket.ts's real reach/need scoring decides who's genuinely
+  // interested and what they'd expect to pay. A club that genuinely rejects
+  // or walks away (a real negotiation failure, not a pause) is dropped from
+  // this same list rather than ended outright — the interest was real,
+  // that specific attempt wasn't.
+  const [interestList, setInterestList] = useState<
+    { playerId: string; playerName: string; interests: TransferInterest[] } | null
+  >(null);
+  // Requested directly, 14 Sep 2026: "you should be able to go back" mid-
+  // negotiation to check other clubs, then return to the SAME one later and
+  // see their real current position, not the original expected offer.
+  // Keyed by club — a full NegotiationScreen state, not just a number, so
+  // resuming restores the exact log/mood/round it was stepped away at.
+  const [savedNegotiations, setSavedNegotiations] = useState<Record<string, NegotiationState>>({});
+
+  if (pendingSale) {
+    return (
+      <div>
+        <div className="kit-card px-3 py-4 mb-2 text-center">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Confirm sale</div>
+          <div className="font-black text-white text-lg">{pendingSale.playerName}</div>
+          <div className="text-[10px] font-bold text-white/70 mt-1">to {pendingSale.buyerClub}</div>
+          <div className="text-yellow-300 font-black text-sm mt-1">for ★{money(pendingSale.fee)}</div>
+        </div>
+        <button
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee, sale.buyerClub)); }}
+          className="w-full mb-2 px-3 py-2.5 rounded-lg kit-btn kit-btn-green text-emerald-950 font-black text-sm"
+        >
+          Confirm Sale
+        </button>
+        <button
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onProposeSellVote(club, sale.playerId, sale.fee, sale.buyerClub)); }}
+          className="w-full mb-2 px-3 py-2 rounded-lg kit-btn kit-btn-glass text-white font-bold text-xs"
+        >
+          Put It To A Shareholder Vote First
+        </button>
+        <button onClick={() => setPendingSale(null)} className="w-full text-xs font-black text-white/70 hover:text-white">Cancel</button>
+      </div>
+    );
+  }
+
+  if (negotiating) {
+    const savedState = negotiating.kind === "sell" ? savedNegotiations[negotiating.buyerClub] : undefined;
+    return (
+      <NegotiationScreen
+        mode={negotiating.kind === "sell" ? "selling" : "buying"}
+        playerName={negotiating.kind === "manager" ? negotiating.managerName : negotiating.playerName}
+        counterpartLabel={negotiating.kind === "sell" ? negotiating.buyerClub : negotiating.kind === "manager" ? "His Representatives" : undefined}
+        marketValue={negotiating.marketValue}
+        initialState={savedState}
+        onStepAway={negotiating.kind === "sell" ? state => {
+          const deal = negotiating;
+          setSavedNegotiations(s => ({ ...s, [deal.buyerClub]: state }));
+          setNegotiating(null);
+        } : undefined}
+        onDone={finalPrice => {
+          const deal = negotiating;
+          setNegotiating(null);
+          if (finalPrice === null) {
+            setMessage("Talks broke down — no deal was made.");
+            if (deal.kind === "sell") {
+              // A real rejection/walkout, not a step-away — this club is
+              // genuinely done, not just paused.
+              setSavedNegotiations(s => { const { [deal.buyerClub]: _, ...rest } = s; return rest; });
+              setInterestList(list => list && { ...list, interests: list.interests.filter(i => i.club !== deal.buyerClub) });
+            }
+            if (deal.kind === "manager") onManagerNegotiationFailed(deal.club, deal.managerName);
+            return;
+          }
+          if (deal.kind === "sign") { runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice)); return; }
+          if (deal.kind === "manager") { runAction(onReplaceManager(deal.club, deal.managerName, finalPrice)); return; }
+          setInterestList(null);
+          setSavedNegotiations({});
+          setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice, buyerClub: deal.buyerClub });
+        }}
+      />
+    );
+  }
+
+  if (interestList) {
+    return (
+      <div>
+        <button onClick={() => { setInterestList(null); setSavedNegotiations({}); }} className="mb-2 text-xs font-black text-white/90 hover:text-white">← Back</button>
+        <div className="kit-card px-3 py-3 mb-2">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/80">Selling</div>
+          <div className="font-black text-white">{interestList.playerName}</div>
+        </div>
+        {interestList.interests.length === 0 && (
+          <div className="text-center text-xs font-bold text-white/70 py-6">No club is genuinely interested right now.</div>
+        )}
+        <div className="kit-card overflow-hidden">
+          {interestList.interests.map(i => {
+            const inTalks = savedNegotiations[i.club];
+            return (
+              <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] last:border-b-0">
+                <div>
+                  <div className="text-sm font-bold text-white">{i.club}</div>
+                  <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
+                    Wants him as a {i.roleIntent} ·{" "}
+                    {inTalks
+                      ? `★${money(inTalks.theirPosition)} current offer`
+                      : `★${money(i.expectedOffer)} expected offer`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setNegotiating({
+                    kind: "sell", playerId: interestList.playerId, playerName: interestList.playerName,
+                    buyerClub: i.club, marketValue: i.expectedOffer,
+                  })}
+                  className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-[10px] font-black"
+                >
+                  {inTalks ? "Resume" : "Negotiate"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Requested directly: majority (or full) ownership of your own club now
+  // unlocks the same real powers as any other club, not just a budget top-
+  // up — Manager (into the real career.manager, not the cosmetic record
+  // every other club's appointment writes to) and Powers' Kit/Facilities/
+  // Presidency, none of which touch your own squad's data at all. Squad and
+  // Sign stay hidden here specifically — they read the OTHER 19 clubs'
+  // LeagueSquad shape, and your own real teammates live in a different,
+  // richer SquadPlayer[] this Boardroom doesn't translate to yet. Powers'
+  // Formation/Son/Merger are hidden below for the same reason.
+  return (
+    <div>
+      <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
+      <div className="kit-card px-3 py-3 mb-2">
+        <div className="flex items-center gap-2">
+          {clubKitFor(career, club) && <KitSwatch kit={clubKitFor(career, club)!.home} size={32} />}
+          <div>
+            <div className="font-black text-white">{club}</div>
+            <div className="text-[10px] text-white/90">
+              Manager: {isOwnClub ? (career.manager?.name || "Vacant") : (loadLineup(club)?.manager || state.managerName || "Vacant")}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div className="flex-1 kit-input rounded-lg px-2 py-1.5 flex items-center justify-between">
+            <span className="text-[10px] font-bold text-white font-semibold">Budget</span>
+            <span className="font-black text-yellow-300 text-sm">★{money(state.budget)}</span>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="text" inputMode="numeric" value={topUp.toLocaleString()}
+            onChange={e => setTopUp(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
+            className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
+          />
+          <button
+            disabled={topUp <= 0 || topUp > career.money}
+            onClick={() => onTopUpBudget(club, topUp)}
+            className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs whitespace-nowrap"
+          >
+            Fund club
+          </button>
+        </div>
+      </div>
+
+      <div className={`grid gap-1 mb-2 ${isOwnClub ? "grid-cols-3" : "grid-cols-5"}`}>
+        {(isOwnClub ? (["manager", "powers", "history"] as const) : (["squad", "sign", "manager", "powers", "history"] as const)).map(s => (
+          <button
+            key={s}
+            onClick={() => { setSection(s); setMessage(null); }}
+            className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
+              section === s ? "kit-btn kit-btn-green" : "kit-row text-white/70 font-semibold"
+            }`}
+          >
+            {s === "sign" ? "Sign a player" : s}
+          </button>
+        ))}
+      </div>
+
+      {message && (
+        <div className="mb-2 rounded-lg bg-red-900/60 border border-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200">
+          {message}
+        </div>
+      )}
+
+      {section === "squad" && (
+        <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
+          {(squad?.players ?? []).map(p => (
+            <div key={p.id} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
+              <div>
+                <div className="text-sm font-bold text-white">{p.name}</div>
+                <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
+              </div>
+              <button
+                onClick={() => { setSavedNegotiations({}); setInterestList({ playerId: p.id, playerName: p.name, interests: interestedClubs(p, club, career) }); }}
+                className="px-2.5 py-1 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
+              >
+                Sell
+              </button>
+            </div>
+          ))}
+          {(!squad || squad.players.length === 0) && (
+            <div className="px-3 py-6 text-center text-xs text-white font-semibold">No squad data on file yet.</div>
+          )}
+        </div>
+      )}
+
+      {section === "sign" && (
+        <SignPlayerPanel
+          career={career} club={club}
+          onSignFreeAgent={(c, p, f) => runAction(onSignPlayer(c, p, f))}
+          onNegotiateSigning={(playerId, fromClub, playerName, marketValue) =>
+            setNegotiating({ kind: "sign", playerId, fromClub, playerName, marketValue })
+          }
+        />
+      )}
+
+      {section === "manager" && (
+        <ManagerPanel
+          career={career} club={club}
+          onNegotiate={(c, n, anchorFee) => setNegotiating({ kind: "manager", club: c, managerName: n, marketValue: anchorFee })}
+        />
+      )}
+
+      {section === "powers" && (
+        <PowersPanel
+          career={career} club={club} squad={squad}
+          onSetFormation={(c, f) => runAction(onSetFormation(c, f))}
+          onSetOwnedLineup={(c, l) => runAction(onSetOwnedLineup(c, l))}
+          onAppointSelfCaptain={(c) => runAction(onAppointSelfCaptain(c))}
+          onSetTalisman={(c, on) => runAction(onSetTalisman(c, on))}
+          onTransferSelfTo={(c) => runAction(onTransferSelfTo(c))}
+          onSetKit={(c, k) => runAction(onSetKit(c, k))}
+          onProposeKitVote={(c, a, b, favor) => runAction(onProposeKitVote(c, a, b, favor))}
+          onStandForPresident={(c) => runAction(onStandForPresident(c))}
+          onSetPresidentWage={(c, w) => runAction(onSetPresidentWage(c, w))}
+          otherOwnedClubs={otherOwnedClubs}
+          onMergeClubs={(p, a) => runAction(onMergeClubs(p, a))}
+          son={son} onHaveASon={() => runAction(onHaveASon())} onAgeUpSon={() => runAction(onAgeUpSon())}
+          onPromoteSon={(c) => runAction(onPromoteSon(c))} onTransferSon={(c) => runAction(onTransferSon(c))}
+          onRenameStadium={(c, n) => runAction(onRenameStadium(c, n))}
+          onUpgradeStadiumCapacity={(c) => runAction(onUpgradeStadiumCapacity(c))}
+          onUpgradeTrainingGround={(c) => runAction(onUpgradeTrainingGround(c))}
+          onUpgradeYouthAcademy={(c) => runAction(onUpgradeYouthAcademy(c))}
+        />
+      )}
+
+      {section === "history" && (
+        <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
+          {(career.clubTransferHistory?.[club] ?? []).map((t, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06] last:border-b-0">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-white truncate">{t.playerName}</div>
+                <div className="text-[10px] text-white font-semibold">
+                  {t.direction === "in" ? `In from ${t.otherClub}` : `Out to ${t.otherClub}`} · Season {t.season}
+                </div>
+              </div>
+              <span className={`shrink-0 font-black text-sm ${t.direction === "in" ? "text-red-300" : "text-emerald-300"}`}>
+                {t.direction === "in" ? "-" : "+"}★{formatMoneyPrecise(t.fee)}
+              </span>
+            </div>
+          ))}
+          {(!career.clubTransferHistory?.[club] || career.clubTransferHistory[club].length === 0) && (
+            <div className="px-3 py-6 text-center text-xs text-white font-semibold">No transfers done through this club yet.</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── A real lineup preview, plus a real, save-scoped editor ──────────────────
+//
+// Requested directly: for a club the player has enough rank to actually
+// decide lineups for, show a real preview of its current best XI, reflecting
+// THIS save's actual current squad, and a way to genuinely edit it.
+//
+// A previous pass linked straight into `/lineups` (LineupBuilder.tsx) — the
+// tool that sets a club's lineup TEMPLATE for the start of a save, and every
+// save that reuses it — on the reasoning that it was "already a full, tested
+// editor." That was wrong, reported directly and corrected: this Boardroom
+// view is about the CURRENT save's own in-game lineup for this specific
+// club, never the shared starting template every save reads from. Editing
+// through that link risked corrupting the global template from inside one
+// save's Boardroom.
+//
+// The real fix: `career.ownedLineups[club]` (types.ts), a save-scoped
+// override written by `setOwnedLineup` (clubPowers.ts) and read FIRST by
+// `teamsheet.ts`'s `resolveLineupFor` — never touching `lineupStore.ts`'s
+// shared table. The preview below reads it first, falling back to the exact
+// same global-save/auto-pick chain as before when this save has never set
+// one; the "Edit Lineup" button opens `OwnedLineupEditor.tsx`, which reuses
+// `LineupBuilder.tsx`'s own tap-to-swap editing wholesale, redirected at its
+// new `persistence` prop.
+function LineupPreview({
+  club, squad, career, onSetOwnedLineup,
+}: {
+  club: string; squad: LeagueSquad | undefined; career: CareerState;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  if (!squad || squad.players.length === 0) {
+    return (
+      <div className="kit-card p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Lineup</div>
+        <div className="text-[11px] text-white/70 font-semibold">No squad data on file yet to build a lineup preview from.</div>
+      </div>
+    );
+  }
+  const pickable: Pickable[] = squad.players.map(p => ({
+    id: p.id, name: p.name, position: p.position, positions: p.positions, overall: p.overall,
+  }));
+  const known = new Set(pickable.map(p => p.id));
+  const ownedOverride = career.ownedLineups?.[club];
+  const saved = (ownedOverride && ownedOverride.xi.some(id => id && known.has(id)))
+    ? ownedOverride
+    : loadLineup(club);
+  const hasUsableSave = !!saved && saved.xi.some(id => id && known.has(id));
+  const formation = formationOf(hasUsableSave ? saved!.formation : DEFAULT_FORMATION);
+  const xi = hasUsableSave
+    ? saved!.xi.map(id => (id && known.has(id) ? id : null))
+    : autoPick(pickable, formation);
+  const byId = new Map(pickable.map(p => [p.id, p]));
+  const isOwnedOverride = !!ownedOverride && ownedOverride === saved;
+
+  return (
+    <div className="kit-card p-3">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60">
+          Lineup {isOwnedOverride
+            ? `· ${formation.name ?? formation.id} (your edit — this save only)`
+            : hasUsableSave ? `· ${formation.name ?? formation.id}` : "· auto-picked (nothing saved yet)"}
+        </div>
+        <button
+          onClick={() => setEditing(true)}
+          className="shrink-0 rounded-lg bg-emerald-600 px-2 py-1 text-[9px] font-black uppercase text-white transition hover:bg-emerald-500"
+        >
+          Edit Lineup
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+        {formation.slots.map((slot, i) => {
+          const id = xi[i];
+          const p = id ? byId.get(id) : undefined;
+          return (
+            <div key={i} className="flex items-center justify-between text-[10px] text-white font-semibold gap-1">
+              <span className="text-white/50 shrink-0 w-8">{slot.role}</span>
+              <span className="truncate flex-1 text-right">{p ? p.name : "—"}</span>
+              {p && <span className="shrink-0 text-white/60 w-6 text-right">{p.overall ?? "—"}</span>}
+            </div>
+          );
+        })}
+      </div>
+      {editing && (
+        <OwnedLineupEditor
+          club={club} squad={squad} career={career}
+          onClose={() => setEditing(false)}
+          onSave={onSetOwnedLineup}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── PHASE 3 OF STAR_POWER_POLITICS.MD — THE REST OF THE OWNERSHIP LAYER ────
+
+function PowersPanel({
+  career, club, squad, onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  onAppointSelfCaptain, onSetTalisman, onTransferSelfTo,
+  otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
+  onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
+}: {
+  career: CareerState; club: string; squad: LeagueSquad | undefined;
+  onSetFormation: (club: string, formationId: string) => void;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => void;
+  onAppointSelfCaptain: (club: string) => void;
+  onSetTalisman: (club: string, on: boolean) => void;
+  onTransferSelfTo: (toClub: string) => void;
+  onSetKit: (club: string, kit: ClubKit) => void;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => void;
+  onStandForPresident: (club: string) => void;
+  onSetPresidentWage: (club: string, wage: number) => void;
+  otherOwnedClubs: string[];
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => void;
+  son: CareerState["son"];
+  onHaveASon: () => void;
+  onAgeUpSon: () => void;
+  onPromoteSon: (club: string) => void;
+  onTransferSon: (toClub: string) => void;
+  onRenameStadium: (club: string, name: string) => void;
+  onUpgradeStadiumCapacity: (club: string) => void;
+  onUpgradeTrainingGround: (club: string) => void;
+  onUpgradeYouthAcademy: (club: string) => void;
+}) {
+  const state = ownedClubState(career, club);
+  const kit = clubKitFor(career, club);
+  const facilities = facilitiesFor(career, club);
+  // Formation and the Son/Merger mechanics all move players through
+  // findSquadEntry, which only ever holds the OTHER 19 clubs' LeagueSquad —
+  // your own real teammates (career.squad) are a different shape this
+  // Boardroom doesn't translate to yet, so these three stay hidden for your
+  // own club specifically. Kit, Facilities, and the Presidency below have no
+  // such conflict and work exactly the same as any other club.
+  const isOwnClub = club === career.player.club;
+  const [formationId, setFormationId] = useState(state.formation ?? "433");
+  // Defaults to this club's REAL current kit (kitsOf, kits.ts) rather than a
+  // flat hardcoded red — Design A starts as "what you already wear," same
+  // idea as the negotiation screens defaulting to a real anchor, not zero.
+  const realDefault = kitsOf(club);
+  const [kitA, setKitA] = useState<ClubKit>(kit ?? realDefault);
+  // Reported directly, and reproduced exactly: put a kit to a fan vote,
+  // Design B (this picker's own fixed default) wins, and the NEXT time the
+  // kit picker opens, Design A now shows the just-adopted current kit —
+  // which IS that same fixed default — while Design B still defaults to
+  // the identical literal. Two options that are always meant to be a real
+  // choice ended up showing the same colours because one of them was never
+  // anything but a hardcoded constant. Guaranteed different from whatever
+  // the current kit actually is now, picking a second alternate only if the
+  // first alternate happens to already be the current kit.
+  const KIT_ALT_1: ClubKit = { home: { shirt: "#1d4ed8", trim: "#facc15" }, away: { shirt: "#ffffff", trim: "#1d4ed8" } };
+  const KIT_ALT_2: ClubKit = { home: { shirt: "#111827", trim: "#dc2626" }, away: { shirt: "#dc2626", trim: "#111827" } };
+  const sameKit = (a: ClubKit, b: ClubKit) =>
+    a.home.shirt === b.home.shirt && a.home.trim === b.home.trim && a.away.shirt === b.away.shirt && a.away.trim === b.away.trim;
+  const [kitB, setKitB] = useState<ClubKit>(kit && sameKit(kit, KIT_ALT_1) ? KIT_ALT_2 : KIT_ALT_1);
+  const [wage, setWage] = useState(state.presidentWage ?? 0);
+  const [mergeTarget, setMergeTarget] = useState(otherOwnedClubs[0] ?? "");
+  const [stadiumName, setStadiumName] = useState(facilities.stadiumName);
+  const leagueClubs = career.league.map(t => t.name).filter(n => n !== club);
+  const [transferTarget, setTransferTarget] = useState(leagueClubs[0] ?? "");
+
+  return (
+    <div className="space-y-3">
+      {isOwnClub ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-1.5">
+            Owning your own club — more power, not less
+          </div>
+          <p className="mb-2 text-[10px] text-white/70 leading-snug">
+            Formation and lineup are already yours on the real team sheet — this section is the power that's
+            ONLY real because it's also your own club: none of it exists for a club you don't play for.
+          </p>
+
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-lg kit-row p-2">
+            <span className="text-[11px] font-bold text-white/90">
+              Captain: {career.captain ? "You" : "Someone else"}
+            </span>
+            {!career.captain && (
+              <button
+                onClick={() => onAppointSelfCaptain(club)}
+                className="px-3 py-1.5 rounded-lg kit-btn kit-btn-gold font-black text-xs text-black whitespace-nowrap"
+              >
+                Appoint yourself
+              </button>
+            )}
+          </div>
+
+          <div className="mb-2 rounded-lg kit-row p-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-white/90">
+                Talisman tactic: {state.talisman ? "On" : "Off"}
+              </span>
+              <button
+                onClick={() => onSetTalisman(club, !state.talisman)}
+                className={`px-3 py-1.5 rounded-lg font-black text-xs whitespace-nowrap ${
+                  state.talisman ? "bg-rose-600 hover:bg-rose-500 text-white" : "bg-emerald-500 hover:bg-emerald-400"
+                }`}
+              >
+                {state.talisman ? "Turn off" : "Turn on"}
+              </button>
+            </div>
+            <p className="mt-1 text-[9px] text-white/60 leading-snug">
+              Everyone plays for you — way more chances come your way, at the cost of your team-mates'
+              own share of them. Only affects real matches you play for this club.
+            </p>
+          </div>
+
+          {leagueClubs.length > 0 && (
+            <div className="rounded-lg kit-row p-2">
+              <div className="text-[11px] font-bold text-white/90 mb-1">Sell yourself to a club of your choice</div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={transferTarget} onChange={e => setTransferTarget(e.target.value)}
+                  className="flex-1 rounded-lg kit-input px-2 py-1.5 text-xs text-white"
+                >
+                  {leagueClubs.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button
+                  onClick={() => onTransferSelfTo(transferTarget)}
+                  className="px-3 py-1.5 rounded-lg kit-btn kit-btn-red font-black text-xs text-white whitespace-nowrap"
+                >
+                  Transfer
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="kit-card p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Formation (manager's tactics)</div>
+          <div className="flex items-center gap-2">
+            <select
+              value={formationId} onChange={e => setFormationId(e.target.value)}
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
+            >
+              {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name ?? f.id}</option>)}
+            </select>
+            <button
+              onClick={() => onSetFormation(club, formationId)}
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green font-black text-xs whitespace-nowrap"
+            >
+              Set
+            </button>
+          </div>
+          <div className="mt-1 text-[9px] text-white font-semibold">Real strength with this shape: {clubStrengthWithFormation(career, club)}</div>
+        </div>
+      )}
+
+      {!isOwnClub && (
+        <LineupPreview
+          club={club} squad={squad} career={career}
+          onSetOwnedLineup={onSetOwnedLineup}
+        />
+      )}
+
+      <div className="kit-card p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
+        <div className="mb-2 text-[9px] text-white/70 leading-snug">
+          A real home AND away kit, exactly like a real match — clash rules still apply. Design A and B below are two full candidates you can put to a real fan vote (or set directly); whichever wins genuinely becomes this club's kit in real matches, not just here.
+        </div>
+        {kit && (
+          <div className="mb-2 flex items-center gap-3 text-[10px] text-white font-semibold">
+            <div className="flex items-center gap-1.5">
+              <KitSwatch kit={kit.home} size={36} />
+              <span>Home <span className="w-3.5 h-3.5 rounded-full border border-white/30 inline-block align-middle ml-1" style={{ background: kit.home.shirt }} /></span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <KitSwatch kit={kit.away} size={36} />
+              <span>Away <span className="w-3.5 h-3.5 rounded-full border border-white/30 inline-block align-middle ml-1" style={{ background: kit.away.shirt }} /></span>
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {([["A", kitA, setKitA], ["B", kitB, setKitB]] as const).map(([label, design, setDesign]) => (
+            <div key={label}>
+              <div className="text-[9px] font-bold text-white/90 mb-1">Design {label}</div>
+              {(["home", "away"] as const).map(side => (
+                <div key={side} className="flex items-center gap-1.5 mb-1">
+                  <KitSwatch kit={design[side]} size={26} />
+                  <span className="text-[8px] font-bold text-white/60 uppercase w-8">{side}</span>
+                  <input
+                    type="color" value={design[side].shirt}
+                    onChange={e => setDesign({ ...design, [side]: { ...design[side], shirt: e.target.value } })}
+                    className="w-5 h-5 rounded" title={`${side} shirt`}
+                  />
+                  <input
+                    type="color" value={design[side].trim}
+                    onChange={e => setDesign({ ...design, [side]: { ...design[side], trim: e.target.value } })}
+                    className="w-5 h-5 rounded" title={`${side} trim`}
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 flex gap-1">
+          <button onClick={() => onSetKit(club, kitA)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
+            Set Design A directly
+          </button>
+          <button onClick={() => onSetKit(club, kitB)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
+            Set Design B directly
+          </button>
+        </div>
+        {/* Reported directly: this used to always nominate Design A as the
+            owner's favourite, with no way to actually root for B — so a
+            legitimate Design B win read as the vote "failing" on the
+            ceremony screen even though it won fairly. Two real options now. */}
+        <div className="mt-1.5 flex gap-1">
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
+            Vote — favour A
+          </button>
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "b")} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
+            Vote — favour B
+          </button>
+        </div>
+        <button onClick={() => onProposeKitVote(club, kitA, kitB, undefined)} className="mt-1.5 w-full py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black text-white/90">
+          Vote — no favourite, let the fans decide
+        </button>
+      </div>
+
+      <div className="kit-card p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Presidency</div>
+        {state.isPresident ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text" inputMode="numeric" value={wage.toLocaleString()}
+              onChange={e => setWage(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
+            />
+            <button onClick={() => onSetPresidentWage(club, wage)} className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green font-black text-xs whitespace-nowrap">
+              Set wage
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => onStandForPresident(club)} className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
+            Stand for president (shareholder vote)
+          </button>
+        )}
+      </div>
+
+      {!isOwnClub && otherOwnedClubs.length > 0 && (
+        <div className="kit-card ring-1 ring-red-500/40 p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-red-300 mb-1.5">Merge/takeover (100% ownership of both required)</div>
+          <div className="flex items-center gap-2">
+            <select value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white">
+              {otherOwnedClubs.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button onClick={() => onMergeClubs(club, mergeTarget)} className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 font-black text-xs whitespace-nowrap">
+              Absorb
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="kit-card p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Son</div>
+        {!son ? (
+          <button onClick={onHaveASon} className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
+            Have a son
+          </button>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="text-[10px] text-white font-semibold">
+              {son.name} · Age {son.age} · OVR {son.overall} · {son.club ?? "Not on a team yet"}
+            </div>
+            <div className="flex gap-1">
+              <button onClick={onAgeUpSon} className="flex-1 py-1.5 rounded-md bg-purple-600/80 hover:bg-purple-500 text-[10px] font-black">
+                Use the potion
+              </button>
+              {isOwnClub ? (
+                <div className="flex-1 text-[9px] text-white/60 font-semibold flex items-center justify-center text-center px-1">
+                  Getting him into YOUR squad isn't wired up here yet — see the transfer market instead.
+                </div>
+              ) : !son.club ? (
+                <button onClick={() => onPromoteSon(club)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green text-[10px] font-black">
+                  Promote to first team
+                </button>
+              ) : (
+                <button onClick={() => onTransferSon(club)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
+                  Transfer here
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="kit-card p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Facilities</div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <input value={stadiumName} onChange={e => setStadiumName(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white" />
+          <button onClick={() => onRenameStadium(club, stadiumName)} className="px-3 py-1.5 rounded-lg kit-btn kit-btn-glass font-black text-xs whitespace-nowrap">
+            Rename
+          </button>
+        </div>
+        <div className="text-[11px] text-white font-semibold mb-1.5">
+          Capacity {facilities.stadiumCapacity.toLocaleString()} · Training tier {facilities.trainingGroundTier}/3 · Youth tier {facilities.youthAcademyTier}/3
+        </div>
+        {facilities.stadiumBuild && (
+          <div className="mb-1.5 rounded-lg bg-amber-900/30 border border-amber-700/60 px-2.5 py-1.5 text-[10px] font-bold text-amber-200">
+            🏗️ Expanding to {facilities.stadiumBuild.targetCapacity.toLocaleString()} — {facilities.stadiumBuild.seasonsRemaining} season{facilities.stadiumBuild.seasonsRemaining === 1 ? "" : "s"} left
+          </div>
+        )}
+        <div className="flex gap-1">
+          <button
+            disabled={!!facilities.stadiumBuild}
+            onClick={() => onUpgradeStadiumCapacity(club)}
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
+          >
+            {facilities.stadiumBuild ? "Expansion under way" : "+5,000 seats (real build time)"}
+          </button>
+          <button
+            disabled={facilities.trainingGroundTier >= 3}
+            onClick={() => onUpgradeTrainingGround(club)}
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
+          >
+            Upgrade training
+          </button>
+          <button
+            disabled={facilities.youthAcademyTier >= 3}
+            onClick={() => onUpgradeYouthAcademy(club)}
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
+          >
+            Upgrade academy
+          </button>
+        </div>
+        <div className="mt-1.5 text-[9px] text-white font-semibold">A bigger stadium earns this club real gate-receipt revenue every season.</div>
+      </div>
+    </div>
+  );
+}
+
+function SignPlayerPanel({
+  career, club, onSignFreeAgent, onNegotiateSigning,
+}: {
+  career: CareerState; club: string;
+  onSignFreeAgent: (club: string, playerId: string, fromClub: string) => void;
+  onNegotiateSigning: (playerId: string, fromClub: string, playerName: string, marketValue: number) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [positionFilter, setPositionFilter] = useState<Set<string>>(new Set());
+  const [nationFilter, setNationFilter] = useState("");
+  const [clubFilter, setClubFilter] = useState("");
+  const [minRating, setMinRating] = useState("");
+  const [maxRating, setMaxRating] = useState("");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+  const [sortBy, setSortBy] = useState<"rating" | "value">("rating");
+  const [sortDesc, setSortDesc] = useState(true);
+  const freeAgents = (career.freeAgents ?? []).map(p => ({ ...p, fromClub: FREE_AGENTS_CLUB }));
+  // Reported directly, 14 Sep 2026, and a real bug: signing "from" the
+  // human player's own club pulled from a stale, redundant copy of that
+  // club's squad `leagueSquads` carries (fetched as part of the whole
+  // division, nothing ever excludes it) — never career.squad, the club's
+  // REAL roster. The player got added to the buying club for real but was
+  // never actually removed from his own club's real team sheet. This
+  // system was never built to touch career.squad at all, so the fix is to
+  // never offer the human's own club as a "from" option here in the first
+  // place — see transferMarket.ts's own note on the same root cause.
+  // Reported directly, 15 Sep 2026, and a real bug: a huge run of DIFFERENT
+  // clubs' fake, generated players sorted straight to the top of the list,
+  // right behind the real free agents — because leagueSquads.ts's own
+  // fallback formula (`62 + (seed % 22)`) tops out at EXACTLY 83 for every
+  // generated squad, so once sorted by overall descending, dozens of
+  // unrelated clubs' fake "best player" all land on the identical 83 and
+  // cluster together. Checked directly against the live database
+  // afterward: every Champions/Europa/Other club this game tracks DOES have
+  // real player rows on file under the exact name asked for — so a save
+  // showing this isn't missing data, it's almost always a stale
+  // `externalSquads` snapshot taken before a name-matching fix landed.
+  // `leagueSquads.ts`'s own `shouldUpgradeExternalSquads` already re-fetches
+  // a snapshot like that automatically on next load — but regardless of
+  // WHY a squad is still fake, `generatedSquad`'s own `gen:` id prefix (the
+  // same tell `shouldUpgradeExternalSquads` uses) means a fictional player
+  // is never offered as a signing option here.
+  // Reported directly, 16 Sep 2026, a real bug with real money lost over
+  // it: the human player's own character showed up as a signable candidate
+  // FROM a club he no longer even played for (his original club, long since
+  // left for good) — "buying" it did something (money left the buying
+  // club's budget) but connected to nothing real: this system was never
+  // built to move `career.player`/`career.squad` at all, only the
+  // LeaguePlayer-shaped records the OTHER 19 clubs carry, so it can never
+  // legitimately contain the human character in the first place. Whatever
+  // stale snapshot let a leftover record with his exact name survive under
+  // an old club long after he actually transferred away, the fix that
+  // matters is the same shape as the "gen:" filter just above it: never
+  // offer HIM as a buyable candidate, full stop, regardless of which club's
+  // data he's stuck in or why.
+  const yourName = `${career.player.firstName} ${career.player.lastName}`;
+  const rawOthers = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
+    .filter(s => s.club !== club && s.club !== career.player.club)
+    .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })))
+    .filter(p => !p.id.startsWith("gen:"))
+    .filter(p => p.name !== yourName);
+  // Reported directly, and a real bug: the same real player turning up
+  // "four in a row and then two more further down" — spamming filters
+  // afterward made it look like the panel had stopped responding at all,
+  // which duplicate rows explain too: this list is keyed on
+  // `${fromClub}:${id}`, and a genuinely duplicate (fromClub, id) pair
+  // gives React two siblings sharing one key, which is exactly the kind of
+  // thing that leaves a list rendering stale/wrong on the next update.
+  // `career.leagueSquads`/`career.externalSquads` aren't mutually
+  // exclusive by construction — the same real player.id can legitimately
+  // turn up in both (a stale snapshot overlap, or a club briefly present
+  // in both lists at once) — so dedupe by id here rather than chasing every
+  // possible way the two source lists could overlap upstream, keeping only
+  // the first sighting of each real player.
+  const seenIds = new Set<string>();
+  const others = rawOthers.filter(p => {
+    if (seenIds.has(p.id)) return false;
+    seenIds.add(p.id);
+    return true;
+  });
+  const everyone = [...freeAgents, ...others];
+
+  // Requested directly, researched for feasibility first: every field these
+  // filters need (multi-position, nationality, rating, club, market value)
+  // was already on the data reaching this screen — nothing new to fetch.
+  const withValue = everyone.map(p => ({ ...p, marketValue: playerMarketValue(p, p.fromClub, career) }));
+
+  // Options are built off the FULL pool (before any filter narrows it) so
+  // the dropdowns always offer every real choice, not just whatever
+  // happens to survive the filters already applied.
+  const allPositions = Array.from(new Set(everyone.flatMap(p => (p.positions?.length ? p.positions : [p.position])))).sort();
+  const allNations = Array.from(new Set(everyone.map(p => p.nation).filter((n): n is string => !!n))).sort();
+  const allClubs = Array.from(new Set(everyone.map(p => p.fromClub))).sort();
+
+  const min = minRating === "" ? undefined : Number(minRating);
+  const max = maxRating === "" ? undefined : Number(maxRating);
+  const minA = minAge === "" ? undefined : Number(minAge);
+  const maxA = maxAge === "" ? undefined : Number(maxAge);
+  const maxV = maxValue === "" ? undefined : Number(maxValue.replace(/[^\d]/g, ""));
+
+  let pool = withValue.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  if (positionFilter.size > 0) {
+    pool = pool.filter(p => (p.positions?.length ? p.positions : [p.position]).some(pos => positionFilter.has(pos)));
+  }
+  if (nationFilter) pool = pool.filter(p => p.nation === nationFilter);
+  if (clubFilter) pool = pool.filter(p => p.fromClub === clubFilter);
+  if (min !== undefined && !Number.isNaN(min)) pool = pool.filter(p => p.overall >= min);
+  if (max !== undefined && !Number.isNaN(max)) pool = pool.filter(p => p.overall <= max);
+  // Age/market-value cap filters — requested directly. "You could put a cap
+  // of 20 million... it would show you every player within that limit,
+  // wouldn't show anyone above, but would show everyone below" — a single
+  // max-value input, no min, matching that description exactly.
+  if (minA !== undefined && !Number.isNaN(minA)) pool = pool.filter(p => (p.age ?? 24) >= minA);
+  if (maxA !== undefined && !Number.isNaN(maxA)) pool = pool.filter(p => (p.age ?? 24) <= maxA);
+  if (maxV !== undefined && !Number.isNaN(maxV)) pool = pool.filter(p => p.marketValue <= maxV);
+
+  pool = [...pool].sort((a, b) => {
+    const diff = sortBy === "rating" ? a.overall - b.overall : a.marketValue - b.marketValue;
+    return sortDesc ? -diff : diff;
+  }).slice(0, 60);
+
+  const togglePosition = (pos: string) => setPositionFilter(prev => {
+    const next = new Set(prev);
+    if (next.has(pos)) next.delete(pos); else next.add(pos);
+    return next;
+  });
+
+  const activeFilterCount = positionFilter.size + (nationFilter ? 1 : 0) + (clubFilter ? 1 : 0) + (min !== undefined ? 1 : 0) + (max !== undefined ? 1 : 0)
+    + (minA !== undefined ? 1 : 0) + (maxA !== undefined ? 1 : 0) + (maxV !== undefined ? 1 : 0);
+
+  return (
+    <>
+      <div className="flex gap-2 mb-2">
+        <input
+          value={search} onChange={e => setSearch(e.target.value)} placeholder="Search players…"
+          className="flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
+        />
+        <button
+          onClick={() => setShowFilters(v => !v)}
+          className={`shrink-0 px-3 rounded-lg text-[10px] font-black ${showFilters || activeFilterCount > 0 ? "bg-emerald-600 text-white" : "bg-gray-800 border border-gray-700 text-white/70"}`}
+        >
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </button>
+      </div>
+
+      {showFilters && (
+        <div className="mb-2 kit-card p-2.5 space-y-2">
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Position</div>
+            <div className="flex flex-wrap gap-1">
+              {allPositions.map(pos => (
+                <button
+                  key={pos}
+                  onClick={() => togglePosition(pos)}
+                  className={`px-2 py-1 rounded text-[10px] font-black ${positionFilter.has(pos) ? "bg-emerald-500 text-emerald-950" : "bg-gray-700 text-white/80"}`}
+                >
+                  {pos}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Nationality</div>
+              <select
+                value={nationFilter} onChange={e => setNationFilter(e.target.value)}
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+              >
+                <option value="">Any</option>
+                {allNations.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Club</div>
+              <select
+                value={clubFilter} onChange={e => setClubFilter(e.target.value)}
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+              >
+                <option value="">Any</option>
+                {allClubs.map(c => <option key={c} value={c}>{c === FREE_AGENTS_CLUB ? "Free agent" : c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Rating range</div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number" placeholder="Min" value={minRating} onChange={e => setMinRating(e.target.value)}
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+              />
+              <span className="text-white/50 text-[10px]">to</span>
+              <input
+                type="number" placeholder="Max" value={maxRating} onChange={e => setMaxRating(e.target.value)}
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Age range</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" placeholder="Min" value={minAge} onChange={e => setMinAge(e.target.value)}
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+                />
+                <span className="text-white/50 text-[10px]">to</span>
+                <input
+                  type="number" placeholder="Max" value={maxAge} onChange={e => setMaxAge(e.target.value)}
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Max market value</div>
+              {/* Same comma-formatted text+numeric pattern as every other
+                  money input in this file — a plain number input can't show
+                  thousands separators. "You could put a cap of 20 million...
+                  would show you every player within that limit... but would
+                  show everyone below" — a single ceiling, no minimum. */}
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-300 font-black text-xs">★</span>
+                <input
+                  type="text" inputMode="numeric"
+                  placeholder="No cap"
+                  value={maxValue === "" ? "" : Number(maxValue.replace(/[^\d]/g, "")).toLocaleString()}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/[^\d]/g, "");
+                    setMaxValue(digits);
+                  }}
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white tabular-nums"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Sort by</div>
+            <div className="flex gap-1">
+              {(["rating", "value"] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => setSortBy(s)}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-black uppercase ${sortBy === s ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80"}`}
+                >
+                  {s === "rating" ? "Rating" : "Market value"}
+                </button>
+              ))}
+              <button
+                onClick={() => setSortDesc(v => !v)}
+                className="px-3 py-1.5 rounded-md bg-gray-700 text-white/80 text-[10px] font-black"
+              >
+                {sortDesc ? "High→Low" : "Low→High"}
+              </button>
+            </div>
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => { setPositionFilter(new Set()); setNationFilter(""); setClubFilter(""); setMinRating(""); setMaxRating(""); setMinAge(""); setMaxAge(""); setMaxValue(""); }}
+              className="w-full py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black text-white/80"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="kit-card overflow-hidden max-h-[45vh] overflow-y-auto">
+        {pool.map(p => (
+          <div key={`${p.fromClub}:${p.id}`} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
+            <div>
+              <div className="text-sm font-bold text-white">{p.name}</div>
+              <div className="text-[10px] text-white font-semibold">
+                {p.position} · OVR {p.overall} · ★{formatMoney(p.marketValue)} · {p.fromClub === FREE_AGENTS_CLUB ? "Free agent" : p.fromClub}
+              </div>
+            </div>
+            <button
+              onClick={() => p.fromClub === FREE_AGENTS_CLUB
+                ? onSignFreeAgent(club, p.id, p.fromClub)
+                : onNegotiateSigning(p.id, p.fromClub, p.name, p.marketValue)}
+              className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[10px] font-black text-emerald-950"
+            >
+              {p.fromClub === FREE_AGENTS_CLUB ? "Sign" : "Negotiate"}
+            </button>
+          </div>
+        ))}
+        {pool.length === 0 && <div className="px-3 py-6 text-center text-xs text-white font-semibold">No players match.</div>}
+      </div>
+    </>
+  );
+}
+
+function ManagerPanel({
+  career, club, onNegotiate,
+}: { career: CareerState; club: string; onNegotiate: (club: string, managerName: string, anchorFee: number) => void }) {
+  // Own club reads the REAL career.manager — that's what appointing someone
+  // here actually writes to (see investments.ts's replaceManagerForOwnedClub).
+  // Every other club keeps the same read priority as the Boardroom header
+  // above: the real saved lineup's manager wins over this club's own
+  // separate managerName record, since that's what every other screen
+  // actually displays.
+  const current = club === career.player.club
+    ? career.manager?.name
+    : (loadLineup(club)?.manager || ownedClubState(career, club).managerName);
+  // The real, single source of truth for "who's actually on the market" —
+  // career.availableManagers, maintained by every hire/sack this game
+  // already does (careerFlow.ts's own-club sacking, replaceManagerForOwnedClub
+  // for an owned club). Reported directly: a manager already in a job used
+  // to stay ON this list, greyed out with an "At <club>" label — reads as
+  // "still technically pickable," when the whole point of a real transfer
+  // market is that an employed manager isn't in it at all. He's just left
+  // off the list now, exactly like the just-sacked man he replaced is
+  // already correctly added BACK to this same list by the code that fired
+  // him — nothing new needed there, it just was never reflected here.
+  const marketPool = career.availableManagers ?? allPoolManagers();
+  return (
+    <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
+      {allPoolManagers().map(name => {
+        if (name === current) {
+          return (
+            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
+              <span className="text-sm font-bold text-emerald-300">{name} (current)</span>
+            </div>
+          );
+        }
+        if (!marketPool.includes(name)) return null;
+        const interest = managerInterest(career, name, club);
+        return (
+          <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-white truncate">{name}</div>
+              {!interest.willing && (
+                <div className="text-[9px] font-semibold text-white/60 leading-snug">{interest.reason}</div>
+              )}
+            </div>
+            <button
+              disabled={!interest.willing}
+              onClick={() => onNegotiate(club, name, interest.anchorFee)}
+              className="shrink-0 ml-2 px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-[10px] font-black text-emerald-950"
+            >
+              {interest.willing ? "Negotiate" : "Not Interested"}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

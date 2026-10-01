@@ -71,11 +71,11 @@ export default function ManagerTalk({
   return (
     <div className="mx-auto flex w-full max-w-md flex-col px-4 py-3 text-white">
       <div className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">
-        A club has come in for you
+        A scout has spotted you
       </div>
       <div className="text-xl font-black leading-tight">{talk.club}</div>
       <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
-        {leagueNameFor(talk.division)} · {managerName} watched you play
+        {leagueNameFor(talk.division)} · {managerName}&apos;s scout watched you play
       </div>
 
       {/* His office. Tapping moves him on to the next thing he has to say.

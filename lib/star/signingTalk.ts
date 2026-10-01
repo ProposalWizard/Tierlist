@@ -2,7 +2,7 @@ import type { CareerDivision } from "./calendar";
 import { matchweeksFor } from "./calendar";
 import { offerWageFor, offerStanding, weeklyWageFor } from "./economy";
 import { startNegotiation, type NegotiationState } from "./negotiation";
-import { STAGE_LABEL, TRIAL_STAGES, trialScore, type TrialProgress, type TrialStage } from "./trial";
+import { STAGE_LABEL, trialStagesFor, trialScore, type TrialProgress, type TrialStage } from "./trial";
 
 /**
  * THE CONVERSATION BEFORE THE CONTRACT.
@@ -148,7 +148,7 @@ export interface ManagerTalk {
 function bestAndWorst(trial: TrialProgress): { best: TrialStage | null; worst: TrialStage | null } {
   let best: TrialStage | null = null, worst: TrialStage | null = null;
   let bestScore = -1, worstScore = 101;
-  for (const stage of TRIAL_STAGES) {
+  for (const stage of trialStagesFor(trial)) {
     const r = trial.results[stage];
     if (!r) continue;
     if (r.score > bestScore) { bestScore = r.score; best = stage; }

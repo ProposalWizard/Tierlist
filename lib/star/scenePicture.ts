@@ -25,6 +25,19 @@ export interface ScenePicture {
   teammates?: boolean;
   /** false: no "GOAL" / "PASS" / "OFFSIDE" text or goal flash; the feature says what happened. */
   banners?: boolean;
+  /**
+   * false: your own figure is not drawn (the ball, the drag and the strike are
+   * unchanged — only the picture of the man is left out). Harry, 1 Oct 2026:
+   * "on penalties I like our guy being there, and maybe free kick … outside of
+   * that we just don't have him."
+   */
+  you?: boolean;
+  /**
+   * false: the penalty box, the six-yard box, the spot and the D are not drawn
+   * (and the worn patches that go with them). Harry: "the pitch doesn't need
+   * to have the box in it at all times." Lines only — nothing is a rule here.
+   */
+  box?: boolean;
 }
 
 /**

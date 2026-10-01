@@ -27,9 +27,10 @@ import type { CareerState } from "@/lib/star/types";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { hasClub } from "@/lib/star/calendar";
+import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ClubBadge from "./ClubBadge";
-import { KitStyles, Stadium, Pitch, PressButton, ClubCard, Shine, Glow, RiseIn, clubTheme, rgba, useClubTheme } from "./ui";
+import { KitStyles, PressButton, ClubCard, Shine, Glow, RiseIn, clubTheme, rgba, useClubTheme } from "./ui";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 
@@ -98,10 +99,6 @@ export default function TitleScreen(p: TitleScreenProps) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  // Never taller than about half the screen, so a short menu (no save yet)
-  // does not blow him up to fill it.
-  const avH = Math.max(150, Math.min(stage.h - 6, 520, Math.round(stage.vh * 0.47)));
-  const avW = Math.min(stage.w, Math.round(avH * 0.86));
 
   const firstEmpty = saves.find((s) => s.empty)?.slot;
   const newGame = () => {
@@ -112,82 +109,66 @@ export default function TitleScreen(p: TitleScreenProps) {
   const signed = !!career && hasClub(career);
   const shown = career ?? NO_SAVE_PLAYER;
 
+  // The player stands on the left, as tall as the stage he is given.
+  const avH = Math.max(150, Math.min(stage.h - 4, 560));
+  const avW = Math.min(stage.w, Math.round(avH * 0.86));
+  const club = signed && career ? short(career.player.club) : null;
+
   return (
     <div
-      className="fixed inset-0 z-[80] overflow-hidden bg-[#04070e] text-white"
+      className="fixed inset-0 z-[80] overflow-hidden bg-[#04100a] text-white"
       onPointerMove={onMove}
       style={{ touchAction: "manipulation" }}
     >
       <KitStyles />
-      {/* The stadium, fading up out of the dark while the floodlights
-          flicker on, with a slow camera drift and the pointer's lean. */}
-      <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 10}px, ${-tilt.y * 6}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
-        <div className="kit-fade absolute inset-[-6%]">
-          <div className="kit-drift absolute inset-0">
-            <Stadium glow={theme.glow} intro big pitch={false} />
-          </div>
+      {/* THE SET (v0.23, P82: "this whole pitch with the football, the name of
+          it, the background's like a net. Our guy should be standing … on the
+          left"): the goal's net behind, the pitch under him, a ball at his
+          feet. Our own colours — the net is lit in your club's colour — and no
+          store badges. A still picture; the net leans a little with the finger. */}
+      <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
+        <div className="kit-fade absolute inset-[-4%]">
+          <GoalNet glow={theme.glow} />
+          <PitchFloor />
         </div>
-        <Motes />
       </div>
-      {/* Vignette, so the menu reads over the lights. */}
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(120% 75% at 50% 42%, transparent 45%, rgba(0,0,0,.55) 100%), linear-gradient(180deg, rgba(0,0,0,.35) 0%, transparent 22%, transparent 52%, rgba(2,4,10,.92) 82%)" }} />
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(120% 70% at 30% 52%, transparent 40%, rgba(0,0,0,.5) 100%), linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 24%)" }} />
 
-      <div className="relative mx-auto flex h-full max-w-md flex-col px-4" style={{ paddingTop: "max(12px, env(safe-area-inset-top))", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}>
+      <div className="relative mx-auto h-full max-w-md" style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}>
         <Wordmark glow={theme.glow} />
+        {!career && (
+          <div className="kit-rise mt-1 text-center" style={{ animationDelay: "900ms" }}>
+            <div className="text-[13px] font-black uppercase tracking-[0.1em] text-white" style={{ textShadow: "0 2px 10px rgba(0,0,0,.8)" }}>Every legend starts with a trial</div>
+          </div>
+        )}
 
-        {/* You. */}
-        <div ref={stageRef} className="relative flex min-h-0 flex-1 items-end justify-center">
-          {!career && (
-            <div className="kit-rise absolute inset-x-0 top-[15%] text-center" style={{ animationDelay: "900ms" }}>
-              <div className="text-[13px] font-black uppercase tracking-[0.1em] text-white" style={{ textShadow: "0 2px 10px rgba(0,0,0,.8)" }}>Every legend starts with a trial</div>
-              <div className="mt-1 text-[11.5px] font-bold text-white/65">Make your player. Earn a contract. Go.</div>
-            </div>
-          )}
+        {/* You, on the left, standing on the pitch with the ball at your feet. */}
+        <div ref={stageRef} className="pointer-events-none absolute bottom-[9%] left-[-18.5%] h-[54%] w-[88%]">
           <div className="kit-rise absolute inset-x-0 bottom-0 flex justify-center" style={{ animationDelay: "520ms" }}>
-            {/* The lean lives on its own wrapper: a finished rise-in holds
-                its end state, which would override a transform set here. */}
-            <div className="relative" style={{ transform: `translate3d(${tilt.x * 5}px, 0, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
-              {/* The patch of pitch he stands on, lit in the club colour. */}
-              <Glow color={theme.glow} alpha={0.45} className="bottom-[2%] left-1/2 h-[18%] w-[80%] -translate-x-1/2 blur-2xl" />
-              <Pitch className="-bottom-[7%] left-1/2 h-[20%] w-[190%] -translate-x-1/2" />
+            <div className="relative" style={{ transform: `translate3d(${tilt.x * 4}px, 0, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
+              <Glow color={theme.glow} alpha={0.4} className="bottom-[1%] left-1/2 h-[10%] w-[90%] -translate-x-1/2 blur-xl" />
               <div className="kib-breathe">
                 <PlayerAvatar career={shown} width={avW} height={avH} look={look} />
               </div>
             </div>
           </div>
         </div>
+        <TitleBall className="kit-rise absolute bottom-[3.5%] left-[26%]" style={{ animationDelay: "700ms" }} />
 
-        {/* The menu. */}
-        <div className="relative -mt-3 space-y-2">
+        {/* The menu: flush to the right edge, slanted like a boot's tongue. */}
+        <div className="absolute bottom-[4%] right-0 w-[50%] space-y-2">
           {career ? (
             <RiseIn index={0} delay={760}>
-              <PressButton variant="primary" pulse onClick={p.onContinue} className="relative w-full overflow-hidden rounded-2xl px-4 py-2.5 text-left" size="none">
-                <Shine loop every={4.5} />
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/20 text-[18px]" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.4)" }}>▶</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[19px] font-black uppercase leading-none tracking-wide">Continue</div>
-                    <div className="mt-1 flex items-center gap-1.5 truncate text-[11.5px] font-bold text-white/90">
-                      {signed && <ClubBadge club={career.player.club} kit={{ shirt: theme.shirt, trim: theme.trim }} size={16} />}
-                      <span className="truncate">
-                        {signed
-                          ? `${short(career.player.club)} · Season ${career.season}`
-                          : `${career.player.firstName} ${career.player.lastName} · ${career.retired ? "Retired" : "No club yet"}`}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-gradient-to-b from-yellow-200 to-amber-400 px-2 py-1 text-[13px] font-black tabular-nums text-gray-950" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 3px 8px -2px rgba(0,0,0,.4)" }}>
-                    ★ {(career.stars ?? 1).toFixed(1)}
-                  </span>
-                </div>
-              </PressButton>
+              <MenuButton primary icon="▶" label="Continue" onClick={p.onContinue}
+                hint={club ? <span className="flex items-center gap-1">{<ClubBadge club={career.player.club} kit={{ shirt: theme.shirt, trim: theme.trim }} size={13} />}{club} · S{career.season}</span> : (career.retired ? "Retired" : "No club yet")}
+                badge={<span className="bg-gradient-to-b from-yellow-200 to-amber-400 px-1.5 py-0.5 text-[13px] font-black leading-none tabular-nums text-gray-950">★{starLevel(career)}</span>} />
             </RiseIn>
           ) : null}
           <RiseIn index={career ? 1 : 0} delay={760}>
-            <MenuButton icon="＋" label="New Game" primary={!career} onClick={newGame} />
+            <MenuButton primary={!career} icon="＋" label="New game" onClick={newGame} />
           </RiseIn>
           <RiseIn index={career ? 2 : 1} delay={760}>
-            <MenuButton icon="▤" label="Load Game" hint={`${saves.filter((s) => !s.empty).length} of ${saves.length} saves`} onClick={() => setSheet("load")} />
+            <MenuButton icon="▤" label="Load game" hint={`${saves.filter((s) => !s.empty).length}/${saves.length}`} onClick={() => setSheet("load")} />
           </RiseIn>
           {p.onSettings && (
             <RiseIn index={career ? 3 : 2} delay={760}>
@@ -195,10 +176,10 @@ export default function TitleScreen(p: TitleScreenProps) {
             </RiseIn>
           )}
           <RiseIn index={career ? 4 : 3} delay={760}>
-            <div className="flex items-center justify-center gap-4 pt-1 text-[11px] font-black uppercase tracking-[0.18em] text-white/55">
-              {p.showPlayArea && <a href="/star-play-dev" className="kib-press hover:text-white">Play Area</a>}
-              {p.showPlayArea && <span className="text-white/25">·</span>}
-              <button onClick={() => setSheet("credits")} className="kib-press uppercase hover:text-white">Credits</button>
+            <div className="flex items-center justify-end gap-3 pr-3 pt-0.5 text-[12px] font-black uppercase tracking-[0.16em] text-white/75" style={{ textShadow: "0 1px 4px rgba(0,0,0,.9)" }}>
+              {p.showPlayArea && <a href="/star-play-dev" className="kib-press">Play Area</a>}
+              {p.showPlayArea && <span className="text-white/30">·</span>}
+              <button onClick={() => setSheet("credits")} className="kib-press uppercase">Credits</button>
             </div>
           </RiseIn>
         </div>
@@ -224,9 +205,9 @@ export default function TitleScreen(p: TitleScreenProps) {
 function Wordmark({ glow }: { glow: string }) {
   return (
     <div className="kit-drop-in relative z-10 text-center" style={{ animationDelay: "280ms" }}>
-      <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 3px 0 rgba(0,0,0,.5)) drop-shadow(0 0 18px ${rgba(glow, 0.55)})` }}>
+      <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 3px 0 rgba(0,0,0,.55)) drop-shadow(0 0 18px ${rgba(glow, 0.55)})` }}>
         <div
-          className="kit-text-shine pr-1 text-[40px] font-black italic leading-[1.05] tracking-[-0.04em] min-[380px]:text-[44px]"
+          className="kit-text-shine pr-1 text-[46px] font-black italic leading-[1.02] tracking-[-0.03em] min-[380px]:text-[52px]"
           style={{ backgroundImage: "linear-gradient(100deg, #f8fafc 0%, #e2e8f0 38%, #ffffff 46%, #fde68a 50%, #ffffff 54%, #e2e8f0 62%, #f8fafc 100%)" }}
         >
           KNOWITBALL
@@ -234,50 +215,82 @@ function Wordmark({ glow }: { glow: string }) {
       </div>
       <div className="mt-0.5 flex items-center justify-center gap-2">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-300/80" />
-        <span className="text-[10.5px] font-black uppercase tracking-[0.32em] text-amber-200" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>Road to the Ballon d&apos;Or</span>
+        <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>Road to the Ballon d&apos;Or</span>
         <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-300/80" />
       </div>
     </div>
   );
 }
 
-function MenuButton({ icon, label, hint, primary = false, onClick }: { icon: string; label: string; hint?: string; primary?: boolean; onClick: () => void }) {
+/** One menu row: flat, flush to the right edge, a slanted left edge. */
+function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { icon: string; label: string; hint?: React.ReactNode; badge?: React.ReactNode; primary?: boolean; onClick: () => void }) {
   return (
-    <PressButton
-      variant={primary ? "primary" : "secondary"}
-      pulse={primary}
-      size="none"
+    <button
       onClick={onClick}
-      className="relative flex h-[48px] w-full items-center gap-3 overflow-hidden rounded-2xl px-4 text-left"
+      className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "h-[58px] text-white" : "h-[46px] text-white"}`}
+      style={{
+        clipPath: "polygon(14px 0, 100% 0, 100% 100%, 0 100%)",
+        background: primary ? "linear-gradient(180deg, #34d399, #059669)" : "linear-gradient(180deg, rgba(10,50,28,.92), rgba(5,32,17,.96))",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), inset -1px 0 0 rgba(255,255,255,.2)",
+      }}
     >
       {primary && <Shine loop every={4.5} />}
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-[14px] text-white/90">{icon}</span>
-      <span className="flex-1 text-[15px] font-black uppercase tracking-wide">{label}</span>
-      {hint && <span className="text-[10.5px] font-bold text-white/55">{hint}</span>}
-      <span className="text-[15px] text-white/40">›</span>
-    </PressButton>
+      <span className="shrink-0 text-[17px] leading-none text-white/90">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate font-black uppercase leading-none tracking-wide ${primary ? "text-[22px]" : "text-[18px]"}`}>{label}</span>
+        {hint && <span className="mt-1 block truncate text-[12px] font-black uppercase leading-none tracking-tight text-white/80">{hint}</span>}
+      </span>
+      {badge}
+    </button>
   );
 }
 
-/** Dust drifting up through the floodlight beams. */
-function Motes() {
-  const motes = Array.from({ length: 16 }, (_, i) => ({
-    left: `${(i * 37) % 100}%`,
-    top: `${30 + ((i * 53) % 55)}%`,
-    size: 1.5 + (i % 3),
-    dx: `${((i * 29) % 40) - 20}px`,
-    dur: `${5 + (i % 5)}s`,
-    delay: `${(i * 0.45) % 5}s`,
-  }));
+/** The net behind the goal, lit in your club's colour: a mesh of diamonds,
+ *  the crossbar along the top and a post down the right-hand side. */
+function GoalNet({ glow }: { glow: string }) {
   return (
-    <div className="pointer-events-none absolute inset-0">
-      {motes.map((m, i) => (
-        <span
-          key={i}
-          className="kit-mote absolute rounded-full bg-white"
-          style={{ left: m.left, top: m.top, width: m.size, height: m.size, boxShadow: "0 0 6px rgba(255,255,255,.8)", ["--dx" as string]: m.dx, ["--dur" as string]: m.dur, ["--delay" as string]: m.delay } as React.CSSProperties}
-        />
-      ))}
+    <div className="absolute inset-x-0 top-0 h-[68%]" aria-hidden>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 70% at 30% 100%, ${rgba(glow, 0.5)} 0%, transparent 70%), linear-gradient(180deg, #03100a 0%, #07210f 70%, #0a2d16 100%)` }} />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.26) 0 1.5px, transparent 1.5px 17px), repeating-linear-gradient(-45deg, rgba(255,255,255,.26) 0 1.5px, transparent 1.5px 17px)",
+          maskImage: "linear-gradient(180deg, #000 0%, #000 55%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 55%, transparent 100%)",
+        }}
+      />
+      {/* crossbar and post */}
+      <div className="absolute inset-x-0 top-[4%] h-[9px] bg-white/90" style={{ boxShadow: "0 3px 10px rgba(0,0,0,.6), 0 0 18px rgba(255,255,255,.25)" }} />
+      <div className="absolute bottom-0 right-[6%] top-[4%] w-[9px] bg-white/85" style={{ boxShadow: "0 0 14px rgba(255,255,255,.2)" }} />
+    </div>
+  );
+}
+
+/** The pitch he stands on: mown bands, the goal line and the six-yard box in chalk. */
+function PitchFloor() {
+  return (
+    <div className="absolute inset-x-0 bottom-0 h-[34%]" aria-hidden>
+      <div className="absolute inset-0" style={{ background: "repeating-linear-gradient(180deg, #23823f 0 38px, #1c6e34 38px 76px)" }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 38%, rgba(0,0,0,.25) 100%)" }} />
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-white/85" />
+      <div className="absolute left-[8%] top-0 h-[52%] w-[3px] bg-white/55" />
+      <div className="absolute left-[8%] top-[52%] h-[3px] w-[62%] bg-white/55" />
+    </div>
+  );
+}
+
+/** A big match ball with a soft shadow, at his feet. */
+function TitleBall({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <div className={className} style={style} aria-hidden>
+      <svg width="68" height="71" viewBox="0 0 96 100">
+        <ellipse cx="50" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.45)" />
+        <circle cx="46" cy="46" r="42" fill="#fff" stroke="#0f172a" strokeWidth="2" />
+        <path d="M46 24 62 36 56 55H36L30 36Z" fill="#111827" />
+        <path d="M46 24V8M62 36 78 30M56 55 66 70M36 55 26 70M30 36 14 30" stroke="#111827" strokeWidth="2.4" fill="none" />
+        <path d="M78 30 84 46 72 58 66 70M14 30 8 46 20 58 26 70" stroke="#cbd5e1" strokeWidth="1.6" fill="none" />
+        <ellipse cx="34" cy="28" rx="13" ry="7" fill="rgba(255,255,255,.65)" transform="rotate(-30 34 28)" />
+      </svg>
     </div>
   );
 }
@@ -343,7 +356,7 @@ function LoadSheet({ saves, activeSlot, full, career, onClose, onLoad, onNew, on
                     </div>
                     <div className="truncate text-[14px] font-black text-white">{s.playerName}</div>
                     <div className="truncate text-[11px] font-bold text-white/65">
-                      {s.signed ? `${short(s.club ?? "")} · Season ${s.season}` : "No club yet"} · <span className="text-amber-300">★{s.starRating?.toFixed(1)}</span>
+                      {s.signed ? `${short(s.club ?? "")} · Season ${s.season}` : "No club yet"} · <span className="text-amber-300">★{s.starRating}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">

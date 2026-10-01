@@ -328,7 +328,10 @@ export const TOTAL_INCOME_MULTIPLE =
     + TOTAL_INCOME_SHARES.sponsorPerMatch
     + TOTAL_INCOME_SHARES.lumps;
 
-/** Bottom rung first, so the ladder is built upwards from `WAGE_FLOOR`. */
+/** Bottom rung first, so the ladder is built upwards from `WAGE_FLOOR`.
+ *  National League North and South are left off: they pay the National
+ *  League's band (see DIVISION_BASE_WAGE), so the floor stays where every
+ *  number in this file was tuned against. */
 const LADDER_UP: CareerDivision[] = [...DIVISION_ORDER].reverse();
 
 /**
@@ -431,6 +434,12 @@ export const DIVISION_BASE_WAGE: Record<CareerDivision, number> = (() => {
     if (i > 0) base *= divisionStepInto(division);
     out[division] = base;
   });
+  // North and South share the bottom band with the National League (1 Oct
+  // 2026). A lower band would put a North bench player under a free agent's
+  // ★10 a week (FREE_AGENT_WEEKLY_PAY), which is the one place this ladder
+  // is anchored. Within the band, a club's own standing still sets its pay.
+  out.national_league_north = out.national_league;
+  out.national_league_south = out.national_league;
   return out;
 })();
 

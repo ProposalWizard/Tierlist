@@ -1,0 +1,89 @@
+[00:00] Blah, blah.
+[00:04] Okay I am going to go through the last video's responses and then I'm going to go through
+[00:12] both of Mikey's latest patch notes to give any feedback that I have on that.
+[00:18] Okay the video is analysed, everything you asked to be done is built and pushed.
+[00:23] Research you asked for is running and one question at one
+[00:29] Okay savings done
+[00:32] Nice
+[00:36] Good session on phone current here
+[00:38] We have to make it very clear.
+[00:55] I think the best thing to do is just to play from the phone's copy.
+[01:01] I don't know actually.
+[01:02] I don't know.
+[01:03] This is okay for now.
+[01:33] you
+[02:03] you
+[02:33] you
+[03:03] Okay, back to it, sorry. Okay. I'm just gonna highlight what I've read past from now on.
+[03:26] Just don't want to be careful about my read.
+[03:42] Bought coins can never reach the casino.
+[03:45] Okay, so the money swap, yeah.
+[03:48] can I price something as 10 million coins and a token amount at the same
+[04:01] time or does it have to be five pound is that one to be careful
+[04:18] That's the two store accounts, so we can build the app frame without the code magic
+[04:32] stuff or like test flight or anything.
+[04:42] Oh the game can tell automatically whether it's being played with finger or mouse and
+[04:46] and turn a feature like the ball bounce on for touch only.
+[04:50] That's amazing.
+[04:51] Okay, that's a headline.
+[04:53] So when I'm gonna send this full,
+[04:56] we're gonna finalize decisions on an order,
+[05:00] a plan of everything that we're gonna do
+[05:01] to get this actually to be an app.
+[05:04] That is a headline, that's really cool.
+[05:07] Save sizes and how we can maximize save size
+[05:11] is a headline.
+[05:12] Offline app is a headline.
+[05:15] Coins and casino all that stuff will be a headline
+[05:22] Okay, yeah, that's cool
+[05:30] Cool
+[05:40] Cool
+[05:45] What do you mean through hosting for this?
+[05:55] I don't get that.
+[06:00] No, I wouldn't say save on the page.
+[06:08] I just save them and then you write them in as a second tab that you can switch to
+[06:13] Harry's notes or and that could that should be for everyone really okay okay casino is
+[06:24] important as it stands the casino probably makes the 18 plus headline casino needs
+[06:30] whole headline.
+[06:38] Yeah, we gotta be careful with this.
+[07:30] Okay, it has to be paid through Apple's and Google's own payment systems.
+[07:45] So what if we had the casino was literally just hiding casino in the app but keeping
+[07:56] it on the website?
+[07:58] hmm yeah not worth it
+[08:08] I mean this is interesting I wonder how they'd actually do that for us
+[08:16] For now, I think we keep it on the website only.
+[08:31] I think it's a tough one because we really like the casino.
+[08:35] What if it was completely fake chips, fake everything, none of it actually impact the
+[08:40] game, you just go in there, maybe you can get some XP for winning games or something
+[08:45] like that but doesn't actually mean anything because originally NSS even
+[08:50] right now age rating 13 plus due to simulated gambling casino mini games
+[09:07] Can you do some research on the history of NSS, what it used to be rated at, how long
+[09:16] could we get away with that before they put that on us?
+[09:20] Okay, interesting, interesting. So it could still be an option.
+[09:37] offline up.
+[10:07] Capacitors own doc say load the website setting is not intended for use in production.
+[10:24] So what is the frame plus an offline screen?
+[10:37] the difference between career game only inside the app fully offline and frame
+[10:42] loading website plus offline screen
+[10:51] okay cool
+[11:07] Where is A, B or C?
+[11:11] I checked my key work is all good. 20 seasons savesides and measures 2 database headroom is the thing to watch.
+[11:17] 3 failing tests. They were only failing on your branch because you didn't have Mikey's latest. Ok cool.
+[11:24] He lengthened the pen timer. Interesting.
+[11:28] Me personally, I think that one second is even maybe a bit too long.
+[11:33] be a bit too long so we're having a difference of opinions there maybe give
+[11:36] an input on that nice
+[11:49] okay cool
+[11:52] Nice, okay cool.
+[12:04] Ah, that's interesting.
+[12:13] Ah, that's interesting. I don't know if we want that to be revealed in a midweek game
+[12:35] Damn that's crazy. Okay, so it's only a little bit more
+[12:43] We have 120 megabytes left on the free database at 200 kB that's room for about 430 players.
+[13:02] If we paid how much could we do?
+[13:07] So is this downloading these is that telling the user to download that when they come
+[13:11] in right okay I think that is a lot of updates from me on everything that we
+[13:19] just did I'm gonna do a separate video now going through patch notes one patch
+[13:23] notes two I'm probably doing a quick play test and then you might later on
+[13:27] be getting an influx of like ten YouTube videos on NSS with a bunch of
+[13:34] reviews and comments that are gonna help us build the game a little bit
+[13:37] better okay

@@ -1,4 +1,4 @@
-import { withStars } from "./starPoints";
+import { withStars, isOldStarScale, starLevel } from "./starPoints";
 import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
@@ -9,11 +9,20 @@ import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { catchUpAwards, compactPotmHistory } from "./potm";
 import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
+import {
+  type SaveStamp, type SyncRecord, type SyncedVersion, type DeviceKind, type OtherDeviceWarning,
+  type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
+  recordAfterSend, recordAfterConfirm, recordAfterTake, decideLoad, deviceKindFromUA, pickSpareSlot,
+} from "./saveClash";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
 const PHASE_KEY = "star-career-phase-v1";
 const SAVED_AT_KEY = "star-career-saved-at-v1";
+/** Per save: where this device stands with the cloud — see lib/star/saveClash.ts. */
+const SYNC_KEY = "star-career-sync-v1";
+/** Per browser: a random id, so an upload can say which device sent it. */
+const DEVICE_KEY = "star-device-id-v1";
 
 /**
  * A logged-out player's own slot — distinct from any real account id, so a
@@ -490,8 +499,9 @@ function backfill(c: CareerState): CareerState {
   // rollover gets the same trim now (see compactPotmHistory): last season
   // and this one whole, older seasons only the months you won.
   out.potm = compactPotmHistory(out.potm, out.season - 1);
-  // A save from before Star Points gets its ledger and star rating here.
-  return out.stars === undefined ? withStars(out) : out;
+  // A save from before Star Points gets its ledger and star rating here, and
+  // one from the 1.0-10.0 days is moved onto 1-100 (starPoints.ts bestOf).
+  return out.stars === undefined || isOldStarScale(out) ? withStars(out) : out;
 }
 
 export function clearCareer(scope: string) {
@@ -499,6 +509,7 @@ export function clearCareer(scope: string) {
     localStorage.removeItem(scoped(KEY, scope));
     localStorage.removeItem(scoped(SAVED_AT_KEY, scope));
     localStorage.removeItem(scoped(PHASE_KEY, scope));
+    localStorage.removeItem(scoped(SYNC_KEY, scope));
     // Pre-fix saves under the flat keys, and a stray v1 record — neither is
     // scoped to begin with, so there's nothing to pick a scope for; clearing
     // them here just means a reset also cleans up anything left over from
@@ -565,7 +576,7 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
       // The star rating players see is the career one (starPoints.ts).
-      starRating: career.stars ?? 1,
+      starRating: starLevel(career),
       retired: !!career.retired,
     });
   }
@@ -612,11 +623,30 @@ export function saveActiveSlot(accountScope: string, slot: number): void {
  * as fire-and-forget as a network hiccup, until it has.
  */
 export async function saveCareerToCloud(
-  state: CareerState, slot: number = 1, opts: { leavingPage?: boolean } = {},
+  state: CareerState, slot: number = 1, opts: { leavingPage?: boolean; scope?: string } = {},
 ): Promise<void> {
   try {
-    const body = JSON.stringify(toSavedForm(state));
-    await fetch(`/api/star/career?slot=${slot}`, {
+    // Stamped, so the next load on any device can tell a cloud copy that is
+    // simply newer from one that went its own way — see lib/star/saveClash.ts.
+    // Only when the caller says which save this is (its slot scope); an
+    // unstamped upload is exactly what every upload was before.
+    // "Decide later" on a save clash with no free slot: this device plays
+    // its own copy, but it must not overwrite the other one in the cloud.
+    if (opts.scope && heldScopes.has(opts.scope)) return;
+    let sent: SyncedVersion | null = null;
+    let payload: object = toSavedForm(state);
+    if (opts.scope) {
+      const rec = loadSyncRecord(opts.scope);
+      const next = nextStamp(rec, {
+        deviceId: getDeviceId(), device: thisDeviceKind(), at: Date.now(),
+        random: randomId(), progress: progressFingerprint(state),
+      });
+      payload = { ...payload, sync: next.stamp };
+      sent = next.sent;
+      saveSyncRecord(opts.scope, recordAfterSend(rec, sent));
+    }
+    const body = JSON.stringify(payload);
+    const res = await fetch(`/api/star/career?slot=${slot}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
@@ -628,7 +658,24 @@ export async function saveCareerToCloud(
       // phone that is merely backgrounded (the common case) still finishes.
       keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
+    // Only a real "ok" moves the base: signed out, the route answers `null`.
+    if (sent && opts.scope && res.ok) {
+      const data = await res.json().catch(() => null) as { ok?: boolean } | null;
+      if (data?.ok === true) saveSyncRecord(opts.scope, recordAfterConfirm(loadSyncRecord(opts.scope), sent));
+    }
   } catch {}
+}
+
+/**
+ * Does this device hold progress the cloud hasn't confirmed? True when no
+ * upload of this save has ever been confirmed, or the last confirmed one
+ * was of different progress. Used to upload the moment signal comes back
+ * (Harry, 30 Sep 2026: "upload first thing the moment you reopen with
+ * signal") instead of waiting for the next change to trigger a save.
+ */
+export function hasUnsyncedProgress(scope: string, state: CareerState): boolean {
+  const base = loadSyncRecord(scope).base;
+  return !base || base.progress !== progressFingerprint(state);
 }
 
 /** Just under the ~64 KB cap browsers put on keepalive/sendBeacon bodies. */
@@ -644,13 +691,20 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
  * it — see the note on loadCareerSavedAt for why blindly preferring cloud
  * regressed players' squads.
  */
-export async function loadCareerFromCloud(slot: number = 1): Promise<{ career: CareerState; savedAt: number } | null> {
+export async function loadCareerFromCloud(slot: number = 1): Promise<{ career: CareerState; savedAt: number; stamp: SaveStamp | null } | null> {
   try {
     const res = await fetch(`/api/star/career?slot=${slot}`);
     if (!res.ok) return null;
-    const data = await res.json() as { career: CareerState; updatedAt: string } | null;
+    const data = await res.json() as { career: CareerState & { sync?: unknown }; updatedAt: string } | null;
     if (!data?.career || data.career.version !== 2) return null;
-    return { career: backfill(fromSavedForm(data.career)), savedAt: new Date(data.updatedAt).getTime() };
+    // The stamp describes the upload, not the career: it never goes back
+    // into the career itself (or into this device's local copy).
+    const { sync, ...career } = data.career;
+    return {
+      career: backfill(fromSavedForm(career as CareerState)),
+      savedAt: new Date(data.updatedAt).getTime(),
+      stamp: readStamp(sync),
+    };
   } catch {
     return null;
   }
@@ -664,4 +718,175 @@ export async function clearCareerFromCloud(slot: number = 1): Promise<void> {
   try {
     await fetch(`/api/star/career?slot=${slot}`, { method: "DELETE" });
   } catch {}
+}
+
+// ── Two different saves (lib/star/saveClash.ts) ──────────────────────────────
+
+function randomId(): string {
+  try {
+    const c = (globalThis as { crypto?: Crypto }).crypto;
+    if (c?.randomUUID) return c.randomUUID().replace(/-/g, "").slice(0, 10);
+  } catch { /* fall through */ }
+  return Math.random().toString(36).slice(2, 12).padEnd(10, "0");
+}
+
+/**
+ * This browser's own id, made once and kept. Not an identity of the person —
+ * only a way for an upload to say "this came from the same browser as that".
+ * It only ever travels inside this account's own save.
+ */
+export function getDeviceId(): string {
+  try {
+    const have = localStorage.getItem(DEVICE_KEY);
+    if (have) return have;
+    const made = `d-${randomId()}`;
+    localStorage.setItem(DEVICE_KEY, made);
+    return made;
+  } catch {
+    return "d-unknown";
+  }
+}
+
+function thisDeviceKind(): DeviceKind {
+  try { return deviceKindFromUA(navigator.userAgent); } catch { return "computer"; }
+}
+
+export function loadSyncRecord(scope: string): SyncRecord {
+  try {
+    const raw = localStorage.getItem(scoped(SYNC_KEY, scope));
+    return raw ? sanitizeSyncRecord(JSON.parse(raw)) : emptySyncRecord();
+  } catch {
+    return emptySyncRecord();
+  }
+}
+
+function saveSyncRecord(scope: string, rec: SyncRecord): void {
+  try { localStorage.setItem(scoped(SYNC_KEY, scope), JSON.stringify(rec)); } catch {}
+}
+
+// "This career was saved on your phone a few minutes ago" — published here,
+// shown by components/star/OtherDeviceBanner.tsx (mounted in the star-dev
+// layout, like SaveFailedBanner), so page.tsx only has to load the career.
+let otherDevice: OtherDeviceWarning | null = null;
+const otherDeviceListeners = new Set<(w: OtherDeviceWarning | null) => void>();
+export function getOtherDeviceWarning(): OtherDeviceWarning | null { return otherDevice; }
+export function onOtherDeviceWarningChange(fn: (w: OtherDeviceWarning | null) => void): () => void {
+  otherDeviceListeners.add(fn);
+  return () => { otherDeviceListeners.delete(fn); };
+}
+export function setOtherDeviceWarning(next: OtherDeviceWarning | null): void {
+  otherDevice = next;
+  otherDeviceListeners.forEach((fn) => { try { fn(next); } catch {} });
+}
+
+/** Two copies of one save, both with progress the other lacks. */
+export interface SaveClash {
+  slot: number;
+  local: { career: CareerState; savedAt: number };
+  cloud: { career: CareerState; savedAt: number; device: DeviceKind | null };
+  /** Where the copy that isn't kept goes. Null: every other slot is taken. */
+  spareSlot: number | null;
+  /** The cloud copy as a version to remember once a choice is made. */
+  cloudVersion: SyncedVersion | null;
+  why: LoadWhy;
+}
+
+export type LoadOutcome =
+  | { kind: "career"; career: CareerState | null; why: LoadWhy }
+  | { kind: "clash"; clash: SaveClash };
+
+/**
+ * Which copy of save `slot` to open: this device's or the cloud's — or,
+ * when they have genuinely gone different ways, neither yet (a SaveClash for
+ * the player to settle). The decision itself is lib/star/saveClash.ts's
+ * decideLoad; this only gathers what it needs and writes down the result.
+ */
+export async function reconcileCareerLoad(accountScope: string, slot: number): Promise<LoadOutcome> {
+  const scope = slotScope(accountScope, slot);
+  const local = loadCareer(scope);
+  const localAt = local ? loadCareerSavedAt(scope) : -1;
+  const cloud = await loadCareerFromCloud(slot);
+  const decision = decideLoad({
+    local: local ? { at: localAt, progress: progressFingerprint(local) } : null,
+    cloud: cloud ? { at: cloud.savedAt, progress: progressFingerprint(cloud.career), stamp: cloud.stamp } : null,
+    record: loadSyncRecord(scope),
+    deviceId: getDeviceId(),
+    now: Date.now(),
+  });
+  setOtherDeviceWarning(decision.warn);
+
+  if (decision.use === "clash" && local && cloud) {
+    saveSyncRecord(scope, decision.record);
+    return {
+      kind: "clash",
+      clash: {
+        slot,
+        local: { career: local, savedAt: localAt },
+        cloud: { career: cloud.career, savedAt: cloud.savedAt, device: cloud.stamp?.device ?? null },
+        spareSlot: await findSpareSlot(accountScope, slot),
+        cloudVersion: decision.cloudVersion,
+        why: decision.why,
+      },
+    };
+  }
+  if (decision.use === "cloud" && cloud) {
+    // The cloud copy is written here straight away, BEFORE the record says
+    // this device holds it. Left to the page's own save a moment later, a
+    // tab closed in between would leave the record claiming the cloud copy
+    // while the old local copy sat on disk — and the next load would read
+    // that old copy as "ahead" and upload it over the newer one.
+    if (saveCareer(cloud.career, scope)) saveSyncRecord(scope, decision.record);
+    return { kind: "career", career: cloud.career, why: decision.why };
+  }
+  saveSyncRecord(scope, decision.record);
+  return { kind: "career", career: decision.use === "local" ? local : null, why: decision.why };
+}
+
+async function findSpareSlot(accountScope: string, current: number): Promise<number | null> {
+  const slots: { slot: number; localEmpty: boolean; cloudEmpty: boolean }[] = [];
+  for (const s of listSaveSlots(accountScope)) {
+    if (s.slot === current) continue;
+    // A slot this device has never used can still hold another device's
+    // save in the cloud; writing a spare over it would lose that instead.
+    const cloudEmpty = s.empty ? !(await loadCareerFromCloud(s.slot)) : false;
+    slots.push({ slot: s.slot, localEmpty: s.empty, cloudEmpty });
+  }
+  return pickSpareSlot(current, slots);
+}
+
+/**
+ * The player picked one. The other goes to the spare slot (this device, and
+ * the cloud when that slot can reach it — see star_career_slots.sql), or,
+ * when there is none, is let go: the prompt has already said so and been
+ * told "Overwrite". Returns the career to open.
+ */
+export function resolveSaveClash(accountScope: string, clash: SaveClash, keep: "local" | "cloud"): CareerState {
+  const scope = slotScope(accountScope, clash.slot);
+  const chosen = keep === "local" ? clash.local.career : clash.cloud.career;
+  const other = keep === "local" ? clash.cloud.career : clash.local.career;
+  if (clash.spareSlot !== null) {
+    const spareScope = slotScope(accountScope, clash.spareSlot);
+    saveCareer(other, spareScope);
+    void saveCareerToCloud(other, clash.spareSlot, { scope: spareScope });
+  }
+  // Whichever was kept, this device has now SEEN the cloud copy, so it is
+  // the base: keeping this device's copy then reads as "ahead" and uploads
+  // over it (the cloud copy is safe in the spare slot), and keeping the
+  // cloud copy reads as "in sync".
+  heldScopes.delete(scope);
+  if (saveCareer(chosen, scope)) saveSyncRecord(scope, recordAfterTake(clash.cloudVersion));
+  return chosen;
+}
+
+/** Save scopes whose cloud uploads are paused until the clash is settled. */
+const heldScopes = new Set<string>();
+
+/**
+ * "Decide later" (no free slot): open this device's copy, upload nothing
+ * for this save until the page is reopened. The sync record is left as it
+ * was, so the next load finds the same clash and asks again.
+ */
+export function deferSaveClash(accountScope: string, clash: SaveClash): CareerState {
+  heldScopes.add(slotScope(accountScope, clash.slot));
+  return clash.local.career;
 }

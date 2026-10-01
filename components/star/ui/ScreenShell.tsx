@@ -17,7 +17,7 @@ import { FloatText, Pop } from "./juice";
  *
  * Renders KitStyles itself (these screens sit outside the dashboard).
  */
-export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Back", right, children, className = "", accent }: {
+export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Back", right, children, className = "", accent, hud, bare = false, bottomBar }: {
   glow: string;
   title: React.ReactNode;
   icon?: React.ReactNode;
@@ -28,6 +28,15 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
   className?: string;
   /** A second colour mixed into the backdrop (the casino's gold). */
   accent?: string;
+  /** The top HUD (ui/TopHud.tsx), stuck to the top so energy never leaves
+   *  (Harry, 1 Oct 2026, P86). */
+  hud?: React.ReactNode;
+  /** No title row and no Back button (Harry, P40: "the Style doesn't need to
+   *  be there and Back doesn't need to be there"): pair with `bottomBar`. */
+  bare?: boolean;
+  /** A fixed bottom bar (ui/Nav.tsx's BottomBar). Pads the page so nothing
+   *  hides behind it. */
+  bottomBar?: React.ReactNode;
 }) {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-white">
@@ -35,7 +44,7 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div
           className="absolute inset-0"
-          style={{ background: `radial-gradient(90% 45% at 50% -8%, ${rgba(glow, 0.5)} 0%, transparent 70%)${accent ? `, radial-gradient(70% 40% at 50% 108%, ${rgba(accent, 0.28)} 0%, transparent 70%)` : ""}, linear-gradient(180deg, #0a1120 0%, #05080f 60%)` }}
+          style={{ background: `radial-gradient(90% 45% at 50% -8%, ${rgba(glow, 0.5)} 0%, transparent 70%)${accent ? `, radial-gradient(70% 40% at 50% 108%, ${rgba(accent, 0.28)} 0%, transparent 70%)` : ""}, var(--sk-page, linear-gradient(180deg, #0a1120 0%, #05080f 60%))` }}
         />
         <div
           className="absolute inset-x-0 top-0 h-[34%]"
@@ -49,21 +58,27 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
           }}
         />
       </div>
-      <div className={`relative mx-auto w-full max-w-md px-3 pb-10 ${className}`}>
-        <div className="sticky top-0 z-30 -mx-3 mb-3 flex items-center gap-2 px-3 pb-2 pt-3" style={{ background: "linear-gradient(180deg, rgba(5,8,15,.94) 60%, rgba(5,8,15,0))", backdropFilter: "blur(4px)" }}>
-          {onBack && (
-            <PressButton variant="secondary" size="none" onClick={onBack} className="flex h-9 shrink-0 items-center gap-1 rounded-full pl-2.5 pr-3 text-[12px] font-black uppercase tracking-wide">
-              <span className="text-[16px] leading-none">‹</span>{backLabel}
-            </PressButton>
+      <div className={`relative mx-auto w-full max-w-md px-3 ${bottomBar ? "pb-[84px]" : "pb-10"} ${className}`}>
+        <div className={`sticky top-0 z-30 -mx-3 ${bare ? "mb-2" : "mb-3"}`} style={{ background: bare && hud ? "rgba(5,8,15,.96)" : "linear-gradient(180deg, rgba(5,8,15,.94) 60%, rgba(5,8,15,0))", backdropFilter: bare && hud ? undefined : "blur(4px)" }}>
+          {hud}
+          {!bare && (
+            <div className="flex items-center gap-2 px-3 pb-2 pt-3">
+              {onBack && (
+                <PressButton variant="secondary" size="none" onClick={onBack} className="flex h-9 shrink-0 items-center gap-1 rounded-full pl-2.5 pr-3 text-[12px] font-black uppercase tracking-wide">
+                  <span className="text-[16px] leading-none">‹</span>{backLabel}
+                </PressButton>
+              )}
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {icon && <span className="text-[18px] leading-none">{icon}</span>}
+                <div className="truncate text-[18px] font-black uppercase tracking-wide" style={{ textShadow: `0 2px 10px rgba(0,0,0,.7), 0 0 18px ${rgba(glow, 0.45)}` }}>{title}</div>
+              </div>
+              {right}
+            </div>
           )}
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            {icon && <span className="text-[18px] leading-none">{icon}</span>}
-            <div className="truncate text-[18px] font-black uppercase tracking-wide" style={{ textShadow: `0 2px 10px rgba(0,0,0,.7), 0 0 18px ${rgba(glow, 0.45)}` }}>{title}</div>
-          </div>
-          {right}
         </div>
         {children}
       </div>
+      {bottomBar}
     </div>
   );
 }

@@ -26,7 +26,10 @@ const PLAYER: StarPlayer = {
 
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
 
-const base = () => makeInitialCareer(PLAYER, CLUBS);
+// The manager at 60, the start value these mechanics were built against. A
+// new career starts him at 50 since 1 Oct 2026 (Harry, P26) — what that does
+// to a new player's place is measured in tests/star/unlocks.mts, not here.
+const base = () => { const c = makeInitialCareer(PLAYER, CLUBS); return { ...c, relationships: { ...c.relationships, boss: 60 } }; };
 
 const withState = (over: Partial<CareerState>): CareerState => ({ ...base(), ...over });
 

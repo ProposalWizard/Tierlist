@@ -1,52 +1,57 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import NewspaperHeadline from "./NewspaperHeadline";
+import type { CareerState } from "@/lib/star/types";
+import SigningScene from "./SigningScene";
 
 /**
- * WHAT THE TRIAL GETS YOU.
+ * WHAT THE TRIAL GETS YOU — the signing.
  *
- * Two beats after the penalty finally goes in, before the game proper starts.
+ * Harry, 30 Sep 2026: the newspaper page that used to come first ("B wins
+ * Chelsea the FA Youth Cup!") is "useless, that page" — it is gone from this
+ * flow. It carried nothing that is not on the next screen (your surname, the
+ * club), so nothing was folded in. NewspaperHeadline.tsx is kept for reuse.
  *
- *  1. The back page. A supplied newspaper splash (see NewspaperHeadline) with
- *     the player's own surname, club and "wins the FA Youth Cup!" set into its
- *     headline band — nothing to interact with, just a Continue. There is
- *     nothing to persist here: it is read once and gone, the same as the real
- *     thing.
- *  2. The offer, and the signing. The button does not say Continue — it says
- *     Sign it, because that is the action. Pressing it writes a signature
- *     across the page and only then moves on.
+ * The paper contract is now SigningScene: you and the manager at a desk, the
+ * terms on the contract between you, tap to sign, a handshake. The old
+ * paper-and-signature page below is the fallback for a caller that has no
+ * career to draw the scene from.
  */
 
 export default function TrialReward({
   playerName,
-  surname,
   club,
   onDone,
   terms,
+  career,
+  managerName,
 }: {
   terms?: ContractTerms;
   playerName: string;
-  /** Just the surname — the newspaper headline reads "SURNAME WINS...", not the full name. */
-  surname: string;
+  /** No longer shown (it was the newspaper's headline). Kept so callers compile. */
+  surname?: string;
   club: string;
   onDone: () => void;
+  /** Who is signing — draws the signing scene. Without it, the paper page. */
+  career?: CareerState;
+  /** The manager across the desk. */
+  managerName?: string;
 }) {
-  const [step, setStep] = useState<1 | 2>(1);
   const [signing, setSigning] = useState(false);
 
-  return step === 1 ? (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <NewspaperHeadline surname={surname} club={club} />
-        <button
-          onClick={() => setStep(2)}
-          className="mt-4 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white transition hover:bg-white/20 active:scale-[0.99]"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  ) : (
+  if (career) {
+    return (
+      <SigningScene
+        career={career}
+        club={club}
+        playerName={playerName}
+        managerName={managerName || "The manager"}
+        terms={terms}
+        onDone={onDone}
+      />
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm text-center">
         <CongratulationsBanner />
@@ -233,6 +238,9 @@ function TermsOverlay({ name, club, terms }: { name: string; club: string; terms
 }
 
 const CLUB_NAME_BOX = { top: 83, left: 13.7, right: 55, bottom: 13.4 };
+
+/** The hand-shaped signature stroke (300×60 box), shared with SigningScene. */
+export const SIGNATURE_D = "M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40";
 const SIGNATURE_BOX = { top: 83, left: 55.2, right: 13.1, bottom: 13.4 };
 
 export function SignaturePad({
@@ -276,7 +284,7 @@ export function SignaturePad({
   const signaturePath = (
     <path
       ref={pathRef}
-      d="M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40"
+      d={SIGNATURE_D}
       fill="none"
       stroke="#0f172a"
       strokeWidth="3"

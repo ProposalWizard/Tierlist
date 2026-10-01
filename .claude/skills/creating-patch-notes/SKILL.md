@@ -30,6 +30,12 @@ session.
 > picture; answers to questions go low. See `artifact-house-style` → Every
 > item is Problem → Why → Fix.
 
+> **Standing rule (Harry, 1 Oct 2026):** every new thing gets a real video
+> plus a still — a before clip and an after clip of the whole phone screen,
+> filmed with `scripts/film/rec.mjs`, shown one full-width clip at a time with
+> a playhead and ½×/¼× speed. Never GIFs, crops or squeezed side-by-sides.
+> See `artifact-house-style` → 4b and `scripts/film/README.md`.
+
 > **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
 > "Check these" list — one plain line per changed feature or fix, with where
 > to find it, no explanations. See `artifact-house-style` → What always goes

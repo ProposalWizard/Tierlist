@@ -1,0 +1,60 @@
+<!-- One change, with before/after clips. Copy the CSS and the script once per
+     page, then one <article class="cx"> per change. Clips come from
+     scripts/film/rec.mjs (720-px MP4 of the whole phone screen). -->
+<style>
+.cx{border-top:1px solid var(--line);padding:18px 0 6px}
+.cxh{display:flex;gap:10px;align-items:baseline}
+.cxh .n{flex:none;font:800 13px/1 system-ui,sans-serif;color:var(--ink3)}
+.cxh h4{margin:0;font-size:17.5px;line-height:1.3;text-wrap:balance}
+.cx .w{margin:6px 0 0;color:var(--ink2);font-size:15.5px;line-height:1.5}
+.cx .look{margin:8px 0 0;font-size:15px;background:var(--card2);border-radius:10px;padding:9px 12px}
+.cx .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.seg{display:flex;gap:6px;margin:12px 0 8px}
+.seg button{flex:1;font:800 14px/1 system-ui,sans-serif;padding:11px 0;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink2)}
+.seg button.on[data-s="before"]{background:var(--ink3);color:var(--bg)}
+.seg button.on[data-s="after"]{background:var(--green);color:#06170e}
+.panes{display:grid;gap:14px}
+.pane[hidden]{display:none!important}
+.pane .lab{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px}
+.pane video{display:block;width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+.spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+.spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2)}
+.spd button.on{background:var(--ink);color:var(--bg)}
+@media (min-width:760px){.seg{display:none}.panes{grid-template-columns:1fr 1fr}.pane[hidden]{display:block!important}}
+</style>
+
+<article class="cx">
+  <div class="cxh"><span class="n">1</span><h4>Headline you could read out loud</h4></div>
+  <p class="w">One line: what changed, with the number before → after.</p>
+  <p class="look"><b>Look for</b>What to watch in the clip.</p>
+  <div class="seg"><button data-s="before">Before</button><button data-s="after" class="on">After</button></div>
+  <div class="panes">
+    <div class="pane before" hidden><span class="lab">Before</span>
+      <video src="clips/01-x-before.mp4" poster="img/01-x-before.jpg" controls playsinline muted preload="none"></video>
+      <div class="spd">Speed <button class="on" data-r="1">1×</button><button data-r="0.5">½×</button><button data-r="0.25">¼×</button></div></div>
+    <div class="pane after"><span class="lab">After</span>
+      <video src="clips/01-x-after.mp4" poster="img/01-x-after.jpg" controls playsinline muted preload="none"></video>
+      <div class="spd">Speed <button class="on" data-r="1">1×</button><button data-r="0.5">½×</button><button data-r="0.25">¼×</button></div></div>
+  </div>
+</article>
+
+<script>
+document.addEventListener("click", function (e) {
+  var b = e.target.closest && e.target.closest(".seg button");
+  if (b) {
+    var art = b.closest(".cx"), s = b.getAttribute("data-s");
+    art.querySelectorAll(".seg button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    art.querySelectorAll(".pane").forEach(function (p) {
+      var show = p.classList.contains(s); p.hidden = !show;
+      if (!show) { var v = p.querySelector("video"); if (v) v.pause(); }
+    });
+    return;
+  }
+  var r = e.target.closest && e.target.closest(".spd button");
+  if (r) {
+    var pane = r.closest(".pane"), v = pane.querySelector("video");
+    pane.querySelectorAll(".spd button").forEach(function (x) { x.classList.toggle("on", x === r); });
+    if (v) { var rate = parseFloat(r.getAttribute("data-r")); v.playbackRate = rate; v.defaultPlaybackRate = rate; if (v.paused) v.play().catch(function () {}); }
+  }
+});
+</script>

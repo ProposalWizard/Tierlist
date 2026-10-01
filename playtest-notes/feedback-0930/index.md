@@ -1,0 +1,93 @@
+# Playtest breakdown — feedback-0930
+
+- Video: `video.mp4` — 11:16 long
+- 91 pictures on 8 sheets, 71 lines of speech
+- Each section below is one sheet: the stretch of video it covers and everything said in it.
+- A moment too quick for a sheet: rerun with `--clip mm:ss-mm:ss --clip-fps 20`.
+
+## 00:00 – 01:29  ·  sheets/sheet_001.jpg
+- **[00:02]** Okay, so I'm gonna go firstly through this another OBS recording
+- **[00:07]** I'm gonna go firstly through all of the answers to my previous questions and
+- **[00:13]** Then go from there
+- **[00:15]** Sign in stays part of the game. So exactly how it is now on the website. The only difference is in the app Google blocked its sign-in page
+- **[00:23]** Inside of app so when you sign in with Google in the app
+- **[00:26]** The phones own Google
+- **[00:28]** So they sign in with Apple they still then get to sign in with Google and it's the same account
+- **[00:45]** Okay, cool
+- **[00:57]** Okay, so when do we actually go ahead and start using code magic? So how does this work?
+- **[01:13]** coins bought in game fine they take 15%
+- **[01:19]** Stripe takes 1.5% sure how does it work with the casino because I'm sure we have to be careful
+- **[01:24]** We do have a casino system where you spend in-game coins
+
+## 01:29 – 03:05  ·  sheets/sheet_002.jpg
+- **[01:30]** The coins you combine the store are separate value. What if we offered a
+- **[01:35]** coin swap so five store bought coins equals
+- **[01:40]** 10,000 in-game coins and also what if that that wasn't a thing but let's say a celebration
+- **[01:46]** Let's say Ronaldo free kick style
+- **[01:50]** Costs 10 million in-game coins, but only costs 500 or like say five pound
+- **[01:56]** Would that be allowed if there's casino in the game. How does that work?
+- **[02:01]** Yeah, okay number five is huge
+- **[02:16]** Definitely do a full research on that because that sounds like a better way to do it. But how hard is it gonna be? Oh?
+- **[02:27]** I don't know what I said
+- **[02:29]** For six
+- **[02:30]** By touch versus mouse. How would that work?
+- **[02:50]** They go on the phone would it just automatically know that you're now using touch and the gameplay is
+- **[02:56]** Difference I literally mean like if I'm on the phone
+- **[02:59]** I want the ball bouncing and that whole feature of like where the balls coming from
+
+## 03:05 – 04:41  ·  sheets/sheet_003.jpg
+- **[03:05]** That's a whole feature for swiping or
+- **[03:08]** Is it like you can't put one in put one out or decide what's different?
+- **[03:13]** Yeah, how do we switch to 2D automatically on slow phones? That's an interesting idea
+- **[03:26]** Yeah, do those two
+- **[03:41]** Those two being these two I don't know if keep this phone
+- **[03:54]** Save all your PCs is the right option. I would say
+- **[03:58]** Like do you want to save progress or something like that?
+- **[04:06]** Yes, that's the type of thing your mid session on your phone carry on here anyway
+- **[04:11]** You'll lose progress or something like that
+- **[04:14]** Well, I'll then like open up phone and save
+- **[04:30]** 225 KB a save. So what would you predict after 20 seasons a save with cost?
+
+## 04:41 – 06:17  ·  sheets/sheet_004.jpg
+- **[04:44]** See okay cool. That's a good way of doing it
+- **[04:47]** Talking about number 11
+- **[05:25]** Yeah, let's do that
+- **[05:26]** Let's reward daily login on the testers and maybe that's something we're doing the future anyway
+- **[05:33]** Yeah, and in-game feedback button as well just for the test so how would we create a test link is that all just done through test flight?
+- **[05:52]** For the company stuff. We're not gonna actually create a company
+- **[05:58]** So
+- **[06:00]** For now what like what we're gonna do is we're gonna
+- **[06:05]** Just do me being the person and then upgrade my app or account to a company account
+- **[06:10]** So should I still use this email now if we're gonna use the same account eventually and what's the protocol there?
+- **[06:15]** Now that we're not gonna do a company
+
+## 06:17 – 07:53  ·  sheets/sheet_005.jpg
+- **[06:40]** Paying yourself each of you pays tax on what you take out either a salary or dividends. Okay. Well, it's one cool in the content
+- **[06:50]** Yeah, so here's all the stuff I said about my dad as a limited company
+- **[07:29]** Like these automatic fines all of this stuff is just too too much hassle, but then we will do the upgrade accounting eventually
+- **[07:39]** Transfer built-in transfer. That's the only catch
+- **[07:49]** See, how does this work? Say we don't pick moves to a free safe spot if there's no free slot
+
+## 07:53 – 09:00  ·  sheets/sheet_006.jpg
+- **[08:37]** What are these?
+- **[08:38]** Change these things that Mikey's done
+- **[08:41]** Just check over that and make sure that's all good
+- **[08:44]** Other than that. Let's have a quick look at some patch notes from Mikey
+- **[08:49]** So this is the patch notes from Mikey and I'm gonna make any notes on it myself and then let's add a
+
+## 09:00 – 10:30  ·  sheets/sheet_007.jpg
+- **[09:05]** I want to add like
+- **[09:08]** Hmm I
+- **[09:10]** Want to add like a second tab to this which is Harry's notes of
+- **[09:15]** Mikey's notes if that makes sense. I don't know if that's possible
+- **[09:20]** Okay, so let's start star rating is now your career one to ten overalls how good you are pretty cool
+- **[10:00]** Is it is it smart to multiply by the stage?
+- **[10:20]** Probably is right okay
+- **[10:24]** trophies nice I don't know if he's mentioned that but
+
+## 10:30 – 11:17  ·  sheets/sheet_008.jpg
+- **[10:57]** Stargate so kind of like this wait, okay
+- **[11:00]** I'm gonna I'm gonna stop there and we'll come back. I'm gonna do another video
+- **[11:05]** Analyzing that so that's just all my feedback to all of the company stuff and we'll do a different video
+- **[11:09]** but keep my idea of making the second tab of
+- **[11:12]** Mikey's feedback which is my feedback on top of his feedback that makes sense

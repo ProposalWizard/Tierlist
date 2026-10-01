@@ -23,6 +23,10 @@ export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.21": "mikey/v0.8.html",
   "0.20": "mikey/v0.7.html",
   "1.0": "pages/1.0/index.html",
+  // Not a version: the App Plan, shown on its own admin page (/admin/app-plan).
+  "app-plan": "pages/app-plan/index.html",
+  // Not versions: Harry's review pages, shown as the "Harry's notes" tab.
+  "review-0.20": "reviews/0.20/index.html",
   "0.19": "mikey/v0.6.html",
   "0.13": "mikey/v0.5.html",
   "0.12": "mikey/v0.4.html",

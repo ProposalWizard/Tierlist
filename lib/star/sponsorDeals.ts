@@ -5,6 +5,7 @@ import { clubExpectation } from "./expectations";
 import { wageShareFor } from "./wages";
 import { WAGE_FLOOR } from "./economy";
 import { mulberry32 } from "./season";
+import { starLevel } from "./starPoints";
 
 /**
  * SPONSORS, REBUILT — brands come to you (Mikey, 30 Sep 2026).
@@ -216,7 +217,8 @@ export function fairWeekly(career: CareerState, category: string, rng: () => num
   const wage = Math.max(WAGE_FLOOR, career.contract?.wage ?? 0);
   const taper = wage > TAPER_FROM ? Math.pow(TAPER_FROM / wage, TAPER_POWER) : 1;
   // Fame is what gets you the offer; your star rating nudges the money.
-  const stars = career.stars ?? 1;
+  // (1-100 since 1 Oct 2026; /10 keeps the nudge the size it was on 1-10.)
+  const stars = starLevel(career) / 10;
   return roundMoney(wage * cat.share * taper * (0.9 + rng() * 0.3) * (1 + stars * 0.02));
 }
 
@@ -344,7 +346,7 @@ export function offerChance(career: CareerState): number {
   if (career.status === "Squad" || career.status === "Injured") return 0;
   const form = recentForm(career);
   if (form < 6.2 || career.seasonStats.appearances < 1) return 0;
-  return clamp(0.06 + fameOf(career) / 500 + (form - 6.2) * 0.12 + (career.stars ?? 1) * 0.008, 0, 0.45);
+  return clamp(0.06 + fameOf(career) / 500 + (form - 6.2) * 0.12 + (starLevel(career) / 10) * 0.008, 0, 0.45);
 }
 
 const push = (s: BrandsState, line: string): string[] => [line, ...s.news].slice(0, 12);

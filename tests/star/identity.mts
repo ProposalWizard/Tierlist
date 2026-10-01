@@ -85,7 +85,7 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
   check(id.weekActions > 0, "an unsigned career still has a week to spend");
   check(id.sponsors.length > 0, "an unsigned career still has the sponsor slate");
   check(id.relationships.boss > 0, "an unsigned career still has relationships");
-  check(id.reputation > 0, "an unsigned career still has a reputation");
+  check(typeof id.reputation === "number" && id.reputation >= 0, "an unsigned career still has a reputation (0 — unknown — since 1 Oct 2026)");
   check(!!id.currentBoot, "an unsigned career still has boots on");
 
   // The rating is computed off skills and honours, neither of which a club
@@ -389,6 +389,9 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // The career star rating (starPoints.ts, 30 Sep 2026) added three fields
     // the fixture predates.
     for (const k of ["stars", "starLedger", "starBest"]) delete rest[k];
+    // Harry, 1 Oct 2026 (P26): new careers start manager/team-mates/fans 50,
+    // happiness 45; and a new career carries the unlock chain (unlocks.ts).
+    for (const k of ["relationships", "happiness", "unlocks"]) delete rest[k];
     return JSON.stringify(rest);
   };
 

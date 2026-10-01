@@ -4,51 +4,52 @@
  * THE MIDDLE HOME SCREEN — the best-looking screen in the game.
  *
  * Harry, 28 Sep 2026: "The home screen should look the best, and right now it
- * doesn't." Top to bottom (28 Sep, later: "put [the next match] under the
- * avatar right before cans"):
- *   1. you, centred and big, in the club kit, under floodlights, with your
- *      name, crest, number, position and three polished pills (rating,
- *      money, age);
- *   2. the next match — both crests big, a styled "vs", the date and how many
- *      days away — with your last five results underneath it;
- *   3. energy and the KIB cans — the real can pictures, lit in their own
- *      colours, with Use and Buy;
- *   4. your shop items.
- * Every card is themed in your club's colours. Motion: cards rise in when
- * Home opens, numbers count, a used can shakes and empties into the energy
- * bar, and the avatar breathes and celebrates a win. All of it stops for a
- * phone set to reduce motion.
+ * doesn't." Reworked 1 Oct 2026 to fit ONE phone screen with no scrolling
+ * (even a 360x640 one), and again after his review (v0.23, P72-P82, P96).
+ * Top to bottom:
+ *   0. the HUD (ui/TopHud.tsx, in the shell above this page): star rating
+ *      with its progress bar, energy with the can beside it (USE, or BUY
+ *      when you have none), money and age;
+ *   1. Next match, as it was: both crests, VS, the date and your form;
+ *   2. the mini league table: you and the clubs either side;
+ *   3. you, standing on a football pitch with the goal behind you — drag to
+ *      turn him, tap for a celebration — and reputation, fame, goals and
+ *      assists beside you. No card: the pitch fades up into the stand.
+ * Sponsors is a small arrow at the bottom right. The 3D / 2D switch is in
+ * Settings.
  *
- * Built from the design kit (components/star/ui) — ClubCard, Pill, StatBar,
- * PressButton, RiseIn, Glow, Stadium and the juice (Burst, Shake, Drips,
- * FloatText) — so any other screen can take the same look in one line.
+ * Built from the design kit (components/star/ui). Motion: panels rise in when
+ * Home opens, numbers count, the avatar breathes and celebrates a win. All of
+ * it stops for a phone set to reduce motion.
  *
  * The stats/contract card lives on the screen to the left, the shop on the
  * one to the right (SwipePages, page.tsx).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
-import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
-import { kitsOf } from "@/lib/star/kits";
+import { kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { formatMoney } from "@/lib/star/money";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
-import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar";
-import ClubBadge from "./ClubBadge";
+import { divisionOf, fixtureTimestamp, leagueNameFor } from "@/lib/star/calendar";
+import { kitsOf } from "@/lib/star/kits";
 import KibCanIcon from "./KibCanIcon";
-import { setPieceDuties } from "@/lib/star/setPieces";
-import { starStatus } from "@/lib/star/starPoints";
-import { attributeOverall } from "@/lib/star/rating";
-import StarRatingSheet from "./StarRatingSheet";
-import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
-import FigureSkinToggle from "./FigureSkinToggle";
+import { brandsOf } from "@/lib/star/sponsorDeals";
+import { isOpen } from "@/lib/star/unlocks";
+import { fameOf, fameLevel } from "@/lib/star/fame";
+import { reputationLabel } from "@/lib/star/reputation";
+import { useAvatarStyle } from "./PlayerAvatar";
+import { useFigureSkin } from "./FigureSkinToggle";
+import ClubBadge from "./ClubBadge";
+import SpinPlayer from "./SpinPlayer";
+import MiniLeague, { miniLeagueHeight } from "./MiniLeague";
+import HomeBackdrop from "./HomeBackdrop";
 import {
-  ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
-  Burst, Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
+  FlatPanel, SquareBar, PressButton, RiseIn, Glow, Stadium,
+  Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
   glowOf, rgba, tint, useClubTheme,
 } from "./ui";
 
 const ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5fa", elite: "#c084fc" };
-const POS_NAME: Record<string, string> = { ST: "Striker", CAM: "Attacking Mid", LW: "Left Wing", RW: "Right Wing", CM: "Central Mid" };
 
 export type HubPhase = "store" | "shop-kib" | "shop-boots" | "shop-lifestyle" | "casino-menu" | "sponsors" | "achievements" | "trophies" | "ownership" | "garden";
 
@@ -62,6 +63,8 @@ interface Props {
   onUseCan: (id: KibCan["id"]) => void;
   onBuyCan: (can: KibCan) => void;
   onOpen: (phase: HubPhase) => void;
+  /** The League screen (the mini table opens it). */
+  onLeague?: () => void;
 }
 
 export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -93,33 +96,84 @@ export function daysToNext(career: CareerState, next: Fixture): number {
   return Math.max(0, Math.round((nextTs - today) / 86400000));
 }
 
+// A phone that is short (a 360x640 one has ~315px of room for all of Home)
+// still has to show all of it. Home measures the room it was given (the
+// swipe page's scroll box) and sizes the league table and the player to
+// what is left.
+function useRoom() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [room, setRoom] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const root = ref.current?.closest("[data-scroll-root]") as HTMLElement | null;
+    if (!root) return;
+    const read = () => setRoom(root.clientHeight);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, room] as const;
+}
+
+/** The Next match panel's height, and the gap under it. */
+const NEXT_H = 86;
+const FIG_MAX_W = 190;
+/** The bottom strip that carries the edge arrows and Sponsors. */
+export const ARROW_STRIP = 34;
+const FIG_ASPECT = 172 / 204;
+/** How many league rows there is room for. */
+export function leagueRowsFor(room: number | null): number {
+  return room !== null && room >= 440 ? 5 : 3;
+}
+/** The player's box: what is left after the next match and the league table. */
+export function playerSizeFor(room: number | null, rows = 3): { w: number; h: number } {
+  if (room === null) return { w: 130, h: 154 };
+  // + ARROW_STRIP: the bottom-edge arrows (Stats ‹ › Shop) sit under him (v0.23).
+  const fixed = NEXT_H + 4 + miniLeagueHeight(rows) + 4 + 14 + ARROW_STRIP;
+  const h = Math.max(104, Math.min(226, room - fixed));
+  const w = Math.min(FIG_MAX_W, Math.round(h * FIG_ASPECT));
+  return { w, h: Math.round(w / FIG_ASPECT) };
+}
+
 export default function HomeHub(p: Props) {
   const { career } = p;
   const { shirt, trim, glow } = useClubTheme(career);
+  const [ref, room] = useRoom();
+  const rows = leagueRowsFor(room);
+  const size = playerSizeFor(room, rows);
   return (
-    <div className="space-y-2.5 pb-3">
-      <RiseIn onPageActive index={0}><Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} /></RiseIn>
-      <RiseIn onPageActive index={1}><NextMatchCard {...p} glow={glow} /></RiseIn>
-      {/* KIB cans, then energy. "Your shop items" moved back to the Shop
-          page (Mikey, 28 Sep 2026: "get rid of the shop thing at the bottom
-          of like what you currently own"). */}
-      <RiseIn onPageActive index={2}><Cans {...p} glow={glow} /></RiseIn>
-      <RiseIn onPageActive index={3}><EnergyBar {...p} glow={glow} /></RiseIn>
+    // Full width: the page's own side padding is cancelled (-mx-3) so the
+    // pitch and the panels touch both edges, and the page is at least as tall
+    // as its box so the pitch reaches the bottom bar.
+    <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
+      <div className="home-sky"><Stadium glow={glow} pitch={false} floods={false} /></div>
+      <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
+      <div className="relative z-10 mt-1"><MiniLeague career={career} glow={glow} rows={rows} onOpen={p.onLeague} /></div>
+      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
+      {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
     </div>
   );
 }
 
-// ── 2. Next match + last five ───────────────────────────────────────────────
+// ── 1. Next match, as it was: both crests, VS, the date and your form ──────
 
-function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Props & { glow: string }) {
+const FORM_TONE = { W: "bg-emerald-500", D: "bg-gray-500", L: "bg-red-600" } as const;
+
+function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props & { glow: string }) {
   const five = lastFive(career);
+  const form = five.length > 0 && (
+    <span className="flex shrink-0 items-center gap-[3px]" aria-label={`Last ${five.length}: ${five.map((f) => f.res).join(" ")}`}>
+      {five.map((f, i) => (
+        <span key={i} className={`grid h-[15px] w-[15px] place-items-center text-[10px] font-black leading-none text-white ${FORM_TONE[f.res]}`}>{f.res}</span>
+      ))}
+    </span>
+  );
   if (!nextFixture) {
     return (
-      <ClubCard glow={glow} className="rounded-2xl p-3 text-center">
-        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Season complete</div>
-        <div className="mt-0.5 text-[12px] font-bold text-white/80">Every fixture is played — the awards are next.</div>
-        <LastFive five={five} />
-      </ClubCard>
+      <FlatPanel fade="top" glow={glow} className="flex h-[40px] items-center gap-2 px-3">
+        <span className="min-w-0 truncate text-[12px] font-black text-white">Season complete — the awards are next</span>
+        <span className="ml-auto">{form}</span>
+      </FlatPanel>
     );
   }
   const home = nextFixture.home ? myTeam : nextFixture.opponent;
@@ -131,108 +185,52 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
   const when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`;
   const hg = glowOf(homeKit.shirt, homeKit.trim), ag = glowOf(awayKit.shirt, awayKit.trim);
   return (
-    <ClubCard duel={[hg, ag]} className="relative overflow-hidden rounded-2xl">
-      <div className="flex items-center justify-between px-3 pt-2">
-        <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-300/30">Next match</span>
-        <span className="truncate pl-2 text-[10px] font-black uppercase tracking-wider text-white/60">{comp}</span>
+    <FlatPanel fade="top" className="relative px-3" style={{ height: NEXT_H }}>
+      {/* the two clubs, each lighting its own side */}
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(60% 130% at 0% 55%, ${rgba(hg, 0.38)}, transparent 70%), radial-gradient(60% 130% at 100% 55%, ${rgba(ag, 0.38)}, transparent 70%)` }} />
+      <div className="relative flex h-[15px] items-center justify-between pt-1">
+        <span className="text-[10px] font-black uppercase leading-none tracking-[0.18em] text-emerald-300">Next match</span>
+        <span className="truncate pl-2 text-[10px] font-black uppercase leading-none tracking-wider text-white/75">{comp}</span>
       </div>
-      {/* Two equal columns either side of a fixed-width middle, crests on one
-          line and VS dead centre between them (Mikey, 28 Sep 2026: "the VS
-          doesn't look centered… they're on different levels"). Your club is
-          outlined instead of a "YOU" label under it. */}
-      <div className="grid grid-cols-[1fr_64px_1fr] items-start gap-1 px-2 pt-1">
-        <TeamSide club={home} kitShirt={homeKit.shirt} kitTrim={homeKit.trim} you={home === myTeam} />
-        <div className="flex h-[50px] items-center justify-center">
-          <span
-            className="bg-gradient-to-b from-white to-white/50 bg-clip-text text-[26px] font-black italic leading-none tracking-tighter text-transparent"
-            style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.6))" }}
-          >VS</span>
-        </div>
-        <TeamSide club={away} kitShirt={awayKit.shirt} kitTrim={awayKit.trim} you={away === myTeam} />
+      <div className="relative mt-1 grid grid-cols-[1fr_44px_1fr] items-start">
+        <TeamSide club={home} kit={homeKit} you={home === myTeam} />
+        <div className="flex h-[34px] items-center justify-center text-[22px] font-black italic leading-none text-white/90" style={{ textShadow: "0 2px 6px rgba(0,0,0,.6)" }}>VS</div>
+        <TeamSide club={away} kit={awayKit} you={away === myTeam} />
       </div>
-      <div className="flex items-center justify-center gap-2 pb-1.5 pt-0.5">
-        <span className="whitespace-nowrap text-[11px] font-black text-white">{nextMatchDate ?? `Week ${nextFixture.week}`}</span>
-        <span className={`whitespace-nowrap rounded-full px-2 py-[1px] text-[10px] font-black ${days <= 1 ? "bg-amber-400 text-gray-950" : "bg-white/12 text-amber-200 ring-1 ring-white/15"}`}>
-          ⏱ {when}
-        </span>
+      <div className="relative mt-0.5 flex h-[16px] items-center gap-2">
+        <span className="whitespace-nowrap text-[11px] font-black leading-none text-white">{nextMatchDate ?? `Week ${nextFixture.week}`}</span>
+        <span className={`whitespace-nowrap px-1.5 text-[10px] font-black leading-[15px] ${days <= 1 ? "bg-amber-400 text-gray-950" : "bg-white/12 text-amber-200"}`}>⏱ {when}</span>
+        <span className="ml-auto">{form}</span>
       </div>
-      <div className="border-t border-white/10 bg-black/25 px-2.5 pb-2 pt-1.5">
-        <LastFive five={five} />
-      </div>
-    </ClubCard>
+    </FlatPanel>
   );
 }
 
-function TeamSide({ club, kitShirt, kitTrim, you }: { club: string; kitShirt: string; kitTrim: string; you: boolean }) {
+function TeamSide({ club, kit, you }: { club: string; kit: { shirt: string; trim: string }; you: boolean }) {
   return (
     <div className="flex min-w-0 flex-col items-center">
-      <div className={`relative grid h-[50px] w-[50px] place-items-center rounded-full ${you ? "ring-2 ring-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.7)]" : ""}`}>
-        <Glow color={glowOf(kitShirt, kitTrim)} alpha={0.55} className="inset-1 blur-md" />
-        <div className="relative" style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,.55))" }}>
-          <ClubBadge club={club} kit={{ shirt: kitShirt, trim: kitTrim }} size={44} />
-        </div>
+      <div className={`relative grid h-[34px] w-[34px] place-items-center ${you ? "shadow-[0_0_12px_rgba(110,231,183,.6)]" : ""}`} style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,.55))" }}>
+        <ClubBadge club={club} kit={kit} size={32} />
       </div>
-      <div className={`mt-0.5 w-full truncate text-center text-[12px] font-black ${you ? "text-emerald-300" : "text-white"}`}>{short(club)}</div>
+      <div className={`w-full truncate text-center text-[11.5px] font-black leading-tight ${you ? "text-emerald-300" : "text-white"}`}>{short(club)}</div>
     </div>
   );
 }
 
-function LastFive({ five }: { five: FormResult[] }) {
-  const tone = {
-    W: "from-emerald-400 to-emerald-600 shadow-emerald-900/60",
-    D: "from-gray-400 to-gray-600 shadow-black/40",
-    L: "from-red-500 to-red-700 shadow-red-950/60",
-  } as const;
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Last 5</span>
-        {five.some((f) => f.rating !== undefined) && (
-          <span className="text-[9px] font-black text-white/45">
-            avg rating <span className="text-amber-300">{(five.filter((f) => f.rating !== undefined).reduce((s, f) => s + (f.rating ?? 0), 0) / five.filter((f) => f.rating !== undefined).length).toFixed(1)}</span>
-          </span>
-        )}
-      </div>
-      {five.length === 0 ? (
-        <div className="text-[11px] font-bold text-white">No matches yet — your first is up next.</div>
-      ) : (
-        <div className="grid grid-cols-5 gap-1">
-          {Array.from({ length: 5 }, (_, i) => five[i - (5 - five.length)]).map((f, i) => f ? (
-            <div key={i} className="flex min-w-0 flex-col items-center rounded-lg bg-white/[0.06] px-0.5 pb-1 pt-1 ring-1 ring-white/5" title={`v ${short(f.opp)}`}>
-              <div className="flex items-center gap-1">
-                <span className={`grid h-[17px] w-[17px] shrink-0 place-items-center rounded-md bg-gradient-to-b text-[10px] font-black text-white shadow ${tone[f.res]}`}>{f.res}</span>
-                <span className="text-[12px] font-black leading-none tabular-nums text-white">{f.us}-{f.them}</span>
-              </div>
-              {/* Who it was against, as their crest — a name does not fit
-                  five across on a phone ("Liver…"). */}
-              <div className="mt-0.5 flex items-center gap-0.5">
-                <span className="text-[8px] font-black text-white/40">v</span>
-                <ClubBadge club={f.opp} kit={kitsOf(f.opp).home} size={14} />
-              </div>
-            </div>
-          ) : (
-            <div key={i} className="rounded-lg border border-dashed border-white/10" />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// ── 2. You, on the pitch ────────────────────────────────────────────────────
 
-// ── 1. You ──────────────────────────────────────────────────────────────────
-
-function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
-  const look = useAvatarStyle();
-  // The star rating is the CAREER one (starPoints.ts); ability shows as Overall.
-  const star = starStatus(career);
-  const rating = useCountUp(star.stars);
-  const money = useCountUp(career.money, 900);
+function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+  // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
+  // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
+  const [skin] = useFigureSkin();
+  const style = useAvatarStyle();
+  const look = skin === "classic" ? "A1" : style;
+  const fame = fameOf(career);
+  const ps = career.seasonStats;
   // A win in your last match: a hop, the arms up, confetti — once per match
   // per visit, not every time the page is swiped past.
   const last = lastFive(career).at(-1);
   const [celebrate, setCelebrate] = useState(false);
-  const [starPass, setStarPass] = useState(false);
-  const duties = setPieceDuties(career);
   useEffect(() => {
     if (!last || last.res !== "W") return;
     const key = `kib-celebrated-${career.season}-${last.week}`;
@@ -250,100 +248,66 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   }, [career.season, last?.week, last?.res]);
 
   return (
-    <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
-      <Stadium glow={glow} />
-      {/* Age top-left, money top-right (Mikey, 28 Sep 2026). */}
-      <div className="absolute left-3 top-[46px] z-10"><Pill label="Age" value={String(career.player.age)} /></div>
-      <div className="absolute right-3 top-[46px] z-10"><Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" /></div>
-      {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
-      {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026.
-          Under Mikey's money pill (it covered the right floodlight at top-2),
-          and 32px tall so a thumb can hit it. */}
-      <FigureSkinToggle className="absolute right-3 top-[90px] z-10 min-h-[32px]" />
-      <div className="relative flex justify-center pt-1.5">
-        {/* 184 tall (was 204, 236 before that), halfway to the 164 tried on
-            28 Sep 2026 (Mikey: "go in between those two figures"). 204 tall (was 236) so that on an iPhone 13 the next-match card
-            under this hero shows its crests above the bottom bar, not just
-            its label. The figure crops its empty top strip to stay big. */}
-        <div className={celebrate ? "kib-hop" : "kib-breathe"}>
-          <PlayerAvatar career={career} width={172} height={204} look={look} celebrate={celebrate} />
+    <div className="relative flex min-h-0 flex-1 items-end">
+      {/* the pitch is sized to him (the goal line sits just above his head)
+          and fades out upwards into the stand, under the league table */}
+      <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30), maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
+      <div className="relative flex w-full items-end gap-2 px-3 pt-1" style={{ paddingBottom: ARROW_STRIP + 8 }}>
+        <div className="relative shrink-0" style={{ width: figW }}>
+          <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
         </div>
-        {celebrate && <Burst colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} className="left-1/2 top-[38%]" />}
-      </div>
-      <div className="relative -mt-4 bg-gradient-to-b from-transparent via-black/45 to-black/70 px-3 pb-2.5 pt-3 text-center">
-        {/* The NAME is centred; the badge hangs off its left (Mikey, 28 Sep
-            2026: "the name should be centered and then the club badge should
-            just be on the left of the name"). */}
-        <div className="relative mx-auto w-fit max-w-[80%]">
-          <div className="absolute right-full top-1/2 mr-2 -translate-y-1/2" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
-            <ClubBadge club={career.player.club} kit={{ shirt: kitShirt, trim: kitTrim }} size={28} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">
+          <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
+          <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
+          <div className="grid grid-cols-2 gap-1.5">
+            <SeasonStat label="Goals" value={ps.goals} />
+            <SeasonStat label="Assists" value={ps.assists} />
           </div>
-          {/* A dark plate behind the name: on the club-colour glow a bare
-              white name washed out (Harry's Plymouth screenshot, 28 Sep). */}
-          {/* No dark box behind the name (Mikey: "why does it have a black
-              translucent colour behind it"); a heavier shadow keeps it
-              readable on any club's glow. */}
-          <div className="min-w-0 truncate px-1 text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,1), 0 2px 10px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9)" }}>
-            {career.player.firstName} {career.player.lastName}
-          </div>
-        </div>
-        {/* The club · number · position line is gone (Mikey: the badge, the
-            shirt number and the club are already on screen). Rating sits
-            under the name and opens the Star Pass. */}
-        {/* Set-piece tags you've earned: PK = penalty taker, FK = free-kick
-            taker (Mikey, 29 Sep 2026: "like a tag that you've earned"). */}
-        {(duties.penalties || duties.freeKicks) && (
-          <div className="mt-1 flex justify-center gap-1.5">
-            {duties.penalties && <DutyTag code="PK" label="Penalty taker" />}
-            {duties.freeKicks && <DutyTag code="FK" label="Free-kick taker" />}
-          </div>
-        )}
-        <button
-          onClick={() => setStarPass(true)}
-          className="kib-press mt-1.5 inline-flex"
-          aria-label="Star rating — see how it is made up"
-        >
-          <Pill gold label="Rating ›" value={`★ ${rating.toFixed(1)}`} />
-        </button>
-        {/* The way to the next 0.1★, and your overall (how good you are now). */}
-        <div className="mx-auto mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-black/60">
-          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-200" style={{ width: `${Math.max(3, star.toNext * 100)}%` }} />
-        </div>
-        <div className="mt-1 text-[10.5px] font-black uppercase tracking-wider text-white">
-          {star.gate ? `🔒 ★${star.gate.cap.toFixed(1)} gate · ` : ""}Overall {Math.round(attributeOverall(career.skills))}
+          <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
         </div>
       </div>
-    </ClubCard>
+    </div>
   );
 }
 
-// ── 3. Energy and the cans ──────────────────────────────────────────────────
-
-function Cans({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
-  const e = Math.max(0, Math.min(100, Math.round(career.energy)));
+/** Reputation or Fame: a flat block with a square bar — no rounded card. */
+function StandBox({ label, name, value, bar, colors }: { label: string; name: string; value: number; bar: number; colors: [string, string] }) {
   return (
-    <ClubCard glow={glow} className="rounded-2xl p-3">
-      <div className="text-[12px] font-black uppercase tracking-[0.16em] text-white">KIB cans</div>
-      <div className="mt-1.5 grid grid-cols-3 gap-2">
-        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} />)}
+    <div className="bg-black/45 px-2 py-[3px]" style={{ borderLeft: `3px solid ${colors[0]}` }}>
+      <div className="text-[8.5px] font-black uppercase leading-none tracking-[0.18em] text-white/75">{label}</div>
+      <div className="mt-0.5 flex items-baseline justify-between gap-1">
+        <span className="min-w-0 truncate text-[12.5px] font-black leading-tight text-white">{name}</span>
+        <span className="text-[12.5px] font-black tabular-nums leading-tight text-white">{value}</span>
       </div>
-    </ClubCard>
+      <SquareBar value={bar} colors={colors} className="mt-0.5 h-[7px]" ticks={false} />
+    </div>
   );
 }
 
-function EnergyBar({ career, glow }: Props & { glow: string }) {
-  const e = Math.max(0, Math.min(100, Math.round(career.energy)));
-  const shown = useCountUp(e, 900);
-  const fill = levelColors(e);
+function SeasonStat({ label, value }: { label: string; value: number }) {
   return (
-    <ClubCard glow={glow} className="rounded-2xl p-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[12px] font-black uppercase tracking-[0.16em] text-white">⚡ Energy</span>
-        <span className="text-[20px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 12px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
-      </div>
-      {/* A sheen races along the bar the moment energy goes UP (a can was drunk). */}
-      <StatBar value={e} colors={fill} className="mt-1.5 h-4" />
-    </ClubCard>
+    <div className="bg-black/45 px-2 py-[3px] text-center">
+      <div className="text-[16px] font-black leading-none tabular-nums text-white">{value}</div>
+      <div className="mt-0.5 text-[8.5px] font-black uppercase leading-none tracking-[0.16em] text-white/75">{label}</div>
+    </div>
+  );
+}
+
+// ── 3. Sponsors, a small arrow at the bottom right ──────────────────────────
+
+/** Your sponsors, one tap from Home (Harry, 1 Oct 2026, P66: "like being a
+ *  little arrow in the bottom right instead"). Not a pill: plain text and an
+ *  arrow, with a red count when offers are waiting. */
+function SponsorsArrow({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
+  const offers = brandsOf(career).offers.length;
+  return (
+    <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"}
+      className="kib-press absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white"
+      style={{ textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" }}>
+      Sponsors
+      {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
+      <span className="text-[17px] leading-none text-emerald-300">›</span>
+    </button>
   );
 }
 
@@ -352,7 +316,7 @@ function prefersReducedMotionSafe(): boolean {
 }
 
 /** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
-export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean }) {
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean; mini?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -362,13 +326,54 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { 
   const canUse = count > 0 && !ready && !full;
   const canBuy = career.money >= price;
   const [drinking, setDrinking] = useState(0);
-  const effect = c.effect === "curve" ? "Curve shots" : c.effect === "extraTouch" ? "Extra touch" : `+${c.restore} energy`;
+  const effect = c.effect === "curve" ? `Curve shots${c.restore ? ` +${c.restore}` : ""}` : c.effect === "extraTouch" ? `Extra touch${c.restore ? ` +${c.restore}` : ""}` : `+${c.restore} energy`;
   const use = () => {
     if (!canUse) return;
     setDrinking((d) => d + 1);
     // Let the can shake and tip before the numbers move.
     setTimeout(() => onUse(c.id), prefersReducedMotionSafe() ? 0 : 650);
   };
+  // Home's short tile (`mini`): can and name side by side, Use and Buy side by side.
+  if (mini) return (
+    <div
+      className="relative overflow-hidden rounded-xl p-1.5"
+      style={{
+        background: `radial-gradient(90% 70% at 30% 30%, ${rgba(accent, 0.34)} 0%, transparent 70%), linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25))`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(accent, 0.35)}, 0 6px 14px -8px ${rgba(accent, 0.6)}`,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <div className="relative h-[40px] w-[22px] shrink-0">
+          <Glow color={accent} alpha={0.5} className="bottom-0 left-1/2 h-6 w-8 -translate-x-1/2 blur-md" />
+          <Shake trigger={drinking} className="absolute inset-0 flex items-end justify-center" style={{ filter: `drop-shadow(0 3px 6px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
+            <KibCanIcon can={c} className="h-[38px] w-[22px]" />
+          </Shake>
+          <span className="absolute -bottom-1 -right-1.5 min-w-[18px] rounded-full px-1 text-center text-[9.5px] font-black leading-[14px] tabular-nums text-gray-950"
+            style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
+          {drinking > 0 && (
+            <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
+              <Drips trigger={drinking} color={accent} />
+              <FloatText trigger={drinking} motion="tick" text="−1" className="left-0 top-0 text-[11px] text-white" style={{ textShadow: `0 0 6px ${accent}` }} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[11px] font-black leading-tight text-white">{c.name.replace(" KIB Can", "")}</div>
+          <div className="line-clamp-2 text-[9.5px] font-bold leading-[11px] text-white/80">{effect}</div>
+        </div>
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1">
+        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use}
+          className="rounded-md py-1 text-[10.5px] font-black uppercase">
+          {ready ? "✓" : full ? "Full" : "Use"}
+        </PressButton>
+        <PressButton size="none" disabled={!canBuy} onClick={() => onBuy(c)} aria-label={`Buy a ${c.name} for ${formatMoney(price)}`}
+          className="rounded-md bg-black/35 py-1 text-[10px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40">
+          ★{formatMoney(price)}
+        </PressButton>
+      </div>
+    </div>
+  );
   return (
     <div
       className="relative flex flex-col items-center overflow-hidden rounded-xl px-1.5 pb-1.5 pt-2"
@@ -419,15 +424,3 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { 
   );
 }
 
-/** Where the Star Pass will live (Mikey, 28 Sep 2026: "your star rating is
- *  clickable… it would take you to that star pass"). Not built yet — this
- *  says what it will be. */
-/** A set-piece duty you've earned: just the short code, a small gold tag
- *  (Mikey, 29 Sep 2026: "it should just say PK and it should just say FK"). */
-function DutyTag({ code, label }: { code: string; label: string }) {
-  return (
-    <span className="rounded-md border border-amber-200 bg-amber-400 px-1.5 py-[1px] text-[11px] font-black leading-tight text-gray-950 shadow-[0_0_10px_rgba(251,191,36,.45)]" title={label} aria-label={label}>
-      {code}
-    </span>
-  );
-}

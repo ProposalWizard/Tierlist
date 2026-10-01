@@ -3,8 +3,10 @@ import { sortLeague, simulateFixtureScore } from "./season";
 import { divisionOf, divisionRank, type CareerDivision } from "./calendar";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
-  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
+import { splitByRegion, latitudeOf } from "./nonLeagueRegions";
 
 /**
  * UP AND DOWN.
@@ -58,11 +60,17 @@ export interface DivisionMembership {
   leagueOne: string[];
   leagueTwo: string[];
   nationalLeague: string[];
-  /** Below the National League. Not a division, same idea as the old pool —
-   *  exactly four clubs, and (see resolveLadder) ALL FOUR rotate out every
-   *  season, since the National League relegates four with nowhere else to
-   *  go. */
-  nationalLeaguePool: string[];
+  /**
+   * The two regional divisions under the National League — playable, 24
+   * clubs each (Harry, 1 Oct 2026, P62). They replace the old four-club
+   * "National League pool", which had no fixtures. Two go up from each every
+   * season (champion + play-off winner); the National League's four
+   * relegated clubs are split between them by where they are (see
+   * nonLeagueRegions.ts). Nothing below them, so nobody goes down out of
+   * them.
+   */
+  nationalLeagueNorth: string[];
+  nationalLeagueSouth: string[];
 }
 
 export function membershipOf(career: CareerState): DivisionMembership {
@@ -81,7 +89,8 @@ export function membershipOf(career: CareerState): DivisionMembership {
     leagueOne: d?.leagueOne ?? [...LEAGUE_ONE_CLUBS],
     leagueTwo: d?.leagueTwo ?? [...LEAGUE_TWO_CLUBS],
     nationalLeague: d?.nationalLeague ?? [...NATIONAL_LEAGUE_CLUBS],
-    nationalLeaguePool: d?.nationalLeaguePool ?? [...NATIONAL_LEAGUE_POOL_CLUBS],
+    nationalLeagueNorth: d?.nationalLeagueNorth ?? [...NATIONAL_LEAGUE_NORTH_CLUBS],
+    nationalLeagueSouth: d?.nationalLeagueSouth ?? [...NATIONAL_LEAGUE_SOUTH_CLUBS],
   };
 }
 
@@ -101,7 +110,8 @@ function baselineFor(tier: keyof DivisionMembership): number {
     : tier === "championship" ? 70
     : tier === "leagueOne" ? 63
     : tier === "leagueTwo" ? 58
-    : 55; // nationalLeague, nationalLeaguePool — same tier, given directly
+    : tier === "nationalLeague" ? 55
+    : 50; // nationalLeagueNorth / nationalLeagueSouth — one rung, side by side
 }
 
 function nameNoise(club: string): number {
@@ -115,7 +125,7 @@ function nameNoise(club: string): number {
 
 function strengthTable(career: CareerState, members: DivisionMembership): Map<string, number> {
   const out = new Map<string, number>();
-  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeaguePool"] as const) {
+  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeagueNorth", "nationalLeagueSouth"] as const) {
     for (const club of members[tier]) out.set(club, baselineFor(tier) + nameNoise(club));
   }
   // Anything this career genuinely knows about beats the estimate.
@@ -139,7 +149,8 @@ export function estimateClubStrength(career: CareerState, club: string): number 
     : members.leagueOne.includes(club) ? "leagueOne"
     : members.leagueTwo.includes(club) ? "leagueTwo"
     : members.nationalLeague.includes(club) ? "nationalLeague"
-    : "nationalLeaguePool";
+    : members.nationalLeagueNorth.includes(club) ? "nationalLeagueNorth"
+    : "nationalLeagueSouth";
   return baselineFor(tier) + nameNoise(club);
 }
 
@@ -256,7 +267,8 @@ const CHAMPIONSHIP_SIZE = CHAMPIONSHIP_CLUBS.length;
 const LEAGUE_ONE_SIZE = LEAGUE_ONE_CLUBS.length;
 const LEAGUE_TWO_SIZE = LEAGUE_TWO_CLUBS.length;
 const NATIONAL_LEAGUE_SIZE = NATIONAL_LEAGUE_CLUBS.length;
-const NATIONAL_POOL_SIZE = NATIONAL_LEAGUE_POOL_CLUBS.length;
+const NORTH_SIZE = NATIONAL_LEAGUE_NORTH_CLUBS.length;
+const SOUTH_SIZE = NATIONAL_LEAGUE_SOUTH_CLUBS.length;
 
 // How many move at each of the three new boundaries, given directly:
 //   League One <-> Championship: 3 up (top 2 automatic + 1 playoff-modeled
@@ -266,9 +278,9 @@ const NATIONAL_POOL_SIZE = NATIONAL_LEAGUE_POOL_CLUBS.length;
 //     21st-24th down).
 //   League Two <-> National League: 2 each way (1 automatic + 1 modeled up;
 //     23rd-24th down).
-//   National League <-> its 4-club pool: 4 each way — the whole pool turns
-//     over every season, since the National League relegates four and this
-//     game has no National League North/South to send them to instead.
+//   National League <-> North and South (1 Oct 2026, P62): 4 down, split
+//     two and two by region (nonLeagueRegions.ts); 2 up from EACH region —
+//     the champion and the play-off winner, as in real life.
 // None of these tiers is ever a division a career actually plays a season
 // in (see clubs.ts's own note), so — same as the existing Championship<->pool
 // shape already did — every count here is a genuine table position ONLY for
@@ -277,7 +289,10 @@ const NATIONAL_POOL_SIZE = NATIONAL_LEAGUE_POOL_CLUBS.length;
 const CHAMP_LEAGUE_ONE_COUNT = 3;
 const LEAGUE_ONE_TWO_COUNT = 4;
 const LEAGUE_TWO_NATIONAL_COUNT = 2;
-const NATIONAL_POOL_COUNT = 4;
+/** Up from each regional division: the champion and the play-off winner. */
+const REGIONAL_UP_COUNT = 2;
+/** Down from the National League, into the two regions together. */
+const NATIONAL_DOWN_COUNT = REGIONAL_UP_COUNT * 2;
 
 /**
  * Fix a ladder that has drifted from the shape it's supposed to have —
@@ -318,17 +333,18 @@ const NATIONAL_POOL_COUNT = 4;
  */
 function reconcileLadder(
   premier: string[], championship: string[], leagueOne: string[], leagueTwo: string[],
-  nationalLeague: string[], nationalPool: string[], limbo: string[],
+  nationalLeague: string[], north: string[], south: string[], limbo: string[],
   strength: Map<string, number>, rng: () => number,
 ): {
   premier: string[]; championship: string[]; leagueOne: string[]; leagueTwo: string[];
-  nationalLeague: string[]; nationalLeaguePool: string[]; limbo: string[];
+  nationalLeague: string[]; nationalLeagueNorth: string[]; nationalLeagueSouth: string[]; limbo: string[];
 } {
   const seen = new Set<string>();
   const dedupe = (list: string[]) => list.filter(c => (seen.has(c) ? false : (seen.add(c), true)));
   let p = dedupe(premier), c = dedupe(championship);
   let l1 = dedupe([...leagueOne, ...limbo]);
-  let l2 = dedupe(leagueTwo), nl = dedupe(nationalLeague), np = dedupe(nationalPool);
+  let l2 = dedupe(leagueTwo), nl = dedupe(nationalLeague);
+  let nn = dedupe(north), ns = dedupe(south);
 
   const byStrengthAsc = (list: string[]) => [...list].sort((a, b) => (strength.get(a) ?? 70) - (strength.get(b) ?? 70));
 
@@ -353,28 +369,47 @@ function reconcileLadder(
   [c, l1] = shrink(c, CHAMPIONSHIP_SIZE, l1);
   [l1, l2] = shrink(l1, LEAGUE_ONE_SIZE, l2);
   [l2, nl] = shrink(l2, LEAGUE_TWO_SIZE, nl);
-  [nl, np] = shrink(nl, NATIONAL_LEAGUE_SIZE, np);
+  // The National League's overflow lands in the regions as one group; the
+  // sideways balance below sorts out which region.
+  let regional: string[] = [...nn, ...ns];
+  [nl, regional] = shrink(nl, NATIONAL_LEAGUE_SIZE, regional);
+  const spilled = regional.filter(x => !nn.includes(x) && !ns.includes(x));
+  const spill = splitByRegion(spilled, Math.max(0, NORTH_SIZE - nn.length));
+  nn = [...nn, ...spill.north];
+  ns = [...ns, ...spill.south];
 
   // Then undersized tiers pull upward from whatever the tier below now has
   // spare, same direction an ordinary promotion already moves in, bottom to
   // top so a shortfall doesn't get "fixed" from a tier that hasn't itself
-  // been topped up yet.
-  [nl, np] = grow(nl, NATIONAL_LEAGUE_SIZE, np);
+  // been topped up yet. The National League draws from both regions at once.
+  [nl, regional] = grow(nl, NATIONAL_LEAGUE_SIZE, [...nn, ...ns]);
+  nn = nn.filter(x => regional.includes(x));
+  ns = ns.filter(x => regional.includes(x));
   [l2, nl] = grow(l2, LEAGUE_TWO_SIZE, nl);
   [l1, l2] = grow(l1, LEAGUE_ONE_SIZE, l2);
   [c, l1] = grow(c, CHAMPIONSHIP_SIZE, l1);
   [p, c] = grow(p, PREMIER_SIZE, c);
 
-  // An oversized National League pool (nowhere lower than it) sheds its own
-  // weakest back into limbo — the one tier with nowhere lower to shrink
-  // into, same as League One's own shortfall case above has nowhere lower
-  // to grow FROM once League Two, National League and its pool are all
-  // already exhausted.
-  const [poolFinal, limboOut] = shrink(np, NATIONAL_POOL_SIZE, []);
+  // North and South: a sideways move evens them up, as the real FA does —
+  // the southernmost club of an oversized North goes South, the
+  // northernmost of an oversized South goes North.
+  while (nn.length > NORTH_SIZE && ns.length < SOUTH_SIZE) {
+    const mover = [...nn].sort((a, b) => latitudeOf(a) - latitudeOf(b))[0];
+    nn = nn.filter(x => x !== mover); ns = [...ns, mover];
+  }
+  while (ns.length > SOUTH_SIZE && nn.length < NORTH_SIZE) {
+    const mover = [...ns].sort((a, b) => latitudeOf(b) - latitudeOf(a))[0];
+    ns = ns.filter(x => x !== mover); nn = [...nn, mover];
+  }
+  // Nothing sits below the regions. Anything still over size there is a
+  // broken save, not a season; it waits in limbo (which re-enters at League
+  // One, see forcedMovement.ts) rather than a 25th club playing a season.
+  const [northFinal, northOut] = shrink(nn, NORTH_SIZE, []);
+  const [southFinal, southOut] = shrink(ns, SOUTH_SIZE, []);
 
   return {
-    premier: p, championship: c, leagueOne: l1, leagueTwo: l2,
-    nationalLeague: nl, nationalLeaguePool: poolFinal, limbo: limboOut,
+    premier: p, championship: c, leagueOne: l1, leagueTwo: l2, nationalLeague: nl,
+    nationalLeagueNorth: northFinal, nationalLeagueSouth: southFinal, limbo: [...northOut, ...southOut],
   };
 }
 
@@ -401,8 +436,14 @@ export interface LadderOutcome {
   relegatedFromLeagueOne: string[];
   promotedToLeagueTwo: string[];
   relegatedFromLeagueTwo: string[];
+  /** Both regions' promoted clubs together (two from North, two from South). */
   promotedToNationalLeague: string[];
   relegatedFromNationalLeague: string[];
+  /** The National League's relegated clubs, by which region they went to. */
+  relegatedToNorth: string[];
+  relegatedToSouth: string[];
+  promotedFromNorth: string[];
+  promotedFromSouth: string[];
   /** Only when the season being played ends in real play-offs — every
    *  division except the Premier League (see playoffs.ts). */
   playOffs: PlayOffResult | null;
@@ -424,8 +465,9 @@ export interface LadderOutcome {
 /**
  * Which tier key (DivisionMembership's own field names) a CareerDivision
  * corresponds to — the ladder itself always deals in the five real English
- * tiers below, "premier" through "nationalLeague"; "nationalLeaguePool" is
- * never a division a career plays, same as the old five-club pool never was.
+ * tiers below, "premier" through "nationalLeague", in this loop; North and
+ * South sit side by side under the National League and are handled on their
+ * own below the loop.
  */
 const TIER_KEYS = ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague"] as const;
 type TierKey = typeof TIER_KEYS[number];
@@ -509,26 +551,29 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     working[below] = working[below].filter(c => !promoted.includes(c));
   }
 
-  // ── National League down to its own four-club pool ──
+  // ── National League <-> North and South ──
   //
-  // Not a real division a career ever plays (the pool has no fixtures, no
-  // table, no season — see clubs.ts's own note), so relegation into it
-  // cannot just drop you there and carry on, the same way relegation out of
-  // the Championship used to be a dead end before League One became a real
-  // division. That case is handled upstream of here (see app/star-dev/
-  // page.tsx's openTransferWindowOrRoll and relegationOffers.ts) — by the
-  // time this runs, `you` already names a club with a real division to be
-  // placed in, so bottom-N here is simply the table's, like every other
-  // club's.
+  // Four down, two up from each region. Same rule as every boundary above:
+  // the division you played is decided by its real table (and, in a region,
+  // by its real play-offs — 2nd to 5th, one place, see playoffs.ts); every
+  // other is a weighted draw.
   const playingNationalLeague = division === "national_league";
   const relegatedFromNationalLeague = playingNationalLeague
-    ? names.slice(-NATIONAL_POOL_COUNT)
-    : weightedDraw(working.nationalLeague, strength, NATIONAL_POOL_COUNT, rng, true);
-  // The whole 4-club pool turns over every season — see clubs.ts's own note
-  // on NATIONAL_LEAGUE_POOL_CLUBS. No real season for it to be promoted
-  // FROM, so this is always a weighted draw regardless of division.
-  const promotedToNationalLeague = weightedDraw(
-    members.nationalLeaguePool, strength, Math.min(NATIONAL_POOL_COUNT, members.nationalLeaguePool.length), rng);
+    ? names.slice(-NATIONAL_DOWN_COUNT)
+    : weightedDraw(working.nationalLeague, strength, NATIONAL_DOWN_COUNT, rng, true);
+  const regionUp = (key: "nationalLeagueNorth" | "nationalLeagueSouth", div: CareerDivision): string[] => {
+    if (division !== div) return weightedDraw(members[key], strength, REGIONAL_UP_COUNT, rng);
+    const played = career.playOffState?.promoted;
+    playOffs = played ? null : resolvePlayOffs(career.league, strength, rng, REGIONAL_UP_COUNT - 1);
+    const last = played ?? playOffs?.promoted;
+    const auto = names.slice(0, REGIONAL_UP_COUNT - 1);
+    return last ? [...auto, last] : auto;
+  };
+  const promotedFromNorth = regionUp("nationalLeagueNorth", "national_league_north");
+  const promotedFromSouth = regionUp("nationalLeagueSouth", "national_league_south");
+  const promotedToNationalLeague = [...promotedFromNorth, ...promotedFromSouth];
+  const { north: relegatedToNorth, south: relegatedToSouth } =
+    splitByRegion(relegatedFromNationalLeague, promotedFromNorth.length);
   working.nationalLeague = working.nationalLeague.filter(c => !relegatedFromNationalLeague.includes(c));
 
   const premierRaw = [...working.premier, ...promotedInto.premier];
@@ -547,9 +592,11 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   const nationalLeagueRaw = [
     ...working.nationalLeague, ...relegatedFrom.leagueTwo, ...promotedToNationalLeague,
   ];
-  const nationalPoolRaw = [
-    ...members.nationalLeaguePool.filter(c => !promotedToNationalLeague.includes(c)),
-    ...relegatedFromNationalLeague,
+  const northRaw = [
+    ...members.nationalLeagueNorth.filter(c => !promotedFromNorth.includes(c)), ...relegatedToNorth,
+  ];
+  const southRaw = [
+    ...members.nationalLeagueSouth.filter(c => !promotedFromSouth.includes(c)), ...relegatedToSouth,
   ];
 
   // Reported directly, from a real save at season 3: the Premier League
@@ -563,11 +610,13 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   // save regardless of what today's code does, and the fix that actually
   // reaches a player is one that heals the shape it finds, not one that
   // only proves it wouldn't have happened starting from scratch.
-  const { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool, limbo } =
-    reconcileLadder(
-      premierRaw, championshipRaw, leagueOneRaw, leagueTwoRaw, nationalLeagueRaw, nationalPoolRaw,
-      career.limboClubs ?? [], strength, rng,
-    );
+  const {
+    premier, championship, leagueOne, leagueTwo, nationalLeague,
+    nationalLeagueNorth, nationalLeagueSouth, limbo,
+  } = reconcileLadder(
+    premierRaw, championshipRaw, leagueOneRaw, leagueTwoRaw, nationalLeagueRaw, northRaw, southRaw,
+    career.limboClubs ?? [], strength, rng,
+  );
 
   const NEXT_TIERS: { division: CareerDivision; clubs: string[] }[] = [
     { division: "premier", clubs: premier },
@@ -575,13 +624,14 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     { division: "league_one", clubs: leagueOne },
     { division: "league_two", clubs: leagueTwo },
     { division: "national_league", clubs: nationalLeague },
+    { division: "national_league_north", clubs: nationalLeagueNorth },
+    { division: "national_league_south", clubs: nationalLeagueSouth },
   ];
 
-  // Your club is in exactly one of these five by now — either it was never
-  // in the relegated group, or the page already moved you to a new one
-  // before this ran (see the note above on the National League <-> pool
-  // boundary). Falling back to the division you were already in only
-  // matters for a save from before any of this existed.
+  // Your club is in exactly one of these seven by now — every boundary,
+  // including the National League's, is now down into a playable division.
+  // Falling back to the division you were already in only matters for a
+  // save from before any of this existed.
   const next = NEXT_TIERS.find(t => t.clubs.includes(you));
   const nextDivision: CareerDivision = next?.division ?? division;
   const nextClubs = next?.clubs ?? (division === "premier" ? premier : championship);
@@ -592,13 +642,14 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   return {
     division: nextDivision,
     clubs: nextClubs,
-    divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool },
+    divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeagueNorth, nationalLeagueSouth },
     yourMove,
     promotedToPremier: promotedInto.premier, relegatedFromPremier: relegatedFrom.premier,
     promotedToChampionship: promotedInto.championship, relegatedFromChampionship: relegatedFrom.championship,
     promotedToLeagueOne: promotedInto.leagueOne, relegatedFromLeagueOne: relegatedFrom.leagueOne,
     promotedToLeagueTwo: promotedInto.leagueTwo, relegatedFromLeagueTwo: relegatedFrom.leagueTwo,
     promotedToNationalLeague, relegatedFromNationalLeague,
+    relegatedToNorth, relegatedToSouth, promotedFromNorth, promotedFromSouth,
     playOffs,
     limbo,
   };

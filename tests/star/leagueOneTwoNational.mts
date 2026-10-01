@@ -1,5 +1,5 @@
 import {
-  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
   CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, divisionOf, CLUB_SHORT_NAMES,
 } from "../../lib/star/clubs";
@@ -10,7 +10,8 @@ import { kitsOf } from "../../lib/star/kits";
 import type { CareerState, StarPlayer, LeagueTeam } from "../../lib/star/types";
 
 /**
- * LEAGUE ONE, LEAGUE TWO, THE NATIONAL LEAGUE, AND ITS FOUR-CLUB POOL.
+ * LEAGUE ONE, LEAGUE TWO, THE NATIONAL LEAGUE, AND NATIONAL LEAGUE NORTH/SOUTH
+ * (which replaced the old four-club pool, 1 Oct 2026).
  *
  * Three real tiers extended below the Championship, given directly with
  * real club names, kits and generated-squad target ratings — see
@@ -44,7 +45,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(LEAGUE_ONE_CLUBS.length === 24, `League One has 24 clubs (${LEAGUE_ONE_CLUBS.length})`);
   check(LEAGUE_TWO_CLUBS.length === 24, `League Two has 24 clubs (${LEAGUE_TWO_CLUBS.length})`);
   check(NATIONAL_LEAGUE_CLUBS.length === 24, `the National League has 24 clubs (${NATIONAL_LEAGUE_CLUBS.length})`);
-  check(NATIONAL_LEAGUE_POOL_CLUBS.length === 4, `its pool has 4 clubs (${NATIONAL_LEAGUE_POOL_CLUBS.length})`);
+  check(NATIONAL_LEAGUE_NORTH_CLUBS.length === 24 && NATIONAL_LEAGUE_SOUTH_CLUBS.length === 24,
+    `North and South have 24 clubs each (${NATIONAL_LEAGUE_NORTH_CLUBS.length} / ${NATIONAL_LEAGUE_SOUTH_CLUBS.length})`);
 
   const overlap = ["Luton Town", "Huddersfield Town", "Leicester City", "Reading FC", "Wigan Athletic"];
   check(overlap.every(c => LEAGUE_ONE_CLUBS.includes(c)),
@@ -55,16 +57,17 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 {
   const all = [
     ...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS,
-    ...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_POOL_CLUBS,
+    ...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS,
+    ...NATIONAL_LEAGUE_NORTH_CLUBS, ...NATIONAL_LEAGUE_SOUTH_CLUBS,
   ];
   const dupes = all.filter((c, i) => all.indexOf(c) !== i);
-  check(dupes.length === 0, `no club sits in two of premier/championship/L1/L2/NL/pool at once (${dupes.join(", ")})`);
+  check(dupes.length === 0, `no club sits in two of premier/championship/L1/L2/NL/pool at once, North/South included (${dupes.join(", ")})`);
 
   // The old five-club promotion pool and the standalone "Other" clubs may
   // legitimately share a name with League One (the five overlap clubs,
   // given directly) — that's fine, that's the whole point — but must never
   // ALSO collide with League Two/National League/its pool.
-  const lowerThree = [...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_POOL_CLUBS];
+  const lowerThree = [...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_NORTH_CLUBS, ...NATIONAL_LEAGUE_SOUTH_CLUBS];
   const stray = [...PROMOTION_POOL_CLUBS, ...OTHER_CLUBS, ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS]
     .filter(c => lowerThree.includes(c));
   check(stray.length === 0, `no European/Other/old-pool club strays into League Two/National League/its pool (${stray.join(", ")})`);
@@ -77,7 +80,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     `an overlap club tags league_one, not the old pool (${divisionOf("Luton Town")})`);
   check(divisionOf("Accrington Stanley") === "league_two", "a League Two club tags league_two");
   check(divisionOf("Yeovil Town") === "national_league", "a National League club tags national_league");
-  check(divisionOf("Torquay United") === "national_league_pool", "a pool club tags national_league_pool");
+  check(divisionOf("Torquay United") === "national_league_south", "an old pool club (Torquay) now tags national_league_south");
+  check(divisionOf("Chorley") === "national_league_north", "an old pool club (Chorley) now tags national_league_north");
   check(divisionOf("Not A Real Club") === null, "an unknown name still resolves to null");
 }
 
@@ -86,7 +90,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   const NEUTRAL_SHIRT = "#2F6F4E";
   const missingShort: string[] = [];
   const neutralKit: string[] = [];
-  for (const c of [...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_POOL_CLUBS]) {
+  for (const c of [...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_NORTH_CLUBS, ...NATIONAL_LEAGUE_SOUTH_CLUBS]) {
     if (!CLUB_SHORT_NAMES[c]) missingShort.push(c);
     if (kitsOf(c).home.shirt === NEUTRAL_SHIRT) neutralKit.push(c);
   }
@@ -113,11 +117,13 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     if (ladder.divisions.leagueOne.length !== 24) fail(`League One has ${ladder.divisions.leagueOne.length} clubs`);
     else if (ladder.divisions.leagueTwo.length !== 24) fail(`League Two has ${ladder.divisions.leagueTwo.length} clubs`);
     else if (ladder.divisions.nationalLeague.length !== 24) fail(`National League has ${ladder.divisions.nationalLeague.length} clubs`);
-    else if (ladder.divisions.nationalLeaguePool.length !== 4) fail(`the pool has ${ladder.divisions.nationalLeaguePool.length} clubs`);
+    else if (ladder.divisions.nationalLeagueNorth.length !== 24) fail(`North has ${ladder.divisions.nationalLeagueNorth.length} clubs`);
+    else if (ladder.divisions.nationalLeagueSouth.length !== 24) fail(`South has ${ladder.divisions.nationalLeagueSouth.length} clubs`);
     else {
       const all = [
         ...ladder.divisions.premier, ...ladder.divisions.championship, ...ladder.divisions.leagueOne,
-        ...ladder.divisions.leagueTwo, ...ladder.divisions.nationalLeague, ...ladder.divisions.nationalLeaguePool,
+        ...ladder.divisions.leagueTwo, ...ladder.divisions.nationalLeague,
+        ...ladder.divisions.nationalLeagueNorth, ...ladder.divisions.nationalLeagueSouth,
       ];
       if (new Set(all).size !== all.length) fail("a club is in two tiers at once");
       else {
@@ -140,33 +146,28 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(sawLeagueOneMovement, "and League One's own membership genuinely changes season to season");
 }
 
-// ── The National League's four-club pool genuinely rotates ─────────────────
+// ── North and South genuinely trade clubs with the National League ───────────
 {
   let career = makeInitialCareer(playerAt(CHAMPIONSHIP_CLUBS[1]), [...CHAMPIONSHIP_CLUBS], "championship");
-  const seenInPool = new Set<string>();
+  const seenInRegions = new Set<string>();
   const seenInNationalLeague = new Set<string>();
+  const originalRegional = [...NATIONAL_LEAGUE_NORTH_CLUBS, ...NATIONAL_LEAGUE_SOUTH_CLUBS];
 
   for (let season = 1; season <= 10; season++) {
     const rng = mulberry32(season * 53 + 11);
     const order = [...career.league.map(t => t.name)].sort(() => rng() - 0.5);
     const standing = withStandings(career, order);
     const ladder = resolveLadder(standing, mulberry32(season * 97 + 13));
-    for (const c of ladder.divisions.nationalLeaguePool) seenInPool.add(c);
+    for (const c of [...ladder.divisions.nationalLeagueNorth, ...ladder.divisions.nationalLeagueSouth]) seenInRegions.add(c);
     for (const c of ladder.divisions.nationalLeague) seenInNationalLeague.add(c);
     career = advanceSeason(standing, false).career;
   }
 
-  // All four original pool clubs should have had a real chance to be drawn
-  // UP into the National League over ten seasons of full turnover.
-  const everMovedUp = NATIONAL_LEAGUE_POOL_CLUBS.filter(c => seenInNationalLeague.has(c));
-  check(everMovedUp.length > 0,
-    `at least one of the original four pool clubs is drawn up into the National League over ten seasons (${everMovedUp.length}/4)`);
-  // And at least one National League club should have been relegated down
-  // into the pool over the same stretch.
-  const everMovedDown = seenInPool.size > NATIONAL_LEAGUE_POOL_CLUBS.filter(c => seenInPool.has(c)).length
-    || Array.from(seenInPool).some(c => !NATIONAL_LEAGUE_POOL_CLUBS.includes(c));
-  check(everMovedDown, "and at least one real National League club is relegated down into the pool over the same stretch");
-  check(seenInPool.size >= 4, `the pool draws from more than just its own four original members over time (${seenInPool.size} distinct clubs seen)`);
+  const everMovedUp = originalRegional.filter(c => seenInNationalLeague.has(c));
+  check(everMovedUp.length >= 4,
+    `North/South clubs are drawn up into the National League over ten seasons (${everMovedUp.length})`);
+  const everMovedDown = Array.from(seenInRegions).filter(c => !originalRegional.includes(c));
+  check(everMovedDown.length >= 4, `and National League clubs come down into the regions (${everMovedDown.length})`);
 }
 
 // ── A save from before these three tiers existed still works ───────────────
@@ -177,7 +178,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   const oldShaped = { ...career, divisions: { premier: [...PREMIER_LEAGUE_CLUBS], championship: [...CHAMPIONSHIP_CLUBS] } as any };
   const members = membershipOf(oldShaped);
   check(members.leagueOne.length === 24, `an old save's League One backfills to 24 fresh (${members.leagueOne.length})`);
-  check(members.nationalLeaguePool.length === 4, `and its pool backfills to 4 fresh (${members.nationalLeaguePool.length})`);
+  check(members.nationalLeagueNorth.length === 24 && members.nationalLeagueSouth.length === 24,
+    `and North/South backfill to 24 fresh (${members.nationalLeagueNorth.length} / ${members.nationalLeagueSouth.length})`);
 
   const out = resolveLadder(withStandings(oldShaped, [...CHAMPIONSHIP_CLUBS]), mulberry32(3));
   check(out.divisions.leagueOne.length === 24, "resolveLadder itself doesn't crash or corrupt on an old-shaped save");

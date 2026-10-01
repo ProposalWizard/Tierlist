@@ -78,6 +78,7 @@ function buildOffer(
 const MEMBERSHIP_KEY: Record<CareerDivision, keyof DivisionMembership | null> = {
   premier: "premier", championship: "championship", league_one: "leagueOne",
   league_two: "leagueTwo", national_league: "nationalLeague",
+  national_league_north: "nationalLeagueNorth", national_league_south: "nationalLeagueSouth",
 };
 
 export function generateRelegationOffers(career: CareerState, rng: () => number): TransferOffer[] {

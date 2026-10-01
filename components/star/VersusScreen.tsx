@@ -249,7 +249,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             substitutes bar and Kick Off's own margins are still trimmed
             from the earlier pass too. */}
         <div className="relative">
-          <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
+          <div className="sk-versus-pitch relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
             {/* Mown stripes as real alternating bands (not a near-invisible
                 0.025-opacity tint) plus a soft center-lit vignette, so the
                 grass itself reads as turf under floodlights rather than a
@@ -316,16 +316,30 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             need the whole kick off button available to click with nothing
             on top of it." `mt-6` clears the tab's actual bottom edge with a
             few pixels to spare and nothing more. */}
-        <PressButton
-          variant="primary"
-          size="none"
-          pulse
-          onClick={onKickOff}
-          className="relative mt-6 w-full overflow-hidden rounded-xl py-2.5 text-base font-black uppercase tracking-widest"
+        {/* Always on screen (Harry, 1 Oct 2026, 14:43: "the kickoff should
+            always be visible"): fixed to the bottom of the window while the
+            pitch scrolls under it (position: sticky is switched off on this
+            page by the global overflow-x rule, so it is fixed), so no phone size ever has to scroll for it.
+            Before: 138 px of scrolling on a 390x844 phone, 291 on a 375x667. */}
+        {/* Kept as a gap in the page so the pitch scrolls clear of the bar. */}
+        <div aria-hidden className="h-[76px]" />
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 pt-2"
+          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "linear-gradient(to top, #05070d 62%, rgba(5,7,13,0))" }}
         >
-          <Shine loop every={3.5} />
-          Kick Off
-        </PressButton>
+          <div className="mx-auto w-full max-w-md px-3">
+            <PressButton
+              variant="primary"
+              size="none"
+              pulse
+              onClick={onKickOff}
+              className="relative w-full overflow-hidden rounded-xl py-2.5 text-base font-black uppercase tracking-widest"
+            >
+              <Shine loop every={3.5} />
+              Kick Off
+            </PressButton>
+          </div>
+        </div>
       </div>
     </Screen>
   );

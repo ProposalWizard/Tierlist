@@ -24,7 +24,9 @@ import {
   ACCESSORIES_IN_MATCH_NOTE, type CareerStoreResult,
 } from "@/lib/star/store/career";
 
-export default function CareerStore({ career, onChange, onBack }: {
+export default function CareerStore({ career, onChange, onBack, hud }: {
+  /** The top HUD (ui/TopHud.tsx): energy never leaves. */
+  hud?: React.ReactNode;
   career: CareerState;
   /** The career after a purchase / equip. */
   onChange: (next: CareerState) => void;
@@ -51,6 +53,7 @@ export default function CareerStore({ career, onChange, onBack }: {
       now={now}
       glow={glow}
       back={{ onClick: onBack }}
+      hud={hud}
       hide={(item) => !shownInCareer(item, career)}
       packs={coinPacksAreTestMode() ? "test" : "soon"}
       accessoriesNote={ACCESSORIES_IN_MATCH_NOTE}

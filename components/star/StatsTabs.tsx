@@ -20,98 +20,63 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import DashboardStats from "./DashboardStats";
 import ClubBadge from "./ClubBadge";
-import { sortLeague } from "@/lib/star/season";
-import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
-import { ClubCard, StatBar, PressButton, RiseIn, useCountUp, rgba, useClubTheme } from "./ui";
-import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
+import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
+import { CardTitle } from "./screenKit";
 
-type Tab = "season" | "all" | "records";
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
   const y = c.player.startYear + s - 1;
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
-export default function StatsTabs({ career, onRenew, onOpen, onLeague }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void; onLeague?: () => void }) {
-  const [tab, setTab] = useState<Tab>("season");
-  const { glow } = useClubTheme(career);
-  return (
-    <div className="pb-2">
-      <SegTabs value={tab} onChange={setTab} tabs={[["season", "Season"], ["all", "All seasons"], ["records", "Records"]] as const} />
-      {tab === "season" && (
-        <div className="space-y-2">
-          <RiseIn onPageActive index={0}><LeagueCard career={career} onLeague={onLeague} glow={glow} /></RiseIn>
-          <RiseIn onPageActive index={1}><DashboardStats career={career} onRenew={onRenew} /></RiseIn>
-        </div>
-      )}
-      {tab === "all" && <RiseIn key="all"><AllSeasons career={career} glow={glow} /></RiseIn>}
-      {tab === "records" && <RiseIn key="records"><Records career={career} glow={glow} /></RiseIn>}
-      {tab === "records" && onOpen && (
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
-          <PressButton variant="secondary" size="none" onClick={() => onOpen("trophies")} className="rounded-xl py-2.5 text-[11px] font-black">🏆 Trophy cabinet →</PressButton>
-        </div>
-      )}
-    </div>
-  );
-}
+const VIEWS = [
+  { id: "season", label: "Season", icon: "📊" },
+  { id: "contract", label: "Contract", icon: "📝" },
+  { id: "status", label: "Status", icon: "🩺" },
+  { id: "all", label: "All seasons", icon: "🗓️" },
+  { id: "records", label: "Records", icon: "🏅" },
+] as const;
+type View = (typeof VIEWS)[number]["id"];
+let lastView: View = "season";
 
 /**
- * WHERE YOU ARE IN THE LEAGUE — Harry, 28 Sep 2026: League moves to the bottom
- * bar, "and then in the stats section keep league there". Your position and
- * points and the clubs either side of you, with the full table one tap away.
- * (Last 5 moved back to Home, under the next match.)
+ * THE STATS PAGE — one thin row, NSS-style (Harry, 1 Oct 2026, P46/P47/P96).
+ * It had three stacked tab rows (Stats · Home · Shop, Season · All seasons ·
+ * Records, Stats · Contract · Status): about 100px before any number showed.
+ * Now: just "‹ Season ›" to change the view (Season, Contract, Status, All
+ * seasons, Records). The League and Home arrows moved to the bottom edge with
+ * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
+ * has it, and the League screen has the full table.
  */
-function LeagueCard({ career, onLeague, glow }: { career: CareerState; onLeague?: () => void; glow: string }) {
-  const table = sortLeague(career.league);
-  const me = table.findIndex((t) => t.name === career.player.club);
-  if (me < 0) return null;
-  const from = Math.max(0, Math.min(me - 2, table.length - 5));
-  const rows = table.slice(from, from + 5);
-  const pos = me + 1;
-  const suffix = pos % 10 === 1 && pos !== 11 ? "st" : pos % 10 === 2 && pos !== 12 ? "nd" : pos % 10 === 3 && pos !== 13 ? "rd" : "th";
+export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void }) {
+  const [view, setViewState] = useState<View>(lastView);
+  const setView = (v: View) => { lastView = v; setViewState(v); };
+  const { glow } = useClubTheme(career);
+  const i = VIEWS.findIndex((v) => v.id === view);
+  const step = (d: number) => setView(VIEWS[(i + d + VIEWS.length) % VIEWS.length].id);
+  const here = VIEWS[i];
   return (
-    <ClubCard glow={glow} className="mt-2 p-2.5">
-      <div className="flex items-center justify-between">
-        <CardTitle>🏆 {leagueNameFor(divisionOf(career))}</CardTitle>
-        {onLeague && (
-          <PressButton variant="secondary" size="none" onClick={onLeague} className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Full table →</PressButton>
-        )}
+    <div className="pb-2">
+      <div data-stats-row className="mb-2 grid items-center">
+        <div className="flex min-w-0 items-center justify-center gap-1">
+          <button onClick={() => step(-1)} aria-label={`Previous view: ${VIEWS[(i + VIEWS.length - 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="left" size={14} /></button>
+          <div className="min-w-0 truncate text-center text-[13px] font-black uppercase tracking-wide text-white" style={{ minWidth: 72 }}><span className="mr-1">{here.icon}</span>{here.label}</div>
+          <button onClick={() => step(1)} aria-label={`Next view: ${VIEWS[(i + 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="right" size={14} /></button>
+        </div>
       </div>
-      <div className="mt-1.5 flex items-center gap-3">
-        <div className="relative shrink-0 px-1 text-center">
-          <div aria-hidden className="kib-glow-pulse absolute inset-0 rounded-full blur-lg" style={{ background: rgba(glow, 0.45) }} />
-          <div className="relative bg-gradient-to-b from-yellow-200 to-amber-500 bg-clip-text text-[34px] font-black leading-none tabular-nums text-transparent" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.6))" }}>
-            <PosCount value={pos} /><span className="text-[15px]">{suffix}</span>
+      <RiseIn key={view}>
+        {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}
+        {view === "all" && <AllSeasons career={career} glow={glow} />}
+        {view === "records" && <Records career={career} glow={glow} />}
+        {view === "records" && onOpen && (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
+            <PressButton variant="secondary" size="none" onClick={() => onOpen("trophies")} className="rounded-xl py-2.5 text-[11px] font-black">🏆 Trophy cabinet →</PressButton>
           </div>
-          <div className="relative mt-0.5 text-[10px] font-black tabular-nums text-white/80">{table[me].points} pts</div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-[2px]">
-          {rows.map((t, i) => {
-            const n = from + i + 1, you = t.name === career.player.club;
-            return (
-              <div
-                key={t.name}
-                className={`flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[11px] font-bold ${you ? "text-white" : "text-white/80"}`}
-                style={you ? youRowStyle(glow) : undefined}
-              >
-                <span className="w-4 text-right tabular-nums text-white/55">{n}</span>
-                <ClubBadge club={t.name} kit={kitsOf(t.name).home} size={14} />
-                <span className="min-w-0 flex-1 truncate">{short(t.name)}</span>
-                <span className="w-5 text-right tabular-nums text-white/55">{t.played}</span>
-                <span className={`w-6 text-right font-black tabular-nums ${you ? "text-yellow-200" : "text-white"}`}>{t.points}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </ClubCard>
+        )}
+      </RiseIn>
+    </div>
   );
-}
-
-/** The league position counting to its new value. */
-function PosCount({ value }: { value: number }) {
-  return <>{Math.round(useCountUp(value, 700))}</>;
 }
 
 function Card({ title, children, note, glow }: { title: string; children: React.ReactNode; note?: string; glow: string }) {

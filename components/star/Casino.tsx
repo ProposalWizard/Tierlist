@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
 import {
@@ -30,7 +30,12 @@ function useCasinoFx() {
 }
 type CasinoFx = ReturnType<typeof useCasinoFx>;
 
+/** The top HUD for every casino screen (v0.23, P86: energy never leaves). */
+const HudCtx = createContext<React.ReactNode>(null);
+
 interface Props {
+  /** The top HUD (ui/TopHud.tsx). */
+  hud?: React.ReactNode;
   bankStart: number;
   career: CareerState;
   onExit: (finalBank: number) => void;
@@ -97,7 +102,11 @@ function stepAtOrBelow(n: number): number {
 
 const BET_STORAGE_KEY = "star-casino-bet";
 
-export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
+export default function CasinoMenu(props: Props) {
+  return <HudCtx.Provider value={props.hud ?? null}><CasinoInner {...props} /></HudCtx.Provider>;
+}
+
+function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
@@ -192,8 +201,9 @@ const GAMES: { id: "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goa
 
 function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerState; onExit: () => void; onPick: (g: (typeof GAMES)[number]["id"]) => void }) {
   const { glow } = useClubTheme(career);
+  const hud = useContext(HudCtx);
   return (
-    <ScreenShell glow={glow} accent={GOLD} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
+    <ScreenShell glow={glow} accent={GOLD} hud={hud} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
       <div className="space-y-2.5">
         {GAMES.map((g, i) => (
           <RiseIn key={g.id} index={i} step={60}>
@@ -202,7 +212,7 @@ function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerSt
               onClick={() => onPick(g.id)}
               className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-4 py-4 text-left disabled:opacity-40"
               style={{
-                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97))`,
+                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97)))`,
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(g.color, 0.35)}, 0 12px 24px -14px ${rgba(g.color, 0.75)}`,
               }}
             >
@@ -248,6 +258,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children
 }) {
   // Float every change of the bank off it: "−★2k" as a stake goes down,
   // "+★4k" as winnings come in.
+  const hud = useContext(HudCtx);
   const prev = useRef(bank);
   const [delta, setDelta] = useState({ n: 0, text: "", up: false });
   useEffect(() => {
@@ -259,6 +270,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children
     <ScreenShell
       glow={FELT}
       accent={GOLD}
+      hud={hud}
       title={title}
       icon={icon}
       onBack={onExit}
@@ -277,7 +289,7 @@ function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChang
   return (
     <div
       className="mb-3 flex items-center gap-2 rounded-2xl px-3 py-2"
-      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
+      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
     >
       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/80">Your bet</span>
       <div className="ml-auto flex items-center gap-2">
@@ -638,7 +650,7 @@ function HorseRacingGame(props: HorseRacingProps) {
               </>
             ) : (
               <>
-                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
+                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="text-5xl">🐎</div>
                     <div className="flex-1 min-w-0">
@@ -798,7 +810,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           </div>
         )}
 
-        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
+        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
           {book.map(entry => (
             <button
               key={entry.name}

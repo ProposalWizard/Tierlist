@@ -15,7 +15,8 @@ const base = makeInitialCareer({
   firstName: "Test", lastName: "Player", age: 18, skinTone: "light",
   club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
 } as never, ["Arsenal", "Chelsea"]);
-const neutral: CareerState = { ...base, manager: undefined, energy: 100 };
+// Manager at 60, the start these were built against (new careers start at 50 since 1 Oct 2026).
+const neutral: CareerState = { ...base, manager: undefined, energy: 100, relationships: { ...base.relationships, boss: 60 } };
 
 // Boss moves the way matchStats.ts moves it: under 5.0 is -5, under 6 is -2, 7+ is +3.
 const bossFor = (r: number) => (r >= 8 ? 6 : r >= 7 ? 3 : r >= 6 ? 1 : r >= 5 ? -2 : -5);

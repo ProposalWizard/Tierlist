@@ -45,6 +45,10 @@ export const MODE_INVOLVEMENT: Record<EnergyMode, number> = {
  *  From the plan's full-match Medium costs: NL 28 · L2 30 · L1 32 ·
  *  Champ 34 · PL 36 · Europa 38 · Champions League / Super Cup 40. */
 export const DIVISION_ENERGY_FACTOR: Record<CareerDivision, number> = {
+  // North and South weren't in the plan; a step below the National League,
+  // the same 2-point step every other rung takes.
+  national_league_north: 26 / 36,
+  national_league_south: 26 / 36,
   national_league: 28 / 36,
   league_two: 30 / 36,
   league_one: 32 / 36,
@@ -66,6 +70,8 @@ export function clubDivision(career: Pick<CareerState, "divisions" | "division" 
   if (d.leagueOne?.includes(club)) return "league_one";
   if (d.leagueTwo?.includes(club)) return "league_two";
   if (d.nationalLeague?.includes(club)) return "national_league";
+  if (d.nationalLeagueNorth?.includes(club)) return "national_league_north";
+  if (d.nationalLeagueSouth?.includes(club)) return "national_league_south";
   return null;
 }
 

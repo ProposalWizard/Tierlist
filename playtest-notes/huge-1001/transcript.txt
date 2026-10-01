@@ -1,0 +1,537 @@
+[00:00] Okay, this is again big, big updates.
+[00:06] I'm gonna go through all of the artifacts from V20 and V21.
+[00:14] I'm gonna give full feedback and I'm also gonna compare that to stuff on the actual
+[00:29] about.
+[01:13] Okay, so that's ready. Okay, let's go through the changes of everything. Okay. First of
+[01:26] I would say there's simpler stuff that sometimes does not need a video. For example, like here.
+[01:37] Actually, this is pretty cool. This is pretty cool. I would say a few things. What would I say?
+[01:46] This is the after. Squad.
+[01:52] Straight away, just tracking my mouse movements here as well.
+[01:56] Penalties, palm, this doesn't need to be there, it doesn't need to be said.
+[02:00] So let's just remove that.
+[02:09] Again, I don't think these hidden numbers, just don't think they need to be shown.
+[02:20] I think we need to be explaining stuff past an original tutorial.
+[02:29] Just the star rating bar is good enough I think. Plus like your chance breakdown
+[02:35] whatever. Again here, star rating should have, I'm actually gonna try and
+[02:44] get new stars so I'll go up.
+[02:49] It's still webapp.
+[03:04] Bear with me for a sec, don't necessarily take this into account.
+[03:11] Breaking news, two good to go users are saving great food for half price or less. Reports
+[03:17] are coming in from bakeries, restaurants and supermarkets and all that good food
+[03:23] it's being saved from going to waste as the news spreads good food gets saved quickly
+[03:31] well the secret's definitely out
+[03:48] Okay.
+[03:58] So this is where you can see an idea of the tutorial, how NSS does it.
+[04:04] Because I think that we should be trying to,
+[04:12] we should be trying to copy exactly almost how they do it.
+[04:17] I think first thing I'm realizing straight away is the ball is way smaller, feels a lot lighter.
+[04:24] It's telling them where to aim, where to touch on the ball.
+[04:28] The little pointer is like a little hand. Wind comes in with the rain.
+[04:36] But essentially what I really want to show you is this tutorial.
+[04:40] You see how it points to stuff.
+[04:45] Firstly that just feels so good.
+[04:47] Hold on actually.
+[04:50] I can mute this, bro.
+[04:59] I'll come back to that in a sec,
+[05:01] because there's other stuff to look through.
+[05:03] But essentially what I was trying to show is
+[05:04] the tutorial thing that pops up,
+[05:06] that's what should pop up.
+[05:08] Not this whole star rating thing.
+[05:11] It should literally just pop up and point to it
+[05:12] The star rating is how your
+[05:19] It's a mix of your skills your experience and your fame or your reputation and
+[05:27] Then obviously explain maybe take them to the star pass once that is the thing
+[05:35] I'm not really sure about the gate stuff. I
+[05:42] I think if you're gonna do that, when they click in,
+[05:45] it should be like a scrolling kind of calendar
+[05:49] looking thing where they can scroll left
+[05:51] and it will take them across level one, level two,
+[05:54] level three, level four, level five,
+[05:56] what that unlocks for them, et cetera.
+[06:02] This isn't that bad.
+[06:03] I think this is pretty cool.
+[06:04] This again is just like never needed.
+[06:07] Your career so far out of 100, it never goes down.
+[06:10] Not needed.
+[06:14] Again, when I'm asking what is the star rating for, I was actually just asking you.
+[06:19] Again, never mention 1 to 100.
+[06:22] Everything you do on and off the pitch at star points, it never, again, never goes
+[06:26] down.
+[06:26] We're not sure about that because I think you can be able to go down a little bit.
+[06:31] If you're having poor performances, eventually maybe you can even go down a whole level.
+[06:36] Again, we're never going to say to the user, the star pass coming next will be built
+[06:39] on it.
+[06:40] Nah.
+[06:41] if people really want to see a breakdown of their star points that's cool that
+[06:45] can be on like a star pass section that is locked to start with until
+[06:50] they've gone through the tutorial
+[07:06] Um...
+[07:08] For the trial, I think...
+[07:14] I like the idea from N.S.S.
+[07:18] Oh
+[07:18] You can actually just see the difference
+[07:23] Look how much like that are
+[07:26] There one looks I don't know something about the texture the size of the box
+[07:34] Camera angle how small the ball is
+[07:39] Something about it just does look better. Do you never see your guy?
+[07:51] Even this, that's a nice little screen and you see what I mean with the pitch in the
+[07:57] background now.
+[07:59] You got like, Harry.
+[08:08] Simple, not overdone on the UI but fills the whole screen.
+[08:15] continent nation.
+[08:21] Obviously it's laggy because it's like an online port of the game.
+[08:31] You must undergo a football trial. The first trial was technique. This skill determines how much you can bend and dip the ball.
+[08:39] So even hear that sound of this, but if you can.
+[08:42] See how the gates are taller on that.
+[08:44] Then you're shot to score a goal.
+[08:46] So this is straight up just one thing per thing.
+[08:52] The ball feels like heavier at the start.
+[08:56] Beat the keeper.
+[08:57] Even the goalie doesn't just like,
+[08:58] he's not just sat on a line.
+[09:00] It's almost like we're looking down onto him.
+[09:03] And again, I think this is a really good mode.
+[09:05] I think this is cool.
+[09:09] The last trial is vision.
+[09:11] I think we basically just,
+[09:14] just try and make everything closer.
+[09:16] Look at that achievement pops up.
+[09:18] Amazing, you've impressed.
+[09:19] I think we can make this look a bit better,
+[09:20] but I think even that animation,
+[09:23] this like a breaking news article kind of thing,
+[09:27] the help button, that's good.
+[09:31] To see how this is just so simple,
+[09:36] Then you have your stats over here.
+[09:39] Chain view.
+[09:45] It's simplified.
+[09:46] Everything is simplified.
+[09:50] Do you see what I mean with the icons?
+[09:52] Real pictures.
+[09:59] So I don't want it to be exactly like everything I'm saying.
+[10:02] What I did want to see though was, do you see?
+[10:11] So you see your guy here, this is cool.
+[10:15] I just much prefer how the guys made, like the little models there.
+[10:19] Ah okay, so you don't actually see your guy and I actually think that's good.
+[10:32] Sound effects are good.
+[10:34] See how these are look...
+[10:34] Oh, okay.
+[10:37] You can see the effect of the energy and then you're going to see the star rating
+[10:40] thing at the end of this game as well.
+[10:45] See the rolling of the ball, the way the ball dips.
+[10:55] It's interesting to see how little amount of attackers there are, how the scenarios look, how the ball bounces off people.
+[11:10] How far out I am but there's no way I can score this at this level. Look I can't even
+[11:15] get halfway to the goal but it bounced and then it hit off the bar. Then after this
+[11:20] this is like a post match. Mm, M10 football, bounce back Billy. Mm, M10 football, bounce
+[11:28] back Billy. And then you see the star rating goes up but it doesn't say plus 100 points.
+[11:33] Then your match stats, your match rating, and what does that do for your relationships?
+[11:39] Your wage and your bonus and your cash, the sound effects.
+[11:43] This is all satisfying after a game.
+[11:46] This is satisfying.
+[11:47] This makes them want to climb their rank.
+[11:50] It looks clean.
+[11:52] You get a bunch of dopamine achievements straight away and you can't press next until
+[11:56] you've seen all your achievements.
+[12:03] I also got into the game so quick.
+[12:06] There you go, a little football news.
+[12:08] So wait, the same way that we would have our social media,
+[12:10] maybe we just have like a news article
+[12:12] every single time as well.
+[12:15] Not spoon fed too much, I guess.
+[12:18] You can see the price of the energy.
+[12:21] Maybe...
+[12:26] It's just, there's a lot going on there.
+[12:30] I guess in the drills and the training, just take elements of what I just showed you.
+[12:38] You know, I think let's remove the guy.
+[12:42] On penalties, I like our guy being there and maybe free kick.
+[12:45] Set pieces, fine.
+[12:47] But maybe outside of that we just don't have him.
+[12:51] Technique drill, you saw what I saw with the thing and just like the pitch doesn't need
+[12:56] to have the box in it at all times.
+[13:00] I like Find the Pass as well to be honest so I think Find the Pass could stay as
+[13:04] a fifth drill.
+[13:07] And then the Pen Shoot Out I think it should just be like Try a List not an S
+[13:11] to the end you take. If anything we should just we should do a full pen
+[13:15] shootout where it rigs the game so it always has you having to score the
+[13:22] winning pen and that's how it should end. So maybe the other ones are all
+[13:27] one one attempt it's just a tutorial on how to play the game and then you
+[13:32] get a pen shootout to really like enjoy that. These again like that looks
+[13:40] so much worse. I think it's because it's not an app, but I don't really like the dark UI. I like
+[13:47] the pitch and the white and the basic. The animations and the feel of it are good,
+[13:54] but I think we need to use a bit of the basics.
+[14:05] This is too long isn't it?
+[14:10] It's too long.
+[14:22] Yeah, the pen shoot out should be quite quick and then coming up to your pen.
+[14:32] Again this whole no contract thing, don't even, don't put this in the game right
+[14:36] now and you don't get a trial rating, you just get scouted.
+[14:40] That's it, like a scout has spotted you. That's it. It doesn't have to be complicated.
+[14:51] I think try a list first. Try a list versus academy.
+[14:57] I don't know if we're going to do more than one kick right now, but if we do, yes.
+[15:05] Sure, bad luck events are funny.
+[15:09] Yeah, do up to three on the shoot out, that'd be better.
+[15:15] Again, this just looks like a bit much right now
+[15:19] in my brain.
+[15:20] I can't put my finger on what it is, but
+[15:26] something about it just don't feel right.
+[15:29] Even this section like,
+[15:33] here, life, lifestyle.
+[15:36] Items, vehicles, properties.
+[15:41] And
+[15:42] Just looks better. I look at this. I don't mind what we got going on. This is cool
+[15:47] I don't think this is not this is that bad
+[15:50] But it's like how much of the screen as well is being taken taken up by this
+[15:55] Look at that. So that first
+[15:58] 40% of the screen
+[16:00] Here is just that and then the rest of it is actually the game
+[16:04] So obviously we can't take into account this stuff that that shouldn't even be which you should be doing this in full screen
+[16:09] The style doesn't need to be there and back doesn't need to be there. That should always be at the bottom because your bottom
+[16:16] Your bottom should always kind of have everything on there. That's why I think the UI looks a bit weird at times
+[16:28] Because you're hot you always have a home button and then instead of swiping left and right when you're in a certain page
+[16:33] You get you get loads of stuff help
+[16:37] See that? That's how we do tutorials. You pop them up as they're in something. We don't
+[16:44] necessarily force it. Again I've already spoken about this. This is it. This is
+[16:54] good but just look at the illustrations. They're not very good are they?
+[17:06] I just don't know about this.
+[17:08] I just don't know about it.
+[17:10] These are better.
+[17:11] Oh the boots are starting to look a little better
+[17:29] And a sponsorship thing pops up nice that's pretty cool
+[18:01] I
+[18:03] Don't know what's going on here
+[18:05] stats home shop season all seasons record stats contract status I
+[18:10] I mean that
+[18:13] That is bloated if you ask me
+[18:17] That is very blood
+[18:20] This that's home shop thing
+[18:23] Just isn't really needed. Maybe maybe that's what I'm coming to the conclusion of
+[18:28] Look at this
+[18:30] the how much real estate
+[18:33] Stats sponsors all of these swipes they take up a little bit of real estate
+[18:39] This takes up 20% or like 10% of the length of our screen.
+[18:44] Whereas it could just be a little arrow here with an image,
+[18:48] arrow here, image, the little word.
+[18:51] And then you wouldn't have any of that.
+[18:53] You could just have like a change view option,
+[18:56] season, all seasons, records.
+[18:59] Okay, yeah, we have stats.
+[19:01] We have two separate things on one page.
+[19:03] So it makes sense.
+[19:03] Why don't we just have another arrow
+[19:05] to go to the next thing, which will then be the league.
+[19:09] It's interesting to see what a working product looks like.
+[19:13] This did not see this. This is pretty cool.
+[19:18] Cubs come in for you.
+[19:23] That's cool animation.
+[19:27] But these guys, I mean.
+[19:32] Let's stop with the real faces, unless it's your guy.
+[19:37] That's just a real face put onto a 3D avatar. That could look a lot better.
+[19:42] If it's going to be Keith Andrews as well, that's not Keith Andrews.
+[19:47] That doesn't make sense.
+[19:53] Instead of the newspaper page, which I see what Mikey was going for,
+[19:57] we can have that breaking news article of youngsters signs for Brentford or whatever,
+[20:03] And he's looking to take charge of the league
+[20:09] This is cool, this is really cool
+[20:13] Again session 30 energy 3 to pack stop it stop this everywhere
+[20:20] Well, let's see this
+[20:26] That's cool, that's really cool that's how exactly how it should look in the dribbling mode is like this
+[20:34] Really good, really good. So we can add that to the home screen and this section now.
+[20:43] I mean that's just so horrendously broken.
+[20:58] Interesting. Okay, good to see.
+[21:07] If I connect 11 labs, could you then start generating sound effects and put them into
+[21:14] the game?
+[21:16] I might be able to do that.
+[21:18] It's not my 11 labs, that's the only thing.
+[21:21] So an MCP.
+[21:39] I mean I can potentially get you an API key for 11Labs so let me know if that would help.
+[21:54] I
+[21:55] Don't know if we want to have our guy, but I do know is the NSS look of their guys is
+[22:02] So much better
+[22:05] Like that guy looks so much better
+[22:08] That compared to that, it's 3D looking but it's still like 2 bit, it's interesting.
+[22:21] Oh rendered, oh damn you have done it.
+[22:26] That's so much better, oh my god that's so much better, well done, well done.
+[22:33] Okay, okay. Yes, yes. Now we just need to figure out how to get it across on the screen.
+[22:43] No, no, no.
+[22:50] What do you mean after this?
+[22:53] What are you doing? Do them all like this. This is unbelievable.
+[23:00] What the hell? These are incredible. You have to do this.
+[23:03] Don't do an in-between don't
+[23:11] I don't know. I don't know but that looks incredible. That's all I'm gonna say. Oh my god the walk around shop
+[23:20] You can actually do this in game are you telling me you can play as this guy how I
+[23:28] Thought we couldn't do blender in game
+[23:31] That is un- if you can get the textures right on that, that is unreal because we can have
+[23:37] a garden built like that, we can have a house built like that.
+[23:41] Oh my god, push that as a side thing, that is unreal.
+[23:49] Okay, I think that's probably- and again, just- if that's possible, then use that
+[23:59] for the manager signing.
+[24:02] If you can flip and do that walk around, yeah, yeah.
+[24:05] Use that from the manager signing.
+[24:06] Okay, moving on to the UI and home,
+[24:09] which I think is even more important.
+[24:15] New player sits on the bench about half the clubs.
+[24:19] For me, in my opinion, from the trial,
+[24:23] from now on, as just a starting point,
+[24:26] First of all, we need to add the non-league clubs.
+[24:29] So non-league south and north need to become playable.
+[24:32] That's a final decision for me.
+[25:16] Okay sorry, new player sits on the bench at about half the clubs.
+[25:21] 9 or 20 in Premier League, 12 or 24.
+[25:24] Yeah, like I was gonna say, from now on, from the trial, it's not a trial score.
+[25:29] They just get scouted randomly.
+[25:31] If they win the penalty shootout, like if they score that final pen, maybe they have
+[25:36] a better chance of being in the National League rather than the non-league south
+[25:39] or north.
+[25:43] Forget like existing careers, no tutorial.
+[25:48] Existing careers don't matter.
+[25:49] It's not like we have a player base who are there losing important stuff. It's just us so I don't care about that
+[25:57] The pitch doesn't need to be the default look but we can try and figure out a way to make the game
+[26:03] Like look at the background here. It's just so much like
+[26:07] cleaner in a way
+[26:09] But I know I want to have our own spins
+[26:11] I don't want you to just look at an SS and just do exactly what it is
+[26:14] But you see what the difference is between that and ours
+[26:20] I like the idea of unlocking stuff, but I think the way that they did their
+[26:25] tutorial stuff was better than ours. We could have a tutorial section on the
+[26:28] home screen as well. Again, the sponsors we just spoke about like being
+[26:34] a little arrow in the bottom right instead potentially. I'm just gonna go
+[26:42] through it through the images instead. Again, this is what I mean.
+[26:47] instead of saying this is home as a pop-up, just pop it up how it does here.
+[26:58] So when I'm on the home page, it starts popping stuff up, telling you what everything is.
+[27:03] See what I mean? And it's like an ordered thing. So look, it's going to keep going through
+[27:09] and tell you everything in the game. And it just keeps rotating. So I think what we do is
+[27:17] We don't pop up, this is the home screen.
+[27:20] We just pop up like home, your player,
+[27:24] like those types of pop ups.
+[27:26] And then we say go to training.
+[27:27] And then they have to press go to training.
+[27:33] Okay.
+[27:36] Do your two, yeah you do your two things.
+[27:41] Again, same again, instead of this pop up,
+[27:44] make it a different, like the actual pop ups.
+[27:47] the boss meeting, I think minus eight is too much
+[27:50] when you fail here, maybe like a minus four.
+[27:57] Again, could we make this like a 3D blender?
+[28:00] Can we make this better?
+[28:03] The buying the phone should be like quite a big thing.
+[28:08] So maybe you have to play a game first
+[28:10] and then come back.
+[28:13] You unlock the shop.
+[28:16] Sure. The phone and the app store, I think this is really good, but the app store should,
+[28:21] again, this should have tutorials like pop-ups. The app store should be like paying to get
+[28:27] these apps. These are essentially shortcuts for the player. So I think it should be like
+[28:33] quite a bit of money to get those.
+[28:38] With the UI, I think, I don't know if this is better than the previous. I like this
+[28:46] stuff 12 rating. I don't know about PK, FK being there. I think 19 should be like,
+[28:54] not over the floodlight. I don't like how the whole background is like gray and
+[29:02] and also I don't like the floating pill effect
+[29:04] of everything.
+[29:07] Ah, I just got rid of these.
+[29:12] Okay, well we're not looking at that.
+[29:17] I don't like the floating pill effect
+[29:18] of everything on the site.
+[29:21] Like when, see this looks better on the PC.
+[29:24] That's what I was going off of.
+[29:26] This is on the phone.
+[29:27] On the phone, it looks so much worse.
+[29:30] It needs to just be like he's on a football pitch.
+[29:35] You can see the goal in the background maybe
+[29:38] and it's flesh.
+[29:39] It's like a transit, it's like a fade
+[29:41] rather than a pill, a 3D pill on top.
+[29:45] And then obviously the energy can thing here
+[29:48] I think is good, but I think we can take the
+[29:53] Man United vs Chelsea, first you put it underneath,
+[29:55] but I think we can make it basically
+[29:57] what it was before, next fixture.
+[30:00] It's got space now because of this energy use.
+[30:03] And then when the use isn't there,
+[30:06] or maybe just have a use and a buy,
+[30:07] but when the use isn't there,
+[30:08] change it to a buy, potentially.
+[30:12] And then add being able to spin your guy now
+[30:14] and maybe tap on him
+[30:15] and he does different little celebrations.
+[30:20] I think this is good.
+[30:21] I think it is good.
+[30:23] It's an improvement.
+[30:24] I don't know about PK, FK.
+[30:26] I just don't think it needs to be said.
+[30:28] I think at one point your manager will come up to you have a conversation with you and say I'm making you depend on your cake
+[30:34] Faker and then you'll just know that that doesn't need to be said the bar is more important
+[30:38] Then it does worry me that you've got an energy bar and then you've got
+[30:45] You've got energy bar and then you've got a progress bar there
+[30:50] Where did they show the energy?
+[30:52] EDF smart charging
+[30:54] Ignore this, ignore this, ignore this, ignore this.
+[30:57] It automatically charges when electricity is at its cheapest and less carbon intensive.
+[31:01] Those cheaper rates...
+[31:06] EDF smart charging is another one of those little things that makes life easier.
+[31:11] It automatically charges when electricity is at its cheapest and less carbon intensive.
+[31:15] Those cheaper rates also apply to your home electricity too.
+[31:19] Ignore.
+[31:21] Oh, skip.
+[31:25] Okay, where is it shown?
+[31:27] Where is the fitness shown?
+[31:35] That home screen, by the way, that's kind of what I had in mind is like, okay, first
+[31:41] of all, energy and star rating at the top.
+[31:44] You see this?
+[31:45] that this whole thing at the top, this pill here,
+[31:52] I think that's potentially what we're missing.
+[31:56] Like where this is here for us,
+[31:59] we could get rid of so much crap.
+[32:02] Energy, star rating.
+[32:05] I don't mind the star rating being here instead,
+[32:09] but it's not that clear.
+[32:12] So maybe if it looked more like this,
+[32:15] a square with a proper progress bar here.
+[32:18] But energy, so you've got money on the right,
+[32:21] and then maybe, or like maybe you've got money,
+[32:24] money, age, energy, reputation maybe,
+[32:31] or like fame, and then you've just,
+[32:35] you can get rid of energy here.
+[32:37] You can put the can next to the energy up here,
+[32:41] and then that would just organize the page
+[32:43] a little bit nicer.
+[32:48] So we can play our card.
+[32:52] Cool.
+[32:53] And yeah, what I was gonna say is like the home screen.
+[32:57] I like this, like this whole pitch with the football,
+[33:02] new, the name of it, like the background's like a net.
+[33:06] Our guy should be standing like here then on the left.
+[33:11] Obviously available on this, that wouldn't be in the app
+[33:14] but we can make this smaller as well.
+[33:16] Okay, more, more, more, more.
+[33:19] Yeah, fine.
+[33:21] Money chip on every page is an improvement.
+[33:25] I don't know about the 3D, 2D move.
+[33:28] I think it probably is, but we should definitely say,
+[33:31] we should definitely push them into the settings
+[33:33] and show them what those are.
+[33:35] Also, I don't think the penalty run-up and 3-kick run-up should be in your settings.
+[33:39] It should probably be in like a style,
+[33:41] like a play style section.
+[33:48] I don't mind the sponsors popping up when you get a new sponsor.
+[33:52] That's pretty cool.
+[33:56] Okay, here's a big change.
+[33:58] We don't want any of this text on the relations page.
+[34:02] None.
+[34:03] None.
+[34:04] And the progress bars, I think where we're missing out is having them small lines like
+[34:09] this we should have them squares with very clear maybe even animated like
+[34:13] progress this stuff not none of this text is needed all that's needed is
+[34:18] those help pop-ups one time and then maybe like a little question mark pop
+[34:24] up somewhere where you can just click if they're confused don't need any of
+[34:41] Life. Look at the relationships.
+[34:45] Your happiness. Happiness. Maybe happiness goes.
+[34:49] Oh and the pills at the top change based on what screen you're in.
+[34:54] So that's kind of like your HUD.
+[34:56] See star rating on the home screen.
+[35:00] Interesting. In the skills stream, is it any different?
+[35:06] Skills, like your overall skill rating, but your energy never leaves. In the league area,
+[35:13] you then get none of that top bit and you can look through the leagues, you can look
+[35:16] through every league table. Also, I prefer this league system. I don't like the floating
+[35:23] pills, that's what I'm realising. But as I was saying with the relationships, good
+[35:32] for the team means you'll get more chances during the map. Stuff like that. That looks
+[35:36] way better. Even here, why are these pills floating? That's so AI. No. No. Instead of
+[35:46] the closed phone button being there, could we have that be more creative? More like
+[35:52] an actual phone, potentially? The red dot should only go when you actually have no
+[35:59] notifications or you've read them. This page now is super empty. Again, do we just
+[36:08] like at no point does it do this and you see how the girlfriend and sponsors
+[36:17] are just blacked out. It's just blacked out, you don't have to, you don't have any
+[36:20] at the moment. So it's a pre-match for them, you get your match kits, you've got
+[36:27] your fixtures so we could do this fixture page with the league and you
+[36:32] have a bell like maybe in the middle somewhere the bell to see if you want
+[36:37] to get notifications straight in no yeah no yap at all
+[36:43] whereas we've got just like information overload energy sharpness
+[36:48] you can see all that before you go in the game you can see that before
+[36:52] you go in the game so maybe if they're low on energy as they go to
+[36:56] press play we prompt them. But this, this whole... the only thing I would say is maybe
+[37:03] like a pre-match animation where it shows the line up and then you just click and you're
+[37:08] in the game. That's probably the most I would say we need now. And the other thing
+[37:14] I was thinking is when it's in the training or drills or match we definitely use the
+[37:19] pitch kind of UI. I think I'll be a lot better. But all of this, I think, yeah, overdone.
+[37:29] Like this, this page is alright, but remember they've already pressed play to get into
+[37:35] the game. So for me, I don't know. I think at least once they press play, put them
+[37:40] into the actual match screen and then have this pop up if we're gonna do that.
+[37:49] I also don't know about this and this is the pitch screen that should definitely be
+[37:54] more like pitch related definitely. Also I would reverse these instead of
+[38:05] red yellow green I would do green yellow red red being the most intensive
+[38:10] small thing but yeah again we already spoke on this what the hell is going on
+[38:14] here I think the league stuff has to get removed from this page and be moved
+[38:18] over to either another page or we just keep it in the league area but
+[38:23] that UI is pretty cool we could just have that on the home screen even
+[38:28] underneath like the next game because I think it is cool but we've
+[38:32] already discussed what should happen here maybe that should just literally be
+[38:36] the full page and scroll waiting and it's not a pill.
+[38:41] That probably makes more sense.
+[38:47] Instead of the My Staff, let's have the 3D area
+[38:50] like we did in the, like that thing that you made,
+[38:53] but make it as like your home.
+[38:55] So you can see like you have your garage
+[38:57] and your home maybe at the bottom.
+[39:00] Yeah.
+[39:09] Yeah, maybe make this minus four instead on the boss meeting.
+[39:17] Premium Leak Cans also.
+[39:21] So we spoke about the whole tutorial thing, I think.
+[39:25] It's a good idea, but it definitely needs work.
+[39:31] And I'm really intrigued about changing the way the game actually looks now.
+[39:36] I think that's going to be important and even like the heaviness of the ball.
+[39:41] Even this just looks like a website. I think we're building it like a website when it is an app
+[39:45] and it looks good on the site, but it doesn't look good on the app, I guess.
+[39:53] I like this flow. I like the flow so far.
+[39:58] Style locked except the phone. So maybe then the phone should just like flash and
+[40:03] it should give back a little pop up of what the phone actually is.
+[40:07] Again, change.
+[40:09] To be honest, I don't think the phone needs five levels.
+[40:12] That's just me.
+[40:14] I think the phone should be there as the first style unlock.
+[40:17] It's the first thing you have to buy.
+[40:19] And it's like 800.
+[40:21] And it's just like an iPhone.
+[40:22] Don't call it iPhone, but everyone will know what that is.
+[40:26] Then maybe it does last two seasons and then you need a new one.
+[40:28] I don't think we need five levels there, personally,
+[40:31] because it's like a utility item.
+[40:32] This is something that's going to add to your game.
+[40:34] So then we can say to earn coins,
+[40:37] go ahead and play your first game.
+[40:39] So the tutorial doesn't drag on, drag on, drag on.
+[40:41] You just get to know the UI.
+[40:44] Then when you unlock the phone,
+[40:45] you obviously get this, and I already said about that.
+[40:49] The pitch looked like I said,
+[40:50] this first of all, this font,
+[40:53] so much better than this font.
+[40:55] So use this font across everything I would say.
+[40:58] I much prefer that font even for this text.
+[41:03] Like obviously I've already discussed so many UI changes.
+[41:07] So much better, so much better.
+[41:09] So use that font.
+[41:11] I personally like the green pill,
+[41:13] but it needs to blend.
+[41:14] Like you can't just have this floating blob
+[41:15] on top of that.
+[41:17] So I think it's the right idea,
+[41:20] but it's just not perfect yet.
+[41:22] Again here, like I don't necessarily think this is ideal,
+[41:26] but it's okay for now. And the training I think looks pretty good like that, that
+[41:34] looks pretty good. Again I think we should have square progress bars. This
+[41:44] is cool but like obviously it's kind of overlapping two pitches on each
+[41:48] other so that could be a bit confusing. For now yeah let's have it
+[41:54] be a look but we'll keep updating the pitch look. Alright that is an absolutely
+[42:01] humongous update I think the gameplay stuff as well is gonna be super
+[42:06] difficult to get right so what I would say is make all of this into the
+[42:12] patch notes of the 0.22 do everything else first from top to
+[42:18] bottom that will be one push because I just want to get that pushed so other
+[42:24] people can see it make notes on it. At the bottom of the whole 22 talk about
+[42:30] the gameplay look changes because that's gonna be a whole project I guess
+[42:35] to make the gameplay look how I was just showing you in LSS is gonna be
+[42:38] difficult and I can continue working on that while we push the other
+[42:42] changes so either make it into its whole own artifact like completely
+[42:46] fixing how the gameplay looks, feels, everything like that. Like the actual
+[42:53] look of it, not the features because when I've said like trial and drills
+[42:57] need to change etc. Still do that in the VO22 but the actual look and feel
+[43:02] of the engine and the game that goes into a different one. Okay, that's
+[43:10] everything. It's a 43 minute video so it's gonna be a long one but I expect
+[43:16] an absolute perfect patch notes, fully tested and yeah get back to me.

@@ -24,6 +24,7 @@ check(can("premium").effect === "curve", "Premium gives the curve");
 check(can("elite").effect === "extraTouch", "Elite gives the extra touch");
 check(kibCanEffectLabel(can("basic")) === "+65 energy", "Basic is labelled +65 energy");
 check(/Swerve/.test(kibCanEffectLabel(can("premium"))) && /Touch/.test(kibCanEffectLabel(can("elite"))), "the boot cans say which boots");
+check(can("premium").restore === 30 && can("elite").restore === 40, "Premium +30 and Elite +40 energy on top (1 Oct 2026, P5)");
 
 const player = { firstName: "T", lastName: "P", age: 22, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;

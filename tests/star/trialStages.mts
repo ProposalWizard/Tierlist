@@ -44,12 +44,20 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 // ── Every stage gives you a real number of attempts ─────────────────────
 {
+  // v0.23: every drill is ONE attempt ("it's just a tutorial on how to play the
+  // game") and the shootout is three kicks each. The rungs above one are still
+  // built and still tested below — they are what an old save and the ladder
+  // maths read — but nothing plays them any more.
   for (const [stage, n] of Object.entries(REPS)) {
-    check(n >= 3 && n <= 8, `${stage} should be a few attempts, not one and not an evening (${n})`);
+    check(n >= 1 && n <= 8, `${stage} should be between one attempt and a few (${n})`);
   }
+  for (const s of ["freeKicks", "technique", "dribbling", "vision"] as const) {
+    check(REPS[s] === 1, `${s} is one attempt (Harry, v0.23): ${REPS[s]}`);
+  }
+  check(REPS.shootout === 3, `the shootout is up to three kicks each: ${REPS.shootout}`);
   check(
-    Object.keys(REPS).length === TRIAL_STAGES.length - 1,
-    "every stage but the five-a-side has a rep count",
+    TRIAL_STAGES.every(s => s in REPS),
+    "every stage the trial plays has a rep count",
   );
 }
 
@@ -189,8 +197,8 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     const a = startTrial(seed);
     const b = resume(a);
     trials++;
-    const answersA = Array.from({ length: REPS.vision }, (_, r) => visionSetup(a, r).correct).join(",");
-    const answersB = Array.from({ length: REPS.vision }, (_, r) => visionSetup(b, r).correct).join(",");
+    const answersA = Array.from({ length: Math.max(REPS.vision, 6) }, (_, r) => visionSetup(a, r).correct).join(",");
+    const answersB = Array.from({ length: Math.max(REPS.vision, 6) }, (_, r) => visionSetup(b, r).correct).join(",");
     if (answersA !== answersB) visionDiffered++;
     const leansA = Array.from({ length: REPS.penalties }, (_, r) => Math.sign(penaltySetup(a, r).keeperLean)).join(",");
     const leansB = Array.from({ length: REPS.penalties }, (_, r) => Math.sign(penaltySetup(b, r).keeperLean)).join(",");

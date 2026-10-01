@@ -23,7 +23,7 @@ import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode }
 import { separateBodies } from "@/lib/star/spacing";
 import { newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { finishServedFrame } from "@/lib/star/goalFrame";
-import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, FOUL_SHARE } from "@/lib/star/pressure";
+import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, pressFromBehind, foulShareFor, pressStep } from "@/lib/star/pressure";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -96,7 +96,7 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { useFitWidth } from "./useFitWidth";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
-import { creditChance, type CreditDelta } from "@/lib/star/credit";
+import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { matchTeamStrength } from "@/lib/star/matchday";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
@@ -1098,6 +1098,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** v0.15 item 16: blocks deflected this strike (one per strike; the next
    *  defender to get to it wins it, as today). */
   const deflectionsRef = useRef(0);
+  /** Every team-mate lay-off and shot since your strike, in order — who the
+   *  assist belongs to (lib/star/credit.ts assistFor). Reset at each strike. */
+  const matePlaysRef = useRef<MatePlay[]>([]);
   /**
    * The banner for a ball that reached a team-mate. A strike that came off a
    * defender first was not a pass: a free kick into the wall that fell to a
@@ -1527,6 +1530,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const aimCommitRef = useRef<number | null>(null);
   /** The defender closing you down this chance, if anyone is. */
   const presserRef = useRef<Scenario["defenders"][number] | null>(null);
+  /** The closer started behind you (on your side of the ball) — he goes round
+   *  you, and fouls you more often (lib/star/pressure.ts, Harry 1 Oct 2026). */
+  const presserBehindRef = useRef(false);
   const pressureRef = useRef(pressure);
   pressureRef.current = pressure;
   /** A foul while you pulled back: the set piece the next chance is. */
@@ -1995,6 +2001,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const replayRng = countedRng(r.seed, rngCallCountRef);
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
+      matePlaysRef.current = [];
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
@@ -2255,7 +2262,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // you're dragging back", ordered run or not. He comes at the lighter pace
   // Harry picked (lib/star/pressure.ts), and when he gets there you are
   // either tackled or, about 1 time in 3, fouled: a free kick outside the
-  // box, a penalty inside it.
+  // box, a penalty inside it. A closer who starts behind you goes round you,
+  // not through you, and fouls you 2 times in 3 (Harry, 1 Oct 2026).
   //
   // All of it happens here, in the aim phase. An ordered run moves by the
   // same rule the engine uses for a man running to orders (stepReactions'
@@ -2287,6 +2295,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (dist < bestD) { bestD = dist; best = d; }
       }
       presserRef.current = best;
+      presserBehindRef.current = !!best && pressFromBehind(best, sc.ball, sc.player);
     }
     if (isCaptainRef.current && hasOrderedRun(sc)) pushLine("He's off — play it before he's past the last man.");
   };
@@ -2301,7 +2310,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim(null);
     // Tackled, or fouled about 1 time in 3. Its own seeded draw, so the
     // chance's counted stream (goal replays read it) is untouched.
-    if (why === "pressed" && mulberry32((seedRef.current ^ 0x0f0c1a5) >>> 0)() < FOUL_SHARE) {
+    // From behind he fouls you more often (2 in 3, not 1 in 3) — Harry.
+    if (why === "pressed" && mulberry32((seedRef.current ^ 0x0f0c1a5) >>> 0)() < foulShareFor(presserBehindRef.current)) {
       fouled();
       return;
     }
@@ -2361,10 +2371,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const d = presserRef.current;
     if (d && since > PRESS_REACT_S) {
       const b = sc.ball;
-      const dx = b.x - d.x, dy = b.y - d.y, dist = Math.hypot(dx, dy);
+      const dist = Math.hypot(b.x - d.x, b.y - d.y);
       if (dist <= PRESS_WIN_R) { loseChance("pressed"); return; }
-      const step = Math.min(dist - PRESS_WIN_R * 0.5, pressSpeedFor(pressureRef.current) * dt);
-      d.x += (dx / dist) * step; d.y += (dy / dist) * step;
+      // Straight at the ball — round you, never through you, if you are in
+      // the way (Harry, 1 Oct 2026: "on the wrong side of me").
+      pressStep(d, b, sc.player, pressSpeedFor(pressureRef.current) * dt);
     }
   };
 
@@ -2493,8 +2504,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.fillRect(c.px - rx * unit * 1.2, c.py - rx * unit * 1.2, rx * unit * 2.4, rx * unit * 2.4);
         ctx.restore();
       };
-      wear(CX, 1.9, 6.2, 2.4, 0.22);      // the goalmouth
-      wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16); // the penalty spot
+      if (sceneRef.current?.box !== false) {
+        wear(CX, 1.9, 6.2, 2.4, 0.22);      // the goalmouth
+        wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16); // the penalty spot
+      }
       wear(CX, HALF_LEN, 3.4, 2.4, 0.14);   // the centre
     }
 
@@ -2525,11 +2538,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     pLine(0, 0, PITCH_W, 0);
     pLine(0, 0, 0, HALF_LEN);
     pLine(PITCH_W, 0, PITCH_W, HALF_LEN);
-    // Penalty area (40.32 x 16.5) and six-yard box (18.32 x 5.5)
-    pRect(BOX_L, 0, BOX_R, BOX_DEPTH);
-    pRect(SIX_L, 0, SIX_R, SIX_DEPTH);
+    // Penalty area (40.32 x 16.5) and six-yard box (18.32 x 5.5) — a feature
+    // can leave them off (`scene.box === false`, the trial's gate drill).
+    const drawBox = sceneRef.current?.box !== false;
+    if (drawBox) {
+      pRect(BOX_L, 0, BOX_R, BOX_DEPTH);
+      pRect(SIX_L, 0, SIX_R, SIX_DEPTH);
+    }
     // Penalty spot + the D (an arc of radius 9.15 m clipped to outside the box)
-    {
+    if (drawBox) {
       const spot = P(CX, PEN_SPOT_Y);
       ctx.beginPath();
       ctx.arc(spot.px, spot.py, Math.max(1.5, unit * 0.11), 0, Math.PI * 2);
@@ -2998,10 +3015,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
-    } else
+    } else if (sceneRef.current?.you !== false)
     // You wear the same shirt as everybody else on your side — you are one of
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
+    // (A feature can leave you off the picture: `scene.you === false`.)
     footballer(sc.player.x, sc.player.y, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
@@ -3655,7 +3673,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // v0.15 item 16: the ball a moment before a defender gets to it.
           const bIn = ballRef.current;
           const incoming = { vx: bIn.vel.x, vy: bIn.vel.y, vz: bIn.vz, z: bIn.z, spin: bIn.spin };
+          const mateProbe = probeMatePlays(scenarioRef.current);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          noteMatePlays(matePlaysRef.current, mateProbe, scenarioRef.current);
           // ── v0.15 item 16: a block deflects instead of ending the chance ──
           // The engine has already cleared it; put it back into play off the
           // defender at a new angle, loose, and let the normal rules decide
@@ -3897,7 +3917,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
     // back off React state would risk under-counting the final chance. State is
     // just a mirror for the HUD.
-    const d = creditChance(res, { youShot, receiverShot, isSimplePass });
+    // Whose assist a team-mate's goal is: yours only if nobody else in your
+    // shirt played it between your touch and his strike (Harry, 1 Oct 2026:
+    // "I still get an assist for that even though I wasn't the one who
+    // actually assisted him").
+    const assist = assistFor(matePlaysRef.current);
+    const d = creditChance(res, { youShot, receiverShot, isSimplePass, assistYours: assist.yours });
     const t = tallyRef.current;
     if (!isShootoutKick && !auto) {
       t.shots += d.shots;
@@ -4017,7 +4042,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const how = res === "rebound" ? "rebound" : sc.kind;
       const distance = Math.hypot(sc.ball.x - (sc.goal.x1 + sc.goal.x2) / 2, sc.ball.y);
 
-      if (d.assists === 1 && sc.receiver) {
+      // A team-mate's goal: either you assisted it, or another team-mate did.
+      const mateGoal = d.assists === 1 || (receiverShot && !assist.yours);
+      if (mateGoal && sc.receiver) {
         // ── The man who scored it is the man who scored it ──
         //
         // He is decided on the pitch, at the moment the ball reaches him, and
@@ -4040,17 +4067,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           })();
         if (scorer) commentaryRoleLabel = scorer.shortName;
         const scorerLabel = scorer?.shortName ?? sc.receiver.roleLabel ?? "Team-mate";
+        // The assist: you, or the team-mate who played it last before him
+        // (his lay-off, or his shot that came back) — named when we know him.
+        const mateAssist = assist.yours ? undefined : assist.by?.who;
         goalEventsRef.current.push({
           minute: matchMinuteRef.current,
           scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
-          assist: playerName,
+          assist: assist.yours ? playerName : mateAssist?.name,
           isUserGoal: false, how, distance: Math.round(distance),
           // PROTOTYPE (home-screen proto): how far YOUR pass went — from where
           // you played it to where he took it. Feeds "furthest assist".
-          ...(sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
+          ...(assist.yours && sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
         });
         logMoment(`⚽ ${scorerLabel} scores!`, "goal");
-        logMoment(`🎯 ${playerLabel()} assists!`, "assist");
+        if (assist.yours) logMoment(`🎯 ${playerLabel()} assists!`, "assist");
+        else if (mateAssist) logMoment(`🎯 ${mateAssist.shortName} assists!`, "assist");
       } else if (d.goals === 1) {
         // ── And an assist is somebody who was actually in the move ──
         //
@@ -4087,7 +4118,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // capture. `pendingReplayRef` is only ever set right before a real
       // strike (handleContact), so it is naturally absent for anything that
       // scored without you having personally struck it.
-      if (!(d.assists === 1 && sc.receiver) && pendingReplayRef.current && !replayOfRef.current) {
+      if (!(mateGoal && sc.receiver) && pendingReplayRef.current && !replayOfRef.current) {
         const verb = SCENARIO_LABEL[sc.kind]?.verb.replace("!", "") ?? sc.kind;
         onGoalScoredRef.current?.({
           id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -5718,6 +5749,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     deflectionsRef.current = 0;
+    matePlaysRef.current = [];
     ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
@@ -6113,6 +6145,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             regulation={MATCH_DURATION}
             onOpenScores={liveWeekRef.current && liveWeekRef.current.fixtures.length ? () => setScoresOpen(true) : undefined}
             homeTeam={homeTeam}
+            userIsHome={fixture ? !!fixture.home : true}
             awayTeam={awayTeam}
             homeScore={homeScore}
             awayScore={awayScore}

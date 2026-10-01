@@ -1,7 +1,7 @@
 import { getTuning } from "./tuningStore";
 import {
-  freeKickDrill, visionDrill, strikeSpot, shotQuality,
-  type FreeKickDrillConfig, type VisionDrillConfig,
+  freeKickDrill, visionDrill, techniqueDrill, strikeSpot, shotQuality,
+  type FreeKickDrillConfig, type VisionDrillConfig, type TechniqueDrillConfig,
 } from "./trainingDrills";
 import {
   difficultyFor, keeperBonusFor, adversityOn,
@@ -76,6 +76,9 @@ export function attemptSeed(trial: TrialProgress): number {
 }
 
 /**
+ * **v0.23: every drill is ONE attempt and the shootout is three kicks each —
+ * the notes below are the history of the three-rep trial and are kept for it.**
+ *
  * How many attempts each stage gives you. Enough that one fluke neither makes
  * nor breaks it; few enough that the whole trial is minutes, not an evening.
  *
@@ -117,10 +120,24 @@ export function attemptSeed(trial: TrialProgress): number {
  * tap is a much coarser read than a struck ball.
  */
 export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
+  /** Retired from the trial (1 Oct 2026); an old save's three still read. */
   penalties: 3,
-  freeKicks: 3,
-  dribbling: 3,
-  vision: 6,
+  // ── ONE attempt each, from v0.23 ──
+  // Harry, reviewing the v0.20 trial: "maybe the other ones are all one
+  // attempt, it's just a tutorial on how to play the game, and then you get a
+  // pen shootout to really enjoy that." And "this is too long, isn't it? It's
+  // too long." So each drill is one go at its easiest rung. (The old three
+  // reps are why the cut-down ramps above still have three rows.)
+  freeKicks: 1,
+  /** Training's gate of cones — one ball. */
+  technique: 1,
+  /** One run (its waves are `dribbleSetup`'s). */
+  dribbling: 1,
+  vision: 1,
+  /** Up to three kicks each, rigged so the last is yours
+   *  (lib/star/trialShootoutRig.ts, `SHOOTOUT_KICKS`). Both keepers' ramp
+   *  runs over these three kicks. */
+  shootout: 3,
 };
 
 // ── 1. Penalties ────────────────────────────────────────────────────────
@@ -438,6 +455,77 @@ export function penaltyRampFor(rep: number, reps: number): { keeperStrength: num
   };
 }
 
+// ── Through the gate (training's technique drill, 1 Oct 2026) ─────────────
+
+/**
+ * The gate for one rep: training's own `techniqueDrill`, on the rung the
+ * day's difficulty points at — the same translation free kicks make. Nothing
+ * about the drill itself is new: the cones, how they recede and narrow and
+ * slide off your line, and how a crossing is judged are all training's, so
+ * the trial's gate IS the training gate at a given level.
+ */
+export function techniqueSetup(trial: TrialProgress, rep: number): TechniqueDrillConfig {
+  return techniqueDrill(ladderLevel(difficultyFor(trial, "technique")), rep);
+}
+
+// ── The penalty shootout (1 Oct 2026) ───────────────────────────────────
+
+/**
+ * Who you are up against in the shootout, and how good they are.
+ *
+ * ── Both keepers ramp, kick by kick, the same way ──
+ *
+ * The trial's penalty keeper already gets sharper every kick
+ * (`penaltyRampFor`, v0.15 item 7b: a fair keeper first, his best last). In a
+ * shootout BOTH keepers do: theirs on your kicks, yours on their kicks, kick
+ * number for kick number. Measured on the real engine (1 Oct 2026, 500 kicks
+ * a row): with only THEIR keeper ramping and yours a flat 55, their side
+ * scored 79 % to a stand-in taker's 53 % and you won 13 % of shootouts — a
+ * stage you mostly lose for reasons that were never yours. With both on the
+ * ramp the two sides score alike and it is close to a coin flip on an
+ * average day (47-50 %), so a shootout is won by the kicks you take.
+ *
+ * Their five takers are rated off the day's difficulty (52 on the kindest
+ * day, 88 on the hardest). On the real engine that moves their conversion
+ * only a little (62 → 67 % on a first kick); the keeper ramp is what decides
+ * how hard a kick is, by design. The sharp-keeper adversity adds to THEIR
+ * keeper's strength; the cold-keeper one makes him read you better. Neither
+ * touches your keeper.
+ */
+export const COLD_KEEPER_READ_BONUS = 0.12;
+
+/** Your keeper (a fellow trialist) on THEIR kick `theirKick` (0-based): the
+ *  same ramp their keeper is on, with no adversity — it is theirs to suffer. */
+export function shootoutOurKeeperFor(theirKick: number): {
+  keeperStrength: number; read: { commitChance: number; readChance: number; metres: number };
+} {
+  return penaltyRampFor(Math.min(theirKick, REPS.shootout - 1), REPS.shootout);
+}
+
+export function shootoutTheirRating(trial: TrialProgress): number {
+  return Math.round(52 + difficultyFor(trial, "shootout") * 36);
+}
+
+export function shootoutKeeperFor(trial: TrialProgress, yourKick: number): {
+  keeperStrength: number; read: { commitChance: number; readChance: number; metres: number };
+} {
+  const ramp = penaltyRampFor(Math.min(yourKick, REPS.shootout - 1), REPS.shootout);
+  const cold = adversityOn(trial, "shootout")?.id === "cold-keeper";
+  return {
+    keeperStrength: Math.min(99, ramp.keeperStrength + keeperBonusFor(trial, "shootout")),
+    read: cold
+      ? { ...ramp.read, readChance: Math.min(0.95, ramp.read.readChance + COLD_KEEPER_READ_BONUS) }
+      : ramp.read,
+  };
+}
+
+/** The shootout's quality: the share of YOUR kicks that went in. Winning it
+ *  is the story; this is the part that was yours. */
+export function shootoutQuality(yourKicks: boolean[]): number {
+  if (yourKicks.length === 0) return 0;
+  return yourKicks.filter(Boolean).length / yourKicks.length;
+}
+
 /**
  * THE TRIAL PLAYER'S INVISIBLE STATS.
  *
@@ -537,13 +625,19 @@ export const EXTRA_MAN = 1;
 export function dribbleSetup(trial: TrialProgress): DribbleSetup {
   const d = difficultyFor(trial, "dribbling");
   const ev = adversityOn(trial, "dribbling");
-  // Two to four waves, widening with the difficulty, capped at the run's own
+  // Two or three waves, widening with the difficulty, capped at the run's own
   // ceiling of ten — a real match has eleven men and one of them is in goal.
-  const waves = Math.round(2 + d * 2);
+  //
+  // v0.23: shorter. This was two to four waves of one to four men (usually
+  // seven or so men on a median day) — about the length of the free kicks and
+  // the gate put together. Harry, reviewing that trial: "this is too long,
+  // isn't it?" and "it's just a tutorial on how to play the game". A median day
+  // is now two waves and three men; the hardest is three waves and seven.
+  const waves = d >= 0.7 ? 3 : 2;
   const sizes: number[] = [];
   let total = 0;
   for (let i = 0; i < waves; i++) {
-    const want = Math.max(1, Math.round(1 + d * 2 + (i === waves - 1 ? 1 : 0)));
+    const want = Math.max(1, Math.round(1 + d * 1.2 + (i === waves - 1 ? 1 : 0)));
     const room = Math.max(0, 10 - total);
     const take = Math.min(want, room);
     if (take <= 0) break;
@@ -818,7 +912,7 @@ export const TEACH_SEEN_KEY = "star-trial-taught";
 /** Every drill that teaches. The five-a-side is not one: it has no single
  *  first rep to hang an instruction on. */
 export const TEACHABLE_DRILLS: TeachableDrill[] = [
-  "penalties", "freeKicks", "dribbling", "vision",
+  "penalties", "freeKicks", "technique", "dribbling", "vision", "shootout",
 ];
 
 function teachKeyFor(drill: TeachableDrill): string {

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type React from "react";
 import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { displayOverall } from "@/lib/star/rating";
+import { starLevel } from "@/lib/star/starPoints";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
@@ -44,6 +45,9 @@ interface Props {
    * leaves it off and looks exactly as before.
    */
   compact?: boolean;
+  /** The match-week page drives the view itself (its edge arrows) and hides this screen's own tab row. */
+  view?: "table" | "results" | "fixtures" | "awards" | "squad";
+  hideTabs?: boolean;
 }
 
 /** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
@@ -74,6 +78,10 @@ const LADDER: Record<Exclude<CareerDivision, "premier">, { auto: number; down: n
   league_one: { auto: 2, down: 4 },
   league_two: { auto: 3, down: 2 },
   national_league: { auto: 1, down: 4 },
+  // The bottom rung: champion up, 2nd-5th play off for the other place,
+  // nobody down (nothing below them in the game).
+  national_league_north: { auto: 1, down: 0 },
+  national_league_south: { auto: 1, down: 0 },
 };
 
 // ── Positions that moved since you last looked ─────────────────────────────
@@ -168,7 +176,7 @@ function ovrStyle(o?: number): string {
     : "bg-gradient-to-b from-gray-500 to-gray-700 text-white";
 }
 
-export default function LeagueScreen({ career, compact = false }: Props) {
+export default function LeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
   const { glow } = useClubTheme(career);
   // The league tables' columns and club names (see `compact`).
   const tableCols = compact
@@ -184,7 +192,8 @@ export default function LeagueScreen({ career, compact = false }: Props) {
   // "transfers" moved to the Media screen — see TransfersPanel.tsx, and
   // "cups" folded into "table" — see the competition switcher below. Five
   // tabs now, not seven.
-  const [view, setView] = useState<"table" | "results" | "fixtures" | "awards" | "squad">("table");
+  const [ownView, setView] = useState<"table" | "results" | "fixtures" | "awards" | "squad">("table");
+  const view = forcedView ?? ownView;
   const [compIndex, setCompIndex] = useState(0);
   const sorted = sortLeague(career.league);
   const squad = career.squad ?? [];
@@ -243,13 +252,15 @@ export default function LeagueScreen({ career, compact = false }: Props) {
 
   return (
     <div className="mt-2">
-      <SegTabs
-        className="mb-2"
-        small={compact}
-        value={view}
-        onChange={setView}
-        tabs={[["table", "Table"], ["results", "Results"], ["fixtures", "Fixtures"], ["awards", "Awards"], ["squad", "Squad"]] as const}
-      />
+      {!hideTabs && (
+        <SegTabs
+          className="mb-2"
+          small={compact}
+          value={view}
+          onChange={setView}
+          tabs={[["table", "Table"], ["results", "Results"], ["fixtures", "Fixtures"], ["awards", "Awards"], ["squad", "Squad"]] as const}
+        />
+      )}
 
       {view === "results" && (
         <RiseIn key="results">
@@ -855,7 +866,11 @@ export default function LeagueScreen({ career, compact = false }: Props) {
                       </div>
                     </div>
                     <div className="flex justify-center">
-                      <span className={`min-w-[24px] rounded-md px-1 py-[1px] text-center text-[10px] font-black tabular-nums shadow ${ovrStyle(p.overall)}`}>{p.overall ?? "—"}</span>
+                      {/* Your row shows your star rating, the one rating you
+                          see (Harry, 1 Oct 2026); team-mates keep their OVR. */}
+                      {p.isYou
+                        ? <span className="min-w-[24px] rounded-md bg-amber-400 px-1 py-[1px] text-center text-[10px] font-black tabular-nums text-gray-950 shadow">★{starLevel(career)}</span>
+                        : <span className={`min-w-[24px] rounded-md px-1 py-[1px] text-center text-[10px] font-black tabular-nums shadow ${ovrStyle(p.overall)}`}>{p.overall ?? "—"}</span>}
                     </div>
                     <div className="text-center text-white/90">{p.position}</div>
                     <div className="text-center">

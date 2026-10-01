@@ -282,6 +282,7 @@ export const ADMIN_GUIDES = {
           ["Version list", "Tap a version to read it."],
           ["Page", "The version's artifact exactly as it was published, pictures and all. Kept in the code, so it works even if the link changes."],
           ["Text", "The same notes as plain data, in the site's own style."],
+          ["Harry's notes", "Only on versions Harry has reviewed: his spoken notes from his recordings (likes, concerns, questions), each with the video and timestamp. Written in by Claude, not typed on this page."],
           ["Open the original artifact ↗", "Opens the shareable page on claude.ai for that version, if it has one."],
         ],
       },
@@ -289,7 +290,24 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing here saves. New patch notes are added by Claude as part of shipping a change."],
     commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · patch-notes/",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
+  },
+
+  "/admin/app-plan": {
+    title: "App Plan",
+    what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",
+    buttons: [
+      {
+        items: [
+          ["Toggles (▸)", "Open the detail under a section. Closed by default."],
+          ["Open questions tick boxes", "Tick one off as you decide it. The ticks are kept in this browser only — they don't reach anyone else or the database."],
+        ],
+      },
+    ],
+    saving: ["Nothing here saves to the site. Answers to the open questions go to Claude (in chat or a recording), and the page is updated in the code."],
+    commit: ["The page lives in the repo (patch-notes/pages/app-plan/) — changes appear after the next deploy."],
+    inGame: ["Admin only. Players never see this page."],
+    dev: "app/admin/app-plan/page.tsx · patch-notes/pages/app-plan/index.html · lib/patchNotePages.ts",
   },
 
   // ════════════════════════════════════════════════════════════════════
@@ -481,7 +499,7 @@ export const ADMIN_GUIDES = {
           ["Chances: Drawings / Generator", "Drawings (the default, and the game): each chance is one of your drawings, nudged and mirrored. Generator: every player is built from the spread of all the drawings of that type, so no drawing is ever replayed. Reaches Infinite Match, Infinite Highlights and the gallery's Sim — never a career."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
-          ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
+          ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3 — 2 in 3 if he comes from behind you, and he goes round you, never through you: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
           ["Penalty run-up", "How you run up to a penalty: Standard, The Stroll, The Skip, The Sprint, Stutter Step, Two Steps or The Arc — every style, owned or not, so each can be seen on the real pitch (open a penalty card in Infinite Highlights or the gallery and press Play, or play a shootout). Looks only: who scores is the same with every style. Test screens only — a career uses the one it has equipped in Settings → Run-ups."],
           ["Free-kick run-up", "A separate set for direct free kicks, each modelled on an elite taker: Standard, Power Stance (Ronaldo), Stance and Sprint (Bale), The Calm Curl (Messi), Stutter Curl (Neymar), The Whip (Maddison), Long Diagonal (Trent). Looks only — the strike is still yours. Test screens only."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
@@ -609,9 +627,9 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved."],
     inGame: [
       "Not in the game yet. If it is kept, it goes on the Home screen and in the store when trying on accessories.",
-      "The front is the real home-screen player. The back is a simple stand-in drawn on this page, because the game has no back view yet. A real turn needs the Blender player rendered from about 24 angles.",
+      "Front and back are both the real home-screen player (the back: surname and number on the shirt, the back of his head in his photo's hair colour). Side-on he narrows (body to 42%, head to 80%) and fades from front to back, so he never collapses to a line. A true side view still needs the Blender player rendered from about 24 angles.",
     ],
-    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · tools/blender-footballer/",
+    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · lib/star/heroBack.ts · tools/blender-footballer/",
   },
 
   "/star-blender-dev": {

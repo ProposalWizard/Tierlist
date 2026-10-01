@@ -137,7 +137,8 @@ export interface CupSlot {
  * a career ever plays a league season IN.
  */
 export type CareerDivision =
-  | "premier" | "championship" | "league_one" | "league_two" | "national_league";
+  | "premier" | "championship" | "league_one" | "league_two" | "national_league"
+  | "national_league_north" | "national_league_south";
 
 /**
  * Top to bottom. League One, League Two and the National League are real
@@ -146,23 +147,51 @@ export type CareerDivision =
  * genuinely playable careers, reusing the Championship's own 46-round season
  * shape rather than inventing a new one (see the file note on
  * CHAMPIONSHIP_MATCHWEEKS below).
+ *
+ * This is the straight ladder, one division per rung, which is what the wage
+ * curve and every "each rung below is smaller" check is built on. National
+ * League North and South (Harry, 1 Oct 2026, P62) are the rung under it, and
+ * they are SIDE BY SIDE rather than one above the other, so they are not in
+ * this list: they share rank 5 (`divisionRank`) and are listed with the rest
+ * in ALL_DIVISIONS.
  */
 export const DIVISION_ORDER: CareerDivision[] =
   ["premier", "championship", "league_one", "league_two", "national_league"];
 
+/** Every playable division, top to bottom, North before South. */
+export const ALL_DIVISIONS: CareerDivision[] =
+  [...DIVISION_ORDER, "national_league_north", "national_league_south"];
+
+/** The two regional divisions at the foot of the ladder. */
+export const REGIONAL_DIVISIONS: readonly CareerDivision[] = ["national_league_north", "national_league_south"];
+
+export function isRegionalDivision(division: CareerDivision): boolean {
+  return division === "national_league_north" || division === "national_league_south";
+}
+
+/**
+ * How far down the ladder, 0 for the Premier League. North and South are
+ * one rung, so they share a rank (5) — moving between them is sideways, not
+ * a promotion or a relegation.
+ */
 export function divisionRank(division: CareerDivision): number {
-  return DIVISION_ORDER.indexOf(division);
+  return isRegionalDivision(division) ? DIVISION_ORDER.length : DIVISION_ORDER.indexOf(division);
 }
 
 /** The division directly above this one on the English ladder, or null for
- *  the Premier League itself. */
+ *  the Premier League itself. North and South both answer the National
+ *  League. */
 export function divisionAbove(division: CareerDivision): CareerDivision | null {
   const i = divisionRank(division);
   return i > 0 ? DIVISION_ORDER[i - 1] : null;
 }
 
-/** The division directly below this one, or null for the National League. */
+/** The division directly below this one, or null at the bottom (North and
+ *  South). Below the National League there are two; this answers North,
+ *  which is only ever used where any one rung down will do (youth loans). */
 export function divisionBelow(division: CareerDivision): CareerDivision | null {
+  if (isRegionalDivision(division)) return null;
+  if (division === "national_league") return "national_league_north";
   const i = divisionRank(division);
   return i >= 0 && i < DIVISION_ORDER.length - 1 ? DIVISION_ORDER[i + 1] : null;
 }
@@ -213,6 +242,8 @@ export function leagueNameFor(division: CareerDivision): string {
     case "league_one": return "League One";
     case "league_two": return "League Two";
     case "national_league": return "National League";
+    case "national_league_north": return "National League North";
+    case "national_league_south": return "National League South";
   }
 }
 

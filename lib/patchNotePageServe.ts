@@ -40,7 +40,7 @@ export function resolveInside(rel: string): string | null {
   return abs;
 }
 
-/** What the file route will serve — pictures, fonts and stylesheets only. */
+/** What the file route will serve — pictures, short clips, fonts and stylesheets only. */
 export const SERVED_TYPES: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
@@ -48,6 +48,7 @@ export const SERVED_TYPES: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
   ".svg": "image/svg+xml",
+  ".mp4": "video/mp4",
   ".css": "text/css; charset=utf-8",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
@@ -70,7 +71,7 @@ export function rewriteRelative(html: string, pageRel: string): string {
   };
   return html
     .replace(/\b(src|href|poster)=(["'])([^"']*)\2/gi, (m, attr, q, u) =>
-      attr.toLowerCase() === "href" && !/\.(?:css|png|jpe?g|webp|gif|svg|woff2?)(?:[?#]|$)/i.test(u)
+      attr.toLowerCase() === "href" && !/\.(?:css|png|jpe?g|webp|gif|svg|woff2?|mp4)(?:[?#]|$)/i.test(u)
         ? m
         : `${attr}=${q}${to(u)}${q}`)
     .replace(/url\((["']?)([^)"']+)\1\)/gi, (_m, q, u) => `url(${q}${to(u)}${q})`);

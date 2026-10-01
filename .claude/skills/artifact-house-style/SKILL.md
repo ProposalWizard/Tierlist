@@ -50,6 +50,47 @@ alongside the page) and reference them relatively.
 Every screenshot gets a one-line caption saying what to look at — not what it
 is.
 
+### 4b. Every new thing gets a real video — standard (Harry, 1 Oct 2026)
+*"why is the framing off the videos so cooked and there no playhead … redo
+with real videos and screenshots for every single element, remember
+everything has to be clear to read"* — then, of the fix: *"this should be
+standard."*
+
+- **One entry per change, each with a before clip and an after clip** (same
+  save, same taps) **plus a still** of the key moment. Brand-new things film
+  where they would be. A rule you can't see (a %, a timing) still gets a clip
+  of it happening.
+- **Film with `scripts/film/rec.mjs`** (read `scripts/film/README.md`): real
+  MP4, the whole 390×844 phone screen at 2x, a dot for every tap. Never GIFs,
+  never crops, never a 300-px strip.
+- **Show them with `references/clip-card.html`**: `<video controls
+  playsinline muted preload="none">` with the still as `poster`, a
+  Before/After switch so a phone shows one full-width clip at a time (both
+  side by side only on a wide screen), ½× / ¼× speed buttons, and a "Look
+  for" line saying what to watch. Never two phone shots squeezed side by side
+  on a phone — neither is readable.
+- Clips go in `files` as `clips/<name>.mp4`. The admin patch-notes archive
+  plays them too (it serves `.mp4` with byte ranges).
+- Watch every clip's cover and open every still before publishing.
+- **Builders don't film; one filming pass at the end** (Harry, 1 Oct 2026:
+  "we are wasting time and tokens"). During a build: stills only. After the
+  merge: one pass films every before/after for the page.
+- **All "after" clips come from ONE combined copy** (Harry, 1 Oct 2026, on
+  the v0.23 page: *"How am I meant to analyse if you've recorded everything
+  separately? … apply all the changes, and then record stuff so you can see
+  everything together"*). When parts are built in parallel, merge first, then
+  film every "after" on the merged copy and every "before" on the one shared
+  base. Never ship a page whose screens disagree with each other because each
+  part filmed its own branch.
+- **Confirmed by Harry on the v0.20/v0.21 pages (1 Oct 2026):** *"these
+  artifacts are amazing, speed tabs, the more pictures settings — this is
+  GREAT."* So keep exactly that: the ½×/¼× speed buttons under every clip,
+  extra stills behind a "More pictures (n)" toggle, the detail behind a
+  "The detail" toggle, and one short line + "Look for" above the clip. The
+  generators that built them are the pattern to copy
+  (`references/generators/review-page-build.py` and `v021-page-build.py`;
+  the reusable card is `references/clip-card.html`).
+
 ### 5. Everything long is behind a toggle
 `<details>` / `<summary>`, closed by default, labelled with what is inside
 ("What the four bugs were", "Where it still misses", "The two options"). The
@@ -74,8 +115,8 @@ the main headline."*
 - **The biggest or most confusing change is the headline**, above the
   checklist: its own bordered section with the same Problem / Why / Fix, a
   before/after, and "what this means for you".
-- **Before/after pictures for anything confusing.** A real screenshot pair
-  when one exists; otherwise a small drawn diagram (inline SVG or HTML boxes)
+- **Before/after clips for every change** (rule 4b), and pictures for
+  anything confusing. A real screenshot pair when one exists; otherwise a small drawn diagram (inline SVG or HTML boxes)
   labelled as a drawing, with anything exaggerated for visibility saying so.
 - **Answers to their questions go low**, after the changes, never at the top.
   A reply only makes sense once the reader knows what changed.
@@ -193,7 +234,8 @@ yes"), not as a file's name.
   `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`
   and again under `:root[data-theme="dark"]`. Explicit `background` on `body`.
 - Title is two to four words, a name not a sentence ("Knowitball v0.1").
-- Screenshots go in `files` as `img/<name>.png`, referenced as `img/<name>.png`.
+- Screenshots go in `files` as `img/<name>.png`, referenced as `img/<name>.png`;
+  clips as `clips/<name>.mp4` (rule 4b).
 - **Artifacts are private.** Say so when handing over the link, and say who
   cannot open it yet.
 - **You cannot change sharing.** That is the Share menu on the page, by hand.
