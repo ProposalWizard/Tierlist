@@ -209,7 +209,7 @@ const OPP = { shirt: ROLE_KIT.opp, shorts: ROLE_KIT.oppRim, trim: ROLE_KIT.oppRi
 
 /** The first rep's countdown: three numerals, a second apart. */
 const TEACH_COUNT_FROM = 3;
-const TEACH_COUNT_MS = 1000;
+const TEACH_COUNT_MS = 600;
 
 export interface TrialVisionProps {
   trial: TrialProgress;
@@ -508,12 +508,10 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
       drawFigure(ctx, p, m, { ...KIT, face: fake(`mate-${i}`) }, faceStyleRef.current, fakeFaceStyleRef.current, { scale: FIG });
     });
 
-    // You, with the ball at your feet.
+    // You, with the ball at your feet: the ring and the ball, no figure
+    // (Harry, 1 Oct 2026: "outside of penalties and free kicks we just don't
+    // have him" — the passes are about the men you are choosing between).
     ring(l.you.x, l.you.y, "#fbbf24");
-    drawFigure(
-      ctx, p, l.you, { ...KIT, star: true, face: fake("you") }, faceStyleRef.current, fakeFaceStyleRef.current,
-      { scale: FIG },
-    );
     drawBall(ctx, p, { x: l.you.x + 0.9, y: l.you.y + 0.7 }, 0, FIG);
 
     // The clock, as a bar across the top. A number counting down in tenths is
@@ -530,12 +528,15 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   return (
     <div className="w-full">
       <div className="mb-1 flex items-baseline justify-between">
-        <span className="text-[11px] font-black uppercase tracking-widest text-white/80">Find the pass</span>
-        <span className="text-[11px] font-black tabular-nums text-white/60">
-          {Math.min(rep + 1, REPS.vision)} / {REPS.vision}
-        </span>
+        <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">Find the pass</span>
+        {/* One attempt (the v0.23 trial): nothing to count. */}
+        {REPS.vision > 1 && (
+          <span className="text-[11px] font-black tabular-nums text-gray-500">
+            {Math.min(rep + 1, REPS.vision)} / {REPS.vision}
+          </span>
+        )}
       </div>
-      <div className="mb-1 text-[11px] font-bold text-white/55">
+      <div className="mb-1 text-[11px] font-bold text-gray-500">
         {setup.options} options · {setup.window.toFixed(1)}s
       </div>
 
@@ -562,7 +563,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
           means; only the chrome around the box does. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto w-full overflow-hidden rounded-xl border border-gray-200"
         style={{ height: boxH ?? "auto", aspectRatio: boxH == null ? "4 / 5" : undefined }}
       >
         <canvas
@@ -572,7 +573,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         />
 
         {phase === "ready" && (
-          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70 px-5">
+          <div className="absolute inset-0 z-30 grid place-items-center bg-white/75 px-5">
             {/* ── One card, the same card every other drill uses ──
                 This stage used to hand-roll its own badge/headline/paragraph,
                 which drifted: a different badge ("First one" vs "How to
@@ -615,15 +616,14 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                    was. */
                 <div
                   key={count}
-                  className="mt-3 text-7xl font-black tabular-nums text-amber-300"
-                  style={{ textShadow: "0 4px 12px rgba(0,0,0,0.8)" }}
+                  className="mt-3 text-7xl font-black tabular-nums text-emerald-600"
                 >
                   {count}
                 </div>
               ) : (
                 <div className="mt-3">
-                  <div className="text-sm font-black uppercase tracking-widest text-white">Heads up</div>
-                  <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
+                  <div className="text-sm font-black uppercase tracking-widest text-gray-700">Heads up</div>
+                  <div className="mt-1 text-2xl font-black text-gray-900">Who&apos;s free?</div>
                 </div>
               )}
             </div>
@@ -632,18 +632,18 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
 
         {phase === "reveal" && verdict && (
           <div className="pointer-events-none absolute inset-x-0 top-5 z-30 flex justify-center px-4">
-            <div className="rounded-xl bg-black/70 px-4 py-2 text-center text-lg font-black text-amber-300">
+            <div className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-center text-lg font-black text-gray-900 shadow-lg">
               {verdict}
             </div>
           </div>
         )}
       </div>
 
-      <div className="mt-1 flex items-center gap-1">
+      {REPS.vision > 1 && <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: REPS.vision }, (_, i) => {
           const q = scoresRef.current[i];
           return (
-            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
               {q !== undefined && (
                 <div
                   className={`h-full ${q >= 0.65 ? "bg-emerald-400" : q >= 0.2 ? "bg-amber-400" : "bg-rose-500"}`}
@@ -653,7 +653,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
             </div>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 }

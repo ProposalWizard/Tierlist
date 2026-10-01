@@ -600,11 +600,11 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   // not like a full one.
   const half = TRIAL_STAGES.slice(0, 2).reduce((acc, s) => recordStage(acc, s, 1), startTrial(11));
   const full = TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 1), startTrial(11));
-  check(trialScore(half) < trialScore(full), "two perfect stages score less than four");
+  check(trialScore(half) < trialScore(full), "two perfect stages score less than all five");
   check(trialScore(half) > 0, "…but two perfect stages are not worth nothing");
   check(
-    Math.abs(trialScore(half) - trialScore(full) * 0.5) < 2,
-    "two of four stages should be worth about half",
+    Math.abs(trialScore(half) - trialScore(full) * (2 / TRIAL_STAGES.length)) < 2,
+    "two of five stages should be worth about two fifths",
   );
 
   // Every stage counts the same — no stage is secretly worth more.
@@ -631,15 +631,15 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   }
 }
 
-// ── Old saves, from before the four-stage trial (1 Oct 2026) ────────────
+// ── Old saves, from before the v0.23 trial (1 Oct 2026) ─────────────────
 {
-  // The new trial.
+  // The new trial: finding the pass is back as the fifth drill (Harry, v0.23).
   check(
-    JSON.stringify(TRIAL_STAGES) === JSON.stringify(["freeKicks", "technique", "dribbling", "shootout"]),
-    "the trial is free kicks, the gate, taking a man on, then the shootout",
+    JSON.stringify(TRIAL_STAGES) === JSON.stringify(["freeKicks", "technique", "dribbling", "vision", "shootout"]),
+    "the trial is free kicks, the gate, taking a man on, finding the pass, then the shootout",
   );
-  check(!TRIAL_STAGES.includes("vision") && !TRIAL_STAGES.includes("fiveASide"),
-    "finding the pass and the five-a-side are out of the trial");
+  check(!TRIAL_STAGES.includes("penalties") && !TRIAL_STAGES.includes("fiveASide"),
+    "the three plain penalties and the five-a-side are out of the trial");
 
   // A trial FINISHED on the old five stages stays finished, on its old score.
   const oldDone = LEGACY_TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 0.8), startTrial(77));
@@ -660,9 +660,9 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(nextStage(fin) === "shootout", "…then the shootout");
   fin = recordStage(fin, "shootout", 0.7);
   check(trialComplete(fin), "…and then it is finished");
-  check(!!fin.results.vision && !!fin.results.penalties, "the retired stages' results are kept on the save");
+  check(!!fin.results.penalties, "the retired stage's result is kept on the save");
   const newMean = Math.round(TRIAL_STAGES.reduce((a, s) => a + fin.results[s]!.score, 0) / TRIAL_STAGES.length);
-  check(trialScore(fin) === newMean, "…but the score is the four stages it is now made of");
+  check(trialScore(fin) === newMean, "…but the score is the five stages it is now made of");
   check(trialScore(fin) > 0 && trialScore(fin) <= 100, "…and in range");
 }
 

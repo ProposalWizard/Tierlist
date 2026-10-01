@@ -352,6 +352,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    *  every single fixture would be a toll gate; shown once a week it is a
    *  reminder. See the LoanBrief block further down. */
   const [loanBriefWeek, setLoanBriefWeek] = useState<number | null>(null);
+  /** The trial's closing "A scout has spotted you" card is on screen. The last
+   *  stage's result is on the career by then (so a closed app loses nothing),
+   *  and without this the "finished trial goes straight on" guard below would
+   *  skip the card the instant that result was written. */
+  const trialEndingRef = useRef(false);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
   /** Whether they won it is only known at the ceremony, so it is carried here. */
   const [wonBallonDor, setWonBallonDor] = useState(false);
@@ -3067,7 +3072,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * permanently stranded career. Found by an independent check of the review,
    * not by playing it.
    */
-  if (phase === "trial-stages" && career?.trial && trialComplete(career.trial)) {
+  if (phase === "trial-stages" && career?.trial && trialComplete(career.trial) && !trialEndingRef.current) {
     setPhase(afterTrialPhase(career));
     return null;
   }
@@ -3086,6 +3091,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           pace: career.skills.pace,
         }}
         onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
+        onEnding={showing => { trialEndingRef.current = showing; }}
         onComplete={(score, t) => {
           const finished = { ...career, trial: { ...t } };
           setCareer(finished);

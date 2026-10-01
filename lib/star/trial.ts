@@ -77,13 +77,22 @@ export type TrialStage =
  * does in this game is strike a dead ball, and the gate is the same strike
  * with nobody in goal, so the two sit together.
  *
+ * ── Five again, from v0.23 (1 Oct 2026, Harry's review of that trial) ──
+ *
+ * "I like Find the Pass as well, to be honest, so I think Find the Pass could
+ * stay as a fifth drill." So it is back, between taking a man on and the
+ * shootout. And every drill but the shootout is ONE attempt now — "it's just a
+ * tutorial on how to play the game" (`REPS`, trialStages.ts) — with the
+ * shootout, three kicks each and rigged so the last one is yours, as the
+ * ending (lib/star/trialShootoutRig.ts).
+ *
  * The removed stages stay in the `TrialStage` type and in `STAGE_LABEL`, and
  * nothing deletes their results: a save from before this change still reads,
  * still shows what it played, and — if it was finished — still counts the
  * stages it was actually scored on. See `trialStagesFor`.
  */
 export const TRIAL_STAGES: TrialStage[] = [
-  "freeKicks", "technique", "dribbling", "shootout",
+  "freeKicks", "technique", "dribbling", "vision", "shootout",
 ];
 
 /** The five-stage trial every career before 1 Oct 2026 was given. */
@@ -451,6 +460,14 @@ export interface TrialProgress {
    * whole reason this field exists.
    */
   inProgress?: TrialStage | null;
+  /**
+   * Whether the shootout's last kick — the winning penalty — went in. Set when
+   * the shootout ends (v0.23, Harry: "rigs the game so it always has you having
+   * to score the winning pen"). It is the one thing the trial hands on: the
+   * scout who spotted you reads it (lib/star/scoutedPlacement.ts). Absent on a
+   * trial that has not reached it, and on every older save.
+   */
+  finalPenScored?: boolean;
   startedAt: number;
   /**
    * A five-a-side left half-played.

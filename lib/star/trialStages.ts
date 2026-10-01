@@ -76,6 +76,9 @@ export function attemptSeed(trial: TrialProgress): number {
 }
 
 /**
+ * **v0.23: every drill is ONE attempt and the shootout is three kicks each —
+ * the notes below are the history of the three-rep trial and are kept for it.**
+ *
  * How many attempts each stage gives you. Enough that one fluke neither makes
  * nor breaks it; few enough that the whole trial is minutes, not an evening.
  *
@@ -117,14 +120,24 @@ export function attemptSeed(trial: TrialProgress): number {
  * tap is a much coarser read than a struck ball.
  */
 export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
+  /** Retired from the trial (1 Oct 2026); an old save's three still read. */
   penalties: 3,
-  freeKicks: 3,
-  /** Training's gate of cones, three balls — the same count as free kicks. */
-  technique: 3,
-  dribbling: 3,
-  vision: 6,
-  /** The first five kicks each; sudden death after that (shootout.ts). */
-  shootout: 5,
+  // ── ONE attempt each, from v0.23 ──
+  // Harry, reviewing the v0.20 trial: "maybe the other ones are all one
+  // attempt, it's just a tutorial on how to play the game, and then you get a
+  // pen shootout to really enjoy that." And "this is too long, isn't it? It's
+  // too long." So each drill is one go at its easiest rung. (The old three
+  // reps are why the cut-down ramps above still have three rows.)
+  freeKicks: 1,
+  /** Training's gate of cones — one ball. */
+  technique: 1,
+  /** One run (its waves are `dribbleSetup`'s). */
+  dribbling: 1,
+  vision: 1,
+  /** Up to three kicks each, rigged so the last is yours
+   *  (lib/star/trialShootoutRig.ts, `SHOOTOUT_KICKS`). Both keepers' ramp
+   *  runs over these three kicks. */
+  shootout: 3,
 };
 
 // ── 1. Penalties ────────────────────────────────────────────────────────
@@ -612,13 +625,19 @@ export const EXTRA_MAN = 1;
 export function dribbleSetup(trial: TrialProgress): DribbleSetup {
   const d = difficultyFor(trial, "dribbling");
   const ev = adversityOn(trial, "dribbling");
-  // Two to four waves, widening with the difficulty, capped at the run's own
+  // Two or three waves, widening with the difficulty, capped at the run's own
   // ceiling of ten — a real match has eleven men and one of them is in goal.
-  const waves = Math.round(2 + d * 2);
+  //
+  // v0.23: shorter. This was two to four waves of one to four men (usually
+  // seven or so men on a median day) — about the length of the free kicks and
+  // the gate put together. Harry, reviewing that trial: "this is too long,
+  // isn't it?" and "it's just a tutorial on how to play the game". A median day
+  // is now two waves and three men; the hardest is three waves and seven.
+  const waves = d >= 0.7 ? 3 : 2;
   const sizes: number[] = [];
   let total = 0;
   for (let i = 0; i < waves; i++) {
-    const want = Math.max(1, Math.round(1 + d * 2 + (i === waves - 1 ? 1 : 0)));
+    const want = Math.max(1, Math.round(1 + d * 1.2 + (i === waves - 1 ? 1 : 0)));
     const room = Math.max(0, 10 - total);
     const take = Math.min(want, room);
     if (take <= 0) break;
