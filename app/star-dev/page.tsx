@@ -3425,7 +3425,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           nextFixture={nextFixture}
           onBack={handleBackToDashboard}
           onPlay={() => handleNavigate("play")}
+          // The "?" replays the League's pointer; not while the first-visit one is up.
+          onHelp={career.unlocks && !hasSeen(career, "league-intro") ? undefined : () => setHelpTour(HELP_TOURS.league)}
         />
+        {helpTour && <PointerTour key="help-league" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {career.unlocks && !hasSeen(career, "league-intro") && (
           <PointerTour
             key="league-screen"

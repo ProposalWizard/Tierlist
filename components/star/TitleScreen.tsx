@@ -143,7 +143,7 @@ export default function TitleScreen(p: TitleScreenProps) {
         )}
 
         {/* You, on the left, standing on the pitch with the ball at your feet. */}
-        <div ref={stageRef} className="pointer-events-none absolute bottom-[9%] left-[-16%] h-[54%] w-[88%]">
+        <div ref={stageRef} className="pointer-events-none absolute bottom-[9%] left-[-18.5%] h-[54%] w-[88%]">
           <div className="kit-rise absolute inset-x-0 bottom-0 flex justify-center" style={{ animationDelay: "520ms" }}>
             <div className="relative" style={{ transform: `translate3d(${tilt.x * 4}px, 0, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
               <Glow color={theme.glow} alpha={0.4} className="bottom-[1%] left-1/2 h-[10%] w-[90%] -translate-x-1/2 blur-xl" />
@@ -153,7 +153,7 @@ export default function TitleScreen(p: TitleScreenProps) {
             </div>
           </div>
         </div>
-        <TitleBall className="kit-rise absolute bottom-[3.5%] left-[36%]" style={{ animationDelay: "700ms" }} />
+        <TitleBall className="kit-rise absolute bottom-[3.5%] left-[26%]" style={{ animationDelay: "700ms" }} />
 
         {/* The menu: flush to the right edge, slanted like a boot's tongue. */}
         <div className="absolute bottom-[4%] right-0 w-[50%] space-y-2">
@@ -238,7 +238,7 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
       <span className="shrink-0 text-[17px] leading-none text-white/90">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate font-black uppercase leading-none tracking-wide ${primary ? "text-[22px]" : "text-[18px]"}`}>{label}</span>
-        {hint && <span className="mt-1 block truncate text-[12px] font-black uppercase leading-none tracking-wide text-white/80">{hint}</span>}
+        {hint && <span className="mt-1 block truncate text-[12px] font-black uppercase leading-none tracking-tight text-white/80">{hint}</span>}
       </span>
       {badge}
     </button>
@@ -283,7 +283,7 @@ function PitchFloor() {
 function TitleBall({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div className={className} style={style} aria-hidden>
-      <svg width="84" height="88" viewBox="0 0 96 100">
+      <svg width="68" height="71" viewBox="0 0 96 100">
         <ellipse cx="50" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.45)" />
         <circle cx="46" cy="46" r="42" fill="#fff" stroke="#0f172a" strokeWidth="2" />
         <path d="M46 24 62 36 56 55H36L30 36Z" fill="#111827" />
