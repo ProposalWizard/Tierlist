@@ -2,6 +2,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { LogLine } from "@/lib/star/matchLog";
 import { labelInk, type Kit } from "@/lib/star/kits";
+import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import type { EnergyMode } from "@/lib/star/energy";
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
@@ -280,10 +281,10 @@ export default function MatchCommentary({
 function KickOffCard({ homeTeam, awayTeam, homeKit, awayKit }: { homeTeam: string; awayTeam: string; homeKit: Kit; awayKit: Kit }) {
   const chip = (name: string, kit: Kit) => (
     <div
-      className="min-w-0 flex-1 truncate px-2 py-2 text-center text-[13px] font-black uppercase tracking-wide"
+      className="min-w-0 flex-1 truncate px-2 py-2 text-center text-[12px] font-black uppercase tracking-normal"
       style={{ backgroundColor: kit.shirt, color: labelInk(kit.shirt), borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), 0 4px 12px -6px rgba(0,0,0,.8)" }}
     >
-      {name}
+      {CLUB_SHORT_NAMES[name] ?? name}
     </div>
   );
   const line = "rgba(255,255,255,.78)";

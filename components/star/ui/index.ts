@@ -16,6 +16,7 @@ export { Burst, FloatText, Shake, Pop, Shine, Drips, useTrigger } from "./juice"
 export { ShakeX, LossFlash, WinCelebration, Badge, useFly } from "./reward";
 export { default as ScreenShell, WalletPill } from "./ScreenShell";
 export { FlatPanel, SquareBar } from "./Flat";
-export { default as TopHud, type HudScreen } from "./TopHud";
+export { default as TopHud, HUD_SPEC, type HudScreen } from "./TopHud";
+export { default as LiquidBar } from "./LiquidBar";
 export { default as GameBar } from "./GameBar";
 export { EdgeArrows, BottomBar, BarButton, HelpDot, HomeBar, Chev, ArrowButton, EmptySlots, type EdgeArrow } from "./Nav";

@@ -44,7 +44,7 @@ export const SHOP_TOUR: TourStep[] = [
 ];
 
 /** Replayed from the "?" button. Never forced. */
-export type HelpScreen = "home" | "stats" | "shop" | "training" | "relations" | "league";
+export type HelpScreen = "home" | "stats" | "shop" | "training" | "relations" | "league" | "style" | "settings";
 
 export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
   home: [
@@ -72,5 +72,15 @@ export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
   ],
   league: [
     { target: "screen", text: "Table, results and fixtures" },
+  ],
+  // v0.23.1 (P62: "every page should have one of these").
+  style: [
+    { target: "reputation", text: "Your reputation. What people think of you" },
+    { target: "money", text: "Your coins. Buy things, and they raise your fame" },
+    { target: "energy", text: "Energy" },
+  ],
+  settings: [
+    { target: "home", text: "Home takes you back to your career" },
+    { target: "energy", text: "Energy is always here, on every screen" },
   ],
 };

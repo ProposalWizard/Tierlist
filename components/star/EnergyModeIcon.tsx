@@ -9,7 +9,7 @@ import { useUiVersion } from "@/lib/star/uiLook";
  *
  * Drawn from the owners' three concept images (23 Sep 2026): a split ring, a
  * lightning bolt cutting diagonally through the gaps, and little sparks
- * around it — red for Low, amber for Medium, green for High. Redrawn rather
+ * around it — yellow for Low, orange for Medium, red for High. Redrawn rather
  * than pasted in, for a dark match screen: a dark centre, a thick dark
  * sticker outline, a two-tone bolt. The number of sparks says the level on
  * its own (2 · 4 · 6), so the three read as less-to-more even without colour.
@@ -18,11 +18,11 @@ import { useUiVersion } from "@/lib/star/uiLook";
  */
 
 const PALETTE: Record<EnergyMode, { main: string; light: string; glow: string }> = {
-  // Green → yellow → red, red the most intense (Harry, 1 Oct 2026, P95:
-  // "instead of red, yellow, green I would do green, yellow, red — red being
-  // the most intense"). The order Low · Medium · High is unchanged.
-  low: { main: "#22c55e", light: "#d9f99d", glow: "rgba(132,204,22,0.6)" },
-  medium: { main: "#f59e0b", light: "#fde047", glow: "rgba(245,158,11,0.55)" },
+  // Yellow → orange → red, a heat scale (v0.23.1, P31: the two of them could
+  // not agree on whether green is "best" or "least", so there is no green at
+  // all; red still means the most intense). Low · Medium · High, unchanged.
+  low: { main: "#facc15", light: "#fef9c3", glow: "rgba(250,204,21,0.6)" },
+  medium: { main: "#f97316", light: "#fed7aa", glow: "rgba(249,115,22,0.58)" },
   high: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.6)" },
 };
 

@@ -30,6 +30,7 @@ import { formationOf } from "@/lib/star/formations";
 import { offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
 import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
 import { loadLineup } from "@/lib/star/lineupStore";
+import { getSkipLineup } from "@/lib/star/lineupPrefs";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import VersusScreen from "./VersusScreen";
@@ -71,13 +72,15 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     [career.player.club, nextFixture, preMatchSelection?.status, playAs],
   );
   const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
-  const showLineup = !watching && (!tired || asked) && teamsReady;
+  // "Skip the line-up" in Settings (v0.23.1, P30/P75): straight into the match.
+  const skipIt = useRef(typeof window !== "undefined" && getSkipLineup());
+  const showLineup = !watching && (!tired || asked) && teamsReady && !skipIt.current;
 
   // Nothing to draw (an international, or a squad too thin): straight in.
   const went = useRef(false);
   const go = () => { if (went.current) return; went.current = true; onPlayMatch(); };
   useEffect(() => {
-    if (watching || (tired && !asked) || teamsReady) return;
+    if (watching || (tired && !asked) || (teamsReady && !skipIt.current)) return;
     go();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watching, tired, asked, teamsReady]);
@@ -106,7 +109,16 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
 
   if (showLineup && matchday) {
     return (
-      <div data-lineup-intro>
+      // A tap anywhere that is not a button kicks off (P75: "you can just tap
+      // and you get through it"); while the position list is open it closes it.
+      <div
+        data-lineup-intro
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button, a, [role=button]")) return;
+          if (picking) { setPicking(false); return; }
+          go();
+        }}
+      >
         {/* The timer along the top: the line-up kicks off when it fills. */}
         {!held && (
           <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[4px] bg-black/60">
@@ -171,6 +183,9 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
       </div>
     );
   }
+
+  // Going straight in (skip setting, or nothing to draw): no prompt flashes up.
+  if (!watching && !(tired && !asked)) return <div className="min-h-[100dvh] bg-[#05080f]" />;
 
   // The one prompt: low energy as you press Play, or left out of the squad.
   const can = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];

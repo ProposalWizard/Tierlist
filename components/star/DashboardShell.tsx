@@ -47,9 +47,11 @@ interface Props {
   /** Unlock chain (lib/star/unlocks.ts): buttons still locked, each with the
    *  one line that says how to open it. Absent = everything open. */
   locked?: Partial<Record<NavTab, string>>;
-  /** Unlock chain: Achievements takes the League button's place on the bar
-   *  (Harry, 1 Oct 2026, 07:58). League is then reached from Stats or the phone. */
-  achievementsSlot?: { active: boolean; onClick: () => void };
+  /** Unlock chain: HOME takes the League button's place on the bar once
+   *  Achievements has opened (v0.23.1, P26/P60: "you got rid of the home button
+   *  at the bottom … there's no way to get back"). League is then reached from
+   *  Stats or the phone; Achievements from a link on Home. */
+  homeSlot?: { active: boolean; onClick: () => void };
   /** The top HUD (ui/TopHud.tsx): replaces the Star/Energy bars, the Age
    *  strip and the header's money chip, on every screen but the phone. */
   hud?: React.ReactNode;
@@ -62,7 +64,7 @@ interface Props {
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false, mediaUnread = false, onHelp }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, homeSlot, hud, swipe = false, mediaUnread = false, onHelp }: Props) {
   // A locked button answers a tap with its "how to unlock" line.
   const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
   const tap = (tab: NavTab, label: string) => {
@@ -153,8 +155,8 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
               <span className="text-[12px] font-bold text-amber-300">{lockNote.hint}</span>
             </div>
           )}
-          {achievementsSlot
-            ? <NavBtn tour="nav-league" label="Achievements" icon="⭐" active={achievementsSlot.active} onClick={achievementsSlot.onClick} tight />
+          {homeSlot
+            ? <NavBtn tour="nav-league" label="Home" icon="🏠" active={homeSlot.active} onClick={homeSlot.onClick} />
             : <NavBtn tour="nav-league" label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
           <NavBtn tour="nav-training" label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
           <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />
