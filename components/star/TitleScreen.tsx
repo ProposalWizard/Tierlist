@@ -30,6 +30,7 @@ import { hasClub } from "@/lib/star/calendar";
 import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ClubBadge from "./ClubBadge";
+import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import { KitStyles, PressButton, ClubCard, Shine, Glow, RiseIn, Stadium, clubTheme, rgba, useClubTheme } from "./ui";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -115,6 +116,11 @@ export default function TitleScreen(p: TitleScreenProps) {
   const avH = Math.max(150, Math.min(stage.h - 4, 560));
   const avW = Math.min(stage.w, Math.round(avH * 0.86));
   const club = signed && career ? short(career.player.club) : null;
+  // The stand and sky behind the goal, as on Home: day, sunset or night by
+  // the next match's kick-off (lib/star/kickoff.ts); sunset with no match yet
+  // (Harry's favourite).
+  const next = career ? [...career.fixtures].filter((f) => !f.played).sort((a, b) => a.week - b.week)[0] ?? null : null;
+  const sky: HomeSky = career && next ? homeSkyFor(career, next) : "sunset";
 
   return (
     <div
@@ -131,7 +137,8 @@ export default function TitleScreen(p: TitleScreenProps) {
       <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
         <div className="kit-fade absolute inset-[-4%]">
           <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
-          <Floodlights />
+          <SkyPlate sky={sky} />
+          {sky !== "day" && <Floodlights />}
           <GoalNet glow={theme.glow} />
           <PitchFloor />
         </div>
@@ -318,6 +325,18 @@ function GoalNet({ glow }: { glow: string }) {
       <div className="absolute bottom-0 left-0 top-0 w-[5px] bg-white/90" />
       <div className="absolute bottom-0 right-0 top-0 w-[5px] bg-white/90" />
     </div>
+  );
+}
+
+/** The stand behind the goal and the sky above it (public/home/, the same
+ *  three pictures as Home). Its grass meets the goal line at 52%. */
+function SkyPlate({ sky }: { sky: HomeSky }) {
+  return (
+    <div
+      className="absolute inset-x-0 top-0 h-[52%]"
+      aria-hidden
+      style={{ backgroundImage: `url(/home/tall-${sky}.webp)`, backgroundSize: "cover", backgroundPosition: "center bottom" }}
+    />
   );
 }
 
