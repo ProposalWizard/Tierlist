@@ -19,6 +19,7 @@ import json, os, re, subprocess, sys, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, "public", "sfx")
 VARIANTS = 3
+PEAK_MAX = -1.5  # dB, finished file
 STYLE = "Clean, close, dry studio sound effect, no music, no voices speaking."
 
 # name, seconds, what it's for, prompt
@@ -69,6 +70,25 @@ def generate(prompt, seconds, dest):
         raise RuntimeError(f"ElevenLabs {r.stdout.strip()}: {msg}")
 
 
+def finish(raw, dest, tmp):
+    """Trim the lead-in, level to -16 LUFS, then pull the gain down until the
+    finished MP3 peaks at or under PEAK_MAX (loudnorm and the MP3 encode both
+    overshoot on sharp transients like a kick or a tap)."""
+    wav = os.path.join(tmp, "level.wav")
+    subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", raw,
+                    "-af", "silenceremove=start_periods=1:start_threshold=-50dB,loudnorm=I=-16:TP=-1.5:LRA=11",
+                    "-ac", "1", "-ar", "44100", wav], check=True)
+    gain = 0.0
+    for _ in range(4):
+        subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", wav,
+                        "-af", f"volume={gain}dB", "-b:a", "96k", dest], check=True)
+        d, peak, mean = measure(dest)
+        if peak <= PEAK_MAX:
+            break
+        gain -= peak - PEAK_MAX + 0.3
+    return d, peak, mean
+
+
 def main():
     if not os.environ.get("ELEVENLABS_API_KEY", "").startswith("sk_"):
         sys.exit("ELEVENLABS_API_KEY must be a real key starting with sk_ (not the key ID).")
@@ -76,14 +96,16 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     man_path = os.path.join(OUT, "manifest.json")
     manifest = {s["name"]: s for s in json.load(open(man_path))["sounds"]} if os.path.exists(man_path) else {}
-    tmp = tempfile.mkdtemp()
+    # SFX_REUSE=<dir> re-levels takes already downloaded there instead of paying for new ones
+    tmp = os.environ.get("SFX_REUSE") or tempfile.mkdtemp()
     for name, secs, purpose, prompt in SOUNDS:
         if only and name not in only:
             continue
         takes = []
         for v in range(VARIANTS):
             raw = os.path.join(tmp, f"{name}-{v}.mp3")
-            generate(prompt, secs, raw)
+            if not os.path.exists(raw):
+                generate(prompt, secs, raw)
             d, peak, mean = measure(raw)
             takes.append((raw, d, peak, mean))
             print(f"  {name} v{v}: {d:.2f}s peak {peak} dB mean {mean} dB")
@@ -91,10 +113,7 @@ def main():
         # closest to the asked length, then the most punch (peak minus mean)
         best = min(clean, key=lambda t: (round(abs(t[1] - secs), 1), -(t[2] - t[3])))
         dest = os.path.join(OUT, f"{name}.mp3")
-        subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", best[0],
-                        "-af", "silenceremove=start_periods=1:start_threshold=-50dB,loudnorm=I=-16:TP=-1.5:LRA=11",
-                        "-ac", "1", "-ar", "44100", "-b:a", "96k", dest], check=True)
-        d, peak, mean = measure(dest)
+        d, peak, mean = finish(best[0], dest, tmp)
         manifest[name] = {"name": name, "file": f"/sfx/{name}.mp3", "duration": round(d, 2),
                           "kb": round(os.path.getsize(dest) / 1024, 1), "purpose": purpose, "prompt": prompt}
         print(f"-> {name}: {d:.2f}s, {manifest[name]['kb']} KB, peak {peak} dB")
