@@ -346,6 +346,12 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
+patch-notes or review page: a before and an after clip of the whole phone
+screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
+full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
+or two phone shots squeezed side by side. `scripts/film/README.md`.
+
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
