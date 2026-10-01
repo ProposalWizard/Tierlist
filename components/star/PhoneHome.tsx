@@ -34,6 +34,7 @@ import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib
 import { mulberry32 } from "@/lib/star/season";
 import { formatMoney } from "@/lib/star/money";
 import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
+import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
 import MediaFeed from "./MediaFeed";
 import LeagueScreen from "./LeagueScreen";
@@ -140,7 +141,9 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
     setSocialSeen(Number.isFinite(s) && s > 0 ? s : -1);
   }, []);
   const lastPostAt = useMemo(() => Math.max(0, ...(career.media?.posts ?? []).map((p) => p.at)), [career.media]);
-  const badges: Partial<Record<AppId, number>> = {
+  const badges: Partial<Record<AppId | Leave, number>> = {
+    // Sponsor offers waiting for an answer (lib/star/sponsorDeals.ts).
+    sponsors: brandsOf(career).offers.length,
     messages: seenMsgs ? msgs.filter((m) => !seenMsgs.has(msgKey(m))).length : 0,
     // Never opened here before: only what the last match stirred up counts,
     // not a whole season of history.

@@ -1,0 +1,197 @@
+<title>Knowitball Patch Notes Mikey v0.8</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 14px;margin:0 0 8px}
+  .check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .check li:last-child{border-bottom:0}
+  .check li span{color:var(--ink2)}
+  .pw{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+  .pw b{color:var(--ink)}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+  .ba figure{margin:0}
+  .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+  .ba figcaption{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--ink3)}
+  .ba figure.after figcaption{color:var(--green)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.8</span>
+  <h1>Knowitball Patch Notes Mikey v0.8 — Sponsors Revamp</h1>
+  <p class="sub">30 September 2026 · branch Mikey · 1 change · tests: all passing except the 3 that also fail on main</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>1 → 5</b><span>deal slots, Local Name to Icon</span></div>
+  <div class="s"><b>13</b><span>kinds of brand, each with invented brands</span></div>
+  <div class="s"><b>every week</b><span>sponsor money, paid with your wage</span></div>
+  <div class="s"><b>25% off</b><span>every pair of boots with a boots deal</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check n">
+  <li>The Sponsors screen: Deals, Offers and Brands tabs <span>· Shop → Sponsors, or Phone → Sponsors</span></li>
+  <li>Offers arrive while you are playing well, with a red dot on the Phone <span>· Phone → Sponsors badge</span></li>
+  <li>Sign, Decline, More money, Longer deal, Easier target on an offer <span>· Sponsors → Offers</span></li>
+  <li>"More money" opens the negotiation screen with the brand <span>· Sponsors → Offers</span></li>
+  <li>Sponsor money on the after-match card <span>· after a weekend match</span></li>
+  <li>Targets fill up and pay a bonus <span>· Sponsors → Deals</span></li>
+  <li>The brand's happy / on the fence / unhappy face <span>· Sponsors → Deals</span></li>
+  <li>Boots are 25% cheaper with a boots deal <span>· Shop → Boots</span></li>
+  <li>Walk away early (costs the whole deal) <span>· Sponsors → Deals</span></li>
+</ul>
+
+<h2 class="add"><i></i>The headline: brands come to you</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Sponsors rebuilt: offers, deals, slots and weekly money</div>
+    <p class="pw"><b>Problem:</b> the Sponsors page was a list of ten categories you signed yourself, paid once a season. Nothing arrived, there was nothing to decide, and nothing could go wrong.</p>
+    <p class="pw"><b>Why:</b> it was built as a checklist, not as brands with their own terms.</p>
+    <p class="pw"><b>Fix:</b> brands now send you offers. Each one is a brand (invented, like STRYDE boots or VOLTA Energy), a weekly fee, 1 to 3 seasons, one or two targets, and sometimes a clause. You have deal slots: 1 at Local Name up to 5 at Icon, and one deal per kind of brand. An offer lasts 2 weeks. Signing pays two weeks' fee straight away. Deals belong to you, not the club, so they carry on if you move. <span class="tag seen">screens seen; money measured</span></p>
+    <div class="ba"><figure class="after"><img src="v0.8/deals.jpg" alt="Deals tab"><figcaption>Your deals</figcaption></figure><figure class="after"><img src="v0.8/offers.jpg" alt="Offers tab"><figcaption>Offers</figcaption></figure></div>
+  </li>
+  <li>
+    <div class="hd">Who gets offers</div>
+    <p class="pw">Only a player who is playing and playing well: in the squad, with recent ratings of 6.2 or better. More fame and better form bring more offers, and your star rating nudges the money up a little. Each kind of brand also wants something that fits it: goals for boots, appearances for a drinks brand, a trophy for electronics, a car of your own for a watch brand, a title-chasing club for a car brand. <span class="tag">measured</span></p>
+    <div class="ba"><figure class="after" style="grid-column:1/-1;max-width:390px"><img src="v0.8/brands.jpg" alt="Brands tab"><figcaption>What each kind of brand wants</figcaption></figure></div>
+  </li>
+  <li>
+    <div class="hd">Targets only ever add</div>
+    <p class="pw">Targets vary: score 14 goals this season, score in 4 appearances in a row, win Player of the Month, average 7.2, get promoted, win a trophy. Hitting one pays a bonus and makes the brand happier. Missing one costs no money, only a little of the brand's happiness. <span class="tag">measured</span></p>
+  </li>
+  <li>
+    <div class="hd">Brand happiness decides the renewal</div>
+    <p class="pw">Each deal shows the brand's face and a bar. Good ratings, targets and trophies push it up; misses and scandals pull it down. When the deal ends, a happy brand offers a renewal with a 15–30% raise, a brand on the fence offers a raise, the same money or a cut, and an unhappy one walks. <span class="tag">measured</span></p>
+  </li>
+  <li>
+    <div class="hd">Things that happen</div>
+    <p class="pw"><b>Bidding war:</b> two brands of the same kind want you; sign one and the other walks. <b>Buy-out:</b> a rival offers more money and pays to take you from your current brand; you can ask your brand to match it (a happy one usually does). <b>Scandal:</b> being caught for corruption, or a heavy night at the casino (losing more than 8 weeks' wages in one visit, 1 time in 4), ends any deal with a behaviour clause and upsets the rest. <b>One-off adverts:</b> cash for your first goal, first hat-trick, 50 and 100 goals, first Player of the Month, first trophy and first cap, without using a slot. <b>Home nation:</b> a national brand once you win a cap. <span class="tag">measured</span></p>
+  </li>
+  <li>
+    <div class="hd">Negotiating and walking away</div>
+    <p class="pw">"More money" opens the same two-desks negotiation screen as transfers; push too hard and the brand leaves. "Longer deal" and "Easier target" can each be asked once. Leaving a deal early costs its whole guaranteed value: every week it promised. <span class="tag">measured</span></p>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Sponsor money is now weekly, on the after-match card</div>
+    <p class="pw"><b>Before:</b> once-a-season fees, plus "image rights" every match from the sponsors relationship bar. <b>Now:</b> your deals' weekly fees, paid with your wage on the weekend match, and paid even in a week you don't play. The per-match image-rights money is gone. <span class="tag">measured</span></p>
+    <div class="bars">
+      <div class="bar"><div class="lb"><span>Five deals at the top (★100k wage), a week</span><span>★30k–40k</span></div><div class="track"><div class="fill now" style="width:33%"></div></div></div>
+      <div class="bar"><div class="lb"><span>One boots deal in the National League (★25 wage), a week</span><span>★4–5</span></div><div class="track"><div class="fill was" style="width:16%"></div></div></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Two new kinds of brand</div>
+    <p class="pw">Headphones and a football video game join boots, sports drink, food, sports and casual clothing, electronics, cosmetics, watch, jewellery, car and home nation.</p>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">Not played through on a screen <span class="pill p-amb">LOW</span></div><div class="dt">The Sponsors screens were seen with example deals. Offers arriving during a real career, the negotiation screen for a sponsor, and the after-match line were checked by tests and a played-through test career, not by eye.</div></li>
+  <li><div class="hd">Offers are not a phone pop-up yet <span class="pill p-amb">LOW</span></div><div class="dt">They show as a badge on the Phone and in Sponsors → Offers. A pop-up was left for later, as asked.</div></li>
+  <li><div class="hd">The old sponsors relationship bar <span class="pill p-amb">LOW</span></div><div class="dt">Relations still shows a Sponsors bar and minigame. It no longer changes your money; brand happiness now does that job per deal.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 30 September 2026 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 27 September 2026 · Five levels of every boot and lifestyle item</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 26 September 2026 · How you get picked</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild</li>
+</ul>
+</div>

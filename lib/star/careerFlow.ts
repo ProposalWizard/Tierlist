@@ -5,6 +5,7 @@
 // phase routing and toasts; this owns the numbers.
 
 import { bestsAfterMatch, archiveRowFor } from "./careerRecords";
+import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
 import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
@@ -1279,6 +1280,13 @@ export function creditMatchResult(
     Object.assign(next, decaySkills(next, mulberry32(next.season * 5051 + next.week * 131 + 3)));
   }
 
+  // Sponsors: targets move, offers come and go (sponsorDeals.ts). Not on a replay.
+  if (!alreadyPlayed) {
+    const b = brandsAfterMatch(career, next, fixture, stats);
+    next.brands = b.brands;
+    next.money += b.bonus;
+  }
+
   const settled = applyAchievements(next);
   return {
     career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
@@ -1763,6 +1771,13 @@ export function advanceSeason(
   // Aged skills, a season's trophies, fresh personal bests and any
   // achievement this rollover itself unlocked are all final at this point —
   // exactly the moment computeStarRating should read them from.
+  // Sponsors: season targets are judged, deals run down, renewals are offered.
+  {
+    const b = brandsAfterSeason(career, next, ladder.yourMove === "promoted");
+    next.brands = b.brands;
+    next.money += b.bonus;
+  }
+
   const settled = applyAchievements(next);
   return {
     career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
@@ -1944,7 +1959,8 @@ export function simulateMissedFixture(
     //
     // You are paid for the week, not for turning up, so the share is the
     // same as it would have been had you played this one.
-    money: career.money + wageForFixture(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
+    // …and your sponsors pay you for the week whether you played or not.
+    money: career.money + wageForFixture(career, fixture) + sponsorPayFor(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     ...sessionsAfterMatch(career, dayFor(fixture.kind, fixture.week, divisionOf(career))),
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
