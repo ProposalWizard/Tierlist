@@ -61,7 +61,7 @@ interface Props {
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false, mediaUnread = false }: Props) {
   // A locked button answers a tap with its "how to unlock" line.
   const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
   const tap = (tab: NavTab, label: string) => {
@@ -225,7 +225,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
           <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
           <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />
           <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} />
-          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} />
+          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} dot={mediaUnread} />
         </div>
       </div>
     </div>

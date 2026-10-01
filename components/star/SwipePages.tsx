@@ -11,6 +11,7 @@
  * whatever button it started on.
  */
 import { useRef, useState } from "react";
+import { EdgeArrows } from "./ui/Nav";
 
 /** A settle with a little overshoot, so a page lands rather than stops. The
  *  reduced-motion rule in HomeFx.tsx does not reach inline transitions, so a
@@ -21,7 +22,7 @@ if (typeof window !== "undefined") {
   try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) SETTLE = "1ms linear"; } catch { /* keep the spring */ }
 }
 
-export default function SwipePages({ index, onIndex, labels, children, inset = false }: {
+export default function SwipePages({ index, onIndex, labels, children, inset = false, arrows }: {
   index: number;
   onIndex: (i: number) => void;
   labels: [string, string, string];
@@ -29,6 +30,11 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   /** The pages and the tab row carry their own 12px side padding (the shell
    *  adds none), so a page can bleed to both edges. Home uses it. */
   inset?: boolean;
+  /** v0.23 (Harry, P47: "a little arrow here with an image, arrow here, image,
+   *  the little word"): in place of the tab row, a thin row of edge arrows
+   *  (the page to the left, the page to the right). One icon per page; a page
+   *  listed in `ownRow` draws its own row, so nothing stacks. */
+  arrows?: { icons: [string, string, string]; ownRow?: number[] };
 }) {
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
@@ -72,6 +78,16 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {arrows ? (
+        !arrows.ownRow?.includes(index) && (
+          <div className={`mb-2 shrink-0 ${inset ? "px-3" : ""}`}>
+            <EdgeArrows
+              prev={index > 0 ? { icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => onIndex(index - 1) } : undefined}
+              next={index < 2 ? { icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => onIndex(index + 1) } : undefined}
+            >{labels[index]}</EdgeArrows>
+          </div>
+        )
+      ) : (
       <div className={`relative mb-2 grid shrink-0 grid-cols-3 rounded-[3px] bg-black/30 p-1 ${inset ? "mx-3" : ""}`}>
         {/* The highlight and its underline follow the finger while you
             drag, then spring onto the tab you land on. */}
@@ -95,6 +111,7 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
           </button>
         ))}
       </div>
+      )}
       <div
         ref={vp}
         className="relative min-h-0 flex-1 overflow-hidden"

@@ -55,6 +55,8 @@ export interface StoreViewProps {
   dayOffset?: number;
   /** "Test" badge, "Use one (test)" and the test-mode wording. */
   testArea?: boolean;
+  /** The top HUD (the career's; absent in the test area). */
+  hud?: ReactNode;
   /** Where ‹ goes. */
   back: { href: string } | { onClick: () => void };
   /** Rendered under the header — the test area's controls. */
@@ -245,6 +247,7 @@ export default function StoreView(p: StoreViewProps) {
       <div className="relative mx-auto max-w-[900px] pb-24">
         {/* ── Header: title + wallet ── */}
         <div className="sticky top-0 z-20" style={{ background: "linear-gradient(180deg, rgba(5,8,15,.95) 70%, rgba(5,8,15,.8))", backdropFilter: "blur(6px)" }}>
+          {p.hud}
           <div className="flex items-center gap-2 px-4 pt-3 pb-2">
             {"href" in p.back
               ? <Link href={p.back.href} aria-label="Back" className="kib-press flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.05] text-lg font-black ring-1 ring-white/10">‹</Link>

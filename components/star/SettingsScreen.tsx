@@ -35,6 +35,8 @@ import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch 
 
 interface Props {
   career: CareerState;
+  /** The top HUD (ui/TopHud.tsx): energy never leaves (Harry, P86). */
+  hud?: React.ReactNode;
   onBack: () => void;
   /** Back to the title screen (Continue / New Game / Load Game). */
   onExitToTitle?: () => void;
@@ -85,7 +87,7 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer,
+  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
@@ -127,6 +129,7 @@ export default function SettingsScreen({
 
   return (
     <Screen glow={glow} className="max-w-md px-3 pb-10 pt-3">
+      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <ScreenHeader
         title="Settings"
         kicker={career.player.club || undefined}
@@ -208,10 +211,14 @@ export default function SettingsScreen({
         </SetCard>
       </RiseIn>
 
+      {/* Moved here from the middle of Settings (Harry, 1 Oct 2026, P84: "I
+          don't think the penalty run-up and three-kick run-up should be in
+          your settings. It should probably be in like a play style section"). */}
+      {(onSetPenaltyRunup || onSetFreeKickRunup) && <RiseIn index={next()}><SetSection>Play style</SetSection></RiseIn>}
       {(onSetPenaltyRunup || onSetFreeKickRunup) && (
         <RiseIn index={next()} className="mt-2.5">
           <SetCard tone={glow}>
-            <SetHead>Run-ups</SetHead>
+            <SetHead>Penalties and free kicks</SetHead>
             <SetNote>How you run up to the ball. Looks only — the kick is the same.</SetNote>
             {onSetPenaltyRunup && (
               <RunupPicker

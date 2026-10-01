@@ -17,9 +17,12 @@ import type { EnergyMode } from "@/lib/star/energy";
  */
 
 const PALETTE: Record<EnergyMode, { main: string; light: string; glow: string }> = {
-  low: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.55)" },
+  // Green → yellow → red, red the most intense (Harry, 1 Oct 2026, P95:
+  // "instead of red, yellow, green I would do green, yellow, red — red being
+  // the most intense"). The order Low · Medium · High is unchanged.
+  low: { main: "#22c55e", light: "#d9f99d", glow: "rgba(132,204,22,0.6)" },
   medium: { main: "#f59e0b", light: "#fde047", glow: "rgba(245,158,11,0.55)" },
-  high: { main: "#22c55e", light: "#d9f99d", glow: "rgba(132,204,22,0.6)" },
+  high: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.6)" },
 };
 
 /** Where the sparks sit, in degrees on screen (0 = right, 90 = down) — the

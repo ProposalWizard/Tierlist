@@ -33,7 +33,7 @@ import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
 import { formatMoney } from "@/lib/star/money";
-import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
+import { SOCIAL_SEEN, MSGS_SEEN, readLS, writeLS, buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
 import { AppStore } from "./UnlockChain";
@@ -43,7 +43,7 @@ import EnginePlay from "./EnginePlay";
 import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
-import { ClubCard, CountUp, PressButton, RiseIn, Glow, Badge, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
+import { ClubCard, CountUp, RiseIn, Glow, Badge, HomeBar, EmptySlots, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
 type Leave = HubPhase | "settings";
@@ -72,31 +72,6 @@ const INSIDE = new Set<string>(["social", "kickabout", "league", "fixtures", "me
 const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : APPS.find((a) => a.id === id)!);
-
-// ── What is unread (per phone, in this browser — a convenience, not state) ──
-const SOCIAL_SEEN = "star-phone-social-seen";
-const MSGS_SEEN = "star-phone-msgs-seen";
-function readLS(key: string): string | null {
-  try { return localStorage.getItem(key); } catch { return null; }
-}
-function writeLS(key: string, v: string) {
-  try { localStorage.setItem(key, v); } catch { /* private window */ }
-}
-
-interface Msg { from: string; icon: string; text: string; tone: [string, string] }
-/** Messages — a sketch of what the phone could tell you. Built from real
- *  career facts; the wording is placeholder. */
-function buildMessages(career: CareerState): Msg[] {
-  const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
-  const msgs: Msg[] = [];
-  if (career.managerNews) msgs.push({ from: "The club", icon: "🏟️", text: career.managerNews, tone: ["#60a5fa", "#1d4ed8"] });
-  if (next) msgs.push({ from: career.manager?.name ? `Gaffer (${career.manager.name})` : "Gaffer", icon: "🧢", text: `${short(next.opponent)} next. Be ready.`, tone: ["#34d399", "#047857"] });
-  msgs.push({ from: "Agent", icon: "💼", text: `${career.contract.seasonsRemaining} season${career.contract.seasonsRemaining === 1 ? "" : "s"} left on your deal at ★${formatMoney(career.contract.wage)} a week.`, tone: ["#fbbf24", "#b45309"] });
-  if (career.energy < 60) msgs.push({ from: "Physio", icon: "🩺", text: `Energy's at ${Math.round(career.energy)}%. Rest up or drink a can.`, tone: ["#f87171", "#b91c1c"] });
-  msgs.push({ from: "Mum", icon: "❤️", text: "Proud of you. Eat something green.", tone: ["#f472b6", "#be185d"] });
-  return msgs;
-}
-const msgKey = (m: Msg) => `${m.from}|${m.text}`;
 
 export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall }: {
   career: CareerState;
@@ -157,7 +132,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
     messages: seenMsgs ? msgs.filter((m) => !seenMsgs.has(msgKey(m))).length : 0,
     // Never opened here before: only what the last match stirred up counts,
     // not a whole season of history.
-    social: socialSeen === null ? 0 : socialSeen === -1 ? (hasFreshMedia(career) ? 1 : 0) : unreadCount(career, socialSeen),
+    social: socialUnread(career, socialSeen),
   };
   const markSeen = (id: AppId) => {
     if (id === "messages") {
@@ -192,7 +167,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
       {size && (
         <div style={{ width: size.w, height: size.h }}>
-          <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow}>
+          <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
               {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} />}
               {app !== null && (
@@ -211,17 +186,9 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
                   {app === "messages" && <Messages msgs={msgs} />}
                   {app === "appstore" && <AppStore career={career} onInstall={(id) => onInstall?.(id)} />}
-                  <div className="flex shrink-0 justify-center pb-0.5 pt-1">
-                    <PressButton
-                      variant="secondary"
-                      size="none"
-                      onClick={goHome}
-                      aria-label="Home"
-                      className="rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest text-white/85"
-                    >
-                      ◀ Home
-                    </PressButton>
-                  </div>
+                  {/* The phone's home bar: tap it or swipe up to go home (Harry,
+                      P88: "more like an actual phone"; it was a "◀ Home" pill). */}
+                  <HomeBar onActivate={goHome} label="Home" />
                 </div>
               )}
             </div>
@@ -240,11 +207,22 @@ function wallpaper(glow: string, trim: string): React.CSSProperties {
   };
 }
 
-function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true }: {
+function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, off = false }: {
   app: App; size?: number; badge?: number; index?: number; label?: boolean;
+  /** An app you do not have yet: a blacked-out shape, like New Star Soccer's
+   *  empty slots (Harry, P90). Tapping it opens the App Store. */
+  off?: boolean;
   onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
+  if (off) return (
+    <button onClick={() => onOpen("appstore", ref.current)} aria-label="Not installed yet — open the App Store" data-app-off className="kib-press flex min-w-0 flex-col items-center gap-1">
+      <span ref={ref} className="kit-icon-in relative grid aspect-square place-items-center rounded-[28%]" style={{ width: size, animationDelay: `${index * 26}ms`, background: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.07), 0 7px 14px -6px rgba(0,0,0,.8)" }}>
+        <span className="text-white" style={{ fontSize: size * 0.48, filter: "brightness(0) opacity(.55)" }}>{app.icon}</span>
+      </span>
+      {label && <span className="w-full text-center text-[9.5px] font-bold text-white/25">???</span>}
+    </button>
+  );
   return (
     <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
       <span
@@ -274,8 +252,10 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
   installed?: (id: string) => boolean;
 }) {
   const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+  // A new career's phone shows every app, the ones it does not have yet
+  // blacked out (NSS-style), plus the App Store that gets them.
   const grid = installed
-    ? [...APPS.filter((a) => !DOCK.has(a.id) && installed(a.id)), APP_STORE_ICON]
+    ? [...APPS.filter((a) => !DOCK.has(a.id)), APP_STORE_ICON]
     : APPS.filter((a) => !DOCK.has(a.id));
   const dock = APPS.filter((a) => DOCK.has(a.id));
   return (
@@ -289,7 +269,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
         {grid.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
+          <AppIcon key={a.id} app={a} index={i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && a.id !== "appstore" && !installed(a.id)} />
         ))}
       </div>
       <div className="min-h-0 flex-1" />
@@ -302,19 +282,9 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
           <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
         ))}
       </div>
-      {onClose && (
-        <div className="flex shrink-0 justify-center pb-1.5 pt-0.5">
-          <PressButton
-            variant="secondary"
-            size="none"
-            onClick={onClose}
-            aria-label="Close phone"
-            className="rounded-full px-5 py-1.5 text-[11px] font-black uppercase tracking-widest text-white"
-          >
-            ✕ Close phone
-          </PressButton>
-        </div>
-      )}
+      {/* Putting the phone down is the home bar too — tap it or swipe up
+          (it was a "✕ Close phone" pill, P88). */}
+      {onClose && <HomeBar onActivate={onClose} label="Close phone" />}
     </div>
   );
 }
@@ -463,9 +433,10 @@ function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
   return (
     <AppShell app={appOf("fixtures")}>
       <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto pb-1">
+        {played.length === 0 && upcoming.length === 0 && <EmptySlots rows={5} icon="📅" />}
         {played.length > 0 && <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Results</div>}
         {played.map((f, i) => row(f, i))}
-        <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Coming up</div>
+        {upcoming.length > 0 && <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Coming up</div>}
         {upcoming.map((f, i) => row(f, played.length + i, i === 0))}
       </div>
     </AppShell>
@@ -476,7 +447,8 @@ function Messages({ msgs }: { msgs: Msg[] }) {
   return (
     <AppShell app={appOf("messages")}>
       <div className="kib-noscroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 pt-2.5">
-        <div className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Today</div>
+        {msgs.length === 0 && <EmptySlots rows={4} icon="🔔" />}
+        {msgs.length > 0 && <div className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Today</div>}
         {msgs.map((m, i) => (
           <RiseIn key={i} index={i} step={70}>
             <div className="flex items-end gap-2">

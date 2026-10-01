@@ -91,6 +91,7 @@ import DashboardStats from "@/components/star/DashboardStats";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
+import { PHONE_SEEN_EVENT, phoneUnreadCount } from "@/lib/star/phoneUnread";
 import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
 import PhoneHome from "@/components/star/PhoneHome";
@@ -100,7 +101,7 @@ import LadderScreen from "@/components/star/LadderScreen";
 import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
-import MatchdayScreen from "@/components/star/MatchdayScreen";
+import LineupIntro from "@/components/star/LineupIntro";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
@@ -605,6 +606,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The pre-match screen reads THESE, not the raw pre-credit `career`/
   // `selection` above, so it shows and decides off the number you're really
   // about to have rather than a stale one from before this week finished.
+  // The Phone button's red dot: unread things on the phone, until you read them.
+  const [phoneSeenTick, setPhoneSeenTick] = useState(0);
+  useEffect(() => {
+    const on = () => setPhoneSeenTick((t) => t + 1);
+    window.addEventListener(PHONE_SEEN_EVENT, on);
+    return () => window.removeEventListener(PHONE_SEEN_EVENT, on);
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const phoneUnread = useMemo(() => (career ? phoneUnreadCount(career) : 0), [career, phoneSeenTick]);
   const preMatchEnergy = career ? projectedEnergy(career) : 0;
   const preMatchSelection = career ? selectionFor({ ...career, energy: preMatchEnergy }) : null;
   // Item 24: the sub's planned minute and ladder show only with Settings →
@@ -3381,8 +3391,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   // The Store (Shop page's big tile, the phone's Store app) — the test area's
   // screen on this career. See components/star/store/CareerStore.tsx.
+  // The top HUD on every screen outside the dashboard shell (v0.23, P86:
+  // "your energy never leaves").
+  const screenHud = (screen: HudScreen) => (
+    <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
+  );
   if (phase === "store") {
-    return <CareerStore career={career} onChange={setCareer} onBack={handleBackToDashboard} />;
+    return <CareerStore career={career} onChange={setCareer} onBack={handleBackToDashboard} hud={screenHud("shop")} />;
   }
 
   if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
@@ -3396,12 +3411,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onBuyBoot={handleBuyBoot}
         onBuyItem={handleBuyItem}
         onBuyFromBlackMarket={handleBuyFromBlackMarket}
+        hud={screenHud("shop")}
+        onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
       />
     );
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
+    return <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
   }
 
   if (phase === "investments") {
@@ -3561,6 +3578,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onSetPenaltyRunup={handleSetPenaltyRunup}
         onSetFreeKickRunup={handleSetFreeKickRunup}
         onExitCareer={handleExit}
+        hud={screenHud("settings")}
       />
     );
   }
@@ -3592,23 +3610,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Pre-match confirmation — the match-day screen (components/star/MatchdayScreen.tsx),
   // including the team-sheet step before kick-off.
   if (phase === "pre-match" && nextFixture) {
+    // v0.23 (P91/P93): no match-day page. Play → (a prompt only if energy is
+    // low) → the line-up animation → the match. components/star/LineupIntro.tsx.
     return (
-      <MatchdayScreen
+      <LineupIntro
         career={career}
         nextFixture={nextFixture}
         preMatchEnergy={preMatchEnergy}
         preMatchSelection={preMatchSelection}
-        showDevInfo={showDevInfo}
         playAs={playAs}
-        onPlayAs={setPlayAs}
-        showTeams={showTeams}
-        onShowTeams={setShowTeams}
         onBack={handleBackToDashboard}
         onPlayMatch={handlePlayMatch}
         onWatchFromStands={handleWatchFromStands}
         onSimMatch={handleSimMatch}
         onUseCan={handleUseCan}
-        onBuyCan={handleBuyKib}
       />
     );
   }
@@ -3665,7 +3680,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       onNavigate={handleNavigate}
       onSettings={() => setPhase("settings")}
       activeNav={phase === "skills" ? (trainingTab === "life" ? "life" : "skills") : activeNav}
-      mediaUnread={(hasFreshMedia(career) || brandsOf(career).offers.length > 0) && activeNav !== "media"}
+      // A red dot while something on the phone is unread; it clears once you
+      // have opened it (lib/star/phoneUnread.ts; Harry, P89).
+      mediaUnread={phoneUnread > 0}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
@@ -3813,10 +3830,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             setPhase("dashboard");
           }}
           labels={["Stats", "Home", "Shop"]}
+          // v0.23: edge arrows instead of the tab row; Stats draws its own row.
+          arrows={{ icons: ["📊", "🏠", "🛍️"], ownRow: isOpen(career, "stats") ? [0] : [] }}
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} onLeague={() => handleNavigate("league")} />
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} onLeague={() => handleNavigate("league")} onHome={() => setHomePage(1)} />
               : <LockedPage key="stats" title="Stats" feature="stats" />,
             <HomeHub
               key="home"

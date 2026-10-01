@@ -22,6 +22,8 @@ import { SegTabs, CardTitle } from "./screenKit";
 interface Props {
   career: CareerState;
   onRenew: () => void;
+  /** Controlled by the Stats page's arrows (no tab row of its own). */
+  view?: StatsTab;
 }
 
 /** A section card on Status, lit in its own colour (was a coloured left border). */
@@ -42,11 +44,12 @@ const ord = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "
 type StatsTab = "stats" | "contract" | "status";
 let lastTab: StatsTab = "stats";
 
-export default function DashboardStats({ career, onRenew }: Props) {
+export default function DashboardStats({ career, onRenew, view }: Props) {
   const { glow } = useClubTheme(career);
   // Remembered across screens, so coming back from a contract renewal lands
   // on Contract, not Stats (Mikey, 29 Sep 2026).
-  const [tab, setTabState] = useState<StatsTab>(lastTab);
+  const [tabState, setTabState] = useState<StatsTab>(lastTab);
+  const tab = view ?? tabState;
   const setTab = (t: StatsTab) => { lastTab = t; setTabState(t); };
   const selection = selectionFor(career);
   const duties = setPieceDuties(career, selection.status);
@@ -71,7 +74,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
 
   return (
     <div className="mt-2">
-      <SegTabs className="mb-2" value={tab} onChange={setTab} tabs={[["stats", "Stats"], ["contract", "Contract"], ["status", "Status"]] as const} />
+      {!view && <SegTabs className="mb-2" value={tab} onChange={setTab} tabs={[["stats", "Stats"], ["contract", "Contract"], ["status", "Status"]] as const} />}
 
       {tab === "stats" && (
         <RiseIn key="stats">

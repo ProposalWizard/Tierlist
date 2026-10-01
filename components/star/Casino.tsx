@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
 import {
@@ -30,7 +30,12 @@ function useCasinoFx() {
 }
 type CasinoFx = ReturnType<typeof useCasinoFx>;
 
+/** The top HUD for every casino screen (v0.23, P86: energy never leaves). */
+const HudCtx = createContext<React.ReactNode>(null);
+
 interface Props {
+  /** The top HUD (ui/TopHud.tsx). */
+  hud?: React.ReactNode;
   bankStart: number;
   career: CareerState;
   onExit: (finalBank: number) => void;
@@ -97,7 +102,11 @@ function stepAtOrBelow(n: number): number {
 
 const BET_STORAGE_KEY = "star-casino-bet";
 
-export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
+export default function CasinoMenu(props: Props) {
+  return <HudCtx.Provider value={props.hud ?? null}><CasinoInner {...props} /></HudCtx.Provider>;
+}
+
+function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
@@ -192,8 +201,9 @@ const GAMES: { id: "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goa
 
 function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerState; onExit: () => void; onPick: (g: (typeof GAMES)[number]["id"]) => void }) {
   const { glow } = useClubTheme(career);
+  const hud = useContext(HudCtx);
   return (
-    <ScreenShell glow={glow} accent={GOLD} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
+    <ScreenShell glow={glow} accent={GOLD} hud={hud} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
       <div className="space-y-2.5">
         {GAMES.map((g, i) => (
           <RiseIn key={g.id} index={i} step={60}>
@@ -248,6 +258,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children
 }) {
   // Float every change of the bank off it: "−★2k" as a stake goes down,
   // "+★4k" as winnings come in.
+  const hud = useContext(HudCtx);
   const prev = useRef(bank);
   const [delta, setDelta] = useState({ n: 0, text: "", up: false });
   useEffect(() => {
@@ -259,6 +270,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children
     <ScreenShell
       glow={FELT}
       accent={GOLD}
+      hud={hud}
       title={title}
       icon={icon}
       onBack={onExit}

@@ -15,8 +15,13 @@ import { styleUnlockStar } from "@/lib/star/unlocks";
 import { starsNow } from "@/lib/star/starPoints";
 import {
   ScreenShell, WalletPill, ClubCard, PressButton, Glow, Burst, Pop, RiseIn, useFly, useTrigger,
-  useClubTheme, rgba, tint,
+  useClubTheme, rgba, tint, FloatText,
 } from "./ui";
+
+/** "−★12k" floating up off the HUD's money when you spend. */
+function SpentFloat({ n, text }: { n: number; text: string }) {
+  return <div className="relative h-0 w-0"><FloatText trigger={n} text={text} color="#fca5a5" className="right-3 top-1" size={15} /></div>;
+}
 
 interface ActionResult { ok: boolean; reason?: string; }
 
@@ -60,6 +65,10 @@ interface Props {
   /** Phase 5 of STAR_POWER_POLITICS.md — buying a boot the FA's Rule Book
    *  has banned, from "shady guys," at a real risk of getting caught. */
   onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
+  /** The top HUD (ui/TopHud.tsx): energy never leaves (Harry, P86). */
+  hud?: React.ReactNode;
+  /** Home from the Style page's bottom bar. */
+  onHome?: () => void;
 }
 
 /**
@@ -71,7 +80,7 @@ interface Props {
  * item's own row), "−★X" floats up off your money, and the money counts
  * down to its new value. Every price, level, rule and handler is unchanged.
  */
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome }: Props) {
   const theme = useClubTheme(career);
   // Five levels of everything (27 Sep 2026). The shop opens on the level
   // priced for the league you're in: National League level 1 … Premier League 5.
@@ -101,7 +110,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
   const reward = (price: number, from: Element | null, to: Element | null, node: React.ReactNode, color: string, key: string, holdCount = false) => {
     setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
     if (holdCount) setInFlight((m) => ({ ...m, [key]: (m[key] ?? 0) + 1 }));
-    fly(from, to ?? walletRef.current, node, () => {
+    // With the top HUD up there is no wallet pill: the HUD's money cell is the target.
+    fly(from, to ?? walletRef.current ?? (typeof document !== "undefined" ? document.querySelector("[data-hud] [data-money-chip]") : null), node, () => {
       if (holdCount) setInFlight((m) => ({ ...m, [key]: Math.max(0, (m[key] ?? 0) - 1) }));
       setLandColor(color);
       setLandKey(key);
@@ -118,7 +128,10 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
       title={title}
       icon={icon}
       onBack={onBack}
-      right={<WalletPill ref={walletRef} value={career.money} format={formatMoney} spent={spent.n} spentText={spent.text} />}
+      hud={hud}
+      // The Style page has no title or Back button: its bottom bar does that.
+      bare={kind === "lifestyle" && !!hud}
+      right={hud ? <SpentFloat n={spent.n} text={spent.text} /> : <WalletPill ref={walletRef} value={career.money} format={formatMoney} spent={spent.n} spentText={spent.text} />}
     >
       {flyLayer}
 
@@ -236,6 +249,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
       {kind === "lifestyle" && (
         <StyleShop
           career={career}
+          onBack={onBack}
+          onHome={onHome}
           onBuyItem={onBuyItem}
           reward={(price, from, to, node, color, key) => reward(price, from, to, node, color, key)}
           landed={landed}

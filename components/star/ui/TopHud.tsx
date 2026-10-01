@@ -24,7 +24,7 @@ import { levelColors } from "./StatBar";
  * in every one of them, with its can right next to it: USE when you hold a
  * can, BUY (opens the cans shop) when you do not.
  */
-export type HudScreen = "home" | "stats" | "training" | "shop" | "relations" | "league" | "other";
+export type HudScreen = "home" | "stats" | "training" | "shop" | "relations" | "league" | "other" | "casino" | "settings";
 export type HudCell = "rating" | "energy" | "money" | "happiness" | "age";
 
 export const HUD_SPEC: Record<HudScreen, { top: HudCell[]; strip: HudCell[] }> = {
@@ -35,6 +35,9 @@ export const HUD_SPEC: Record<HudScreen, { top: HudCell[]; strip: HudCell[] }> =
   relations: { top: ["happiness", "energy"], strip: ["money"] },
   league: { top: ["energy", "money"], strip: [] },
   other: { top: ["rating", "energy"], strip: ["money", "age"] },
+  // The casino has its own bank (its wallet pill), so only energy here (v0.23, P86).
+  casino: { top: ["energy"], strip: [] },
+  settings: { top: ["rating", "energy"], strip: ["money"] },
 };
 
 /** The can that gives energy is the Basic one (the others are boot abilities). */
