@@ -125,6 +125,8 @@ export const PLAY_DIVISIONS: { id: CareerDivision; label: string }[] = [
   { id: "league_one", label: "League One" },
   { id: "league_two", label: "League Two" },
   { id: "national_league", label: "National League" },
+  { id: "national_league_north", label: "National League North" },
+  { id: "national_league_south", label: "National League South" },
 ];
 
 const KEY = "star-play-settings-v1";

@@ -153,7 +153,8 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
     const ladder = resolveLadder(nextCareer, mulberry32(5));
     const allAfter = [
       ...ladder.divisions.premier, ...ladder.divisions.championship, ...ladder.divisions.leagueOne,
-      ...ladder.divisions.leagueTwo, ...ladder.divisions.nationalLeague, ...ladder.divisions.nationalLeaguePool,
+      ...ladder.divisions.leagueTwo, ...ladder.divisions.nationalLeague,
+      ...ladder.divisions.nationalLeagueNorth, ...ladder.divisions.nationalLeagueSouth,
       ...ladder.limbo,
     ];
     check(new Set(allAfter).size === allAfter.length, "after the very next ladder resolution, nobody is in two places at once, including anyone still in limbo");

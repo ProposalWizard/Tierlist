@@ -1,6 +1,6 @@
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS,
-  LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
 import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import type { CareerDivision } from "./calendar";
@@ -155,6 +155,8 @@ const DIVISION_CLUBS: Record<CareerDivision, readonly string[]> = {
   league_one: LEAGUE_ONE_CLUBS,
   league_two: LEAGUE_TWO_CLUBS,
   national_league: NATIONAL_LEAGUE_CLUBS,
+  national_league_north: NATIONAL_LEAGUE_NORTH_CLUBS,
+  national_league_south: NATIONAL_LEAGUE_SOUTH_CLUBS,
 };
 
 /** Every club a division opened the game with. Exported because the wage

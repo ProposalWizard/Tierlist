@@ -34,6 +34,7 @@ import {
   pointLines, starLevel, isOldStarScale, STAR_TITLES, starTitle,
   LEVEL_THRESHOLDS, LEVEL_COST, STAR_CURVE, levelCosts, STAR_GATES, LEGEND_TASKS, TROPHY_SP, MATCH_SP, TIER_MULT, SP_SCALE, emptyLedger,
   PREMIER_DEBUT_SP, MAX_RISE_PER_MATCH, POINTS_CAP_LEVEL,
+  POOR_MATCH_RATING, GOOD_MATCH_RATING, SLUMP_MATCHES, SLUMP_SHARE,
 } from "../../lib/star/starPoints.ts";
 import { ACHIEVEMENTS } from "../../lib/star/achievements.ts";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData.ts";
@@ -110,7 +111,7 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(STAR_GATES.length === 7 && STAR_GATES.map(g => g.cap).join() === "29,39,49,59,69,79,89", "seven gates, at 29 … 89");
 }
 
-// ── It never goes down ──
+// ── Things you lose never take a level away (form is the one thing that can, below) ──
 {
   let c = withStars({ ...fresh(), ownedItems: [{ id: "island", name: "Private Island", category: "property", price: 1, lifestyleValue: 250, level: 5 }] as CareerState["ownedItems"], investments: [{ club: "X", percent: 60 }] as unknown as CareerState["investments"] });
   const before = starStatus(c);
@@ -305,6 +306,59 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(sixty / four >= 10, `60→61 takes at least 10× the matches of 4→5 (${sixty} vs ${four} matches: ${(sixty / four).toFixed(0)}×)`);
   console.log(`  curve: after level 4, ${share.toFixed(2)}% of matches pay a whole level; 4→5 ${four} match(es), 60→61 ${sixty} (${(sixty / four).toFixed(0)}×); level 4 at match ${first4.join("/")}`);
   check(med(risers.map(r => at(r, 5) - at(r, 4))) >= 2, `a riser's 4→5 takes more than one match (${risers.map(r => at(r, 5) - at(r, 4)).join(", ")})`);
+}
+
+// ── Poor form can take a level away (Harry, 1 Oct 2026, P14) ──
+// Measured over played-out careers (scratch harness, 20 careers a row, the
+// real careerFlow; before = v023-base, after = this rule):
+//   rising player (avg 7.3)   level after 46 / 92 matches: 9 / 13 before, 9 / 13 after; 0 of 20 ever dropped
+//   struggling (avg 5.7)      after 92 matches: 10 before, 3 after (peak 4); 19 of 20 dropped at least once
+//   5-match slump at level 8  8 → 8 before, 8 → 7 after (20 of 20, on the 5th poor match); won back in a median 3 good matches
+//   15-match slump at level 8 8 → 9 before (still climbing), 8 → 5 after; never more than 1 level in a match
+//   poor from the first match level after 20: 4 before, 1 after; never below 1
+{
+  check(POOR_MATCH_RATING === 5.5 && SLUMP_MATCHES === 5 && SLUMP_SHARE === 0.2 && GOOD_MATCH_RATING === 6.5, "the rule's numbers");
+  // Climb a National League career to level 8 on good matches.
+  let c = fresh();
+  while (starStatus(c).stars < 8) c = creditMatchResult(c, leagueFixture(c), stats({ goals: 1, rating: 7.8, homeScore: 1, awayScore: 0 })).career;
+  const top = starStatus(c).stars;
+  const poor = (x: CareerState, rating = 4.6) => creditMatchResult(x, leagueFixture(x), stats({ rating })).career;
+  const levels: number[] = [], totals: number[] = [starStatus(c).total];
+  for (let i = 0; i < SLUMP_MATCHES - 1; i++) { c = poor(c); levels.push(starStatus(c).stars); totals.push(starStatus(c).total); }
+  check(levels.every(l => l === top), `four poor matches keep the level (${top} → ${levels.join(", ")})`);
+  check(totals.every((t, i) => i === 0 || t < totals[i - 1]), "…but each one takes points off, so the bar falls");
+  c = poor(c);
+  check(starStatus(c).stars === top - 1, `the fifth poor match in a row drops one level (${top} → ${starStatus(c).stars})`);
+  c = poor(c);
+  check(starStatus(c).stars === top - 1, `the sixth doesn't drop another — the run starts again (${starStatus(c).stars})`);
+  check(withStars(withStars(c)).stars === top - 1, "banking again between matches doesn't change it");
+
+  // A good match breaks the run; an in-between one doesn't.
+  let d = fresh();
+  while (starStatus(d).stars < 8) d = creditMatchResult(d, leagueFixture(d), stats({ goals: 1, rating: 7.8, homeScore: 1, awayScore: 0 })).career;
+  const top2 = starStatus(d).stars;
+  for (let i = 0; i < 4; i++) d = poor(d);
+  d = creditMatchResult(d, leagueFixture(d), stats({ rating: GOOD_MATCH_RATING })).career;
+  for (let i = 0; i < 4; i++) d = poor(d);
+  check(starStatus(d).stars === top2, `4 poor, a good one, 4 poor: no level lost (${top2} → ${starStatus(d).stars})`);
+  let e = fresh();
+  while (starStatus(e).stars < 8) e = creditMatchResult(e, leagueFixture(e), stats({ goals: 1, rating: 7.8, homeScore: 1, awayScore: 0 })).career;
+  const top3 = starStatus(e).stars;
+  for (let i = 0; i < 4; i++) e = poor(e);
+  e = poor(e, 6.0); // between the two lines: neither counts nor breaks
+  check(starStatus(e).stars === top3, `4 poor and a 6.0 keep the level (${starStatus(e).stars})`);
+  e = poor(e);
+  check(starStatus(e).stars === top3 - 1, `…and one more poor one completes the run of five (${top3} → ${starStatus(e).stars})`);
+
+  // Never below 1.
+  let f = fresh();
+  for (let i = 0; i < 12; i++) f = poor(f, 3.5);
+  check(starStatus(f).stars === 1 && starStatus(f).total >= 0, `poor from the first match stays on 1 (${starStatus(f).stars}, ${starStatus(f).total} SP)`);
+
+  // Good form climbs as before: a rating of 6.5+ never costs anything.
+  let g = fresh();
+  for (let i = 0; i < 10; i++) g = creditMatchResult(g, leagueFixture(g), stats({ rating: 6.6 })).career;
+  check(!g.starLedger?.slump || g.starLedger.slump.debt === 0, "a career with no poor matches carries no debt");
 }
 
 // ── Names describe the career, never the club or division (Harry: "Non-league regular" in the Prem) ──

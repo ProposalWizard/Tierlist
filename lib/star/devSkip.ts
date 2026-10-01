@@ -114,11 +114,11 @@ function rollOverSilently(career: CareerState): CareerState {
   let cur = awardLeagueTrophyIfWon(career).career;
 
   let forcedRelegationMove = false;
-  // The only genuine dead end left on the ladder is relegation out of the
-  // National League into its own four-club pool — every other boundary
-  // (including Championship -> League One, now that League One is a real
-  // playable division) simply carries on into next season's real fixtures.
-  if (divisionOf(cur) === "national_league") {
+  // Relegation out of the National League used to be a dead end (its old
+  // four-club pool had no fixtures). It now drops into National League
+  // North or South, both playable, so this never fires; kept for any
+  // future tier with nowhere to go.
+  if (false as boolean) {
     const bottomFour = sortLeague(cur.league).slice(-4).map(t => t.name);
     if (bottomFour.includes(cur.player.club)) {
       const offers = generateRelegationOffers(cur, mulberry32(cur.season * 8831 + cur.fame));

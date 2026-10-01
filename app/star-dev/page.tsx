@@ -20,6 +20,7 @@ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { generateScoutOffers, clubsForDivision, type ScoutOffer } from "@/lib/star/scoutOffers";
+import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
 import ScoutOffers from "@/components/star/ScoutOffers";
 // ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
 // Added as new phases beside the existing ones; nothing in the phase machine
@@ -48,7 +49,6 @@ import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/st
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel, divisionOf, type CareerDivision } from "@/lib/star/calendar";
-import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
@@ -182,6 +182,13 @@ import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
  */
 function offersForTrial(career: CareerState): ScoutOffer[] {
   if (!career.trial) return [];
+  // The first trial no longer scores you onto a ladder: a scout has spotted
+  // you, and you start at one club in the National League, North or South —
+  // likelier the National League if you scored the shootout's final penalty
+  // (Harry, 1 Oct 2026, P36/P63; lib/star/scoutedPlacement.ts). One offer,
+  // seeded off the trial, so a reload lands at the same club. A free agent's
+  // second look (trialsTaken > 1) still reads the old score ladder below.
+  if ((career.trialsTaken ?? 1) <= 1) return [scoutedOfferForTrial(career.trial)];
   return generateScoutOffers(
     trialScore(career.trial),
     mulberry32(career.trial.seed ^ 0x5c0a7),
@@ -1520,28 +1527,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, continueAfterRollover]);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
-    // ── Relegated out of the National League ──
-    //
-    // The four-club pool the old club drops into has no fixtures, no table,
-    // no season — so this cannot be the ordinary optional window
-    // (TransferWindow, with its "stay put" button). A new club has to be
-    // chosen before the season can roll over at all, because advanceSeason
-    // needs to know which real division to build next season's fixtures in.
-    // Every OTHER boundary (including Championship -> League One) now just
-    // carries on into next season's real fixtures, since League One, League
-    // Two and the National League are all real playable divisions.
-    if (divisionOf(from) === "national_league"
-      && sortLeague(from.league).slice(-4).map(t => t.name).includes(from.player.club)) {
-      const offers = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
-      // Guaranteed non-empty in the normal game — a division this small only
-      // happens in a test fixture, and rolling over rather than showing an
-      // empty offer screen is the safer failure.
-      if (offers.length > 0) {
-        setTransferOffers(offers);
-        setPhase("relegation-move");
-        return;
-      }
-    }
+    // Relegation out of the National League used to force a move here (its
+    // old four-club pool had no fixtures). It now drops into National League
+    // North or South, which are real divisions (1 Oct 2026, P62), so every
+    // boundary carries on into next season's real fixtures.
     // ── A loan that hit its number ──
     //
     // The parent club's interest is a real `TransferOffer` in the ordinary
@@ -3781,7 +3770,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             <div className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-300">Star rating</div>
             <div className="mt-1 text-[72px] font-black italic leading-none text-white" style={{ textShadow: "0 0 24px rgba(251,191,36,.7)" }}>★ {newStar}</div>
             <div className="mt-2 text-[15px] font-black text-amber-300">{starTitle(newStar)}</div>
-            <div className="mt-1 text-[12px] font-bold text-white">Your career so far, out of 100. It never goes down.</div>
+            <div className="mt-1 text-[12px] font-bold text-white">Your career so far. Poor form can cost you a level.</div>
             <div className="mt-6 inline-block rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-gray-950">Continue</div>
           </div>
         </button>

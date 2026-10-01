@@ -54,7 +54,7 @@ export function LockedPage({ title, feature }: { title: string; feature: Feature
 const TUTORIAL = [
   { icon: "🏠", title: "This is Home", body: "Everything about your career starts here. Your next match and your energy are on this screen." },
   { icon: "🧍", title: "This is your player", body: "That's you, in your club's kit — your age, energy and next match sit around him." },
-  { icon: "⭐", title: "Your star rating", body: "Your whole career, out of 100. Training, matches and achievements push it up — it never goes down." },
+  { icon: "⭐", title: "Your star rating", body: "Your whole career, out of 100. Training, matches and achievements push it up; a run of poor matches can take it down." },
   { icon: "⚽", title: "Start with training", body: "Most of the game is locked for now. Do two training drills to open the League." },
 ];
 

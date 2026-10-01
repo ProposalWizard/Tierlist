@@ -513,6 +513,7 @@ const COMPETITION_ABBREV: Record<Competition, string> = {
  *  than the full competition name fixtureLabel reads out on the team sheet. */
 const DIVISION_ABBREV: Record<CareerDivision, string> = {
   premier: "Prem", championship: "Champ", league_one: "L1", league_two: "L2", national_league: "NL",
+  national_league_north: "NLN", national_league_south: "NLS",
 };
 
 export function competitionAbbrev(f: Fixture, division: CareerDivision): string {

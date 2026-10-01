@@ -78,6 +78,10 @@ const LADDER: Record<Exclude<CareerDivision, "premier">, { auto: number; down: n
   league_one: { auto: 2, down: 4 },
   league_two: { auto: 3, down: 2 },
   national_league: { auto: 1, down: 4 },
+  // The bottom rung: champion up, 2nd-5th play off for the other place,
+  // nobody down (nothing below them in the game).
+  national_league_north: { auto: 1, down: 0 },
+  national_league_south: { auto: 1, down: 0 },
 };
 
 // ── Positions that moved since you last looked ─────────────────────────────

@@ -1599,6 +1599,8 @@ export function advanceSeason(
       relegatedFromLeagueTwo: ladder.relegatedFromLeagueTwo,
       promotedToNationalLeague: ladder.promotedToNationalLeague,
       relegatedFromNationalLeague: ladder.relegatedFromNationalLeague,
+      relegatedToNorth: ladder.relegatedToNorth,
+      relegatedToSouth: ladder.relegatedToSouth,
       ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
     },
     week: 1,
