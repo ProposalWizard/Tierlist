@@ -39,6 +39,25 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+- **1 Oct 2026 (HUGE UPDATES review, v0.23): the game must feel like an app, not a
+  website.** Four rulings, all built as shared pieces in `components/star/ui/`, so
+  use them rather than drawing your own:
+  - **One heavy font everywhere** (P105: *"this font is so much better … use this
+    font across everything"*). Anton, set once in `ui/flat.css` on `.star-root`
+    for headings, buttons and every `font-black`/`font-extrabold` label, in both
+    looks. Plain `font-bold` sentences stay in the page font so a paragraph is
+    readable.
+  - **No floating pills** (P73, P87: *"I don't like the floating pill effect of
+    everything … that's so AI"*). A panel is flat: full width, square edges,
+    fading into the page. Use `FlatPanel` (`ui/Flat.tsx`), not a rounded card on
+    grey. The Pitch look's card is see-through grass with no drop shadow (P106).
+  - **Square bars** (P85, P107: *"squares with very clear, maybe even animated,
+    progress"*). `StatBar` and `SquareBar` are square, outlined and ticked.
+  - **A top HUD** (P80, P81, P86: *"the pills at the top change based on what
+    screen you're in … but your energy never leaves"*). `TopHud` (`ui/TopHud.tsx`)
+    in the shell; which cells show per screen is `HUD_SPEC`. Energy is in every
+    one, with its can: USE when you hold one, BUY (opens the cans shop) when not.
+
 ### 1 Oct 2026 — "findable" means the first screen
 - **A thing made easier to find has to be on the first screen without
   scrolling** (from "fix the new problems": the Sponsors strip sat under the

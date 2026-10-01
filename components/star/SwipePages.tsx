@@ -21,11 +21,14 @@ if (typeof window !== "undefined") {
   try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) SETTLE = "1ms linear"; } catch { /* keep the spring */ }
 }
 
-export default function SwipePages({ index, onIndex, labels, children }: {
+export default function SwipePages({ index, onIndex, labels, children, inset = false }: {
   index: number;
   onIndex: (i: number) => void;
   labels: [string, string, string];
   children: [React.ReactNode, React.ReactNode, React.ReactNode];
+  /** The pages and the tab row carry their own 12px side padding (the shell
+   *  adds none), so a page can bleed to both edges. Home uses it. */
+  inset?: boolean;
 }) {
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
@@ -69,11 +72,11 @@ export default function SwipePages({ index, onIndex, labels, children }: {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="relative mb-2 grid shrink-0 grid-cols-3 rounded-xl bg-black/25 p-1">
+      <div className={`relative mb-2 grid shrink-0 grid-cols-3 rounded-[3px] bg-black/30 p-1 ${inset ? "mx-3" : ""}`}>
         {/* The highlight and its underline follow the finger while you
             drag, then spring onto the tab you land on. */}
         <div
-          className="absolute bottom-1 top-1 rounded-lg bg-white/15 shadow"
+          className="absolute bottom-1 top-1 rounded-[2px] bg-white/15"
           style={{
             width: "calc((100% - 0.5rem) / 3)", left: "0.25rem",
             transform: `translateX(${(index - dx / width) * 100}%)`,
@@ -117,7 +120,7 @@ export default function SwipePages({ index, onIndex, labels, children }: {
             // never turned. Mouse drags were unaffected, which hid it.
             // data-page-active: the page on screen, so its cards can play
             // their rise-in each time it is opened (HomeFx.tsx).
-            <div key={i} data-scroll-root data-page-active={i === index} className="kib-shell-noscroll h-full overflow-y-auto" style={{ width: "33.3333%", touchAction: "pan-y" }}>
+            <div key={i} data-scroll-root data-page-active={i === index} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
           ))}

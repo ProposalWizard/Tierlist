@@ -3,7 +3,7 @@ import type { CareerState, Skills } from "@/lib/star/types";
 import {
   TRAINING_LEVELS, highestUnlocked, starsOf, totalStars, skillFromStars,
 } from "@/lib/star/trainingLevels";
-import { KitStyles, Shine, Glow, useClubTheme, rgba } from "./ui";
+import { KitStyles, Shine, Glow, SquareBar, useClubTheme, rgba } from "./ui";
 
 /**
  * Pick a training level (Mikey, 25 Sep 2026 — New Star Soccer's ladder).
@@ -80,9 +80,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
               Level {open} is next
             </span>
           </div>
-          <div className="relative mt-2 h-3 overflow-hidden rounded-full bg-black/45" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.6)" }}>
-            <div className="h-full rounded-full" style={{ width: `${Math.max(2, (stars / max) * 100)}%`, background: `linear-gradient(90deg, ${a}, #fde68a)`, boxShadow: `0 0 10px ${rgba(a, 0.7)}` }} />
-          </div>
+          <SquareBar value={Math.max(2, (stars / max) * 100)} colors={[a, "#fde68a"]} className="mt-2 h-3" animate />
           <div className="relative mt-2 text-[11.5px] font-bold text-white">
             3 tries a level: first ★★★, second ★★, third ★. Every 3 new stars is +2 {look.title}.
             {value < ceiling && ` You've lost ${ceiling - value} since your best — pass any level to win them back.`}

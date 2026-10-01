@@ -90,6 +90,7 @@ import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub from "@/components/star/HomeHub";
+import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
 import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
 import PhoneHome from "@/components/star/PhoneHome";
@@ -3669,6 +3670,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
       compact={swipeActive || phase === "skills"}
+      swipe={swipeActive}
+      hud={
+        // The top HUD (v0.23): the cells change with the screen; energy is
+        // always there, with its can (USE, or BUY into the cans shop).
+        <TopHud
+          career={career}
+          screen={((): HudScreen => {
+            if (swipeActive) return homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop";
+            if (phase === "skills") return trainingTab === "life" ? "relations" : "training";
+            if (phase === "league") return "league";
+            return "other";
+          })()}
+          onUseCan={handleUseCan}
+          onOpenCans={() => setPhase("shop-kib")}
+        />
+      }
       // The home button top-left opens the main menu (Mikey, 28 Sep 2026:
       // "this home button should take you back to the main menu").
       // On Home it opens the main menu; anywhere else it takes you back to
@@ -3788,6 +3805,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {phase === "skills" && trainingBody}
       {swipeActive && (
         <SwipePages
+          inset
           index={homePage}
           onIndex={(i) => {
             setHomePage(i as 0 | 1 | 2);
@@ -3808,7 +3826,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               myTeam={nextFixture ? myTeam(nextFixture) : career.player.club}
               onUseCan={handleUseCan}
               onBuyCan={handleBuyKib}
-                onOpen={(ph) => setPhase(ph)}
+              onOpen={(ph) => setPhase(ph)}
+              onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
             />,
             isOpen(career, "shop")
               ? <ShopPage key="shop" career={career} onOpen={(ph) => setPhase(ph)} />

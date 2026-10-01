@@ -20,7 +20,11 @@
 .star-look-pitch {
   --sk-stripes: repeating-linear-gradient(180deg, #22763f 0 72px, #1b6232 72px 144px);
   --sk-page: radial-gradient(130% 60% at 50% -6%, rgba(255,250,220,.16) 0%, transparent 62%), radial-gradient(140% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.42) 100%), var(--sk-stripes);
-  --sk-card: linear-gradient(180deg, rgba(12,58,32,.93), rgba(6,36,19,.96));
+  /* v0.23 (P106: "you can't just have this floating blob on top of that"):
+     cards are a see-through grass tint with a chalk edge and NO drop shadow,
+     so they read as part of the pitch, not a dark slab sitting on it. */
+  --sk-card: linear-gradient(180deg, rgba(4,38,18,.52), rgba(4,38,18,.34));
+  --sk-lift: 0 0 0 0 transparent;
   --sk-chalk: rgba(255,255,255,.30);
   --sk-display: var(--font-pitch), Anton, Impact, "Arial Narrow", "Roboto Condensed", sans-serif;
 }
@@ -453,3 +457,10 @@
 .star-look-pitch .to-slate-950\/80 { --tw-gradient-to: rgb(6 35 19 / 0.8) var(--tw-gradient-to-position); }
 .star-look-pitch .from-slate-950\/90 { --tw-gradient-from: rgb(6 35 19 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(6 35 19 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
 .star-look-pitch .to-slate-950\/90 { --tw-gradient-to: rgb(6 35 19 / 0.9) var(--tw-gradient-to-position); }
+
+/* v0.23: Home's night-stand sky is not drawn on the grass look (the page is
+   already the pitch), and the team sheet's own pitch is see-through chalk on
+   the page's grass instead of a second green pitch on top (P108). */
+.star-look-pitch .home-sky { display: none; }
+.star-look-pitch .sk-versus-pitch { background: transparent !important; box-shadow: none !important; border-color: var(--sk-chalk) !important; }
+.star-look-pitch .sk-versus-pitch > div:nth-child(-n+2) { display: none; }

@@ -51,11 +51,17 @@ interface Props {
   /** Unlock chain: Achievements takes the League button's place on the bar
    *  (Harry, 1 Oct 2026, 07:58). League is then reached from Stats or the phone. */
   achievementsSlot?: { active: boolean; onClick: () => void };
+  /** The top HUD (ui/TopHud.tsx): replaces the Star/Energy bars, the Age
+   *  strip and the header's money chip, on every screen but the phone. */
+  hud?: React.ReactNode;
+  /** The swipe home screens carry their own side padding (the Home page
+   *  bleeds to both edges), so the body adds none. */
+  swipe?: boolean;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false }: Props) {
   // A locked button answers a tap with its "how to unlock" line.
   const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
   const tap = (tab: NavTab, label: string) => {
@@ -108,7 +114,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
                 data-home-button
                 onClick={onHome ?? (() => onNavigate("home"))}
                 aria-label="Home"
-                className={`kib-press w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
+                className={`kib-press w-8 h-8 rounded-[3px] flex items-center justify-center border transition-colors ${
                   atHome
                     ? "bg-gray-600 hover:bg-gray-500 border-transparent"
                     : "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300/70 shadow-[0_0_12px_rgba(16,185,129,.55)]"
@@ -116,27 +122,31 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
               >
                 <HouseIcon />
               </button>
-              <div className="flex-1 mx-2 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border bg-white/10 text-white border-white/20 text-center">
+              <div className="flex-1 mx-2 min-w-0 py-1 px-3 font-black text-[17px] leading-tight uppercase tracking-wide truncate text-white text-center" style={{ textShadow: "0 1px 3px rgba(0,0,0,.7)" }}>
                 {fullName}
               </div>
               {/* Your money, always on screen, on every page (Harry, 1 Oct
                   2026: "a little pocket at the top that you can always see
                   on any page"). It is the only place money shows now. */}
-              <div
+              {!hud && <div
                 data-money-chip
                 aria-label={`Money ${formatMoney(career.money)}`}
                 className="mr-2 flex shrink-0 items-center gap-1 rounded-full border border-yellow-300/30 bg-black/35 px-2.5 py-1 text-xs font-black tabular-nums text-yellow-200"
               >
                 <StarIcon small />
                 {formatMoney(career.money)}
-              </div>
-              <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
+              </div>}
+              <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-[3px] bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
                 <GearIcon />
               </button>
             </div>
 
+            {/* The HUD: rating, energy (with its can), money, age — which cells
+                show depends on the screen (ui/TopHud.tsx). */}
+            {hud}
+
             {/* Star + Energy bars */}
-            {!compact && (<>
+            {!compact && !hud && (<>
             <div className="grid grid-cols-2 gap-2 px-3 pt-2">
               <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
                 <StarIcon />
@@ -179,7 +189,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
           .kib-shell-noscroll::-webkit-scrollbar { display: none; }
           .kib-shell-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
         `}</style>
-        <div className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : "px-3 py-2"}`}>
+        <div className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : swipe ? "pt-2" : "px-3 py-2"}`}>
           {children}
         </div>
 
@@ -236,7 +246,7 @@ function NavBtn({ label, icon, active, onClick, dot, lockHint, tight }: { label:
     <button
       onClick={onClick}
       aria-label={`${label} — locked: ${lockHint}`}
-      className="kib-press relative min-w-0 h-[50px] rounded-xl font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 bg-gray-800 text-gray-400"
+      className="kib-press relative min-w-0 h-[50px] rounded-[4px] font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 bg-gray-800 text-gray-400"
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
     >
       <span className="text-[18px] leading-none opacity-30 grayscale">{icon}</span>
@@ -247,7 +257,7 @@ function NavBtn({ label, icon, active, onClick, dot, lockHint, tight }: { label:
   return (
     <button
       onClick={onClick}
-      className={`kib-press relative min-w-0 h-[50px] rounded-xl font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 ${
+      className={`kib-press relative min-w-0 h-[50px] rounded-[4px] font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 ${
         active
           ? "bg-gradient-to-b from-gray-400/70 to-gray-500/70 text-white shadow-inner"
           : "bg-gradient-to-b from-gray-600 to-gray-700 text-gray-100 hover:from-gray-500"
