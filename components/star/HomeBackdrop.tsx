@@ -21,7 +21,7 @@ export default function HomeBackdrop({ glow }: { glow: string }) {
   let y = 0, h = 4.2;
   for (let i = 0; y < 100; i++) { bands.push({ y, h, dark: i % 2 === 0 }); y += h; h *= 1.2; }
   return (
-    <div aria-hidden className="home-pitch pointer-events-none absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(180deg, transparent 0, #000 22%)", WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 22%)" }}>
+    <div aria-hidden className="home-pitch pointer-events-none absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(180deg, transparent 0, #000 12%)", WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 12%)" }}>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="hp-shade" x1="0" y1="0" x2="0" y2="1">
@@ -40,14 +40,13 @@ export default function HomeBackdrop({ glow }: { glow: string }) {
         </g>
         <rect x="0" y="27" width="100" height="73" fill="url(#hp-shade)" />
         <rect x="0" y="27" width="100" height="73" fill="url(#hp-spot)" />
-        {/* chalk: the goal line and the spot (the boxes crossed the stat blocks) */}
+        {/* chalk: the goal line only (the boxes and the spot crossed the stat blocks) */}
         <g stroke="rgba(255,255,255,.7)" strokeWidth=".5" fill="none" vectorEffect="non-scaling-stroke">
           <line x1="0" y1="27" x2="100" y2="27" />
         </g>
-        <ellipse cx="50" cy="56" rx="1.4" ry=".7" fill="rgba(255,255,255,.75)" />
       </svg>
       {/* The goal, standing on the goal line behind him (left, over his head). */}
-      <svg className="absolute left-[2%] top-[4%] h-[27%] w-[54%]" viewBox="0 0 200 74" preserveAspectRatio="none" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.55))" }}>
+      <svg className="absolute left-[2%] top-[3%] h-[24%] w-[54%]" viewBox="0 0 200 74" preserveAspectRatio="none" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.55))" }}>
         <rect x="6" y="6" width="188" height="68" fill="rgba(10,16,24,.5)" />
         <g stroke="rgba(255,255,255,.34)" strokeWidth=".8">
           {Array.from({ length: 18 }, (_, i) => <line key={`v${i}`} x1={6 + i * 11} y1="6" x2={6 + i * 11} y2="74" />)}

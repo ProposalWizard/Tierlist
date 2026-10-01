@@ -71,6 +71,22 @@ const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {
 `WalletPill` counts to its new value and floats `spentText` up off it.
 `useFly` sends a copy of what you bought along an arc into where it now lives.
 
+## The flat look (v0.23) — use these, not rounded cards on grey
+
+```tsx
+<FlatPanel bleed edge glow={theme.glow}>…</FlatPanel>      {/* full width, square, fades into the page */}
+<SquareBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4" animate>85</SquareBar>
+<TopHud career={career} screen="home" onUseCan={use} onOpenCans={() => setPhase("shop-kib")} />
+```
+
+`FlatPanel` has no rounded corners and no drop shadow; `fade` is "both" (soft
+top and bottom), "top", "bottom" or "none". `SquareBar` (and `StatBar`, which
+is now the same shape) are square, outlined and ticked; `animate` marches
+stripes along the fill. `TopHud` is the strip under the shell header: which
+cells it shows per screen is `HUD_SPEC` in `TopHud.tsx`; energy is always one
+of them, with its can (USE, or BUY into the cans shop). One heavy font
+(Anton) is set on `.star-root` in `flat.css` — do not set a font by hand.
+
 ## Rules
 
 - No animation loops on a canvas: the one-engine guard fails the build on

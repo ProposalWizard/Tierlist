@@ -5,8 +5,8 @@
  *  1. ONE HEAVY FONT EVERYWHERE (P105: "this font is so much better … use
  *     this font across everything"). Anton, already loaded for the Pitch look
  *     and the front page, now sets every heading, button and bold label in
- *     BOTH looks. Sentences in plain `font-bold` / normal weight stay in the
- *     page's normal face so a paragraph stays readable.
+ *     BOTH looks (every bold weight: font-bold, -semibold, -black). Only
+ *     normal-weight running text stays in the page's own face.
  *  2. NO FLOATING PILLS (P73, P87: "rounded cards floating on grey/black … so
  *     AI"). `.sk-flat` is a flush panel: full width, square edges, fading into
  *     the page instead of sitting on it. Components: ui/Flat.tsx.
@@ -27,13 +27,13 @@
 }
 
 /* 1. The font. Anton has one (heavy) weight: no faux bold. */
-.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .sk-display),
-.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .sk-display) * {
+.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .font-bold, .font-semibold, .sk-display),
+.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .font-bold, .font-semibold, .sk-display) *:not(input):not(textarea) {
   font-family: var(--sk-display);
   font-weight: 400;
 }
 /* Anton sits a little taller than the sans it replaces: keep the line tight. */
-.star-root :is(.font-black, .font-extrabold):not(.leading-none) { letter-spacing: .012em; }
+.star-root :is(.font-black, .font-extrabold, .font-bold):not(.leading-none) { letter-spacing: .012em; }
 
 /* 2. Flat panels. */
 .sk-flat {
