@@ -1,183 +1,184 @@
 "use client";
 
 /**
- * THE STAR PASS — a scrolling strip of levels (opened from the rating in the
- * top HUD). Harry, 1 Oct 2026 (P11): "when they click in it should be like a
- * scrolling kind of calendar looking thing where they can scroll left and it
- * will take them across level one, level two, level three … what that unlocks
- * for them." The red "★29 gate" box is gone.
+ * THE STAR PASS (Mikey, 2 Oct 2026) — opened from the star rating in the top
+ * HUD. Laid out like Clash Royale's Trophy Road: a road you climb from level 1
+ * at the bottom to level 100 at the top, with your progress up a rail on the
+ * left and a reward platform at every 5th level (medium rewards on the 5s,
+ * great rewards on the 10s). The road changes look every 20 levels; the top
+ * stretch is royal gold and level 100 has its own golden stand.
  *
- * Each level is a square card: what it unlocks, as pictures (the shop items
- * that open at that star rating, lib/star/unlocks.ts `styleUnlockStar`). A
- * padlock card sits in the path wherever a gate holds you
- * (lib/star/starPoints.ts `STAR_GATES`). Your level is lit with its progress
- * bar; levels you have not reached are dimmed. Tap a card for its names — the
- * gate's one line, or the ten Legend tasks at the end. The strip opens
- * centred on you. Pictures and names only; no explaining sentences.
+ * The platforms, reward boxes and the level-100 stand are rendered in Blender
+ * (tools/star-pass-art/render_star_pass.py → public/star/star-pass/). The
+ * rewards themselves are placeholders until Mikey decides them
+ * (lib/star/starPassRewards.ts). Star Points and gates are read from
+ * lib/star/starPoints.ts exactly as before.
  *
- * Existing star-points numbers are unchanged: this reads starStatus() and
- * ledgerOf() exactly as before.
+ * Replaced Harry's sideways strip of level cards (1 Oct 2026, P11), which also
+ * showed the Style items each level opens; that unlock still happens
+ * (lib/star/unlocks.ts) but is no longer pictured here.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
-import { starStatus, STAR_GATES, LEGEND_TASKS, ledgerOf, starTitle, MAX_LEVEL, POINTS_CAP_LEVEL } from "@/lib/star/starPoints";
-import { LIFESTYLE_ALL_LEVELS, baseIdOf } from "@/lib/star/shopData";
-import { styleUnlockStar } from "@/lib/star/unlocks";
-import { familyName } from "@/lib/star/lifestyleLevels";
-import StylePicture from "./StylePicture";
+import { starStatus, STAR_GATES, ledgerOf, starTitle, MAX_LEVEL } from "@/lib/star/starPoints";
+import { REWARD_LEVELS, STAR_PASS_REWARDS, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
+import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { SquareBar, BottomBar, BarButton, Chev } from "./ui";
 
+const ART = "/star/star-pass";
 const fmt = (n: number) => Math.round(n).toLocaleString("en-GB");
-const CARD_W = 148;   // a level with something in it
-const SLIM_W = 60;    // a level with nothing new
-const GATE_W = 70;
-const CARD_H = 196;
 
-interface Unlock { base: string; name: string }
+/** Space per level on the road, in px. The five levels leading up to a great
+ *  (10th) reward get more room, since its platform is bigger. */
+const GAP = 46;
+const GAP_GREAT = 60;
+const ROAD_TOP = 320;    // room above level 100 for its stand
+const ROAD_BOTTOM = 60;  // room below level 1
+const RAIL_X = 34;
+
+/** Height from the bottom of the road to level n. */
+function yOf(n: number): number {
+  let y = ROAD_BOTTOM;
+  for (let i = 2; i <= n; i++) y += (Math.ceil(i / 5) * 5) % 10 === 0 ? GAP_GREAT : GAP;
+  return y;
+}
 
 export default function StarRatingSheet({ career, onClose }: { career: CareerState; onClose: () => void }) {
   const st = starStatus(career);
   const led = ledgerOf(career);
+  const [showPoints, setShowPoints] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const roadH = yOf(MAX_LEVEL) + ROAD_TOP;
+  // Where your marker sits: your level, plus the way to the next one.
+  const lv = Math.min(MAX_LEVEL, st.stars);
+  const frac = lv < MAX_LEVEL && !st.gate ? Math.max(0, Math.min(1, st.toNext)) : 0;
+  const hereY = yOf(lv) + frac * (yOf(Math.min(MAX_LEVEL, lv + 1)) - yOf(lv));
+  const face = career.player.portrait ?? DEFAULT_FAKE_FACE;
+  const gates = useMemo(() => STAR_GATES.map(g => ({ ...g, isOpen: g.open(career, led) })), [career, led]);
+
+  useEffect(() => setMounted(true), []);
+  // Open on you: your marker a little below the middle of the screen.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!mounted || !el) return;
+    el.scrollTop = Math.max(0, roadH - hereY - el.clientHeight * 0.6);
+  }, [mounted, roadH, hereY]);
+  if (!mounted) return null;
+
   const rows: [string, number][] = [
     ["Matches", st.points.match], ["Trophies", st.points.trophies], ["Awards", st.points.awards],
     ["Milestones", st.points.milestones], ["Fame", st.points.status],
     ...(st.carry > 0 ? [["Carried", st.carry] as [string, number]] : []),
   ];
-
-  // Level → the shop items that open at it.
-  const byLevel = useMemo(() => {
-    const m = new Map<number, Unlock[]>();
-    const seen = new Set<string>();
-    for (const it of LIFESTYLE_ALL_LEVELS) {
-      const base = baseIdOf(it);
-      if (seen.has(base)) continue;
-      seen.add(base);
-      const lv = styleUnlockStar(base);
-      if (lv < 1) continue;
-      m.set(lv, [...(m.get(lv) ?? []), { base, name: familyName(it) }]);
-    }
-    return m;
-  }, []);
-  const gateAfter = useMemo(() => new Map(STAR_GATES.map((g) => [g.cap, g])), []);
-
-  // Opens on what is next: the gate holding you, else the next level with something in it.
-  const [sel, setSel] = useState<{ kind: "level"; n: number } | { kind: "gate"; cap: number }>(() => {
-    if (st.gate) return { kind: "gate", cap: st.gate.cap };
-    const next = Array.from(byLevel.keys()).filter((n) => n > st.stars).sort((a, b) => a - b)[0];
-    return { kind: "level", n: next ?? st.stars };
-  });
-  const stripRef = useRef<HTMLDivElement>(null);
-  const hereRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  // Open centred on you.
-  useEffect(() => {
-    const strip = stripRef.current, el = hereRef.current;
-    if (!mounted || !strip || !el) return;
-    strip.scrollLeft = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
-  }, [mounted]);
-  if (!mounted) return null;
-
-  const levels = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
-  const selLevel = sel.kind === "level" ? sel.n : sel.cap;
-  const selUnlocks = sel.kind === "level" ? byLevel.get(sel.n) ?? [] : [];
-  const selGate = sel.kind === "gate" ? gateAfter.get(sel.cap) ?? null : null;
+  const nextReward = REWARD_LEVELS.find(n => n > st.stars);
 
   return createPortal(
-    <div data-star-pass className="fixed inset-0 z-[70] overflow-y-auto bg-[#05080f] text-white" style={{ paddingBottom: 84 }}>
-      <div className="mx-auto w-full max-w-md">
-        {/* Where you are. */}
-        <div className="flex items-center gap-3 px-3 pb-2 pt-3">
-          <div className="flex h-[54px] shrink-0 items-center gap-1 px-2.5 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
+    <div data-star-pass className="fixed inset-0 z-[70] flex flex-col bg-[#05080f] text-white">
+      {/* Where you are. */}
+      <div className="relative z-10 mx-auto w-full max-w-md px-3 pb-2 pt-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-[54px] shrink-0 items-center gap-1 px-2.5 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), 0 0 18px rgba(251,191,36,.45)" }}>
             <span className="text-[22px] leading-none">★</span>
             <span className="text-[38px] font-black leading-none tabular-nums">{st.stars}</span>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[17px] font-black uppercase leading-none tracking-wide">{starTitle(st.stars)}</div>
-            <SquareBar value={Math.max(3, st.toNext * 100)} colors={["#f59e0b", "#fde047"]} className="mt-1.5 h-[16px]" animate>
-              {st.stars >= MAX_LEVEL ? "MAX" : st.gate ? "🔒" : st.held > 0 ? "★" + (st.stars + 1) : null}
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="truncate text-[18px] font-black uppercase leading-none tracking-wide">Star Pass</div>
+              <button onClick={() => setShowPoints(v => !v)} className="kib-press shrink-0 text-[11px] font-black uppercase tracking-wider text-amber-300">
+                {showPoints ? "Hide points" : "Star Points"}
+              </button>
+            </div>
+            <div className="mt-1 truncate text-[12px] font-black uppercase tracking-wide text-white">{starTitle(st.stars)}</div>
+            <SquareBar value={Math.max(3, st.toNext * 100)} colors={["#f59e0b", "#fde047"]} className="mt-1.5 h-[14px]" animate>
+              {st.stars >= MAX_LEVEL ? "MAX" : st.gate ? "🔒" : null}
             </SquareBar>
           </div>
         </div>
+        {(nextReward || st.gate) && (
+          <div className="mt-1.5 text-[12px] font-black text-white">
+            {nextReward && <>Next reward at level <span className="text-amber-300">{nextReward}</span></>}
+            {st.gate && <>{nextReward ? " · " : ""}🔒 {st.gate.need}</>}
+          </div>
+        )}
+        {showPoints && (
+          <div className="mt-2 grid grid-cols-2 gap-px bg-black/50" style={{ borderRadius: 2 }}>
+            <div className="col-span-2 flex items-center justify-between bg-white/[0.07] px-2.5 py-1.5 text-[12px] font-black uppercase tracking-widest text-amber-300">
+              <span>Star Points</span><span className="tabular-nums">{fmt(st.total)}</span>
+            </div>
+            {rows.map(([label, n]) => (
+              <div key={label} className="flex items-center justify-between bg-white/[0.07] px-2.5 py-1.5 text-[12.5px] font-black">
+                <span className="uppercase tracking-wide text-white">{label}</span><span className="tabular-nums">{fmt(n)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* The levels: swipe along them. */}
-        <div
-          ref={stripRef}
-          data-level-strip
-          className="flex items-stretch gap-1.5 overflow-x-auto px-3 py-2"
-          style={{ scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
-        >
-          {levels.map((n) => {
-            const unlocks = byLevel.get(n) ?? [];
-            const here = n === st.stars;
-            const reached = n <= st.stars;
-            const gate = gateAfter.get(n);
+      {/* The road: level 1 at the bottom, 100 at the top. */}
+      <div ref={scrollRef} data-star-road className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: 84 }}>
+        <div className="relative mx-auto w-full max-w-md overflow-hidden" style={{ height: roadH }}>
+          {/* Each stretch's look, a new one every 20 levels, blended into the next. */}
+          {STAR_PASS_THEMES.map((t, i) => {
+            const bottom = i === 0 ? 0 : yOf(t.from) - GAP;
+            const top = t.to >= MAX_LEVEL ? roadH : yOf(t.to) + GAP;
+            const fade = "linear-gradient(0deg, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%)";
             return (
-              <div key={n} className="flex shrink-0 items-stretch gap-1" style={{ scrollSnapAlign: "center" }}>
-                <LevelCard
-                  n={n} unlocks={unlocks} here={here} reached={reached}
-                  selected={sel.kind === "level" && sel.n === n}
-                  progress={here ? st.toNext * 100 : null}
-                  legend={n > POINTS_CAP_LEVEL}
-                  innerRef={here ? hereRef : undefined}
-                  onTap={() => setSel({ kind: "level", n })}
-                />
-                {gate && (
-                  <GateCard
-                    open={gate.open(career, led)}
-                    holding={st.gate?.cap === gate.cap}
-                    selected={sel.kind === "gate" && sel.cap === gate.cap}
-                    onTap={() => setSel({ kind: "gate", cap: gate.cap })}
-                  />
+              <div key={t.key} className="absolute inset-x-0" style={{
+                bottom, height: top - bottom, background: t.bg,
+                maskImage: i === 0 ? undefined : fade, WebkitMaskImage: i === 0 ? undefined : fade,
+              }} />
+            );
+          })}
+
+          {/* The rail, filled up to you. */}
+          <div className="absolute w-[8px] -translate-x-1/2 bg-black/55" style={{ left: RAIL_X, bottom: ROAD_BOTTOM, height: yOf(MAX_LEVEL) - ROAD_BOTTOM, borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.18)" }} />
+          <div className="absolute w-[8px] -translate-x-1/2" style={{
+            left: RAIL_X, bottom: ROAD_BOTTOM, height: Math.max(0, hereY - ROAD_BOTTOM), borderRadius: 2,
+            background: "linear-gradient(0deg, #f59e0b, #fde047)", boxShadow: "0 0 12px rgba(251,191,36,.7)",
+          }} />
+
+          {/* A mark at every level; the number at 1 and every 5th. */}
+          {Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map((n) => {
+            const labelled = n === 1 || n % 5 === 0;
+            const reached = n <= st.stars;
+            return (
+              <div key={n} className="absolute" style={{ left: 0, width: RAIL_X * 2, bottom: yOf(n), height: 0 }}>
+                <span className="absolute -translate-x-1/2 translate-y-1/2" style={{
+                  left: RAIL_X, bottom: 0, width: labelled ? 14 : 6, height: labelled ? 14 : 6, borderRadius: labelled ? 3 : 999,
+                  background: reached ? "#fde047" : "rgba(255,255,255,.4)",
+                  boxShadow: reached && labelled ? "0 0 8px rgba(253,224,71,.8)" : undefined,
+                }} />
+                {labelled && (
+                  <span className="absolute translate-y-1/2 text-[12px] font-black tabular-nums" style={{ left: 2, bottom: 0, color: reached ? "#fde047" : "#ffffff", textShadow: "0 1px 3px rgba(0,0,0,.9)" }}>
+                    {n}
+                  </span>
                 )}
               </div>
             );
           })}
-        </div>
 
-        {/* Names for the card you tapped. */}
-        <div className="mx-3 mt-1 min-h-[88px] bg-white/[0.06] p-2.5" style={{ borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.14)" }}>
-          <div className="flex items-center gap-2 text-[15px] font-black uppercase leading-none tracking-wide">
-            <span className="text-amber-300">★{selLevel}</span>
-            {sel.kind === "gate" && <span>🔒</span>}
-          </div>
-          {selGate && <div className="mt-2 text-[14px] font-black leading-tight text-white">{selGate.need}</div>}
-          {sel.kind === "level" && selUnlocks.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {selUnlocks.map((u) => (
-                <span key={u.base} className="bg-black/50 px-1.5 py-1 text-[12px] font-black uppercase leading-none" style={{ borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.22)" }}>{u.name}</span>
-              ))}
-            </div>
-          )}
-          {sel.kind === "level" && sel.n > POINTS_CAP_LEVEL && (
-            <div className="mt-2 space-y-1">
-              {LEGEND_TASKS.map((t) => {
-                const done = st.legendDone.includes(t.id);
-                return (
-                  <div key={t.id} className={`flex items-center gap-2 text-[12.5px] font-black leading-tight ${done ? "text-white" : "text-white/70"}`}>
-                    <span className={`grid h-4 w-4 shrink-0 place-items-center text-[10px] ${done ? "bg-amber-400 text-gray-950" : "bg-black/40"}`} style={{ borderRadius: 2, boxShadow: done ? undefined : "inset 0 0 0 1px rgba(255,255,255,.4)" }}>{done ? "✓" : ""}</span>
-                    <span className="min-w-0 flex-1">{t.label}</span>
-                    {!done && <span className="shrink-0 text-[11px] tabular-nums text-white/70">{t.progress(career, led).split(" · ")[0]}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Where your Star Points came from. */}
-        <div className="mx-3 mt-2 grid grid-cols-2 gap-px bg-black/50" style={{ borderRadius: 2 }}>
-          <div className="col-span-2 flex items-center justify-between bg-white/[0.06] px-2.5 py-1.5 text-[12px] font-black uppercase tracking-widest text-amber-300">
-            <span>Star Points</span><span className="tabular-nums">{fmt(st.total)}</span>
-          </div>
-          {rows.map(([label, n]) => (
-            <div key={label} className="flex items-center justify-between bg-white/[0.06] px-2.5 py-1.5 text-[12.5px] font-black">
-              <span className="uppercase tracking-wide text-white/85">{label}</span><span className="tabular-nums">{fmt(n)}</span>
+          {/* A closed gate: a padlock on the rail (what it needs is in the header). */}
+          {gates.filter(g => !g.isOpen).map((g) => (
+            <div key={g.cap} className="absolute z-[5] grid h-[22px] w-[22px] -translate-x-1/2 translate-y-1/2 place-items-center text-[12px]" title={g.need}
+              style={{ left: RAIL_X, bottom: (yOf(g.cap) + yOf(g.cap + 1)) / 2, borderRadius: 4, background: "#7f1d1d", boxShadow: "0 0 0 2px #f87171, 0 0 10px rgba(248,113,113,.6)" }}>
+              🔒
             </div>
           ))}
+
+          {/* A platform and a reward at every 5th level; level 100's stand. */}
+          {REWARD_LEVELS.map((n) => <RewardStop key={n} level={n} reached={n <= st.stars} next={n === nextReward} />)}
+
+          {/* You. */}
+          <div className="absolute z-10 -translate-x-1/2 translate-y-1/2" style={{ left: RAIL_X, bottom: hereY }}>
+            <div className="h-[38px] w-[38px] overflow-hidden bg-gray-900" style={{ borderRadius: 4, boxShadow: "0 0 0 2px #fde047, 0 0 14px rgba(253,224,71,.8)" }}>
+              <img src={face} alt="You" className="h-full w-full object-cover" draggable={false} />
+            </div>
+          </div>
         </div>
       </div>
+
       <BottomBar cols="1fr">
         <BarButton icon={<Chev dir="left" size={16} className="text-amber-300" />} label="Back" onClick={onClose} />
       </BottomBar>
@@ -186,66 +187,47 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
   );
 }
 
-function LevelCard({ n, unlocks, here, reached, selected, progress, legend, innerRef, onTap }: {
-  n: number; unlocks: Unlock[]; here: boolean; reached: boolean; selected: boolean; progress: number | null; legend: boolean;
-  innerRef?: React.Ref<HTMLButtonElement>; onTap: () => void;
-}) {
-  const full = unlocks.length > 0;
-  const shown = unlocks.slice(0, 4);
+function RewardStop({ level, reached, next }: { level: number; reached: boolean; next: boolean }) {
+  const tier = rewardTier(level);
+  const great = tier === "great";
+  const top = level === MAX_LEVEL;
+  const theme = themeFor(level);
+  const reward = STAR_PASS_REWARDS[level];
+  const plinthW = top ? 240 : great ? 236 : 186;
+  const plinth = top ? `${ART}/crown-100.webp` : `${ART}/plinth-${theme.key}-${tier}.webp`;
+  const box = reward?.image ?? `${ART}/box-${tier}.webp`;
+  const boxW = great ? 84 : 62;
+  const gold = great || top;
   return (
-    <button
-      ref={innerRef}
-      onClick={onTap}
-      aria-label={`Level ${n}${full ? `: ${unlocks.map((u) => u.name).join(", ")}` : ""}`}
-      className="kib-press relative flex shrink-0 flex-col overflow-hidden text-left"
-      style={{
-        width: full ? CARD_W : SLIM_W, height: CARD_H, borderRadius: 2,
-        background: here ? "linear-gradient(180deg, rgba(251,191,36,.28), rgba(251,191,36,.08))" : "rgba(255,255,255,.07)",
-        boxShadow: here ? "inset 0 0 0 2px #fbbf24, 0 0 14px rgba(251,191,36,.45)" : selected ? "inset 0 0 0 2px rgba(255,255,255,.85)" : "inset 0 0 0 1px rgba(255,255,255,.16)",
-        filter: reached ? undefined : "brightness(.5)",
-      }}
-    >
-      <div className={`flex items-center justify-between px-1.5 pt-1 leading-none ${here ? "text-amber-300" : "text-white"}`}>
-        <span className="text-[20px] font-black tabular-nums">{n}</span>
-        {legend && <span className="text-[10px] text-amber-300">★</span>}
+    <div className="absolute flex flex-col items-center" style={{
+      left: RAIL_X + 22, right: 8, bottom: yOf(level), transform: `translateY(${top ? 22 : 40}%)`,
+      filter: reached || next ? undefined : "saturate(.55) brightness(.6)",
+    }}>
+      <div className="relative" style={{ width: plinthW }}>
+        {/* The glow round a reached platform, or the next one, in this stretch's colour. */}
+        {(reached || next) && (
+          <div className={`absolute inset-x-[6%] bottom-[6%] top-[28%] ${next ? "animate-pulse" : ""}`} style={{ background: `radial-gradient(closest-side, ${theme.accent}99, transparent)`, filter: "blur(10px)" }} />
+        )}
+        <img src={plinth} alt="" className="relative block w-full" draggable={false} />
+        {!top && (
+          <img src={box} alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 ${next ? "animate-bounce" : ""}`}
+            style={{ width: boxW, bottom: great ? "52%" : "46%", filter: "drop-shadow(0 6px 6px rgba(0,0,0,.55))", animationDuration: "1.6s" }} />
+        )}
+        {reached && !top && (
+          <span className="absolute grid h-6 w-6 place-items-center text-[13px] font-black text-gray-950" style={{ right: great ? "20%" : "18%", top: great ? "2%" : "-4%", borderRadius: 4, background: "#4ade80", boxShadow: "0 0 10px rgba(74,222,128,.8)" }}>✓</span>
+        )}
       </div>
-      {full && (
-        <div className={`grid min-h-0 flex-1 content-center gap-1 px-1.5 ${shown.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-          {shown.map((u, i) => (
-            <div key={u.base} className="relative">
-              <StylePicture base={u.base} level={1} className="block aspect-[100/64] w-full" />
-              {i === 3 && unlocks.length > 4 && (
-                <span className="absolute inset-0 grid place-items-center bg-black/60 text-[13px] font-black">+{unlocks.length - 3}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      {!full && <div className="flex-1" />}
-      {progress != null && (
-        <div className="px-1.5 pb-1.5">
-          <SquareBar value={Math.max(4, progress)} colors={["#f59e0b", "#fde047"]} className="h-[14px]" ticks={false} />
-        </div>
-      )}
-    </button>
-  );
-}
-
-function GateCard({ open, holding, selected, onTap }: { open: boolean; holding: boolean; selected: boolean; onTap: () => void }) {
-  return (
-    <button
-      onClick={onTap}
-      aria-label={open ? "Gate: open" : "Gate: closed"}
-      className="kib-press relative flex shrink-0 flex-col items-center justify-center gap-1"
-      style={{
-        width: GATE_W, height: CARD_H, borderRadius: 2,
-        background: open ? "rgba(52,211,153,.16)" : "rgba(239,68,68,.16)",
-        boxShadow: `inset 0 0 0 ${selected || holding ? 2 : 1}px ${open ? "#34d399" : "#f87171"}`,
-        borderStyle: "dashed",
-      }}
-    >
-      <span className="text-[30px] leading-none">{open ? "🔓" : "🔒"}</span>
-      <span className="text-[10px] font-black uppercase leading-none tracking-widest text-white">Gate</span>
-    </button>
+      <div className="-mt-1 flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider" style={{
+        borderRadius: 2,
+        background: gold ? "linear-gradient(180deg, #fde047, #f59e0b)" : "rgba(0,0,0,.65)",
+        color: gold ? "#111827" : "#ffffff",
+        boxShadow: gold ? "0 0 12px rgba(251,191,36,.5)" : `inset 0 0 0 1px ${theme.accent}`,
+      }}>
+        <span>Level {level}</span>
+        <span>·</span>
+        <span className="normal-case tracking-normal">{reward?.name ?? (top ? "The final reward" : great ? "Great reward" : "Reward")}</span>
+      </div>
+      {!reward && <div className="mt-0.5 text-[10.5px] font-black text-white" style={{ textShadow: "0 1px 3px #000" }}>Coming soon</div>}
+    </div>
   );
 }
