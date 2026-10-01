@@ -41,11 +41,11 @@ import { useAvatarStyle } from "./PlayerAvatar";
 import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
-import MiniLeague, { miniLeagueHeight } from "./MiniLeague";
+import { LeagueDropdown, LEAGUE_DROPDOWN_H } from "./MiniLeague";
 import HomeBackdrop from "./HomeBackdrop";
-import { homeSkyFor } from "@/lib/star/kickoff";
+import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import {
-  FlatPanel, SquareBar, PressButton, RiseIn, Glow, Stadium,
+  FlatPanel, SquareBar, PressButton, RiseIn, Glow,
   Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
   glowOf, rgba, tint, useClubTheme,
 } from "./ui";
@@ -130,7 +130,10 @@ export function leagueRowsFor(room: number | null): number {
 export function playerSizeFor(room: number | null, rows = 3): { w: number; h: number } {
   if (room === null) return { w: 130, h: 154 };
   // + ARROW_STRIP: the bottom-edge arrows (Stats ‹ › Shop) sit under him (v0.23).
-  const fixed = NEXT_H + 4 + miniLeagueHeight(rows) + 4 + 14 + ARROW_STRIP;
+  // The league is a one-row dropdown now (Harry, 1 Oct 2026), so `rows` no
+  // longer costs height; it is kept for callers that still pass it.
+  void rows;
+  const fixed = NEXT_H + 4 + LEAGUE_DROPDOWN_H + 4 + 14 + ARROW_STRIP;
   const h = Math.max(104, Math.min(226, room - fixed));
   const w = Math.min(FIG_MAX_W, Math.round(h * FIG_ASPECT));
   return { w, h: Math.round(w / FIG_ASPECT) };
@@ -147,9 +150,9 @@ export default function HomeHub(p: Props) {
     // pitch and the panels touch both edges, and the page is at least as tall
     // as its box so the pitch reaches the bottom bar.
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
-      <div className="home-sky"><Stadium glow={glow} pitch={false} floods={false} /></div>
+      <HomeScene rootRef={ref} sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <div className="relative z-10 mt-1"><MiniLeague career={career} glow={glow} rows={rows} onOpen={p.onLeague} /></div>
+      <div className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
     </div>
@@ -186,9 +189,11 @@ function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props &
   const when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`;
   const hg = glowOf(homeKit.shirt, homeKit.trim), ag = glowOf(awayKit.shirt, awayKit.trim);
   return (
-    <FlatPanel fade="top" className="relative px-3" style={{ height: NEXT_H }}>
+    // Faint, so the sky shows through (Harry, 1 Oct 2026: "make the next match
+    // super low opacity"); the text keeps a shadow to stay readable.
+    <FlatPanel fade="top" className="relative px-3" style={{ height: NEXT_H, ["--sk-flat-alpha" as string]: 0.14, textShadow: "0 1px 3px rgba(0,0,0,.85)" } as React.CSSProperties}>
       {/* the two clubs, each lighting its own side */}
-      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(60% 130% at 0% 55%, ${rgba(hg, 0.38)}, transparent 70%), radial-gradient(60% 130% at 100% 55%, ${rgba(ag, 0.38)}, transparent 70%)` }} />
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(60% 130% at 0% 55%, ${rgba(hg, 0.16)}, transparent 70%), radial-gradient(60% 130% at 100% 55%, ${rgba(ag, 0.16)}, transparent 70%)` }} />
       <div className="relative flex h-[15px] items-center justify-between pt-1">
         <span className="text-[10px] font-black uppercase leading-none tracking-[0.18em] text-emerald-300">Next match</span>
         <span className="truncate pl-2 text-[10px] font-black uppercase leading-none tracking-wider text-white/75">{comp}</span>
@@ -218,12 +223,57 @@ function TeamSide({ club, kit, you }: { club: string; kit: { shirt: string; trim
   );
 }
 
+// ── The stadium behind everything ──────────────────────────────────────────
+
+/** Where the grass meets the hoardings in each picture (0-1 down it),
+ *  measured off the files in public/home/. */
+const SCENE_LINE: Record<HomeSky, number> = { day: 0.516, sunset: 0.49, night: 0.487 };
+const SCENE_ASPECT = 1344 / 752;
+
+/**
+ * ONE PICTURE BEHIND ALL OF HOME — sky, stand, hoardings and a real mown pitch
+ * (Harry, 1 Oct 2026: the drawn grass "is letting it down"). Picked by the next
+ * match's kick-off (lib/star/kickoff.ts) and lined up so its hoardings sit on
+ * the goal line Hero marks, whatever the phone's size.
+ */
+function HomeScene({ rootRef, sky }: { rootRef: React.RefObject<HTMLDivElement>; sky: HomeSky }) {
+  const [box, setBox] = useState<{ w: number; h: number; goal: number } | null>(null);
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const read = () => {
+      const r = root.getBoundingClientRect();
+      const m = root.querySelector("[data-goal-line]")?.getBoundingClientRect();
+      setBox({ w: r.width, h: r.height, goal: m ? m.top - r.top : r.height * 0.55 });
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, [rootRef]);
+  if (!box) return null;
+  const f = SCENE_LINE[sky];
+  // As small as it can be while covering the screen, with its line on the goal line.
+  const imgH = Math.max(box.w * SCENE_ASPECT, box.goal / f, (box.h - box.goal) / (1 - f));
+  const imgW = imgH / SCENE_ASPECT;
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        className="absolute"
+        style={{
+          width: imgW, height: imgH, left: (box.w - imgW) / 2, top: box.goal - f * imgH,
+          backgroundImage: `url(/home/scene-${sky}.webp)`, backgroundSize: "100% 100%",
+        }}
+      />
+    </div>
+  );
+}
+
 // ── 2. You, on the pitch ────────────────────────────────────────────────────
 
-function Hero({ career, nextFixture, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   // The stand and sky behind the goal: day, sunset or night by the next
   // match's kick-off (lib/star/kickoff.ts). Pictures in public/home/.
-  const sky = homeSkyFor(career, nextFixture);
   const pitchH = Math.round(figH * 1.32 + 30);
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
@@ -254,23 +304,10 @@ function Hero({ career, nextFixture, glow, kitShirt, kitTrim, figW, figH }: Prop
 
   return (
     <div className="relative flex min-h-0 flex-1 items-end">
-      {/* the pitch is sized to him (the goal line sits just above his head)
-          and fades out upwards into the stand, under the league table */}
-      {/* the stand behind the goal: its grass meets the goal line, the sky
-          fades out under the league table */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0"
-        style={{
-          bottom: `calc(min(${pitchH}px, 100%) * 0.73)`,
-          backgroundImage: `url(/home/${sky}.webp)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center bottom",
-          maskImage: "linear-gradient(180deg, transparent 0, #000 28%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 28%)",
-        }}
-      />
-      <div className="absolute inset-x-0 bottom-0" style={{ height: pitchH, maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
+      {/* the goal stands on the picture's goal line (HomeScene lines the
+          picture up with this marker) */}
+      <div data-goal-line aria-hidden className="pointer-events-none absolute inset-x-0 h-0" style={{ bottom: `calc(min(${pitchH}px, 100%) * 0.73)` }} />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: pitchH, maxHeight: "100%" }}><HomeBackdrop glow={glow} grass={false} /></div>
       <div className="relative flex w-full items-end gap-2 px-3 pt-1" style={{ paddingBottom: ARROW_STRIP + 8 }}>
         <div className="relative shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
