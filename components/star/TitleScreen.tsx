@@ -30,7 +30,7 @@ import { hasClub } from "@/lib/star/calendar";
 import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ClubBadge from "./ClubBadge";
-import { KitStyles, PressButton, ClubCard, Shine, Glow, RiseIn, clubTheme, rgba, useClubTheme } from "./ui";
+import { KitStyles, PressButton, ClubCard, Shine, Glow, RiseIn, Stadium, clubTheme, rgba, useClubTheme } from "./ui";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 
@@ -69,6 +69,8 @@ export interface TitleScreenProps {
   onDeleteSlot: (slot: number) => void;
   /** Absent when there is no save to have settings for. */
   onSettings?: () => void;
+  /** The Tutorial button (P64): replays the pointer tour on a save, or starts a new career, whose first Home runs it. */
+  onTutorial?: () => void;
   /** Development only: the Play Area link. */
   showPlayArea?: boolean;
 }
@@ -128,6 +130,8 @@ export default function TitleScreen(p: TitleScreenProps) {
           store badges. A still picture; the net leans a little with the finger. */}
       <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
         <div className="kit-fade absolute inset-[-4%]">
+          <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
+          <Floodlights />
           <GoalNet glow={theme.glow} />
           <PitchFloor />
         </div>
@@ -170,14 +174,19 @@ export default function TitleScreen(p: TitleScreenProps) {
           <RiseIn index={career ? 2 : 1} delay={760}>
             <MenuButton icon="▤" label="Load game" hint={`${saves.filter((s) => !s.empty).length}/${saves.length}`} onClick={() => setSheet("load")} />
           </RiseIn>
-          {p.onSettings && (
+          {p.onTutorial && (
             <RiseIn index={career ? 3 : 2} delay={760}>
+              <MenuButton icon="?" label="Tutorial" onClick={p.onTutorial} />
+            </RiseIn>
+          )}
+          {p.onSettings && (
+            <RiseIn index={career ? 4 : 3} delay={760}>
               <MenuButton icon="⚙" label="Settings" onClick={p.onSettings} />
             </RiseIn>
           )}
-          <RiseIn index={career ? 4 : 3} delay={760}>
+          <RiseIn index={career ? 5 : 4} delay={760}>
             <div className="flex items-center justify-end gap-3 pr-3 pt-0.5 text-[12px] font-black uppercase tracking-[0.16em] text-white/75" style={{ textShadow: "0 1px 4px rgba(0,0,0,.9)" }}>
-              {p.showPlayArea && <a href="/star-play-dev" className="kib-press">Play Area</a>}
+              {p.showPlayArea && <a href="/star-play-dev" className="kib-press whitespace-nowrap">Play Area</a>}
               {p.showPlayArea && <span className="text-white/30">·</span>}
               <button onClick={() => setSheet("credits")} className="kib-press uppercase">Credits</button>
             </div>
@@ -202,22 +211,71 @@ export default function TitleScreen(p: TitleScreenProps) {
   );
 }
 
+/** The name, big (P64: "you can't even see the name of the game"): ONE line,
+ *  KNOWITBALL, filling the width (Harry, 1 Oct 2026: "don't split knowit-ball").
+ *  The size is measured, so it fills the screen in whatever font the phone has. */
 function Wordmark({ glow }: { glow: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const probe = useRef<HTMLSpanElement>(null);
+  const [px, setPx] = useState(76);
+  useEffect(() => {
+    const fit = () => {
+      const el = box.current, pr = probe.current;
+      if (!el || !pr) return;
+      // The probe is "KNOWITBALL" at 100px: scale so it fills 94% of the column, within 120px.
+      const w = pr.getBoundingClientRect().width;
+      if (w > 0) setPx(Math.max(36, Math.min(120, Math.floor((el.clientWidth * 0.94 * 100) / w))));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (box.current) ro.observe(box.current);
+    document.fonts?.ready.then(fit).catch(() => {});
+    return () => ro.disconnect();
+  }, []);
+  const word = "kit-text-shine block font-black italic uppercase tracking-[-0.04em]";
+  const fill = { backgroundImage: "linear-gradient(100deg, #f8fafc 0%, #e2e8f0 38%, #ffffff 46%, #fde68a 50%, #ffffff 54%, #e2e8f0 62%, #f8fafc 100%)", fontSize: px, lineHeight: 0.9, paddingRight: "0.08em" } as const;
   return (
-    <div className="kit-drop-in relative z-10 text-center" style={{ animationDelay: "280ms" }}>
-      <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 3px 0 rgba(0,0,0,.55)) drop-shadow(0 0 18px ${rgba(glow, 0.55)})` }}>
-        <div
-          className="kit-text-shine pr-1 text-[46px] font-black italic leading-[1.02] tracking-[-0.03em] min-[380px]:text-[52px]"
-          style={{ backgroundImage: "linear-gradient(100deg, #f8fafc 0%, #e2e8f0 38%, #ffffff 46%, #fde68a 50%, #ffffff 54%, #e2e8f0 62%, #f8fafc 100%)" }}
-        >
-          KNOWITBALL
-        </div>
+    <div ref={box} className="kit-drop-in relative z-10 text-center" style={{ animationDelay: "280ms" }}>
+      <span ref={probe} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-black italic uppercase tracking-[-0.04em]" style={{ fontSize: 100 }}>KNOWITBALL</span>
+      <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px ${rgba(glow, 0.6)})` }}>
+        <span className={`${word} whitespace-nowrap`} style={fill}>KNOWITBALL</span>
       </div>
-      <div className="mt-0.5 flex items-center justify-center gap-2">
+      <div className="mt-1 flex items-center justify-center gap-2">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-300/80" />
         <span className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>Road to the Ballon d&apos;Or</span>
         <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-300/80" />
       </div>
+    </div>
+  );
+}
+
+/** Two floodlight banks high in the corners, their beams falling inward and
+ *  down onto the pitch (P65: "something about those headlights I like … put
+ *  the headlight light coming down"). */
+function Floodlights() {
+  const lamp = (side: "left" | "right", delay: string) => (
+    <div key={side} className="kit-flicker absolute top-[5.5%] rounded-[3px] bg-slate-800 p-[2px]"
+      style={{ [side]: "2%", width: 50, height: 21, boxShadow: "0 0 18px 6px rgba(235,245,255,.7)", animationDelay: delay } as React.CSSProperties}>
+      <div className="h-full w-full rounded-[2px]" style={{ backgroundImage: "radial-gradient(circle, #fff 1.4px, rgba(255,255,255,.4) 2px, transparent 2.6px)", backgroundSize: "7px 5px" }} />
+    </div>
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {/* The two beams: from each lamp bank down and in, widening onto the pitch. */}
+      <svg className="kit-flicker absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter: "blur(3px)", mixBlendMode: "screen" }}>
+        <defs>
+          <linearGradient id="tb" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#eaf3ff" stopOpacity=".55" />
+            <stop offset=".6" stopColor="#eaf3ff" stopOpacity=".16" />
+            <stop offset="1" stopColor="#eaf3ff" stopOpacity=".05" />
+          </linearGradient>
+        </defs>
+        <polygon points="10,6 19,6 66,100 8,100" fill="url(#tb)" />
+        <polygon points="81,6 90,6 92,100 34,100" fill="url(#tb)" />
+      </svg>
+      {lamp("left", "0ms")}{lamp("right", "260ms")}
+      {/* The pool of light on the pitch. */}
+      <div className="absolute inset-x-0 bottom-[6%] h-[40%]" style={{ background: "radial-gradient(60% 70% at 50% 60%, rgba(235,245,255,.22), transparent 75%)", mixBlendMode: "screen" }} />
     </div>
   );
 }
@@ -227,7 +285,7 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
   return (
     <button
       onClick={onClick}
-      className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "h-[58px] text-white" : "h-[46px] text-white"}`}
+      className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "h-[54px] text-white" : "h-[42px] text-white"}`}
       style={{
         clipPath: "polygon(14px 0, 100% 0, 100% 100%, 0 100%)",
         background: primary ? "linear-gradient(180deg, #34d399, #059669)" : "linear-gradient(180deg, rgba(10,50,28,.92), rgba(5,32,17,.96))",
@@ -245,23 +303,20 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
   );
 }
 
-/** The net behind the goal, lit in your club's colour: a mesh of diamonds,
- *  the crossbar along the top and a post down the right-hand side. */
+/** A small goal on the pitch behind him (P64: "the net's way too big"): the
+ *  frame with its net lit in your club's colour, standing on the goal line. */
 function GoalNet({ glow }: { glow: string }) {
   return (
-    <div className="absolute inset-x-0 top-0 h-[68%]" aria-hidden>
-      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 70% at 30% 100%, ${rgba(glow, 0.5)} 0%, transparent 70%), linear-gradient(180deg, #03100a 0%, #07210f 70%, #0a2d16 100%)` }} />
+    <div className="absolute left-[2%] top-[36%] h-[16%] w-[54%]" aria-hidden>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 90% at 40% 100%, ${rgba(glow, 0.4)} 0%, transparent 75%), linear-gradient(180deg, rgba(3,16,10,.9), rgba(10,45,22,.7))` }} />
       <div
         className="absolute inset-0"
-        style={{
-          backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.26) 0 1.5px, transparent 1.5px 17px), repeating-linear-gradient(-45deg, rgba(255,255,255,.26) 0 1.5px, transparent 1.5px 17px)",
-          maskImage: "linear-gradient(180deg, #000 0%, #000 55%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 55%, transparent 100%)",
-        }}
+        style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.3) 0 1px, transparent 1px 9px), repeating-linear-gradient(-45deg, rgba(255,255,255,.3) 0 1px, transparent 1px 9px)" }}
       />
-      {/* crossbar and post */}
-      <div className="absolute inset-x-0 top-[4%] h-[9px] bg-white/90" style={{ boxShadow: "0 3px 10px rgba(0,0,0,.6), 0 0 18px rgba(255,255,255,.25)" }} />
-      <div className="absolute bottom-0 right-[6%] top-[4%] w-[9px] bg-white/85" style={{ boxShadow: "0 0 14px rgba(255,255,255,.2)" }} />
+      {/* crossbar and both posts */}
+      <div className="absolute inset-x-0 top-0 h-[5px] bg-white/90" style={{ boxShadow: "0 3px 8px rgba(0,0,0,.6)" }} />
+      <div className="absolute bottom-0 left-0 top-0 w-[5px] bg-white/90" />
+      <div className="absolute bottom-0 right-0 top-0 w-[5px] bg-white/90" />
     </div>
   );
 }
@@ -269,7 +324,7 @@ function GoalNet({ glow }: { glow: string }) {
 /** The pitch he stands on: mown bands, the goal line and the six-yard box in chalk. */
 function PitchFloor() {
   return (
-    <div className="absolute inset-x-0 bottom-0 h-[34%]" aria-hidden>
+    <div className="absolute inset-x-0 bottom-0 h-[48%]" aria-hidden>
       <div className="absolute inset-0" style={{ background: "repeating-linear-gradient(180deg, #23823f 0 38px, #1c6e34 38px 76px)" }} />
       <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 38%, rgba(0,0,0,.25) 100%)" }} />
       <div className="absolute inset-x-0 top-0 h-[3px] bg-white/85" />

@@ -59,7 +59,7 @@ export function LockedPage({ title, feature }: { title: string; feature: Feature
 
 // ── 4. The achievement pop-up ───────────────────────────────────────────────
 
-export function AchievementPop({ label, unlocked, onClose, phone = false }: { label: string; unlocked: string; onClose: () => void; /** The phone: a big moment (Harry, P70). */ phone?: boolean }) {
+export function AchievementPop({ label, unlocked, onClose, phone = false, record = false }: { label: string; unlocked: string; onClose: () => void; /** The phone: a big moment (Harry, P70). */ phone?: boolean; /** A record broken, not an achievement (P36). */ record?: boolean }) {
   useEffect(() => { sfx("achievement-pop"); }, []);
   return (
     <Sheet onClose={onClose} z={95}>
@@ -69,7 +69,7 @@ export function AchievementPop({ label, unlocked, onClose, phone = false }: { la
         .kib-ach-star { animation: kib-ach-star .7s cubic-bezier(.2,1.4,.4,1) both }
         .kib-ach-ring { animation: kib-ach-ring 1.1s ease-out .2s both }
       `}</style>
-      <div className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-300">{phone ? "New phone" : "Achievement unlocked"}</div>
+      <div className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-300">{phone ? "New phone" : record ? "Record broken" : "Achievement unlocked"}</div>
       {phone ? (
         <div className="relative mx-auto mt-2 h-[150px] w-[190px]">
           <span className="kib-ach-ring absolute inset-6 rounded-full ring-4 ring-amber-300/70" />
@@ -82,7 +82,7 @@ export function AchievementPop({ label, unlocked, onClose, phone = false }: { la
         <div className="relative mx-auto mt-3 grid h-24 w-24 place-items-center">
           <span className="kib-ach-ring absolute inset-0 rounded-full ring-4 ring-amber-300/70" />
           <Burst trigger={1} colors={GOLD} count={24} round />
-          <span className="kib-ach-star text-[64px] leading-none" style={{ filter: "drop-shadow(0 0 16px rgba(251,191,36,.85))" }}>⭐</span>
+          <span className="kib-ach-star text-[64px] leading-none" style={{ filter: "drop-shadow(0 0 16px rgba(251,191,36,.85))" }}>{record ? "🏆" : "⭐"}</span>
         </div>
       )}
       <div className="mt-2 text-[18px] font-black">{label}</div>

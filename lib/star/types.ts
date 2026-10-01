@@ -905,6 +905,8 @@ export interface CareerState {
   unlocks?: CareerUnlocks;
   /** Set-piece duties the manager has already told you about, once each (v0.23, P78). */
   setPieceTold?: ("penalties" | "freeKicks")[];
+  /** How many matches you had played when the manager last gave a set-piece chat, so the next one waits for a later match (P86). */
+  setPieceTalkAt?: number;
   /**
    * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
    * for penalties and one for direct free kicks. Looks only, never who

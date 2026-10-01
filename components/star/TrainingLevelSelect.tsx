@@ -101,7 +101,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
                 disabled={locked}
                 onClick={() => onPlay(n)}
                 aria-label={locked ? `Level ${n}, locked` : `Level ${n}, ${s} stars`}
-                className={`kib-press relative overflow-hidden rounded-xl px-1 py-2 text-center ${next ? "animate-pulse" : ""}`}
+                className={`kib-press relative aspect-square overflow-hidden rounded-xl text-center ${next ? "animate-pulse" : ""}`}
                 style={locked
                   ? { background: "rgba(15,23,42,.7)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.05)" }
                   : next
@@ -110,11 +110,14 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
                       ? { background: "linear-gradient(180deg, rgba(251,191,36,.35), rgba(15,23,42,.95))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.7), 0 0 12px rgba(251,191,36,.35)" }
                       : { background: `linear-gradient(180deg, ${rgba(a, 0.18)}, rgba(15,23,42,.95))`, boxShadow: `inset 0 0 0 1px ${rgba(a, 0.4)}` }}
               >
-                <div className={`text-[15px] font-black ${locked ? "opacity-40" : "text-white"}`}>{locked ? "🔒" : n}</div>
-                <div className="mt-0.5 text-[11px] tracking-tight">
-                  {[0, 1, 2].map(k => (
-                    <span key={k} style={k < s ? { color: "#fcd34d", textShadow: "0 0 6px rgba(251,191,36,.8)" } : { color: "rgba(255,255,255,.18)" }}>★</span>
-                  ))}
+                {/* P68: the number is small, the stars are the square. */}
+                <div className={`absolute left-1.5 top-1 text-[10px] font-black leading-none tabular-nums ${locked ? "opacity-40" : "text-white/80"}`}>{locked ? "🔒" : n}</div>
+                <div className="flex h-full flex-col items-center justify-center pt-2">
+                  <Star3D on={s >= 3} size={27} />
+                  <div className="-mt-0.5 flex items-end gap-px">
+                    <Star3D on={s >= 1} size={23} />
+                    <Star3D on={s >= 2} size={23} />
+                  </div>
                 </div>
               </button>
             );
@@ -122,5 +125,22 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
         </div>
       </div>
     </div>
+  );
+}
+
+/** A fat, slightly 3D star: lit gold with a darker rim, or a dark hollow one. */
+function Star3D({ on, size }: { on: boolean; size: number }) {
+  const id = on ? "ts-on" : "ts-off";
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden style={on ? { filter: "drop-shadow(0 2px 2px rgba(0,0,0,.6)) drop-shadow(0 0 5px rgba(251,191,36,.7))" } : undefined}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          {on ? (<><stop offset="0" stopColor="#fff3a8" /><stop offset=".55" stopColor="#fbbf24" /><stop offset="1" stopColor="#d97706" /></>)
+            : (<><stop offset="0" stopColor="rgba(255,255,255,.16)" /><stop offset="1" stopColor="rgba(255,255,255,.05)" /></>)}
+        </linearGradient>
+      </defs>
+      <path d="M12 2.2l2.9 6.1 6.7.9-4.9 4.7 1.2 6.7L12 17.4 6.1 20.6l1.2-6.7L2.4 9.2l6.7-.9z" fill={`url(#${id})`}
+        stroke={on ? "#92400e" : "rgba(255,255,255,.12)"} strokeWidth="1.1" strokeLinejoin="round" />
+    </svg>
   );
 }

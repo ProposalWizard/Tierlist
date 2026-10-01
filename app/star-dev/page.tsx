@@ -73,6 +73,7 @@ import TransferSigning from "@/components/star/TransferSigning";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
+import { earnedBetween, type EarnPop } from "@/lib/star/earnPops";
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -326,6 +327,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[]; held?: number; carried?: number } | null>(null);
   /** A whole new star: the full-screen moment. */
   const [newStar, setNewStar] = useState<number | null>(null);
+  const prevCareerRef = useRef<CareerState | null>(null);
+  const lastMatchAchRef = useRef<string[]>([]);
+  lastMatchAchRef.current = lastMatchAch;
+  // Whatever the career just earned pops up by itself — an achievement from
+  // anywhere, a record broken in a match. A match's own achievements already
+  // show on the post-match screen, so they are not shown twice.
+  useEffect(() => {
+    const prev = prevCareerRef.current;
+    prevCareerRef.current = career;
+    if (!prev || !career || prev === career) return;
+    const fresh = earnedBetween(prev, career).filter(e => !(e.kind === "achievement" && lastMatchAchRef.current.includes(e.id.slice(4))));
+    if (fresh.length) setEarnPops(q => [...q, ...fresh.filter(f => !q.some(x => x.id === f.id))]);
+  }, [career]);
   // Unlock chain: the achievement pop-up waiting to show (UnlockChain.tsx).
   const [chainPop, setChainPop] = useState<{ label: string; unlocked: string; phone?: boolean } | null>(null);
   // A "?" replay of the pointers for the screen you are on (never forced).
@@ -342,6 +356,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    *  on Market like it always has. */
   const [investmentsEntry, setInvestmentsEntry] = useState<{ tab: "market" | "portfolio" | "boardroom"; club?: string; section?: "squad" | "sign" | "manager" | "powers" } | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  // Achievements and records earned, waiting to pop up on Home (P36; lib/star/earnPops.ts).
+  const [earnPops, setEarnPops] = useState<EarnPop[]>([]);
   /** A star rating that just moved — see toastRatingChange. Cleared the same
    *  flat-timeout way the achievement toast above already is. */
   const [ratingChange, setRatingChange] = useState<{ from: number; to: number } | null>(null);
@@ -1799,6 +1815,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setContractOfferReason(null);
     setInvestmentsEntry(null);
     setUnlockedAchievements([]);
+    setEarnPops([]);
+    prevCareerRef.current = null;
     setRatingChange(null);
     setRelationshipGameKind(null);
     setPendingVote(null);
@@ -2121,6 +2139,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setTitleOpen(false);
     if (slot !== activeSlotRef.current) handleSwitchSave(slot);
   }, [handleSwitchSave]);
+  // The title's Tutorial button (P64): a save on Home replays the pointer tour
+  // there; no save starts a new career, whose first Home runs the tutorial.
+  const handleTitleTutorial = useCallback(() => {
+    if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
+    setTitleOpen(false);
+    if (phase === "dashboard" && career.unlocks) { setHomePage(1); setHelpTour(HELP_TOURS.home); }
+  }, [career, phase, handleTitleNewGame]);
   const handleTitleSettings = useCallback(() => {
     setSettingsFromTitle(phase === "settings" ? "dashboard" : phase);
     setTitleOpen(false);
@@ -2803,6 +2828,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onLoadSlot={handleTitleLoad}
         onDeleteSlot={handleDeleteSave}
         onSettings={career ? handleTitleSettings : undefined}
+        onTutorial={handleTitleTutorial}
         showPlayArea={offlineDevPlayEnabled()}
       />
     );
@@ -3760,11 +3786,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const played1 = career.fixtures.some(f => f.played);
   // A word from the manager about set pieces: once, after your first match,
   // never on top of a tutorial or a news pop-up (lib/star/setPieceTalk.ts).
-  const setPieceChat = swipeActive && homePage === 1 && newsQueue.length === 0 && !chainPop && newStar === null && !potmWin && !pendingSignOffer
+  const setPieceChat = swipeActive && homePage === 1 && newsQueue.length === 0 && !chainPop && earnPops.length === 0 && newStar === null && !potmWin && !pendingSignOffer
     ? setPieceTalkDue(career) : null;
   const tour: { key: string; steps: TourStep[]; skippable?: boolean; onDone: () => void } | null = (() => {
     if (helpTour) return { key: "help", steps: helpTour, onDone: () => setHelpTour(null) };
-    if (!career.unlocks || chainPop || newStar !== null || newsQueue.length > 0) return null;
+    if (!career.unlocks || chainPop || earnPops.length > 0 || newStar !== null || newsQueue.length > 0) return null;
     const onHome = swipeActive && homePage === 1;
     if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: WELCOME_TOUR, skippable: true, onDone: seenKey("tutorial") };
     if ((phase === "skills" || swipeActive) && drillMessageDue(career)) return { key: "league-open", steps: LEAGUE_TOUR, onDone: seenKey("drills-msg") };
@@ -3859,10 +3885,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {chainPop && (
         <AchievementPop label={chainPop.label} unlocked={chainPop.unlocked} phone={chainPop.phone} onClose={() => setChainPop(null)} />
       )}
-      {unlockedAchievements.length > 0 && (
-        <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
-          ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
-        </div>
+      {!chainPop && newStar === null && newsQueue.length === 0 && earnPops.length > 0 && (
+        <AchievementPop key={earnPops[0].id} label={earnPops[0].label} unlocked={earnPops[0].unlocked} record={earnPops[0].kind === "record"} onClose={() => setEarnPops(q => q.slice(1))} />
       )}
       {newStar !== null && (
         <button onClick={() => setNewStar(null)} className="fixed inset-0 z-[80] grid place-items-center bg-black/90 p-6 text-center" aria-label="Close">
