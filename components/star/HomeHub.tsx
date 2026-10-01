@@ -43,6 +43,7 @@ import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
 import MiniLeague, { miniLeagueHeight } from "./MiniLeague";
 import HomeBackdrop from "./HomeBackdrop";
+import { homeSkyFor } from "@/lib/star/kickoff";
 import {
   FlatPanel, SquareBar, PressButton, RiseIn, Glow, Stadium,
   Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
@@ -219,7 +220,11 @@ function TeamSide({ club, kit, you }: { club: string; kit: { shirt: string; trim
 
 // ── 2. You, on the pitch ────────────────────────────────────────────────────
 
-function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+function Hero({ career, nextFixture, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+  // The stand and sky behind the goal: day, sunset or night by the next
+  // match's kick-off (lib/star/kickoff.ts). Pictures in public/home/.
+  const sky = homeSkyFor(career, nextFixture);
+  const pitchH = Math.round(figH * 1.32 + 30);
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -251,7 +256,21 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
     <div className="relative flex min-h-0 flex-1 items-end">
       {/* the pitch is sized to him (the goal line sits just above his head)
           and fades out upwards into the stand, under the league table */}
-      <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30), maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
+      {/* the stand behind the goal: its grass meets the goal line, the sky
+          fades out under the league table */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0"
+        style={{
+          bottom: `calc(min(${pitchH}px, 100%) * 0.73)`,
+          backgroundImage: `url(/home/${sky}.webp)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center bottom",
+          maskImage: "linear-gradient(180deg, transparent 0, #000 28%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0, #000 28%)",
+        }}
+      />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: pitchH, maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
       <div className="relative flex w-full items-end gap-2 px-3 pt-1" style={{ paddingBottom: ARROW_STRIP + 8 }}>
         <div className="relative shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
