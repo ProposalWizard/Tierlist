@@ -3425,7 +3425,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           nextFixture={nextFixture}
           onBack={handleBackToDashboard}
           onPlay={() => handleNavigate("play")}
+          // The "?" replays the League's pointer; not while the first-visit one is up.
+          onHelp={career.unlocks && !hasSeen(career, "league-intro") ? undefined : () => setHelpTour(HELP_TOURS.league)}
         />
+        {helpTour && <PointerTour key="help-league" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {career.unlocks && !hasSeen(career, "league-intro") && (
           <PointerTour
             key="league-screen"
@@ -3716,8 +3719,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const swipeActive = phase === "dashboard";
   // Which screen the "?" is on, and the one pointer tour running right now.
   const helpScreen: HelpScreen | null = swipeActive ? (homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop")
-    : phase === "skills" ? (trainingTab === "life" ? "relations" : "training")
-      : phase === "league" ? "league" : null;
+    : phase === "skills" ? (trainingTab === "life" ? "relations" : "training") : null;
   const seenKey = (key: string) => () => setCareer(c => (c ? markSeen(c, key) : c));
   const played1 = career.fixtures.some(f => f.played);
   // A word from the manager about set pieces: once, after your first match,
@@ -3730,12 +3732,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const onHome = swipeActive && homePage === 1;
     if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: WELCOME_TOUR, skippable: true, onDone: seenKey("tutorial") };
     if ((phase === "skills" || swipeActive) && drillMessageDue(career)) return { key: "league-open", steps: LEAGUE_TOUR, onDone: seenKey("drills-msg") };
-    if (phase === "league" && !hasSeen(career, "league-intro")) {
-      return { key: "league-screen", steps: LEAGUE_SCREEN_TOUR, onDone: () => {
-        setCareer(c => (c ? recordLeagueVisit(markSeen(c, "league-intro")) : c));
-        setChainPop({ label: "Complete your first two training sessions", unlocked: "Achievements unlocked" });
-      } };
-    }
+    // The League's first-visit pointer lives on the League page itself (it
+    // returns early, above).
     if (onHome && hasSeen(career, "league-intro") && !hasSeen(career, "play-tip") && !played1 && isOpen(career, "play")) {
       return { key: "first-game", steps: FIRST_GAME_TOUR, onDone: seenKey("play-tip") };
     }

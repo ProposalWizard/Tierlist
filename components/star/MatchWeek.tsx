@@ -33,7 +33,7 @@ export const WEEK_VIEWS = [
 export type WeekView = (typeof WEEK_VIEWS)[number]["id"];
 let lastView: WeekView = "table";
 
-export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, initialView }: {
+export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, initialView, onHelp }: {
   career: CareerState;
   /** The top HUD, so energy never leaves. */
   hud: React.ReactNode;
@@ -41,6 +41,8 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
   onBack: () => void;
   onPlay: () => void;
   initialView?: WeekView;
+  /** The "?": replays this page's pointer tour (same as the dashboard's "?"). */
+  onHelp?: () => void;
 }) {
   const { glow } = useClubTheme(career);
   const [view, setViewState] = useState<WeekView>(initialView ?? lastView);
@@ -76,7 +78,12 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
           prev={prev ? { icon: prev.icon, label: prev.label, onClick: () => setView(prev.id) } : undefined}
           next={next ? { icon: next.icon, label: next.label, onClick: () => setView(next.id) } : undefined}
         >
-          {here.label}
+          <span className="inline-flex items-center justify-center gap-1.5">
+            {here.label}
+            {onHelp && (
+              <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}>?</button>
+            )}
+          </span>
         </EdgeArrows>
 
         {view === "fixtures" ? <FixturesPane career={career} next={nextFixture} />
