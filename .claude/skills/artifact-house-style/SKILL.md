@@ -72,6 +72,9 @@ standard."*
 - Clips go in `files` as `clips/<name>.mp4`. The admin patch-notes archive
   plays them too (it serves `.mp4` with byte ranges).
 - Watch every clip's cover and open every still before publishing.
+- **Builders don't film; one filming pass at the end** (Harry, 1 Oct 2026:
+  "we are wasting time and tokens"). During a build: stills only. After the
+  merge: one pass films every before/after for the page.
 - **All "after" clips come from ONE combined copy** (Harry, 1 Oct 2026, on
   the v0.23 page: *"How am I meant to analyse if you've recorded everything
   separately? … apply all the changes, and then record stuff so you can see
