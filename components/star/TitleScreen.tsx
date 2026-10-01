@@ -211,9 +211,9 @@ export default function TitleScreen(p: TitleScreenProps) {
   );
 }
 
-/** The name, big (P64: "you can't even see the name of the game"): two lines
- *  that fill the width, KNOWIT over BALL. The size is measured, so it fills the
- *  screen in whatever font the phone has. */
+/** The name, big (P64: "you can't even see the name of the game"): ONE line,
+ *  KNOWITBALL, filling the width (Harry, 1 Oct 2026: "don't split knowit-ball").
+ *  The size is measured, so it fills the screen in whatever font the phone has. */
 function Wordmark({ glow }: { glow: string }) {
   const box = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLSpanElement>(null);
@@ -222,9 +222,9 @@ function Wordmark({ glow }: { glow: string }) {
     const fit = () => {
       const el = box.current, pr = probe.current;
       if (!el || !pr) return;
-      // The probe is "KNOWIT" at 100px: scale so it fills 92% of the column, within 120px.
+      // The probe is "KNOWITBALL" at 100px: scale so it fills 94% of the column, within 120px.
       const w = pr.getBoundingClientRect().width;
-      if (w > 0) setPx(Math.max(48, Math.min(120, Math.floor((el.clientWidth * 0.92 * 100) / w))));
+      if (w > 0) setPx(Math.max(36, Math.min(120, Math.floor((el.clientWidth * 0.94 * 100) / w))));
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -236,10 +236,9 @@ function Wordmark({ glow }: { glow: string }) {
   const fill = { backgroundImage: "linear-gradient(100deg, #f8fafc 0%, #e2e8f0 38%, #ffffff 46%, #fde68a 50%, #ffffff 54%, #e2e8f0 62%, #f8fafc 100%)", fontSize: px, lineHeight: 0.9, paddingRight: "0.08em" } as const;
   return (
     <div ref={box} className="kit-drop-in relative z-10 text-center" style={{ animationDelay: "280ms" }}>
-      <span ref={probe} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-black italic uppercase tracking-[-0.04em]" style={{ fontSize: 100 }}>KNOWIT</span>
+      <span ref={probe} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-black italic uppercase tracking-[-0.04em]" style={{ fontSize: 100 }}>KNOWITBALL</span>
       <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px ${rgba(glow, 0.6)})` }}>
-        <span className={word} style={fill}>KNOWIT</span>
-        <span className={word} style={fill}>BALL</span>
+        <span className={`${word} whitespace-nowrap`} style={fill}>KNOWITBALL</span>
       </div>
       <div className="mt-1 flex items-center justify-center gap-2">
         <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-300/80" />
