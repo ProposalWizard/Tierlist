@@ -61,6 +61,32 @@ Newest first. Each is something that was actually said.
   on Home. Keep a card short enough that it reads as whole, not a title with
   its contents chopped off (cans + energy went from 303px to about 130px).
 
+### 30 Sep 2026 — the shop (review of Mikey v0.7)
+- **The four shops come first.** "Probably should do these four first instead
+  of those two … this makes them seem like small things." KIB Cans, Boots,
+  Style, Sponsors are big picture tiles at the top of the Shop page; Store and
+  Casino sit under them. Each tile carries a live line (cans owned, boot
+  matches left, fame from stuff, deals signed).
+- **A level is a thing, not "L1".** "What is a level one sports car? …
+  broken down motorbike, normal car, Tesla, sports car, Lamborghini … actual
+  images of each one … instead of L1, L2, L3." Every level of every Style
+  item has its own name and its own drawing (lib/star/lifestyleLevels.ts,
+  components/star/StylePicture.tsx). Generic names, never real brands.
+- **"You should always be able to see how much fame stuff is giving you."**
+  Fame is on every card and in a strip at the top of Style, and it is the
+  real share of your fame — not the item's raw status number.
+- **"Way too long."** A list of rows with five price buttons each became a
+  3-wide grid of picture cards; the detail is in a sheet you tap open.
+  Measured at 390 wide: the longest Style tab 1,663 px → 686 px.
+- **"A little place where you can see all your stuff."** My stuff: boots,
+  cans and everything owned, each with its fame and seasons left.
+- **Boots: "like a gallery, like I'm in a shop … hover over a shoe and buy
+  it."** A swipeable lit shelf of drawn boots; tap one for all five levels.
+  The walk-around 3D shop he described is NOT built — a much bigger job.
+- **Holiday is its own group** (p7): jet, villa, island. Level 5 should
+  "unlock something crazy" — the slot is shown as "to be decided" until a
+  real reward is designed; never invent one quietly.
+
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
   short, small tutorial or pop-up… doesn't have to be many words, just
