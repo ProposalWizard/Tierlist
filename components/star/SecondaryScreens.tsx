@@ -1,5 +1,4 @@
 "use client";
-import { attributeOverall } from "@/lib/star/rating";
 import TrophyImage from "./TrophyImage";
 import { fameOf, fameLevel, nextFameLevel, FAME_LEVELS } from "@/lib/star/fame";
 import { reputationLabel, REPUTATION_RECOMMEND_MIN, REPUTATION_PROPOSE_RULES_MIN, REPUTATION_PRESIDENCY_MIN } from "@/lib/star/reputation";
@@ -512,7 +511,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               Not interested in renegotiating right now.
             </div>
             <div className="text-xs text-white/75 mb-4 leading-snug">
-              You haven&apos;t done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your overall, and they&apos;ll be a lot more willing to talk.
+              You haven&apos;t done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your game, and they&apos;ll be a lot more willing to talk.
             </div>
             <PressButton variant="primary" onClick={() => onComplete(null)} className="w-full">Back</PressButton>
           </div>
@@ -532,7 +531,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               <div className="mb-3 flex items-start gap-2 bg-amber-900/40 border border-amber-700/50 rounded-xl px-3 py-2.5">
                 <span className="text-lg leading-none">⭐</span>
                 <div className="text-xs text-amber-200 leading-snug">
-                  <span className="font-black text-amber-300">Overall {Math.round(attributeOverall(career.skills))}!</span> The club recognise how much you have improved and are offering improved terms to reflect your standing.
+                  <span className="font-black text-amber-300">You&apos;ve improved!</span> The club recognise how much you have improved and are offering improved terms to reflect your standing.
                 </div>
               </div>
             )}

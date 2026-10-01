@@ -72,8 +72,7 @@ import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
-import { starsNow, starStatus, matchStarPoints, withStars } from "@/lib/star/starPoints";
-import { STAR_TITLES } from "@/components/star/StarRatingSheet";
+import { starsNow, starStatus, matchStarPoints, withStars, starGain, starTitle } from "@/lib/star/starPoints";
 import { clubTheme } from "@/components/star/ui";
 import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
@@ -280,7 +279,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   /** Your star rating before and after the last match — the bar on a simmed result (item 36). */
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
-  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string } | null>(null);
+  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[] } | null>(null);
   /** A whole new star: the full-screen moment. */
   const [newStar, setNewStar] = useState<number | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
@@ -998,11 +997,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // only — a rating that ticks down from aging decay is real and correct,
   // but is not the kind of moment worth a celebratory banner for.
   const toastRatingChange = (from: number, to: number) => {
-    const fromShown = Math.round(from * 10) / 10;
-    const toShown = Math.round(to * 10) / 10;
+    // The star rating is a whole number, 1-100 (starPoints.ts).
+    const fromShown = Math.floor(from);
+    const toShown = Math.floor(to);
     if (toShown <= fromShown) return;
-    // A whole new star gets the full screen; anything less, the banner.
-    if (Math.floor(toShown + 1e-9) > Math.floor(fromShown + 1e-9)) setNewStar(Math.floor(toShown + 1e-9));
+    // Every ten (20, 30 …) gets the full screen; anything less, the banner.
+    if (Math.floor(toShown / 10) > Math.floor(fromShown / 10)) setNewStar(Math.floor(toShown / 10) * 10);
     setRatingChange({ from: fromShown, to: toShown });
     setTimeout(() => setRatingChange(null), 3000);
   };
@@ -1021,7 +1021,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const starNext = starStatus(next);
     const earned = matchStarPoints(career, nextFixture, stats);
     setLastStarChange({ from: starsNow(career), to: starNext.stars });
-    setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, gate: starNext.gate?.need });
+    // Everything that moved the rating, not just the match (starGain).
+    const gain = starGain(career, next);
+    setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, gate: starNext.gate?.need,
+      total: gain.total, extra: gain.lines.filter(l => l.cat !== "match").map(l => ({ label: l.label, sp: l.sp, n: l.n })) });
     toastAchievements(newlyUnlocked);
     toastRatingChange(starsNow(career), starNext.stars);
     // The world reacts. Generated once, here, from the career on both sides of
@@ -3569,17 +3572,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       )}
       {newStar !== null && (
         <button onClick={() => setNewStar(null)} className="fixed inset-0 z-[80] grid place-items-center bg-black/90 p-6 text-center" aria-label="Close">
+          {/* The name is about your career, never the club you're at
+              (Harry, 1 Oct 2026: "Non-league regular" while in the Prem). */}
           <div>
-            <div className="text-[34px] leading-none text-amber-300" style={{ textShadow: "0 0 20px rgba(251,191,36,.8)" }}>{"★".repeat(newStar)}</div>
-            <div className="mt-3 text-[40px] font-black italic leading-none text-white">{newStar} STARS</div>
-            <div className="mt-2 text-[15px] font-black text-amber-300">{STAR_TITLES[newStar] ?? ""}</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-300">Star rating</div>
+            <div className="mt-1 text-[72px] font-black italic leading-none text-white" style={{ textShadow: "0 0 24px rgba(251,191,36,.7)" }}>★ {newStar}</div>
+            <div className="mt-2 text-[15px] font-black text-amber-300">{starTitle(newStar)}</div>
+            <div className="mt-1 text-[12px] font-bold text-white">Your career so far, out of 100. It never goes down.</div>
             <div className="mt-6 inline-block rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-gray-950">Continue</div>
           </div>
         </button>
       )}
       {ratingChange && (
         <div className="mb-2 bg-emerald-500 border border-emerald-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
-          ▲ Star rating up: {ratingChange.from.toFixed(1)}★ → {ratingChange.to.toFixed(1)}★
+          ▲ Star rating up: ★{ratingChange.from} → ★{ratingChange.to}
         </div>
       )}
       {phase === "dashboard" && career.managerNews && (

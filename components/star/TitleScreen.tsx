@@ -27,6 +27,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { hasClub } from "@/lib/star/calendar";
+import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ClubBadge from "./ClubBadge";
 import { KitStyles, Stadium, Pitch, PressButton, ClubCard, Shine, Glow, RiseIn, clubTheme, rgba, useClubTheme } from "./ui";
@@ -177,7 +178,7 @@ export default function TitleScreen(p: TitleScreenProps) {
                     </div>
                   </div>
                   <span className="shrink-0 rounded-full bg-gradient-to-b from-yellow-200 to-amber-400 px-2 py-1 text-[13px] font-black tabular-nums text-gray-950" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 3px 8px -2px rgba(0,0,0,.4)" }}>
-                    ★ {(career.stars ?? 1).toFixed(1)}
+                    ★ {starLevel(career)}
                   </span>
                 </div>
               </PressButton>
@@ -343,7 +344,7 @@ function LoadSheet({ saves, activeSlot, full, career, onClose, onLoad, onNew, on
                     </div>
                     <div className="truncate text-[14px] font-black text-white">{s.playerName}</div>
                     <div className="truncate text-[11px] font-bold text-white/65">
-                      {s.signed ? `${short(s.club ?? "")} · Season ${s.season}` : "No club yet"} · <span className="text-amber-300">★{s.starRating?.toFixed(1)}</span>
+                      {s.signed ? `${short(s.club ?? "")} · Season ${s.season}` : "No club yet"} · <span className="text-amber-300">★{s.starRating}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">

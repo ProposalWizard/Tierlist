@@ -34,8 +34,10 @@ interface Props {
    *  match's result (item 36). */
   starBefore?: number;
   starAfter?: number;
-  /** Star Points this match earned, and the way to the next 0.1★ (starPoints.ts). */
-  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string };
+  /** Star Points this match earned, and the way to the next level (starPoints.ts).
+   *  `total` is everything that moved the rating (the match plus any debut,
+   *  achievement or trophy it brought), and `extra` names the rest. */
+  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[] };
 }
 
 // The same black outline the live scoreboard puts on its club-name text —
@@ -299,31 +301,33 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
 }
 
 /**
- * Item 36: your star rating and how far it has come towards the next tenth —
- * the one progress number a simmed match shows (and now the full match too).
+ * Item 36: your star rating (1-100) and how far it has come towards the next
+ * level. The points line adds up to what actually moved the rating: the match
+ * first, then anything else it brought (Harry, 1 Oct 2026: the card said +68
+ * and the rating went up eleven levels).
  */
 function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
   if (after === undefined) return null;
-  const from = before ?? after;
-  const tenth = (r: number) => Math.floor(r * 10 + 1e-9);
-  const frac = (r: number) => Math.max(0, Math.min(1, r * 10 - tenth(r)));
-  const up = tenth(after) > tenth(from);
-  // The career star rating moves in whole tenths, so the bar is the way to
-  // the next one, handed in; without it, fall back to the old fraction.
-  const startPct = star ? 0 : up ? 0 : frac(from) * 100;
-  const endPct = star ? star.toNext * 100 : frac(after) * 100;
+  const from = Math.floor(before ?? after);
+  const to = Math.floor(after);
+  const up = to > from;
+  // The bar is the way to the next level, handed in by the page.
+  const startPct = 0;
+  const endPct = star ? star.toNext * 100 : 0;
+  const extra = star?.extra ?? [];
+  const total = star?.total ?? star?.sp ?? 0;
+  const status = star?.gate ? `held at a gate: ${star.gate}` : up ? `Up ${to - from} level${to - from === 1 ? "" : "s"}!` : `${Math.round(endPct)}% of the way to ${to + 1}`;
   return (
     <div className="relative px-3 py-2.5">
       <div className="flex items-center gap-2">
         <StarIcon large />
         <div className="flex-1 text-sm font-black text-white">Star Rating</div>
         <div className="relative text-sm font-black tabular-nums text-amber-300">
-          {up ? `${(tenth(from) / 10).toFixed(1)} → ` : ""}{(tenth(after) / 10).toFixed(1)}
-          {up && <FloatText trigger={on ? 1 : 0} text={`+${((tenth(after) - tenth(from)) / 10).toFixed(1)} ★`} color="#fde047" className="left-1/2 -top-2" size={13} />}
+          {up ? `${from} → ` : ""}{to}
+          {up && <FloatText trigger={on ? 1 : 0} text={`+${to - from}`} color="#fde047" className="left-1/2 -top-2" size={13} />}
         </div>
       </div>
       <div className="relative mt-1.5 h-3 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }} role="meter" aria-label="Progress to the next star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(endPct)}>
-        <div className="absolute inset-y-0 left-0 rounded-full bg-amber-500/55" style={{ width: `${startPct}%` }} />
         <div
           className="absolute inset-y-0 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-yellow-200"
           style={{ left: `${startPct}%`, width: `${on ? Math.max(0, endPct - startPct) : 0}%`, transition: "width 900ms cubic-bezier(.2,.8,.2,1)", boxShadow: "0 0 12px rgba(251,191,36,.7)" }}
@@ -331,11 +335,28 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
           <div className="absolute inset-x-0 top-0 h-1/2 bg-white/35" />
         </div>
       </div>
-      <div className="mt-1 text-[10px] font-bold text-white">
-        {star
-          ? <><span className="font-black text-amber-300">+{star.sp.toLocaleString("en-GB")} Star Points</span>{star.mult !== 1 ? ` (${star.base} × ${star.mult})` : ""} · {star.gate ? `held at a gate: ${star.gate}` : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}</>
-          : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}
-      </div>
+      {star ? (
+        <>
+          <div className="mt-1 text-[10px] font-bold text-white">
+            <span className="font-black text-amber-300">+{exact(total)} Star Points</span> · {status}
+          </div>
+          {extra.length > 0 && (
+            <div className="mt-1 space-y-[1px] text-[10px] font-bold text-white">
+              <div className="flex justify-between gap-2"><span>This match{star.mult !== 1 ? ` (${exact(star.base)} × ${star.mult})` : ""}</span><span className="tabular-nums">+{exact(star.sp)}</span></div>
+              {extra.map((l) => (
+                <div key={l.label} className="flex justify-between gap-2">
+                  <span>{l.label}{l.n && l.n > 1 ? ` ×${l.n}` : ""}</span><span className="tabular-nums">+{exact(l.sp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {extra.length === 0 && star.mult !== 1 && (
+            <div className="mt-0.5 text-[10px] font-bold text-white">This match: {exact(star.base)} × {star.mult}</div>
+          )}
+        </>
+      ) : (
+        <div className="mt-1 text-[10px] font-bold text-white">{status}</div>
+      )}
     </div>
   );
 }

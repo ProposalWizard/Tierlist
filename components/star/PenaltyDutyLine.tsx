@@ -3,7 +3,7 @@ import type { CareerState, Fixture } from "@/lib/star/types";
 import type { Selection } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster } from "@/lib/star/teamsheet";
-import { takerRating, designatedTaker, PENALTY_STAR_WEIGHT } from "@/lib/star/penaltyTaking";
+import { takerRating, designatedTaker } from "@/lib/star/penaltyTaking";
 
 /**
  * WHO IS ON PENALTIES TODAY — and what earns you them (v0.15 item 6).
@@ -24,9 +24,10 @@ export default function PenaltyDutyLine({ career, fixture, status }: {
     id: p.id, name: p.name, shortName: p.shortName, rating: takerRating(p), isGK: p.position === "GK",
   })));
   const mate = taker?.shortName ?? "A team-mate";
-  const stars = Math.round(career.starRating * 10) / 10;
-  // `stars` here is ability (career.starRating), not the career star rating.
-  const sum = `free kick ${career.skills.freeKick} + ability ${stars} × ${PENALTY_STAR_WEIGHT} = ${Math.round(duties.penaltyStanding)}`;
+  // The standing is free kick + ability (career.starRating) × a weight
+  // (setPieces.ts). Only the one total is shown: the player sees one rating,
+  // the 1-100 star rating, and no Overall (Harry, 1 Oct 2026).
+  const sum = `penalty score ${Math.round(duties.penaltyStanding)}`;
   const onPitch = status !== "Squad" && status !== "Injured";
   return (
     <div className="mt-2.5 rounded-lg bg-black/25 px-2.5 py-2 text-left">
@@ -40,7 +41,7 @@ export default function PenaltyDutyLine({ career, fixture, status }: {
           ? `You're not playing — ${mate} takes them.`
           : duties.penalties
             ? `You're on them: ${sum} (needs ${duties.penaltyNeeded}).`
-            : `You take over at ${duties.penaltyNeeded}: ${sum} now. Each star counts ${PENALTY_STAR_WEIGHT}.`}
+            : `You take over at ${duties.penaltyNeeded}: ${sum} now. Free kick training raises it.`}
       </div>
     </div>
   );

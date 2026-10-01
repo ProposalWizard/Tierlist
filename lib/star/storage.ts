@@ -1,4 +1,4 @@
-import { withStars } from "./starPoints";
+import { withStars, isOldStarScale, starLevel } from "./starPoints";
 import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
@@ -490,8 +490,9 @@ function backfill(c: CareerState): CareerState {
   // rollover gets the same trim now (see compactPotmHistory): last season
   // and this one whole, older seasons only the months you won.
   out.potm = compactPotmHistory(out.potm, out.season - 1);
-  // A save from before Star Points gets its ledger and star rating here.
-  return out.stars === undefined ? withStars(out) : out;
+  // A save from before Star Points gets its ledger and star rating here, and
+  // one from the 1.0-10.0 days is moved onto 1-100 (starPoints.ts bestOf).
+  return out.stars === undefined || isOldStarScale(out) ? withStars(out) : out;
 }
 
 export function clearCareer(scope: string) {
@@ -565,7 +566,7 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
       // The star rating players see is the career one (starPoints.ts).
-      starRating: career.stars ?? 1,
+      starRating: starLevel(career),
       retired: !!career.retired,
     });
   }
