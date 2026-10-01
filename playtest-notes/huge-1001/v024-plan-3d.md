@@ -156,3 +156,23 @@ Playtest every phase with `star-playtest` (everyday model).
 5. Boss meeting and phone: rendered pictures and clips first, or live 3D? **Rendered / Live**
 6. First slice of the home: house + garage + car only, then grow? **Yes / No**
 7. Keep the shop page's free "superhero" body for now, or swap to the Blender footballer first (phase 2)? **Keep / Swap**
+
+---
+
+## 7. Added from the v0.23 review with Mikey (1 Oct, `playtest-notes/v023rev-1001/points.md` P57, P72, P90)
+
+P57: "What if it creates a 3D model version of your head when you take a picture and then just puts that head on the body? … you can just have set bodies and it just puts your head on that. I don't know how much space that would take up."
+
+This is Harry answering his own question 4 (Photo / Modelled) with a third option: **your photo becomes a 3D head**, on the set body from phase 2. Three ways to do it, all reasoned, none tried:
+
+| Way | How | Size per player | Looks | Risk |
+|---|---|---|---|---|
+| **A. Photo wrapped on a stock head** | The face from your photo (the face scan already cuts it out, `faceScan.ts`) painted onto the front of one shared head model; skin tone picked from the photo for the rest of the head | About 50–100 KB (one image), the head model is shared | Good from the front and three-quarter view; flat from the side | Low. All in the browser, nothing sent anywhere |
+| **B. Photo to 3D head by an AI service** | Send the photo once to an image-to-3D service, get a head model back, shrink it to the size budget, store it with the save | About 300 KB–1 MB after shrinking (raw output is often 5–20 MB) | Real shape from every angle, but these services often get hair and ears wrong | Medium–high: costs per head, the photo leaves the phone (needs a consent line), and it needs a server step |
+| **C. Modelled face matched to the photo** | Pick skin tone, hair style and colour from the photo; use the modelled game face | Nothing extra | Looks like the rest of the game, not like you | Lowest |
+
+Recommendation: **A first**, as a throwaway prototype on the phase-2 footballer, filmed at phone size next to C. Only try B if A doesn't look like you.
+
+Managers (P72, P90) stay on C: "fake faces … based on an image of them somewhat, to the point where no one could sue us … skin colour, hair type". This is already in v0.23.1's signing work (U2) for the 2D scene; the 3D office reuses the same choice.
+
+Question 4 becomes: **Your face in 3D: A (photo on a stock head) / B (AI head) / C (modelled)?**

@@ -69,3 +69,22 @@ Ball: radius in px and the metres it represents (worked out: about 7 px, 1.0 m).
 8. **Fewer attackers:** will you **redraw** the chances in the gallery, or **leave** them? redraw / leave
 9. **Scope:** the new look in the **trial** first, or **all** screens including the career match? trial / all
 10. **Keeper off his line:** only in the one-on-one stage? Penalties have to stay on the line. yes / no
+
+---
+
+## 7. Added from the v0.23 review with Mikey (1 Oct, `playtest-notes/v023rev-1001/points.md`)
+
+P84: "my next project is making the game look way more like NSS now, like in game … sometimes when you're shooting you see a wind in the top right and it's raining, and the texture of the pitch is just so much better."
+
+| # | Item | What changes on screen | Where it lives | Render-only? | Harry judges by eye first? |
+|---|---|---|---|---|---|
+| L12 | **Weather you can see** (P84) | Today the weather already changes the ball (`lib/star/weather.ts`: wind pushes it sideways, rain adds drag) but **nothing is drawn**: read in the code, CanvasMatch never draws rain or wind. Add a wind arrow top-right (direction + strength, like NSS), rain streaks and a darker wet pitch in rain/heavy | Reads `scenario.conditions`, which the match already sets. Draw code only | Yes. The numbers it shows are the ones the physics already uses | **Yes.** One sheet: clear / wind / rain / heavy, arrow in 2 styles |
+| L3 | Pitch texture (P84 repeats it) | No change to the item; P84 makes it a headline, not a nice-to-have | — | Yes | Yes (rings / stripes / plain) |
+| L13 | **Shoot on Home** (P17, an idea, "imagine you could shoot here") | Tap the player on Home and take one shot at the goal behind him | Must mount `EngineFeature`/`EnginePlay` (ONE ENGINE rule), never its own loop | Not a look change, a small new mode | Ask first: Q11 |
+
+New questions:
+
+11. **Shoot on Home:** build it in v0.24, or **later**? now / later
+12. **Weather arrow:** NSS-style **arrow** with a number, or a **flag** that blows? arrow / flag
+
+Order inside phase 2's sheet: L12 and L3 lead (they are P84's own examples), then L1, L4, L6, L7, L8, L11.
