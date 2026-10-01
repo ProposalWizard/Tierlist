@@ -5,10 +5,10 @@ import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
-import { DEFAULT_FAKE_FACE, FAKE_FACES, fakeFaceFor } from "@/lib/star/fakeFaces";
+import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { fitImage, getFittedHead } from "@/lib/star/faceFit";
-import { skinFor } from "@/lib/star/figure3d";
-import { paintHeroFigure, tint, rgba, luminance, type HeroLook, type P } from "@/lib/star/heroFigure";
+import { skinFor, drawStyledHead } from "@/lib/star/figure3d";
+import { paintHeroFigure, tint, rgba, luminance, HERO_CHIN_Y, HERO_FACE_H, type HeroLook, type P } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import { Burst, KitStyles } from "./ui";
 import { useScannedPortrait } from "./useScannedPortrait";
@@ -58,13 +58,6 @@ const ZOOM_MS = 450, SIGN_MS = 1200, OUT_MS = 450, CHEER_MS = 500;
 type Beat = "idle" | "zoom" | "sign" | "shake" | "done";
 
 const money = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
-
-/** The manager's face: a generated one, never the same picture as yours. */
-function bossFaceFor(name: string, yours: string): string {
-  const pick = fakeFaceFor(`manager:${name}`);
-  if (pick !== yours) return pick;
-  return FAKE_FACES[(FAKE_FACES.indexOf(pick) + 1) % FAKE_FACES.length];
-}
 
 /** Bumps when the readable copies of these pictures have loaded. */
 function useFaceTicks(urls: string[]): number {
@@ -197,8 +190,10 @@ export default function SigningScene({
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const scanned = useScannedPortrait(career.player.portrait);
   const youFace = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
-  const bossFace = bossFaceFor(managerName, youFace);
-  const tick = useFaceTicks([youFace, bossFace]);
+  // Harry, 1 Oct 2026 (P49): "Let's stop with the real faces, unless it's your
+  // guy ... that's not Keith Andrews." Only YOUR face is a photo; the manager
+  // is a drawn head (figure3d's drawStyledHead), the same man every time.
+  const tick = useFaceTicks([youFace]);
   const number = terms?.squadNumber ?? career.squadNumber ?? null;
 
   // The stage scales to the column's width.
@@ -225,7 +220,6 @@ export default function SigningScene({
     if (!ctx) return;
     ctx.setTransform(px, 0, 0, px, 0, 0);
     const youFit = getFittedHead(youFace);
-    const bossFit = getFittedHead(bossFace);
     paintOffice(ctx, {
       club: kit,
       shake,
@@ -236,11 +230,12 @@ export default function SigningScene({
       },
       boss: {
         shirt: "#1d2430", shorts: "#141922", trim: "#e9edf2",
-        skin: bossFit?.skin ?? skinFor(managerName),
-        number: null, fitted: bossFit,
+        skin: skinFor(managerName),
+        number: null, fitted: null,
+        drawHead: (c) => drawStyledHead(c, 101, HERO_CHIN_Y, HERO_FACE_H, skinFor(managerName), `manager:${managerName}`),
       },
     });
-  }, [k, tick, shake, kit.shirt, kit.trim, youFace, bossFace, number, career.player.skinTone, managerName, kit]);
+  }, [k, tick, shake, kit.shirt, kit.trim, youFace, number, career.player.skinTone, managerName, kit]);
 
   useEffect(() => () => { timers.current.forEach((t) => window.clearTimeout(t)); }, []);
 

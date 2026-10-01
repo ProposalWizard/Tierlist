@@ -17,7 +17,7 @@
  * Drawn in a 100 × 64 box. Seeded by nothing — the same item and level always
  * draws the same picture.
  */
-import { useId, cloneElement, isValidElement, Fragment } from "react";
+import { useId, useState, useEffect, cloneElement, isValidElement, Fragment } from "react";
 import type React from "react";
 
 type Lv = 1 | 2 | 3 | 4 | 5;
@@ -31,10 +31,45 @@ const PAINT: Record<Lv, { body: string; dark: string; trim: string; glass: strin
   5: { body: "url(#GOLD)", dark: "#a16207", trim: "#fde68a", glass: "#fef3c7" },
 };
 
-/** A picture of one level of one style item. */
+/** True once we know the render at `src` could not be loaded (a missing file, a bad
+ *  connection). An SVG <image> does not reliably report that itself, so ask a plain Image. */
+export function useRenderFailed(src: string): boolean {
+  const [failed, setFailed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    let alive = true;
+    const im = new Image();
+    im.onerror = () => { if (alive) setFailed(src); };
+    im.src = src;
+    return () => { alive = false; im.onerror = null; };
+  }, [src]);
+  return failed === src;
+}
+
+/**
+ * A picture of one level of one style item.
+ *
+ * Harry, 1 Oct 2026, on the Blender test renders: "Oh damn, you have done it.
+ * That's so much better ... Do them all like this ... Don't do an in-between."
+ * Every level is now a Blender render (public/shop/<base>-L<n>.webp, made by
+ * tools/blender-shop). The drawing below stays as the fallback for a picture
+ * that fails to load or an item with no render. The level-5 sparkles are still
+ * drawn here, over the render, so they keep clear of the corner badges.
+ */
 export default function StylePicture({ base, level, className = "" }: { base: string; level: number; className?: string }) {
   const uid = useId().replace(/:/g, "");
   const lv = Math.max(1, Math.min(5, Math.round(level || 1))) as Lv;
+  // The phone is one item at one level (W5): one picture whatever level is asked for.
+  const src = base in DRAW ? `/shop/${base}-L${base === "phone" ? 1 : lv}.webp` : "";
+  const failed = useRenderFailed(src);
+  if (src && !failed) {
+    return (
+      <svg viewBox="0 0 100 64" className={className} role="img" aria-hidden>
+        <image href={src} x="0" y="0" width="100" height="64" preserveAspectRatio="xMidYMid slice" />
+        {lv === 5 && <Sparkles />}
+      </svg>
+    );
+  }
   const draw = DRAW[base] ?? DRAW.phone;
   // Gradient ids must be unique per picture or a list of them shares one.
   const svg = draw(lv);
@@ -79,7 +114,7 @@ function rewriteIds(node: React.ReactNode, uid: string): React.ReactNode {
 // Kept to the top middle and the right edge below the corner: the top-left
 // corner holds "Level 5 of 5" (and "✓ YOURS" on a grid card), the top-right
 // "✓ YOURS" on the item sheet. Harry, 1 Oct 2026: a sparkle sat on the badge.
-const Sparkles = () => (
+export const Sparkles = () => (
   <g fill="#fffbe6">
     {[[50, 5, 1.5], [59, 11, 2.4], [67, 4, 1.3], [94, 24, 1.9]].map(([x, y, r], i) => (
       <path key={i} d={`M${x} ${y - r * 2} L${x + r * 0.5} ${y - r * 0.5} L${x + r * 2} ${y} L${x + r * 0.5} ${y + r * 0.5} L${x} ${y + r * 2} L${x - r * 0.5} ${y + r * 0.5} L${x - r * 2} ${y} L${x - r * 0.5} ${y - r * 0.5} Z`} />
