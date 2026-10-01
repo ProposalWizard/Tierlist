@@ -3261,7 +3261,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
     return (
       <PitchScope>
-       <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
+       <div className="min-h-screen sk-shell sk-nograss bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
@@ -3439,9 +3439,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The same top bar (name, age, money) and the same HUD (rating + energy) as
   // the dashboard on every full screen (Harry, 1 Oct 2026: "the pills at the
   // top aren't uniform across every page").
-  const screenHud = (screen: HudScreen) => (
+  const screenHud = (screen: HudScreen, help?: HelpScreen) => (
     <>
-      <GameBar career={career} onHome={() => handleNavigate("home")} onSettings={() => setPhase("settings")} />
+      <GameBar career={career} onHome={() => handleNavigate("home")} onSettings={() => setPhase("settings")} onHelp={help ? () => setHelpTour(HELP_TOURS[help]) : undefined} />
       <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
     </>
   );
@@ -3492,9 +3492,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onBuyBoot={handleBuyBoot}
           onBuyItem={handleBuyItem}
           onBuyFromBlackMarket={handleBuyFromBlackMarket}
-          hud={screenHud("shop")}
+          hud={screenHud(kind === "lifestyle" ? "style" : "shop", kind === "lifestyle" ? "style" : "shop")}
           onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
         />
+        {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {/* The phone flashes; one line says what it is (Harry, P102). */}
         {kind === "lifestyle" && career.unlocks && !isOpen(career, "phone") && !hasSeen(career, "phone-tip") && (
           <PointerTour
@@ -3637,6 +3638,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "settings") {
     return (
+      <>
+      {helpTour && <PointerTour key="help-settings" steps={helpTour} onDone={() => setHelpTour(null)} />}
       <SettingsScreen
         career={career}
         onBack={settingsFromTitle ? handleExitToTitle : handleBackFromSettings}
@@ -3668,8 +3671,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onSetPenaltyRunup={handleSetPenaltyRunup}
         onSetFreeKickRunup={handleSetFreeKickRunup}
         onExitCareer={handleExit}
-        hud={screenHud("settings")}
+        hud={screenHud("settings", "settings")}
       />
+      </>
     );
   }
   if (phase === "face-editor") {
@@ -3836,7 +3840,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // (Harry, 1 Oct 2026: "it should lock until u repair").
         ...(isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0) ? { media: "Your phone broke — repair it in Style" } : {}),
       } : undefined}
-      achievementsSlot={career.unlocks && isOpen(career, "achievements") ? { active: false, onClick: () => setPhase("achievements") } : undefined}
+      homeSlot={career.unlocks && isOpen(career, "achievements") ? { active: swipeActive && homePage === 1, onClick: () => handleNavigate("home") } : undefined}
     >
       {/* ── The pointer tutorial (PointerTour.tsx, lib/star/tours.ts): one
           tour at a time, in order, pointing at the real screen. ── */}

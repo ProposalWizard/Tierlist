@@ -10,6 +10,7 @@ import { SquareBar } from "./Flat";
 import { Shake } from "./juice";
 import { useCountUp, prefersReducedMotion } from "./motion";
 import { levelColors } from "./StatBar";
+import { reputationLabel } from "@/lib/star/reputation";
 
 /**
  * THE TOP HUD (Harry, 1 Oct 2026, P80/P81/P86: "your energy never leaves").
@@ -26,7 +27,21 @@ import { levelColors } from "./StatBar";
  * every page". So money and age live in the top bar (ui/GameBar.tsx), and
  * nothing here changes with the screen. `screen` only labels the block.
  */
-export type HudScreen = "home" | "stats" | "training" | "shop" | "relations" | "league" | "other" | "casino" | "settings";
+export type HudScreen = "home" | "stats" | "training" | "shop" | "style" | "relations" | "league" | "other" | "casino" | "settings";
+
+/**
+ * WHICH BAR SITS ON THE LEFT, PER SCREEN (Harry, P13: "when you go to
+ * relationship, one of them swaps out for … happiness; or if you go to style
+ * it'll swap out for reputation … so you always have the relevant bars for
+ * whatever you're looking at"). Energy is the right-hand cell on EVERY screen,
+ * with its can, so it is not listed. Add a screen here to give it its own.
+ */
+export type HudLeft = "star" | "happiness" | "reputation";
+export const HUD_SPEC: Record<HudScreen, HudLeft> = {
+  home: "star", stats: "star", training: "star", shop: "star", league: "star", other: "star", casino: "star", settings: "star",
+  relations: "happiness",
+  style: "reputation",
+};
 
 /** The can that gives energy is the Basic one (the others are boot abilities). */
 const ENERGY_CAN = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];
@@ -46,7 +61,7 @@ export default function TopHud({ career, screen, onUseCan, onOpenCans, className
       {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
       {/* One encapsulated block: rating | energy, a hairline between. */}
       <div data-hud-block className="grid grid-cols-2 gap-px overflow-hidden bg-black/55" style={{ borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge, rgba(255,255,255,.22))" }}>
-        <RatingCell career={career} onOpen={() => setStarPass(true)} />
+        {HUD_SPEC[screen] === "happiness" ? <HappinessCell career={career} /> : HUD_SPEC[screen] === "reputation" ? <ReputationCell career={career} /> : <RatingCell career={career} onOpen={() => setStarPass(true)} />}
         <EnergyCell career={career} onUseCan={onUseCan} onOpenCans={onOpenCans} />
       </div>
     </div>
@@ -66,12 +81,38 @@ function RatingCell({ career, onOpen }: { career: CareerState; onOpen: () => voi
     <button onClick={open ? onOpen : undefined} data-tour="rating" aria-label={open ? "Star Pass" : "Star rating"} className={`kib-press ${CELL} h-[34px] text-left`} style={WASH}>
       <span className="flex h-[24px] shrink-0 items-center gap-0.5 px-1.5 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
         <span className="text-[13px] leading-none">★</span>
-        <span className="min-w-[18px] text-[17px] font-black leading-none tabular-nums">{Math.round(shown)}</span>
+        <span className="sk-num min-w-[18px] text-[17px] font-black leading-none tabular-nums">{Math.round(shown)}</span>
       </span>
       <SquareBar value={Math.max(3, star.toNext * 100)} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate />
       {star.gate && <span className="shrink-0 text-[10px] font-black leading-none text-white">🔒</span>}
     </button>
   );
+}
+
+/** A value badge + one liquid bar: the shape every left-hand cell shares. */
+function MeterCell({ tour, label, icon, number, bar, colors, badge }: { tour: string; label: string; icon: string; number: number; bar: number; colors: [string, string]; badge: [string, string] }) {
+  const shown = useCountUp(number);
+  return (
+    <div data-tour={tour} aria-label={`${label} ${Math.round(number)}`} className={`${CELL} h-[34px]`} style={WASH}>
+      <span className="flex h-[24px] shrink-0 items-center gap-0.5 px-1.5 text-gray-950" style={{ background: `linear-gradient(180deg, ${badge[0]}, ${badge[1]})`, borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
+        <span className="text-[13px] leading-none">{icon}</span>
+        <span className="sk-num min-w-[18px] text-[17px] font-black leading-none tabular-nums">{Math.round(shown)}</span>
+      </span>
+      <SquareBar value={Math.max(3, bar)} colors={colors} className="h-[14px] min-w-0 flex-1" animate />
+    </div>
+  );
+}
+
+/** Relations: how happy you are, in place of the star rating (P13). */
+function HappinessCell({ career }: { career: CareerState }) {
+  const h = Math.max(0, Math.min(100, Math.round(career.happiness)));
+  return <MeterCell tour="happiness" label="Happiness" icon="😊" number={h} bar={h} colors={levelColors(h)} badge={["#f9a8d4", "#ec4899"]} />;
+}
+
+/** Style: your reputation, in place of the star rating (P13). */
+function ReputationCell({ career }: { career: CareerState }) {
+  const r = Math.max(0, Math.min(100, Math.round(career.reputation)));
+  return <MeterCell tour="reputation" label={reputationLabel(r)} icon="🌐" number={r} bar={r} colors={["#0ea5e9", "#a5f3fc"]} badge={["#7dd3fc", "#0ea5e9"]} />;
 }
 
 function EnergyCell({ career, onUseCan, onOpenCans }: { career: CareerState; onUseCan: (id: (typeof KIB_CANS)[number]["id"]) => void; onOpenCans: () => void }) {

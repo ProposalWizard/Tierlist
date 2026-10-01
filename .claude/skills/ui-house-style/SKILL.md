@@ -356,3 +356,21 @@ Newest first. Each is something that was actually said.
 - Say plainly what you could NOT do and why. A gap stated is fine; a gap hidden
   is the thing that gets caught later.
 - **Then update "The rulings" above** with anything new they said.
+
+### 1 Oct 2026 — v0.23 review with Mikey (v0.23.1, look and navigation)
+- **The heavy font is for titles and big numbers only** (P14, P58, P78: "the all
+  bold text, I think no … for the league and fixtures I like the normal font").
+  Supersedes the "one heavy font everywhere" ruling above. Headings, `.sk-display`,
+  `.sk-num`, and any black-weight text 16px+ are Anton; lists, tables, buttons and
+  labels are the normal font (ui/flat.css).
+- **Star rating and energy are one smooth glowing liquid bar** (P8, P15, P96): no
+  ticks, rounded ends, glows, animates on change. One component (`ui/LiquidBar.tsx`);
+  SquareBar and StatBar draw it. Supersedes the "square bars" ruling.
+- **The HUD shows the relevant bar per screen** (P13): `HUD_SPEC` in ui/TopHud.tsx.
+  Relations: happiness; Style: reputation; energy always.
+- **Bottom-left is Home** once Achievements has opened (P26, P60); Achievements is
+  a small link on Home. Bottom arrows are small and dim (P9, P81).
+- **Bolts run yellow, orange, red** (Low, Medium, High) (P31) - no green.
+- **Every main page has a "?"** (P62). Settings: small one-line on/off rows (P61).
+  The line-up skips on any tap, or never shows with Settings → Skip the line-up.
+

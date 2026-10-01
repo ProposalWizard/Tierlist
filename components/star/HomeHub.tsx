@@ -150,7 +150,7 @@ export default function HomeHub(p: Props) {
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
       <div className="relative z-10 mt-1"><MiniLeague career={career} glow={glow} rows={rows} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
-      {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
+      <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>
   );
 }
@@ -293,21 +293,36 @@ function SeasonStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-// ── 3. Sponsors, a small arrow at the bottom right ──────────────────────────
+// ── 3. Achievements and Sponsors, two small links in the middle ────────────
 
-/** Your sponsors, one tap from Home (Harry, 1 Oct 2026, P66: "like being a
- *  little arrow in the bottom right instead"). Not a pill: plain text and an
- *  arrow, with a red count when offers are waiting. */
-function SponsorsArrow({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
+/** The two small links in the middle of Home's bottom strip: Achievements
+ *  (v0.23.1, P26/P60: the bottom-left button is Home now, "it could just be on
+ *  the homepage") and Sponsors (Harry, 1 Oct 2026, P66: "like being a little
+ *  arrow in the bottom right instead"). Plain text, not pills, with a red
+ *  count when sponsor offers are waiting. */
+function MiddleLinks({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
   const offers = brandsOf(career).offers.length;
+  const showAch = isOpen(career, "achievements");
+  const showSp = isOpen(career, "shop");
+  if (!showAch && !showSp) return null;
+  const text = "kib-press flex items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
+  const shadow = { textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" };
   return (
-    <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"}
-      className="kib-press absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white"
-      style={{ textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" }}>
-      Sponsors
-      {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
-      <span className="text-[17px] leading-none text-emerald-300">›</span>
-    </button>
+    <div className="absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+      {showAch && (
+        <button type="button" data-tour="achievements" onClick={() => onOpen("achievements")} aria-label="Achievements" className={text} style={shadow}>
+          <span className="text-[14px] leading-none">⭐</span>
+          <span className="max-[379px]:hidden">Achievements</span>
+        </button>
+      )}
+      {showSp && (
+        <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"} className={text} style={shadow}>
+          Sponsors
+          {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
+          <span className="text-[17px] leading-none text-emerald-300">›</span>
+        </button>
+      )}
+    </div>
   );
 }
 

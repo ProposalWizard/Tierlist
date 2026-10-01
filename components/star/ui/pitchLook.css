@@ -35,6 +35,11 @@
   background: var(--sk-page) !important;
   background-attachment: fixed !important;
 }
+/* The match screen: the pitch card sits on a dark night page, not on more grass
+   (v0.23.1, P69: "I don't like the grass behind the pitch"). */
+.star-look-pitch .sk-shell.sk-nograss {
+  background: radial-gradient(120% 50% at 50% -6%, rgba(40,90,60,.35), transparent 70%), linear-gradient(180deg, #0a1322 0%, #05080f 100%) !important;
+}
 .star-look-pitch .sk-bar,
 .star-look-pitch .sk-nav {
   background: linear-gradient(180deg, #1c6a3b, #14562e) !important;
@@ -43,17 +48,15 @@
 .star-look-pitch .sk-nav { border-top-width: 2px; }
 .star-look-pitch .sk-bar { border-bottom-width: 2px; }
 
-/* Display type: headings, the big black-weight capitals, scoreboard numbers
-   and the nav labels. Anton has one (heavy) weight, so no faux-bold. */
-.star-look-pitch :is(h1, h2, h3),
-.star-look-pitch .font-black.uppercase,
-.star-look-pitch .font-black.tabular-nums,
-.star-look-pitch .sk-nav button > span:last-of-type {
+/* Display type: headings only. The big black-weight capitals and numbers are
+   picked up by ui/flat.css (size-based); labels, tables and the nav stay in
+   the normal font (v0.23.1, P58/P78). */
+.star-look-pitch :is(h1, h2, h3) {
   font-family: var(--sk-display);
   font-weight: 400;
 }
 /* Scoreboard digits: a touch of LED glow. */
-.star-look-pitch .font-black.tabular-nums { text-shadow: 0 0 10px rgba(255,255,255,.18), 0 1px 0 rgba(0,0,0,.6); }
+.star-look-pitch .font-black.tabular-nums:is([class*="text-[16"], [class*="text-[17"], [class*="text-[18"], [class*="text-[19"], [class*="text-[2"], [class*="text-[3"], .text-lg, .text-xl, .text-2xl, .text-3xl) { text-shadow: 0 0 10px rgba(255,255,255,.18), 0 1px 0 rgba(0,0,0,.6); }
 
 /* Generated: Tailwind grays → pitch greens. */
 .star-look-pitch .bg-gray-400 { background-color: #409c64; }
