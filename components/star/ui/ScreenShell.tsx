@@ -35,7 +35,7 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div
           className="absolute inset-0"
-          style={{ background: `radial-gradient(90% 45% at 50% -8%, ${rgba(glow, 0.5)} 0%, transparent 70%)${accent ? `, radial-gradient(70% 40% at 50% 108%, ${rgba(accent, 0.28)} 0%, transparent 70%)` : ""}, linear-gradient(180deg, #0a1120 0%, #05080f 60%)` }}
+          style={{ background: `radial-gradient(90% 45% at 50% -8%, ${rgba(glow, 0.5)} 0%, transparent 70%)${accent ? `, radial-gradient(70% 40% at 50% 108%, ${rgba(accent, 0.28)} 0%, transparent 70%)` : ""}, var(--sk-page, linear-gradient(180deg, #0a1120 0%, #05080f 60%))` }}
         />
         <div
           className="absolute inset-x-0 top-0 h-[34%]"

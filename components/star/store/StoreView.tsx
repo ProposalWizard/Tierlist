@@ -104,7 +104,7 @@ function CoinIcon({ className = "h-4 w-4" }: { className?: string }) {
  *  top, a soft drop — the home cards' look in the store's colours. */
 function cardLook(color: string, strength = 0.26): React.CSSProperties {
   return {
-    background: `radial-gradient(110% 90% at 0% 0%, ${rgba(color, strength)} 0%, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.9), rgba(12,17,28,.96))`,
+    background: `radial-gradient(110% 90% at 0% 0%, ${rgba(color, strength)} 0%, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.9), rgba(12,17,28,.96)))`,
     boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(color, 0.28)}, 0 10px 22px -12px rgba(0,0,0,.85)`,
   };
 }
@@ -241,7 +241,7 @@ export default function StoreView(p: StoreViewProps) {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-slate-100">
       <KitStyles />
-      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ background: `radial-gradient(90% 40% at 50% -6%, ${rgba(glow, 0.45)} 0%, transparent 70%), radial-gradient(70% 35% at 50% 106%, ${rgba("#f59e0b", 0.18)} 0%, transparent 70%), linear-gradient(180deg, #0a1120 0%, #05080f 60%)` }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ background: `radial-gradient(90% 40% at 50% -6%, ${rgba(glow, 0.45)} 0%, transparent 70%), radial-gradient(70% 35% at 50% 106%, ${rgba("#f59e0b", 0.18)} 0%, transparent 70%), var(--sk-page, linear-gradient(180deg, #0a1120 0%, #05080f 60%))` }} />
       <div className="relative mx-auto max-w-[900px] pb-24">
         {/* ── Header: title + wallet ── */}
         <div className="sticky top-0 z-20" style={{ background: "linear-gradient(180deg, rgba(5,8,15,.95) 70%, rgba(5,8,15,.8))", backdropFilter: "blur(6px)" }}>
@@ -621,7 +621,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
         className="kit-rise relative max-h-[92dvh] w-full max-w-[420px] overflow-y-auto rounded-t-3xl border-t border-white/10 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:rounded-3xl"
-        style={{ background: `radial-gradient(100% 45% at 50% 0%, ${rgba(rar ? RARITY_COLOR[rar] : "#8b5cf6", 0.28)} 0%, transparent 70%), linear-gradient(180deg, #0f172a, #070b14)`, boxShadow: "0 -20px 50px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.1)" }}>
+        style={{ background: `radial-gradient(100% 45% at 50% 0%, ${rgba(rar ? RARITY_COLOR[rar] : "#8b5cf6", 0.28)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, #0f172a, #070b14))`, boxShadow: "0 -20px 50px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.1)" }}>
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">

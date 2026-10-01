@@ -55,7 +55,7 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
         data-testid={`clash-card-${side}`}
         className="rounded-2xl p-3"
         style={{
-          background: `radial-gradient(120% 140% at 0% 0%, ${rgba(theme.glow, 0.26)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
+          background: `radial-gradient(120% 140% at 0% 0%, ${rgba(theme.glow, 0.26)} 0%, transparent 55%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,
           boxShadow: chosen
             ? `inset 0 0 0 2px ${rgba(theme.glow, 0.95)}, 0 0 18px -6px ${rgba(theme.glow, 0.9)}`
             : `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(theme.glow, 0.25)}, 0 10px 24px -12px rgba(0,0,0,.8)`,

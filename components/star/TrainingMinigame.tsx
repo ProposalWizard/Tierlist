@@ -173,11 +173,11 @@ function Shell({
   const onTry = Math.max(0, TRIES - results.length);
   return (
     <div className="min-h-screen text-white flex flex-col items-center py-3 px-3"
-      style={{ background: `radial-gradient(90% 50% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
+      style={{ background: `radial-gradient(90% 50% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <div className="w-full max-w-sm">
         <div className="relative overflow-hidden rounded-2xl p-2.5"
           style={{
-            background: `radial-gradient(120% 90% at 0% 0%, ${rgba(glow, 0.32)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97))`,
+            background: `radial-gradient(120% 90% at 0% 0%, ${rgba(glow, 0.32)}, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97)))`,
             boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(glow, 0.35)}, 0 0 26px -6px ${rgba(glow, 0.55)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
           }}>
           <Shine loop every={6} />
@@ -853,10 +853,10 @@ function CompleteScreen({ title, trainingLevel, stars }: { title: string; traini
   const verdict = stars === 3 ? "First time!" : stars === 2 ? "Second try" : stars === 1 ? "Just made it" : "Not this time";
   return (
     <div className="min-h-screen text-white flex flex-col items-center justify-center py-3 px-3"
-      style={{ background: `radial-gradient(80% 50% at 50% 30%, ${rgba(glow, 0.4)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
+      style={{ background: `radial-gradient(80% 50% at 50% 30%, ${rgba(glow, 0.4)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <div className="relative w-full max-w-sm overflow-hidden rounded-2xl p-6 text-center"
         style={{
-          background: `radial-gradient(120% 90% at 50% 0%, ${rgba(look.accent, 0.3)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.95), rgba(10,14,24,.98))`,
+          background: `radial-gradient(120% 90% at 50% 0%, ${rgba(look.accent, 0.3)}, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.95), rgba(10,14,24,.98)))`,
           boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px ${rgba(look.accent, 0.4)}, 0 0 40px -8px ${rgba(glow, 0.7)}`,
         }}>
         <Glow color={stars > 0 ? "#fbbf24" : look.accent} alpha={0.35} pulse className="inset-10 blur-2xl" />

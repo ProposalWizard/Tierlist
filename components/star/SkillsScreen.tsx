@@ -138,7 +138,7 @@ function NoMoreSessions({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 px-6" onClick={onClose} role="dialog" aria-modal="true" aria-label="No more sessions this week">
       <div
         className="w-full max-w-xs rounded-2xl p-5 text-center"
-        style={{ background: "linear-gradient(180deg, rgba(31,41,55,.98), rgba(12,17,28,.98))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px rgba(52,211,153,.35), 0 20px 40px -10px rgba(0,0,0,.9)" }}
+        style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.98), rgba(12,17,28,.98)))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px rgba(52,211,153,.35), 0 20px 40px -10px rgba(0,0,0,.9)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center gap-2">
@@ -172,7 +172,7 @@ function SkillCard({ skill, label, icon, desc, value, stars, canTrain, outOfSess
       onClick={onTrain}
       className="kib-press relative block w-full overflow-hidden rounded-2xl p-3 text-left disabled:opacity-60"
       style={{
-        background: `radial-gradient(120% 140% at 0% 0%, ${rgba(c1, canTrain ? 0.3 : 0.14)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
+        background: `radial-gradient(120% 140% at 0% 0%, ${rgba(c1, canTrain ? 0.3 : 0.14)} 0%, transparent 55%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(c1, canTrain ? 0.32 : 0.14)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
       }}
     >

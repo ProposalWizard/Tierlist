@@ -101,7 +101,7 @@ function BigTile({ onClick, color, title, sub, chip, art }: {
       onClick={onClick}
       className="kib-press relative flex h-[184px] flex-col overflow-hidden rounded-2xl p-2.5 text-left"
       style={{
-        background: `radial-gradient(90% 70% at 50% 18%, ${rgba(color, 0.42)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(10,15,26,.97))`,
+        background: `radial-gradient(90% 70% at 50% 18%, ${rgba(color, 0.42)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(10,15,26,.97)))`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px ${rgba(color, 0.4)}, 0 12px 26px -12px ${rgba(color, 0.75)}`,
       }}
     >
@@ -124,7 +124,7 @@ function SmallHero({ onClick, icon, title, sub, colors }: { onClick: () => void;
       onClick={onClick}
       className="kib-press relative flex items-center gap-2 overflow-hidden rounded-2xl p-2.5 text-left"
       style={{
-        background: `radial-gradient(80% 120% at 0% 0%, ${rgba(a, 0.45)} 0%, transparent 60%), radial-gradient(70% 120% at 100% 100%, ${rgba(b, 0.4)} 0%, transparent 60%), linear-gradient(180deg, #172033, #0a0f1a)`,
+        background: `radial-gradient(80% 120% at 0% 0%, ${rgba(a, 0.45)} 0%, transparent 60%), radial-gradient(70% 120% at 100% 100%, ${rgba(b, 0.4)} 0%, transparent 60%), var(--sk-card, var(--sk-card, linear-gradient(180deg, #172033, #0a0f1a)))`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px ${rgba(a, 0.35)}`,
       }}
     >

@@ -49,7 +49,7 @@ const FAME_BAR: [string, string] = ["#fbbf24", "#fde68a"];
 
 function brandStyle(color: string, strength = 0.3): React.CSSProperties {
   return {
-    background: `radial-gradient(120% 130% at 0% 0%, ${rgba(color, strength)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97))`,
+    background: `radial-gradient(120% 130% at 0% 0%, ${rgba(color, strength)}, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97)))`,
     boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(color, 0.45)}, 0 0 22px -8px ${rgba(color, 0.6)}`,
   };
 }

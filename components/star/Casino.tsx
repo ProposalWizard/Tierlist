@@ -202,7 +202,7 @@ function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerSt
               onClick={() => onPick(g.id)}
               className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-4 py-4 text-left disabled:opacity-40"
               style={{
-                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97))`,
+                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97)))`,
                 boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(g.color, 0.35)}, 0 12px 24px -14px ${rgba(g.color, 0.75)}`,
               }}
             >
@@ -277,7 +277,7 @@ function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChang
   return (
     <div
       className="mb-3 flex items-center gap-2 rounded-2xl px-3 py-2"
-      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
+      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
     >
       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/80">Your bet</span>
       <div className="ml-auto flex items-center gap-2">
@@ -638,7 +638,7 @@ function HorseRacingGame(props: HorseRacingProps) {
               </>
             ) : (
               <>
-                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
+                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="text-5xl">🐎</div>
                     <div className="flex-1 min-w-0">
@@ -798,7 +798,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           </div>
         )}
 
-        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
+        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
           {book.map(entry => (
             <button
               key={entry.name}

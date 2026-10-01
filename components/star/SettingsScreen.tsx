@@ -1,4 +1,5 @@
 "use client";
+import { useUiLook, setUiLook } from "@/lib/star/uiLook";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -92,6 +93,7 @@ export default function SettingsScreen({
   // Harry says otherwise; this switch is for trying 3D on this device.
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
+  const uiLookNow = useUiLook();
 
   const togglePostMatchReactions = () => {
     const next = !postMatchReactions;
@@ -263,6 +265,20 @@ export default function SettingsScreen({
           </div>
           <SetNote dim className="mt-1 text-[10px]">
             3D (the default) draws every player with shading, kit folds, boots and a fitted face. Applies to the home screen and the match bar too. This phone only.
+          </SetNote>
+
+          <SetDivider />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Look</span>
+            <SegTabs
+              className="w-[150px] shrink-0"
+              value={uiLookNow}
+              onChange={setUiLook}
+              tabs={[["classic", "Classic"], ["pitch", "Pitch"]] as const}
+            />
+          </div>
+          <SetNote dim className="mt-1 text-[10px]">
+            Pitch dresses the menus like a football ground: grass stripes, chalk lines and bold matchday type. Same screens, same buttons. This phone only.
           </SetNote>
 
           <SetDivider />

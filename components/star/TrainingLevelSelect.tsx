@@ -41,7 +41,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
 
   return (
     <div className="min-h-screen text-white px-4 py-4"
-      style={{ background: `radial-gradient(90% 40% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
+      style={{ background: `radial-gradient(90% 40% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <KitStyles />
       <div className="mx-auto w-full max-w-sm">
         <div className="flex items-center justify-between">
@@ -54,7 +54,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
         {/* The skill, as a big lit card — the same card as on the Training page. */}
         <div className="kit-rise relative mt-3 overflow-hidden rounded-2xl p-4"
           style={{
-            background: `radial-gradient(110% 120% at 0% 0%, ${rgba(a, 0.35)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97))`,
+            background: `radial-gradient(110% 120% at 0% 0%, ${rgba(a, 0.35)}, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97)))`,
             boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(a, 0.45)}, 0 0 26px -6px ${rgba(a, 0.55)}`,
           }}>
           <Shine loop every={6} />

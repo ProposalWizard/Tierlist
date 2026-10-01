@@ -259,7 +259,7 @@ function FullHeight({ children }: { children: React.ReactNode }) {
       className="flex flex-col overflow-hidden text-white"
       style={{
         height: h !== null ? `${h}px` : "calc(100dvh - 64px)",
-        background: "radial-gradient(120% 50% at 50% 0%, rgba(16,185,129,.16), transparent 60%), linear-gradient(180deg, #111827, #0a0f1a)",
+        background: "radial-gradient(120% 50% at 50% 0%, rgba(16,185,129,.16), transparent 60%), var(--sk-page, linear-gradient(180deg, #111827, #0a0f1a))",
       }}
     >
       {children}
