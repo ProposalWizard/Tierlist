@@ -16,6 +16,7 @@ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { generateScoutOffers, clubsForDivision, type ScoutOffer } from "@/lib/star/scoutOffers";
+import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
 import ScoutOffers from "@/components/star/ScoutOffers";
 // ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
 // Added as new phases beside the existing ones; nothing in the phase machine
@@ -44,7 +45,6 @@ import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/st
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel, divisionOf, type CareerDivision } from "@/lib/star/calendar";
-import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
@@ -175,6 +175,13 @@ import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
  */
 function offersForTrial(career: CareerState): ScoutOffer[] {
   if (!career.trial) return [];
+  // The first trial no longer scores you onto a ladder: a scout has spotted
+  // you, and you start at one club in the National League, North or South —
+  // likelier the National League if you scored the shootout's final penalty
+  // (Harry, 1 Oct 2026, P36/P63; lib/star/scoutedPlacement.ts). One offer,
+  // seeded off the trial, so a reload lands at the same club. A free agent's
+  // second look (trialsTaken > 1) still reads the old score ladder below.
+  if ((career.trialsTaken ?? 1) <= 1) return [scoutedOfferForTrial(career.trial)];
   return generateScoutOffers(
     trialScore(career.trial),
     mulberry32(career.trial.seed ^ 0x5c0a7),
