@@ -58,6 +58,20 @@ Newest first. Each is something that was actually said.
   and stops the auto-kick-off while open). Inferred from P91/P93 (the line-up
   replaced the match-day page, which used to hold the picker).
 
+### 1 Oct 2026 — tutorials are pointers, not cards (v0.23, "HUGE UPDATES" review)
+- **A tutorial is small pop-ups with a hand pointing at the real thing, in order**
+  (P7, P67, P68): "Home", "your player", "star rating", "energy", then "Go to
+  training", which you must press. Never a "This is Home" card. Use
+  `components/star/PointerTour.tsx` and put steps in `lib/star/tours.ts`; mark a
+  target with `data-tour="name"`. A "?" in the header replays a screen's pointers (P42).
+- **No hidden numbers, no explaining sentences** (P4, P5, P12, P13, P15, P51):
+  no "+N Star Points", "1 to 100", "never goes down", "A session: 30 energy ·
+  3 tries". The star points breakdown lives in the Star Pass, shut until the
+  tutorial is done.
+- **After a match the order is:** star bar rises, match rating, relationships,
+  pay, achievements one at a time; Continue is shut until all are seen (P27).
+- **News is a headline and one line** (P28), not a page.
+
 - **1 Oct 2026 (HUGE UPDATES review, v0.23): the game must feel like an app, not a
   website.** Four rulings, all built as shared pieces in `components/star/ui/`, so
   use them rather than drawing your own:

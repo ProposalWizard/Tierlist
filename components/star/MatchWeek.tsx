@@ -70,7 +70,7 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
         </BottomBar>
       }
     >
-      <div data-matchweek={view}>
+      <div data-matchweek={view} data-tour="screen">
         <EdgeArrows
           className="mb-2"
           prev={prev ? { icon: prev.icon, label: prev.label, onClick: () => setView(prev.id) } : undefined}

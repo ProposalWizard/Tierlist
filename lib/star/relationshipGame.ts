@@ -9,11 +9,14 @@
  * max or plus two. And the higher up you go, the harder it is."
  *
  * Before: lose +4, win 12 + 2 × lives left (+14 to +18).
- * Now:    lose −8; win +2 below 60, +1 from 60 to 85, and above 85 only one
+ * Then:   lose −8; win +2 below 60, +1 from 60 to 85, and above 85 only one
  *         win in two moves it at all (+1).
+ * Now:    lose −4 (v0.23); wins unchanged.
  */
 
-export const GAME_LOSS = -8;
+/** Harry, 1 Oct 2026 (P69, P98): "minus eight is too much when you fail here.
+ *  Maybe like a minus four." */
+export const GAME_LOSS = -4;
 /** Below this a win is +2. */
 export const GAME_EASY_BELOW = 60;
 /** From GAME_EASY_BELOW up to this a win is +1; above it, +1 only sometimes. */

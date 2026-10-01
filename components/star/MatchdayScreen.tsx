@@ -55,7 +55,6 @@ import { rgba } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import SwipePages from "./SwipePages";
-import PenaltyDutyLine from "./PenaltyDutyLine";
 import ScoutReportCard from "./ScoutReport";
 import VersusScreen from "./VersusScreen";
 import { CanTile, cardStyle, glowOf, short } from "./HomeHub";
@@ -489,7 +488,6 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
         {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={p.onUseCan} onBuy={p.onBuyCan} compact />)}
       </div>}
 
-      <PenaltyDutyLine career={career} fixture={nextFixture} status={sel.status} />
     </div>
   );
 }

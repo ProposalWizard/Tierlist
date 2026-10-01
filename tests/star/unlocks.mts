@@ -6,7 +6,7 @@ const store = new Map<string, string>();
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { saveCareer, loadCareer } from "../../lib/star/storage";
 import {
-  isOpen, recordDrill, drillMessageDue, recordLeagueVisit, recordBossMeeting, recordPhoneBought, markSeen, hasSeen,
+  isOpen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, markSeen, hasSeen,
   styleUnlockStar, styleLock, appInstalled, installApp, STARTER_APPS, APP_STORE, type Feature,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
@@ -70,11 +70,14 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
 
   check(recordBossMeeting({ ...c, unlocks: { ...c.unlocks!, open: [...c.unlocks!.open] } }).unlocks!.open.includes("relations"), "(a boss meeting opens Relations whenever it happens)");
   c = recordLeagueVisit(c);
-  check(isOpen(c, "shop") && isOpen(c, "achievements"), "opening the League opens Shop and Achievements");
+  check(isOpen(c, "achievements") && !isOpen(c, "shop"), "opening the League opens Achievements — the Shop waits for the first game (P70)");
   check(c.achievements.includes("first-two-sessions"), "…and hands out 'Complete your first two training sessions'");
   const again = recordLeagueVisit(c);
   check(again.achievements.filter(a => a === "first-two-sessions").length === 1, "the achievement is handed out once");
   check(!isOpen(c, "relations"), "Relations still locked");
+  c = recordFirstMatch(c);
+  check(isOpen(c, "shop"), "playing the first game opens the Shop");
+  check(recordFirstMatch(c) === c, "…once");
 
   c = recordBossMeeting(c);
   check(isOpen(c, "relations") && c.achievements.includes("boss-meeting"), "a boss meeting opens Relations with its achievement");
@@ -103,8 +106,12 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   let c = fresh();
   check(STARTER_APPS.every(a => appInstalled(c, a)) && ["league", "settings"].every(a => appInstalled(c, a)), "League, Settings and the dock apps start on the phone");
   check(APP_STORE.every(a => !appInstalled(c, a.id)), "Shop, Store, Casino, Sponsors, Owner, Garden, Awards are in the App Store");
-  c = installApp(c, "casino-menu");
+  const broke = installApp(c, "casino-menu");
+  check(broke === c && !appInstalled(broke, "casino-menu"), "an app you cannot afford does not install (P71: apps cost real money)");
+  check(APP_STORE.every(a => a.price >= 1000), "every app costs at least ★1,000");
+  c = installApp({ ...c, money: 5000 }, "casino-menu");
   check(appInstalled(c, "casino-menu") && !appInstalled(c, "store"), "getting one app adds only that one");
+  check(c.money === 5000 - APP_STORE.find(a => a.id === "casino-menu")!.price, "…and charges its price");
   check(APP_STORE.every(a => appInstalled({ unlocks: undefined }, a.id)), "an existing career has every app");
 }
 
@@ -118,7 +125,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(back.unlocks === undefined, "an old save loads without an unlock chain");
   for (const f of ALL) check(isOpen(back, f), `an old save has ${f} open`);
   check(hasSeen(back, "tutorial") && !drillMessageDue(back), "an old save never sees the tutorial or the drills message");
-  check(recordDrill(back) === back && recordLeagueVisit(back) === back && recordBossMeeting(back) === back && recordPhoneBought(back) === back, "the chain never touches an old save");
+  check(recordDrill(back) === back && recordLeagueVisit(back) === back && recordBossMeeting(back) === back && recordPhoneBought(back) === back && recordFirstMatch(back) === back, "the chain never touches an old save");
   const ownNumbers = { ...old, relationships: { ...old.relationships, boss: 77 }, happiness: 63, reputation: 20 };
   saveCareer(ownNumbers, "test-old2");
   const back2 = loadCareer("test-old2")!;
@@ -128,7 +135,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
 // ── The relationship minigame (every kind uses the same scale) ──
 {
   const before = { lose: 4, winMin: 14, winMax: 18 };
-  check(relationshipGameGain(false, 50) === -8 && GAME_LOSS === -8, "losing costs 8 (was +4)");
+  check(relationshipGameGain(false, 50) === -4 && GAME_LOSS === -4, "losing costs 4 (was 8, and +4 before that — P69, P98: \"minus eight is too much\")");
   for (const v of [0, 30, 59]) check(relationshipGameGain(true, v) === 2, `a win at ${v} is +2`);
   for (const v of [60, 72, 85]) check(relationshipGameGain(true, v) === 1, `a win at ${v} is +1`);
   check(relationshipGameGain(true, 90, 0.1) === 1 && relationshipGameGain(true, 90, 0.9) === 0, "above 85 a win is only sometimes +1");

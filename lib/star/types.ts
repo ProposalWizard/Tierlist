@@ -900,6 +900,8 @@ export interface CareerState {
    * see lib/star/unlocks.ts.
    */
   unlocks?: CareerUnlocks;
+  /** Set-piece duties the manager has already told you about, once each (v0.23, P78). */
+  setPieceTold?: ("penalties" | "freeKicks")[];
   /**
    * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
    * for penalties and one for direct free kicks. Looks only, never who

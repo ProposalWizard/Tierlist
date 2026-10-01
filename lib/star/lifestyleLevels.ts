@@ -28,7 +28,8 @@ export const LEVEL_NAMES: Record<string, [string, string, string, string, string
   diamond: ["Crystal Pendant", "Diamond Pendant", "Diamond Necklace", "Diamond Collar", "Rare Pink Diamond"],
   art: ["Poster Print", "Framed Print", "Original Painting", "Gallery Piece", "Old Master"],
   // ── Gadgets (for you) ──
-  phone: ["Old Brick Phone", "Flip Phone", "Smartphone", "Pro Smartphone", "Gold Smartphone"],
+  // One phone, not five levels (Harry, 1 Oct 2026, P103) — see shopDefaults.ts.
+  phone: ["Phone", "Phone", "Phone", "Phone", "Phone"],
   console: ["Retro Handheld", "Second-Hand Console", "New Console", "Pro Console", "Gold Edition Console"],
   headphones: ["Cheap Earbuds", "Wired Headphones", "Wireless Headphones", "Studio Headphones", "Diamond Headphones"],
   music: ["Pocket Radio", "Music Player", "Bluetooth Speaker", "Hi-Fi Stack", "Home Studio"],

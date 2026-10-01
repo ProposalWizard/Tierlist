@@ -57,11 +57,13 @@ interface Props {
   /** The swipe home screens carry their own side padding (the Home page
    *  bleeds to both edges), so the body adds none. */
   swipe?: boolean;
+  /** The small "?" in the header: replays this screen's pointers (never forced). */
+  onHelp?: () => void;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false, mediaUnread = false }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false, mediaUnread = false, onHelp }: Props) {
   // A locked button answers a tap with its "how to unlock" line.
   const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
   const tap = (tab: NavTab, label: string) => {
@@ -112,6 +114,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
                   you are off the home screens, so the way back is obvious. */}
               <button
                 data-home-button
+                data-tour="home"
                 onClick={onHome ?? (() => onNavigate("home"))}
                 aria-label="Home"
                 className={`kib-press w-8 h-8 rounded-[3px] flex items-center justify-center border transition-colors ${
@@ -136,6 +139,9 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
                 <StarIcon small />
                 {formatMoney(career.money)}
               </div>}
+              {onHelp && (
+                <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] bg-gray-600 text-[17px] font-black leading-none text-amber-300 hover:bg-gray-500">?</button>
+              )}
               <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-[3px] bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
                 <GearIcon />
               </button>
@@ -189,7 +195,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
           .kib-shell-noscroll::-webkit-scrollbar { display: none; }
           .kib-shell-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
         `}</style>
-        <div className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : swipe ? "pt-2" : "px-3 py-2"}`}>
+        <div data-tour="screen" className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : swipe ? "pt-2" : "px-3 py-2"}`}>
           {children}
         </div>
 
@@ -220,12 +226,12 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
             </div>
           )}
           {achievementsSlot
-            ? <NavBtn label="Achievements" icon="⭐" active={achievementsSlot.active} onClick={achievementsSlot.onClick} tight />
-            : <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
-          <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
+            ? <NavBtn tour="nav-league" label="Achievements" icon="⭐" active={achievementsSlot.active} onClick={achievementsSlot.onClick} tight />
+            : <NavBtn tour="nav-league" label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
+          <NavBtn tour="nav-training" label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
           <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />
-          <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} />
-          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} dot={mediaUnread} />
+          <NavBtn tour="nav-life" label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} />
+          <NavBtn tour="nav-phone" label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} dot={mediaUnread} />
         </div>
       </div>
     </div>
@@ -241,10 +247,11 @@ function LockGlyph({ size = 14 }: { size?: number }) {
   );
 }
 
-function NavBtn({ label, icon, active, onClick, dot, lockHint, tight }: { label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean; lockHint?: string; /** A long label ("Achievements") set smaller so it is not cut off. */ tight?: boolean }) {
+function NavBtn({ label, icon, active, onClick, dot, lockHint, tight, tour }: { tour?: string; label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean; lockHint?: string; /** A long label ("Achievements") set smaller so it is not cut off. */ tight?: boolean }) {
   if (lockHint) return (
     <button
       onClick={onClick}
+      data-tour={tour}
       aria-label={`${label} — locked: ${lockHint}`}
       className="kib-press relative min-w-0 h-[50px] rounded-[4px] font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 bg-gray-800 text-gray-400"
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
@@ -257,6 +264,7 @@ function NavBtn({ label, icon, active, onClick, dot, lockHint, tight }: { label:
   return (
     <button
       onClick={onClick}
+      data-tour={tour}
       className={`kib-press relative min-w-0 h-[50px] rounded-[4px] font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 ${
         active
           ? "bg-gradient-to-b from-gray-400/70 to-gray-500/70 text-white shadow-inner"
@@ -279,6 +287,7 @@ function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick
     <div className="relative flex justify-center">
       <button
         onClick={onClick}
+        data-tour="nav-play"
         aria-label="Play — locked"
         className="kib-press -mt-5 flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full border-[3px] border-gray-800 bg-gray-700 font-black text-gray-300"
       >
@@ -291,6 +300,7 @@ function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick
     <div className="relative flex justify-center">
       <button
         onClick={onClick}
+        data-tour="nav-play"
         aria-label="Play"
         className={`kib-press kib-play-pulse -mt-5 flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full border-[3px] font-black text-white ${
           active ? "border-white/80" : "border-gray-800"

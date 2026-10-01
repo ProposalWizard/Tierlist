@@ -104,6 +104,7 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
         {labels.map((l, i) => (
           <button
             key={l}
+            data-tour={`tab-${i}`}
             onClick={() => onIndex(i)}
             className={`relative z-10 py-1.5 text-[11px] font-black uppercase tracking-widest transition ${i === index ? "text-white" : "text-white/55"}`}
           >
