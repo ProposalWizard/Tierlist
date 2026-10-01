@@ -609,7 +609,7 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved."],
     inGame: [
       "Not in the game yet. If it is kept, it goes on the Home screen and in the store when trying on accessories.",
-      "Front and back are both the real home-screen player (the back: surname and number on the shirt, the back of his head in his photo's hair colour). Still missing: the side-on angles in between, which need the Blender player rendered from about 24 angles.",
+      "Front and back are both the real home-screen player (the back: surname and number on the shirt, the back of his head in his photo's hair colour). Side-on he narrows (body to 42%, head to 80%) and fades from front to back, so he never collapses to a line. A true side view still needs the Blender player rendered from about 24 angles.",
     ],
     dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · lib/star/heroBack.ts · tools/blender-footballer/",
   },

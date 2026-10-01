@@ -15,11 +15,10 @@
  *     lib/star/heroBack.ts): surname and number on the shirt, the back of his
  *     head with his photo's hair colour. Harry, 30 Sep 2026: the old flat
  *     stand-in "does not work".
- *   - What is still missing: the in-between angles. He narrows to his edge
- *     and widens again; a true side-on turn needs the Blender player rendered
- *     at ~24 angles (tools/blender-footballer).
- * The turn itself is the figure narrowing to its edge and widening again, so
- * the picture swaps front ↔ back at 90° and 270°.
+ *   - What is still missing: a true side view. Side-on the body narrows to
+ *     42% (the head to 80%) and front cross-fades into back — he never
+ *     collapses to a line. A real side-on turn needs the Blender player
+ *     rendered at ~24 angles (tools/blender-footballer).
  */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +28,9 @@ import { CLUB_KITS, kitsOf } from "@/lib/star/kits";
 import type { CareerState } from "@/lib/star/types";
 
 const W = 200, H = 240;
+/** Where the neck is, as % of the avatar's height: above it is the head,
+ *  which narrows far less than the body as he turns side-on. */
+const HEAD_CUT = 25;
 
 function demoCareer(club: string, number: number, surname: string): CareerState {
   return {
@@ -91,8 +93,16 @@ export default function SpinDevPage() {
   const rad = (angle * Math.PI) / 180;
   const c = Math.cos(rad);
   const showBack = c < 0;
-  const squash = Math.max(0.04, Math.abs(c));
   const shown = ((Math.round(angle) % 360) + 360) % 360;
+  // Side-on he must still read as a person (Harry, 1 Oct 2026: at 70–110°
+  // he "collapses to a thin vertical line"). A real man side-on is about
+  // 40% as wide as face-on and his head barely narrows, so the body never
+  // goes below 42% and the head never below 80%; front and back cross-fade
+  // through the side (about 84–96°) instead of swapping on a hairline.
+  const ac = Math.abs(c);
+  const bodyW = 0.42 + 0.58 * ac;
+  const headW = 0.8 + 0.2 * ac;
+  const back = Math.min(1, Math.max(0, (0.1 - c) / 0.2)); // 0 = front, 1 = back
 
   return (
     <div className="min-h-screen px-4 py-5 text-white" style={{ background: "#05070d" }}>
@@ -106,10 +116,24 @@ export default function SpinDevPage() {
           style={{ height: H + 40, background: "radial-gradient(70% 60% at 50% 40%, #1f3b2a, #07100b)", cursor: dragRef.current ? "grabbing" : "grab" }}
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         >
-          <div style={{ transform: `scaleX(${squash})`, transition: "none" }}>
-            <PlayerAvatar career={career} width={W * 0.9} height={H} look="A2" view={showBack ? "back" : "front"} />
+          <div className="relative" style={{ width: W * 0.9, height: H }}>
+            {(["front", "back"] as const).map((v) => {
+              // The front stays solid underneath and the back fades in over
+              // it, so mid-turn he is never see-through.
+              const o = v === "back" ? back : back < 1 ? 1 : 0;
+              if (o <= 0) return null;
+              return (["head", "body"] as const).map((part) => (
+                <div key={v + part} className="absolute inset-0" style={{
+                  opacity: o,
+                  transform: `scaleX(${part === "head" ? headW : bodyW})`,
+                  clipPath: part === "head" ? `inset(0 0 ${100 - HEAD_CUT}% 0)` : `inset(${HEAD_CUT}% 0 0 0)`,
+                }}>
+                  <PlayerAvatar career={career} width={W * 0.9} height={H} look="A2" view={v} />
+                </div>
+              ));
+            })}
           </div>
-          <div className="absolute bottom-2 left-3 rounded-lg bg-black/60 px-2 py-0.5 text-[11px] font-black">{shown}° · {showBack ? "back" : "front"}</div>
+          <div className="absolute bottom-2 left-3 rounded-lg bg-black/60 px-2 py-0.5 text-[11px] font-black">{shown}° · {ac < 0.2 ? "side" : showBack ? "back" : "front"}</div>
           <div className="absolute bottom-2 right-3 text-[18px] font-black">⟲ ⟳</div>
         </div>
 
@@ -126,7 +150,7 @@ export default function SpinDevPage() {
         </div>
 
         <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-400/15 p-3 text-[12.5px] font-bold text-white">
-          Front and back are the real home-screen player. Still missing: the side-on angles in between.
+          Front and back are the real home-screen player. Side-on he narrows and fades from front to back; a true side view needs the 3D renders.
         </div>
       </div>
       <PageGuide page="/star-spin-dev" />

@@ -686,6 +686,7 @@ function paintBody(
   ctx: CanvasRenderingContext2D, r: number, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
   pose?: BodyPose,
+  edge = 1,
 ): void {
   const skin = look.skin ?? TC.skin;
   const spread = pose?.armSpread ?? 0;
@@ -746,7 +747,7 @@ function paintBody(
   ctx.fillStyle = look.shirt;
   ctx.fill();
   ctx.strokeStyle = look.trim;
-  ctx.lineWidth = Math.max(1, r * 0.06);
+  ctx.lineWidth = Math.max(1, r * 0.06 * edge);
   ctx.stroke();
 
   // ── Arms ──
@@ -803,7 +804,7 @@ function paintBody(
   // A collar, tucked just under wherever the head actually sits, so the head
   // meets the body instead of hovering over it.
   ctx.strokeStyle = look.trim;
-  ctx.lineWidth = Math.max(1, r * 0.07);
+  ctx.lineWidth = Math.max(1, r * 0.07 * edge);
   ctx.beginPath();
   ctx.moveTo(-r * 0.12, NECK_Y * r + sink);
   ctx.lineTo(r * 0.12, NECK_Y * r + sink);
@@ -976,6 +977,13 @@ export interface FigureDrawOpts {
    * setting in lib/star/figureSkin.ts decides.
    */
   skin?: FigureSkin;
+  /**
+   * How thick the trim edge round the shirt and the collar is, as a multiple
+   * of the usual (classic figure only). Omitted = 1, every match call site.
+   * The Home screen's big 2D player passes less: blown up to hero size the
+   * usual edge is a thick white "cut-out" border (Harry, 1 Oct 2026).
+   */
+  edge?: number;
 }
 
 /**
@@ -1014,7 +1022,7 @@ export function drawFigureAt(
   ctx.translate(x, groundY - r * FEET_Y - up);
   if (opts.facing) ctx.rotate(opts.facing);
   if (is3d) paintBody3d(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose, ANATOMY, TC.skin);
-  else paintBody(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose);
+  else paintBody(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose, opts.edge ?? 1);
   ctx.restore();
 
   // Both markers are drawn upright in screen space, outside the rotation —

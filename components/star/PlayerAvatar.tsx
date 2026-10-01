@@ -8,8 +8,9 @@
  * not as good, and it just has no flash to it" — so there are now two looks,
  * both in lib/star/heroFigure.ts, for him to pick between by eye:
  *
- *   A1 "Lit 2D"    — the game's own figure (drawFigureAt), lit: shading, a
- *                    warm rim light and a club-colour rim.
+ *   A1 "2D"        — the game's own flat figure (drawFigureAt), drawn exactly
+ *                    as in the match (no rim lights — 1 Oct 2026, they made
+ *                    him look cut out).
  *   A2 "Pseudo-3D" — a more solid figure drawn for this screen: shaded limbs,
  *                    kit folds, a 3/4 turn, the crest on the chest and the
  *                    squad number on the shorts.
@@ -25,7 +26,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { drawFigureAt, drawBall, bodyPoseFor, FIGURE_HEIGHT_R } from "@/lib/star/fiveASide/render";
+import { drawFigureAt, drawBall, bodyPoseFor, FIGURE_HEIGHT_R, FEET_Y } from "@/lib/star/fiveASide/render";
 import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
@@ -75,6 +76,14 @@ export function useFaceFit(): boolean {
  *  (HERO_TOP) is cropped off so he is as big as the box allows. */
 function heroScale(width: number, height: number): number {
   return Math.min(width / HERO_W, height / (HERO_H - HERO_TOP));
+}
+
+/** Where the A1 (2D) man stands in a box: ground line, size, centre. */
+function a1Geometry(width: number, height: number, ball: boolean) {
+  const groundY = height - Math.max(8, height * 0.07);
+  const r = Math.min((groundY - height * 0.1) / FIGURE_HEIGHT_R, width / 1.45);
+  const x = width / 2 - (ball ? r * 0.2 : 0);
+  return { groundY, r, x };
 }
 
 export default function PlayerAvatar({ career, width, height, ball = true, className, look = AVATAR_STYLE, celebrate = false, view = "front" }: {
@@ -128,9 +137,7 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       const lx = layer.getContext("2d");
       if (!lx) return;
       lx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const groundY = height - Math.max(8, height * 0.07);
-      const r = Math.min((groundY - height * 0.1) / FIGURE_HEIGHT_R, width / 1.45);
-      const x = width / 2 - (ball ? r * 0.2 : 0);
+      const { groundY, r, x } = a1Geometry(width, height, ball);
       // A soft floor shadow on the main canvas, under the lit layer.
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const fs = ctx.createRadialGradient(x, groundY, 2, x, groundY, r * 0.75);
@@ -143,15 +150,21 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       drawFigureAt(
         lx, x, groundY, r,
         { shirt: kit.shirt, shorts: kit.trim, trim: kit.trim, skin, face },
-        faceStyle, fakeFaceStyle,
-        { pose, shadowR: 0.001, liftPx: celebrate ? r * 0.05 : 0 },
+        // No white ring traced round the head either: blown up to hero size
+        // it is the thick white "cut-out" edge, not a thin line as on the pitch.
+        { ...faceStyle, outlineEnabled: false }, fakeFaceStyle,
+        // Always the flat match figure here: A1 is what the 2D pill shows.
+        { pose, shadowR: 0.001, liftPx: celebrate ? r * 0.05 : 0, skin: "classic", edge: 0.35 },
       );
       if (ball) {
         const unit = r / 1.05;
         drawBall(lx, { px: (v) => v, py: (v) => v, unit, W: width, H: height }, { x: x + r * 0.62, y: groundY - r * 0.02 }, 0, 0.42);
       }
+      // Drawn exactly as the match draws him — no rim lights. Harry, 1 Oct
+      // 2026: the warm-white rim round the 2D man made him look "cut out",
+      // not like the players on the pitch.
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      compositeLit(ctx, layer, { rim: rimOf(kit), d: Math.max(3, 2.4 * dpr) });
+      ctx.drawImage(layer, 0, 0);
     };
 
     const drawA2 = (ctx: CanvasRenderingContext2D) => {
@@ -194,11 +207,18 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
   // A2's crest sits on the chest as a real badge (the game's ClubBadge), not
   // a drawing of one. Hidden while the arms are up — it would float.
   const s = heroScale(width, height);
-  const crest = look === "A2" && !celebrate && view === "front" ? {
+  // The 2D man wears the crest too, on the left breast, so he is in his
+  // club's kit rather than a plain shirt (Harry, 1 Oct 2026).
+  const a1 = a1Geometry(width, height, ball);
+  const crest = celebrate || view !== "front" ? null : look === "A2" ? {
     left: (width - HERO_W * s) / 2 + HERO_CREST.x * HERO_W * s,
     top: (height - HERO_H * s) + HERO_CREST.y * HERO_H * s,
     size: Math.max(12, Math.round(HERO_CREST.size * HERO_W * s)),
-  } : null;
+  } : {
+    left: a1.x + a1.r * 0.17,
+    top: a1.groundY - a1.r * (FEET_Y + 0.78),
+    size: Math.max(12, Math.round(a1.r * 0.2)),
+  };
 
   return (
     <div className={className} style={{ position: "relative", width, height }}>
