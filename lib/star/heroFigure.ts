@@ -244,7 +244,12 @@ export function paintHeroShadow(ctx: CanvasRenderingContext2D): void {
 export function paintHeroFigure(
   ctx: CanvasRenderingContext2D, look: HeroLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
-  { armsUp = false, shadow = true }: { armsUp?: boolean; shadow?: boolean } = {},
+  { armsUp = false, shadow = true, reach }: {
+    armsUp?: boolean; shadow?: boolean;
+    /** The far arm held out to (elbow, hand) instead of hanging — the
+     *  handshake in the signing scene (SigningScene.tsx). */
+    reach?: { elbow: P; hand: P };
+  } = {},
 ): void {
   const { shirt, shorts, trim, skin } = look;
   const sock = shirt;
@@ -273,15 +278,17 @@ export function paintHeroFigure(
   // match the avatar" — in the win pose the arms went up and the sleeves
   // stayed pointing down at the shoulders).
   const farSh: P = [140, 96], nearSh: P = [60, 97];
-  const farElbow: P = armsUp ? [161, 60] : [147, 140];
-  const farHand: P = armsUp ? [171, 25] : [150, 184];
+  const farElbow: P = reach ? reach.elbow : armsUp ? [161, 60] : [147, 140];
+  const farHand: P = reach ? reach.hand : armsUp ? [171, 25] : [150, 184];
+  // Held out, the far arm comes round in front of the body like a raised one.
+  const farInFront = armsUp || !!reach;
   const nearElbow: P = armsUp ? [39, 60] : [52, 140];
   const nearHand: P = armsUp ? [29, 25] : [49, 184];
   const farArm = () => {
     limb(ctx, along(farSh, farElbow, 0.35), farElbow, 16, 14, skin); // starts under the sleeve
     limb(ctx, farElbow, farHand, 14, 11, skin);
     ctx.fillStyle = tint(skin, -0.12);
-    ctx.beginPath(); ctx.arc(farHand[0], farHand[1] + (armsUp ? -2 : 2), 6.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(farHand[0], farHand[1] + (armsUp ? -2 : reach ? 0 : 2), 6.5, 0, Math.PI * 2); ctx.fill();
   };
   const nearArm = () => {
     limb(ctx, along(nearSh, nearElbow, 0.35), nearElbow, 17, 15, skin);
@@ -294,7 +301,7 @@ export function paintHeroFigure(
     }
   };
   // Down, the far arm hangs behind the body.
-  if (!armsUp) farArm();
+  if (!farInFront) farArm();
 
   // ── Shorts ──
   {
@@ -370,7 +377,7 @@ export function paintHeroFigure(
 
   // ── Arms first, then the sleeves over the top of the upper arms, in
   // every pose. (Down, the far arm already went on behind the body.)
-  if (armsUp) farArm();
+  if (farInFront) farArm();
   nearArm();
   sleeve(ctx, farSh, farElbow, 21, 16.5, tint(shirt, -0.22), trim);
   sleeve(ctx, nearSh, nearElbow, 23, 19, shirt, trim);

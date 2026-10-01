@@ -3079,6 +3079,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setActiveNav("home");
           setPhase(onLoan ? "loan-brief" : "dashboard");
         }}
+        // The signing scene (Harry, 30 Sep 2026): you and this club's manager.
+        career={career}
+        managerName={career.manager?.name || loadLineup(career.contract?.club ?? career.player.club)?.manager || undefined}
       />
     );
   }
