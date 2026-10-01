@@ -1,0 +1,190 @@
+[00:00] okay so I am gonna let this go those are running now let's go on the site and
+[00:27] and let's do some work. So obviously you've changed the trial up. First of all here is where
+[00:35] we'll apply the spinning system. Secondly, I'm going to feed in two images. I'm going to feed
+[00:48] in an image in a minute when I submit this OBS and that image is to basically say that my friend
+[00:56] tried the game on his phone and essentially he couldn't even see the settings bar when he went
+[01:05] in his save was looking rather different than our save which in my opinion is not good obviously
+[01:18] so that's first things first how do we ratio the game across all devices all phones
+[01:25] everything exactly the same. Next thing's next, homepage. This having to be a scroll
+[01:35] to get to KIB cans and energy right now, don't love it. So,
+[01:43] I think first of all premium and elite should be plus x energy and the extra use.
+[01:51] use. But on top of that, for now, I think we take this energy bar, we put this energy
+[01:59] bar somewhere here
+[02:29] I think maybe we've gone around this the wrong way like this is cool but it could be better
+[02:42] it could just be him if you can see my mouse put to the left I don't think on the name
+[02:51] is needed the names up here already but when you spin him around maybe the name
+[02:56] should be on the back of the shirt whatever he should be known as then you
+[02:59] could have actually have like obviously this UI is good but sometimes you do
+[03:03] want something a little bit easier to read so maybe you have you know age
+[03:08] star rating with the progress bar and then you have energy this energy bar
+[03:14] at the bottom here and then let's put a smaller version of this can with
+[03:19] the use button next to the energy bar that we use there use by and then this
+[03:26] Premier League next match versus Coventry form I think that should also
+[03:32] be made a bit smaller maybe even more condensed put this at the top and just
+[03:38] make that even thinner make that literally like this and just have
+[03:44] just DDW like not this whole thing so yeah do that and then make this also
+[03:53] smaller so these basically these these three pockets should all fit without
+[03:59] scrolling and this should just I think it should just look a bit
+[04:02] different I think I think it could look better and I think we could also
+[04:06] add like celebrations and stuff to him there then another bit of key info
+[04:12] we got from the friend was that like he came in and there's just a lot of
+[04:16] information there's a lot going on this phone as relations as training so
+[04:21] how about this how about we start with relations and phone locked phone
+[04:31] locked until you buy it in the store the hell do I get out of this phone
+[04:40] unlocked until you buy it in the shop.
+[04:43] Also, we don't need a whole thing for your money.
+[04:48] That should, the money should literally just be
+[04:51] a little pocket at the top
+[04:53] that you can always see your money on any page.
+[04:56] And then it doesn't have to be here
+[04:57] taking up space as well.
+[04:58] Same with the 3D, 2D, that's taken up valuable space
+[05:02] because we could even have the Chelsea versus commentary.
+[05:05] We could just have that hit.
+[05:07] Chelsea versus commentary, win, win, loss, loss, loss, draw.
+[05:10] and then have a bit more space for this important stuff
+[05:13] and then maybe even have to like the league table here.
+[05:16] But here, store and casino get moved down to the bottom.
+[05:22] I don't think this your shop items
+[05:23] is even worth having there.
+[05:25] Have then, you know, KIB cans, boots, style, sponsors
+[05:32] at the top and store casino underneath that.
+[05:37] But like I was gonna say, yeah,
+[05:38] he said there's too much information since you come in.
+[05:40] So why don't we lock phone?
+[05:42] As soon as you come in,
+[05:43] maybe you get like a little tutorial thing,
+[05:44] like this is home, this is your player,
+[05:48] it's how star ratings work, click, click, click.
+[05:52] Locked, locked, locked, training.
+[05:55] Forces you to do a training drill.
+[05:57] You get put onto this, oh, click here.
+[06:00] Put onto this page.
+[06:01] Okay, choose any of these trainings.
+[06:04] They choose paste, say, there to complete it.
+[06:07] Then they come out and it's like,
+[06:08] choose one of these, do one more drill, vision.
+[06:12] After that, it would say like,
+[06:14] your star rating has improved X amount
+[06:17] from doing X training.
+[06:21] And we should assign skill rating points
+[06:26] per level for the training.
+[06:30] And then after they've done the training,
+[06:32] we can unlock the league area.
+[06:36] So we can say, this is where you see
+[06:38] how your club's fairing, your previous results, your fixtures and any awards in the league.
+[06:44] So it'll just be like a click-through, table, results, fixtures, awards and your current
+[06:48] squad stats.
+[06:51] So then that'll be good and then you go back to home and we can say your shop.
+[06:58] So tell them about the shop, explain each item and then the stats again, this should
+[07:05] be moved here.
+[07:06] I think we've already spoken about that.
+[07:07] So the stats can literally just be on its own stats.
+[07:11] Premier League then moves to the bottom.
+[07:17] All seasons, records, all cool.
+[07:22] And then actually, where is achievements as well?
+[07:29] Also sponsors is too good in a way.
+[07:31] We already spoke about that.
+[07:32] Instead of League here, why don't we just make this
+[07:37] League clickable the whole thing you can click in there and you can get to this
+[07:44] Well, I'm having league at the bottom there. We could have achievements and
+[07:48] After you complete your two training sessions
+[07:51] We could have an animation poll that says complete your first two training sessions that then has a star that is achievements here and
+[07:59] achievements could unlock
+[08:01] Cosmetics, it could unlock, it could give you more skill rating, it could unlock random
+[08:07] events etc.
+[08:09] So locked, locked, locked.
+[08:11] So then you unlock achievements and then the next achievement unlocks and it says
+[08:14] get 100% relationship with your teammates.
+[08:19] First of all, so much going on here.
+[08:23] This not needed, this weak, energy, all of that, get rid.
+[08:27] Chubby Alonzo, it should all be at like 50, 50.
+[08:33] 50, sponsors unhappy.
+[08:35] You probably like 45, reputation zero, fame one.
+[08:40] Lifestyle, this stuff again, this is not relationships.
+[08:44] So let's not have a link to that.
+[08:47] And also, this is the kind of page
+[08:49] where I think this UI is a bit too bubbly.
+[08:53] This needs to be a bit more clear.
+[08:55] I still think in fitting with the rest of the game, but it needs to be clear for sure.
+[09:01] But then obviously just explain the relations and what they mean.
+[09:06] So relationship with your manager, this decides on a match day, your selection, if
+[09:13] you would be on penalties or free kicks, et cetera, anything that a manager does.
+[09:17] Teammates, how often you get highlights, how often your teammates pass back to you
+[09:22] when you pass to them in the midfield how good the chemistry
+[09:26] of the team is maybe your team plays worse if your relationship
+[09:29] with the teammates is worse the fans maybe you're more
+[09:33] likely to get booed after a bad game or have bad social
+[09:39] media or etc.
+[09:41] We haven't really decided on that sponsors ways to make
+[09:45] extra money to keep them happy.
+[09:48] maybe you have to post sponsored stories
+[09:53] and go to press events that cost you energy
+[09:55] and et cetera, et cetera.
+[09:57] And these are all things you have to balance.
+[09:59] You, single.
+[10:02] You can, eventually you can have a relationship.
+[10:05] You can, you know, if you overwork yourself,
+[10:08] you come down in happiness.
+[10:09] The happier you are, the less energy you lose
+[10:13] and the more you recover.
+[10:14] And we haven't even taken into account
+[10:15] energy recovery after games.
+[10:18] If you had every single day you should just get like five to six energy and you could
+[10:22] be able to get physio and loads of extra stuff there.
+[10:27] This stuff, reputation and fame, I think when this guy gets moved over here, we could
+[10:33] do this in the top right.
+[10:35] I may not even know where to put this where it's not going to be jarring, but
+[10:40] for now maybe top right.
+[10:42] And then you could have your overall star rating, which I think this just doesn't
+[10:47] look that good with the name gone maybe maybe if we do this like more of a
+[10:52] dressing room vibe or something name gone I know you just have like fame
+[10:58] reputation goals assists this season or something so yeah that unlocks your
+[11:07] relations because of the achievement so maybe the achievement should be
+[11:10] something get a ball like one have a meeting with your boss then you click in
+[11:20] and you have to do this and even if you get nothing for it you get a plus four
+[11:28] for trying no see instantly that's wrong that should be like minus eight
+[11:31] because you tried to go up but you've actually pissed him off then
+[11:34] and that's way too easy to get plus four on the manager I don't think it
+[11:39] you should keep it like plus one, max, or plus two.
+[11:44] And the higher up you go, the harder it is.
+[11:48] What was I saying?
+[11:50] Yeah, the achievement, in order, what I was saying,
+[11:53] the achievement should be like,
+[11:56] have a meeting with your boss.
+[11:58] So that opens up relations.
+[12:00] Then this one will stay locked,
+[12:02] and it will say, find out more in the future.
+[12:09] And then in the store, I also think this store obviously is further down here, this will
+[12:16] be here.
+[12:17] But I think this should probably all be one-shot button somehow, but if not, in the style
+[12:26] area, we've already discussed changing this completely, but phone, everything should
+[12:32] be locked apart from phone, and maybe everything's kind of locked to like level
+[12:37] level 6, level 8, level 10, the rest are like level 10 and then maybe some of the
+[12:43] more expensive ones are level 15, level 30. Explain the lifestyle, what it does
+[12:47] for fame, what it does for reputation. Maybe the phone gets, whenever this
+[12:54] happens, so we won't push them into here, they'll eventually find their way
+[12:57] in lifestyle. Whenever they buy a phone it then should instantly take
+[13:03] them back to here and it will give them achievement by phone and from there
+[13:09] this will then unlock from being locked you'll have your social kick
+[13:13] about fixtures messages and all you have on here is your league shop store
+[13:19] and casino plus an app store so owner garden settings is very good as
+[13:28] well okay maybe we just have league and settings to start plus your your
+[13:36] messages, pictures, kick about, social plus messages needs a big revamp because
+[13:40] this has no impact on the game right now so you have league in your settings
+[13:44] and you have an app store you click in on the app store you have apps shop
+[13:48] store casino sponsors ownership awards or like achievements training
+[13:57] whatever and then maybe you can also have like backgrounds that you can pick to put on the back
+[14:03] etc those will also cost money so yeah little unlocks that you can get and explain that as we
+[14:11] go also this notification thing has got to go um yeah i think that's probably a bit of
+[14:19] everything right now then here this this screen again i think
+[14:22] I think if the energy is at 100%, don't even show the KIB cans.
+[14:31] Don't show it.
+[14:33] Just show sharpness energy.
+[14:38] This just doesn't feel great.
+[14:40] I don't know why it doesn't feel great.
+[14:43] This being scroll wheel is so annoying.
+[14:46] We need to condense this page and the kickoff should always be visible.
+[14:50] The kickoff should probably be a button like in the top right or something as well as
+[14:55] at the bottom or just condense the whole thing and make it visible.
+[15:07] And gameplay I think is, we've discussed gameplay stuff so I think that's it for now.
