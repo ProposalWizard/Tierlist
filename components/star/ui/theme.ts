@@ -46,15 +46,15 @@ export function useClubTheme(career: CareerState | null | undefined): ClubTheme 
  *  a soft highlight along the top edge. */
 export function cardStyle(glow: string, strength = 0.28): React.CSSProperties {
   return {
-    background: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, strength)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(glow, 0.22)}, 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35)`,
+    background: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, strength)} 0%, transparent 55%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px var(--sk-chalk, ${rgba(glow, 0.22)}), 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35)`,
   };
 }
 
 /** Two clubs meeting: each side lit in its own colour (the next-match card). */
 export function duelStyle(left: string, right: string): React.CSSProperties {
   return {
-    background: `radial-gradient(90% 120% at 0% 50%, ${rgba(left, 0.42)} 0%, transparent 58%), radial-gradient(90% 120% at 100% 50%, ${rgba(right, 0.42)} 0%, transparent 58%), linear-gradient(180deg, #172033, #0a0f1a)`,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.08), 0 12px 26px -14px rgba(0,0,0,.9), 0 2px 6px rgba(0,0,0,.35)`,
+    background: `radial-gradient(90% 120% at 0% 50%, ${rgba(left, 0.42)} 0%, transparent 58%), radial-gradient(90% 120% at 100% 50%, ${rgba(right, 0.42)} 0%, transparent 58%), var(--sk-card, linear-gradient(180deg, #172033, #0a0f1a))`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px var(--sk-chalk, rgba(255,255,255,.08)), 0 12px 26px -14px rgba(0,0,0,.9), 0 2px 6px rgba(0,0,0,.35)`,
   };
 }

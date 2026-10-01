@@ -93,14 +93,14 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
   return (
     <div
       ref={shellRef}
-      className="bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col overflow-hidden"
+      className="sk-shell bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col overflow-hidden"
       style={{ height: shellH !== null ? `${shellH}px` : "calc(100dvh - 64px)" }}
     >
       <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
         {!fullBleed && (
           <>
             {/* Top header */}
-            <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
+            <div className="sk-bar bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
               {/* Home, top left (was a red ✕ that left the career — that is
                   "Exit career" at the bottom of Settings now). Lit green when
                   you are off the home screens, so the way back is obvious. */}
@@ -201,7 +201,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
             middle · Relationships · Phone", no Home button (the swipe tabs
             and the name pill up top take you home). Play is the biggest
             thing on the bar: raised, green, with a slow pulse. */}
-        <div className="relative grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]">
+        <div className="sk-nav relative grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]">
           {lockNote && (
             <div className="pointer-events-none absolute inset-x-3 bottom-full mb-2 flex items-center gap-2 rounded-xl bg-gray-950/95 px-3 py-2 ring-1 ring-amber-300/40 shadow-lg">
               <span className="text-amber-300"><LockGlyph /></span>

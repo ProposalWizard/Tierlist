@@ -148,7 +148,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedCan(c); } }}
                   className="kib-press relative flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-2xl p-3"
                   style={{
-                    background: `radial-gradient(70% 90% at 12% 50%, ${rgba(accent, sel ? 0.42 : 0.28)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
+                    background: `radial-gradient(70% 90% at 12% 50%, ${rgba(accent, sel ? 0.42 : 0.28)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,
                     boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 ${sel ? 2 : 1}px ${rgba(accent, sel ? 0.85 : 0.3)}, 0 10px 22px -12px ${rgba(accent, 0.7)}`,
                   }}
                 >

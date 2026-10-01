@@ -72,7 +72,7 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
                     onClick={() => setSheet({ base: id, level: shown.level ?? homeLevel })}
                     title={`${shown.name} — tap to see all 5 levels`}
                     className="kib-press group relative w-[150px] shrink-0 snap-start overflow-hidden rounded-2xl text-left"
-                    style={{ background: `radial-gradient(80% 60% at 50% 0%, ${rgba(look.upper, 0.45)} 0%, transparent 70%), linear-gradient(180deg, #1a2234, #0a0f1a)`, boxShadow: `inset 0 0 0 1px ${wearing === id ? "rgba(52,211,153,.8)" : rgba(look.upper, 0.35)}` }}
+                    style={{ background: `radial-gradient(80% 60% at 50% 0%, ${rgba(look.upper, 0.45)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, #1a2234, #0a0f1a))`, boxShadow: `inset 0 0 0 1px ${wearing === id ? "rgba(52,211,153,.8)" : rgba(look.upper, 0.35)}` }}
                   >
                     {/* Spotlight from above. */}
                     <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-24 w-28 -translate-x-1/2" style={{ background: "radial-gradient(50% 100% at 50% 0%, rgba(255,255,255,.22), transparent 70%)" }} />
@@ -139,7 +139,7 @@ function BootSheet({ career, levels, level, banned, setLevel, onClose, onBuy, on
   const maxStat = Math.max(...levels.map((x) => Math.max(x.power, x.technique)), 1);
   return (
     <ShopSheet open onClose={onClose} title={b.name} accent={look.upper}>
-      <div className="relative overflow-hidden rounded-2xl" style={{ background: `radial-gradient(70% 70% at 50% 10%, ${rgba(look.upper, 0.5)}, transparent 70%), linear-gradient(180deg, #1a2234, #0a0f1a)` }}>
+      <div className="relative overflow-hidden rounded-2xl" style={{ background: `radial-gradient(70% 70% at 50% 10%, ${rgba(look.upper, 0.5)}, transparent 70%), var(--sk-card, linear-gradient(180deg, #1a2234, #0a0f1a))` }}>
         <BootPicture base={base} level={b.level ?? 1} className="mx-auto block aspect-[100/64] w-[88%]" />
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">Level {b.level} of 5</span>
       </div>

@@ -1,4 +1,7 @@
 "use client";
+import { useUiLook } from "@/lib/star/uiLook";
+import { pitchFont } from "@/components/star/ui/pitchFont";
+import "@/components/star/ui/pitchLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
@@ -261,11 +264,14 @@ function offersWithAgreedTerms(career: CareerState, offers: ScoutOffer[]): Scout
  *  mechanism, which is why this wrapper still exists at all. */
 export default function StarDevPage() {
   const immersive = useImmersiveMode();
+  // The menus' look (Settings → Look): "pitch" adds one class that turns the
+  // career screens green and chalk-lined (lib/star/uiLook.ts, pitchLook.css).
+  const look = useUiLook();
   // No text highlighting while you drag and tap (Mikey, 28 Sep 2026: on PC
   // "the dragging feature does also do the same thing as highlighting
   // words"). Typing in a box still works — inputs keep their own selection.
   return (
-    <div className="select-none [&_input]:select-text [&_textarea]:select-text">
+    <div className={`select-none [&_input]:select-text [&_textarea]:select-text ${look === "pitch" ? `star-look-pitch ${pitchFont.variable}` : ""}`}>
       <StarDevInner immersive={immersive} />
     </div>
   );

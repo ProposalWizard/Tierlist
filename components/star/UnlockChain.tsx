@@ -20,7 +20,7 @@ function Sheet({ children, onClose, z = 85 }: { children: React.ReactNode; onClo
     <div className="fixed inset-0 grid place-items-center bg-black/80 p-5" style={{ zIndex: z }} onClick={onClose}>
       <div
         className="kit-rise w-full max-w-[340px] rounded-3xl p-4 text-center text-white"
-        style={{ background: "linear-gradient(180deg, #1f2937, #0b1220)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.12), 0 20px 50px -10px rgba(0,0,0,.9)" }}
+        style={{ background: "var(--sk-card, linear-gradient(180deg, #1f2937, #0b1220))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.12), 0 20px 50px -10px rgba(0,0,0,.9)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

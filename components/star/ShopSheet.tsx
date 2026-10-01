@@ -38,7 +38,7 @@ export default function ShopSheet({ open, onClose, title, children, accent = "#e
       <div
         className="relative max-h-[88dvh] w-full max-w-md overflow-y-auto overflow-x-hidden rounded-t-3xl px-3 pb-6 pt-2"
         style={{
-          background: "linear-gradient(180deg, #141b2b 0%, #0a0f1a 100%)",
+          background: "var(--sk-card, linear-gradient(180deg, #141b2b 0%, #0a0f1a 100%))",
           boxShadow: `0 -10px 40px -10px ${accent}88, inset 0 1px 0 rgba(255,255,255,.12)`,
           animation: "kibSheetUp .22s cubic-bezier(.2,.9,.3,1.1)",
         }}

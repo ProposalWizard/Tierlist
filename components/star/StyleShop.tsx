@@ -186,7 +186,7 @@ function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = n
       data-item-card={base}
       data-locked
       className="relative flex flex-col overflow-hidden rounded-2xl text-left"
-      style={{ background: "linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
+      style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98)))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
     >
       <div className="relative" style={{ background: tileBg(lv) }}>
         <StylePicture base={base} level={lv} className="block aspect-[100/64] w-full opacity-30 grayscale" />
@@ -207,7 +207,7 @@ function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = n
       onClick={onOpen}
       title={`${levelName(item)} — level ${lv}`}
       className="kib-press group relative flex flex-col overflow-hidden rounded-2xl text-left transition hover:-translate-y-0.5"
-      style={{ background: "linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98))", boxShadow: `inset 0 0 0 1px ${yours ? "rgba(52,211,153,.7)" : "rgba(255,255,255,.08)"}, 0 8px 18px -10px rgba(0,0,0,.8)` }}
+      style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98)))", boxShadow: `inset 0 0 0 1px ${yours ? "rgba(52,211,153,.7)" : "rgba(255,255,255,.08)"}, 0 8px 18px -10px rgba(0,0,0,.8)` }}
     >
       <div className="relative" style={{ background: tileBg(lv) }}>
         <StylePicture base={base} level={lv} className="block aspect-[100/64] w-full transition group-hover:scale-105" />
@@ -376,7 +376,7 @@ function MyStuff({ career, onOpen }: { career: CareerState; onOpen: (base: strin
                 data-item-card={base}
                 onClick={() => onOpen(base, lv)}
                 className="kib-press relative overflow-hidden rounded-2xl text-left ring-1 ring-white/10"
-                style={{ background: "linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98))" }}
+                style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98)))" }}
               >
                 <div className="relative" style={{ background: tileBg(lv) }}>
                   <StylePicture base={base} level={lv} className={`block aspect-[100/64] w-full ${worn ? "opacity-40 grayscale" : ""}`} />
