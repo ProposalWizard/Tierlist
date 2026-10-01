@@ -39,6 +39,30 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 30 Sep 2026 — the signing, training sessions, the 3D/2D pill (Harry, Mikey v0.7 review)
+- **A form to read is not a moment.** On the paper contract: "The contract
+  showing the real terms is really cool… this isn't that interesting… have them
+  sat down together and then you show him actually signing the contract… tap and
+  you would sign." Keep the real numbers, but stage them: your player and the
+  manager at a desk, the terms big on the contract (club, seasons, wage), tap →
+  the pen writes → handshake → Continue. About 2.6 s, Skip always there
+  (`components/star/SigningScene.tsx`).
+- **A screen that only repeats what the next one says goes.** The FA Youth Cup
+  newspaper after the offer: "that's useless, that page." Removed from the
+  signing flow; the component stays.
+- **Limits are shown, not counted out in words.** Training sessions: "it should
+  be only seen through energy… as you click on a training, it should say you
+  have no more sessions this week. It shouldn't just say '1 out of 2 sessions
+  remaining.'" Sessions are charge cells (⚡); at zero the cards still answer a
+  tap with one final pop-up, "No more sessions this week".
+- **A switch must change what is right next to it.** "16, the 2D flick doesn't
+  work here" — the 3D/2D pill on the Home hero flipped every match figure but
+  not the hero beside it. Now it flips the hero too. (inferred: "flick" = the
+  flip pill; there is no drag-to-spin on Home.)
+- **A stand-in that says it is a stand-in reads as broken.** The spin page's
+  back view: "on the back does not work." The back is now the same drawn man
+  from behind (name + number, back of the head), not a separate flat drawing.
+
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
   short, small tutorial or pop-up… doesn't have to be many words, just
