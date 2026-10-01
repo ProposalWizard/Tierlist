@@ -131,12 +131,11 @@ export default function HomeHub(p: Props) {
   // the next match as ONE line, then you, with your energy and a can inside
   // your card. The money is a chip in the top bar (DashboardShell).
   return (
-    // minHeight, not height: on a tall phone the player's card stretches to
-    // the bottom bar instead of leaving a dead gap; on a short one the
-    // content decides and nothing is clipped.
-    <div ref={ref} className="flex flex-col gap-2.5 pb-3" style={{ minHeight: room ?? undefined }}>
+    // The card keeps its natural height: on a tall phone the spare room is
+    // left empty rather than stretched into dead sky above the player.
+    <div ref={ref} className="space-y-2.5 pb-3">
       <RiseIn onPageActive index={0}><NextMatchLine {...p} glow={glow} /></RiseIn>
-      <RiseIn onPageActive index={1} className="flex min-h-0 flex-1 flex-col"><Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} /></RiseIn>
+      <RiseIn onPageActive index={1}><Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} /></RiseIn>
     </div>
   );
 }
@@ -219,20 +218,20 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan 
   }, [career.season, last?.week, last?.res]);
 
   return (
-    <ClubCard glow={glow} strength={0.2} className="relative flex flex-1 flex-col overflow-hidden rounded-2xl">
+    <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
       <Stadium glow={glow} />
       {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
       {/* The dressing room: you at your locker on the left, what the world
           thinks of you on the right (Harry, 1 Oct 2026). */}
-      <div className="relative flex flex-1 items-center gap-2 px-3 pt-3">
-        <div className="relative shrink-0 self-end" style={{ width: figW }}>
+      <div className="relative flex items-center gap-2 px-3 pt-3">
+        <div className="relative shrink-0" style={{ width: figW }}>
           <span className="absolute left-0 top-0 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ring-1 ring-white/15">Age {career.player.age}</span>
           <div className={celebrate ? "kib-hop" : "kib-breathe"}>
             <PlayerAvatar career={career} width={figW} height={figH} look={look} celebrate={celebrate} />
           </div>
           {celebrate && <Burst colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} className="left-1/2 top-[38%]" />}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 self-center">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
           <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
           <div className="grid grid-cols-2 gap-1.5">
