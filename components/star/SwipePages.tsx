@@ -11,7 +11,7 @@
  * whatever button it started on.
  */
 import { useRef, useState } from "react";
-import { EdgeArrows } from "./ui/Nav";
+import { ArrowButton, type EdgeArrow } from "./ui/Nav";
 
 /** A settle with a little overshoot, so a page lands rather than stops. The
  *  reduced-motion rule in HomeFx.tsx does not reach inline transitions, so a
@@ -30,11 +30,14 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   /** The pages and the tab row carry their own 12px side padding (the shell
    *  adds none), so a page can bleed to both edges. Home uses it. */
   inset?: boolean;
-  /** v0.23 (Harry, P47: "a little arrow here with an image, arrow here, image,
-   *  the little word"): in place of the tab row, a thin row of edge arrows
-   *  (the page to the left, the page to the right). One icon per page; a page
-   *  listed in `ownRow` draws its own row, so nothing stacks. */
-  arrows?: { icons: [string, string, string]; ownRow?: number[] };
+  /** NSS style (Harry, 1 Oct 2026: "the stats/home shop area was meant to
+   *  become arrows at the bottom … an arrow on either side"): no tab row at
+   *  the top. A small arrow with a tiny label sits at the bottom-left and
+   *  bottom-right edge, naming the page on that side; a swipe still turns the
+   *  page. One icon per page. `leftEnd` fills the left arrow on the FIRST page
+   *  (Stats → League). Pages in `bleed` draw under the arrows (Home's pitch);
+   *  the rest get room at the bottom so nothing scrolls behind them. */
+  arrows?: { icons: [string, string, string]; leftEnd?: EdgeArrow; bleed?: number[] };
 }) {
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
@@ -77,17 +80,8 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {arrows ? (
-        !arrows.ownRow?.includes(index) && (
-          <div className={`mb-2 shrink-0 ${inset ? "px-3" : ""}`}>
-            <EdgeArrows
-              prev={index > 0 ? { icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => onIndex(index - 1) } : undefined}
-              next={index < 2 ? { icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => onIndex(index + 1) } : undefined}
-            >{labels[index]}</EdgeArrows>
-          </div>
-        )
-      ) : (
+    <div className="relative flex h-full min-h-0 flex-col">
+      {!arrows ? (
       <div className={`relative mb-2 grid shrink-0 grid-cols-3 rounded-[3px] bg-black/30 p-1 ${inset ? "mx-3" : ""}`}>
         {/* The highlight and its underline follow the finger while you
             drag, then spring onto the tab you land on. */}
@@ -112,7 +106,7 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
           </button>
         ))}
       </div>
-      )}
+      ) : null}
       <div
         ref={vp}
         className="relative min-h-0 flex-1 overflow-hidden"
@@ -138,12 +132,25 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
             // never turned. Mouse drags were unaffected, which hid it.
             // data-page-active: the page on screen, so its cards can play
             // their rise-in each time it is opened (HomeFx.tsx).
-            <div key={i} data-scroll-root data-page-active={i === index} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
+            <div key={i} data-scroll-root data-page-active={i === index} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""} ${arrows && !arrows.bleed?.includes(i) ? "pb-[38px]" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
           ))}
         </div>
       </div>
+      {arrows && (
+        // The two edge arrows, along the bottom of the pages (above the bottom bar).
+        <div data-edge-arrows className="pointer-events-none absolute inset-x-0 bottom-1 z-20 flex items-end justify-between px-2">
+          <div className="pointer-events-auto">
+            {index > 0
+              ? <ArrowButton compact side="left" a={{ tour: `tab-${index - 1}`, icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => onIndex(index - 1) }} />
+              : arrows.leftEnd ? <ArrowButton compact side="left" a={arrows.leftEnd} /> : null}
+          </div>
+          <div className="pointer-events-auto">
+            {index < 2 ? <ArrowButton compact side="right" a={{ tour: `tab-${index + 1}`, icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => onIndex(index + 1) }} /> : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

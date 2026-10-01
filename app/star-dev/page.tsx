@@ -98,6 +98,7 @@ import DashboardStats from "@/components/star/DashboardStats";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
+import GameBar from "@/components/star/ui/GameBar";
 import { PHONE_SEEN_EVENT, phoneUnreadCount } from "@/lib/star/phoneUnread";
 import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
@@ -3410,8 +3411,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // screen on this career. See components/star/store/CareerStore.tsx.
   // The top HUD on every screen outside the dashboard shell (v0.23, P86:
   // "your energy never leaves").
+  // The same top bar (name, age, money) and the same HUD (rating + energy) as
+  // the dashboard on every full screen (Harry, 1 Oct 2026: "the pills at the
+  // top aren't uniform across every page").
   const screenHud = (screen: HudScreen) => (
-    <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
+    <>
+      <GameBar career={career} onHome={() => handleNavigate("home")} onSettings={() => setPhase("settings")} />
+      <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
+    </>
   );
   // The league and the fixtures on ONE page, with the live-score bell in the
   // bottom bar (v0.23 W7, P90) — components/star/MatchWeek.tsx. A full screen
@@ -3904,12 +3911,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             setPhase("dashboard");
           }}
           labels={["Stats", "Home", "Shop"]}
-          // v0.23: edge arrows instead of the tab row; Stats draws its own row.
-          arrows={{ icons: ["📊", "🏠", "🛍️"], ownRow: isOpen(career, "stats") ? [0] : [] }}
+          // Small arrows at the bottom edge instead of a tab row (Harry, 1 Oct
+          // 2026); Stats' left arrow is the League, Home's pitch runs under them.
+          arrows={{
+            icons: ["📊", "🏠", "🛍️"],
+            leftEnd: isOpen(career, "league") ? { icon: "🏆", label: "League", onClick: () => handleNavigate("league") } : undefined,
+            bleed: [1],
+          }}
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} onLeague={() => handleNavigate("league")} onHome={() => setHomePage(1)} />
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} />
               : <LockedPage key="stats" title="Stats" feature="stats" />,
             <HomeHub
               key="home"

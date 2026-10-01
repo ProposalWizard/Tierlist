@@ -15,7 +15,7 @@
  */
 import { rgba } from "./ui";
 
-export default function HomeBackdrop({ glow }: { glow: string }) {
+export default function HomeBackdrop({ glow, centered = false }: { glow: string; centered?: boolean }) {
   // 12 mown bands, widening towards the viewer (perspective), 100x100 box.
   const bands: { y: number; h: number; dark: boolean }[] = [];
   let y = 0, h = 4.2;
@@ -46,7 +46,7 @@ export default function HomeBackdrop({ glow }: { glow: string }) {
         </g>
       </svg>
       {/* The goal, standing on the goal line behind him (left, over his head). */}
-      <svg className="absolute left-[2%] top-[3%] h-[24%] w-[54%]" viewBox="0 0 200 74" preserveAspectRatio="none" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.55))" }}>
+      <svg className={`absolute top-[3%] h-[24%] ${centered ? "left-[14%] w-[72%]" : "left-[2%] w-[54%]"}`} viewBox="0 0 200 74" preserveAspectRatio="none" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.55))" }}>
         <rect x="6" y="6" width="188" height="68" fill="rgba(10,16,24,.5)" />
         <g stroke="rgba(255,255,255,.34)" strokeWidth=".8">
           {Array.from({ length: 18 }, (_, i) => <line key={`v${i}`} x1={6 + i * 11} y1="6" x2={6 + i * 11} y2="74" />)}
