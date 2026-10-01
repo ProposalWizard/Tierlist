@@ -262,7 +262,7 @@ export default function SettingsScreen({
             />
           </div>
           <SetNote dim className="mt-1 text-[10px]">
-            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Also on the home screen and in the match bar. This phone only.
+            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Applies to the home screen and the match bar too. This phone only.
           </SetNote>
 
           <SetDivider />

@@ -98,8 +98,19 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
               >
                 <HouseIcon />
               </button>
-              <div className="flex-1 mx-3 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border bg-white/10 text-white border-white/20 text-center">
+              <div className="flex-1 mx-2 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border bg-white/10 text-white border-white/20 text-center">
                 {fullName}
+              </div>
+              {/* Your money, always on screen, on every page (Harry, 1 Oct
+                  2026: "a little pocket at the top that you can always see
+                  on any page"). It is the only place money shows now. */}
+              <div
+                data-money-chip
+                aria-label={`Money ${formatMoney(career.money)}`}
+                className="mr-2 flex shrink-0 items-center gap-1 rounded-full border border-yellow-300/30 bg-black/35 px-2.5 py-1 text-xs font-black tabular-nums text-yellow-200"
+              >
+                <StarIcon small />
+                {formatMoney(career.money)}
               </div>
               <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
                 <GearIcon />
@@ -124,14 +135,10 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
               </div>
             </div>
 
-            {/* Age / Cash strip */}
+            {/* Age strip (the cash is the chip in the header now) */}
             <div className="flex items-center justify-between px-3 pt-2 gap-2">
               <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
                 Age {career.player.age}
-              </div>
-              <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
-                <StarIcon small />
-                {formatMoney(career.money)}
               </div>
             </div>
             </>)}

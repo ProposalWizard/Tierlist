@@ -15,7 +15,6 @@
  */
 import type { CareerState } from "@/lib/star/types";
 import ShopItemsCard from "./ShopItemsCard";
-import { formatMoney } from "@/lib/star/money";
 import { KIB_CANS, baseIdOf } from "@/lib/star/shopData";
 import { ownedFame, isWornOut } from "@/lib/star/fame";
 import { fameText } from "@/lib/star/lifestyleLevels";
@@ -25,7 +24,7 @@ import type { HubPhase } from "./HomeHub";
 import KibCanIcon from "./KibCanIcon";
 import BootPicture from "./BootPicture";
 import StylePicture from "./StylePicture";
-import { ClubCard, CountUp, RiseIn, Shine, useClubTheme, rgba } from "./ui";
+import { RiseIn, Shine, useClubTheme, rgba } from "./ui";
 import type React from "react";
 
 export default function ShopPage({ career, onOpen }: { career: CareerState; onOpen: (ph: HubPhase) => void }) {
@@ -40,21 +39,9 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
 
   return (
     <div className="space-y-2.5 pb-3">
+      {/* No "Your money" panel up here: money is the chip in the top bar on
+          every page (Harry, 1 Oct 2026). */}
       <RiseIn onPageActive index={0}>
-        <ClubCard glow={glow} className="flex items-center justify-between rounded-2xl px-3 py-2.5">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Your money</div>
-            <div className="text-[10.5px] font-bold text-white/55">
-              <span className="text-amber-200">{(career.coins ?? 0).toLocaleString("en-GB")}</span> Coins
-            </div>
-          </div>
-          <div className="text-[24px] font-black tabular-nums text-yellow-200" style={{ textShadow: "0 0 14px rgba(253,224,71,.45), 0 2px 6px rgba(0,0,0,.6)" }}>
-            ★ <CountUp value={career.money} ms={900} format={(n) => formatMoney(Math.round(n))} />
-          </div>
-        </ClubCard>
-      </RiseIn>
-
-      <RiseIn onPageActive index={1}>
         <div className="grid grid-cols-2 gap-2.5">
           <BigTile
             onClick={() => onOpen("shop-kib")}
@@ -95,7 +82,7 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
         </div>
       </RiseIn>
 
-      <RiseIn onPageActive index={2}>
+      <RiseIn onPageActive index={1}>
         <div className="grid grid-cols-2 gap-2.5">
           <SmallHero onClick={() => onOpen("store")} icon="🛒" title="Store" sub={`${(career.coins ?? 0).toLocaleString("en-GB")} Coins · specials`} colors={["#fbbf24", "#7c3aed"]} />
           <SmallHero onClick={() => onOpen("casino-menu")} icon="🎰" title="Casino" sub="Slots, cards, racing" colors={["#facc15", "#dc2626"]} />
@@ -103,7 +90,7 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
       </RiseIn>
 
       {/* Everything you own — taps through to the full "My stuff" view. */}
-      <RiseIn onPageActive index={3}>
+      <RiseIn onPageActive index={2}>
         <ShopItemsCard career={career} onOpenShop={() => { openStyleOn("mine"); onOpen("shop-lifestyle"); }} glow={glow} />
       </RiseIn>
     </div>
