@@ -451,13 +451,25 @@ const Glare = ({ x, y, w, h }: { x: number; y: number; w: number; h: number }) =
   <path d={`M${x + w * 0.2} ${y + 1} L${x + w * 0.55} ${y + 1} L${x + w * 0.1} ${y + h * 0.6} L${x + 0.5} ${y + h * 0.6} Z`} fill="rgba(255,255,255,.18)" />
 );
 
-function Phone(lv: Lv) {
-  const c = CASE[lv];
-  if (lv === 1) return (<><Shadow w={22} /><rect x="42" y="12" width="16" height="42" rx="3" fill={c} stroke="#374151" /><rect x="52" y="4" width="2.5" height="9" fill="#374151" /><Screen x={44} y={15} w={12} h={10} on={false} />{Array.from({ length: 12 }, (_, i) => <rect key={i} x={44 + (i % 3) * 4.2} y={29 + Math.floor(i / 3) * 5.6} width="3" height="3.6" rx=".6" fill="#d1d5db" />)}<Rust x={45} y={50} /></>);
-  if (lv === 2) return (<><Shadow w={26} /><rect x="40" y="8" width="20" height="22" rx="3" fill={c} stroke="#64748b" /><Screen x={42} y={11} w={16} h={14} /><rect x="40" y="31" width="20" height="24" rx="3" fill={c} stroke="#64748b" />{Array.from({ length: 9 }, (_, i) => <rect key={i} x={43 + (i % 3) * 5} y={35 + Math.floor(i / 3) * 5.5} width="4" height="3.6" rx=".8" fill="#94a3b8" />)}</>);
-  const w = lv === 3 ? 22 : 25, h = lv === 3 ? 44 : 48;
-  const x = 50 - w / 2, y = 56 - h;
-  return (<><Shadow w={w + 8} /><rect x={x} y={y} width={w} height={h} rx="4" fill={c} stroke={lv === 4 ? "#94a3b8" : "#64748b"} /><Screen x={x + 1.6} y={y + 3} w={w - 3.2} h={h - 6} /><Glare x={x + 1.6} y={y + 3} w={w - 3.2} h={h - 6} /><rect x={48} y={y + 1} width="4" height="1" rx=".5" fill="#0b1220" />{lv >= 4 && <><circle cx={x + 5} cy={y + 8} r="1.8" fill="#38bdf8" /><circle cx={x + 5} cy={y + 13} r="1.8" fill="#a78bfa" /></>}</>);
+/** THE PHONE (Harry, 1 Oct 2026, P103: "just like an iPhone. Don't call it
+ *  iPhone, but everyone will know what that is"): one phone, whatever level is
+ *  asked for — a thin dark frame, a screen edge to edge, a pill cut-out at the
+ *  top, a grid of bright app tiles, a home bar. No logo, no name. */
+function Phone(_lv: Lv) {
+  const x = 36, y = 4, w = 28, h = 56;
+  const tiles = ["#34d399", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#fb7185", "#22d3ee", "#f97316", "#4ade80", "#e879f9", "#38bdf8", "#facc15"];
+  return (
+    <>
+      <Shadow w={w + 10} />
+      <rect x={x} y={y} width={w} height={h} rx="6" fill="#1b1e24" stroke="#9aa3af" strokeWidth=".9" />
+      <rect x={x + 1.3} y={y + 1.3} width={w - 2.6} height={h - 2.6} rx="4.8" fill="#2f46d8" />
+      <path d={`M${x + 1.3} ${y + 30} Q${x + w / 2} ${y + 22} ${x + w - 1.3} ${y + 32} L${x + w - 1.3} ${y + h - 6} Q${x + w - 1.3} ${y + h - 1.3} ${x + w - 6} ${y + h - 1.3} L${x + 6} ${y + h - 1.3} Q${x + 1.3} ${y + h - 1.3} ${x + 1.3} ${y + h - 6} Z`} fill="#0ea5e9" opacity=".55" />
+      <rect x={50 - 4.2} y={y + 3} width="8.4" height="2.6" rx="1.3" fill="#05070a" />
+      {tiles.map((c, i) => <rect key={i} x={x + 4 + (i % 3) * 7.4} y={y + 12 + Math.floor(i / 3) * 8.6} width="5.6" height="5.6" rx="1.5" fill={c} />)}
+      <rect x={50 - 5} y={y + h - 4.2} width="10" height="1.1" rx=".55" fill="rgba(255,255,255,.85)" />
+      <path d={`M${x + 3} ${y + 3} L${x + 11} ${y + 3} L${x + 3} ${y + 18} Z`} fill="rgba(255,255,255,.12)" />
+    </>
+  );
 }
 
 function Console(lv: Lv) {

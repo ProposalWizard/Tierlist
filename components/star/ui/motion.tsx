@@ -139,7 +139,17 @@ export const KIT_CSS = `
     .kit-ring { animation: none !important; opacity: 0 !important; }
   }
 
+  /* ── The pointer tutorial (PointerTour.tsx): a hand that bobs toward the thing, a ring that pulses on it,
+     a tile that flashes until it is tapped ── */
+  @keyframes kit-hand-bob { 0%,100% { transform: translate(0,0); } 50% { transform: translate(var(--hx, 0), var(--hy, -8px)); } }
+  .kit-hand-bob { animation: kit-hand-bob 780ms ease-in-out infinite; }
+  @keyframes kit-tour-ring { 0%,100% { box-shadow: 0 0 0 2px rgba(253,224,71,.95), 0 0 14px 2px rgba(253,224,71,.55); } 50% { box-shadow: 0 0 0 4px rgba(253,224,71,.55), 0 0 22px 6px rgba(253,224,71,.3); } }
+  .kit-tour-ring { animation: kit-tour-ring 1.1s ease-in-out infinite; }
+  @keyframes kit-tile-flash { 0%,100% { box-shadow: 0 0 0 0 rgba(253,224,71,0), inset 0 0 0 2px rgba(253,224,71,.0); } 50% { box-shadow: 0 0 22px 3px rgba(253,224,71,.75), inset 0 0 0 2px rgba(253,224,71,.95); } }
+  .kit-tile-flash { animation: kit-tile-flash 1s ease-in-out infinite; }
+
   @media (prefers-reduced-motion: reduce) {
+    .kit-hand-bob, .kit-tour-ring, .kit-tile-flash { animation: none !important; }
     .kit-shake-x, .kit-badge-pop, .kit-app-open, .kit-app-close, .kit-icon-in, .kit-win-pop, .kit-deal, .kit-reel-spin { animation: none !important; }
     .kit-loss-flash, .kit-win-overlay, .kit-fly-x, .kit-fly-y, .kit-fly-s, .kit-rays { animation: none !important; display: none !important; }
     [data-page-active="true"] .kib-rise, .kit-rise, .kib-breathe, .kib-hop, .kib-confetti, .kib-play-pulse, .kib-shake,

@@ -371,10 +371,23 @@ export const LIFESTYLE_LEVEL_PRICE_MULT: Record<number, number> = {
   5: ISLAND_L5_TARGET / ISLAND_L5_BAND,
 };
 
+/**
+ * THE PHONE IS ONE ITEM (Harry, 1 Oct 2026, P103: "I don't think the phone
+ * needs five levels … it should be there as the first style unlock. It's the
+ * first thing you have to buy, and it's like 800, and it's just like an
+ * iPhone. Don't call it iPhone, but everyone will know what that is. Then
+ * maybe it does last two seasons and then you need a new one"). A utility,
+ * not a status ladder: one level, ★800, two seasons (fame.ts), then a new one.
+ */
+/** What the shop sells the phone for. The base catalogue above keeps its band
+ *  price (tests/star/economy.mts holds that ladder); the shop sells LIFESTYLE_LEVELS. */
+export const PHONE_PRICE = 800;
+const SINGLE_LEVEL = new Set(["phone"]);
+
 export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
   const out: OwnedItem[] = LIFESTYLE_SPECS.flatMap((spec) => {
     const own = levelOfTier(spec.tier);
-    return Array.from({ length: SHOP_LEVEL_COUNT }, (_, i) => {
+    return Array.from({ length: SINGLE_LEVEL.has(spec.id) ? 1 : SHOP_LEVEL_COUNT }, (_, i) => {
       const level = i + 1;
       return {
         id: levelItemId(spec.id, level, own),
@@ -400,6 +413,9 @@ export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
       }
     }
   }
+  // Set after the ladder above, so the phone's price does not drag every
+  // other gadget up with it.
+  for (const o of out) if (o.baseId === "phone") o.price = PHONE_PRICE;
   return out;
 })();
 

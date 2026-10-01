@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { formatMoney } from "@/lib/star/money";
 import { starStatus } from "@/lib/star/starPoints";
+import { hasSeen } from "@/lib/star/unlocks";
 import KibCanIcon from "../KibCanIcon";
 import StarRatingSheet from "../StarRatingSheet";
 import { SquareBar } from "./Flat";
@@ -82,8 +83,10 @@ const WASH = { background: "linear-gradient(180deg, rgba(var(--sk-flat-rgb),.78)
 function RatingCell({ career, onOpen }: { career: CareerState; onOpen: () => void }) {
   const star = starStatus(career);
   const shown = useCountUp(star.stars);
+  // The Star Pass stays locked until the tutorial is done (Harry, P15).
+  const open = hasSeen(career, "tutorial");
   return (
-    <button onClick={onOpen} aria-label="Star rating — see how it is made up" className={`kib-press ${CELL} h-[34px] text-left`} style={WASH}>
+    <button onClick={open ? onOpen : undefined} data-tour="rating" aria-label={open ? "Star Pass" : "Star rating"} className={`kib-press ${CELL} h-[34px] text-left`} style={WASH}>
       <span className="flex h-[24px] shrink-0 items-center gap-0.5 px-1.5 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
         <span className="text-[13px] leading-none">★</span>
         <span className="min-w-[18px] text-[17px] font-black leading-none tabular-nums">{Math.round(shown)}</span>
@@ -108,7 +111,7 @@ function EnergyCell({ career, onUseCan, onOpenCans }: { career: CareerState; onU
     setTimeout(() => onUseCan(ENERGY_CAN.id), typeof window !== "undefined" && prefersReducedMotion() ? 0 : 650);
   };
   return (
-    <div className={`${CELL} h-[34px]`} style={WASH}>
+    <div data-tour="energy" className={`${CELL} h-[34px]`} style={WASH}>
       <span className="shrink-0 text-[13px] leading-none" aria-hidden>⚡</span>
       <SquareBar value={e} colors={levelColors(e)} className="h-[16px] min-w-0 flex-1" animate>{Math.round(shown)}</SquareBar>
       <div className="relative h-[26px] w-[16px] shrink-0">
@@ -133,7 +136,7 @@ function EnergyCell({ career, onUseCan, onOpenCans }: { career: CareerState; onU
 function MoneyCell({ career, big = false }: { career: CareerState; big?: boolean }) {
   const shown = useCountUp(career.money, 800);
   return (
-    <div data-money-chip aria-label={`Money ${formatMoney(career.money)}`} className={`${CELL} ${big ? "h-[34px]" : "h-[20px] flex-1 justify-center"}`} style={WASH}>
+    <div data-money-chip data-tour="money" aria-label={`Money ${formatMoney(career.money)}`} className={`${CELL} ${big ? "h-[34px]" : "h-[20px] flex-1 justify-center"}`} style={WASH}>
       <span className={`${big ? "text-[15px]" : "text-[12px]"} leading-none text-yellow-300`}>★</span>
       <span className={`${big ? "text-[17px]" : "text-[13px]"} font-black leading-none tabular-nums text-yellow-200`}>{formatMoney(Math.round(shown))}</span>
     </div>
@@ -152,7 +155,7 @@ function AgeCell({ career }: { career: CareerState }) {
 function HappinessCell({ career }: { career: CareerState }) {
   const h = Math.max(0, Math.min(100, Math.round(career.happiness ?? 0)));
   return (
-    <div className={`${CELL} h-[34px]`} style={WASH}>
+    <div data-tour="happiness" className={`${CELL} h-[34px]`} style={WASH}>
       <span className="shrink-0 text-[14px] leading-none" aria-hidden>😊</span>
       <SquareBar value={h} colors={levelColors(h)} className="h-[16px] min-w-0 flex-1" animate>{h}</SquareBar>
     </div>

@@ -1,11 +1,15 @@
 "use client";
 
 /**
- * YOUR STAR RATING, EXPLAINED — opened from the rating on Home (Mikey,
- * 30 Sep 2026; 1-100 since 1 Oct 2026). What it is for, in one line (Harry:
- * "what is star ratings for?"), where you are, what the next level takes, the gate holding
- * you (if one is), where your Star Points came from, and the ten Legend
- * tasks that make the last ten levels. All of it read from lib/star/starPoints.ts.
+ * THE STAR PASS — where your star points came from (opened from the rating
+ * in the top HUD). Harry, 1 Oct 2026 (P10, P12, P13, P15): the "what is the
+ * star rating for" box is gone — the pointer tutorial says it in one line
+ * ("a mix of your skills, experience and fame") — and "1 to 100", "never goes
+ * down" and "the Star Pass, coming next" are never said. This is the Star
+ * Pass section itself: "locked to start with until they've gone through the
+ * tutorial" (TopHud keeps it shut until then). Where you are, what the next
+ * level takes, the gate holding you (if one is), where your Star Points came
+ * from, and the ten Legend tasks. All read from lib/star/starPoints.ts.
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -32,12 +36,9 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
     <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/85 p-3" onClick={onClose}>
       <div className="mx-auto w-full max-w-sm rounded-2xl border border-amber-300/60 bg-gray-950 p-4" onClick={(e) => e.stopPropagation()}>
         <div className="text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Star rating</div>
-          <div className="mt-1 text-[44px] font-black leading-none text-amber-300" style={{ textShadow: "0 0 18px rgba(251,191,36,.6)" }}>★ {st.stars}<span className="text-[18px] text-white"> / {MAX_LEVEL}</span></div>
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Star Pass</div>
+          <div className="mt-1 text-[44px] font-black leading-none text-amber-300" style={{ textShadow: "0 0 18px rgba(251,191,36,.6)" }}>★ {st.stars}</div>
           <div className="mt-1 text-[15px] font-black text-white">{starTitle(st.stars)}</div>
-          <div className="mt-1 rounded-lg bg-amber-400/15 px-2 py-1.5 text-[11.5px] font-bold text-white">
-            <b className="text-amber-300">What it&apos;s for:</b> your one rating, 1 to 100. Everything you do on and off the pitch adds Star Points, and it never goes down. The Star Pass, coming next, will be built on it.
-          </div>
         </div>
 
         <div className="mt-3 h-3 overflow-hidden rounded-full bg-black/60" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.7)" }}>
@@ -78,7 +79,6 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
               <span>{label}</span><span className="tabular-nums">{fmt(n)}</span>
             </div>
           ))}
-          <div className="mt-1.5 text-[10.5px] font-bold text-white">Match points count ×1 in the National League, up to ×4 in the Premier League and ×5 in Europe.</div>
         </div>
 
         {st.stars >= 80 && (

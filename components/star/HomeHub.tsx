@@ -250,7 +250,7 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
           and fades out upwards into the stand, under the league table */}
       <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30), maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
       <div className="relative flex w-full items-end gap-2 px-3 pb-2 pt-1">
-        <div className="relative shrink-0" style={{ width: figW }}>
+        <div data-tour="player" className="relative shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">

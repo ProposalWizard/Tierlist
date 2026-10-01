@@ -63,6 +63,7 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
           />
           <BigTile
             onClick={() => onOpen("shop-lifestyle")}
+            tour="shop-style"
             color="#e879f9"
             title="Style"
             sub="Cars, homes, drip, holidays"
@@ -93,12 +94,14 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
 }
 
 /** One of the four big shop tiles: a picture, a name, a live line. */
-function BigTile({ onClick, color, title, sub, chip, art }: {
+function BigTile({ onClick, color, title, sub, chip, art, tour }: {
+  /** data-tour name, for the pointer tutorial. */ tour?: string;
   onClick: () => void; color: string; title: string; sub: string; chip: string; art: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
+      data-tour={tour}
       className="kib-press relative flex h-[184px] flex-col overflow-hidden rounded-2xl p-2.5 text-left"
       style={{
         background: `radial-gradient(90% 70% at 50% 18%, ${rgba(color, 0.42)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(10,15,26,.97)))`,

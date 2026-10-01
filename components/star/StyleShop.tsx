@@ -57,7 +57,9 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
   lockOf?: (base: string) => number | null;
 }) {
   const [view, setView] = useState(() => takeStyleView());
-  const [group, setGroup] = useState<StyleGroup>("drip");
+  // The phone is the first thing to buy (Harry, 1 Oct 2026, P102): until you
+  // have one, a new career opens on Gadgets, where it sits and flashes.
+  const [group, setGroup] = useState<StyleGroup>(() => (lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone") ? "gadgets" : "drip"));
   const [sheet, setSheet] = useState<{ base: string; level: number } | null>(null);
   const mineRef = useRef<HTMLButtonElement>(null);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
@@ -140,6 +142,8 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
                   worn={worn}
                   fame={mine && !worn ? fameFromOwned(owned, mine) : fameGainFromBuying(owned, item)}
                   price={mine && !worn ? levels.find((l) => (l.level ?? 0) === ownLv + 1)?.price ?? null : item.price}
+                  single={levels.length === 1}
+                  flash={base === "phone" && !!lockOf && (!mine || worn)}
                   onOpen={() => setSheet({ base, level: mine && !worn ? Math.min(5, ownLv + (ownLv < 5 ? 1 : 0)) : showLv })}
                 />
               );
@@ -173,7 +177,9 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
 }
 
 /** One picture card in the grid. */
-function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = null }: {
+function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = null, single = false, flash = false }: {
+  /** One level only (the phone): no level dots. */ single?: boolean;
+  /** Flashing, until it is bought (the phone, on a new career). */ flash?: boolean;
   base: string; item: OwnedItem; mine?: OwnedItem; ownLv: number; worn: boolean; fame: number; price: number | null; onOpen: () => void;
   /** Locked behind a star rating: how far there you are, 0-1. A bar, never
    *  the number (house style, 30 Sep 2026). */
@@ -204,16 +210,17 @@ function ItemCard({ base, item, mine, ownLv, worn, fame, price, onOpen, lock = n
   return (
     <button
       data-item-card={base}
+      data-tour={base === "phone" ? "phone-tile" : undefined}
       onClick={onOpen}
       title={`${levelName(item)} — level ${lv}`}
-      className="kib-press group relative flex flex-col overflow-hidden rounded-2xl text-left transition hover:-translate-y-0.5"
+      className={`kib-press group relative flex flex-col overflow-hidden rounded-2xl text-left transition hover:-translate-y-0.5 ${flash ? "kit-tile-flash" : ""}`}
       style={{ background: "var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.95), rgba(12,17,28,.98)))", boxShadow: `inset 0 0 0 1px ${yours ? "rgba(52,211,153,.7)" : "rgba(255,255,255,.08)"}, 0 8px 18px -10px rgba(0,0,0,.8)` }}
     >
       <div className="relative" style={{ background: tileBg(lv) }}>
         <StylePicture base={base} level={lv} className="block aspect-[100/64] w-full transition group-hover:scale-105" />
         {yours && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[9px] font-black leading-none text-emerald-950">✓ YOURS</span>}
         {worn && <span className="absolute left-1 top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-black leading-none text-white">WORN OUT</span>}
-        <Pips className="absolute bottom-1 right-1" lit={yours ? ownLv : 0} shown={lv} />
+        {!single && <Pips className="absolute bottom-1 right-1" lit={yours ? ownLv : 0} shown={lv} />}
       </div>
       <div className="flex flex-1 flex-col px-1.5 pb-1.5 pt-1">
         <div className="line-clamp-2 min-h-[26px] text-[11px] font-black leading-[13px] text-white">{levelName(item)}</div>
@@ -262,13 +269,13 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
     <ShopSheet open onClose={onClose} title={familyName(it)}>
       <div className="relative overflow-hidden rounded-2xl" style={{ background: tileBg(lv) }}>
         <StylePicture base={base} level={lv} className="block aspect-[100/64] w-full" />
-        <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">Level {lv} of 5</span>
+        {levels.length > 1 && <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">Level {lv} of 5</span>}
         {mine && !worn && ownLv === lv && <span className="absolute right-2 top-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] font-black text-emerald-950">✓ YOURS</span>}
       </div>
       <div className="mt-2 text-[20px] font-black leading-tight text-white">{levelName(it)}</div>
 
       {/* All five levels — tap (or hover, on a computer) to look at one. */}
-      <div className="mt-2 grid grid-cols-5 gap-1.5">
+      {levels.length > 1 && <div className="mt-2 grid grid-cols-5 gap-1.5">
         {levels.map((l) => {
           const n = l.level ?? 1;
           const on = n === lv;
@@ -290,7 +297,7 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
         <Stat big={`${fameText(gain)}`} small={mine && !worn ? `fame (now ${fameText(nowFame)})` : "fame"} color="#fcd34d" />
@@ -299,13 +306,13 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
       </div>
 
       {/* Level 5 unlock — the slot is real, what it unlocks isn't decided. */}
-      <div className={`mt-2 flex items-center gap-2 rounded-xl p-2 ring-1 ${lv === 5 ? "bg-yellow-400/15 ring-yellow-300/50" : "bg-white/[0.04] ring-white/10"}`}>
+      {levels.length > 1 && <div className={`mt-2 flex items-center gap-2 rounded-xl p-2 ring-1 ${lv === 5 ? "bg-yellow-400/15 ring-yellow-300/50" : "bg-white/[0.04] ring-white/10"}`}>
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/40 text-[16px]">🔒</span>
         <div className="min-w-0">
           <div className="text-[11px] font-black text-yellow-200">Level 5 unlock</div>
           <div className="text-[10.5px] font-bold text-white/75">To be decided — nothing extra yet.</div>
         </div>
-      </div>
+      </div>}
 
       <div className="mt-2 flex items-center justify-between px-1">
         <div className="text-[18px] font-black text-yellow-300">★{formatMoney(it.price)}</div>

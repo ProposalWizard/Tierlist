@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import type { CareerState, Skills } from "@/lib/star/types";
-import { setPieceDuties } from "@/lib/star/setPieces";
 import { starsOf, totalStars } from "@/lib/star/trainingLevels";
 import { trainingLeft, TRAINING_SESSIONS_PER_WEEK } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
@@ -47,7 +46,6 @@ const ENERGY_COST = getTuning("energy.trainingCost");
 
 
 export default function SkillsScreen({ career, onTrain }: Props) {
-  const duties = setPieceDuties(career);
   const left = trainingLeft(career);
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
@@ -68,35 +66,15 @@ export default function SkillsScreen({ career, onTrain }: Props) {
             <SessionCell key={i} full={i < left} />
           ))}
         </div>
-        <div className="mt-2 text-[12px] font-bold text-white">
-          {left > 0 ? `A session: ${ENERGY_COST} energy · 3 tries · up to ★★★` : "No more sessions this week"}
-        </div>
+        {/* No "A session: 30 energy · 3 tries · up to ★★★" sentence (Harry,
+            1 Oct 2026, P51: "stop it. Stop this everywhere"). */}
+        {left <= 0 && <div className="mt-2 text-[12px] font-bold text-white">No more sessions this week</div>}
       </ClubCard>
       {noMore && <NoMoreSessions onClose={() => setNoMore(false)} />}
 
-      {/* What the free-kick rating actually buys. It was trainable, had an
-          achievement and was read by no code at all. */}
-      <ClubCard glow="#f59e0b" className="p-3">
-        <CardTitle tone="text-amber-300">🎪 Set-piece duty</CardTitle>
-        <div className="mt-1 text-[11.5px] font-bold text-white">
-          {duties.freeKicks && duties.penalties
-            ? "You take the free kicks and the penalties."
-            : duties.penalties
-              ? `Penalties are yours. Free kicks need a Free Kick rating of ${duties.freeKickNeeded}.`
-              : `${career.player.club} have better takers. Penalties need ${duties.penaltyNeeded}, free kicks ${duties.freeKickNeeded}.`}
-        </div>
-        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-black">
-          <span className={`rounded-full px-2 py-0.5 ${duties.penalties ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-300/30" : "bg-black/35 text-white ring-1 ring-white/10"}`}>
-            Penalties {duties.penalties ? "✓ yours" : `need ${duties.penaltyNeeded}`}
-          </span>
-          <span className={`rounded-full px-2 py-0.5 ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-300/30" : "bg-black/35 text-white ring-1 ring-white/10"}`}>
-            Free kicks {duties.freeKicks ? "✓ yours" : `need ${duties.freeKickNeeded}`}
-          </span>
-        </div>
-        <div className="mt-1.5 text-[10px] font-bold text-white/70">
-          Judged against your club — a move up the league can cost you the ball.
-        </div>
-      </ClubCard>
+      {/* The "Set-piece duty" card (penalty and free-kick numbers) is gone
+          (Harry, 1 Oct 2026, P4, P78): the manager tells you once, in a
+          conversation, when you become the taker (lib/star/setPieceTalk.ts). */}
 
       {SKILL_LABELS.map(([key, label, icon, desc]) => (
         <SkillCard
