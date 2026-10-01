@@ -23,9 +23,9 @@ import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
  * How it works, in the order this file is written:
  *  1. Everything earns Star Points (SP). Match points are multiplied by the
  *     stage they were earned on (National League ×1 … Champions League ×5).
- *  2. SP turn into levels on a curve (LEVEL_THRESHOLDS): each level costs more
- *     than the one before — 10,000 SP a level at the start, 1.1 million a
- *     level in the 80s (Harry: 11→20 "about 100,000", 81→90 "about 10 million").
+ *  2. SP turn into levels on a curve (LEVEL_COST): about a match a level up
+ *     to 4, then each level dearer than the last, so 60→61 takes 14-20× the
+ *     matches 4→5 does (see STAR_CURVES).
  *  3. Star gates: you can't pass 29 / 39 / 49 / 59 until you've played 10
  *     league games at that level OR HIGHER (so jumping straight from the
  *     National League to the Championship opens three gates at once), and
@@ -310,20 +310,59 @@ export function livePoints(career: CareerState): StarBreakdown {
 export const MAX_LEVEL = 100;
 export const POINTS_CAP_LEVEL = 90;
 
-/** What one level costs in each band: 1→10, 10→20 … 80→90. Each band costs
- *  more a level than the one below. 10→60 are the old 1.0-6.0 star costs ×200
- *  (600 SP a star at the bottom = 12,000 a level); the top two are pushed up
- *  to Harry's shape: 11→20 is 108,000 SP, 81→90 is 9.9 million. */
-export const LEVEL_COST = [10_000, 12_000, 28_000, 50_000, 80_000, 110_000, 320_000, 550_000, 1_100_000];
+/**
+ * What each level costs (Harry, 1 Oct 2026: "almost impossible after like
+ * level 4 to go more than 1 level and the curve should rapidly change so that
+ * say level 60-61 is exponentially longer than 4-5").
+ *
+ * Levels 1→4 are cheap, about one a match. From 4 on every level costs
+ * `grow` times the one before up to 60, then `growTop` times from 60 to 90.
+ * Because a career earns more per match as it climbs, what matters is
+ * MATCHES per level; measured on played-out careers (60 careers, 3 player
+ * types, tests/star/starPoints.mts header) the recommended curve gives:
+ *   1→4 about one a match, 4→5 in 1-2 matches, 10→11 in ~4, 30→31 in
+ *   ~6, 60→61 in 20-27, 80→81 in ~28 — 60→61 is 14-20× 4→5. After level 4
+ *   a match alone pays for a whole level 0.2-0.5% of the time. A riser is
+ *   ~65 after twelve seasons, a star ~73; 9 of 20 stars reach 90 by season 20.
+ *   11→20 is 304,000 SP and 81→90 is 12.7 million (Harry's earlier anchors
+ *   were ~100,000 and ~10 million: the low one had to rise, or a level in the
+ *   teens would still come every match or two).
+ * The other two curves are a one-word switch (STAR_CURVE).
+ */
+export const STAR_CURVES = {
+  /** 60→61 ~9-16× 4→5; a riser ~77 after twelve seasons, every star reaches 90 by season 14. */
+  gentle: { start: 12_000, grow: 1.065, growTop: 1.04 },
+  /** The one in the game. */
+  recommended: { start: 15_000, grow: 1.075, growTop: 1.02 },
+  /** 60→61 ~22-48× 4→5; nobody reaches 70 in twelve seasons. */
+  brutal: { start: 20_000, grow: 1.085, growTop: 1.02 },
+} as const;
+export type StarCurve = keyof typeof STAR_CURVES;
+export const STAR_CURVE: StarCurve = "recommended";
+/** 1→2, 2→3, 3→4: about one match each. */
+export const EARLY_LEVEL_COST = [8_000, 4_000, 4_000];
+/** Where the steeper climb gives way to the gentler top one. */
+export const CURVE_KNEE = 60;
+
+/** Rounded to two significant figures, so the numbers read cleanly. */
+const twoFigures = (n: number) => { const p = Math.pow(10, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; };
+
+/** LEVEL_COST[L] = SP to go from level L to L+1, for L = 1…89 (index 0 unused). */
+export function levelCosts(curve: StarCurve = STAR_CURVE): number[] {
+  const { start, grow, growTop } = STAR_CURVES[curve];
+  const out = [0];
+  for (let L = 1; L < POINTS_CAP_LEVEL; L++) {
+    out[L] = L <= EARLY_LEVEL_COST.length ? EARLY_LEVEL_COST[L - 1]
+      : twoFigures(start * Math.pow(grow, Math.min(L, CURVE_KNEE) - 4) * Math.pow(growTop, Math.max(0, L - CURVE_KNEE)));
+  }
+  return out;
+}
+export const LEVEL_COST: number[] = levelCosts();
 
 /** LEVEL_THRESHOLDS[L] = total SP to be on level L, for L = 1…90 (index 0 unused). */
 export const LEVEL_THRESHOLDS: number[] = (() => {
   const t = [0, 0];
-  for (let L = 2; L <= POINTS_CAP_LEVEL; L++) {
-    // The step INTO level L is priced by the band L-1 sits in: 1→2 … 9→10 are
-    // the first band (nine steps), 10→11 … 19→20 the second, and so on.
-    t[L] = t[L - 1] + LEVEL_COST[L - 1 < 10 ? 0 : Math.floor((L - 1) / 10)];
-  }
+  for (let L = 2; L <= POINTS_CAP_LEVEL; L++) t[L] = t[L - 1] + LEVEL_COST[L - 1];
   return t;
 })();
 
