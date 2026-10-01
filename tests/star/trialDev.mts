@@ -145,12 +145,14 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 // ── The half-played five-a-side is dropped, same as a played one ────────
 {
   const t = { ...startTrial(8), fiveASide: { pretend: "snapshot" } } as TrialProgress;
-  const skippedOther = simStage(t, "penalties", "average");
-  check(skippedOther.fiveASide !== undefined,
-    "skipping another stage leaves a half-played five-a-side alone");
+  // The five-a-side is no longer a trial stage (1 Oct 2026): a snapshot can
+  // only be an old save's, and any stage recorded drops it.
+  const skippedOther = simStage(t, "freeKicks", "average");
+  check(skippedOther.fiveASide === undefined,
+    "an old save's half-played five-a-side is dropped once any stage is recorded");
   const simmed = simRemaining(t, "average");
   check(simmed.fiveASide === undefined,
-    "filling the five-a-side drops its stale snapshot rather than saving it forever");
+    "simming the rest drops the stale snapshot rather than saving it forever");
 }
 
 // ── The levels are the levels ───────────────────────────────────────────

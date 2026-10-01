@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { STAGE_LABEL, TRIAL_STAGES, type TrialProgress, type TrialStage } from "@/lib/star/trial";
+import { STAGE_LABEL, trialStagesFor, type TrialProgress, type TrialStage } from "@/lib/star/trial";
 import {
   TRIAL_SIM_LEVELS, TRIAL_SIM_LABEL, simScore, type TrialSimLevel,
 } from "@/lib/star/trialDev";
@@ -39,8 +39,9 @@ export default function DevTrialPanel({
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<TrialSimLevel>("average");
 
-  const done = TRIAL_STAGES.filter(s => trial.results[s]).length;
-  const left = TRIAL_STAGES.length - done;
+  const all = trialStagesFor(trial);
+  const done = all.filter(s => trial.results[s]).length;
+  const left = all.length - done;
 
   // ── Open, it floats over the stage instead of pushing it down ──
   //

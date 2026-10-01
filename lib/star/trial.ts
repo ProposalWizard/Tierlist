@@ -8,7 +8,8 @@ import { mulberry32 } from "./season";
  * absolutely nothing — everybody arrived at the same club on the same wage
  * however they had played.
  *
- * A trial is five stages on the live match engine, each scored on HOW WELL
+ * A trial is four stages on the live match engine (five before 1 Oct 2026 —
+ * see `TRIAL_STAGES`), each scored on HOW WELL
  * YOU DID, against an afternoon whose difficulty decides how hard doing well
  * was — and one number at the end that decides who comes in for you. Fail it
  * badly enough and nobody does (see §3.7 of
@@ -55,17 +56,64 @@ import { mulberry32 } from "./season";
  * and what is still missing.
  */
 
-export type TrialStage = "penalties" | "freeKicks" | "dribbling" | "vision" | "fiveASide";
+export type TrialStage =
+  | "freeKicks" | "technique" | "dribbling" | "shootout"
+  // ── Retired from the trial (1 Oct 2026), kept so old saves still read ──
+  | "penalties" | "vision" | "fiveASide";
 
-/** The order they are played in, and the order the sequencer walks. */
+/**
+ * The order they are played in, and the order the sequencer walks.
+ *
+ * ── Four stages, from 1 Oct 2026 ──
+ *
+ * Harry: "the trial is just so flat right now. I think we just remove the
+ * 5-side and find the player, and we just do the technique drill there, and
+ * maybe a penalty shootout instead of pens as the last one."
+ *
+ * So the five-a-side and finding the pass are out, training's real technique
+ * drill (the gate of cones) is in, and the three plain penalties became a
+ * shootout against another side — alternate kicks, sudden death — which
+ * closes the afternoon. Free kicks open it because the first thing anybody
+ * does in this game is strike a dead ball, and the gate is the same strike
+ * with nobody in goal, so the two sit together.
+ *
+ * The removed stages stay in the `TrialStage` type and in `STAGE_LABEL`, and
+ * nothing deletes their results: a save from before this change still reads,
+ * still shows what it played, and — if it was finished — still counts the
+ * stages it was actually scored on. See `trialStagesFor`.
+ */
 export const TRIAL_STAGES: TrialStage[] = [
+  "freeKicks", "technique", "dribbling", "shootout",
+];
+
+/** The five-stage trial every career before 1 Oct 2026 was given. */
+export const LEGACY_TRIAL_STAGES: TrialStage[] = [
   "penalties", "freeKicks", "dribbling", "vision", "fiveASide",
 ];
 
+/**
+ * Which list of stages THIS trial is made of.
+ *
+ * A trial finished on the old five stages stays a five-stage trial: its score
+ * was the mean of those five, the offers it earned were rolled off that
+ * number, and re-reading it against the new four would change a result the
+ * player has already been shown (and may have signed on). Anything else — a
+ * new trial, or an old one caught part-way — plays the new four. An old save
+ * part-way through keeps the results it has for stages that still exist (free
+ * kicks, taking a man on) and simply plays the rest; results for retired
+ * stages are left on the save, untouched, and count for nothing.
+ */
+export function trialStagesFor(trial: Pick<TrialProgress, "results">): TrialStage[] {
+  const legacyDone = LEGACY_TRIAL_STAGES.every(s => !!trial.results[s]);
+  return legacyDone ? LEGACY_TRIAL_STAGES : TRIAL_STAGES;
+}
+
 export const STAGE_LABEL: Record<TrialStage, string> = {
-  penalties: "Penalties",
   freeKicks: "Free kicks",
+  technique: "Through the gate",
   dribbling: "Take him on",
+  shootout: "Penalty shootout",
+  penalties: "Penalties",
   vision: "Find the pass",
   fiveASide: "Five-a-side",
 };
@@ -157,7 +205,7 @@ export interface TrialAdversityEvent {
  */
 export const SHARP_KEEPER_BONUS = 15;
 
-const KEEPER_STAGES: TrialStage[] = ["penalties", "freeKicks", "fiveASide"];
+const KEEPER_STAGES: TrialStage[] = ["freeKicks", "shootout"];
 
 /**
  * The catalogue. Order is meaningless; the roll is uniform over it.
@@ -183,7 +231,10 @@ export const TRIAL_ADVERSITY: TrialAdversityEvent[] = [
     id: "cold-keeper",
     label: "Gives nothing away",
     blurb: "This one does not flinch. He waits, he watches, and he tells you absolutely nothing before you strike it.",
-    stages: ["penalties"],
+    // Was "penalties"; the trial's penalties are the shootout now (1 Oct
+    // 2026). It reaches the shootout's keeper through `shootoutSetup`
+    // (trialStages.ts).
+    stages: ["shootout"],
     // Measured against the sharp keeper on the real engine rather than
     // eyeballed: across a whole stage the two cost a taker almost the same
     // (−6.0 points of conversion against −6.4), even though they get there
@@ -276,6 +327,22 @@ export const TRIAL_ADVERSITY: TrialAdversityEvent[] = [
  * top of it rather than taking a slice out of it.
  */
 export const ADVERSITY_CHANCE = 0.42;
+
+/** The stages an event can land on that the trial still plays. */
+function liveStagesOf(e: TrialAdversityEvent): TrialStage[] {
+  return e.stages.filter(st => TRIAL_STAGES.includes(st));
+}
+
+/**
+ * The events a NEW trial can draw: only the ones with a stage still played.
+ *
+ * The three "looking up" events (`snap-decision`, `crowded-picture`,
+ * `tight-margins`) lived on the finding-the-pass stage, which left the trial
+ * on 1 Oct 2026. They stay in the catalogue so an old save that drew one
+ * still reads its label, but nothing new rolls them — an event on a stage you
+ * never play is a caption about nothing.
+ */
+export const LIVE_ADVERSITY: TrialAdversityEvent[] = TRIAL_ADVERSITY.filter(e => liveStagesOf(e).length > 0);
 
 /** The event a trial actually drew, or null. Unknown ids — a save from a
  *  build that named an event this one does not — read as null rather than
@@ -528,14 +595,14 @@ export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)
   // genuinely HARDER afternoon at almost exactly the third it has always
   // been. See ADVERSITY_CHANCE.
   const pick = <T,>(xs: T[], r: number) => xs[Math.min(xs.length - 1, Math.floor(r * xs.length))];
-  const event = rng() < ADVERSITY_CHANCE ? pick(TRIAL_ADVERSITY, rng()) : null;
+  const event = rng() < ADVERSITY_CHANCE ? pick(LIVE_ADVERSITY, rng()) : null;
   const adversity: TrialAdversity = event ? event.id : null;
   // Onto a stage it can actually bite on. A sharp keeper means nothing in the
   // dribbling stage and a shorter look at the picture means nothing outside
   // the vision stage, so each event carries its own list rather than every
   // event drawing from one shared one. A flavour event lists all five and
   // simply draws one — nothing depends on which.
-  const adversityStage = event ? pick(event.stages, rng()) : null;
+  const adversityStage = event ? pick(liveStagesOf(event), rng()) : null;
 
   return {
     seed,
@@ -679,7 +746,8 @@ export function recordStage(
         difficulty: clamp01(difficultyFor(trial, stage) + adversityWeightFor(trial, stage)),
         // Penalties score what you scored: 1 of 3 is 33 (Mikey, 28 Sep 2026:
         // "surely it should be one third of 100"). See PenaltyStage's onDone.
-        score: stage === "penalties" || stage === "freeKicks" ? Math.round(100 * played) : stageScore(played, scoringDifficultyFor(trial, stage)),
+        // The shootout too: its quality is the share of your kicks you scored.
+        score: stage === "penalties" || stage === "freeKicks" || stage === "shootout" ? Math.round(100 * played) : stageScore(played, scoringDifficultyFor(trial, stage)),
         decidedAt: Date.now(),
       },
     },
@@ -761,7 +829,7 @@ export function noteReload(trial: TrialProgress): TrialProgress {
 
 /** The first stage with no result yet, or null when the trial is over. */
 export function nextStage(trial: TrialProgress): TrialStage | null {
-  return TRIAL_STAGES.find(s => !trial.results[s]) ?? null;
+  return trialStagesFor(trial).find(s => !trial.results[s]) ?? null;
 }
 
 export function trialComplete(trial: TrialProgress): boolean {
@@ -781,6 +849,7 @@ export function trialComplete(trial: TrialProgress): boolean {
  * which it was.
  */
 export function trialScore(trial: TrialProgress): number {
-  const total = TRIAL_STAGES.reduce((sum, s) => sum + (trial.results[s]?.score ?? 0), 0);
-  return Math.round(total / TRIAL_STAGES.length);
+  const stages = trialStagesFor(trial);
+  const total = stages.reduce((sum, s) => sum + (trial.results[s]?.score ?? 0), 0);
+  return Math.round(total / stages.length);
 }

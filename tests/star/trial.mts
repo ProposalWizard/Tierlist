@@ -3,7 +3,8 @@ import {
   reloadDifficultyBump, recordStage, noteReload, beginStage, resumeInterrupted,
   nextStage, trialComplete, trialScore, TRIAL_STAGES, SHARP_KEEPER_BONUS,
   RELOAD_DIFFICULTY_STEP, RELOAD_DIFFICULTY_CAP, RELOAD_GRACE,
-  SCORE_BASE, SCORE_DIFFICULTY_SPAN, TRIAL_ADVERSITY, ADVERSITY_CHANCE,
+  SCORE_BASE, SCORE_DIFFICULTY_SPAN, TRIAL_ADVERSITY, ADVERSITY_CHANCE, LIVE_ADVERSITY,
+  LEGACY_TRIAL_STAGES, trialStagesFor,
   adversityFor, adversityOn, adversityWeightFor,
   type TrialStage, type TrialAdversityId,
 } from "../../lib/star/trial";
@@ -327,8 +328,14 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
   // Every event in the catalogue is reachable. One that never draws is a
   // dead entry wearing a weight.
-  for (const e of TRIAL_ADVERSITY) {
+  // Since 1 Oct 2026 that is every event with a stage still played; the
+  // three finding-the-pass events stay in the catalogue for old saves and
+  // must never be drawn for a new trial.
+  for (const e of LIVE_ADVERSITY) {
     check(drawn.has(e.id), `${e.id} never came up in 2000 trials`);
+  }
+  for (const e of TRIAL_ADVERSITY.filter(x => !LIVE_ADVERSITY.includes(x))) {
+    check(!drawn.has(e.id), `${e.id} is on a retired stage and must not be drawn`);
   }
 
   // The rate. `ADVERSITY_CHANCE` is deliberately above the old 0.34 so that
@@ -591,13 +598,13 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
   // An abandoned trial scores like a part-played one, not like a failure and
   // not like a full one.
-  const half = TRIAL_STAGES.slice(0, 3).reduce((acc, s) => recordStage(acc, s, 1), startTrial(11));
+  const half = TRIAL_STAGES.slice(0, 2).reduce((acc, s) => recordStage(acc, s, 1), startTrial(11));
   const full = TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 1), startTrial(11));
-  check(trialScore(half) < trialScore(full), "three perfect stages score less than five");
-  check(trialScore(half) > 0, "…but three perfect stages are not worth nothing");
+  check(trialScore(half) < trialScore(full), "two perfect stages score less than four");
+  check(trialScore(half) > 0, "…but two perfect stages are not worth nothing");
   check(
-    Math.abs(trialScore(half) - trialScore(full) * 0.6) < 2,
-    "three of five stages should be worth about three fifths",
+    Math.abs(trialScore(half) - trialScore(full) * 0.5) < 2,
+    "two of four stages should be worth about half",
   );
 
   // Every stage counts the same — no stage is secretly worth more.
@@ -622,6 +629,41 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   for (const s of TRIAL_STAGES) {
     check(difficultyFor(back, s) === difficultyFor(t, s), `…and the same difficulty for ${s}`);
   }
+}
+
+// ── Old saves, from before the four-stage trial (1 Oct 2026) ────────────
+{
+  // The new trial.
+  check(
+    JSON.stringify(TRIAL_STAGES) === JSON.stringify(["freeKicks", "technique", "dribbling", "shootout"]),
+    "the trial is free kicks, the gate, taking a man on, then the shootout",
+  );
+  check(!TRIAL_STAGES.includes("vision") && !TRIAL_STAGES.includes("fiveASide"),
+    "finding the pass and the five-a-side are out of the trial");
+
+  // A trial FINISHED on the old five stages stays finished, on its old score.
+  const oldDone = LEGACY_TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 0.8), startTrial(77));
+  check(trialStagesFor(oldDone) === LEGACY_TRIAL_STAGES, "a finished old trial is still read as five stages");
+  check(trialComplete(oldDone), "…and is still complete — nobody is sent back into a trial they finished");
+  const oldMean = Math.round(LEGACY_TRIAL_STAGES.reduce((a, s) => a + oldDone.results[s]!.score, 0) / 5);
+  check(trialScore(oldDone) === oldMean, "…and keeps the score its offers were rolled from");
+
+  // A save caught part-way (penalties, free kicks, dribbling and the vision
+  // stage done; the five-a-side never reached) finishes on the NEW stages.
+  const mid = (["penalties", "freeKicks", "dribbling", "vision"] as TrialStage[])
+    .reduce((acc, s) => recordStage(acc, s, 0.7), startTrial(78));
+  const midSaved = JSON.parse(JSON.stringify({ ...mid, fiveASide: { pretend: "snapshot" } })) as typeof mid;
+  check(trialStagesFor(midSaved) === TRIAL_STAGES, "an old trial part-way through plays the new stages");
+  check(nextStage(midSaved) === "technique", `…picking up at the gate (got ${nextStage(midSaved)})`);
+  check(!trialComplete(midSaved), "…and is not complete");
+  let fin = recordStage(midSaved, "technique", 0.7);
+  check(nextStage(fin) === "shootout", "…then the shootout");
+  fin = recordStage(fin, "shootout", 0.7);
+  check(trialComplete(fin), "…and then it is finished");
+  check(!!fin.results.vision && !!fin.results.penalties, "the retired stages' results are kept on the save");
+  const newMean = Math.round(TRIAL_STAGES.reduce((a, s) => a + fin.results[s]!.score, 0) / TRIAL_STAGES.length);
+  check(trialScore(fin) === newMean, "…but the score is the four stages it is now made of");
+  check(trialScore(fin) > 0 && trialScore(fin) <= 100, "…and in range");
 }
 
 if (problems.length) {

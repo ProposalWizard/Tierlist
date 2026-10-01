@@ -48,8 +48,8 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     check(n >= 3 && n <= 8, `${stage} should be a few attempts, not one and not an evening (${n})`);
   }
   check(
-    Object.keys(REPS).length === TRIAL_STAGES.length - 1,
-    "every stage but the five-a-side has a rep count",
+    TRIAL_STAGES.every(s => s in REPS),
+    "every stage the trial plays has a rep count",
   );
 }
 
