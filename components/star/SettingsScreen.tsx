@@ -150,7 +150,7 @@ export default function SettingsScreen({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <SetHead>Full Screen</SetHead>
-              <SetNote>Hide the site&apos;s top bar and footer, and go full screen where your browser supports it.</SetNote>
+              <SetNote>The game already hides the site menu. This also hides your browser bar, where it can.</SetNote>
             </div>
             <Switch on={immersiveActive} onClick={onToggleImmersive} />
           </div>

@@ -20,7 +20,7 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import DashboardStats from "./DashboardStats";
 import ClubBadge from "./ClubBadge";
-import { ClubCard, StatBar, PressButton, RiseIn, ArrowButton, Chev, useClubTheme } from "./ui";
+import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -43,12 +43,12 @@ let lastView: View = "season";
  * THE STATS PAGE — one thin row, NSS-style (Harry, 1 Oct 2026, P46/P47/P96).
  * It had three stacked tab rows (Stats · Home · Shop, Season · All seasons ·
  * Records, Stats · Contract · Status): about 100px before any number showed.
- * Now: a League arrow at the left edge, a Home arrow at the right edge, and
- * "‹ Season ›" between them to change the view (Season, Contract, Status, All
- * seasons, Records). The Premier League mini-table is gone from here: Home
+ * Now: just "‹ Season ›" to change the view (Season, Contract, Status, All
+ * seasons, Records). The League and Home arrows moved to the bottom edge with
+ * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
  * has it, and the League screen has the full table.
  */
-export default function StatsTabs({ career, onRenew, onOpen, onLeague, onHome }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void; onLeague?: () => void; onHome?: () => void }) {
+export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void }) {
   const [view, setViewState] = useState<View>(lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
@@ -57,14 +57,12 @@ export default function StatsTabs({ career, onRenew, onOpen, onLeague, onHome }:
   const here = VIEWS[i];
   return (
     <div className="pb-2">
-      <div data-stats-row className="mb-2 grid grid-cols-[auto_1fr_auto] items-center gap-1.5">
-        {onLeague ? <ArrowButton side="left" a={{ icon: "🏆", label: "League", onClick: onLeague }} /> : <span />}
+      <div data-stats-row className="mb-2 grid items-center">
         <div className="flex min-w-0 items-center justify-center gap-1">
           <button onClick={() => step(-1)} aria-label={`Previous view: ${VIEWS[(i + VIEWS.length - 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="left" size={14} /></button>
           <div className="min-w-0 truncate text-center text-[13px] font-black uppercase tracking-wide text-white" style={{ minWidth: 72 }}><span className="mr-1">{here.icon}</span>{here.label}</div>
           <button onClick={() => step(1)} aria-label={`Next view: ${VIEWS[(i + 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="right" size={14} /></button>
         </div>
-        {onHome ? <ArrowButton side="right" a={{ icon: "🏠", label: "Home", onClick: onHome }} /> : <span />}
       </div>
       <RiseIn key={view}>
         {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}

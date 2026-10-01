@@ -2,7 +2,6 @@
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { KIB_CANS } from "@/lib/star/shopData";
-import { formatMoney } from "@/lib/star/money";
 import { starStatus } from "@/lib/star/starPoints";
 import { hasSeen } from "@/lib/star/unlocks";
 import KibCanIcon from "../KibCanIcon";
@@ -13,33 +12,21 @@ import { useCountUp, prefersReducedMotion } from "./motion";
 import { levelColors } from "./StatBar";
 
 /**
- * THE TOP HUD (Harry, 1 Oct 2026, P80/P81/P86: "the pills at the top change
- * based on what screen you're in, so that's kind of like your HUD … but your
- * energy never leaves"). Modelled on New Star Soccer's Star Rating | Energy
- * strip, in our own flat, square look — no floating pills.
+ * THE TOP HUD (Harry, 1 Oct 2026, P80/P81/P86: "your energy never leaves").
+ * Modelled on New Star Soccer's Star Rating | Energy strip, in our own flat,
+ * square look — no floating pills.
  *
  *   <TopHud career={career} screen="home" onUseCan={use} onOpenCans={() => setPhase("shop-kib")} />
  *
- * Two flush rows: two big cells (each half the width, touching), then a thin
- * strip. Which cells show depends on `screen` (HUD_SPEC below); ENERGY is
- * in every one of them, with its can right next to it: USE when you hold a
- * can, BUY (opens the cans shop) when you do not.
+ * ONE block, the same on every screen: star rating on the left, energy with
+ * its can on the right (USE when you hold a can, BUY — the cans shop — when
+ * you do not). Harry: "the star rating and the energy need to be more
+ * encapsulated … put the money next to the name and the age next to the name
+ * at the very top bar", then "the pills at the top aren't uniform across
+ * every page". So money and age live in the top bar (ui/GameBar.tsx), and
+ * nothing here changes with the screen. `screen` only labels the block.
  */
 export type HudScreen = "home" | "stats" | "training" | "shop" | "relations" | "league" | "other" | "casino" | "settings";
-export type HudCell = "rating" | "energy" | "money" | "happiness" | "age";
-
-export const HUD_SPEC: Record<HudScreen, { top: HudCell[]; strip: HudCell[] }> = {
-  home: { top: ["rating", "energy"], strip: ["money", "age"] },
-  stats: { top: ["rating", "energy"], strip: ["money", "age"] },
-  training: { top: ["rating", "energy"], strip: ["money"] },
-  shop: { top: ["money", "energy"], strip: [] },
-  relations: { top: ["happiness", "energy"], strip: ["money"] },
-  league: { top: ["energy", "money"], strip: [] },
-  other: { top: ["rating", "energy"], strip: ["money", "age"] },
-  // The casino has its own bank (its wallet pill), so only energy here (v0.23, P86).
-  casino: { top: ["energy"], strip: [] },
-  settings: { top: ["rating", "energy"], strip: ["money"] },
-};
 
 /** The can that gives energy is the Basic one (the others are boot abilities). */
 const ENERGY_CAN = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];
@@ -53,28 +40,15 @@ export default function TopHud({ career, screen, onUseCan, onOpenCans, className
   onOpenCans: () => void;
   className?: string;
 }) {
-  const spec = HUD_SPEC[screen];
   const [starPass, setStarPass] = useState(false);
-  const cell = (c: HudCell) => {
-    switch (c) {
-      case "rating": return <RatingCell key={c} career={career} onOpen={() => setStarPass(true)} />;
-      case "energy": return <EnergyCell key={c} career={career} onUseCan={onUseCan} onOpenCans={onOpenCans} />;
-      case "money": return <MoneyCell key={c} career={career} big />;
-      case "happiness": return <HappinessCell key={c} career={career} />;
-      default: return null;
-    }
-  };
   return (
-    <div data-hud={screen} className={`shrink-0 ${className}`}>
+    <div data-hud={screen} className={`shrink-0 px-2 pb-1 pt-1.5 ${className}`}>
       {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
-      <div className={`grid ${spec.top.length > 1 ? "grid-cols-2" : "grid-cols-1"} gap-px bg-black/50`}>
-        {spec.top.map(cell)}
+      {/* One encapsulated block: rating | energy, a hairline between. */}
+      <div data-hud-block className="grid grid-cols-2 gap-px overflow-hidden bg-black/55" style={{ borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge, rgba(255,255,255,.22))" }}>
+        <RatingCell career={career} onOpen={() => setStarPass(true)} />
+        <EnergyCell career={career} onUseCan={onUseCan} onOpenCans={onOpenCans} />
       </div>
-      {spec.strip.length > 0 && (
-        <div className="flex items-stretch gap-px bg-black/50">
-          {spec.strip.map((c) => c === "money" ? <MoneyCell key={c} career={career} /> : c === "age" ? <AgeCell key={c} career={career} /> : null)}
-        </div>
-      )}
     </div>
   );
 }
@@ -132,35 +106,6 @@ function EnergyCell({ career, onUseCan, onOpenCans }: { career: CareerState; onU
       >
         {count > 0 ? (full ? "FULL" : "USE") : "BUY"}
       </button>
-    </div>
-  );
-}
-
-function MoneyCell({ career, big = false }: { career: CareerState; big?: boolean }) {
-  const shown = useCountUp(career.money, 800);
-  return (
-    <div data-money-chip data-tour="money" aria-label={`Money ${formatMoney(career.money)}`} className={`${CELL} ${big ? "h-[34px]" : "h-[20px] flex-1 justify-center"}`} style={WASH}>
-      <span className={`${big ? "text-[15px]" : "text-[12px]"} leading-none text-yellow-300`}>★</span>
-      <span className={`${big ? "text-[17px]" : "text-[13px]"} font-black leading-none tabular-nums text-yellow-200`}>{formatMoney(Math.round(shown))}</span>
-    </div>
-  );
-}
-
-function AgeCell({ career }: { career: CareerState }) {
-  return (
-    <div className={`${CELL} h-[20px] flex-1 justify-center`} style={WASH}>
-      <span className="text-[10px] font-black uppercase leading-none tracking-[0.14em] text-white/70">Age</span>
-      <span className="text-[13px] font-black leading-none tabular-nums text-white">{career.player.age}</span>
-    </div>
-  );
-}
-
-function HappinessCell({ career }: { career: CareerState }) {
-  const h = Math.max(0, Math.min(100, Math.round(career.happiness ?? 0)));
-  return (
-    <div data-tour="happiness" className={`${CELL} h-[34px]`} style={WASH}>
-      <span className="shrink-0 text-[14px] leading-none" aria-hidden>😊</span>
-      <SquareBar value={h} colors={levelColors(h)} className="h-[16px] min-w-0 flex-1" animate>{h}</SquareBar>
     </div>
   );
 }

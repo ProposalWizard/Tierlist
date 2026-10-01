@@ -1,9 +1,8 @@
 "use client";
-import { starsNow } from "@/lib/star/starPoints";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { formatMoney } from "@/lib/star/money";
 import { HomeFxStyles } from "./HomeFx";
+import GameBar from "./ui/GameBar";
 
 interface Props {
   career: CareerState;
@@ -76,8 +75,6 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
     }
     onNavigate(tab);
   };
-  const fullName = `${career.player.firstName} ${career.player.lastName}`;
-  const energyPct = Math.max(0, Math.min(100, career.energy));
 
   // The site's GlobalNav sits above this shell. Measure the shell's own document
   // position and fill exactly the rest of the viewport, so the bottom nav bar is
@@ -105,80 +102,11 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
       style={{ height: shellH !== null ? `${shellH}px` : "calc(100dvh - 64px)" }}
     >
       <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
-        {!fullBleed && (
-          <>
-            {/* Top header */}
-            <div className="sk-bar bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
-              {/* Home, top left (was a red ✕ that left the career — that is
-                  "Exit career" at the bottom of Settings now). Lit green when
-                  you are off the home screens, so the way back is obvious. */}
-              <button
-                data-home-button
-                data-tour="home"
-                onClick={onHome ?? (() => onNavigate("home"))}
-                aria-label="Home"
-                className={`kib-press w-8 h-8 rounded-[3px] flex items-center justify-center border transition-colors ${
-                  atHome
-                    ? "bg-gray-600 hover:bg-gray-500 border-transparent"
-                    : "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300/70 shadow-[0_0_12px_rgba(16,185,129,.55)]"
-                }`}
-              >
-                <HouseIcon />
-              </button>
-              <div className="flex-1 mx-2 min-w-0 py-1 px-3 font-black text-[17px] leading-tight uppercase tracking-wide truncate text-white text-center" style={{ textShadow: "0 1px 3px rgba(0,0,0,.7)" }}>
-                {fullName}
-              </div>
-              {/* Your money, always on screen, on every page (Harry, 1 Oct
-                  2026: "a little pocket at the top that you can always see
-                  on any page"). It is the only place money shows now. */}
-              {!hud && <div
-                data-money-chip
-                aria-label={`Money ${formatMoney(career.money)}`}
-                className="mr-2 flex shrink-0 items-center gap-1 rounded-full border border-yellow-300/30 bg-black/35 px-2.5 py-1 text-xs font-black tabular-nums text-yellow-200"
-              >
-                <StarIcon small />
-                {formatMoney(career.money)}
-              </div>}
-              {onHelp && (
-                <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] bg-gray-600 text-[17px] font-black leading-none text-amber-300 hover:bg-gray-500">?</button>
-              )}
-              <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-[3px] bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
-                <GearIcon />
-              </button>
-            </div>
-
-            {/* The HUD: rating, energy (with its can), money, age — which cells
-                show depends on the screen (ui/TopHud.tsx). */}
-            {hud}
-
-            {/* Star + Energy bars */}
-            {!compact && !hud && (<>
-            <div className="grid grid-cols-2 gap-2 px-3 pt-2">
-              <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
-                <StarIcon />
-                <span className="text-white font-black text-sm">Star Rating</span>
-                <span className="ml-auto text-white font-black text-sm">{starsNow(career)}</span>
-              </div>
-              <div className="relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500" style={{ width: `${energyPct}%` }} />
-                <div className="relative flex items-center gap-1 px-2 py-1.5">
-                  <HeartIcon />
-                  <span className="text-white font-black text-sm">Energy</span>
-                  <span className="ml-auto text-white font-black text-sm">{Math.round(energyPct)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Age strip (the cash is the chip in the header now) */}
-            <div className="flex items-center justify-between px-3 pt-2 gap-2">
-              <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
-                Age {career.player.age}
-              </div>
-            </div>
-            </>)}
-          </>
-        )}
-
+        {/* The top bar and the HUD under it are the same on every screen,
+            the phone included (Harry, 1 Oct 2026: "the pills at the top
+            aren't uniform across every page") — ui/GameBar.tsx, ui/TopHud.tsx. */}
+        <GameBar career={career} onHome={onHome ?? (() => onNavigate("home"))} atHome={atHome} onHelp={onHelp} onSettings={onSettings} />
+        {hud}
         {/* Body — the only scrollable region; header + bottom nav stay fixed.
             No padding in fullBleed — the phone gets every pixel of it.
             Scrollbar hidden, same as the phone's own feed already is
@@ -311,41 +239,5 @@ function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick
         <span className="text-[11px] uppercase tracking-wider leading-none">Play</span>
       </button>
     </div>
-  );
-}
-
-function StarIcon({ small }: { small?: boolean } = {}) {
-  const s = small ? 12 : 16;
-  return (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" className="text-white">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
-  );
-}
-
-function HeartIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="#dc2626">
-      <path d="M12 21s-7-4.5-9.5-9.5C.5 7 4 3 8 3c2 0 3.5 1 4 2 .5-1 2-2 4-2 4 0 7.5 4 5.5 8.5C19 16.5 12 21 12 21z" />
-    </svg>
-  );
-}
-
-function HouseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5.5 9v11h13V9" />
-      <path d="M10 20v-5.5h4V20" />
-    </svg>
-  );
-}
-
-function GearIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-    </svg>
   );
 }
