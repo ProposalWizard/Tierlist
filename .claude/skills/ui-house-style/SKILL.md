@@ -189,6 +189,11 @@ Newest first. Each is something that was actually said.
   back view: "on the back does not work." The back is now the same drawn man
   from behind (name + number, back of the head), not a separate flat drawing.
 
+### 1 Oct 2026 — New UI Home layout and a lighter pitch
+- **Home keeps the top bar, star/energy block and bottom arrows; the player area goes back to the earlier structure**: goal behind, player standing lower-left, Reputation / Fame / Goals / Assists to his right. "The actual structure of where the player is standing … that is how we want it to look." No league table, no tab row.
+- **"The general vibe should be the green pitch style. Also, make everything a lighter version … rather than everything being so dark."** The pitch variables in `components/star/ui/pitchLook.css` are one step lighter (stripes #2c8a4b/#257a41, page vignette 18%); option B (two steps lighter) is in the 1 Oct stills. White text stays only on greens at or below 62% lightness.
+- **Phone with every app open = an old save** (no `unlocks`); a new career greys the seven store apps.
+
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
   short, small tutorial or pop-up… doesn't have to be many words, just
