@@ -314,7 +314,7 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
         className="relative mt-1.5 w-full overflow-hidden rounded-2xl py-3 text-[14px] font-black"
       >
         {canBuy && <Shine loop every={4.5} />}
-        {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${mine && !worn ? "Upgrade" : "Buy"} — ★${formatMoney(it.price)}`}
+        {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${mine && !worn ? "Upgrade" : mine && worn && levels.length === 1 ? "Repair" : "Buy"} — ★${formatMoney(it.price)}`}
       </PressButton>
       {mine && !worn && !blocked && <div className="mt-1 text-center text-[10px] font-bold text-white/70">Replaces your {levelName(mine)}.</div>}
     </ShopSheet>

@@ -3797,8 +3797,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         ...(isOpen(career, "relations") ? {} : { life: LOCK_HINT.relations }),
         ...(isOpen(career, "phone") ? {} : { media: LOCK_HINT.phone }),
         // A phone lasts two seasons, then you need a new one (Harry, P103).
-        // A broken phone no longer locks the Phone button (Harry, 1 Oct 2026:
-        // too harsh). It still needs replacing in Style.
+        // A broken phone locks the Phone button until you repair it in Style
+        // (Harry, 1 Oct 2026: "it should lock until u repair").
+        ...(isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0) ? { media: "Your phone broke — repair it in Style" } : {}),
       } : undefined}
       achievementsSlot={career.unlocks && isOpen(career, "achievements") ? { active: false, onClick: () => setPhase("achievements") } : undefined}
     >
