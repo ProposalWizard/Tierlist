@@ -96,7 +96,12 @@ export function simStage(
   // The five-a-side left the trial (1 Oct 2026), so a snapshot here can only
   // be an old save's — dropped on any recorded stage, as `finishStage` does.
   const from = trial.fiveASide !== undefined ? { ...trial, fiveASide: undefined } : trial;
-  return recordStage(from, stage, TRIAL_SIM_QUALITY[level]);
+  const recorded = recordStage(from, stage, TRIAL_SIM_QUALITY[level]);
+  // A simmed shootout also says whether the winning penalty went in: a good
+  // afternoon scores it, a poor one does not (lib/star/scoutedPlacement.ts).
+  return stage === "shootout" && recorded.finalPenScored === undefined
+    ? { ...recorded, finalPenScored: TRIAL_SIM_QUALITY[level] >= 0.5 }
+    : recorded;
 }
 
 /**

@@ -1,6 +1,5 @@
 "use client";
 import type React from "react";
-import "./pitchLook.css";
 
 /**
  * THE PITCH LOOK, ALWAYS, ON THE SCREENS THAT PLAY FOOTBALL (Harry, 1 Oct 2026,

@@ -18,7 +18,8 @@ check(bases.length === 31, `31 items in the shop (got ${bases.length})`);
 for (const b of bases) {
   const names = LEVEL_NAMES[b];
   check(!!names && names.length === 5, `${b} has five level names`);
-  if (names) check(new Set(names).size === 5, `${b}'s five names are all different`);
+  // The phone is one item, not a ladder (Harry, 1 Oct 2026, v0.23): its five slots share a name.
+  if (names && b !== "phone") check(new Set(names).size === 5, `${b}'s five names are all different`);
 }
 for (const b of Object.keys(LEVEL_NAMES)) check(bases.includes(b), `${b} is a real shop item`);
 
