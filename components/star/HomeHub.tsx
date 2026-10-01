@@ -6,20 +6,17 @@
  * Harry, 28 Sep 2026: "The home screen should look the best, and right now it
  * doesn't." Reworked 1 Oct 2026 to fit ONE phone screen with no scrolling
  * (even a 360x640 one), and again after his review (v0.23, P72-P82, P96).
- * Top to bottom (after Harry's 1 Oct review: "get rid of the league table …
- * the player should really just be at the top again, and then everything"):
- *   0. above this page: the top bar (name, age, money) and the HUD (star
- *      rating + energy with its can) — ui/GameBar.tsx, ui/TopHud.tsx;
- *   1. Next match, right under them: both crests, VS, the date and your form;
- *   2. you, standing low on a football pitch (bottom left) with the goal
- *      behind you — drag to turn him, tap for a celebration — and reputation,
- *      fame, goals and assists to your right (v0.23, Harry's screenshot: "the
- *      actual structure of where the player is standing … that is how we want
- *      it"). No card: the pitch fades up into the stand.
- * The bottom edge carries a small arrow to each neighbouring page (Stats on
- * the left, Shop on the right — SwipePages) and Sponsors between them. The
- * mini league table is gone (the League screen has the full one). The 3D / 2D
- * switch is in Settings.
+ * Top to bottom:
+ *   0. the HUD (ui/TopHud.tsx, in the shell above this page): star rating
+ *      with its progress bar, energy with the can beside it (USE, or BUY
+ *      when you have none), money and age;
+ *   1. Next match, as it was: both crests, VS, the date and your form;
+ *   2. the mini league table: you and the clubs either side;
+ *   3. you, standing on a football pitch with the goal behind you — drag to
+ *      turn him, tap for a celebration — and reputation, fame, goals and
+ *      assists beside you. No card: the pitch fades up into the stand.
+ * Sponsors is a small arrow at the bottom right. The 3D / 2D switch is in
+ * Settings.
  *
  * Built from the design kit (components/star/ui). Motion: panels rise in when
  * Home opens, numbers count, the avatar breathes and celebrates a win. All of
@@ -44,6 +41,7 @@ import { useAvatarStyle } from "./PlayerAvatar";
 import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
+import MiniLeague, { miniLeagueHeight } from "./MiniLeague";
 import HomeBackdrop from "./HomeBackdrop";
 import {
   FlatPanel, SquareBar, PressButton, RiseIn, Glow, Stadium,
@@ -117,23 +115,23 @@ function useRoom() {
   return [ref, room] as const;
 }
 
-/** The Next match panel's height. */
+/** The Next match panel's height, and the gap under it. */
 const NEXT_H = 86;
-const FIG_ASPECT = 172 / 204;
+const FIG_MAX_W = 190;
 /** The bottom strip that carries the edge arrows and Sponsors. */
 export const ARROW_STRIP = 34;
-/** The four stat blocks keep at least this much width beside him. */
-const STATS_MIN_W = 150;
-/** The player's box, from the height of the pitch area under Next match. He
- *  stands low on the grass, bottom-left (Harry, 1 Oct 2026: "the actual
- *  structure of where the player is standing … that is how we want it"), as big
- *  as the height and the width beside the stat blocks allow. */
-export function playerSizeFor(hero: number | null, width = 390): { w: number; h: number } {
-  if (hero === null) return { w: 130, h: 154 };
-  const byH = Math.round((hero - ARROW_STRIP - 8) * 0.5);
-  const maxW = Math.min(216, width - 24 - 8 - STATS_MIN_W);
-  const h0 = Math.max(104, Math.min(byH, Math.round(maxW / FIG_ASPECT)));
-  const w = Math.min(maxW, Math.round(h0 * FIG_ASPECT));
+const FIG_ASPECT = 172 / 204;
+/** How many league rows there is room for. */
+export function leagueRowsFor(room: number | null): number {
+  return room !== null && room >= 440 ? 5 : 3;
+}
+/** The player's box: what is left after the next match and the league table. */
+export function playerSizeFor(room: number | null, rows = 3): { w: number; h: number } {
+  if (room === null) return { w: 130, h: 154 };
+  // + ARROW_STRIP: the bottom-edge arrows (Stats ‹ › Shop) sit under him (v0.23).
+  const fixed = NEXT_H + 4 + miniLeagueHeight(rows) + 4 + 14 + ARROW_STRIP;
+  const h = Math.max(104, Math.min(226, room - fixed));
+  const w = Math.min(FIG_MAX_W, Math.round(h * FIG_ASPECT));
   return { w, h: Math.round(w / FIG_ASPECT) };
 }
 
@@ -141,8 +139,8 @@ export default function HomeHub(p: Props) {
   const { career } = p;
   const { shirt, trim, glow } = useClubTheme(career);
   const [ref, room] = useRoom();
-  const hero = room === null ? null : Math.max(0, room - NEXT_H - 4);
-  const size = playerSizeFor(hero, typeof window !== "undefined" ? Math.min(window.innerWidth, 448) : 390);
+  const rows = leagueRowsFor(room);
+  const size = playerSizeFor(room, rows);
   return (
     // Full width: the page's own side padding is cancelled (-mx-3) so the
     // pitch and the panels touch both edges, and the page is at least as tall
@@ -150,7 +148,8 @@ export default function HomeHub(p: Props) {
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
       <div className="home-sky"><Stadium glow={glow} pitch={false} floods={false} /></div>
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} hero={hero} />
+      <div className="relative z-10 mt-1"><MiniLeague career={career} glow={glow} rows={rows} onOpen={p.onLeague} /></div>
+      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
     </div>
   );
@@ -220,7 +219,7 @@ function TeamSide({ club, kit, you }: { club: string; kit: { shirt: string; trim
 
 // ── 2. You, on the pitch ────────────────────────────────────────────────────
 
-function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number; hero: number | null }) {
+function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -248,22 +247,15 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH, hero }: Props & { g
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [career.season, last?.week, last?.res]);
 
-  // The pitch fills the whole area under Next match. He stands at the bottom
-  // left, his feet just above the arrows; the goal stands on the goal line a
-  // little above his head; the four blocks sit to his right.
-  const H = hero ?? 0;
-  const top = hero === null ? 6 : Math.max(6, H - ARROW_STRIP - 6 - figH);
-  const line = hero === null ? 0.3 : Math.max(0.2, (top - 0.04 * H) / H);
-  const player = (
-    <div data-tour="player" className="relative shrink-0" style={{ width: figW }}>
-      <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
-    </div>
-  );
   return (
-    <div className="relative min-h-0 flex-1">
-      <div className="absolute inset-0"><HomeBackdrop glow={glow} line={line} goalH={0.32} /></div>
-      <div className="absolute inset-x-0 flex items-center gap-2 px-3" style={{ top }}>
-        {player}
+    <div className="relative flex min-h-0 flex-1 items-end">
+      {/* the pitch is sized to him (the goal line sits just above his head)
+          and fades out upwards into the stand, under the league table */}
+      <div className="absolute inset-x-0 bottom-0" style={{ height: Math.round(figH * 1.32 + 30), maxHeight: "100%" }}><HomeBackdrop glow={glow} /></div>
+      <div className="relative flex w-full items-end gap-2 px-3 pt-1" style={{ paddingBottom: ARROW_STRIP + 8 }}>
+        <div className="relative shrink-0" style={{ width: figW }}>
+          <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
+        </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">
           <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
           <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
@@ -301,17 +293,16 @@ function SeasonStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-// ── 3. Sponsors, a small arrow at the bottom edge ──────────────────────────
+// ── 3. Sponsors, a small arrow at the bottom right ──────────────────────────
 
 /** Your sponsors, one tap from Home (Harry, 1 Oct 2026, P66: "like being a
- *  little arrow in the bottom right instead"). The bottom right now belongs to
- *  the Shop arrow, so it sits in the middle of the bottom edge. Not a pill:
- *  plain text and an arrow, with a red count when offers are waiting. */
+ *  little arrow in the bottom right instead"). Not a pill: plain text and an
+ *  arrow, with a red count when offers are waiting. */
 function SponsorsArrow({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
   const offers = brandsOf(career).offers.length;
   return (
     <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"}
-      className="kib-press absolute bottom-[5px] left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white"
+      className="kib-press absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white"
       style={{ textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" }}>
       Sponsors
       {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
