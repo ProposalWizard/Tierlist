@@ -13,7 +13,7 @@
  *      days away — with your last five results underneath it;
  *   3. energy and the KIB cans — the real can pictures, lit in their own
  *      colours, with Use and Buy;
- *   4. your shop items.
+ *   4. sponsors — offers waiting, your deals, or how near the first slot is.
  * Every card is themed in your club's colours. Motion: cards rise in when
  * Home opens, numbers count, a used can shakes and empties into the energy
  * bar, and the avatar breathes and celebrates a win. All of it stops for a
@@ -38,6 +38,7 @@ import KibCanIcon from "./KibCanIcon";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { starStatus } from "@/lib/star/starPoints";
 import StarRatingSheet from "./StarRatingSheet";
+import { brandsOf } from "@/lib/star/sponsorDeals";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import FigureSkinToggle from "./FigureSkinToggle";
 import {
@@ -102,8 +103,10 @@ export default function HomeHub(p: Props) {
       {/* KIB cans, then energy. "Your shop items" moved back to the Shop
           page (Mikey, 28 Sep 2026: "get rid of the shop thing at the bottom
           of like what you currently own"). */}
+      {/* Energy and the cans in ONE short card (Harry, 30 Sep 2026: "the
+          energy cans, they're being off the screen, it's kind of jarring").
+          Was a 225px cans card plus a 68px energy card. */}
       <RiseIn onPageActive index={2}><Cans {...p} glow={glow} /></RiseIn>
-      <RiseIn onPageActive index={3}><EnergyBar {...p} glow={glow} /></RiseIn>
     </div>
   );
 }
@@ -220,7 +223,7 @@ function LastFive({ five }: { five: FormResult[] }) {
 
 // ── 1. You ──────────────────────────────────────────────────────────────────
 
-function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
+function Hero({ career, glow, kitShirt, kitTrim, onOpen }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
   const look = useAvatarStyle();
   // The one rating the player sees: the career star rating, 1-100 (starPoints.ts).
   const star = starStatus(career);
@@ -259,6 +262,12 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
           Under Mikey's money pill (it covered the right floodlight at top-2),
           and 32px tall so a thumb can hit it. */}
       <FigureSkinToggle className="absolute right-3 top-[90px] z-10 min-h-[32px]" />
+      {/* Sponsors, one tap from Home and on the FIRST screen. Harry: "how do
+          I even get there? … That feels quite hidden away". 1 Oct 2026: as a
+          strip under the cans it sat below the first screen of a 390x844
+          phone, and under the next-match card it was 6px short of clearing
+          the Play button — so it is a pill here, opposite 3D / 2D. */}
+      <SponsorsPill career={career} onOpen={onOpen} className="absolute left-3 top-[90px] z-10 min-h-[32px]" />
       <div className="relative flex justify-center pt-1.5">
         {/* 184 tall (was 204, 236 before that), halfway to the 164 tried on
             28 Sep 2026 (Mikey: "go in between those two figures"). 204 tall (was 236) so that on an iPhone 13 the next-match card
@@ -322,29 +331,39 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
 
 function Cans({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
+  const shown = useCountUp(e, 900);
+  const fill = levelColors(e);
   return (
-    <ClubCard glow={glow} className="rounded-2xl p-3">
-      <div className="text-[12px] font-black uppercase tracking-[0.16em] text-white">KIB cans</div>
-      <div className="mt-1.5 grid grid-cols-3 gap-2">
-        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} />)}
+    <ClubCard glow={glow} className="rounded-2xl p-2.5">
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-[11px] font-black uppercase tracking-[0.14em] text-white">⚡ Energy</span>
+        {/* A sheen races along the bar the moment energy goes UP (a can was drunk). */}
+        <StatBar value={e} colors={fill} className="h-3 min-w-0 flex-1" />
+        <span className="w-[44px] shrink-0 text-right text-[16px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 12px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} mini />)}
       </div>
     </ClubCard>
   );
 }
 
-function EnergyBar({ career, glow }: Props & { glow: string }) {
-  const e = Math.max(0, Math.min(100, Math.round(career.energy)));
-  const shown = useCountUp(e, 900);
-  const fill = levelColors(e);
+/** Your sponsors, one tap from Home: offers waiting, or your deals and what
+ *  they pay, or how close the first slot is (a bar, never a number). */
+function SponsorsPill({ career, onOpen, className = "" }: { career: CareerState; onOpen: Props["onOpen"]; className?: string }) {
+  const b = brandsOf(career);
+  const offers = b.offers.length;
+  const deals = b.deals.length;
+  const label = offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting`
+    : deals ? `Sponsors: ${deals} deal${deals === 1 ? "" : "s"}` : "Sponsors";
   return (
-    <ClubCard glow={glow} className="rounded-2xl p-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[12px] font-black uppercase tracking-[0.16em] text-white">⚡ Energy</span>
-        <span className="text-[20px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 12px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
-      </div>
-      {/* A sheen races along the bar the moment energy goes UP (a can was drunk). */}
-      <StatBar value={e} colors={fill} className="mt-1.5 h-4" />
-    </ClubCard>
+    <button type="button" onClick={() => onOpen("sponsors")} aria-label={`Open ${label}`} title={label}
+      className={`kib-press flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white transition active:scale-95 ${className}`}
+      style={{ background: "rgba(0,0,0,.55)", boxShadow: "inset 0 0 0 1px rgba(52,211,153,.55), 0 0 10px rgba(52,211,153,.3)" }}>
+      <span className="text-[13px] leading-none">🤝</span>
+      <span>Sponsors</span>
+      {offers > 0 && <span className="grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
+    </button>
   );
 }
 
@@ -353,7 +372,7 @@ function prefersReducedMotionSafe(): boolean {
 }
 
 /** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
-export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean }) {
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean; mini?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -370,6 +389,47 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { 
     // Let the can shake and tip before the numbers move.
     setTimeout(() => onUse(c.id), prefersReducedMotionSafe() ? 0 : 650);
   };
+  // Home's short tile (`mini`): can and name side by side, Use and Buy side by side.
+  if (mini) return (
+    <div
+      className="relative overflow-hidden rounded-xl p-1.5"
+      style={{
+        background: `radial-gradient(90% 70% at 30% 30%, ${rgba(accent, 0.34)} 0%, transparent 70%), linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25))`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(accent, 0.35)}, 0 6px 14px -8px ${rgba(accent, 0.6)}`,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <div className="relative h-[40px] w-[22px] shrink-0">
+          <Glow color={accent} alpha={0.5} className="bottom-0 left-1/2 h-6 w-8 -translate-x-1/2 blur-md" />
+          <Shake trigger={drinking} className="absolute inset-0 flex items-end justify-center" style={{ filter: `drop-shadow(0 3px 6px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
+            <KibCanIcon can={c} className="h-[38px] w-[22px]" />
+          </Shake>
+          <span className="absolute -bottom-1 -right-1.5 min-w-[18px] rounded-full px-1 text-center text-[9.5px] font-black leading-[14px] tabular-nums text-gray-950"
+            style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
+          {drinking > 0 && (
+            <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
+              <Drips trigger={drinking} color={accent} />
+              <FloatText trigger={drinking} motion="tick" text="−1" className="left-0 top-0 text-[11px] text-white" style={{ textShadow: `0 0 6px ${accent}` }} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[11px] font-black leading-tight text-white">{c.name.replace(" KIB Can", "")}</div>
+          <div className="line-clamp-2 text-[9.5px] font-bold leading-[11px] text-white/80">{effect}</div>
+        </div>
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1">
+        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use}
+          className="rounded-md py-1 text-[10.5px] font-black uppercase">
+          {ready ? "✓" : full ? "Full" : "Use"}
+        </PressButton>
+        <PressButton size="none" disabled={!canBuy} onClick={() => onBuy(c)} aria-label={`Buy a ${c.name} for ${formatMoney(price)}`}
+          className="rounded-md bg-black/35 py-1 text-[10px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40">
+          ★{formatMoney(price)}
+        </PressButton>
+      </div>
+    </div>
+  );
   return (
     <div
       className="relative flex flex-col items-center overflow-hidden rounded-xl px-1.5 pb-1.5 pt-2"
