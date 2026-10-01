@@ -1,0 +1,265 @@
+<title>Mikey v0.20 · Harry's review</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3d5249;--ink3:#667b71;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:700px;margin:0 auto;padding:0 16px 80px}
+  p{margin:0 0 10px}
+  header{padding:36px 0 8px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,38px);line-height:1.08;margin:12px 0 10px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink2);font-size:15px;margin:0 0 8px}
+  .legend{font-size:13px;color:var(--ink3);margin:10px 0 0}
+  .legend span{display:block;margin:4px 0}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:46px 0 14px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .c-g{color:var(--green)} .c-g i{background:var(--green)}
+  .c-b{color:var(--blue)} .c-b i{background:var(--blue)}
+  .c-v{color:var(--violet)} .c-v i{background:var(--violet)}
+  .c-a{color:var(--amber)} .c-a i{background:var(--amber)}
+  .c-t{color:var(--teal)} .c-t i{background:var(--teal)}
+  .c-m{color:var(--ink3)} .c-m i{background:var(--ink3)}
+  .c-r{color:var(--red)} .c-r i{background:var(--red)}
+
+  /* the one-line-per-item checklist */
+  ul.look{list-style:none;margin:0;padding:0}
+  ul.look li{border-bottom:1px solid var(--line);padding:10px 0}
+  ul.look li:last-child{border-bottom:0}
+  ul.look label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  ul.look input{margin:4px 0 0;width:18px;height:18px;flex:0 0 auto;accent-color:var(--green)}
+  ul.look .t{font-weight:700}
+  ul.look .t a{color:inherit;text-decoration:none}
+  ul.look .w{display:block;font-size:13px;color:var(--ink3);font-weight:400;margin-top:2px}
+
+  /* big numbers */
+  .nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 6px}
+  .nums div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .nums b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .nums span{display:block;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.35}
+
+  /* an item */
+  article.it{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 12px;margin:16px 0;scroll-margin-top:12px}
+  .it-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .no{font-size:12px;font-weight:800;color:var(--ink3);letter-spacing:.06em;margin-right:4px}
+  article.it h3{font-size:19px;line-height:1.25;margin:8px 0 4px;letter-spacing:-.01em;text-wrap:balance}
+  .blk{margin:16px 0 0}
+  .blk h4{margin:0 0 4px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .blk p,.blk li{color:var(--ink2)}
+  .blk b{color:var(--ink)}
+  .blk ul,.blk ol{margin:0 0 10px;padding-left:20px}
+  .blk li{margin:4px 0}
+  .said p{color:var(--ink);font-style:italic}
+  .ask{border-left:3px solid var(--amber);padding-left:12px}
+  ul.opts{list-style:none;padding-left:0!important;margin:4px 0 8px}
+  ul.opts li{margin:0 0 8px;padding-left:28px;text-indent:-28px}
+  ul.opts li b{display:inline-block;width:28px;text-indent:0}
+  p.rec{font-weight:700}
+  .ask h4{color:var(--amber)}
+  .how{display:block;font-size:12.5px;color:var(--ink3);margin-top:6px}
+  .how b{font-weight:700;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:999px;line-height:1.4;white-space:nowrap}
+  .p-ok{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+  .p-chg{background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+  .p-deep{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+  .p-new{background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal)}
+  .p-exp{background:color-mix(in srgb,var(--teal) 12%,transparent);color:var(--teal)}
+  .p-park{background:var(--card2);color:var(--ink3)}
+  .p-core{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
+  .p-wait{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+
+  /* pictures and clips: pairs side by side, everything else full width */
+  .media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:6px 0 4px}
+  .media.one{grid-template-columns:minmax(0,1fr)}
+  figure{margin:0}
+  figure img,figure video{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#05070d}
+  figure a{display:block}
+  figcaption{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.4}
+  figcaption b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+  .tag.b{color:var(--ink3)} .tag.a{color:var(--green)}
+
+  .tbl{overflow-x:auto;margin:4px 0 8px}
+  .tbl table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+  .tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .tbl th{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .tbl td:not(:first-child),.tbl th:not(:first-child){text-align:right;white-space:nowrap}
+  @media (max-width:480px){.tbl table{font-size:13px}.tbl th,.tbl td{padding:6px 5px}.tbl td:not(:first-child),.tbl th:not(:first-child){white-space:normal}}
+
+  /* stacked steps */
+  ol.steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  ol.steps>li{counter-increment:st;padding:12px 0 12px 38px;border-bottom:1px solid var(--line);position:relative}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li::before{content:counter(st);position:absolute;left:0;top:12px;width:26px;height:26px;border-radius:50%;
+    background:var(--teal);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}
+  :root:not([data-theme="light"]) ol.steps>li::before{color:#041b1e}
+  ol.steps .hd{display:block;font-weight:700;color:var(--ink)}
+  ol.steps p{margin:4px 0 0;color:var(--ink2)}
+
+  .box{border:2px solid var(--red);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .box .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
+  .box h3{font-size:20px;margin:4px 0 10px}
+  .hl{border:2px solid var(--green);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .hl .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+  .hl h3{font-size:20px;margin:4px 0 10px}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:12px 0;font-size:14px;font-weight:700;color:var(--ink2);display:flex;gap:8px;align-items:baseline}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";color:var(--ink3);transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+  footer{margin-top:40px;font-size:13px;color:var(--ink3)}
+</style>
+<style>
+  .status{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;margin-left:6px;
+    background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);padding:4px 10px;border-radius:999px}
+  .strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 8px}
+  @media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .strip div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .strip b{display:block;font-size:clamp(19px,5vw,24px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .strip span{display:block;font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.35}
+  .bars{margin:8px 0 4px}
+  .bar{display:grid;grid-template-columns:minmax(84px,120px) minmax(0,1fr) auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  :root:not([data-theme="light"]) .fill.was{background:color-mix(in srgb,var(--ink3) 45%,transparent)}
+  :root[data-theme="light"] .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.warn{background:var(--amber)} .fill.now.bad{background:var(--red)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.85;margin-left:3px}
+  .bcap{font-size:12.5px;color:var(--ink3);margin:2px 0 6px}
+  .it p.one{color:var(--ink2);margin:2px 0 0;font-size:15px}
+  .pwf{margin:12px 0 0}
+  .pwf h4{margin:10px 0 2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf h4.fx{color:var(--green)} .pwf h4.st{color:var(--amber)}
+  .pwf p{margin:0;color:var(--ink2)}
+  .sub-h{font-size:17px;font-weight:800;margin:30px 0 4px;letter-spacing:-.01em}
+  .hl .mean{background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:14px}
+  .hl .mean b{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+  .p-dec{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+  .p-bug{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+  .p-plan{background:var(--card2);color:var(--ink3)}
+  ul.look .tag2{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:4px}
+  ol.dec{list-style:none;margin:0;padding:0}
+  .dec article.it{border-left:3px solid var(--amber)}
+  ul.hist{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.hist li{margin:4px 0}
+  ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.plain li{margin:3px 0}
+  ul.ts{list-style:none;margin:8px 0 0;padding:0}
+  ul.ts li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14.5px}
+  ul.ts li:last-child{border-bottom:0}
+  ul.ts b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .tbl td:first-child{white-space:normal}
+  figure video{max-height:78vh;object-fit:contain}
+  .media.one figure img{width:auto;max-width:100%;max-height:82vh;margin:0 auto}
+  code{font-size:12.5px;background:var(--card2);padding:1px 5px;border-radius:5px;word-break:break-word}
+</style><style>
+.area{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 15px;margin:14px 0}
+.area h3{margin:0 0 4px;font-size:18px}
+.st{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.st.done{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.st.wip{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.st.dec{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+.chg{list-style:none;margin:8px 0 0;padding:0}
+.chg>li{padding:9px 0;border-bottom:1px solid var(--line)} .chg>li:last-child{border-bottom:0}
+.chg b.t{display:block;color:var(--ink)} .chg .w{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.chg .ev{display:inline-block;font:700 10.5px/1 system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 2px}
+.ba figure{margin:0} .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+.ba figcaption{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.ba .lab{display:inline-block;font:800 10px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:5px;margin-bottom:4px}
+.lab.b{background:var(--card2);color:var(--ink3)} .lab.a{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.solo{margin:10px 0} .solo img{max-width:100%;border-radius:8px;border:1px solid var(--line)}
+.note{border-left:3px solid var(--line);padding:6px 0 6px 11px;margin:9px 0}
+.note.bug{border-color:var(--red)} .note.chg2{border-color:var(--amber)} .note.like{border-color:var(--green)} .note.q{border-color:var(--blue)}
+.note q{display:block;color:var(--ink);font-style:normal} .note small{color:var(--ink3)}
+.note .tb{font:800 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.toc a{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card2);color:var(--ink);text-decoration:none}
+.dq{border:1px solid color-mix(in srgb,var(--amber) 45%,var(--line));border-radius:12px;padding:11px 13px;margin:10px 0;background:color-mix(in srgb,var(--amber) 6%,var(--card))}
+.dq b{color:var(--ink)} .dq span{display:block;color:var(--ink2);font-size:13.5px;margin-top:3px}
+</style><div class="wrap"><header><span class="ver">Mikey v0.20 · site archive</span><span class="status">Harry's notes tab · updated as each part lands</span>
+<h1>Harry's review, and the changes</h1>
+<p class="sub">Harry's notes on this version (and on v0.21, sponsors) from his recordings, then every change built from them in a <b>test copy</b> of the game, with before and after pictures. Nothing here is live yet.</p></header>
+<div class="strip"><div><b>1 of 6</b><span>areas built in the test copy</span></div><div><b>54</b><span>points in Harry's review video</span></div>
+<div><b>29</b><span>tested in the game on camera</span></div><div><b>0</b><span>decisions waiting</span></div></div>
+<nav class="toc"><a href="#star">Star rating out of 100</a><a href="#trial">Trial: technique + shootout</a><a href="#shop">Shop, Style and Boots</a><a href="#sponsors">Sponsors, Home and Stats</a><a href="#signing">Signing scene + small fixes</a><a href="#match">Real-match bugs</a><a href="#notes">Harry's notes</a></nav>
+<h2 id="changes" class="c-g"><i></i>Changes, built in a test copy</h2><p class="sub">Each part was built by itself, with screenshots taken before and after at phone size (390 px). Tap a picture to open it full size.</p>
+<section class="area" id="star"><h3>Star rating out of 100<span class="st wip">Building now</span></h3><p class="sub">Replaces Overall on every screen (Harry, 1 Oct: “replace”). One old 0.1 step becomes one level, the scale gets much steeper, the +68 mismatch and the “Non-league regular” popup get fixed.</p></section>
+<section class="area" id="trial"><h3>Trial: technique + shootout<span class="st wip">Building now</span></h3><p class="sub">Five-a-side and “find the player” come out, the technique drill goes in, the last stage becomes a penalty shootout, and the score card between drills becomes a 3-2-1.</p></section>
+<section class="area" id="shop"><h3>Shop, Style and Boots<span class="st wip">Building now</span></h3><p class="sub">Shop tiles reordered, Style redesigned with real names and pictures per level, fame always shown, a Holiday group and “My stuff”, Boots as a shop shelf.</p></section>
+<section class="area" id="sponsors"><h3>Sponsors, Home and Stats<span class="st done">Built · in test</span></h3><p class="sub">Built in the test copy. Seen in a browser at 390 px and 360 px; no sideways scroll.</p><ul class="chg"><li><b class="t">Sponsors strip on Home<span class="ev">seen</span></b><span class="w">One tap opens Sponsors. Shows “1 offer waiting” with a red badge, your deals and weekly money, or how close your first deal is.</span></li><li><b class="t">Progress bars instead of exact fame<span class="ev">seen</span></b><span class="w">“Needs Icon (80 fame)” is now “Needs Icon” with a gold bar. The empty Deals text no longer says “(10 fame)”.</span></li><li><b class="t">“Deal slots · UNKNOWN, 0 of 0 used” fixed<span class="ev">seen</span></b><span class="w">Mikey's rule gives a new career 0 slots (Harry, 1 Oct: keep it 0). It now reads “Your first slot opens at Local Name” with a bar.</span></li><li><b class="t">Relations sponsors row was out of date<span class="ev">seen</span></b><span class="w">It read the old sponsor list, so after signing a deal it still said “No deals signed yet”. It now shows your brand deals and waiting offers.</span></li><li><b class="t">Energy and cans in one short card<span class="ev">seen</span></b><span class="w">303 px → about 130 px. Home is 148 px shorter overall. On a phone the cans still sit just below the first screen (the player card and next match fill it).</span></li><li><b class="t">Stats tab: your season first<span class="ev">seen</span></b><span class="w">Your season stats come first, the league table underneath. (The recording was garbled here; this is the best reading.)</span></li></ul><details><summary>Before and after pictures (11)</summary><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-01-home-390-first-screen-before.jpg" target="_blank"><img src="img/sponsors-01-home-390-first-screen-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-01-home-390-first-screen-after.jpg" target="_blank"><img src="img/sponsors-01-home-390-first-screen-after.jpg" loading="lazy" alt="after"></a><figcaption>home 390 first screen</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-02-home-390-cans-before.jpg" target="_blank"><img src="img/sponsors-02-home-390-cans-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-02-home-390-cans-after.jpg" target="_blank"><img src="img/sponsors-02-home-390-cans-after.jpg" loading="lazy" alt="after"></a><figcaption>home 390 cans</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-03-home-360-cans-before.jpg" target="_blank"><img src="img/sponsors-03-home-360-cans-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-03-home-360-cans-after.jpg" target="_blank"><img src="img/sponsors-03-home-360-cans-after.jpg" loading="lazy" alt="after"></a><figcaption>home 360 cans</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-04-home-390-offer-waiting-before.jpg" target="_blank"><img src="img/sponsors-04-home-390-offer-waiting-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-04-home-390-offer-waiting-after.jpg" target="_blank"><img src="img/sponsors-04-home-390-offer-waiting-after.jpg" loading="lazy" alt="after"></a><figcaption>home 390 offer waiting</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-05-stats-tab-390-before.jpg" target="_blank"><img src="img/sponsors-05-stats-tab-390-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-05-stats-tab-390-after.jpg" target="_blank"><img src="img/sponsors-05-stats-tab-390-after.jpg" loading="lazy" alt="after"></a><figcaption>stats tab 390</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-06-sponsors-deals-fresh-save-before.jpg" target="_blank"><img src="img/sponsors-06-sponsors-deals-fresh-save-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-06-sponsors-deals-fresh-save-after.jpg" target="_blank"><img src="img/sponsors-06-sponsors-deals-fresh-save-after.jpg" loading="lazy" alt="after"></a><figcaption>sponsors deals fresh save</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-07-sponsors-deals-with-a-deal-before.jpg" target="_blank"><img src="img/sponsors-07-sponsors-deals-with-a-deal-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-07-sponsors-deals-with-a-deal-after.jpg" target="_blank"><img src="img/sponsors-07-sponsors-deals-with-a-deal-after.jpg" loading="lazy" alt="after"></a><figcaption>sponsors deals with a deal</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-08-sponsors-brands-30-fame-full-before.jpg" target="_blank"><img src="img/sponsors-08-sponsors-brands-30-fame-full-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-08-sponsors-brands-30-fame-full-after.jpg" target="_blank"><img src="img/sponsors-08-sponsors-brands-30-fame-full-after.jpg" loading="lazy" alt="after"></a><figcaption>sponsors brands 30 fame full</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-09-sponsors-brands-fresh-save-before.jpg" target="_blank"><img src="img/sponsors-09-sponsors-brands-fresh-save-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-09-sponsors-brands-fresh-save-after.jpg" target="_blank"><img src="img/sponsors-09-sponsors-brands-fresh-save-after.jpg" loading="lazy" alt="after"></a><figcaption>sponsors brands fresh save</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-10-relations-sponsors-row-with-a-deal-before.jpg" target="_blank"><img src="img/sponsors-10-relations-sponsors-row-with-a-deal-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-10-relations-sponsors-row-with-a-deal-after.jpg" target="_blank"><img src="img/sponsors-10-relations-sponsors-row-with-a-deal-after.jpg" loading="lazy" alt="after"></a><figcaption>relations sponsors row with a deal</figcaption></figure></div><div class="ba"><figure><span class="lab b">Before</span><a href="img/sponsors-11-relations-sponsors-row-fresh-before.jpg" target="_blank"><img src="img/sponsors-11-relations-sponsors-row-fresh-before.jpg" loading="lazy" alt="before"></a></figure><figure><span class="lab a">After</span><a href="img/sponsors-11-relations-sponsors-row-fresh-after.jpg" target="_blank"><img src="img/sponsors-11-relations-sponsors-row-fresh-after.jpg" loading="lazy" alt="after"></a><figcaption>relations sponsors row fresh</figcaption></figure></div></details><details><summary>Not done, or left for a decision</summary><ul class="plain"><li>Bottom-bar idea for you to decide: swap Phone for Sponsors, or put a badge on Relations. Not built.</li><li>The Relations row still says “Higher = more money every match”, which looks out of date since Mikey's v0.8. Mikey's call.</li><li>Your sponsor ideas (scandals, a famous girlfriend, sponsored posts, a social following) are noted, not built.</li></ul></details></section>
+<section class="area" id="signing"><h3>Signing scene + small fixes<span class="st wip">Building now</span></h3><p class="sub">A signing scene at a desk instead of the paper contract, no newspaper page, “No more sessions this week” in training, the spin page's back view, and the 2D flick on Home.</p></section>
+<section class="area" id="match"><h3>Real-match bugs<span class="st wip">Building now</span></h3><p class="sub">The defender who intercepts from the wrong side, and the assist you didn't make.</p><ul class="chg"><li><b class="t">Assist you didn't make: fixed<span class="ev">measured</span></b><span class="w">Any team-mate goal after your pass counted as your assist, even if someone else played it in between. Now the assist goes to the last team-mate to touch it. Wrongly credited: 14% → 0; with an ordered lay-off: 75% → 0.</span></li><li><b class="t">Wrong-side interception: explained, now being fixed (your pick a + b)<span class="ev">seen + measured</span></b><span class="w">In the Premier League the nearest defender runs straight at the ball the moment you pull back — through your body if he's behind you. His run goes through you in 6.8% of chances, 47% of one-on-ones. Building: (a) he goes round you, (b) from behind he fouls more, sometimes a penalty.</span></li></ul><figure class="solo"><a href="img/match-01-wrongside-closedown-live-strip.jpg" target="_blank"><img src="img/match-01-wrongside-closedown-live-strip.jpg" loading="lazy" alt=""></a><figcaption class="bcap">Before: the defender starts behind you and walks through your player to take the ball (filmed in the real game, Premier League pressure).</figcaption></figure><details><summary>Not done, or left for a decision</summary><ul class="plain"><li>Tap a team-mate to pass in the real match: your idea, not built.</li><li>(c) a defender can only block a ball coming towards him: needs Mikey's OK (match engine).</li></ul></details></section>
+<h2 id="notes" class="c-v"><i></i>Harry's notes</h2><p class="sub">His words from his recordings (30 Sep), with the time. TESTED = he did it in the game on camera; READ = from Mikey's notes.</p>
+<p class="sub-h">Broken (7)</p>
+<div class="note bug"><q>“68 star points just took me from 1.0 to 2.1… the scale is completely wrong… it needs to be multiplied massively.”</q><small>Star points scale (v0.7) · review of Mikey's notes 14:34<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-01-star-rating-after-match.jpg" target="_blank"><img src="img/keyframes-01-star-rating-after-match.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“Non-league regular… I'm in the Prem… me personally, I don't really like that.”</q><small>New-star popup (v0.7) · review of Mikey's notes 14:44<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-02-two-stars-popup.jpg" target="_blank"><img src="img/keyframes-02-two-stars-popup.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“Did you see how my player's face just changed? Like I was a black guy and now I'm a white guy.”</q><small>Five-a-side, your player (v0.7) · review of Mikey's notes 11:43<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-09-five-a-side-your-player-skin-zoom.jpg" target="_blank"><img src="img/keyframes-09-five-a-side-your-player-skin-zoom.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“The spin your player test page, on the back does not work.”</q><small>Spin your player, back view (v0.7) · review of Mikey's notes 08:52<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-07-spin-player-back-view.jpg" target="_blank"><img src="img/keyframes-07-spin-player-back-view.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“16, the 2D flick doesn't work here, just so you know.”</q><small>Home at age 16 (v0.7) · review of Mikey's notes 12:46<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-03-home-star-rating-overall.jpg" target="_blank"><img src="img/keyframes-03-home-star-rating-overall.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“That intercepts it even though he's on the wrong side of me.”</q><small>Real match: interception · review of Mikey's notes 13:49<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-10-highlight-tap-pass-chance.jpg" target="_blank"><img src="img/keyframes-10-highlight-tap-pass-chance.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note bug"><q>“I still get an assist for that even though I wasn't the one who actually assisted him.”</q><small>Real match: assist credit · review of Mikey's notes 14:22<span class="tb">Tested</span></small></div>
+<p class="sub-h">Change (18)</p>
+<div class="note chg2"><q>“Literally go 3-2-1 drill, 3-2-1 drill, just keep it moving… the score pulls them out.”</q><small>Trial score card (v0.7) · review of Mikey's notes 07:16<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-05-trial-score-card.jpg" target="_blank"><img src="img/keyframes-05-trial-score-card.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“Generate the player… with a generated manager… sat down together and then you show him actually signing the contract.”</q><small>Contract (v0.7) · review of Mikey's notes 07:55<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-06-contract-terms.jpg" target="_blank"><img src="img/keyframes-06-contract-terms.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“Then this, that's useless, that page.”</q><small>Newspaper after the offer · review of Mikey's notes 12:38<span class="tb">Tested</span></small></div>
+<div class="note chg2"><q>“After you do two training sessions… it should say you have no more sessions this week. It shouldn't just say like '1 out of 2 sessions remaining.'”</q><small>Training sessions (v0.7) · review of Mikey's notes 05:54<span class="tb">Read</span></small></div>
+<div class="note chg2"><q>“The dribbling drill is still pretty cooked. It needs to look a lot better.”</q><small>Dribbling drill · review of Mikey's notes 06:42<span class="tb">Read</span></small></div>
+<div class="note chg2"><q>“This page is just really bad… what is a level one sports car?… broken down motorbike, normal car, Tesla, sports car, Lamborghini… actual images of each one.”</q><small>Style / Lifestyle (v0.7) · review of Mikey's notes 15:16<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-12-lifestyle-vehicles-sports-car.jpg" target="_blank"><img src="img/keyframes-12-lifestyle-vehicles-sports-car.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“You should always be able to see how much fame stuff is giving you. Also, why would a phone give you fame?”</q><small>Fame per item · review of Mikey's notes 15:29<span class="tb">Tested</span></small></div>
+<div class="note chg2"><q>“Level 5 firstly should unlock something crazy… I think we should just call it a holiday section.”</q><small>Style, level 5 and Holiday (v0.7) · review of Mikey's notes 04:34<span class="tb">Read</span></small></div>
+<div class="note chg2"><q>“It should just be like a gallery, like I'm in a shop… hover over a shoe and buy it.”</q><small>Boots page (v0.7) · review of Mikey's notes 16:48<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-13-boots-seven-types.jpg" target="_blank"><img src="img/keyframes-13-boots-seven-types.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“Probably should do these four first instead of those two… this makes them seem like small things.”</q><small>Shop hub · review of Mikey's notes 14:55<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-14-shop-hub.jpg" target="_blank"><img src="img/keyframes-14-shop-hub.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“In season this should be the first thing you see and then maybe underneath that you would have the Prem.”</q><small>Stats tab · review of Mikey's notes 12:54<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-15-stats-tab-season.jpg" target="_blank"><img src="img/keyframes-15-stats-tab-season.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“Not every single one of the highlights from the other team should be me being able to block it… 5-0, maybe that's too easy.”</q><small>Five-a-side difficulty · review of Mikey's notes 12:19<span class="tb">Tested</span></small></div>
+<div class="note chg2"><q>“How do I even get there? Is it relations?… That feels quite hidden away.”</q><small>Sponsors, finding them (v0.8) · review of Mikey's notes 17:36<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-16-relations-sponsors-deals-button.jpg" target="_blank"><img src="img/keyframes-16-relations-sponsors-deals-button.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“I don't like the idea that we tell them exact amounts that are needed… I'd rather a progress bar.”</q><small>Sponsors, fame needed (v0.8) · review of Mikey's notes 19:03<span class="tb">Tested</span></small><figure class="solo"><a href="img/keyframes-17-sponsor-categories-locked-fame.jpg" target="_blank"><img src="img/keyframes-17-sponsor-categories-locked-fame.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note chg2"><q>“Even the energy cans, they're being off the screen, it's kind of jarring.”</q><small>Home, energy cans (v0.8) · review of Mikey's notes 18:30<span class="tb">Tested</span></small></div>
+<div class="note chg2"><q>“I would love to just be able to tap on him [to pass]… if the player's behind you they should be more likely to foul you… a percent chance for a pen.”</q><small>Real match ideas · review of Mikey's notes 13:24<span class="tb">Tested</span></small></div>
+<div class="note chg2"><q>“Scandals off the pitch or a famous girlfriend… sponsored posts on your phone… build your social media as you grow.”</q><small>Sponsor ideas (v0.8) · review of Mikey's notes 19:27<span class="tb">Read</span></small></div>
+<div class="note chg2"><q>“Me personally, I think that one second is even maybe a bit too long, so we're having a difference of opinions there.”</q><small>Penalty timer 1.0 → 1.8 s · review video 11:28<span class="tb">Read</span></small></div>
+<p class="sub-h">Likes (8)</p>
+<div class="note like"><q>“I like this whole section. I think this is fine. But again, it needs to be scaled.”</q><small>Star rating idea and gates · review of Mikey's notes 01:36<span class="tb">Read</span></small></div>
+<div class="note like"><q>“Training screens look really cool now.”</q><small>Training screens · review of Mikey's notes 06:28<span class="tb">Read</span></small><figure class="solo"><a href="img/keyframes-20-notes-training-screens-image.jpg" target="_blank"><img src="img/keyframes-20-notes-training-screens-image.jpg" loading="lazy" alt=""></a><figcaption class="bcap"></figcaption></figure></div>
+<div class="note like"><q>“The contract showing the real terms is really cool… This is cool for the homepage… I'm liking the five a side.”</q><small>Contract terms, spin page, five-a-side · review of Mikey's notes 08:52<span class="tb">Tested</span></small></div>
+<div class="note like"><q>“This is cool. This is really cool… Okay, I don't mind that [weekly money].”</q><small>Sponsors screen and weekly money (v0.8) · review of Mikey's notes 18:07<span class="tb">Read</span></small></div>
+<div class="note like"><q>“Yeah, the Star Pass would be really cool.”</q><small>Star Pass · review of Mikey's notes 17:12<span class="tb">Read</span></small></div>
+<div class="note like"><q>“Star rating is now your career, one to ten. Overall is how good you are. Pretty cool.”</q><small>Star rating 1–10 (first look) · feedback video 9:21<span class="tb">Read</span></small></div>
+<div class="note like"><q>“Is it smart to multiply by the stage? Probably is, right?”</q><small>Star Points × stage · feedback video 10:00<span class="tb">Read</span></small></div>
+<div class="note like"><q>“Trophies, nice… Star gates. So I kind of like this.”</q><small>Trophies and star gates · feedback video 10:24<span class="tb">Read</span></small></div>
+<p class="sub-h">Questions (3)</p>
+<div class="note q"><q>“What is star ratings for? I guess we're going to have the star pass.”</q><small>Star rating (v0.7) · review of Mikey's notes 03:01<span class="tb">Read</span></small></div>
+<div class="note q"><q>“A club that signs you after your first one gives it to you about eight times in ten. What does that mean?”</q><small>Preferred number (v0.7) · review of Mikey's notes 07:06<span class="tb">Read</span></small></div>
+<div class="note q"><q>“I don't know if we want that to be refilled in a midweek game.”</q><small>Training refills · review video 12:13<span class="tb">Read</span></small></div>
+<footer>Mikey v0.20 review · built 1 Oct 2026 in a test copy. Nothing on this page is live; each part goes in only once Harry (and Mikey, for his areas) say yes.</footer></div>

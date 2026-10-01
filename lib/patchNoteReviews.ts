@@ -26,6 +26,12 @@ export interface ReviewNote {
 
 export interface PatchNoteReview {
   by: string;
+  /**
+   * A full kept page for the tab (a key in PATCH_NOTE_PAGES), shown instead
+   * of the note cards — used when the review has pictures, before/after
+   * screenshots and the changes built from it.
+   */
+  page?: string;
   /** ISO date of the most recent note. */
   updatedAt: string;
   notes: ReviewNote[];
@@ -34,6 +40,7 @@ export interface PatchNoteReview {
 export const PATCH_NOTE_REVIEWS: Record<string, PatchNoteReview> = {
   "0.20": {
     by: "Harry",
+    page: "review-0.20",
     updatedAt: "2026-09-30",
     notes: [
       {

@@ -196,7 +196,7 @@ function VersionView({ note }: { note: PatchNote }) {
           <span className={`text-[12px] ${INK3}`}>{hint}</span>
         </div>
       )}
-      {view === "notes" && review ? <ReviewView review={review} />
+      {view === "notes" && review ? (review.page ? <PageFrame pageKey={review.page} label={`${review.by}'s notes on v${note.version}`} /> : <ReviewView review={review} />)
         : view === "page" && hasPage ? <PageFrame pageKey={note.version} artifactUrl={note.artifactUrl} />
         : <NoteBody note={note} />}
     </>
