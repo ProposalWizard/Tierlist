@@ -402,12 +402,19 @@ export function paintBody3d(
         g.setTransform(k, 0, 0, k, ox * k, oy * k);
         drawBody3d(g, rq, look, skin, qp, A, mode, hk);
       }
-      sp = { c, ox, oy };
+      // The offsets are kept in DEVICE pixels, like the picture itself. They
+      // were kept in this canvas's own units, so a picture made by one
+      // screen (the trial's penalties, drawn at one scale) and reused by
+      // another at a different scale (five-a-side, Find the Pass) was
+      // stamped up and to the left of its head: a floating head beside a
+      // headless body (Mikey, 1 Oct 2026). The cache key holds only the
+      // device size, so this must not depend on the scale either.
+      sp = { c, ox: ox * k, oy: oy * k };
       sprites.set(key, sp);
       if (sprites.size > SPRITE_LIMIT) sprites.delete(sprites.keys().next().value as string);
     }
     const f = r / rq;
-    ctx.drawImage(sp.c, -sp.ox * f, -sp.oy * f, (sp.c.width / k) * f, (sp.c.height / k) * f);
+    ctx.drawImage(sp.c, -(sp.ox / k) * f, -(sp.oy / k) * f, (sp.c.width / k) * f, (sp.c.height / k) * f);
   } else {
     drawBody3d(ctx, r, look, skin, qp, A, mode, hk);
   }
@@ -428,7 +435,8 @@ export function paintBody3d(
   }
 }
 
-/** The cached body pictures: most recently used last. */
+/** The cached body pictures: most recently used last. `ox`/`oy` are where
+ *  the body's origin sits in the picture, in device pixels. */
 const sprites = new Map<string, { c: HTMLCanvasElement; ox: number; oy: number }>();
 const SPRITE_LIMIT = 320;
 /** A body's picture box, in r: half-width (arms flung wide, gloves), above
