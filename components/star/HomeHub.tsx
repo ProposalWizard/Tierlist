@@ -40,7 +40,7 @@ import { starStatus } from "@/lib/star/starPoints";
 import { attributeOverall } from "@/lib/star/rating";
 import StarRatingSheet from "./StarRatingSheet";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
-import FigureSkinToggle from "./FigureSkinToggle";
+import FigureSkinToggle, { useFigureSkin } from "./FigureSkinToggle";
 import {
   ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
   Burst, Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
@@ -222,7 +222,13 @@ function LastFive({ five }: { five: FormResult[] }) {
 // ── 1. You ──────────────────────────────────────────────────────────────────
 
 function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
-  const look = useAvatarStyle();
+  const style = useAvatarStyle();
+  // The 3D / 2D pill sits on this card, so the man on this card follows it.
+  // Harry, 30 Sep 2026 (age-16 Home): "the 2D flick doesn't work here" — the
+  // pill flipped every match figure but this one stayed the A2 3D player.
+  // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
+  const [skin] = useFigureSkin();
+  const look = skin === "classic" ? "A1" : style;
   // The star rating is the CAREER one (starPoints.ts); ability shows as Overall.
   const star = starStatus(career);
   const rating = useCountUp(star.stars);
