@@ -1,5 +1,6 @@
 "use client";
 import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
+import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -96,6 +97,7 @@ export default function SettingsScreen({
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
+  const sfxNow = useSfxOn();
 
   const togglePostMatchReactions = () => {
     const next = !postMatchReactions;
@@ -286,6 +288,20 @@ export default function SettingsScreen({
           </div>
           <SetNote dim className="mt-1 text-[10px]">
             Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
+          </SetNote>
+
+          <SetDivider />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Sound effects</span>
+            <SegTabs
+              className="w-[150px] shrink-0"
+              value={sfxNow ? "on" : "off"}
+              onChange={(v) => { setSfxOn(v === "on"); if (v === "on") sfx("ui-confirm"); }}
+              tabs={[["on", "On"], ["off", "Off"]] as const}
+            />
+          </div>
+          <SetNote dim className="mt-1 text-[10px]">
+            Button taps, pay, level-ups, achievements, news and phone pings. Not the match. This phone only.
           </SetNote>
 
           <SetDivider />

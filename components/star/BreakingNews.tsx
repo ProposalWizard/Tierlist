@@ -22,6 +22,7 @@ import ClubBadge from "./ClubBadge";
 import { kitsOf } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
 import type { BreakingNews as News } from "@/lib/star/breakingNews";
+import { sfx } from "@/lib/star/sfx";
 
 const anton = Anton({ subsets: ["latin"], weight: "400", display: "swap" });
 
@@ -42,6 +43,7 @@ const CSS = `
 export default function BreakingNews({ news, onClose }: { news: News; onClose: () => void }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => { const t = setTimeout(() => setArmed(true), 600); return () => clearTimeout(t); }, []);
+  useEffect(() => { sfx("breaking-news"); }, []);
   if (typeof document === "undefined") return null;
 
   const kit = news.club ? kitsOf(news.club).home : undefined;

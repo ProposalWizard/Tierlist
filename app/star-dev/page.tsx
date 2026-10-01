@@ -85,6 +85,7 @@ import { signingNews, newsForMatch, type BreakingNews as News } from "@/lib/star
 import { setPieceTalkDue, markSetPieceTold } from "@/lib/star/setPieceTalk";
 import { WELCOME_TOUR, LEAGUE_TOUR, LEAGUE_SCREEN_TOUR, FIRST_GAME_TOUR, SHOP_TOUR, HELP_TOURS, type HelpScreen, type TourStep } from "@/lib/star/tours";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
+import { sfx } from "@/lib/star/sfx";
 import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
@@ -1073,6 +1074,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const toastAchievements = (ids: string[]) => {
     if (ids.length > 0) {
       setUnlockedAchievements(ids);
+      sfx("achievement-pop");
       setTimeout(() => setUnlockedAchievements([]), 3000);
     }
   };
@@ -1098,6 +1100,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // Every ten (20, 30 …) gets the full screen; anything less, the banner.
     if (Math.floor(toShown / 10) > Math.floor(fromShown / 10)) setNewStar(Math.floor(toShown / 10) * 10);
     if (!banner) return;
+    sfx("level-up");
     setRatingChange({ from: fromShown, to: toShown });
     setTimeout(() => setRatingChange(null), 3000);
   };
@@ -2165,6 +2168,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // …and an energy can does nothing at full energy (v0.15 item 28).
     if (!can.effect && career.energy >= 100) return;
     // Premium and Elite give their ability AND some energy (P5, 1 Oct 2026).
+    sfx("can-open");
     setCareer({
       ...career,
       kibCans: { ...career.kibCans, [id]: career.kibCans[id] - 1 },
@@ -2302,7 +2306,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career]);
   const handleSellStake = useCallback((club: string, percent: number) => {
     if (!career) return;
-    setCareer(sellStake(career, club, percent));
+    const sold = sellStake(career, club, percent);
+    if (sold.money > career.money) sfx("coin-in");
+    setCareer(sold);
   }, [career]);
   const handleTopUpClubBudget = useCallback((club: string, amount: number) => {
     if (!career) return;
@@ -2337,6 +2343,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (buyerClub && agreedFee !== undefined && playerName) {
       next = { ...next, media: generateForBoardroomSale(next, club, buyerClub, playerName, agreedFee, `boardroom-sale-${playerId}`) };
     }
+    sfx("coin-in");
     setCareer(next);
     return { ok: true };
   }, [career]);

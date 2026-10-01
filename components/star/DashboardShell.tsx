@@ -3,6 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { HomeFxStyles } from "./HomeFx";
 import GameBar from "./ui/GameBar";
+import { preloadSfx, sfx } from "@/lib/star/sfx";
+
+/** Whether the Phone had something unread last time a shell looked — kept
+ *  across screens, so a message that lands while you are elsewhere still
+ *  pings when you come back, and opening the page never does. */
+let phoneWasUnread: boolean | undefined;
 
 interface Props {
   career: CareerState;
@@ -63,6 +69,12 @@ interface Props {
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
 export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, achievementsSlot, hud, swipe = false, mediaUnread = false, onHelp }: Props) {
+  // A new message on the phone pings (lib/star/sfx.ts).
+  useEffect(() => { preloadSfx(); }, []);
+  useEffect(() => {
+    if (phoneWasUnread === false && mediaUnread) sfx("phone-notification");
+    phoneWasUnread = mediaUnread;
+  }, [mediaUnread]);
   // A locked button answers a tap with its "how to unlock" line.
   const [lockNote, setLockNote] = useState<{ label: string; hint: string; at: number } | null>(null);
   const tap = (tab: NavTab, label: string) => {
