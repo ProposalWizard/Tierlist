@@ -216,19 +216,20 @@ def frame_camera_for(z_center, dist=13.5):
     cam.location = (0, -dist, 5.0 + z_center)
 
 
-jobs = []
-for t in THEMES:
-    jobs.append((f"plinth-{t}-medium", lambda t=t: plinth(t, False), 0.6))
-    jobs.append((f"plinth-{t}-great", lambda t=t: plinth(t, True), 0.9))
-jobs.append(("box-medium", lambda: box(False), 0.8))
-jobs.append(("box-great", lambda: box(True), 1.0))
-jobs.append(("crown-100", lambda: crown(), 2.3))
+if __name__ == "__main__":
+    jobs = []
+    for t in THEMES:
+        jobs.append((f"plinth-{t}-medium", lambda t=t: plinth(t, False), 0.6))
+        jobs.append((f"plinth-{t}-great", lambda t=t: plinth(t, True), 0.9))
+    jobs.append(("box-medium", lambda: box(False), 0.8))
+    jobs.append(("box-great", lambda: box(True), 1.0))
+    jobs.append(("crown-100", lambda: crown(), 2.3))
 
-only = argv[2].split(",") if len(argv) > 2 else None
-for name, build, zc in jobs:
-    if only and name not in only:
-        continue
-    reset()
-    build()
-    frame_camera_for(zc, 17.5 if name == "crown-100" else 9.0 if name.startswith("box") else 13.5)
-    render(os.path.join(OUT, name + ".png"))
+    only = argv[2].split(",") if len(argv) > 2 else None
+    for name, build, zc in jobs:
+        if only and name not in only:
+            continue
+        reset()
+        build()
+        frame_camera_for(zc, 17.5 if name == "crown-100" else 9.0 if name.startswith("box") else 13.5)
+        render(os.path.join(OUT, name + ".png"))
