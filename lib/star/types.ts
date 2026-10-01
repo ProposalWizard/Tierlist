@@ -1128,7 +1128,7 @@ export interface CareerState {
     /** The division it was won in (starPoints.ts pays more the higher it is). */
     division?: import("./calendar").CareerDivision }[];
   /**
-   * THE STAR RATING players see: your career, 1.0-10.0★, never goes down
+   * THE STAR RATING players see: your career, 1-100 (a run of poor matches can take a level off — starPoints.ts 2c)
    * (lib/star/starPoints.ts). `starRating` above is your ABILITY on the old
    * 1-5 scale and is shown as "Overall"; everything that read it still does.
    */

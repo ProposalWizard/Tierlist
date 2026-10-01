@@ -18,7 +18,8 @@ import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
  *    transfers and everything else that read it still do, so nothing about
  *    how the game plays moved. Screens show it as "Overall" (displayOverall).
  *  - `career.stars` (this file) is what the game now CALLS the star rating:
- *    your journey, a whole number from 1 to 100. It only ever goes up.
+ *    your journey, a whole number from 1 to 100. It goes up, and since
+ *    1 Oct 2026 a run of poor matches can take it back down (see 2c).
  *
  * How it works, in the order this file is written:
  *  1. Everything earns Star Points (SP). Match points are multiplied by the
@@ -43,7 +44,9 @@ import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
  * Everything is derived from the career, so nothing else needs touching.
  *
  * Never-goes-down is a high-water mark (`career.starBest`), kept per category
- * so an island wearing out or a club stake sold can't take a star away.
+ * so an island wearing out or a club stake sold can't take a star away. The
+ * one thing that CAN take it down is form: a run of poor matches (2c below,
+ * Harry, 1 Oct 2026, P14).
  */
 
 // ── 1. What earns points ────────────────────────────────────────────────────
@@ -86,6 +89,9 @@ export interface StarLedger {
   tiers: Partial<Record<StarTier, TierTally>>;
   /** Champions League matches played (a gate reads it). */
   uclApps: number;
+  /** Poor form (2c): Star Points lost to poor matches, and how many poor
+   *  matches in a row without a good one. Absent until the first poor match. */
+  slump?: { debt: number; streak: number };
   promotions: number;
   /** The standing of your first club, and of the biggest you've played for. */
   firstRep?: number;
@@ -168,6 +174,7 @@ export function ledgerAfterMatch(career: CareerState, fixture: Fixture, stats: M
     ...led,
     tiers: { ...led.tiers, [tier]: now },
     uclApps: led.uclApps + (fixture.competition === "Champions League" ? 1 : 0),
+    ...slumpAfterMatch(career, led, stats, Math.round(tallySp(add) * TIER_MULT[tier])),
   };
 }
 
@@ -409,6 +416,46 @@ export function matchesPlayed(led: StarLedger): number {
   return Object.values(led.tiers).reduce((s, t) => s + (t?.apps ?? 0), 0);
 }
 
+// ── 2c. Poor form costs you ─────────────────────────────────────────────────
+
+/**
+ * Harry, 1 Oct 2026 (P14): "I think you can be able to go down a little bit.
+ * If you're having poor performances, eventually maybe you can even go down
+ * a whole level."
+ *
+ * The rule (its numbers are on the question list):
+ *  - A POOR match is a match rating under POOR_MATCH_RATING (5.5). It earns
+ *    nothing — whatever it would have paid is taken straight back — and it
+ *    costs SLUMP_SHARE (a fifth) of what your current level costs to climb.
+ *    So five poor matches in a row cost about a whole level of points.
+ *  - The points go at once, so the bar falls straight away. The LEVEL only
+ *    drops once you have strung SLUMP_MATCHES (5) poor matches together,
+ *    with no good match (GOOD_MATCH_RATING, 6.5+) in between. A match between
+ *    the two neither adds to the run nor breaks it.
+ *  - Never more than one level a match, never below level 1, and after a
+ *    drop the run starts again — so a long slump costs about a level every
+ *    five poor matches, not one a match.
+ *  - The Legend levels (90 and up) are tasks you have done, not points, so
+ *    form never touches them.
+ * Good matches climb exactly as before: the lost points are simply a hole
+ * the next good matches fill first.
+ */
+export const POOR_MATCH_RATING = 5.5;
+export const GOOD_MATCH_RATING = 6.5;
+export const SLUMP_SHARE = 0.2;
+export const SLUMP_MATCHES = 5;
+
+function slumpAfterMatch(career: CareerState, led: StarLedger, stats: MatchStats, matchSp: number): Pick<StarLedger, "slump"> | null {
+  const was = led.slump ?? { debt: 0, streak: 0 };
+  const level = starLevel(career);
+  if (stats.rating < POOR_MATCH_RATING && level < POINTS_CAP_LEVEL) {
+    const cost = LEVEL_COST[Math.max(1, Math.min(POINTS_CAP_LEVEL - 1, level))];
+    return { slump: { debt: was.debt + matchSp + Math.round(cost * SLUMP_SHARE), streak: was.streak + 1 } };
+  }
+  if (stats.rating >= GOOD_MATCH_RATING && was.streak > 0) return { slump: { ...was, streak: 0 } };
+  return led.slump ? { slump: was } : null;
+}
+
 // ── 3. Star gates ───────────────────────────────────────────────────────────
 
 export interface StarGate { cap: number; need: string; open: (career: CareerState, led: StarLedger) => boolean }
@@ -524,7 +571,7 @@ export function starStatus(career: CareerState): StarStatus {
   const carry = converting
     ? Math.max(0, pointsForLevel(Math.min(POINTS_CAP_LEVEL, best?.stars ?? 1)) - earned)
     : (best?.carry ?? 0);
-  const total = earned + carry;
+  const total = Math.max(0, earned + carry - (led.slump?.debt ?? 0));
   const ungated = levelFromPoints(total);
 
   const gate = STAR_GATES.find(g => !g.open(career, led)) ?? null;
@@ -542,10 +589,16 @@ export function starStatus(career: CareerState): StarStatus {
   // played (the ledger's count moved on), at the rating banked before it.
   // No banked rating at all (a brand-new career) has nothing to hold back.
   const apps = matchesPlayed(led);
-  const win = best?.win && best.win.apps === apps ? best.win : { apps, base: best?.stars ?? stars };
+  const newWindow = !(best?.win && best.win.apps === apps);
+  const win = !newWindow && best?.win ? best.win : { apps, base: best?.stars ?? stars };
   const reach = stars;
   stars = Math.min(stars, win.base + MAX_RISE_PER_MATCH);
-  stars = Math.min(MAX_LEVEL, Math.max(stars, best?.stars ?? 1));
+  // The floor is the banked rating — except on the first look after a new
+  // match, when a run of SLUMP_MATCHES poor ones lets it slip one level (2c).
+  const banked = best?.stars ?? 1;
+  const slipping = newWindow && !converting && banked < POINTS_CAP_LEVEL
+    && (led.slump?.streak ?? 0) >= SLUMP_MATCHES;
+  stars = Math.min(MAX_LEVEL, Math.max(stars, Math.max(1, banked - (slipping ? 1 : 0))));
   const held = Math.max(0, reach - stars);
 
   let toNext = 0, spToNext = 0, carried = 0;
@@ -610,6 +663,9 @@ export function withStars(career: CareerState): CareerState {
     : career.awards;
   const next: CareerState = { ...career, starLedger: led, awards };
   const st = starStatus(next);
+  // A level just slipped (2c): the run of poor matches starts again.
+  const dropped = st.stars < (bestOf(career)?.stars ?? st.stars);
+  if (dropped && led.slump) next.starLedger = { ...led, slump: { ...led.slump, streak: 0 } };
   return {
     ...next, stars: st.stars,
     starBest: { ...st.points, stars: st.stars, legend: st.legendDone, scale: MAX_LEVEL, ...(st.carry > 0 ? { carry: st.carry } : {}), win: st.win },

@@ -3706,7 +3706,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             <div className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-300">Star rating</div>
             <div className="mt-1 text-[72px] font-black italic leading-none text-white" style={{ textShadow: "0 0 24px rgba(251,191,36,.7)" }}>★ {newStar}</div>
             <div className="mt-2 text-[15px] font-black text-amber-300">{starTitle(newStar)}</div>
-            <div className="mt-1 text-[12px] font-bold text-white">Your career so far, out of 100. It never goes down.</div>
+            <div className="mt-1 text-[12px] font-bold text-white">Your career so far. Poor form can cost you a level.</div>
             <div className="mt-6 inline-block rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-gray-950">Continue</div>
           </div>
         </button>

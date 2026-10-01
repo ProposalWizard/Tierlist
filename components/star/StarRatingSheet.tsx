@@ -36,7 +36,7 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
           <div className="mt-1 text-[44px] font-black leading-none text-amber-300" style={{ textShadow: "0 0 18px rgba(251,191,36,.6)" }}>★ {st.stars}<span className="text-[18px] text-white"> / {MAX_LEVEL}</span></div>
           <div className="mt-1 text-[15px] font-black text-white">{starTitle(st.stars)}</div>
           <div className="mt-1 rounded-lg bg-amber-400/15 px-2 py-1.5 text-[11.5px] font-bold text-white">
-            <b className="text-amber-300">What it&apos;s for:</b> your one rating, 1 to 100. Everything you do on and off the pitch adds Star Points, and it never goes down. The Star Pass, coming next, will be built on it.
+            <b className="text-amber-300">What it&apos;s for:</b> a mix of your skills, your experience and your fame. Everything you do on and off the pitch adds Star Points; a run of poor matches takes some away. The Star Pass, coming next, will be built on it.
           </div>
         </div>
 
