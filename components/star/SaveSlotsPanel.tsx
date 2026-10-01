@@ -87,8 +87,8 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                             empty club keeps it from reading as a broken or
                             spare slot to start over on. */}
                         {save.signed
-                          ? <>{save.club} · Season {save.season} · <span className="text-yellow-200">{save.starRating?.toFixed(1)}★</span></>
-                          : <>No club yet · <span className="text-yellow-200">{save.starRating?.toFixed(1)}★</span></>}
+                          ? <>{save.club} · Season {save.season} · <span className="text-yellow-200">★{save.starRating}</span></>
+                          : <>No club yet · <span className="text-yellow-200">★{save.starRating}</span></>}
                       </div>
                     </>
                   )}

@@ -2,26 +2,25 @@
 
 /**
  * YOUR STAR RATING, EXPLAINED — opened from the rating on Home (Mikey,
- * 30 Sep 2026). Where you are, what the next 0.1★ takes, the gate holding
+ * 30 Sep 2026; 1-100 since 1 Oct 2026). What it is for, in one line (Harry:
+ * "what is star ratings for?"), where you are, what the next level takes, the gate holding
  * you (if one is), where your Star Points came from, and the ten Legend
- * tasks that make the last star. All of it read from lib/star/starPoints.ts.
+ * tasks that make the last ten levels. All of it read from lib/star/starPoints.ts.
  */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
-import { starStatus, STAR_GATES, LEGEND_TASKS, ledgerOf } from "@/lib/star/starPoints";
-import { attributeOverall } from "@/lib/star/rating";
+import { starStatus, STAR_GATES, LEGEND_TASKS, ledgerOf, starTitle, MAX_LEVEL, POINTS_CAP_LEVEL } from "@/lib/star/starPoints";
 
-export const STAR_TITLES = ["", "Non-league hopeful", "Non-league regular", "Football League pro", "League One standout", "Championship star", "Premier League player", "Winner", "Elite", "Ballon d'Or winner", "The Complete Career"];
 const fmt = (n: number) => Math.round(n).toLocaleString("en-GB");
 
 export default function StarRatingSheet({ career, onClose }: { career: CareerState; onClose: () => void }) {
   const st = starStatus(career);
   const led = ledgerOf(career);
-  const whole = Math.floor(st.stars + 1e-9);
   const rows: [string, number][] = [
     ["Matches", st.points.match], ["Trophies and promotions", st.points.trophies], ["Awards", st.points.awards],
     ["Milestones and achievements", st.points.milestones], ["Fame and what you own", st.points.status],
+    ...(st.carry > 0 ? [["Carried from your old rating", st.carry] as [string, number]] : []),
   ];
   const nextGate = STAR_GATES.find(g => !g.open(career, led));
   // Drawn on the page itself: Home sits inside a sliding, clipped strip, and
@@ -34,31 +33,39 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
       <div className="mx-auto w-full max-w-sm rounded-2xl border border-amber-300/60 bg-gray-950 p-4" onClick={(e) => e.stopPropagation()}>
         <div className="text-center">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Star rating</div>
-          <div className="mt-1 text-[44px] font-black leading-none text-amber-300" style={{ textShadow: "0 0 18px rgba(251,191,36,.6)" }}>★ {st.stars.toFixed(1)}</div>
-          <div className="mt-1 text-[15px] font-black text-white">{STAR_TITLES[Math.min(10, whole)]}</div>
-          <div className="mt-0.5 text-[11px] font-bold text-white">Your career so far. It never goes down. Overall {Math.round(attributeOverall(career.skills))} is how good you are right now.</div>
+          <div className="mt-1 text-[44px] font-black leading-none text-amber-300" style={{ textShadow: "0 0 18px rgba(251,191,36,.6)" }}>★ {st.stars}<span className="text-[18px] text-white"> / {MAX_LEVEL}</span></div>
+          <div className="mt-1 text-[15px] font-black text-white">{starTitle(st.stars)}</div>
+          <div className="mt-1 rounded-lg bg-amber-400/15 px-2 py-1.5 text-[11.5px] font-bold text-white">
+            <b className="text-amber-300">What it&apos;s for:</b> your one rating, 1 to 100. Everything you do on and off the pitch adds Star Points, and it never goes down. The Star Pass, coming next, will be built on it.
+          </div>
         </div>
 
         <div className="mt-3 h-3 overflow-hidden rounded-full bg-black/60" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.7)" }}>
           <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-200" style={{ width: `${Math.max(2, st.toNext * 100)}%`, boxShadow: "0 0 10px rgba(251,191,36,.7)" }} />
         </div>
         <div className="mt-1 text-center text-[11.5px] font-black text-white">
-          {st.stars >= 10 ? "10.0★ — you have done everything."
-            : st.stars >= 9 ? `${st.legendDone.length} of ${LEGEND_TASKS.length} Legend tasks done · each is 0.1★`
+          {st.stars >= MAX_LEVEL ? `${MAX_LEVEL} — you have done everything.`
+            : st.stars >= POINTS_CAP_LEVEL ? `${st.legendDone.length} of ${LEGEND_TASKS.length} Legend tasks done · one level each`
+              : st.held > 0 ? `★${st.stars + 1} is paid for — it comes with your next match`
               : st.gate ? "Held at a star gate"
-                : `${fmt(st.spToNext)} Star Points to ★${(st.stars + 0.1).toFixed(1)}`}
+                : `${fmt(st.spToNext)} Star Points to ★${st.stars + 1}`}
         </div>
 
-        {st.gate && (
-          <div className="mt-3 rounded-xl border border-dashed border-red-400 bg-red-500/10 p-2.5">
-            <div className="text-[12px] font-black text-white">🔒 ★{st.gate.cap.toFixed(1)} gate</div>
-            <div className="text-[11.5px] font-bold text-white">{st.gate.need}.</div>
-            {st.ungated > st.stars && <div className="mt-0.5 text-[11.5px] font-black text-amber-300">{(st.ungated - st.stars).toFixed(1)}★ banked — yours the moment it opens.</div>}
+        {st.held > 0 && (
+          <div className="mt-2 rounded-lg bg-white/10 px-2 py-1.5 text-center text-[11.5px] font-bold text-white">
+            One level a match at most.{st.carried > 0 ? <> <b className="text-amber-300">+{fmt(st.carried)}</b> Star Points carried to the levels after.</> : null}
           </div>
         )}
-        {!st.gate && nextGate && st.stars < 9 && (
+        {st.gate && (
+          <div className="mt-3 rounded-xl border border-dashed border-red-400 bg-red-500/10 p-2.5">
+            <div className="text-[12px] font-black text-white">🔒 ★{st.gate.cap} gate</div>
+            <div className="text-[11.5px] font-bold text-white">{st.gate.need}.</div>
+            {st.ungated > st.stars && <div className="mt-0.5 text-[11.5px] font-black text-amber-300">{st.ungated - st.stars} level{st.ungated - st.stars === 1 ? "" : "s"} banked — yours the moment it opens.</div>}
+          </div>
+        )}
+        {!st.gate && nextGate && st.stars < POINTS_CAP_LEVEL && (
           <div className="mt-3 rounded-xl bg-white/10 p-2.5 text-[11.5px] font-bold text-white">
-            <b>Next gate, at ★{nextGate.cap.toFixed(1)}:</b> {nextGate.need}.
+            <b>Next gate, at ★{nextGate.cap}:</b> {nextGate.need}.
           </div>
         )}
 
@@ -74,9 +81,9 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
           <div className="mt-1.5 text-[10.5px] font-bold text-white">Match points count ×1 in the National League, up to ×4 in the Premier League and ×5 in Europe.</div>
         </div>
 
-        {st.stars >= 8 && (
+        {st.stars >= 80 && (
           <div className="mt-3 rounded-xl bg-white/5 p-2.5">
-            <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">The last star · Legend tasks</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">The last ten · Legend tasks</div>
             {LEGEND_TASKS.map(t => {
               const done = st.legendDone.includes(t.id);
               return (

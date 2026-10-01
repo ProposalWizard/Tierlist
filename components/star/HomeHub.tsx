@@ -37,7 +37,6 @@ import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { starStatus } from "@/lib/star/starPoints";
-import { attributeOverall } from "@/lib/star/rating";
 import StarRatingSheet from "./StarRatingSheet";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import FigureSkinToggle from "./FigureSkinToggle";
@@ -223,7 +222,7 @@ function LastFive({ five }: { five: FormResult[] }) {
 
 function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
   const look = useAvatarStyle();
-  // The star rating is the CAREER one (starPoints.ts); ability shows as Overall.
+  // The one rating the player sees: the career star rating, 1-100 (starPoints.ts).
   const star = starStatus(career);
   const rating = useCountUp(star.stars);
   const money = useCountUp(career.money, 900);
@@ -303,15 +302,17 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
           className="kib-press mt-1.5 inline-flex"
           aria-label="Star rating — see how it is made up"
         >
-          <Pill gold label="Rating ›" value={`★ ${rating.toFixed(1)}`} />
+          <Pill gold label="Rating ›" value={`★ ${Math.round(rating)}`} />
         </button>
-        {/* The way to the next 0.1★, and your overall (how good you are now). */}
+        {/* The way to the next level. One rating, 1-100: Overall is no longer
+            shown to the player (Harry, 1 Oct 2026); ability still runs the
+            game underneath (rating.ts). */}
         <div className="mx-auto mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-black/60">
           <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-200" style={{ width: `${Math.max(3, star.toNext * 100)}%` }} />
         </div>
-        <div className="mt-1 text-[10.5px] font-black uppercase tracking-wider text-white">
-          {star.gate ? `🔒 ★${star.gate.cap.toFixed(1)} gate · ` : ""}Overall {Math.round(attributeOverall(career.skills))}
-        </div>
+        {star.gate && (
+          <div className="mt-1 text-[10.5px] font-black uppercase tracking-wider text-white">🔒 ★{star.gate.cap} gate</div>
+        )}
       </div>
     </ClubCard>
   );

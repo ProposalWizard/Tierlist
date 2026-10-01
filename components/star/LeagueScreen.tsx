@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type React from "react";
 import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { displayOverall } from "@/lib/star/rating";
+import { starLevel } from "@/lib/star/starPoints";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
@@ -855,7 +856,11 @@ export default function LeagueScreen({ career, compact = false }: Props) {
                       </div>
                     </div>
                     <div className="flex justify-center">
-                      <span className={`min-w-[24px] rounded-md px-1 py-[1px] text-center text-[10px] font-black tabular-nums shadow ${ovrStyle(p.overall)}`}>{p.overall ?? "—"}</span>
+                      {/* Your row shows your star rating, the one rating you
+                          see (Harry, 1 Oct 2026); team-mates keep their OVR. */}
+                      {p.isYou
+                        ? <span className="min-w-[24px] rounded-md bg-amber-400 px-1 py-[1px] text-center text-[10px] font-black tabular-nums text-gray-950 shadow">★{starLevel(career)}</span>
+                        : <span className={`min-w-[24px] rounded-md px-1 py-[1px] text-center text-[10px] font-black tabular-nums shadow ${ovrStyle(p.overall)}`}>{p.overall ?? "—"}</span>}
                     </div>
                     <div className="text-center text-white/90">{p.position}</div>
                     <div className="text-center">

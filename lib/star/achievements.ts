@@ -31,8 +31,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "boss-90", label: "Manager's Favourite", description: "Reach 90 Boss rating", check: (c) => c.relationships.boss >= 90 },
   { id: "team-90", label: "Dressing Room Leader", description: "Reach 90 Team rating", check: (c) => c.relationships.team >= 90 },
   { id: "fans-90", label: "Fan Favourite", description: "Reach 90 Fans rating", check: (c) => c.relationships.fans >= 90 },
-  { id: "star-4", label: "★4 Rating", description: "Reach 4 stars", check: (c) => c.starRating >= 4 },
-  { id: "star-5", label: "★5 Legend", description: "Reach 5 stars", check: (c) => c.starRating >= 5 },
+  // Ability (career.starRating), not the 1-100 star rating; named without a
+  // number since the player only sees one rating now (Harry, 1 Oct 2026).
+  { id: "star-4", label: "Top Player", description: "Become one of the best players in the country", check: (c) => c.starRating >= 4 },
+  { id: "star-5", label: "World Class", description: "Reach world-class ability", check: (c) => c.starRating >= 5 },
   { id: "rich", label: "Comfortable Living", description: "Save ★100", check: (c) => c.money >= 100 },
   { id: "loaded", label: "Wealthy", description: "Save ★500", check: (c) => c.money >= 500 },
   { id: "ballon-dor", label: "Ballon d'Or Winner", description: "Win the Ballon d'Or", check: (c) => c.ballonDorWins >= 1 },
