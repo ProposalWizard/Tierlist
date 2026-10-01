@@ -82,9 +82,12 @@ const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {
 `FlatPanel` has no rounded corners and no drop shadow; `fade` is "both" (soft
 top and bottom), "top", "bottom" or "none". `SquareBar` (and `StatBar`, which
 is now the same shape) are square, outlined and ticked; `animate` marches
-stripes along the fill. `TopHud` is the strip under the shell header: which
-cells it shows per screen is `HUD_SPEC` in `TopHud.tsx`; energy is always one
-of them, with its can (USE, or BUY into the cans shop). One heavy font
+stripes along the fill. The top of EVERY game screen is the same two
+pieces (Harry, 1 Oct 2026, "the pills at the top aren't uniform"): `GameBar`
+(home, name, age, money, "?", settings) and `TopHud` (one block: star rating |
+energy with its can, USE or BUY). Neither changes with the screen; a screen's
+own extras go in a title row UNDER them. `DashboardShell` renders both; full
+screens get them through `ScreenShell hud={…}`. One heavy font
 (Anton) is set on `.star-root` in `flat.css` — do not set a font by hand.
 
 ## Navigation the NSS way (v0.23) — `ui/Nav.tsx`
