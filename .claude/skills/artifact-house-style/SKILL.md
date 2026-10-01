@@ -72,6 +72,14 @@ standard."*
 - Clips go in `files` as `clips/<name>.mp4`. The admin patch-notes archive
   plays them too (it serves `.mp4` with byte ranges).
 - Watch every clip's cover and open every still before publishing.
+- **Confirmed by Harry on the v0.20/v0.21 pages (1 Oct 2026):** *"these
+  artifacts are amazing, speed tabs, the more pictures settings — this is
+  GREAT."* So keep exactly that: the ½×/¼× speed buttons under every clip,
+  extra stills behind a "More pictures (n)" toggle, the detail behind a
+  "The detail" toggle, and one short line + "Look for" above the clip. The
+  generators that built them are the pattern to copy
+  (`references/generators/review-page-build.py` and `v021-page-build.py`;
+  the reusable card is `references/clip-card.html`).
 
 ### 5. Everything long is behind a toggle
 `<details>` / `<summary>`, closed by default, labelled with what is inside
