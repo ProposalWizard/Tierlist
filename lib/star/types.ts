@@ -733,7 +733,10 @@ export interface CareerState {
    * Cleared the moment a club is actually signed for. Absent on every career
    * that has not just negotiated one.
    */
-  agreedTerms?: { club: string; wage: number };
+  agreedTerms?: { club: string; wage: number;
+    /** The talks broke down: the club came back with a worse, final offer
+     *  instead of walking away (Mikey, 1 Oct 2026). */
+    soured?: boolean };
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate

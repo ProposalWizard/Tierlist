@@ -350,6 +350,55 @@ export function generateScoutOffers(
   return offers.sort((a, b) => b.strength - a.strength);
 }
 
+/** How often a trial that drew one club draws a second as well. */
+export const SECOND_CLUB_CHANCE = 0.85;
+
+/**
+ * WHO CAME IN FOR YOU, AS THE GAME PLAYS IT NOW (Mikey, 1 Oct 2026).
+ *
+ * "You have to be given a club after the trial. You cannot leave that area
+ * without choosing a club" — at least one, and most of the time two. The
+ * youth team and the free-agent life are switched off as places a trial can
+ * send you; their code (youth.ts, freeAgent.ts, generateScoutOffers's own
+ * empty list) is kept, unused, for when they come back.
+ *
+ * Built on generateScoutOffers, so a good trial still draws better and more
+ * clubs; this only fills in when the rolls left fewer than that. The clubs it
+ * adds come from the rungs that wanted the player most, at the trial's own
+ * wage for that club.
+ */
+export function trialOffers(trialScore: number, rng: () => number, ctx: ScoutContext = {}): ScoutOffer[] {
+  const offers = generateScoutOffers(trialScore, rng, ctx);
+  const score = Math.max(0, Math.min(100, Number.isFinite(trialScore) ? trialScore : 0));
+  const want = offers.length === 0 ? (rng() < SECOND_CLUB_CHANCE ? 2 : 1) : offers.length === 1 && rng() < SECOND_CLUB_CHANCE ? 2 : offers.length;
+  const taken = new Set(offers.map(o => o.club));
+  // The rungs whose usual signing is nearest this trial come first — by how
+  // close the score is to each rung's peak, not by `appetite`, which is zero
+  // everywhere below the interest bar (and would then hand a poor trial a
+  // Premier League club, the first rung in the list).
+  const peaks = ctx.retrial ? RETRIAL_PEAK : PEAK;
+  const rungs = [...LADDER].sort((a, b) => Math.abs(score - peaks[a.division]) - Math.abs(score - peaks[b.division]));
+  for (let i = 0; offers.length < want && i < rungs.length * 3; i++) {
+    const rung = rungs[i % rungs.length];
+    const club = pick(rung.clubs, rng);
+    if (taken.has(club)) continue;
+    taken.add(club);
+    const wage = offerWage(club, rung.division, score);
+    offers.push({
+      club, division: rung.division, wage,
+      goalBonus: goalBonusFor(wage), assistBonus: assistBonusFor(wage),
+      seasons: rung.division === "premier" || rung.division === "championship" ? 3 : 2,
+      pitch: pick(PITCHES, rng),
+      strength: clubStrength(club, rung.division, rung.strength),
+    });
+  }
+  return offers.sort((a, b) => b.strength - a.strength);
+}
+
+/** Push a manager too far and he does not walk: this is what is left on the table. */
+export const SOURED_OFFER_SHARE = 0.8;
+export const SOURED_PITCH = "You pushed us too far. This is our final offer — take it or leave it.";
+
 /** For the screen: which league an offer is from, in words. */
 export function offerLeagueName(offer: ScoutOffer): string {
   return leagueNameFor(offer.division);
