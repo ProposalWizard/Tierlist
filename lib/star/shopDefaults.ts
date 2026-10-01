@@ -380,8 +380,10 @@ export const LIFESTYLE_LEVEL_PRICE_MULT: Record<number, number> = {
  * not a status ladder: one level, ★800, two seasons (fame.ts), then a new one.
  */
 /** What the shop sells the phone for. The base catalogue above keeps its band
- *  price (tests/star/economy.mts holds that ladder); the shop sells LIFESTYLE_LEVELS. */
-export const PHONE_PRICE = 800;
+ *  price (tests/star/economy.mts holds that ladder); the shop sells LIFESTYLE_LEVELS.
+ *  ★800 was about 23 weeks of non-league wages (~★25 a week) for the first
+ *  thing you buy; Harry, 1 Oct 2026: "lower the phone price". ★150 ≈ 6 weeks. */
+export const PHONE_PRICE = 150;
 const SINGLE_LEVEL = new Set(["phone"]);
 
 export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
