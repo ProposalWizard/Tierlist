@@ -279,7 +279,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   /** Your star rating before and after the last match — the bar on a simmed result (item 36). */
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
-  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[] } | null>(null);
+  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[]; held?: number; carried?: number } | null>(null);
   /** A whole new star: the full-screen moment. */
   const [newStar, setNewStar] = useState<number | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
@@ -1024,7 +1024,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // Everything that moved the rating, not just the match (starGain).
     const gain = starGain(career, next);
     setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, gate: starNext.gate?.need,
-      total: gain.total, extra: gain.lines.filter(l => l.cat !== "match").map(l => ({ label: l.label, sp: l.sp, n: l.n })) });
+      total: gain.total, extra: gain.lines.filter(l => l.cat !== "match").map(l => ({ label: l.label, sp: l.sp, n: l.n })),
+      held: starNext.held, carried: starNext.carried });
     toastAchievements(newlyUnlocked);
     toastRatingChange(starsNow(career), starNext.stars);
     // The world reacts. Generated once, here, from the career on both sides of

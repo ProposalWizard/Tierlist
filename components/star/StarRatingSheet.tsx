@@ -46,10 +46,16 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
         <div className="mt-1 text-center text-[11.5px] font-black text-white">
           {st.stars >= MAX_LEVEL ? `${MAX_LEVEL} — you have done everything.`
             : st.stars >= POINTS_CAP_LEVEL ? `${st.legendDone.length} of ${LEGEND_TASKS.length} Legend tasks done · one level each`
+              : st.held > 0 ? `★${st.stars + 1} is paid for — it comes with your next match`
               : st.gate ? "Held at a star gate"
                 : `${fmt(st.spToNext)} Star Points to ★${st.stars + 1}`}
         </div>
 
+        {st.held > 0 && (
+          <div className="mt-2 rounded-lg bg-white/10 px-2 py-1.5 text-center text-[11.5px] font-bold text-white">
+            One level a match at most.{st.carried > 0 ? <> <b className="text-amber-300">+{fmt(st.carried)}</b> Star Points carried to the levels after.</> : null}
+          </div>
+        )}
         {st.gate && (
           <div className="mt-3 rounded-xl border border-dashed border-red-400 bg-red-500/10 p-2.5">
             <div className="text-[12px] font-black text-white">🔒 ★{st.gate.cap} gate</div>

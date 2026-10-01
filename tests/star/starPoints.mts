@@ -13,12 +13,17 @@
 //   NL stayer before      match 11       held at 29 from season 2
 //            after        match 81       held at 29 from season 3-4
 //   first match: before +3 to +6 levels, after +0 to +2.
-import { makeInitialCareer, creditMatchResult, attachClub } from "../../lib/star/careerFlow.ts";
+//   1 Oct 2026, one level a match at most (MAX_RISE_PER_MATCH): biggest
+//   one-match rise over these 18 careers 12 -> 1; matches to level 10
+//   unchanged (riser 20.2, star 11.2, stayer 32.0). A Premier League start
+//   reaches 10 in 9 matches (was 3-6), first match +1 (was +3 to +6).
+import { makeInitialCareer, creditMatchResult, attachClub, advanceSeason } from "../../lib/star/careerFlow.ts";
 import { NATIONAL_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs.ts";
 import {
   starStatus, withStars, matchStarPoints, livePoints, levelFromPoints, pointsForLevel, ledgerFromHistory, starGain,
   pointLines, starLevel, isOldStarScale, STAR_TITLES, starTitle,
   LEVEL_THRESHOLDS, LEVEL_COST, STAR_GATES, LEGEND_TASKS, TROPHY_SP, MATCH_SP, TIER_MULT, SP_SCALE, emptyLedger,
+  PREMIER_DEBUT_SP, MAX_RISE_PER_MATCH,
 } from "../../lib/star/starPoints.ts";
 import { ACHIEVEMENTS } from "../../lib/star/achievements.ts";
 import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types.ts";
@@ -105,7 +110,9 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   const at90 = (legend: string[]): CareerState => ({ ...fresh(), stars: 90,
     starLedger: { ...emptyLedger(), uclApps: 1, ballonRanks: [1], tiers: { premier: { ...zero, apps: 10 } } },
     ballonDorWins: 1, trophies: [{ season: 1, competition: "Premier League", club: "X" }],
-    starBest: { match: 30_000_000, trophies: 0, awards: 0, milestones: 0, status: 0, stars: 90, legend, scale: 100 } });
+    // A window that doesn't bind: this block is about tasks → levels; the
+    // one-level-a-match cap has its own block below.
+    starBest: { match: 30_000_000, trophies: 0, awards: 0, milestones: 0, status: 0, stars: 90, legend, scale: 100, win: { apps: 10, base: 99 } } });
   check(starStatus(at90([])).stars === 90, `90 with no tasks done (${starStatus(at90([])).stars})`);
   check(starStatus(at90(["ballons", "ucl", "titles"])).stars === 93, "three tasks is 93");
   check(starStatus(at90(LEGEND_TASKS.slice(0, 9).map(t => t.id))).stars === 99, "nine of ten is 99");
@@ -171,11 +178,53 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(gain.lines.some(l => l.key === "pl-debut"), "the Premier League debut is named, not hidden");
   check(gain.lines.some(l => l.key === "achievements" && (l.n ?? 0) >= 1), "and so are the achievements the match unlocked");
   const moved = after.stars! - c.stars!;
-  check(moved >= 1 && moved <= 4, `a first Premier League draw with an assist moves you a few levels, not ten (${c.stars} → ${after.stars})`);
+  check(moved === 1, `a first Premier League draw with an assist moves you one level (${c.stars} → ${after.stars})`);
+  check(PREMIER_DEBUT_SP === 6_000 && PREMIER_DEBUT_SP <= LEVEL_COST[0], `the Premier League debut is about one level at the start (${PREMIER_DEBUT_SP})`);
   const nl = fresh();
   const nlAfter = creditMatchResult(nl, leagueFixture(nl), stats({ goals: 1, assists: 1, starMan: true, rating: 8.4, homeScore: 2, awayScore: 0 })).career;
   check(nlAfter.stars! - nl.stars! <= 2, `a dream National League debut is a level or two (${nl.stars} → ${nlAfter.stars})`);
   check(pointLines(after).reduce((t, l) => t + l.sp, 0) === Object.values(livePoints(after)).reduce((a, b) => a + b, 0), "the named lines are the whole of livePoints");
+}
+
+// ── Never two levels from one match (Harry, 1 Oct 2026: "you should never jump 2 levels") ──
+// Played-out careers through the real careerFlow: every match, plus anything
+// credited before the next one (season-end awards, promotion, a gate
+// opening), moves the rating by at most one level. Fails if any match moves 2+.
+{
+  check(MAX_RISE_PER_MATCH === 1, "the cap is one level");
+  let worst = 0, heldSeen = 0, matches = 0;
+  const rnd = (() => { let x = 7; return () => ((x = (x * 1103515245 + 12345) % 2147483648) / 2147483648); })();
+  for (const [start, clubs, div, goals] of [
+    ["Chelsea", PREMIER_LEAGUE_CLUBS, "premier", 0.9], [NATIONAL_LEAGUE_CLUBS[3], NATIONAL_LEAGUE_CLUBS, "national_league", 0.8],
+  ] as const) {
+    let c: CareerState = withStars(makeInitialCareer({ ...P, club: start }, [...clubs], div));
+    let last = starStatus(c).stars;
+    for (let season = 1; season <= 3; season++) {
+      for (let g = 0; g < 80; g++) {
+        const f = c.fixtures.find(x => !x.played);
+        if (!f) break;
+        const won = rnd() < 0.7, n = rnd() < goals ? (rnd() < 0.3 ? 3 : 1) : 0;
+        c = creditMatchResult(c, f, stats({ goals: n, assists: rnd() < 0.5 ? 1 : 0, starMan: n > 0, rating: n > 0 ? 8.8 : 7, homeScore: won ? n + 1 : 0, awayScore: won ? 0 : 1 })).career;
+        const now = starStatus(c).stars;
+        worst = Math.max(worst, now - last); last = now; matches++;
+        if (starStatus(c).held > 0) heldSeen++;
+      }
+      c = advanceSeason(c, false).career;
+      const now = starStatus(c).stars;
+      worst = Math.max(worst, now - last); last = now;
+    }
+  }
+  check(worst <= 1, `no match moved the rating 2+ levels (biggest: ${worst}, over ${matches} matches)`);
+  check(heldSeen > 0, `the cap did hold points back at times (${heldSeen} matches), so this isn't passing by accident`);
+  // Nothing is lost: what was held pays out one level a match after.
+  const c0 = freshChelsea(), f0 = leagueFixture(c0);
+  const big = creditMatchResult(c0, f0, stats({ goals: 3, assists: 1, starMan: true, rating: 9.5, homeScore: 4, awayScore: 0 })).career;
+  const st = starStatus(big);
+  check(st.stars === c0.stars! + 1 && st.held > 0 && st.carried > 0, `a dream Premier League debut is still one level, the rest carried (${c0.stars} → ${st.stars}, ${st.held} held, +${st.carried})`);
+  check(withStars(withStars(big)).stars === st.stars, "banking again between matches doesn't sneak a second level in");
+  const g2 = big.fixtures.find(x => !x.played)!;
+  const next = creditMatchResult(big, g2, stats({})).career;
+  check(starStatus(next).stars === st.stars + 1, `the next match (even a quiet defeat) pays out a held level (${st.stars} → ${starStatus(next).stars})`);
 }
 
 // ── Names describe the career, never the club or division (Harry: "Non-league regular" in the Prem) ──

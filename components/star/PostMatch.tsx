@@ -37,7 +37,10 @@ interface Props {
   /** Star Points this match earned, and the way to the next level (starPoints.ts).
    *  `total` is everything that moved the rating (the match plus any debut,
    *  achievement or trophy it brought), and `extra` names the rest. */
-  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[] };
+  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[];
+    /** Levels the one-level-a-match cap held back, and the points past the
+     *  next level carried to the matches after (starPoints.ts). */
+    held?: number; carried?: number };
 }
 
 // The same black outline the live scoreboard puts on its club-name text —
@@ -352,6 +355,13 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
           )}
           {extra.length === 0 && star.mult !== 1 && (
             <div className="mt-0.5 text-[10px] font-bold text-white">This match: {exact(star.base)} × {star.mult}</div>
+          )}
+          {/* One level a match at most (Harry, 1 Oct 2026: "you should never
+              jump 2 levels"). Nothing is lost: say where the rest went. */}
+          {(star.held ?? 0) > 0 && (
+            <div className="mt-1 text-[10px] font-black text-amber-300">
+              +{exact(star.carried ?? 0)} carried to next level · one level a match at most
+            </div>
           )}
         </>
       ) : (

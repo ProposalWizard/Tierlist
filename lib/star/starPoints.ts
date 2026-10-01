@@ -100,6 +100,10 @@ export interface StarBest {
   /** Points carried over from a 1.0-10.0 save, so its converted rating sits
    *  at the start of its level and keeps climbing. Set once, at conversion. */
   carry?: number;
+  /** The one-level-a-match cap (MAX_RISE_PER_MATCH): `apps` is how many
+   *  matches you had played when this window opened, `base` your rating then.
+   *  Until you play again the rating can't pass base + 1. */
+  win?: { apps: number; base: number };
 }
 
 /** The career's ledger; a save from before Star Points gets one rebuilt. */
@@ -202,7 +206,10 @@ export const MILESTONES = {
 // just took me from 1.0 to 2.1"): a Premier League debut was worth more than
 // a whole star, and the four achievements a first match unlocks almost
 // another. Cut down, and the card now lists them (starGain).
-export const PREMIER_DEBUT_SP = 150 * S;
+// 1 Oct 2026, again ("you should never jump 2 levels"): 18,000 was still
+// ~2.5 levels at the start. Now 6,000, about one level, and the one-level-a-
+// match cap (MAX_RISE_PER_MATCH) holds back anything a match brings beyond that.
+export const PREMIER_DEBUT_SP = 50 * S;
 export const BIGGER_CLUB_SP_PER_POINT = 10 * S;
 export const RECORD_SP = 2500 * S;
 export const ACHIEVEMENT_SP = 20 * S;
@@ -340,6 +347,23 @@ export function starTitle(level: number): string {
   return STAR_TITLES[Math.max(0, Math.min(10, Math.floor(level / 10)))];
 }
 
+// ── 2b. One level a match, at most ─────────────────────────────────────────
+
+/**
+ * Harry, 1 Oct 2026: "you should never jump 2 levels, it should always be
+ * longer than that." One match — with everything that lands with it before
+ * your next one (a debut, achievements, a trophy, the season's awards) — can
+ * lift the rating by this many levels at most. The points still bank: any
+ * beyond the cap carry over and pay out one level per match after it.
+ * A 1.0-10.0 save being converted is not a match: it keeps the level it had.
+ */
+export const MAX_RISE_PER_MATCH = 1;
+
+/** Matches you have played, in every competition (the ledger counts them). */
+export function matchesPlayed(led: StarLedger): number {
+  return Object.values(led.tiers).reduce((s, t) => s + (t?.apps ?? 0), 0);
+}
+
 // ── 3. Star gates ───────────────────────────────────────────────────────────
 
 export interface StarGate { cap: number; need: string; open: (career: CareerState, led: StarLedger) => boolean }
@@ -400,6 +424,13 @@ export interface StarStatus {
   legendDone: string[];
   /** Points carried over from a 1.0-10.0 save (see bestOf). */
   carry: number;
+  /** Levels your points have already paid for that the one-level-a-match cap
+   *  is holding back; they come one per match you play. */
+  held: number;
+  /** Star Points past the next level, carried to the matches after (0 unless held). */
+  carried: number;
+  /** The cap's window (see StarBest.win), to bank. */
+  win: { apps: number; base: number };
 }
 
 /** True for a career saved on the 1.0-10.0 scale and not yet converted. */
@@ -460,17 +491,30 @@ export function starStatus(career: CareerState): StarStatus {
   ]));
   // The last ten levels: only once points and every gate have taken you to 90.
   if (stars >= POINTS_CAP_LEVEL) stars = POINTS_CAP_LEVEL + Math.floor((10 * legendDone.length) / LEGEND_TASKS.length);
-  stars = Math.min(MAX_LEVEL, Math.max(stars, best?.stars ?? 1));
+  stars = Math.min(MAX_LEVEL, stars);
 
-  let toNext = 0, spToNext = 0;
-  if (stars >= POINTS_CAP_LEVEL) toNext = stars >= MAX_LEVEL ? 1 : ((10 * legendDone.length) / LEGEND_TASKS.length) % 1;
+  // One level a match at most. The window opens when a new match has been
+  // played (the ledger's count moved on), at the rating banked before it.
+  // No banked rating at all (a brand-new career) has nothing to hold back.
+  const apps = matchesPlayed(led);
+  const win = best?.win && best.win.apps === apps ? best.win : { apps, base: best?.stars ?? stars };
+  const reach = stars;
+  stars = Math.min(stars, win.base + MAX_RISE_PER_MATCH);
+  stars = Math.min(MAX_LEVEL, Math.max(stars, best?.stars ?? 1));
+  const held = Math.max(0, reach - stars);
+
+  let toNext = 0, spToNext = 0, carried = 0;
+  if (held > 0) {
+    toNext = 1;
+    carried = stars < POINTS_CAP_LEVEL ? Math.max(0, total - pointsForLevel(stars + 1)) : 0;
+  } else if (stars >= POINTS_CAP_LEVEL) toNext = stars >= MAX_LEVEL ? 1 : ((10 * legendDone.length) / LEGEND_TASKS.length) % 1;
   else if (gate && stars >= gate.cap) toNext = 1;
   else {
     const from = pointsForLevel(stars), to = pointsForLevel(stars + 1);
     toNext = Math.max(0, Math.min(1, (total - from) / Math.max(1, to - from)));
     spToNext = Math.max(0, to - total);
   }
-  return { stars, points, total, ungated, gate: gate && stars >= gate.cap ? gate : null, toNext, spToNext, legendDone, carry };
+  return { stars, points, total, ungated, gate: gate && stars >= gate.cap && !held ? gate : null, toNext, spToNext, legendDone, carry, held, carried, win };
 }
 
 /** The star rating to show. */
@@ -523,7 +567,7 @@ export function withStars(career: CareerState): CareerState {
   const st = starStatus(next);
   return {
     ...next, stars: st.stars,
-    starBest: { ...st.points, stars: st.stars, legend: st.legendDone, scale: MAX_LEVEL, ...(st.carry > 0 ? { carry: st.carry } : {}) },
+    starBest: { ...st.points, stars: st.stars, legend: st.legendDone, scale: MAX_LEVEL, ...(st.carry > 0 ? { carry: st.carry } : {}), win: st.win },
   };
 }
 
