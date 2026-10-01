@@ -58,6 +58,32 @@ Newest first. Each is something that was actually said.
     in the shell; which cells show per screen is `HUD_SPEC`. Energy is in every
     one, with its can: USE when you hold one, BUY (opens the cans shop) when not.
 
+### 1 Oct 2026 — screens review (Harry, "HUGE UPDATES", P39-P97)
+- **Never stack tab rows.** Stats had three (Stats·Home·Shop, Season·All·Records,
+  Stats·Contract·Status): "that is bloated". Now one row: a League arrow at the
+  left edge, a Home arrow at the right edge, "‹ Season ›" between them. Edge
+  arrows ("an image, the little word") are `ui/Nav.tsx`. The Premier League
+  mini-table left Stats (Home has it, League has the full table).
+- **A page that is a list has no title and no Back button on it.** "The style
+  doesn't need to be there and back doesn't need to be there." Back / the page's
+  own switch / Home are a fixed bottom bar (NSS: Back / Lifestyle / Buy), and the
+  top HUD carries money and energy. Style's first item moved from 302px to 173px
+  down a 390x844 phone. "My stuff" went (a 3D home replaces it later).
+- **Relations cards carry no text** — a face, one word, a square animated bar
+  with the number on it, a play button, a "?" that says one line ("a good
+  relationship with the team means you'll get more chances during a match").
+  An empty slot is blacked out, not hidden (NSS's girlfriend and sponsors).
+- **The phone is a phone.** Closing it is the home bar (tap or swipe up), not a
+  "✕ CLOSE PHONE" pill. The red dot shows only while something is unread and
+  clears once read. Apps you do not have are blacked out; an empty page is
+  blacked-out slots, not a blank.
+- **Pre-match is an animation, not a page.** Play → the line-up draws in and
+  kicks off by itself → the match; a prompt only if energy is low when you press
+  Play. The black "KICK OFF" panel is a pitch. Energy-mode icons run green,
+  yellow, red (red the most intense).
+- **Energy never leaves**: the top HUD is on the shop pages, Store, Casino and
+  Settings too. Run-up options live under "Play style", not in Settings' middle.
+
 ### 1 Oct 2026 — "findable" means the first screen
 - **A thing made easier to find has to be on the first screen without
   scrolling** (from "fix the new problems": the Sponsors strip sat under the

@@ -294,11 +294,10 @@ function KickOffCard({ homeTeam, awayTeam, homeKit, awayKit }: { homeTeam: strin
         boxShadow: "inset 0 0 0 2px rgba(255,255,255,.5), inset 0 0 40px rgba(0,0,0,.45)",
       }}
     >
-      {/* The markings: halfway line, centre circle and spot, both boxes. */}
+      {/* The markings: halfway line, centre circle, both boxes. */}
       <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" fill="none" stroke={line} strokeWidth="1.2">
         <line x1="100" y1="0" x2="100" y2="120" />
         <circle cx="100" cy="60" r="20" />
-        <circle cx="100" cy="60" r="1.6" fill={line} stroke="none" />
         <rect x="0" y="32" width="26" height="56" />
         <rect x="0" y="46" width="9" height="28" />
         <rect x="174" y="32" width="26" height="56" />

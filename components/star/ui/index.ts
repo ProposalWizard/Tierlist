@@ -17,4 +17,4 @@ export { ShakeX, LossFlash, WinCelebration, Badge, useFly } from "./reward";
 export { default as ScreenShell, WalletPill } from "./ScreenShell";
 export { FlatPanel, SquareBar } from "./Flat";
 export { default as TopHud, HUD_SPEC, type HudScreen, type HudCell } from "./TopHud";
-export { EdgeArrows, BottomBar, BarButton, HelpDot, HomeBar, Chev, EmptySlots, type EdgeArrow } from "./Nav";
+export { EdgeArrows, BottomBar, BarButton, HelpDot, HomeBar, Chev, ArrowButton, EmptySlots, type EdgeArrow } from "./Nav";

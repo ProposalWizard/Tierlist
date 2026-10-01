@@ -87,6 +87,22 @@ cells it shows per screen is `HUD_SPEC` in `TopHud.tsx`; energy is always one
 of them, with its can (USE, or BUY into the cans shop). One heavy font
 (Anton) is set on `.star-root` in `flat.css` — do not set a font by hand.
 
+## Navigation the NSS way (v0.23) — `ui/Nav.tsx`
+
+```tsx
+<EdgeArrows prev={{ icon: "📅", label: "Season", onClick }} next={{ icon: "🏅", label: "Records", onClick }}>All seasons</EdgeArrows>  {/* one thin row, arrows at the edges */}
+<ArrowButton side="right" a={{ icon: "🏠", label: "Home", onClick }} />   {/* one arrow, laid out yourself */}
+<ScreenShell bare hud={<TopHud … />} bottomBar={<BottomBar><BarButton icon={<Chev dir="left" />} label="Back" onClick={back} /> … </BottomBar>}>…</ScreenShell>
+<HelpDot text="One line." />                 {/* the small "?" */}
+<HomeBar onActivate={closePhone} label="Close phone" />   {/* the phone's home bar: tap or swipe up */}
+<EmptySlots rows={3} icon="📭" />            {/* an empty page: blacked-out slots, no words */}
+```
+
+Three or more tab rows on one screen is a bug: one row of edge arrows, a
+bottom bar for Back / the page's switch / Home, and a `?` for any explaining.
+A thing you do not have yet is shown blacked out (`filter: brightness(.18)`),
+never hidden and never explained in a paragraph.
+
 ## Rules
 
 - No animation loops on a canvas: the one-engine guard fails the build on

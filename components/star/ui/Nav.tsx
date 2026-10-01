@@ -31,6 +31,11 @@ export interface EdgeArrow { icon?: React.ReactNode; label: string; onClick: () 
 
 const ARROW_BG = "linear-gradient(180deg, rgba(var(--sk-flat-rgb),.78), rgba(var(--sk-flat-rgb),.55))";
 
+/** One arrow on its own (a row you lay out yourself). */
+export function ArrowButton({ side, a }: { side: "left" | "right"; a: EdgeArrow }) {
+  return <Arrow side={side} a={a} />;
+}
+
 function Arrow({ side, a }: { side: "left" | "right"; a: EdgeArrow }) {
   const tri = (
     <svg width="9" height="14" viewBox="0 0 9 14" aria-hidden className="shrink-0">
