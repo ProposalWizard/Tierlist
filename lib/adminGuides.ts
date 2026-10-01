@@ -609,9 +609,9 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved."],
     inGame: [
       "Not in the game yet. If it is kept, it goes on the Home screen and in the store when trying on accessories.",
-      "The front is the real home-screen player. The back is a simple stand-in drawn on this page, because the game has no back view yet. A real turn needs the Blender player rendered from about 24 angles.",
+      "Front and back are both the real home-screen player (the back: surname and number on the shirt, the back of his head in his photo's hair colour). Still missing: the side-on angles in between, which need the Blender player rendered from about 24 angles.",
     ],
-    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · tools/blender-footballer/",
+    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · lib/star/heroBack.ts · tools/blender-footballer/",
   },
 
   "/star-blender-dev": {

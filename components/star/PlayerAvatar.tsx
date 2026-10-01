@@ -32,6 +32,7 @@ import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { paintHeroBack } from "@/lib/star/heroBack";
 import { compositeLit, paintHeroFigure, paintHeroShadow, HERO_W, HERO_H, HERO_TOP, HERO_CREST, type AvatarStyle } from "@/lib/star/heroFigure";
 import { fitImage, getFittedHead } from "@/lib/star/faceFit";
 import ClubBadge from "./ClubBadge";
@@ -76,11 +77,14 @@ function heroScale(width: number, height: number): number {
   return Math.min(width / HERO_W, height / (HERO_H - HERO_TOP));
 }
 
-export default function PlayerAvatar({ career, width, height, ball = true, className, look = AVATAR_STYLE, celebrate = false }: {
+export default function PlayerAvatar({ career, width, height, ball = true, className, look = AVATAR_STYLE, celebrate = false, view = "front" }: {
   career: CareerState; width: number; height: number; ball?: boolean; className?: string;
   look?: AvatarStyle;
   /** Arms up — the win celebration (HomeHub decides when). */
   celebrate?: boolean;
+  /** "back": the same A2 man from behind — surname and number on the shirt,
+   *  the back of his head (lib/star/heroBack.ts). Spin your player uses it. */
+  view?: "front" | "back";
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const cache = useRef(createFaceImageCache());
@@ -163,7 +167,9 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       // loaded readably this is null and the plain pasted head is drawn.
       const fitted = fitOn ? getFittedHead(faceUrl) : null;
       lx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (width - HERO_W * s) / 2, dpr * (height - HERO_H * s));
-      paintHeroFigure(lx, { shirt: kit.shirt, shorts: kit.trim, trim: kit.trim, skin: fitted?.skin ?? skin, face, number, fitted }, faceStyle, fakeFaceStyle, { armsUp: celebrate, shadow: false });
+      const heroLook = { shirt: kit.shirt, shorts: kit.trim, trim: kit.trim, skin: fitted?.skin ?? skin, face, number, fitted };
+      if (view === "back") paintHeroBack(lx, { ...heroLook, surname: career.player.lastName, key: `${career.player.firstName} ${career.player.lastName}` });
+      else paintHeroFigure(lx, heroLook, faceStyle, fakeFaceStyle, { armsUp: celebrate, shadow: false });
       ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (width - HERO_W * s) / 2, dpr * (height - HERO_H * s));
       paintHeroShadow(ctx);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -175,19 +181,20 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       if (!ctx) return;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (look === "A2") drawA2(ctx); else drawA1(ctx);
+      // The back exists only as the A2 figure.
+      if (look === "A2" || view === "back") drawA2(ctx); else drawA1(ctx);
     };
     draw();
     if (face && !(face.complete && face.naturalWidth > 0)) {
       face.addEventListener("load", draw, { once: true });
       return () => face.removeEventListener("load", draw);
     }
-  }, [width, height, kit.shirt, kit.trim, skin, faceUrl, ball, look, celebrate, number, fitOn, fitTick]);
+  }, [width, height, kit.shirt, kit.trim, skin, faceUrl, ball, look, celebrate, number, fitOn, fitTick, view, career.player.lastName, career.player.firstName]);
 
   // A2's crest sits on the chest as a real badge (the game's ClubBadge), not
   // a drawing of one. Hidden while the arms are up — it would float.
   const s = heroScale(width, height);
-  const crest = look === "A2" && !celebrate ? {
+  const crest = look === "A2" && !celebrate && view === "front" ? {
     left: (width - HERO_W * s) / 2 + HERO_CREST.x * HERO_W * s,
     top: (height - HERO_H * s) + HERO_CREST.y * HERO_H * s,
     size: Math.max(12, Math.round(HERO_CREST.size * HERO_W * s)),
