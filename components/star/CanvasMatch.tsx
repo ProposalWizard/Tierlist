@@ -23,7 +23,7 @@ import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode }
 import { separateBodies } from "@/lib/star/spacing";
 import { newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { finishServedFrame } from "@/lib/star/goalFrame";
-import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, FOUL_SHARE } from "@/lib/star/pressure";
+import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, pressFromBehind, foulShareFor, pressStep } from "@/lib/star/pressure";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -1530,6 +1530,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const aimCommitRef = useRef<number | null>(null);
   /** The defender closing you down this chance, if anyone is. */
   const presserRef = useRef<Scenario["defenders"][number] | null>(null);
+  /** The closer started behind you (on your side of the ball) — he goes round
+   *  you, and fouls you more often (lib/star/pressure.ts, Harry 1 Oct 2026). */
+  const presserBehindRef = useRef(false);
   const pressureRef = useRef(pressure);
   pressureRef.current = pressure;
   /** A foul while you pulled back: the set piece the next chance is. */
@@ -2259,7 +2262,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // you're dragging back", ordered run or not. He comes at the lighter pace
   // Harry picked (lib/star/pressure.ts), and when he gets there you are
   // either tackled or, about 1 time in 3, fouled: a free kick outside the
-  // box, a penalty inside it.
+  // box, a penalty inside it. A closer who starts behind you goes round you,
+  // not through you, and fouls you 2 times in 3 (Harry, 1 Oct 2026).
   //
   // All of it happens here, in the aim phase. An ordered run moves by the
   // same rule the engine uses for a man running to orders (stepReactions'
@@ -2291,6 +2295,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (dist < bestD) { bestD = dist; best = d; }
       }
       presserRef.current = best;
+      presserBehindRef.current = !!best && pressFromBehind(best, sc.ball, sc.player);
     }
     if (isCaptainRef.current && hasOrderedRun(sc)) pushLine("He's off — play it before he's past the last man.");
   };
@@ -2305,7 +2310,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim(null);
     // Tackled, or fouled about 1 time in 3. Its own seeded draw, so the
     // chance's counted stream (goal replays read it) is untouched.
-    if (why === "pressed" && mulberry32((seedRef.current ^ 0x0f0c1a5) >>> 0)() < FOUL_SHARE) {
+    // From behind he fouls you more often (2 in 3, not 1 in 3) — Harry.
+    if (why === "pressed" && mulberry32((seedRef.current ^ 0x0f0c1a5) >>> 0)() < foulShareFor(presserBehindRef.current)) {
       fouled();
       return;
     }
@@ -2365,10 +2371,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const d = presserRef.current;
     if (d && since > PRESS_REACT_S) {
       const b = sc.ball;
-      const dx = b.x - d.x, dy = b.y - d.y, dist = Math.hypot(dx, dy);
+      const dist = Math.hypot(b.x - d.x, b.y - d.y);
       if (dist <= PRESS_WIN_R) { loseChance("pressed"); return; }
-      const step = Math.min(dist - PRESS_WIN_R * 0.5, pressSpeedFor(pressureRef.current) * dt);
-      d.x += (dx / dist) * step; d.y += (dy / dist) * step;
+      // Straight at the ball — round you, never through you, if you are in
+      // the way (Harry, 1 Oct 2026: "on the wrong side of me").
+      pressStep(d, b, sc.player, pressSpeedFor(pressureRef.current) * dt);
     }
   };
 
