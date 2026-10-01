@@ -1,12 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MatchStats } from "@/lib/star/types";
 import { kitsFor, type Kit } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
 import { CHANCE_KIND_LABEL, CHANCE_OUTCOME_LABEL, chanceOutcomeGood, type ChanceOutcome } from "@/lib/star/chanceLog";
 import { minuteLabel } from "@/lib/star/addedTime";
 import ClubBadge from "./ClubBadge";
-import { ClubCard, CountUp, PressButton, Burst, FloatText, Glow, Shine, clubTheme, rgba } from "./ui";
+import { ClubCard, CountUp, PressButton, Burst, FloatText, Glow, Shine, Pop, clubTheme, rgba, prefersReducedMotion } from "./ui";
+import { SquareBar } from "./ui/Flat";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
 
 /** Every star, not a rounded "3k" — Harry wants the real numbers. */
@@ -34,8 +35,16 @@ interface Props {
    *  match's result (item 36). */
   starBefore?: number;
   starAfter?: number;
-  /** Star Points this match earned, and the way to the next 0.1★ (starPoints.ts). */
-  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string };
+  /** Star Points this match earned, and the way to the next level (starPoints.ts).
+   *  `total` is everything that moved the rating (the match plus any debut,
+   *  achievement or trophy it brought), and `extra` names the rest. */
+  star?: { sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[];
+    /** Levels the one-level-a-match cap held back, and the points past the
+     *  next level carried to the matches after (starPoints.ts). */
+    held?: number; carried?: number };
+  /** Achievements this match unlocked, shown one at a time at the end; you
+   *  cannot press Continue until you have seen them all (Harry, P27). */
+  achievements?: { label: string; description: string }[];
 }
 
 // The same black outline the live scoreboard puts on its club-name text —
@@ -61,7 +70,7 @@ const RESULT_LOOK: Record<Result, { word: string; color: string }> = {
  * counts up big, then the money and the relationship changes float up off
  * their rows. For a phone set to reduce motion every beat lands at once.
  */
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star, achievements = [] }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
   const kits = kitsFor(homeTeam, awayTeam);
@@ -80,10 +89,19 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
   const sting = result === "loss" || out;
 
   // The beats. Each is on straight away for reduced motion.
+  // NSS order (Harry, P27): the star rating bar rises first, then the match
+  // rating, then what it did to relationships, then wage / bonus / cash, then
+  // the achievements, one at a time.
   const scoreIn = useLater(250);
   const verdict = useLater(1000);
-  const ratingIn = useLater(1350);
-  const moneyIn = useLater(1900);
+  const starIn = useLater(1400);
+  const ratingIn = useLater(2500);
+  const relIn = useLater(3500);
+  const moneyIn = useLater(4400);
+  const achIn = useLater(5400);
+  const [seen, setSeen] = useState(0);
+  const allSeen = achievements.length === 0 || seen >= achievements.length;
+  const canContinue = allSeen && (achievements.length === 0 || achIn);
 
   return (
     <Screen glow={theme.glow} tone={look.color}>
@@ -131,27 +149,27 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
         </div>
       )}
 
-      {/* Item 36: a simmed match is just the score, your goals and assists,
-          your rating and your star rating — then home. */}
+      {/* The order is the point: star bar, match rating, relationships, pay,
+          achievements. Each block arrives on its beat (everything at once for
+          a phone set to reduce motion). No "+N points" text anywhere. */}
       {stats.simmed ? (
         <ClubCard glow={theme.glow} className="mt-2.5 overflow-hidden">
           <div className="border-b border-white/10 bg-sky-500/10 py-1.5 text-center text-[10.5px] font-black uppercase tracking-[0.2em] text-sky-200">
             ⏩ Simulated{stats.enteredAt ? ` · on at ${stats.enteredAt}'` : ""}
           </div>
-          <div className="grid grid-cols-2 gap-2 p-2.5">
+          <StarBar before={starBefore} after={starAfter} on={starIn} star={star} />
+          <RatingHero value={stats.rating} on={ratingIn} starMan={stats.starMan} />
+          <div className="grid grid-cols-2 gap-2 p-2.5 pt-0">
             <StatTile label="Goals" value={stats.goals} on={ratingIn} highlight={stats.goals > 0} />
             <StatTile label="Assists" value={stats.assists} on={ratingIn} highlight={stats.assists > 0} />
           </div>
-          <RatingHero value={stats.rating} on={ratingIn} starMan={stats.starMan} />
-          <StarBar before={starBefore} after={starAfter} on={moneyIn} star={star} />
         </ClubCard>
       ) : (<>
-        <div className="mt-2.5 grid grid-cols-4 gap-1.5">
-          <StatTile label="Chances" value={stats.chances} on={ratingIn} />
-          <StatTile label="Goals" value={stats.goals} on={ratingIn} highlight={stats.goals > 0} />
-          <StatTile label="Assists" value={stats.assists} on={ratingIn} highlight={stats.assists > 0} />
-          <StatTile label="Passes" value={stats.passes} on={ratingIn} />
-        </div>
+        {starAfter !== undefined && (
+          <ClubCard glow="#fbbf24" strength={0.2} className="mt-2.5 overflow-hidden">
+            <StarBar before={starBefore} after={starAfter} on={starIn} star={star} />
+          </ClubCard>
+        )}
 
         <ClubCard glow={theme.glow} className="mt-2 overflow-hidden">
           <RatingHero
@@ -164,6 +182,20 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
           {log && chancesOpen && <ChanceList chances={log} />}
         </ClubCard>
 
+        <div className="mt-2 grid grid-cols-4 gap-1.5">
+          <StatTile label="Chances" value={stats.chances} on={ratingIn} />
+          <StatTile label="Goals" value={stats.goals} on={ratingIn} highlight={stats.goals > 0} />
+          <StatTile label="Assists" value={stats.assists} on={ratingIn} highlight={stats.assists > 0} />
+          <StatTile label="Passes" value={stats.passes} on={ratingIn} />
+        </div>
+
+        <div className={`mt-2 grid grid-cols-3 gap-1.5 ${relIn ? "kit-rise" : "opacity-0"}`}>
+          <RelChip label="Boss" delta={stats.bossChange} on={relIn} />
+          <RelChip label="Team" delta={stats.teamChange} on={relIn} />
+          <RelChip label="Fans" delta={stats.fansChange} on={relIn} />
+        </div>
+
+        <div className={moneyIn ? "kit-rise" : "opacity-0"}>
         <ClubCard glow="#fbbf24" strength={0.18} className="mt-2 overflow-hidden">
           <SectionLabel className="px-3 pb-1 pt-2.5">Pay</SectionLabel>
           <RowStar label="Wage" value={stats.wage} on={moneyIn} />
@@ -178,22 +210,17 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             </div>
           </div>
         </ClubCard>
-
-        <div className="mt-2 grid grid-cols-3 gap-1.5">
-          <RelChip label="Boss" delta={stats.bossChange} on={moneyIn} />
-          <RelChip label="Team" delta={stats.teamChange} on={moneyIn} />
-          <RelChip label="Fans" delta={stats.fansChange} on={moneyIn} />
         </div>
-
-        {starAfter !== undefined && (
-          <ClubCard glow="#fbbf24" strength={0.2} className="mt-2 overflow-hidden">
-            <StarBar before={starBefore} after={starAfter} on={moneyIn} star={star} />
-          </ClubCard>
-        )}
       </>)}
 
-      <PressButton variant="primary" size="lg" pulse onClick={onContinue} className="relative mt-3 flex w-full items-center justify-center gap-2 overflow-hidden">
-        <Shine loop every={5} />
+      {/* The achievements, one at a time. Continue stays shut until every one
+          has been seen. */}
+      {achIn && achievements.length > 0 && seen < achievements.length && (
+        <AchievementCard key={seen} a={achievements[seen]} n={seen + 1} of={achievements.length} onNext={() => setSeen((k) => k + 1)} />
+      )}
+
+      <PressButton variant="primary" size="lg" pulse={canContinue} disabled={!canContinue} onClick={onContinue} className="relative mt-3 flex w-full items-center justify-center gap-2 overflow-hidden">
+        {canContinue && <Shine loop every={5} />}
         Continue
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -299,42 +326,60 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
 }
 
 /**
- * Item 36: your star rating and how far it has come towards the next tenth —
- * the one progress number a simmed match shows (and now the full match too).
+ * Your star rating as a bar that rises (Harry, P5, P27: "the star rating goes
+ * up, but it doesn't say plus 100 points … just the star rating bar is good
+ * enough"). The bar is the way to the next level. A level up fills it, ticks
+ * the number, and starts the next level's bar. No point totals, no "this match"
+ * lines, no "% of the way".
  */
 function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
+  const from = Math.floor(before ?? after ?? 0);
+  const to = Math.floor(after ?? from);
+  const up = to > from;
+  const endPct = star ? Math.max(3, star.toNext * 100) : 0;
+  // 0: waiting · 1: rising (to the top on a level up) · 2: new level, rising again
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    if (prefersReducedMotion()) { setStage(up ? 2 : 1); return; }
+    setStage(1);
+    if (!up) return;
+    const t1 = setTimeout(() => setStage(2), 1100);
+    return () => clearTimeout(t1);
+  }, [on, up]);
   if (after === undefined) return null;
-  const from = before ?? after;
-  const tenth = (r: number) => Math.floor(r * 10 + 1e-9);
-  const frac = (r: number) => Math.max(0, Math.min(1, r * 10 - tenth(r)));
-  const up = tenth(after) > tenth(from);
-  // The career star rating moves in whole tenths, so the bar is the way to
-  // the next one, handed in; without it, fall back to the old fraction.
-  const startPct = star ? 0 : up ? 0 : frac(from) * 100;
-  const endPct = star ? star.toNext * 100 : frac(after) * 100;
+  const shownLevel = up && stage < 2 ? from : to;
+  const value = stage === 0 ? 0 : up && stage === 1 ? 100 : endPct;
   return (
     <div className="relative px-3 py-2.5">
-      <div className="flex items-center gap-2">
-        <StarIcon large />
-        <div className="flex-1 text-sm font-black text-white">Star Rating</div>
-        <div className="relative text-sm font-black tabular-nums text-amber-300">
-          {up ? `${(tenth(from) / 10).toFixed(1)} → ` : ""}{(tenth(after) / 10).toFixed(1)}
-          {up && <FloatText trigger={on ? 1 : 0} text={`+${((tenth(after) - tenth(from)) / 10).toFixed(1)} ★`} color="#fde047" className="left-1/2 -top-2" size={13} />}
+      <div className="flex items-center gap-2.5">
+        <div className="relative flex h-[30px] shrink-0 items-center gap-1 px-2 text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }}>
+          <span className="text-[15px] leading-none">★</span>
+          <Pop value={shownLevel}><span className="min-w-[22px] text-center text-[21px] font-black leading-none tabular-nums">{shownLevel}</span></Pop>
+          {up && stage >= 2 && <FloatText trigger={1} text="LEVEL UP" color="#fde047" className="left-1/2 -top-3" size={12} />}
+        </div>
+        <div className="min-w-0 flex-1" role="meter" aria-label="Star rating progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
+          <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} />
         </div>
       </div>
-      <div className="relative mt-1.5 h-3 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }} role="meter" aria-label="Progress to the next star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(endPct)}>
-        <div className="absolute inset-y-0 left-0 rounded-full bg-amber-500/55" style={{ width: `${startPct}%` }} />
-        <div
-          className="absolute inset-y-0 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-yellow-200"
-          style={{ left: `${startPct}%`, width: `${on ? Math.max(0, endPct - startPct) : 0}%`, transition: "width 900ms cubic-bezier(.2,.8,.2,1)", boxShadow: "0 0 12px rgba(251,191,36,.7)" }}
-        >
-          <div className="absolute inset-x-0 top-0 h-1/2 bg-white/35" />
-        </div>
-      </div>
-      <div className="mt-1 text-[10px] font-bold text-white">
-        {star
-          ? <><span className="font-black text-amber-300">+{star.sp.toLocaleString("en-GB")} Star Points</span>{star.mult !== 1 ? ` (${star.base} × ${star.mult})` : ""} · {star.gate ? `held at a gate: ${star.gate}` : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}</>
-          : up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}
+    </div>
+  );
+}
+
+/** One achievement, big, with a Next — shown alone (Harry, P27: "you can't
+ *  press next until you've seen all your achievements"). */
+function AchievementCard({ a, n, of, onNext }: { a: { label: string; description: string }; n: number; of: number; onNext: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { ref.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" }); }, []);
+  return (
+    <div ref={ref} className="kit-slam relative mt-2 overflow-hidden rounded-xl text-center" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.22), rgba(120,53,15,.35))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 2px rgba(251,191,36,.7), 0 0 24px rgba(251,191,36,.3)" }}>
+      <Burst colors={["#fde047", "#fbbf24", "#ffffff"]} count={20} className="left-1/2 top-[40%]" round />
+      <div className="px-3 pb-3 pt-2.5">
+        <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">Achievement{of > 1 ? ` ${n} of ${of}` : ""}</div>
+        <div className="mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>
+        <div className="mt-1 text-[18px] font-black leading-tight">{a.label}</div>
+        <div className="text-[12px] font-bold text-white/85">{a.description}</div>
+        <PressButton variant="gold" size="none" onClick={onNext} className="mt-2 w-full rounded-[3px] py-2 text-[13px] font-black">{n < of ? "Next" : "Done"}</PressButton>
       </div>
     </div>
   );

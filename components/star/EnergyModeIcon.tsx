@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import type { EnergyMode } from "@/lib/star/energy";
+import { useUiVersion } from "@/lib/star/uiLook";
 
 /**
  * THE ENERGY-MODE ICONS — Low, Medium, High, as pictures instead of words.
@@ -17,8 +18,18 @@ import type { EnergyMode } from "@/lib/star/energy";
  */
 
 const PALETTE: Record<EnergyMode, { main: string; light: string; glow: string }> = {
-  low: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.55)" },
+  // Green → yellow → red, red the most intense (Harry, 1 Oct 2026, P95:
+  // "instead of red, yellow, green I would do green, yellow, red — red being
+  // the most intense"). The order Low · Medium · High is unchanged.
+  low: { main: "#22c55e", light: "#d9f99d", glow: "rgba(132,204,22,0.6)" },
   medium: { main: "#f59e0b", light: "#fde047", glow: "rgba(245,158,11,0.55)" },
+  high: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.6)" },
+};
+
+/** Settings → UI: Old — the colours before P95: red Low, green High. */
+const OLD_UI_PALETTE: Record<EnergyMode, { main: string; light: string; glow: string }> = {
+  low: { main: "#ef4444", light: "#fca5a5", glow: "rgba(239,68,68,0.55)" },
+  medium: PALETTE.medium,
   high: { main: "#22c55e", light: "#d9f99d", glow: "rgba(132,204,22,0.6)" },
 };
 
@@ -51,7 +62,7 @@ export default function EnergyModeIcon({ mode, active = true, size = 32 }: {
   size?: number;
 }) {
   const id = useId().replace(/:/g, "");
-  const c = PALETTE[mode];
+  const c = (useUiVersion() === "old" ? OLD_UI_PALETTE : PALETTE)[mode];
   return (
     <svg
       width={size}

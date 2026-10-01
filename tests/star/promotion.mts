@@ -3,8 +3,14 @@ import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { generateRelegationOffers } from "../../lib/star/relegationOffers";
 import { acceptOffer } from "../../lib/star/transfers";
 import { mulberry32, sortLeague } from "../../lib/star/season";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
-import { divisionOf, matchweeksFor } from "../../lib/star/calendar";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, LEAGUE_ONE_CLUBS, NATIONAL_LEAGUE_CLUBS,
+  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
+} from "../../lib/star/clubs";
+import { divisionOf, matchweeksFor, type CareerDivision } from "../../lib/star/calendar";
+import { latitudeOf } from "../../lib/star/nonLeagueRegions";
+import type { DivisionMembership } from "../../lib/star/promotion";
+import { divisionOf as divisionOfClub } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer, LeagueTeam } from "../../lib/star/types";
 
 /**
@@ -38,6 +44,11 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   });
   return { ...career, league };
 }
+
+const KEY_OF: Record<CareerDivision, keyof DivisionMembership> = {
+  premier: "premier", championship: "championship", league_one: "leagueOne", league_two: "leagueTwo",
+  national_league: "nationalLeague", national_league_north: "nationalLeagueNorth", national_league_south: "nationalLeagueSouth",
+};
 
 // ── The play-offs are 3v6, 4v5, then a final ────────────────────────────────
 {
@@ -195,7 +206,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     const before = membershipOf(career);
     const beforeAll = [
       ...before.premier, ...before.championship, ...before.leagueOne,
-      ...before.leagueTwo, ...before.nationalLeague, ...before.nationalLeaguePool,
+      ...before.leagueTwo, ...before.nationalLeague, ...before.nationalLeagueNorth, ...before.nationalLeagueSouth,
     ];
 
     // Mirrors app/star-dev/page.tsx's openTransferWindowOrRoll: relegation
@@ -213,7 +224,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     const m = membershipOf(career);
     const all = [
       ...m.premier, ...m.championship, ...m.leagueOne,
-      ...m.leagueTwo, ...m.nationalLeague, ...m.nationalLeaguePool,
+      ...m.leagueTwo, ...m.nationalLeague, ...m.nationalLeagueNorth, ...m.nationalLeagueSouth,
     ];
 
     if (divisionOf(career) === "premier") seasonsInPremier++;
@@ -226,7 +237,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     else if (m.leagueOne.length !== LEAGUE_ONE_CLUBS.length) fail(`League One has ${m.leagueOne.length} clubs`);
     else if (m.leagueTwo.length !== 24) fail(`League Two has ${m.leagueTwo.length} clubs`);
     else if (m.nationalLeague.length !== 24) fail(`National League has ${m.nationalLeague.length} clubs`);
-    else if (m.nationalLeaguePool.length !== 4) fail(`National League pool has ${m.nationalLeaguePool.length} clubs`);
+    else if (m.nationalLeagueNorth.length !== 24) fail(`National League North has ${m.nationalLeagueNorth.length} clubs`);
+    else if (m.nationalLeagueSouth.length !== 24) fail(`National League South has ${m.nationalLeagueSouth.length} clubs`);
     else if (new Set(all).size !== all.length) {
       const dupes = all.filter((c, i) => all.indexOf(c) !== i);
       fail(`a club is in two places at once (${Array.from(new Set(dupes)).join(", ")})`);
@@ -234,7 +246,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
       fail(`clubs appeared or vanished (${beforeAll.length} -> ${all.length})`);
     } else if (new Set(all).size !== new Set(beforeAll).size) {
       fail("the set of clubs in the world changed");
-    } else if (!m[divisionOf(career) === "premier" ? "premier" : "championship"].includes(career.player.club)) {
+    } else if (!m[KEY_OF[divisionOf(career)]].includes(career.player.club)) {
       fail("your own club is not in the division you are playing in");
     } else if (career.league.length !== (divisionOf(career) === "premier" ? 20 : 24)) {
       fail(`the table has ${career.league.length} clubs for the ${divisionOf(career)}`);
@@ -254,6 +266,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 }
 
 // ── A corrupted 21-club Premier League heals back to 20/24/5 ────────────────
+// (KEY_OF is used by the twenty-season block above; hoisted as a const.)
 //
 // Reported directly from a real save at season 3: the Premier League table
 // held 21 clubs. The pure arithmetic above is provably correct today (the
@@ -280,7 +293,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     "Hornchurch", "Kidderminster Harriers", "Scunthorpe United", "Solihull Moors",
     "Southend United", "Sutton United", "Tamworth", "Wealdstone", "Woking",
     "Worthing", "Yeovil Town"];
-  const nationalPoolClubs = ["Chorley", "Scarborough Athletic", "Dorking Wanderers", "Torquay United"];
+  const northClubs = [...NATIONAL_LEAGUE_NORTH_CLUBS];
+  const southClubs = [...NATIONAL_LEAGUE_SOUTH_CLUBS];
 
   // The 21st Premier League club is a duplicate of a real Championship club —
   // the same name sitting in two tiers at once, which is exactly what
@@ -291,7 +305,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     premier: [...premierClubs, strayClub],
     championship: [...championshipClubs],
     leagueOne: leagueOneClubs, leagueTwo: leagueTwoClubs,
-    nationalLeague: nationalLeagueClubs, nationalLeaguePool: nationalPoolClubs,
+    nationalLeague: nationalLeagueClubs, nationalLeagueNorth: northClubs, nationalLeagueSouth: southClubs,
   };
 
   const order = [...premierClubs, strayClub];
@@ -300,7 +314,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   career = { ...career, divisions: corruptDivisions };
 
   const out = resolveLadder(career, mulberry32(23));
-  const { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool } = out.divisions;
+  const { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeagueNorth, nationalLeagueSouth } = out.divisions;
 
   check(premier.length === PREMIER_LEAGUE_CLUBS.length,
     `a corrupted 21-club Premier League heals to ${PREMIER_LEAGUE_CLUBS.length} (saw ${premier.length})`);
@@ -309,12 +323,101 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(leagueOne.length === leagueOneClubs.length,
     `League One still ends up at ${leagueOneClubs.length} (saw ${leagueOne.length})`);
 
-  const all = [...premier, ...championship, ...leagueOne, ...leagueTwo, ...nationalLeague, ...nationalLeaguePool];
+  const all = [...premier, ...championship, ...leagueOne, ...leagueTwo, ...nationalLeague, ...nationalLeagueNorth, ...nationalLeagueSouth];
   check(new Set(all).size === all.length, "no club is left sitting in two tiers at once");
   check(all.length === premierClubs.length + championshipClubs.length + leagueOneClubs.length
-      + leagueTwoClubs.length + nationalLeagueClubs.length + nationalPoolClubs.length,
+      + leagueTwoClubs.length + nationalLeagueClubs.length + northClubs.length + southClubs.length,
     `no club was invented or dropped while healing (${all.length} total)`);
   check(new Set(all).has(strayClub), "the stray duplicate club still exists somewhere, just not doubled up");
+}
+
+// ── National League North and South: two up from each, four down, split by region ──
+//
+// P62 (Harry, 1 Oct 2026). Checked four ways: the fixed sizes (24 / 24 / 24)
+// hold after every season of a long run played FROM each region; the real
+// rule moves exactly two up from each region and four down from the
+// National League, two to each; the four go to the half of the country
+// they are in (northernmost to North); and a career at the bottom of a
+// region simply stays there (nothing below).
+{
+  check(NATIONAL_LEAGUE_NORTH_CLUBS.length === 24 && NATIONAL_LEAGUE_SOUTH_CLUBS.length === 24,
+    `North and South have 24 clubs each (${NATIONAL_LEAGUE_NORTH_CLUBS.length} / ${NATIONAL_LEAGUE_SOUTH_CLUBS.length})`);
+  const everyLadderClub = [
+    ...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS, ...LEAGUE_ONE_CLUBS, ...NATIONAL_LEAGUE_CLUBS,
+    ...NATIONAL_LEAGUE_NORTH_CLUBS, ...NATIONAL_LEAGUE_SOUTH_CLUBS,
+  ];
+  check(new Set(everyLadderClub).size === everyLadderClub.length, "no North/South club is also on a higher tier");
+  check(NATIONAL_LEAGUE_NORTH_CLUBS.every(c => divisionOfClub(c) === "national_league_north")
+    && NATIONAL_LEAGUE_SOUTH_CLUBS.every(c => divisionOfClub(c) === "national_league_south"),
+    "every North/South club is tagged with its own division");
+
+  for (const [div, clubs] of [
+    ["national_league_north", NATIONAL_LEAGUE_NORTH_CLUBS],
+    ["national_league_south", NATIONAL_LEAGUE_SOUTH_CLUBS],
+  ] as const) {
+    // One season, read straight off resolveLadder.
+    const order = [...clubs];
+    const you = order[10];
+    const career = withStandings(makeInitialCareer(playerAt(you), [...clubs], div), order);
+    const out = resolveLadder(career, mulberry32(77));
+    const fromYours = div === "national_league_north" ? out.promotedFromNorth : out.promotedFromSouth;
+    check(out.promotedFromNorth.length === 2 && out.promotedFromSouth.length === 2,
+      `${div}: two up from each region (${out.promotedFromNorth.length} / ${out.promotedFromSouth.length})`);
+    check(fromYours[0] === order[0], `${div}: the champion goes up (${fromYours[0]} vs ${order[0]})`);
+    check(order.slice(1, 5).includes(fromYours[1]), `${div}: the other place is a 2nd-5th play-off winner (${fromYours[1]})`);
+    check(out.relegatedFromNationalLeague.length === 4, `four down from the National League (${out.relegatedFromNationalLeague.length})`);
+    check(out.relegatedToNorth.length === 2 && out.relegatedToSouth.length === 2,
+      `split two and two (${out.relegatedToNorth.length} / ${out.relegatedToSouth.length})`);
+    const southOfNorth = Math.min(...out.relegatedToNorth.map(latitudeOf)) >= Math.max(...out.relegatedToSouth.map(latitudeOf));
+    check(southOfNorth, `the northernmost two go North (${out.relegatedToNorth.join(", ")} | ${out.relegatedToSouth.join(", ")})`);
+    check(out.division === div && out.yourMove === null, `${div}: a mid-table club stays put (${out.division})`);
+
+    // Bottom of the region: nowhere to go down to.
+    const last = withStandings(makeInitialCareer(playerAt(order[23]), [...clubs], div), order);
+    const outLast = resolveLadder(last, mulberry32(78));
+    check(outLast.division === div && outLast.yourMove === null, `${div}: finishing bottom keeps you in ${div} (${outLast.division})`);
+
+    // Twenty seasons from inside the region, through advanceSeason.
+    let c = makeInitialCareer(playerAt(clubs[3]), [...clubs], div);
+    let broke = "", ups = 0;
+    for (let season = 1; season <= 20 && !broke; season++) {
+      const rng = mulberry32(season * 97 + (div === "national_league_north" ? 1 : 2));
+      const tableOrder = [...c.league.map(t => t.name)].sort(() => rng() - 0.5);
+      c = withStandings(c, tableOrder);
+      const beforeDivision = divisionOf(c);
+      c = advanceSeason(c, false).career;
+      if (c.ladderNews?.yourMove === "promoted") ups++;
+      const m = membershipOf(c);
+      const sizes = [m.premier.length, m.championship.length, m.leagueOne.length, m.leagueTwo.length,
+        m.nationalLeague.length, m.nationalLeagueNorth.length, m.nationalLeagueSouth.length];
+      const all = [...m.premier, ...m.championship, ...m.leagueOne, ...m.leagueTwo,
+        ...m.nationalLeague, ...m.nationalLeagueNorth, ...m.nationalLeagueSouth];
+      if (sizes.join() !== "20,24,24,24,24,24,24") broke = `season ${season}: sizes ${sizes.join("/")}`;
+      else if (new Set(all).size !== all.length) broke = `season ${season}: a club is in two divisions`;
+      else if (!m[KEY_OF[divisionOf(c)]].includes(c.player.club)) broke = `season ${season}: you are not in your own division`;
+      else if (c.league.length !== 24) broke = `season ${season}: ${c.league.length}-club table in ${divisionOf(c)}`;
+      else if (c.fixtures.filter(f => (f.kind ?? "league") === "league").length !== 46) broke = `season ${season}: not 46 league fixtures`;
+      else if (beforeDivision === divisionOf(c) && c.ladderNews?.yourMove) broke = `season ${season}: a move that went nowhere`;
+    }
+    check(broke === "", broke || `${div}: twenty seasons stay 20/24/24/24/24/24/24, nobody doubled up`);
+    check(ups > 0, `${div}: and your club actually came up at least once in twenty seasons (${ups})`);
+  }
+
+  // A National League club finishing bottom four drops into its own region.
+  {
+    const order = [...NATIONAL_LEAGUE_CLUBS];
+    const northern = "Gateshead", southern = "Woking";
+    // Bottom four: two far north, two far south, so the rule has a clear answer.
+    const bottom = ["Hartlepool United", northern, "Yeovil Town", southern];
+    const ranked = [...order.filter(x => !bottom.includes(x)), ...bottom];
+    for (const you of [northern, southern]) {
+      const c = withStandings(makeInitialCareer(playerAt(you), [...NATIONAL_LEAGUE_CLUBS], "national_league"), ranked);
+      const out = resolveLadder(c, mulberry32(5));
+      const want = you === northern ? "national_league_north" : "national_league_south";
+      check(out.division === want && out.yourMove === "relegated", `${you} relegated from the National League goes to ${want} (${out.division}, ${out.yourMove})`);
+      check(out.clubs.length === 24, `and that table has 24 clubs (${out.clubs.length})`);
+    }
+  }
 }
 
 if (problems.length) {
@@ -322,4 +425,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — three up, three down, play-offs, twenty seasons that still add up, and a corrupted save heals itself");
+console.log("PASS — three up, three down, play-offs, twenty seasons that still add up, North and South two up/four down, and a corrupted save heals itself");

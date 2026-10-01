@@ -7,6 +7,7 @@ import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
 import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
+import { useUiVersion } from "@/lib/star/uiLook";
 
 /**
  * THE MATCH, AS IT IS BEING PLAYED.
@@ -58,14 +59,19 @@ interface Props {
   regulation?: number;
   /** Item 35: opens every live score in the division. Absent: no button. */
   onOpenScores?: () => void;
+  /** Which side is yours, so the kick-off card can colour each name. */
+  userIsHome?: boolean;
 }
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
   speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
-  minuteLabel, added = 0, regulation = 90, onOpenScores,
+  minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  // Settings → UI: Old keeps this panel as it was before v0.23 — no kick-off
+  // pitch card, the old energy-ring colours (lib/star/uiLook.ts).
+  const oldUi = useUiVersion() === "old";
 
   // Pinned to the newest line. `scrollTop = scrollHeight` rather than
   // `scrollIntoView` on the last child: the latter scrolls the PAGE as well
@@ -137,6 +143,16 @@ export default function MatchCommentary({
             still run the full width; only the words stop short of it. */}
         <div className="flex min-h-full flex-col justify-start [&>div]:pr-16">
           {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
+          {/* Until the first real line lands the panel was only the "Kick Off"
+              strip over a black screen for a couple of seconds (Harry's 1 Oct
+              2026 recording, 14:59). This is the kick-off itself: who is
+              playing, in whose colours, and that the first chance is coming. */}
+          {lines.length <= 1 && !oldUi && (
+            <KickOffCard
+              homeTeam={homeTeam} awayTeam={awayTeam}
+              homeKit={userIsHome ? userKit : oppKit} awayKit={userIsHome ? oppKit : userKit}
+            />
+          )}
         </div>
       </div>
 
@@ -226,9 +242,12 @@ export default function MatchCommentary({
         <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
           {(["low", "medium", "high"] as EnergyMode[]).map(m => {
             const on = energyMode === m;
-            // Icons, not words (owners, 23 Sep 2026) — red Low, amber
-            // Medium, green High; see EnergyModeIcon.
-            const ring = m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70";
+            // Icons, not words (owners, 23 Sep 2026). Green Low, amber
+            // Medium, red High — red is the most intense (Harry, 1 Oct 2026,
+            // P95); see EnergyModeIcon.
+            const ring = oldUi
+              ? (m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70")
+              : (m === "low" ? "ring-green-500/70" : m === "high" ? "ring-red-500/70" : "ring-amber-400/70");
             return (
               <button
                 key={m}
@@ -247,6 +266,55 @@ export default function MatchCommentary({
         </div>
       </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The opening beat: the two sides in their colours, before the first line —
+ * on a pitch, not a black box (Harry, 1 Oct 2026, P94: "this is the pitch
+ * screen — that should definitely be more pitch related"). Mown stripes, the
+ * touchlines, the halfway line and centre circle; the two teams' names are
+ * set on it like a broadcast graphic.
+ */
+function KickOffCard({ homeTeam, awayTeam, homeKit, awayKit }: { homeTeam: string; awayTeam: string; homeKit: Kit; awayKit: Kit }) {
+  const chip = (name: string, kit: Kit) => (
+    <div
+      className="min-w-0 flex-1 truncate px-2 py-2 text-center text-[13px] font-black uppercase tracking-wide"
+      style={{ backgroundColor: kit.shirt, color: labelInk(kit.shirt), borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), 0 4px 12px -6px rgba(0,0,0,.8)" }}
+    >
+      {name}
+    </div>
+  );
+  const line = "rgba(255,255,255,.78)";
+  return (
+    <div
+      data-kickoff-pitch
+      className="relative my-2 mr-3 flex min-h-[210px] flex-1 flex-col items-center justify-center overflow-hidden text-center"
+      style={{
+        marginLeft: 12,
+        paddingRight: 0, // the feed gives its rows a right gutter for the minute plate; a pitch runs full width
+        backgroundColor: "#1f7a3a",
+        backgroundImage: "repeating-linear-gradient(90deg, #22853f 0 38px, #1c6f35 38px 76px), radial-gradient(120% 90% at 50% 50%, rgba(255,255,255,.1), rgba(0,0,0,.28))",
+        backgroundBlendMode: "normal",
+        boxShadow: "inset 0 0 0 2px rgba(255,255,255,.5), inset 0 0 40px rgba(0,0,0,.45)",
+      }}
+    >
+      {/* The markings: halfway line, centre circle, both boxes. */}
+      <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" fill="none" stroke={line} strokeWidth="1.2">
+        <line x1="100" y1="0" x2="100" y2="120" />
+        <circle cx="100" cy="60" r="20" />
+        <rect x="0" y="32" width="26" height="56" />
+        <rect x="0" y="46" width="9" height="28" />
+        <rect x="174" y="32" width="26" height="56" />
+        <rect x="191" y="46" width="9" height="28" />
+      </svg>
+      <div className="relative flex w-full items-center gap-2 px-3">
+        {chip(homeTeam, homeKit)}
+        <span className="shrink-0 text-[15px] font-black italic text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.8)" }}>v</span>
+        {chip(awayTeam, awayKit)}
+      </div>
+      <div className="relative mt-2 text-[11px] font-black uppercase tracking-[0.25em] text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.8)" }}>⚽ Kick off</div>
     </div>
   );
 }

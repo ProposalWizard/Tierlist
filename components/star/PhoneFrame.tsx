@@ -21,6 +21,7 @@ export default function PhoneFrame({
   statusLabel = "9:41",
   wallpaper,
   rim,
+  ownHomeBar = false,
 }: {
   children: React.ReactNode;
   /** The screen's background (the phone home screen's club wallpaper).
@@ -32,6 +33,9 @@ export default function PhoneFrame({
    *  ticking one, so the screen never has to reconcile a live clock with
    *  server-rendered markup. */
   statusLabel?: string;
+  /** The content draws a working home bar (ui/Nav.tsx's HomeBar): skip the
+   *  decorative one so there are not two. */
+  ownHomeBar?: boolean;
 }) {
   return (
     <div
@@ -88,9 +92,11 @@ export default function PhoneFrame({
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 
         {/* Home indicator */}
-        <div className="pointer-events-none relative z-20 flex shrink-0 justify-center pb-1.5 pt-1">
-          <div className="h-[4px] w-[108px] rounded-full bg-white/60" />
-        </div>
+        {!ownHomeBar && (
+          <div className="pointer-events-none relative z-20 flex shrink-0 justify-center pb-1.5 pt-1">
+            <div className="h-[4px] w-[108px] rounded-full bg-white/60" />
+          </div>
+        )}
       </div>
 
       {/* Side buttons — a thin insert on each edge, purely decorative. */}

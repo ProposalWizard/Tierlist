@@ -74,8 +74,8 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
   // boots' curve and Elite the NS-Maestro boots' Touch Mode, for the next
   // match you play — no energy.
   { id: "basic", name: "Basic KIB Can", price: canPrice("energy", 0), restore: 65, color: "bg-orange-400", image: "/star/kib-basic.png" },
-  { id: "premium", name: "Premium KIB Can", price: canPrice("energy", 1), restore: 0, effect: "curve", color: "bg-blue-400", image: "/star/kib-premium.png" },
-  { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 0, effect: "extraTouch", color: "bg-purple-400", image: "/star/kib-elite.png" },
+  { id: "premium", name: "Premium KIB Can", price: canPrice("energy", 1), restore: 30, effect: "curve", color: "bg-blue-400", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 40, effect: "extraTouch", color: "bg-purple-400", image: "/star/kib-elite.png" },
 ];
 
 
@@ -371,10 +371,25 @@ export const LIFESTYLE_LEVEL_PRICE_MULT: Record<number, number> = {
   5: ISLAND_L5_TARGET / ISLAND_L5_BAND,
 };
 
+/**
+ * THE PHONE IS ONE ITEM (Harry, 1 Oct 2026, P103: "I don't think the phone
+ * needs five levels … it should be there as the first style unlock. It's the
+ * first thing you have to buy, and it's like 800, and it's just like an
+ * iPhone. Don't call it iPhone, but everyone will know what that is. Then
+ * maybe it does last two seasons and then you need a new one"). A utility,
+ * not a status ladder: one level, ★800, two seasons (fame.ts), then a new one.
+ */
+/** What the shop sells the phone for. The base catalogue above keeps its band
+ *  price (tests/star/economy.mts holds that ladder); the shop sells LIFESTYLE_LEVELS.
+ *  ★800 was about 23 weeks of non-league wages (~★25 a week) for the first
+ *  thing you buy; Harry, 1 Oct 2026: "lower the phone price". ★150 ≈ 6 weeks. */
+export const PHONE_PRICE = 150;
+const SINGLE_LEVEL = new Set(["phone"]);
+
 export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
   const out: OwnedItem[] = LIFESTYLE_SPECS.flatMap((spec) => {
     const own = levelOfTier(spec.tier);
-    return Array.from({ length: SHOP_LEVEL_COUNT }, (_, i) => {
+    return Array.from({ length: SINGLE_LEVEL.has(spec.id) ? 1 : SHOP_LEVEL_COUNT }, (_, i) => {
       const level = i + 1;
       return {
         id: levelItemId(spec.id, level, own),
@@ -400,6 +415,9 @@ export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
       }
     }
   }
+  // Set after the ladder above, so the phone's price does not drag every
+  // other gadget up with it.
+  for (const o of out) if (o.baseId === "phone") o.price = PHONE_PRICE;
   return out;
 })();
 

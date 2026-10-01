@@ -25,7 +25,7 @@
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import type { CareerState } from "@/lib/star/types";
-import { StatBar, FloatText, Burst, prefersReducedMotion, rgba, tint } from "./ui";
+import { StatBar, SquareBar, FloatText, Burst, prefersReducedMotion, rgba, tint } from "./ui";
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 
@@ -197,7 +197,7 @@ const fmtDelta = (d: number) => `${d > 0 ? "+" : "−"}${Math.abs(Math.round(d *
  * a +1 is seen), a "+3" floats up off the end (a red "−2" going down) and a
  * small spark burst goes off there, in the bar's colour.
  */
-export function DeltaBar({ seen, colors, className = "h-3", label, burst = true, sheen = true }: {
+export function DeltaBar({ seen, colors, className = "h-3", label, burst = true, sheen = true, square = false }: {
   seen: { shown: number; delta: number; trigger: number };
   colors?: [string, string];
   className?: string;
@@ -205,6 +205,8 @@ export function DeltaBar({ seen, colors, className = "h-3", label, burst = true,
   label?: string;
   burst?: boolean;
   sheen?: boolean;
+  /** The v0.23 square bar with marching stripes and the number on it (Relations). */
+  square?: boolean;
 }) {
   const up = seen.delta > 0;
   const tipV = Math.max(0, Math.min(100, seen.shown));
@@ -216,7 +218,9 @@ export function DeltaBar({ seen, colors, className = "h-3", label, burst = true,
   const played = seen.trigger > 0 && seen.delta !== 0;
   return (
     <div className="relative">
-      <StatBar value={seen.shown} colors={colors} className={className} sheen={sheen} />
+      {square
+        ? <SquareBar value={seen.shown} colors={colors ?? ["#34d399", "#a3e635"]} className={className} animate>{Math.round(seen.shown)}</SquareBar>
+        : <StatBar value={seen.shown} colors={colors} className={className} sheen={sheen} />}
       {played && up && (
         <span
           key={`g${seen.trigger}`}

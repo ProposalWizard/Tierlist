@@ -1,0 +1,1313 @@
+"use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { CareerState, Horse } from "@/lib/star/types";
+import { shuffle } from "@/lib/shuffle";
+import {
+  BET_COMPETITIONS, oddsFor, entrantsFor, canPlaceCompetitionBet, type BetCompetition, type CompetitionBet, type BetEntrant,
+} from "@/lib/star/competitionBetting";
+import { getTuning } from "@/lib/star/tuningStore";
+import { formatMoney } from "@/lib/star/money";
+import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
+import GoalieMode from "@/components/star/GoalieMode";
+import {
+  ScreenShell, WalletPill, PressButton, RiseIn, Glow, Shine, Pop, Burst, FloatText,
+  ShakeX, LossFlash, WinCelebration, useTrigger, useCountUp, useClubTheme, rgba, tint,
+} from "@/components/star/legacy/ui";
+
+/** The casino's own colours: green baize and gold, on the home screen's night. */
+const FELT = "#10b981";
+const GOLD = "#f59e0b";
+const WIN_COLORS = ["#fde047", "#f59e0b", "#34d399", "#ffffff"];
+const winText = (n: number) => `+★${formatMoney(n)}`;
+
+/** The juice every game fires: a big win, or a loss (a shudder and a red flash). */
+function useCasinoFx() {
+  const [won, fireWon] = useTrigger();
+  const [lost, fireLost] = useTrigger();
+  const [amount, setAmount] = useState(0);
+  const win = useCallback((n: number) => { setAmount(n); fireWon(); }, [fireWon]);
+  return { won, lost, amount, win, lose: fireLost };
+}
+type CasinoFx = ReturnType<typeof useCasinoFx>;
+
+interface Props {
+  bankStart: number;
+  career: CareerState;
+  onExit: (finalBank: number) => void;
+  onHorseRace: (finish: number, prize: number, energyCost: number) => void;
+  onBuyHorse: (horse: Horse, price: number) => void;
+  onRenameHorse: (name: string) => void;
+  onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
+}
+
+// Horses available for purchase (same as former HorseRacing.tsx STABLE).
+// Prices rescaled 14 Sep 2026 — same ×2000 personal-money multiplier as the
+// shop catalogue (shopDefaults.ts), so a racehorse still costs the same
+// number of weeks' wage as it always did.
+const PURCHASABLE_HORSES: { horse: Omit<Horse, "energy" | "racesRun" | "racesWon" | "earnings">; price: number }[] = [
+  { horse: { name: "Clover Lad", breed: "Cob", speed: 55, stamina: 58 }, price: 60000 },
+  { horse: { name: "Midnight Dash", breed: "Thoroughbred", speed: 68, stamina: 62 }, price: 120000 },
+  { horse: { name: "Golden Arrow", breed: "Arabian", speed: 78, stamina: 72 }, price: 240000 },
+  { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 480000 },
+];
+
+const HORSE_NAMES = [
+  "Thunder Bolt", "Golden Arrow", "Midnight Star", "Silver Streak", "Red Comet",
+  "Wild Spirit", "Iron Duke", "Bold Ruler", "Grey Storm", "Nimbus",
+  "Blaze", "Royal Flash", "Diamond Dash", "Lucky Strike", "Storm Chaser",
+];
+
+const MY_HORSE_RACE_COST = 40;
+
+/**
+ * BET AMOUNTS — A REAL STEP TABLE, NOT ±1.
+ *
+ * Requested directly, with the exact sequence given: every press used to
+ * move the bet by a single star, which is fine for deciding between 4 and 5
+ * but useless for getting from 1 to anything worth calling a bet — a real
+ * session's bankroll runs into the thousands, and pressing a button that
+ * many times to get there is not a control, it's a chore. This is the given
+ * sequence verbatim: 1-10 by small steps, 10-1000 in round hundreds, then
+ * increasingly coarse steps up to a million, the same shape a real casino's
+ * chip denominations use.
+ *
+ * Rescaled 14 Sep 2026, same ×2000 personal-money multiplier as the shop
+ * catalogue and every other personal-spending number this session — the
+ * bank this bets against (`career.money`, via `bankStart`) moved to the
+ * same real-money scale, so the chip ladder needed to move with it or every
+ * step below "500,000" would have gone meaningless overnight.
+ */
+const BET_STEPS: number[] = [
+  2000, 4000, 10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 800000,
+  1000000, 1200000, 1400000, 1600000, 1800000, 2000000,
+  2500000, 3000000, 3500000, 4000000, 5000000, 6000000, 7000000, 8000000, 10000000, 12000000,
+  14000000, 16000000, 18000000, 20000000,
+  25000000, 30000000, 35000000, 40000000, 50000000, 60000000, 70000000, 80000000, 100000000,
+  120000000, 140000000, 160000000, 180000000, 200000000,
+  500000000, 1000000000, 2000000000,
+];
+
+/** The nearest step at or below `n` — for clamping a saved/previous bet down
+ *  to whatever the current bank can actually afford. */
+function stepAtOrBelow(n: number): number {
+  let best = BET_STEPS[0];
+  for (const s of BET_STEPS) { if (s <= n) best = s; else break; }
+  return best;
+}
+
+const BET_STORAGE_KEY = "star-casino-bet";
+
+export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
+  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
+  const [bank, setBank] = useState(bankStart);
+  const [bet, setBet] = useState(BET_STEPS[0]);
+
+  // Persisted the same way the match speed button is (star-match-speed):
+  // read once on mount, written back on every change, so it holds across
+  // casino visits — "if I left it on ten star money as the bet, the next
+  // time I came to do a bet it would still be on ten."
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem(BET_STORAGE_KEY));
+      if (BET_STEPS.includes(saved)) setBet(stepAtOrBelow(Math.min(saved, bankStart)));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const changeBet = useCallback((direction: 1 | -1) => {
+    setBet((b) => {
+      const i = BET_STEPS.indexOf(b);
+      // A bet that predates this table (or was clamped to a non-step value
+      // by the bank cap below) may not sit exactly on a step — fall back to
+      // the nearest one below it first, so a press always moves from a real
+      // rung rather than getting stuck between two of them.
+      const cur = i >= 0 ? i : BET_STEPS.indexOf(stepAtOrBelow(b));
+      const next = Math.max(0, Math.min(BET_STEPS.length - 1, cur + direction));
+      const value = Math.min(BET_STEPS[next], Math.max(1, bank));
+      try { localStorage.setItem(BET_STORAGE_KEY, String(value)); } catch { /* ignore */ }
+      return value;
+    });
+  }, [bank]);
+
+  if (game === "blackjack") {
+    return <Blackjack bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
+  }
+  if (game === "roulette") {
+    return <Roulette bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
+  }
+  if (game === "slots") {
+    return <Slots bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
+  }
+  if (game === "horses") {
+    return (
+      <HorseRacingGame
+        bank={bank}
+        bet={bet}
+        career={career}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+        onHorseRace={onHorseRace}
+        onBuyHorse={onBuyHorse}
+        onRenameHorse={onRenameHorse}
+      />
+    );
+  }
+  if (game === "bets") {
+    return (
+      <CompetitionBetting
+        bank={bank}
+        bet={bet}
+        career={career}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+        onPlaceBet={onPlaceBet}
+      />
+    );
+  }
+  if (game === "goalie") {
+    return (
+      <GoalieMode
+        bank={bank}
+        bet={bet}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+      />
+    );
+  }
+
+  return <Menu bank={bank} career={career} onExit={() => onExit(bank)} onPick={setGame} />;
+}
+
+const GAMES: { id: "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie"; icon: string; label: string; sub: string; color: string }[] = [
+  { id: "blackjack", icon: "🃏", label: "BLACK JACK", sub: "Beat the dealer to 21 · pays 2×", color: "#10b981" },
+  { id: "roulette", icon: "🎡", label: "ROULETTE", sub: "Red, black, odd, even or one number", color: "#ef4444" },
+  { id: "slots", icon: "🎰", label: "SLOTS", sub: "Three sevens pays 20×", color: "#f59e0b" },
+  { id: "horses", icon: "🐎", label: "HORSE RACING", sub: "Back a horse, or race your own", color: "#a16207" },
+  { id: "bets", icon: "🏆", label: "COMPETITION BETS", sub: "Who wins the league and the cups", color: "#6366f1" },
+  { id: "goalie", icon: "🧤", label: "GOALIE MODE", sub: "Save shots, stack the multiplier", color: "#0ea5e9" },
+];
+
+function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerState; onExit: () => void; onPick: (g: (typeof GAMES)[number]["id"]) => void }) {
+  const { glow } = useClubTheme(career);
+  return (
+    <ScreenShell glow={glow} accent={GOLD} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
+      <div className="space-y-2.5">
+        {GAMES.map((g, i) => (
+          <RiseIn key={g.id} index={i} step={60}>
+            <PressButton
+              disabled={bank < 1}
+              onClick={() => onPick(g.id)}
+              className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-4 py-4 text-left disabled:opacity-40"
+              style={{
+                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97))`,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(g.color, 0.35)}, 0 12px 24px -14px ${rgba(g.color, 0.75)}`,
+              }}
+            >
+              {i === 0 && <Shine loop every={6} />}
+              <span className="relative grid h-14 w-14 shrink-0 place-items-center">
+                <Glow color={g.color} alpha={0.5} className="inset-0 blur-lg" />
+                <span
+                  className="relative grid h-12 w-12 place-items-center rounded-2xl text-[28px]"
+                  style={{ background: `linear-gradient(160deg, ${tint(g.color, 0.25)}, ${tint(g.color, -0.4)})`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.45), 0 6px 12px -4px ${rgba(g.color, 0.8)}` }}
+                >
+                  {g.icon}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[19px] font-black tracking-wide text-white" style={{ textShadow: `0 2px 10px ${rgba(g.color, 0.6)}` }}>{g.label}</span>
+                <span className="block text-[11px] font-bold text-white/65">{g.sub}</span>
+              </span>
+              <span className="text-[20px] text-white/40">›</span>
+            </PressButton>
+          </RiseIn>
+        ))}
+      </div>
+    </ScreenShell>
+  );
+}
+
+interface CasinoGameProps {
+  bank: number;
+  bet: number;
+  onSetBank: (n: number) => void;
+  onExit: () => void;
+  /** Moves the bet one rung up or down BET_STEPS — not a raw amount. */
+  onChangeBet: (direction: 1 | -1) => void;
+}
+
+/**
+ * EVERY GAME'S FRAME: the night backdrop lit green and gold, a header with
+ * Menu, the game's name and your bank (which counts, and floats each win or
+ * stake off it), the bet stepper, and the win/loss juice.
+ */
+function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children }: CasinoGameProps & {
+  title: string; icon: string; fx?: CasinoFx; children?: React.ReactNode;
+}) {
+  // Float every change of the bank off it: "−★2k" as a stake goes down,
+  // "+★4k" as winnings come in.
+  const prev = useRef(bank);
+  const [delta, setDelta] = useState({ n: 0, text: "", up: false });
+  useEffect(() => {
+    const d = bank - prev.current;
+    prev.current = bank;
+    if (d !== 0) setDelta((x) => ({ n: x.n + 1, text: `${d > 0 ? "+" : "−"}★${formatMoney(Math.abs(d))}`, up: d > 0 }));
+  }, [bank]);
+  return (
+    <ScreenShell
+      glow={FELT}
+      accent={GOLD}
+      title={title}
+      icon={icon}
+      onBack={onExit}
+      backLabel="Menu"
+      right={<WalletPill value={bank} format={formatMoney} spent={delta.n} spentText={delta.text} spentColor={delta.up ? "#6ee7b7" : "#fca5a5"} />}
+    >
+      <BetBar bet={bet} bank={bank} onChangeBet={onChangeBet} />
+      {children}
+      {fx && <LossFlash trigger={fx.lost} />}
+      {fx && <WinCelebration trigger={fx.won} amount={fx.amount} format={winText} colors={WIN_COLORS} />}
+    </ScreenShell>
+  );
+}
+
+function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChangeBet: (d: 1 | -1) => void }) {
+  return (
+    <div
+      className="mb-3 flex items-center gap-2 rounded-2xl px-3 py-2"
+      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
+    >
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/80">Your bet</span>
+      <div className="ml-auto flex items-center gap-2">
+        <PressButton variant="secondary" size="none" aria-label="Lower bet" onClick={() => onChangeBet(-1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-red-300">▼</PressButton>
+        <span className="min-w-[78px] text-center text-[17px] font-black tabular-nums text-yellow-200" style={{ textShadow: "0 0 12px rgba(253,224,71,.4)" }}>
+          <Pop value={bet}>★{formatMoney(bet)}</Pop>
+        </span>
+        <PressButton variant="secondary" size="none" aria-label="Raise bet" disabled={bet >= bank} onClick={() => onChangeBet(1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-emerald-300">▲</PressButton>
+      </div>
+    </div>
+  );
+}
+
+// ---------- HORSE RACING ----------
+interface RaceHorse {
+  name: string;
+  rating: number;
+  odds: number;
+}
+interface RaceRunner {
+  name: string;
+  rating: number;
+  score: number;
+  duration: number;
+  isUser: boolean;
+}
+
+/**
+ * Real win odds for this exact field — measured by actually running the
+ * SAME race-scoring formula the real race below settles by
+ * (`rating + random noise up to horseRacing.raceNoise`), many times, rather
+ * than a hand-derived formula that could quietly drift out of sync with it.
+ * Reported directly: the old odds (`12 - rating/10`, a flat linear map) had
+ * nothing to do with how the race actually got decided, which is exactly
+ * how a rating-95 horse and a rating-40 horse ended up priced only a few
+ * points apart despite one of them being close to unbeatable in the real
+ * simulation. Cheap enough to run live (a few thousand additions) that
+ * there is no reason for the quoted price to ever disagree with reality.
+ */
+function raceWinOdds(ratings: number[]): number[] {
+  const noiseMax = getTuning("horseRacing.raceNoise");
+  const trials = 4000;
+  const wins = new Array(ratings.length).fill(0);
+  for (let t = 0; t < trials; t++) {
+    let bestIdx = 0, bestScore = -Infinity;
+    for (let i = 0; i < ratings.length; i++) {
+      const score = ratings[i] + Math.random() * noiseMax;
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    wins[bestIdx]++;
+  }
+  const overround = 1.15;
+  return wins.map(w => {
+    const prob = Math.max(w, 1) / trials; // never literally zero — a bad enough run still happens sometimes
+    return Math.max(1.2, Math.round((1 / prob / overround) * 10) / 10);
+  });
+}
+
+function generateRaceHorses(): RaceHorse[] {
+  const shuffled = shuffle(HORSE_NAMES);
+  const ratings: number[] = [];
+  for (let i = 0; i < 6; i++) ratings.push(40 + Math.floor(Math.random() * 56)); // 40-95
+  const odds = raceWinOdds(ratings);
+  return ratings.map((rating, i) => ({ name: shuffled[i], rating, odds: odds[i] }));
+}
+
+interface HorseRacingProps extends CasinoGameProps {
+  career: CareerState;
+  onHorseRace: (finish: number, prize: number, energyCost: number) => void;
+  onBuyHorse: (horse: Horse, price: number) => void;
+  onRenameHorse: (name: string) => void;
+}
+
+function HorseRacingGame(props: HorseRacingProps) {
+  const fx = useCasinoFx();
+  const [tab, setTab] = useState<"bet" | "my-horses">("bet");
+  const [horses, setHorses] = useState<RaceHorse[]>(() => generateRaceHorses());
+  const [selectedHorse, setSelectedHorse] = useState<number | null>(null);
+  const [runners, setRunners] = useState<RaceRunner[] | null>(null);
+  const [go, setGo] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [result, setResult] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
+  const [isMyHorseRace, setIsMyHorseRace] = useState(false);
+
+  const ownsStable = props.career.ownedItems.some((i) => (i.baseId ?? i.id) === "stable");
+  const myHorse = props.career.horse;
+
+  // Start CSS transition one tick after lanes mount
+  useEffect(() => {
+    if (runners && !go) {
+      const t = setTimeout(() => setGo(true), 60);
+      return () => clearTimeout(t);
+    }
+  }, [runners, go]);
+
+  // Reveal result once the slowest runner crosses the line
+  useEffect(() => {
+    if (runners && go && !result) {
+      const maxDur = Math.max(...runners.map((r) => r.duration));
+      const t = setTimeout(() => {
+        const ordered = [...runners].sort((a, b) => b.score - a.score);
+        const winnerName = ordered[0].name;
+        if (isMyHorseRace) {
+          // My horse race — a real fixed purse for where you finished, never
+          // a bet. See lib/star/horse.ts's own header for why this changed.
+          const finish = ordered.findIndex((r) => r.isUser) + 1;
+          const prize = myHorse ? horseRacePrize(finish, myHorse) : 0;
+          setResult({ finish, payout: prize, winnerName });
+          if (prize > 0) fx.win(prize);
+        } else {
+          // Betting race — did our pick win?
+          const betHorse = horses[selectedHorse!];
+          const finish = ordered.findIndex((r) => r.name === betHorse.name) + 1;
+          const payout = finish === 1 ? Math.round(props.bet * betHorse.odds) : 0;
+          setResult({ finish, payout, winnerName });
+          if (payout > 0) fx.win(payout - props.bet); else fx.lose();
+        }
+      }, maxDur * 1000 + 250);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runners, go, result, isMyHorseRace, horses, selectedHorse, myHorse]);
+
+  const placeBet = () => {
+    if (selectedHorse === null || props.bank < props.bet) return;
+    props.onSetBank(props.bank - props.bet);
+
+    // Build runners from the race horses — the SAME noise the quoted odds
+    // above were actually measured against (raceWinOdds), so the race that
+    // plays out can never quietly disagree with the price it was priced at.
+    const raceNoise = getTuning("horseRacing.raceNoise");
+    const field: RaceRunner[] = horses.map((h) => {
+      const score = h.rating + Math.random() * raceNoise;
+      return { name: h.name, rating: h.rating, score, duration: 0, isUser: false };
+    });
+
+    const scores = field.map((r) => r.score);
+    const lo = Math.min(...scores), hi = Math.max(...scores);
+    field.forEach((r) => {
+      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
+      r.duration = 3.6 - norm * 1.4;
+    });
+
+    setIsMyHorseRace(false);
+    setResult(null);
+    setGo(false);
+    setRunners(field);
+  };
+
+  const startMyHorseRace = () => {
+    if (!myHorse || myHorse.energy < MY_HORSE_RACE_COST) return;
+    const energyFactor = 0.6 + (myHorse.energy / 100) * 0.4;
+    // Reported directly: even the best purchasable horse was winning far
+    // too often (5 of 6 real starts) — barely any real risk to owning the
+    // best horse. `horseRacing.raceNoise` (tuning.ts) is now wide enough,
+    // relative to the real rating gap between a top horse and an average
+    // rival, that the best horse stays the field's real favourite without
+    // being a near-certainty — measured directly, not guessed: at the old,
+    // much narrower noise (22) the best purchasable horse won about 61% of
+    // simulated starts; at this tuning (50) that drops to roughly 40-45% —
+    // still clearly the field's favourite, but losing more often than not.
+    const raceNoise = getTuning("horseRacing.raceNoise");
+    const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * raceNoise;
+
+    const field: RaceRunner[] = [{ name: myHorse.name, rating: Math.round((myHorse.speed + myHorse.stamina) / 2), score: userScore, duration: 0, isUser: true }];
+    const rivalNames = shuffle(HORSE_NAMES.filter((n) => n !== myHorse.name));
+    for (let i = 0; i < 5; i++) {
+      const rating = 46 + Math.random() * 42;
+      field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * raceNoise, duration: 0, isUser: false });
+    }
+
+    const scores = field.map((r) => r.score);
+    const lo = Math.min(...scores), hi = Math.max(...scores);
+    field.forEach((r) => {
+      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
+      r.duration = 3.6 - norm * 1.4;
+    });
+
+    setIsMyHorseRace(true);
+    setResult(null);
+    setGo(false);
+    setRunners(field);
+  };
+
+  const collectResult = () => {
+    if (!result) return;
+    if (isMyHorseRace) {
+      props.onHorseRace(result.finish, result.payout, MY_HORSE_RACE_COST);
+      if (result.payout > 0) props.onSetBank(props.bank + result.payout);
+    } else {
+      if (result.payout > 0) props.onSetBank(props.bank + result.payout);
+    }
+    setRunners(null);
+    setGo(false);
+    setResult(null);
+    setHorses(generateRaceHorses());
+    setSelectedHorse(null);
+  };
+
+  // Race animation view (shared by both bet and my-horse races)
+  if (runners) {
+    return (
+      <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
+          <ShakeX trigger={fx.lost}>
+          <div className="overflow-hidden rounded-2xl p-3" style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,.04) 0 34px, transparent 34px 68px), linear-gradient(180deg, #15803d, #064e3b)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 2px ${rgba(GOLD, 0.45)}, 0 16px 30px -16px rgba(0,0,0,.9)` }}>
+            <div className="space-y-2 relative">
+              {/* Finish line */}
+              <div className="absolute right-1 top-0 bottom-0 w-1 bg-white/70" style={{ backgroundImage: "repeating-linear-gradient(0deg,#fff 0 6px,#111 6px 12px)" }} />
+              {runners.map((r, i) => {
+                const isPickedOrUser = isMyHorseRace ? r.isUser : r.name === horses[selectedHorse!]?.name;
+                return (
+                  <div key={i} className="relative h-8 bg-emerald-800/40 rounded">
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 text-2xl whitespace-nowrap"
+                      style={{
+                        left: go ? "88%" : "2%",
+                        transition: `left ${r.duration}s cubic-bezier(0.4,0.1,0.7,1)`,
+                      }}
+                    >
+                      <span className="inline-block -scale-x-100 drop-shadow-[0_3px_3px_rgba(0,0,0,.6)]">🐎</span>
+                    </div>
+                    <div className={`absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-black ${isPickedOrUser ? "text-yellow-300" : "text-white/70"}`}>
+                      {isMyHorseRace && r.isUser ? "YOU" : r.name}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {result && (
+              <div className="mt-3 text-center">
+                {isMyHorseRace ? (
+                  <>
+                    <div className={`text-3xl font-black ${result.finish === 1 ? "text-yellow-300" : result.finish <= 3 ? "text-emerald-300" : "text-white/85"}`}>
+                      {ordinal(result.finish)} Place
+                    </div>
+                    <div className="text-sm font-bold mt-1">
+                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{formatMoney(result.payout)}!</span> : <span className="text-white/75">Out of the money.</span>}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-black ${result.payout > 0 ? "text-yellow-300" : "text-red-400"}`}>
+                      {result.payout > 0 ? `YOU WIN! +★${formatMoney(result.payout)}` : "No luck!"}
+                    </div>
+                    <div className="text-sm text-white/85 mt-1">Winner: {result.winnerName}</div>
+                  </>
+                )}
+                <PressButton variant={result.payout > 0 ? "gold" : "primary"} size="none" pulse={result.payout > 0} onClick={collectResult} className="relative mt-3 w-full overflow-hidden rounded-xl py-2.5 font-black">
+                  {result.payout > 0 && <Shine loop every={3} />}
+                  {result.payout > 0 ? "Collect Winnings" : "Next Race"}
+                </PressButton>
+              </div>
+            )}
+            {!result && (
+              <div className="mt-3 text-center text-xs font-black text-white/80 animate-pulse">And they&apos;re off!</div>
+            )}
+          </div>
+          </ShakeX>
+      </CasinoFrame>
+    );
+  }
+
+  return (
+    <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
+
+        {/* Tabs */}
+        {ownsStable && (
+          <div className="flex gap-1 mb-3">
+            <button
+              onClick={() => setTab("bet")}
+              className={`kib-press flex-1 rounded-xl py-2 text-sm font-black transition ${tab === "bet" ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/75 ring-1 ring-white/10"}`}
+            >Bet on Races</button>
+            <button
+              onClick={() => setTab("my-horses")}
+              className={`kib-press flex-1 rounded-xl py-2 text-sm font-black transition ${tab === "my-horses" ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/75 ring-1 ring-white/10"}`}
+            >My Horses</button>
+          </div>
+        )}
+
+        {/* Betting tab */}
+        {tab === "bet" && (
+          <>
+            <div className="text-[10px] text-center text-white/75 mb-2">Pick a horse, place your bet, and watch the race!</div>
+            <div className="space-y-2 mb-3">
+              {horses.map((h, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedHorse(i)}
+                  className={`kib-press flex w-full items-center gap-3 rounded-2xl p-3 transition ${
+                    selectedHorse === i
+                      ? "bg-gradient-to-r from-emerald-500/30 to-emerald-900/40 ring-2 ring-emerald-300"
+                      : "bg-gradient-to-b from-white/[0.09] to-white/[0.03] ring-1 ring-white/10"
+                  }`}
+                >
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-b from-amber-600/50 to-amber-900/40 text-2xl ring-1 ring-amber-300/30">🐎</div>
+                  <div className="flex-1 text-left">
+                    <div className="font-black text-white text-sm">{h.name}</div>
+                    <div className="text-[10px] text-white/75">Rating: {h.rating}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-black text-yellow-300 text-sm">{h.odds.toFixed(2)}</div>
+                    <div className="text-[9px] text-white/65">odds</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <PressButton
+              variant="primary"
+              size="none"
+              pulse={selectedHorse !== null && props.bank >= props.bet}
+              disabled={selectedHorse === null || props.bank < props.bet}
+              onClick={placeBet}
+              className="w-full rounded-2xl py-3 font-black"
+            >
+              Place Bet — ★{formatMoney(props.bet)}
+            </PressButton>
+          </>
+        )}
+
+        {/* My Horses tab */}
+        {tab === "my-horses" && ownsStable && (
+          <>
+            {!myHorse ? (
+              <>
+                <div className="mb-3 rounded-2xl bg-white/[0.06] p-3 text-center text-[11px] font-bold leading-snug text-white/85 ring-1 ring-white/10">
+                  Buy a racehorse and enter it in races to win a real prize for finishing 1st, 2nd or 3rd — no betting involved. Racing tires your horse (energy comes back as the season plays out), and owning one costs real weekly upkeep whether it races or not.
+                </div>
+                <div className="space-y-2">
+                  {PURCHASABLE_HORSES.map((s) => {
+                    const canAfford = props.bank >= s.price;
+                    return (
+                      <div key={s.horse.name} className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-3 ring-1 ring-white/10">
+                        <div className="text-3xl">🐎</div>
+                        <div className="flex-1">
+                          <div className="font-black text-white text-sm">{s.horse.name}</div>
+                          <div className="text-[10px] text-white/75">{s.horse.breed} - SPD {s.horse.speed} - STA {s.horse.stamina}</div>
+                        </div>
+                        <PressButton
+                          variant="primary"
+                          size="none"
+                          onClick={() => {
+                            if (canAfford) {
+                              props.onBuyHorse({ ...s.horse, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 }, s.price);
+                              props.onSetBank(props.bank - s.price);
+                            }
+                          }}
+                          disabled={!canAfford}
+                          className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-black"
+                        >
+                          <StarIcon />{formatMoney(s.price)}
+                        </PressButton>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="text-5xl">🐎</div>
+                    <div className="flex-1 min-w-0">
+                      {renaming ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus value={nameDraft} maxLength={24}
+                            onChange={e => setNameDraft(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && nameDraft.trim()) { props.onRenameHorse(nameDraft); setRenaming(false); }
+                              if (e.key === "Escape") setRenaming(false);
+                            }}
+                            className="min-w-0 flex-1 rounded-md bg-gray-900 border border-emerald-500/60 px-2 py-1 text-sm font-black text-white"
+                          />
+                          <button
+                            onClick={() => { if (nameDraft.trim()) { props.onRenameHorse(nameDraft); setRenaming(false); } }}
+                            className="shrink-0 rounded-md bg-emerald-500 hover:bg-emerald-400 px-2 py-1 text-[10px] font-black"
+                          >Save</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setNameDraft(myHorse.name); setRenaming(true); }}
+                          className="flex items-center gap-1.5 text-left"
+                        >
+                          <span className="font-black text-white text-lg truncate">{myHorse.name}</span>
+                          <span className="text-[10px] font-bold text-emerald-300 underline">Rename</span>
+                        </button>
+                      )}
+                      <div className="text-[11px] text-white/75">{myHorse.breed}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center mb-3">
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-[9px] uppercase tracking-widest text-white/75 font-bold">Speed</div>
+                      <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.speed}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-[9px] uppercase tracking-widest text-white/75 font-bold">Stamina</div>
+                      <div className="text-lg font-black text-emerald-300 tabular-nums">{myHorse.stamina}</div>
+                    </div>
+                  </div>
+                  <div className="mb-1 flex justify-between text-[10px] font-bold text-white/85">
+                    <span>Energy</span><span>{myHorse.energy}%</span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-black/40 overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${myHorse.energy}%`, background: myHorse.energy >= MY_HORSE_RACE_COST ? "linear-gradient(to right,#22c55e,#eab308)" : "#ef4444" }} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px]">
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-white/75 font-bold">Runs</div>
+                      <div className="text-white font-black">{myHorse.racesRun}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-white/75 font-bold">Wins</div>
+                      <div className="text-white font-black">{myHorse.racesWon}</div>
+                    </div>
+                    <div className="bg-gray-900/50 rounded-lg py-1.5">
+                      <div className="text-white/75 font-bold">Winnings</div>
+                      <div className="text-white font-black">★{formatMoney(myHorse.earnings)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-red-950/40 border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold text-red-200">
+                    <span>Upkeep — feed, keep, vet</span>
+                    <span className="font-black">-★{formatMoney(horseUpkeep(myHorse))}/week</span>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-center text-white/75 mb-2">
+                  Prize — 1st: ★{formatMoney(horseRacePrize(1, myHorse))} · 2nd: ★{formatMoney(horseRacePrize(2, myHorse))} · 3rd: ★{formatMoney(horseRacePrize(3, myHorse))}
+                </div>
+
+                <PressButton
+                  variant="primary"
+                  size="none"
+                  pulse={myHorse.energy >= MY_HORSE_RACE_COST}
+                  onClick={startMyHorseRace}
+                  disabled={myHorse.energy < MY_HORSE_RACE_COST}
+                  className="w-full rounded-2xl py-3 text-lg font-black"
+                >
+                  {myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
+                </PressButton>
+                {myHorse.energy < MY_HORSE_RACE_COST && (
+                  <div className="mt-2 text-[10px] text-center text-white/75">Your horse regains 20 energy after each match you play.</div>
+                )}
+              </>
+            )}
+          </>
+        )}
+    </CasinoFrame>
+  );
+}
+
+function ordinal(n: number) {
+  return n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
+}
+
+// ---------- COMPETITION BETS ----------
+//
+// Requested directly: bet on the winner of any competition, priced off real
+// team ratings — see lib/star/competitionBetting.ts for the actual odds
+// model and settlement. This screen only lays a stake and shows what's
+// already down; nothing here decides who wins anything.
+interface CompetitionBettingProps extends CasinoGameProps {
+  career: CareerState;
+  onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
+}
+
+function CompetitionBetting(props: CompetitionBettingProps) {
+  const [tab, setTab] = useState<BetCompetition>("league");
+  const [placed, setPlaced] = useState<{ club: string; odds: number } | null>(null);
+  const book: BetEntrant[] = oddsFor(entrantsFor(tab, props.career), tab);
+  const pending = (props.career.competitionBets ?? []).filter(b => b.season === props.career.season);
+  // Reported directly: betting with no cutoff let a bet get placed on the
+  // last day of the season, once a title was already effectively decided —
+  // a free win, not a real bet. Closed the moment the summer transfer
+  // window shuts (see competitionBetting.ts's own note on why this exact
+  // calendar boundary, not a fixed matchweek count).
+  const bettingOpen = canPlaceCompetitionBet(props.career);
+
+  const place = (entry: BetEntrant) => {
+    if (!bettingOpen || props.bank < props.bet) return;
+    props.onSetBank(props.bank - props.bet);
+    props.onPlaceBet({
+      competition: tab, club: entry.name, odds: entry.odds, stake: props.bet, season: props.career.season,
+    });
+    setPlaced({ club: entry.name, odds: entry.odds });
+    setTimeout(() => setPlaced(null), 1400);
+  };
+
+  return (
+    <CasinoFrame {...props} title="Bets" icon="🏆">
+
+        <div className="grid grid-cols-5 gap-1 mb-3">
+          {BET_COMPETITIONS.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setTab(c.id)}
+              className={`kib-press rounded-xl py-2 text-[9px] font-black uppercase leading-tight transition ${
+                tab === c.id ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/70 ring-1 ring-white/10"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {placed && (
+          <div className="kit-pop relative mb-2 block rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-3 py-2 text-center text-xs font-black text-emerald-950 shadow-lg shadow-emerald-900/60">
+            <Burst colors={WIN_COLORS} count={16} spread={0.8} round />
+            Bet placed: {placed.club} @ {placed.odds.toFixed(2)}
+          </div>
+        )}
+
+        {!bettingOpen && (
+          <div className="mb-2 rounded-lg bg-red-900/60 border border-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200">
+            Betting closed for the season — the summer transfer window has shut.
+          </div>
+        )}
+
+        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
+          {book.map(entry => (
+            <button
+              key={entry.name}
+              onClick={() => place(entry)}
+              disabled={!bettingOpen || props.bank < props.bet}
+              className="kib-press flex w-full items-center justify-between gap-2 border-b border-white/[0.06] px-3 py-2.5 text-left last:border-b-0 hover:bg-white/[0.05] disabled:opacity-40"
+            >
+              <span className="font-bold text-white text-sm truncate">{entry.name}</span>
+              <span className="shrink-0 rounded-lg bg-gradient-to-b from-yellow-300/25 to-amber-600/20 px-2 py-0.5 text-sm font-black tabular-nums text-yellow-200 ring-1 ring-yellow-300/30">{entry.odds.toFixed(2)}</span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 text-[10px] text-center text-white/65">
+          Tap a club to bet ★{formatMoney(props.bet)} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
+        </div>
+
+        {pending.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">
+              Your bets this season
+            </div>
+            <div className="space-y-1.5">
+              {pending.map((b, i) => {
+                const label = BET_COMPETITIONS.find(c => c.id === b.competition)?.label ?? b.competition;
+                return (
+                  <div key={i} className="flex items-center justify-between rounded-xl bg-white/[0.06] px-3 py-2 text-[11px] ring-1 ring-white/10">
+                    <div>
+                      <span className="font-bold text-white">{b.club}</span>
+                      <span className="text-white/55"> — {label}</span>
+                    </div>
+                    <div className="font-black text-yellow-300 tabular-nums">
+                      ★{formatMoney(b.stake)} @ {b.odds.toFixed(2)} → ★{formatMoney(Math.round(b.stake * b.odds))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1.5 text-[9px] text-center text-white/50">
+              Settles at the end of the season, against the real result.
+            </div>
+          </div>
+        )}
+    </CasinoFrame>
+  );
+}
+
+// ---------- BLACKJACK ----------
+/** Green baize under a lamp, with a gold rail. */
+const FELT_TABLE: React.CSSProperties = {
+  background: "radial-gradient(75% 55% at 50% 45%, #16a34a 0%, #15803d 45%, #064e3b 100%)",
+  boxShadow: `inset 0 0 0 4px ${rgba(GOLD, 0.7)}, inset 0 0 0 7px rgba(0,0,0,.35), inset 0 10px 30px rgba(0,0,0,.45), 0 18px 34px -16px rgba(0,0,0,.9)`,
+};
+type Card = { rank: string; value: number; suit: "♥" | "♠" | "♦" | "♣" };
+const DECK: string[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const SUITS: Array<"♥" | "♠" | "♦" | "♣"> = ["♥", "♠", "♦", "♣"];
+
+function drawCard(): Card {
+  const r = DECK[Math.floor(Math.random() * DECK.length)];
+  const v = r === "A" ? 11 : ["J", "Q", "K"].includes(r) ? 10 : parseInt(r, 10);
+  const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
+  return { rank: r, value: v, suit };
+}
+
+function handValue(cards: Card[]): number {
+  let total = cards.reduce((s, c) => s + c.value, 0);
+  let aces = cards.filter((c) => c.rank === "A").length;
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+
+function Blackjack(props: CasinoGameProps) {
+  const fx = useCasinoFx();
+  // Requested directly: pressing Black Jack used to deal both hands
+  // instantly, before the bet was even decided — "it's a bit misconstruing
+  // the way that does it." A real "bet" phase now sits in front of every
+  // hand (the first one included): the table is empty, the bet bar's own
+  // bet +/- is right there to adjust, and nothing is drawn or staked until
+  // you press Deal yourself.
+  const [player, setPlayer] = useState<Card[]>([]);
+  const [dealer, setDealer] = useState<Card[]>([]);
+  const [revealedDealerCount, setRevealedDealerCount] = useState(0);
+  const [phase, setPhase] = useState<"bet" | "play" | "dealer-turn" | "done">("bet");
+  const [message, setMessage] = useState("");
+
+  const deal = () => {
+    if (props.bank < props.bet) return;
+    setPlayer([drawCard(), drawCard()]);
+    setDealer([drawCard(), drawCard()]);
+    setRevealedDealerCount(1); // second card hidden until Hold
+    setPhase("play");
+    setMessage("");
+    props.onSetBank(props.bank - props.bet);
+  };
+
+  const startRound = () => {
+    // Back to the bet screen, not straight into a new hand — same reasoning
+    // as the initial deal: the bet is worth a deliberate look between hands
+    // too, not just the very first one.
+    setPlayer([]);
+    setDealer([]);
+    setRevealedDealerCount(0);
+    setMessage("");
+    setPhase("bet");
+  };
+
+  const hit = () => {
+    if (phase !== "play") return;
+    const next = [...player, drawCard()];
+    setPlayer(next);
+    if (handValue(next) > 21) {
+      // Bust — reveal dealer card and end
+      setRevealedDealerCount(dealer.length);
+      setMessage("BUST!");
+      setPhase("done");
+      fx.lose();
+    }
+  };
+
+  const hold = async () => {
+    if (phase !== "play") return;
+    setPhase("dealer-turn");
+    // Step 1: reveal dealer's second card after brief pause
+    await new Promise((r) => setTimeout(r, 700));
+    setRevealedDealerCount(2);
+    await new Promise((r) => setTimeout(r, 900));
+
+    // Step 2: dealer draws until 17+, one card at a time with delay
+    let d = [...dealer];
+    while (handValue(d) < 17) {
+      d = [...d, drawCard()];
+      setDealer(d);
+      setRevealedDealerCount(d.length);
+      await new Promise((r) => setTimeout(r, 900));
+    }
+
+    // Step 3: decide result after a short beat
+    await new Promise((r) => setTimeout(r, 400));
+    const p = handValue(player);
+    const dv = handValue(d);
+    if (dv > 21) {
+      setMessage("DEALER BUSTS — YOU WIN!");
+      props.onSetBank(props.bank + props.bet * 2);
+      fx.win(props.bet);
+    } else if (p > dv) {
+      setMessage("YOU WIN!");
+      props.onSetBank(props.bank + props.bet * 2);
+      fx.win(props.bet);
+    } else if (p === dv) {
+      setMessage("PUSH");
+      props.onSetBank(props.bank + props.bet);
+    } else {
+      setMessage("DEALER WINS");
+      fx.lose();
+    }
+    setPhase("done");
+  };
+
+  const dealt = phase !== "bet";
+  const done = phase === "done";
+  const showingSecondCard = revealedDealerCount >= 2;
+
+  return (
+    <CasinoFrame {...props} title="Blackjack" icon="🃏" fx={fx}>
+        <ShakeX trigger={fx.lost}>
+        <div className="relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-[26px] p-4" style={FELT_TABLE}>
+          <div>
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-200/90">Dealer</div>
+            <div className="flex gap-2">
+              {dealer.map((c, i) => (
+                <div key={i} className="kit-deal" style={{ animationDelay: `${i * 90}ms` }}>
+                  <CardView card={c} hidden={i >= revealedDealerCount} />
+                </div>
+              ))}
+            </div>
+            {dealt && (
+              <div className="text-white font-black mt-1">
+                {showingSecondCard ? handValue(dealer.slice(0, revealedDealerCount)) : "?"}
+              </div>
+            )}
+          </div>
+
+          {phase === "bet" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
+              <div className="text-center text-sm font-bold text-white/70">
+                Set your bet above, then deal yourself in.
+              </div>
+            </div>
+          )}
+
+          {message && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className={`kit-win-pop rounded-2xl bg-black/75 px-4 py-2 text-center text-3xl font-black text-yellow-300 ring-1 ring-white/15 ${message.includes("WIN") ? "text-emerald-300" : message.includes("BUST") || message.includes("DEALER WINS") ? "text-red-400" : ""}`}>
+                {message}
+              </div>
+            </div>
+          )}
+
+          <div>
+            {dealt && <div className="text-white font-black mb-1">{handValue(player)}</div>}
+            <div className="flex gap-2">
+              {player.map((c, i) => (
+                <div key={i} className="kit-deal" style={{ animationDelay: `${i * 90}ms` }}>
+                  <CardView card={c} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-200/90">Player</div>
+          </div>
+        </div>
+        </ShakeX>
+
+        {phase === "bet" && (
+          <PressButton
+            variant="primary"
+            size="none"
+            pulse={props.bank >= props.bet}
+            disabled={props.bank < props.bet}
+            onClick={deal}
+            className="mt-3 w-full rounded-2xl py-3 font-black"
+          >
+            Deal — ★{formatMoney(props.bet)}
+          </PressButton>
+        )}
+        {phase === "play" && (
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <PressButton variant="danger" size="none" onClick={hold} className="rounded-2xl py-3 font-black">✕ Hold</PressButton>
+            <PressButton variant="primary" size="none" onClick={hit} className="rounded-2xl py-3 font-black">✓ Hit</PressButton>
+          </div>
+        )}
+        {phase === "dealer-turn" && (
+          <div className="mt-3 py-3 text-center text-yellow-200 font-black animate-pulse">Dealer drawing...</div>
+        )}
+        {done && (
+          <PressButton variant="primary" size="none" onClick={startRound} className="mt-3 w-full rounded-2xl py-3 font-black">
+            New Hand
+          </PressButton>
+        )}
+    </CasinoFrame>
+  );
+}
+
+function CardView({ card, hidden }: { card: Card; hidden?: boolean }) {
+  if (hidden) {
+    return (
+      <div className="flex h-20 w-14 items-center justify-center rounded-lg border-2 border-white bg-gradient-to-br from-blue-700 to-blue-900 shadow-[0_6px_12px_-4px_rgba(0,0,0,.7)]" style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px), linear-gradient(135deg, #1d4ed8, #1e3a8a)" }}>
+        <div className="w-8 h-14 border-2 border-white/30 rounded" />
+      </div>
+    );
+  }
+  const red = card.suit === "♥" || card.suit === "♦";
+  return (
+    <div className="relative flex h-20 w-14 flex-col items-center justify-center rounded-lg border border-gray-300 bg-gradient-to-b from-white to-gray-100 shadow-[0_6px_12px_-4px_rgba(0,0,0,.7)]">
+      <div className={`text-2xl font-black ${red ? "text-red-600" : "text-black"}`}>{card.rank}</div>
+      <div className={`text-lg ${red ? "text-red-600" : "text-black"}`}>{card.suit}</div>
+    </div>
+  );
+}
+
+// ---------- ROULETTE ----------
+// European roulette (0-36). Numbers laid around a wheel in canonical order.
+const ROULETTE_ORDER = [
+  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23,
+  10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
+];
+const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+function isRed(n: number) { return RED_NUMBERS.has(n); }
+function pocketColor(n: number) {
+  if (n === 0) return "#059669"; // green
+  return isRed(n) ? "#dc2626" : "#111827";
+}
+
+function Roulette(props: CasinoGameProps) {
+  const fx = useCasinoFx();
+  const [choice, setChoice] = useState<"red" | "black" | "even" | "odd" | number | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [result, setResult] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
+
+  const spin = () => {
+    if (choice === null) return;
+    props.onSetBank(props.bank - props.bet);
+    setSpinning(true);
+    setResult(null);
+    setMessage("");
+
+    // Pick winner + compute rotation.
+    // Each pocket = 360 / 37 degrees. Rotate the wheel so the winning pocket lands under the pointer (top).
+    const winner = Math.floor(Math.random() * 37);
+    const winnerIdx = ROULETTE_ORDER.indexOf(winner);
+    const anglePer = 360 / 37;
+    // Wheel spins clockwise multiple times, then stops with winner at the top pointer.
+    // Base rotation to align winner: 360 - winnerIdx * anglePer
+    const target = 360 - winnerIdx * anglePer;
+    const revolutions = 6 + Math.floor(Math.random() * 3);
+    const finalRotation = wheelRotation + revolutions * 360 + (target - (wheelRotation % 360));
+    setWheelRotation(finalRotation);
+
+    setTimeout(() => {
+      setResult(winner);
+      setSpinning(false);
+      let win = 0;
+      const redWin = isRed(winner);
+      if (typeof choice === "number" && choice === winner) win = props.bet * 35;
+      else if (choice === "red" && redWin) win = props.bet * 2;
+      else if (choice === "black" && !redWin && winner !== 0) win = props.bet * 2;
+      else if (choice === "even" && winner !== 0 && winner % 2 === 0) win = props.bet * 2;
+      else if (choice === "odd" && winner % 2 === 1) win = props.bet * 2;
+      if (win > 0) {
+        setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
+        props.onSetBank(props.bank - props.bet + win);
+        fx.win(win - props.bet);
+      } else {
+        setMessage("Lost!");
+        fx.lose();
+      }
+    }, 4500);
+  };
+
+  return (
+    <CasinoFrame {...props} title="Roulette" icon="🎡" fx={fx}>
+
+        {/* Wheel */}
+        <ShakeX trigger={fx.lost}>
+        <div className="rounded-[26px] p-4" style={{ background: "radial-gradient(70% 60% at 50% 40%, rgba(245,158,11,.25), transparent 70%), linear-gradient(180deg, #3b2106, #1c1003)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 3px ${rgba(GOLD, 0.6)}, 0 18px 34px -16px rgba(0,0,0,.9)` }}>
+          <div className="relative aspect-square">
+            {/* Pointer at top */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+              <svg width="28" height="28" viewBox="0 0 28 28">
+                <path d="M14 0 L28 14 L14 24 L0 14 Z" fill="#fbbf24" stroke="#000" strokeWidth="1.5" />
+              </svg>
+            </div>
+
+            {/* Wheel */}
+            <div
+              className="absolute inset-2 rounded-full border-4 border-yellow-500 shadow-inner overflow-hidden"
+              style={{
+                transform: `rotate(${wheelRotation}deg)`,
+                transition: spinning ? "transform 4500ms cubic-bezier(0.15, 0.6, 0.2, 1)" : "none",
+                background: "conic-gradient(from 0deg, " +
+                  ROULETTE_ORDER.map((n, i) => {
+                    const startPct = (i / 37) * 100;
+                    const endPct = ((i + 1) / 37) * 100;
+                    return `${pocketColor(n)} ${startPct}% ${endPct}%`;
+                  }).join(", ") + ")",
+              }}
+            >
+              {/* Number labels — one full-size layer per number, rotated so the
+                  label sits in its pocket near the rim. */}
+              {ROULETTE_ORDER.map((n, i) => {
+                const angle = (i / 37) * 360 + 360 / 74;
+                return (
+                  <div
+                    key={i}
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ transform: `rotate(${angle}deg)` }}
+                  >
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 pt-[3px] text-white font-black text-[10px] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                      {n}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Center hub */}
+            <div className="absolute inset-[35%] rounded-full bg-gradient-to-br from-yellow-500 to-yellow-700 border-4 border-yellow-400 shadow-xl flex items-center justify-center">
+              <div className={`text-3xl font-black text-white transition-opacity ${spinning ? "opacity-40" : "opacity-100"}`}>
+                {spinning ? "?" : result ?? "?"}
+              </div>
+            </div>
+          </div>
+
+          {message && (
+            <div className={`kit-win-pop mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
+          )}
+        </div>
+        </ShakeX>
+
+        {/* Bet choices */}
+        <div className="mt-3 grid grid-cols-4 gap-1.5">
+          {(["red", "black", "even", "odd"] as const).map((c) => (
+            <button
+              key={c}
+              disabled={spinning}
+              onClick={() => setChoice(c)}
+              className={`kib-press rounded-xl py-3 text-xs font-black uppercase transition ${
+                choice === c ? (c === "red" ? "bg-gradient-to-b from-red-400 to-red-700 ring-2 ring-white/80" : c === "black" ? "bg-black text-white ring-2 ring-white" : "bg-gradient-to-b from-emerald-400 to-emerald-700 ring-2 ring-white/80") : "bg-white/[0.08] ring-1 ring-white/10"
+              }`}
+            >{c}</button>
+          ))}
+        </div>
+        <div className="mt-2 text-[10px] text-center text-white/75">Red/Black/Even/Odd: 2x • Single number: 35x</div>
+        {/* Every number shown at once, no scrolling — reported directly:
+            a scrollbar here for only 37 short buttons was unnecessary when
+            the grid comfortably fits the page at a slightly smaller size. */}
+        <div className="mt-2 grid grid-cols-6 gap-1">
+          {Array.from({ length: 37 }).map((_, i) => {
+            const bg = i === 0 ? "bg-emerald-700" : isRed(i) ? "bg-red-700" : "bg-gray-900";
+            return (
+              <button
+                key={i}
+                disabled={spinning}
+                onClick={() => setChoice(i)}
+                className={`kib-press rounded-lg py-1.5 text-[11px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)] ${choice === i ? "ring-2 ring-yellow-300" : ""} ${bg}`}
+              >{i}</button>
+            );
+          })}
+        </div>
+
+        <PressButton
+          variant="primary"
+          size="none"
+          pulse={!spinning && choice !== null && props.bank >= props.bet}
+          disabled={spinning || choice === null || props.bank < props.bet}
+          onClick={spin}
+          className="mt-3 w-full rounded-2xl py-3 font-black"
+        >
+          {spinning ? "Spinning..." : `Spin — ★${formatMoney(props.bet)}`}
+        </PressButton>
+    </CasinoFrame>
+  );
+}
+
+// ---------- SLOTS ----------
+const SLOTS_SYMBOLS = ["🍒", "🍋", "🍊", "🔔", "⭐", "7️⃣"];
+function Slots(props: CasinoGameProps) {
+  const fx = useCasinoFx();
+  const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍊"]);
+  const [spinning, setSpinning] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const spin = () => {
+    props.onSetBank(props.bank - props.bet);
+    setSpinning(true);
+    setMessage("");
+    const roll = () => SLOTS_SYMBOLS[Math.floor(Math.random() * SLOTS_SYMBOLS.length)];
+    let ticks = 0;
+    const timer = setInterval(() => {
+      setReels([roll(), roll(), roll()]);
+      ticks++;
+      if (ticks > 12) {
+        clearInterval(timer);
+        const final = [roll(), roll(), roll()];
+        setReels(final);
+        setSpinning(false);
+        const [a, b, c] = final;
+        let win = 0;
+        if (a === b && b === c) {
+          if (a === "7️⃣") win = props.bet * 20;
+          else if (a === "⭐") win = props.bet * 10;
+          else win = props.bet * 5;
+        } else if (a === b || b === c) {
+          win = props.bet;
+        }
+        if (win > 0) {
+          setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
+          props.onSetBank(props.bank - props.bet + win);
+          if (win > props.bet) fx.win(win - props.bet);
+        } else {
+          setMessage("No luck");
+          fx.lose();
+        }
+      }
+    }, 90);
+  };
+
+  return (
+    <CasinoFrame {...props} title="Slots" icon="🎰" fx={fx}>
+        <ShakeX trigger={fx.lost}>
+        <div className="relative overflow-hidden rounded-[26px] p-4" style={{ background: "radial-gradient(70% 60% at 50% 30%, rgba(250,204,21,.3), transparent 70%), linear-gradient(180deg, #7c2d12, #3b0a06)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 3px ${rgba(GOLD, 0.7)}, 0 18px 34px -16px rgba(0,0,0,.9)` }}>
+          {/* Marquee lights round the machine. */}
+          <div aria-hidden className="kib-flood pointer-events-none absolute inset-1.5 rounded-[21px] border-[3px] border-dotted border-yellow-200/90" style={{ filter: "drop-shadow(0 0 4px rgba(254,240,138,.9))" }} />
+          <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-black p-3 shadow-[inset_0_4px_12px_rgba(0,0,0,.9)]">
+            {reels.map((r, i) => (
+              <div key={i} className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border-4 border-yellow-600 bg-gradient-to-b from-gray-200 via-white to-gray-300 text-6xl">
+                <span key={spinning ? `s${r}${i}` : `f${r}${i}`} className={spinning ? "kit-reel-spin" : "kit-pop"}>{r}</span>
+              </div>
+            ))}
+          </div>
+          {message && (
+            <div className={`kit-win-pop relative mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
+          )}
+          <div className="relative mt-3 text-center text-[10px] font-bold text-yellow-200">
+            777 = 20x • ⭐⭐⭐ = 10x • Any triple = 5x • Any pair = 1x
+          </div>
+        </div>
+        </ShakeX>
+
+        <PressButton
+          variant="gold"
+          size="none"
+          pulse={!spinning && props.bank >= props.bet}
+          disabled={spinning || props.bank < props.bet}
+          onClick={spin}
+          className="relative mt-3 w-full overflow-hidden rounded-2xl py-3 text-[15px] font-black"
+        >
+          {!spinning && <Shine loop every={3.5} />}
+          {spinning ? "Spinning..." : `Pull the Lever — ★${formatMoney(props.bet)}`}
+        </PressButton>
+    </CasinoFrame>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="#fbbf24">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+}

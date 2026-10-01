@@ -3,7 +3,7 @@ import type { CareerState, Skills } from "@/lib/star/types";
 import {
   TRAINING_LEVELS, highestUnlocked, starsOf, totalStars, skillFromStars,
 } from "@/lib/star/trainingLevels";
-import { KitStyles, Shine, Glow, useClubTheme, rgba } from "./ui";
+import { KitStyles, Shine, Glow, SquareBar, useClubTheme, rgba } from "./ui";
 
 /**
  * Pick a training level (Mikey, 25 Sep 2026 — New Star Soccer's ladder).
@@ -41,7 +41,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
 
   return (
     <div className="min-h-screen text-white px-4 py-4"
-      style={{ background: `radial-gradient(90% 40% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
+      style={{ background: `radial-gradient(90% 40% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <KitStyles />
       <div className="mx-auto w-full max-w-sm">
         <div className="flex items-center justify-between">
@@ -54,7 +54,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
         {/* The skill, as a big lit card — the same card as on the Training page. */}
         <div className="kit-rise relative mt-3 overflow-hidden rounded-2xl p-4"
           style={{
-            background: `radial-gradient(110% 120% at 0% 0%, ${rgba(a, 0.35)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97))`,
+            background: `radial-gradient(110% 120% at 0% 0%, ${rgba(a, 0.35)}, transparent 60%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97)))`,
             boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(a, 0.45)}, 0 0 26px -6px ${rgba(a, 0.55)}`,
           }}>
           <Shine loop every={6} />
@@ -80,9 +80,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
               Level {open} is next
             </span>
           </div>
-          <div className="relative mt-2 h-3 overflow-hidden rounded-full bg-black/45" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.6)" }}>
-            <div className="h-full rounded-full" style={{ width: `${Math.max(2, (stars / max) * 100)}%`, background: `linear-gradient(90deg, ${a}, #fde68a)`, boxShadow: `0 0 10px ${rgba(a, 0.7)}` }} />
-          </div>
+          <SquareBar value={Math.max(2, (stars / max) * 100)} colors={[a, "#fde68a"]} className="mt-2 h-3" animate />
           <div className="relative mt-2 text-[11.5px] font-bold text-white">
             3 tries a level: first ★★★, second ★★, third ★. Every 3 new stars is +2 {look.title}.
             {value < ceiling && ` You've lost ${ceiling - value} since your best — pass any level to win them back.`}

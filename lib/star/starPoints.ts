@@ -8,7 +8,9 @@ import { ACHIEVEMENTS } from "./achievements";
 import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
 
 /**
- * THE STAR RATING — your career, 1.0 to 10.0★ (Mikey, 30 Sep 2026).
+ * THE STAR RATING — your career, 1 to 100 (Mikey, 30 Sep 2026; moved from
+ * 1.0-10.0 to 1-100 for Harry, 1 Oct 2026: "each one level would have been
+ * 10 levels now").
  *
  * Two numbers now, with two jobs:
  *  - `career.starRating` is unchanged: your ABILITY on the old 1-5 scale,
@@ -16,26 +18,35 @@ import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
  *    transfers and everything else that read it still do, so nothing about
  *    how the game plays moved. Screens show it as "Overall" (displayOverall).
  *  - `career.stars` (this file) is what the game now CALLS the star rating:
- *    your journey. It only ever goes up.
+ *    your journey, a whole number from 1 to 100. It goes up, and since
+ *    1 Oct 2026 a run of poor matches can take it back down (see 2c).
  *
  * How it works, in the order this file is written:
  *  1. Everything earns Star Points (SP). Match points are multiplied by the
  *     stage they were earned on (National League ×1 … Champions League ×5).
- *  2. SP turn into stars on a curve (STAR_THRESHOLDS): each star costs more.
- *  3. Star gates: you can't pass 2.9 / 3.9 / 4.9 / 5.9 until you've played 10
+ *  2. SP turn into levels on a curve (LEVEL_COST): about a match a level up
+ *     to 4, then each level dearer than the last, so 60→61 takes 14-20× the
+ *     matches 4→5 does (see STAR_CURVES).
+ *  3. Star gates: you can't pass 29 / 39 / 49 / 59 until you've played 10
  *     league games at that level OR HIGHER (so jumping straight from the
  *     National League to the Championship opens three gates at once), and
- *     6.9 / 7.9 / 8.9 need trophies and Ballon d'Or placings. Points above a
+ *     69 / 79 / 89 need trophies and Ballon d'Or placings. Points above a
  *     gate are banked and paid out the moment it opens.
- *  4. From 9.0 there is no gate and no points: the last star is ten Legend
- *     tasks, 0.1★ each. 10.0★ is having done everything in the game.
+ *  4. From 90 there is no gate and no points: the last ten levels are ten
+ *     Legend tasks, one level each. 100 is having done everything in the game.
+ *
+ * A save from the 1.0-10.0 days is converted the first time it is read
+ * (`bestOf`): its rating ×10, and its points carried so it keeps climbing
+ * from where it was. Nothing it had is lost.
  *
  * ADDING SOMETHING NEW TO THE GAME (a World Cup, a lower-league cup…): give
  * its trophy a line in TROPHY_SP, and if it is a pinnacle, a Legend task.
  * Everything is derived from the career, so nothing else needs touching.
  *
  * Never-goes-down is a high-water mark (`career.starBest`), kept per category
- * so an island wearing out or a club stake sold can't take a star away.
+ * so an island wearing out or a club stake sold can't take a star away. The
+ * one thing that CAN take it down is form: a run of poor matches (2c below,
+ * Harry, 1 Oct 2026, P14).
  */
 
 // ── 1. What earns points ────────────────────────────────────────────────────
@@ -44,14 +55,27 @@ export type StarTier = CareerDivision | "cup" | "intl" | "europe";
 
 /** A match's points are multiplied by where it was played. */
 export const TIER_MULT: Record<StarTier, number> = {
+  // North and South (1 Oct 2026) count like the National League: ×1 is the
+  // floor of the scale, and a lower multiplier would make the bottom of the
+  // ladder slower still than the curve was tuned on.
+  national_league_north: 1, national_league_south: 1,
   national_league: 1, league_two: 1.5, league_one: 2, championship: 3, premier: 4,
   cup: 4, intl: 4, europe: 5,
 };
 
+/**
+ * Every point value in this file is written in the old (Sep 2026) units and
+ * multiplied by this, so the relative weights Mikey tuned stay readable.
+ * Tuned against played-out careers (tests/star/starPoints.mts and the
+ * measurement in that file's header), not by hand.
+ */
+export const SP_SCALE = 120;
+const S = SP_SCALE;
+
 export const MATCH_SP = {
-  play: 5, start: 3, win: 3, draw: 1, goal: 12, assist: 8, hatTrick: 20, starMan: 20,
+  play: 5 * S, start: 3 * S, win: 3 * S, draw: 1 * S, goal: 12 * S, assist: 8 * S, hatTrick: 20 * S, starMan: 20 * S,
   /** A match rating of this or better… */
-  highRating: 8, /** …is worth this. */ highRatingSp: 8,
+  highRating: 8, /** …is worth this. */ highRatingSp: 8 * S,
 };
 
 export interface TierTally {
@@ -65,6 +89,9 @@ export interface StarLedger {
   tiers: Partial<Record<StarTier, TierTally>>;
   /** Champions League matches played (a gate reads it). */
   uclApps: number;
+  /** Poor form (2c): Star Points lost to poor matches, and how many poor
+   *  matches in a row without a good one. Absent until the first poor match. */
+  slump?: { debt: number; streak: number };
   promotions: number;
   /** The standing of your first club, and of the biggest you've played for. */
   firstRep?: number;
@@ -78,6 +105,15 @@ export interface StarBest {
   stars: number;
   /** Legend tasks done. Sticky: a task done stays done. */
   legend: string[];
+  /** 100 once this is on the 1-100 scale. Absent on a 1.0-10.0 save (see bestOf). */
+  scale?: number;
+  /** Points carried over from a 1.0-10.0 save, so its converted rating sits
+   *  at the start of its level and keeps climbing. Set once, at conversion. */
+  carry?: number;
+  /** The one-level-a-match cap (MAX_RISE_PER_MATCH): `apps` is how many
+   *  matches you had played when this window opened, `base` your rating then.
+   *  Until you play again the rating can't pass base + 1. */
+  win?: { apps: number; base: number };
 }
 
 /** The career's ledger; a save from before Star Points gets one rebuilt. */
@@ -138,11 +174,16 @@ export function ledgerAfterMatch(career: CareerState, fixture: Fixture, stats: M
     ...led,
     tiers: { ...led.tiers, [tier]: now },
     uclApps: led.uclApps + (fixture.competition === "Champions League" ? 1 : 0),
+    ...slumpAfterMatch(career, led, stats, Math.round(tallySp(add) * TIER_MULT[tier])),
   };
 }
 
 /** Flat points for silverware. A trophy not listed here is worth OTHER_TROPHY_SP. */
-export const TROPHY_SP: Record<string, number> = {
+const scaleAll = <T extends Record<string, number>>(o: T): T =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v * S])) as T;
+
+export const TROPHY_SP: Record<string, number> = scaleAll({
+  "National League North": 180, "National League South": 180,
   "National League": 250, "League Two": 350, "League One": 500, "Championship": 800,
   "Premier League": 2000,
   "Community Shield": 150, "Super Cup": 150,
@@ -153,37 +194,46 @@ export const TROPHY_SP: Record<string, number> = {
   "Champions League": 3000,
   "World Cup": 3000, "European Championship": 2000,
   "Play-Offs": 0, // the promotion it wins is paid below
-};
-export const OTHER_TROPHY_SP = 100;
-export const PROMOTION_SP = 300;
+});
+export const OTHER_TROPHY_SP = 100 * S;
+export const PROMOTION_SP = 300 * S;
 
 const DIV_ORDER: CareerDivision[] = ["national_league", "league_two", "league_one", "championship", "premier"];
 /** Individual awards, by the division they were won in (bottom to top). */
 export const AWARD_SP: Record<string, number[]> = {
-  "Player of the Month": [50, 100, 150, 200, 250],
-  "Golden Boot": [200, 500, 800, 1100, 1500],
-  "Player of the Season": [300, 700, 1100, 1500, 2000],
+  "Player of the Month": [50, 100, 150, 200, 250].map(n => n * S),
+  "Golden Boot": [200, 500, 800, 1100, 1500].map(n => n * S),
+  "Player of the Season": [300, 700, 1100, 1500, 2000].map(n => n * S),
 };
-export const BALLON_SP = { win: 6000, top3: 2500, top10: 1000 };
+export const BALLON_SP = scaleAll({ win: 6000, top3: 2500, top10: 1000 });
 
+const steps = (xs: [number, number][]) => xs.map(([at, sp]) => [at, sp * S] as [number, number]);
 export const MILESTONES = {
-  apps: [[50, 100], [100, 200], [250, 400], [500, 800]],
-  goals: [[50, 200], [100, 400], [200, 800], [300, 1500]],
-  caps: [[1, 400], [25, 300], [50, 600], [100, 1200]],
-} as const;
-export const PREMIER_DEBUT_SP = 500;
-export const BIGGER_CLUB_SP_PER_POINT = 10;
-export const RECORD_SP = 2500;
-export const ACHIEVEMENT_SP = 60;
-export const SKILL_MAXED_SP = 200;
-export const TRAINING_STAR_SP = 3;
+  apps: steps([[50, 100], [100, 200], [250, 400], [500, 800]]),
+  goals: steps([[50, 200], [100, 400], [200, 800], [300, 1500]]),
+  caps: steps([[1, 400], [25, 300], [50, 600], [100, 1200]]),
+};
+// Both of these were the ones that made a first match look like it moved the
+// rating ten times what the card said (Harry, 1 Oct 2026: "+68 star points
+// just took me from 1.0 to 2.1"): a Premier League debut was worth more than
+// a whole star, and the four achievements a first match unlocks almost
+// another. Cut down, and the card now lists them (starGain).
+// 1 Oct 2026, again ("you should never jump 2 levels"): 18,000 was still
+// ~2.5 levels at the start. Now 6,000, about one level, and the one-level-a-
+// match cap (MAX_RISE_PER_MATCH) holds back anything a match brings beyond that.
+export const PREMIER_DEBUT_SP = 50 * S;
+export const BIGGER_CLUB_SP_PER_POINT = 10 * S;
+export const RECORD_SP = 2500 * S;
+export const ACHIEVEMENT_SP = 20 * S;
+export const SKILL_MAXED_SP = 200 * S;
+export const TRAINING_STAR_SP = 3 * S;
 
 /** Your best fame level so far: Rising Star, National Name, Global Star, Icon. */
-export const FAME_SP: [number, number][] = [[25, 150], [40, 400], [60, 1000], [80, 2500]];
-export const CLUB_OWNER_SP = 1500;
-export const TOP_ITEM_SP = 300;
-export const ISLAND_SP = 1000;
-export const PRESIDENT_SP = 3000;
+export const FAME_SP: [number, number][] = steps([[25, 150], [40, 400], [60, 1000], [80, 2500]]);
+export const CLUB_OWNER_SP = 1500 * S;
+export const TOP_ITEM_SP = 300 * S;
+export const ISLAND_SP = 1000 * S;
+export const PRESIDENT_SP = 3000 * S;
 
 const SKILLS: (keyof Skills)[] = ["pace", "power", "technique", "vision", "freeKick"];
 const stepSum = (n: number, steps: readonly (readonly [number, number])[]) => steps.reduce((s, [at, sp]) => s + (n >= at ? sp : 0), 0);
@@ -194,69 +244,216 @@ const ownsIsland = (career: CareerState) => topItems(career).some(i => (i.baseId
 
 export interface StarBreakdown { match: number; trophies: number; awards: number; milestones: number; status: number }
 
-/** Star Points as the career stands right now (before the high-water mark). */
-export function livePoints(career: CareerState): StarBreakdown {
-  const led = ledgerOf(career);
-  const match = Math.round(Object.entries(led.tiers).reduce((s, [tier, t]) => s + tallySp(t!) * TIER_MULT[tier as StarTier], 0));
-
-  const trophies = career.trophies.reduce((s, t) => s + (TROPHY_SP[t.competition] ?? OTHER_TROPHY_SP), 0)
-    + led.promotions * PROMOTION_SP;
-
-  const awards = (career.awards ?? []).reduce((s, a) => {
-    const row = AWARD_SP[a.kind];
-    if (!row) return s;
-    return s + row[Math.max(0, DIV_ORDER.indexOf(a.division ?? "national_league"))];
-  }, 0) + led.ballonRanks.reduce((s, r) => s + (r === 1 ? BALLON_SP.win : r <= 3 ? BALLON_SP.top3 : BALLON_SP.top10), 0);
-
-  const cs = career.careerStats;
-  const milestones = stepSum(cs.appearances, MILESTONES.apps) + stepSum(cs.goals, MILESTONES.goals)
-    + stepSum(career.caps ?? 0, MILESTONES.caps)
-    + ((led.tiers.premier?.apps ?? 0) > 0 ? PREMIER_DEBUT_SP : 0)
-    + Math.max(0, (led.maxRep ?? 0) - (led.firstRep ?? led.maxRep ?? 0)) * BIGGER_CLUB_SP_PER_POINT
-    + RECORDS.filter(r => recordBeaten(career, r)).length * RECORD_SP
-    // "first-contract" comes with signing, so it earns nothing: a career starts on exactly 1.0★.
-    + career.achievements.filter(id => id !== "first-contract").length * ACHIEVEMENT_SP
-    + SKILLS.filter(k => career.skills[k] >= 100).length * SKILL_MAXED_SP
-    + SKILLS.reduce((s, k) => s + totalStars(trainingStarsOf(career, k)), 0) * TRAINING_STAR_SP;
-
-  const fame = fameOf(career);
-  const status = FAME_SP.reduce((s, [min, sp]) => (fame >= min ? sp : s), 0)
-    + (ownsClub(career) ? CLUB_OWNER_SP : 0)
-    + topItems(career).reduce((s, i) => s + ((i.baseId ?? i.id) === "island" ? ISLAND_SP : TOP_ITEM_SP), 0)
-    + (career.governingBodyPresidencies?.length ? PRESIDENT_SP : 0);
-
-  return { match, trophies, awards, milestones, status };
+/** One named source of Star Points, so a screen can say where they came from. */
+export interface StarLine {
+  key: string;
+  cat: keyof StarBreakdown;
+  label: string;
+  sp: number;
+  /** How many of it (achievements, trophies…), for the label of a change. */
+  n?: number;
 }
 
-// ── 2. Points to stars ──────────────────────────────────────────────────────
+const TIER_NAME: Record<StarTier, string> = {
+  national_league_north: "National League North", national_league_south: "National League South",
+  national_league: "National League", league_two: "League Two", league_one: "League One",
+  championship: "Championship", premier: "Premier League", cup: "Cups", intl: "Internationals", europe: "Europe",
+};
 
-/** Total SP needed for 1.0★, 2.0★ … 10.0★. Each star costs more than the last. */
-// Set against played-out careers (tests/star/starPoints.mts), not by hand: a
-// regular's season is worth about 1,000 SP in the National League, 1,450 in
-// League Two, 2,000 in League One, 3,300 in the Championship and 5,500 in the
-// Premier League (cups and Europe included); a star's Premier League season
-// with trophies and awards is 12,000-15,000. The last entry only closes the
-// table: past 9.0 the rating comes from the Legend tasks.
-export const STAR_THRESHOLDS = [0, 600, 2000, 4500, 8500, 14000, 30000, 55000, 95000, 150000];
+/** Every source of Star Points, as the career stands right now. livePoints is their sum. */
+export function pointLines(career: CareerState): StarLine[] {
+  const led = ledgerOf(career);
+  const out: StarLine[] = [];
+  const add = (key: string, cat: keyof StarBreakdown, label: string, sp: number, n?: number) => { if (sp > 0) out.push({ key, cat, label, sp, n }); };
 
-/** Stars for a points total, to one decimal, rounded down. Capped at 9.0:
- *  the last star is the Legend tasks, not points. */
-export function starsFromPoints(sp: number): number {
-  for (let i = STAR_THRESHOLDS.length - 2; i >= 0; i--) {
-    if (sp >= STAR_THRESHOLDS[i]) {
-      const span = STAR_THRESHOLDS[i + 1] - STAR_THRESHOLDS[i];
-      const stars = i + 1 + (sp - STAR_THRESHOLDS[i]) / span;
-      return Math.min(9, Math.floor(stars * 10 + 1e-9) / 10);
-    }
+  for (const [tier, t] of Object.entries(led.tiers)) {
+    add(`match:${tier}`, "match", `Matches · ${TIER_NAME[tier as StarTier]}`, Math.round(tallySp(t!) * TIER_MULT[tier as StarTier]), t!.apps);
   }
+
+  const byComp = new Map<string, number>();
+  for (const t of career.trophies) byComp.set(t.competition, (byComp.get(t.competition) ?? 0) + 1);
+  for (const [comp, n] of Array.from(byComp)) add(`trophy:${comp}`, "trophies", comp, n * (TROPHY_SP[comp] ?? OTHER_TROPHY_SP), n);
+  add("promotion", "trophies", "Promotion", led.promotions * PROMOTION_SP, led.promotions);
+
+  const byAward = new Map<string, { sp: number; n: number }>();
+  for (const a of career.awards ?? []) {
+    const row = AWARD_SP[a.kind];
+    if (!row) continue;
+    const was = byAward.get(a.kind) ?? { sp: 0, n: 0 };
+    byAward.set(a.kind, { sp: was.sp + row[Math.max(0, DIV_ORDER.indexOf(a.division ?? "national_league"))], n: was.n + 1 });
+  }
+  for (const [kind, v] of Array.from(byAward)) add(`award:${kind}`, "awards", kind, v.sp, v.n);
+  add("ballon", "awards", "Ballon d'Or placings", led.ballonRanks.reduce((s, r) => s + (r === 1 ? BALLON_SP.win : r <= 3 ? BALLON_SP.top3 : BALLON_SP.top10), 0), led.ballonRanks.length);
+
+  const cs = career.careerStats;
+  add("apps", "milestones", "Appearance milestones", stepSum(cs.appearances, MILESTONES.apps));
+  add("goals", "milestones", "Goal milestones", stepSum(cs.goals, MILESTONES.goals));
+  add("caps", "milestones", "International caps", stepSum(career.caps ?? 0, MILESTONES.caps));
+  add("pl-debut", "milestones", "Premier League debut", (led.tiers.premier?.apps ?? 0) > 0 ? PREMIER_DEBUT_SP : 0);
+  add("bigger-club", "milestones", "A bigger club", Math.max(0, (led.maxRep ?? 0) - (led.firstRep ?? led.maxRep ?? 0)) * BIGGER_CLUB_SP_PER_POINT);
+  const records = RECORDS.filter(r => recordBeaten(career, r)).length;
+  add("records", "milestones", "Records broken", records * RECORD_SP, records);
+  // "first-contract" comes with signing, so it earns nothing: a career starts on exactly 1.
+  const ach = career.achievements.filter(id => id !== "first-contract").length;
+  add("achievements", "milestones", "Achievements", ach * ACHIEVEMENT_SP, ach);
+  const maxed = SKILLS.filter(k => career.skills[k] >= 100).length;
+  add("maxed", "milestones", "Skills at 100", maxed * SKILL_MAXED_SP, maxed);
+  const tStars = SKILLS.reduce((s, k) => s + totalStars(trainingStarsOf(career, k)), 0);
+  add("training", "milestones", "Training stars", tStars * TRAINING_STAR_SP, tStars);
+
+  const fame = fameOf(career);
+  add("fame", "status", "Fame", FAME_SP.reduce((s, [min, sp]) => (fame >= min ? sp : s), 0));
+  add("owner", "status", "Owning a club", ownsClub(career) ? CLUB_OWNER_SP : 0);
+  const top = topItems(career);
+  add("items", "status", "Top-level things you own", top.reduce((s, i) => s + ((i.baseId ?? i.id) === "island" ? ISLAND_SP : TOP_ITEM_SP), 0), top.length);
+  add("president", "status", "A presidency", career.governingBodyPresidencies?.length ? PRESIDENT_SP : 0);
+  return out;
+}
+
+/** Star Points as the career stands right now (before the high-water mark). */
+export function livePoints(career: CareerState): StarBreakdown {
+  const b: StarBreakdown = { match: 0, trophies: 0, awards: 0, milestones: 0, status: 0 };
+  for (const l of pointLines(career)) b[l.cat] += l.sp;
+  return b;
+}
+
+// ── 2. Points to levels ─────────────────────────────────────────────────────
+
+/** The top of the scale; 90 of it comes from points, the last 10 from Legend tasks. */
+export const MAX_LEVEL = 100;
+export const POINTS_CAP_LEVEL = 90;
+
+/**
+ * What each level costs (Harry, 1 Oct 2026: "almost impossible after like
+ * level 4 to go more than 1 level and the curve should rapidly change so that
+ * say level 60-61 is exponentially longer than 4-5").
+ *
+ * Levels 1→4 are cheap, about one a match. From 4 on every level costs
+ * `grow` times the one before up to 60, then `growTop` times from 60 to 90.
+ * Because a career earns more per match as it climbs, what matters is
+ * MATCHES per level; measured on played-out careers (60 careers, 3 player
+ * types, tests/star/starPoints.mts header) the recommended curve gives:
+ *   1→4 about one a match, 4→5 in 1-2 matches, 10→11 in ~4, 30→31 in
+ *   ~6, 60→61 in 20-27, 80→81 in ~28 — 60→61 is 14-20× 4→5. After level 4
+ *   a match alone pays for a whole level 0.2-0.5% of the time. A riser is
+ *   ~65 after twelve seasons, a star ~73; 9 of 20 stars reach 90 by season 20.
+ *   11→20 is 304,000 SP and 81→90 is 12.7 million (Harry's earlier anchors
+ *   were ~100,000 and ~10 million: the low one had to rise, or a level in the
+ *   teens would still come every match or two).
+ * The other two curves are a one-word switch (STAR_CURVE).
+ */
+export const STAR_CURVES = {
+  /** 60→61 ~9-16× 4→5; a riser ~77 after twelve seasons, every star reaches 90 by season 14. */
+  gentle: { start: 12_000, grow: 1.065, growTop: 1.04 },
+  /** The one in the game. */
+  recommended: { start: 15_000, grow: 1.075, growTop: 1.02 },
+  /** 60→61 ~22-48× 4→5; nobody reaches 70 in twelve seasons. */
+  brutal: { start: 20_000, grow: 1.085, growTop: 1.02 },
+} as const;
+export type StarCurve = keyof typeof STAR_CURVES;
+export const STAR_CURVE: StarCurve = "recommended";
+/** 1→2, 2→3, 3→4: about one match each. */
+export const EARLY_LEVEL_COST = [8_000, 4_000, 4_000];
+/** Where the steeper climb gives way to the gentler top one. */
+export const CURVE_KNEE = 60;
+
+/** Rounded to two significant figures, so the numbers read cleanly. */
+const twoFigures = (n: number) => { const p = Math.pow(10, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; };
+
+/** LEVEL_COST[L] = SP to go from level L to L+1, for L = 1…89 (index 0 unused). */
+export function levelCosts(curve: StarCurve = STAR_CURVE): number[] {
+  const { start, grow, growTop } = STAR_CURVES[curve];
+  const out = [0];
+  for (let L = 1; L < POINTS_CAP_LEVEL; L++) {
+    out[L] = L <= EARLY_LEVEL_COST.length ? EARLY_LEVEL_COST[L - 1]
+      : twoFigures(start * Math.pow(grow, Math.min(L, CURVE_KNEE) - 4) * Math.pow(growTop, Math.max(0, L - CURVE_KNEE)));
+  }
+  return out;
+}
+export const LEVEL_COST: number[] = levelCosts();
+
+/** LEVEL_THRESHOLDS[L] = total SP to be on level L, for L = 1…90 (index 0 unused). */
+export const LEVEL_THRESHOLDS: number[] = (() => {
+  const t = [0, 0];
+  for (let L = 2; L <= POINTS_CAP_LEVEL; L++) t[L] = t[L - 1] + LEVEL_COST[L - 1];
+  return t;
+})();
+
+/** Level for a points total, rounded down. Capped at 90: the last ten are the
+ *  Legend tasks, not points. */
+export function levelFromPoints(sp: number): number {
+  for (let L = POINTS_CAP_LEVEL; L >= 1; L--) if (sp >= LEVEL_THRESHOLDS[L]) return L;
   return 1;
 }
 
-/** SP at which a star value (one decimal, up to 9.0) is reached. */
-export function pointsForStars(stars: number): number {
-  const s = Math.max(1, Math.min(9, stars));
-  const i = Math.min(STAR_THRESHOLDS.length - 2, Math.floor(s + 1e-9) - 1);
-  return Math.round(STAR_THRESHOLDS[i] + (s - (i + 1)) * (STAR_THRESHOLDS[i + 1] - STAR_THRESHOLDS[i]));
+/** SP at which a level (1…90) is reached. */
+export function pointsForLevel(level: number): number {
+  return LEVEL_THRESHOLDS[Math.max(1, Math.min(POINTS_CAP_LEVEL, Math.floor(level)))];
+}
+
+/** A name for each band of ten. About your career, never about the club or
+ *  division you're at now (Harry, 1 Oct 2026: "2 STARS · Non-league regular"
+ *  showed while he was in the Premier League). */
+export const STAR_TITLES = ["Starting out", "Finding your feet", "Making a name", "Established", "Standout", "Star", "Big name", "Elite", "World class", "Legend in the making", "The Complete Career"];
+export function starTitle(level: number): string {
+  return STAR_TITLES[Math.max(0, Math.min(10, Math.floor(level / 10)))];
+}
+
+// ── 2b. One level a match, at most ─────────────────────────────────────────
+
+/**
+ * Harry, 1 Oct 2026: "you should never jump 2 levels, it should always be
+ * longer than that." One match — with everything that lands with it before
+ * your next one (a debut, achievements, a trophy, the season's awards) — can
+ * lift the rating by this many levels at most. The points still bank: any
+ * beyond the cap carry over and pay out one level per match after it.
+ * A 1.0-10.0 save being converted is not a match: it keeps the level it had.
+ */
+export const MAX_RISE_PER_MATCH = 1;
+
+/** Matches you have played, in every competition (the ledger counts them). */
+export function matchesPlayed(led: StarLedger): number {
+  return Object.values(led.tiers).reduce((s, t) => s + (t?.apps ?? 0), 0);
+}
+
+// ── 2c. Poor form costs you ─────────────────────────────────────────────────
+
+/**
+ * Harry, 1 Oct 2026 (P14): "I think you can be able to go down a little bit.
+ * If you're having poor performances, eventually maybe you can even go down
+ * a whole level."
+ *
+ * The rule (its numbers are on the question list):
+ *  - A POOR match is a match rating under POOR_MATCH_RATING (5.5). It earns
+ *    nothing — whatever it would have paid is taken straight back — and it
+ *    costs SLUMP_SHARE (a fifth) of what your current level costs to climb.
+ *    So five poor matches in a row cost about a whole level of points.
+ *  - The points go at once, so the bar falls straight away. The LEVEL only
+ *    drops once you have strung SLUMP_MATCHES (5) poor matches together,
+ *    with no good match (GOOD_MATCH_RATING, 6.5+) in between. A match between
+ *    the two neither adds to the run nor breaks it.
+ *  - Never more than one level a match, never below level 1, and after a
+ *    drop the run starts again — so a long slump costs about a level every
+ *    five poor matches, not one a match.
+ *  - The Legend levels (90 and up) are tasks you have done, not points, so
+ *    form never touches them.
+ * Good matches climb exactly as before: the lost points are simply a hole
+ * the next good matches fill first.
+ */
+export const POOR_MATCH_RATING = 5.5;
+export const GOOD_MATCH_RATING = 6.5;
+export const SLUMP_SHARE = 0.2;
+export const SLUMP_MATCHES = 5;
+
+function slumpAfterMatch(career: CareerState, led: StarLedger, stats: MatchStats, matchSp: number): Pick<StarLedger, "slump"> | null {
+  const was = led.slump ?? { debt: 0, streak: 0 };
+  const level = starLevel(career);
+  if (stats.rating < POOR_MATCH_RATING && level < POINTS_CAP_LEVEL) {
+    const cost = LEVEL_COST[Math.max(1, Math.min(POINTS_CAP_LEVEL - 1, level))];
+    return { slump: { debt: was.debt + matchSp + Math.round(cost * SLUMP_SHARE), streak: was.streak + 1 } };
+  }
+  if (stats.rating >= GOOD_MATCH_RATING && was.streak > 0) return { slump: { ...was, streak: 0 } };
+  return led.slump ? { slump: was } : null;
 }
 
 // ── 3. Star gates ───────────────────────────────────────────────────────────
@@ -270,22 +467,22 @@ const MAJOR = ["Premier League", "FA Cup", "League Cup", "Champions League", "Eu
 
 /** In order. "Or higher" is what lets a jump of two divisions open two gates. */
 export const STAR_GATES: StarGate[] = [
-  { cap: 2.9, need: `Play ${GATE_GAMES} league games in League Two or higher`, open: (_c, l) => gamesAtOrAbove(l, "league_two") >= GATE_GAMES },
-  { cap: 3.9, need: `Play ${GATE_GAMES} league games in League One or higher`, open: (_c, l) => gamesAtOrAbove(l, "league_one") >= GATE_GAMES },
-  { cap: 4.9, need: `Play ${GATE_GAMES} league games in the Championship or higher`, open: (_c, l) => gamesAtOrAbove(l, "championship") >= GATE_GAMES },
-  { cap: 5.9, need: `Play ${GATE_GAMES} Premier League games`, open: (_c, l) => gamesAtOrAbove(l, "premier") >= GATE_GAMES },
-  { cap: 6.9, need: "Win a major trophy, or play in the Champions League", open: (c, l) => l.uclApps > 0 || c.trophies.some(t => MAJOR.includes(t.competition)) },
-  { cap: 7.9, need: "Win the Premier League or Champions League, and finish top 10 in a Ballon d'Or", open: (c, l) => (count(c, "Premier League") + count(c, "Champions League") > 0) && l.ballonRanks.length > 0 },
-  { cap: 8.9, need: "Win the Ballon d'Or, or finish top 3 twice", open: (c, l) => c.ballonDorWins > 0 || l.ballonRanks.includes(1) || l.ballonRanks.filter(r => r <= 3).length >= 2 },
+  { cap: 29, need: `Play ${GATE_GAMES} league games in League Two or higher`, open: (_c, l) => gamesAtOrAbove(l, "league_two") >= GATE_GAMES },
+  { cap: 39, need: `Play ${GATE_GAMES} league games in League One or higher`, open: (_c, l) => gamesAtOrAbove(l, "league_one") >= GATE_GAMES },
+  { cap: 49, need: `Play ${GATE_GAMES} league games in the Championship or higher`, open: (_c, l) => gamesAtOrAbove(l, "championship") >= GATE_GAMES },
+  { cap: 59, need: `Play ${GATE_GAMES} Premier League games`, open: (_c, l) => gamesAtOrAbove(l, "premier") >= GATE_GAMES },
+  { cap: 69, need: "Win a major trophy, or play in the Champions League", open: (c, l) => l.uclApps > 0 || c.trophies.some(t => MAJOR.includes(t.competition)) },
+  { cap: 79, need: "Win the Premier League or Champions League, and finish top 10 in a Ballon d'Or", open: (c, l) => (count(c, "Premier League") + count(c, "Champions League") > 0) && l.ballonRanks.length > 0 },
+  { cap: 89, need: "Win the Ballon d'Or, or finish top 3 twice", open: (c, l) => c.ballonDorWins > 0 || l.ballonRanks.includes(1) || l.ballonRanks.filter(r => r <= 3).length >= 2 },
 ];
 
-// ── 4. The last star: Legend tasks ──────────────────────────────────────────
+// ── 4. The last ten levels: Legend tasks ──────────────────────────────────────────
 
 export interface LegendTask { id: string; label: string; done: (career: CareerState, led: StarLedger) => boolean; progress: (career: CareerState, led: StarLedger) => string }
 
 export const LEGEND = { ballons: 4, ucl: 3, titles: 5, trophies: 20, clubStature: 95, goalsAssists: 500, reputation: 95, fame: 80 };
 
-/** Ten tasks, 0.1★ each, from 9.0 to 10.0. Add one here when the game grows. */
+/** Ten tasks, one level each, from 90 to 100. Add one here when the game grows. */
 export const LEGEND_TASKS: LegendTask[] = [
   { id: "ballons", label: `Win ${LEGEND.ballons} Ballon d'Ors`, done: c => c.ballonDorWins >= LEGEND.ballons, progress: c => `${c.ballonDorWins} / ${LEGEND.ballons}` },
   { id: "ucl", label: `Win ${LEGEND.ucl} Champions Leagues`, done: c => count(c, "Champions League") >= LEGEND.ucl, progress: c => `${count(c, "Champions League")} / ${LEGEND.ucl}` },
@@ -302,26 +499,64 @@ export const LEGEND_TASKS: LegendTask[] = [
 // ── Putting it together ─────────────────────────────────────────────────────
 
 export interface StarStatus {
+  /** The star rating, a whole number 1-100. */
   stars: number;
   /** Banked total, by category (each the best it has ever been). */
   points: StarBreakdown;
+  /** Banked total, including any carry from a 1.0-10.0 save. */
   total: number;
   /** What your points alone would make you, before any gate. */
   ungated: number;
   /** The gate holding you, if one is. */
   gate: StarGate | null;
-  /** 0-1 of the way to the next 0.1★ (points below 9.0, tasks above). */
+  /** 0-1 of the way to the next level (points below 90, tasks above). */
   toNext: number;
-  /** SP still needed for the next 0.1★ (0 when gated, or at 9.0 and above). */
+  /** SP still needed for the next level (0 when gated, or at 90 and above). */
   spToNext: number;
   legendDone: string[];
+  /** Points carried over from a 1.0-10.0 save (see bestOf). */
+  carry: number;
+  /** Levels your points have already paid for that the one-level-a-match cap
+   *  is holding back; they come one per match you play. */
+  held: number;
+  /** Star Points past the next level, carried to the matches after (0 unless held). */
+  carried: number;
+  /** The cap's window (see StarBest.win), to bank. */
+  win: { apps: number; base: number };
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
+/** True for a career saved on the 1.0-10.0 scale and not yet converted. */
+export function isOldStarScale(career: Pick<CareerState, "stars" | "starBest">): boolean {
+  if (career.starBest) return career.starBest.scale !== MAX_LEVEL;
+  return career.stars !== undefined;
+}
+
+/**
+ * The high-water marks on the 1-100 scale. A 1.0-10.0 save is converted here,
+ * whenever it is read: its rating ×10 (2.9 → 29, 7.4 → 74), its banked points
+ * into today's units, Legend tasks kept. `carry` is filled in by starStatus
+ * once the live points are known.
+ */
+export function bestOf(career: Pick<CareerState, "stars" | "starBest">): StarBest | undefined {
+  const b = career.starBest;
+  if (!isOldStarScale(career)) return b;
+  const level = Math.max(1, Math.min(MAX_LEVEL, Math.round((b?.stars ?? career.stars ?? 1) * 10)));
+  return {
+    match: (b?.match ?? 0) * S, trophies: (b?.trophies ?? 0) * S, awards: (b?.awards ?? 0) * S,
+    milestones: (b?.milestones ?? 0) * S, status: (b?.status ?? 0) * S,
+    stars: level, legend: b?.legend ?? [], scale: MAX_LEVEL,
+  };
+}
+
+/** The star rating of any career, old save or new, without banking anything. */
+export function starLevel(career: Pick<CareerState, "stars" | "starBest">): number {
+  return isOldStarScale(career) ? bestOf(career)!.stars : (career.stars ?? 1);
+}
 
 export function starStatus(career: CareerState): StarStatus {
   const led = ledgerOf(career);
-  const best = career.starBest;
+  const converting = isOldStarScale(career);
+  const best = bestOf(career);
   const live = livePoints(career);
   const points: StarBreakdown = {
     match: Math.max(live.match, best?.match ?? 0),
@@ -330,8 +565,14 @@ export function starStatus(career: CareerState): StarStatus {
     milestones: Math.max(live.milestones, best?.milestones ?? 0),
     status: Math.max(live.status, best?.status ?? 0),
   };
-  const total = points.match + points.trophies + points.awards + points.milestones + points.status;
-  const ungated = starsFromPoints(total);
+  const earned = points.match + points.trophies + points.awards + points.milestones + points.status;
+  // A converted save starts at the bottom of the level it had, not below it:
+  // whatever its points fall short of that level is carried, once, for good.
+  const carry = converting
+    ? Math.max(0, pointsForLevel(Math.min(POINTS_CAP_LEVEL, best?.stars ?? 1)) - earned)
+    : (best?.carry ?? 0);
+  const total = Math.max(0, earned + carry - (led.slump?.debt ?? 0));
+  const ungated = levelFromPoints(total);
 
   const gate = STAR_GATES.find(g => !g.open(career, led)) ?? null;
   let stars = gate ? Math.min(ungated, gate.cap) : ungated;
@@ -340,19 +581,38 @@ export function starStatus(career: CareerState): StarStatus {
     ...(best?.legend ?? []),
     ...LEGEND_TASKS.filter(t => t.done(career, led)).map(t => t.id),
   ]));
-  // The last star: only once points and every gate have taken you to 9.0.
-  if (stars >= 9) stars = round1(9 + Math.floor((10 * legendDone.length) / LEGEND_TASKS.length) / 10);
-  stars = Math.max(stars, best?.stars ?? 1);
+  // The last ten levels: only once points and every gate have taken you to 90.
+  if (stars >= POINTS_CAP_LEVEL) stars = POINTS_CAP_LEVEL + Math.floor((10 * legendDone.length) / LEGEND_TASKS.length);
+  stars = Math.min(MAX_LEVEL, stars);
 
-  let toNext = 0, spToNext = 0;
-  if (stars >= 9) toNext = stars >= 10 ? 1 : ((10 * legendDone.length) / LEGEND_TASKS.length) % 1;
+  // One level a match at most. The window opens when a new match has been
+  // played (the ledger's count moved on), at the rating banked before it.
+  // No banked rating at all (a brand-new career) has nothing to hold back.
+  const apps = matchesPlayed(led);
+  const newWindow = !(best?.win && best.win.apps === apps);
+  const win = !newWindow && best?.win ? best.win : { apps, base: best?.stars ?? stars };
+  const reach = stars;
+  stars = Math.min(stars, win.base + MAX_RISE_PER_MATCH);
+  // The floor is the banked rating — except on the first look after a new
+  // match, when a run of SLUMP_MATCHES poor ones lets it slip one level (2c).
+  const banked = best?.stars ?? 1;
+  const slipping = newWindow && !converting && banked < POINTS_CAP_LEVEL
+    && (led.slump?.streak ?? 0) >= SLUMP_MATCHES;
+  stars = Math.min(MAX_LEVEL, Math.max(stars, Math.max(1, banked - (slipping ? 1 : 0))));
+  const held = Math.max(0, reach - stars);
+
+  let toNext = 0, spToNext = 0, carried = 0;
+  if (held > 0) {
+    toNext = 1;
+    carried = stars < POINTS_CAP_LEVEL ? Math.max(0, total - pointsForLevel(stars + 1)) : 0;
+  } else if (stars >= POINTS_CAP_LEVEL) toNext = stars >= MAX_LEVEL ? 1 : ((10 * legendDone.length) / LEGEND_TASKS.length) % 1;
   else if (gate && stars >= gate.cap) toNext = 1;
   else {
-    const from = pointsForStars(stars), to = pointsForStars(round1(stars + 0.1));
+    const from = pointsForLevel(stars), to = pointsForLevel(stars + 1);
     toNext = Math.max(0, Math.min(1, (total - from) / Math.max(1, to - from)));
     spToNext = Math.max(0, to - total);
   }
-  return { stars, points, total, ungated, gate: gate && stars >= gate.cap ? gate : null, toNext, spToNext, legendDone };
+  return { stars, points, total, ungated, gate: gate && stars >= gate.cap && !held ? gate : null, toNext, spToNext, legendDone, carry, held, carried, win };
 }
 
 /** The star rating to show. */
@@ -361,9 +621,35 @@ export function starsNow(career: CareerState): number {
 }
 
 /**
+ * Where the Star Points between two moments of a career came from — what the
+ * after-match card lists, so the number it shows is the number that moved
+ * the rating (Harry, 1 Oct 2026: "+68 star points just took me from 1.0 to
+ * 2.1" — the other ~600 were a Premier League debut and two achievements the
+ * card never mentioned).
+ */
+export function starGain(before: CareerState, after: CareerState): { total: number; lines: StarLine[] } {
+  const a = starStatus(before), b = starStatus(after);
+  const total = Math.max(0, b.total - a.total);
+  const was = new Map(pointLines(before).map(l => [l.key, l]));
+  const lines: StarLine[] = [];
+  for (const l of pointLines(after)) {
+    // Only categories whose banked total actually moved (a sold club bought
+    // back earns nothing twice).
+    if (b.points[l.cat] <= a.points[l.cat]) continue;
+    const prev = was.get(l.key);
+    const sp = l.sp - (prev?.sp ?? 0);
+    if (sp <= 0) continue;
+    const n = l.n !== undefined ? l.n - (prev?.n ?? 0) : undefined;
+    lines.push({ ...l, sp, n });
+  }
+  return { total, lines };
+}
+
+/**
  * Bank the star rating onto the career: the high-water marks, the biggest
  * club so far, and the division on any award that doesn't carry one yet.
- * Safe to call as often as you like.
+ * Converts a 1.0-10.0 save the first time it runs. Safe to call as often as
+ * you like.
  */
 export function withStars(career: CareerState): CareerState {
   const led0 = ledgerOf(career);
@@ -377,7 +663,13 @@ export function withStars(career: CareerState): CareerState {
     : career.awards;
   const next: CareerState = { ...career, starLedger: led, awards };
   const st = starStatus(next);
-  return { ...next, stars: st.stars, starBest: { ...st.points, stars: st.stars, legend: st.legendDone } };
+  // A level just slipped (2c): the run of poor matches starts again.
+  const dropped = st.stars < (bestOf(career)?.stars ?? st.stars);
+  if (dropped && led.slump) next.starLedger = { ...led, slump: { ...led.slump, streak: 0 } };
+  return {
+    ...next, stars: st.stars,
+    starBest: { ...st.points, stars: st.stars, legend: st.legendDone, scale: MAX_LEVEL, ...(st.carry > 0 ? { carry: st.carry } : {}), win: st.win },
+  };
 }
 
 /**

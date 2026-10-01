@@ -58,8 +58,10 @@ export const KIB_CANS: KibCan[] = applyPriceOverrides("kibCans", KIB_CANS_DEFAUL
 
 /** What a can does, in the words the shop and dashboard show. */
 export function kibCanEffectLabel(can: KibCan): string {
-  if (can.effect === "curve") return "Swerve boots' curve for your next match";
-  if (can.effect === "extraTouch") return "Touch boots' extra touch for your next match";
+  // Premium and Elite also give some energy on top (Harry, 1 Oct 2026, P5).
+  const plus = can.restore > 0 ? ` + ${can.restore} energy` : "";
+  if (can.effect === "curve") return `Swerve boots' curve for your next match${plus}`;
+  if (can.effect === "extraTouch") return `Touch boots' extra touch for your next match${plus}`;
   return `+${can.restore} energy`;
 }
 

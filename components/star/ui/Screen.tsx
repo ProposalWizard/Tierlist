@@ -39,7 +39,7 @@ export const SCREEN_CSS = `
     border-radius: 1rem;
     background:
       radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--kit-glow, #2F6F4E) 26%, transparent) 0%, transparent 55%),
-      linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96));
+      var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px color-mix(in srgb, var(--kit-glow, #2F6F4E) 22%, transparent), 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35);
   }
   .kit-row { background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.05); }
@@ -68,7 +68,7 @@ export function Backdrop({ glow, tone }: { glow: string; tone?: string }) {
   const low = tone ?? glow;
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 55% at 50% -8%, ${rgba(glow, 0.42)} 0%, transparent 70%), radial-gradient(80% 45% at 50% 108%, ${rgba(low, 0.3)} 0%, transparent 70%), linear-gradient(180deg, #070b16 0%, #0a1020 50%, #05070d 100%)` }} />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 55% at 50% -8%, ${rgba(glow, 0.42)} 0%, transparent 70%), radial-gradient(80% 45% at 50% 108%, ${rgba(low, 0.3)} 0%, transparent 70%), var(--sk-page, linear-gradient(180deg, #070b16 0%, #0a1020 50%, #05070d 100%))` }} />
       <div
         className="absolute inset-x-0 top-[3%] h-[34%]"
         style={{

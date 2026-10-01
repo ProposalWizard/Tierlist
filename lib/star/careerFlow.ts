@@ -38,7 +38,8 @@ import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier } from "./rating";
-import { REPUTATION_START, changeReputation, cheekyMissReputation } from "./reputation";
+import { NEW_CAREER_REPUTATION, changeReputation, cheekyMissReputation } from "./reputation";
+import { freshUnlocks } from "./unlocks";
 import { addFame, FAME_EVENTS, wearItems, isWornOut } from "./fame";
 import { restDaysBetween, dailyRecovery, energyFactorFor, clampEnergy, ENERGY_FULL_MATCH_MEDIUM } from "./energy";
 import { seasonStanding } from "./seasonStanding";
@@ -176,12 +177,19 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
       freeKick: getTuning("startingSkills.freeKick"),
     },
     lastTrainedWeek: { pace: 1, power: 1, technique: 1, vision: 1, freeKick: 1 },
-    relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
+    // Harry, 1 Oct 2026 (P26): "it should all be at like 50, 50, 50 ... you
+    // probably like 45, reputation zero, fame one". Was boss 60, team 60,
+    // fans 40, happiness 60, reputation 20, fame 0. Only a NEW career starts
+    // here; a save keeps the numbers it has.
+    relationships: { boss: 50, team: 50, fans: 50, girlfriend: null, sponsors: 0 },
     // A trialist is unknown to the football world and to any governing body
     // or shareholder — low but not zero, the same "unproven, not disliked"
     // starting point `fans: 40` already sets. Club reputation starts higher,
     // matching the fresh-signing optimism `boss`/`team` already open with.
-    reputation: REPUTATION_START,
+    reputation: NEW_CAREER_REPUTATION,
+    // A new career walks the unlock chain (lib/star/unlocks.ts); a save from
+    // before it has no `unlocks` and everything open.
+    unlocks: freshUnlocks(),
     // ── Nobody has signed you, so there are no terms ──
     //
     // This used to open at ★2,000 a week on a three-year deal at the club
@@ -202,7 +210,7 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     matchFitness: 80,
     energy: 100,
     injury: null,
-    happiness: 60,
+    happiness: 45,
     // ── Nothing in the bank, because nothing has been paid ──
     //
     // This used to be ★5,000, on a career nobody had signed. Against the free
@@ -218,7 +226,7 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // computeStarRating's own note. A placeholder here only so every
     // required CareerState field is present in this one literal.
     starRating: 2.5,
-    fame: 0,
+    fame: 1,
     seasonStats: { ...EMPTY_SEASON_STATS },
     careerStats: { ...EMPTY_SEASON_STATS },
     // Club-derived, all four. Empty rather than invented — see attachClub.
@@ -1591,6 +1599,8 @@ export function advanceSeason(
       relegatedFromLeagueTwo: ladder.relegatedFromLeagueTwo,
       promotedToNationalLeague: ladder.promotedToNationalLeague,
       relegatedFromNationalLeague: ladder.relegatedFromNationalLeague,
+      relegatedToNorth: ladder.relegatedToNorth,
+      relegatedToSouth: ladder.relegatedToSouth,
       ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
     },
     week: 1,

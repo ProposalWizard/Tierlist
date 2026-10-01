@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { rgba } from "./theme";
 import { prefersReducedMotion } from "./motion";
 
 /** Green when healthy, amber when low, red when nearly empty — the energy
@@ -10,9 +9,12 @@ export function levelColors(value: number): [string, string] {
 }
 
 /**
- * A GLOSSY BAR: gradient fill, a highlight on the top half, a sheen that
- * keeps sweeping along it, and a fill that glides to its new value. When the
- * value goes UP the sheen races across twice (a can was drunk).
+ * THE BAR EVERY SCREEN USES — SQUARE since v0.23 (Harry, P85/P107: "squares
+ * with very clear, maybe even animated, progress"): square corners, a clear
+ * outline, ten ruler ticks, a gradient fill, a sheen that keeps sweeping along
+ * it, and a fill that glides to its new value. When the value goes UP the
+ * sheen races across twice (a can was drunk). (ui/Flat.tsx's SquareBar is the
+ * same look without the sheen, for a bar with a number on it.)
  *
  *   <StatBar value={energy} className="mt-1.5 h-4" />
  *   <StatBar value={62} colors={["#60a5fa", "#a5f3fc"]} className="h-2.5" />
@@ -37,14 +39,15 @@ export default function StatBar({ value, colors, className = "h-4", sheen = true
   }, [v]);
   const still = typeof window !== "undefined" && prefersReducedMotion();
   return (
-    <div className={`relative overflow-hidden rounded-full bg-black/55 ${className}`} style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }}>
+    <div className={`sk-sqbar ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)}>
       <div
-        className="relative h-full overflow-hidden rounded-full"
-        style={{ width: `${v}%`, background: `linear-gradient(90deg, ${fill[0]}, ${fill[1]})`, boxShadow: `0 0 14px ${rgba(fill[0], 0.7)}`, transition: still ? "none" : "width 900ms cubic-bezier(.2,.8,.2,1)" }}
+        className="relative h-full overflow-hidden"
+        style={{ width: `${v}%`, background: `linear-gradient(180deg, ${fill[1]}, ${fill[0]} 70%)`, transition: still ? "none" : "width 900ms cubic-bezier(.2,.8,.2,1)" }}
       >
-        <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-white/35" />
-        {sheen && <div key={boost} className={`absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent ${boost ? "kib-sheen-fast" : "kib-sheen"}`} />}
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-white/25" />
+        {sheen && <div key={boost} className={`absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent ${boost ? "kib-sheen-fast" : "kib-sheen"}`} />}
       </div>
+      <div className="sk-sqbar-ticks" />
     </div>
   );
 }

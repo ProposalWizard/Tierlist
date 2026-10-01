@@ -657,6 +657,22 @@ export interface Horse {
   earnings: number; // lifetime prize money won
 }
 
+/** See CareerState.unlocks and lib/star/unlocks.ts. */
+export interface CareerUnlocks {
+  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone". */
+  open: string[];
+  /** One-off screens already shown: "tutorial", "drills-msg", "league-intro", "shop-intro", pop-ups. */
+  seen: string[];
+  /** Training drills finished since the career began (the chain needs 2). */
+  drills: number;
+  /** Star points when the chain began, for "your star rating went up by X from training". */
+  pointsAtStart: number;
+  /** Star rating when the chain began (same reason). */
+  starsAtStart?: number;
+  /** Phone apps installed from the App Store. */
+  apps: string[];
+}
+
 export interface CareerState {
   version: 2;
   player: StarPlayer;
@@ -733,7 +749,10 @@ export interface CareerState {
    * Cleared the moment a club is actually signed for. Absent on every career
    * that has not just negotiated one.
    */
-  agreedTerms?: { club: string; wage: number };
+  agreedTerms?: { club: string; wage: number;
+    /** The talks broke down: the club came back with a worse, final offer
+     *  instead of walking away (Mikey, 1 Oct 2026). */
+    soured?: boolean };
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate
@@ -791,7 +810,9 @@ export interface CareerState {
      *  ignored) — `membershipOf` fills all four of these in fresh from
      *  clubs.ts's season-1 lists the first time such a save rolls over. */
     leagueOne?: string[]; leagueTwo?: string[];
-    nationalLeague?: string[]; nationalLeaguePool?: string[];
+    nationalLeague?: string[];
+    /** The two regional divisions under the National League (P62, 1 Oct 2026). */
+    nationalLeagueNorth?: string[]; nationalLeagueSouth?: string[];
   };
   /**
    * The Championship play-offs, once your club has reached them.
@@ -817,6 +838,9 @@ export interface CareerState {
     relegatedFromLeagueTwo?: string[];
     promotedToNationalLeague?: string[];
     relegatedFromNationalLeague?: string[];
+    /** The National League's relegated clubs, by which region they went to. */
+    relegatedToNorth?: string[];
+    relegatedToSouth?: string[];
     playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
   };
   week: number;
@@ -872,6 +896,15 @@ export interface CareerState {
    * Optional: absent on every older save, which reads as nothing active.
    */
   kibAbility?: { curve?: boolean; extraTouch?: boolean };
+  /**
+   * The unlock chain a NEW career walks through (Harry, 1 Oct 2026, P13-P40):
+   * Home and Training open, everything else locked until it is earned.
+   * Absent on every save from before it, which reads as everything open —
+   * see lib/star/unlocks.ts.
+   */
+  unlocks?: CareerUnlocks;
+  /** Set-piece duties the manager has already told you about, once each (v0.23, P78). */
+  setPieceTold?: ("penalties" | "freeKicks")[];
   /**
    * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
    * for penalties and one for direct free kicks. Looks only, never who
@@ -1100,7 +1133,7 @@ export interface CareerState {
     /** The division it was won in (starPoints.ts pays more the higher it is). */
     division?: import("./calendar").CareerDivision }[];
   /**
-   * THE STAR RATING players see: your career, 1.0-10.0★, never goes down
+   * THE STAR RATING players see: your career, 1-100 (a run of poor matches can take a level off — starPoints.ts 2c)
    * (lib/star/starPoints.ts). `starRating` above is your ABILITY on the old
    * 1-5 scale and is shown as "Overall"; everything that read it still does.
    */

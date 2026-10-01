@@ -36,7 +36,9 @@ def setup_render(res=(600, 450), samples=48, look='AgX - Punchy', view='Standard
     scn.render.image_settings.file_format = 'PNG'
     scn.render.image_settings.color_mode = 'RGBA'
     scn.render.image_settings.color_depth = '8'
-    scn.render.threads_mode = 'AUTO'
+    import os as _os
+    scn.render.threads_mode = 'FIXED'
+    scn.render.threads = int(_os.environ.get('THREADS', '2'))
 
 
 def world(strength=0.35, top=(0.55, 0.62, 0.8), bottom=(0.06, 0.07, 0.1)):

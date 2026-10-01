@@ -68,3 +68,10 @@ h1, h2, h3, h4, h5, h6 {
 body.knowitball-immersive [data-global-chrome] {
   display: none !important;
 }
+
+/* The career game (/star-dev) fills the whole phone like an app: the site's top
+ * menu and footer are hidden while its marker is on the page (see
+ * components/star/GameFullScreen.tsx). Only /star-dev renders the marker. */
+body:has([data-star-game]) [data-global-chrome] {
+  display: none !important;
+}

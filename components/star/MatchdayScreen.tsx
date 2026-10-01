@@ -55,7 +55,6 @@ import { rgba } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import SwipePages from "./SwipePages";
-import PenaltyDutyLine from "./PenaltyDutyLine";
 import ScoutReportCard from "./ScoutReport";
 import VersusScreen from "./VersusScreen";
 import { CanTile, cardStyle, glowOf, short } from "./HomeHub";
@@ -259,7 +258,7 @@ function FullHeight({ children }: { children: React.ReactNode }) {
       className="flex flex-col overflow-hidden text-white"
       style={{
         height: h !== null ? `${h}px` : "calc(100dvh - 64px)",
-        background: "radial-gradient(120% 50% at 50% 0%, rgba(16,185,129,.16), transparent 60%), linear-gradient(180deg, #111827, #0a0f1a)",
+        background: "radial-gradient(120% 50% at 50% 0%, rgba(16,185,129,.16), transparent 60%), var(--sk-page, linear-gradient(180deg, #111827, #0a0f1a))",
       }}
     >
       {children}
@@ -379,6 +378,9 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
   const { career, nextFixture, preMatchEnergy, preMatchSelection: sel, showDevInfo } = p;
   const e = Math.max(0, Math.min(100, Math.round(preMatchEnergy)));
   const fit = Math.max(0, Math.min(100, Math.round(career.matchFitness)));
+  // At 100% energy a can has nothing to do, so the cans panel is hidden and the
+  // card is just sharpness and energy (Harry, 1 Oct 2026, 14:19).
+  const fullEnergy = e >= 100;
   const tone = sel.status === "1st Team"
     ? { label: "Starting XI", cls: "from-emerald-300 to-emerald-500 text-gray-950", glow: "#10b981" }
     : sel.status === "Substitute"
@@ -465,9 +467,9 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
           line and "On the bench" flips to "Starting XI" above, on the spot. */}
       {/* The warnings share the cans' header row: a can is what fixes the
           first one. */}
-      <div className="mt-2.5 flex items-center gap-2">
-        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</span>
-        <div className="kib-md-noscroll flex min-w-0 flex-1 justify-end gap-1.5 overflow-x-auto">
+      {(!fullEnergy || pills.some((x) => x.tone === "bad" || x.tone === "warn")) && <div className="mt-2.5 flex items-center gap-2">
+        {!fullEnergy && <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</span>}
+        <div className={`kib-md-noscroll flex min-w-0 flex-1 gap-1.5 overflow-x-auto ${fullEnergy ? "justify-start" : "justify-end"}`}>
           {pills.map((pl) => (
             <span
               key={pl.text}
@@ -481,12 +483,11 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
             </span>
           ))}
         </div>
-      </div>
-      <div className="mt-1 grid grid-cols-3 gap-2">
+      </div>}
+      {!fullEnergy && <div className="mt-1 grid grid-cols-3 gap-2">
         {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={p.onUseCan} onBuy={p.onBuyCan} compact />)}
-      </div>
+      </div>}
 
-      <PenaltyDutyLine career={career} fixture={nextFixture} status={sel.status} />
     </div>
   );
 }

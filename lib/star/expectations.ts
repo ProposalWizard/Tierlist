@@ -62,7 +62,8 @@ export function clubExpectation(career: CareerState): ClubExpectation {
       : division === "pool" ? 0.8
       : division === "league_one" ? 0.85
       : division === "league_two" ? 0.9
-      : division === "national_league" || division === "national_league_pool" ? 0.95
+      : division === "national_league" ? 0.95
+      : division === "national_league_north" || division === "national_league_south" ? 0.97
       : 0.5; // an "Other" club with no tracked division at all
   })();
 

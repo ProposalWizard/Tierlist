@@ -71,6 +71,60 @@ const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {
 `WalletPill` counts to its new value and floats `spentText` up off it.
 `useFly` sends a copy of what you bought along an arc into where it now lives.
 
+## The flat look (v0.23) — use these, not rounded cards on grey
+
+```tsx
+<FlatPanel bleed edge glow={theme.glow}>…</FlatPanel>      {/* full width, square, fades into the page */}
+<SquareBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4" animate>85</SquareBar>
+<TopHud career={career} screen="home" onUseCan={use} onOpenCans={() => setPhase("shop-kib")} />
+```
+
+`FlatPanel` has no rounded corners and no drop shadow; `fade` is "both" (soft
+top and bottom), "top", "bottom" or "none". `SquareBar` (and `StatBar`, which
+is now the same shape) are square, outlined and ticked; `animate` marches
+stripes along the fill. The top of EVERY game screen is the same two
+pieces (Harry, 1 Oct 2026, "the pills at the top aren't uniform"): `GameBar`
+(home, name, age, money, "?", settings) and `TopHud` (one block: star rating |
+energy with its can, USE or BUY). Neither changes with the screen; a screen's
+own extras go in a title row UNDER them. `DashboardShell` renders both; full
+screens get them through `ScreenShell hud={…}`. One heavy font
+(Anton) is set on `.star-root` in `flat.css` — do not set a font by hand.
+
+## Navigation the NSS way (v0.23) — `ui/Nav.tsx`
+
+```tsx
+<EdgeArrows prev={{ icon: "📅", label: "Season", onClick }} next={{ icon: "🏅", label: "Records", onClick }}>All seasons</EdgeArrows>  {/* one thin row, arrows at the edges */}
+<ArrowButton side="right" a={{ icon: "🏠", label: "Home", onClick }} />   {/* one arrow, laid out yourself */}
+<ScreenShell bare hud={<TopHud … />} bottomBar={<BottomBar><BarButton icon={<Chev dir="left" />} label="Back" onClick={back} /> … </BottomBar>}>…</ScreenShell>
+<HelpDot text="One line." />                 {/* the small "?" */}
+<HomeBar onActivate={closePhone} label="Close phone" />   {/* the phone's home bar: tap or swipe up */}
+<EmptySlots rows={3} icon="📭" />            {/* an empty page: blacked-out slots, no words */}
+```
+
+Three or more tab rows on one screen is a bug: one row of edge arrows, a
+bottom bar for Back / the page's switch / Home, and a `?` for any explaining.
+A thing you do not have yet is shown blacked out (`filter: brightness(.18)`),
+never hidden and never explained in a paragraph.
+
+## Football screens are always the pitch (v0.23, P92)
+
+```tsx
+<PitchScope><TrainingMinigame … /></PitchScope>          {/* green, chalk, Anton, square corners — in BOTH looks */}
+<PitchScope on={onTrainingPage}><DashboardShell … /></PitchScope>   {/* same wrapper, switched off elsewhere (no remount) */}
+```
+
+Training, the drills and the match chrome (scoreboard, bars, buttons around the
+canvas) use the Pitch look. The New UI is the Pitch look throughout (Settings →
+UI: New); the Old UI is frozen in `components/star/legacy/` and never uses
+any of this. `PitchScope` adds the one `star-look-pitch` class; the canvas
+itself is untouched.
+
+## The match-week page (v0.23, P90)
+
+`components/star/MatchWeek.tsx` is the League screen: edge arrows flip Results ·
+Fixtures · Table · Scout · Awards · Squad, the bottom bar is Back · 🔔 · Play,
+and the bell opens the live-score list (the same clubs as Settings → Live scores).
+
 ## Rules
 
 - No animation loops on a canvas: the one-engine guard fails the build on

@@ -228,6 +228,15 @@ used the base engine … extra stuff built on top of the base engine."*
 - **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
   and 2 dev prototypes. The live list is in the guard.
 
+## OLD UI / NEW UI — Settings → UI: Old | New (Harry, 1 Oct 2026)
+
+*"keep the old ui exactly how it is as a backup … old ui is current and new ui
+is whatever we eventually land on."* Old UI = the career screens frozen as on
+branch Harry at 4f2e839, in `components/star/legacy/` (read its README). Never
+restyle or "fix" anything there. New UI = `app/star-dev/page.tsx` +
+`components/star/`. Both share the save, `lib/star`, the match, training
+drills and the trial. Setting: `lib/star/uiLook.ts` (per device, default New).
+
 ## SCENARIO RULES COME FROM THE DRAWINGS — the one-on-one way, for every kind
 
 Harry, 26 Sep 2026, after hand-written corner and long-range rulesets made the

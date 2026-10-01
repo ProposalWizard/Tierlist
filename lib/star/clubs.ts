@@ -111,17 +111,43 @@ export const NATIONAL_LEAGUE_CLUBS: readonly string[] = [
 ];
 
 /**
- * Below the National League. Not a division — nobody plays a season in it,
- * same idea as PROMOTION_POOL_CLUBS below the Championship. Exactly four
- * clubs, and (per lib/star/promotion.ts) ALL four rotate out every season —
- * the National League relegates four (nowhere for them to go but here, since
- * this game has no National League North/South) and this pool sends
- * (weighted-drawn) replacements up to fill every one of those four places,
- * so the pool turns over completely rather than partially the way the
- * Championship's five-club pool only ever loses three of five.
+ * NATIONAL LEAGUE NORTH AND SOUTH — the two playable divisions at the foot of
+ * the ladder (Harry, 1 Oct 2026, P62: "non-league south and north need to
+ * become playable. That's a final decision from me.").
+ *
+ * Real clubs only. Each list is the real 2025/26 membership of that division,
+ * moved on by the same season this game's own National League list already
+ * assumes: the four clubs that list has as promoted (AFC Fylde and
+ * Kidderminster from the North, Hornchurch and Worthing from the South) are
+ * taken out, and the four 2025/26 National League clubs that list has as
+ * relegated (Brackley Town and Morecambe north, Braintree Town and Truro City
+ * south) are put in. Nobody's 2026 relegation to step 3 is modelled, so the
+ * clubs that would have gone down are still here. Twenty-four each.
+ *
+ * They replace the old four-club "National League pool" (Chorley,
+ * Scarborough Athletic, Dorking Wanderers, Torquay United), which was a
+ * holding area with no fixtures. All four are in these lists now.
+ *
+ * Nothing sits below them: they are the bottom of the game's ladder, so they
+ * promote (two each, see promotion.ts) but never relegate.
  */
-export const NATIONAL_LEAGUE_POOL_CLUBS: readonly string[] = [
-  "Chorley", "Scarborough Athletic", "Dorking Wanderers", "Torquay United",
+export const NATIONAL_LEAGUE_NORTH_CLUBS: readonly string[] = [
+  "AFC Telford United", "Alfreton Town", "Bedford Town", "Brackley Town",
+  "Buxton", "Chester", "Chorley", "Curzon Ashton", "Darlington",
+  "Hednesford Town", "Hereford", "King's Lynn Town", "Leamington",
+  "Macclesfield", "Marine", "Merthyr Town", "Morecambe", "Peterborough Sports",
+  "Radcliffe", "Scarborough Athletic", "South Shields", "Southport",
+  "Spennymoor Town", "Worksop Town",
+];
+
+export const NATIONAL_LEAGUE_SOUTH_CLUBS: readonly string[] = [
+  "AFC Totton", "Bath City", "Braintree Town", "Chelmsford City",
+  "Chesham United", "Chippenham Town", "Dagenham & Redbridge",
+  "Dorking Wanderers", "Eastbourne Borough", "Ebbsfleet United", "Enfield Town",
+  "Farnborough", "Hampton & Richmond Borough", "Hemel Hempstead Town",
+  "Horsham", "Maidenhead United", "Maidstone United", "St Albans City",
+  "Salisbury", "Slough Town", "Tonbridge Angels", "Torquay United",
+  "Truro City", "Weston-super-Mare",
 ];
 
 /**
@@ -355,13 +381,31 @@ export const CLUB_SHORT_NAMES: Record<string, string> = {
   "Solihull Moors": "Solihull", "Southend United": "Southend",
   "Sutton United": "Sutton", "Tamworth": "Tamworth", "Wealdstone": "Wealdstone",
   "Woking": "Woking", "Worthing": "Worthing", "Yeovil Town": "Yeovil",
-  "Chorley": "Chorley", "Scarborough Athletic": "Scarborough",
-  "Dorking Wanderers": "Dorking", "Torquay United": "Torquay",
+
+  // ── National League North / South ──
+  "AFC Telford United": "Telford", "Alfreton Town": "Alfreton", "Bedford Town": "Bedford",
+  "Brackley Town": "Brackley", "Buxton": "Buxton", "Chester": "Chester", "Chorley": "Chorley",
+  "Curzon Ashton": "Curzon", "Darlington": "Darlington", "Hednesford Town": "Hednesford",
+  "Hereford": "Hereford", "King's Lynn Town": "King's Lynn", "Leamington": "Leamington",
+  "Macclesfield": "Macclesfield", "Marine": "Marine", "Merthyr Town": "Merthyr",
+  "Morecambe": "Morecambe", "Peterborough Sports": "P'boro Sports", "Radcliffe": "Radcliffe",
+  "Scarborough Athletic": "Scarborough", "South Shields": "South Shields", "Southport": "Southport",
+  "Spennymoor Town": "Spennymoor", "Worksop Town": "Worksop",
+  "AFC Totton": "Totton", "Bath City": "Bath", "Braintree Town": "Braintree",
+  "Chelmsford City": "Chelmsford", "Chesham United": "Chesham", "Chippenham Town": "Chippenham",
+  "Dagenham & Redbridge": "Dag & Red", "Dorking Wanderers": "Dorking",
+  "Eastbourne Borough": "Eastbourne", "Ebbsfleet United": "Ebbsfleet", "Enfield Town": "Enfield",
+  "Farnborough": "Farnborough", "Hampton & Richmond Borough": "Hampton",
+  "Hemel Hempstead Town": "Hemel", "Horsham": "Horsham", "Maidenhead United": "Maidenhead",
+  "Maidstone United": "Maidstone", "St Albans City": "St Albans", "Salisbury": "Salisbury",
+  "Slough Town": "Slough", "Tonbridge Angels": "Tonbridge", "Torquay United": "Torquay",
+  "Truro City": "Truro", "Weston-super-Mare": "Weston",
 };
 
 export type Division =
   | "premier" | "championship" | "pool" | "champions" | "europa"
-  | "league_one" | "league_two" | "national_league" | "national_league_pool";
+  | "league_one" | "league_two" | "national_league"
+  | "national_league_north" | "national_league_south";
 
 const DIVISION_BY_CLUB = new Map<string, Division>([
   ...PREMIER_LEAGUE_CLUBS.map(c => [c, "premier"] as const),
@@ -377,7 +421,8 @@ const DIVISION_BY_CLUB = new Map<string, Division>([
   ...LEAGUE_ONE_CLUBS.map(c => [c, "league_one"] as const),
   ...LEAGUE_TWO_CLUBS.map(c => [c, "league_two"] as const),
   ...NATIONAL_LEAGUE_CLUBS.map(c => [c, "national_league"] as const),
-  ...NATIONAL_LEAGUE_POOL_CLUBS.map(c => [c, "national_league_pool"] as const),
+  ...NATIONAL_LEAGUE_NORTH_CLUBS.map(c => [c, "national_league_north"] as const),
+  ...NATIONAL_LEAGUE_SOUTH_CLUBS.map(c => [c, "national_league_south"] as const),
 ]);
 
 export function divisionOf(club: string): Division | null {

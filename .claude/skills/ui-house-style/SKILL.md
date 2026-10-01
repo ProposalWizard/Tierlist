@@ -39,6 +39,161 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 1 Oct 2026 — football screens, the title, the league page (v0.23 W7)
+- **"When it's in the training or drills or match, we definitely use the pitch
+  kind of UI."** (P92) Training, the drills and the match chrome are green with
+  chalk lines in BOTH looks: wrap them in `ui/PitchScope.tsx`, never a second
+  stylesheet. The canvas is not touched.
+- **Title screen: "this whole pitch with the football, the name of it, the
+  background's like a net. Our guy should be standing … on the left."** (P82)
+  Net behind, pitch under, a ball at his feet, the menu flush to the right
+  edge, no store badges. "I don't want you to just look at NSS and do exactly
+  what it is": our own Anton wordmark and club-colour light, slanted buttons.
+- **"We could do this fixture page with the league, and you have a bell, like
+  maybe in the middle somewhere … straight in, no yap at all."** (P90) The
+  League screen is one page (`MatchWeek.tsx`): edge arrows flip Results ·
+  Fixtures · Table · Scout · Awards · Squad; bottom bar Back · 🔔 · Play. The
+  bell is the middle of the bar and opens the live-score clubs.
+- **Play as ▾ sits on the line-up animation** (it opens the position choices
+  and stops the auto-kick-off while open). Inferred from P91/P93 (the line-up
+  replaced the match-day page, which used to hold the picker).
+
+### 1 Oct 2026 — tutorials are pointers, not cards (v0.23, "HUGE UPDATES" review)
+- **A tutorial is small pop-ups with a hand pointing at the real thing, in order**
+  (P7, P67, P68): "Home", "your player", "star rating", "energy", then "Go to
+  training", which you must press. Never a "This is Home" card. Use
+  `components/star/PointerTour.tsx` and put steps in `lib/star/tours.ts`; mark a
+  target with `data-tour="name"`. A "?" in the header replays a screen's pointers (P42).
+- **No hidden numbers, no explaining sentences** (P4, P5, P12, P13, P15, P51):
+  no "+N Star Points", "1 to 100", "never goes down", "A session: 30 energy ·
+  3 tries". The star points breakdown lives in the Star Pass, shut until the
+  tutorial is done.
+- **After a match the order is:** star bar rises, match rating, relationships,
+  pay, achievements one at a time; Continue is shut until all are seen (P27).
+- **News is a headline and one line** (P28) — but on its own full-screen page, TV-style (Harry, 1 Oct 2026, v0.23): an animated BREAKING NEWS band on top, a scrolling ticker band along the bottom, the picture (face + crest), tap to continue. "Some stuff clean, some stuff a bit not clean": crisp type and layout, crooked bands, a torn headline strip, scan-lines. Not a small pop-up over Home.
+
+- **1 Oct 2026 (HUGE UPDATES review, v0.23): the game must feel like an app, not a
+  website.** Four rulings, all built as shared pieces in `components/star/ui/`, so
+  use them rather than drawing your own:
+  - **One heavy font everywhere** (P105: *"this font is so much better … use this
+    font across everything"*). Anton, set once in `ui/flat.css` on `.star-root`
+    for headings, buttons and every `font-black`/`font-extrabold` label, in both
+    looks. Plain `font-bold` sentences stay in the page font so a paragraph is
+    readable.
+  - **No floating pills** (P73, P87: *"I don't like the floating pill effect of
+    everything … that's so AI"*). A panel is flat: full width, square edges,
+    fading into the page. Use `FlatPanel` (`ui/Flat.tsx`), not a rounded card on
+    grey. The Pitch look's card is see-through grass with no drop shadow (P106).
+  - **Square bars** (P85, P107: *"squares with very clear, maybe even animated,
+    progress"*). `StatBar` and `SquareBar` are square, outlined and ticked.
+  - **A top HUD** (P80, P81, P86: *"the pills at the top change based on what
+    screen you're in … but your energy never leaves"*). `TopHud` (`ui/TopHud.tsx`)
+    in the shell; which cells show per screen is `HUD_SPEC`. Energy is in every
+    one, with its can: USE when you hold one, BUY (opens the cans shop) when not.
+
+### 1 Oct 2026 — screens review (Harry, "HUGE UPDATES", P39-P97)
+- **Never stack tab rows.** Stats had three (Stats·Home·Shop, Season·All·Records,
+  Stats·Contract·Status): "that is bloated". Now one row: a League arrow at the
+  left edge, a Home arrow at the right edge, "‹ Season ›" between them. Edge
+  arrows ("an image, the little word") are `ui/Nav.tsx`. The Premier League
+  mini-table left Stats (Home has it, League has the full table).
+- **A page that is a list has no title and no Back button on it.** "The style
+  doesn't need to be there and back doesn't need to be there." Back / the page's
+  own switch / Home are a fixed bottom bar (NSS: Back / Lifestyle / Buy), and the
+  top HUD carries money and energy. Style's first item moved from 302px to 173px
+  down a 390x844 phone. "My stuff" went (a 3D home replaces it later).
+- **Relations cards carry no text** — a face, one word, a square animated bar
+  with the number on it, a play button, a "?" that says one line ("a good
+  relationship with the team means you'll get more chances during a match").
+  An empty slot is blacked out, not hidden (NSS's girlfriend and sponsors).
+- **The phone is a phone.** Closing it is the home bar (tap or swipe up), not a
+  "✕ CLOSE PHONE" pill. The red dot shows only while something is unread and
+  clears once read. Apps you do not have are blacked out; an empty page is
+  blacked-out slots, not a blank.
+- **Pre-match is an animation, not a page.** Play → the line-up draws in and
+  kicks off by itself → the match; a prompt only if energy is low when you press
+  Play. The black "KICK OFF" panel is a pitch. Energy-mode icons run green,
+  yellow, red (red the most intense).
+- **Energy never leaves**: the top HUD is on the shop pages, Store, Casino and
+  Settings too. Run-up options live under "Play style", not in Settings' middle.
+
+### 1 Oct 2026 — "findable" means the first screen
+- **A thing made easier to find has to be on the first screen without
+  scrolling** (from "fix the new problems": the Sponsors strip sat under the
+  cans, below the first screen of a 390x844 phone). Measured before choosing
+  a spot: under the next-match card it ended at 778px against the Play
+  button's top at 772px — 6px short, so it would have been cramped. It went
+  into the hero as a pill opposite 3D / 2D (294–326px). Measure, don't guess.
+
+### 30 Sep 2026 — sponsors, fame and Home
+- **Never show the exact amount needed to unlock something — show a bar.**
+  Harry, on "Needs Icon (80 fame)": *"I don't like the idea that we tell them
+  exact amounts that are needed. To me that kind of just kills the game…
+  I'd rather a progress bar than 'you need 80'. That makes them kind of want
+  to work towards it."* Name the level ("Needs Icon"), draw how far you are,
+  leave the number out.
+- **A feature people can't find is a broken feature.** "How do I even get
+  there? … That feels quite hidden away." If a screen matters, it gets a way
+  in from Home, not only from a menu two taps deep.
+- **A card cut in half by the bottom bar is "jarring".** Said of the KIB cans
+  on Home. Keep a card short enough that it reads as whole, not a title with
+  its contents chopped off (cans + energy went from 303px to about 130px).
+
+### 30 Sep 2026 — the shop (review of Mikey v0.7)
+- **The four shops come first.** "Probably should do these four first instead
+  of those two … this makes them seem like small things." KIB Cans, Boots,
+  Style, Sponsors are big picture tiles at the top of the Shop page; Store and
+  Casino sit under them. Each tile carries a live line (cans owned, boot
+  matches left, fame from stuff, deals signed).
+- **A level is a thing, not "L1".** "What is a level one sports car? …
+  broken down motorbike, normal car, Tesla, sports car, Lamborghini … actual
+  images of each one … instead of L1, L2, L3." Every level of every Style
+  item has its own name and its own drawing (lib/star/lifestyleLevels.ts,
+  components/star/StylePicture.tsx). Generic names, never real brands.
+- **"You should always be able to see how much fame stuff is giving you."**
+  Fame is on every card and in a strip at the top of Style, and it is the
+  real share of your fame — not the item's raw status number.
+- **"Way too long."** A list of rows with five price buttons each became a
+  3-wide grid of picture cards; the detail is in a sheet you tap open.
+  Measured at 390 wide: the longest Style tab 1,663 px → 686 px.
+- **"A little place where you can see all your stuff."** My stuff: boots,
+  cans and everything owned, each with its fame and seasons left.
+- **Boots: "like a gallery, like I'm in a shop … hover over a shoe and buy
+  it."** A swipeable lit shelf of drawn boots; tap one for all five levels.
+  The walk-around 3D shop he described is NOT built — a much bigger job.
+- **Holiday is its own group** (p7): jet, villa, island. Level 5 should
+  "unlock something crazy" — the slot is shown as "to be decided" until a
+  real reward is designed; never invent one quietly.
+
+### 30 Sep 2026 — the signing, training sessions, the 3D/2D pill (Harry, Mikey v0.7 review)
+- **A form to read is not a moment.** On the paper contract: "The contract
+  showing the real terms is really cool… this isn't that interesting… have them
+  sat down together and then you show him actually signing the contract… tap and
+  you would sign." Keep the real numbers, but stage them: your player and the
+  manager at a desk, the terms big on the contract (club, seasons, wage), tap →
+  the pen writes → handshake → Continue. About 2.6 s, Skip always there
+  (`components/star/SigningScene.tsx`).
+- **A screen that only repeats what the next one says goes.** The FA Youth Cup
+  newspaper after the offer: "that's useless, that page." Removed from the
+  signing flow; the component stays.
+- **Limits are shown, not counted out in words.** Training sessions: "it should
+  be only seen through energy… as you click on a training, it should say you
+  have no more sessions this week. It shouldn't just say '1 out of 2 sessions
+  remaining.'" Sessions are charge cells (⚡); at zero the cards still answer a
+  tap with one final pop-up, "No more sessions this week".
+- **A switch must change what is right next to it.** "16, the 2D flick doesn't
+  work here" — the 3D/2D pill on the Home hero flipped every match figure but
+  not the hero beside it. Now it flips the hero too. (inferred: "flick" = the
+  flip pill; there is no drag-to-spin on Home.)
+- **A stand-in that says it is a stand-in reads as broken.** The spin page's
+  back view: "on the back does not work." The back is now the same drawn man
+  from behind (name + number, back of the head), not a separate flat drawing.
+
+### 1 Oct 2026 — New UI Home layout and a lighter pitch
+- **Home keeps the top bar, star/energy block and bottom arrows; the player area goes back to the earlier structure**: goal behind, player standing lower-left, Reputation / Fame / Goals / Assists to his right. "The actual structure of where the player is standing … that is how we want it to look." No league table, no tab row.
+- **"The general vibe should be the green pitch style. Also, make everything a lighter version … rather than everything being so dark."** The pitch variables in `components/star/ui/pitchLook.css` are one step lighter (stripes #2c8a4b/#257a41, page vignette 18%); option B (two steps lighter) is in the 1 Oct stills. White text stays only on greens at or below 62% lightness.
+- **Phone with every app open = an old save** (no `unlocks`); a new career greys the seven store apps.
+
 ### 25 Sep 2026 — training levels
 - **Level 1 of every training game opens on a how-it-works card.** "A very
   short, small tutorial or pop-up… doesn't have to be many words, just

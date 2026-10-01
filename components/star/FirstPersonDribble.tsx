@@ -274,11 +274,18 @@ export interface FirstPersonDribbleProps {
    * A picture choice only: the run itself never reads it.
    */
   camera?: DribbleCamera;
+  /**
+   * Leave your own figure out of the picture; the ball, the men and the camera
+   * are unchanged. The v0.23 trial sets it (Harry, 1 Oct 2026: "outside of
+   * penalties and free kicks we just don't have him"); the real match never
+   * does. Off by default.
+   */
+  hideYou?: boolean;
 }
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false, hold = false, camera = "C1",
+  hideHint = false, hold = false, camera = "C1", hideYou = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -301,6 +308,8 @@ export default function FirstPersonDribble({
   // roster), so it needs the same fallback tuning to look right.
   const fakeFaceStyleRef = useRef(loadFakeFaceStyle());
   const rngRef = useRef<() => number>(() => Math.random());
+  const hideYouRef = useRef(hideYou);
+  hideYouRef.current = hideYou;
   const holdRef = useRef(hold);
   holdRef.current = hold;
   const reducedMotionRef = useRef(false);
@@ -634,6 +643,7 @@ export default function FirstPersonDribble({
         assist, reducedMotion: reducedMotionRef.current,
         hud: { text: `${wavesCleared}/${run.roundSizes.length} waves`, pips },
         own: { x: run.x, y: run.y },
+        hideYou: hideYouRef.current,
         ownLean: lean,
         getFace: faceImageCacheRef.current.get,
         faceStyle: faceStyleRef.current,

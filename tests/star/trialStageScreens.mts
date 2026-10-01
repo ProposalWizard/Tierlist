@@ -75,7 +75,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   let tallest = 0;
   for (let s = 0; s < 120; s++) {
     const trial = startTrial(1000 + s * 7919);
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+    for (let rep = 0; rep < Math.max(REPS.freeKicks, 3); rep++) {
       const setup = freeKickSetup(trial, rep);
       const vp = freeKickView(setup.ball);
       const w = vp.x2 - vp.x1, h = vp.y2 - vp.y1;
@@ -101,7 +101,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
 {
   for (let s = 0; s < 120; s++) {
     const trial = startTrial(50_000 + s * 104_729);
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+    for (let rep = 0; rep < Math.max(REPS.freeKicks, 3); rep++) {
       const setup = freeKickSetup(trial, rep);
       const wall = freeKickWall(setup);
       check(wall.length === Math.max(1, Math.round(setup.wall)),
@@ -122,7 +122,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   let jumped = 0, built = 0, resolved = 0;
   for (let s = 0; s < 40; s++) {
     const trial = startTrial(900_000 + s * 7717);
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+    for (let rep = 0; rep < Math.max(REPS.freeKicks, 3); rep++) {
       const setup = freeKickSetup(trial, rep);
       const sc = buildFreeKickScenario(trial, rep, mulberry32((s * 31 + rep) >>> 0));
       built++;
@@ -195,7 +195,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   let pictures = 0, fullMargin = 0, worstGapShare = Infinity;
   let tightest = Infinity;
   for (let level = 0; level <= 100; level += 5) {
-    for (let rep = 0; rep < REPS.vision; rep++) {
+    for (let rep = 0; rep < Math.max(REPS.vision, 6); rep++) {
       // A trial whose difficulty IS this rung, so the whole ladder is walked
       // rather than whatever a handful of random trials happened to roll.
       const trial = { ...startTrial(77_000 + level * 13 + rep), baseDifficulty: level / 100 };
@@ -262,7 +262,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
       if (sc.receiverShot) touched++;
       if (sc.follower.active) woke++;
     }
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+    for (let rep = 0; rep < Math.max(REPS.freeKicks, 3); rep++) {
       const sc = buildFreeKickScenario(trial, rep, mulberry32((s * 29 + rep) >>> 0));
       strikeAndResolve(sc, mulberry32(s * 3 + rep), 0.4);
       attempts++;
@@ -294,15 +294,15 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
     const b = { ...a, reloads: a.reloads + 1 };
     trials++;
 
-    const layoutsA = Array.from({ length: REPS.vision }, (_, rep) =>
+    const layoutsA = Array.from({ length: Math.max(REPS.vision, 6) }, (_, rep) =>
       JSON.stringify(layoutVision(visionSetup(a, rep), attemptSeed(a), rep)));
-    const layoutsB = Array.from({ length: REPS.vision }, (_, rep) =>
+    const layoutsB = Array.from({ length: Math.max(REPS.vision, 6) }, (_, rep) =>
       JSON.stringify(layoutVision(visionSetup(b, rep), attemptSeed(b), rep)));
     if (layoutsA.every((l, i) => l !== layoutsB[i])) differed++;
 
     // …and the other half of the same rule: WITHOUT a resume, the picture is
     // still exactly itself, so leaving the app between stages costs nothing.
-    const again = Array.from({ length: REPS.vision }, (_, rep) =>
+    const again = Array.from({ length: Math.max(REPS.vision, 6) }, (_, rep) =>
       JSON.stringify(layoutVision(visionSetup(a, rep), attemptSeed(a), rep)));
     if (again.every((l, i) => l === layoutsA[i])) sameWhenNotResumed++;
   }
@@ -315,8 +315,8 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   // only worth confirming the two are not accidentally the same change.
   const a = startTrial(11), b = { ...a, reloads: 1 };
   check(
-    Array.from({ length: REPS.vision }, (_, r) => visionSetup(a, r).correct).join(",")
-      !== Array.from({ length: REPS.vision }, (_, r) => visionSetup(b, r).correct).join(","),
+    Array.from({ length: Math.max(REPS.vision, 6) }, (_, r) => visionSetup(a, r).correct).join(",")
+      !== Array.from({ length: Math.max(REPS.vision, 6) }, (_, r) => visionSetup(b, r).correct).join(","),
     "the right man is the same man after a resume",
   );
 }

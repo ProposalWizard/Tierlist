@@ -1,5 +1,5 @@
 import {
-  TRIAL_STAGES, recordStage, trialScore, nextStage,
+  trialStagesFor, recordStage, trialScore, nextStage,
   type TrialProgress, type TrialStage,
 } from "./trial";
 
@@ -93,8 +93,15 @@ export const TRIAL_SIM_LABEL: Record<TrialSimLevel, string> = {
 export function simStage(
   trial: TrialProgress, stage: TrialStage, level: TrialSimLevel,
 ): TrialProgress {
-  const from = stage === "fiveASide" ? { ...trial, fiveASide: undefined } : trial;
-  return recordStage(from, stage, TRIAL_SIM_QUALITY[level]);
+  // The five-a-side left the trial (1 Oct 2026), so a snapshot here can only
+  // be an old save's — dropped on any recorded stage, as `finishStage` does.
+  const from = trial.fiveASide !== undefined ? { ...trial, fiveASide: undefined } : trial;
+  const recorded = recordStage(from, stage, TRIAL_SIM_QUALITY[level]);
+  // A simmed shootout also says whether the winning penalty went in: a good
+  // afternoon scores it, a poor one does not (lib/star/scoutedPlacement.ts).
+  return stage === "shootout" && recorded.finalPenScored === undefined
+    ? { ...recorded, finalPenScored: TRIAL_SIM_QUALITY[level] >= 0.5 }
+    : recorded;
 }
 
 /**
@@ -107,7 +114,7 @@ export function simStage(
  */
 export function simRemaining(trial: TrialProgress, level: TrialSimLevel): TrialProgress {
   let out = trial;
-  for (const stage of TRIAL_STAGES) {
+  for (const stage of trialStagesFor(trial)) {
     if (out.results[stage]) continue;
     out = simStage(out, stage, level);
   }

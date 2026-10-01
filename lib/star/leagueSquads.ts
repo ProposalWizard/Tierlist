@@ -129,7 +129,8 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
   // data on file.
   if (!roster.length) {
     const div = divisionOf(club);
-    if (div === "league_one" || div === "league_two" || div === "national_league" || div === "national_league_pool") {
+    if (div === "league_one" || div === "league_two" || div === "national_league"
+      || div === "national_league_north" || div === "national_league_south") {
       return generatedSquad(club, avgOverallFor(club));
     }
     return { club, players: [] };
@@ -258,7 +259,10 @@ function avgOverallFor(club: string): number {
   const div = divisionOf(club);
   if (div === "league_one") return 63;
   if (div === "league_two") return 58;
-  if (div === "national_league" || div === "national_league_pool") return 55;
+  if (div === "national_league") return 55;
+  // National League North/South (1 Oct 2026): one rung below, three points
+  // lower — the same size of step League Two -> National League takes.
+  if (div === "national_league_north" || div === "national_league_south") return 52;
   return 73;
 }
 
