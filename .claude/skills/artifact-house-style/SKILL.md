@@ -72,6 +72,13 @@ standard."*
 - Clips go in `files` as `clips/<name>.mp4`. The admin patch-notes archive
   plays them too (it serves `.mp4` with byte ranges).
 - Watch every clip's cover and open every still before publishing.
+- **All "after" clips come from ONE combined copy** (Harry, 1 Oct 2026, on
+  the v0.23 page: *"How am I meant to analyse if you've recorded everything
+  separately? … apply all the changes, and then record stuff so you can see
+  everything together"*). When parts are built in parallel, merge first, then
+  film every "after" on the merged copy and every "before" on the one shared
+  base. Never ship a page whose screens disagree with each other because each
+  part filmed its own branch.
 - **Confirmed by Harry on the v0.20/v0.21 pages (1 Oct 2026):** *"these
   artifacts are amazing, speed tabs, the more pictures settings — this is
   GREAT."* So keep exactly that: the ½×/¼× speed buttons under every clip,

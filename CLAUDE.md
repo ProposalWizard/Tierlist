@@ -352,6 +352,12 @@ patch-notes or review page: a before and an after clip of the whole phone
 screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
 full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
 or two phone shots squeezed side by side. `scripts/film/README.md`.
+**Film the "after" on the final combined copy (Harry, 1 Oct 2026).** When a
+batch is built in parallel parts, every "after" clip on the page is filmed on
+the ONE merged copy with all changes in, and every "before" on the same base,
+so each picture shows everything together. *"How am I meant to analyse if
+you've recorded everything separately? … put the patch notes together in a
+way where you can see everything, apply all the changes, and then record."*
 
 **Perfection with efficiency (Harry, 1 Oct 2026).** *"we have to combine
 perfection with efficiency. If its gonna take 30 mins less to get to the same
