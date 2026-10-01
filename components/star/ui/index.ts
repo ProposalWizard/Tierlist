@@ -15,3 +15,5 @@ export { useClubTheme, clubTheme, glowOf, cardStyle, duelStyle, rgba, tint, lumi
 export { Burst, FloatText, Shake, Pop, Shine, Drips, useTrigger } from "./juice";
 export { ShakeX, LossFlash, WinCelebration, Badge, useFly } from "./reward";
 export { default as ScreenShell, WalletPill } from "./ScreenShell";
+export { FlatPanel, SquareBar } from "./Flat";
+export { default as TopHud, HUD_SPEC, type HudScreen, type HudCell } from "./TopHud";

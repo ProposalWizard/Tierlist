@@ -1,0 +1,82 @@
+/*
+ * THE FLAT LOOK (v0.23 look primitives; Harry, 1 Oct 2026 review).
+ *
+ * Three rulings, all in this file so any screen can take them:
+ *  1. ONE HEAVY FONT EVERYWHERE (P105: "this font is so much better … use
+ *     this font across everything"). Anton, already loaded for the Pitch look
+ *     and the front page, now sets every heading, button and bold label in
+ *     BOTH looks. Sentences in plain `font-bold` / normal weight stay in the
+ *     page's normal face so a paragraph stays readable.
+ *  2. NO FLOATING PILLS (P73, P87: "rounded cards floating on grey/black … so
+ *     AI"). `.sk-flat` is a flush panel: full width, square edges, fading into
+ *     the page instead of sitting on it. Components: ui/Flat.tsx.
+ *  3. SQUARE BARS (P85, P107). `.sk-sqbar` is the square, clearly outlined,
+ *     optionally animated progress bar (ui/Flat.tsx → SquareBar).
+ * The Pitch look only re-colours these (the --sk-flat-* variables).
+ */
+.star-root {
+  --sk-display: var(--font-pitch), Anton, Impact, "Arial Narrow", "Roboto Condensed", sans-serif;
+  --sk-flat-rgb: 0, 0, 0;
+  --sk-flat-alpha: .46;
+  --sk-edge: rgba(255, 255, 255, .22);
+}
+.star-look-pitch {
+  --sk-flat-rgb: 3, 32, 15;
+  --sk-flat-alpha: .5;
+  --sk-edge: rgba(255, 255, 255, .42);
+}
+
+/* 1. The font. Anton has one (heavy) weight: no faux bold. */
+.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .sk-display),
+.star-root :is(h1, h2, h3, h4, button, .font-black, .font-extrabold, .sk-display) * {
+  font-family: var(--sk-display);
+  font-weight: 400;
+}
+/* Anton sits a little taller than the sans it replaces: keep the line tight. */
+.star-root :is(.font-black, .font-extrabold):not(.leading-none) { letter-spacing: .012em; }
+
+/* 2. Flat panels. */
+.sk-flat {
+  --sk-fade: rgba(var(--sk-flat-rgb), var(--sk-flat-alpha));
+  background: var(--sk-flat-bg, linear-gradient(180deg, transparent 0%, var(--sk-fade) 26%, var(--sk-fade) 74%, transparent 100%));
+  border-radius: 0;
+}
+.sk-flat[data-fade="top"] { --sk-flat-bg: linear-gradient(180deg, transparent 0%, var(--sk-fade) 34%, var(--sk-fade) 100%); }
+.sk-flat[data-fade="bottom"] { --sk-flat-bg: linear-gradient(180deg, var(--sk-fade) 0%, var(--sk-fade) 66%, transparent 100%); }
+.sk-flat[data-fade="none"] { --sk-flat-bg: var(--sk-fade); }
+.sk-flat[data-edge="true"] { box-shadow: inset 0 1px 0 var(--sk-edge), inset 0 -1px 0 var(--sk-edge); }
+
+/* 3. Square bars. */
+.sk-sqbar {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, .72);
+  box-shadow: inset 0 0 0 1px var(--sk-edge);
+}
+.sk-sqbar-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 0;
+  transition: width 900ms cubic-bezier(.2, .8, .2, 1);
+}
+/* The ten ticks that make it read as a ruler, not a pill. */
+.sk-sqbar-ticks {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(0, 0, 0, .55) calc(10% - 1px), rgba(0, 0, 0, .55) 10%);
+}
+/* "Animated": diagonal stripes marching along the fill. */
+.sk-sqbar-anim {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, .28) 0 5px, transparent 5px 12px);
+  background-size: 17px 100%;
+  animation: sk-stripes 1.1s linear infinite;
+}
+@keyframes sk-stripes { to { background-position: 17px 0; } }
+@keyframes sk-bar-pop { 0% { filter: brightness(2.2); } 100% { filter: brightness(1); } }
+.sk-sqbar-pop { animation: sk-bar-pop 700ms ease-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  .sk-sqbar-anim { animation: none; }
+  .sk-sqbar-fill { transition: none; }
+  .sk-sqbar-pop { animation: none; }
+}

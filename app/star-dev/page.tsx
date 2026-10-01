@@ -2,6 +2,7 @@
 import { useUiLook } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/pitchLook.css";
+import "@/components/star/ui/flat.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
@@ -271,7 +272,7 @@ export default function StarDevPage() {
   // "the dragging feature does also do the same thing as highlighting
   // words"). Typing in a box still works — inputs keep their own selection.
   return (
-    <div className={`select-none [&_input]:select-text [&_textarea]:select-text ${look === "pitch" ? `star-look-pitch ${pitchFont.variable}` : ""}`}>
+    <div className={`select-none [&_input]:select-text [&_textarea]:select-text star-root ${pitchFont.variable} ${look === "pitch" ? "star-look-pitch" : ""}`}>
       <StarDevInner immersive={immersive} />
     </div>
   );
