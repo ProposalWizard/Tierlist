@@ -75,7 +75,7 @@ export default function BootPicture({ base, level, className = "" }: { base: str
       {lv >= 4 && <path d="M37 24 Q40 19 46 21 L44 26 Z" fill={upper} stroke="#0b1220" strokeWidth=".6" />}
       {lv === 5 && (
         <g fill="#fffbe6">
-          {[[56, 8, 2], [90, 18, 2.6], [80, 5, 1.5]].map(([x, y, r], i) => (
+          {[[56, 8, 2], [90, 18, 2.6], [70, 5, 1.5]].map(([x, y, r], i) => (
             <path key={i} d={`M${x} ${y - r * 2} L${x + r * 0.5} ${y - r * 0.5} L${x + r * 2} ${y} L${x + r * 0.5} ${y + r * 0.5} L${x} ${y + r * 2} L${x - r * 0.5} ${y + r * 0.5} L${x - r * 2} ${y} L${x - r * 0.5} ${y - r * 0.5} Z`} />
           ))}
         </g>

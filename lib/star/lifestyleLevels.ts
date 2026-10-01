@@ -45,7 +45,9 @@ export const LEVEL_NAMES: Record<string, [string, string, string, string, string
   classic: ["Barn-Find Classic", "Classic Saloon", "Classic Roadster", "Vintage Racer", "Museum Classic"],
   "car-4": ["Second-Hand Supercar", "Supercar", "Open-Top Supercar", "Hypercar", "One-Off Hypercar"],
   // ── Homes ──
-  "flat-1": ["Box Room", "Studio Flat", "Loft Studio", "Designer Studio", "Riverside Studio"],
+  // Climbs in size, not just polish (Harry, 1 Oct 2026: level 5 was still
+  // "a studio" at ★263k, dearer than a two-bed apartment).
+  "flat-1": ["Box Room", "Studio Flat", "One-Bed Flat", "Loft Conversion", "Riverside Loft"],
   "flat-2": ["Shared Flat", "City Apartment", "Two-Bed Apartment", "Duplex Apartment", "Sky Apartment"],
   penthouse: ["Top-Floor Flat", "Penthouse", "Roof-Terrace Penthouse", "Sky Penthouse", "Tower-Top Penthouse"],
   stable: ["Rented Paddock", "Small Stable", "Horse Stable", "Riding Centre", "Racing Stud"],

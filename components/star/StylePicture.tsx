@@ -76,9 +76,12 @@ function rewriteIds(node: React.ReactNode, uid: string): React.ReactNode {
   return cloneElement(el, next, ...list.map((k) => rewriteIds(k, uid)));
 }
 
+// Kept to the top middle and the right edge below the corner: the top-left
+// corner holds "Level 5 of 5" (and "✓ YOURS" on a grid card), the top-right
+// "✓ YOURS" on the item sheet. Harry, 1 Oct 2026: a sparkle sat on the badge.
 const Sparkles = () => (
   <g fill="#fffbe6">
-    {[[12, 10, 2.2], [88, 14, 2.6], [80, 6, 1.5], [20, 4, 1.4]].map(([x, y, r], i) => (
+    {[[50, 5, 1.5], [59, 11, 2.4], [67, 4, 1.3], [94, 24, 1.9]].map(([x, y, r], i) => (
       <path key={i} d={`M${x} ${y - r * 2} L${x + r * 0.5} ${y - r * 0.5} L${x + r * 2} ${y} L${x + r * 0.5} ${y + r * 0.5} L${x} ${y + r * 2} L${x - r * 0.5} ${y + r * 0.5} L${x - r * 2} ${y} L${x - r * 0.5} ${y - r * 0.5} Z`} />
     ))}
   </g>

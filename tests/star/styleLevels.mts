@@ -48,6 +48,10 @@ check(shares.every((s) => s > 0), "every owned thing shows some fame");
 const sum = shares.reduce((a, b) => a + b, 0);
 check(sum <= total + 1e-9 && sum >= total * 0.9, `shares (${sum.toFixed(2)}) add up to about the total (${total.toFixed(2)})`);
 
+// A level never names the home smaller than the level below it: the
+// Studio Flat's top level was "Riverside Studio" at ★263k (1 Oct 2026).
+check(!/studio/i.test(LEVEL_NAMES["flat-1"][4]), "Studio Flat level 5 is not still a studio");
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems) console.error("  ✗ " + p);
