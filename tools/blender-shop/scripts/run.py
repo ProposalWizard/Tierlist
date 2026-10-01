@@ -31,7 +31,7 @@ def main():
     S.studio_lights(scale=c['scale'], aim=c['aim'], key=c.get('key', 1.0))
     S.shadow_catcher(c.get('floor', 0.0), size=c.get('floor_size', 80))
     cam = S.camera(c['cam'], c['target'], lens=c.get('lens', 50))
-    S.frame_objects(cam, [p for p in parts if p.type == 'MESH'], fill=c.get('fill', 0.8), offset=c.get('offset', (0, 0)), fill_y=c.get('fill_y'))
+    S.frame_objects(cam, [p for p in (c.get('frame_parts') or parts) if p.type == 'MESH'], fill=c.get('fill', 0.8), offset=c.get('offset', (0, 0)), fill_y=c.get('fill_y'))
     S.render(out)
 
 

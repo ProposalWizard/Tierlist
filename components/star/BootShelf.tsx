@@ -78,7 +78,9 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
                     <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-24 w-28 -translate-x-1/2" style={{ background: "radial-gradient(50% 100% at 50% 0%, rgba(255,255,255,.22), transparent 70%)" }} />
                     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[88px] h-3" style={{ background: "linear-gradient(180deg, #8b6a4a, #4a3423)", boxShadow: "0 6px 10px -4px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.25)" }} />
                     <div className="relative flex h-[98px] items-end justify-center px-1">
-                      <BootPicture base={id} level={shown.level ?? 1} className="w-full transition duration-200 group-hover:-translate-y-1 group-hover:scale-105" />
+                      {/* v0.23.1 (Harry, "massive... size 18"): the render fills its whole frame, so at full card width a boot was almost as wide
+                          as the card. Standing at about three-quarters width it sits on the plank at a believable size. */}
+                      <BootPicture base={id} level={shown.level ?? 1} className="w-[72%] transition duration-200 group-hover:-translate-y-1 group-hover:scale-105" />
                     </div>
                     <div className="relative h-[66px] px-2 pt-2.5">
                       <div className="flex items-center gap-1">
@@ -140,7 +142,7 @@ function BootSheet({ career, levels, level, banned, setLevel, onClose, onBuy, on
   return (
     <ShopSheet open onClose={onClose} title={b.name} accent={look.upper}>
       <div className="relative overflow-hidden rounded-2xl" style={{ background: `radial-gradient(70% 70% at 50% 10%, ${rgba(look.upper, 0.5)}, transparent 70%), var(--sk-card, linear-gradient(180deg, #1a2234, #0a0f1a))` }}>
-        <BootPicture base={base} level={b.level ?? 1} className="mx-auto block aspect-[100/64] w-[88%]" />
+        <BootPicture base={base} level={b.level ?? 1} className="mx-auto block aspect-[100/64] w-[76%]" />
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">Level {b.level} of 5</span>
       </div>
       <div className="mt-2 grid grid-cols-5 gap-1.5">

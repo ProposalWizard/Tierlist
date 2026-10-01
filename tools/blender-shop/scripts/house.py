@@ -200,22 +200,23 @@ def hedge(c, size, M):
 
 # ---------------------------------------------------------------- houses
 def terrace(M):
-    """Level 1: one narrow house in a run of three; ours is the tired middle one."""
-    parts = plinth(11.5, 8.5, M)
-    W, D, H = 3.4, 6.0, 5.2
-    y0 = -1.4
-    for k, x in enumerate((-3.4, 0, 3.4)):
-        ours = k == 1
-        wall = M['brick_old'] if ours else M['brick']
-        parts.append(box('Wall', (x, y0 + D / 2, H / 2), (W, D, H), wall))
-        parts += windows_on('front', x - 0.6, x + 0.9, 0.0, 1, 2, 2.5, M, y=y0, wsize=(0.9, 1.05))
-        parts += door(x - 0.95, y0, M, w=0.85)
-        parts.append(box('Chim', (x + 1.2, y0 + D / 2, H + 1.6), (0.5, 0.7, 1.4), M['brick'], bevel=0.02))
-    parts.append(gable_roof('Roof', -5.1, 5.1, y0, y0 + D, H, 1.7, M['slate'], over=0.2))
-    parts += windows_on('side', y0 + 1.2, y0 + D - 1.2, 0.0, 2, 2, 2.5, M, x=5.1, wsize=(0.8, 1.0))
-    parts.append(box('Path', (-0.95, -3.2, 0.03), (1.0, 3.5, 0.06), M['path']))
-    parts.append(box('Bin', (1.0, -2.6, 0.55), (0.6, 0.7, 1.1), M['bin'], bevel=0.05))
-    parts.append(box('Wall', (0, -4.0, 0.3), (11.0, 0.25, 0.6), M['brick_old'], bevel=0.02))
+    """Level 1 (v0.23.1): the starter. One small, narrow, tired two-up-two-down with a yard,
+    smaller and humbler than before (it used to be a row of three big houses)."""
+    parts = plinth(7.6, 7.2, M)
+    W, D, H = 3.6, 4.4, 4.0
+    y0 = -0.4
+    x = 0.0
+    parts.append(box('Wall', (x, y0 + D / 2, H / 2), (W, D, H), M['brick_old']))
+    parts += windows_on('front', x - 0.65, x + 0.95, 0.0, 1, 2, 2.15, M, y=y0, wsize=(0.78, 0.9))
+    parts += door(x - 0.95, y0, M, w=0.8, h=1.95)
+    parts.append(gable_roof('Roof', x - W / 2, x + W / 2, y0, y0 + D, H, 1.1, M['slate'], over=0.18, ridge_axis='X'))
+    parts.append(box('Chim', (x + 1.1, y0 + D / 2, H + 1.0), (0.45, 0.6, 0.9), M['brick'], bevel=0.02))
+    parts += windows_on('side', y0 + 1.1, y0 + D - 1.1, 0.0, 1, 2, 2.15, M, x=x + W / 2, wsize=(0.7, 0.9))
+    parts.append(box('Path', (x - 0.95, -2.0, 0.03), (0.9, 1.7, 0.06), M['path']))
+    parts.append(box('Bin', (x + 1.2, -1.9, 0.5), (0.5, 0.55, 1.0), M['bin'], bevel=0.05))
+    parts.append(box('WallF', (x, -2.85, 0.25), (6.4, 0.2, 0.5), M['brick_old'], bevel=0.02))
+    parts.append(box('WallL', (-3.2, 0.0, 0.25), (0.2, 5.8, 0.5), M['brick_old'], bevel=0.02))
+    parts += hedge((2.3, -2.4, 0.3), (1.4, 0.5, 0.6), M)
     return parts
 
 
