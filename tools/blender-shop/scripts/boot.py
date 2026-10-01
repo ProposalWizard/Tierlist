@@ -20,6 +20,10 @@ BOOT_LOOK = {
     'elite': ('#111827', '#fbbf24', '#374151'),
     'curl': ('#06b6d4', '#7c3aed', '#4c1d95'),
     'maestro': ('#c026d3', '#fde68a', '#701a75'),
+    # store accessory boots (v0.23.1)
+    'blackout': ('#0a0a0a', '#52525b', '#18181b'),
+    'volt': ('#d9f99d', '#65a30d', '#3f6212'),
+    'chrome': ('#facc15', '#a16207', '#a16207'),
 }
 
 L = 0.29          # boot length (m), heel x=0 -> toe x=L
