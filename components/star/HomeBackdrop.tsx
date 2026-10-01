@@ -15,7 +15,7 @@
  */
 import { rgba } from "./ui";
 
-export default function HomeBackdrop({ glow }: { glow: string }) {
+export default function HomeBackdrop({ glow, grass = true }: { glow: string; /** false when a stadium picture already shows the pitch (Home). */ grass?: boolean }) {
   // 12 mown bands, widening towards the viewer (perspective), 100x100 box.
   const bands: { y: number; h: number; dark: boolean }[] = [];
   let y = 0, h = 4.2;
@@ -35,11 +35,13 @@ export default function HomeBackdrop({ glow }: { glow: string }) {
           </radialGradient>
         </defs>
         {/* the grass starts at the goal line (y = 27) */}
-        <g transform="translate(0 27) scale(1 .73)">
-          {bands.map((b, i) => <rect key={i} x="0" y={b.y} width="100" height={b.h + 0.2} style={{ fill: b.dark ? "var(--sk-band-dark, #1b6b34)" : "var(--sk-band-light, #23803f)" }} />)}
-        </g>
-        <rect x="0" y="27" width="100" height="73" fill="url(#hp-shade)" />
-        <rect x="0" y="27" width="100" height="73" fill="url(#hp-spot)" />
+        {grass && <>
+          <g transform="translate(0 27) scale(1 .73)">
+            {bands.map((b, i) => <rect key={i} x="0" y={b.y} width="100" height={b.h + 0.2} style={{ fill: b.dark ? "var(--sk-band-dark, #1b6b34)" : "var(--sk-band-light, #23803f)" }} />)}
+          </g>
+          <rect x="0" y="27" width="100" height="73" fill="url(#hp-shade)" />
+          <rect x="0" y="27" width="100" height="73" fill="url(#hp-spot)" />
+        </>}
         {/* chalk: the goal line only (the boxes and the spot crossed the stat blocks) */}
         <g stroke="rgba(255,255,255,.7)" strokeWidth=".5" fill="none" vectorEffect="non-scaling-stroke">
           <line x1="0" y1="27" x2="100" y2="27" />
