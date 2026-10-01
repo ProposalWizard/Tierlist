@@ -39,6 +39,14 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 1 Oct 2026 — "findable" means the first screen
+- **A thing made easier to find has to be on the first screen without
+  scrolling** (from "fix the new problems": the Sponsors strip sat under the
+  cans, below the first screen of a 390x844 phone). Measured before choosing
+  a spot: under the next-match card it ended at 778px against the Play
+  button's top at 772px — 6px short, so it would have been cramped. It went
+  into the hero as a pill opposite 3D / 2D (294–326px). Measure, don't guess.
+
 ### 30 Sep 2026 — sponsors, fame and Home
 - **Never show the exact amount needed to unlock something — show a bar.**
   Harry, on "Needs Icon (80 fame)": *"I don't like the idea that we tell them

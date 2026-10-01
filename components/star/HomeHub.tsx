@@ -39,8 +39,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { starStatus } from "@/lib/star/starPoints";
 import { attributeOverall } from "@/lib/star/rating";
 import StarRatingSheet from "./StarRatingSheet";
-import { brandsOf, slotsFor, weeklySponsorTotal } from "@/lib/star/sponsorDeals";
-import { fameOf, fameLevel, nextFameLevel } from "@/lib/star/fame";
+import { brandsOf } from "@/lib/star/sponsorDeals";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import FigureSkinToggle from "./FigureSkinToggle";
 import {
@@ -109,9 +108,6 @@ export default function HomeHub(p: Props) {
           energy cans, they're being off the screen, it's kind of jarring").
           Was a 225px cans card plus a 68px energy card. */}
       <RiseIn onPageActive index={2}><Cans {...p} glow={glow} /></RiseIn>
-      {/* Sponsors, one tap from Home (Harry: "how do I even get there? …
-          That feels quite hidden away"). */}
-      <RiseIn onPageActive index={3}><SponsorsStrip {...p} glow={glow} /></RiseIn>
     </div>
   );
 }
@@ -228,7 +224,7 @@ function LastFive({ five }: { five: FormResult[] }) {
 
 // ── 1. You ──────────────────────────────────────────────────────────────────
 
-function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
+function Hero({ career, glow, kitShirt, kitTrim, onOpen }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
   const look = useAvatarStyle();
   // The star rating is the CAREER one (starPoints.ts); ability shows as Overall.
   const star = starStatus(career);
@@ -267,6 +263,12 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
           Under Mikey's money pill (it covered the right floodlight at top-2),
           and 32px tall so a thumb can hit it. */}
       <FigureSkinToggle className="absolute right-3 top-[90px] z-10 min-h-[32px]" />
+      {/* Sponsors, one tap from Home and on the FIRST screen. Harry: "how do
+          I even get there? … That feels quite hidden away". 1 Oct 2026: as a
+          strip under the cans it sat below the first screen of a 390x844
+          phone, and under the next-match card it was 6px short of clearing
+          the Play button — so it is a pill here, opposite 3D / 2D. */}
+      <SponsorsPill career={career} onOpen={onOpen} className="absolute left-3 top-[90px] z-10 min-h-[32px]" />
       <div className="relative flex justify-center pt-1.5">
         {/* 184 tall (was 204, 236 before that), halfway to the 164 tried on
             28 Sep 2026 (Mikey: "go in between those two figures"). 204 tall (was 236) so that on an iPhone 13 the next-match card
@@ -347,33 +349,19 @@ function Cans({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
 
 /** Your sponsors, one tap from Home: offers waiting, or your deals and what
  *  they pay, or how close the first slot is (a bar, never a number). */
-function SponsorsStrip({ career, onOpen, glow }: Props & { glow: string }) {
+function SponsorsPill({ career, onOpen, className = "" }: { career: CareerState; onOpen: Props["onOpen"]; className?: string }) {
   const b = brandsOf(career);
   const offers = b.offers.length;
   const deals = b.deals.length;
-  const slots = slotsFor(career);
-  const fame = fameOf(career);
-  const next = nextFameLevel(fame), cur = fameLevel(fame);
-  const pct = next ? Math.max(0, Math.min(100, ((fame - cur.min) / Math.max(1, next.min - cur.min)) * 100)) : 100;
-  const line = offers ? `${offers} offer${offers === 1 ? "" : "s"} waiting`
-    : deals ? `${deals} deal${deals === 1 ? "" : "s"} · ★${formatMoney(weeklySponsorTotal(career))} a week`
-      : slots === 0 ? "First deal at Local Name"
-        : "Play well and brands will get in touch";
+  const label = offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting`
+    : deals ? `Sponsors: ${deals} deal${deals === 1 ? "" : "s"}` : "Sponsors";
   return (
-    <button type="button" onClick={() => onOpen("sponsors")} aria-label="Open Sponsors" className="kib-press block w-full text-left">
-      <ClubCard glow={glow} className="flex items-center gap-2.5 rounded-2xl p-2.5">
-        <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[20px]"
-          style={{ background: "linear-gradient(160deg, rgba(52,211,153,.55), rgba(52,211,153,.12))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.3), 0 0 12px rgba(52,211,153,.45)" }}>
-          🤝
-          {offers > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-[20px] place-items-center rounded-full bg-red-500 px-1 text-[11px] font-black text-white ring-2 ring-gray-950">{offers}</span>}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-black uppercase tracking-[0.16em] text-white">Sponsors</div>
-          <div className={`truncate text-[11.5px] font-bold ${offers ? "text-emerald-300" : "text-white"}`}>{line}</div>
-          {!offers && !deals && slots === 0 && <StatBar value={pct} colors={["#fbbf24", "#fde68a"]} className="mt-1 h-1.5" sheen={false} />}
-        </div>
-        <span className="shrink-0 text-[20px] font-black leading-none text-white">›</span>
-      </ClubCard>
+    <button type="button" onClick={() => onOpen("sponsors")} aria-label={`Open ${label}`} title={label}
+      className={`kib-press flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white transition active:scale-95 ${className}`}
+      style={{ background: "rgba(0,0,0,.55)", boxShadow: "inset 0 0 0 1px rgba(52,211,153,.55), 0 0 10px rgba(52,211,153,.3)" }}>
+      <span className="text-[13px] leading-none">🤝</span>
+      <span>Sponsors</span>
+      {offers > 0 && <span className="grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
     </button>
   );
 }
