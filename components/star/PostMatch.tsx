@@ -6,6 +6,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { CHANCE_KIND_LABEL, CHANCE_OUTCOME_LABEL, chanceOutcomeGood, type ChanceOutcome } from "@/lib/star/chanceLog";
 import { minuteLabel } from "@/lib/star/addedTime";
 import ClubBadge from "./ClubBadge";
+import { sfx } from "@/lib/star/sfx";
 import { ClubCard, CountUp, PressButton, Burst, FloatText, Glow, Shine, Pop, clubTheme, rgba, prefersReducedMotion } from "./ui";
 import { SquareBar } from "./ui/Flat";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
@@ -102,6 +103,8 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
   const [seen, setSeen] = useState(0);
   const allSeen = achievements.length === 0 || seen >= achievements.length;
   const canContinue = allSeen && (achievements.length === 0 || achIn);
+  // The pay lands with a ka-ching (lib/star/sfx.ts).
+  useEffect(() => { if (moneyIn && stats.totalCash > 0) sfx("coin-in"); }, [moneyIn, stats.totalCash]);
 
   return (
     <Screen glow={theme.glow} tone={look.color}>
@@ -340,13 +343,14 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
   // 0: waiting · 1: rising (to the top on a level up) · 2: new level, rising again
   const [stage, setStage] = useState(0);
   useEffect(() => {
-    if (!on) return;
-    if (prefersReducedMotion()) { setStage(up ? 2 : 1); return; }
+    if (!on || after === undefined) return;
+    if (prefersReducedMotion()) { setStage(up ? 2 : 1); sfx(up ? "level-up" : "star-tick"); return; }
     setStage(1);
+    sfx("star-tick");
     if (!up) return;
-    const t1 = setTimeout(() => setStage(2), 1100);
+    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, 1100);
     return () => clearTimeout(t1);
-  }, [on, up]);
+  }, [on, up, after === undefined]);
   if (after === undefined) return null;
   const shownLevel = up && stage < 2 ? from : to;
   const value = stage === 0 ? 0 : up && stage === 1 ? 100 : endPct;
@@ -370,7 +374,7 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
  *  press next until you've seen all your achievements"). */
 function AchievementCard({ a, n, of, onNext }: { a: { label: string; description: string }; n: number; of: number; onNext: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" }); }, []);
+  useEffect(() => { ref.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" }); sfx("achievement-pop"); }, []);
   return (
     <div ref={ref} className="kit-slam relative mt-2 overflow-hidden rounded-xl text-center" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.22), rgba(120,53,15,.35))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 2px rgba(251,191,36,.7), 0 0 24px rgba(251,191,36,.3)" }}>
       <Burst colors={["#fde047", "#fbbf24", "#ffffff"]} count={20} className="left-1/2 top-[40%]" round />

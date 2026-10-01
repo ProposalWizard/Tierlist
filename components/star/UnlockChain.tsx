@@ -7,7 +7,9 @@
  * Harry, 1 Oct 2026 (P13-P40): "Locked, locked, locked, training." The
  * tutorial itself is pointers now (PointerTour.tsx), not cards.
  */
+import { useEffect } from "react";
 import type { CareerState } from "@/lib/star/types";
+import { sfx } from "@/lib/star/sfx";
 import { APP_STORE, LOCK_HINT, UNLOCK_ACHIEVEMENTS, appInstalled, type Feature } from "@/lib/star/unlocks";
 import { formatMoney } from "@/lib/star/money";
 import { Burst, PressButton } from "./ui";
@@ -58,6 +60,7 @@ export function LockedPage({ title, feature }: { title: string; feature: Feature
 // ── 4. The achievement pop-up ───────────────────────────────────────────────
 
 export function AchievementPop({ label, unlocked, onClose, phone = false }: { label: string; unlocked: string; onClose: () => void; /** The phone: a big moment (Harry, P70). */ phone?: boolean }) {
+  useEffect(() => { sfx("achievement-pop"); }, []);
   return (
     <Sheet onClose={onClose} z={95}>
       <style>{`
