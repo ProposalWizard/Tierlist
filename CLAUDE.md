@@ -353,6 +353,13 @@ screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
 full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
 or two phone shots squeezed side by side. `scripts/film/README.md`.
 
+**Perfection with efficiency (Harry, 1 Oct 2026).** *"we have to combine
+perfection with efficiency. If its gonna take 30 mins less to get to the same
+outcome at some points you can use a bit less effort but the layout should
+always be the same."* Cut effort where it doesn't change the outcome (fewer
+re-takes, lighter checks on small items); never cut the page layout — the
+same cards, clips, speed buttons and toggles every time.
+
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
