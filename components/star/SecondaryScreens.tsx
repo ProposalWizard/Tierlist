@@ -131,7 +131,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
 // LEAGUE EVER HAS" — so it needs a progress bar rather than a checkmark, and
 // a source (RECORDS, records.ts) that carries the real number to chase, not
 // just a boolean.
-export function AchievementsScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
+export function AchievementsScreen({ career, onBack, top }: { career: CareerState; onBack: () => void; /** Shown above the list — the unlock chain's first steps (UnlockChain.tsx). */ top?: React.ReactNode }) {
   const [tab, setTab] = useState<"achievements" | "records">("achievements");
   const beaten = RECORDS.filter(r => recordBeaten(career, r)).length;
   const theme = clubTheme(career.player.club, career);
@@ -154,6 +154,7 @@ export function AchievementsScreen({ career, onBack }: { career: CareerState; on
 
         {tab === "achievements" ? (
           <>
+            {top}
             <div className="kit-card overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
               {ACHIEVEMENTS.map((a, i) => {
                 const unlocked = career.achievements.includes(a.id);
@@ -170,8 +171,8 @@ export function AchievementsScreen({ career, onBack }: { career: CareerState; on
               })}
             </div>
             <div className="mt-2 text-xs text-center text-white/80 font-bold">
-              <span className="text-amber-300">{career.achievements.length}</span> / {ACHIEVEMENTS.length} unlocked
-              <StatBar value={(career.achievements.length / Math.max(1, ACHIEVEMENTS.length)) * 100} colors={["#f59e0b", "#fde047"]} className="mx-auto mt-1.5 h-2 w-40" />
+              <span className="text-amber-300">{ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length}</span> / {ACHIEVEMENTS.length} unlocked
+              <StatBar value={(ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length / Math.max(1, ACHIEVEMENTS.length)) * 100} colors={["#f59e0b", "#fde047"]} className="mx-auto mt-1.5 h-2 w-40" />
             </div>
           </>
         ) : (

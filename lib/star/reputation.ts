@@ -22,6 +22,10 @@ import type { CareerState } from "./types";
  */
 
 export const REPUTATION_START = 20;
+/** Where a brand-new career starts (Harry, 1 Oct 2026, P26: "reputation
+ *  zero"). REPUTATION_START stays the number a save missing the field is
+ *  given, so no existing career moves. */
+export const NEW_CAREER_REPUTATION = 0;
 export const REPUTATION_RECOMMEND_MIN = 30;
 export const REPUTATION_PROPOSE_RULES_MIN = 60;
 export const REPUTATION_PRESIDENCY_MIN = 90;
@@ -97,5 +101,7 @@ export function reputationLabel(rep: number): string {
   if (r >= REPUTATION_PROPOSE_RULES_MIN) return "Respected";
   if (r >= REPUTATION_RECOMMEND_MIN) return "Trusted";
   if (r >= 15) return "Unproven";
+  // A new career starts at 0 — nobody knows you yet, not distrust.
+  if (r < 1) return "Unknown";
   return "Distrusted";
 }

@@ -47,13 +47,13 @@ const fresh = (): CareerState => makeInitialCareer(player("Liverpool"), [...PREM
   check(clampReputation(140) === 100 && clampReputation(-5) === 0, "reputation clamps to 0-100");
   check(changeReputation(15, REPUTATION_EVENTS.mergedClubs) === 0, "merging clubs costs 20 and floors at 0");
   check(REPUTATION_EVENTS.mergedClubs === -20, "merging clubs is -20, as agreed");
-  check(fresh().reputation === REPUTATION_START, `a new career starts at ${REPUTATION_START}`);
+  check(fresh().reputation === 0, "a new career starts at 0 (Harry, 1 Oct 2026)");
   check(typeof fresh().reputation === "number", "reputation is a single number now");
   check(migrateReputation({ world: 40, club: 60, government: 0, shareholders: 20 }) === 30,
     "an old four-bar save becomes the average of the four");
-  check(migrateReputation(undefined) === REPUTATION_START, "a missing reputation starts where a new career does");
+  check(migrateReputation(undefined) === REPUTATION_START, "a save missing reputation gets the old start (20) — no save moves");
   check(reputationVoteBias(100) === 1 && reputationVoteBias(0) === -1 && reputationVoteBias(50) === 0, "vote bias spans -1..1");
-  check(reputationLabel(95) === "Establishment" && reputationLabel(5) === "Distrusted", "labels read sensibly");
+  check(reputationLabel(95) === "Establishment" && reputationLabel(5) === "Distrusted" && reputationLabel(0) === "Unknown", "labels read sensibly");
 }
 
 // ── Fame: capped, six levels ────────────────────────────────────────────────
@@ -61,7 +61,7 @@ const fresh = (): CareerState => makeInitialCareer(player("Liverpool"), [...PREM
   check(FAME_LEVELS.length === 6, "six fame levels");
   check(fameLevel(0).name === "Unknown" && fameLevel(80).name === "Icon" && fameLevel(59).name === "National Name", "levels sit where agreed");
   check(fameOf({ fame: 999, ownedItems: [] }) === 100, "fame never exceeds 100");
-  check(fresh().fame === 0, "a new career starts unknown");
+  check(fresh().fame === 1 && fameLevel(1).name === "Unknown", "a new career starts on 1, unknown");
 }
 
 // ── Fame: what you own, on a curve, and it wears out ────────────────────────
@@ -93,7 +93,7 @@ const fresh = (): CareerState => makeInitialCareer(player("Liverpool"), [...PREM
 {
   const all = [0, 0.3, 0.6, 0.99].map(scandalFame);
   check(all.every(n => n >= 1 && n <= 4), `a scandal is always +1 to +4 fame (${all.join(",")})`);
-  const c = fresh();
+  const c = { ...fresh(), reputation: 20 }; // a new career's 0 has nowhere to fall
   const after = applyEffects(c, { fame: 3, reputation: -8, scandal: true });
   check(after.fame > c.fame, "a scandal dilemma raises fame");
   check(after.reputation < c.reputation, "…and lowers reputation");

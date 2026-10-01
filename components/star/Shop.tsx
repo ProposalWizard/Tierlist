@@ -11,6 +11,8 @@ import KibCanIcon from "./KibCanIcon";
 import BootPicture from "./BootPicture";
 import BootShelf from "./BootShelf";
 import StyleShop from "./StyleShop";
+import { styleUnlockStar } from "@/lib/star/unlocks";
+import { starsNow } from "@/lib/star/starPoints";
 import {
   ScreenShell, WalletPill, ClubCard, PressButton, Glow, Burst, Pop, RiseIn, useFly, useTrigger,
   useClubTheme, rgba, tint,
@@ -238,6 +240,13 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           reward={(price, from, to, node, color, key) => reward(price, from, to, node, color, key)}
           landed={landed}
           landKey={landKey}
+          // Unlock chain (lib/star/unlocks.ts): on a new career only the phone
+          // is open; the rest open at a star rating, shown as a bar.
+          lockOf={career.unlocks ? (base) => {
+            const need = styleUnlockStar(base);
+            const stars = starsNow(career);
+            return stars >= need ? null : Math.min(1, stars / need);
+          } : undefined}
         />
       )}
     </ScreenShell>
