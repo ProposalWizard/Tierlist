@@ -1,0 +1,516 @@
+[00:00] Okay, this is the first test of the OBS screen recording system
+[00:05] I'm Harry so you can understand my voice and Mikey also
+[00:14] Okay, we want to be really quick now because I'm worried about the size of this video being too much
+[00:19] So this is the first test so we'll see what it's it's saying. I'm also gonna do this. Oh, is that used the mic into
+[00:24] Places or is that all good?
+[00:26] Okay, headless chicken
+[00:28] So essentially this was about the players pressing the ball after you dragged back
+[00:34] So this is the other yes, so I'm gonna look at the
+[00:39] So before it's just looking like crazy
+[00:44] That's new but then
+[00:48] This is even new I guess
+[00:50] It's like the two near the nearest part the nearest no look so everyone here goes towards the ball everyone gets dragged in
+[00:58] Yeah, whereas here the the closest guy presses the ball and then the closest teammate and the closest opponent
+[01:04] Charge the ball when it's it's free
+[01:08] So those two go for it, but then then these guys will react in line
+[01:13] So the opponents react in line with the pressing guy so if the ball was moving this way the back line would move back
+[01:19] So they don't
+[01:22] And then your teammates will move up not just press the ball
+[01:25] So it's like two people jawling one person pressing you it's just like a better we need more
+[01:30] evidence about that highlight but
+[01:33] On paper it looks like it should be a little bit better
+[01:36] Okay
+[01:38] Too many one-on-ones very simple measured too many one-on-ones cut one-on-ones to about one every three games or
+[01:44] Or tune that I guess
+[01:48] Over time using this
+[01:50] High notes
+[01:54] Cut to one or three games with a high angle it shouldn't just be something takes over but the whole highlight system is really broken in my opinion
+[02:01] So we have to figure out
+[02:06] See for now maybe
+[02:09] See I don't know tight angles take over. I don't know how the generations work
+[02:13] So I don't know one and three I think one and three is fine
+[02:17] Yeah, but I don't think tight angles just take over but the way it works is literally that it's generating the game
+[02:22] And it's actually using where of the ball is to create the highlight instead of just like oh here's the next highlight
+[02:28] So it's it's an interesting way that we're doing it
+[02:31] Whole goal must be on screen easy. Let's see it proposed. Yes, it looks good. Looks way better
+[02:38] Cold car. Yep. That's good. Trancy's too far up out move up to 5.6 meters closer
+[02:44] Keep as built with a shorter drag only 12 or 300 through walls move more than three meters
+[02:53] Explain this
+[02:56] Hopefully the video
+[02:58] We don't under really understand what you're saying if anything I think we spoke about already the camera could zoom out rather than
+[03:04] I think it's talking about the drag. No, it's not gonna be enough drive
+[03:08] Don't closer
+[03:10] Not seeing as changes the chance itself
+[03:13] Right, so like it's had to move us closer to the goal for the book the goal to be in frame
+[03:20] I think it's worth saying
+[03:24] Yeah, but I think that's is that not enough space to drag down as I was saying
+[03:28] I don't know it could happen maybe
+[03:31] It's me saying like cap the move at three meters from the bottom or something, but I want that to be possible
+[03:37] You can explain that to us again. Yeah
+[03:41] Bylines upside down
+[03:44] Yes, this we don't want this what we want
+[03:55] Self-explanatory just literally flipped cool. Yeah. Oh wait. Did that switch camera?
+[04:07] Yeah, okay cool. I think that's perfect. We don't need to
+[04:10] worry about this. I don't know what you're saying
+[04:14] Near the side you can't pull back enough don't just ban those highlights move the camera with you keeping the goal of you
+[04:18] What we found tight angle the drag runs off the picture 30% of the time change slide the camera sideways
+[04:23] There's always a full plus a thumbs width
+[04:27] Okay, so this was
+[04:34] Okay, so that's where you
+[04:39] Yeah crazy
+[04:49] But it needs to check it for the same highlights because those are two different highlights. Oh wait no
+[04:55] No, but this is just
+[05:04] What happened to that guy oh, he just ended up behind
+[05:11] Okay, perfect. Yeah, all good. Nice
+[05:14] Really good really good. These days are incredible. I'll be honest
+[05:17] I think the filming has made it so much better at the game because it's understand it's actually playing the game on the phone
+[05:25] Yes, I'm actually crazy
+[05:27] We're happy with whatever changes were made. Oh wait. That's so cheesy
+[05:30] The slide alone fixes tight angles and cutbacks through balls need to zoom. I think slide automatically zoom out
+[05:38] Zoom button that's kind of crazy
+[05:42] That's that's too complicated
+[05:44] Wait, so zoom button for the user or for the user I think it's saying I do do automatically for now
+[05:53] Maybe there's like if you get to max vision you could somehow zoom out and see more of the pitch or something if that was
+[05:59] Something we could implement that pretty cool, but yeah
+[06:03] We'd have to do like a full pitch highlight which could be done at some point if we get really advanced
+[06:08] Drag is too long pause measured short of all power drag. I should see the changes
+[06:15] Finger moved 18.9 minute guy not even even for the goal
+[06:19] Okay, so it's half half the distance half the distance oh 25% sure
+[06:32] No the
+[06:38] Sounds good so it was good how you did it for now. Yep, okay, this is a big one
+[06:44] Run start when you pull back and bring your league pressure filming real career matches Chelsea versus Palace US captain
+[06:50] The run I order should start as soon as I pull back so I've time to pass to stay on side no cancelling the charge
+[06:56] The chance just goes in the Premier League closest opponent closing down the ball as soon as you're dragging back
+[07:01] Do we like that originally? What was that to yeah? Okay?
+[07:06] I'm just gonna watch the video. Okay, so we've asked for the run
+[07:11] My god that's
+[07:15] Okay, that mean that still worked like the guy moved quickly enough for the work
+[07:22] Whoa
+[07:25] Guy generated a second second
+[07:29] Didn't even didn't even give time in your tests with the dragback for the player to press you also
+[07:36] The guy duplicated himself there wait, we'll play it in slow mo in case this video can actually understand what I'm saying
+[07:43] Guy duplicated himself
+[07:45] So there's two versions of him he should move way
+[07:48] Slow up probably so you actually have time to time the boss if we can't get that right
+[07:53] We'll just go back to to this but I still think the opposition should press when you drive back regardless of the run making
+[07:59] Especially in a Premier League this defender should just close you down. So you have it like a maximum time to think about it
+[08:06] So that doesn't look perfect. Yeah
+[08:10] As built seems fine actually
+[08:13] Loki harder, but we all have to test it when we get there
+[08:17] Okay, subs ratings and energy late subs get nothing we spoke about this after 80 minutes
+[08:24] 50% of subs getting no chances after 81 or 2 chances guaranteed let you come on the more chances a minute your sub minutes
+[08:31] moves early as you earn it
+[08:33] That makes sense
+[08:35] I like the one or two chances after 80
+[08:38] Let me just read this is this dev
+[08:42] Oh sim as well shit
+[08:45] So I basically said if you're coming on I don't want it to be like you it proposed like you can't come on
+[08:53] After 70 and I was like no sometimes you want to come on and be like that chicharito like late goal
+[08:58] But it should just compress how many chances per minute you get into
+[09:03] Like taking into account your fitness
+[09:05] You should still get two chances after 80 if you're gonna get two chances after 70 that makes sense
+[09:09] So let's just get rid of the eighties minute subs. Yes, I see
+[09:14] So I think that's what it's done
+[09:16] I don't know what this this should not be shown to the user if this is being shown this your role bench on it on around 80
+[09:23] The manager I mean unless the manager has a chat with you and says I think you're gonna get on this is a bit too complicated
+[09:28] I think it's just oh yeah
+[09:31] Yeah
+[09:33] Yeah unless that's a dev thing so we can test it
+[09:38] Attention if it's a dev thing then that's fine. Yeah, we don't want them to see that
+[09:44] I should be for that chooser
+[09:49] Guidelines that was the before I mean that's not
+[10:05] Okay
+[10:11] I think also extend that 70 minutes you won't guarantee highlights from 70 minutes
+[10:16] Subdom then some subdorf
+[10:18] You stay on unless your energy runs out. I think if you have an instinct you could get hooked but for now I think it's fine
+[10:28] You don't
+[10:33] Came on at 72 and came off
+[10:39] Okay, I guess this is just oh
+[10:44] Okay
+[10:46] We should definitely do the animation change
+[10:51] Yeah, we should definitely do the animation change for the free kicks as well
+[10:54] Energy cut off with the sub coming off 15
+[11:01] What's the current cut off for lightly and subdorf anyway
+[11:05] First sub coming up there's cars. It's not car off
+[11:09] But it's like you only have a chance of getting sucked off when you hit like 40 energy, okay
+[11:14] But there should be like you energy car for I would say zero percent zero if you can guess
+[11:21] You get sucked off of zero. That's that's surely too because you you're getting sucked off
+[11:26] You'll be potentially coming on 80 minutes
+[11:29] You know get sucked off for 15% energy
+[11:33] 15% energy to me is like the guys got popped his Achilles and he's on the floor
+[11:38] Like at that point you're you're finished surely or we say like zero is just like you're you're
+[11:46] Extremely tired. It's not just like you're you're finished
+[11:51] Guarantee, okay, so in NSS. I'm pretty sure the cut off is like 30 or something like once you hit like
+[11:58] I think you're I think you're all
+[12:01] Way higher than zero from my
+[12:06] You
+[12:08] All the way down it goes under zip
+[12:12] You have a chance of getting sucked off. Oh, it's like a chance
+[12:17] Okay, all right. Yeah, zero then
+[12:21] Make sense ratings punish good play scoring as a sub got me 5.9
+[12:26] Completely pass or dribble pass your man counts as a wasted chance
+[12:30] once
+[12:31] cost 0.35 and earns everyone 0.05 start averages 5.14
+[12:36] Only real misses count as wasted passes and dribbles become a plus after you match a short wide this rating line
+[12:45] I
+[12:46] Kind of like this
+[12:48] Especially with simulated
+[12:52] I like to see this
+[13:02] Maybe you have
+[13:06] It's like your stats of the game. Yeah, I think it should be an option to see like people want to see you have your stats
+[13:12] You don't see you don't see missed
+[13:15] You don't see the reason like you can see you can see
+[13:18] Oh, yeah, chances 5
+[13:21] This is just shows you exactly what what happened on your chances
+[13:27] From this I think that's from a smash for it
+[13:30] I think that's from the sim. This is why the why this rating this is too confusing
+[13:34] The why this rating should just be a drop-down version of the simulated box of chances that you can just tap on and see the exact
+[13:41] Chances you missed rather than
+[13:44] Having this at the top the sim makes sense to do this. I think it's cool. Yeah
+[13:49] If the sim is even a thing
+[13:51] Keep the pool towards 6.5 for short cameos in terms of rating
+[13:58] Like what rating should short cameos be
+[14:04] Yeah
+[14:06] 6.5 is generally average rating like that's where you normally start as
+[14:11] Yeah, I think this still needs more work in general
+[14:16] We haven't really figured out the system yet, so that's fine
+[14:20] Can't feel the energy setting maxing energy doesn't seem to change anything what we found it works
+[14:25] It does work. Okay, normal rat already ranges for 2011 high backfires you run out around 79 minutes
+[14:31] I'm a two tired to start next week medium match cost 60 energy, but a week's rest gives back 48
+[14:37] It's plus two chances from high line after the match now. We just don't need that
+[14:45] No, we don't need any of this why the why this rating should just be like a chance breakdown the high energy stuff should just all be behind
+[14:54] The scenes this should just feel seamless. I also think we just you just haven't solved anything
+[15:00] We were talking about there. I think leave it as is for now and we'll we'll come back to the energy and chances
+[15:08] Happening instead of actually change. I do think this fitness problem is probably a little bit of an issue
+[15:12] But I guess they just have to have we have to match the energy cans to
+[15:22] Yeah
+[15:24] It should be like pull back to having high energy all the time
+[15:29] Okay, the can changes nice you drink basic can
+[15:33] Um
+[15:35] Users offer a hundred much day energy box gets used can if I can get you over the line to start bench flips the starting weapon perfect
+[15:42] Is there a video for this nice nice sizing of this video?
+[15:56] Sit that's really good
+[15:59] On here use for
+[16:03] I think you just push up on that one
+[16:08] That was a bit rich and it's a bit different in the game. Yeah, okay. That was a bit rich, okay
+[16:14] Which can does match they use basic for now?
+[16:17] We don't know what the other ones do. Oh
+[16:19] Okay, this one said we need to give it a video of this next time or something, so
+[16:27] Very goals five minutes happens 0.02 to 0.07 times a season, okay, maybe that was just insane
+[16:33] It's happened
+[16:35] Multiple times twice to be fair twice
+[16:40] Okay, first
+[16:42] added time and fergie time
+[16:45] Game should have added time and crazy late moments if fergie time
+[16:48] You're also probably more vulnerable in those moments one to five added minutes when you're chasing late more chances and more
+[16:53] Tacking ones for you and more counter attacks against you. That's pretty
+[16:56] Nighty plus
+[17:00] Seems like this guy's called at least two chances just in the last five minutes
+[17:06] He gets one chance right or is that there's that too? Oh, oh, this is it
+[17:17] That's it oh
+[17:19] Yeah, it's gonna it's gonna show how we're gonna show how we did it what the solutions that was really smart
+[17:25] So what's this okay, then it's be like a little X to get rid of those or they just naturally go
+[17:38] What they don't really know what had to do with the 90 plus 5 to be honest, but
+[17:47] interesting
+[17:49] Goal after night II never never oh yeah
+[17:53] Result change at the time. Okay, so it is very it is very rare
+[17:57] Yeah, so in 10% of matches that we got I think that's probably pretty pretty good
+[18:04] Yeah, you're chasing
+[18:06] I would just say if you're the bigger team at home, you're probably also more likely to go for it
+[18:13] And to want to go behind not level anywhere as far as Lee's playing Liverpool. I'd probably be holding on if anything
+[18:21] Okay, I just say about
+[18:24] I think it's a different I think it's a whole own section
+[18:28] Round of 16 with only four ties, but this was just simple fix name each round by how many teams left
+[18:45] It was the round of 16 and there was only four fixtures when there should have been eight
+[18:50] So now you've just jumped from round of 32 to quarter final instead of fixing the issue
+[18:55] Which was that the fixtures were wrong unless we're we're wrong
+[18:59] Yeah, I think I think just double check all of your code and things about
+[19:04] rounds to see
+[19:06] Possible
+[19:08] Yeah, for sure
+[19:10] Draw off the or not down don't make me watch the draw not in
+[19:15] Okay, so it went from the cup draw to a contract renewal
+[19:21] Okay perfect
+[19:29] Yeah, other scores during a match, okay, we can comment on this in a
+[19:32] In a title race litigation about what other scores pop up play them before kickoff and reveal each goal is your clock passes
+[19:37] It's minute table always matches what you saw
+[19:41] Okay, so this is how it does it. It's playing is playing the other games before you start your game and then it's revealing them
+[19:48] That's nice
+[19:50] Why would say here is that?
+[19:54] Maybe we should only have one notification shown at a time. Yeah, so that's a cover your whole screen
+[19:59] So maybe just if there's a goal of 46 minutes and then it's got 49 minutes. It just changes to that
+[20:06] Yeah, and maybe there's a second page for that
+[20:10] Also, I would say that
+[20:13] Maybe we don't have notifications unless you turn on notifications for the game
+[20:19] So maybe there could be something in the fixtures area
+[20:25] Where you can turn on notifications
+[20:28] For game because you want to see this the whole time
+[20:30] I think you want to choose what teams you want to see notifications for like a little toggle maybe you could just teams or just specific games
+[20:37] I think games is too long because you always have to do it if you're in like a
+[20:42] Top-4 battle with spurs you want to see spurs as results. You just literally click on spurs
+[20:49] Well
+[20:54] We could have both I just think the fixture one is like they're always gonna have to go in and do something
+[20:59] Whereas you can just do a tick box and forget about it kind of thing
+[21:04] Maybe even on the phone screen you can just have like a little settings bar that has notifications
+[21:10] An easier way to do it even though it's not a phone like you're actually in the game, but it kind of makes sense
+[21:20] Is it big
+[21:22] For having the screens maybe you don't need to see you scored
+[21:28] Yeah, and we don't need to see every highlight from a game that sometimes you'll see some sometimes you won't see also
+[21:34] That could be the same technology we're using on the home screen for slight swiping left and right during a game
+[21:40] Maybe you could have a right talk like a little arrow on the right that you click and you can just see all the fixtures live
+[21:47] That's why I was thinking as well. Yeah, I think that's a good way to like a bit like football manager
+[21:53] Where you have different pages? Yeah, okay? That's a good idea as well
+[21:57] I hope we've explained that well
+[21:59] But these need to be smaller and they should have like a little X to get rid of them quicker if you want to and maybe one one at a time
+[22:05] Max because we don't need to see every single highlight right now. Yeah, like is
+[22:12] The man United vs. man city game
+[22:16] And then for one down
+[22:19] 24 minutes
+[22:25] 3.6 pop-ups a match, but that's just not true
+[22:28] We've literally just seen four pop-ups in 10 minutes of a game. I think it means
+[22:35] Victory
+[22:40] We've just discussed on the which games pop up so give us some alright that's him
+[22:46] Today the only other
+[22:48] A sim this match button on match day for any match to unseen match plays out each chance that comes to you is settled by your skills
+[22:54] And you get real stats and a rating sounds pretty good to me. I think it just needs to
+[23:00] Fit I mean this whole unseen match business. I thought you were gonna explain it to me. I don't know if it's about to come
+[23:08] You get a few less if you sim I guess
+[23:15] That's very
+[23:18] Yeah, maybe there's a way to track their form in the last stuff and then if they've just had a good 20 games
+[23:24] I can just it shouldn't be better than you really
+[23:26] It shouldn't be better than you but I'm all I'm thinking is if people just want to start getting progress
+[23:32] They might just want to sit we could also hide the sim before but behind a paywall. Not one lie
+[23:37] So that's another thing I'm thinking good to just like I don't know how good sim sim
+[23:42] Actually, it's because if you if you want to similar games in a season
+[23:49] Yeah, but some people
+[23:51] I
+[23:53] Think some people would want to just like just get their guy better and just progress quicker and not play like an hour
+[24:00] And a half to get through one season or however long it is like an hour
+[24:03] Like imagine you just sit in ten days in the season. You just saved a bit of time
+[24:08] You know, maybe you don't even need the screen then maybe if you sim a game
+[24:12] It just shows you the score and if you score those isn't
+[24:15] And we just shows the goal scores and assists
+[24:18] Well, then I would just take you but be one skip you just you press in you should game and then you'd be back to the
+[24:24] home screen
+[24:25] It could do that. I mean I don't really see you need to see chances and stuff
+[24:31] You should see your Mac rating and your your your star rate
+[24:34] I mean we haven't even done like the star rating up after a game and everything
+[24:39] Like the leveling so that's the only thing I would show once that's in like your little bar of progress
+[24:45] How much it went up or whatever?
+[24:48] I don't really think any of this would be needed after a sim
+[24:57] I guess seeming should be slightly worse for now so plain stays worth it or maybe a quite a little bit worse
+[25:04] Okay, swiped screens to see what it did. Oh
+[25:08] Hello
+[25:10] Okay, wait, so that's before this is after I kind of like that home screen, you know, that's very cool
+[25:16] I mean this needs to be better
+[25:19] but
+[25:20] It's cool 4.3 rated 22k age 19
+[25:25] Okay, I like it
+[25:27] So this is the swipe features I guess
+[25:30] Training oh
+[25:34] Hold on so it's swiping to do that. That's kind of sick
+[25:40] That's kind of sick
+[25:45] Yeah
+[25:52] There's something missing from the home page I think I think it's probably the
+[26:02] This this fixture the next match fixture
+[26:06] Should just maybe that should be
+[26:11] This should it should just be like in the top right Sunderland versus Chelsea like next next game and then
+[26:18] Here should be the notebook the energy cans with a bi option as well
+[26:22] So you don't have to go into the store then on the on the stats screen. Maybe we have the shop items as well
+[26:30] Like the I mean Adjem. This is probably a scroll. That's probably more stuff on the home screen
+[26:37] Yeah, yeah scrolling down yes, okay
+[26:41] But yeah, like we just described
+[26:43] Is this so is this in the game? Oh wait? Oh, this is my bow
+[26:47] Two layouts B B B is how the next match should look
+[26:53] But not the play button. I should just show you the next match
+[26:56] although I kind of like I
+[26:58] Think it's too big still the next match area
+[27:01] Like it should just be a bit smaller into the top right of that and then keep like the emphasis on your star rating your money
+[27:07] your age
+[27:09] Age 19 and I'm number 19. Okay
+[27:14] I mean we can figure that out. Oh
+[27:16] Okay, different saves on phone and PC phone rexam
+[27:20] The change flipped the database switch that all three saves follow you list every save from the cloud on every device
+[27:27] Saying where each lives asked before cloud copy replaces a different career
+[27:32] Hold on
+[27:34] Now phone
+[27:37] Propose phone
+[27:39] This phone cloud should just be linked to your account
+[27:45] Your account should only be able to hold three saves and then the same saves and I know what device you logged into
+[27:53] It's based on your
+[27:56] But then that saying that every
+[28:00] Every person's career is saved onto a cloud and not onto their device
+[28:05] That might be silly because then we're taking all of the the
+[28:11] Hit on the date. I guess it's nothing storing locally
+[28:23] Yeah, if this was an app how would this work?
+[28:25] I think it was an app. It would be safety or device
+[28:28] This is too much. Yeah, it's all I understand
+[28:31] It definitely should just be
+[28:34] Yeah, it should be safe to your device, but then then how would you put on your computer?
+[28:38] I don't really think it matters too much having the same on both
+[28:42] If you're playing on phone you probably would just play on phone
+[28:45] I'm not just going to play on your PC to be honest, but let's just see other solutions for that because I don't really know
+[28:51] What I don't think it's the best reason
+[28:54] Real players League one need to fill out database
+[28:58] The same way that you did the other ones I'm trying to get it to do
+[29:08] For the non-leagues
+[29:10] There's no play of faces. Can we do play?
+[29:18] Yeah, it says it says it's a database script
+[29:22] Before after they're real, okay cool. That looks good to me
+[29:31] Okay, so National League just doesn't have data for
+[29:35] Can we use there's got to be FM football manager PC packs that have all national league and
+[29:46] Non-league North and South teams
+[29:48] That you can scrape so have a look for those because that should have the data should also be player face
+[29:54] Data's something called FM scout that has loads of stuff. Let's use fake faces rather than sit sit the words. I reckon as well
+[30:03] Yeah
+[30:04] Okay, this is the one that I'm like how does this work in new test area?
+[30:08] So our way we can do test area that shows the full 90 minutes of gameplay
+[30:12] Test page that plays the whole match of it any speed. Oh my god. This is crazy
+[30:17] This is this is future
+[30:21] Creation this what I mean with this website is I want to see a video
+[30:27] Wait, this is not
+[30:34] Match oh wait video
+[30:36] Match radar
+[30:44] No, yeah, this is just showing the unseen but but that is how it could look when you're not seeing your highlights
+[30:50] If we could somehow have it that you could I mean that's on 20 times
+[30:56] I would like to see that on there that's an injury. That's very cool. We'll work on the match radar
+[31:01] I think that is unbelievably cool. Okay, this is probably the last thing
+[31:07] pretty much
+[31:10] The how a highlight is chosen so that's not trying to understand this quickly
+[31:15] Match plays itself minute by minute while you're off the ball an unseen version of the match runs which team has it
+[31:21] So that's this this is this is going on in the background. Yeah, this is yeah, okay
+[31:27] Which part of the pitch who's on top nothing is drawn when your team gets into the final third or the box the move comes to you
+[31:33] It stops that's a highlight a strike
+[31:35] I guess about six a match few as a sub
+[31:38] First is it a dead ball in the box about one time in 12?
+[31:41] You're fouled a penalty in the final third about one and five
+[31:44] It's a free kick and one six at corner if you're on them you take it if not teammate does so it first is deciding if it's a
+[31:52] dead ball or an actual highlight
+[31:56] Okay, fine if not where the ball is
+[31:59] It gives a short menu middle of the box one on one wide in the box cut back edge of the box
+[32:04] Middle through ball long shot one and one cut back edge of the box wide by line cross
+[32:09] Middle third build up mid-foot pass through ball long shot
+[32:11] I mean, I actually make sense
+[32:13] That's how it would be like in a certain area of the pitch. There's X amount of different highlights you could get
+[32:22] Yes
+[32:28] Okay
+[32:33] The scores how common each option gets a score on a dice roll picks one the scores how common that chance is in real football
+[32:40] See that's the thing. I think is maybe not ideal
+[32:43] Because we should be building to make the game
+[32:46] The most fun it can be and not necessarily the most realistic
+[32:51] The strikers table loves one on ones and tight angles and barely wants long shots when you're chasing the game late
+[32:56] Or you might stronger than long shots count. See that's that's not even realistic. That's depending on the strikers
+[33:03] Well, that's not like a classic striker. Yes, there's different types of strikers who will want long shots and things like that
+[33:11] Yeah, it doesn't have to be so one dimensional with it. You want all types of chances
+[33:18] Yeah
+[33:22] See this one of your drawings with everyone nudge up to two meters that is not how I understood it
+[33:29] I understood that we were generating an image based on the hard rule set which I know we discussed before
+[33:35] But this is something that needs kind of like a decision and and figuring out
+[33:39] I think this is probably the last like big hurdle of the game right now
+[33:43] How the highlights actually built a built-in layout item 18 changes the step, okay? Well, we already spoke about that then
+[33:52] Move reaches the middle of the box comes to you. No foul menus on one one on one or tight angle one on one scores four times
+[33:58] 20 because they eat tight angle three times 40 and 42
+[34:01] So it's one on one two times to see this just makes no sense to me
+[34:04] So I don't know we're gonna have to figure out what what is the best way
+[34:11] Yeah, which is that you're never given free kicks or penalties as highlights
+[34:18] But when you're dragging back
+[34:21] For a chance, there's a chance that the opposition profiles here. I think I think that's pretty I think that's pretty cool
+[34:28] But I don't think you would always be the one getting felt so that you should still be
+[34:33] Three picks and pens but that should be definitely
+[34:40] What I want to definitely have to believe
+[34:43] One and one should definitely have your but that's what I think
+[34:51] I know we'll figure out that stuff pretty quick
+[35:02] Yeah
+[35:06] It's coming I think we can do it. I asked a question about the trophies
+[35:11] Are we not allowed to use real trophy in the Israel player names?
+[35:15] The trophy design only protected is to look that counts generic trophies are safe
+[35:22] Play names lower rescue
+[35:30] Again making real money from hundreds of real players is the kind I get to let
+[35:35] I would ask like what is like could we get a sued in a bad way for that?
+[35:39] Like if we sold ten thousand copies of the game and then they sent a letter saying like oh you can't use these real names anymore
+[35:45] That's calm because we already got the game into a great position
+[35:49] Yeah, like could we just change that oh
+[35:53] This is true
+[35:55] The faces are actually the ones they use
+[35:58] That's probably not a good way to do it
+[36:04] Yeah, we're gonna have to find a different way I think we're just gonna have to like
+[36:12] Yeah, I think we have like player faces
+[36:22] Yeah
+[36:25] Because foot manager doesn't do them the self are those just taken from the same source
+[36:33] We'll have to look at that. I think the player faces are honestly not that big important to me
+[36:38] I think if you don't have the name that's I don't really care about this player face on the
+[36:43] avatar because
+[36:45] The avatar is so 2d that I don't even think well. This is a 40-minute recording. So this will be interesting
+[36:51] 72,000 frames born bug blood
+[36:55] 47 sector 40 minutes comes roughly 300 pictures if it's mostly menus up about 2000 if it's nonstop play
+[37:02] 160 pages of 12 I can read all of them, okay
+[37:06] For one bug the short clip is best. Okay, so when we're doing like proper training
+[37:11] We can just take videos of really quick things that we're doing, but this will be interesting
+[37:19] Yeah, it records in the bowels are the spot was asking
+[37:23] My robot plays the game on my cloud machine and films what it does frame by frame with the games numbers underneath
+[37:28] It can't film your game your phone your save 20 games in the way you actually play sure makes sense
+[37:37] Film the game I had one temporary line to the match file. It lets my robot read the game's numbers each frame where the keeper is
+[37:42] Keep that line. Yep, that seems fine
+[37:44] You've asked for every change to be filmed before it's built. That's this tool on every item
+[37:48] It's how every picture on this page was made using a temporary copy
+[37:51] Yeah, that's definitely fine because the filming is
+[37:54] Yeah, the filming is incredible
+[38:01] This is
+[38:07] Okay
+[38:13] If you let go without shooting you lose the ball
+[38:16] That's how it's built say if you meant something else
+[38:18] I think if you're getting pressed and they reach you you either lose the ball get fouled that's a new
+[38:25] Thing so if you're getting pressed if you're not getting pressed if the player just runs offside then
+[38:33] If the player just runs offside and then obviously pass me's offside if you shoot and you miss you miss
+[38:39] But if you get pressed and he gets you you either get tackled or he files you
+[38:49] Yeah, keep it in the project switched off on the live site
+[38:59] It's
+[39:00] Explain what you mean by the filming tool keeping in the project
+[39:04] Keep in the gallery pictures 20% bigger in this in the match. Yeah making the match size obviously
+[39:09] Why is that a thing do that in a trial as well? Make sure all players across trial and training and match out all the same
+[39:16] Corners cannot possibly score 88% that that is just not true, but tune it with the new keeper
+[39:23] Penalties to
+[39:29] We already spoke about a lot of these questions. I'm just not gonna answer when they do what we spoke about it six
+[39:34] We spoke about that seven
+[39:38] We spoke about that eight
+[39:48] A block bouncing straight in I think that's pretty rare. That's I think that's fine. Yeah
+[39:57] We spoke about the camera we spoke about the camera we spoke about the drag
+[40:03] We spoke about the captain we spoke our shoot outs
+[40:07] We spoke about pens we spoke about trial keeper. It's hard to talk about numbers. We don't understand the numbers as well as you do
+[40:19] Let's just go with recommended
+[40:22] for sure
+[40:23] 18 keeper how far may he walk from your drawing while you aim
+[40:30] Yes, I'm saying that he can adjust while you're dragging back
+[40:33] You know just
+[40:35] And the left one look
+[40:43] Well both of them, but in the right one he can move less
+[40:53] I think it's going based off the rule probably
+[40:56] For the highlight. I think the goalie AI needs to be much smarter
+[40:59] So then it can do this stuff, but I like the idea of this. It's not bad a
+[41:04] Hot before penalty that I've measured it makes no difference if it's just a visual thing that just like I think we'll
+[41:11] discuss
+[41:11] Depends is like can you change direction after he's hopped because that would be a bit of P
+[41:15] So but if it if it's just like a really small move movement to the left or the right
+[41:20] I also think add animations of the key for like jumping up and down on the on the line and like moving his arms to put off the
+[41:27] Attacker random thought I think that's a funny
+[41:30] thing to add
+[41:32] Every highlight different we spoke about highlights what it needs more work. I
+[41:42] Think we need to keep the memory, but I think we spoke about that already
+[41:45] We spoke about one-on-ones. We spoke about run up. We spoke about reputation here
+[41:50] We spoke about cans. We spoke about at a time live scores
+[41:55] subs subs Sim button
+[41:58] home lower leagues
+[42:01] Okay, cool
+[42:04] All right, that is everything I'm gonna feed you I'm gonna put into the Google Drive now a
+[42:12] A
+[42:14] 42-minute recording of the screen if it's too big and one go I can cut it up. So let me know if you can read that
+[42:21] I'm also gonna feed you
+[42:24] The transcript of before I started the recording as well, and then you can analyze everything
+[42:30] Any final notes from big mics?
+[42:37] Okay, I think
+[42:39] As an added note Mikey also needs to be able to use this filming technology on his branch and to be able to put
+[42:47] Maybe he gets his own Google Drive link
+[42:50] That directly links to his branch
+[42:52] I don't know how it works if it's just a universal I feed it into the drive and then it just goes into like the
+[43:00] Everyone can see that but he needs to be able to do this as well for when we tune the gameplay and are making
+[43:07] New things happen. All right, cool. All right. I'm gonna test this Google Drive

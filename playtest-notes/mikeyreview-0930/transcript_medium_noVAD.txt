@@ -1,0 +1,211 @@
+[00:00] Alright, this is where I am going to go through now.
+[00:07] Okay, I'm going to go through all of the patch notes from MyK.
+[00:17] Alright.
+[00:23] Star rating is now on your career, 1 to 10.
+[00:26] is how good you are.
+[00:44] So what decides overall is not just to do with training, it's also to do with
+[00:50] all of that stuff. Does that make sense?
+[00:52] sense. I think about how much is play changed to star ratings new you are
+[00:58] start earn star points for everything you do so from the one game I played I
+[01:05] went from 1.0 to 1.8 star rating in one National League game so I would
+[01:13] instantly say first things first that the scale is completely wrong of how
+[01:22] many points either to that you get or how many points you need to level up. It
+[01:28] needs to be multiplied massively like massively. Yep that's that for now. I
+[01:39] like this whole section I think this is fine but again it needs to be
+[01:44] scaled. If it's 60 star points to go up 0.1 obviously it's an early level
+[01:49] 6000 will probably take you somehow if you won the Ballon d'Or first season, which isn't
+[01:54] even possible, you probably get all the way to like six.
+[01:57] It's like, nah.
+[01:59] Also every level, I'm sure Mikey's already said this, but 1.1 to 2 maybe will be 100,000
+[02:07] points.
+[02:08] 9.1 to 9.9, well we said we're not doing that, 8.1 to 9 should be like 10 million
+[02:16] start points.
+[02:17] So that will be the kind of scale of difference.
+[02:29] So you have to play games at these ratings to level up.
+[02:34] So once you hit 2.9 you then would have to play 10 games in league 2 to continue
+[02:39] progressing 10 games in league 1 to continue progressing here then championship then Premier
+[02:44] League.
+[02:45] about champion's league after that when you get to 6.9 and then maybe World Cup
+[02:51] that could be cool maybe World Cups like four appearances or something yeah
+[03:00] that makes sense
+[03:04] points above a gate are banked and paid out when it opens does the
+[03:14] banking make sense? I do, I do understand. So actually I don't really understand in
+[03:24] general what a star rating is. Surely it would make sense if your star rating was
+[03:36] directly linked to your performance and training.
+[03:42] Otherwise, what's the point of what is star ratings for?
+[03:47] I guess we're going to have the star pass, which is obviously each point,
+[03:52] like each point five maybe has an unlock.
+[03:55] Every one point has like a bigger unlock.
+[03:59] So maybe that's something, but yeah, I'm not sure because I thought,
+[04:04] Oh, it might be a way.
+[04:09] Maybe it's a way to stop you from getting too good
+[04:12] in that, at that level.
+[04:24] These are cool.
+[04:27] Can we see, can I see pictures of these?
+[04:29] And then maybe we can try and make Blender upgrades.
+[04:34] So I did have an idea on the style section.
+[04:38] Right now for me it doesn't seem that interesting that a level 5 private island costs 10 million and a level 1 private island costs 1.3 million.
+[04:49] Okay they're going to give you star points, they're going to give you some sort of unlock.
+[04:53] Level 5 firstly should unlock something crazy like you get some sort of game changer point or something that works towards a bigger unlock.
+[05:03] a bigger unlock from getting all the level fives or something like that but secondly I think if
+[05:08] we're going to do that we should just call it like a holiday section maybe it's like um
+[05:19] maybe it's literally just like
+[05:20] I don't know some examples would be like private jet maybe that's already a
+[05:33] separate one or maybe it's like holiday home or like cottage holiday
+[05:40] home, small big yacht, small island, big island or something like that like
+[05:51] different items I don't know what all the items are so I can't say for sure
+[05:54] but that could be an interesting way to do it. I would say the sessions a
+[06:02] week is fine but I think it should be only seen through energy and after you
+[06:14] do two training sessions it should just pop up and like as you click on a
+[06:18] training it should say you have no more sessions this week it shouldn't
+[06:21] just say like one out of two sessions remaining or something yeah
+[06:29] Yeah, training screens look really cool now, which is cool.
+[06:35] Yeah, this is really cool, I like that.
+[06:42] Also, the dribbling drill is still pretty cooked.
+[06:45] It needs to look a lot better,
+[06:48] so that needs some improvements now,
+[06:50] that 3D-ness of it.
+[06:52] Yep, the club, the home screen looks good.
+[07:06] A club that signs you after your first one gives it to you about eight times in ten.
+[07:11] What does that mean?
+[07:16] Yeah, on the trials, let's remove...
+[07:21] I should probably just get it up so you can see.
+[07:26] Damn it.
+[07:29] Okay, I'm not going to be able to get it up, but let's remove the section of the
+[07:39] drill that gives them a score of 100 after each drill.
+[07:42] to literally go three, two, one drill, three, two, one drill.
+[07:47] Just keep it moving.
+[07:48] We don't need the score section right now.
+[07:50] Even if we were gonna calculate that in the background,
+[07:52] we don't need it to be shown to them
+[07:54] because the score pulls them out.
+[07:57] The contract showing the real terms is really cool.
+[07:59] Something to me about this contract,
+[08:02] maybe the font, something about this
+[08:06] isn't interesting to me.
+[08:08] I think it'll be cool if we generated the player
+[08:12] that that player is using, it's actually with the contract and with a generated manager
+[08:21] of that club and have them sat down together and then you show him actually signing the
+[08:27] contract and that's it.
+[08:29] You don't actually need to see all of the stuff like this.
+[08:34] This isn't that interesting.
+[08:36] It'd be cool if you get to tap and you would sign and maybe then it goes to this
+[08:40] kind of three maybe I can over the shoulder shot now that can be done
+[08:43] through Higgsfield like video and I put it in but then it will be
+[08:48] pre-generated it won't look like your player so maybe think about how
+[08:52] that would look the spin your player test page on the back does not work
+[09:01] as you can see like that that doesn't work I like this though this is cool
+[09:06] for the homepage. It'd also be cool if any celebrations and accessories you unlock also
+[09:11] go onto the homepage.
+[09:36] .
+[10:06] .
+[10:36] Okay, five aside, I like this.
+[10:57] I haven't tried it.
+[10:58] Should we try it right now?
+[11:00] Let's try it.
+[11:03] New game.
+[11:07] Let's delete this one.
+[11:13] H, V. Continue.
+[11:17] 10. Also left foot, right foot.
+[11:21] For penalties and free kicks, maybe this is the only important.
+[11:25] But weak foot could also matter. But we haven't really decided that.
+[11:29] inside of that sure let's skip skip skip skip okay I've said yes let me let you
+[11:45] watch a game of five aside and you can see what happens did you see how my
+[11:51] My players face just changed like I was a black guy and now I'm a white guy.
+[11:56] This is pretty good so far.
+[12:00] I'm liking the five a side.
+[12:04] My team's cooking.
+[12:08] My God I've got hat trick.
+[12:10] Ah he's shot nice.
+[12:11] That's good to see.
+[12:12] I'm not really seeing too many of the opposition's highlights but they are losing
+[12:16] four nil so maybe that's why.
+[12:19] So not every single one of the highlights from the other team should be me being able
+[12:25] to block it.
+[12:26] They should just score sometimes.
+[12:27] 5-0, that's kind of crazy.
+[12:30] Maybe that's too easy.
+[12:32] And then obviously I've been scuttled for Chelsea, we're going to work on that.
+[12:39] Then this, that's useless, that page, and then this is what I'm talking about.
+[12:42] This isn't that interesting.
+[12:44] It's cool.
+[12:45] I like that this has been put in like that, but yeah, it's not that interesting.
+[12:49] 16 the 2d flick doesn't work here just so you know stats on the stats section
+[12:58] in season this should be the first thing you see and then maybe underneath that
+[13:05] you would have the the prem and then all circuit records nice and then you
+[13:13] have the shop like we spoke about the casino earlier so we'll figure that
+[13:18] on out okay also interesting thing but playing a game in you just saw on the
+[13:29] five aside how when I pass to someone I could just click on them I kind of like
+[13:35] that feature again I've come on as a sub I would love to just be able to
+[13:41] tap on him and maybe there's a better chance of it getting intercepted if I
+[13:44] do that but maybe there isn't I don't know like there again intercepted that
+[13:50] should let me shoot especially if I've done a high angle here no possible way
+[13:54] for me to do this highlight by dragging because as soon as I pull back he's
+[13:58] gonna he's gonna intercept it that's close and that intercepts it even
+[14:02] though he's on the wrong side of me I also think for fouls if the
+[14:06] players behind you they should be more likely to foul you this is cool
+[14:11] It's just not looking perfect
+[14:13] And now I get a shot and go nice
+[14:17] See there if the player behind me fouled it should have been a pen
+[14:21] Or like a percent chance for a pen again. I'm gonna have to pass this off because I
+[14:28] Can't score that there we go and I still get an assist for that even though I wasn't the one who actually assisted him
+[14:34] So once you remember that and here you'll see what I was talking about
+[14:38] about 68 star points just took me from 1.0 to 2.1. Non-league regular and I
+[14:46] understand that because I'm in the prem that kind of makes sense right but me
+[14:52] personally I don't really like that.
+[14:55] Shop. Shop's a bit too hard to get into like they're not being like a
+[15:02] style section higher probably should do these four first instead of those two
+[15:11] and maybe they should be in this kind of layout I don't know this makes them
+[15:17] seem like small things this to me right now this page is just really bad
+[15:22] in my opinion I mean first of all it's just way too long you should
+[15:30] always be able to see how much fame stuff is giving you. Also why would a
+[15:35] phone give you fame? Sports car for 5k like what is a level one sports car?
+[15:44] Instead of sports car 5k let's just do like broken down motorbike, normal car,
+[15:50] Tesla, sports car Lamborghini or whatever like the bigger one is. That
+[15:59] makes more sense and also let's have actual images of each one like a little
+[16:03] image on there instead of L1, L2, L3 and that you hover over it and it
+[16:07] actually does that it shows something. That whole UI I think is not very good
+[16:14] right now personally I think this could be a lot better and we could have a
+[16:17] whole like maybe like a little place where you can see all your stuff
+[16:29] The after match star points line new starfall screen.
+[16:43] Yet we just saw that actually I can show you the boots.
+[16:50] Again I just don't like this page.
+[16:52] Why is it down here?
+[16:54] should just be like a gallery like I'm in a shop and I could move my mouse
+[16:59] around to look around I could walk around and I can like hover over a shoe
+[17:04] and buy it like that would be so much more interesting than this
+[17:08] personally for me just doesn't feel like it makes sense it probably
+[17:12] doesn't make sense yeah the star pass would be really cool and then the
+[17:20] sponsors rebuild we can look at that now sponsors rebuild sponsors revamp
+[17:32] once this page was a list of 10 categories you signed yourself yeah it
+[17:36] was not looking good to be fair let's see it now I mean first of all how do
+[17:49] Do I even get there?
+[17:50] Is it relations?
+[17:58] Deals.
+[17:59] That feels quite hidden away, to be honest.
+[18:06] Like even the relations page, I'm not sure about it.
+[18:13] I like it but,
+[18:14] Yeah, I don't know something's feeling a little bit off.
+[18:23] This is cool.
+[18:24] This is really cool, but I just think it's too hard to get to the sponsors and maybe
+[18:28] that's where one of these left or right places needs to be a little bit better.
+[18:37] Even the energy cans there being off the screen, it's kind of jarring.
+[18:47] This takes up a lot of real estate.
+[18:54] Then the table.
+[18:59] Maybe sponsors should be in your shop instead.
+[19:02] as oh okay interesting again I don't like the idea that we tell them exact
+[19:12] amounts that are needed to me that kind of just kills the game maybe like I'd
+[19:17] rather a progress bar then you need a that makes some kind of want to work
+[19:22] towards it
+[19:27] interesting okay
+[19:32] I also think even if a player is not playing well, if they're having scandals off the pitch or they have a famous girlfriend or like there's so many variables that could just make you maybe get a sponsorship. So we should put those in eventually as well.
+[19:45] as well. I hear this part I mean this this is not this isn't bad but I do
+[19:59] think there should be other factors involved as well. Ah the brands give
+[20:12] bonuses interesting maybe they shouldn't only be playing related
+[20:21] interesting interesting maybe we should also add sponsored posts as well on your
+[20:27] phone maybe a sponsored post could be 1k or something like maybe you can
+[20:32] choose to post things and maybe you can build your social media as you
+[20:36] grow like if you don't post maybe you don't grow your social media interesting
+[20:53] okay I don't mind that otherwise you'd get big big amounts in one in one kind
+[20:57] of jump I guess okay that's probably everything so I'm gonna go ahead and
+[21:06] And end there.

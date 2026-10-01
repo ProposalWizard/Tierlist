@@ -1,0 +1,73 @@
+[00:00] Okay, so I'm gonna go firstly through, this is another OBS recording, I'm gonna go firstly
+[00:09] through all of the answers to my previous questions and then go from there.
+[00:16] Sign in stays part of the game, so it works exactly how it is now on the website.
+[00:19] The only difference is in the app Google blocks its sign in page inside of apps.
+[00:24] when you sign in with Google on the app the phone's own Google so they sign in
+[00:35] with Apple they still then get to sign in with Google and it's the same account
+[00:44] okay cool
+[00:54] Okay, so when do we actually go ahead and start using code magic?
+[01:11] So how does this work?
+[01:13] Coins bought in game, fine, they take 15%.
+[01:19] Stripe takes 1.5% sure.
+[01:21] How does it work with the casino?
+[01:22] because I'm sure we have to be careful. We do have a casino system where you
+[01:26] spend in-game coins. The coins you can buy in the store are separate
+[01:32] value. What if we offered a coin swap so five store-bought coins equals 10,000
+[01:41] in-game coins and also what if that wasn't a thing but let's say a
+[01:45] celebration. Let's say Ronaldo free kick style costs 10 million in-game coins but
+[01:53] only costs 500 or like say five pound. Would that be allowed if there's
+[01:58] casino in the game? How does that work?
+[02:02] Yeah, okay. Number five is huge. Definitely do a full research on that because that sounds
+[02:19] like a better way to do it, but how hard is it going to be?
+[02:24] Oh, I don't know what I said for 6.
+[02:48] Buy touch vs mouse, how would that work?
+[02:50] go on the phone would it just automatically know that you're now using
+[02:53] touch and the gameplay is different so I literally mean like if I'm on the phone
+[02:59] I want the ball bouncing and that whole feature of like where the ball's
+[03:04] coming from that's a whole feature for swiping or is it like you can't
+[03:10] put one in put one out or decide what's different
+[03:20] Yeah, how do we switch to 2D automatically on slow phones? That's an interesting idea.
+[03:38] Yeah, do those two.
+[03:41] Those two being these two.
+[03:50] I don't know if keep this phone save or your PC's is the right option. I would
+[03:57] say like do you want to save progress or something like that. Yes that's the
+[04:07] type of thing. Your mid-session on your phone carry on here anyway you'll
+[04:12] lose progress or something like that. Or then like open up phone and save.
+[04:20] 225 KB a save. So what would you predict after 20 seasons a save would cost?
+[04:44] I see. Okay, cool. That's a good way of doing it.
+[04:47] I'm talking about number 11.
+[05:17] yeah let's do that let's reward daily login on the testers and maybe that's
+[05:30] something we do in the future anyway yeah and in-game feedback button as
+[05:35] well just for the test so how would we create a test link is that all just
+[05:39] done through test flight. For the company stuff we're not going to
+[05:53] actually create a company so for now what like what we're gonna do is
+[06:03] we're gonna just do me being the person and then upgrade my Apple account to a
+[06:10] company account so should I still use this email now if we're gonna use the
+[06:13] same account eventually and what's the protocol there now that we're not
+[06:16] going to do a company
+[06:33] Paying yourself each of you pays tax on what you take out either a salary or dividends, okay?
+[06:47] Well, that's one school in the content vehicle
+[07:03] Yeah, so here's all the stuff I said about my dad as a limited company, like these automatic
+[07:30] finds all of this stuff is just too too much hassle but then we will do the
+[07:35] upgrade accounting eventually transfer built-in transfer
+[07:47] that's the only catch
+[08:00] See, how does this work? Save You Don't Pick moves to a free save spot if there's no free
+[08:16] lot.
+[08:36] What are these changes, these things that Mikey's done? Just check over that
+[08:42] and make sure that's all good. Other than that, let's have a quick look at some
+[08:47] patch notes from Mikey. So this is the patch notes from Mikey and I'm gonna
+[08:54] make any notes on it myself and then let's add a... I want to add like hmm... I
+[09:09] want to add like a second tab to this which is Harry's notes of Mikey's notes
+[09:16] if that makes sense I don't know if that's possible though okay so let's
+[09:21] start star rating is now your career one to ten overall is how good you are
+[09:39] Yeah.
+[09:59] Pretty cool.
+[10:09] Is it is it smart to multiply by the stage?
+[10:21] Probably is right. Okay trophies nice
+[10:36] Yeah, cool
+[10:39] I don't know if he's mentioned that, but...
+[10:56] Hmm, Stargates. I kind of like this. Wait, okay. I'm gonna stop there and
+[11:02] we'll come back. I'm gonna do another video analyzing that. So that's just all
+[11:06] my feedback to all of the company's staff and we'll do a different video
+[11:09] but keep my idea of making the second tab of Mikey's feedback which is my
+[11:14] feedback on top of his feedback if that makes sense
