@@ -132,6 +132,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Players", href: "/admin/football/players" },
       { name: "PL Clubs", href: "/admin/football/pl-clubs" },
       { name: "Scrape / Import", href: "/admin/football/scrape" },
+      { name: "Sound Board", href: "/admin/sound-board" },
     ],
   },
   {

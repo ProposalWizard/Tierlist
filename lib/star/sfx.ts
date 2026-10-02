@@ -29,6 +29,59 @@ let on: boolean | undefined;
 const listeners = new Set<() => void>();
 const cache = new Map<SfxName, HTMLAudioElement>();
 
+/**
+ * REPLACEMENT SOUNDS. An admin can upload a replacement for any sound on the
+ * Sound Board (/admin/sound-board). The list of replacements is kept in
+ * Supabase Storage and served by /api/star/sfx-overrides. We remember the last
+ * list per device (so the very first sound of a visit already uses it) and
+ * refresh it once in the background. No list, no network, a bad answer: the
+ * bundled file in public/sfx plays, exactly as before.
+ */
+export const SFX_OVERRIDES_KEY = "star-sfx-overrides";
+let overrides: Record<string, string> | undefined;
+let overridesRequested = false;
+
+function readStoredOverrides(): Record<string, string> {
+  try {
+    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(SFX_OVERRIDES_KEY);
+    const m = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(m)) if (typeof v === "string" && /^https?:\/\//.test(v)) out[k] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** The file a sound plays: the admin's replacement if there is one, else the bundled one. */
+export function sfxUrl(name: string): string {
+  if (overrides === undefined) overrides = readStoredOverrides();
+  return overrides[name] ?? `/sfx/${name}.mp3`;
+}
+
+/** Ask once per page load which sounds have a replacement. Never throws. */
+function refreshOverrides(): void {
+  if (overridesRequested || typeof fetch === "undefined" || typeof window === "undefined") return;
+  overridesRequested = true;
+  fetch("/api/star/sfx-overrides")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j: { overrides?: Record<string, { url?: unknown }> } | null) => {
+      if (!j || !j.overrides || typeof j.overrides !== "object") return;
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(j.overrides)) {
+        if (v && typeof v.url === "string" && /^https?:\/\//.test(v.url)) next[k] = v.url;
+      }
+      const before = overrides ?? readStoredOverrides();
+      overrides = next;
+      try { localStorage.setItem(SFX_OVERRIDES_KEY, JSON.stringify(next)); } catch { /* fine */ }
+      // Drop any already-loaded copy whose file changed, so the next play uses the new one.
+      Object.keys({ ...before, ...next }).forEach((k) => {
+        if (before[k] !== next[k]) cache.delete(k as SfxName);
+      });
+    })
+    .catch(() => { /* keep the bundled sounds */ });
+}
+
 function readOn(): boolean {
   try {
     if (typeof localStorage === "undefined") return true;
@@ -63,7 +116,8 @@ function load(name: SfxName): HTMLAudioElement | null {
   if (typeof Audio === "undefined") return null;
   let a = cache.get(name);
   if (!a) {
-    a = new Audio(`/sfx/${name}.mp3`);
+    refreshOverrides();
+    a = new Audio(sfxUrl(name));
     a.preload = "auto";
     cache.set(name, a);
   }
