@@ -76,6 +76,9 @@ interface Props {
   hud?: React.ReactNode;
   /** Home from the Style page's bottom bar. */
   onHome?: () => void;
+  /** Open on this item's sheet (a boot or Style base id, at that level) —
+   *  set when you tap "See it in the shop" in the 3D shop. */
+  focus?: { id: string; level: number } | null;
 }
 
 /**
@@ -87,7 +90,7 @@ interface Props {
  * item's own row), "−★X" floats up off your money, and the money counts
  * down to its new value. Every price, level, rule and handler is unchanged.
  */
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome, focus }: Props) {
   const theme = useClubTheme(career);
   // Five levels of everything (27 Sep 2026). The shop opens on the level
   // priced for the league you're in: National League level 1 … Premier League 5.
@@ -313,6 +316,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
             boots={BOOTS_ALL_LEVELS}
             banned={bannedBoots}
             homeLevel={homeLevel}
+            focus={focus}
             soldOut={soldOut}
             onBuyNow={(b) => {
               if (career.money < b.price) return;
@@ -355,6 +359,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           career={career}
           onBack={onBack}
           onHome={onHome}
+          focus={focus}
           onBuyItem={onBuyItem}
           reward={(price, from, to, node, color, key) => reward(price, from, to, node, color, key)}
           landed={landed}

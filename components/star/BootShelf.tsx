@@ -41,7 +41,7 @@ const SHELVES: { title: string; note: string; ids: string[]; glass?: boolean }[]
 /** The plank's top edge, in px from the top of a shelf row. Boots stand on it. */
 const PLANK_Y = 88;
 
-export default function BootShelf({ career, boots, banned, homeLevel, soldOut, onBuyNow, onAddToBasket, onBuyFromBlackMarket }: {
+export default function BootShelf({ career, boots, banned, homeLevel, soldOut, onBuyNow, onAddToBasket, onBuyFromBlackMarket, focus }: {
   career: CareerState;
   /** Every level of every boot, already priced (boot sponsor discount applied). */
   boots: Boot[];
@@ -54,8 +54,11 @@ export default function BootShelf({ career, boots, banned, homeLevel, soldOut, o
   /** Put one pair in the basket; `from` is where it flies from. */
   onAddToBasket: (boot: Boot, from: Element | null) => void;
   onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
+  /** Open with this boot's sheet up (from the 3D shop's "See it in the shop"). */
+  focus?: { id: string; level: number } | null;
 }) {
-  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(null);
+  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(() =>
+    focus && boots.some((b) => baseIdOf(b) === focus.id) ? { base: focus.id, level: focus.level } : null);
   const list = useBasket();
   const levelsOf = (base: string) => boots.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   const wearing = baseIdOf(career.currentBoot);
