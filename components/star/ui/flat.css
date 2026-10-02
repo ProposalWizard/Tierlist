@@ -91,12 +91,53 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5));
   border-radius: 0 999px 999px 0;
 }
+/* 3b. THE SQUARE BAR (Harry, 2 Oct 2026, P1-10/P1-35/P1-58: "everything that's
+   at the top should be a square bar", P1-9/P1-14: "that outside would be
+   white"). The same liquid, glow and drifting light, with square ends and a
+   white edge. LiquidBar's `square` prop sets it; every bar in the top HUD and
+   the after-match star bar use it. */
+.sk-liq[data-shape="square"] .sk-liq-track {
+  border-radius: 0; box-sizing: border-box; border: 1.5px solid rgba(255, 255, 255, .92);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .85), 0 1px 0 rgba(0, 0, 0, .45);
+}
+.sk-liq[data-shape="square"] .sk-liq-fill,
+.sk-liq[data-shape="square"] .sk-liq-gloss,
+.sk-liq[data-shape="square"] .sk-liq-rim { border-radius: 0; }
+.sk-liq[data-shape="square"] .sk-liq-gloss { left: 0; right: 0; top: 0; height: 42%; }
+.sk-liq[data-shape="square"] .sk-liq-glow { border-radius: 2px; }
+/* 3c. THE STAR THAT FILLS (ui/TopMeter.tsx FillStar; Harry, 2 Oct 2026,
+   P1-39). The gold rises to your way through the level; the star glows and
+   breathes, and a light sweeps across it. */
+.sk-star-fill { transition: transform 1100ms cubic-bezier(.25, .7, .3, 1); }
+.sk-star-glow { filter: drop-shadow(0 0 3px rgba(253, 224, 71, .75)) drop-shadow(0 1px 1px rgba(0, 0, 0, .7)); animation: sk-star-glow 2.4s ease-in-out infinite; }
+.sk-star-sheen { animation: sk-star-sheen 3.4s ease-in-out infinite; }
+.sk-star-cut { transition: clip-path 1100ms cubic-bezier(.25, .7, .3, 1); }
+/* The light on the Blender star: a soft band sliding across, masked to the gold. */
+.sk-star-sweep {
+  pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(105deg, transparent 0%, transparent 40%, rgba(255, 255, 255, .7) 50%, transparent 60%, transparent 100%);
+  background-size: 300% 100%; animation: sk-star-sweep 3.4s ease-in-out infinite;
+}
+@keyframes sk-star-sweep { 0%, 50% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+@keyframes sk-star-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(253, 224, 71, .55)) drop-shadow(0 1px 1px rgba(0, 0, 0, .7)); }
+  50% { filter: drop-shadow(0 0 7px rgba(253, 224, 71, .95)) drop-shadow(0 1px 1px rgba(0, 0, 0, .7)); }
+}
+@keyframes sk-star-sheen { 0%, 55% { transform: translateX(0); } 100% { transform: translateX(46px); } }
 @keyframes sk-liq-drift { 0% { background-position: 130% 0; } 100% { background-position: -30% 0; } }
 @keyframes sk-liq-race { 0% { filter: brightness(1.9); } 100% { filter: brightness(1); } }
 @keyframes sk-liq-breathe { 0%, 100% { opacity: .62; } 50% { opacity: .92; } }
 @keyframes sk-liq-pop { 0% { filter: brightness(2.1) saturate(1.2); } 100% { filter: brightness(1) saturate(1); } }
 .sk-liq-pop { animation: sk-liq-pop 800ms ease-out 1; }
+/* A rise: a bright wash over the fill that fades (a child, so the fill keeps gliding). */
+.sk-liq-flash {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .8));
+  animation: sk-liq-flash 900ms ease-out 1;
+}
+@keyframes sk-liq-flash { 0% { opacity: .9; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .sk-liq-flow, .sk-liq-flow-fast, .sk-liq-glow, .sk-liq-pop { animation: none; }
+  .sk-liq-flow, .sk-liq-flow-fast, .sk-liq-glow, .sk-liq-pop, .sk-liq-flash, .sk-star-glow, .sk-star-sheen, .sk-star-sweep { animation: none; }
+  .sk-star-fill, .sk-star-cut { transition: none; }
   .sk-liq-fill, .sk-liq-glow { transition: none; }
 }

@@ -9,6 +9,7 @@ import ClubBadge from "./ClubBadge";
 import { sfx } from "@/lib/star/sfx";
 import { ClubCard, CountUp, PressButton, Burst, FloatText, Glow, Shine, Pop, clubTheme, rgba, prefersReducedMotion } from "./ui";
 import { SquareBar } from "./ui/Flat";
+import { FillStar } from "./ui/TopMeter";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
 
 /** Every star, not a rounded "3k" — Harry wants the real numbers. */
@@ -42,7 +43,10 @@ interface Props {
   star?: { sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[];
     /** Levels the one-level-a-match cap held back, and the points past the
      *  next level carried to the matches after (starPoints.ts). */
-    held?: number; carried?: number };
+    held?: number; carried?: number;
+    /** 0-1 of the way through the level BEFORE this match (starStatus(before).toNext),
+     *  so the bar starts where you were. Optional: without it the bar starts at 0. */
+    fromNext?: number };
   /** Achievements this match unlocked, shown one at a time at the end; you
    *  cannot press Continue until you have seen them all (Harry, P27). */
   achievements?: { label: string; description: string }[];
@@ -331,37 +335,56 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
 /**
  * Your star rating as a bar that rises (Harry, P5, P27: "the star rating goes
  * up, but it doesn't say plus 100 points … just the star rating bar is good
- * enough"). The bar is the way to the next level. A level up fills it, ticks
- * the number, and starts the next level's bar. No point totals, no "this match"
- * lines, no "% of the way".
+ * enough"). The bar is the way to the next level. No point totals, no "this
+ * match" lines, no "% of the way".
+ *
+ * v0.24 (Harry, 2 Oct 2026, P1-56/P1-57/P1-58): it NEVER goes down on screen,
+ * it fills slower, and it is square. A level up fills it to the top, EMPTIES it
+ * in one jump (the star pops, the level-up sound plays) and fills it again
+ * from 0 to where you now are. It used to slide straight back down from the
+ * top to the new level's point, which read as the rating falling.
+ * Stages: 0 waiting · 1 rising (to the top on a level up) · 2 emptied ·
+ * 3 rising again in the new level.
  */
+const STAR_RISE_MS = 2000;
+const STAR_REFILL_MS = 1700;
+const STAR_HOLD_MS = 350;
 function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
   const from = Math.floor(before ?? after ?? 0);
   const to = Math.floor(after ?? from);
   const up = to > from;
   const endPct = star ? Math.max(3, star.toNext * 100) : 0;
-  // 0: waiting · 1: rising (to the top on a level up) · 2: new level, rising again
+  // Where the bar starts: your way through the level BEFORE the match, when
+  // the caller knows it; 0 otherwise. Without a level up it never starts
+  // above where it ends, so it can only rise.
+  const startRaw = star?.fromNext !== undefined ? Math.max(0, Math.min(100, star.fromNext * 100)) : 0;
+  const begin = up ? startRaw : Math.min(startRaw, endPct);
   const [stage, setStage] = useState(0);
   useEffect(() => {
     if (!on || after === undefined) return;
-    if (prefersReducedMotion()) { setStage(up ? 2 : 1); sfx(up ? "level-up" : "star-tick"); return; }
+    if (prefersReducedMotion()) { setStage(up ? 3 : 1); sfx(up ? "level-up" : "star-tick"); return; }
     setStage(1);
     sfx("star-tick");
     if (!up) return;
-    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, 1100);
-    return () => clearTimeout(t1);
+    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, STAR_RISE_MS + STAR_HOLD_MS);
+    // One frame at 0 with no glide, then fill again.
+    const t2 = setTimeout(() => setStage(3), STAR_RISE_MS + STAR_HOLD_MS + 90);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [on, up, after === undefined]);
   if (after === undefined) return null;
-  const value = stage === 0 ? 0 : up && stage === 1 ? 100 : endPct;
+  const value = stage === 0 ? begin : stage === 1 ? (up ? 100 : endPct) : stage === 2 ? 0 : endPct;
+  const duration = stage === 2 ? 0 : stage === 3 ? STAR_REFILL_MS : STAR_RISE_MS;
   return (
-    <div className="relative px-3 py-2.5">
+    <div className="relative px-3 py-2.5" data-star-stage={stage}>
       {/* P35: no numbers, just the words and the bar. */}
       <div className="mb-1.5 flex items-center gap-1.5">
-        <Pop value={up && stage >= 2 ? 1 : 0}><StarIcon /></Pop>
+        <Pop value={up && stage >= 2 ? 1 : 0}>
+          <span className="block h-[20px] w-[20px]"><FillStar fraction={value / 100} duration={duration} /></span>
+        </Pop>
         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Star rating</span>
       </div>
       <div role="meter" aria-label="Star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
-        <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} />
+        <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} square duration={duration} />
       </div>
     </div>
   );

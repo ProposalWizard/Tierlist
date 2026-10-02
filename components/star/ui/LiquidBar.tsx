@@ -22,7 +22,7 @@ import { prefersReducedMotion } from "./motion";
  *
  *   <LiquidBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4">85</LiquidBar>
  */
-export default function LiquidBar({ value, colors, className = "h-3", sheen = true, children }: {
+export default function LiquidBar({ value, colors, className = "h-3", sheen = true, square = false, duration, children }: {
   /** 0-100. */
   value: number;
   /** [deep, light] — the fill runs deep → light. */
@@ -30,6 +30,10 @@ export default function LiquidBar({ value, colors, className = "h-3", sheen = tr
   className?: string;
   /** The drifting light. Off for a bar that should sit still. */
   sheen?: boolean;
+  /** Square ends and a white edge (flat.css 3b): every bar at the top of a screen. */
+  square?: boolean;
+  /** How long the fill takes to glide to a new value, in ms (900 by default). 0 jumps. */
+  duration?: number;
   /** Over the bar, centred (a number). */
   children?: React.ReactNode;
 }) {
@@ -42,6 +46,7 @@ export default function LiquidBar({ value, colors, className = "h-3", sheen = tr
   }, [v]);
   const still = typeof window !== "undefined" && prefersReducedMotion();
   const w = `${v}%`;
+  const glide = still || duration === 0 ? "none" : duration ? `width ${duration}ms cubic-bezier(.45, .05, .35, 1)` : undefined;
   return (
     <div
       role="progressbar"
@@ -49,14 +54,19 @@ export default function LiquidBar({ value, colors, className = "h-3", sheen = tr
       aria-valuemax={100}
       aria-valuenow={Math.round(v)}
       data-liquid-bar
+      data-shape={square ? "square" : undefined}
       className={`sk-liq ${className}`}
       style={{ ["--liq-a" as string]: colors[0], ["--liq-b" as string]: colors[1] } as React.CSSProperties}
     >
       {/* The glow behind the fill: outside the track, so it is not clipped. */}
-      <div aria-hidden className="sk-liq-glow" style={{ width: w, transition: still ? "none" : undefined }} />
+      <div aria-hidden className="sk-liq-glow" style={{ width: w, transition: glide }} />
       <div className="sk-liq-track">
-        <div key={boost} className={`sk-liq-fill ${boost ? "sk-liq-pop" : ""}`} style={{ width: w, transition: still ? "none" : undefined }}>
+        {/* Not keyed: remounting the fill on a rise made it JUMP to the new
+            value instead of gliding (the after-match star bar never rose
+            slowly). The flash is its own keyed child instead. */}
+        <div className="sk-liq-fill" style={{ width: w, transition: glide }}>
           <div className="sk-liq-gloss" />
+          {boost > 0 && !still && <div key={`p${boost}`} aria-hidden className="sk-liq-flash" />}
           {sheen && !still && <div key={`s${boost}`} className={`sk-liq-flow ${boost ? "sk-liq-flow-fast" : ""}`} />}
           <div className="sk-liq-rim" />
         </div>

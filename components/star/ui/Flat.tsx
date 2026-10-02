@@ -43,8 +43,12 @@ export function FlatPanel({ glow, fade = "both", edge = false, bleed = false, cl
  * with `className` (h-3 by default). A number over it goes in `children`.
  *
  *   <SquareBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4" animate>85</SquareBar>
+ *
+ * `square` (v0.24) gives it square ends and a white edge: use it for any bar
+ * at the top of a screen, or use TopMeter (ui/TopMeter.tsx), which adds the
+ * icon sitting on top of the bar.
  */
-export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, children }: {
+export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, square = false, duration, children }: {
   /** 0-100. */
   value: number;
   colors?: [string, string];
@@ -52,8 +56,13 @@ export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = 
   animate?: boolean;
   /** Ignored: the liquid bar has no tick marks. */
   ticks?: boolean;
+  /** Square ends and a white edge — every bar at the TOP of a screen (Harry,
+   *  2 Oct 2026, P1-35: "everything that's at the top should be a square bar"). */
+  square?: boolean;
+  /** Glide time in ms (900 by default); 0 jumps. */
+  duration?: number;
   /** Over the bar, centred (a number). */
   children?: React.ReactNode;
 }) {
-  return <LiquidBar value={value} colors={colors} className={className} sheen={animate}>{children}</LiquidBar>;
+  return <LiquidBar value={value} colors={colors} className={className} sheen={animate} square={square} duration={duration}>{children}</LiquidBar>;
 }
