@@ -1,166 +1,181 @@
 "use client";
 
 /**
- * SIGNING SCENE — 3D PROTOTYPE (v0.24, Harry P2-7..P2-13, P2-49/50).
+ * SIGNING SCENE — LIVE 3D (Harry, 2 Oct 2026: "Make the cutscene 3D live …
+ * if they choose a skin tone, if they have a face picture, or if they have
+ * any accessories, put that in there … do all of the movement stuff as well").
  *
- * "Make it an actual conversation … sitting across from him, like a FIFA
- * career mode." "The contract should be facing him … the camera over their
- * shoulder. And then it zooms out to this when you tap to sign and shows the
- * player actually signing it."
- *
- * Every picture is a Blender render (tools/blender-signing/signing.py), made
- * once per skin tone, so the page only swaps pictures: no 3D runs in the
- * browser. Not wired into a career: the contract's terms are a fixed sample.
+ * The same scene the career plays (components/star/SigningScene3D.tsx) with
+ * the sample terms, and a picker for the look so it can be tested without a
+ * career: skin tone, face picture, hair, every store accessory, the aviators.
  */
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
-import { SIGNING_LINES, SIGNING_SKINS, signingShot, type SigningSkin } from "@/lib/star/signing3d";
+import { SKIN_TONES, type SkinTone } from "@/lib/star/playerIdentity";
+import { FAKE_FACES } from "@/lib/star/fakeFaces";
+import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
+import { ACCESSORIES, SLOT_LABEL } from "@/lib/star/store/catalogue";
+import { SAMPLE_TERMS, contractRows, signingLines, wornAccessories, SIGNING3D_ACCESSORY_SLOTS } from "@/lib/star/signing3d";
+import { managerLook } from "@/lib/star/managerFace";
+import { kitsOf } from "@/lib/star/kits";
+import type { SigningHairStyle, SigningYou } from "@/lib/star/signing3dScene";
+
+const SigningScene3D = dynamic(() => import("@/components/star/SigningScene3D"), { ssr: false });
 
 const INK = "#f8fafc";
-
-type Stage = "talk" | "contract" | "zoom" | "signed";
+const HAIR_COLOURS = [["#17110d", "Black"], ["#3d2616", "Brown"], ["#b88a4a", "Fair"], ["#d7b26a", "Blond"]] as const;
 
 export default function Signing3dPage() {
-  const [skin, setSkin] = useState<SigningSkin>("medium");
-  const [line, setLine] = useState(0);
-  const [stage, setStage] = useState<Stage>("talk");
-  const [typed, setTyped] = useState(0);
-  const [zoomed, setZoomed] = useState(false);
-  const [pen, setPen] = useState(false);
-  const timers = useRef<number[]>([]);
+  const [skin, setSkin] = useState<SkinTone>("fair");
+  const [face, setFace] = useState<number>(0); // -1 = the model's own face
+  const [hairStyle, setHairStyle] = useState<SigningHairStyle>("short");
+  const [hair, setHair] = useState<string>("#3d2616");
+  const [worn, setWorn] = useState<Record<string, string>>({});
+  const [aviators, setAviators] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [replay, setReplay] = useState(0);
 
-  const clearTimers = () => { timers.current.forEach((t) => window.clearTimeout(t)); timers.current = []; };
-  const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
-
-  // Load every picture for this skin up front, so no beat waits on the network.
   useEffect(() => {
-    for (const b of ["talk", "reply", "contract", "signing", "signed"] as const) {
-      const im = new Image(); im.src = signingShot(b, skin);
-    }
-  }, [skin]);
-
-  const current = SIGNING_LINES[line];
-  // The words type out (no voice).
-  useEffect(() => {
-    if (stage !== "talk") return;
-    setTyped(0);
-    let n = 0;
-    const id = window.setInterval(() => { n += 2; setTyped(n); if (n >= current.text.length) window.clearInterval(id); }, 28);
-    return () => window.clearInterval(id);
-  }, [line, stage, current.text.length]);
-
-  const restart = useCallback(() => {
-    clearTimers(); setLine(0); setStage("talk"); setZoomed(false); setPen(false);
+    document.body.classList.add("knowitball-immersive");
+    return () => document.body.classList.remove("knowitball-immersive");
   }, []);
-  useEffect(() => () => clearTimers(), []);
 
-  const advance = () => {
-    if (stage !== "talk") return;
-    if (typed < current.text.length) { setTyped(current.text.length); return; }
-    if (line + 1 < SIGNING_LINES.length) setLine(line + 1);
-    else setStage("contract");
+  // Read the URL once, so a still can be set up from a link.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const s = q.get("skin"); if (s && SKIN_TONES.some((t) => t.id === s)) setSkin(s as SkinTone);
+    const f = q.get("face"); if (f != null) setFace(Number(f));
+    const h = q.get("hair"); if (h === "short" || h === "long" || h === "buzz" || h === "none") setHairStyle(h);
+    const acc = q.get("acc");
+    if (acc) {
+      const w: Record<string, string> = {};
+      for (const id of acc.split(",")) { const a = ACCESSORIES.find((x) => x.id === id); if (a) w[a.slot] = a.id; }
+      setWorn(w);
+    }
+    if (q.get("aviators") === "1") setAviators(true);
+  }, []);
+
+  // The face picture, fitted the way the home avatar fits it.
+  const faceUrl = face >= 0 ? FAKE_FACES[face] : null;
+  const [fitted, setFitted] = useState<FittedHead | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    if (!faceUrl) { setFitted(null); return; }
+    const img = fitImage(faceUrl);
+    const done = () => {
+      const f = getFittedHead(faceUrl);
+      (window as unknown as { __fitted?: unknown }).__fitted = f; // for test stills
+      setFitted(f);
+    };
+    if (img.complete && img.naturalWidth) { done(); return; }
+    setFitted(null);
+    img.addEventListener("load", done, { once: true });
+    return () => img.removeEventListener("load", done);
+  }, [faceUrl]);
+  const waitingForFace = !mounted || (!!faceUrl && !fitted);
+
+  const kit = kitsOf(SAMPLE_TERMS.club).home;
+  const you: SigningYou = useMemo(() => ({
+    skin: SKIN_TONES.find((t) => t.id === skin)!.hex,
+    face: fitted,
+    accessories: wornAccessories(worn),
+    aviators,
+    kit,
+    number: SAMPLE_TERMS.number,
+    hair,
+    hairStyle,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [skin, fitted, worn, aviators, hair, hairStyle, kit.shirt, kit.trim]);
+
+  const look = managerLook(SAMPLE_TERMS.manager);
+  const manager = { skin: look.skin, hairColour: look.hairColour, grey: look.grey, beard: look.beard !== "none", bald: look.hair === "bald", buzz: look.hair === "buzz" || look.hair === "receding" || look.hair === "ring" };
+  const contract = {
+    club: SAMPLE_TERMS.club, playerName: SAMPLE_TERMS.playerName, managerName: SAMPLE_TERMS.manager,
+    rows: contractRows({ seasons: SAMPLE_TERMS.seasons, wage: SAMPLE_TERMS.wage, number: SAMPLE_TERMS.number, position: SAMPLE_TERMS.position, season: "2026/27" }),
+    shirt: kit.shirt, trim: kit.trim,
   };
 
-  const sign = () => {
-    if (stage !== "contract") return;
-    setStage("zoom"); setZoomed(false);
-    // next frame: start the pull-back from the paper to the wide desk
-    later(() => setZoomed(true), 40);
-    later(() => setPen(true), 950);
-    later(() => setStage("signed"), 1900);
-  };
-
-  const shot = stage === "talk" ? current.shot : stage === "contract" ? "contract" : stage === "zoom" ? "signing" : "signed";
+  const chip = (on: boolean): React.CSSProperties => ({
+    padding: "7px 10px", fontSize: 12, fontWeight: 800, borderRadius: 8, border: "none",
+    background: on ? INK : "rgba(255,255,255,.1)", color: on ? "#07090f" : INK,
+  });
 
   return (
-    <main style={{ minHeight: "100vh", background: "#07090f", color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif" }}>
-      <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <header style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 12px 8px" }}>
-          <Link href="/star-3d-area-dev" aria-label="Back" style={{ color: INK, textDecoration: "none", fontSize: 22, width: 28 }}>‹</Link>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1, color: "#fbbf24" }}>SIGNING FOR ENFIELD TOWN</div>
-          <button onClick={restart} style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, padding: "6px 10px", background: "rgba(255,255,255,.1)", color: INK, border: "none", borderRadius: 2 }}>↺ Replay</button>
-        </header>
+    <main>
+      {!waitingForFace && (
+        <SigningScene3D
+          you={you}
+          manager={manager}
+          contract={contract}
+          lines={signingLines({ seasons: SAMPLE_TERMS.seasons, number: SAMPLE_TERMS.number })}
+          title={`Signing for ${SAMPLE_TERMS.club}`}
+          onDone={() => setReplay((r) => r + 1)}
+          doneLabel="Continue (replays here)"
+          replayKey={replay}
+          topRight={
+            <>
+              <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...chip(false), minHeight: 36, display: "flex", alignItems: "center", textDecoration: "none", borderRadius: 999 }}>‹</Link>
+              <button onClick={() => setReplay((r) => r + 1)} style={{ ...chip(false), minHeight: 36, borderRadius: 999 }}>↺</button>
+              <button data-picker onClick={() => setOpen((o) => !o)} style={{ ...chip(open), minHeight: 36, borderRadius: 999 }}>Your player</button>
+            </>
+          }
+        />
+      )}
 
-        <div style={{ display: "flex", gap: 6, padding: "0 12px 10px", alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "#94a3b8", marginRight: 2 }}>Your player</span>
-          {SIGNING_SKINS.map((s) => (
-            <button
-              key={s.id}
-              data-skin={s.id}
-              onClick={() => setSkin(s.id)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 9px", fontSize: 12, fontWeight: 700, borderRadius: 2, border: "none", background: s.id === skin ? INK : "rgba(255,255,255,.08)", color: s.id === skin ? "#07090f" : INK }}
-            >
-              <span style={{ width: 12, height: 12, borderRadius: 6, background: s.dot, boxShadow: "0 0 0 1px rgba(0,0,0,.3)" }} />{s.label}
-            </button>
+      {open && (
+        <div style={{ position: "fixed", left: 8, right: 8, top: 58, maxHeight: "62vh", overflowY: "auto", zIndex: 40, padding: 12, borderRadius: 12, background: "rgba(8,10,16,.94)", color: INK, fontFamily: "system-ui, sans-serif", boxShadow: "0 12px 30px rgba(0,0,0,.6)" }}>
+          <Section title="Skin tone">
+            {SKIN_TONES.map((t) => (
+              <button key={t.id} data-skin={t.id} onClick={() => setSkin(t.id)} aria-label={t.label}
+                style={{ width: 30, height: 30, borderRadius: 15, border: t.id === skin ? "3px solid #fff" : "2px solid rgba(255,255,255,.2)", background: t.hex }} />
+            ))}
+          </Section>
+          <Section title="Face picture">
+            <button onClick={() => setFace(-1)} style={chip(face === -1)}>Model&apos;s own</button>
+            {FAKE_FACES.map((f, i) => (
+              <button key={f} onClick={() => setFace(i)} style={{ ...chip(face === i), padding: 2, width: 38, height: 38, overflow: "hidden" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f} alt={`Face ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }} />
+              </button>
+            ))}
+          </Section>
+          <Section title="Hair">
+            {(["short", "long", "buzz", "none"] as const).map((h) => (
+              <button key={h} onClick={() => setHairStyle(h)} style={chip(hairStyle === h)}>{h[0].toUpperCase() + h.slice(1)}</button>
+            ))}
+            {HAIR_COLOURS.map(([c, n]) => (
+              <button key={c} onClick={() => setHair(c)} aria-label={n} style={{ width: 26, height: 26, borderRadius: 13, background: c, border: hair === c ? "3px solid #fff" : "2px solid rgba(255,255,255,.2)" }} />
+            ))}
+          </Section>
+          {SIGNING3D_ACCESSORY_SLOTS.map((slot) => (
+            <Section key={slot} title={SLOT_LABEL[slot]}>
+              <button onClick={() => setWorn((w) => { const n = { ...w }; delete n[slot]; return n; })} style={chip(!worn[slot])}>None</button>
+              {ACCESSORIES.filter((a) => a.slot === slot).map((a) => (
+                <button key={a.id} data-acc={a.id} onClick={() => setWorn((w) => ({ ...w, [slot]: a.id }))} style={chip(worn[slot] === a.id)}>
+                  <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 5, background: a.color, marginRight: 5, boxShadow: "0 0 0 1px rgba(0,0,0,.4)" }} />{a.name}
+                </button>
+              ))}
+            </Section>
           ))}
+          <Section title="Star Pass">
+            <button onClick={() => setAviators((v) => !v)} style={chip(aviators)}>Gold Aviators</button>
+          </Section>
+          <button onClick={() => setOpen(false)} style={{ ...chip(true), width: "100%", marginTop: 4, padding: "10px 0" }}>Done</button>
         </div>
-
-        {/* THE SCENE */}
-        <div
-          data-stage={stage}
-          onClick={advance}
-          style={{ position: "relative", aspectRatio: "4 / 5", overflow: "hidden", background: "#000", cursor: stage === "talk" ? "pointer" : "default", userSelect: "none" }}
-        >
-          {(["talk", "reply", "contract"] as const).map((b) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={b} src={signingShot(b, skin)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: shot === b ? 1 : 0, transition: "opacity 260ms ease" }} />
-          ))}
-          {/* the wide desk: starts zoomed in on the paper and pulls back */}
-          {(["signing", "signed"] as const).map((b) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={b}
-              src={signingShot(b, skin)}
-              alt=""
-              style={{
-                position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-                opacity: (b === "signing" && stage === "zoom") || (b === "signed" && stage === "signed") ? 1 : 0,
-                transformOrigin: "48% 53%",
-                transform: stage === "zoom" && !zoomed ? "scale(3.2)" : "scale(1)",
-                transition: stage === "zoom" ? "transform 900ms cubic-bezier(.2,.7,.2,1), opacity 220ms ease" : "opacity 300ms ease",
-              }}
-            />
-          ))}
-
-          {/* the letterbox bars, like a cutscene */}
-          <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 18, background: "#000" }} />
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 18, background: "#000" }} />
-
-          {stage === "talk" && (
-            <div data-line={line} style={{ position: "absolute", left: 12, right: 12, bottom: 30, padding: "10px 12px", background: "rgba(5,7,12,.82)", borderLeft: `3px solid ${current.who === "boss" ? "#fbbf24" : "#60a5fa"}` }}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: current.who === "boss" ? "#fbbf24" : "#60a5fa" }}>
-                {current.who === "boss" ? "O. BIANCHI · MANAGER" : "YOU"}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.3, marginTop: 3, minHeight: 44 }}>{current.text.slice(0, typed)}</div>
-              <div style={{ position: "absolute", right: 10, bottom: 6, fontSize: 11, color: "#94a3b8" }}>{line + 1}/{SIGNING_LINES.length} · tap ›</div>
-            </div>
-          )}
-
-          {stage === "signed" && (
-            <div style={{ position: "absolute", left: 0, right: 0, top: "16%", textAlign: "center" }}>
-              <span style={{ display: "inline-block", padding: "8px 18px", fontSize: 30, fontWeight: 900, letterSpacing: 3, color: "#fde047", border: "3px solid #fde047", transform: "rotate(-8deg)", background: "rgba(0,0,0,.45)", animation: "stampIn 380ms cubic-bezier(.2,1.6,.4,1) both" }}>SIGNED</span>
-            </div>
-          )}
-          {stage === "zoom" && pen && (
-            <div style={{ position: "absolute", left: 0, right: 0, bottom: 34, textAlign: "center", fontSize: 13, fontWeight: 800, color: "#e2e8f0", textShadow: "0 1px 3px #000" }}>✍︎ signing…</div>
-          )}
-        </div>
-
-        <div style={{ padding: 12 }}>
-          {stage === "contract" && (
-            <button data-sign onClick={sign} style={{ width: "100%", padding: "15px 0", fontSize: 17, fontWeight: 900, letterSpacing: 1, color: "#1a1206", background: "linear-gradient(180deg,#fde047,#f59e0b)", border: "none", borderRadius: 3, boxShadow: "0 6px 18px rgba(245,158,11,.35)" }}>
-              TAP TO SIGN
-            </button>
-          )}
-          {stage === "signed" && (
-            <button onClick={restart} style={{ width: "100%", padding: "14px 0", fontSize: 16, fontWeight: 900, color: "#07090f", background: INK, border: "none", borderRadius: 3 }}>Continue (replays here)</button>
-          )}
-          {stage === "talk" && <div style={{ fontSize: 12, color: "#64748b", textAlign: "center" }}>Tap the picture for the next line</div>}
-        </div>
-      </div>
-      <style>{`@keyframes stampIn { from { transform: rotate(-8deg) scale(2.2); opacity: 0 } to { transform: rotate(-8deg) scale(1); opacity: 1 } }`}</style>
-      <PageGuide page="/star-3d-area-dev/signing" />
+      )}
+      <PageGuide page="/star-3d-area-dev/signing" corner="bottom-left" />
     </main>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#94a3b8", marginBottom: 5, textTransform: "uppercase" }}>{title}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>{children}</div>
+    </div>
   );
 }
