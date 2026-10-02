@@ -14,7 +14,10 @@
  *      place on the bottom bar. The Shop opens after your FIRST GAME (Harry,
  *      P70: "you have to play a game first and then come back. You unlock
  *      the shop").
- *   4. Achievement "Have a meeting with your boss" → Relations unlocks.
+ *   4. The first game also opens Relations (v0.24, Harry 2 Oct 2026, P1-44:
+ *      "after your third game … the relationship pops up because your
+ *      manager wants to talk to you" — game 1 for now). The first-steps list
+ *      then asks for a meeting with your boss.
  *   5. Style (Lifestyle): only the phone to start; everything else unlocks at
  *      a star rating. Buying the phone → back Home, "Buy a phone" achievement
  *      → the Phone button unlocks.
@@ -27,7 +30,14 @@
 import type { CareerState, CareerUnlocks } from "./types";
 import { LIFESTYLE_ITEMS } from "./shopData";
 
-export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone";
+export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors";
+
+/**
+ * SPONSORS OPEN LATER (Harry, 2 Oct 2026, P1-43 to P1-45: "this sponsor
+ * section should be locked off to start with … these things can happen after
+ * 10 games, after 15 games"). Games you have played in (appearances).
+ */
+export const SPONSORS_AFTER_GAMES = 10;
 
 /** How many drills open the League. */
 export const DRILLS_TO_UNLOCK = 2;
@@ -47,8 +57,22 @@ export const LOCK_HINT: Record<Feature, string> = {
   play: "Finish 2 training drills",
   shop: "Play your first game",
   achievements: "Open the League once",
-  relations: "Achievement: have a meeting with your boss",
-  phone: "Find out more in the future",
+  relations: "Play your first game",
+  phone: "Buy a phone in Style",
+  sponsors: `Play ${SPONSORS_AFTER_GAMES} games`,
+};
+
+/** What each feature is, in one line — said when it unlocks (v0.24, Harry:
+ *  "the moment ANY feature unlocks … it is announced"). */
+export const FEATURE_INFO: Record<Feature, { name: string; icon: string; line: string }> = {
+  league: { name: "League", icon: "🏆", line: "The table, results and fixtures" },
+  stats: { name: "Stats", icon: "📊", line: "Your numbers and records" },
+  play: { name: "Play", icon: "▶️", line: "Play your matches" },
+  shop: { name: "Shop", icon: "🛍️", line: "Energy cans, boots and style" },
+  achievements: { name: "Achievements", icon: "⭐", line: "Your first steps and everything you earn" },
+  relations: { name: "Relations", icon: "❤️", line: "Your boss, your team-mates and the fans" },
+  phone: { name: "Phone", icon: "📱", line: "Messages, social media and an App Store" },
+  sponsors: { name: "Sponsors", icon: "🤝", line: "Brands pay you every week to wear their name" },
 };
 
 /** A new career's starting state. `points` = star points right now. */
@@ -77,6 +101,20 @@ function addTo(list: string[], ...items: string[]): string[] {
   const out = [...list];
   for (const i of items) if (!out.includes(i)) out.push(i);
   return out;
+}
+
+/** Opens features and queues the new ones to be announced (v0.24). Only the
+ *  ones in `announce` are queued: League and Achievements, Stats and Play
+ *  already have their own moments (the League pointer, the first-steps pop). */
+function openFeatures(u: CareerUnlocks, features: Feature[], announce: Feature[] = []): CareerUnlocks {
+  const fresh = features.filter((f) => !u.open.includes(f));
+  if (fresh.length === 0) return u;
+  const queue = fresh.filter((f) => announce.includes(f));
+  return {
+    ...u,
+    open: addTo(u.open, ...fresh),
+    ...(queue.length ? { announce: addTo(u.announce ?? [], ...queue) } : {}),
+  };
 }
 
 function grant(c: CareerState, id: string): string[] {
@@ -115,17 +153,33 @@ export function recordLeagueVisit(c: CareerState): CareerState {
   };
 }
 
-/** The first game was played: the Shop opens (and with it, the phone). */
-export function recordFirstMatch(c: CareerState): CareerState {
-  if (!c.unlocks || c.unlocks.open.includes("shop")) return c;
-  return withU(c, { ...c.unlocks, open: addTo(c.unlocks.open, "shop") });
+/** A game was played. The first opens the Shop and Relations (announced);
+ *  the tenth opens Sponsors (announced). Call it after every match. */
+export function recordMatchPlayed(c: CareerState): CareerState {
+  if (!c.unlocks) return c;
+  const games = c.careerStats?.appearances ?? 0;
+  let u = c.unlocks;
+  if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
+  if (games >= SPONSORS_AFTER_GAMES) u = openFeatures(u, ["sponsors"], ["sponsors"]);
+  return u === c.unlocks ? c : withU(c, u);
 }
 
-/** A boss meeting was played (won or lost — he asked for a meeting, not a win). */
+/** The first game (kept for older callers): the same as recordMatchPlayed,
+ *  and it opens the Shop and Relations even when no appearance was counted. */
+export function recordFirstMatch(c: CareerState): CareerState {
+  if (!c.unlocks) return c;
+  const u = openFeatures(c.unlocks, ["relations", "shop"], ["relations", "shop"]);
+  const after = u === c.unlocks ? c : withU(c, u);
+  return recordMatchPlayed(after);
+}
+
+/** A boss meeting was played (won or lost — he asked for a meeting, not a
+ *  win). Hands out the first-steps achievement; opens Relations if a save
+ *  from before v0.24 still has it shut. */
 export function recordBossMeeting(c: CareerState): CareerState {
-  if (!c.unlocks || c.unlocks.open.includes("relations")) return c;
+  if (!c.unlocks || c.achievements.includes("boss-meeting")) return c;
   return {
-    ...withU(c, { ...c.unlocks, open: addTo(c.unlocks.open, "relations") }),
+    ...withU(c, openFeatures(c.unlocks, ["relations"])),
     achievements: grant(c, "boss-meeting"),
   };
 }
@@ -137,6 +191,97 @@ export function recordPhoneBought(c: CareerState): CareerState {
     ...withU(c, { ...c.unlocks, open: addTo(c.unlocks.open, "phone") }),
     achievements: grant(c, "buy-phone"),
   };
+}
+
+// ── Announcing an unlock (v0.24) ───────────────────────────────────────────
+
+/** Features opened but not yet announced, in the order they opened. */
+export function pendingAnnouncements(c: Pick<CareerState, "unlocks">): Feature[] {
+  return (c.unlocks?.announce ?? []) as Feature[];
+}
+
+/** The announcement was shown: clear these from the queue. */
+export function markAnnounced(c: CareerState, features: Feature[] = pendingAnnouncements(c)): CareerState {
+  if (!c.unlocks?.announce?.length) return c;
+  const left = c.unlocks.announce.filter((f) => !features.includes(f as Feature));
+  return withU(c, { ...c.unlocks, announce: left });
+}
+
+/** How many games until Sponsors open (0 = open). */
+export function gamesUntilSponsors(c: Pick<CareerState, "unlocks" | "careerStats">): number {
+  if (isOpen(c, "sponsors")) return 0;
+  return Math.max(0, SPONSORS_AFTER_GAMES - (c.careerStats?.appearances ?? 0));
+}
+
+// ── The first steps: a story list of achievements (v0.24) ──────────────────
+//
+// Harry, 2 Oct 2026 (P2-69): "almost like a story mode of achievements. And
+// then there's the achievements that just happen naturally." The story is
+// these steps, in order; each says what it opens and has a Go button that
+// takes you there (UnlockChain.tsx).
+
+export type StepId = "first-two-sessions" | "first-game" | "boss-meeting" | "buy-phone";
+export interface FirstStep {
+  id: StepId;
+  label: string;
+  /** What you have to do, as the row says it. */
+  todo: string;
+  /** The prompt when this is the next step ("Time to meet your boss"). */
+  prompt: string;
+  /** What it opens. */
+  opens: string;
+}
+
+export const FIRST_STEPS: FirstStep[] = [
+  { id: "first-two-sessions", label: "First Two Sessions", todo: "Complete your first two training sessions", prompt: "Go to training", opens: "Opens the League" },
+  { id: "first-game", label: "Debut", todo: "Play your first game", prompt: "Time to play your first game", opens: "Opens Relations and the Shop" },
+  { id: "boss-meeting", label: "Face to Face", todo: "Have a meeting with your boss", prompt: "Time to meet your boss", opens: "Your boss picks you more when he likes you" },
+  { id: "buy-phone", label: "Connected", todo: "Buy a phone", prompt: "Buy your first phone in the Shop", opens: "Opens the Phone" },
+];
+
+export function stepDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">, id: StepId): boolean {
+  if (!c.unlocks) return true;
+  if (id === "first-game") return (c.careerStats?.appearances ?? 0) >= 1 || c.fixtures.some((f) => f.played);
+  if (id === "first-two-sessions") return c.achievements.includes(id) || c.unlocks.drills >= DRILLS_TO_UNLOCK;
+  return c.achievements.includes(id);
+}
+
+/** The next first step to do, or null when every one is done. */
+export function nextStep(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): FirstStep | null {
+  if (!c.unlocks) return null;
+  return FIRST_STEPS.find((s) => !stepDone(c, s.id)) ?? null;
+}
+
+export function firstStepsDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
+  return nextStep(c) === null;
+}
+
+/**
+ * THE BOTTOM-LEFT BUTTON (Harry, 2 Oct 2026, P2-68, P2-89): "the achievements
+ * are there until they've completed all their first steps. Once they complete
+ * all of their first steps, then maybe it says, do you wanna switch this to
+ * league as a shortcut?"
+ *
+ *   "league"       — League (locked until two drills), and every old save.
+ *   "achievements" — once Achievements has opened, through the first steps,
+ *                    and after them if the player says no to the switch.
+ */
+export type BottomLeft = "league" | "achievements";
+
+export function bottomLeft(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): BottomLeft {
+  if (!c.unlocks || !c.unlocks.open.includes("achievements")) return "league";
+  if (c.unlocks.slot) return c.unlocks.slot;
+  return "achievements";
+}
+
+/** Ask "switch this to League?" — first steps done, not asked yet. */
+export function slotQuestionDue(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
+  return !!c.unlocks && c.unlocks.open.includes("achievements") && !c.unlocks.slot && firstStepsDone(c);
+}
+
+export function setBottomLeft(c: CareerState, slot: BottomLeft): CareerState {
+  if (!c.unlocks) return c;
+  return withU(c, { ...c.unlocks, slot });
 }
 
 // ── Style (Lifestyle) items: locked by star rating ──────────────────────────

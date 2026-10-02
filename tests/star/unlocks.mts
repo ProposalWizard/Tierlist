@@ -8,6 +8,8 @@ import { saveCareer, loadCareer } from "../../lib/star/storage";
 import {
   isOpen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, markSeen, hasSeen,
   styleUnlockStar, styleLock, appInstalled, installApp, STARTER_APPS, APP_STORE, type Feature,
+  recordMatchPlayed, pendingAnnouncements, markAnnounced, gamesUntilSponsors, SPONSORS_AFTER_GAMES, LOCK_HINT,
+  FIRST_STEPS, nextStep, stepDone, firstStepsDone, bottomLeft, slotQuestionDue, setBottomLeft,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
 import { KIB_CANS, kibCanEffectLabel } from "../../lib/star/shopData";
@@ -74,9 +76,9 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(c.achievements.includes("first-two-sessions"), "…and hands out 'Complete your first two training sessions'");
   const again = recordLeagueVisit(c);
   check(again.achievements.filter(a => a === "first-two-sessions").length === 1, "the achievement is handed out once");
-  check(!isOpen(c, "relations"), "Relations still locked");
+  check(!isOpen(c, "relations"), "Relations still locked before the first game");
   c = recordFirstMatch(c);
-  check(isOpen(c, "shop"), "playing the first game opens the Shop");
+  check(isOpen(c, "shop") && isOpen(c, "relations"), "playing the first game opens the Shop and Relations (v0.24)");
   check(recordFirstMatch(c) === c, "…once");
 
   c = recordBossMeeting(c);
@@ -86,6 +88,58 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   c = recordPhoneBought(c);
   check(isOpen(c, "phone") && c.achievements.includes("buy-phone"), "buying the phone opens the Phone with its achievement");
   for (const f of ALL) check(isOpen(c, f), `at the end of the chain ${f} is open`);
+}
+
+// ── v0.24: Relations after game 1, Sponsors later, every unlock announced ──
+{
+  let c = fresh();
+  check(!isOpen(c, "sponsors"), "a new career starts with Sponsors locked (P1-45)");
+  check(pendingAnnouncements(c).length === 0, "nothing to announce at the start");
+  c = recordLeagueVisit(recordDrill(recordDrill(c)));
+  check(pendingAnnouncements(c).length === 0, "League and Achievements have their own moments — not queued");
+  const played = (n: number, x: CareerState): CareerState => ({ ...x, careerStats: { ...x.careerStats, appearances: n } });
+  c = recordFirstMatch(played(1, c));
+  check(isOpen(c, "relations") && isOpen(c, "shop"), "game 1 opens Relations and the Shop (P1-44)");
+  check(pendingAnnouncements(c).join() === "relations,shop", "…and both are queued to be announced");
+  check(!isOpen(c, "sponsors") && gamesUntilSponsors(c) === SPONSORS_AFTER_GAMES - 1, "Sponsors still shut, with the games left counted");
+  c = markAnnounced(c);
+  check(pendingAnnouncements(c).length === 0, "an announcement shows once");
+  for (let n = 2; n < SPONSORS_AFTER_GAMES; n++) c = recordMatchPlayed(played(n, c));
+  check(!isOpen(c, "sponsors") && pendingAnnouncements(c).length === 0, `games 2 to ${SPONSORS_AFTER_GAMES - 1} open nothing`);
+  c = recordMatchPlayed(played(SPONSORS_AFTER_GAMES, c));
+  check(isOpen(c, "sponsors") && pendingAnnouncements(c).join() === "sponsors" && gamesUntilSponsors(c) === 0, `game ${SPONSORS_AFTER_GAMES} opens Sponsors and announces it`);
+  check(recordMatchPlayed(markAnnounced(c)).unlocks!.announce!.length === 0, "…once");
+  check(LOCK_HINT.sponsors.includes(String(SPONSORS_AFTER_GAMES)), "the lock line says how many games");
+  // An old save: never locked, never announced.
+  const old = { ...c, unlocks: undefined };
+  check(isOpen(old, "sponsors") && gamesUntilSponsors(old) === 0 && recordMatchPlayed(old) === old, "an old save has Sponsors open and is never touched");
+}
+
+// ── v0.24: the first steps, the story list, the bottom-left button ──
+{
+  let c = fresh();
+  check(FIRST_STEPS.map(s => s.id).join() === "first-two-sessions,first-game,boss-meeting,buy-phone", "four first steps, in order");
+  check(nextStep(c)?.id === "first-two-sessions" && !firstStepsDone(c), "a new career starts on step 1");
+  check(bottomLeft(c) === "league", "the bottom-left starts as League (locked)");
+  c = recordDrill(c);
+  check(nextStep(c)?.id === "first-two-sessions", "one drill is not the step");
+  c = recordLeagueVisit(recordDrill(c));
+  check(stepDone(c, "first-two-sessions") && nextStep(c)?.id === "first-game", "two drills: next is the first game");
+  check(bottomLeft(c) === "achievements", "Achievements opens and takes the bottom-left (P2-68)");
+  c = recordFirstMatch({ ...c, careerStats: { ...c.careerStats, appearances: 1 } });
+  check(nextStep(c)?.id === "boss-meeting" && FIRST_STEPS[2].prompt === "Time to meet your boss", "after the first game: time to meet your boss (P2-87)");
+  c = recordBossMeeting(c);
+  check(nextStep(c)?.id === "buy-phone", "then the phone");
+  check(recordBossMeeting(c) === c, "the boss meeting is handed out once");
+  check(!slotQuestionDue(c), "no switch question before the first steps are done");
+  c = recordPhoneBought(c);
+  check(firstStepsDone(c) && nextStep(c) === null, "the phone finishes the first steps");
+  check(slotQuestionDue(c) && bottomLeft(c) === "achievements", "then the game asks to switch the button to League (P2-89)");
+  const yes = setBottomLeft(c, "league"), no = setBottomLeft(c, "achievements");
+  check(bottomLeft(yes) === "league" && !slotQuestionDue(yes), "yes: League, and the question is not asked again");
+  check(bottomLeft(no) === "achievements" && !slotQuestionDue(no), "no: Achievements stays, and the question is not asked again");
+  const old = { ...c, unlocks: undefined };
+  check(bottomLeft(old) === "league" && nextStep(old) === null && !slotQuestionDue(old), "an old save keeps League and has no first steps");
 }
 
 // ── Style: only the phone, the rest by star rating ──
