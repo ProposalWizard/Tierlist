@@ -27,17 +27,31 @@ export interface StarPassReward {
   name: string;
   /** A picture of it; the placeholder box shows when there is none. */
   image?: string;
+  /** A whole picture of the reward standing on its podium (may be animated),
+   *  drawn in place of the plain podium + box. */
+  scene?: string;
+  /** The podium's width as a share of the scene picture's width, so the
+   *  podium comes out the same size as the plain ones (make_webp.py prints it). */
+  sceneFit?: number;
 }
 
-/** The rewards, by level. Empty until Mikey decides them. */
-export const STAR_PASS_REWARDS: Partial<Record<number, StarPassReward>> = {};
+/** The rewards, by level. Levels 5, 10 and 15 are DESIGN TESTS only (Mikey,
+ *  1 Oct 2026): pictures to judge the look, nothing is given in the game.
+ *  The car is a borrowed model shaped like a Ferrari 458 and must be swapped
+ *  for an unbranded one before any of this is used for real. */
+export const STAR_PASS_REWARDS: Partial<Record<number, StarPassReward>> = {
+  5: { name: "Hop penalty run-up", scene: "/star/star-pass/reward-penalty.webp", sceneFit: 0.598 },
+  10: { name: "Red sports car", scene: "/star/star-pass/reward-car.webp", sceneFit: 0.882 },
+  15: { name: "Star ball", scene: "/star/star-pass/reward-ball.webp", sceneFit: 0.889 },
+};
 
 /** The look of each stretch of the road: a new one every 20 levels. */
 export interface StarPassTheme {
   key: "premier" | "europa" | "champions" | "worldcup" | "ballondor";
   from: number;
   to: number;
-  /** The road's background, as CSS. */
+  /** The road's background: a painted floodlit pitch in this stretch's
+   *  colours (tools/star-pass-art/make_backgrounds.py). */
   bg: string;
   /** The rail's colour and the glow on this stretch. */
   accent: string;
@@ -45,15 +59,15 @@ export interface StarPassTheme {
 
 export const STAR_PASS_THEMES: StarPassTheme[] = [
   { key: "premier", from: 1, to: 20, accent: "#22e8d6",
-    bg: "radial-gradient(70% 40% at 80% 30%, rgba(233,0,123,.28), transparent 70%), radial-gradient(60% 40% at 15% 75%, rgba(0,255,224,.18), transparent 70%), linear-gradient(180deg, #2a0730, #1a0420)" },
+    bg: "/star/star-pass/bg-premier.webp" },
   { key: "europa", from: 21, to: 40, accent: "#ff7a1a",
-    bg: "repeating-linear-gradient(135deg, rgba(255,122,26,.07) 0 14px, transparent 14px 40px), radial-gradient(70% 45% at 50% 50%, rgba(255,110,20,.22), transparent 70%), linear-gradient(180deg, #160d08, #0b0807)" },
+    bg: "/star/star-pass/bg-europa.webp" },
   { key: "champions", from: 41, to: 60, accent: "#cfe0ff",
-    bg: "radial-gradient(circle at 20% 20%, rgba(255,255,255,.9) 0 1px, transparent 2px), radial-gradient(circle at 70% 60%, rgba(255,255,255,.8) 0 1px, transparent 2px), radial-gradient(circle at 45% 85%, rgba(255,255,255,.7) 0 1px, transparent 2px), radial-gradient(60% 45% at 50% 45%, rgba(120,150,255,.25), transparent 70%), linear-gradient(180deg, #061033, #030818)" },
+    bg: "/star/star-pass/bg-champions.webp" },
   { key: "worldcup", from: 61, to: 80, accent: "#ffcc4d",
-    bg: "radial-gradient(70% 45% at 50% 40%, rgba(255,204,77,.25), transparent 70%), repeating-linear-gradient(90deg, rgba(20,120,70,.18) 0 22px, transparent 22px 44px), linear-gradient(180deg, #06301c, #041a10)" },
+    bg: "/star/star-pass/bg-worldcup.webp" },
   { key: "ballondor", from: 81, to: 100, accent: "#ffd76a",
-    bg: "radial-gradient(circle at 25% 30%, rgba(255,230,150,.9) 0 1px, transparent 2px), radial-gradient(circle at 75% 70%, rgba(255,230,150,.8) 0 1.5px, transparent 2.5px), radial-gradient(70% 50% at 50% 40%, rgba(255,200,80,.35), transparent 70%), linear-gradient(180deg, #4a0610, #24030a)" },
+    bg: "/star/star-pass/bg-ballondor.webp" },
 ];
 
 export function themeFor(level: number): StarPassTheme {
