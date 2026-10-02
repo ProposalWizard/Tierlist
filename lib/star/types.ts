@@ -920,6 +920,14 @@ export interface CareerState {
    *  are unique across them. Each set's Standard always counts as owned,
    *  listed or not. Absent on older saves: none bought yet. */
   ownedAnimations?: string[];
+  /** Star Pass levels whose reward has been claimed (lib/star/starPassClaim.ts). */
+  starPassClaimed?: number[];
+  /** Collectible reward cards you own (rewardCatalogue.ts ids: a car, a ball,
+   *  sunglasses …), kept in the Locker. Run-ups and accessories you win go
+   *  into ownedAnimations / ownedAccessories instead. */
+  ownedRewards?: string[];
+  /** Collectible slot → the card used there (one sunglasses, one ball …). */
+  equippedRewards?: Record<string, string>;
   // ── The Store (lib/star/store/career.ts, 28 Sep 2026). All optional:
   //    an older save reads as none of each (storage.ts backfills coins). ──
   /** Coins — the store's second currency. 50 Coins = one week of your wage.

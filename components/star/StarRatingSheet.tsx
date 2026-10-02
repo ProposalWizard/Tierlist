@@ -25,10 +25,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { starStatus, STAR_GATES, ledgerOf, starTitle, MAX_LEVEL } from "@/lib/star/starPoints";
-import { REWARD_LEVELS, STAR_PASS_REWARDS, STAR_PASS_STEP, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
+import { REWARD_LEVELS, STAR_PASS_STEP, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
+import { findCard, type CatalogueItem } from "@/lib/star/rewardCatalogue";
+import { usePassLayout } from "@/lib/star/starPassStore";
+import { claimableLevels, claimLevel, equipCard, isClaimed } from "@/lib/star/starPassClaim";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { BottomBar, BarButton, Chev } from "./ui";
 import Podium3D from "./Podium3D";
+import RewardReveal from "./RewardReveal";
+import LockerSheet from "./LockerSheet";
 
 const ART = "/star/star-pass";
 const fmt = (n: number) => Math.round(n).toLocaleString("en-GB");
@@ -45,37 +50,45 @@ const HEADER_H = 92;
 const FADE = 130;
 
 /** How tall a level's podium (and its reward) is drawn, in px. */
-function stopHeight(level: number): number {
-  const reward = STAR_PASS_REWARDS[level];
+function stopHeight(level: number, card: CatalogueItem | undefined): number {
   const great = rewardTier(level) === "great";
   if (level === MAX_LEVEL) return 240 * (392 / 442);
-  if (reward?.live) return reward.live.h;
+  const a = card?.art;
+  if (a?.live) return a.live.h;
   const plinthW = great ? 236 : 186;
-  if (reward?.scene) return (plinthW / (reward.sceneFit ?? 1)) * (reward.sceneAspect ?? 0.7);
+  if (a?.scene) return (plinthW / (a.sceneFit ?? 1)) * (a.sceneAspect ?? 0.7);
   return great ? plinthW * (322 / 556) : plinthW * (217 / 468);
 }
 
 /** Height from the bottom of the road to every level. The five levels before
  *  a reward share out enough room for it and the one below it not to touch
  *  (a tall reward, like a footballer on his podium, gets more road). */
-const Y_OF: number[] = (() => {
+function buildY(cardAt: (n: number) => CatalogueItem | undefined): number[] {
   const y = [0, ROAD_BOTTOM];
   for (let i = 2; i <= MAX_LEVEL; i++) {
     const r = Math.ceil(i / 5) * 5;
     const base = r % 10 === 0 ? GAP_GREAT : GAP;
-    const below = r - 5 >= STAR_PASS_STEP ? stopHeight(r - 5) / 2 : 40;
-    const need = (below + stopHeight(r) / 2 + 22) / 5;
+    const below = r - 5 >= STAR_PASS_STEP ? stopHeight(r - 5, cardAt(r - 5)) / 2 : 40;
+    const need = (below + stopHeight(r, cardAt(r)) / 2 + 22) / 5;
     y[i] = y[i - 1] + Math.max(base, need);
   }
   return y;
-})();
-
-function yOf(n: number): number {
-  return Y_OF[Math.max(1, Math.min(MAX_LEVEL, n))];
 }
 
-export default function StarRatingSheet({ career, onClose }: { career: CareerState; onClose: () => void }) {
+export default function StarRatingSheet({ career, onClose, onCareer }: {
+  career: CareerState;
+  onClose: () => void;
+  /** Saves a claimed reward / a Locker change into the career. */
+  onCareer?: (c: CareerState) => void;
+}) {
+  const { layout, catalogue } = usePassLayout();
+  const cardAt = (n: number) => findCard(layout.levels[n], catalogue);
+  const Y = useMemo(() => buildY((n) => findCard(layout.levels[n], catalogue)), [layout, catalogue]);
+  const yOf = (n: number) => Y[Math.max(1, Math.min(MAX_LEVEL, n))];
+  const [reveal, setReveal] = useState<number | null>(null);
+  const [locker, setLocker] = useState(false);
   const st = starStatus(career);
+  const claimable = new Set(claimableLevels(career, layout.levels, st.stars));
   const led = ledgerOf(career);
   const [showPoints, setShowPoints] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -170,7 +183,10 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
           ))}
 
           {/* A podium and a reward at every 5th level, centred on its level; level 100's stand. */}
-          {REWARD_LEVELS.map((n) => <RewardStop key={n} level={n} reached={n <= st.stars} next={n === nextReward} />)}
+          {REWARD_LEVELS.map((n) => (
+            <RewardStop key={n} level={n} y={yOf(n)} card={cardAt(n)} reached={n <= st.stars} next={n === nextReward}
+              claimable={claimable.has(n) && !!onCareer} claimed={isClaimed(career, n)} onClaim={() => setReveal(n)} />
+          ))}
 
           {/* You. */}
           <div className="absolute z-10 -translate-x-1/2 translate-y-1/2" style={{ left: RAIL_X, bottom: hereY }}>
@@ -226,56 +242,72 @@ export default function StarRatingSheet({ career, onClose }: { career: CareerSta
         )}
       </div>
 
-      <BottomBar cols="1fr">
+      <BottomBar cols="1fr 1fr">
         <BarButton icon={<Chev dir="left" size={16} className="text-amber-300" />} label="Back" onClick={onClose} />
+        <BarButton icon="🎒" label="Locker" onClick={() => setLocker(true)} />
       </BottomBar>
+      {locker && <LockerSheet career={career} catalogue={catalogue} onCareer={onCareer} onClose={() => setLocker(false)} />}
+      {reveal != null && cardAt(reveal) && (
+        <RewardReveal card={cardAt(reveal)!} level={reveal}
+          onLater={() => { onCareer?.(claimLevel(career, reveal, cardAt(reveal), st.stars)); setReveal(null); }}
+          onUse={() => { onCareer?.(equipCard(claimLevel(career, reveal, cardAt(reveal), st.stars), cardAt(reveal)!)); setReveal(null); }} />
+      )}
     </div>,
     document.body,
   );
 }
 
-function RewardStop({ level, reached, next }: { level: number; reached: boolean; next: boolean }) {
+function RewardStop({ level, y, card, reached, next, claimable, claimed, onClaim }: {
+  level: number; y: number; card: CatalogueItem | undefined; reached: boolean; next: boolean;
+  claimable: boolean; claimed: boolean; onClaim: () => void;
+}) {
   const tier = rewardTier(level);
   const great = tier === "great";
   const top = level === MAX_LEVEL;
   const theme = themeFor(level);
-  const reward = STAR_PASS_REWARDS[level];
+  const art = card?.art;
   const plinthW = top ? 240 : great ? 236 : 186;
-  const scene = reward?.scene;
+  const scene = art?.scene;
   const plinth = top ? `${ART}/crown-100.webp` : `${ART}/plinth-${theme.key}-${tier}.webp`;
-  const box = reward?.image ?? `${ART}/box-${tier}.webp`;
+  const box = art?.image ?? `${ART}/box-${tier}.webp`;
   const boxW = great ? 84 : 62;
+  const live = art?.live;
   // A scene picture is wider than its podium (room for a ball in flight); size
   // it so the podium itself matches the plain ones.
-  const live = reward?.live;
-  const w = live ? live.w : scene ? plinthW / (reward?.sceneFit ?? 1) : plinthW;
+  const w = live ? live.w : scene ? plinthW / (art?.sceneFit ?? 1) : plinthW;
+  const lit = reached || next;
   return (
     <>
       {/* A faint line from the rail out to the podium, so each one reads as its level's. */}
       <div className="absolute h-[2px] translate-y-1/2" style={{
-        left: RAIL_X + 8, width: 150, bottom: yOf(level),
-        background: `linear-gradient(90deg, ${reached ? "#fde047" : theme.accent}, transparent)`, opacity: reached || next ? 0.85 : 0.4,
+        left: RAIL_X + 8, width: 150, bottom: y,
+        background: `linear-gradient(90deg, ${reached ? "#fde047" : theme.accent}, transparent)`, opacity: lit ? 0.85 : 0.4,
       }} />
       <div className="absolute flex justify-center" style={{
-        left: RAIL_X + 22, right: 8, bottom: yOf(level), transform: "translateY(50%)",
-        filter: reached || next ? undefined : "saturate(.85) brightness(.85)",
+        left: RAIL_X + 22, right: 8, bottom: y, transform: "translateY(50%)",
+        filter: lit ? undefined : "saturate(.85) brightness(.85)",
       }}>
         <div className="relative shrink-0" style={{ width: w }}>
-          {/* The glow round a reached podium, or the next one, in this stretch's colour. */}
-          {(reached || next) && (
-            <div className={`absolute inset-x-[10%] bottom-[4%] top-[35%] ${next ? "animate-pulse" : ""}`} style={{ background: `radial-gradient(closest-side, ${theme.accent}88, transparent)`, filter: "blur(12px)" }} />
+          {/* The glow round a reached podium, or the next one, in this stretch's colour (gold when there's something to claim). */}
+          {lit && (
+            <div className={`absolute inset-x-[10%] bottom-[4%] top-[35%] ${next || claimable ? "animate-pulse" : ""}`} style={{ background: `radial-gradient(closest-side, ${claimable ? "#fde047" : theme.accent}88, transparent)`, filter: "blur(12px)" }} />
           )}
           {live ? (
             <div className="relative"><Podium3D cfg={live} /></div>
           ) : (
-            <img src={scene ?? plinth} alt={reward?.name ?? ""} className="relative block w-full" draggable={false} />
+            <img src={scene ?? plinth} alt={card?.name ?? ""} className="relative block w-full" draggable={false} />
           )}
           {!top && !scene && !live && (
-            <img src={box} alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 ${next ? "animate-bounce" : ""}`}
+            <img src={box} alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 ${next || claimable ? "animate-bounce" : ""}`}
               style={{ width: boxW, bottom: great ? "52%" : "46%", filter: "drop-shadow(0 6px 6px rgba(0,0,0,.55))", animationDuration: "1.6s" }} />
           )}
-          {reached && !top && (
+          {claimed && !top && (
             <span className="absolute grid h-6 w-6 place-items-center text-[13px] font-black text-gray-950" style={{ right: "6%", top: "8%", borderRadius: 4, background: "#4ade80", boxShadow: "0 0 10px rgba(74,222,128,.8)" }}>✓</span>
+          )}
+          {claimable && (
+            <button onClick={onClaim} data-claim={level} className="kib-press absolute bottom-[2%] left-1/2 z-[6] h-[38px] -translate-x-1/2 px-5 text-[14px] font-black uppercase tracking-[0.18em] text-gray-950" style={{
+              borderRadius: 3, background: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "0 0 18px rgba(251,191,36,.75), inset 0 1px 0 rgba(255,255,255,.6)",
+            }}>Claim</button>
           )}
         </div>
       </div>
