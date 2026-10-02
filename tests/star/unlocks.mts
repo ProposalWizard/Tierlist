@@ -8,7 +8,7 @@ import { saveCareer, loadCareer } from "../../lib/star/storage";
 import {
   isOpen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, markSeen, hasSeen,
   styleUnlockStar, styleLock, appInstalled, installApp, STARTER_APPS, APP_STORE, type Feature,
-  recordMatchPlayed, pendingAnnouncements, markAnnounced, gamesUntilSponsors, SPONSORS_AFTER_GAMES, LOCK_HINT,
+  recordMatchPlayed, pendingAnnouncements, markAnnounced, hasSponsorOffer, LOCK_HINT,
   FIRST_STEPS, nextStep, stepDone, firstStepsDone, bottomLeft, slotQuestionDue, setBottomLeft,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
@@ -90,7 +90,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   for (const f of ALL) check(isOpen(c, f), `at the end of the chain ${f} is open`);
 }
 
-// ── v0.24: Relations after game 1, Sponsors later, every unlock announced ──
+// ── v0.24: Relations after game 1; v0.25: Sponsors with your first offer ──
 {
   let c = fresh();
   check(!isOpen(c, "sponsors"), "a new career starts with Sponsors locked (P1-45)");
@@ -101,18 +101,24 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   c = recordFirstMatch(played(1, c));
   check(isOpen(c, "relations") && isOpen(c, "shop"), "game 1 opens Relations and the Shop (P1-44)");
   check(pendingAnnouncements(c).join() === "relations,shop", "…and both are queued to be announced");
-  check(!isOpen(c, "sponsors") && gamesUntilSponsors(c) === SPONSORS_AFTER_GAMES - 1, "Sponsors still shut, with the games left counted");
+  check(!isOpen(c, "sponsors") && !hasSponsorOffer(c), "Sponsors still shut with no offer");
   c = markAnnounced(c);
   check(pendingAnnouncements(c).length === 0, "an announcement shows once");
-  for (let n = 2; n < SPONSORS_AFTER_GAMES; n++) c = recordMatchPlayed(played(n, c));
-  check(!isOpen(c, "sponsors") && pendingAnnouncements(c).length === 0, `games 2 to ${SPONSORS_AFTER_GAMES - 1} open nothing`);
-  c = recordMatchPlayed(played(SPONSORS_AFTER_GAMES, c));
-  check(isOpen(c, "sponsors") && pendingAnnouncements(c).join() === "sponsors" && gamesUntilSponsors(c) === 0, `game ${SPONSORS_AFTER_GAMES} opens Sponsors and announces it`);
+  // v0.25 (points 36, 53): no game count. Twenty games with no offer: still shut.
+  for (let n = 2; n <= 20; n++) c = recordMatchPlayed(played(n, c));
+  check(!isOpen(c, "sponsors") && pendingAnnouncements(c).length === 0, "20 games with no offer open nothing");
+  // The first offer arrives: Sponsors open and are announced.
+  const offer = { id: "o1", kind: "new", brand: "Crunchwell", category: "Food", color: "#fb923c", weekly: 5, seasons: 1,
+    targets: [], signingOn: 10, expires: { season: 1, week: 9 }, note: "" } as const;
+  c = { ...c, brands: { deals: [], offers: [{ ...offer, targets: [] }], news: [], paid: [], seq: 1 } };
+  check(hasSponsorOffer(c), "an offer counts");
+  c = recordMatchPlayed(played(21, c));
+  check(isOpen(c, "sponsors") && pendingAnnouncements(c).join() === "sponsors", "the first offer opens Sponsors and announces it");
   check(recordMatchPlayed(markAnnounced(c)).unlocks!.announce!.length === 0, "…once");
-  check(LOCK_HINT.sponsors.includes(String(SPONSORS_AFTER_GAMES)), "the lock line says how many games");
+  check(!/\d+ games/.test(LOCK_HINT.sponsors), "the lock line no longer counts games");
   // An old save: never locked, never announced.
   const old = { ...c, unlocks: undefined };
-  check(isOpen(old, "sponsors") && gamesUntilSponsors(old) === 0 && recordMatchPlayed(old) === old, "an old save has Sponsors open and is never touched");
+  check(isOpen(old, "sponsors") && recordMatchPlayed(old) === old, "an old save has Sponsors open and is never touched");
 }
 
 // ── v0.24: the first steps, the story list, the bottom-left button ──

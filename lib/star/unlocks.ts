@@ -33,11 +33,17 @@ import { LIFESTYLE_ITEMS } from "./shopData";
 export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors";
 
 /**
- * SPONSORS OPEN LATER (Harry, 2 Oct 2026, P1-43 to P1-45: "this sponsor
- * section should be locked off to start with … these things can happen after
- * 10 games, after 15 games"). Games you have played in (appearances).
+ * SPONSORS OPEN WITH YOUR FIRST OFFER (v0.25, review of v0.24, points 36 and
+ * 53). v0.24 opened them after 10 games. Mikey: "don't set it to a certain
+ * amount of games … whenever your first sponsor happens, it should then do
+ * the unveil, and it should all be locked until then." Offers come from form
+ * and fame (sponsorDeals.ts, offerChance): nothing while you play badly, and
+ * the small brands need no fame at all. Pay is a share of your wage, so a
+ * National League South deal pays very little.
  */
-export const SPONSORS_AFTER_GAMES = 10;
+export function hasSponsorOffer(c: Pick<CareerState, "brands">): boolean {
+  return (c.brands?.offers.length ?? 0) > 0 || (c.brands?.deals.length ?? 0) > 0;
+}
 
 /** How many drills open the League. */
 export const DRILLS_TO_UNLOCK = 2;
@@ -59,7 +65,7 @@ export const LOCK_HINT: Record<Feature, string> = {
   achievements: "Open the League once",
   relations: "Play your first game",
   phone: "Buy a phone in Style",
-  sponsors: `Play ${SPONSORS_AFTER_GAMES} games`,
+  sponsors: "Play well and a brand will get in touch",
 };
 
 /** What each feature is, in one line — said when it unlocks (v0.24, Harry:
@@ -154,13 +160,14 @@ export function recordLeagueVisit(c: CareerState): CareerState {
 }
 
 /** A game was played. The first opens the Shop and Relations (announced);
- *  the tenth opens Sponsors (announced). Call it after every match. */
+ *  your first sponsor offer opens Sponsors (announced, v0.25). Call it after
+ *  every match. */
 export function recordMatchPlayed(c: CareerState): CareerState {
   if (!c.unlocks) return c;
   const games = c.careerStats?.appearances ?? 0;
   let u = c.unlocks;
   if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
-  if (games >= SPONSORS_AFTER_GAMES) u = openFeatures(u, ["sponsors"], ["sponsors"]);
+  if (hasSponsorOffer(c)) u = openFeatures(u, ["sponsors"], ["sponsors"]);
   return u === c.unlocks ? c : withU(c, u);
 }
 
@@ -205,12 +212,6 @@ export function markAnnounced(c: CareerState, features: Feature[] = pendingAnnou
   if (!c.unlocks?.announce?.length) return c;
   const left = c.unlocks.announce.filter((f) => !features.includes(f as Feature));
   return withU(c, { ...c.unlocks, announce: left });
-}
-
-/** How many games until Sponsors open (0 = open). */
-export function gamesUntilSponsors(c: Pick<CareerState, "unlocks" | "careerStats">): number {
-  if (isOpen(c, "sponsors")) return 0;
-  return Math.max(0, SPONSORS_AFTER_GAMES - (c.careerStats?.appearances ?? 0));
 }
 
 // ── The first steps: a story list of achievements (v0.24) ──────────────────

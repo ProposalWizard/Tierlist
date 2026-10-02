@@ -75,7 +75,7 @@ import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilem
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { earnedBetween, type EarnPop } from "@/lib/star/earnPops";
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
-import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gamesUntilSponsors } from "@/lib/star/unlocks";
+import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
 import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo } from "@/components/star/UnlockChain";
 import { DrillIntroOff, DrillTutorial, DrillHelpButton } from "@/components/star/TrainingIntro";
@@ -1173,7 +1173,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const credited = creditMatchResult(career, nextFixture, stats);
     const { newlyUnlocked, potmAwarded } = credited;
     // The first game opens the Shop (Harry, P70: "play a game first and then come back").
-    // v0.24: it also opens Relations, and Sponsors after ten games (unlocks.ts).
+    // v0.24: it also opens Relations; v0.25: Sponsors open with your first offer (unlocks.ts).
     let next = recordFirstMatch(credited.career);
     // The full-time energy tutorial ran this match: never again.
     if (energyTourDoneRef.current) { next = markSeen(next, "energy-tut"); energyTourDoneRef.current = false; }
@@ -3920,11 +3920,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const helpScreen: HelpScreen | null = swipeActive ? (homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop")
     : phase === "skills" ? (trainingTab === "life" ? "relations" : "training")
     : phase === "media" && activeNav === "media" ? "phone" : null;
-  // Sponsors stay shut until they open (v0.24, P1-45): every way in says how far off they are.
+  // Sponsors stay shut until your first offer (v0.25): every way in says how they open.
   const openHub = (ph: Parameters<typeof setPhase>[0]) => {
     if (ph === "sponsors" && !isOpen(career, "sponsors")) {
-      const left = gamesUntilSponsors(career);
-      showLock(`Sponsors open after ${LOCK_HINT.sponsors.replace(/^Play /, "")} — ${left} to go`);
+      showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`);
       return;
     }
     setPhase(ph);
@@ -4199,7 +4198,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
             />,
             isOpen(career, "shop")
-              ? <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : `${gamesUntilSponsors(career)} more games`} />
+              ? <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
               : <LockedPage key="shop" title="Shop" feature="shop" />,
           ]}
         </SwipePages>
