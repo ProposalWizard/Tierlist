@@ -36,11 +36,11 @@ export const SCENES_3D: Scene3d[] = [
   {
     id: "shop3d",
     title: "Walk-around shop",
-    line: "Walk a footballer round a shop and pretend-buy boots, a car and cans.",
+    line: "Walk a footballer round a lit showroom: the real Blender boots and cars in 3D. Also in the game, as a beta button on the Shop page.",
     status: "Test page",
     href: "/star-shop3d-dev",
     thumb: "/star/area3d/shop3d.jpg",
-    files: "app/star-shop3d-dev · lib/star/shop3d · public/star/shop3d · tools/shop3d",
+    files: "components/star/Shop3D.tsx · app/star-shop3d-dev · lib/star/shop3d · public/star/shop3d · tools/shop3d",
   },
   {
     id: "footballer",

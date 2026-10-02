@@ -1,30 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * THE 3D SHOP — a test-area walk-around (Harry, 1 Oct 2026: "I kinda had a
- * different idea of actually playing a 3d person going shopping").
+ * THE 3D SHOP — a walk-around showroom (Harry, 1 Oct 2026: "I kinda had a
+ * different idea of actually playing a 3d person going shopping"; 2 Oct:
+ * "the 3D model of the car and the boots was so bad … take the model that we
+ * built and make it bigger").
  *
- * You are a footballer in kit, in a small lit boutique: a boots wall, a car
- * on a turntable, a fridge of KIB cans and a counter. Walk up to a display
- * and its card opens (the card itself is the page's own HTML, not drawn
- * here).
+ * You are a footballer in kit, in a warm, dim showroom with a spotlight on
+ * everything for sale: seven boots on plinths, a car on a turntable, a KIB
+ * can fridge and a counter with the watches and jewellery in light boxes.
+ * Walk up to a display (or tap it) and its card opens — the card is the
+ * page's own HTML (components/star/Shop3D.tsx), not drawn here.
  *
- * Nothing here plays football — there is no ball and no match. three.js is
- * NOT a dependency of this repo: it is fetched at runtime from jsDelivr,
- * pinned to one version, so trying this costs nothing to the real game's
- * bundle. Its render loop is three's own `renderer.setAnimationLoop` on a
- * WebGL canvas, which only moves the walker, the turntable and the camera.
+ * The boots and cars are the SAME Blender models the shop pictures are
+ * rendered from, exported small (tools/shop3d/export_items.py →
+ * public/star/shop3d/items/*.glb, Draco-compressed). The watches and
+ * jewellery have no 3D model: they are the shop pictures, in light boxes.
+ *
+ * three.js is the site's own `three` package, loaded only when this opens
+ * (a dynamic import, so it is its own chunk and costs nothing anywhere
+ * else). The render loop is three's `renderer.setAnimationLoop` on a WebGL
+ * canvas; nothing here plays football — there is no ball and no match.
  *
  * The character is CC0: Quaternius' Universal Base Characters body + hair,
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
-import type { DisplayId } from "./catalogue";
+import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
-import { signCanvas, floorCanvas, numberCanvas } from "./textures";
-
-export const THREE_VERSION = "0.169.0";
-const CDN = `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}`;
+import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas } from "./textures";
+import { formatMoney } from "../money";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -33,59 +38,74 @@ export interface ShopCallbacks {
   onFps: (fps: number) => void;
 }
 
+export interface Picked { display: DisplayId; index: number }
+
 export interface ShopController {
   /** Joystick: x right, y forward, each -1..1. */
   setStick: (x: number, y: number) => void;
   setKit: (kit: KitColours) => void;
-  /** Which item on a display is picked (the boots wall lights that pair, the car repaints). */
-  select: (display: DisplayId, index: number, colour: string) => void;
-  /** Which item on a display you are standing nearest (the boots wall). */
+  /** Which item on a display is picked: its plinth lights up / the car swaps. */
+  select: (display: DisplayId, index: number) => void;
+  /** Which level of the picked item the card shows (the light boxes swap picture). */
+  setLevel: (display: DisplayId, index: number, level: number) => void;
+  /** Which item on a display you are standing nearest. */
   nearestItem: (display: DisplayId) => number;
   /** He reaches out — the "buy" gesture. */
   playBuy: () => void;
-  /** A card is open: the camera steps back to show the display. */
+  /** A card is open: the camera moves in on the picked item. */
   setCardOpen: (open: boolean) => void;
-  /** Paint each pair on the boots wall (catalogue order). */
-  setBootColours: (colours: string[]) => void;
+  /** The "Owned" chip on each item's floating tag (item id → text, e.g. "Owned L2"). */
+  setOwned: (owned: Record<string, string>) => void;
   /** Drag on the view to swing the camera round. */
   orbit: (dxPixels: number) => void;
-  /** For filming: where he is. */
+  /** What is under a tap at (x, y) in page pixels, if anything. */
+  pick: (clientX: number, clientY: number) => Picked | null;
+  /** For checking: stand him at (x, z), facing yaw (radians). */
+  place: (x: number, z: number, yaw?: number) => void;
+  /** For checking: where he is. */
   where: () => { x: number; z: number; yaw: number; camYaw: number; t: number };
   /** Filming only: [wall-clock ms, game seconds] for every frame drawn. */
   filmLog: () => [number, number][];
   /** What one frame costs to draw: draw calls and triangles. */
-  stats: () => { calls: number; triangles: number; pixelRatio: number };
+  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number };
   dispose: () => void;
 }
 
 /** Room: x -6..6, z -8..8 (door at +z). Metres. */
-const ROOM = { x: 6, z: 8, h: 3.4 };
-const START = { x: 0, z: 5.3 };
+const ROOM = { x: 6, z: 8, h: 3.6 };
+const START = { x: -0.5, z: 3.7 };
 
-const ZONES: { id: DisplayId; x: number; z: number; r: number }[] = [
-  { id: "boots", x: -4.55, z: 0, r: 1.55 },
-  { id: "car", x: 2.6, z: -1.6, r: 3.15 },
-  { id: "cans", x: 4.0, z: 4.1, r: 1.35 },
-  { id: "counter", x: 0, z: -5.0, r: 1.45 },
+/** The boots: seven plinths down the west side. */
+const PLINTH_X = -4.55;
+const PLINTH_Z = [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3];
+const PLINTH_H = 0.92;
+/** The Blender boot is 0.29 m long; on its plinth it is shown at this size. */
+const BOOT_SCALE = 2.75;
+/** The car's turntable. */
+const CAR = { x: 2.35, z: -1.75, r: 2.85 };
+/** The counter and its light boxes on the back wall. */
+const COUNTER_Z = -6.45;
+const BOX_X = [-3.6, -1.8, 0, 1.8, 3.6];
+const BOX_Y = 1.95;
+const FRIDGE = { x: 5.4, z: 4.3 };
+
+type Zone = { id: DisplayId; inside: (x: number, z: number) => boolean };
+const ZONES: Zone[] = [
+  { id: "boots", inside: (x, z) => x < -2.75 && Math.abs(z) < 4.1 },
+  { id: "car", inside: (x, z) => Math.hypot(x - CAR.x, z - CAR.z) < CAR.r + 1.05 },
+  { id: "cans", inside: (x, z) => Math.hypot(x - FRIDGE.x, z - FRIDGE.z) < 1.75 },
+  { id: "counter", inside: (x, z) => z < -4.75 && Math.abs(x) < 3.4 },
 ];
 
-/** Things you can't walk through: boxes [minX, maxX, minZ, maxZ] and circles. */
+/** Things you can't walk through: boxes [minX, maxX, minZ, maxZ] and circles [x, z, r]. */
 const BOXES: [number, number, number, number][] = [
-  [-6, -5.35, -3.2, 3.2], // boots wall unit
-  [4.75, 6, 2.7, 5.5], // fridge
-  [-2.7, 2.7, -6.95, -5.85], // counter
+  [-6, -4.12, -3.85, 3.85], // the plinths
+  [4.7, 6, 2.9, 5.7], // fridge
+  [-2.8, 2.8, -7.0, -5.9], // counter
   [-6, -5.1, 5.6, 6.6], // plant
   [5.1, 6, -7.6, -6.6], // plant
 ];
-const CIRCLES: [number, number, number][] = [[2.6, -1.6, 2.15]];
-
-/** The point on a display he turns to face when its card is open. */
-function facePoint(id: DisplayId, x: number, z: number): [number, number] {
-  if (id === "boots") return [-5.5, Math.max(-2.4, Math.min(2.4, z))];
-  if (id === "car") return [2.6, -1.6];
-  if (id === "cans") return [5.4, 4.1];
-  return [Math.max(-2.2, Math.min(2.2, x)), -6.5];
-}
+const CIRCLES: [number, number, number][] = [[CAR.x, CAR.z, CAR.r - 0.05]];
 
 const WALK = 1.55; // m/s
 const JOG = 3.3;
@@ -96,23 +116,26 @@ export type ShopQuality = "high" | "low";
 export interface ShopOptions {
   quality?: ShopQuality;
   /** Filming only: every drawn frame moves the game on by exactly this many
-   *  seconds, however long it took to draw — so a machine with no graphics
-   *  chip can still film smooth, real-speed motion. Off in normal use. */
+   *  seconds, however long it took to draw. Off in normal use. */
   fixedStep?: number;
 }
 
-export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0: KitColours, opts: ShopOptions = {}): Promise<ShopController> {
-  const quality = opts.quality ?? "high";
-  const THREE: any = await import(/* webpackIgnore: true */ `${CDN}/+esm` as string);
-  const { GLTFLoader }: any = await import(/* webpackIgnore: true */ `${CDN}/examples/jsm/loaders/GLTFLoader.js/+esm` as string);
-  const { RoomEnvironment }: any = await import(/* webpackIgnore: true */ `${CDN}/examples/jsm/environments/RoomEnvironment.js/+esm` as string);
+export async function startShop(
+  container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
+  displays: Record<DisplayId, Display>, opts: ShopOptions = {},
+): Promise<ShopController> {
+  let quality = opts.quality ?? "high";
+  const THREE: any = await import("three");
+  const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
+  const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
+  const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.enabled = quality === "high";
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.display = "block";
@@ -122,35 +145,41 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#141821");
-  scene.fog = new THREE.Fog("#141821", 14, 26);
+  const BG = "#120e0b";
+  scene.background = new THREE.Color(BG);
+  scene.fog = new THREE.Fog(BG, 22, 42);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
-  scene.environmentIntensity = 0.55;
+  scene.environmentIntensity = 0.32;
 
-  const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 60);
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 60);
+  let disposed = false;
 
-  // ── Light: one sun-ish key with shadows, a sky fill, two accents ──
-  scene.add(new THREE.HemisphereLight("#e6eeff", "#4a3424", 0.75));
-  const key = new THREE.DirectionalLight("#fff3e2", 1.9);
-  key.position.set(3.5, 9, 5);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  const sc = key.shadow.camera;
-  sc.left = -8; sc.right = 8; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 25;
-  key.shadow.bias = -0.0006;
-  key.shadow.normalBias = 0.03;
-  scene.add(key);
-  const carSpot = new THREE.SpotLight("#ffffff", 40, 9, 0.62, 0.5, 1.6);
-  carSpot.position.set(2.6, ROOM.h - 0.05, -1.6);
-  carSpot.target.position.set(2.6, 0, -1.6);
-  scene.add(carSpot, carSpot.target);
-  const bootsGlow = new THREE.PointLight("#ffe7c4", 9, 6, 1.8);
-  bootsGlow.position.set(-4.2, 2.4, 0);
-  scene.add(bootsGlow);
+  // ── Light: a warm, dim room; a spotlight on everything for sale ──
+  scene.add(new THREE.HemisphereLight("#ffe8cf", "#2a1a10", 0.55));
+  const fill = new THREE.DirectionalLight("#ffe4c4", 0.45);
+  fill.position.set(-2, 6, 9);
+  scene.add(fill);
+  const spot = (colour: string, power: number, x: number, y: number, z: number, tx: number, ty: number, tz: number, angle: number, pen = 0.55, dist = 9) => {
+    const s = new THREE.SpotLight(colour, power, dist, angle, pen, 2);
+    s.position.set(x, y, z);
+    s.target.position.set(tx, ty, tz);
+    scene.add(s, s.target);
+    return s;
+  };
+  const carSpot = spot("#fff3e4", 150, CAR.x + 0.3, ROOM.h - 0.08, CAR.z + 0.6, CAR.x, 0, CAR.z, 0.72, 0.5, 12);
+  carSpot.castShadow = quality === "high";
+  carSpot.shadow.mapSize.set(1024, 1024);
+  carSpot.shadow.bias = -0.0004;
+  carSpot.shadow.normalBias = 0.03;
+  carSpot.shadow.camera.near = 0.5;
+  carSpot.shadow.camera.far = 8;
+  spot("#d9e8ff", 45, CAR.x + 3.2, ROOM.h - 0.1, CAR.z + 3.0, CAR.x, 0.6, CAR.z, 0.55, 0.7, 10); // a cool kicker on the paint
+  for (const z of [-2.2, 0, 2.2]) spot("#ffdcae", 70, -2.7, ROOM.h - 0.08, z, PLINTH_X, PLINTH_H, z, 0.62, 0.55, 8);
+  spot("#ffe6c2", 70, 0, ROOM.h - 0.08, -4.4, 0, 1.2, COUNTER_Z - 0.6, 1.0, 0.6, 9);
 
-  // ── Materials ──
+  // ── Materials and helpers ──
   const mat = (c: string, o: any = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, metalness: 0, ...o });
   const glow = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i });
   const canvasTex = (cv: HTMLCanvasElement) => {
@@ -167,25 +196,38 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     scene.add(me);
     return me;
   };
-  const sign = (text: string, bg: string, ink: string, w: number, h: number, x: number, y: number, z: number, ry: number) => {
-    const t = canvasTex(signCanvas(text, { bg, ink, w: 512, h: Math.round((512 * h) / w) }));
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: t, emissive: "#ffffff", emissiveMap: t, emissiveIntensity: 0.9, roughness: 0.6 }));
+  const neon = (text: string, ink: string, w: number, x: number, y: number, z: number, ry: number) => {
+    const cv = neonCanvas(text, ink);
+    const t = canvasTex(cv);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, (w * cv.height) / cv.width),
+      new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false, fog: false }));
     m.position.set(x, y, z);
     m.rotation.y = ry;
     scene.add(m);
+    return m;
+  };
+  const blobT = canvasTex(blobCanvas());
+  const blob = (w: number, d: number, x: number, z: number, parent: any = scene, y = 0.012, opacity = 1) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ map: blobT, transparent: true, depthWrite: false, opacity }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, y, z);
+    m.renderOrder = 1;
+    parent.add(m);
     return m;
   };
 
   // ── The room ──
   const floorT = canvasTex(floorCanvas());
   floorT.wrapS = floorT.wrapT = THREE.RepeatWrapping;
-  floorT.repeat.set(3, 4);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), mat("#ffffff", { map: floorT, roughness: 0.5 }));
+  floorT.repeat.set(4, 5.3);
+  // dark polished boards: low roughness, so the lights sheen across them
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), mat("#6e4c35", { map: floorT, roughness: 0.3, metalness: 0.05 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
-  const wallM = mat("#262c38", { roughness: 0.9 });
-  const skirtM = mat("#11141a", { roughness: 0.6 });
+  const wallM = mat("#2e2620", { roughness: 0.92 });
+  const panelM = mat("#3b2c22", { roughness: 0.6 });
+  const trimM = mat("#c79a4b", { roughness: 0.35, metalness: 0.8 });
   // back (north), west, east walls
   box(ROOM.x * 2, ROOM.h, 0.1, wallM, 0, ROOM.h / 2, -ROOM.z);
   box(0.1, ROOM.h, ROOM.z * 2, wallM, -ROOM.x, ROOM.h / 2, 0);
@@ -194,175 +236,231 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
   box(ROOM.x - 1.2, ROOM.h, 0.1, wallM, -(ROOM.x + 1.2) / 2, ROOM.h / 2, ROOM.z);
   box(ROOM.x - 1.2, ROOM.h, 0.1, wallM, (ROOM.x + 1.2) / 2, ROOM.h / 2, ROOM.z);
   box(2.4, ROOM.h - 2.6, 0.1, wallM, 0, 2.6 + (ROOM.h - 2.6) / 2, ROOM.z);
+  // walnut panelling, a gold rail and a warm cove light round the walls
+  box(0.05, 1.1, ROOM.z * 2 - 0.2, panelM, -ROOM.x + 0.08, 0.55, 0);
+  box(0.05, 1.1, ROOM.z * 2 - 0.2, panelM, ROOM.x - 0.08, 0.55, 0);
+  box(ROOM.x * 2 - 0.2, 1.1, 0.05, panelM, 0, 0.55, -ROOM.z + 0.08);
+  box(0.06, 0.03, ROOM.z * 2 - 0.2, trimM, -ROOM.x + 0.1, 1.12, 0);
+  box(0.06, 0.03, ROOM.z * 2 - 0.2, trimM, ROOM.x - 0.1, 1.12, 0);
+  box(ROOM.x * 2 - 0.2, 0.03, 0.06, trimM, 0, 1.12, -ROOM.z + 0.1);
+  box(0.04, 0.04, ROOM.z * 2 - 0.3, glow("#ffb867", 2.2), -ROOM.x + 0.12, ROOM.h - 0.25, 0);
+  box(0.04, 0.04, ROOM.z * 2 - 0.3, glow("#ffb867", 2.2), ROOM.x - 0.12, ROOM.h - 0.25, 0);
+  box(ROOM.x * 2 - 0.3, 0.04, 0.04, glow("#ffb867", 2.2), 0, ROOM.h - 0.25, -ROOM.z + 0.12);
   // daylight outside the door, and the glass doors standing open
-  const outside = new THREE.Mesh(new THREE.PlaneGeometry(6, 4), new THREE.MeshBasicMaterial({ color: "#cfe3ff" }));
+  const outside = new THREE.Mesh(new THREE.PlaneGeometry(6, 4), new THREE.MeshBasicMaterial({ color: "#d9e6f5" }));
   outside.position.set(0, 1.6, ROOM.z + 1.2);
   outside.rotation.y = Math.PI;
   scene.add(outside);
-  const glassM = new THREE.MeshStandardMaterial({ color: "#9fc4e8", transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0.1 });
+  const glassM = new THREE.MeshStandardMaterial({ color: "#a9c8e6", transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.1, depthWrite: false });
   for (const s of [-1, 1]) {
     const d = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.5, 0.04), glassM);
     d.position.set(s * 1.55, 1.25, ROOM.z - 0.45);
     d.rotation.y = s * 1.2;
     scene.add(d);
   }
-  // skirting and a ceiling with light strips
-  box(ROOM.x * 2, 0.12, 0.04, skirtM, 0, 0.06, -ROOM.z + 0.07);
-  box(0.04, 0.12, ROOM.z * 2, skirtM, -ROOM.x + 0.07, 0.06, 0);
-  box(0.04, 0.12, ROOM.z * 2, skirtM, ROOM.x - 0.07, 0.06, 0);
-  box(ROOM.x * 2, 0.08, ROOM.z * 2, mat("#2a2f3a", { roughness: 0.95 }), 0, ROOM.h, 0);
-  for (const x of [-3, 0, 3]) box(0.08, 0.02, 11, glow("#fff1dc", 1.1), x, ROOM.h - 0.05, 0);
-  // a rug down the middle
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 9), mat("#3a1f24", { roughness: 0.95 }));
+  // a dark ceiling with round downlights
+  box(ROOM.x * 2, 0.08, ROOM.z * 2, mat("#1f1813", { roughness: 0.9, emissive: "#0d0906", emissiveIntensity: 1 }), 0, ROOM.h, 0);
+  const downG = new THREE.CircleGeometry(0.11, 20);
+  const downM = glow("#fff1d6", 3);
+  for (const [x, z] of [[-2.7, -2.2], [-2.7, 0], [-2.7, 2.2], [0, -4.4], [CAR.x + 0.3, CAR.z + 0.6], [CAR.x + 3.2, CAR.z + 3.0],
+    [-1.5, 4.5], [1.8, 4.5], [-1.2, 1.2], [4.2, 3.0]] as [number, number][]) {
+    const d = new THREE.Mesh(downG, downM);
+    d.rotation.x = Math.PI / 2;
+    d.position.set(x, ROOM.h - 0.045, z);
+    scene.add(d);
+  }
+  // a runner up the middle
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 7.5), mat("#4a1c1f", { roughness: 0.95 }));
   rug.rotation.x = -Math.PI / 2;
-  rug.position.set(-0.6, 0.005, 1.5);
+  rug.position.set(-1.0, 0.006, 3.6);
   rug.receiveShadow = true;
   scene.add(rug);
-  // plants
+  const rugEdge = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 7.6), mat("#b88a3e", { roughness: 0.6, metalness: 0.4 }));
+  rugEdge.rotation.x = -Math.PI / 2;
+  rugEdge.position.set(-1.0, 0.004, 3.6);
+  scene.add(rugEdge);
+  // plants in brass pots
   const plant = (x: number, z: number) => {
-    box(0.55, 0.6, 0.55, mat("#e9e4dc"), x, 0.3, z, true);
-    const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 0), mat("#2f6b3a", { flatShading: true }));
-    leaves.position.set(x, 1.15, z);
-    leaves.scale.set(1, 1.35, 1);
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.24, 0.6, 20), mat("#b58a45", { roughness: 0.35, metalness: 0.7 }));
+    pot.position.set(x, 0.3, z);
+    pot.castShadow = true;
+    scene.add(pot);
+    const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat("#2d5a33", { flatShading: true, roughness: 0.8 }));
+    leaves.position.set(x, 1.2, z);
+    leaves.scale.set(1, 1.45, 1);
     leaves.castShadow = true;
     scene.add(leaves);
+    blob(1.1, 1.1, x, z);
   };
   plant(-5.5, 6.1);
   plant(5.5, -7.1);
 
-  // ── The boots wall (west) ──
-  box(0.5, 3, 6.4, mat("#0f1218", { roughness: 0.5 }), -5.7, 1.5, 0);
-  sign("BOOTS", "#0f1218", "#ffffff", 2.4, 0.6, -5.43, 2.85, 0, Math.PI / 2);
-  const shelfY = [0.8, 1.45, 2.1];
-  const shelfM = mat("#f3f1ec", { roughness: 0.35 });
-  for (const y of shelfY) {
-    box(0.42, 0.04, 6.0, shelfM, -5.25, y, 0, false);
-    box(0.02, 0.015, 5.9, glow("#ffe2b0", 3), -5.06, y - 0.03, 0);
-  }
-  const bootPairs: any[] = [];
-  const bootMats: any[] = [];
-  const BOOT_SLOTS: [number, number][] = [ // [shelf, z]
-    [0, -1.6], [0, 0], [0, 1.6], [1, -0.9], [1, 0.9], [2, -0.9], [2, 0.9],
-  ];
-  // A football boot, from its side outline (heel at x=0, toe at x=0.29 m),
-  // pushed out to a boot's width with soft edges.
-  const extrude = (pts: (s: any) => void, depth: number) => {
-    const sh = new THREE.Shape();
-    pts(sh);
-    const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.014, bevelSegments: 2, curveSegments: 8 });
-    g.translate(-0.145, 0, -depth / 2);
-    g.rotateY(Math.PI / 2);
-    return g;
+  // ── Floating price tags ──
+  type Tag = { sprite: any; tex: any; key: string; base: [number, number, number]; display: DisplayId; index: number };
+  const tags: Tag[] = [];
+  let owned: Record<string, string> = {};
+  const fromPrice = (display: DisplayId, index: number) => {
+    const it = displays[display].items[index];
+    const p = Math.min(...it.levels.map((l) => l.price));
+    return `${it.levels.length > 1 ? "from " : ""}★${formatMoney(p)}`;
   };
-  const bootGeo = extrude((s) => {
-    s.moveTo(0.0, 0.012);
-    s.lineTo(0.27, 0.012);
-    s.quadraticCurveTo(0.305, 0.016, 0.296, 0.04);
-    s.quadraticCurveTo(0.27, 0.062, 0.2, 0.072);
-    s.quadraticCurveTo(0.13, 0.085, 0.095, 0.125);
-    s.lineTo(0.08, 0.138);
-    s.quadraticCurveTo(0.04, 0.128, 0.012, 0.13);
-    s.quadraticCurveTo(-0.012, 0.07, 0.0, 0.012);
-  }, 0.07);
-  const soleGeo = extrude((s) => {
-    s.moveTo(-0.004, 0.0);
-    s.lineTo(0.285, 0.0);
-    s.quadraticCurveTo(0.31, 0.006, 0.3, 0.02);
-    s.lineTo(-0.008, 0.02);
-    s.lineTo(-0.004, 0.0);
-  }, 0.074);
-  const stripeGeo = new THREE.BoxGeometry(0.004, 0.018, 0.12);
-  const lightSole = mat("#ececec", { roughness: 0.5 });
-  const darkSole = mat("#151515", { roughness: 0.5 });
-  for (let i = 0; i < BOOT_SLOTS.length; i++) {
-    const [s, z] = BOOT_SLOTS[i];
-    const pair = new THREE.Group();
-    const m = mat("#ffffff", { roughness: 0.3, metalness: 0.08 });
-    bootMats.push(m);
-    for (const dx of [-0.075, 0.075]) {
-      const b = new THREE.Mesh(bootGeo, m);
-      b.position.set(dx, 0.0, dx * 0.5);
-      b.castShadow = true;
-      const sole = new THREE.Mesh(soleGeo, i === 4 ? lightSole : darkSole);
-      sole.position.set(dx, 0.0, dx * 0.5);
-      const stripe = new THREE.Mesh(stripeGeo, i === 4 ? lightSole : darkSole);
-      stripe.position.set(dx + (dx > 0 ? 0.05 : -0.05), 0.06, dx * 0.5 - 0.02);
-      stripe.rotation.x = -0.35;
-      pair.add(b, sole, stripe);
+  const tagText = (display: DisplayId, index: number) => {
+    const it = displays[display].items[index];
+    return { name: display === "cans" ? "KIB Cans" : it.name, price: fromPrice(display, index), tag: owned[it.id] ?? null };
+  };
+  const makeTag = (display: DisplayId, index: number, x: number, y: number, z: number, w = 1.05) => {
+    const t = tagText(display, index);
+    const tex = canvasTex(labelCanvas(t.name, t.price, t.tag));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
+    sp.scale.set(w, (w * 168) / 512, 1);
+    sp.position.set(x, y, z);
+    sp.renderOrder = 5;
+    scene.add(sp);
+    const tg: Tag = { sprite: sp, tex, key: JSON.stringify(t), base: [x, y, z], display, index };
+    tags.push(tg);
+    return tg;
+  };
+  const redrawTags = () => {
+    for (const tg of tags) {
+      const t = tagText(tg.display, tg.index);
+      const key = JSON.stringify(t);
+      if (key === tg.key) continue;
+      tg.key = key;
+      tg.tex.image = labelCanvas(t.name, t.price, t.tag);
+      tg.tex.needsUpdate = true;
     }
-    pair.scale.setScalar(1.5);
-    pair.position.set(-5.2, shelfY[s] + 0.025, z);
-    pair.rotation.y = 0.5;
-    scene.add(pair);
-    bootPairs.push(pair);
-  }
-  const bootHalo = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.42), new THREE.MeshBasicMaterial({ color: "#ffd88a", transparent: true, opacity: 0.0 }));
-  bootHalo.rotation.y = Math.PI / 2;
-  scene.add(bootHalo);
+  };
+
+  // things a tap can pick: mesh -> which item
+  const pickables: any[] = [];
+  const pickable = (o: any, display: DisplayId, index: number) => {
+    o.traverse((c: any) => { if (c.isMesh) { c.userData.pick = { display, index }; pickables.push(c); } });
+  };
+
+  // ── The loaders ──
+  const draco = new DRACOLoader();
+  draco.setDecoderPath("/star/shop3d/draco/");
+  draco.setDecoderConfig({ type: "wasm" });
+  const loader = new GLTFLoader();
+  loader.setDRACOLoader(draco);
+  let loaded = 0;
+  const models = new Map<string, Promise<any>>();
+  const loadModel = (url: string) => {
+    if (!models.has(url)) {
+      models.set(url, loader.loadAsync(url).then((g: any) => {
+        loaded++;
+        g.scene.traverse((o: any) => {
+          if (!o.isMesh) return;
+          o.castShadow = true;
+          o.receiveShadow = true;
+          const m = o.material;
+          if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
+        });
+        return g.scene;
+      }));
+    }
+    return models.get(url)!;
+  };
+
+  // ── The boots, one on each plinth ──
+  const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
+  const plinthM = mat("#1c1714", { roughness: 0.32, metalness: 0.25 });
+  box(1.1, 0.04, 8.0, mat("#100c0a", { roughness: 0.25, metalness: 0.3 }), PLINTH_X, 0.02, 0); // a dark stage under the row
+  box(0.06, 2.6, 8.2, mat("#211915", { roughness: 0.55 }), -ROOM.x + 0.14, 1.85, 0); // a dark wall panel behind
+  neon("BOOTS", "#ffb347", 2.6, -ROOM.x + 0.2, 2.9, 0, Math.PI / 2);
+  const bootSlots: { group: any; ring: any; tag: Tag; z: number; spin: number }[] = [];
+  const ringG = new THREE.TorusGeometry(0.395, 0.012, 8, 48);
+  displays.boots.items.forEach((it, i) => {
+    const z = PLINTH_Z[i] ?? i;
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.4, PLINTH_H, 32), plinthM);
+    col.position.set(PLINTH_X, PLINTH_H / 2, z);
+    col.castShadow = true;
+    col.receiveShadow = true;
+    scene.add(col);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.035, 32), plinthTopM);
+    top.position.set(PLINTH_X, PLINTH_H + 0.017, z);
+    top.receiveShadow = true;
+    scene.add(top);
+    const ring = new THREE.Mesh(ringG, glow(it.colour, 0.9));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(PLINTH_X, PLINTH_H + 0.002, z);
+    scene.add(ring);
+    blob(0.95, 0.95, PLINTH_X, z);
+    const group = new THREE.Group();
+    group.position.set(PLINTH_X, PLINTH_H + 0.035, z);
+    group.scale.setScalar(BOOT_SCALE);
+    scene.add(group);
+    blob(0.32, 0.18, 0, 0, group, 0.002, 0.8);
+    pickable(col, "boots", i);
+    const tag = makeTag("boots", i, PLINTH_X + 0.15, PLINTH_H + 0.78, z, 0.98);
+    pickable(tag.sprite, "boots", i);
+    bootSlots.push({ group, ring, tag, z, spin: i * 0.9 });
+    if (it.model) {
+      loadModel(it.model).then((m) => {
+        if (disposed) return;
+        const b = m.clone();
+        group.add(b);
+        pickable(b, "boots", i);
+      }).catch((e) => console.error("boot model", e));
+    }
+  });
 
   // ── The car on its turntable ──
   const table = new THREE.Group();
-  table.position.set(2.6, 0, -1.6);
+  table.position.set(CAR.x, 0, CAR.z);
   scene.add(table);
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.1, 0.14, 48), mat("#20242c", { metalness: 0.6, roughness: 0.3 }));
-  disc.position.y = 0.07;
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(CAR.r, CAR.r + 0.05, 0.12, 64), mat("#1a1715", { metalness: 0.55, roughness: 0.25 }));
+  disc.position.y = 0.06;
   disc.receiveShadow = true;
   table.add(disc);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.07, 0.02, 6, 64), glow("#7fd4ff", 2.5));
+  const discTop = new THREE.Mesh(new THREE.CircleGeometry(CAR.r - 0.12, 64), mat("#2a2420", { metalness: 0.3, roughness: 0.35 }));
+  discTop.rotation.x = -Math.PI / 2;
+  discTop.position.y = 0.122;
+  discTop.receiveShadow = true;
+  table.add(discTop);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(CAR.r + 0.02, 0.022, 6, 96), glow("#ffc46b", 2.4));
   ring.rotation.x = Math.PI / 2;
-  ring.position.y = 0.145;
+  ring.position.y = 0.125;
   table.add(ring);
-  const car = new THREE.Group();
-  car.position.y = 0.14;
-  table.add(car);
-  const paint = mat("#f2c230", { roughness: 0.28, metalness: 0.35 });
-  const darkGlass = mat("#10161f", { roughness: 0.1, metalness: 0.6 });
-  const carPart = (g: any, m: any, x: number, y: number, z: number) => {
-    const me = new THREE.Mesh(g, m);
-    me.position.set(x, y, z);
-    me.castShadow = true;
-    car.add(me);
-    return me;
+  pickable(disc, "car", 0);
+  const carHolder = new THREE.Group();
+  carHolder.position.y = 0.124;
+  table.add(carHolder);
+  blob(5.6, 2.9, 0, 0, carHolder, 0.004, 0.95);
+  let carIndex = -1;
+  let carWant = 0;
+  let carPop = 1; // grows the new car in
+  const carTag = makeTag("car", 0, CAR.x, 2.35, CAR.z, 1.3);
+  pickable(carTag.sprite, "car", 0);
+  const showCar = (i: number) => {
+    carWant = i;
+    const it = displays.car.items[i];
+    if (!it?.model) return;
+    loadModel(it.model).then((m) => {
+      if (disposed || carWant !== i || carIndex === i) return;
+      carIndex = i;
+      for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
+      const c = m.clone();
+      c.userData.car = true;
+      carHolder.add(c);
+      pickable(c, "car", i);
+      carPop = 0;
+      carTag.index = i;
+      redrawTags();
+    }).catch((e) => console.error("car model", e));
   };
-  // The car from its side outline (front at +x), pushed out to its width.
-  const carShape = (pts: [number, number][], depth: number, bevel: number) => {
-    const sh = new THREE.Shape();
-    sh.moveTo(pts[0][0], pts[0][1]);
-    for (const [x, y] of pts.slice(1)) sh.lineTo(x, y);
-    const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 3, curveSegments: 6 });
-    g.translate(0, 0, -depth / 2);
-    g.rotateY(Math.PI / 2);
-    return g;
-  };
-  carPart(carShape([[-2.05, 0.28], [2.0, 0.28], [2.1, 0.42], [2.08, 0.6], [1.15, 0.76], [0.3, 1.12], [-0.8, 1.15],
-    [-1.75, 0.86], [-2.08, 0.78], [-2.12, 0.42]], 1.62, 0.1), paint, 0, 0, 0);
-  carPart(carShape([[1.08, 0.79], [0.33, 1.08], [-0.77, 1.1], [-1.62, 0.86], [1.08, 0.79]], 1.86, 0.0), darkGlass, 0, 0, 0);
-  const tyreG = new THREE.CylinderGeometry(0.36, 0.36, 0.28, 18);
-  tyreG.rotateZ(Math.PI / 2);
-  const rimG = new THREE.CylinderGeometry(0.22, 0.22, 0.29, 10);
-  rimG.rotateZ(Math.PI / 2);
-  const tyreM = mat("#0b0b0c", { roughness: 0.9 });
-  const rimM = mat("#c9ced6", { metalness: 0.9, roughness: 0.25 });
-  for (const [x, z] of [[-0.86, -1.3], [0.86, -1.3], [-0.86, 1.35], [0.86, 1.35]]) {
-    carPart(tyreG, tyreM, x, 0.36, z);
-    carPart(rimG, rimM, x, 0.36, z);
-  }
-  for (const x of [-0.6, 0.6]) {
-    carPart(new THREE.BoxGeometry(0.4, 0.09, 0.04), glow("#ffffff", 3), x, 0.55, -2.2);
-    carPart(new THREE.BoxGeometry(0.45, 0.08, 0.04), glow("#ff2a2a", 2.5), x, 0.6, 2.22);
-  }
-  sign("MOTORS", "#0d1016", "#7fd4ff", 2.2, 0.5, 5.94, 2.7, -1.6, -Math.PI / 2);
+  neon("MOTORS", "#7fd4ff", 2.4, ROOM.x - 0.08, 2.85, CAR.z, -Math.PI / 2);
 
   // ── The KIB fridge (east, by the door) ──
-  const fx = 5.4, fz = 4.1;
-  box(1.1, 2.3, 2.6, mat("#e9edf2", { roughness: 0.3, metalness: 0.3 }), fx + 0.05, 1.15, fz, true);
-  const inside = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.9), glow("#e8f6ff", 0.9));
+  const fx = FRIDGE.x, fz = FRIDGE.z;
+  box(1.1, 2.3, 2.6, mat("#d9dde2", { roughness: 0.3, metalness: 0.4 }), fx + 0.05, 1.15, fz, true);
+  const inside = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.9), glow("#f0f8ff", 1.0));
   inside.position.set(fx - 0.15, 1.2, fz);
   inside.rotation.y = -Math.PI / 2;
   scene.add(inside);
-  const canG = new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12);
+  const canG = new THREE.CylinderGeometry(0.05, 0.05, 0.17, 16);
   const PER = 9;
-  const cansMesh = new THREE.InstancedMesh(canG, mat("#ffffff", { roughness: 0.3, metalness: 0.7 }), 3 * 3 * PER);
+  const cansMesh = new THREE.InstancedMesh(canG, mat("#ffffff", { roughness: 0.25, metalness: 0.75 }), 3 * 3 * PER);
   const tmp = new THREE.Object3D();
   let ci = 0;
   for (let shelf = 0; shelf < 3; shelf++) {
@@ -370,7 +468,7 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     box(0.5, 0.025, 2.3, mat("#cfd6de", { roughness: 0.2, metalness: 0.5 }), fx - 0.4, y - 0.1, fz);
     for (let col = 0; col < 3; col++) {
       for (let k = 0; k < PER; k++) {
-        tmp.position.set(fx - 0.55 + (k % 3) * 0.1, y, fz - 1.0 + col * 0.75 + Math.floor(k / 3) * 0.1);
+        tmp.position.set(fx - 0.55 + (k % 3) * 0.11, y, fz - 1.0 + col * 0.75 + Math.floor(k / 3) * 0.11);
         tmp.updateMatrix();
         cansMesh.setMatrixAt(ci, tmp.matrix);
         cansMesh.setColorAt(ci, new THREE.Color(CAN_COLOURS[col]));
@@ -379,36 +477,61 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     }
   }
   scene.add(cansMesh);
+  pickable(cansMesh, "cans", 0);
   const fridgeGlass = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.0), glassM);
   fridgeGlass.position.set(fx - 0.52, 1.2, fz);
   fridgeGlass.rotation.y = -Math.PI / 2;
   scene.add(fridgeGlass);
-  sign("KIB CANS", "#ff8a1f", "#140a02", 2.0, 0.42, fx - 0.5, 2.55, fz, -Math.PI / 2);
+  neon("KIB CANS", "#ff8a1f", 2.0, fx - 0.52, 2.6, fz, -Math.PI / 2);
+  pickable(makeTag("cans", 0, fx - 1.0, 2.05, fz, 1.0).sprite, "cans", 0);
+  blob(1.6, 3.0, fx, fz);
 
-  // ── The counter (north) with a watch case and the till ──
-  box(5.2, 1.0, 0.95, mat("#f4f1ea", { roughness: 0.4 }), 0, 0.5, -6.4, true);
-  box(5.3, 0.05, 1.05, mat("#20242c", { roughness: 0.25, metalness: 0.4 }), 0, 1.02, -6.4);
-  box(5.2, 0.04, 0.02, glow("#ffcf6e", 2.5), 0, 0.2, -5.91);
-  const caseGlass = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.34, 0.6), glassM);
-  caseGlass.position.set(-1.1, 1.22, -6.35);
-  scene.add(caseGlass);
-  const watchMs: any[] = [];
-  for (let i = 0; i < 5; i++) {
-    const wm = mat(["#d9dde3", "#c0c6cf", "#e1b84a", "#e8f4ff", "#e1b84a"][i], { metalness: 0.95, roughness: 0.2 });
-    watchMs.push(wm);
-    const w = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.018, 8, 20), wm);
-    w.position.set(-1.85 + i * 0.37, 1.13, -6.35);
-    w.rotation.x = -1.1;
-    scene.add(w);
-  }
-  box(0.42, 0.3, 0.32, mat("#1a1d24"), 1.5, 1.2, -6.45, true);
-  box(0.36, 0.22, 0.02, glow("#5ce1a1", 1.4), 1.5, 1.4, -6.28);
-  // back wall: the shop's name
-  sign("KNOWITBALL STORE", "#0d1016", "#ffffff", 5.6, 0.7, 0, 2.55, -ROOM.z + 0.07, 0);
-  box(5.8, 0.04, 0.3, shelfM, 0, 1.75, -ROOM.z + 0.2);
+  // ── The counter, and the watches and jewellery in light boxes behind it ──
+  box(5.4, 1.0, 0.95, mat("#e8e0d2", { roughness: 0.35 }), 0, 0.5, COUNTER_Z, true);
+  box(5.5, 0.05, 1.05, mat("#1d1814", { roughness: 0.2, metalness: 0.5 }), 0, 1.02, COUNTER_Z);
+  box(5.4, 0.04, 0.02, glow("#ffcf6e", 2.5), 0, 0.2, COUNTER_Z + 0.49);
+  box(0.42, 0.3, 0.32, mat("#1a1d24"), 2.1, 1.2, COUNTER_Z - 0.05, true);
+  box(0.36, 0.22, 0.02, glow("#5ce1a1", 1.4), 2.1, 1.4, COUNTER_Z + 0.12);
+  blob(6.2, 1.6, 0, COUNTER_Z);
+  neon("KNOWITBALL", "#ffd27a", 4.2, 0, 3.05, -ROOM.z + 0.12, 0);
+  const texLoader = new THREE.TextureLoader();
+  const boxM: any[] = [];
+  const boxLevel: number[] = [];
+  const frameM = mat("#c79a4b", { roughness: 0.3, metalness: 0.85 });
+  displays.counter.items.forEach((it, i) => {
+    const x = BOX_X[i] ?? 0;
+    const zb = -ROOM.z + 0.16;
+    box(1.32, 1.06, 0.06, frameM, x, BOX_Y, zb);
+    // the light box: a warm white panel the picture sits on
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 0.96), new THREE.MeshBasicMaterial({ color: "#f3ead9", toneMapped: false }));
+    panel.position.set(x, BOX_Y, zb + 0.035);
+    scene.add(panel);
+    const pm = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, color: "#ffffff" });
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.9), pm);
+    pic.position.set(x, BOX_Y, zb + 0.04);
+    scene.add(pic);
+    boxM.push(pm);
+    boxLevel.push(0);
+    pickable(panel, "counter", i);
+    pickable(pic, "counter", i);
+    pickable(makeTag("counter", i, x, BOX_Y + 0.78, zb + 0.35, 1.0).sprite, "counter", i);
+  });
+  const showPicture = (i: number, level: number) => {
+    const it = displays.counter.items[i];
+    if (!it?.picture || boxLevel[i] === level) return;
+    boxLevel[i] = level;
+    texLoader.load(it.picture(level), (t: any) => {
+      if (disposed || boxLevel[i] !== level) { t.dispose(); return; }
+      t.colorSpace = THREE.SRGBColorSpace;
+      const old = boxM[i].map;
+      boxM[i].map = t;
+      boxM[i].needsUpdate = true;
+      old?.dispose?.();
+    });
+  };
+  displays.counter.items.forEach((_, i) => showPicture(i, 3));
 
   // ── The footballer ──
-  const loader = new GLTFLoader();
   const [charGltf, animGltf] = await Promise.all([
     loader.loadAsync("/star/shop3d/character.glb"),
     loader.loadAsync("/star/shop3d/anims.glb"),
@@ -417,6 +540,7 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
   player.position.set(START.x, 0, START.z);
   player.rotation.y = Math.PI; // facing into the shop (-z)
   scene.add(player);
+  const playerBlob = blob(0.9, 0.9, START.x, START.z, scene, 0.014, 0.9);
   const kitU = {
     uShirt: { value: new THREE.Color(kit0.shirt) },
     uTrim: { value: new THREE.Color(kit0.trim) },
@@ -438,8 +562,7 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
   const mixer = new THREE.AnimationMixer(player);
   const clip = (n: string) => animGltf.animations.find((a: any) => a.name === n);
   const act = (n: string) => {
-    const c = clip(n);
-    const a = mixer.clipAction(c);
+    const a = mixer.clipAction(clip(n));
     a.play();
     a.setEffectiveWeight(0);
     return a;
@@ -461,11 +584,12 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
   let near: DisplayId | null = null;
-  let frames = 0, fpsT0 = performance.now();
+  let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
   let framed = false, frame = 0;
+  let sel: { display: DisplayId; index: number } = { display: "car", index: 0 };
   const filmLog: [number, number][] = [];
-  let disposed = false;
+  let lastOff = -1; // the camera's view offset, in pixels
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase();
@@ -482,6 +606,9 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    // a tall phone screen sees more of the room with a wider lens
+    camera.fov = w / h < 0.7 ? 60 : 54;
+    lastOff = -1;
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(resize);
@@ -513,9 +640,36 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     return [x, z];
   };
 
+  /** Where the camera goes, and looks, to show the picked item close up. */
+  const focusShot = (): { cam: [number, number, number]; look: [number, number, number] } => {
+    const { display, index } = sel;
+    if (display === "boots") {
+      const z = PLINTH_Z[index] ?? 0;
+      const side = z > 2.5 ? -1 : 1;
+      return { cam: [-1.95, 2.05, z + side * 1.55], look: [PLINTH_X, PLINTH_H + 0.22, z + side * 0.1] };
+    }
+    if (display === "car") {
+      // from wherever he is standing, three-quarters on and a bit high
+      let a = Math.atan2(player.position.x - CAR.x, player.position.z - CAR.z) + 0.55;
+      if (!isFinite(a)) a = 0.6;
+      const d = 7.4;
+      let cx = CAR.x + Math.sin(a) * d, cz = CAR.z + Math.cos(a) * d;
+      cx = Math.max(-ROOM.x + 0.4, Math.min(ROOM.x - 0.4, cx));
+      cz = Math.max(-ROOM.z + 0.4, Math.min(ROOM.z - 0.4, cz));
+      return { cam: [cx, 2.9, cz], look: [CAR.x, 0.35, CAR.z] };
+    }
+    if (display === "counter") {
+      const x = BOX_X[index] ?? 0;
+      return { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
+    }
+    return { cam: [2.6, 1.8, FRIDGE.z + 0.9], look: [FRIDGE.x, 1.2, FRIDGE.z] };
+  };
+
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3();
-  const look = new THREE.Vector3();
+  const camLook = new THREE.Vector3();
+  const want = new THREE.Vector3();
+  const wantLook = new THREE.Vector3();
   let first = true;
 
   renderer.setAnimationLoop(() => {
@@ -542,12 +696,12 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
       const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
       const rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
       const dx = fx * iy + rx * ix, dz = fz * iy + rz * ix;
-      const want = Math.atan2(dx, dz);
-      yaw += angDiff(yaw, want) * Math.min(1, dt * 10);
+      yaw += angDiff(yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 10);
     }
     const [nx, nz] = collide(player.position.x + Math.sin(yaw) * speed * dt, player.position.z + Math.cos(yaw) * speed * dt);
     player.position.x = nx; player.position.z = nz;
     player.rotation.y = yaw;
+    playerBlob.position.set(nx, 0.014, nz);
 
     // animation blend
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
@@ -564,72 +718,117 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
     if (buying > 0) buying -= dt;
     mixer.update(dt);
 
-    // a card is open and he's stopped: he turns to the display, and so does the camera
-    if (framed && near && speed < 0.3 && mag < 0.08) {
-      const [tx, tz] = facePoint(near, player.position.x, player.position.z);
-      const want = Math.atan2(tx - player.position.x, tz - player.position.z);
-      yaw += angDiff(yaw, want) * Math.min(1, dt * 5);
+    // a card is open: he turns to face what's picked
+    const shot = framed ? focusShot() : null;
+    if (shot && speed < 0.3 && mag < 0.08) {
+      const w2 = Math.atan2(shot.look[0] - player.position.x, shot.look[2] - player.position.z);
+      yaw += angDiff(yaw, w2) * Math.min(1, dt * 5);
       player.rotation.y = yaw;
-      if (orbitHold <= 0) camYaw += angDiff(camYaw, want + Math.PI) * Math.min(1, dt * 2.5);
     }
-    // camera: swings round behind him while he walks
+
+    // camera: follows behind him; with a card open it moves in on the item
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    // pull back when a card is open, so the display is in the picture
-    const pull = (frame += ((framed ? 1 : 0) - frame) * Math.min(1, dt * 3));
-    const want = new THREE.Vector3(player.position.x, 2.4 + 0.25 * pull, player.position.z)
-      .addScaledVector(cf, -4.1 - 1.6 * pull).addScaledVector(cr, 0.3);
+    want.set(player.position.x, 2.85, player.position.z).addScaledVector(cf, -4.6).addScaledVector(cr, 0.3);
+    wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
+    if (shot) {
+      want.lerp(new THREE.Vector3(...shot.cam), frame);
+      wantLook.lerp(new THREE.Vector3(...shot.look), frame);
+    }
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
-    want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z + 0.9, want.z));
-    if (first) { camPos.copy(want); first = false; } else camPos.lerp(want, Math.min(1, dt * 6));
+    want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
+    if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
+    else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
     camera.position.copy(camPos);
-    look.set(player.position.x, 1.0, player.position.z).addScaledVector(cf, 1.8).addScaledVector(cr, 0.15);
-    camera.lookAt(look);
+    camera.lookAt(camLook);
+    // with a card open, slide the picture up so the item sits above the card
+    const vw = container.clientWidth || 1, vh = container.clientHeight || 1;
+    const offY = Math.round(frame * 0.17 * vh);
+    if (offY !== lastOff) {
+      lastOff = offY;
+      if (offY > 0) camera.setViewOffset(vw, vh, 0, offY, vw, vh); else camera.clearViewOffset();
+    }
 
-    // the turntable turns, the picked boots glow
-    table.rotation.y += dt * 0.25;
-    bootHalo.material.opacity = 0.18 + 0.1 * Math.sin(gameT * 3);
+    // the turntable turns, the boots turn slowly on their plinths
+    table.rotation.y += dt * 0.22;
+    if (carPop < 1) { carPop = Math.min(1, carPop + dt * 2.2); }
+    const pop = 1 - Math.pow(1 - carPop, 3);
+    carHolder.scale.setScalar(0.85 + 0.15 * pop);
+    bootSlots.forEach((b, i) => {
+      const on = sel.display === "boots" && sel.index === i;
+      b.group.rotation.y = b.spin + gameT * (on ? 0.6 : 0.25);
+      const s = BOOT_SCALE * (on ? 1.12 : 1);
+      b.group.scale.setScalar(b.group.scale.x + (s - b.group.scale.x) * Math.min(1, dt * 6));
+      b.group.position.y = PLINTH_H + 0.035 + (on ? 0.04 + 0.02 * Math.sin(gameT * 2.2) : 0);
+      b.ring.material.emissiveIntensity = on ? 2.6 + 0.6 * Math.sin(gameT * 4) : 0.9;
+    });
+    // tags: full when you're near, fading out across the room
+    for (const tg of tags) {
+      const d = Math.hypot(tg.base[0] - player.position.x, tg.base[2] - player.position.z);
+      const on = framed && tg.display === sel.display && tg.index === sel.index && (tg.display !== "car" || true);
+      const a = on ? 1 : Math.max(0, Math.min(1, (7.5 - d) / 2.5)) * (framed ? 0.35 : 1);
+      tg.sprite.material.opacity = a;
+      tg.sprite.visible = a > 0.02;
+      tg.sprite.position.y = tg.base[1] + 0.03 * Math.sin(gameT * 1.6 + tg.base[2]);
+    }
 
     // which display is he at?
     let now: DisplayId | null = null;
     for (const zn of ZONES) {
-      if (Math.hypot(player.position.x - zn.x, player.position.z - zn.z) < zn.r) { now = zn.id; break; }
+      if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
     }
     if (now !== near) { near = now; cb.onNear(near); }
 
     renderer.render(scene, camera);
-    // frames per real second (wall clock, not the capped step above)
+    // frames per real second; a phone that can't keep up drops to fewer pixels
     frames++;
     const nowMs = performance.now();
-    if (nowMs - fpsT0 >= 1000) { cb.onFps(Math.round((frames * 1000) / (nowMs - fpsT0))); frames = 0; fpsT0 = nowMs; }
+    if (nowMs - fpsT0 >= 1000) {
+      const fps = Math.round((frames * 1000) / (nowMs - fpsT0));
+      cb.onFps(fps);
+      frames = 0; fpsT0 = nowMs;
+      if (!opts.fixedStep && quality === "high") {
+        slowSeconds = fps < 28 ? slowSeconds + 1 : 0;
+        if (slowSeconds >= 3) {
+          quality = "low";
+          renderer.setPixelRatio(1);
+          carSpot.castShadow = false;
+          renderer.shadowMap.enabled = false;
+          resize();
+        }
+      }
+    }
   });
 
+  const ray = new THREE.Raycaster();
   const ctrl: ShopController = {
     setStick: (x, y) => { stick = { x, y }; },
-    setCardOpen: (open) => { framed = open; },
-    setBootColours: (cs) => { bootMats.forEach((m, i) => m.color.set(cs[i] ?? "#ffffff")); },
+    setCardOpen: (open) => { framed = open; if (open) orbitHold = 0; },
     setKit: (k) => { kitU.uShirt.value.set(k.shirt); kitU.uTrim.value.set(k.trim); },
-    select: (display, index, colour) => {
-      if (display === "boots") {
-        bootPairs.forEach((p, i) => p.scale.setScalar(i === index ? 1.95 : 1.5));
-        const p = bootPairs[index];
-        if (p) { bootHalo.position.set(-5.43, p.position.y + 0.12, p.position.z); }
-      } else if (display === "car") {
-        paint.color.set(colour);
-      } else if (display === "counter") {
-        watchMs.forEach((m, i) => { m.emissive.set(i === index ? "#3a2a00" : "#000000"); });
-      }
+    select: (display, index) => {
+      sel = { display, index };
+      if (display === "car") showCar(index);
     },
+    setLevel: (display, index, level) => {
+      if (display === "counter") showPicture(index, level);
+    },
+    setOwned: (o) => { owned = o; redrawTags(); },
     nearestItem: (display) => {
-      if (display !== "boots") return 0;
-      let best = 0, bd = Infinity;
-      bootPairs.forEach((p, i) => {
-        const d = Math.abs(p.position.z - player.position.z) + (2.1 - p.position.y) * 0.1;
-        if (d < bd) { bd = d; best = i; }
-      });
-      return best;
+      if (display === "boots") {
+        let best = 0, bd = Infinity;
+        PLINTH_Z.forEach((z, i) => { const d = Math.abs(z - player.position.z); if (d < bd) { bd = d; best = i; } });
+        return Math.min(best, displays.boots.items.length - 1);
+      }
+      if (display === "counter") {
+        let best = 0, bd = Infinity;
+        BOX_X.forEach((x, i) => { const d = Math.abs(x - player.position.x); if (d < bd) { bd = d; best = i; } });
+        return Math.min(best, displays.counter.items.length - 1);
+      }
+      if (display === "car") return Math.max(0, carIndex);
+      return 0;
     },
     playBuy: () => {
       buyA.reset();
@@ -637,9 +836,20 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
       buying = buyA.getClip().duration;
     },
     orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    pick: (px, py) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);
+      const hit = ray.intersectObjects(pickables.filter((o) => o.visible !== false), false)[0];
+      const p = hit?.object?.userData?.pick as Picked | undefined;
+      if (!p) return null;
+      return p.display === "car" ? { display: "car", index: Math.max(0, carIndex) } : p;
+    },
+    place: (x, z, y = yaw) => {
+      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true;
+    },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
-    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio() }),
+    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded }),
     dispose: () => {
       disposed = true;
       renderer.setAnimationLoop(null);
@@ -651,12 +861,14 @@ export async function startShop(container: HTMLElement, cb: ShopCallbacks, kit0:
         const m = o.material;
         (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
       });
+      draco.dispose();
       envTex.dispose();
       pmrem.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },
   };
+  showCar(0);
   return ctrl;
 }
 

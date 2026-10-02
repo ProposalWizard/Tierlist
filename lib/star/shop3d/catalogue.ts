@@ -3,12 +3,17 @@
  * this branch (lib/star/shopData.ts), not typed in again. Test area only:
  * nothing here buys anything; the page shows "Bought (test only)".
  *
- * Four displays: the boots wall, the car on the turntable, the KIB can
- * fridge and the counter (a watch and jewellery case). Each item comes in
- * the shop's five levels, one per money rung (Starter … World Class); KIB
- * cans are the exception — the real shop has three cans, not five levels.
+ * Four displays: the boots on their plinths, the car on the turntable, the
+ * KIB can fridge and the counter (a watch and jewellery case). Each item
+ * comes in the shop's five levels, one per money rung (Starter … World
+ * Class); KIB cans are the exception — the real shop has three cans, not
+ * five levels.
+ *
+ * In a career the prices are the career's own (a boot sponsor's 25% off, a
+ * can priced off your wage): pass `prices`. The test page leaves it out and
+ * shows the shop's list prices.
  */
-import { BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanEffectLabel, baseIdOf } from "../shopData";
+import { BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanEffectLabel, baseIdOf, type KibCan } from "../shopData";
 import { SHOP_TIERS } from "../economy";
 
 export type DisplayId = "boots" | "car" | "cans" | "counter";
@@ -29,6 +34,18 @@ export interface ShopItem {
   /** Colour the 3D model is drawn in when this item is picked. */
   colour: string;
   levels: ShopLevel[];
+  /** A real 3D model (.glb) of it, made from the same Blender model as the
+   *  shop picture (tools/shop3d/export_items.py). */
+  model?: string;
+  /** Which level that model is of. */
+  modelLevel?: number;
+  /** No 3D model: the shop picture of a level, shown in a light box. */
+  picture?: (level: number) => string;
+}
+
+export interface ShopPrices {
+  boot?: (price: number) => number;
+  can?: (can: KibCan) => number;
 }
 
 export interface Display {
@@ -51,7 +68,13 @@ const CAR_COLOURS: Record<string, string> = {
   classic: "#1f5a3c", "car-4": "#ff6a00",
 };
 
-function boots(): ShopItem[] {
+/** The car families, and which level each .glb was exported at (a mix of
+ *  paints: the shop paints every family the same colour at one level). */
+export const CAR_MODEL_LEVEL: Record<string, number> = { "car-1": 2, "car-2": 4, suv: 3, "car-3": 5, classic: 3, "car-4": 4 };
+const carFile = (id: string) => `/star/shop3d/items/${id.startsWith("car-") ? id : `car-${id}`}.glb`;
+export const BOOT_MODEL_LEVEL = 3;
+
+function boots(pr: ShopPrices): ShopItem[] {
   const byBase = new Map<string, typeof BOOTS_ALL_LEVELS>();
   for (const b of BOOTS_ALL_LEVELS) {
     const id = baseIdOf(b);
@@ -64,10 +87,12 @@ function boots(): ShopItem[] {
       id,
       name: sorted[0].name,
       colour: BOOT_COLOURS[id] ?? "#dddddd",
+      model: `/star/shop3d/items/boot-${id}.glb`,
+      modelLevel: BOOT_MODEL_LEVEL,
       levels: sorted.map((b) => ({
         label: `L${b.level ?? 1}`,
         rung: RUNG[(b.level ?? 1) - 1] ?? "",
-        price: b.price,
+        price: pr.boot ? pr.boot(b.price) : b.price,
         gives: [
           `+${b.power} power`, `+${b.technique} technique`,
           b.curve ? "curve" : "", b.extraTouch ? "extra touch" : "",
@@ -94,6 +119,9 @@ function lifestyle(category: "vehicle" | "item", only?: string[]): ShopItem[] {
       id,
       name: rows[0].name,
       colour: CAR_COLOURS[id] ?? "#c9a24a",
+      ...(category === "vehicle"
+        ? { model: carFile(id), modelLevel: CAR_MODEL_LEVEL[id] }
+        : { picture: (lv: number) => `/shop/${id}-L${Math.max(1, Math.min(rows.length, lv))}.webp` }),
       levels: rows.map((r) => ({
         label: `L${r.level ?? 1}`,
         rung: RUNG[(r.level ?? 1) - 1] ?? "",
@@ -104,7 +132,7 @@ function lifestyle(category: "vehicle" | "item", only?: string[]): ShopItem[] {
   });
 }
 
-function cans(): ShopItem[] {
+function cans(pr: ShopPrices): ShopItem[] {
   return [{
     id: "kib",
     name: "KIB Cans",
@@ -112,17 +140,17 @@ function cans(): ShopItem[] {
     levels: KIB_CANS.map((c) => ({
       label: c.name.replace(" KIB Can", ""),
       rung: "",
-      price: c.price,
+      price: pr.can ? pr.can(c) : c.price,
       gives: kibCanEffectLabel(c),
     })),
   }];
 }
 
-export function shopDisplays(): Record<DisplayId, Display> {
+export function shopDisplays(prices: ShopPrices = {}): Record<DisplayId, Display> {
   return {
-    boots: { id: "boots", title: "Boots", items: boots() },
+    boots: { id: "boots", title: "Boots", items: boots(prices) },
     car: { id: "car", title: "Cars", items: lifestyle("vehicle", ["car-1", "car-2", "suv", "car-3", "classic", "car-4"]) },
-    cans: { id: "cans", title: "KIB Cans", items: cans() },
+    cans: { id: "cans", title: "KIB Cans", items: cans(prices) },
     counter: { id: "counter", title: "Watches & jewellery", items: lifestyle("item", ["smartwatch", "silver", "gold", "diamond", "rolex"]) },
   };
 }

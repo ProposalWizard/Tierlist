@@ -31,6 +31,7 @@ export const FOLDERS = [
   { id: "clips", title: "Blender footballer: clips", kind: "video", dir: "star/blender/clips", test: (f) => f.endsWith(".mp4"), made: "tools/blender-footballer/scripts", note: "Rendered in Chelsea's kit; a .webm copy and a .jpg poster sit next to each." },
   { id: "match", title: "Match view proposal", kind: "image", dir: "star/area3d", test: (f) => f.startsWith("match-"), made: "tools/blender-signing/match_look.py", note: "Blender players seen from the 2D match's own camera, and a before/after still. A proposal (Harry P2-74)." },
   { id: "models", title: "3D models (live in the browser)", kind: "model", dir: "star/shop3d", test: (f) => f.endsWith(".glb"), made: "tools/shop3d/build_assets.py", note: "Loaded by three.js on the 3D Shop page. CC0 Quaternius body (LICENSE.txt in the same folder)." },
+  { id: "shopitems", title: "3D shop: boots and cars (live in the browser)", kind: "model", dir: "star/shop3d/items", test: (f) => f.endsWith(".glb"), made: "tools/shop3d/export_items.py (from tools/blender-shop/scripts/{boot,car,cars}.py)", note: "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop." },
 ];
 
 function walk(dir, deep) {
