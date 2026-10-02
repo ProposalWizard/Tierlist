@@ -825,23 +825,24 @@ export const ADMIN_GUIDES = {
 
   "/star-shop3d-dev": {
     title: "3D Shop",
-    what: "A test of shopping as a 3D player: you walk a footballer in your club's kit round a small shop and buy things from the displays. Nothing reaches a career.",
+    what: "The walk-around 3D shop, with test controls. It is the same screen a career opens from the Shop page's \"Walk the 3D shop (beta)\" button. Here nothing reaches a career.",
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
+          ["‹ 3D area", "Back to the 3D Test Area."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
-          ["Walk up to a display", "Boots wall, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+          ["Tap something", "A boot, the car, a light box or the fridge: its card opens and the camera moves in on it, wherever you are standing."],
+          ["Walk up to a display", "Boots, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
         ],
       },
       {
         group: "The card",
         items: [
-          ["‹ / ›", "The other items on that display (the boots wall lights up the pair you're on; the car repaints)."],
-          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans instead."],
-          ["Buy …", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
+          ["‹ / ›", "The other items on that display: the next boot lights up, the next car rolls onto the turntable."],
+          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans. On the counter, the light box changes to that level's picture."],
+          ["Buy … (test)", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
           ["✕", "Closes the card. It opens again the next time you walk up."],
         ],
       },
@@ -850,13 +851,14 @@ export const ADMIN_GUIDES = {
       "Nothing is saved. What you \"bought\" is forgotten when you leave.",
     ],
     inGame: [
-      "Not in the game. The real shop is still the screen in a career.",
-      "KIB can prices are the shop's starting price; in a career a can costs a slice of your own wage.",
+      "Yes, as a beta: the Shop page (swipe right from Home) has a \"Walk the 3D shop (beta)\" button under Store and Casino. The normal shop is unchanged.",
+      "In a career the card shows the career's own prices and an \"Owned\" or \"Wearing\" tag, and its button is \"See it in the shop\": it opens that item in the normal shop to buy it. Nothing is bought in 3D.",
+      "The boots and the cars are real 3D models, made from the same Blender models as the shop pictures. Boots are shown at level 3; each car at one level (the card says which). The watches and jewellery are the shop pictures in light boxes, not 3D. The cans are simple 3D cans.",
     ],
     needs: [
-      "The 3D library (three.js) is fetched from cdn.jsdelivr.net when the page opens. If that site is blocked, the page shows a plain message instead of the shop.",
+      "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own.",
     ],
-    dev: "app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/ (character.glb, anims.glb, LICENSE.txt) · tools/shop3d/build_assets.py · three.js from cdn.jsdelivr.net at runtime",
+    dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · character.glb + anims.glb from tools/shop3d/build_assets.py · three.js is the site's own package, loaded only when the shop opens",
   },
 
   "/star-3d-dev": {

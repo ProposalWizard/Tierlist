@@ -20,7 +20,7 @@ export function signCanvas(text: string, opts: { bg: string; ink: string; w?: nu
   return c;
 }
 
-/** Light oak boards, 1024², tiling. */
+/** Wooden boards, 512², tiling. Tinted darker by the floor material. */
 export function floorCanvas(): HTMLCanvasElement {
   const s = 512;
   const c = document.createElement("canvas");
@@ -60,5 +60,95 @@ export function numberCanvas(n: number, ink: string): HTMLCanvasElement {
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText(String(n), 128, 140);
+  return c;
+}
+
+const FONT = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+
+/** A floating price tag: the item's name, its price, and a green "Owned"
+ *  chip when the career has it. Transparent round the edges. */
+export function labelCanvas(name: string, price: string, tag?: string | null): HTMLCanvasElement {
+  const w = 512, h = 168;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d")!;
+  const r = 34;
+  g.beginPath();
+  g.moveTo(r, 6); g.lineTo(w - r, 6); g.quadraticCurveTo(w - 6, 6, w - 6, r);
+  g.lineTo(w - 6, h - r); g.quadraticCurveTo(w - 6, h - 6, w - r, h - 6);
+  g.lineTo(r, h - 6); g.quadraticCurveTo(6, h - 6, 6, h - r);
+  g.lineTo(6, r); g.quadraticCurveTo(6, 6, r, 6);
+  g.fillStyle = "rgba(14,12,10,0.86)";
+  g.fill();
+  g.lineWidth = 4;
+  g.strokeStyle = "rgba(250,204,21,0.75)";
+  g.stroke();
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  let size = 56;
+  g.font = `900 ${size}px ${FONT}`;
+  while (g.measureText(name).width > w - 60 && size > 30) { size -= 2; g.font = `900 ${size}px ${FONT}`; }
+  g.fillStyle = "#ffffff";
+  g.fillText(name, w / 2, tag ? 52 : 60);
+  g.font = `800 40px ${FONT}`;
+  g.fillStyle = "#fde047";
+  if (tag) {
+    const pw = g.measureText(price).width;
+    g.font = `900 30px ${FONT}`;
+    const tw = g.measureText(tag).width + 28;
+    const x0 = w / 2 - (pw + 16 + tw) / 2;
+    g.font = `800 40px ${FONT}`;
+    g.textAlign = "left";
+    g.fillText(price, x0, 118);
+    g.fillStyle = "#16a34a";
+    const tx = x0 + pw + 16;
+    g.beginPath();
+    g.roundRect?.(tx, 98, tw, 42, 21);
+    if (!g.roundRect) g.rect(tx, 98, tw, 42);
+    g.fill();
+    g.fillStyle = "#ffffff";
+    g.font = `900 30px ${FONT}`;
+    g.fillText(tag, tx + 14, 120);
+  } else {
+    g.fillText(price, w / 2, 120);
+  }
+  return c;
+}
+
+/** A soft round shadow to lay under things (cheap, and there on every phone). */
+export function blobCanvas(): HTMLCanvasElement {
+  const s = 128;
+  const c = document.createElement("canvas");
+  c.width = s; c.height = s;
+  const g = c.getContext("2d")!;
+  const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  gr.addColorStop(0, "rgba(0,0,0,0.62)");
+  gr.addColorStop(0.55, "rgba(0,0,0,0.32)");
+  gr.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = gr;
+  g.fillRect(0, 0, s, s);
+  return c;
+}
+
+/** A neon word on a see-through background: the glow is drawn in. */
+export function neonCanvas(text: string, ink: string, w = 1024, h = 192): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d")!;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  let size = Math.round(h * 0.58);
+  g.font = `900 ${size}px ${FONT}`;
+  while (g.measureText(text).width > w * 0.9 && size > 20) { size -= 4; g.font = `900 ${size}px ${FONT}`; }
+  g.shadowColor = ink;
+  for (const b of [36, 18, 6]) {
+    g.shadowBlur = b;
+    g.fillStyle = ink;
+    g.fillText(text, w / 2, h / 2);
+  }
+  g.shadowBlur = 0;
+  g.fillStyle = "#fffdf5";
+  g.globalAlpha = 0.85;
+  g.fillText(text, w / 2, h / 2);
   return c;
 }

@@ -1128,5 +1128,66 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 997248
       }
     ]
+  },
+  {
+    "id": "shopitems",
+    "title": "3D shop: boots and cars (live in the browser)",
+    "kind": "model",
+    "made": "tools/shop3d/export_items.py (from tools/blender-shop/scripts/{boot,car,cars}.py)",
+    "note": "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop.",
+    "files": [
+      {
+        "path": "/star/shop3d/items/boot-control.glb",
+        "bytes": 68120
+      },
+      {
+        "path": "/star/shop3d/items/boot-curl.glb",
+        "bytes": 69376
+      },
+      {
+        "path": "/star/shop3d/items/boot-elite.glb",
+        "bytes": 67056
+      },
+      {
+        "path": "/star/shop3d/items/boot-maestro.glb",
+        "bytes": 68632
+      },
+      {
+        "path": "/star/shop3d/items/boot-power.glb",
+        "bytes": 68060
+      },
+      {
+        "path": "/star/shop3d/items/boot-speed.glb",
+        "bytes": 69144
+      },
+      {
+        "path": "/star/shop3d/items/boot-starter.glb",
+        "bytes": 66808
+      },
+      {
+        "path": "/star/shop3d/items/car-1.glb",
+        "bytes": 166728
+      },
+      {
+        "path": "/star/shop3d/items/car-2.glb",
+        "bytes": 171532
+      },
+      {
+        "path": "/star/shop3d/items/car-3.glb",
+        "bytes": 200088
+      },
+      {
+        "path": "/star/shop3d/items/car-4.glb",
+        "bytes": 168800
+      },
+      {
+        "path": "/star/shop3d/items/car-classic.glb",
+        "bytes": 200612
+      },
+      {
+        "path": "/star/shop3d/items/car-suv.glb",
+        "bytes": 167936
+      }
+    ]
   }
 ];

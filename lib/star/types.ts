@@ -1407,6 +1407,10 @@ export type StarPhase =
   | "shop-kib"
   | "shop-boots"
   | "shop-lifestyle"
+  /** Walk the 3D shop (beta) — a 3D showroom of the boots, cars, cans and
+   *  jewellery, opened from the Shop page. Buying is still done in the normal
+   *  shop. See components/star/Shop3D.tsx. */
+  | "shop-3d"
   /** The Store (daily specials, run-ups, accessories, boosts, Coins) — the
    *  test area's screen on the real career. See components/star/store/CareerStore. */
   | "store"
