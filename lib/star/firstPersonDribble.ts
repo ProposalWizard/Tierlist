@@ -733,3 +733,38 @@ export function runProgress(s: FpRunState): number {
   if (total <= 0) return 1;
   return clamp((s.startY - s.y) / total, 0, 1);
 }
+
+// ── The chase camera's shoulder lean (a picture only — the run never reads it) ──
+//
+// Harry, 2 Oct 2026, playing the trial's Take Him On: "the changing of the
+// camera angle is a bit crazy." The C1 camera leans to whichever side the
+// ball is on and aims at a point ahead of you, so every touch across your
+// body swung it from one shoulder to the other: about 22° of turn in about
+// half a second. The calm feel leans half as far (a full swap is about 11°),
+// swaps only once the ball is clearly across (0.5 m, not 0.15 m), eases about
+// three times more slowly, and slides after your lane at 3/s, not 5.5/s.
+// The real match keeps the lively feel (FirstPersonDribble's `calmCamera`).
+export interface CameraFeel {
+  /** Share of the camera's own lean (`CamPose.side`) actually used. */
+  sideScale: number;
+  /** How far across (m) the ball must be before the lean swaps sides. */
+  flipAt: number;
+  /** /s, how fast the lean eases to its target. */
+  sideRate: number;
+  /** /s, how fast the camera slides after your lane (an upper limit). */
+  followRate: number;
+}
+export const LIVELY_CAMERA: CameraFeel = { sideScale: 1, flipAt: 0.15, sideRate: 3, followRate: 5.5 };
+export const CALM_CAMERA: CameraFeel = { sideScale: 0.5, flipAt: 0.5, sideRate: 1, followRate: 3 };
+
+/** One frame of the lean: which shoulder, and how far over the camera is now. */
+export function stepCameraLean(
+  lean: { dir: 1 | -1; side: number },
+  ballOff: number, poseSide: number, feel: CameraFeel, dt: number,
+): { dir: 1 | -1; side: number } {
+  let dir = lean.dir;
+  if (ballOff > feel.flipAt) dir = 1;
+  else if (ballOff < -feel.flipAt) dir = -1;
+  const side = lean.side + (dir * poseSide * feel.sideScale - lean.side) * (1 - Math.exp(-feel.sideRate * dt));
+  return { dir, side };
+}

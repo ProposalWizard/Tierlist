@@ -1,24 +1,28 @@
 /**
  * THE TRIAL'S SHOOTOUT RIG (Harry, 1 Oct 2026: "rigs the game so it always has
- * you having to score the winning pen").
+ * you having to score the winning pen"; 2 Oct 2026: two team-mates take our
+ * first two, you take the last, and "it could be any organization of outcomes
+ * to get to that").
  *
- * Two halves:
+ * Three halves:
  *
- *  1. The rule, over every run you could possibly have (8 of them for three
- *     kicks): the score is LEVEL whenever your last kick is up, so that kick is
- *     the winning penalty; Academy never lead before it; and a goal on that
- *     kick wins it.
- *  2. The plans that rule hands the real engine, struck the way CanvasMatch
+ *  1. The scripts, over thousands of saves: level before your kick every time,
+ *     every one of the 10 paths turns up, 0-0 / 1-1 / 2-2 each about a third,
+ *     and consecutive saves usually differ.
+ *  2. The misses and the run-ups: no two of a save's first three misses look
+ *     alike, and five takers run up five different ways.
+ *  3. The plans that rule hands the real engine, struck the way CanvasMatch
  *     strikes an automatic penalty (rules, run-up, keeper brain, launch()), at
- *     each keeper strength the shootout's ramp reaches: a "goal" plan goes in
- *     and a "miss" plan does not, essentially every time. A rig that the engine
- *     can disagree with would show a goal the score says was missed.
+ *     every keeper strength the shootout uses on either side: a "goal" plan
+ *     goes in and every "miss" style stays out, essentially every time. A rig
+ *     the engine can disagree with would show a goal the score says was missed.
  *
  * Run: npx tsx tests/star/trialShootoutRig.mts
  */
 import {
-  createRig, rigApply, rigNextSide, rigTheirIntent, rigGoals, isWinningPenalty,
-  winningPenaltyScored, rigPlanFor, rigKeeperRead, SHOOTOUT_KICKS, type RigState,
+  createRig, createRigScript, rigApply, rigNextSide, rigIntent, rigGoals, isYourKick, isTeamMateKick,
+  winningPenaltyScored, rigPlanFor, rigKeeperRead, pickRunups, idForRunup, MISS_STYLES,
+  SHOOTOUT_KICKS, SHOOTOUT_TOTAL, type RigState, type MissStyle,
 } from "../../lib/star/trialShootoutRig";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders, stepReactions, type Scenario,
@@ -28,59 +32,109 @@ import { enforceHardRules } from "../../lib/star/kindRules";
 import { brainSetup, brainAim, brainRunUp, brainStrike, brainStep } from "../../lib/star/keeperBrain";
 import { RUNUP, runupPath, standBack, playerAt, goalLineX } from "../../lib/star/penaltyRunup";
 import { aimFor, takerSkills, type PenaltyPlan } from "../../lib/star/penaltyTaking";
-import { shootoutOurKeeperFor } from "../../lib/star/trialStages";
+import { takerPenaltyRunup } from "../../lib/star/runupStyles";
+import { shootoutOurKeeperFor, shootoutKeeperFor } from "../../lib/star/trialStages";
+import { startTrial } from "../../lib/star/trial";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 
-console.log("\nTHE RULE, OVER EVERY RUN YOU COULD HAVE");
-{
-  ok(SHOOTOUT_KICKS === 3, `up to three kicks each (Harry's answer): ${SHOOTOUT_KICKS}`);
-  let allLevel = true, neverBehind = true, winOnGoal = true, sixKicks = true, yoursLast = true;
-  for (let mask = 0; mask < 1 << SHOOTOUT_KICKS; mask++) {
-    let st: RigState = createRig();
-    const yours = Array.from({ length: SHOOTOUT_KICKS }, (_, i) => !!(mask & (1 << i)));
-    let yi = 0;
-    while (!st.over) {
-      const side = rigNextSide(st.kicks);
-      if (side === "them") {
-        st = rigApply(st, rigTheirIntent(st.kicks));
-      } else {
-        if (isWinningPenalty(st)) {
-          allLevel &&= rigGoals(st.kicks, "you") === rigGoals(st.kicks, "them");
-          const before = st;
-          const wins = rigApply(before, true);
-          winOnGoal &&= wins.winner === "you" && winningPenaltyScored(wins);
-          const level = rigApply(before, false);
-          winOnGoal &&= level.winner === null && !winningPenaltyScored(level);
-        }
-        st = rigApply(st, yours[yi++]);
-      }
-      neverBehind &&= rigGoals(st.kicks, "them") <= rigGoals(st.kicks, "you");
-    }
-    sixKicks &&= st.kicks.length === SHOOTOUT_KICKS * 2;
-    yoursLast &&= st.kicks[st.kicks.length - 1].side === "you";
+/** Play one save's automatic kicks exactly as scripted (or with `flip` kicks going the other way). */
+function playTo(seed: number, flip = -1): RigState {
+  const script = createRigScript(seed);
+  let st: RigState = createRig();
+  while (!isYourKick(st) && !st.over) {
+    const want = rigIntent(st, script);
+    st = rigApply(st, st.kicks.length === flip ? !want : want);
   }
-  ok(allLevel, "the score is level every time your last kick is up (all 8 runs)");
-  ok(winOnGoal, "scoring that kick wins the shootout; missing it leaves it level");
-  ok(neverBehind, "Academy are never ahead of you");
-  ok(sixKicks, "always three kicks each");
-  ok(yoursLast, "the last kick of the shootout is always yours");
+  return st;
+}
 
-  // They equalise when you go ahead, and miss otherwise.
-  let st = createRig();
-  ok(rigTheirIntent(st.kicks) === false, "opening kick: they miss");
-  st = rigApply(st, false);            // them: miss
-  st = rigApply(st, true);             // you: score
-  ok(rigTheirIntent(st.kicks) === true, "you scored: they equalise");
-  st = rigApply(st, true);
-  st = rigApply(st, false);            // you miss: level
-  ok(rigTheirIntent(st.kicks) === false, "level: they miss");
+console.log("\nTHE SCRIPTS, OVER 3,000 SAVES");
+{
+  ok(SHOOTOUT_KICKS === 3 && SHOOTOUT_TOTAL === 6, "three kicks each, six in all");
+  const N = 3000;
+  let level = 0, yoursLast = 0, mateFirstTwo = 0, sameAsLast = 0;
+  const levels = [0, 0, 0];
+  const paths = new Set<string>();
+  let prev = "";
+  for (let s = 0; s < N; s++) {
+    const st = playTo(s * 7919 + 1);
+    const t = rigGoals(st.kicks, "them"), u = rigGoals(st.kicks, "you");
+    if (t === u) level++;
+    levels[Math.min(2, u)]++;
+    if (isYourKick(st) && st.kicks.length === SHOOTOUT_TOTAL - 1) yoursLast++;
+    const key = st.kicks.map(k => (k.scored ? "1" : "0")).join("");
+    paths.add(key);
+    if (key === prev) sameAsLast++;
+    prev = key;
+    // Our first two kicks were team-mates', never yours.
+    let stp: RigState = createRig(), mates = 0;
+    for (const k of st.kicks) { if (isTeamMateKick(stp)) mates++; stp = rigApply(stp, k.scored); }
+    if (mates === SHOOTOUT_KICKS - 1) mateFirstTwo++;
+  }
+  console.log(`  levels before your kick: 0-0 ${levels[0]}, 1-1 ${levels[1]}, 2-2 ${levels[2]} (of ${N}); ${paths.size} different paths; same path as the save before: ${(sameAsLast / N * 100).toFixed(1)}%`);
+  ok(level === N, `level every time your kick is up (${level}/${N})`);
+  ok(yoursLast === N, "your kick is always the sixth and last");
+  ok(mateFirstTwo === N, "the Trialists' first two kicks are always team-mates'");
+  ok(paths.size === 10, `all 10 paths to level turn up (${paths.size})`);
+  ok(levels.every(n => n > N * 0.28 && n < N * 0.39), "0-0, 1-1 and 2-2 each about a third");
+  ok(sameAsLast < N * 0.2, "one save rarely repeats the path of the save before");
+  ok(paths.has("00000"), "Harry's example turns up: they miss three, we miss two, then you");
+
+  // Your kick decides it.
+  let winOnGoal = true;
+  for (let s = 0; s < 200; s++) {
+    const st = playTo(s + 11);
+    const won = rigApply(st, true), level2 = rigApply(st, false);
+    winOnGoal &&= won.over && won.winner === "you" && winningPenaltyScored(won);
+    winOnGoal &&= level2.over && level2.winner === null && !winningPenaltyScored(level2);
+  }
+  ok(winOnGoal, "score your kick and you win; miss it and it stays level");
+
+  // One automatic kick goes against its plan (the engine disagreed): the rest
+  // of the kicks absorb it when they still can.
+  let tried = 0, recovered = 0, beforeLast = 0, beforeLastRecovered = 0;
+  for (let s = 0; s < 400; s++) {
+    for (let flip = 0; flip < SHOOTOUT_TOTAL - 1; flip++) {
+      const st = playTo(s * 31 + 5, flip);
+      tried++;
+      const lv = rigGoals(st.kicks, "them") === rigGoals(st.kicks, "you");
+      if (lv) recovered++;
+      if (flip < SHOOTOUT_TOTAL - 2) { beforeLast++; if (lv) beforeLastRecovered++; }
+    }
+  }
+  console.log(`  one kick off script: still level ${recovered}/${tried}; when it is not the last automatic kick, ${beforeLastRecovered}/${beforeLast}`);
+  ok(beforeLastRecovered / beforeLast > 0.6, "a surprise before the last automatic kick is usually absorbed");
+}
+
+console.log("\nMISSES AND RUN-UPS");
+{
+  let distinct = 0, total = 0, bothSides = 0;
+  for (let s = 0; s < 1000; s++) {
+    const sc = createRigScript(s * 13 + 3);
+    const ms: MissStyle[] = [];
+    sc.intents.forEach((g, i) => { if (!g) ms.push(sc.misses[i]); });
+    const firstThree = ms.slice(0, 3);
+    if (firstThree.length > 1) { total++; if (new Set(firstThree).size === firstThree.length) distinct++; }
+    if (new Set(sc.sides).size === 2) bothSides++;
+  }
+  ok(distinct === total, `no two of a save's first three misses look alike (${distinct}/${total})`);
+  ok(bothSides > 900, `kicks go both ways in a save (${bothSides}/1000)`);
+  ok(MISS_STYLES.length === 3, "three ways to miss: wide, skied, over");
+
+  let allDistinct = true, allMatch = true;
+  for (let s = 0; s < 300; s++) {
+    const r = pickRunups(s * 977 + 1, 5);
+    allDistinct &&= new Set(r).size === 5;
+    r.forEach((style, i) => { allMatch &&= takerPenaltyRunup(idForRunup(`t${s}-${i}`, style)) === style; });
+  }
+  ok(allDistinct, "five takers, five different run-ups");
+  ok(allMatch, "each taker's id makes the match pick exactly his run-up");
 }
 
 console.log("\nTHE PLANS THE RIG HANDS THE REAL ENGINE");
-function kick(seed: number, plan: PenaltyPlan, ks: number, read: { commitChance: number; readChance: number; metres: number }): string {
-  const rating = 70;
+function kick(seed: number, plan: PenaltyPlan, ks: number, read: { commitChance: number; readChance: number; metres: number }, rating: number): string {
   const rng = mulberry32(seed);
   const sc: Scenario = buildScenario("penalty", rng, ks, 60, 55);
   enforceHardRules(sc); initDefenders(sc, rng); sc.defenders = [];
@@ -108,20 +162,30 @@ function kick(seed: number, plan: PenaltyPlan, ks: number, read: { commitChance:
   return res ?? "none";
 }
 {
-  const N = 200;
-  for (let row = 0; row < SHOOTOUT_KICKS; row++) {
-    const k = shootoutOurKeeperFor(row);
-    let goals = 0, misses = 0;
+  const N = 150;
+  const t = { ...startTrial(9), adversity: null, adversityStage: null };
+  // Every keeper an automatic kick faces: ours on their three, theirs on our two.
+  const keepers = [
+    ...[0, 1, 2].map(r => ({ label: `our keeper, their kick ${r + 1}`, k: shootoutOurKeeperFor(r) })),
+    ...[0, 1].map(r => ({ label: `their keeper, our kick ${r + 1}`, k: shootoutKeeperFor(t, r) })),
+  ];
+  for (const { label, k } of keepers) {
+    let goals = 0;
+    const missOut: Record<string, number> = {};
     for (let i = 0; i < N; i++) {
       const side = i % 2 ? 1 : -1;
-      const g = kick(4000 + i * 7919 + row * 31, rigPlanFor(true, side, 70), k.keeperStrength, rigKeeperRead(true, k.read));
+      const rating = 52 + (i % 5) * 9;
+      const tech = takerSkills(rating).technique;
+      const g = kick(4000 + i * 7919 + k.keeperStrength * 31, rigPlanFor(true, side, tech), k.keeperStrength, rigKeeperRead(true, k.read), rating);
       if (g === "goal" || g === "rebound") goals++;
-      const m = kick(9000 + i * 7919 + row * 31, rigPlanFor(false, side, 70), k.keeperStrength, rigKeeperRead(false, k.read));
-      if (m !== "goal" && m !== "rebound") misses++;
+      for (const m of MISS_STYLES) {
+        const r = kick(9000 + i * 7919 + k.keeperStrength * 31 + m.length, rigPlanFor(false, side, tech, m), k.keeperStrength, rigKeeperRead(false, k.read), rating);
+        if (r !== "goal" && r !== "rebound") missOut[m] = (missOut[m] ?? 0) + 1;
+      }
     }
-    console.log(`  their kick ${row + 1} (keeper ${k.keeperStrength}): rigged goals in ${goals}/${N}, rigged misses out ${misses}/${N}`);
-    ok(goals >= N * 0.99, `their rigged goal goes in on kick ${row + 1} (${goals}/${N})`);
-    ok(misses >= N * 0.995, `their rigged miss stays out on kick ${row + 1} (${misses}/${N})`);
+    console.log(`  ${label} (keeper ${k.keeperStrength}): goals in ${goals}/${N}; misses out — ${MISS_STYLES.map(m => `${m} ${missOut[m] ?? 0}`).join(", ")} /${N}`);
+    ok(goals >= N * 0.98, `a rigged goal goes in (${label})`);
+    for (const m of MISS_STYLES) ok((missOut[m] ?? 0) >= N * 0.99, `a rigged "${m}" miss stays out (${label})`);
   }
 }
 

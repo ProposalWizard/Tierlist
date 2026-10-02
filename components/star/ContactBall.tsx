@@ -55,13 +55,16 @@ interface Props {
   motion?: BallMotion;
   /** Your technique, 0-100. Higher = the ball moves slower. */
   technique?: number;
+  /** A feature's teaching pause (CanvasMatch `holdAt`): the clock waits
+   *  until this goes false. Absent in the real match. */
+  hold?: boolean;
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
 const TOO_SLOW_MS = 350;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50 }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -96,11 +99,11 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   // your second, with the ring already part-drained the first time you see it.
   const [started, setStarted] = useState(false);
   useEffect(() => {
-    if (!timed) return;
+    if (!timed || hold) return;
     let r2 = 0;
     const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setStarted(true)); });
     return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
-  }, [timed]);
+  }, [timed, hold]);
 
   // The deadline. A tap locks the screen (below) and a locked screen never
   // times out.

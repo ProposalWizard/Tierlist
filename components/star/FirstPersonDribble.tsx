@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  newRun, applySteer, applyBurst, stepRun, BURST_T,
+  newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor } from "@/lib/star/firstPersonView";
@@ -162,6 +162,8 @@ const DEFAULT_CHASE_OFFSET = 4.5;   // metres BEHIND your actual position
 // camera catches up. /s, exponential-smoothing rate.
 const DEFAULT_CAMERA_FOLLOW_RATE = 5.5;
 
+// The calm camera (`calmCamera`) — see CALM_CAMERA in lib/star/firstPersonDribble.ts.
+
 // ── The ball's touch spring — see the file header. ──
 const DEFAULT_BALL_TOUCH_REACH = 0.9; // metres it eases toward, to the touched side
 const BALL_SPRING_K = 90;             // stiffness
@@ -281,11 +283,18 @@ export interface FirstPersonDribbleProps {
    * does. Off by default.
    */
   hideYou?: boolean;
+  /**
+   * A steadier camera: smaller, slower shoulder swaps (see CALM_CAMERA). The
+   * trial's Take Him On sets it (Harry, 2 Oct 2026: "the changing of the
+   * camera angle is a bit crazy"); the real match does not, so its dribble
+   * looks exactly as it did. A picture only.
+   */
+  calmCamera?: boolean;
 }
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false, hold = false, camera = "C1", hideYou = false,
+  hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -310,6 +319,8 @@ export default function FirstPersonDribble({
   const rngRef = useRef<() => number>(() => Math.random());
   const hideYouRef = useRef(hideYou);
   hideYouRef.current = hideYou;
+  const camFeelRef = useRef(calmCamera ? CALM_CAMERA : LIVELY_CAMERA);
+  camFeelRef.current = calmCamera ? CALM_CAMERA : LIVELY_CAMERA;
   const holdRef = useRef(hold);
   holdRef.current = hold;
   const reducedMotionRef = useRef(false);
@@ -554,7 +565,9 @@ export default function FirstPersonDribble({
       // Camera lag — see the file header: ease toward your lane instead of
       // snapping to it, so a steer or a burst displaces YOU across the
       // frame before the camera catches up.
-      camXRef.current += (run.x - camXRef.current) * (1 - Math.exp(-cameraFollowRate * dt));
+      const feel = camFeelRef.current;
+      const followRate = feel === CALM_CAMERA ? Math.min(cameraFollowRate, feel.followRate) : cameraFollowRate;
+      camXRef.current += (run.x - camXRef.current) * (1 - Math.exp(-followRate * dt));
 
       // The ball's touch spring — see the file header. Pushed toward
       // whichever side you're currently steering (or bursting) toward;
@@ -588,9 +601,9 @@ export default function FirstPersonDribble({
         const pose = poseFor(cameraRef.current, closeRef.current);
         // Lean towards the side the ball is on, so it is never behind your legs.
         const off = ballXRef.current - run.x;
-        if (off > 0.15) sideDirRef.current = 1;
-        else if (off < -0.15) sideDirRef.current = -1;
-        sideRef.current += (sideDirRef.current * pose.side - sideRef.current) * (1 - Math.exp(-3 * dt));
+        const lean = stepCameraLean({ dir: sideDirRef.current >= 0 ? 1 : -1, side: sideRef.current }, off, pose.side, feel, dt);
+        sideDirRef.current = lean.dir;
+        sideRef.current = lean.side;
         camEye = pose.eye; camPitchDeg = pose.pitchDeg; camOffset = pose.offset; restLead = pose.lead; camLook = pose.look;
       } else {
         sideRef.current = 0;

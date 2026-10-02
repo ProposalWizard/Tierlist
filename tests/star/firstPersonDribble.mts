@@ -1,8 +1,9 @@
 import {
   newRun, applySteer, applyBurst, stepRun, runProgress, runSpeed, pickWaveSizes,
-  BASE_SPEED, PACE_SPEED, LUNGE_REACH,
+  BASE_SPEED, PACE_SPEED, LUNGE_REACH, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
   type FpRunState, type FpDefender, type RunPhase, type FpIdentity,
 } from "../../lib/star/firstPersonDribble";
+import { CAM_C1 } from "../../lib/star/dribbleCamera";
 import { mulberry32 } from "../../lib/star/season";
 
 /**
@@ -578,6 +579,37 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
   const blank = newRun({ pace: 100, oppStrength: 55, waveSizes: [1], roster: blankRoster, rng: mulberry32(41) });
   const plain = newRun({ pace: 100, oppStrength: 55, waveSizes: [1], rng: mulberry32(41) });
   check(blank.defenders[0].mirrorSpeed === plain.defenders[0].mirrorSpeed, "a real identity with neither stat set falls back to oppStrength, matching the anonymous case exactly");
+}
+
+// ── The calm camera (the trial's Take Him On, Harry 2 Oct 2026: "the
+// changing of the camera angle is a bit crazy") ──
+//
+// The same touches, left and right every 0.45 s for 6 s, through both feels.
+// The camera's turn is atan(side / (look + offset)) for C1. Measured: how far
+// it swings from one shoulder to the other, and how fast it turns at worst.
+{
+  const touches = (feel: typeof LIVELY_CAMERA) => {
+    let lean: { dir: 1 | -1; side: number } = { dir: 1, side: 0 };
+    let lo = Infinity, hi = -Infinity, fastest = 0;
+    const dt = 1 / 60;
+    let prevYaw = 0;
+    for (let t = 0; t < 6; t += dt) {
+      const ballOff = Math.floor(t / 0.45) % 2 === 0 ? 0.9 : -0.9;
+      lean = stepCameraLean(lean, ballOff, CAM_C1.side, feel, dt);
+      const yaw = (Math.atan2(lean.side, CAM_C1.look + CAM_C1.offset) * 180) / Math.PI;
+      if (t > 1) { lo = Math.min(lo, yaw); hi = Math.max(hi, yaw); fastest = Math.max(fastest, Math.abs(yaw - prevYaw) / dt); }
+      prevYaw = yaw;
+    }
+    return { swing: hi - lo, fastest };
+  };
+  const lively = touches(LIVELY_CAMERA), calm = touches(CALM_CAMERA);
+  console.log(`  camera swing on touches every 0.45 s: lively ${lively.swing.toFixed(1)}° (up to ${lively.fastest.toFixed(0)}°/s), calm ${calm.swing.toFixed(1)}° (up to ${calm.fastest.toFixed(0)}°/s)`);
+  check(calm.swing < lively.swing * 0.5, `the calm camera swings less than half as far (${calm.swing.toFixed(1)}° vs ${lively.swing.toFixed(1)}°)`);
+  check(calm.fastest < lively.fastest * 0.25, `…and turns at most a quarter as fast (${calm.fastest.toFixed(0)} vs ${lively.fastest.toFixed(0)} °/s)`);
+  // A touch that barely crosses (0.3 m) never swaps the calm camera's shoulder.
+  let lean: { dir: 1 | -1; side: number } = { dir: 1, side: 0 };
+  for (let i = 0; i < 120; i++) lean = stepCameraLean(lean, -0.3, CAM_C1.side, CALM_CAMERA, 1 / 60);
+  check(lean.dir === 1, "a small touch across does not swap the calm camera's shoulder");
 }
 
 if (problems.length) {

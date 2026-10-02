@@ -169,9 +169,32 @@ export default function TrialFreeKicks({
         // clipping.
         short: "Round the wall, or over it.",
         lines: [
-          "Drag back from the ball to aim, and pull further for more power.",
-          "Then you run up. Strike the SIDE of the ball to bend it round them, or the bottom to lift it over — before the ring runs out.",
+          "Drag back from the ball to aim. Pull further for more power.",
+          "Then let go.",
         ],
+      }}
+      // Harry, 2 Oct 2026: pause as the run-up starts and say what it is,
+      // then pause again on the strike screen and say what to do there.
+      pauseTeach={{
+        runup: {
+          drill: "freeKickRunup",
+          gesture: "run",
+          headline: "You run up to take free kicks.",
+          lines: [
+            "As you hit the ball, you get a timed strike.",
+          ],
+        },
+        contact: {
+          drill: "freeKickStrike",
+          gesture: "strike",
+          place: "top",
+          headline: "Tap the ball before the ring runs out.",
+          lines: [
+            "Tap its side to bend it round the wall.",
+            "Tap low on it to lift it over the wall.",
+            "Run out of time and you scuff it.",
+          ],
+        },
       }}
       subtitle={rep => {
         const s = freeKickSetup(trial, rep);
