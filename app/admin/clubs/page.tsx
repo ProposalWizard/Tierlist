@@ -18,6 +18,7 @@ import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
 
 const LOOK: Record<AuditStatus, { bg: string; fg: string; label: string }> = {
   given: { bg: "#14532d", fg: "#ffffff", label: "Given" },
+  researched: { bg: "#1e3a8a", fg: "#ffffff", label: "Researched" },
   guess: { bg: "#78350f", fg: "#ffffff", label: "Game guesses" },
   missing: { bg: "#7f1d1d", fg: "#ffffff", label: "Missing" },
   na: { bg: "transparent", fg: "#ffffff", label: "Doesn't apply" },
@@ -61,11 +62,13 @@ export default function ClubDataPage() {
   }, [lineups, logos]);
 
   const isGap = (c: AuditCell) => c.status === "missing" || c.status === "guess";
+  const [researchedOnly, setResearchedOnly] = useState(false);
   const shown = rows.filter(r =>
     (group === "All" || r.group === group)
     && (!search || r.club.toLowerCase().includes(search.toLowerCase()))
     && (!gapsOnly || Object.values(r.cells).some(isGap))
-    && (!column || isGap(r.cells[column])));
+    && (!column || isGap(r.cells[column]))
+    && (!researchedOnly || Object.values(r.cells).some(c => c.status === "researched")));
   const cols = column ? AUDIT_COLUMNS.filter(c => c.key === column) : AUDIT_COLUMNS;
 
   /** Per column, across the rows in the current division filter: how many are given. */
@@ -73,7 +76,7 @@ export default function ClubDataPage() {
     const inGroup = rows.filter(r => group === "All" || r.group === group);
     return Object.fromEntries(AUDIT_COLUMNS.map(c => {
       const applies = inGroup.filter(r => r.cells[c.key].status !== "na");
-      return [c.key, { have: applies.filter(r => r.cells[c.key].status === "given").length, of: applies.length }];
+      return [c.key, { have: applies.filter(r => ["given", "researched"].includes(r.cells[c.key].status)).length, of: applies.length }];
     }));
   }, [rows, group]);
 
@@ -88,7 +91,7 @@ export default function ClubDataPage() {
     const head = ["Club", "Division", ...AUDIT_COLUMNS.flatMap(c => [c.label, `${c.label} (status)`])];
     const lines = [head, ...shown.map(r => [r.club, r.group, ...AUDIT_COLUMNS.flatMap(c => {
       const cell = r.cells[c.key];
-      return [cell.value, cell.status === "na" ? "" : LOOK[cell.status].label];
+      return [cell.value, cell.status === "na" ? "" : cell.status === "researched" ? `Researched: ${cell.note ?? ""}` : LOOK[cell.status].label];
     })])].map(l => l.map(esc).join(","));
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const a = document.createElement("a");
@@ -108,7 +111,7 @@ export default function ClubDataPage() {
         </p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold">
-          {(["given", "guess", "missing"] as AuditStatus[]).map(s => (
+          {(["given", "researched", "guess", "missing"] as AuditStatus[]).map(s => (
             <span key={s} className="rounded px-2 py-1" style={{ background: LOOK[s].bg, color: LOOK[s].fg }}>{LOOK[s].label}</span>
           ))}
           <span className="rounded border border-white/30 px-2 py-1">— Doesn&apos;t apply</span>
@@ -127,6 +130,9 @@ export default function ClubDataPage() {
             className="rounded bg-slate-800 px-2 py-2 font-bold text-white placeholder:text-white/70" />
           <label className="flex items-center gap-2 font-bold">
             <input type="checkbox" checked={gapsOnly} onChange={e => setGapsOnly(e.target.checked)} /> Only clubs with gaps
+          </label>
+          <label className="flex items-center gap-2 font-bold">
+            <input type="checkbox" checked={researchedOnly} onChange={e => setResearchedOnly(e.target.checked)} /> Only researched values
           </label>
           <button onClick={downloadCsv} className="rounded bg-emerald-600 px-3 py-2 font-black text-white">Download spreadsheet</button>
           <span className="font-bold">{shown.length} clubs</span>

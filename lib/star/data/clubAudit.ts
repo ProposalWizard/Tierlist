@@ -25,8 +25,9 @@ import { CLUB_DATABASE } from "./footballClubDatabase";
 import { profileOf, type ClubProfile } from "./clubProfiles";
 
 /** given = from you; guess = the game makes it up; missing = nothing at all;
- *  na = doesn't apply to this club. */
-export type AuditStatus = "given" | "guess" | "missing" | "na";
+ *  researched = filled by research (sources/researched_2026-10.json), with
+ *  its source in the note; na = doesn't apply to this club. */
+export type AuditStatus = "given" | "researched" | "guess" | "missing" | "na";
 
 export interface AuditCell { value: string; status: AuditStatus; note?: string }
 
@@ -119,7 +120,7 @@ export function auditClub(
   c.kits = kit
     ? { value: `${kit.home.shirt} ${kit.home.trim} ${kit.away.shirt} ${kit.away.trim}`, status: "given", note: kitWords }
     : missing("Plays in a plain green kit");
-  c.kitPattern = given(p?.homeKit?.pattern ? `${p.homeKit.pattern} / ${p.awayKit?.pattern ?? "?"}` : undefined) ?? missing();
+  c.kitPattern = given(p?.homeKit?.pattern ? (p.awayKit?.pattern ? `${p.homeKit.pattern} / ${p.awayKit.pattern}` : p.homeKit.pattern) : undefined) ?? missing();
   c.badge = given(p?.badgeColours?.join(", ")) ?? missing();
   field("badgeStyle");
   c.logo = { value: "", status: "missing", note: "Checked on the page" };
@@ -157,6 +158,13 @@ export function auditClub(
     ? given(CLUB_LATITUDE[club] !== undefined ? `${CLUB_LATITUDE[club]}° north` : undefined) ?? missing("Placed in the middle of England")
     : na();
 
+  // Boxes filled by research rather than given: own colour, source as the note.
+  for (const [key, source] of Object.entries(p?.researched ?? {})) {
+    const cell = c[key];
+    if (cell && cell.status === "given" && cell.note !== "Lineups page") {
+      c[key] = { ...cell, status: "researched", note: source };
+    }
+  }
   return { club, group: group.name, cells: c };
 }
 
