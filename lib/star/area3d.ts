@@ -25,6 +25,15 @@ export interface Scene3d {
 
 export const SCENES_3D: Scene3d[] = [
   {
+    id: "signing",
+    title: "Signing with the manager",
+    line: "Sit across the desk, a few lines of talk, the contract turned to you, tap to sign.",
+    status: "Prototype",
+    href: "/star-3d-area-dev/signing",
+    thumb: "/star/signing3d/signed-medium.webp",
+    files: "app/star-3d-area-dev/signing · public/star/signing3d · tools/blender-signing",
+  },
+  {
     id: "shop3d",
     title: "Walk-around shop",
     line: "Walk a footballer round a shop and pretend-buy boots, a car and cans.",
@@ -74,5 +83,13 @@ export const SCENES_3D: Scene3d[] = [
     status: "Planned",
     thumb: "/shop/phone-L1.webp",
     files: "plan: scratchpad v024/PLAN-3d.md §3c",
+  },
+  {
+    id: "match2d",
+    title: "Match view, Blender players",
+    line: "One still: today's 2D match with Blender-made players pasted over the drawn ones. A proposal, not built.",
+    status: "Proposal",
+    thumb: "/star/area3d/match-blender.jpg",
+    files: "public/star/area3d/match-* · tools/blender-signing/match_look.py",
   },
 ];

@@ -29,6 +29,7 @@ export const FOLDERS = [
   { id: "store", title: "Store: coins, boosts, accessories", kind: "image", dir: "shop/store", test: (f) => f.endsWith(".webp"), made: "tools/blender-shop/scripts/store.py", note: "" },
   { id: "footballer", title: "Blender footballer: stills", kind: "image", dir: "star/blender", test: (f) => /\.(jpg|webp)$/.test(f), deep: true, made: "tools/blender-footballer/scripts", note: "Each pose is a layer pack (base, light, kit masks, crest, number) the browser recolours into any club." },
   { id: "clips", title: "Blender footballer: clips", kind: "video", dir: "star/blender/clips", test: (f) => f.endsWith(".mp4"), made: "tools/blender-footballer/scripts", note: "Rendered in Chelsea's kit; a .webm copy and a .jpg poster sit next to each." },
+  { id: "match", title: "Match view proposal", kind: "image", dir: "star/area3d", test: (f) => f.startsWith("match-"), made: "tools/blender-signing/match_look.py", note: "Blender players seen from the 2D match's own camera, and a before/after still. A proposal (Harry P2-74)." },
   { id: "models", title: "3D models (live in the browser)", kind: "model", dir: "star/shop3d", test: (f) => f.endsWith(".glb"), made: "tools/shop3d/build_assets.py", note: "Loaded by three.js on the 3D Shop page. CC0 Quaternius body (LICENSE.txt in the same folder)." },
 ];
 

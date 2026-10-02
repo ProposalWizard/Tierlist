@@ -50,7 +50,68 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "kind": "image",
     "made": "tools/blender-signing/signing.py",
     "note": "The beats of the 3D signing prototype: talk, contract over the shoulder, wide sign.",
-    "files": []
+    "files": [
+      {
+        "path": "/star/signing3d/contract-dark.webp",
+        "bytes": 15858
+      },
+      {
+        "path": "/star/signing3d/contract-light.webp",
+        "bytes": 15474
+      },
+      {
+        "path": "/star/signing3d/contract-medium.webp",
+        "bytes": 15774
+      },
+      {
+        "path": "/star/signing3d/reply-dark.webp",
+        "bytes": 15218
+      },
+      {
+        "path": "/star/signing3d/reply-light.webp",
+        "bytes": 15138
+      },
+      {
+        "path": "/star/signing3d/reply-medium.webp",
+        "bytes": 15474
+      },
+      {
+        "path": "/star/signing3d/signed-dark.webp",
+        "bytes": 19148
+      },
+      {
+        "path": "/star/signing3d/signed-light.webp",
+        "bytes": 19424
+      },
+      {
+        "path": "/star/signing3d/signed-medium.webp",
+        "bytes": 19370
+      },
+      {
+        "path": "/star/signing3d/signing-dark.webp",
+        "bytes": 19232
+      },
+      {
+        "path": "/star/signing3d/signing-light.webp",
+        "bytes": 19362
+      },
+      {
+        "path": "/star/signing3d/signing-medium.webp",
+        "bytes": 19424
+      },
+      {
+        "path": "/star/signing3d/talk-dark.webp",
+        "bytes": 19192
+      },
+      {
+        "path": "/star/signing3d/talk-light.webp",
+        "bytes": 19180
+      },
+      {
+        "path": "/star/signing3d/talk-medium.webp",
+        "bytes": 19184
+      }
+    ]
   },
   {
     "id": "backdrops",
@@ -1015,6 +1076,39 @@ export const ASSETS_3D: Asset3dFolder[] = [
       {
         "path": "/star/blender/clips/kneeslide.mp4",
         "bytes": 162436
+      }
+    ]
+  },
+  {
+    "id": "match",
+    "title": "Match view proposal",
+    "kind": "image",
+    "made": "tools/blender-signing/match_look.py",
+    "note": "Blender players seen from the 2D match's own camera, and a before/after still. A proposal (Harry P2-74).",
+    "files": [
+      {
+        "path": "/star/area3d/match-blender-before-after.jpg",
+        "bytes": 125553
+      },
+      {
+        "path": "/star/area3d/match-blender.jpg",
+        "bytes": 31470
+      },
+      {
+        "path": "/star/area3d/match-sprite-away-hips.png",
+        "bytes": 56567
+      },
+      {
+        "path": "/star/area3d/match-sprite-away-idle.png",
+        "bytes": 53954
+      },
+      {
+        "path": "/star/area3d/match-sprite-home-hips.png",
+        "bytes": 58223
+      },
+      {
+        "path": "/star/area3d/match-sprite-home-idle.png",
+        "bytes": 55844
       }
     ]
   },

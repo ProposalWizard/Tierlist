@@ -748,7 +748,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Assets",
         items: [
-          ["📁 folder chips", "One folder per kind: top-bar icons, signing scene, backdrops, each shop group, the store, the Blender footballer, its clips and the 3D models. The number is how many files."],
+          ["📁 folder chips", "One folder per kind: top-bar icons, the signing scene, backdrops, each shop group, the store, the Blender footballer, its clips, the match-view proposal and the 3D models. The number is how many files."],
           ["A picture", "Opens it big, with its file path and size."],
           ["Copy path", "Copies the file path (public/…) so it can be pasted into a message."],
           ["Open file", "Opens the file on its own in a new tab."],
@@ -764,6 +764,29 @@ export const ADMIN_GUIDES = {
       "Nowhere — a sandbox. Each scene says on its own page whether any of it is in the game.",
     ],
     dev: "app/star-3d-area-dev/page.tsx · lib/star/area3d.ts (the scene list) · lib/star/assets3dManifest.ts (generated) · scripts/assets3d-manifest.mjs · tests/star/assets3d.mts",
+  },
+
+  "/star-3d-area-dev/signing": {
+    title: "Signing scene (3D prototype)",
+    what: "The signing redone as a short cutscene: you sit across the desk from the manager, a few lines of talk, the contract turned to face you, then tap to sign and the camera pulls back to the wide desk. Every picture is a Blender render. Not in a career yet.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["↺ Replay", "Starts the scene again from the first line."],
+          ["Your player: Light / Medium / Dark", "Which player sits at the desk. Each is its own set of renders with that skin tone. The Dark one also wears the store's headband, to show a picked accessory carrying into a cutscene."],
+          ["Tap the picture", "Shows the rest of a line at once, or moves to the next line. The camera cuts between over your shoulder (he talks) and over his shoulder (you answer)."],
+          ["TAP TO SIGN", "Appears with the contract. The camera pulls back from the paper to the wide desk, you sign, and SIGNED stamps on."],
+          ["Continue (replays here)", "In the game this would carry on to the next screen; here it starts again."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "Not in the game. The career still uses today's drawn signing (SigningScene).",
+      "The terms on the paper (Enfield Town, 2 seasons, 35 a week, #39) are baked into the render. In the game they would sit on the paper as page text, or be rendered per offer.",
+    ],
+    dev: "app/star-3d-area-dev/signing/page.tsx · lib/star/signing3d.ts (the lines) · public/star/signing3d/<beat>-<skin>.webp · tools/blender-signing/signing.py (the scene, built on tools/blender-footballer)",
   },
 
   "/star-shop3d-dev": {
