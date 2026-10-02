@@ -26,11 +26,36 @@
  *
  * A save from before this (no `unlocks`) has everything open — nothing here
  * ever locks an existing career.
+ *
+ * ── v0.25: THE GAME COMES FIRST (Harry and Mikey, 2 Oct 2026, played live) ──
+ * A career started from v0.25 (`unlocks.gameFirst`) runs in this order:
+ *
+ *   1. Home: the welcome tour (it explains energy, and the three match
+ *      modes), then "You've got a game today — Play". League, Stats and Play
+ *      are open from the start. Training is locked.
+ *   2. The first game opens Training and Achievements (announced).
+ *   3. "Your manager wants a word": tapping Relations goes straight into the
+ *      manager's talk, and the talk is what opens Relations (announced).
+ *   4. Training: two drills, with its tutorial.
+ *   5. The Shop opens after two drills or three games, whichever comes first
+ *      (announced). Then the phone (the step says what it costs and how much
+ *      you still need when you cannot afford it yet).
+ *   6. Sponsors open with your first sponsor offer.
+ *
+ * A save part-way through the v0.24 order (no `gameFirst`) keeps that order.
  */
 import type { CareerState, CareerUnlocks } from "./types";
-import { LIFESTYLE_ITEMS } from "./shopData";
+import { LIFESTYLE_ITEMS, LIFESTYLE_ALL_LEVELS } from "./shopData";
 
-export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors";
+export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors" | "training";
+
+/** v0.25: a career on the game-first order. */
+export function gameFirst(c: Pick<CareerState, "unlocks">): boolean {
+  return !!c.unlocks?.gameFirst;
+}
+
+/** v0.25: the Shop opens after this many games (or two drills, if sooner). */
+export const SHOP_AFTER_GAMES = 3;
 
 /**
  * SPONSORS OPEN WITH YOUR FIRST OFFER (v0.25, review of v0.24, points 36 and
@@ -61,11 +86,12 @@ export const LOCK_HINT: Record<Feature, string> = {
   league: "Finish 2 training drills",
   stats: "Finish 2 training drills",
   play: "Finish 2 training drills",
-  shop: "Play your first game",
-  achievements: "Open the League once",
-  relations: "Play your first game",
+  shop: "Finish 2 training drills, or play 3 games",
+  achievements: "Play your first game",
+  relations: "Talk to your manager after your first game",
   phone: "Buy a phone in Style",
   sponsors: "Play well and a brand will get in touch",
+  training: "Play your first game",
 };
 
 /** What each feature is, in one line — said when it unlocks (v0.24, Harry:
@@ -79,15 +105,25 @@ export const FEATURE_INFO: Record<Feature, { name: string; icon: string; line: s
   relations: { name: "Relations", icon: "❤️", line: "Your boss, your team-mates and the fans" },
   phone: { name: "Phone", icon: "📱", line: "Messages, social media and an App Store" },
   sponsors: { name: "Sponsors", icon: "🤝", line: "Brands pay you every week to wear their name" },
+  training: { name: "Training", icon: "⚽", line: "Drills make your skills better" },
 };
 
 /** A new career's starting state. `points` = star points right now. */
 export function freshUnlocks(points = 0): CareerUnlocks {
-  return { open: [], seen: [], drills: 0, pointsAtStart: points, apps: [] };
+  // v0.25: the game comes first — League, Stats and Play are open at once.
+  return { open: ["league", "stats", "play"], seen: [], drills: 0, pointsAtStart: points, apps: [], gameFirst: true };
 }
 
 export function isOpen(c: Pick<CareerState, "unlocks">, f: Feature): boolean {
-  return !c.unlocks || c.unlocks.open.includes(f);
+  if (!c.unlocks) return true;
+  // Training was never locked before v0.25.
+  if (f === "training" && !c.unlocks.gameFirst) return true;
+  return c.unlocks.open.includes(f);
+}
+
+/** Games played so far: appearances, or played fixtures if you watched one. */
+export function gamesPlayed(c: Pick<CareerState, "careerStats" | "fixtures">): number {
+  return Math.max(c.careerStats?.appearances ?? 0, (c.fixtures ?? []).filter((f) => f.played).length);
 }
 
 /** Is the chain still running (a new career with something still locked)? */
@@ -132,52 +168,72 @@ export function markSeen(c: CareerState, key: string): CareerState {
   return withU(c, { ...c.unlocks, seen: addTo(c.unlocks.seen, key) });
 }
 
-/** A training drill finished. The second one opens League, Stats and Play. */
+/** A training drill finished. The second one opens League, Stats and Play
+ *  (v0.24 order), or the Shop with the first-steps achievement (v0.25). */
 /** `pointsBefore`: star points before this drill — kept from the first one,
  *  so the message can say how much training added. */
 export function recordDrill(c: CareerState, pointsBefore?: number, starsBefore?: number): CareerState {
   if (!c.unlocks) return c;
   const drills = c.unlocks.drills + 1;
-  const open = drills >= DRILLS_TO_UNLOCK ? addTo(c.unlocks.open, "league", "stats", "play") : c.unlocks.open;
   const pointsAtStart = c.unlocks.drills === 0 && pointsBefore !== undefined ? pointsBefore : c.unlocks.pointsAtStart;
   const starsAtStart = c.unlocks.drills === 0 && starsBefore !== undefined ? starsBefore : c.unlocks.starsAtStart;
+  if (c.unlocks.gameFirst) {
+    let u: CareerUnlocks = { ...c.unlocks, drills, pointsAtStart, starsAtStart };
+    if (drills >= DRILLS_TO_UNLOCK) u = openFeatures(u, ["shop"], ["shop"]);
+    return { ...withU(c, u), achievements: drills >= DRILLS_TO_UNLOCK ? grant(c, "first-two-sessions") : c.achievements };
+  }
+  const open = drills >= DRILLS_TO_UNLOCK ? addTo(c.unlocks.open, "league", "stats", "play") : c.unlocks.open;
   return withU(c, { ...c.unlocks, drills, open, pointsAtStart, starsAtStart });
 }
 
 /** Just finished the drill that opened the League (show the message once). */
 export function drillMessageDue(c: CareerState): boolean {
-  return !!c.unlocks && c.unlocks.drills >= DRILLS_TO_UNLOCK && !c.unlocks.seen.includes("drills-msg");
+  return !!c.unlocks && !c.unlocks.gameFirst && c.unlocks.drills >= DRILLS_TO_UNLOCK && !c.unlocks.seen.includes("drills-msg");
 }
 
 /** The League was opened. The first time, Achievements opens and the first
  *  achievement is handed out. */
 export function recordLeagueVisit(c: CareerState): CareerState {
-  if (!c.unlocks || !isOpen(c, "league") || c.unlocks.open.includes("achievements")) return c;
+  // v0.25: the first game opens Achievements, not the League.
+  if (!c.unlocks || c.unlocks.gameFirst || !isOpen(c, "league") || c.unlocks.open.includes("achievements")) return c;
   return {
     ...withU(c, { ...c.unlocks, open: addTo(c.unlocks.open, "achievements") }),
     achievements: grant(c, "first-two-sessions"),
   };
 }
 
-/** A game was played. The first opens the Shop and Relations (announced);
- *  your first sponsor offer opens Sponsors (announced, v0.25). Call it after
- *  every match. */
+/** A game was played. Call it after every match.
+ *  v0.25 order: the first opens Training and Achievements; the third opens the
+ *  Shop if two drills have not already. Relations waits for the manager's talk.
+ *  v0.24 order: the first opens the Shop and Relations.
+ *  Either way, your first sponsor offer opens Sponsors. All announced. */
 export function recordMatchPlayed(c: CareerState): CareerState {
   if (!c.unlocks) return c;
-  const games = c.careerStats?.appearances ?? 0;
+  const games = gamesPlayed(c);
   let u = c.unlocks;
-  if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
+  if (u.gameFirst) {
+    if (games >= 1) u = openFeatures(u, ["training", "achievements"], ["training", "achievements"]);
+    if (games >= SHOP_AFTER_GAMES) u = openFeatures(u, ["shop"], ["shop"]);
+  } else if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
   if (hasSponsorOffer(c)) u = openFeatures(u, ["sponsors"], ["sponsors"]);
   return u === c.unlocks ? c : withU(c, u);
 }
 
 /** The first game (kept for older callers): the same as recordMatchPlayed,
- *  and it opens the Shop and Relations even when no appearance was counted. */
+ *  and it opens the first game's features even when no appearance was counted. */
 export function recordFirstMatch(c: CareerState): CareerState {
   if (!c.unlocks) return c;
-  const u = openFeatures(c.unlocks, ["relations", "shop"], ["relations", "shop"]);
+  const u = c.unlocks.gameFirst
+    ? openFeatures(c.unlocks, ["training", "achievements"], ["training", "achievements"])
+    : openFeatures(c.unlocks, ["relations", "shop"], ["relations", "shop"]);
   const after = u === c.unlocks ? c : withU(c, u);
   return recordMatchPlayed(after);
+}
+
+/** v0.25: the manager's talk is due — the first game is played and the talk
+ *  is not done. Tapping Relations goes straight into it. */
+export function managerTalkDue(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
+  return !!c.unlocks?.gameFirst && gamesPlayed(c) >= 1 && !c.achievements.includes("boss-meeting");
 }
 
 /** A boss meeting was played (won or lost — he asked for a meeting, not a
@@ -186,7 +242,8 @@ export function recordFirstMatch(c: CareerState): CareerState {
 export function recordBossMeeting(c: CareerState): CareerState {
   if (!c.unlocks || c.achievements.includes("boss-meeting")) return c;
   return {
-    ...withU(c, openFeatures(c.unlocks, ["relations"])),
+    // v0.25: the talk is what opens Relations, so it is announced.
+    ...withU(c, openFeatures(c.unlocks, ["relations"], c.unlocks.gameFirst ? ["relations"] : [])),
     achievements: grant(c, "boss-meeting"),
   };
 }
