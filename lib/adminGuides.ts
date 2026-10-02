@@ -356,6 +356,38 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
   },
 
+  "/admin/sound-board": {
+    title: "Sound Board",
+    what: "Every game sound in one list: what it is, where the game plays it, and a way to swap in a new one.",
+    buttons: [
+      {
+        items: [
+          ["▶", "Plays the sound as the game plays it now. If you replaced it, this plays your upload. Tap again (■) to stop."],
+          ["Replace / Replace again", "Choose a sound file from your phone or computer (mp3, wav, ogg, m4a or webm, under 2 MB). It uploads at once. Players hear it from the next time they load the game."],
+          ["▶ Original", "Only on a replaced sound. Plays the sound that came with the game, so you can compare."],
+          ["Put the original back", "Only on a replaced sound. Removes your upload. The game goes back to the sound that came with it."],
+          ["Replaced (gold tag)", "This sound has an upload on it."],
+          ["Not in the game yet (grey tag)", "The sound file exists but the game does not play it. Kick, net, crowd, keeper and whistle: the match still makes its own sounds. A replacement saves, but nobody hears it until the game is changed to play that file."],
+        ],
+      },
+    ],
+    saving: [
+      "Shared with everyone, at once. An upload goes to the site's public image storage (folder sfx-overrides) and a small list says which sounds have one.",
+      "There is no Save button. Each upload or \"Put the original back\" saves as soon as you press it.",
+      "If two admins change sounds in the same second, one change can be lost. Check the gold tags afterwards.",
+    ],
+    inGame: [
+      "The nine sounds marked as in the game: button taps, confirm, money in, star bar, star rating up, achievement, phone post, breaking news, energy can.",
+      "Sounds play in the New UI only, and only with Settings → Sound effects switched on.",
+      "A device that has the game open keeps playing the old sound until it reloads.",
+    ],
+    needs: [
+      "Nothing to run. There is no database table for this. It needs the public storage bucket (tierlist-images) and SUPABASE_SERVICE_ROLE_KEY set in Vercel, like the other admin uploads.",
+      "If the list cannot be read, the game plays the sounds that came with it. Nothing breaks.",
+    ],
+    dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
+  },
+
   "/admin/app-plan": {
     title: "App Plan",
     what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",
