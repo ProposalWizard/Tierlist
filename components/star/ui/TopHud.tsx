@@ -100,7 +100,20 @@ function RatingCell({ career, onOpen, claimable }: { career: CareerState; onOpen
         colors={GOLD}
         after={star.gate ? <span className="shrink-0 text-[10px] font-black leading-none text-white">🔒</span> : undefined}
       />
-      {waiting && open && <span data-claim-dot className="absolute left-[38px] -top-[3px] z-20 h-2.5 w-2.5 animate-pulse bg-red-500" style={{ boxShadow: "0 0 6px rgba(239,68,68,.9)" }} />}
+      {/* A round, glossy "!" badge (Harry, 2 Oct 2026: the flat red square
+          looked out of place next to the 3D icons). Same place, same meaning. */}
+      {waiting && open && (
+        <span
+          data-claim-dot
+          aria-label="Star Pass reward waiting"
+          className="absolute left-[34px] -top-[6px] z-20 grid h-[15px] w-[15px] animate-pulse place-items-center rounded-full text-[10px] font-black leading-none text-white"
+          style={{
+            background: "radial-gradient(circle at 35% 30%, #fca5a5 0%, #ef4444 45%, #b91c1c 100%)",
+            boxShadow: "0 0 0 1.5px #fff, 0 0 8px rgba(239,68,68,.9), inset 0 -1px 2px rgba(0,0,0,.35)",
+            textShadow: "0 1px 1px rgba(0,0,0,.4)",
+          }}
+        >!</span>
+      )}
     </button>
   );
 }
