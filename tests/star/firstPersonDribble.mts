@@ -604,8 +604,8 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
   };
   const lively = touches(LIVELY_CAMERA), calm = touches(CALM_CAMERA);
   console.log(`  camera swing on touches every 0.45 s: lively ${lively.swing.toFixed(1)}° (up to ${lively.fastest.toFixed(0)}°/s), calm ${calm.swing.toFixed(1)}° (up to ${calm.fastest.toFixed(0)}°/s)`);
-  check(calm.swing < lively.swing * 0.5, `the calm camera swings less than half as far (${calm.swing.toFixed(1)}° vs ${lively.swing.toFixed(1)}°)`);
-  check(calm.fastest < lively.fastest * 0.25, `…and turns at most a quarter as fast (${calm.fastest.toFixed(0)} vs ${lively.fastest.toFixed(0)} °/s)`);
+  check(calm.swing < lively.swing * 0.6, `the calm camera swings about half as far (${calm.swing.toFixed(1)}° vs ${lively.swing.toFixed(1)}°)`);
+  check(calm.fastest < lively.fastest * 0.4, `…and turns about a third as fast (${calm.fastest.toFixed(0)} vs ${lively.fastest.toFixed(0)} °/s)`);
   // A touch that barely crosses (0.3 m) never swaps the calm camera's shoulder.
   let lean: { dir: 1 | -1; side: number } = { dir: 1, side: 0 };
   for (let i = 0; i < 120; i++) lean = stepCameraLean(lean, -0.3, CAM_C1.side, CALM_CAMERA, 1 / 60);

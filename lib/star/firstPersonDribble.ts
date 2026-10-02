@@ -740,9 +740,11 @@ export function runProgress(s: FpRunState): number {
 // camera angle is a bit crazy." The C1 camera leans to whichever side the
 // ball is on and aims at a point ahead of you, so every touch across your
 // body swung it from one shoulder to the other: about 22° of turn in about
-// half a second. The calm feel leans half as far (a full swap is about 11°),
-// swaps only once the ball is clearly across (0.5 m, not 0.15 m), eases about
-// three times more slowly, and slides after your lane at 3/s, not 5.5/s.
+// half a second. The calm feel swaps shoulder only once the ball is clearly
+// across (0.5 m, not 0.15 m), eases there 2.5 times more slowly, and slides
+// after your lane at 3/s, not 5.5/s. It keeps the full lean: a half lean was
+// tried and, now that your player is drawn again, it put the ball on his
+// back (seen in a still at 390x844).
 // The real match keeps the lively feel (FirstPersonDribble's `calmCamera`).
 export interface CameraFeel {
   /** Share of the camera's own lean (`CamPose.side`) actually used. */
@@ -755,7 +757,7 @@ export interface CameraFeel {
   followRate: number;
 }
 export const LIVELY_CAMERA: CameraFeel = { sideScale: 1, flipAt: 0.15, sideRate: 3, followRate: 5.5 };
-export const CALM_CAMERA: CameraFeel = { sideScale: 0.5, flipAt: 0.5, sideRate: 1, followRate: 3 };
+export const CALM_CAMERA: CameraFeel = { sideScale: 1, flipAt: 0.5, sideRate: 1.2, followRate: 3 };
 
 /** One frame of the lean: which shoulder, and how far over the camera is now. */
 export function stepCameraLean(
