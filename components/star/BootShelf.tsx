@@ -10,6 +10,12 @@
  * and the buy button. A full walk-around 3D shop is not this — that is a
  * much bigger build.
  *
+ * v0.24 (Harry, 2 Oct 2026, P2-22 to P2-25): no card outline round each boot;
+ * the special boots stand in a small glass case; a boot you buy comes out of
+ * its box (BootUnbox, played by Shop.tsx); and a basket (shopBasket.ts) — a
+ * boot you add comes off the shelf, and one you bought says "Sold out" for
+ * the rest of this visit.
+ *
  * Prices, stats, the boot-sponsor discount and the black market (banned
  * boots) are exactly the old screen's: only the layout and pictures changed.
  */
@@ -22,30 +28,42 @@ import { formatMoney } from "@/lib/star/money";
 import BootPicture, { BOOT_LOOK } from "./BootPicture";
 import ShopSheet, { weeksText } from "./ShopSheet";
 import { PressButton, Shine, rgba } from "./ui";
-import type { Reward } from "./StyleShop";
+import { useBasket, MAX_PAIRS } from "./shopBasket";
 
 interface ActionResult { ok: boolean; reason?: string }
 
-const SHELVES: { title: string; note: string; ids: string[] }[] = [
+const SHELVES: { title: string; note: string; ids: string[]; glass?: boolean }[] = [
   { title: "Everyday boots", note: "Swipe the shelf →", ids: ["starter", "speed", "power", "control", "elite"] },
-  { title: "Special boots", note: "A whole new ability in a match", ids: ["curl", "maestro"] },
+  // Harry, 2 Oct 2026 (P2-23): "maybe only the special boots have like a glass box."
+  { title: "Special boots", note: "A whole new ability in a match", ids: ["curl", "maestro"], glass: true },
 ];
 
-export default function BootShelf({ career, boots, banned, homeLevel, bootTarget, reward, onBuyBoot, onBuyFromBlackMarket }: {
+/** The plank's top edge, in px from the top of a shelf row. Boots stand on it. */
+const PLANK_Y = 88;
+
+export default function BootShelf({ career, boots, banned, homeLevel, soldOut, onBuyNow, onAddToBasket, onBuyFromBlackMarket }: {
   career: CareerState;
   /** Every level of every boot, already priced (boot sponsor discount applied). */
   boots: Boot[];
   banned: Set<string>;
   homeLevel: number;
-  /** Where a bought boot flies to — the "Current boot" card. */
-  bootTarget: () => Element | null;
-  reward: Reward;
-  onBuyBoot: (boot: Boot) => void;
+  /** Boot levels bought on this visit: their spot on the shelf says "Sold out". */
+  soldOut: Set<string>;
+  /** Buy one pair now (Shop.tsx runs the real handler, then the unboxing). */
+  onBuyNow: (boot: Boot) => void;
+  /** Put one pair in the basket; `from` is where it flies from. */
+  onAddToBasket: (boot: Boot, from: Element | null) => void;
   onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
 }) {
   const [sheet, setSheet] = useState<{ base: string; level: number } | null>(null);
+  const list = useBasket();
   const levelsOf = (base: string) => boots.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   const wearing = baseIdOf(career.currentBoot);
+  /** The basket's boot, if it is one of this boot's levels. */
+  const basketOf = (base: string) => {
+    const e = list.find((x) => x.kind === "boot" && baseIdOf(x.boot) === base);
+    return e && e.kind === "boot" ? e : null;
+  };
 
   return (
     <>
@@ -56,8 +74,8 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
             <span className="text-[10px] font-bold text-white/60">{shelf.note}</span>
           </div>
           <div className="relative">
-            {/* The shelf itself: a lit plank the boots stand on. */}
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[88px] h-3 rounded-sm" style={{ background: "linear-gradient(180deg, #8b6a4a, #4a3423)", boxShadow: "0 6px 12px -4px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.25)" }} />
+            {/* The shelf itself: one long lit plank the boots stand on. */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 h-3 rounded-sm" style={{ top: PLANK_Y, background: "linear-gradient(180deg, #8b6a4a, #4a3423)", boxShadow: "0 6px 12px -4px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.25)" }} />
             <div className="-mx-3 flex snap-x snap-mandatory scroll-px-3 gap-2.5 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-boot-shelf>
               {shelf.ids.map((id) => {
                 const levels = levelsOf(id);
@@ -65,37 +83,56 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
                 const shown = levels.find((b) => b.level === homeLevel) ?? levels[0];
                 const look = BOOT_LOOK[id] ?? BOOT_LOOK.starter;
                 const isBanned = banned.has(id);
+                const inBasket = basketOf(id);
+                const sold = soldOut.has(shown.id);
+                // Off the shelf: in the basket, or bought out on this visit.
+                const empty = !!inBasket || sold;
                 return (
-                  <button
-                    key={id}
-                    data-boot-card={id}
-                    onClick={() => setSheet({ base: id, level: shown.level ?? homeLevel })}
-                    title={`${shown.name} — tap to see all 5 levels`}
-                    className="kib-press group relative w-[150px] shrink-0 snap-start overflow-hidden rounded-2xl text-left"
-                    style={{ background: `radial-gradient(80% 60% at 50% 0%, ${rgba(look.upper, 0.45)} 0%, transparent 70%), var(--sk-card, linear-gradient(180deg, #1a2234, #0a0f1a))`, boxShadow: `inset 0 0 0 1px ${wearing === id ? "rgba(52,211,153,.8)" : rgba(look.upper, 0.35)}` }}
-                  >
-                    {/* Spotlight from above. */}
-                    <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-24 w-28 -translate-x-1/2" style={{ background: "radial-gradient(50% 100% at 50% 0%, rgba(255,255,255,.22), transparent 70%)" }} />
-                    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-[88px] h-3" style={{ background: "linear-gradient(180deg, #8b6a4a, #4a3423)", boxShadow: "0 6px 10px -4px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.25)" }} />
-                    <div className="relative flex h-[98px] items-end justify-center px-1">
-                      {/* v0.23.1 (Harry, "massive... size 18"): the render fills its whole frame, so at full card width a boot was almost as wide
-                          as the card. Standing at about three-quarters width it sits on the plank at a believable size. */}
-                      <BootPicture base={id} level={shown.level ?? 1} className="w-[72%] transition duration-200 group-hover:-translate-y-1 group-hover:scale-105" />
-                    </div>
-                    <div className="relative h-[66px] px-2 pt-2.5">
-                      <div className="flex items-center gap-1">
-                        <span className="truncate text-[13px] font-black text-white">{shown.name}</span>
-                        {shown.curve && <span className="rounded bg-sky-500 px-1 py-0.5 text-[8px] font-black leading-none text-white">CURVE</span>}
-                        {shown.extraTouch && <span className="rounded bg-fuchsia-500 px-1 py-0.5 text-[8px] font-black leading-none text-white">TOUCH</span>}
-                        {isBanned && <span className="rounded bg-red-600 px-1 py-0.5 text-[8px] font-black leading-none text-white">BANNED</span>}
+                  <div key={id} className="relative w-[150px] shrink-0 snap-start" data-boot-card={id}>
+                    {/* No card (P2-22/23: "the boots on the shelf without this outline"):
+                        the boot stands on the plank in its own light, its name under it. */}
+                    <button
+                      onClick={() => setSheet({ base: id, level: shown.level ?? homeLevel })}
+                      title={`${shown.name} — tap to see all 5 levels`}
+                      className="kib-press group relative block w-full text-left"
+                    >
+                      <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-[96px] w-[140px] -translate-x-1/2" style={{ background: `radial-gradient(50% 80% at 50% 12%, ${rgba(look.upper, empty ? 0.1 : 0.3)}, transparent 72%)` }} />
+                      <div className="relative flex h-[98px] items-end justify-center px-1" data-boot-art>
+                        {empty ? (
+                          // The space it left: a faint outline of the boot.
+                          <BootPicture base={id} level={shown.level ?? 1} className="w-[72%] opacity-[0.14] grayscale" />
+                        ) : (
+                          // v0.23.1 (Harry, "massive... size 18"): three-quarters width sits on the plank at a believable size.
+                          <BootPicture base={id} level={shown.level ?? 1} className="w-[72%] transition duration-200 group-hover:-translate-y-1 group-hover:scale-105" />
+                        )}
+                        {shelf.glass && <GlassCase dim={empty} />}
+                        {sold && !inBasket && <Stamp text="Sold out" color="#f87171" />}
+                        {inBasket && <Stamp text={`In basket${inBasket.qty > 1 ? ` ×${inBasket.qty}` : ""}`} color="#34d399" />}
                       </div>
-                      <div className="flex items-center justify-between text-[10px] font-bold text-white/80">
-                        <span>Pow +{shown.power} · Tec +{shown.technique}</span>
+                      <div className="relative h-[60px] px-1.5 pt-2.5">
+                        <div className="flex items-center gap-1">
+                          <span className="truncate text-[13px] font-black text-white">{shown.name}</span>
+                          {shown.curve && <span className="rounded bg-sky-500 px-1 py-0.5 text-[8px] font-black leading-none text-white">CURVE</span>}
+                          {shown.extraTouch && <span className="rounded bg-fuchsia-500 px-1 py-0.5 text-[8px] font-black leading-none text-white">TOUCH</span>}
+                          {isBanned && <span className="rounded bg-red-600 px-1 py-0.5 text-[8px] font-black leading-none text-white">BANNED</span>}
+                        </div>
+                        <div className="text-[10px] font-bold text-white/80">Pow +{shown.power} · Tec +{shown.technique}</div>
+                        <div className="text-[11px] font-black text-yellow-300">★{formatMoney(shown.price)} <span className="text-[9px] font-bold text-white/60">L{shown.level}</span></div>
                       </div>
-                      <div className="text-[11px] font-black text-yellow-300">★{formatMoney(shown.price)} <span className="text-[9px] font-bold text-white/60">L{shown.level}</span></div>
-                    </div>
-                    {wearing === id && <span className="absolute left-1.5 top-1.5 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[9px] font-black text-emerald-950">WEARING</span>}
-                  </button>
+                      {wearing === id && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[9px] font-black text-emerald-950">WEARING</span>}
+                    </button>
+                    {/* Straight into the basket, without opening the sheet. */}
+                    {!isBanned && !sold && (!inBasket || (inBasket.boot.id === shown.id && inBasket.qty < MAX_PAIRS)) && (
+                      <button
+                        aria-label={`Add ${shown.name} to basket`}
+                        data-add-basket={id}
+                        onClick={(e) => onAddToBasket(shown, e.currentTarget.parentElement?.querySelector("[data-boot-art]") ?? e.currentTarget)}
+                        className="kib-press absolute right-1 top-1 z-10 grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white shadow-[0_2px_8px_rgba(0,0,0,.6)] ring-1 ring-white/40"
+                      >
+                        <BasketGlyph size={15} plus />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -109,15 +146,15 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
           levels={levelsOf(sheet.base)}
           level={sheet.level}
           banned={banned.has(sheet.base)}
+          soldOut={soldOut}
+          pairsInBasket={(id) => { const e = basketOf(sheet.base); return e && e.boot.id === id ? e.qty : 0; }}
           setLevel={(l) => setSheet({ base: sheet.base, level: l })}
           onClose={() => setSheet(null)}
-          onBuy={(b, btn) => {
-            reward(b.price, btn, bootTarget(), <BootPicture base={sheet.base} level={b.level ?? 1} className="h-12 w-[75px]" />, "#34d399", "boot");
-            onBuyBoot(b);
-          }}
-          onBlackMarket={(b, lawyers, btn) => {
+          onBuy={(b) => { setSheet(null); onBuyNow(b); }}
+          onAdd={(b, btn) => onAddToBasket(b, btn)}
+          onBlackMarket={(b, lawyers) => {
             const r = onBuyFromBlackMarket(b, lawyers);
-            if (r.ok) reward(blackMarketPrice(b.price) + (lawyers ? LAWYER_FEE : 0), btn, bootTarget(), <BootPicture base={sheet.base} level={b.level ?? 1} className="h-12 w-[75px]" />, "#f87171", "boot");
+            if (r.ok) setSheet(null);
             return r;
           }}
         />
@@ -126,36 +163,82 @@ export default function BootShelf({ career, boots, banned, homeLevel, bootTarget
   );
 }
 
-function BootSheet({ career, levels, level, banned, setLevel, onClose, onBuy, onBlackMarket }: {
+/** A small glass display case over a special boot (P2-23): see-through, a
+ *  light edge, a lid and two streaks of reflection. */
+function GlassCase({ dim }: { dim: boolean }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-[10px] bottom-[-2px] top-[6px]">
+      <div className="absolute inset-0 rounded-t-[7px]" style={{
+        background: "linear-gradient(180deg, rgba(220,240,255,.10), rgba(220,240,255,.03) 55%, rgba(220,240,255,.10))",
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,.4), inset 0 0 16px rgba(190,230,255,.2)",
+      }} />
+      <div className="absolute inset-x-[-3px] top-[-4px] h-[6px] rounded-[3px]" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2))", boxShadow: "0 1px 4px rgba(0,0,0,.45)" }} />
+      <div className="absolute inset-0 overflow-hidden rounded-t-[7px]">
+        <div className="absolute inset-y-[-20%] left-[14%] w-[15%] -skew-x-[18deg]" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.24), transparent)" }} />
+        <div className="absolute inset-y-[-20%] left-[36%] w-[5%] -skew-x-[18deg]" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent)" }} />
+      </div>
+      {dim && <div className="absolute inset-0 rounded-t-[7px] bg-black/25" />}
+    </div>
+  );
+}
+
+/** "SOLD OUT" / "IN BASKET" across an empty spot. */
+function Stamp({ text, color }: { text: string; color: string }) {
+  return (
+    <span className="pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 -rotate-[8deg] whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-black uppercase tracking-wider"
+      style={{ color, background: "rgba(5,10,20,.8)", boxShadow: `inset 0 0 0 2px ${color}` }}>
+      {text}
+    </span>
+  );
+}
+
+/** A small shopping basket (with a plus, on an "add" button). */
+export function BasketGlyph({ size = 16, plus = false }: { size?: number; plus?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 10h18l-2 10H5L3 10Z" fill="currentColor" fillOpacity=".25" />
+      <path d="M8 10 11 4M16 10l-3-6" />
+      {plus ? <path d="M12 12.5v6M9 15.5h6" /> : <path d="M9 14v3M15 14v3M12 14v3" />}
+    </svg>
+  );
+}
+
+function BootSheet({ career, levels, level, banned, soldOut, pairsInBasket, setLevel, onClose, onBuy, onAdd, onBlackMarket }: {
   career: CareerState; levels: Boot[]; level: number; banned: boolean;
+  soldOut: Set<string>; pairsInBasket: (id: string) => number;
   setLevel: (l: number) => void; onClose: () => void;
-  onBuy: (b: Boot, btn: Element) => void;
-  onBlackMarket: (b: Boot, lawyers: boolean, btn: Element) => ActionResult;
+  onBuy: (b: Boot) => void;
+  onAdd: (b: Boot, btn: Element) => void;
+  onBlackMarket: (b: Boot, lawyers: boolean) => ActionResult;
 }) {
   const [lawyers, setLawyers] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const b = levels.find((x) => x.level === level) ?? levels[0];
   const base = baseIdOf(b);
   const look = BOOT_LOOK[base] ?? BOOT_LOOK.starter;
-  const canBuy = career.money >= b.price;
+  const sold = soldOut.has(b.id);
+  const pairs = pairsInBasket(b.id);
+  const canBuy = career.money >= b.price && !sold;
   const maxStat = Math.max(...levels.map((x) => Math.max(x.power, x.technique)), 1);
   return (
     <ShopSheet open onClose={onClose} title={b.name} accent={look.upper}>
       <div className="relative overflow-hidden rounded-2xl" style={{ background: `radial-gradient(70% 70% at 50% 10%, ${rgba(look.upper, 0.5)}, transparent 70%), var(--sk-card, linear-gradient(180deg, #1a2234, #0a0f1a))` }}>
-        <BootPicture base={base} level={b.level ?? 1} className="mx-auto block aspect-[100/64] w-[76%]" />
+        <BootPicture base={base} level={b.level ?? 1} className={`mx-auto block aspect-[100/64] w-[76%] ${sold ? "opacity-30 grayscale" : ""}`} />
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">Level {b.level} of 5</span>
+        {sold && <Stamp text="Sold out" color="#f87171" />}
       </div>
       <div className="mt-2 grid grid-cols-5 gap-1.5">
         {levels.map((x) => {
           const n = x.level ?? 1;
           const on = n === b.level;
+          const gone = soldOut.has(x.id);
           return (
             <button key={x.id} onClick={() => setLevel(n)} onMouseEnter={() => setLevel(n)}
               className={`kib-press overflow-hidden rounded-xl bg-[#121a2a] ${on ? "ring-2 ring-white" : "ring-1 ring-white/10"}`}>
-              <BootPicture base={base} level={n} className="block aspect-[100/64] w-full" />
+              <BootPicture base={base} level={n} className={`block aspect-[100/64] w-full ${gone ? "opacity-30 grayscale" : ""}`} />
               <div className="bg-black/55 py-0.5 text-center">
                 <div className="text-[9px] font-black leading-tight text-white">{n === 5 ? "★ 5" : `L${n}`}</div>
-                <div className="text-[9px] font-black leading-tight text-yellow-300">{formatMoney(x.price)}</div>
+                <div className={`text-[9px] font-black leading-tight ${gone ? "text-red-300" : "text-yellow-300"}`}>{gone ? "SOLD" : formatMoney(x.price)}</div>
               </div>
             </button>
           );
@@ -184,20 +267,30 @@ function BootSheet({ career, levels, level, banned, setLevel, onClose, onBuy, on
             <input type="checkbox" checked={lawyers} onChange={(e) => setLawyers(e.target.checked)} />
             Hire lawyers first (★{formatMoney(LAWYER_FEE)} — cuts the risk a lot, doesn&apos;t remove it)
           </label>
-          <PressButton variant="danger" size="none" disabled={career.money < blackMarketPrice(b.price) + (lawyers ? LAWYER_FEE : 0)}
-            onClick={(e) => { const r = onBlackMarket(b, lawyers, e.currentTarget); setMsg(r.ok ? "Bought — nobody official noticed. This time." : (r.reason ?? "Failed")); }}
+          <PressButton variant="danger" size="none" disabled={sold || career.money < blackMarketPrice(b.price) + (lawyers ? LAWYER_FEE : 0)}
+            onClick={() => { const r = onBlackMarket(b, lawyers); setMsg(r.ok ? "Bought — nobody official noticed. This time." : (r.reason ?? "Failed")); }}
             className="w-full rounded-xl py-3 font-black">
-            Buy from shady guys — ★{formatMoney(blackMarketPrice(b.price))}
+            {sold ? "Sold out — back next visit" : `Buy from shady guys — ★${formatMoney(blackMarketPrice(b.price))}`}
           </PressButton>
           {msg && <div className="mt-2 text-center text-[10px] font-bold text-white/85">{msg}</div>}
         </div>
+      ) : sold ? (
+        <div className="mt-1.5 rounded-2xl bg-white/[0.06] py-3 text-center text-[13px] font-black uppercase tracking-wide text-red-300 ring-1 ring-red-400/40">Sold out — back next visit</div>
       ) : (
-        <PressButton variant="primary" size="none" pulse={canBuy} disabled={!canBuy}
-          onClick={(e) => { if (canBuy) onBuy(b, e.currentTarget); }}
-          className="relative mt-1.5 w-full overflow-hidden rounded-2xl py-3 text-[14px] font-black">
-          {canBuy && <Shine loop every={4.5} />}
-          {canBuy ? `Buy ${b.name} L${b.level} — ★${formatMoney(b.price)}` : "Not enough money"}
-        </PressButton>
+        <div className="mt-1.5 flex gap-2">
+          <PressButton variant="secondary" size="none" disabled={pairs >= MAX_PAIRS}
+            onClick={(e) => onAdd(b, e.currentTarget)}
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3 py-3 text-[12px] font-black">
+            <BasketGlyph size={15} plus />
+            {pairs > 0 ? `In basket ×${pairs}` : "Add"}
+          </PressButton>
+          <PressButton variant="primary" size="none" pulse={canBuy} disabled={!canBuy}
+            onClick={() => { if (canBuy) onBuy(b); }}
+            className="relative min-w-0 flex-1 overflow-hidden rounded-2xl py-3 text-[14px] font-black">
+            {canBuy && <Shine loop every={4.5} />}
+            {canBuy ? `Buy now — ★${formatMoney(b.price)}` : "Not enough money"}
+          </PressButton>
+        </div>
       )}
     </ShopSheet>
   );

@@ -31,6 +31,7 @@ import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ClubBadge from "./ClubBadge";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
+import { useRenderFailed } from "./StylePicture";
 import { KitStyles, PressButton, ClubCard, Shine, Glow, RiseIn, Stadium, clubTheme, rgba, useClubTheme } from "./ui";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -121,6 +122,9 @@ export default function TitleScreen(p: TitleScreenProps) {
   // (Harry's favourite).
   const next = career ? [...career.fixtures].filter((f) => !f.played).sort((a, b) => a.week - b.week)[0] ?? null : null;
   const sky: HomeSky = career && next ? homeSkyFor(career, next) : "sunset";
+  const plate = `/home/title-stadium-${sky}.webp`;
+  const plateFailed = useRenderFailed(plate);
+  const goalFailed = useRenderFailed(GOAL_SRC);
 
   return (
     <div
@@ -129,23 +133,30 @@ export default function TitleScreen(p: TitleScreenProps) {
       style={{ touchAction: "manipulation" }}
     >
       <KitStyles />
-      {/* THE SET (v0.23, P82: "this whole pitch with the football, the name of
-          it, the background's like a net. Our guy should be standing … on the
-          left"): the goal's net behind, the pitch under him, a ball at his
-          feet. Our own colours — the net is lit in your club's colour — and no
-          store badges. A still picture; the net leans a little with the finger. */}
+      {/* THE SET. v0.24 (Harry, 2 Oct 2026, P2-18: "the background needs to
+          be like a stadium"): a generated stadium seen from the pitch
+          (public/home/title-stadium-<sky>.webp), the real goal behind you
+          (public/home/goal.webp). If either picture fails to load, the v0.23
+          set (the stand plate, a drawn net and a drawn pitch) shows instead. */}
       <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
-        <div className="kit-fade absolute inset-[-4%]">
-          <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
-          <SkyPlate sky={sky} />
-          {sky !== "day" && <Floodlights />}
-          <GoalNet glow={theme.glow} />
-          <PitchFloor />
-        </div>
+        {plateFailed ? (
+          <div className="kit-fade absolute inset-[-4%]">
+            <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
+            <SkyPlate sky={sky} />
+            {sky !== "day" && <Floodlights />}
+            <GoalNet glow={theme.glow} />
+            <PitchFloor />
+          </div>
+        ) : (
+          <div className="kit-fade absolute inset-[-4%]">
+            <div className="absolute inset-0" aria-hidden style={{ backgroundImage: `url(${plate})`, backgroundSize: "cover", backgroundPosition: "center 62%" }} />
+            {goalFailed ? <GoalNet glow={theme.glow} /> : <GoalPicture glow={theme.glow} />}
+          </div>
+        )}
       </div>
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(120% 70% at 30% 52%, transparent 40%, rgba(0,0,0,.5) 100%), linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 24%)" }} />
 
-      <div className="relative mx-auto h-full max-w-md" style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}>
+      <div className="relative mx-auto h-full max-w-md" style={{ paddingTop: "max(44px, calc(env(safe-area-inset-top) + 26px))" }}>
         <Wordmark glow={theme.glow} />
         {!career && (
           <div className="kit-rise mt-1 text-center" style={{ animationDelay: "900ms" }}>
@@ -154,7 +165,10 @@ export default function TitleScreen(p: TitleScreenProps) {
         )}
 
         {/* You, on the left, standing on the pitch with the ball at your feet. */}
-        <div ref={stageRef} className="pointer-events-none absolute bottom-[9%] left-[-18.5%] h-[54%] w-[88%]">
+        {/* v0.24 (P2-17: "move him … higher up in the stadium … a bit further
+            behind"): on the stadium set he stands further up the pitch and a
+            little smaller, just in front of the goal. */}
+        <div ref={stageRef} className={`pointer-events-none absolute ${plateFailed ? "bottom-[9%] left-[-18.5%] h-[54%] w-[88%]" : "bottom-[19%] left-[-13%] h-[45%] w-[80%]"}`}>
           <div className="kit-rise absolute inset-x-0 bottom-0 flex justify-center" style={{ animationDelay: "520ms" }}>
             <div className="relative" style={{ transform: `translate3d(${tilt.x * 4}px, 0, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
               <Glow color={theme.glow} alpha={0.4} className="bottom-[1%] left-1/2 h-[10%] w-[90%] -translate-x-1/2 blur-xl" />
@@ -164,7 +178,7 @@ export default function TitleScreen(p: TitleScreenProps) {
             </div>
           </div>
         </div>
-        <TitleBall className="kit-rise absolute bottom-[3.5%] left-[26%]" style={{ animationDelay: "700ms" }} />
+        <TitleBall className={`kit-rise absolute ${plateFailed ? "bottom-[3.5%] left-[26%]" : "bottom-[15.5%] left-[28%]"}`} size={plateFailed ? 68 : 54} style={{ animationDelay: "700ms" }} />
 
         {/* The menu: flush to the right edge, slanted like a boot's tongue. */}
         <div className="absolute bottom-[4%] right-0 w-[50%] space-y-2">
@@ -310,6 +324,26 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
   );
 }
 
+/** The real goal (public/home/goal.webp, a generated picture with a
+ *  see-through net), standing a few yards behind you (Harry, 2 Oct 2026,
+ *  P2-19: "the goal isn't looking perfect"). Its goal line is at 64% of the
+ *  screen; your feet are lower, so you stand in front of it. A soft shadow
+ *  under the frame and a glow in your club's colour inside it. */
+const GOAL_SRC = "/home/goal.webp";
+function GoalPicture({ glow }: { glow: string }) {
+  // The box is the set's inset-[-4%] layer, so screen Y% = (4 + Y) / 108 of it.
+  return (
+    <div className="absolute" aria-hidden style={{ left: "3%", width: "80%", bottom: `${100 - ((4 + GOAL_LINE) / 108) * 100}%` }}>
+      <div className="absolute inset-x-[6%] bottom-[2%] top-[18%]" style={{ background: `radial-gradient(70% 70% at 50% 85%, ${rgba(glow, 0.35)}, transparent 75%)` }} />
+      <div className="absolute inset-x-[-4%] bottom-[-6%] h-[16%] rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.45), transparent)" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={GOAL_SRC} alt="" draggable={false} className="relative block w-full select-none" style={{ aspectRatio: "928 / 496", filter: "drop-shadow(0 2px 3px rgba(0,0,0,.45))" }} />
+    </div>
+  );
+}
+/** Where the goal line is, in % of the screen height (the generated set). */
+const GOAL_LINE = 64;
+
 /** A small goal on the pitch behind him (P64: "the net's way too big"): the
  *  frame with its net lit in your club's colour, standing on the goal line. */
 function GoalNet({ glow }: { glow: string }) {
@@ -354,10 +388,10 @@ function PitchFloor() {
 }
 
 /** A big match ball with a soft shadow, at his feet. */
-function TitleBall({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+function TitleBall({ className = "", style, size = 68 }: { className?: string; style?: React.CSSProperties; size?: number }) {
   return (
     <div className={className} style={style} aria-hidden>
-      <svg width="68" height="71" viewBox="0 0 96 100">
+      <svg width={size} height={Math.round(size * 1.045)} viewBox="0 0 96 100">
         <ellipse cx="50" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.45)" />
         <circle cx="46" cy="46" r="42" fill="#fff" stroke="#0f172a" strokeWidth="2" />
         <path d="M46 24 62 36 56 55H36L30 36Z" fill="#111827" />
