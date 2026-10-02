@@ -50,6 +50,12 @@ alongside the page) and reference them relatively.
 Every screenshot gets a one-line caption saying what to look at — not what it
 is.
 
+> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
+> test build (the Vercel preview of the branch) and use stills; a short
+> "after" clip only when a still cannot show it (motion, timing, a fixed
+> problem). Befores only as a quick still of a simple UI or specific gameplay
+> change. Full rule: CLAUDE.md, "No filming phase".
+
 ### 4b. Every new thing gets a real video — standard (Harry, 1 Oct 2026)
 *"why is the framing off the videos so cooked and there no playhead … redo
 with real videos and screenshots for every single element, remember

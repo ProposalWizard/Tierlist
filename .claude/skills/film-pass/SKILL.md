@@ -3,6 +3,12 @@ name: film-pass
 description: How to run the before/after filming pass for a Knowitball patch-notes or review page quickly. Load BEFORE launching any filmer agent, before writing a filming driver script, and whenever a build round reaches "film before/after". Covers the built-server setup, the scene library, claims between filmers, deterministic outcomes, and which model films.
 ---
 
+> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
+> test build (the Vercel preview of the branch) and use stills; a short
+> "after" clip only when a still cannot show it (motion, timing, a fixed
+> problem). Befores only as a quick still of a simple UI or specific gameplay
+> change. Full rule: CLAUDE.md, "No filming phase".
+
 # The filming pass, fast
 
 Harry, 2 Oct 2026, after the v0.24 filming took longer than the build: *"is

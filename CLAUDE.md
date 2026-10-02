@@ -389,7 +389,20 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
-**Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
+**No filming phase — patch notes + a test build link (Harry, 2 Oct 2026). This
+replaces the video rules below.** *"Get rid of the whole recording phase, and
+we just do the patch notes and a test build as a link in the patch notes."*
+- Every patch-notes page links the **test build**: the Vercel preview of the
+  branch, `https://tierlist-git-harry-proposalwizards-projects.vercel.app`
+  (opens when signed in to Vercel). They try the new things there themselves.
+- **Stills by default.** A still of the after for each change, taken by the
+  builder while checking their work. No "before" unless it is a quick still
+  of a simple UI change or of one very specific gameplay change.
+- **A video only when a still cannot show it**: motion, timing, an animation,
+  or proof that a reported problem is fixed. Even then: one short "after"
+  clip, no before, no filming pass, no filmer agents.
+
+**(Superseded 2 Oct — see above.) Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
 patch-notes or review page: a before and an after clip of the whole phone
 screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
 full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
