@@ -99,7 +99,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
   // the achievements, one at a time.
   const scoreIn = useLater(250);
   const verdict = useLater(1000);
-  const starIn = useLater(1400);
+  const starIn = useLater(STAR_IN_MS);
   const ratingIn = useLater(2500);
   const relIn = useLater(3500);
   const moneyIn = useLater(4400);
@@ -346,9 +346,26 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
  * Stages: 0 waiting · 1 rising (to the top on a level up) · 2 emptied ·
  * 3 rising again in the new level.
  */
+/** When the star bar starts to fill on the post-match screen. */
+const STAR_IN_MS = 1400;
 const STAR_RISE_MS = 2000;
 const STAR_REFILL_MS = 1700;
 const STAR_HOLD_MS = 350;
+
+/**
+ * When the achievement pop-ups may start on the post-match screen: after the
+ * star bar has finished, including a level-up's fill, empty and refill. They
+ * sit over the top of the screen, and used to start at 4.2 s, in the middle
+ * of the refill (ends at 5.54 s), so they covered it. Never earlier than the
+ * old 4.2 s.
+ */
+export function achievementToastDelay(before?: number, after?: number): number {
+  const from = Math.floor(before ?? after ?? 0);
+  const to = Math.floor(after ?? from);
+  const levelUp = to > from;
+  const barDone = STAR_IN_MS + STAR_RISE_MS + (levelUp ? STAR_HOLD_MS + 90 + STAR_REFILL_MS : 0);
+  return Math.max(4200, barDone + 400);
+}
 function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
   const from = Math.floor(before ?? after ?? 0);
   const to = Math.floor(after ?? from);

@@ -80,6 +80,7 @@ import { applyGameGain } from "@/lib/star/relationshipGame";
 import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo } from "@/components/star/UnlockChain";
 import { DrillIntroOff, DrillTutorial, DrillHelpButton } from "@/components/star/TrainingIntro";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
+import EnergyBackToast from "@/components/star/EnergyBackToast";
 import PointerTour from "@/components/star/PointerTour";
 import BreakingNews from "@/components/star/BreakingNews";
 import ManagerChat from "@/components/star/ManagerChat";
@@ -121,7 +122,7 @@ import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import { pressureForDivision } from "@/lib/star/pressure";
-import PostMatch from "@/components/star/PostMatch";
+import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
@@ -3449,7 +3450,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         achievements={[]}
         onContinue={handlePostMatchContinue}
       />
-      {matchToasts.length > 0 && <AchievementToasts items={matchToasts} delay={4200} onDone={() => setMatchToasts([])} />}
+      {/* The pop-ups wait for the star bar, level-up refill and all. */}
+      {matchToasts.length > 0 && <AchievementToasts items={matchToasts} delay={achievementToastDelay(lastStarChange?.from, lastStarChange?.to ?? starsNow(career))} onDone={() => setMatchToasts([])} />}
       </>
     );
   }
@@ -3933,16 +3935,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const announce = pendingAnnouncements(career);
   const showAnnounce = swipeActive && homePage === 1 && announce.length > 0 && !chainPop && earnPops.length === 0 && newStar === null && newsQueue.length === 0 && !potmWin;
   const quiet = !chainPop && earnPops.length === 0 && newStar === null && newsQueue.length === 0 && !showAnnounce;
+  // The rest days' energy toast (P2-82) takes its turn after the unlock
+  // pop-up and before the tours: after the first match a tour is always
+  // waiting on Home, so "no tour" never came (EnergyBackToast.tsx).
+  const energyToast = swipeActive && homePage === 1 && energyBack !== null && energyBack > 0 && quiet && !helpTour && !potmWin;
   // A word from the manager about set pieces: once, after your first match,
   // never on top of a tutorial or a news pop-up (lib/star/setPieceTalk.ts).
-  const setPieceChat = swipeActive && homePage === 1 && quiet && !potmWin && !pendingSignOffer
+  const setPieceChat = swipeActive && homePage === 1 && quiet && !potmWin && !pendingSignOffer && !energyToast
     ? setPieceTalkDue(career) : null;
   const step = nextStep(career);
   const onTraining = phase === "skills" && trainingTab === "training";
   const onRelations = phase === "skills" && trainingTab === "life";
   const tour: { key: string; steps: TourStep[]; skippable?: boolean; onDone: () => void } | null = (() => {
     if (helpTour) return { key: "help", steps: helpTour, onDone: () => setHelpTour(null) };
-    if (!career.unlocks || !quiet) return null;
+    if (!career.unlocks || !quiet || energyToast) return null;
     const onHome = swipeActive && homePage === 1;
     const seen = (...keys: string[]) => () => setCareer(c => (c ? keys.reduce((acc, k) => markSeen(acc, k), c) : c));
     if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: WELCOME_TOUR, skippable: true, onDone: seen("tutorial", "help-home") };
@@ -3979,7 +3985,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return null;
   })();
   // First steps done: "Do you want to switch this to League as a shortcut?" (P2-89).
-  const askSlot = swipeActive && homePage === 1 && quiet && !tour && !setPieceChat && slotQuestionDue(career);
+  const askSlot = swipeActive && homePage === 1 && quiet && !tour && !setPieceChat && !energyToast && slotQuestionDue(career);
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
@@ -4085,15 +4091,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <AchievementPop key={earnPops[0].id} label={earnPops[0].label} unlocked={earnPops[0].unlocked} record={earnPops[0].kind === "record"} onClose={() => setEarnPops(q => q.slice(1))} onSeeAll={earnPops[0].kind === "achievement" ? seeAllAchievements : undefined} />
       )}
       {/* The rest days' energy, after a match (v0.24, P2-82). */}
-      {swipeActive && homePage === 1 && energyBack !== null && energyBack > 0 && quiet && !tour && (
-        <button
-          onClick={() => setEnergyBack(null)}
-          className="kit-rise fixed left-1/2 top-[118px] z-[70] -translate-x-1/2 whitespace-nowrap rounded-[4px] px-3 py-1.5 text-[13px] font-black text-gray-950"
-          style={{ background: "linear-gradient(180deg,#bef264,#22c55e)", boxShadow: "0 8px 20px -6px rgba(34,197,94,.7), inset 0 1px 0 rgba(255,255,255,.5)" }}
-          aria-label={`${energyBack} energy back from rest days`}
-        >
-          ⚡ +{energyBack} energy back from rest days
-        </button>
+      {energyToast && energyBack !== null && (
+        <EnergyBackToast amount={energyBack} onDone={() => setEnergyBack(null)} />
       )}
       {lockNote && (
         <div className="pointer-events-none fixed inset-x-3 bottom-[86px] z-[90] mx-auto flex max-w-sm items-center gap-2 rounded-xl bg-gray-950/95 px-3 py-2 text-[12px] font-black text-white ring-1 ring-amber-300/40 shadow-lg">
