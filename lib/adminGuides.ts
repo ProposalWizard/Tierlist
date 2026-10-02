@@ -801,26 +801,39 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-3d-area-dev/signing": {
-    title: "Signing scene (3D prototype)",
-    what: "The signing redone as a short cutscene: you sit across the desk from the manager, a few lines of talk, the contract turned to face you, then tap to sign and the camera pulls back to the wide desk. Every picture is a Blender render. Not in a career yet.",
+    title: "Signing scene (live 3D)",
+    what: "The signing as a live 3D cutscene: you sit across the desk from the manager, a few lines of talk, the contract slides over and turns to you, then tap to sign. You reach for the pen, pick it up, write your name, SIGNED lands, and you both stand and shake hands while the camera pulls back. Your skin tone, face picture, hair and accessories are on your player.",
     buttons: [
       {
         items: [
           ["‹", "Back to the 3D Test Area."],
-          ["↺ Replay", "Starts the scene again from the first line."],
-          ["Your player: Light / Medium / Dark", "Which player sits at the desk. Each is its own set of renders with that skin tone. The Dark one also wears the store's headband, to show a picked accessory carrying into a cutscene."],
-          ["Tap the picture", "Shows the rest of a line at once, or moves to the next line. The camera cuts between over your shoulder (he talks) and over his shoulder (you answer)."],
-          ["TAP TO SIGN", "Appears with the contract. The camera pulls back from the paper to the wide desk, you sign, and SIGNED stamps on."],
-          ["Continue (replays here)", "In the game this would carry on to the next screen; here it starts again."],
+          ["↺", "Starts the scene again from the first line."],
+          ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
+          ["Tap the scene", "Shows the rest of a line at once, or moves to the next line. While you sign, a tap jumps to the handshake."],
+          ["TAP TO SIGN", "Appears with the contract. The camera pulls back, you pick up the pen and sign, SIGNED stamps on, then the handshake."],
+          ["Continue (replays here)", "In the game this carries on to the next screen; here it starts again."],
+          ["👁 (bottom left)", "This guide."],
+        ],
+      },
+      {
+        group: "The picker (Your player)",
+        items: [
+          ["Skin tone", "The 8 tones a player can pick in the game."],
+          ["Face picture", "Model's own: the 3D head's own face. Or one of the 7 fake faces, put on the front of the head the way the home avatar fits a photo."],
+          ["Hair", "Short, Long, Buzz or None, and 4 colours."],
+          ["Head / Neck / Sleeves / Wrists / Hands / Boots / Armband", "Every store accessory you can wear. Celebrations are moves, so they are not in this list."],
+          ["Gold Aviators", "The Star Pass reward, on your face."],
         ],
       },
     ],
-    saving: ["Nothing is saved."],
+    saving: ["Nothing is saved. The picker only changes this page."],
     inGame: [
-      "Not in the game. The career still uses today's drawn signing (SigningScene).",
-      "The terms on the paper (Enfield Town, 2 seasons, 35 a week, #39) are baked into the render. In the game they would sit on the paper as page text, or be rendered per offer.",
+      "In a career only when Settings → \"3D signing scene (beta)\" is On (off by default, per phone). Then the first contract's signing plays this scene with your own player, the club's kit, your shirt number, seasons and wage. Off, the career keeps the drawn signing.",
+      "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
+      "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
     ],
-    dev: "app/star-3d-area-dev/signing/page.tsx · lib/star/signing3d.ts (the lines) · public/star/signing3d/<beat>-<skin>.webp · tools/blender-signing/signing.py (the scene, built on tools/blender-footballer)",
+    dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/signing3dRig.ts (clothes, face, accessories, IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/signing3d/*.glb (tools/signing3d/build_assets.py) · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
   "/star-shop3d-dev": {

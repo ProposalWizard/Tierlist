@@ -27,11 +27,11 @@ export const SCENES_3D: Scene3d[] = [
   {
     id: "signing",
     title: "Signing with the manager",
-    line: "Sit across the desk, a few lines of talk, the contract turned to you, tap to sign.",
+    line: "Live 3D: a few lines across the desk, pick up the pen, sign, shake hands. Your own skin, face and accessories.",
     status: "Prototype",
     href: "/star-3d-area-dev/signing",
-    thumb: "/star/signing3d/signed-medium.webp",
-    files: "app/star-3d-area-dev/signing · public/star/signing3d · tools/blender-signing",
+    thumb: "/star/signing3d/thumb.webp",
+    files: "app/star-3d-area-dev/signing · components/star/SigningScene3D.tsx · lib/star/signing3d{Scene,Rig,Textures}.ts · public/star/signing3d · tools/signing3d",
   },
   {
     id: "shop3d",
