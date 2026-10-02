@@ -23,6 +23,7 @@
  * already taught the hard way: a lookup against these lists only works if
  * the spelling actually matches what the rest of the game calls the club.
  */
+import { CLUB_PROFILES } from "./data/clubProfiles";
 
 export type RivalryTier = "R1" | "R2" | "R3";
 
@@ -296,9 +297,17 @@ export const CLUB_RIVALRIES: Record<string, Rivalry[]> = {
   ],
 };
 
+/** Rivals from the club sheets (lib/star/data/clubProfiles.ts), for clubs
+ *  the table above doesn't cover (North/South and Step 3, 2 Oct 2026). */
+const SHEET_RIVALRIES: Record<string, Rivalry[]> = Object.fromEntries(
+  Object.values(CLUB_PROFILES)
+    .filter((p) => p.rivals?.length && !CLUB_RIVALRIES[p.club])
+    .map((p) => [p.club, p.rivals!.map((r) => ({ club: r.club, tier: r.tier, derby: r.derby }))]),
+);
+
 /** Everything `club` feels about `opponent` — absent if nothing was given. */
 export function rivalryOf(club: string, opponent: string): Rivalry | null {
-  return CLUB_RIVALRIES[club]?.find(r => r.club === opponent) ?? null;
+  return (CLUB_RIVALRIES[club] ?? SHEET_RIVALRIES[club])?.find(r => r.club === opponent) ?? null;
 }
 
 /**

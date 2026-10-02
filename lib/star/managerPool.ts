@@ -159,6 +159,7 @@ const DIVISION_OFFSET: Record<Division, number> = {
   champions: 2, europa: 1, premier: 0, championship: -2, pool: -3,
   league_one: -4, league_two: -5, national_league: -6,
   national_league_north: -7, national_league_south: -7,
+  step3_north: -8, step3_south: -8,
 };
 /** An "Other" club clubs.ts tracks no division for at all — a real, if
  *  untracked, European name (most of the world's clubs). Treated as

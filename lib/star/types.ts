@@ -813,6 +813,8 @@ export interface CareerState {
     nationalLeague?: string[];
     /** The two regional divisions under the National League (P62, 1 Oct 2026). */
     nationalLeagueNorth?: string[]; nationalLeagueSouth?: string[];
+    /** Step 3: four clubs waiting below each region (2 Oct 2026). */
+    step3North?: string[]; step3South?: string[];
   };
   /**
    * The Championship play-offs, once your club has reached them.

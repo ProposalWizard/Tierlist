@@ -117,6 +117,31 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/page.tsx · components/AdminPanel.tsx · components/TicTacToeAdmin.tsx, TenableAdmin.tsx, admin/ObjectivesAdmin.tsx, admin/CardLibraryAdmin.tsx · /api/admin/*",
   },
 
+  "/admin/clubs": {
+    title: "Club Data",
+    what: "Every club in the game, and every piece of information the game uses about it, so you can see what's missing.",
+    buttons: [
+      { items: [
+        ["All divisions", "Shows one division (or the Step 3 clubs waiting, or the European lists) instead of every club."],
+        ["All information / Gaps in: …", "Shows one kind of information only, and only the clubs where it's missing or guessed."],
+        ["Search a club", "Narrows the list to clubs whose name contains what you type."],
+        ["Only clubs with gaps", "Hides clubs that have everything."],
+        ["Download spreadsheet", "Downloads what's on screen as a spreadsheet file (opens in Excel or Google Sheets)."],
+        ["A coloured box", "Green: you gave it. Amber: the game is making it up. Red: nothing at all. Hover (or long-press) to see why."],
+        ["The number under each column", "How many clubs have that piece of information, out of the clubs it applies to."],
+      ] },
+    ],
+    saving: [
+      "Nothing to save: this page only reads. To fill a gap, give the information in chat (or a club sheet) and it's added to the game's data in the code.",
+    ],
+    inGame: [
+      "Everything here is what the game uses: kits on the pitch, stadium names, club size in transfers and prestige, rivalries in the news, managers on the team sheet.",
+    ],
+    needs: [
+      "Badge pictures are read from the shared club badge table. If it can't be read, that column says so for every club rather than guessing.",
+    ],
+    dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
+  },
   "/admin/star-pass": {
     title: "Star Pass Rewards",
     what: "Every reward in one catalogue, by type, and which reward sits at each Star Pass level (5 to 100).",

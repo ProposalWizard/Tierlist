@@ -18,7 +18,7 @@ import {
 import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
-import { mulberry32 } from "@/lib/star/season";
+import { mulberry32, sortLeague } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { trialOffers, clubsForDivision, SOURED_OFFER_SHARE, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
 import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
@@ -49,7 +49,7 @@ import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel, divisionOf, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, isRegionalDivision, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
@@ -1564,10 +1564,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, continueAfterRollover]);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
-    // Relegation out of the National League used to force a move here (its
-    // old four-club pool had no fixtures). It now drops into National League
-    // North or South, which are real divisions (1 Oct 2026, P62), so every
-    // boundary carries on into next season's real fixtures.
+    // Bottom four of National League North/South go down to Step 3, which
+    // has no fixtures (Mikey, 2 Oct 2026), so finishing there forces a move.
+    if (isRegionalDivision(divisionOf(from))
+      && sortLeague(from.league).slice(-4).some(t => t.name === from.player.club)) {
+      const forced = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
+      if (forced.length > 0) {
+        setTransferOffers(forced);
+        setPhase("relegation-move");
+        return;
+      }
+    }
     // ── A loan that hit its number ──
     //
     // The parent club's interest is a real `TransferOffer` in the ordinary

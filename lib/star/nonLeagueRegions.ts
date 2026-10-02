@@ -67,6 +67,13 @@ export const CLUB_LATITUDE: Record<string, number> = {
   "Maidenhead United": 51.5, "Maidstone United": 51.3, "St Albans City": 51.8, "Salisbury": 51.1,
   "Slough Town": 51.5, "Tonbridge Angels": 51.2, "Torquay United": 50.5, "Truro City": 50.3,
   "Weston-super-Mare": 51.3,
+  // Joined 2026/27 (2 Oct 2026 club sheet; latitudes from each club's town).
+  "Harborough Town": 52.5, "Hebburn Town": 55.0, "Oxford City": 51.7, "Spalding United": 52.8,
+  "Billericay Town": 51.6, "Dover Athletic": 51.1, "Farnham Town": 51.2, "Folkestone Invicta": 51.1,
+  "Walton & Hersham": 51.4,
+  // Step 3, waiting below North and South.
+  "Guiseley": 53.9, "Bury Town": 52.2, "Cleethorpes Town": 53.6, "Real Bedford": 52.1,
+  "Welling United": 51.5, "Lewes": 50.9, "Uxbridge": 51.5,
 };
 
 /** The line a club with no latitude on file sits on. */

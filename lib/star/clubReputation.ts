@@ -4,6 +4,7 @@ import {
 } from "./clubs";
 import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import type { CareerDivision } from "./calendar";
+import { profileOf } from "./data/clubProfiles";
 
 /**
  * HOW BIG A CLUB IS — PER CLUB, ACROSS ALL FIVE DIVISIONS.
@@ -137,6 +138,10 @@ export const CLUB_REPUTATION: Record<string, number> = {
  * every formula that multiplies by this.
  */
 export function clubReputation(club: string): number {
+  // A size given in a club sheet (lib/star/data/clubProfiles.ts) wins: it
+  // came from the user, the table below is hand-set estimates.
+  const given = profileOf(club)?.clubSize;
+  if (given !== undefined) return Math.max(1, Math.min(100, given));
   const own = CLUB_REPUTATION[club];
   if (own !== undefined) return own;
 

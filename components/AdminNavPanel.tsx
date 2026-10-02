@@ -125,6 +125,7 @@ const GROUPS: AdminGroup[] = [
     links: [
       { name: "Admin Dashboard", href: "/admin" },
       { name: "XP & Rewards", href: "/admin/xp" },
+      { name: "Club Data", href: "/admin/clubs" },
       { name: "Custom Clubs", href: "/admin/custom-clubs" },
       { name: "CL Draft", href: "/admin/cl-draft" },
       { name: "Football Data", href: "/admin/football" },

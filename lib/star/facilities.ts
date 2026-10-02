@@ -2,6 +2,7 @@ import type { CareerState } from "./types";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "./clubs";
 import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { isMajorityOwner, ownedClubState, type BoardActionResult } from "./investments";
+import { profileOf } from "./data/clubProfiles";
 
 /**
  * CLUB FACILITIES — PHASE 7 OF STAR_POWER_POLITICS.MD, §6.
@@ -95,17 +96,17 @@ function defaultFacilities(club: string): ClubFacilities {
       youthAcademyTier: tierFromRating(real.youthRating),
     };
   }
-  // Fallback for a club genuinely absent from the real dataset — currently
-  // only a merged club's brand-new combined name (clubPowers.ts's
-  // mergeClubs). Same deterministic hash the whole file used to run on.
+  // Next, a club sheet (lib/star/data/clubProfiles.ts): North/South and
+  // Step 3 clubs. Whatever it doesn't give falls through to the hash below.
+  const given = profileOf(club);
   const capacityNoise = hash(club, 1);
   const trainingNoise = hash(club, 2);
   const youthNoise = hash(club, 3);
   return {
-    stadiumName: `${club} Stadium`,
-    stadiumCapacity: Math.round(baseCapacityFor(club) * (0.75 + capacityNoise * 0.6)),
-    trainingGroundTier: (1 + Math.floor(trainingNoise * 3)) as 1 | 2 | 3,
-    youthAcademyTier: (1 + Math.floor(youthNoise * 3)) as 1 | 2 | 3,
+    stadiumName: given?.stadium ?? `${club} Stadium`,
+    stadiumCapacity: given?.capacity ?? Math.round(baseCapacityFor(club) * (0.75 + capacityNoise * 0.6)),
+    trainingGroundTier: given?.training !== undefined ? tierFromRating(given.training) : (1 + Math.floor(trainingNoise * 3)) as 1 | 2 | 3,
+    youthAcademyTier: given?.youth !== undefined ? tierFromRating(given.youth) : (1 + Math.floor(youthNoise * 3)) as 1 | 2 | 3,
   };
 }
 
