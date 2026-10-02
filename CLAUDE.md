@@ -341,7 +341,9 @@ the file in brackets after, once, only if someone needs to find it.
 2026).** Short sentences (20–25 words at most), active voice, simple tenses,
 one word for one thing, no coder words. Any stat, rate or rule with conditions
 gets a picture (bar, flow diagram, ✓/✗ table) before the words. Applies to chat
-replies and every artifact. Full rules: `artifact-house-style` skill.
+replies and every artifact. **Don't overdo the diagrams (Harry, 2 Oct): only
+where a picture is clearer than one plain line.** Use the new skills as needed,
+not by default. Full rules: `artifact-house-style` skill.
 
 **Every claim carries a number, or admits it has none.** "Scoring is hard" is
 not a finding. "A clean one-on-one converts at 0.0% over 250 simulated

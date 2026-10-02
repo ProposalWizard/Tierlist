@@ -168,7 +168,9 @@ how numbers are shown.
 - No coder words in the main flow: no "state", "render", "ref", "prop",
   "commit hash". Say what the player sees.
 
-**Numbers and confusing ideas: a picture first, words second.**
+**Numbers and confusing ideas: a picture first, words second — but don't get
+crazy with diagrams (Harry, 2 Oct: "don't get crazy on the diagrams").** Draw
+only where one plain line would not be clear. A simple fact stays a sentence.
 - A number with a before and after is a bar or a dial, never only a sentence.
 - A rate is "7 in 10" or "70 of 100 kicks", not "0.7" or "p = 0.7".
 - A rule with conditions ("only if…, unless…") is a small flow diagram or a
