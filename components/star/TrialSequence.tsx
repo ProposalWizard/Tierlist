@@ -389,6 +389,8 @@ export default function TrialSequence({
           <FirstPersonDribble
             embedded
             calmCamera
+            // Blue like you are in every other trial stage (Harry, 2 Oct 2026).
+            kits={{ you: { shirt: "#2563eb", shorts: "#f8fafc" } }}
             seed={attemptSeed(trial)}
             pace={skills.pace}
             oppStrength={dribble.oppStrength}
