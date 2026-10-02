@@ -25,9 +25,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { starStatus, STAR_GATES, ledgerOf, starTitle, MAX_LEVEL } from "@/lib/star/starPoints";
-import { REWARD_LEVELS, STAR_PASS_REWARDS, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
+import { REWARD_LEVELS, STAR_PASS_REWARDS, STAR_PASS_STEP, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { BottomBar, BarButton, Chev } from "./ui";
+import Podium3D from "./Podium3D";
 
 const ART = "/star/star-pass";
 const fmt = (n: number) => Math.round(n).toLocaleString("en-GB");
@@ -43,11 +44,34 @@ const HEADER_H = 92;
 /** How far each stretch's background blends into the next, in px. */
 const FADE = 130;
 
-/** Height from the bottom of the road to level n. */
-function yOf(n: number): number {
-  let y = ROAD_BOTTOM;
-  for (let i = 2; i <= n; i++) y += (Math.ceil(i / 5) * 5) % 10 === 0 ? GAP_GREAT : GAP;
+/** How tall a level's podium (and its reward) is drawn, in px. */
+function stopHeight(level: number): number {
+  const reward = STAR_PASS_REWARDS[level];
+  const great = rewardTier(level) === "great";
+  if (level === MAX_LEVEL) return 240 * (392 / 442);
+  if (reward?.live) return reward.live.h;
+  const plinthW = great ? 236 : 186;
+  if (reward?.scene) return (plinthW / (reward.sceneFit ?? 1)) * (reward.sceneAspect ?? 0.7);
+  return great ? plinthW * (322 / 556) : plinthW * (217 / 468);
+}
+
+/** Height from the bottom of the road to every level. The five levels before
+ *  a reward share out enough room for it and the one below it not to touch
+ *  (a tall reward, like a footballer on his podium, gets more road). */
+const Y_OF: number[] = (() => {
+  const y = [0, ROAD_BOTTOM];
+  for (let i = 2; i <= MAX_LEVEL; i++) {
+    const r = Math.ceil(i / 5) * 5;
+    const base = r % 10 === 0 ? GAP_GREAT : GAP;
+    const below = r - 5 >= STAR_PASS_STEP ? stopHeight(r - 5) / 2 : 40;
+    const need = (below + stopHeight(r) / 2 + 22) / 5;
+    y[i] = y[i - 1] + Math.max(base, need);
+  }
   return y;
+})();
+
+function yOf(n: number): number {
+  return Y_OF[Math.max(1, Math.min(MAX_LEVEL, n))];
 }
 
 export default function StarRatingSheet({ career, onClose }: { career: CareerState; onClose: () => void }) {
@@ -223,7 +247,8 @@ function RewardStop({ level, reached, next }: { level: number; reached: boolean;
   const boxW = great ? 84 : 62;
   // A scene picture is wider than its podium (room for a ball in flight); size
   // it so the podium itself matches the plain ones.
-  const w = scene ? plinthW / (reward?.sceneFit ?? 1) : plinthW;
+  const live = reward?.live;
+  const w = live ? live.w : scene ? plinthW / (reward?.sceneFit ?? 1) : plinthW;
   return (
     <>
       {/* A faint line from the rail out to the podium, so each one reads as its level's. */}
@@ -240,8 +265,12 @@ function RewardStop({ level, reached, next }: { level: number; reached: boolean;
           {(reached || next) && (
             <div className={`absolute inset-x-[10%] bottom-[4%] top-[35%] ${next ? "animate-pulse" : ""}`} style={{ background: `radial-gradient(closest-side, ${theme.accent}88, transparent)`, filter: "blur(12px)" }} />
           )}
-          <img src={scene ?? plinth} alt={reward?.name ?? ""} className="relative block w-full" draggable={false} />
-          {!top && !scene && (
+          {live ? (
+            <div className="relative"><Podium3D cfg={live} /></div>
+          ) : (
+            <img src={scene ?? plinth} alt={reward?.name ?? ""} className="relative block w-full" draggable={false} />
+          )}
+          {!top && !scene && !live && (
             <img src={box} alt="" draggable={false} className={`absolute left-1/2 -translate-x-1/2 ${next ? "animate-bounce" : ""}`}
               style={{ width: boxW, bottom: great ? "52%" : "46%", filter: "drop-shadow(0 6px 6px rgba(0,0,0,.55))", animationDuration: "1.6s" }} />
           )}

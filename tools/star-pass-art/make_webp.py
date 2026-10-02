@@ -25,13 +25,17 @@ for im in frames:
         box = b if box is None else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
 cx = W / 2
 half = max(cx - box[0], box[2] - cx) + 6
-crop = (int(cx - half), max(0, box[1] - 6), int(cx + half), min(H, box[3] + 6))
 
 # The podium's width: the widest drawn row in the bottom fifth of frame 0.
 a0 = frames[0].getchannel("A").point(lambda a: 255 if a > 8 else 0)
 lo = int(box[1] + (box[3] - box[1]) * 0.8)
 pb = a0.crop((0, lo, W, box[3])).getbbox()
 plinth_w = pb[2] - pb[0]
+# MAX_OVER: how far past the podium's own edges the picture may reach (a ball
+# flying off is let go at that edge rather than widening the whole picture).
+if os.environ.get("MAX_OVER"):
+    half = min(half, plinth_w / 2 * float(os.environ["MAX_OVER"]))
+crop = (int(cx - half), max(0, box[1] - 6), int(cx + half), min(H, box[3] + 6))
 
 frames = [im.crop(crop) for im in frames]
 if width:

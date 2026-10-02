@@ -23,10 +23,9 @@ sys.path.insert(0, HERE)
 import render_star_pass as base  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-OUT = argv[0]
-JOB = argv[2]
+OUT = argv[0] if argv else "."
+JOB = argv[2] if len(argv) > 2 else None
 FRAMES = argv[3] if len(argv) > 3 else "all"
-os.makedirs(OUT, exist_ok=True)
 mat = base.mat
 
 
@@ -441,4 +440,7 @@ def star_badge():
     render_frames("star", [0])
 
 
-{"car": car, "ball": ball, "penalty": penalty, "star": star_badge}[JOB]() if base.reset() is None else None
+if __name__ == "__main__":
+    os.makedirs(OUT, exist_ok=True)
+    base.reset()
+    {"car": car, "ball": ball, "penalty": penalty, "star": star_badge}[JOB]()
