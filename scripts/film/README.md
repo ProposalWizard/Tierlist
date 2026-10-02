@@ -7,6 +7,9 @@ oddly, with no playhead and before/after squeezed side by side: *"why is the
 framing off the videos so cooked and there no playhead … redo with real videos
 and screenshots for every single element"*, then *"this should be standard."*
 
+**Running a whole pass quickly:** read `.claude/skills/film-pass/SKILL.md`
+first (built server, scene library, claims, certain outcomes).
+
 ## The recorder — `rec.mjs`
 - `phone()` — a 390×844 phone at 2x, touch on, with a white dot wherever a
   finger taps or drags.

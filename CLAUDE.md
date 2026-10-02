@@ -396,6 +396,11 @@ shared base, every "after" on the merged copy. The only exception: things Harry
 judges by eye before they're built for real (a size, a camera, a figure) still
 get a quick prototype he can see first.
 
+**Filming fast (Harry, 2 Oct 2026):** load the `film-pass` skill before any
+filming pass. Film from a built copy, start the "before" clips while the builders work, jump to
+screens with saved games, share one claimed clip list, and add a filmer
+whenever memory frees up.
+
 **Film the "after" on the final combined copy (Harry, 1 Oct 2026).** When a
 batch is built in parallel parts, every "after" clip on the page is filmed on
 the ONE merged copy with all changes in, and every "before" on the same base,
