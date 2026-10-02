@@ -19,3 +19,9 @@
 17. NOTE – Energy back 48 after rest days: discussed, "48 is fine", but staying near full should not be easy; cans should be needed.
 18. BUG – Home on iPhone 16: "+32 energy back" message cut off and covering the next-match card (screenshot).
 19. UNCLEAR – "Something about this area makes me want to spam through it, and I don't understand what's coming next." / "It needs to be a bit bigger, it only takes up a tiny …" / a strange highlight with a bad keeper.
+20. BUG – After a long shot was saved and rebounded, an opposition defender "shot" the loose ball at his own keeper, who saved it.
+21. PRAISE – The 3D walk-around shop on a phone ("this is nuts"); the 3D avatar's long hair.
+22. CHANGE – Tutorials should only explain the key things, not every part of every page.
+23. PRAISE – The start of the game feels like NSS, "like a game now"; going straight into the game would streamline it.
+24. BUG – Mikey's full screen does not work either; something takes Harry out of full screen when a certain screen opens.
+25. UNCLEAR – "We have so many errors now" around the 3D Test Area main room.
