@@ -1,0 +1,177 @@
+[00:00] Okay, sorry about that.
+[00:00] I had people coming and talking to me.
+[00:02] So this is part two of the breakdown.
+[00:06] Sorry, I've ended up being somewhere else.
+[00:09] There's version 23.1.
+[00:20] There we go.
+[00:29] 20 levels, big stars, small numbers. Very good. I like this. This should not be how
+[00:36] it is though. It should be one, two, and then three, or one, two, then three, not
+[00:41] just three on its own. I also kind of liked... I'm not sure. I didn't necessarily
+[00:51] mind these bars for training because if you think about it one two three four five six seven eight
+[00:59] nine ten kind of made sense um maybe can you simulate it in a way that we can see less than
+[01:09] 99 but for now i think that does look that does look pretty good that does look good
+[01:21] This page first of all needs a full redo the scout has spotted you page. I think we use blender Higgs field
+[01:29] Maybe this could be an interesting project for you
+[01:31] Can you make this 10 seconds better? Can you make it an actual conversation?
+[01:36] I don't know how you would possibly do this and maybe if it's too hard push everything else and then focus on this
+[01:42] But like can you make blend the models that adapt to people's accessories and the skin color they choose and whatever for cutscenes
+[01:52] because I'd love if this was a conversation between the two and then not like you can hear it but
+[01:58] at least you're like sitting across from him like a FIFA career mode here the contract should be
+[02:02] facing him with the shoulder over the camera over their shoulder and then it zooms out to
+[02:08] this when you tap to sign and shows you actually the player actually signing it if that
+[02:13] sense. Yeah, this looks better. I can show you what it looks
+[02:21] like updated now. Okay, well, only take the middle bit. I
+[02:26] think we still need to move this note ball a bit lower and
+[02:29] like the other one, I think move him somehow higher up in
+[02:33] the stadium like he's a bit further behind over here. I
+[02:36] think also the background needs to be like a stadium.
+[02:39] the goal isn't looking perfect so that needs still a little bit of updating yeah
+[02:46] the shop stuff is all good I like the boots on the shelf maybe instead of
+[02:51] this outline around it we can just have like a little glass box over it
+[03:27] Okay, yeah, maybe have the boots on the shelf without this outline or at least just add
+[03:32] like a little glass box there maybe or maybe only the special boots have like a glass
+[03:37] box and then like an animation of them coming out of the box when you buy them even when you buy
+[03:42] these ones it'd be cool if like the boot came down into like maybe you have a basket and you
+[03:47] can add more than one thing at a time while you're in the shop and things kind of come
+[03:51] off the shelves and empty out at least and then they just say like sold out
+[03:57] this is so cool so so cool very good job on the coins
+[04:11] Soundboard can you add this as an admin page so we can update it?
+[04:16] It was the money wasn't it
+[04:26] Confirm continue is still white. Oh, I don't know if you've actually updated this year to be fair
+[04:45] Oh I didn't even see the stable stuff, did you do that?
+[04:49] Okay cool, those are the actual updates to that.
+[04:52] In terms of the site, let's just quickly start a new save and you can see how the
+[04:58] trial looks, any problems with the trial and the beginning flow of the game, and
+[05:30] then I'm going to leave you to
+[05:34] Okay, firstly, I'm not sure about the white outline and I'm not sure about this pop-up.
+[05:43] I think we should do go with similar to in the game like a pop-up pops up near where
+[05:48] you would be looking anyway, like that's almost off-screen.
+[05:51] I can still just play right now whereas if that was here in like a box which I'll
+[05:56] show you in a minute, then I would have to click to get it round.
+[06:00] He runs up that has no tutorial. So this part has no tutorial
+[06:04] So when it as soon as he's running up
+[06:06] We should pause the animation and it should say you run up to take free kicks as you hit the ball
+[06:11] You'll be met with a timed animation and then when the time the animation comes you give them another little pop-up
+[06:16] Again here through the cones. It maybe should just add it should pop up somewhere else and you have to click once before you
+[06:25] Cool
+[06:29] Again, this just looks wrong.
+[06:31] Firstly, I'm now invisible,
+[06:33] which in this game mode I think isn't great.
+[06:35] It should probably be a visible player for that.
+[06:38] And also the changing of the camera angle
+[06:40] is a bit crazy.
+[06:42] For Find the Pass, this should still be
+[06:45] five or six goes instead of one,
+[06:47] just because it's really quick.
+[06:48] It should be 2.5 seconds, two seconds,
+[06:51] 1.5 seconds, one second, and then half a second.
+[06:55] But this looks way better.
+[07:00] See that was only one.
+[07:01] Penalty shootout, big thing.
+[07:04] They take a pen every single time
+[07:06] the opponents miss in the same exact way
+[07:09] and everyone does a Bruno run-up.
+[07:12] So when they're going to take a pen,
+[07:13] you could explain players have different run-ups
+[07:16] for each one.
+[07:16] So on the second one, okay, he didn't.
+[07:19] Okay, he did something different.
+[07:20] Interesting.
+[07:21] I'm not meant to take all three pens.
+[07:23] What's meant to happen is I'm meant to rig it.
+[07:26] So, you have two teammates take those first two, and then the academy players take their
+[07:33] three.
+[07:33] What should be the case is we have one miss or one goal.
+[07:39] We basically have the chance to win on this one.
+[07:42] So exactly how this is right now, but it could be any organization of outcomes
+[07:48] to get to that.
+[07:49] They could miss three, we miss two, and I'm the last one.
+[07:52] basically your pen should be to win the game like that and then we win and then
+[08:01] this happens you see the difference in the UI from that one to this one the
+[08:05] whole negotiation except the sign business isn't great this is pretty
+[08:09] cool I don't mind it but it's like that could be better like we discussed
+[08:13] already the breaking news super cool super super cool home nice you should
+[08:21] be able to tap anywhere to get rid of that stuff like oh you can okay cool so
+[08:27] go to training this all works well okay I have to pick you shouldn't have a skip
+[08:32] option on that one here once I get it tells me to go to training but then
+[08:36] there's no tutorial so now it should explain what training is why it
+[08:40] matters explain each training drill and then it should say it should force
+[08:45] you to go into power it should say okay now you're gonna try two drills
+[08:50] So you start with power make it make them click into this once they've clicked on the page
+[08:56] This doesn't need to pop up
+[08:58] This should be a tutorial in here the first time they do it and then always have a question mark up that shows them
+[09:03] Kind of how to do it level one should literally be an open goal
+[09:07] I feel like because this like already I have no power
+[09:10] So how am I meant to win that one, but the UI is looking amazing on these? Oh my god
+[09:17] Really good again just impossible right now
+[09:38] Yeah, so that's that for power.
+[09:41] I think we need to still power scale some of these.
+[09:44] So, okay, try it again next time and then it will maybe push you to do something
+[09:49] else.
+[09:49] Maybe you can just say, okay, you need to complete one more drill.
+[09:52] This is where they can, you can explain that you get two drills per session.
+[09:56] Um, so then we do like vision.
+[09:59] Um, and then after this, it's going to say like your training.
+[10:04] Oh, okay.
+[10:05] Um, your training sessions are done for this week.
+[10:09] Now you have to look towards the match.
+[10:11] So from the training, you, first of all, are going to get the league
+[10:17] unlocked your league so you're going to see you're going to get your achievement and then when it
+[10:23] says continue here instead of continue it should say see all achievements so then that will take
+[10:28] you to achievement so before playing our first game it should show you the achievements
+[10:33] bar here so that just changed from league to achievements which is interesting
+[10:38] and then it should say next so there's like a almost like a story mode of achievements and
+[10:44] and then there's like the achievements
+[10:45] that just happen naturally.
+[10:46] So next will be play your first game
+[10:48] and there'll be like a play tab there.
+[10:50] So to earn coins, play your first game,
+[10:52] use a can, we're low on energy.
+[10:54] We play our first game.
+[10:56] I should have simmed, not bad.
+[10:59] But I mean, you can see here,
+[11:00] this is a bad highlight where you always get intercepted.
+[11:03] So I guess it's good for you to just see
+[11:04] the 2D toggles work, that works.
+[11:08] So now this is 2D.
+[11:09] I do think the 2D kind of sucks though,
+[11:11] especially with the player heads.
+[11:13] I think we just make that like blenderized like I don't know. I don't know about the player heads
+[11:18] on players. The Coley's are insane at this level.
+[11:26] So it's cool that we're we're in the non-league though. I think it is definitely the way.
+[11:35] Also when I pass off the ball there I should get the ball back and I don't know if that's
+[11:39] what happened. I'm just definitely not gonna get to do this. Just gonna say intercepted.
+[11:43] Yeah, see that's a stupid highlight again.
+[11:54] Almost every single one of these highlights has been pretty impossible.
+[11:56] That was a pretty cool highlight.
+[11:58] And then we're going to end up winning maybe 1-0.
+[12:01] Preserve some energy.
+[12:02] It should also have a tutorial in-game.
+[12:04] Like what is this energy bar?
+[12:06] When you click on the next one, like this is more energy.
+[12:09] This is less energy.
+[12:10] And it should show you maybe after the game how much energy you've regained as well. So that's a new thing
+[12:16] Total cash and then yep, you've got your your achievements which should pop up without the next button then explain the post match reactions
+[12:24] See if there's anything we can add there and then you come out once you come out
+[12:28] It should really be in the league here, but League like your first steps go have a meeting with your boss
+[12:33] There's nothing pushing someone to do that right now
+[12:35] And I think that's where the flow needs a little bit more work, like what is next, what pushes them to do that.
+[12:43] And then it's like, maybe it's there like, now it's time to have a conversation with the boss.
+[12:48] And then it says click in here.
+[12:50] Again, achievements weren't going to be on the main page.
+[12:54] Unless, instead of unlocking the league table straight away, we show them the league here.
+[13:00] And then we take them to the league section when we show that.
+[13:03] and instead of the league being on the main page,
+[13:08] this should also scroll back to home
+[13:11] when we're doing this, by the way.
+[13:14] Instead of the league being there,
+[13:15] the achievements are there
+[13:16] until they've completed all their first steps.
+[13:18] Once they complete all of their first steps,
+[13:21] then maybe it says,
+[13:22] do you wanna switch this to league as a shortcut?
+[13:25] I'm not gonna go too much more right now
+[13:27] because I feel like the more I do,
+[13:30] the more chance there is of stuff messing up.
+[13:31] I think that is kind of a lot of feedback right now and I want you to really focus
+[13:43] on getting it all right.
