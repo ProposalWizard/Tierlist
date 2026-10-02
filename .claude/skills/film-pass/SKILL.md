@@ -91,6 +91,15 @@ The wall clock went to server compiles, memory crashes and bot retries.
   round's "after" clip IS this round's "before". Copy it instead of filming it
   again.
 
+### 9. Plan the hard clips before filming starts
+- **Admin pages** redirect to sign-in on the test server, because it has no admin
+  account. In v0.24 the Sound Board could not be filmed. Decide up front: stills
+  from the builder, or Harry films it live. A test-only way round the admin
+  check needs Harry's yes first.
+- **One kind of highlight** (a tight angle, a give-and-go) cannot be waited for.
+  In v0.24 two tries on a slow machine never served one. Use a dev-only seed
+  that serves that kind first (rule 6).
+
 ## Which model
 - Filming is mostly waiting for a browser, so a bigger model doesn't make it faster.
   Use the everyday model at medium effort (as CLAUDE.md says).

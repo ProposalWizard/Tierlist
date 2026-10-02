@@ -366,6 +366,12 @@ see a frozen figure or a box sitting on the ball. Use `star-playtest`.
 message on one unclear clause. Build what is clear, then ask one question with
 its options so it can be answered in a word from a phone.
 
+**When Harry points at a picture, name it back before building (2 Oct 2026).**
+In v0.24 the Home goal was built from the wrong picture and had to be moved
+twice ("move the goal back and have it exactly like image 2"). Say which
+picture you are copying, in one line ("copying image 2: the goal set back where
+the pitch meets the stands"), and build from that.
+
 **Do not agree to be agreeable.** Caught directly: *"a lot of times you're
 just agreeing with us… I want to know for sure if that is a good idea."*
 Before agreeing with a design call, go and find what argues against it. If
