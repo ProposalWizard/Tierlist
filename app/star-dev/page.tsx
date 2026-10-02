@@ -325,7 +325,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The achievements the last match unlocked — the post-match shows them one at a time.
   const [lastMatchAch, setLastMatchAch] = useState<string[]>([]);
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
-  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[]; held?: number; carried?: number } | null>(null);
+  const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[]; held?: number; carried?: number; fromNext?: number } | null>(null);
   /** A whole new star: the full-screen moment. */
   const [newStar, setNewStar] = useState<number | null>(null);
   const prevCareerRef = useRef<CareerState | null>(null);
@@ -1183,7 +1183,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setLastStarChange({ from: starsNow(career), to: starNext.stars });
     // Everything that moved the rating, not just the match (starGain).
     const gain = starGain(career, next);
-    setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, gate: starNext.gate?.need,
+    setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, fromNext: starStatus(career).toNext, gate: starNext.gate?.need,
       total: gain.total, extra: gain.lines.filter(l => l.cat !== "match").map(l => ({ label: l.label, sp: l.sp, n: l.n })),
       held: starNext.held, carried: starNext.carried });
     // Shown one at a time on the post-match screen (PostMatch.tsx), not as a toast on Home.

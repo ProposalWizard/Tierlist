@@ -379,7 +379,7 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Pro
           className="pointer-events-none absolute max-w-none select-none"
           style={{ left: g.left, bottom: g.bottom, width: g.width, height: g.height, filter: "drop-shadow(0 5px 5px rgba(0,0,0,.35))" }}
         />
-        <div className="relative z-10 shrink-0" style={{ width: figW }}>
+        <div data-tour="player" className="relative z-10 shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
         </div>
         <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-1 self-center">
@@ -435,7 +435,7 @@ function SeasonStat({ label, value }: { label: string; value: number }) {
 function MiddleLinks({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
   const offers = brandsOf(career).offers.length;
   const showAch = isOpen(career, "achievements");
-  const showSp = isOpen(career, "shop");
+  const showSp = isOpen(career, "sponsors");
   if (!showAch && !showSp) return null;
   const text = "kib-press flex items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
   const shadow = { textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" };
