@@ -2,6 +2,7 @@
 import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
+import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildScenario,
@@ -4250,11 +4251,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       //  2. Either way, nothing on screen said so: these lines went to the
       //     sandbox-only ticker. Now a banner says it came back, and the match
       //     commentary says which.
+      //  v0.25 (review of v0.24, point 49): "always" was too much. In a
+      //  no-goal picture a forward pass now comes back 92 in 100 and a
+      //  sideways or backward one 60 in 100 (lib/star/giveAndGo.ts). Pictures
+      //  with a goal keep chainReturnChance.
       const onlyPlay = !goalInView(sc.kind);
       const who = sc.receivedBy?.who?.shortName ?? targetName(sc);
-      // The roll is drawn in exactly the cases it always was, so the rest of
+      // One roll, drawn in exactly the cases it always was, so the rest of
       // the match's random stream is what it was.
-      if (at && depth < CHAIN_MAX && (rngRef.current() < chainReturnChance(sc) || onlyPlay)) {
+      const returnChance = onlyPlay && at ? giveAndGoChance(sc, at) : chainReturnChance(sc);
+      if (at && depth < CHAIN_MAX && rngRef.current() < returnChance) {
         const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
