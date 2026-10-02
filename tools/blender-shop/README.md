@@ -72,8 +72,8 @@ Harry, 2 Oct (P1-37, P1-38): a 3D icon sits ABOVE each top bar, as an overlay.
 | `public/icons3d/energy.png` | yellow lightning bolt | Energy |
 | `public/icons3d/world.png` | small Earth with clouds | Reputation ("world") |
 | `public/icons3d/fame.png` | gold crown with stones | Fame |
-| `public/icons3d/happiness.png` | yellow smiley | Happiness |
-| `public/icons3d/heart.png` | pink heart (spare, if happiness should be a heart) | — |
+| `public/icons3d/happiness.png` | pink heart (Harry did not like the smiley, 2 Oct) | Happiness |
+| `public/icons3d/heart.png` | pink heart (same file as happiness.png) | — |
 | `public/icons3d/money.png` | gold coin with a raised ★ | Money |
 | `public/icons3d/star-full.png`, `star-empty.png` | gold star and grey star, same shape and framing | Star rating: draw the grey one, then the gold one clipped from the bottom to the % through the level |
 
