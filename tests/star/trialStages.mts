@@ -51,8 +51,20 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   for (const [stage, n] of Object.entries(REPS)) {
     check(n >= 1 && n <= 8, `${stage} should be between one attempt and a few (${n})`);
   }
-  for (const s of ["freeKicks", "technique", "dribbling", "vision"] as const) {
+  for (const s of ["freeKicks", "technique", "dribbling"] as const) {
     check(REPS[s] === 1, `${s} is one attempt (Harry, v0.23): ${REPS[s]}`);
+  }
+  // Find the Pass is five quick goes, each shorter (Harry, 2 Oct 2026).
+  check(REPS.vision === 5, `find the pass is five goes: ${REPS.vision}`);
+  {
+    const t = { ...startTrial(3), adversity: null, adversityStage: null };
+    const windows = Array.from({ length: REPS.vision }, (_, r) => visionSetup(t, r).window);
+    check(JSON.stringify(windows) === JSON.stringify([2.5, 2, 1.5, 1, 0.5]),
+      `the five clocks are 2.5, 2, 1.5, 1 and 0.5 s: ${windows.join(", ")}`);
+    const snap = { ...t, adversity: "snap-decision" as const, adversityStage: "vision" as const };
+    for (let r = 0; r < REPS.vision; r++) {
+      check(visionSetup(snap, r).window <= windows[r] + 1e-9, `snap decision never gives MORE time (go ${r + 1})`);
+    }
   }
   check(REPS.shootout === 3, `the shootout is up to three kicks each: ${REPS.shootout}`);
   check(

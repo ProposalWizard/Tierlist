@@ -1,5 +1,5 @@
 import {
-  powerDrill, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
+  powerDrill, powerDrillForLevel, powerProgress, OPEN_GOAL_LEVELS, FIRST_BLOCKER_LEVEL, POWER_LEVELS, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality, ladder,
 } from "../../lib/star/trainingDrills";
 import { CX, POST_L, POST_R, PITCH_W, GOAL_W } from "../../lib/star/pitch";
@@ -211,6 +211,44 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(narrowlyWide > miles, `inches wide beats hopelessly wide (${narrowlyWide.toFixed(2)} vs ${miles.toFixed(2)})`);
   check(shotQuality("post", CX) > saved, "hitting the post is the best of the ones that stayed out");
   check(cornerGoal <= 1 && miles >= 0, "every quality stays inside 0-1");
+}
+
+// ── Power by training level: an open goal first, scaled to your Power ─────
+//
+// Harry, 2 Oct 2026: "Level one should literally be an open goal … I have no
+// power. So how am I meant to win that one?" and "we need to still power
+// scale some of these". Win rates on the real engine are in the v0.24 report
+// (scratch harness); this checks the shape.
+{
+  for (const power of [undefined, 40, 60, 80, 100]) {
+    const l1 = powerDrillForLevel(1, 0, power);
+    check(!l1.keeper && l1.blockers === 0, `level 1 is an open goal, nobody in the way (Power ${power})`);
+    check(l1.distance <= 13, `level 1 is close in (${l1.distance.toFixed(1)}m)`);
+    for (let n = 1; n <= OPEN_GOAL_LEVELS; n++) check(!powerDrillForLevel(n, 0, power).keeper, `level ${n} has no keeper`);
+    check(powerDrillForLevel(OPEN_GOAL_LEVELS + 1, 0, power).keeper, `level ${OPEN_GOAL_LEVELS + 1} brings the keeper on`);
+    check(powerDrillForLevel(FIRST_BLOCKER_LEVEL - 1, 0, power).blockers === 0
+      && powerDrillForLevel(FIRST_BLOCKER_LEVEL, 0, power).blockers >= 1, `men in the way from level ${FIRST_BLOCKER_LEVEL}`);
+    // Never easier as the levels go up, for the same Power.
+    let lastD = -1, lastK = -1, lastB = -1;
+    for (let n = 1; n <= POWER_LEVELS; n++) {
+      const c = powerDrillForLevel(n, 0, power);
+      check(c.distance >= lastD - 1e-9 && c.keeperStrength >= lastK - 1e-9 && c.blockers >= lastB,
+        `power level ${n} is never easier than the level before (Power ${power})`);
+      lastD = c.distance; lastK = c.keeperStrength; lastB = c.blockers;
+    }
+  }
+  // A Power behind the level eases it; a Power at or ahead of it changes nothing.
+  for (let n = 1; n <= POWER_LEVELS; n++) {
+    const plain = powerDrillForLevel(n, 0);
+    const strong = powerDrillForLevel(n, 0, 100);
+    const weak = powerDrillForLevel(n, 0, 40);
+    check(JSON.stringify(plain) === JSON.stringify(strong), `Power ahead of level ${n} never makes it harder`);
+    check(weak.distance <= plain.distance + 1e-9 && weak.keeperStrength <= plain.keeperStrength + 1e-9,
+      `Power 40 never gets a harder level ${n} than the plain one`);
+  }
+  check(powerProgress(30, 40) < powerProgress(30, 100), "a weak Power on the top level gets a gentler drill");
+  check(powerDrillForLevel(30, 0).distance > 33 && powerDrillForLevel(30, 0).blockers === 4
+    && powerDrillForLevel(30, 0).keeperStrength >= 90, "level 30 at full Power is still the brutal one");
 }
 
 if (problems.length) {

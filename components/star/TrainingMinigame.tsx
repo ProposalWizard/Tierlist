@@ -9,7 +9,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import { CX, PITCH_W } from "@/lib/star/pitch";
 import {
-  powerDrill, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
+  powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
 } from "@/lib/star/trainingDrills";
 import {
@@ -316,9 +316,19 @@ export interface StrikeSetup {
   gateCfg: ReturnType<typeof techniqueDrill> | null;
   /** What the HUD says this rep is asking for. */
   brief: string;
+  /** Power's first levels: no keeper on the pitch (powerDrillForLevel). */
+  openGoal?: boolean;
 }
 
-export function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => number): StrikeSetup {
+/**
+ * `byLevel` (Power only): build from the training LEVEL and the player's own
+ * Power — an open goal first, and scaled to your Power (powerDrillForLevel,
+ * Harry 2 Oct 2026). Absent: the old 0-100 ladder, as the dev page uses it.
+ */
+export function buildStrike(
+  kind: StrikeKind, level: number, rep: number, rng: () => number,
+  byLevel?: { trainingLevel: number; power: number },
+): StrikeSetup {
   if (kind === "technique") {
     const cfg = techniqueDrill(level, rep);
     // The ball sits far enough back that the gate always stands about six
@@ -387,7 +397,7 @@ export function buildStrike(kind: StrikeKind, level: number, rep: number, rng: (
     };
   }
 
-  const cfg = powerDrill(level, rep);
+  const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
   const ball = strikeSpot(cfg.distance, cfg.offset);
   const sc = buildScenario("long_range", rng, cfg.keeperStrength, 60, 55);
   sc.ball = { x: ball.x, y: ball.y };
@@ -415,7 +425,10 @@ export function buildStrike(kind: StrikeKind, level: number, rep: number, rng: (
     viewport: strikeViewport(ball),
     gate: null,
     gateCfg: null,
-    brief: `${cfg.distance.toFixed(0)}m · ${cfg.blockers} in the way`,
+    brief: cfg.keeper
+      ? `${cfg.distance.toFixed(0)}m · ${cfg.blockers} in the way`
+      : `${cfg.distance.toFixed(0)}m · open goal`,
+    openGoal: !cfg.keeper,
   };
 }
 
@@ -435,28 +448,41 @@ function StrikeDrill({
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
+  // Power is built from the level number and YOUR Power (open goal first,
+  // scaled to your Power — powerDrillForLevel). Held for the whole drill.
+  const powerNow = skills.power;
+  const byLevel = useMemo(
+    () => (kind === "power" ? { trainingLevel, power: powerNow } : undefined),
+    // Fixed at the start of the drill: a level is one picture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [kind, trainingLevel],
+  );
+  const powerKeeper = kind === "power" && byLevel
+    ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power).keeperStrength
+    : powerDrill(level, rep).keeperStrength;
 
   const openOn = useCallback((): Scenario => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current));
+    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
     setup.scenario.viewport = { ...setup.viewport };
     setupRef.current = setup;
     prevRef.current = null;
     crossedRef.current = null;
     return setup.scenario;
-  }, [kind, level]);
+  }, [kind, level, byLevel]);
 
   // The HUD line and the cones for this rep — the same seeded build the
   // engine was handed, so the cones stand exactly where the gate is judged.
   const view = useMemo(() => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current));
+    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
     return {
       brief: setup.brief,
+      openGoal: !!setup.openGoal,
       markers: setup.gate ? [
         { x: setup.gate.left.x, y: setup.gate.left.y },
         { x: setup.gate.right.x, y: setup.gate.right.y },
       ] : [],
     };
-  }, [kind, level, rep]);
+  }, [kind, level, rep, byLevel]);
   const brief = view.brief;
   const markers = view.markers;
 
@@ -518,9 +544,9 @@ function StrikeDrill({
           markers={markers}
           skills={{ power: skills.power, technique: skills.technique }}
           setPieceSkill={skills.freeKick}
-          keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerDrill(level, rep).keeperStrength}
+          keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerKeeper}
           seed={seedRef.current}
-          scene={DRILL_SCENE[kind]}
+          scene={view.openGoal ? { ...DRILL_SCENE.power, keeper: false } : DRILL_SCENE[kind]}
         />}
         {brief && (
           <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-amber-200">

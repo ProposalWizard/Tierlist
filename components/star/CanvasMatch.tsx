@@ -376,6 +376,14 @@ interface Props {
    */
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
+  /**
+   * A feature's teaching pause (the trial's free kick, 2 Oct 2026): called the
+   * moment YOUR run-up starts and the moment the strike screen opens. Return
+   * true to freeze the match right there — nobody moves, the strike screen's
+   * clock does not start — until the feature calls `release()`. Absent (the
+   * real match): never called, nothing is ever held.
+   */
+  holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
 }
 
 
@@ -539,7 +547,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1473,6 +1481,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   /** The strike screen's countdown for this kick, seconds — null = no limit (every kick but a run-up). */
   const [contactTimerS, setContactTimerS] = useState<number | null>(null);
+  // ── A feature's teaching pause (`holdAt`) — never set in the real match ──
+  const holdAtRef = useRef(holdAt);
+  holdAtRef.current = holdAt;
+  const heldRef = useRef(false);
+  const [held, setHeld] = useState(false);
+  /** Ask the feature whether to freeze here; if so, stay frozen until it lets go. */
+  const tryHold = (moment: "runup" | "contact") => {
+    const ask = holdAtRef.current;
+    if (!ask) return;
+    let done = false;
+    const release = () => {
+      if (done) return;
+      done = true;
+      heldRef.current = false;
+      setHeld(false);
+    };
+    if (ask(moment, release) && !done) {
+      heldRef.current = true;
+      setHeld(true);
+    }
+  };
   // Item 5r — a "cheeky" kick (a penalty chipped or down the middle, or an
   // open-play chip) that didn't go in costs a little reputation. The kind of the kick just struck,
   // and the misses so far this match (handed out with the match's stats).
@@ -3546,7 +3575,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // camera stays put. On a penalty the keeper brain may hop (brainRunUp:
       // his one decision, made visible). Nothing else moves and the ball is
       // not touched: the kick itself is still handleContact → launch().
-      if (phaseRef.current === "runup") {
+      if (phaseRef.current === "runup" && !heldRef.current) {
         const ru = runupRef.current;
         const sc = scenarioRef.current;
         stepKeeper(sc, dt);
@@ -3565,6 +3594,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             setAim({ dir: dirNow, power: ru.power });
             setContactTimerS(strikeTimerFor(sc.kind));
             setPhase("contact");
+            tryHold("contact");
             // The page was scrolled to show the strike screen when the jog
             // began (startRunup). Only if it has moved since — the one cheap
             // check — scroll again.
@@ -5703,6 +5733,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     nudgeDragRef.current = null;
     setAim({ dir: dir0, power });
     setPhase("runup");
+    tryHold("runup");
     pushLine("He runs up…");
     // The strike screen at the end of this jog has a countdown, so all of it
     // must be on screen when it opens. Measured on a 390x664 phone: the real
@@ -6096,6 +6127,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             technique={skills.technique}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
+            hold={held}
           />
         )}
 
