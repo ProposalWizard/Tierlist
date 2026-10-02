@@ -801,47 +801,61 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-3d-area-dev/signing": {
-    title: "Signing scene (3D prototype)",
-    what: "The signing redone as a short cutscene: you sit across the desk from the manager, a few lines of talk, the contract turned to face you, then tap to sign and the camera pulls back to the wide desk. Every picture is a Blender render. Not in a career yet.",
+    title: "Signing scene (live 3D)",
+    what: "The signing as a live 3D cutscene: you sit across the desk from the manager, a few lines of talk, the contract slides over and turns to you, then tap to sign. You reach for the pen, pick it up, write your name, SIGNED lands, and you both stand and shake hands while the camera pulls back. Your skin tone, face picture, hair and accessories are on your player.",
     buttons: [
       {
         items: [
           ["‹", "Back to the 3D Test Area."],
-          ["↺ Replay", "Starts the scene again from the first line."],
-          ["Your player: Light / Medium / Dark", "Which player sits at the desk. Each is its own set of renders with that skin tone. The Dark one also wears the store's headband, to show a picked accessory carrying into a cutscene."],
-          ["Tap the picture", "Shows the rest of a line at once, or moves to the next line. The camera cuts between over your shoulder (he talks) and over his shoulder (you answer)."],
-          ["TAP TO SIGN", "Appears with the contract. The camera pulls back from the paper to the wide desk, you sign, and SIGNED stamps on."],
-          ["Continue (replays here)", "In the game this would carry on to the next screen; here it starts again."],
+          ["↺", "Starts the scene again from the first line."],
+          ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
+          ["Tap the scene", "Shows the rest of a line at once, or moves to the next line. While you sign, a tap jumps to the handshake."],
+          ["TAP TO SIGN", "Appears with the contract. The camera pulls back, you pick up the pen and sign, SIGNED stamps on, then the handshake."],
+          ["Continue (replays here)", "In the game this carries on to the next screen; here it starts again."],
+          ["👁 (bottom left)", "This guide."],
+        ],
+      },
+      {
+        group: "The picker (Your player)",
+        items: [
+          ["Skin tone", "The 8 tones a player can pick in the game."],
+          ["Face picture", "Model's own: the 3D head's own face. Or one of the 7 fake faces, put on the front of the head the way the home avatar fits a photo."],
+          ["Hair", "Short, Long, Buzz or None, and 4 colours."],
+          ["Head / Neck / Sleeves / Wrists / Hands / Boots / Armband", "Every store accessory you can wear. Celebrations are moves, so they are not in this list."],
+          ["Gold Aviators", "The Star Pass reward, on your face."],
         ],
       },
     ],
-    saving: ["Nothing is saved."],
+    saving: ["Nothing is saved. The picker only changes this page."],
     inGame: [
-      "Not in the game. The career still uses today's drawn signing (SigningScene).",
-      "The terms on the paper (Enfield Town, 2 seasons, 35 a week, #39) are baked into the render. In the game they would sit on the paper as page text, or be rendered per offer.",
+      "In a career only when Settings → \"3D signing scene (beta)\" is On (off by default, per phone). Then the first contract's signing plays this scene with your own player, the club's kit, your shirt number, seasons and wage. Off, the career keeps the drawn signing.",
+      "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
+      "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
     ],
-    dev: "app/star-3d-area-dev/signing/page.tsx · lib/star/signing3d.ts (the lines) · public/star/signing3d/<beat>-<skin>.webp · tools/blender-signing/signing.py (the scene, built on tools/blender-footballer)",
+    dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/signing3dRig.ts (clothes, face, accessories, IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/signing3d/*.glb (tools/signing3d/build_assets.py) · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
   "/star-shop3d-dev": {
     title: "3D Shop",
-    what: "A test of shopping as a 3D player: you walk a footballer in your club's kit round a small shop and buy things from the displays. Nothing reaches a career.",
+    what: "The walk-around 3D shop, with test controls. It is the same screen a career opens from the Shop page's \"Walk the 3D shop (beta)\" button. Here nothing reaches a career.",
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
+          ["‹ 3D area", "Back to the 3D Test Area."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
-          ["Walk up to a display", "Boots wall, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+          ["Tap something", "A boot, the car, a light box or the fridge: its card opens and the camera moves in on it, wherever you are standing."],
+          ["Walk up to a display", "Boots, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
         ],
       },
       {
         group: "The card",
         items: [
-          ["‹ / ›", "The other items on that display (the boots wall lights up the pair you're on; the car repaints)."],
-          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans instead."],
-          ["Buy …", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
+          ["‹ / ›", "The other items on that display: the next boot lights up, the next car rolls onto the turntable."],
+          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans. On the counter, the light box changes to that level's picture."],
+          ["Buy … (test)", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
           ["✕", "Closes the card. It opens again the next time you walk up."],
         ],
       },
@@ -850,13 +864,14 @@ export const ADMIN_GUIDES = {
       "Nothing is saved. What you \"bought\" is forgotten when you leave.",
     ],
     inGame: [
-      "Not in the game. The real shop is still the screen in a career.",
-      "KIB can prices are the shop's starting price; in a career a can costs a slice of your own wage.",
+      "Yes, as a beta: the Shop page (swipe right from Home) has a \"Walk the 3D shop (beta)\" button under Store and Casino. The normal shop is unchanged.",
+      "In a career the card shows the career's own prices and an \"Owned\" or \"Wearing\" tag, and its button is \"See it in the shop\": it opens that item in the normal shop to buy it. Nothing is bought in 3D.",
+      "The boots and the cars are real 3D models, made from the same Blender models as the shop pictures. Boots are shown at level 3; each car at one level (the card says which). The watches and jewellery are the shop pictures in light boxes, not 3D. The cans are simple 3D cans.",
     ],
     needs: [
-      "The 3D library (three.js) is fetched from cdn.jsdelivr.net when the page opens. If that site is blocked, the page shows a plain message instead of the shop.",
+      "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own.",
     ],
-    dev: "app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/ (character.glb, anims.glb, LICENSE.txt) · tools/shop3d/build_assets.py · three.js from cdn.jsdelivr.net at runtime",
+    dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · character.glb + anims.glb from tools/shop3d/build_assets.py · three.js is the site's own package, loaded only when the shop opens",
   },
 
   "/star-3d-dev": {

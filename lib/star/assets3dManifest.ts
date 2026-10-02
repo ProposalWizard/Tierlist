@@ -46,70 +46,22 @@ export const ASSETS_3D: Asset3dFolder[] = [
   },
   {
     "id": "signing",
-    "title": "Signing scene",
-    "kind": "image",
-    "made": "tools/blender-signing/signing.py",
-    "note": "The beats of the 3D signing prototype: talk, contract over the shoulder, wide sign.",
+    "title": "Signing scene (live 3D)",
+    "kind": "model",
+    "made": "tools/signing3d/build_assets.py",
+    "note": "Loaded by three.js in the live signing scene: the rigged body with four hair styles, its sitting / standing clips, and the Star Pass aviators. CC0 Quaternius (LICENSE.txt in the same folder).",
     "files": [
       {
-        "path": "/star/signing3d/contract-dark.webp",
-        "bytes": 15858
+        "path": "/star/signing3d/anims.glb",
+        "bytes": 275024
       },
       {
-        "path": "/star/signing3d/contract-light.webp",
-        "bytes": 15474
+        "path": "/star/signing3d/aviators.glb",
+        "bytes": 57844
       },
       {
-        "path": "/star/signing3d/contract-medium.webp",
-        "bytes": 15774
-      },
-      {
-        "path": "/star/signing3d/reply-dark.webp",
-        "bytes": 15218
-      },
-      {
-        "path": "/star/signing3d/reply-light.webp",
-        "bytes": 15138
-      },
-      {
-        "path": "/star/signing3d/reply-medium.webp",
-        "bytes": 15474
-      },
-      {
-        "path": "/star/signing3d/signed-dark.webp",
-        "bytes": 19148
-      },
-      {
-        "path": "/star/signing3d/signed-light.webp",
-        "bytes": 19424
-      },
-      {
-        "path": "/star/signing3d/signed-medium.webp",
-        "bytes": 19370
-      },
-      {
-        "path": "/star/signing3d/signing-dark.webp",
-        "bytes": 19232
-      },
-      {
-        "path": "/star/signing3d/signing-light.webp",
-        "bytes": 19362
-      },
-      {
-        "path": "/star/signing3d/signing-medium.webp",
-        "bytes": 19424
-      },
-      {
-        "path": "/star/signing3d/talk-dark.webp",
-        "bytes": 19192
-      },
-      {
-        "path": "/star/signing3d/talk-light.webp",
-        "bytes": 19180
-      },
-      {
-        "path": "/star/signing3d/talk-medium.webp",
-        "bytes": 19184
+        "path": "/star/signing3d/people.glb",
+        "bytes": 1019808
       }
     ]
   },
@@ -1126,6 +1078,67 @@ export const ASSETS_3D: Asset3dFolder[] = [
       {
         "path": "/star/shop3d/character.glb",
         "bytes": 997248
+      }
+    ]
+  },
+  {
+    "id": "shopitems",
+    "title": "3D shop: boots and cars (live in the browser)",
+    "kind": "model",
+    "made": "tools/shop3d/export_items.py (from tools/blender-shop/scripts/{boot,car,cars}.py)",
+    "note": "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop.",
+    "files": [
+      {
+        "path": "/star/shop3d/items/boot-control.glb",
+        "bytes": 68120
+      },
+      {
+        "path": "/star/shop3d/items/boot-curl.glb",
+        "bytes": 69376
+      },
+      {
+        "path": "/star/shop3d/items/boot-elite.glb",
+        "bytes": 67056
+      },
+      {
+        "path": "/star/shop3d/items/boot-maestro.glb",
+        "bytes": 68632
+      },
+      {
+        "path": "/star/shop3d/items/boot-power.glb",
+        "bytes": 68060
+      },
+      {
+        "path": "/star/shop3d/items/boot-speed.glb",
+        "bytes": 69144
+      },
+      {
+        "path": "/star/shop3d/items/boot-starter.glb",
+        "bytes": 66808
+      },
+      {
+        "path": "/star/shop3d/items/car-1.glb",
+        "bytes": 166728
+      },
+      {
+        "path": "/star/shop3d/items/car-2.glb",
+        "bytes": 171532
+      },
+      {
+        "path": "/star/shop3d/items/car-3.glb",
+        "bytes": 200088
+      },
+      {
+        "path": "/star/shop3d/items/car-4.glb",
+        "bytes": 168800
+      },
+      {
+        "path": "/star/shop3d/items/car-classic.glb",
+        "bytes": 200612
+      },
+      {
+        "path": "/star/shop3d/items/car-suv.glb",
+        "bytes": 167936
       }
     ]
   }
