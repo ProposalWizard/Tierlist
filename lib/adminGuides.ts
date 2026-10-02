@@ -726,6 +726,82 @@ export const ADMIN_GUIDES = {
     dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
   },
 
+  "/star-3d-area-dev": {
+    title: "3D Test Area",
+    what: "Every cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Scenes / Assets", "Switch between the list of scenes and the asset store."],
+        ],
+      },
+      {
+        group: "Scenes",
+        items: [
+          ["A scene card", "Opens that scene's own test page. A card with no › (Planned) has nothing to open yet."],
+          ["The coloured tag", "Prototype: being built here. Test page: its own dev page. Pictures: renders only. Planned: written up, not started. Proposal: one picture to judge."],
+          ["The grey line under a card", "Where that scene's files live, for whoever builds it next."],
+        ],
+      },
+      {
+        group: "Assets",
+        items: [
+          ["📁 folder chips", "One folder per kind: top-bar icons, signing scene, backdrops, each shop group, the store, the Blender footballer, its clips and the 3D models. The number is how many files."],
+          ["A picture", "Opens it big, with its file path and size."],
+          ["Copy path", "Copies the file path (public/…) so it can be pasted into a message."],
+          ["Open file", "Opens the file on its own in a new tab."],
+          ["✕ / tap outside", "Closes the big picture."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved.",
+      "The asset list is written into the code. After a new render is added, someone re-runs scripts/assets3d-manifest.mjs; a test fails if the list and the files no longer match.",
+    ],
+    inGame: [
+      "Nowhere — a sandbox. Each scene says on its own page whether any of it is in the game.",
+    ],
+    dev: "app/star-3d-area-dev/page.tsx · lib/star/area3d.ts (the scene list) · lib/star/assets3dManifest.ts (generated) · scripts/assets3d-manifest.mjs · tests/star/assets3d.mts",
+  },
+
+  "/star-shop3d-dev": {
+    title: "3D Shop",
+    what: "A test of shopping as a 3D player: you walk a footballer in your club's kit round a small shop and buy things from the displays. Nothing reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
+          ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
+          ["Drag the view", "Swings the camera round him."],
+          ["Walk up to a display", "Boots wall, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+        ],
+      },
+      {
+        group: "The card",
+        items: [
+          ["‹ / ›", "The other items on that display (the boots wall lights up the pair you're on; the car repaints)."],
+          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans instead."],
+          ["Buy …", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
+          ["✕", "Closes the card. It opens again the next time you walk up."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. What you \"bought\" is forgotten when you leave.",
+    ],
+    inGame: [
+      "Not in the game. The real shop is still the screen in a career.",
+      "KIB can prices are the shop's starting price; in a career a can costs a slice of your own wage.",
+    ],
+    needs: [
+      "The 3D library (three.js) is fetched from cdn.jsdelivr.net when the page opens. If that site is blocked, the page shows a plain message instead of the shop.",
+    ],
+    dev: "app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/ (character.glb, anims.glb, LICENSE.txt) · tools/shop3d/build_assets.py · three.js from cdn.jsdelivr.net at runtime",
+  },
+
   "/star-3d-dev": {
     title: "3D",
     what: "One of every mode in the game, with the players drawn in the new \"3D\" look (shaded kit, folds, socks and boots, a soft shadow, the fitted face) — and a switch to see the same moment in today's look.",

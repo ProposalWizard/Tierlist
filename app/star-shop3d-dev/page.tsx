@@ -140,7 +140,7 @@ export default function Shop3DPage() {
 
       {/* top bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "12px 12px 0", pointerEvents: "none" }}>
-        <Link href="/star-play-dev" aria-label="Back" style={{ ...pill, pointerEvents: "auto", width: 36, justifyContent: "center", fontSize: 18 }}>&#8249;</Link>
+        <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...pill, pointerEvents: "auto", width: 36, justifyContent: "center", fontSize: 18 }}>&#8249;</Link>
         <div style={{ ...pill, fontWeight: 900, fontSize: 15 }}>3D Shop</div>
         <div style={{ flex: 1 }} />
         <button onClick={() => setClub((c) => (c + 1) % CLUBS.length)} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 6 }}>
