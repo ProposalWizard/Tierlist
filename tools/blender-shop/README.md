@@ -64,3 +64,19 @@ The `compare/` and `mockups/` folders and `renders/300/` are from the first test
 ## Not seen / known soft spots
 - Horses are stylised (no rider, one pose per level); the three celebrations in the Store have no render.
 - Level pictures inside one family were checked on contact sheets; the in-game crop was checked on the Style grid, item sheet and boots shelf only.
+
+## Top-bar icons (v0.24)
+Harry, 2 Oct (P1-37, P1-38): a 3D icon sits ABOVE each top bar, as an overlay.
+| File | What | Bar |
+|---|---|---|
+| `public/icons3d/energy.png` | yellow lightning bolt | Energy |
+| `public/icons3d/world.png` | small Earth with clouds | Reputation ("world") |
+| `public/icons3d/fame.png` | gold crown with stones | Fame |
+| `public/icons3d/happiness.png` | yellow smiley | Happiness |
+| `public/icons3d/heart.png` | pink heart (spare, if happiness should be a heart) | — |
+| `public/icons3d/money.png` | gold coin with a raised ★ | Money |
+| `public/icons3d/star-full.png`, `star-empty.png` | gold star and grey star, same shape and framing | Star rating: draw the grey one, then the gold one clipped from the bottom to the % through the level |
+
+- 256x256 PNG, transparent, no floor shadow. All about 18-73 KB.
+- Script: `scripts/icons3d.py -- <name> <out.png> [samples] [size]`. Rendered at 512, 32 samples, then scaled to 256 (LANCZOS).
+- One style: "puffy" extruded outlines (bolt, star, heart) and glossy round shapes, turned a little left so the thickness shows, lit by `studio.py`.
