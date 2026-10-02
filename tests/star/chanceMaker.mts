@@ -18,13 +18,16 @@
  *     SETTLED_ONE_ON_ONE of the time (v0.15 A3).
  *  6. Extra drawn team-mates are real support runners you can pass to.
  *  7. The free-kick rules leave your team-mate where he was drawn.
+ *  8. The picture memory.
+ *  9. No defender nearer the ball than the drawings ever put one (v0.24).
  */
 import { buildScenario, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import {
   makeChance, drawingShape, servesDrawings, PictureMemory, pictureOf, SAME_PICTURE_M, PICTURE_MEMORY,
+  defenderOnTheBall, DEFENDER_ON_BALL,
 } from "@/lib/star/chanceMaker";
-import { authoredPool, applyAuthoredShape, keeperSharesOf, mateBodiesOf } from "@/lib/star/authoredChance";
+import { authoredPool, applyAuthoredShape, keeperSharesOf, mateBodiesOf, ruleSetFor } from "@/lib/star/authoredChance";
 import { sampleFromAuthored } from "@/lib/star/scenarioRules";
 import { closestFigures, closestMarking, MIN_GAP, MARKING_GAP } from "@/lib/star/spacing";
 import { setupKind } from "@/lib/star/kindRules";
@@ -173,6 +176,34 @@ console.log("\n8. THE PICTURE MEMORY");
   }
   ok(mem.recent("long_range").length >= PICTURE_MEMORY, `remembers the last ${PICTURE_MEMORY} pictures of a kind (${mem.recent("long_range").length} kept)`);
   ok(fresh / n >= 0.95, `served long shots unlike any of the last ${PICTURE_MEMORY} (${fresh}/${n})`);
+}
+
+console.log("\n9. NO DEFENDER ON THE BALL (v0.24)");
+// Harry's first National League match: a tight angle served with a defender
+// standing on the ball — every kick went into him ("you always get
+// intercepted"). The drawings never put one closer than their own scanned
+// minimum (tight angle 1.56 m). Before: 6.6% of served tight angles and 6.0%
+// of cutbacks had one within 1.5 m, 2.6% / 2.3% within 1 m.
+{
+  for (const kind of ["tight_angle", "cutback", "one_on_one"] as ScenarioKind[]) {
+    const set = ruleSetFor(kind);
+    const floor = set?.rules.find((r) => r.id === "defNearest")?.min ?? 0;
+    let close = 0, n = 0;
+    for (let i = 0; i < 300; i++) {
+      const made = makeChance({ source: { from: "kind", kind }, rng: mulberry32(9100 + i * 37), memory: null });
+      const defs = made.sc.defenders.filter((d) => !parked(d));
+      if (!defs.length) continue;
+      n++;
+      const d = Math.min(...defs.map((q) => hyp(q, made.sc.ball)));
+      if (d < floor - 0.01) close++;
+    }
+    ok(close === 0, `${kind}: no defender nearer the ball than the drawings' ${floor.toFixed(2)} m (${close}/${n})`);
+  }
+  // The check itself, on a hand-made picture.
+  const set = ruleSetFor("tight_angle")!;
+  const base = { ball: { x: 44, y: 6 }, you: { x: 45.3, y: 6 }, keeper: { x: 34, y: 1 }, mates: [] };
+  ok(defenderOnTheBall({ ...base, defenders: [{ x: 43.2, y: 6.2 }] }, set) === DEFENDER_ON_BALL, "a defender 0.8 m from the ball is a fault");
+  ok(defenderOnTheBall({ ...base, defenders: [{ x: 40, y: 8 }] }, set) === null, "a defender 4.5 m away is not");
 }
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }

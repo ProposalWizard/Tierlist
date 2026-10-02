@@ -4209,10 +4209,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (res === "delivered") {
       const depth = sc.chainDepth ?? 0;
       const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
-      if (at && depth < CHAIN_MAX && rngRef.current() < chainReturnChance(sc)) {
+      // ── THE GIVE-AND-GO (v0.24, Harry's first National League match) ──
+      // "When I pass off the ball there, I should get the ball back, and I
+      // don't know if that's what happened." Two things were wrong:
+      //  1. In a picture with no goal in it (a midfield pass, a build-up) a
+      //     pass is the only thing you can do, and it still came back only
+      //     about half the time (chainReturnChance: 0.30 + how brave it was).
+      //     There, a completed pass now always comes back (still at most
+      //     CHAIN_MAX links). Anywhere with a goal it is the same roll as before.
+      //  2. Either way, nothing on screen said so: these lines went to the
+      //     sandbox-only ticker. Now a banner says it came back, and the match
+      //     commentary says which.
+      const onlyPlay = !goalInView(sc.kind);
+      const who = sc.receivedBy?.who?.shortName ?? targetName(sc);
+      // The roll is drawn in exactly the cases it always was, so the rest of
+      // the match's random stream is what it was.
+      if (at && depth < CHAIN_MAX && (rngRef.current() < chainReturnChance(sc) || onlyPlay)) {
         const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
+        logMoment(`${who ?? "He"} plays it back to ${playerLabel()}.`, "chance");
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) showAction("BACK TO YOU"); }, ACTION_BANNER_MS - 100);
+      } else {
+        logMoment(`${who ?? "He"} keeps it — the move goes on without ${playerLabel()}.`, "chance");
       }
     } else if (res === "touchOn") {
       // Touch Mode's own chain — deterministic, not chainReturnChance's
