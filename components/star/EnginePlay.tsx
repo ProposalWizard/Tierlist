@@ -303,7 +303,7 @@ export default function EnginePlay({
  */
 export function EngineFeature({
   openOn, onChanceServed, onChanceResolved, skills, setPieceSkill, keeperStrength = 62,
-  penaltyRead, seed = 1, markers, onBallStep, scene, penaltyRunup, freeKickRunup,
+  penaltyRead, seed = 1, markers, onBallStep, scene, penaltyRunup, freeKickRunup, holdAt,
 }: {
   /** The picture for the next chance. Called again after every result. */
   openOn: () => Scenario;
@@ -325,6 +325,8 @@ export function EngineFeature({
   /** The player's penalty and free-kick run-ups (lib/star/runupStyles.ts). Looks only. */
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
+  /** A teaching pause as your run-up starts / the strike screen opens (the trial's free kick). */
+  holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
 }) {
   const w = useRealMatchWidth();
   const { boxRef, served } = useRevealPitch(onChanceServed);
@@ -346,6 +348,7 @@ export function EngineFeature({
         scene={scene}
         penaltyRunup={penaltyRunup}
         freeKickRunup={freeKickRunup}
+        holdAt={holdAt}
       />
     </div>
   );

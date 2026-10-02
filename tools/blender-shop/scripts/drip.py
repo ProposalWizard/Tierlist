@@ -38,7 +38,12 @@ def metalmat(kind, name='Mt'):
 
 
 def gem_m(col='#f4fbff'):
-    return S.principled('Gem', col, rough=0.02, metal=0.25, coat=1.0, spec=1.0, emission=col, emission_strength=0.45)
+    """v0.23.1: a cut stone that keeps its facets. The old one had emission 0.45 of near-white on a mirror finish, so every
+    stone clipped to a white blob at 400px. Now: a mid cool-grey body, medium gloss (so the facets catch the light one by one
+    instead of the whole stone mirroring the softbox) and a small emission floor."""
+    c = S.srgb(col)
+    base = tuple(min(0.3, c[i] * 0.2 + (0.06, 0.10, 0.15)[i]) for i in range(3))
+    return S.principled('Gem', (*base, 1), rough=0.06, metal=0.0, coat=0.0, spec=0.6, emission=tuple(b * 0.9 for b in base), emission_strength=0.05)
 
 
 # ---------------------------------------------------------------- watches
@@ -171,7 +176,9 @@ def make_watch(fam, lv):
 
 
 # ---------------------------------------------------------------- chains & necklaces on a bust
-BW = [(-0.07, 0.078, 0.058), (0.0, 0.074, 0.056), (0.03, 0.058, 0.046), (0.06, 0.040, 0.038), (0.15, 0.031, 0.031)]
+# neck and shoulders: (z, half-width, half-depth), ascending z. A real display bust: slim neck, sloped shoulders.
+BW = [(-0.045, 0.118, 0.062), (-0.02, 0.128, 0.066), (0.005, 0.118, 0.062), (0.03, 0.092, 0.054), (0.052, 0.058, 0.044),
+      (0.072, 0.040, 0.036), (0.1, 0.033, 0.032), (0.16, 0.031, 0.031)]
 
 
 def bw(z): return cr([(k[0], k[1]) for k in BW], z)
@@ -180,19 +187,20 @@ def bd(z): return cr([(k[0], k[2]) for k in BW], z)
 
 def bust(M):
     P = []
-    skin = M0('#262830', 0.55, 0.0, 0.2)
+    skin = S.principled('Velvet', '#07080d', rough=0.95, spec=0.15, sheen=0.0)
     secs = []
-    for k in range(24):
-        z = 0.15 - (0.15 + 0.06) * k / 23
-        ring = S.superellipse_ring(0, 0, bw(z), bd(z), n=40, p_top=2.2, p_bot=2.2)
+    for k in range(26):
+        z = 0.16 - (0.16 + 0.045) * k / 25
+        ring = S.superellipse_ring(0, 0, bw(z), bd(z), n=44, p_top=2.2, p_bot=2.2)
         secs.append([(xx, yy, z) for xx, yy in ring])
     torso = S.loft('Bust', secs, subsurf=2); S.apply_mods(torso); torso.data.materials.append(skin)
     for p in torso.data.polygons: p.use_smooth = True
     P.append(torso)
+    P.append(cyl('Plinth', (0, 0, -0.056), 0.1, 0.022, 'Z', mat=S.principled('Plin', '#14161c', rough=0.3, metal=0.6), bevel=0.003, verts=48))
     return P
 
 
-def chain_path(drop=0.07, z0=0.088, eps=0.004):
+def chain_path(drop=0.07, z0=0.082, eps=0.004):
     """Round the neck, dipping down the chest at the front (-Y), following the bust surface."""
     pts = []
     n = 120
@@ -238,30 +246,30 @@ def link_chain(pts, size, mat, thick, flat=1.0, gems=None, n=None, sparse=False)
         o.matrix_basis = Matrix.Translation(p) @ (Rm @ roll).to_4x4() @ o.matrix_basis
         P.append(o)
         if gems and k % gems == 0:
-            g = solid_gem('LGm', p, size * 0.2, gem_m())
-            g.location = p + (zv * (size * 0.12))
+            g = solid_gem('LGm', p, size * 0.30, gem_m())
+            out = Vector((p[0], p[1] * 1.5, 0.0)); out = out.normalized() if out.length else Vector((0, -1, 0)); g.location = p + out * (size * 0.46) + Vector((0, 0, size * 0.1))
             P.append(g)
     return P
 
 
 def chain_cfg(P):
-    return P, dict(scale=0.3, aim=(0, 0, 0.05), cam=(0.3, -0.42, 0.26), target=(0, -0.03, 0.05), lens=70, fill=0.8, fill_y=0.74, floor=-0.0605)
+    return P, dict(scale=0.3, aim=(0, 0, 0.05), cam=(0.3, -0.42, 0.26), target=(0, -0.03, 0.05), lens=70, fill=0.66, fill_y=0.62, floor=-0.0675)
 
 
 def silver_make(lv):
     M = {}
     P = bust(M)
     metal = metalmat('silver', 'Ag')
-    if lv == 1:
-        P += link_chain(chain_path(0.06), 0.0042, metal, 0.0006)
-    elif lv == 2:
-        P += link_chain(chain_path(0.065), 0.0065, metal, 0.0011)
-    elif lv == 3:
-        P += link_chain(chain_path(0.07), 0.009, metal, 0.0019, flat=1.1)
-    elif lv == 4:
-        P += link_chain(chain_path(0.07, eps=0.006), 0.013, metal, 0.0033, flat=1.25)
-    else:
-        P += link_chain(chain_path(0.07, eps=0.006), 0.013, metal, 0.0033, flat=1.25, gems=1)
+    if lv == 1:      # Thin Chain: a fine cable chain
+        P += link_chain(chain_path(0.055), 0.0046, metal, 0.0007)
+    elif lv == 2:    # Silver Chain: a curb chain
+        P += link_chain(chain_path(0.062), 0.0072, metal, 0.0013, flat=1.1)
+    elif lv == 3:    # Thick Silver Chain
+        P += link_chain(chain_path(0.068), 0.0105, metal, 0.0024, flat=1.15)
+    elif lv == 4:    # Heavy Link Chain: chunky Cuban links with a clasp bar
+        P += link_chain(chain_path(0.07, eps=0.006), 0.0155, metal, 0.0042, flat=1.3)
+    else:            # Iced-Out Chain: the heavy chain with a stone on every link
+        P += link_chain(chain_path(0.07, eps=0.006), 0.0155, metal, 0.0042, flat=1.3, gems=1)
     return chain_cfg(P)
 
 
@@ -283,127 +291,187 @@ def diamond_make(lv):
         P += link_chain(chain_path(0.065), 0.0048, plat, 0.0007)
         P.append(pend(0.02, 'd', 0.0115, gem_m()))
         P.append(torus('Bz', front_pt(0.02, 0.012 * 0.7), 0.0128, 0.0012, 'Y', plat, 28, 6))
-    elif lv == 3:
-        P += link_chain(chain_path(0.065), 0.0045, plat, 0.0007)
-        n = 9
-        for k in range(n):
-            u = (k / (n - 1)) * 2 - 1
-            a = math.pi / 2 + u * 1.15
-            z = 0.088 - 0.065 * (1 - u * u) ** 1.0 * 0.0 - 0.0
-            zz = 0.088 - 0.065 * max(0.0, (1 - abs(u) ** 1.7))
-            x = math.sin(u * 1.0) * (bw(zz) + 0.004) * 0.55
-            y = -(bd(zz) + 0.004 + 0.005) * math.cos(u * 0.9)
-            rs = 0.009 - 0.0045 * abs(u)
-            P.append(solid_gem(f'D{k}', (x, y, zz), rs, gem_m(), rot=(math.pi / 2, 0, 0)))
-            P.append(torus(f'S{k}', (x, y + 0.0, zz), rs * 1.15, 0.0011, 'Y', plat, 20, 6))
-    elif lv == 4:
-        for row, (zz, n) in enumerate(((0.13, 36), (0.108, 40), (0.086, 44))):
+    elif lv == 3:    # Diamond Necklace: a riviera of graduated stones, each in a thin setting, on a fine chain
+        path = chain_path(0.062, eps=0.005)
+        P += link_chain(path, 0.0040, plat, 0.0006)
+        fronts = [(i, p) for i, p in enumerate(path) if i > 0 and p[1] < -0.012]
+        pick = fronts[::3]
+        mid = len(pick) / 2
+        for j, (i, p) in enumerate(pick):
+            u = abs(j - (len(pick) - 1) / 2) / max(1.0, (len(pick) - 1) / 2)
+            rs = 0.0072 - 0.0030 * u
+            P.append(solid_gem(f'D{j}', (p[0], p[1] - 0.004, p[2]), rs, gem_m(), rot=(math.pi / 2, 0, 0)))
+            P.append(torus(f'S{j}', (p[0], p[1] - 0.0015, p[2]), rs * 1.12, 0.0010, 'Y', plat, 20, 6))
+    elif lv == 4:    # Diamond Collar: a choker band of stones round the neck and a drop
+        for row, (zz, n) in enumerate(((0.118, 30), (0.100, 32), (0.082, 34))):
             for k in range(n):
                 a = 2 * math.pi * k / n
-                rx, ry = bw(zz) + 0.004, bd(zz) + 0.004
-                P.append(solid_gem(f'C{row}{k}', (math.cos(a) * rx, math.sin(a) * ry, zz), 0.0036, gem_m(), rot=(math.pi / 2, 0, a + math.pi / 2)))
-        for zz in (0.14, 0.119, 0.097, 0.075):
-            P.append(tube(f'Rim{zz}', [(math.cos(2 * math.pi * k / 48) * (bw(zz) + 0.003), math.sin(2 * math.pi * k / 48) * (bd(zz) + 0.003), zz) for k in range(49)], 0.0011, plat, smooth=False, res=4, cap=False))
-        for k in range(7):
-            u = k / 6 * 2 - 1
-            zz = 0.07 - 0.03 * (1 - abs(u))
-            P.append(solid_gem(f'F{k}', (u * 0.04, -(bd(zz) + 0.009), zz), 0.007 - 0.0028 * abs(u), gem_m(), rot=(math.pi / 2, 0, 0)))
+                rx, ry = bw(zz) + 0.0032, bd(zz) + 0.0032
+                P.append(solid_gem(f'C{row}_{k}', (math.cos(a) * rx, math.sin(a) * ry, zz), 0.0043, gem_m(), rot=(math.pi / 2, 0, a + math.pi / 2)))
+        for zz in (0.128, 0.109, 0.091, 0.073):
+            P.append(tube(f'Rim{zz}', [(math.cos(2 * math.pi * k / 48) * (bw(zz) + 0.0025), math.sin(2 * math.pi * k / 48) * (bd(zz) + 0.0025), zz) for k in range(49)], 0.0009, plat, smooth=False, res=4, cap=False))
+        for j, (zz, rr) in enumerate(((0.066, 0.0052), (0.050, 0.0068), (0.031, 0.0090))):
+            P.append(solid_gem(f'F{j}', (0.0, -(bd(zz) + rr * 0.9), zz), rr, gem_m(), rot=(math.pi / 2, 0, 0)))
     else:
         P += link_chain(chain_path(0.065), 0.0062, gold, 0.0011)
         pink = S.principled('Pink', '#ff6fb5', rough=0.0, metal=0.15, coat=1.0, spec=1.0, transmission=0.2, ior=2.4)
         zc = 0.02
         cen = front_pt(zc, 0.02)
-        P.append(solid_gem('Pk', cen, 0.021, pink, scale=(1.0, 1.0, 1.2), rot=(math.pi / 2, 0, 0)))
+        P.append(solid_gem('Pk', cen, 0.019, pink, scale=(1.0, 1.0, 1.15), rot=(math.pi / 2, 0, 0)))
         for k in range(12):
             a = 2 * math.pi * k / 12
-            P.append(solid_gem(f'H{k}', (cen[0] + math.cos(a) * 0.03, cen[1] + 0.002, cen[2] + math.sin(a) * 0.03), 0.0045, gem_m(), rot=(math.pi / 2, 0, 0)))
-        P.append(torus('Halo', (cen[0], cen[1] + 0.003, cen[2]), 0.0325, 0.0017, 'Y', gold, 40, 8))
+            P.append(solid_gem(f'H{k}', (cen[0] + math.cos(a) * 0.029, cen[1] + 0.0, cen[2] + math.sin(a) * 0.029), 0.0042, gem_m(), rot=(math.pi / 2, 0, 0)))
+        P.append(torus('Halo', (cen[0], cen[1] + 0.0035, cen[2]), 0.0305, 0.0021, 'Y', metalmat('gold2', 'Au2'), 40, 8))
     return chain_cfg(P)
 
 
-# ---------------------------------------------------------------- suit
+# ---------------------------------------------------------------- suit (v0.23.1: rebuilt)
+def _stripes(m, base_hex, line_hex, freq, width, metal_line=False, rough_line=None):
+    """Vertical pinstripes: a line every 1/freq metres across the cloth (object X)."""
+    nt = m.node_tree; b = nt.nodes['Principled BSDF']
+    tc = S.node(m, 'ShaderNodeTexCoord')
+    sep = S.node(m, 'ShaderNodeSeparateXYZ'); S.link(m, tc.outputs['Object'], sep.inputs[0])
+    mu = S.node(m, 'ShaderNodeMath'); mu.operation = 'MULTIPLY'; mu.inputs[1].default_value = freq
+    S.link(m, sep.outputs['X'], mu.inputs[0])
+    fr = S.node(m, 'ShaderNodeMath'); fr.operation = 'FRACT'; S.link(m, mu.outputs['Value'], fr.inputs[0])
+    lt = S.node(m, 'ShaderNodeMath'); lt.operation = 'LESS_THAN'; lt.inputs[1].default_value = width
+    S.link(m, fr.outputs['Value'], lt.inputs[0])
+    mix = S.node(m, 'ShaderNodeMix'); mix.data_type = 'RGBA'
+    mix.inputs['A'].default_value = (*S.srgb(base_hex), 1)
+    mix.inputs['B'].default_value = (*S.srgb(line_hex), 1)
+    S.link(m, lt.outputs['Value'], mix.inputs['Factor'])
+    S.link(m, mix.outputs['Result'], b.inputs['Base Color'])
+    if metal_line:
+        S.link(m, lt.outputs['Value'], b.inputs['Metallic'])
+        rl = S.node(m, 'ShaderNodeMath'); rl.operation = 'MULTIPLY_ADD'
+        rl.inputs[1].default_value = -0.35; rl.inputs[2].default_value = 0.7
+        S.link(m, lt.outputs['Value'], rl.inputs[0]); S.link(m, rl.outputs['Value'], b.inputs['Roughness'])
+
+
+def _weave(m, c1, c2, scale):
+    """Tweed: a fine two-colour checker with a little bump."""
+    nt = m.node_tree; b = nt.nodes['Principled BSDF']
+    tc = S.node(m, 'ShaderNodeTexCoord')
+    chk = S.node(m, 'ShaderNodeTexChecker'); chk.inputs['Scale'].default_value = scale
+    chk.inputs['Color1'].default_value = (*S.srgb(c1), 1); chk.inputs['Color2'].default_value = (*S.srgb(c2), 1)
+    S.link(m, tc.outputs['Object'], chk.inputs['Vector'])
+    nz = S.node(m, 'ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = scale * 0.6; nz.inputs['Detail'].default_value = 6
+    S.link(m, tc.outputs['Object'], nz.inputs['Vector'])
+    mix = S.node(m, 'ShaderNodeMix'); mix.data_type = 'RGBA'; mix.inputs['Factor'].default_value = 0.35
+    S.link(m, chk.outputs['Color'], mix.inputs['A'])
+    mix.inputs['B'].default_value = (*S.srgb('#8f7650'), 1)
+    S.link(m, nz.outputs['Fac'], mix.inputs['Factor'])
+    S.link(m, mix.outputs['Result'], b.inputs['Base Color'])
+    bump = S.node(m, 'ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.35
+    S.link(m, nz.outputs['Fac'], bump.inputs['Height']); S.link(m, bump.outputs['Normal'], b.inputs['Normal'])
+
+
+SUIT = {
+    1: dict(name='Blazer', base='#7a6340', rough=0.92),
+    2: dict(name='HighSt', base='#22345f', rough=0.8),
+    3: dict(name='Tailored', base='#2d3036', rough=0.7),
+    4: dict(name='Designer', base='#0a0b0f', rough=0.5),
+    5: dict(name='GoldThread', base='#0f0b05', rough=0.45),
+}
+
+
 def suit_make(lv):
+    from horses import ring_loft
     P = []
-    cols = ['#6f5f4a', '#1d2f55', '#2b2f36', '#0c0d11', '#241a08']
-    base = cols[lv - 1]
-    cloth = S.principled('Cloth', base, rough=0.85 if lv < 4 else 0.45, sheen=0.4, coat=0.0 if lv < 4 else 0.35, coat_rough=0.2)
-    nt = cloth.node_tree
-    b = nt.nodes['Principled BSDF']
-    # patterns
-    tcn = S.node(cloth, 'ShaderNodeTexCoord')
-    if lv == 1:
-        S.add_grunge(cloth, amount=0.6, dirt='#8a7a5e', scale=40, rough_add=0.1, seed=3.0)
-        chk = S.node(cloth, 'ShaderNodeTexChecker'); chk.inputs['Scale'].default_value = 60
-        chk.inputs['Color1'].default_value = (*S.srgb('#6f5f4a'), 1); chk.inputs['Color2'].default_value = (*S.srgb('#5c4e3c'), 1)
-        S.link(cloth, tcn.outputs['Object'], chk.inputs['Vector'])
-    if lv in (3, 5):
-        sep = S.node(cloth, 'ShaderNodeSeparateXYZ'); S.link(cloth, tcn.outputs['Object'], sep.inputs[0])
-        mu = S.node(cloth, 'ShaderNodeMath'); mu.operation = 'MULTIPLY'; mu.inputs[1].default_value = 170 if lv == 3 else 120
-        S.link(cloth, sep.outputs['X'], mu.inputs[0])
-        fr = S.node(cloth, 'ShaderNodeMath'); fr.operation = 'FRACT'; S.link(cloth, mu.outputs['Value'], fr.inputs[0])
-        lt = S.node(cloth, 'ShaderNodeMath'); lt.operation = 'LESS_THAN'; lt.inputs[1].default_value = (0.05 if lv == 3 else 0.2); S.link(cloth, fr.outputs['Value'], lt.inputs[0])
-        mix = S.node(cloth, 'ShaderNodeMix'); mix.data_type = 'RGBA'
-        mix.inputs['A'].default_value = (*S.srgb(base), 1)
-        mix.inputs['B'].default_value = (*S.srgb('#c9c9cf' if lv == 3 else '#f2c14e'), 1)
-        S.link(cloth, lt.outputs['Value'], mix.inputs['Factor'])
-        S.link(cloth, mix.outputs['Result'], b.inputs['Base Color'])
-        if lv == 5:
-            em = S.node(cloth, 'ShaderNodeMath'); em.operation = 'MULTIPLY'; em.inputs[1].default_value = 0.0; S.link(cloth, lt.outputs['Value'], em.inputs[0])
-            b.inputs['Metallic'].default_value = 0.0
-    shirt = M0('#d9d4c4' if lv == 1 else '#f4f4f1', 0.7, 0.0)
-    lapel = cloth if lv < 4 else S.principled('Satin', '#16171c', rough=0.18, coat=0.5, sheen=0.8)
-    tie = M0({1: '#8a3b2e', 2: '#b8332b', 3: '#7a1b2e', 4: '#0b0c10', 5: '#c9a227'}[lv], 0.35, 0.0, 0.3)
-    gold = metalmat('gold', 'Btn')
-    # torso: tapered loft (shoulders -> waist -> hem)
-    T = 0.21
-    prof = [(0.0, 0.16, 0.085, 0.0), (0.12, 0.185, 0.095, 0.0), (0.3, 0.21, 0.115, 0.0), (0.42, 0.205, 0.115, 0.0), (0.5, 0.17, 0.095, 0.0), (0.56, 0.12, 0.06, 0.0)]
+    sp = SUIT[lv]
+    cloth = S.principled('Cloth', sp['base'], rough=sp['rough'], sheen=0.5 if lv < 4 else 0.1, coat=0.0 if lv < 4 else 0.2, coat_rough=0.25)
+    if lv == 1: _weave(cloth, '#7a6340', '#5e4a2c', 90)
+    if lv == 3: _stripes(cloth, '#2d3036', '#aeb2bb', 90, 0.07)
+    if lv == 5: _stripes(cloth, '#0f0b05', '#f2c14e', 70, 0.09, metal_line=True)
+    gold = metalmat('gold', 'Btn'); brass = metalmat('gold2', 'Brass')
+    shirt = M0('#e9e4d4' if lv == 1 else '#f6f6f3', 0.7)
+    if lv == 4: lapel = S.principled('Satin', '#0b0c10', rough=0.16, coat=0.7, sheen=0.9)
+    elif lv == 5: lapel = S.principled('GoldSatin', '#c79a2b', rough=0.22, metal=0.85, coat=0.4)
+    else: lapel = cloth
+    tie_col = {1: None, 2: '#b8332b', 3: '#6e1a2c', 4: None, 5: '#d8a924'}[lv]
+
+    # ---- jacket body: shoulders -> chest -> waist -> hem
+    def prof(t):
+        w = cr([(0, 0.07), (0.05, 0.15), (0.11, 0.208), (0.25, 0.208), (0.55, 0.19), (0.8, 0.197), (1, 0.205)], t)
+        d = cr([(0, 0.06), (0.05, 0.075), (0.11, 0.092), (0.3, 0.105), (0.6, 0.099), (1, 0.102)], t)
+        return w, d
     secs = []
-    for k in range(30):
-        t = k / 29
-        z = 0.62 - t * 0.62 * 1.0
-        w = cr([(0, 0.05), (0.04, 0.12), (0.1, 0.205), (0.2, 0.215), (0.55, 0.19), (0.8, 0.19), (1, 0.2)], t)
-        d = cr([(0, 0.05), (0.04, 0.07), (0.1, 0.09), (0.2, 0.1), (0.55, 0.095), (0.8, 0.098), (1, 0.1)], t)
-        ring = S.superellipse_ring(0, 0, w, d, n=40, p_top=2.6, p_bot=2.6)
-        secs.append([(a, b_, z) for a, b_ in ring])
+    for k in range(34):
+        t = k / 33
+        z = 0.64 - t * 0.64
+        w, d = prof(t)
+        ring = S.superellipse_ring(0, 0, w, d, n=44, p_top=2.5, p_bot=2.5)
+        secs.append([(a_, b_, z) for a_, b_ in ring])
     jacket = S.loft('Jacket', secs, subsurf=2); S.apply_mods(jacket); jacket.data.materials.append(cloth)
     for p in jacket.data.polygons: p.use_smooth = True
     P.append(jacket)
-    # shirt V and tie on the front (-Y)
-    P.append(box('Shirt', (0, -0.098, 0.46), (0.1, 0.012, 0.2), shirt, bevel=0.004, rot=(0.03, 0, 0)))
-    if lv >= 2:
-        if lv == 4:
-            P.append(sph('Bow', (0, -0.112, 0.54), 0.5, tie, scale=(0.06, 0.02, 0.03)))
-        else:
-            P.append(box('Tie', (0, -0.108, 0.42), (0.034, 0.008, 0.22), tie, bevel=0.003))
-            P.append(box('Knot', (0, -0.11, 0.54), (0.04, 0.012, 0.03), tie, bevel=0.004))
-    # lapels: two angled flaps
-    for s in (-1, 1):
-        P.append(box('Lapel', (s * 0.07, -0.108, 0.45), (0.05, 0.012, 0.25), lapel, bevel=0.005, rot=(0.0, 0.0, s * 0.26)))
-    # buttons
-    for z in (0.32, 0.22):
-        P.append(cyl('Btn', (0.025, -0.118, z), 0.012, 0.006, 'Y', mat=gold if lv >= 4 else M0('#222222', 0.4), bevel=0.001))
-        P[-1].rotation_euler = (math.pi / 2, 0, 0)
-    # pocket square and pocket
-    P.append(box('Pocket', (0.11, -0.108, 0.47), (0.05, 0.006, 0.012), lapel, bevel=0.002))
-    if lv >= 3:
-        P.append(box('Square', (0.11, -0.112, 0.485), (0.04, 0.006, 0.02), M0('#f2f2ee' if lv != 5 else '#c9a227', 0.5), bevel=0.003, rot=(0, 0.2, 0)))
-    # sleeves: tapered tubes hanging at the sides
-    for s in (-1, 1):
-        sl = tube('Sleeve', [(s * 0.2, 0, 0.56), (s * 0.245, 0, 0.44), (s * 0.26, 0.01, 0.22)], 0.05, cloth, smooth=True, res=14)
-        sl.data.bevel_depth = 0.052
+    dz = lambda z: prof(1 - z / 0.64)[1]
+    # ---- sleeves hanging from the shoulders (a lofted tube each)
+    for sg in (-1, 1):
+        pts = [(sg * 0.172, 0.0, 0.606), (sg * 0.215, 0.006, 0.52), (sg * 0.243, 0.025, 0.33), (sg * 0.262, 0.045, 0.13)]
+        rad = [(0.052, 0.060), (0.056, 0.062), (0.046, 0.050), (0.040, 0.043)]
+        sl = ring_loft('Sleeve', pts, rad, cloth, n=18, subsurf=1, up=(0, 1, 0))
         P.append(sl)
-    # collar
-    for s in (-1, 1):
-        P.append(box('Collar', (s * 0.04, -0.06, 0.58), (0.06, 0.012, 0.04), lapel, bevel=0.004, rot=(0, 0, s * 0.3)))
-    # hanger/mannequin pole
-    P.append(cyl('Neck', (0, 0, 0.66), 0.04, 0.08, 'Z', mat=M0('#16171b', 0.4, 0.5)))
-    P.append(cyl('Pole', (0, 0, 0.05), 0.014, 0.5, 'Z', mat=M0('#16171b', 0.4, 0.5)))
-    P.append(cyl('Base', (0, 0, -0.17), 0.14, 0.025, 'Z', mat=M0('#16171b', 0.4, 0.5), bevel=0.006))
-    if lv == 5:
-        for k in range(12):
-            P.append(sph('Gl', (-0.2 + 0.036 * k, -0.112, 0.1 + 0.02 * (k % 3)), 0.004, gold))
-    place(P, (0, 0, 0.17), RZ(math.radians(28)))
-    cfg = dict(scale=0.9, aim=(0, 0, 0.35), cam=(1.0, -1.3, 0.7), target=(0, 0, 0.32), lens=60)
+        # shirt cuff peeking out + a button
+        P.append(cyl('Cuff', (sg * 0.2645, 0.0455, 0.098), 0.040, 0.03, 'Z', mat=shirt, bevel=0.004))
+        P.append(cyl('Cuff2', (sg * 0.2645, 0.0455, 0.118), 0.0415, 0.012, 'Z', mat=lapel if lv > 2 else cloth))
+        if lv >= 2:
+            P.append(sph('Cb', (sg * 0.2645 + sg * 0.036, 0.0455, 0.12), 0.0045, gold if lv >= 4 else brass))
+    # ---- shirt V and neckline
+    y_front = lambda z: -(dz(z) + 0.0015)
+    vz = 0.30
+    P.append(mesh_from('ShirtV', [(-0.058, y_front(0.60), 0.605), (0.058, y_front(0.60), 0.605), (0.0, y_front(vz), vz)], [(0, 2, 1)], shirt))
+    P.append(box('Collar1', (-0.032, y_front(0.60) - 0.004, 0.612), (0.07, 0.014, 0.036), shirt, bevel=0.005, rot=(0.0, 0, 0.5)))
+    P.append(box('Collar2', (0.032, y_front(0.60) - 0.004, 0.612), (0.07, 0.014, 0.036), shirt, bevel=0.005, rot=(0.0, 0, -0.5)))
+    # ---- tie or bow tie
+    if lv == 4:
+        bt = S.principled('Bow', '#0a0a0e', rough=0.2, coat=0.5, sheen=0.8)
+        P.append(sph('BowL', (-0.027, y_front(0.585) - 0.006, 0.585), 0.03, bt, scale=(1.0, 0.45, 0.7)))
+        P.append(sph('BowR', (0.027, y_front(0.585) - 0.006, 0.585), 0.03, bt, scale=(1.0, 0.45, 0.7)))
+        P.append(sph('BowK', (0.0, y_front(0.585) - 0.01, 0.585), 0.014, bt, scale=(1.0, 0.7, 1.0)))
+    elif tie_col:
+        tm = S.principled('Tie', tie_col, rough=0.3, coat=0.4, metal=0.6 if lv == 5 else 0.0, sheen=0.5)
+        P.append(mesh_from('Tie', [(-0.017, y_front(0.58) - 0.005, 0.58), (0.017, y_front(0.58) - 0.005, 0.58), (0.027, y_front(0.30) - 0.006, 0.30), (0.0, y_front(0.27) - 0.006, 0.265), (-0.027, y_front(0.30) - 0.006, 0.30)], [(0, 4, 3, 2, 1)], tm))
+        P[-1].modifiers.new('sol', 'SOLIDIFY').thickness = 0.006
+        P.append(box('Knot', (0, y_front(0.58) - 0.007, 0.585), (0.04, 0.016, 0.03), tm, bevel=0.005))
+    # ---- lapels: notch (peak on the tux) strips from the neck down to the button point
+    for sg in (-1, 1):
+        if lv == 4:   # peak lapel
+            vs = [(sg * 0.050, y_front(0.60) - 0.003, 0.61), (sg * 0.145, y_front(0.5) - 0.003, 0.50), (sg * 0.085, y_front(0.46) - 0.003, 0.455), (sg * 0.012, y_front(vz) - 0.003, vz)]
+        else:         # notch lapel
+            vs = [(sg * 0.050, y_front(0.60) - 0.003, 0.61), (sg * 0.125, y_front(0.5) - 0.003, 0.485), (sg * 0.103, y_front(0.455) - 0.003, 0.455), (sg * 0.082, y_front(0.44) - 0.003, 0.44), (sg * 0.012, y_front(vz) - 0.003, vz)]
+        n = len(vs)
+        fc = [tuple(range(n))] if sg == 1 else [tuple(reversed(range(n)))]
+        lp = mesh_from('Lapel', vs, fc, lapel)
+        so = lp.modifiers.new('sol', 'SOLIDIFY'); so.thickness = 0.011; so.offset = 1
+        bv = lp.modifiers.new('bev', 'BEVEL'); bv.width = 0.003; bv.segments = 2
+        P.append(lp)
+    # ---- buttons, flap pockets, breast pocket + square
+    for z in ((0.30, 0.20) if lv != 1 else (0.30,)):
+        P.append(cyl('Btn', (0.0, y_front(z) - 0.004, z), 0.0125, 0.007, 'Y', mat=gold if lv >= 4 else (brass if lv == 1 else M0('#161616', 0.35, 0.0, 0.5)), bevel=0.0012))
+        P[-1].rotation_euler = (math.pi / 2, 0, 0)
+    for sg in (-1, 1):
+        P.append(box('Flap', (sg * 0.115, y_front(0.17) - 0.004, 0.17), (0.085, 0.008, 0.026), lapel if lv >= 3 else cloth, bevel=0.003, rot=(0, 0, sg * -0.05)))
+    P.append(box('Pocket', (0.115, y_front(0.46) - 0.003, 0.455), (0.058, 0.005, 0.011), lapel if lv >= 3 else cloth, bevel=0.002))
+    if lv >= 2:
+        sq = M0({2: '#f1f1ee', 3: '#f6f2e8', 4: '#f6f6f3', 5: '#e2b53a'}[lv], 0.55, 0.9 if lv == 5 else 0.0)
+        P.append(box('Square', (0.115, y_front(0.47) - 0.005, 0.478), (0.046, 0.008, 0.026), sq, bevel=0.003, rot=(0, 0.15, 0)))
+        P.append(box('Square2', (0.108, y_front(0.47) - 0.006, 0.485), (0.026, 0.006, 0.022), sq, bevel=0.003, rot=(0, -0.2, 0)))
+    if lv == 1:      # elbow patches + a charity-shop price tag on a string
+        pa = S.principled('Patch', '#4a3a22', rough=0.9)
+        for sg in (-1, 1):
+            P.append(sph('Patch', (sg * 0.238, 0.06, 0.345), 0.04, pa, scale=(0.8, 0.5, 1.2)))
+        tag = S.principled('Tag', '#efe7d2', rough=0.7)
+        P.append(box('Tag', (-0.172, y_front(0.40) - 0.01, 0.37), (0.05, 0.004, 0.034), tag, bevel=0.002, rot=(0, 0.0, 0.3)))
+        P.append(tube('Str', [(-0.19, y_front(0.46) - 0.006, 0.455), (-0.185, y_front(0.42) - 0.012, 0.40), (-0.172, y_front(0.40) - 0.01, 0.385)], 0.0012, M0('#222222', 0.5), smooth=False, res=4))
+    if lv == 5:      # gold lapel pin and cufflinks sparkle
+        P.append(sph('Pin', (-0.105, y_front(0.5) - 0.008, 0.5), 0.011, gold))
+    # ---- display form: neck stub, pole and base
+    P.append(cyl('Neck', (0, 0, 0.68), 0.04, 0.08, 'Z', mat=M0('#16171b', 0.4, 0.5)))
+    P.append(cyl('Pole', (0, 0, -0.065), 0.014, 0.15, 'Z', mat=M0('#16171b', 0.4, 0.5)))
+    P.append(cyl('Base', (0, 0, -0.145), 0.14, 0.025, 'Z', mat=M0('#16171b', 0.4, 0.5), bevel=0.006))
+    place(P, (0, 0, 0.1325), RZ(math.radians(24)))
+    cfg = dict(scale=0.9, aim=(0, 0, 0.45), cam=(1.0, -1.3, 0.75), target=(0, 0, 0.45), lens=60, fill=0.8, fill_y=0.8)
     return P, cfg
 
 
@@ -509,6 +577,8 @@ def make(fam, lv):
     else:
         P, cfg = art_make(lv)
     P = convert_curves(P)
+    if fam in ('silver', 'diamond'):
+        cfg['frame_parts'] = [o for o in P if not o.name.startswith(('Bust', 'Plinth'))]
     if fam in ('gold', 'rolex'):
         drop_to_floor(P)
     cfg = dict(dict(lens=55, fill=0.8, fill_y=0.74, floor=0.0, offset=(0, -0.01), floor_size=20), **cfg)

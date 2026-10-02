@@ -1,0 +1,33 @@
+3D SHOP TEST PAGE (/star-shop3d-dev) — where these files come from
+
+Both files here were made by tools/shop3d/build_assets.py from two packs by
+Quaternius (https://quaternius.com). Both packs are released under:
+
+  CC0 1.0 Universal (CC0 1.0) — Public Domain Dedication
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution is required. Credit anyway: models and animations by @Quaternius.
+
+character.glb (≈1.0 MB)
+  - Body, eyes, eyebrows: "Superhero_Male_FullBody" from Universal Base
+    Characters (Standard, free edition).
+    https://quaternius.itch.io/universal-base-characters
+    The pack's own licence file (License_Standard.txt) says: "License: CC0 1.0
+    Universal (CC0 1.0) Public Domain Dedication ... Models by @Quaternius".
+  - Hair: "Hair_SimpleParted" from the same pack.
+  - Textures shrunk to 1024/512 px JPEG; the roughness map and the hair and
+    eye normal maps were dropped. Nothing else changed.
+
+anims.glb (≈0.3 MB)
+  - Clips Idle_Loop, Walk_Loop, Jog_Fwd_Loop and Interact from Quaternius'
+    Universal Animation Library (Standard, free edition), file
+    "UAL1_Standard.glb" (sha256 d867292451e432b735e2a910c2db6640fbea97b205d85a2e8ffed26da87972cf),
+    https://quaternius.com/packs/universalanimationlibrary.html
+    The copy used was fetched from a public GitHub mirror of the free pack
+    (wataqsk/project_clara, assets/universal_animation_library/), because
+    itch.io's download links can't be scripted. Its mannequin mesh is not
+    included; only the four clips, with rotations kept and the pelvis
+    height re-based onto the body above.
+
+three.js itself is not in this folder or in the site's bundle: the page loads
+three@0.169.0 (MIT) from cdn.jsdelivr.net when it opens.

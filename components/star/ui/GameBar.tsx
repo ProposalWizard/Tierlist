@@ -42,17 +42,17 @@ export default function GameBar({ career, onHome, atHome = false, onHelp, onSett
       >
         <HouseIcon />
       </button>
-      <div className="min-w-0 flex-1 truncate text-[15px] font-black uppercase leading-tight tracking-wide text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.7)" }}>
+      <div className="sk-display min-w-0 flex-1 truncate text-[15px] font-black uppercase leading-tight tracking-wide text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.7)" }}>
         {fullName}
       </div>
       {/* Age and money, next to the name. */}
       <div data-age-chip aria-label={`Age ${career.player.age}`} className="flex shrink-0 items-baseline gap-1 rounded-[3px] bg-black/35 px-1.5 py-1">
         <span className="text-[9px] font-black uppercase leading-none tracking-[0.12em] text-white/70">Age</span>
-        <span className="text-[13px] font-black leading-none tabular-nums text-white">{career.player.age}</span>
+        <span className="sk-num text-[13px] font-black leading-none tabular-nums text-white">{career.player.age}</span>
       </div>
       <div data-money-chip data-tour="money" aria-label={`Money ${formatMoney(career.money)}`} className="flex shrink-0 items-center gap-1 rounded-[3px] bg-black/35 px-1.5 py-1">
         <span className="text-[12px] leading-none text-yellow-300">★</span>
-        <span className="text-[13px] font-black leading-none tabular-nums text-yellow-200">{formatMoney(Math.round(money))}</span>
+        <span className="sk-num text-[13px] font-black leading-none tabular-nums text-yellow-200">{formatMoney(Math.round(money))}</span>
       </div>
       {onHelp ? (
         <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] bg-gray-600 text-[17px] font-black leading-none text-amber-300 hover:bg-gray-500">?</button>

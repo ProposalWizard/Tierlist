@@ -137,6 +137,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
             size="none"
             pulse
             onClick={onContinue}
+            data-tour="reactions-continue"
             className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black"
           >
             Continue
@@ -175,7 +176,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
             </div>
           )}
 
-          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto">
+          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto" data-tour={mode === "moment" ? "reactions-feed" : undefined}>
             <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls
                   away like any other post, for anyone reading the feed

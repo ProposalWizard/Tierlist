@@ -358,6 +358,38 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
   },
 
+  "/admin/sound-board": {
+    title: "Sound Board",
+    what: "Every game sound in one list: what it is, where the game plays it, and a way to swap in a new one.",
+    buttons: [
+      {
+        items: [
+          ["▶", "Plays the sound as the game plays it now. If you replaced it, this plays your upload. Tap again (■) to stop."],
+          ["Replace / Replace again", "Choose a sound file from your phone or computer (mp3, wav, ogg, m4a or webm, under 2 MB). It uploads at once. Players hear it from the next time they load the game."],
+          ["▶ Original", "Only on a replaced sound. Plays the sound that came with the game, so you can compare."],
+          ["Put the original back", "Only on a replaced sound. Removes your upload. The game goes back to the sound that came with it."],
+          ["Replaced (gold tag)", "This sound has an upload on it."],
+          ["Not in the game yet (grey tag)", "The sound file exists but the game does not play it. Kick, net, crowd, keeper and whistle: the match still makes its own sounds. A replacement saves, but nobody hears it until the game is changed to play that file."],
+        ],
+      },
+    ],
+    saving: [
+      "Shared with everyone, at once. An upload goes to the site's public image storage (folder sfx-overrides) and a small list says which sounds have one.",
+      "There is no Save button. Each upload or \"Put the original back\" saves as soon as you press it.",
+      "If two admins change sounds in the same second, one change can be lost. Check the gold tags afterwards.",
+    ],
+    inGame: [
+      "The nine sounds marked as in the game: button taps, confirm, money in, star bar, star rating up, achievement, phone post, breaking news, energy can.",
+      "Sounds play in the New UI only, and only with Settings → Sound effects switched on.",
+      "A device that has the game open keeps playing the old sound until it reloads.",
+    ],
+    needs: [
+      "Nothing to run. There is no database table for this. It needs the public storage bucket (tierlist-images) and SUPABASE_SERVICE_ROLE_KEY set in Vercel, like the other admin uploads.",
+      "If the list cannot be read, the game plays the sounds that came with it. Nothing breaks.",
+    ],
+    dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
+  },
+
   "/admin/app-plan": {
     title: "App Plan",
     what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",
@@ -726,6 +758,105 @@ export const ADMIN_GUIDES = {
       "The crest is the club's real badge when it loads here, otherwise the same initials disc the game uses; the line under the hero says which.",
     ],
     dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
+  },
+
+  "/star-3d-area-dev": {
+    title: "3D Test Area",
+    what: "Every cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Scenes / Assets", "Switch between the list of scenes and the asset store."],
+        ],
+      },
+      {
+        group: "Scenes",
+        items: [
+          ["A scene card", "Opens that scene's own test page. A card with no › (Planned) has nothing to open yet."],
+          ["The coloured tag", "Prototype: being built here. Test page: its own dev page. Pictures: renders only. Planned: written up, not started. Proposal: one picture to judge."],
+          ["The grey line under a card", "Where that scene's files live, for whoever builds it next."],
+        ],
+      },
+      {
+        group: "Assets",
+        items: [
+          ["📁 folder chips", "One folder per kind: top-bar icons, the signing scene, backdrops, each shop group, the store, the Blender footballer, its clips, the match-view proposal and the 3D models. The number is how many files."],
+          ["A picture", "Opens it big, with its file path and size."],
+          ["Copy path", "Copies the file path (public/…) so it can be pasted into a message."],
+          ["Open file", "Opens the file on its own in a new tab."],
+          ["✕ / tap outside", "Closes the big picture."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved.",
+      "The asset list is written into the code. After a new render is added, someone re-runs scripts/assets3d-manifest.mjs; a test fails if the list and the files no longer match.",
+    ],
+    inGame: [
+      "Nowhere — a sandbox. Each scene says on its own page whether any of it is in the game.",
+    ],
+    dev: "app/star-3d-area-dev/page.tsx · lib/star/area3d.ts (the scene list) · lib/star/assets3dManifest.ts (generated) · scripts/assets3d-manifest.mjs · tests/star/assets3d.mts",
+  },
+
+  "/star-3d-area-dev/signing": {
+    title: "Signing scene (3D prototype)",
+    what: "The signing redone as a short cutscene: you sit across the desk from the manager, a few lines of talk, the contract turned to face you, then tap to sign and the camera pulls back to the wide desk. Every picture is a Blender render. Not in a career yet.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["↺ Replay", "Starts the scene again from the first line."],
+          ["Your player: Light / Medium / Dark", "Which player sits at the desk. Each is its own set of renders with that skin tone. The Dark one also wears the store's headband, to show a picked accessory carrying into a cutscene."],
+          ["Tap the picture", "Shows the rest of a line at once, or moves to the next line. The camera cuts between over your shoulder (he talks) and over his shoulder (you answer)."],
+          ["TAP TO SIGN", "Appears with the contract. The camera pulls back from the paper to the wide desk, you sign, and SIGNED stamps on."],
+          ["Continue (replays here)", "In the game this would carry on to the next screen; here it starts again."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "Not in the game. The career still uses today's drawn signing (SigningScene).",
+      "The terms on the paper (Enfield Town, 2 seasons, 35 a week, #39) are baked into the render. In the game they would sit on the paper as page text, or be rendered per offer.",
+    ],
+    dev: "app/star-3d-area-dev/signing/page.tsx · lib/star/signing3d.ts (the lines) · public/star/signing3d/<beat>-<skin>.webp · tools/blender-signing/signing.py (the scene, built on tools/blender-footballer)",
+  },
+
+  "/star-shop3d-dev": {
+    title: "3D Shop",
+    what: "A test of shopping as a 3D player: you walk a footballer in your club's kit round a small shop and buy things from the displays. Nothing reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
+          ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
+          ["Drag the view", "Swings the camera round him."],
+          ["Walk up to a display", "Boots wall, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+        ],
+      },
+      {
+        group: "The card",
+        items: [
+          ["‹ / ›", "The other items on that display (the boots wall lights up the pair you're on; the car repaints)."],
+          ["L1 … L5", "The five levels and their prices, from the real shop's numbers. KIB cans show the shop's three cans instead."],
+          ["Buy …", "Pretend. He reaches out and the card says \"Bought (test only)\". No money is taken and nothing is kept."],
+          ["✕", "Closes the card. It opens again the next time you walk up."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. What you \"bought\" is forgotten when you leave.",
+    ],
+    inGame: [
+      "Not in the game. The real shop is still the screen in a career.",
+      "KIB can prices are the shop's starting price; in a career a can costs a slice of your own wage.",
+    ],
+    needs: [
+      "The 3D library (three.js) is fetched from cdn.jsdelivr.net when the page opens. If that site is blocked, the page shows a plain message instead of the shop.",
+    ],
+    dev: "app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/ (character.glb, anims.glb, LICENSE.txt) · tools/shop3d/build_assets.py · three.js from cdn.jsdelivr.net at runtime",
   },
 
   "/star-3d-dev": {

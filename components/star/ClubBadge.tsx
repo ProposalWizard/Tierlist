@@ -63,7 +63,7 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
   const shirt = kit ?? kitsOf(club).home;
   return (
     <div
-      className="grid shrink-0 place-items-center rounded-full border font-black"
+      className="grid shrink-0 place-items-center sk-num rounded-full border font-black overflow-hidden"
       style={{
         height: size, width: size, backgroundColor: shirt.shirt, borderColor: shirt.trim,
         color: labelInk(shirt.shirt), fontSize: Math.max(6, Math.round(size * 0.3)),

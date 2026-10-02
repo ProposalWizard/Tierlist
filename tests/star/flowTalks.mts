@@ -29,6 +29,21 @@ const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CL
   }
 }
 {
+  // P86: both duties at once are TWO chats at two moments, never one.
+  const c = fresh();
+  c.skills = { ...c.skills, freeKick: 99 };
+  const one = { ...c, fixtures: c.fixtures.map((f, i) => (i === 0 ? { ...f, played: true } : f)), status: "1st Team" as CareerState["status"] };
+  const t1 = setPieceTalkDue(one);
+  check(!!t1 && t1.duties.length === 1 && t1.duties[0] === "penalties", "the penalty chat comes first, on its own");
+  const afterPen = markSetPieceTold(one, ["penalties"]);
+  check(setPieceTalkDue(afterPen) === null, "the free-kick chat does not follow straight away");
+  const two = { ...afterPen, fixtures: afterPen.fixtures.map((f, i) => (i <= 1 ? { ...f, played: true } : f)) };
+  const t2 = setPieceTalkDue(two);
+  check(!!t2 && t2.duties.length === 1 && t2.duties[0] === "freeKicks", "the free-kick chat comes after the next match, on its own");
+  check(!!t2 && !t2.lines.join(" ").includes("penalty"), "and does not mention penalties");
+  check(setPieceTalkDue(markSetPieceTold(two, ["freeKicks"])) === null, "then nothing more");
+}
+{
   const before = fresh(), after = { ...before, careerStats: { ...before.careerStats, goals: 1 } } as CareerState;
   const fx = before.fixtures[0];
   check(newsForMatch(before, after, fx, null).length === 1, "a first goal makes one piece of news");

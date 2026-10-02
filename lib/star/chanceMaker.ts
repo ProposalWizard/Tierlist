@@ -265,7 +265,43 @@ export function servedFaults(sc: Scenario): string[] {
   if (goalInView(sc.kind) && sc.kind !== "corner" && s.keeper.y > s.ball.y) out.add("keeper beyond the ball");
   const set = ruleSetFor(sc.kind);
   if (set) for (const v of violations(s, set)) out.add(`breaks its rule: ${v}`);
+  const onBall = defenderOnTheBall(s, set);
+  if (onBall) out.add(onBall);
   return Array.from(out);
+}
+
+/**
+ * A DEFENDER NEARER THE BALL THAN ANY DRAWING PUTS ONE (v0.24, Harry's first
+ * National League match).
+ *
+ * Harry: "this is a bad highlight where you always get intercepted … I'm
+ * definitely not gonna get to do this." Filmed: a tight angle served with a
+ * defender standing on the ball, between it and the goal and every team-mate.
+ * The ball was hidden under him. Every kick went into him.
+ *
+ * The drawings never do this. The closest any tight-angle drawing puts a
+ * defender is 1.56 m (cutback 2.53 m, one-on-one 1.92 m). The serving's 2 m
+ * nudge, and the spacing pass that moves a defender off YOU, can walk him onto
+ * the ball. Measured over 250 served tight angles: 4% had a defender within
+ * 1 m, and with him there the obvious plays worked 60% of the time against
+ * 100% with nobody within 2 m.
+ *
+ * No new number: the floor is the kind's own "Nearest defender to the ball"
+ * minimum, scanned off its drawings (scenarioRules.ts's defNearest). Only with
+ * enough drawings to call it a range (MIN_SAMPLES_FOR_INVARIANT).
+ */
+export const DEFENDER_ON_BALL = "a defender nearer the ball than any drawing puts one";
+export function defenderOnTheBall(s: ShapeSample, set: RuleSet | null): string | null {
+  if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
+  const rule = set.rules.find((r) => r.id === "defNearest");
+  const m = MEASURES.find((x) => x.id === "defNearest");
+  if (!rule || !m) return null;
+  const defs = s.defenders.filter((d) => !parked(d));
+  if (!defs.length) return null;
+  const v = m.of({ ...s, defenders: defs });
+  // A centimetre of rounding either way is the same picture. The words carry
+  // no number: drawingOwnFaults matches a fault by its exact text.
+  return v < rule.min - 0.01 ? DEFENDER_ON_BALL : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

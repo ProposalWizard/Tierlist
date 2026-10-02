@@ -12,11 +12,13 @@
  *      when you have none), money and age;
  *   1. Next match, as it was: both crests, VS, the date and your form;
  *   2. the mini league table: you and the clubs either side;
- *   3. you, standing on a football pitch with the goal behind you — drag to
- *      turn him, tap for a celebration — and reputation, fame, goals and
- *      assists beside you. No card: the pitch fades up into the stand.
- * Sponsors is a small arrow at the bottom right. The 3D / 2D switch is in
- * Settings.
+ *   3. you, standing on a football pitch with the goal behind you, its goal
+ *      line at your boots (v0.24) — drag to turn him, tap for a celebration
+ *      — and reputation, fame, goals and assists beside you;
+ *   4. the energy cans under you: Basic / Premium / Elite, each with Use and
+ *      a price (v0.24, Harry's picture "A on a small phone").
+ * Achievements and Sponsors are small links at the bottom. The 3D / 2D
+ * switch is in Settings.
  *
  * Built from the design kit (components/star/ui). Motion: panels rise in when
  * Home opens, numbers count, the avatar breathes and celebrates a win. All of
@@ -27,7 +29,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
-import { kibCanPrice, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { formatMoney } from "@/lib/star/money";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, fixtureTimestamp, leagueNameFor } from "@/lib/star/calendar";
@@ -42,7 +44,6 @@ import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
 import { LeagueDropdown, LEAGUE_DROPDOWN_H } from "./MiniLeague";
-import HomeBackdrop from "./HomeBackdrop";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import {
   FlatPanel, SquareBar, PressButton, RiseIn, Glow,
@@ -118,9 +119,11 @@ function useRoom() {
 
 /** The Next match panel's height, and the gap under it. */
 const NEXT_H = 86;
-const FIG_MAX_W = 190;
+const FIG_MAX_W = 228;
 /** The bottom strip that carries the edge arrows and Sponsors. */
 export const ARROW_STRIP = 34;
+/** The energy cans row under the player (Basic / Premium / Elite). */
+export const CANS_H = 76;
 const FIG_ASPECT = 172 / 204;
 /** How many league rows there is room for. */
 export function leagueRowsFor(room: number | null): number {
@@ -133,8 +136,11 @@ export function playerSizeFor(room: number | null, rows = 3): { w: number; h: nu
   // The league is a one-row dropdown now (Harry, 1 Oct 2026), so `rows` no
   // longer costs height; it is kept for callers that still pass it.
   void rows;
-  const fixed = NEXT_H + 4 + LEAGUE_DROPDOWN_H + 4 + 14 + ARROW_STRIP;
-  const h = Math.max(104, Math.min(226, room - fixed));
+  // + CANS_H: the energy cans row under him (v0.24). He is bigger too: up
+  // to 270 tall (was 226), so on a tall phone he fills the space the old
+  // goal-and-sky gap used.
+  const fixed = NEXT_H + 4 + LEAGUE_DROPDOWN_H + 4 + 4 + CANS_H + 6 + ARROW_STRIP + 4;
+  const h = Math.max(104, Math.min(290, room - fixed));
   const w = Math.min(FIG_MAX_W, Math.round(h * FIG_ASPECT));
   return { w, h: Math.round(w / FIG_ASPECT) };
 }
@@ -154,7 +160,7 @@ export default function HomeHub(p: Props) {
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
       <div className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
-      {isOpen(career, "shop") && <SponsorsArrow career={career} onOpen={p.onOpen} />}
+      <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>
   );
 }
@@ -275,12 +281,48 @@ function HomeScene({ sky }: { sky: HomeSky }) {
   );
 }
 
-// ── 2. You, on the pitch ────────────────────────────────────────────────────
+// ── 2. You, on the pitch, the goal at your feet, the cans under you ────────
 
-function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
-  // The stand and sky behind the goal: day, sunset or night by the next
-  // match's kick-off (lib/star/kickoff.ts). Pictures in public/home/.
-  const pitchH = Math.round(figH * 1.32 + 30);
+/** The goal: a generated, transparent, front-on goal cropped tight to its
+ *  frame (928x496), so the picture's bottom edge IS the goal line. */
+const GOAL_SRC = "/home/goal.webp";
+const GOAL_ASPECT = 928 / 496;
+/** The goal's height for the player's box height. Harry (2 Oct 2026, with
+ *  picture "A on a small phone": "move the goal back and have it exactly like
+ *  image 2") — the goal stands well behind him, about half his height. */
+const GOAL_TO_PLAYER = 0.42;
+/** How far up the screen the goal line sits behind his boots, as a share of
+ *  his box height (image 2: the goal line is at his thighs). */
+const GOAL_BACK = 0.36;
+/** How far above the bottom of the player's box his boots meet the grass. */
+const FEET_LIFT = 0.035;
+/** The stadium picture's hoardings, as a share of the goal's height above
+ *  the goal line. */
+const HOARDING_IN_GOAL = 0.08;
+/** Room kept between each post and the screen edge (the row has 12px of
+ *  page padding either side, so this can be negative). */
+const GOAL_EDGE = 2;
+
+/**
+ * Where Home's goal goes, in the player row's own pixels (x from the row's
+ * left, bottom up from the row's floor). The goal line sits at his boots
+ * (Harry, 2 Oct 2026, v0.24 P1-13/15/17: "the goal has been risen up too
+ * much … bring the goal down"; before, it stood on the hoardings, level with
+ * his chest). The goal is a little shorter than him and never wider than the
+ * screen, so both posts always show; he stands left of centre in the mouth.
+ */
+export function goalBoxFor(figW: number, figH: number, rowW: number) {
+  const bottom = Math.round(figH * (FEET_LIFT + GOAL_BACK));
+  const maxW = rowW > 0 ? rowW - 2 * GOAL_EDGE : Infinity;
+  const width = Math.round(Math.min(figH * GOAL_TO_PLAYER * GOAL_ASPECT, maxW));
+  const height = Math.round(width / GOAL_ASPECT);
+  // Image 2: the left post near the screen's left edge, him in front of it.
+  const want = GOAL_EDGE;
+  const left = Math.round(rowW > 0 ? Math.max(GOAL_EDGE, Math.min(want, rowW - GOAL_EDGE - width)) : want);
+  return { left, bottom, width, height, hoardings: bottom + Math.round(height * HOARDING_IN_GOAL) };
+}
+
+function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -308,17 +350,39 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [career.season, last?.week, last?.res]);
 
+  // The goal stands on the grass at his feet (Harry, 2 Oct 2026, v0.24
+  // P1-13/15/17: "the goal has been risen up too much … bring the goal
+  // down"). Before, its line sat on the hoardings, level with his chest.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [rowW, setRowW] = useState(0);
+  useLayoutEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const read = () => setRowW(el.clientWidth);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const g = goalBoxFor(figW, figH, rowW);
+
   return (
-    <div className="relative flex min-h-0 flex-1 items-end">
-      {/* the goal stands on the picture's goal line (HomeScene lines the
-          picture up with this marker) */}
-      <div data-goal-line aria-hidden className="pointer-events-none absolute inset-x-0 h-0" style={{ bottom: `calc(min(${pitchH}px, 100%) * 0.73)` }} />
-      <div className="absolute inset-x-0 bottom-0" style={{ height: pitchH, maxHeight: "100%" }}><HomeBackdrop glow={glow} grass={false} /></div>
-      <div className="relative flex w-full items-end gap-2 px-3 pt-1" style={{ paddingBottom: ARROW_STRIP + 8 }}>
-        <div className="relative shrink-0" style={{ width: figW }}>
+    <div className="relative flex min-h-0 flex-1 flex-col justify-end px-3" style={{ paddingBottom: ARROW_STRIP + 4 }}>
+      <div ref={rowRef} className="relative flex w-full min-h-0 flex-1 items-end gap-2 pt-1">
+        {/* HomeScene lines the stadium picture's hoardings up with this
+            marker: just behind the goal, seen through the net. */}
+        <div data-goal-line aria-hidden className="pointer-events-none absolute -inset-x-3 h-0" style={{ bottom: g.hoardings }} />
+        {/* the goal, set back behind him where the pitch meets the stands */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={GOAL_SRC} alt="" aria-hidden draggable={false} data-home-goal
+          className="pointer-events-none absolute max-w-none select-none"
+          style={{ left: g.left, bottom: g.bottom, width: g.width, height: g.height, filter: "drop-shadow(0 5px 5px rgba(0,0,0,.35))" }}
+        />
+        <div data-tour="player" className="relative z-10 shrink-0" style={{ width: figW }}>
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
         </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1 self-center">
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-1 self-center">
           <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
           <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
           <div className="grid grid-cols-2 gap-1.5">
@@ -328,6 +392,12 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
           <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
         </div>
       </div>
+      {/* The energy cans, under him (Harry, 2 Oct 2026, P1-14/P1-19: "the
+          one with the cans, I think that's amazing"). Use and Buy are the
+          same handlers the top bar's can and the shop use. */}
+      <div data-home-cans className="relative z-10 mt-1.5 grid shrink-0 grid-cols-3 gap-1.5" style={{ height: CANS_H }}>
+        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={career.energy ?? 100} onUse={onUseCan} onBuy={onBuyCan} mini />)}
+      </div>
     </div>
   );
 }
@@ -335,7 +405,7 @@ function Hero({ career, glow, kitShirt, kitTrim, figW, figH }: Props & { glow: s
 /** Reputation or Fame: a flat block with a square bar — no rounded card. */
 function StandBox({ label, name, value, bar, colors }: { label: string; name: string; value: number; bar: number; colors: [string, string] }) {
   return (
-    <div className="bg-black/45 px-2 py-[3px]" style={{ borderLeft: `3px solid ${colors[0]}` }}>
+    <div className="bg-black/55 px-2 py-[3px]" style={{ borderLeft: `3px solid ${colors[0]}` }}>
       <div className="text-[8.5px] font-black uppercase leading-none tracking-[0.18em] text-white/75">{label}</div>
       <div className="mt-0.5 flex items-baseline justify-between gap-1">
         <span className="min-w-0 truncate text-[12.5px] font-black leading-tight text-white">{name}</span>
@@ -348,28 +418,43 @@ function StandBox({ label, name, value, bar, colors }: { label: string; name: st
 
 function SeasonStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-black/45 px-2 py-[3px] text-center">
+    <div className="bg-black/55 px-2 py-[3px] text-center">
       <div className="text-[16px] font-black leading-none tabular-nums text-white">{value}</div>
       <div className="mt-0.5 text-[8.5px] font-black uppercase leading-none tracking-[0.16em] text-white/75">{label}</div>
     </div>
   );
 }
 
-// ── 3. Sponsors, a small arrow at the bottom right ──────────────────────────
+// ── 3. Achievements and Sponsors, two small links in the middle ────────────
 
-/** Your sponsors, one tap from Home (Harry, 1 Oct 2026, P66: "like being a
- *  little arrow in the bottom right instead"). Not a pill: plain text and an
- *  arrow, with a red count when offers are waiting. */
-function SponsorsArrow({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
+/** The two small links in the middle of Home's bottom strip: Achievements
+ *  (v0.23.1, P26/P60: the bottom-left button is Home now, "it could just be on
+ *  the homepage") and Sponsors (Harry, 1 Oct 2026, P66: "like being a little
+ *  arrow in the bottom right instead"). Plain text, not pills, with a red
+ *  count when sponsor offers are waiting. */
+function MiddleLinks({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
   const offers = brandsOf(career).offers.length;
+  const showAch = isOpen(career, "achievements");
+  const showSp = isOpen(career, "sponsors");
+  if (!showAch && !showSp) return null;
+  const text = "kib-press flex items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
+  const shadow = { textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" };
   return (
-    <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"}
-      className="kib-press absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white"
-      style={{ textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" }}>
-      Sponsors
-      {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
-      <span className="text-[17px] leading-none text-emerald-300">›</span>
-    </button>
+    <div className="absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+      {showAch && (
+        <button type="button" data-tour="achievements" onClick={() => onOpen("achievements")} aria-label="Achievements" className={text} style={shadow}>
+          <span className="text-[14px] leading-none">⭐</span>
+          <span className="max-[379px]:hidden">Achievements</span>
+        </button>
+      )}
+      {showSp && (
+        <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"} className={text} style={shadow}>
+          Sponsors
+          {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
+          <span className="text-[17px] leading-none text-emerald-300">›</span>
+        </button>
+      )}
+    </div>
   );
 }
 

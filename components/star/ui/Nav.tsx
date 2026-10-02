@@ -28,8 +28,6 @@ export function Chev({ dir = "left", size = 14, className = "" }: { dir?: "left"
 
 export interface EdgeArrow { /** A pointer-tour target (data-tour). */ tour?: string; icon?: React.ReactNode; label: string; onClick: () => void; /** A dot on the arrow: something new there. */ dot?: boolean }
 
-const ARROW_BG = "linear-gradient(180deg, rgba(var(--sk-flat-rgb),.78), rgba(var(--sk-flat-rgb),.55))";
-
 /** One arrow on its own (a row you lay out yourself). */
 export function ArrowButton({ side, a, compact = false }: { side: "left" | "right"; a: EdgeArrow; compact?: boolean }) {
   return <Arrow side={side} a={a} compact={compact} />;
@@ -37,7 +35,7 @@ export function ArrowButton({ side, a, compact = false }: { side: "left" | "righ
 
 function Arrow({ side, a, compact = false }: { side: "left" | "right"; a: EdgeArrow; compact?: boolean }) {
   const tri = (
-    <svg width="9" height="14" viewBox="0 0 9 14" aria-hidden className="shrink-0">
+    <svg width="7" height="11" viewBox="0 0 9 14" aria-hidden className="shrink-0">
       <path d={side === "left" ? "M8 1 1.5 7 8 13Z" : "M1 1 7.5 7 1 13Z"} fill="currentColor" />
     </svg>
   );
@@ -46,12 +44,12 @@ function Arrow({ side, a, compact = false }: { side: "left" | "right"; a: EdgeAr
       onClick={a.onClick}
       data-tour={a.tour}
       aria-label={`${side === "left" ? "Previous" : "Next"}: ${a.label}`}
-      className={`kib-press relative flex ${compact ? "h-[26px]" : "h-[30px]"} min-w-0 items-center gap-1 px-2 text-white ${side === "right" ? "flex-row-reverse text-right" : ""}`}
-      style={{ background: ARROW_BG, borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge, rgba(255,255,255,.22))" }}
+      className={`kib-press relative flex ${compact ? "h-[22px]" : "h-[24px]"} min-w-0 items-center gap-1 px-1.5 text-white/80 ${side === "right" ? "flex-row-reverse text-right" : ""}`}
+      style={{ background: "rgba(var(--sk-flat-rgb),.34)", borderRadius: 2, opacity: 0.74 }}
     >
-      <span className="text-amber-300">{tri}</span>
-      {a.icon != null && <span className={`shrink-0 leading-none ${compact ? "text-[12px]" : "text-[14px]"}`}>{a.icon}</span>}
-      <span className={`min-w-0 truncate font-black uppercase leading-none tracking-wide ${compact ? "text-[10.5px]" : "text-[12px]"}`}>{a.label}</span>
+      <span className="text-white/70">{tri}</span>
+      {a.icon != null && <span className={`shrink-0 leading-none ${compact ? "text-[11px]" : "text-[12px]"}`}>{a.icon}</span>}
+      <span className={`min-w-0 truncate font-semibold uppercase leading-none tracking-wide ${compact ? "text-[9.5px]" : "text-[10.5px]"}`}>{a.label}</span>
       {a.dot && <span className="absolute -top-1 h-2.5 w-2.5 bg-red-500" style={{ [side === "left" ? "left" : "right"]: -2, borderRadius: 1 }} />}
     </button>
   );

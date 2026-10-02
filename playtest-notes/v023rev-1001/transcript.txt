@@ -1,0 +1,1008 @@
+# Transcript: v023rev-1001 (Harry and Mikey going through the v0.23 Build Board, 57:56)
+# medium.en, no silence skipping, beam 1, word timings kept in .playtests/v023rev-1001/words.json. Two voices (Harry and Mikey); the speech-to-text does not say who is speaking.
+# Mis-hearings are common where both talk at once. A second pass (beam 5) of 42:00-49:20 and 49:20-52:20 is appended at the end; where the two disagree, prefer the second pass.
+
+[00:00.0] Okay. All right. This is me and Mikey going through the 20 version, 23 artifact kind of quickly.
+[00:08.9] And also at the same time, we're going to open NSS at some point.
+[00:13.1] Okay. So first things first, it's annoying that on the website, this, I'm talking to you Mikey.
+[00:24.7] It's annoying that this is always there because it doesn't really give a good representation
+[00:29.4] of what is going on.
+[00:32.9] So the problem is that basically it's recorded everything.
+[00:36.4] Like this isn't how the home screen looks, but it's showing us a certain part of the
+[00:42.8] home screen.
+[00:43.3] And then the more you scroll, it's going to look different and different.
+[00:46.4] So I've told it from now on.
+[00:49.0] I've made it to change the whole thing before doing the recordings from now on.
+[00:54.7] But right now this is all we have.
+[00:56.0] So essentially one of the biggest changes I wanted was that the energy and the star
+[01:01.8] rating would be like...
+[01:03.4] Let's get NSS open.
+[01:04.3] So I can just show you like in game.
+[01:10.6] Oh you've actually got NSS.
+[01:12.3] Yeah.
+[01:12.6] I've got it here.
+[01:15.5] See this is, for Claude, this is the toggle thing.
+[01:19.9] So when we say the old and the new, do this for now.
+[01:24.6] Oh I've just done, I can't.
+[01:25.8] What the hell is that noise?
+[01:28.2] It's just playing on modern.
+[01:36.7] So we don't want to do this, whatever this is, let's not do that. Brothers don't want
+[01:46.8] us to play their game. Am I not 16? This, that bar basically, I want this bar. This,
+[01:58.6] this section here like I want this part just this little top part I want that to always be there
+[02:05.7] and instead of the the home shop stats I want these little things at the bottom that was like
+[02:13.4] my first main change that I wanted so this was just taken up yeah I don't mind that top thing
+[02:19.0] as well it's just extra space yeah so like I want this money and the age to go up here even
+[02:23.5] um I don't know about the can being up here maybe I was pushing it but what I realized
+[02:27.5] when I was playing NSS was just that like you can just see you can just see
+[02:38.9] the energy
+[02:47.2] this sucks my god I was doing it online it was way better this is you
+[02:54.7] You know what, I'll forget about NSS for now.
+[02:58.2] Yeah, I wanted it up there.
+[02:59.1] I wanted it to be like, okay, just for Claude,
+[03:02.1] well, everything, listen to everything, but
+[03:03.5] I don't like these yellow bars.
+[03:06.0] I want like a smooth, glowing, like,
+[03:09.7] how NSS has it, kind of, actually I kind of like the modern one.
+[03:13.8] One big bar.
+[03:14.7] This is cool. I like this bar.
+[03:16.5] Yeah, I like that. It's almost like a liquid.
+[03:19.1] Yeah, that is what I meant when I meant, I'm an aminated.
+[03:24.2] Oh, boom boy.
+[03:26.2] I'm trying to say animated.
+[03:28.5] Animated, yeah.
+[03:31.0] Yeah, that's what I meant with animated.
+[03:34.2] So that was what I wanted for these bars at the top.
+[03:36.3] So that was a big change.
+[03:37.1] I didn't want this there.
+[03:38.6] I kind of wanted this up here, but now when I think about it, like that is the
+[03:43.7] I actually like it at the bottom because that's like the ground.
+[03:46.2] Yeah, this is kind of what I meant.
+[03:48.0] Like that doesn't look right to me in a way.
+[03:51.8] I just don't know why but this kind of thing looks better
+[03:55.0] I don't know if this is I'm not sure about I really said I don't think I'm sure about
+[03:59.3] the table being here
+[04:08.1] See as we go lower because it
+[04:12.2] It seems to improve in look as we go lower in the in the pitch notes. Oh, yeah, so you can
+[04:18.9] Yeah, that's true.
+[04:21.6] Oh, he's twisting now.
+[04:23.6] Fix the spin thing.
+[04:24.8] So you have your name on the back as well.
+[04:28.0] That is cool.
+[04:29.4] And then he does a little...
+[04:30.5] He needs some muscle.
+[04:32.3] Oh, he does like a cartwheel.
+[04:35.4] We can tap him to get him to set up.
+[04:37.0] Oh, that's cool.
+[04:38.4] So he's got some sort of dynamics.
+[04:42.8] And use or buy...
+[04:44.9] Oh yeah, so when you have none,
+[04:47.7] it becomes bi so if you use yes that's good okay yeah when it's full I kind of
+[04:56.8] like the energy bar when it's full yeah this one should definitely be I kind of
+[05:10.1] like the what the writing inside the pill that's kind of cool energy in
+[05:15.5] maybe
+[05:19.3] Maybe no, yeah
+[05:22.4] Can but it was
+[05:24.6] If it just said like K I'd be or something. It needs to be really sure
+[05:35.3] Hard changes per screen
+[05:38.5] This I don't know what was happening and it's a completely revamped
+[05:43.0] A little bit. I did say I prefer this.
+[05:45.8] I like the league I was before.
+[05:48.0] No, no, the league I want to stay the same.
+[05:50.5] Although this is staying the same, so it's fine.
+[05:53.8] But the thing I wanted was like these.
+[05:55.6] I like the red difference.
+[05:56.6] I like these to carry across different areas.
+[06:00.5] Like on the game, when you go to relationship,
+[06:03.3] one of them swaps out for,
+[06:05.9] so we swap star rating out for like happiness,
+[06:08.3] or like if you go to style,
+[06:09.5] it'll swap out for reputation or whatever.
+[06:10.9] So you always have like the relevant bars for whatever you're looking at.
+[06:17.7] Again these are not updated because this is a dumb artifact.
+[06:24.2] This was the font change. I personally prefer the after to the before.
+[06:31.1] Like a little bit more.
+[06:32.4] I wouldn't say I'm a big fan of either of those fonts to be honest.
+[06:36.2] Yeah fair enough.
+[06:40.8] Oh, so that's why I did the square bars.
+[06:44.8] So I didn't like the roundedness of it, but I didn't necessarily want the lines.
+[06:53.0] I could see it without the lines.
+[06:56.3] It makes it seem more like 10 bars of energy, which it isn't actually like that.
+[07:05.1] So then you have the home.
+[07:07.5] I like green.
+[07:09.3] It's a bit blended as well.
+[07:10.6] I think this looks better.
+[07:12.6] Yeah, I think this is the best.
+[07:14.3] And it's been fixed up here a little bit.
+[07:18.4] So if we fix the actual bar to look better here, this is looking good.
+[07:23.6] There also probably won't be that.
+[07:25.9] Stats home shop.
+[07:27.4] Oh, imagine you could shoot here.
+[07:30.3] Yeah.
+[07:31.1] That'd be kinda crazy.
+[07:34.5] I also made the pitch have a pitch I don't know that makes sense also the
+[07:41.1] kickoff the kickoff like the background is a pitch not just the pitch that
+[07:46.3] should change to in some degree I actually kind of like the before more
+[07:50.6] there but it's just like offset but the kickoff also can't come off the
+[07:57.1] kickoff can't come off the screen a lot of the stuff I did was actually
+[08:00.4] Oh yeah, that's good.
+[08:01.6] A lot of the stuff I did was in the previous patch notes and it's kind of just showing
+[08:04.7] some of the stuff, but yeah, kickoff can't be gone.
+[08:07.0] That's fine.
+[08:08.8] There you go.
+[08:09.3] Let's see how this does this.
+[08:11.7] Let's see.
+[08:13.4] Oh, wait.
+[08:15.2] Oh no, that seems...
+[08:18.1] It's got all the real clubs and stuff, so I don't know.
+[08:22.3] I don't know how this is going to work.
+[08:25.5] Pay off second to fifth no relegation so I understood the save.
+[08:31.0] I mean it looks right.
+[08:32.1] He's gonna understand.
+[08:33.2] Wait.
+[08:33.7] There's two divisions going to one.
+[08:35.7] Wait what's happened here?
+[08:38.8] That's not how it was before.
+[08:40.7] That is not how it's ever been.
+[08:42.4] That's how ene- see why I don't know what the real game is right now because
+[08:46.2] it's not sorted.
+[08:47.3] I'm sure that's how it was before.
+[08:49.3] What?
+[08:49.7] That is not how it was bro.
+[08:52.2] That is me.
+[08:52.7] That's how it was originally I think and then they got rid of it. I don't I've never seen that personally
+[08:59.1] We we took we took or maybe it was before we came into it
+[09:03.7] But there was there was always that energy bar with the star ring. I think I got rid of it at some point
+[09:09.4] I cannot rate it loki. I think it just needs to look a bit more like the rest of the site
+[09:14.7] That's better than this. He said the same design that that does look better than
+[09:19.6] It looks better but I don't know if, I mean it looks better than that but it doesn't
+[09:25.8] really suit, wait, it's just like a completely different style than it was just showing
+[09:33.2] us.
+[09:33.6] I think it's like, it focuses on like one part of the game.
+[09:38.4] Okay so here you can see what I mean like this should be how it looks everywhere
+[09:42.8] because this is the new like the home season league but I kind of wanted it at
+[09:49.1] the bottom so instead of like so the the instead of them being tabs they're
+[09:56.5] like they're just ours so you have your home and then so you have like
+[10:04.4] league and then I this is not why I meant by this but you know no no it's
+[10:11.0] Not right now. I don't know why. I want it to be like, uh,
+[10:14.9] you could swap between stuff, but I don't even know what half this stuff is.
+[10:18.9] We need to just push it and see it in game and we can actually see what
+[10:22.8] it's done. But, um, style, no back, no,
+[10:27.8] my stuff. What was all this before?
+[10:36.9] Oh, this, this whole, I kind of got rid of a lot of yap in the game.
+[10:40.5] is one thing I did I still don't really love the style page I don't know yeah
+[10:49.7] it's a bit dark as well I like the designs compared to a little before
+[10:55.6] because they were nothing before even though that's that's not no this I
+[11:00.3] meant it chose to do the bad designs for some reason yeah again like
+[11:08.2] This is what I meant with the relations.
+[11:10.0] There's so much yap here.
+[11:12.4] So instead, this is not how I wanted to look.
+[11:14.5] But instead, it's way better.
+[11:16.7] And also it's just like
+[11:18.8] you just have like a little thing to hover over.
+[11:22.2] So I think that that definitely looks it's getting there.
+[11:25.3] I think that's better than how this was.
+[11:29.2] Phone, you can just exit like I don't even know what this really means.
+[11:34.8] Oh, you can like swipe up how you would on Apple. Interesting.
+[11:38.7] That's cool. By the way, one thing that we need to figure out how to add here is you got rid of the home button at the bottom.
+[11:48.1] And I don't think there's a way to get back to the original home page easily.
+[11:53.2] Maybe the play button should just become home whenever you're not in a place to play a match.
+[11:59.8] Now how do you play?
+[12:01.2] whenever you're on the actual home screen it goes back to play maybe or should
+[12:05.3] we just always should always be able to just go into a match from whatever
+[12:07.7] screen you're in
+[12:17.3] or somewhere on the page that's probably the most annoying thing when
+[12:22.0] I've been looking through stuff yes that I can't get back to the home
+[12:26.4] I have to go through some sort of weird way to get back to the home page.
+[12:31.1] Oh okay, fair.
+[12:32.1] And that should be the ideal place where you want to be before a game.
+[12:38.0] Yeah, yeah.
+[12:40.6] This is the pre-match.
+[12:42.2] I just didn't like this.
+[12:43.7] I've never liked this.
+[12:45.3] I think I really changed it to be worse than it was anyway.
+[12:48.7] But I don't really like the pre-match system.
+[12:51.3] And also when I was playing NSS,
+[12:52.3] I pressed one button and I was in the game and I was there like that just felt quicker
+[12:59.1] It just felt better. So I kind of wanted to get rid of some of the yap
+[13:02.5] So instead of doing like compressing anything you just press play it loads up
+[13:07.0] Shows you the team sheets. Yes, you can press it
+[13:09.6] And then you just did you kick off it was just like it was almost like a fake load. I feel like
+[13:16.3] it's just doing like an animation of the team sheet instead of
+[13:19.6] just that but I mean that could not be an animation and it could just be you
+[13:23.1] can tap straight through yeah it kind of makes it I think it's alright and then
+[13:29.2] this is like oh it's showing like this it's kind of meant to be like a
+[13:33.0] pre-match thing I don't know I think that's better this is just kick off
+[13:40.6] so this is yeah I think it does this until there's a first
+[13:49.1] highlight. Oh maybe. Draws in with a timer, I don't want to talk, kick off on the other
+[13:54.9] one, kicks off by itself. Oh no, that is saying to like kick off. I don't know why.
+[14:01.4] More pictures. Oh and this was another thing like, it will prompt you if you're
+[14:06.7] low on energy or something. Because I just didn't want, I didn't want the energy
+[14:11.4] to pop up pre-match if it wasn't needed to. Like it was just taking up space, like
+[14:17.8] this whole thing. It's just not needed I think. Especially if you've got full energy then
+[14:24.6] why do you need it? I'm still not sure this screen is even needed. You could literally
+[14:28.2] just go straight into this. You could. I like it. I do like it because it's real
+[14:34.4] players but in like National League I don't know if you care about the lineups. Yeah.
+[14:39.1] So maybe you can just put like a skip setting on. It could just be an ability
+[14:43.9] to turn one off by the post-watch reactions.
+[14:47.2] Oh, yeah.
+[14:48.0] Simple change.
+[14:49.2] I changed the red, yellow, green to green, yellow, red.
+[14:57.2] Red is the most intense.
+[14:58.7] Green is the least intense.
+[14:59.9] Unless that's what it already was,
+[15:01.2] and I've just been doing it the wrong way.
+[15:06.3] Your most intense setting should be red.
+[15:09.3] So like your three heart setting in an SS.
+[15:11.2] Why would it be that?
+[15:12.8] That because red is the most intense.
+[15:13.8] I know it's like that in NSS, but why should...
+[15:17.3] Red is like the worst one.
+[15:19.6] Red is the most intense.
+[15:21.5] Green's like easy and red's hard.
+[15:23.7] That's how I see it.
+[15:26.5] I don't see it like that.
+[15:28.4] I saw that in NSS and I thought,
+[15:30.5] that doesn't make any sense to me.
+[15:32.4] Oh, I think that's some crazy thought.
+[15:36.3] I think that's some crazy thought.
+[15:38.2] I think that's like a 1% percentile
+[15:43.0] kind of thinking right there to be honest I don't think I've ever seen a
+[15:46.7] game that would put green as the hardest thing like green is the the light of
+[15:52.9] any setting it is the best but in a case of like using an energy source
+[15:59.5] or like a physical thing I feel like red is the worst
+[16:05.6] Where's the lowest?
+[16:07.7] Greens the best
+[16:09.8] Greens your most
+[16:12.4] I think you're gonna have to ask like 10 people and say which one would use the most energy red yellow green which one would use the least
+[16:20.5] isn't
+[16:23.4] I don't know if it's about energy. I think the fact that it's bolts maybe is making it a
+[16:29.7] Little bit more confusing when it was the hearts and it was like one heart two hearts three hearts
+[16:35.6] I think the red makes a lot of sense. I don't really know here if it makes as much sense.
+[16:43.0] Subconsciously, I just know that...
+[16:44.5] Green was even one of the colours in NSS, wasn't it?
+[16:47.2] I'm not sure. I think it was actually.
+[16:49.1] I think it was yellow-orange red.
+[16:50.8] Or yellow, maybe, yeah. Maybe we should just do that.
+[16:56.2] Anyway, well...
+[16:57.4] Yeah, I changed it for now.
+[17:02.4] Let us know what you think about that Claude.
+[17:06.7] Oh yeah, I made a playstyle section.
+[17:10.2] Oh wait, we already had that.
+[17:13.3] I wanted to have a whole playstyle section because it's just not understood that.
+[17:18.1] What's that for run ups you choose and stuff?
+[17:20.5] Like run ups, when you're on knuckle wall, power shots, just like a place to see all
+[17:26.0] your stuff.
+[17:29.0] The huds are meant to show on every screen, although it's still, okay, this is where
+[17:34.0] it starts getting interesting.
+[17:36.3] So the whole tutorial flow of the game, I want it to be like, stuff is locked until
+[17:43.1] you have to do this, obviously.
+[17:50.3] And then it forces you into training.
+[17:53.2] So there's nothing else open apart from training.
+[17:55.4] then you have to do two... oh I didn't show that... you have to do two... oh wait, maybe it has...
+[18:03.7] you do two sessions... oh wait here we go... not yet showing it... league unlocked after you do your
+[18:10.2] first two sessions and then you get an achievement for that and then
+[18:14.0] obviously you can see your league and then it just pushes you
+[18:16.1] straight away to going into a game and you just play. So you get a bunch
+[18:21.0] tutorials before you play your first game yeah and without screeners and you've got there's a help
+[18:26.3] button now oh oh that's cool that's the manager conversation interesting okay i like that um
+[18:38.9] and then just gonna press the help button yeah so the help button just kind of cycles
+[18:43.3] through everything on that current page the ui is looking better now i'm liking it now
+[18:49.8] This looks a little bit better. I still don't know why stats are so much shorter. That's
+[18:53.6] not been understood. So we will get rid of all the app with the star system. So I
+[19:03.0] personally think there should be no numbers. I don't know why that's come backwards,
+[19:06.9] but I just don't think there should be any numbers in the game. I think if people
+[19:11.2] don't know, we don't need we don't need explanations. Yeah, I think it's an AI thing
+[19:15.8] where it's just explaining everything.
+[19:18.1] We basically just need it to say star rating.
+[19:20.7] And the bar.
+[19:24.1] That's cool.
+[19:24.8] That's cool.
+[19:25.3] So that's an actual achievement.
+[19:27.2] Yeah.
+[19:27.5] That's great.
+[19:28.0] But these should actually start just popping up
+[19:29.7] automatically as well.
+[19:31.5] And when you break records,
+[19:32.8] the same thing should happen.
+[19:34.6] Yeah.
+[19:35.6] This is not generated very well yet,
+[19:38.6] but like the breaking news stuff.
+[19:42.0] And then after your first game, the shop opens.
+[19:43.7] So this is another new thing.
+[19:46.6] You play your first game, the shop opens.
+[19:49.1] Oh, yeah, cool.
+[19:51.8] So from now on the phone is not locked, is locked from the start.
+[19:56.7] It costs like a 150.
+[19:59.1] So it goes to tell you to buy your first phone.
+[20:02.3] I'm assuming they won't be able to afford it.
+[20:04.6] But until you buy your phone, you can't use the phone.
+[20:07.4] And if your phone breaks...
+[20:08.6] Well maybe we just make the phone, the first level phone, really cheap.
+[20:12.9] I made it I also said there shouldn't be levels for the phone
+[20:16.3] I don't I think certain items should just be a utility like you buy a phone
+[20:22.1] After like four game weeks, and then you just have it and if it breaks you just repair it
+[20:26.3] I think I think
+[20:33.7] Instead of levels I have done that
+[20:42.9] wanted to do where it's like different styles of phone or whatever.
+[20:46.2] Why has it not got that?
+[20:55.9] I have done that basically. I don't know where it is but there's now an app store.
+[21:02.3] So you have to buy different apps and they're kind of like shortcuts and you
+[21:10.6] had it somewhere. That's fine. You'll see it when it pushes anyway. But yeah, the app
+[21:16.0] store, so the phone will literally just start with like the league, the league
+[21:21.2] settings and then the rest will just be like just app store so you can
+[21:24.6] actually buy apps in there.
+[21:27.2] Help button, badge order.
+[21:29.5] This is all progress.
+[21:30.8] I'll see about set pieces. Phone.
+[21:33.4] The phone should be there as a first style unlock. It's a first thing you have to buy. It's like 800.
+[21:36.9] But I changed that to 150 now.
+[21:40.5] Broken phone locks the phone until replaced.
+[21:43.1] I think that's pretty cool.
+[21:45.7] Wait, what?
+[21:46.8] If your phone breaks, you can't use your phone, basically, until you repair it.
+[21:50.9] Oh, okay, yeah.
+[21:51.7] That's cool.
+[21:53.4] Boss meeting loss was weird.
+[21:55.9] It was like, well, there was no loss and you gained like 12 for just doing this
+[22:00.2] simple thing.
+[22:01.2] When the boss relationship is quite an important thing, I felt like that was a bit too easy.
+[22:05.4] So now when you fail you get like minus eight and when you succeed you get like
+[22:10.4] yeah plus four or something so that's a little change. The star rating is
+[22:15.7] way more. If you fail you get minus eight and if you succeed you get minus
+[22:22.4] you get plus four. Yeah. That's not good. You shouldn't get less for succeeding than if you fail otherwise.
+[22:30.5] I think you should get way less because this is a cheat when you think about it
+[22:34.7] This is like, you're not playing and getting into your manager's good books.
+[22:39.0] You're like trying to have a meeting with him to up the relationship.
+[22:42.1] I mean you're supposed to pay energy for that.
+[22:44.9] Yeah, I guess so. But the way the current game works is basically like,
+[22:49.1] if you have like a 65 relationship with your manager, you're on pens, free kicks,
+[22:53.5] the manager loves you, you're selected for every team.
+[22:56.1] So if there was more to it than just like the second a certain number is hit,
+[23:00.5] you're just in the team or whatever, then that's fine.
+[23:02.9] But right now we place a lot of, we place a lot on these relationship ratings, which
+[23:08.8] we probably just shouldn't.
+[23:10.0] So that's why I feel like it's a bit OP if you just go in and you can do two of these
+[23:13.7] and you're like a star man instantly.
+[23:17.7] All right.
+[23:18.5] That's kind of why I changed it.
+[23:19.4] But I think that whole system probably just needs changing.
+[23:22.1] You probably just do like plus three and then like minus two if you lose or something.
+[23:35.6] I don't even know what this is, I'll be honest.
+[23:38.8] I just, it just added in when I created it.
+[23:42.6] Yeah, basically just got rid of anything that's like how that was.
+[23:46.6] This actually isn't supposed to be here, but this is where you click on star rating,
+[23:50.1] right?
+[23:50.7] Oh yeah, maybe that's fine.
+[23:51.9] I like this.
+[23:52.6] You can see all of the points ever that you've got.
+[23:54.8] That's pretty cool.
+[23:56.4] Okay, that's all right.
+[23:57.6] What's that supposed to be is when you click on that, it takes you to the star pass.
+[24:02.4] Okay.
+[24:03.3] Obviously we haven't really done the star pass yet.
+[24:06.3] What's that you say?
+[24:08.0] It's looking pretty mid right now.
+[24:10.4] Oh.
+[24:12.1] But it should be better than this.
+[24:15.9] But it's...
+[24:16.9] I'm imagining something like, you know, the season pass on FIFA.
+[24:22.7] yeah that is what it should be but it's harder mobile. Maybe we should look at other mobile apps.
+[24:28.0] You need to show like 5 in 1 though. I think you could just show like from the level you're on and then what's on the next level.
+[24:34.7] I do like when it's like I like the Brawl Stars Clash Royale type of vibes as well maybe we should just feed some of those in.
+[24:42.5] Training. Oh wait, yeah, yeah, no you're right. I don't know if that's what you meant, but like, you know when like, Clash Royale goes from top to bottom?
+[24:50.9] Yeah. Is that what you said? That could be like climbing up.
+[24:57.1] Yeah, it's like a ladder. Okay. Research the Clash Royale like, season pass type thing and make this vertical instead of sideways.
+[25:08.3] It's the class for arenas.
+[25:12.8] Oh, you mean the actual arena thing?
+[25:15.6] Yeah, so you get rewards as you go up and reach new arenas.
+[25:22.5] Yeah, that's pretty cool.
+[25:24.8] Okay, that's good. We'll change that.
+[25:27.8] No explanation stuff on training.
+[25:31.0] So like, I think it's just this thing.
+[25:35.6] And the session 30 energies three tries like all that. Yeah, it's just just gone
+[25:42.2] Got rid of the penalty stuff here as well
+[25:44.8] I just don't I don't think this page is gonna exist
+[25:47.4] Maybe we could just put this at the bottom of a team. She is this this is the pre-match
+[25:52.3] This is the pre match. Yeah, I still kind of think we could oh, we should just I think I already said this
+[25:56.6] We should just do the league table first. I think I've already said this somewhere
+[26:01.0] When you press next match it does the league table and then you press next and it just goes into the game or like the fixtures.
+[26:08.1] I don't know, something like that or like shows the fixtures.
+[26:11.6] For that page by the way, for this page if we wanted to keep it we could make this into a mix of the scouting and like the form but also with the your customisations.
+[26:28.6] So this could also be where you select your run-up style, your shot types for the match.
+[26:35.1] We could have the play style customisation before the match, but I think if we do that
+[26:40.4] it should be like you unlock it in like star pass level 30 or something.
+[26:46.0] Because I just want the start of the game.
+[26:47.8] Honestly what it should start is that you just press play and you just you spawn into
+[26:52.1] the game because it's like a TikTok video.
+[26:55.0] like every second that they're chilling in this game not doing something there's
+[27:00.2] potential they're just gonna go away so I think by the way I think we just make
+[27:06.1] it very seamless to play games and just not have these blocks but that is a
+[27:11.2] good idea to play style and like yeah I agree stuff can unlock especially
+[27:14.9] as you get higher up I also think scouting is kind of irrelevant in this
+[27:18.0] game unless you're a defender because you have no impact on you have no
+[27:22.0] impact on it. It doesn't affect anything.
+[27:24.0] Yeah. It's just cool.
+[27:25.1] It's cool. It should be there. I said, I already said this should go and it should
+[27:28.1] do the arrows again.
+[27:29.5] I like it for like, prime games and champions league games because you know all the players.
+[27:33.8] Yeah, that's pretty cool.
+[27:34.6] It's probably not that relevant in...
+[27:35.8] Well, I think we just change this to have like the arrows, like NSS does and you
+[27:39.1] can just swipe and see stuff maybe when you get to that level. What are you going
+[27:42.6] to say?
+[27:43.3] Yeah. Go back up. I think one.
+[27:49.1] One. This?
+[27:50.3] Yeah, I really like how these areas at the bottom are locked.
+[27:56.9] I think that's a very good thing about the starting point of the game,
+[28:01.0] where certain areas are still shown but they're locked.
+[28:04.7] So it leaves you wondering how can I unlock these while they're locked,
+[28:09.0] rather than actually not showing them.
+[28:10.7] But that only takes a few games to get everything unlocked, yeah?
+[28:13.9] But it just means that, like Mahdi said, when you come in,
+[28:17.0] You're not just bombarded with a hundred different screens. I think even like the store the shop the style everything should be locked
+[28:24.3] And you just yeah, I think I think the way you've done it now where the beginning of the game is like a tutorial
+[28:32.5] Help buttons and it's kind of like
+[28:35.9] Patience it's it's a slow pace and it's just taking you through
+[28:39.6] I think that's a little bit and we could even do that like you say in the store area as well
+[28:44.2] Maybe some of the things are locked and it takes you through a bit of a tutorial to unlock them.
+[28:50.1] Yeah, yeah. I think that is the way.
+[28:53.3] Because when I was playing NSS it just felt like, it just made me think how...
+[28:59.0] Like our game doesn't feel like anything when I was playing through it.
+[29:03.3] Like there's no... You're not wanting to click that next button and keep playing the game.
+[29:08.3] Whereas here it's like, oh this is the next thing that I'm looking.
+[29:10.9] I think NSS is a bit simpler.
+[29:11.8] Simpler?
+[29:12.3] Which does definitely help.
+[29:14.4] Which is what I actually did wrong with the trial
+[29:16.1] at the start, I was trying to make it too complicated.
+[29:18.3] So, all right, so this is all those shop items.
+[29:21.5] We like these.
+[29:23.7] Is that the starter house?
+[29:25.2] Jesus, quite big.
+[29:26.3] That should be the starter house.
+[29:27.4] I'm happy that it's like this as well
+[29:29.1] because this just means we can add whatever we want,
+[29:31.0] like with designs as well.
+[29:32.6] Yep.
+[29:32.8] We can make it quick, 186.
+[29:35.9] Jeez, oh yeah.
+[29:38.0] Oh my God.
+[29:39.2] Can we make sure?
+[29:40.6] Why is he so assured?
+[29:41.8] Has it updated it as well?
+[29:44.2] Is that Fernando?
+[29:45.3] It actually is.
+[29:46.3] I think it's updated it because the car looks different.
+[29:50.0] Oh my god.
+[29:51.6] Wasn't it like a purple?
+[29:52.7] Oh yeah.
+[29:53.9] It's not actually changing the situation.
+[29:56.6] I don't know what shop this is.
+[29:58.5] Little car sponsorship in the future?
+[30:01.4] This is crazy.
+[30:02.7] Every shop picture is now blank.
+[30:04.3] Oh wait, we can actually see the shop.
+[30:06.4] Ho ho.
+[30:08.4] Actually I don't know what that is.
+[30:09.4] Oh, that's like basic.
+[30:11.3] Oh, it got rid of the store name.
+[30:13.6] Diamond Headphones.
+[30:14.8] I like the store. I thought that was sick.
+[30:17.1] Oh, maybe it's only good on the computer.
+[30:20.0] Oh, this? No, this hasn't even been put in the game.
+[30:22.1] This is just like a...
+[30:23.8] No, I mean how it was before.
+[30:27.8] The actual store area.
+[30:29.6] What, like the big listed thing?
+[30:33.9] Yeah, I think so.
+[30:35.5] Well, how about this now?
+[30:36.9] Like this?
+[30:40.6] Oh yeah I don't know if this is up there. Not this. I like this. This looks sick. Oh
+[30:47.6] this is a different shop though. This is like your style shop. Wait I swear I just
+[30:53.7] showed it. No no these are like the run ups and stuff. This is like what this is
+[31:03.4] now oh this I mean I don't even know what's happening yeah yeah so that's
+[31:18.3] That's a big improvement.
+[31:20.3] Yeah.
+[31:22.0] Oh.
+[31:23.8] That is so cool.
+[31:25.3] Look at the comparison.
+[31:27.1] Look at the comparison.
+[31:29.6] Oh my god.
+[31:31.1] No.
+[31:34.3] That is so cool.
+[31:36.4] Gold card.
+[31:37.9] Boot shelf with rendered boots.
+[31:41.4] Those boots are massive.
+[31:43.7] They actually are.
+[31:45.2] Size 18.
+[31:46.3] Oh, they're actually on a shelf, I see. Interesting. I don't know what's the AI doing. Just scrolling.
+[31:55.4] Okay, this situation is interesting. It's cool. Needs work, but I think I prefer it.
+[32:05.6] I'm putting it on hands like that.
+[32:07.1] I love how the only thing on the contract is just shirt number 90.
+[32:14.0] Interesting.
+[32:15.2] Shirt number 19. That's all I get.
+[32:18.1] I feel like I've changed the contract.
+[32:20.3] You did.
+[32:21.3] Like yesterday. It looked pretty good.
+[32:22.7] No, it does. We just need to put that contract.
+[32:24.3] Just add that contract paper there.
+[32:25.9] I don't like the whole page being the contract, but I don't mind.
+[32:29.8] I didn't mind what I wanted this to be really, if it should say.
+[32:34.7] Oh, yeah. It had a black guy.
+[32:36.8] That contract actually showed the whole terms.
+[32:39.4] Yeah, I like that. But I just didn't like it being the whole page.
+[32:41.8] what I thought it would be cool was if like,
+[32:43.8] it's just signing, this was more,
+[32:45.3] we could do Blender here, but I was like,
+[32:47.1] if we use Blender, it's not actually gonna be your guy.
+[32:50.4] Well, actually, how is the 3D mode gonna work?
+[32:54.5] Is it gonna somehow put your guy,
+[32:56.4] unless we just have set guys
+[32:58.2] and we just load in every single accessory,
+[33:01.2] every single animation, like it's gonna be a bit confusing.
+[33:05.8] What if it creates a 3D model version of your head
+[33:11.3] when you take a picture and then it just puts that head on the body.
+[33:17.1] That could be the way.
+[33:19.5] Because then you can just have set bodies and then it just puts your head on that.
+[33:25.4] I don't know how much space that would take up to create a head.
+[33:32.7] I don't know. We know it's somewhat possible, which is interesting.
+[33:38.4] Yeah, this stuff I don't really like so I think we'll just stick with what we had before.
+[33:43.9] Is this the current? What's the current? I prefer, I want this to just stay the same
+[33:49.3] to be honest. I think this is pretty good. I can't say I'm a massive fan of the new
+[33:52.4] font. I kind of like this font or like an in between. This font looks good here.
+[34:01.0] Like if you go back to the homepage I think. I don't like it here. I don't like
+[34:04.5] on this stuff yeah this looks good wait this is a different font that's why that is a different font
+[34:10.7] to this like these type of fonts are fine i think i don't like these for the main page i think it
+[34:16.2] looks a bit a bit lackluster this is i think anything fixture related it looks good but like
+[34:22.6] like that's this yeah that's a regular form i think yeah i think keep this like just keep
+[34:28.2] how the lead like that stuff yeah this this is fine i think this is actually really good
+[34:31.8] But what it should be is it really like instead of these toggles. It's a little arrow at the bottom. That's like
+[34:40.4] Has like a little formation thing and then you like obviously just scroll
+[34:44.3] Come over and then it would have like the leak or I think it would be like stats and then there'll be another one
+[34:49.4] And then the leak will be there
+[34:52.4] But yeah, I don't like that I mean I don't hate that bad, but it's not nice
+[35:02.7] Yeah, we will some right the store
+[35:12.3] So it's a shot yeah, hmm, I was just thinking because you know that bottom left
+[35:18.3] Is the league? Yes, that's already the left side
+[35:21.7] I was thinking they would do something like that is a swipe. I don't know if I've changed
+[35:26.2] that though did I change that? I don't know if it's still League at the bottom left. No
+[35:32.5] it's achievements. Oh okay well that's yeah because League isn't necessary if it's already there.
+[35:37.4] Yeah that's what I mean. Yeah so we spoke about that. I don't know if achievements even need this whole area.
+[35:43.6] Maybe I could just... I cannot make achievements a bigger thing though. I don't know I feel like that's a pretty cool function.
+[35:48.7] I know but I'm just thinking like it can be a big thing but is it a place where you
+[35:55.4] would really ever go and visit it.
+[35:58.4] Yeah, it's just always, it might not be needed to be there.
+[36:04.2] Maybe we can put something else back in there.
+[36:06.2] It could just be on the homepage.
+[36:07.6] I like this, I like this.
+[36:09.6] Live scores, by the way.
+[36:11.1] That's cool.
+[36:11.7] On the League page, rather than in the settings,
+[36:14.4] because the settings is a bit bloated right now.
+[36:17.3] Yeah, I think certain things should be small things,
+[36:20.9] like full screen and on and off.
+[36:24.2] This is pretty cool. I kind of like the loading and then the position picker, but I don't
+[36:31.1] know what position picker even does. League page now has a little question mark. Every
+[36:37.8] page should have one of these. Yeah, pretty simple. That looks a bit better with the
+[36:44.4] scout fixtures. This is how the league page should look, I guess. And then this
+[36:49.5] This is one of the last changes that I was thinking of doing.
+[36:53.0] Wait, what was Scout?
+[36:53.9] Sorry.
+[36:54.5] The Scout is like your, the Scout thing from the pre-match line-up.
+[36:58.6] Oh, that's cool.
+[37:00.9] Let's have it here.
+[37:01.7] That's actually, that's actually good.
+[37:03.5] I'm happy with that at first though.
+[37:05.1] Because then you actually don't really need it in the pre-match area anyway.
+[37:09.8] Yeah, maybe you can just see it beforehand.
+[37:11.6] Yeah, for Mr. Space.
+[37:12.2] Yeah, yeah.
+[37:12.7] You can just see it beforehand if you want to.
+[37:20.8] Goal's a bit big, that's why I already said. Wait no, it upgraded it. This is a little
+[37:27.2] bit better. That is way- go down. I don't know, because I do like this. But this,
+[37:35.2] I like the football idea, like I like it actually being football. Well that net
+[37:39.6] The net's way too big.
+[37:40.4] Oh, the net's way too big.
+[37:41.5] And also just like this could come up and be a bit bigger.
+[37:45.4] This could be bigger.
+[37:46.2] The title should be bigger.
+[37:46.6] The title should be bigger.
+[37:47.7] There should be a tutorial mode here.
+[37:48.3] You can't even see the name of the game.
+[37:51.0] The play area is pretty cool down there.
+[37:53.6] I think I do prefer this though.
+[37:55.9] I'll be honest.
+[37:56.9] Even how that is now.
+[37:58.2] This one?
+[37:58.7] Yeah.
+[37:59.2] I just think something about this and the whole way the UI was before looked amazing,
+[38:05.3] but it did feel like some sort of test area or something.
+[38:08.9] I don't think that looks like a cool game.
+[38:13.3] Whereas this just looks like a loading screen of a game to me.
+[38:17.1] Maybe it's just this being like that.
+[38:21.4] Or maybe the fact that NSS is like this, but...
+[38:25.0] I don't know.
+[38:27.2] This is good, but...
+[38:28.5] You know what, I prefer the right-hand side thing with the buttons.
+[38:36.1] Maybe the goal looking better would fix it.
+[38:40.2] There's something about those headlights I like.
+[38:43.3] I do like the headlights.
+[38:44.2] We could put the headlight light coming down, fix the goal, make the know-it-ball a lot bigger like that.
+[38:56.0] And we can also offer different home screens in the future.
+[38:59.7] It's like some of the unlocks can be like different home screens.
+[39:03.8] Oh, there's some different sizes.
+[39:05.1] You could even just make this a...
+[39:08.1] Oh, this is sick.
+[39:09.8] Like an image.
+[39:11.4] This is like so much better than what it was before for me.
+[39:16.4] Like if you take that home screen.
+[39:18.5] What is?
+[39:19.2] Like the training being like a green like vibe.
+[39:25.0] I think you recorded that.
+[39:26.9] I think this looks really good.
+[39:30.1] wait why is it it's all this should go yeah I mean it's better than before I
+[39:39.7] changed this already to one I don't remember because it asked me to do it
+[39:47.7] again but I didn't like how the stars were I didn't feel like a big deal I
+[39:53.7] I kinda like this.
+[39:54.5] They're so tiny.
+[39:55.8] I kinda like it.
+[39:56.6] Oh, I mean the number could be a bit smaller.
+[39:59.3] It's not the same design style.
+[40:01.5] I see what you mean, like, make the number smaller and then like, make the stars like
+[40:06.5] a little bit 3D or like just have the star be the main part of the square.
+[40:10.0] Oh my god, they actually didn't change it again.
+[40:12.0] Interesting.
+[40:12.4] I changed this and then I asked it to change it again because it didn't brighten
+[40:17.1] it and it's just not brightened again.
+[40:20.1] That's not nice.
+[40:21.1] Wait, I feel like it was a nice design.
+[40:25.1] Let me just quickly look and see what that was.
+[40:32.8] Oh no, it is that design.
+[40:36.5] Yeah, it didn't maybe change that much.
+[40:38.4] Yeah, we can make the stars bigger.
+[40:40.3] I just feel like the actual stars and the number of each difficulty wasn't the same style as the rest of the page.
+[40:52.3] I agree. I think that has worked, but I just prefer the green a lot.
+[40:57.5] I think the whole game should have a bit of a green vibe, to be honest.
+[40:59.9] Green, oh the background, yeah for sure.
+[41:01.7] And this even, like, this is a prime, I think. This is good.
+[41:07.1] I don't like the grass behind the pit, the kick-off thing here.
+[41:12.8] That does look weird.
+[41:14.3] We should also have different pitch options, and we should add a pitch.
+[41:18.1] Yeah.
+[41:18.7] Ah, that's enough.
+[41:20.6] Um, I got rid of the free agency, or the youth theme.
+[41:24.2] Oh.
+[41:25.1] Game.
+[41:25.7] Uh, I...
+[41:27.5] You done that?
+[41:28.4] When did you do this?
+[41:30.3] Uh, it's not, nothing's been pushed.
+[41:31.5] I did this last night.
+[41:33.8] Oh, it's not been pushed.
+[41:34.5] Oh, maybe it's just taken it from mine as well.
+[41:36.8] Maybe.
+[41:37.6] Um, I also changed the trial.
+[41:39.4] But I did get rid of them.
+[41:40.0] I changed the trial a lot, so I don't know if you did stuff on that.
+[41:43.2] Okay.
+[41:44.0] But, um...
+[41:44.8] All I did was just made, I made it, I made some sort of system that you have to play for a club.
+[41:50.9] Right, that makes sense. Same thing I did, but I also, now that National League South's in there,
+[41:56.7] basically the trial ends with a penalty shootout, three for them, three for you. Basically,
+[42:01.6] I made it so that you take the winning or losing pen or whatever. If you miss the pen,
+[42:06.8] you basically get a bigger chance of going to National League South. Obviously,
+[42:11.0] the user doesn't know this. If you score it, you have a bigger chance of going to National
+[42:14.2] League. I personally don't think that you should ever get scattered above National
+[42:17.7] League because I think it just messes up the progression of the game a lot.
+[42:22.6] But we can discuss how to make that possible. I mean this is very
+[42:29.6] interesting. This is fixed a little bit at least, but I can't say that's the manager.
+[42:34.2] Yeah, and she has detail. Just don't think that's the manager.
+[42:37.6] Why wouldn't that be the manager? Just don't think that's O.Bianci to be honest with you.
+[42:42.5] We can make different faces for now.
+[42:47.1] Just like old white men.
+[42:48.7] I am reading all this.
+[42:50.3] But the start rating can go down apparently.
+[42:52.4] Can go down.
+[42:53.3] Wait, I actually need to see this.
+[42:55.3] Okay, go on.
+[42:55.9] If I was going to mess with it.
+[42:57.1] You can understand this.
+[43:02.3] Oh well, I'm going to see this anyway once the start goes right now.
+[43:06.6] Yeah, basically if you have a match rating under 5.5, it costs a fifth of your levels points.
+[43:12.1] The level only drops after five poor matches in a row
+[43:15.2] If you actually at the bottom of a level a six point five match breaks the run. I think that's pretty cool
+[43:23.7] Scout starts with last penalty equals 50% National League 20% North 20% South missed equals
+[43:30.5] 20-40-40
+[43:34.9] Don't really know I think there has to be an element of not just the penalty the whole trial has to be taken
+[43:40.5] into account and then scoring the penalty maybe should add like a 20% chance of
+[43:45.4] National League and missing it maybe has like a minus 20% I don't think it
+[43:49.1] should be the the be all end all to be honest
+[43:55.2] I don't know what you think
+[43:58.5] I don't know yet, I have to think about it
+[44:01.8] for the leagues
+[44:05.4] okay
+[44:15.3] Yeah, I'm happy with that.
+[44:17.7] I mean, you're gonna do this anyway, so let's just accept that.
+[44:23.7] You're gonna, we're gonna need to look over this anyway, I don't think this is really
+[44:32.0] I think-
+[44:33.0] Oh I see, so it is just the animation.
+[44:35.6] I don't mind-
+[44:36.3] I think you should be able to skip it as well.
+[44:37.9] I don't mind it being like you can just tap and you get through it to be honest
+[44:43.0] So I don't think you should hold the match behind something
+[44:46.3] I think if they want to keep tapping and just get into the game. Yeah
+[44:52.1] I liked how the players position looked in that in that one with the other top and
+[45:08.3] because we need teams that can get promoted and renegade.
+[45:13.4] Low energy prompt the line to start a match. 65 is probably good right?
+[45:21.2] The line to start a match is under 65.
+[45:33.9] which shows whether you're starting?
+[45:37.4] Is that how we're doing right now?
+[45:41.1] Is there a screen which shows whether you're starting?
+[45:43.5] I don't really know.
+[45:44.4] I haven't seen the actual game for so long that it's getting confusing
+[45:47.9] of what it's actually going to look like.
+[45:49.6] So it's probably best to just try and push it.
+[45:51.7] We'll just leave it for that then and then we can come back.
+[45:55.4] The all bold text, I think no.
+[45:57.2] I think we like the normal text here, especially for the league.
+[46:03.7] all of this stuff should stay how it is with the the font and everything. How is this just popped
+[46:10.2] up in-game? Oh this was here there. Yes this is how it is. It must have been there the whole time.
+[46:15.4] For fixture stuff I like this font. Maybe for stuff like this, sure. And then for like
+[46:23.2] other stuff. It is a different font. Yeah use a different font potentially. I use the more
+[46:28.0] bold one that we've been using. Where does the goal stand? It should be showing me what
+[46:32.9] is talking about. We'll go through this, we'll go, we'll redo this once we see it actually.
+[46:43.9] Yeah, we'll redo this, we'll redo this. Yeah, sure.
+[46:51.4] Sure.
+[46:56.1] Why? Why? Why is that? That instead of real life?
+[47:01.5] It should be a little bit less than the National League.
+[47:11.3] Mikey will sort this out.
+[47:17.3] Yeah, sure.
+[47:22.9] That's Home and Shop 2.
+[47:24.2] No, Arrow's on Home and Shop 2.
+[47:25.6] I think the arrows should be more discrete than they are like it should be
+[47:30.4] obvious but kind of discrete so when it's saying the arrows it means like
+[47:38.1] yeah like smaller lower opacity but it looks good looks better than it did
+[47:43.3] before shouldn't be as bold yeah
+[47:52.2] I'll have to see that.
+[47:53.8] That sounds alright there.
+[47:57.3] The downs on this one yeah.
+[47:58.4] Vault colours low green medium high red.
+[48:01.8] We're gonna send you somewhere you're not gonna like.
+[48:04.9] We'll have a look at it.
+[48:05.9] We'll have a look at that.
+[48:08.4] League page opens on the table.
+[48:10.2] Yep, sure.
+[48:11.9] Training page in classic turns the whole top bar and bottom nav green too.
+[48:16.5] Don't know what you mean, mate.
+[48:19.1] I think that was fine.
+[48:20.8] That's fine.
+[48:22.1] The new UI should be, by the way, when the game loads in, it should load into the new...
+[48:28.9] All the changes we made should be the base game now.
+[48:31.9] And the old UI should be the toggle that you toggle into to see what it was before.
+[48:36.0] Because this is... We built a better base now.
+[48:38.7] We can figure it out from here.
+[48:41.3] We can always get the goat part that Leo was talking about back if we need.
+[48:47.6] The old match day conditions, oh yeah this was something as well, like when you're shooting
+[48:51.5] in NSS, I've got a whole, my next project's like making the game look way more like NSS
+[48:56.8] now, like in game, I'll be honest, because it's so much better bro.
+[49:02.2] I want to get into the game, it's so much better.
+[49:06.6] I like Oz but just let me in the game, it just feels amazing.
+[49:12.7] Yeah kill yourself.
+[49:13.4] I guess we'll never know.
+[49:16.0] But sometimes when you're shooting in the game you see a wind in the top right and it's raining.
+[49:21.0] And the texture of the pitch is just so much better.
+[49:25.0] App Store apps, sure, for now. We'll figure it out.
+[49:29.5] Maybe App Store apps can be star racing to unlock.
+[49:35.4] There we go.
+[49:36.8] We'll have to create a star pass, like we'll have to come up all city and then create some huge star pass for sure.
+[49:43.8] Great features for your log.
+[49:45.8] Nah, two chats for Ivo. There'll be different stats, technique, vision, etc.
+[49:52.1] Different stats, different timings for when you'll get those.
+[49:56.5] Oh, by the way, just up one about the star pass.
+[49:59.9] I think that's a good opportunity to do the tutorial type thing.
+[50:04.1] Maybe your first
+[50:08.7] Maybe it's something maybe when you hit the next level it automatically triggers it
+[50:15.4] Maybe you get something
+[50:21.0] Like a
+[50:23.0] Phone a phone background or something
+[50:26.5] Maybe something like that. Yeah something which which you see
+[50:34.4] yuki talk and I got this on my phone okay stop our strip 100 that was only
+[50:41.1] plus-minus light around you that's let's just have as actually we were talking
+[50:49.8] about the cash for our system before so just research that and then apply it
+[50:54.8] to that we don't know we don't really want it the exact same way as
+[50:58.8] before okay next star pass each gate has its own
+[51:03.8] padlock card or badge on it just ignore i don't really get
+[51:08.2] that i forget stuff still that well i don't i don't it's just let's just
+[51:14.1] keep my wife and i'll it was nothing i'm not
+[51:18.0] ignored well we asked it to change all this stuff anyway so yeah
+[51:21.1] just ignore those manager's head is oh so it's either real image or
+[51:27.5] cotton for now we don't have real images of managers faces anyway I think just
+[51:33.6] fake faces maybe just face it on an image of them somewhat like to the
+[51:38.3] point where no one could sue yeah but it's somewhat right like skin color
+[51:44.0] hair type we shouldn't be able to see us face some AI images
+[51:48.5] skin color it's a copy of an AI image
+[51:51.5] skin color like there's any black managers
+[51:57.7] weakest pictures gold suit silver trunks. Yep I mean, oh yeah redo the whole store
+[52:04.2] with all the new Blender stuff by the way. Yep spend more time on proper
+[52:11.8] horses now as well. There's no way it's still building this.
+[52:17.6] Has to be done now. The trials done okay here we go wait we can actually
+[52:25.2] go for the trial. Final filming part A.
+[52:34.6] Come on, be done. I'll do something.
+[52:39.6] I've been waiting so long. That's it. It's literally doing the last thing and then
+[52:46.5] you I'll push it straight away as soon as it's done that. Here have a look at the
+[52:50.5] Let's have a look at the trial stuff actually.
+[52:55.8] Did you just change the penalties? Or is it like, almost like a different system?
+[53:01.8] Well there's nothing ready to see, I just simplified the trial a lot.
+[53:08.5] Actually yeah, we don't even need to see that. This is actually it. Each drill is one attempt, your player only shows on penalties and free kicks.
+[53:14.7] I like the NSS thing where you can't see your player when you're kicking.
+[53:17.4] I don't know what we think about that. I know there's probably a reason that we changed that but
+[53:22.5] No, to be honest. I'm okay with that. It's just
+[53:26.9] That's not the way we did it and if we want the player in there
+[53:31.0] I'm also fine with that. I think it should be there on pens and free kicks
+[53:36.3] Yeah, I think it should be there on pens and free kicks to be honest
+[53:42.0] Also side note like the the passing thing from
+[53:45.5] the fiber side I think that should be like an unlock in the the star levels
+[53:50.4] that unlocks a different style of scenario and stuff you can tap the pass
+[53:55.3] instead of having to drag back things like captain penalties could be unlocks
+[54:02.5] like it's like almost like an ego unlock maybe if your fame is one of
+[54:08.7] the early ones your fame has to hit a certain point as well or something
+[54:12.6] Maybe I could see something like that.
+[54:16.0] Yeah maybe that could even just be like, doesn't have to just be a star pass, maybe it's like an unlocks area as well.
+[54:23.4] Where you need to hit certain conditions to obtain different abilities.
+[54:29.1] Like penalty taker, free kick taker, captain.
+[54:33.2] Yeah yeah. How much? Oh that's got to not be updated. It's not even going to up 1% for this whole thing.
+[54:42.2] There was also, okay, the last thing was the, wait, I mean, oh, every screen combined.
+[54:48.4] Okay, we can see everything.
+[54:49.4] Oh, why has it done that?
+[54:50.5] That's cool.
+[54:52.2] Nah.
+[54:52.7] Wait, it's just changed there.
+[54:55.3] We haven't even seen that for our home screen before.
+[54:58.3] Nah, go back, go back to, it's gonna, I mean, I'm gonna push it anyway, but
+[55:03.8] go back to how, what we spoke about it being really good, I think, just keep
+[55:09.1] it keep it the same keep it the same as where is the flippin build
+[55:23.4] keep it the same this this page I think this one like the green this is
+[55:32.0] the home page and the league is the currently the new training is good that
+[55:38.8] we spoke about obviously the pills we already spoke about being a more like
+[55:44.4] animated non-boxing and then the training also with the green is the new
+[55:49.4] training because right now right now I do not want that everything else it
+[55:57.1] seems like well oh yeah that's the training okay cool yeah everything else
+[56:01.8] seems seems to be of order I don't know why the phone isn't updated to
+[56:06.0] everything you need to lock it in basically the cord is what we're saying.
+[56:10.8] I mean it should be changing depending on what we said here as well. Yeah and then the
+[56:15.9] notebook soundboard.
+[56:16.8] Sam board these not the ones that already in the game I don't think so
+[56:33.2] Yay!!
+[56:33.8] Okay, that's so good.
+[56:40.1] Oh, money paid-in gonna hit nice.
+[56:52.5] Aww, it was dead.
+[56:54.0] Aww, it's dead. Money paid-in needs fixing.
+[56:56.5] Oh, that's NSF.
+[57:00.2] oh i don't know i feel like the star it should like be more of this i like it but a little
+[57:07.5] bit more on the achievement unlocked as well
+[57:10.3] oh that sounds too much like a coin that sounds that sounds more like money yeah
+[57:16.3] wait yeah what the
+[57:23.6] This is some sort of robot gooning or something.
+[57:28.4] Yeah.
+[57:29.9] Yeah.
+[57:31.1] Yeah.
+[57:35.8] This guy's really spooky.
+[57:39.8] Oh yeah.
+[57:42.2] I think I've just given so much to it that we're just gonna have to see what actually
+[57:48.5] comes out of us at this point.
+[57:49.8] But you see the vision of what I was trying to do.
+[57:53.8] How long is that video?
+[57:55.2] Oh, another hour.
+
+
+# ---- SECOND PASS (beam 5, with a hint prompt), 42:00-49:20 ----
+[42:00.0] 3 for them, 3 for you. Basically I made it so that you take the winning or losing pen or whatever.
+[42:05.4] If you miss the pen you basically get a bigger chance of going to National League South. Obviously
+[42:10.9] the user doesn't know this. If you score it you have a bigger chance to go into National League.
+[42:14.8] I personally don't think that you should ever get scouted above National League because
+[42:18.3] I think it just messes up the progression of the game a lot. But we can discuss how to make
+[42:25.0] that possible I mean this this is very interesting this is fixed a little bit
+[42:32.0] at least well I can't say that's the money yeah and she has detail just
+[42:36.3] don't think that's why wouldn't I be the manager just don't think that's o
+[42:39.7] dot ban Bianchi to be honest with you we can make I am reading all this
+[42:49.5] Yes, but the start rating can go down, apparently.
+[42:52.3] It can go down.
+[42:53.3] Wait, I actually need to see this if I was going to mess with it.
+[42:57.2] You can understand this.
+[43:02.2] Oh well, I'm going to see this anyway once the start says re-mat now.
+[43:06.5] Yeah, basically if you have a match rating under 5.5, it costs a fifth of your level's points.
+[43:12.5] The level only drops after five poor matches in a row, if you're actually at the bottom
+[43:16.5] of a level.
+[43:17.5] A 6.5 match breaks the run.
+[43:19.3] I think that's pretty cool. Um,
+[43:23.9] scout would start scored the last penalty equals 50% national league, 20% north,
+[43:27.8] 20% south, missed equals 20, 40, 40. Um,
+[43:34.7] I don't really know. I think there has to be an element of,
+[43:38.3] not just the penalty,
+[43:39.4] the whole trial has to be taken into account and then scoring the penalty
+[43:42.9] maybe should add like a 20% chance of national league and missing it.
+[43:46.9] Maybe it has like a minus 20%. I don't think it should be the be-all-end-all, to be honest.
+[43:55.2] I don't know. I don't know what you think.
+[43:58.3] Uh, I don't know. Yeah, I have to think about it for the leagues.
+[44:05.5] Okay, uh...
+[44:08.4] yeah i'm happy with that i mean you're gonna do this anyway so let's just accept that
+[44:21.2] i don't even understand what that means you're gonna we're gonna need to look over this
+[44:25.5] anyway i don't think this is really yeah
+[44:32.4] i think oh i see so it is just the animation i don't i think you should be able to skip
+[44:37.3] it as well um i don't mind it being like you can just tap and you get through it to be honest so
+[44:44.1] i don't think you should hold the match behind something i think if they want to keep tapping
+[44:47.7] and just get into the game yeah if they want to press kick off i think you got them i liked
+[44:53.0] how the player's position looked in that in that one with the other top and you click it
+[44:57.6] and unlocks. I'll do that after because we need teams that can get promoted and
+[45:12.0] low energy prompt the line to start match 65 is probably good right wait so
+[45:32.4] there's no screen which shows whether you're starving is that how we're doing
+[45:38.3] right now um is there a screen shows whether you're starting i don't really know i haven't
+[45:44.6] seen the actual game for so long that it's getting confusing or what it's actually going
+[45:48.8] to look like so it's probably best to just try and push it just even for that then
+[45:55.2] the old bold text i think no i think the we like the the normal text here especially
+[46:01.8] Really? For the league, all of this stuff should stay how it is with the font and everything.
+[46:09.4] How is this just popped up in-game? Oh, this was here, there. Yes, this is how it is.
+[46:13.6] It must have been there the whole time.
+[46:16.7] For fixture stuff, I like this font. Maybe stuff like this, sure. And then for like,
+[46:23.4] other stuff.
+[46:24.4] It is a different font, yeah.
+[46:25.4] Yeah, use a different font, potentially. I use the more bold one that we've been using.
+[46:29.9] does the goal stand? I should be showing me what it's talking about. We'll go through
+[46:37.3] this last, we'll go, we'll redo this once we see it actually. We'll redo this, we'll
+[46:45.9] we do this yeah sure sure
+[46:56.3] why why why is that that instead of real life
+[47:01.5] uh it should be it should be a little bit less than the national league
+[47:09.9] that's that's mikey will sort this out
+[47:15.9] yeah sure that's home shop to is now arrows on home and shop to I think the
+[47:26.7] arrows should be more discreet than they are like it should be obvious but
+[47:31.0] kind of discreet so when it's saying the arrows it just means like yeah
+[47:38.8] like smaller lower opacity but it looks good looks better than it did
+[47:43.3] before shouldn't be as bold yeah I'll have to see that sounds all right yeah
+[47:58.0] bolt colors low green medium high red we're gonna we're gonna we're gonna
+[48:03.1] send you somewhere the page opens on the table yep sure training page in
+[48:13.0] classic turns the whole top bar and bottom nav green too. Don't know what you mean mate.
+[48:18.8] I think that was, that was fine. That's fine yeah. The new UI should be by the way the
+[48:25.9] when the game loads in it should load into the new all the changes we made should be the base
+[48:30.9] game now and the old UI should be the toggle that you toggle into to see what
+[48:35.0] it was before because this is we built a better base now and we can we can figure out from
+[48:40.2] here we can always get the goat part that Leo's talking about back if we need
+[48:47.0] the old matchday conditions oh yeah this was something as well like when
+[48:50.9] you're shooting in NSS I've got a whole my next projects like making the game
+[48:54.9] look way more like NSS now like in game I'll be honest because it's so
+[49:00.1] It's so much better, bro. I want to get into the game. It's so much better. I like Oz,
+[49:07.6] but just let me in the game. It just feels amazing. Yeah, kill yourself. I guess we'll
+[49:14.8] never know. But like sometimes when you're shooting in the game, you see like a wind
+[49:18.5] in the top right and it's like raining and the texture of the pitch is just so much
+[49:22.8] better.
+
+# ---- SECOND PASS (beam 5), 49:20-52:20 ----
+[49:20.0] and the detection of the pitch is just so much better yeah app store apps sure for now we'll
+[49:28.2] figure out maybe it'll be a diff maybe app store apps can be star racing to unlock yeah
+[49:36.2] there we go we'll have to create star pass like we'll have to come up all city and then create
+[49:41.2] some huge star pass for sure great features that you'll know nah two two chats two chats
+[49:48.0] for evo there'll be different stats technique vision etc different different stats different
+[49:53.4] different timings for when you'll get those oh by the way just up one about the star class
+[49:59.8] yeah i think that's a good opportunity to do at the tutorial type thing where maybe
+[50:04.8] your first one more happens after your first game um maybe it's something maybe when you hit
+[50:11.3] the next level it automatically triggers it maybe you get something which is dying
+[50:18.0] and unlock on the phone like um i don't know a phone a phone background or something
+[50:26.8] maybe something like that yeah something which which you can actually see yeah yeah
+[50:33.1] um you keep talking i gotta do something on my phone okay cool star past trip
+[50:39.6] all 100 levels or any plus minus five around you um let's let's just have it as
+[50:46.6] Actually, we were talking about the Clash Royale system before, so just research that
+[50:53.6] and then apply it to that, because we don't really want it the exact same way as before.
+[51:00.6] Okay, next, Star Pass, each gate has its own Padlock card or badge on them.
+[51:05.6] I just ignore...
+[51:07.6] I don't really get the gate stuff still that well, so...
+[51:10.6] I don't.
+[51:12.6] just let's just keep my wife and now there was nothing i'm not
+[51:18.0] ignored well we asked her to change all this stuff anyway so yeah you can just ignore those
+[51:22.8] the manager's head is oh so it's either real image or a cartoon that is made for now we don't
+[51:30.2] have real images of managers faces anyway i think just fake faces maybe just base it on
+[51:36.1] an image of them somewhat like to the point where no one could sue us for what yeah for it
+[51:41.9] but it's somewhat right like skin color hair type we shouldn't be able to see us based on
+[51:47.5] AI skin color it's a copy of an AI skin color like there's any black managers
+[51:54.8] sad times um weakest pictures gold suit yeah i mean yeah oh yeah redo the whole store with
+[52:04.2] all the new blender stuff by the way um yeah spend more time on spend more time on proper
+[52:11.8] wars is now as well. There's no way it's still building. There's no way it's still
+[52:17.1] building this. It has to be done.

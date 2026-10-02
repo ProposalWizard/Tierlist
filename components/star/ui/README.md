@@ -80,15 +80,20 @@ const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {
 ```
 
 `FlatPanel` has no rounded corners and no drop shadow; `fade` is "both" (soft
-top and bottom), "top", "bottom" or "none". `SquareBar` (and `StatBar`, which
-is now the same shape) are square, outlined and ticked; `animate` marches
-stripes along the fill. The top of EVERY game screen is the same two
+top and bottom), "top", "bottom" or "none". `SquareBar` and `StatBar` are both
+the LIQUID bar (`ui/LiquidBar.tsx`, v0.23.1): one smooth glowing fill, rounded
+ends, no tick marks, glides to new values; `animate` keeps a light drifting
+along it. The top of EVERY game screen is the same two
 pieces (Harry, 1 Oct 2026, "the pills at the top aren't uniform"): `GameBar`
 (home, name, age, money, "?", settings) and `TopHud` (one block: star rating |
 energy with its can, USE or BUY). Neither changes with the screen; a screen's
 own extras go in a title row UNDER them. `DashboardShell` renders both; full
-screens get them through `ScreenShell hud={…}`. One heavy font
-(Anton) is set on `.star-root` in `flat.css` — do not set a font by hand.
+screens get them through `ScreenShell hud={…}`. The heavy
+font (Anton) is for titles and big numbers only (v0.23.1): headings, `.sk-display`,
+`.sk-num` and black-weight text of 16px or more. Everything else (lists, the
+league, fixtures, tables, buttons) is the normal font. Tag, do not set a font by
+hand. `TopHud` picks its left cell per screen from `HUD_SPEC` (star rating;
+happiness on Relations; reputation on Style); energy is always on the right.
 
 ## Navigation the NSS way (v0.23) — `ui/Nav.tsx`
 

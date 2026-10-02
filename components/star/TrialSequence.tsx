@@ -379,13 +379,18 @@ export default function TrialSequence({
             the screen. `attemptSeed` rather than `trial.seed`, like the vision
             and penalty stages: reproducible while you play it, and a resume
             gets new waves at the bumped difficulty. `embedded` needs a box, and
-            this is the same shape the striking stages use. Your figure is not
-            drawn (`hideYou`): Harry, "on penalties I like our guy being there,
-            and maybe free kick … outside of that we just don't have him". */}
+            this is the same shape the striking stages use.
+            Your figure IS drawn again (Harry, 2 Oct 2026: "I'm now invisible,
+            which in this game mode I think isn't great. It should probably be
+            a visible player for that"), and the camera is the calm one ("the
+            changing of the camera angle is a bit crazy" — see CALM_CAMERA in
+            FirstPersonDribble.tsx; the real match keeps its own). */}
         <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-gray-200">
           <FirstPersonDribble
             embedded
-            hideYou
+            calmCamera
+            // Blue like you are in every other trial stage (Harry, 2 Oct 2026).
+            kits={{ you: { shirt: "#2563eb", shorts: "#f8fafc" } }}
             seed={attemptSeed(trial)}
             pace={skills.pace}
             oppStrength={dribble.oppStrength}
@@ -419,7 +424,7 @@ export default function TrialSequence({
   // Each one reports a 0-1 mean quality for the whole stage and nothing else —
   // the difficulty scaling is `recordStage`'s job, and a screen that applied
   // it too would apply it twice. Every drill is ONE attempt (Harry: "it's just
-  // a tutorial on how to play the game"); only the shootout has more.
+  // a tutorial on how to play the game"); only Find the Pass (five quick goes, 2 Oct) and the shootout have more.
   if (stage === "freeKicks") {
     return shell(
       <>

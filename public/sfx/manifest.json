@@ -99,18 +99,18 @@
     {
       "name": "coin-in",
       "file": "/sfx/coin-in.mp3",
-      "duration": 0.84,
-      "kb": 10.1,
+      "duration": 1.41,
+      "kb": 16.9,
       "purpose": "Money paid in",
-      "prompt": "Coins dropping into a pile, bright cash register ching, mobile game reward."
+      "prompt": "Getting paid: a quick rustle of paper banknotes being counted out, then a cash register drawer opening with a bright ka-ching. Money, not a single coin."
     },
     {
       "name": "star-tick",
       "file": "/sfx/star-tick.mp3",
-      "duration": 0.52,
-      "kb": 6.5,
+      "duration": 0.84,
+      "kb": 10.1,
       "purpose": "Star bar filling, one tick",
-      "prompt": "Single tiny bright sparkle tick, mobile game progress bar."
+      "prompt": "Bright satisfying magical star sparkle chime, a shimmering twinkle with a clear bell ping, mobile game reward, full and rich not tiny."
     },
     {
       "name": "level-up",
@@ -123,10 +123,10 @@
     {
       "name": "achievement-pop",
       "file": "/sfx/achievement-pop.mp3",
-      "duration": 1.04,
-      "kb": 12.6,
+      "duration": 1.65,
+      "kb": 19.6,
       "purpose": "Achievement unlocked",
-      "prompt": "Satisfying achievement unlocked pop with a sparkle chime, mobile game."
+      "prompt": "Big satisfying achievement unlocked fanfare: a punchy pop, a bright rising chime arpeggio and a sparkling shimmer tail, celebratory mobile game reward."
     },
     {
       "name": "breaking-news",
