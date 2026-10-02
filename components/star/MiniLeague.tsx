@@ -13,6 +13,7 @@ import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import ClubBadge from "./ClubBadge";
+import { useState } from "react";
 import { FlatPanel, rgba, tint, useCountUp } from "./ui";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -66,5 +67,45 @@ export default function MiniLeague({ career, glow, rows = 5, onOpen }: { career:
         })}
       </div>
     </FlatPanel>
+  );
+}
+
+/** Height of the closed league dropdown, so Home can budget for it. */
+export const LEAGUE_DROPDOWN_H = 24;
+
+/**
+ * THE LEAGUE AS A DROPDOWN (Harry, 1 Oct 2026: "remove the table or make it
+ * a dropdown", so the sky behind the goal shows). Closed it is one slim row:
+ * the league, your position and a chevron. Open, the rows either side of you
+ * drop down over the stand, with Full table to open the League screen.
+ */
+export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; glow: string; onOpen?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const table = sortLeague(career.league);
+  const me = table.findIndex((t) => t.name === career.player.club);
+  const pos = useCountUp(me + 1, 700);
+  if (me < 0) return null;
+  return (
+    <div className="relative z-20">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="kib-press flex w-full items-center justify-between px-3 text-left"
+        style={{ height: LEAGUE_DROPDOWN_H, background: "linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.12))", textShadow: "0 1px 3px rgba(0,0,0,.85)" }}
+      >
+        <span className="text-[11px] font-black uppercase leading-none tracking-[0.14em] text-white">🏆 {leagueNameFor(divisionOf(career))}</span>
+        <span className="flex items-center gap-1.5 leading-none">
+          <span className="text-[13px] font-black tabular-nums text-yellow-200">{Math.round(pos)}<span className="text-[9px]">{ordinal(me + 1)}</span></span>
+          <span className="text-[12px] font-black text-white transition-transform" style={{ transform: open ? "rotate(180deg)" : undefined }}>▾</span>
+        </span>
+      </button>
+      {open && (
+        <div className="absolute inset-x-0 top-full" style={{ animation: "kib-drop .18s ease-out", background: "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
+          <style>{`@keyframes kib-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}`}</style>
+          <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} />
+        </div>
+      )}
+    </div>
   );
 }

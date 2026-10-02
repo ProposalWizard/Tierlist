@@ -5,6 +5,7 @@ import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
 import { getTuning } from "./tuningStore";
 import { divisionOf } from "./clubs";
 import { rememberFetchedSquads } from "./squadSaveCodec";
+import { profileOf } from "./data/clubProfiles";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -262,7 +263,12 @@ function avgOverallFor(club: string): number {
   if (div === "national_league") return 55;
   // National League North/South (1 Oct 2026): one rung below, three points
   // lower — the same size of step League Two -> National League takes.
-  if (div === "national_league_north" || div === "national_league_south") return 52;
+  // North/South 53 and Step 3 50, as given (2 Oct 2026 club sheet); a club
+  // with its own figure in that sheet uses it.
+  const given = profileOf(club)?.avgRating;
+  if (given !== undefined && (div === "national_league_north" || div === "national_league_south" || div === "step3_north" || div === "step3_south")) return given;
+  if (div === "national_league_north" || div === "national_league_south") return 53;
+  if (div === "step3_north" || div === "step3_south") return 50;
   return 73;
 }
 

@@ -7,7 +7,7 @@ import {
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
-import { loadLineup } from "@/lib/star/lineupStore";
+import { loadLineup, managerFor } from "@/lib/star/lineupStore";
 import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, type Pickable } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { kitsOf, type Kit } from "@/lib/star/kits";
@@ -888,7 +888,7 @@ function Boardroom({
           <div>
             <div className="font-black text-white">{club}</div>
             <div className="text-[10px] text-white/90">
-              Manager: {isOwnClub ? (career.manager?.name || "Vacant") : (loadLineup(club)?.manager || state.managerName || "Vacant")}
+              Manager: {isOwnClub ? (career.manager?.name || "Vacant") : (managerFor(club) || state.managerName || "Vacant")}
             </div>
           </div>
         </div>
@@ -1759,7 +1759,7 @@ function ManagerPanel({
   // actually displays.
   const current = club === career.player.club
     ? career.manager?.name
-    : (loadLineup(club)?.manager || ownedClubState(career, club).managerName);
+    : (managerFor(club) || ownedClubState(career, club).managerName);
   // The real, single source of truth for "who's actually on the market" —
   // career.availableManagers, maintained by every hire/sack this game
   // already does (careerFlow.ts's own-club sacking, replaceManagerForOwnedClub

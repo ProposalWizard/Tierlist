@@ -4,7 +4,7 @@ import { divisionOf, divisionRank, type CareerDivision } from "./calendar";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
-  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
+  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS, STEP3_NORTH_CLUBS, STEP3_SOUTH_CLUBS,
 } from "./clubs";
 import { splitByRegion, latitudeOf } from "./nonLeagueRegions";
 
@@ -71,6 +71,56 @@ export interface DivisionMembership {
    */
   nationalLeagueNorth: string[];
   nationalLeagueSouth: string[];
+  /**
+   * Step 3: four clubs waiting below each region (Mikey, 2 Oct 2026). Not
+   * divisions: each season all four go up, and their region's bottom four
+   * (21st-24th) come down to wait in their place.
+   */
+  step3North: string[];
+  step3South: string[];
+}
+
+/**
+ * 2026/27's real North/South line-up (Mikey, 2 Oct 2026) replaced nine
+ * clubs the first build had. A save from before that (no Step 3 lists yet)
+ * swaps them for the joiners at its next rollover — never your own club,
+ * which carries on wherever it is.
+ */
+const RETIRED_REGIONAL = new Set([
+  "Alfreton Town", "Curzon Ashton", "Leamington", "Peterborough Sports",
+  "Bath City", "Chippenham Town", "Eastbourne Borough", "Enfield Town", "St Albans City",
+]);
+const JOINERS = {
+  north: ["Harborough Town", "Hebburn Town", "Oxford City", "Spalding United"],
+  south: ["Billericay Town", "Dover Athletic", "Farnham Town", "Folkestone Invicta", "Walton & Hersham"],
+};
+
+function catchUpRegional(m: DivisionMembership, you: string): DivisionMembership {
+  const everywhere = new Set(Object.values(m).flat());
+  const swap = (list: string[], joiners: string[]) => {
+    const spare = joiners.filter(j => !everywhere.has(j));
+    return list.map(c => {
+      if (!RETIRED_REGIONAL.has(c) || c === you || spare.length === 0) return c;
+      const j = spare.shift()!;
+      everywhere.add(j);
+      return j;
+    });
+  };
+  const next = {
+    ...m,
+    nationalLeagueNorth: swap(m.nationalLeagueNorth, JOINERS.north),
+    nationalLeagueSouth: swap(m.nationalLeagueSouth, JOINERS.south),
+  };
+  // Step 3 starts as given, minus anybody already somewhere on the ladder.
+  const placed = new Set([
+    ...next.premier, ...next.championship, ...next.leagueOne, ...next.leagueTwo,
+    ...next.nationalLeague, ...next.nationalLeagueNorth, ...next.nationalLeagueSouth,
+  ]);
+  return {
+    ...next,
+    step3North: STEP3_NORTH_CLUBS.filter(c => !placed.has(c)),
+    step3South: STEP3_SOUTH_CLUBS.filter(c => !placed.has(c)),
+  };
 }
 
 export function membershipOf(career: CareerState): DivisionMembership {
@@ -83,7 +133,7 @@ export function membershipOf(career: CareerState): DivisionMembership {
   // these three new tiers. A save like that starts these three tiers fresh
   // from the season-1 lists, exactly the same "absent means not caught up
   // yet" convention every other schema addition in this game already uses.
-  return {
+  const m: DivisionMembership = {
     premier: d?.premier ?? [...PREMIER_LEAGUE_CLUBS],
     championship: d?.championship ?? [...CHAMPIONSHIP_CLUBS],
     leagueOne: d?.leagueOne ?? [...LEAGUE_ONE_CLUBS],
@@ -91,7 +141,12 @@ export function membershipOf(career: CareerState): DivisionMembership {
     nationalLeague: d?.nationalLeague ?? [...NATIONAL_LEAGUE_CLUBS],
     nationalLeagueNorth: d?.nationalLeagueNorth ?? [...NATIONAL_LEAGUE_NORTH_CLUBS],
     nationalLeagueSouth: d?.nationalLeagueSouth ?? [...NATIONAL_LEAGUE_SOUTH_CLUBS],
+    step3North: d?.step3North ?? [],
+    step3South: d?.step3South ?? [],
   };
+  // No Step 3 yet: a save from before 2 Oct 2026 (or a fresh career, whose
+  // lists are already the new ones and come through unchanged).
+  return d?.step3North === undefined ? catchUpRegional(m, career.player.club) : m;
 }
 
 // ── Strength, for a club that may not be in your division ───────────────────
@@ -111,6 +166,7 @@ function baselineFor(tier: keyof DivisionMembership): number {
     : tier === "leagueOne" ? 63
     : tier === "leagueTwo" ? 58
     : tier === "nationalLeague" ? 55
+    : tier === "step3North" || tier === "step3South" ? 45
     : 50; // nationalLeagueNorth / nationalLeagueSouth — one rung, side by side
 }
 
@@ -125,7 +181,7 @@ function nameNoise(club: string): number {
 
 function strengthTable(career: CareerState, members: DivisionMembership): Map<string, number> {
   const out = new Map<string, number>();
-  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeagueNorth", "nationalLeagueSouth"] as const) {
+  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeagueNorth", "nationalLeagueSouth", "step3North", "step3South"] as const) {
     for (const club of members[tier]) out.set(club, baselineFor(tier) + nameNoise(club));
   }
   // Anything this career genuinely knows about beats the estimate.
@@ -150,7 +206,9 @@ export function estimateClubStrength(career: CareerState, club: string): number 
     : members.leagueTwo.includes(club) ? "leagueTwo"
     : members.nationalLeague.includes(club) ? "nationalLeague"
     : members.nationalLeagueNorth.includes(club) ? "nationalLeagueNorth"
-    : "nationalLeagueSouth";
+    : members.nationalLeagueSouth.includes(club) ? "nationalLeagueSouth"
+    : members.step3North.includes(club) ? "step3North"
+    : "step3South";
   return baselineFor(tier) + nameNoise(club);
 }
 
@@ -198,7 +256,9 @@ export interface PlayOffTie {
 }
 
 export interface PlayOffResult {
-  /** 3rd v 6th, then 4th v 5th. */
+  /** North/South only: 4th v 7th, then 5th v 6th, one match each. */
+  qualifiers?: PlayOffTie[];
+  /** 3rd v 6th, then 4th v 5th (North/South: 2nd and 3rd v the qualifiers' winners, one match). */
   semiFinals: PlayOffTie[];
   final: { home: string; away: string; hs: number; as: number; winner: string };
   promoted: string;
@@ -260,6 +320,56 @@ export function resolvePlayOffs(
   };
 }
 
+/**
+ * One match, the higher seed at home (a regional play-off). Level after 90
+ * minutes: extra time, then penalties. Extra time is a 35% chance of a goal,
+ * weighted to the stronger side; penalties are a coin flip.
+ */
+export function singleMatchTie(
+  high: string, low: string, strength: Map<string, number>, rng: () => number,
+): PlayOffTie {
+  const sh = strength.get(high) ?? 50, sl = strength.get(low) ?? 50;
+  const score = simulateFixtureScore(sh, sl, rng);
+  let hs = score.home, as = score.away;
+  let winner: string;
+  if (hs !== as) winner = hs > as ? high : low;
+  else if (rng() < 0.35) {
+    winner = rng() < sh / (sh + sl) ? high : low;
+    if (winner === high) hs++; else as++;
+  } else winner = rng() < 0.5 ? high : low;
+  return { home: high, away: low, legs: [{ hs, as }], winner };
+}
+
+/**
+ * NATIONAL LEAGUE NORTH / SOUTH PLAY-OFFS (2026/27 rules, given by Mikey,
+ * 2 Oct 2026). 2nd-7th, one place:
+ *   Qualifying round: 4th v 7th, 5th v 6th (4th and 5th at home).
+ *   Semi-finals: 2nd v winner of 5th/6th, 3rd v winner of 4th/7th (2nd and
+ *   3rd at home).
+ *   Final: one match, at the higher-finishing finalist's ground.
+ * Every tie is one match, extra time and penalties if level.
+ */
+export function resolveRegionalPlayOffs(
+  table: LeagueTeam[], strength: Map<string, number>, rng: () => number,
+): PlayOffResult | null {
+  const sorted = sortLeague(table).map(t => t.name);
+  if (sorted.length < 7) return null;
+  const [, second, third, fourth, fifth, sixth, seventh] = sorted;
+  const q1 = singleMatchTie(fourth, seventh, strength, rng);
+  const q2 = singleMatchTie(fifth, sixth, strength, rng);
+  const s1 = singleMatchTie(second, q2.winner, strength, rng);
+  const s2 = singleMatchTie(third, q1.winner, strength, rng);
+  const higher = sorted.indexOf(s1.winner) < sorted.indexOf(s2.winner) ? s1.winner : s2.winner;
+  const lower = higher === s1.winner ? s2.winner : s1.winner;
+  const f = singleMatchTie(higher, lower, strength, rng);
+  return {
+    qualifiers: [q1, q2],
+    semiFinals: [s1, s2],
+    final: { home: f.home, away: f.away, hs: f.legs[0].hs, as: f.legs[0].as, winner: f.winner },
+    promoted: f.winner,
+  };
+}
+
 // ── Self-healing: a division is always exactly the right size ──────────────
 
 const PREMIER_SIZE = PREMIER_LEAGUE_CLUBS.length;
@@ -269,6 +379,7 @@ const LEAGUE_TWO_SIZE = LEAGUE_TWO_CLUBS.length;
 const NATIONAL_LEAGUE_SIZE = NATIONAL_LEAGUE_CLUBS.length;
 const NORTH_SIZE = NATIONAL_LEAGUE_NORTH_CLUBS.length;
 const SOUTH_SIZE = NATIONAL_LEAGUE_SOUTH_CLUBS.length;
+const STEP3_SIZE = STEP3_NORTH_CLUBS.length;
 
 // How many move at each of the three new boundaries, given directly:
 //   League One <-> Championship: 3 up (top 2 automatic + 1 playoff-modeled
@@ -293,6 +404,8 @@ const LEAGUE_TWO_NATIONAL_COUNT = 2;
 const REGIONAL_UP_COUNT = 2;
 /** Down from the National League, into the two regions together. */
 const NATIONAL_DOWN_COUNT = REGIONAL_UP_COUNT * 2;
+/** Down from each region into its Step 3 (21st-24th), and up from each Step 3. */
+const REGIONAL_DOWN_COUNT = 4;
 
 /**
  * Fix a ladder that has drifted from the shape it's supposed to have —
@@ -335,9 +448,11 @@ function reconcileLadder(
   premier: string[], championship: string[], leagueOne: string[], leagueTwo: string[],
   nationalLeague: string[], north: string[], south: string[], limbo: string[],
   strength: Map<string, number>, rng: () => number,
+  step3North: string[] = [], step3South: string[] = [],
 ): {
   premier: string[]; championship: string[]; leagueOne: string[]; leagueTwo: string[];
-  nationalLeague: string[]; nationalLeagueNorth: string[]; nationalLeagueSouth: string[]; limbo: string[];
+  nationalLeague: string[]; nationalLeagueNorth: string[]; nationalLeagueSouth: string[];
+  step3North: string[]; step3South: string[]; limbo: string[];
 } {
   const seen = new Set<string>();
   const dedupe = (list: string[]) => list.filter(c => (seen.has(c) ? false : (seen.add(c), true)));
@@ -345,6 +460,7 @@ function reconcileLadder(
   let l1 = dedupe([...leagueOne, ...limbo]);
   let l2 = dedupe(leagueTwo), nl = dedupe(nationalLeague);
   let nn = dedupe(north), ns = dedupe(south);
+  let s3n = dedupe(step3North), s3s = dedupe(step3South);
 
   const byStrengthAsc = (list: string[]) => [...list].sort((a, b) => (strength.get(a) ?? 70) - (strength.get(b) ?? 70));
 
@@ -401,15 +517,20 @@ function reconcileLadder(
     const mover = [...ns].sort((a, b) => latitudeOf(b) - latitudeOf(a))[0];
     ns = ns.filter(x => x !== mover); nn = [...nn, mover];
   }
-  // Nothing sits below the regions. Anything still over size there is a
-  // broken save, not a season; it waits in limbo (which re-enters at League
-  // One, see forcedMovement.ts) rather than a 25th club playing a season.
-  const [northFinal, northOut] = shrink(nn, NORTH_SIZE, []);
-  const [southFinal, southOut] = shrink(ns, SOUTH_SIZE, []);
+  // Each region tops up from, or spills into, its own Step 3. Step 3 holds
+  // exactly four; anything beyond that is a broken save and waits in limbo
+  // (which re-enters at League One, see forcedMovement.ts).
+  [nn, s3n] = shrink(nn, NORTH_SIZE, s3n);
+  [ns, s3s] = shrink(ns, SOUTH_SIZE, s3s);
+  [nn, s3n] = grow(nn, NORTH_SIZE, s3n);
+  [ns, s3s] = grow(ns, SOUTH_SIZE, s3s);
+  const [step3NorthFinal, northOut] = shrink(s3n, STEP3_SIZE, []);
+  const [step3SouthFinal, southOut] = shrink(s3s, STEP3_SIZE, []);
 
   return {
     premier: p, championship: c, leagueOne: l1, leagueTwo: l2, nationalLeague: nl,
-    nationalLeagueNorth: northFinal, nationalLeagueSouth: southFinal, limbo: [...northOut, ...southOut],
+    nationalLeagueNorth: nn, nationalLeagueSouth: ns,
+    step3North: step3NorthFinal, step3South: step3SouthFinal, limbo: [...northOut, ...southOut],
   };
 }
 
@@ -444,6 +565,11 @@ export interface LadderOutcome {
   relegatedToSouth: string[];
   promotedFromNorth: string[];
   promotedFromSouth: string[];
+  /** North/South's bottom four, down to Step 3; and Step 3's four, up. */
+  relegatedFromNorth: string[];
+  relegatedFromSouth: string[];
+  promotedFromStep3North: string[];
+  promotedFromStep3South: string[];
   /** Only when the season being played ends in real play-offs — every
    *  division except the Premier League (see playoffs.ts). */
   playOffs: PlayOffResult | null;
@@ -563,14 +689,29 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     : weightedDraw(working.nationalLeague, strength, NATIONAL_DOWN_COUNT, rng, true);
   const regionUp = (key: "nationalLeagueNorth" | "nationalLeagueSouth", div: CareerDivision): string[] => {
     if (division !== div) return weightedDraw(members[key], strength, REGIONAL_UP_COUNT, rng);
+    // The champion up, and the 2nd-7th play-off winner (resolveRegionalPlayOffs).
     const played = career.playOffState?.promoted;
-    playOffs = played ? null : resolvePlayOffs(career.league, strength, rng, REGIONAL_UP_COUNT - 1);
+    playOffs = played ? null : resolveRegionalPlayOffs(career.league, strength, rng);
     const last = played ?? playOffs?.promoted;
     const auto = names.slice(0, REGIONAL_UP_COUNT - 1);
     return last ? [...auto, last] : auto;
   };
   const promotedFromNorth = regionUp("nationalLeagueNorth", "national_league_north");
   const promotedFromSouth = regionUp("nationalLeagueSouth", "national_league_south");
+  // 21st-24th go down to Step 3: a fact in the region you played, a weighted
+  // draw (the weak likelier) in the other.
+  const regionDown = (key: "nationalLeagueNorth" | "nationalLeagueSouth", div: CareerDivision, up: string[]): string[] =>
+    division === div
+      // Step 3 has no fixtures, so your own club never goes down there: a
+      // bottom-four finish forces a move first (page.tsx, "relegation-move");
+      // if that somehow didn't happen, the club above you goes instead.
+      ? names.filter(c => c !== career.player.club).slice(-REGIONAL_DOWN_COUNT)
+      : weightedDraw(members[key].filter(c => !up.includes(c)), strength, REGIONAL_DOWN_COUNT, rng, true);
+  const relegatedFromNorth = regionDown("nationalLeagueNorth", "national_league_north", promotedFromNorth);
+  const relegatedFromSouth = regionDown("nationalLeagueSouth", "national_league_south", promotedFromSouth);
+  // Step 3's four all go up.
+  const promotedFromStep3North = [...members.step3North];
+  const promotedFromStep3South = [...members.step3South];
   const promotedToNationalLeague = [...promotedFromNorth, ...promotedFromSouth];
   const { north: relegatedToNorth, south: relegatedToSouth } =
     splitByRegion(relegatedFromNationalLeague, promotedFromNorth.length);
@@ -593,10 +734,12 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     ...working.nationalLeague, ...relegatedFrom.leagueTwo, ...promotedToNationalLeague,
   ];
   const northRaw = [
-    ...members.nationalLeagueNorth.filter(c => !promotedFromNorth.includes(c)), ...relegatedToNorth,
+    ...members.nationalLeagueNorth.filter(c => !promotedFromNorth.includes(c) && !relegatedFromNorth.includes(c)),
+    ...relegatedToNorth, ...promotedFromStep3North,
   ];
   const southRaw = [
-    ...members.nationalLeagueSouth.filter(c => !promotedFromSouth.includes(c)), ...relegatedToSouth,
+    ...members.nationalLeagueSouth.filter(c => !promotedFromSouth.includes(c) && !relegatedFromSouth.includes(c)),
+    ...relegatedToSouth, ...promotedFromStep3South,
   ];
 
   // Reported directly, from a real save at season 3: the Premier League
@@ -612,10 +755,10 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   // only proves it wouldn't have happened starting from scratch.
   const {
     premier, championship, leagueOne, leagueTwo, nationalLeague,
-    nationalLeagueNorth, nationalLeagueSouth, limbo,
+    nationalLeagueNorth, nationalLeagueSouth, step3North, step3South, limbo,
   } = reconcileLadder(
     premierRaw, championshipRaw, leagueOneRaw, leagueTwoRaw, nationalLeagueRaw, northRaw, southRaw,
-    career.limboClubs ?? [], strength, rng,
+    career.limboClubs ?? [], strength, rng, relegatedFromNorth, relegatedFromSouth,
   );
 
   const NEXT_TIERS: { division: CareerDivision; clubs: string[] }[] = [
@@ -642,7 +785,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   return {
     division: nextDivision,
     clubs: nextClubs,
-    divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeagueNorth, nationalLeagueSouth },
+    divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeagueNorth, nationalLeagueSouth, step3North, step3South },
     yourMove,
     promotedToPremier: promotedInto.premier, relegatedFromPremier: relegatedFrom.premier,
     promotedToChampionship: promotedInto.championship, relegatedFromChampionship: relegatedFrom.championship,
@@ -650,6 +793,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     promotedToLeagueTwo: promotedInto.leagueTwo, relegatedFromLeagueTwo: relegatedFrom.leagueTwo,
     promotedToNationalLeague, relegatedFromNationalLeague,
     relegatedToNorth, relegatedToSouth, promotedFromNorth, promotedFromSouth,
+    relegatedFromNorth, relegatedFromSouth, promotedFromStep3North, promotedFromStep3South,
     playOffs,
     limbo,
   };

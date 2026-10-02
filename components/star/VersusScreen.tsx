@@ -9,7 +9,7 @@ import { faceOrFake, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
 import ClubCrest from "./ClubCrest";
-import { loadLineup } from "@/lib/star/lineupStore";
+import { loadLineup, managerFor } from "@/lib/star/lineupStore";
 import { PressButton, Shine, duelStyle, glowOf } from "./ui";
 import { Screen } from "./ui/Screen";
 
@@ -361,7 +361,7 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
   // you'd look to size up whoever's picking the other side. Reads the
   // same real manager record every other screen shows (loadLineup's own
   // `.manager`, kept current by the Boardroom's appoint-a-manager action).
-  const manager = loadLineup(club)?.manager;
+  const manager = managerFor(club) || undefined;
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
       {/* Reported directly, repeatedly: no ring, no circle, no oval around

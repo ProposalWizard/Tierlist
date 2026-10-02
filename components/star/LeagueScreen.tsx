@@ -73,15 +73,15 @@ const Z = {
  * League the top (count − 1) go up automatically and the play-offs decide
  * one more.
  */
-const LADDER: Record<Exclude<CareerDivision, "premier">, { auto: number; down: number }> = {
+const LADDER: Record<Exclude<CareerDivision, "premier">, { auto: number; down: number; po?: [number, number] }> = {
   championship: { auto: 2, down: 3 },
   league_one: { auto: 2, down: 4 },
-  league_two: { auto: 3, down: 2 },
+  league_two: { auto: 3, down: 2, po: [4, 7] },
   national_league: { auto: 1, down: 4 },
-  // The bottom rung: champion up, 2nd-5th play off for the other place,
-  // nobody down (nothing below them in the game).
-  national_league_north: { auto: 1, down: 0 },
-  national_league_south: { auto: 1, down: 0 },
+  // 2026/27 (Mikey, 2 Oct 2026): champion up, 2nd-7th play off for the
+  // other place, 21st-24th down to Step 3.
+  national_league_north: { auto: 1, down: 4, po: [2, 7] },
+  national_league_south: { auto: 1, down: 4, po: [2, 7] },
 };
 
 // ── Positions that moved since you last looked ─────────────────────────────
@@ -219,7 +219,8 @@ export default function LeagueScreen({ career, compact = false, view: forcedView
     }
     const l = LADDER[division];
     if (pos <= l.auto) return Z.up;
-    if (pos >= Math.max(l.auto + 1, 3) && pos <= 6) return Z.po;
+    const [poTop, poBottom] = l.po ?? [Math.max(l.auto + 1, 3), 6];
+    if (pos >= poTop && pos <= poBottom) return Z.po;
     if (pos > n - l.down) return Z.down;
     return null;
   };

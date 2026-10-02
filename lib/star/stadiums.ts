@@ -13,6 +13,7 @@
  * mainly) gets a generic fallback rather than breaking the scout report —
  * see groundFor below.
  */
+import { profileOf } from "./data/clubProfiles";
 
 export interface Ground {
   name: string;
@@ -79,7 +80,12 @@ export const GROUNDS: Record<string, Ground> = {
 /** A generic ground for anyone missing from the table above (European and
  *  international opponents, mainly) — a fallback rather than a crash. */
 export function groundFor(club: string): Ground {
-  return GROUNDS[club] ?? { name: `${club} Stadium`, capacity: 28000 };
+  const own = GROUNDS[club];
+  if (own) return own;
+  // A club sheet (lib/star/data/clubProfiles.ts) has the lower-league grounds.
+  const p = profileOf(club);
+  if (p?.stadium) return { name: p.stadium, capacity: p.capacity ?? 3000 };
+  return { name: `${club} Stadium`, capacity: 28000 };
 }
 
 /**

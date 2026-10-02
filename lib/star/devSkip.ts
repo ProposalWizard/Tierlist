@@ -3,7 +3,7 @@ import { nextFixtureFor } from "./competitions";
 import {
   simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, runDueTransferWindow,
 } from "./careerFlow";
-import { divisionOf, matchweeksFor, postSeasonFor, fixtureDate, seasonStartYear } from "./calendar";
+import { divisionOf, isRegionalDivision, matchweeksFor, postSeasonFor, fixtureDate, seasonStartYear } from "./calendar";
 import { sortLeague, mulberry32 } from "./season";
 import { generateRelegationOffers } from "./relegationOffers";
 import { acceptOffer } from "./transfers";
@@ -114,11 +114,9 @@ function rollOverSilently(career: CareerState): CareerState {
   let cur = awardLeagueTrophyIfWon(career).career;
 
   let forcedRelegationMove = false;
-  // Relegation out of the National League used to be a dead end (its old
-  // four-club pool had no fixtures). It now drops into National League
-  // North or South, both playable, so this never fires; kept for any
-  // future tier with nowhere to go.
-  if (false as boolean) {
+  // Bottom four of North/South go down to Step 3, which has no fixtures,
+  // so the same forced move as the real screen (page.tsx).
+  if (isRegionalDivision(divisionOf(cur))) {
     const bottomFour = sortLeague(cur.league).slice(-4).map(t => t.name);
     if (bottomFour.includes(cur.player.club)) {
       const offers = generateRelegationOffers(cur, mulberry32(cur.season * 8831 + cur.fame));

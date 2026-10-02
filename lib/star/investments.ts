@@ -19,6 +19,7 @@ import { tierOf, TIER_MULTIPLIER } from "./clubTier";
 import { playerMarketValue } from "./marketValue";
 import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { formatMoney } from "./money";
+import { profileOf } from "./data/clubProfiles";
 
 /**
  * INVESTMENTS — OWNING A PIECE OF A REAL CLUB, NOT JUST PLAYING FOR ONE.
@@ -143,7 +144,7 @@ const PRESTIGE_FLOOR = 0.6;
 const PRESTIGE_CEILING = 3.0;
 
 export function realPrestigeFactor(club: string): number {
-  const rating = CLUB_DATABASE[club]?.currentReputation;
+  const rating = CLUB_DATABASE[club]?.currentReputation ?? profileOf(club)?.currentRep;
   if (rating === undefined) return 1;
   return PRESTIGE_FLOOR + ((rating - 1) / 9) * (PRESTIGE_CEILING - PRESTIGE_FLOOR);
 }

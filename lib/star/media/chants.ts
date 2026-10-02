@@ -13,6 +13,7 @@
  * a club — its full given name, not the terrace short name the chant itself
  * may use.
  */
+import { CLUB_PROFILES } from "../data/clubProfiles";
 
 /** Sung after a win. */
 export const CLUB_WIN_CHANTS: Record<string, string[]> = {
@@ -24,6 +25,11 @@ export const CLUB_WIN_CHANTS: Record<string, string[]> = {
   "Tottenham Hotspur": ["Come on you Spurs!", "Oh when the Spurs go marching in"],
   "West Ham United": ["I'm Forever Blowing Bubbles"],
   "Fulham FC": ["Come on you Whites!"],
+  // Win chants given in a club sheet (North/South and Step 3, 2 Oct 2026),
+  // for clubs not listed above.
+  ...Object.fromEntries(Object.values(CLUB_PROFILES)
+    .filter(p => p.winChant)
+    .map(p => [p.club, [p.winChant!]])),
 };
 
 /**

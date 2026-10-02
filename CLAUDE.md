@@ -173,6 +173,25 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Club data lives in one place, and /admin/clubs shows the gaps
+
+Mikey, 2 Oct 2026: "make sure that you never lose this information again."
+- Every sheet of club information he gives goes into
+  `lib/star/data/sources/` untouched, then `python
+  scripts/club-data/build_club_profile_data.py` regenerates
+  `lib/star/data/clubProfileData.ts`. `lib/star/data/clubProfiles.ts`
+  (`profileOf`) merges the sheets, and the game falls back to it for kits,
+  grounds, club size, facilities, prestige, rivals, win chants and managers.
+- `/admin/clubs` (Club Data) lists every club with every field: green given,
+  amber guessed, red missing, plus a spreadsheet download. The checks are in
+  `lib/star/data/clubAudit.ts`. A new kind of club information gets a column
+  there too.
+- **North/South 2026/27:** the clubs as given. 1st goes up. 2nd–7th play off:
+  4v7 and 5v6, then 2nd and 3rd at home, then a one-off final at the higher
+  finisher's ground. 21st–24th go down to Step 3 (`STEP3_*_CLUBS`), whose four
+  all come up each season. Your own club finishing bottom four is forced to
+  move (Step 3 has no fixtures). Tests: `tests/star/regionalLadder.mts`.
+
 ## Tuner proposals live in the terminal
 
 When anyone asks for "the tuner proposals" (or what the Tune corrections add
@@ -482,6 +501,7 @@ Three people are building this. To avoid two sessions editing the same files:
 | `world_class_potential.sql` | **PENDING — RUN TO ENABLE THE STRONGER TIER** (new, Sep 2026) | Adds `sofifa_players.world_class_potential boolean NOT NULL DEFAULT false` — a second, stronger tier directly above `high_potential`, same admin-toggle shape, requested directly ("a second category... nothing, high potential, or world class potential"). The admin PATCH route always sets `high_potential = true` alongside it, so every existing High Potential hook (`growWonderkids`, `feeFor`, the reach-up bias, the media hype detector) already fires for a World Class player without its own copy of each check — `wonderkids.worldClassMultiplier` (tuning.ts) scales all of them up further on top. Same resilience as `high_potential`: `league-squads/route.ts` degrades gracefully if this column doesn't exist yet, one column at a time. |
 | `star_scenarios.sql` | **PENDING — RUN SO HAND-BUILT SCENARIOS REACH THE GAME** (new, Sep 2026) | Creates the `star_scenarios` table: one row per `MatchScenario` (`lib/star/scenarios.ts`) — camera framing plus hand-placed teammate/opponent positions in real pitch metres. The Scenario Builder (`components/star/ScenarioEditor.tsx`, now hosted both at `/star-scenario-dev` and as a third tab in `/star-gallery-dev`) and the gallery's own base-scenario Save button both write here, so a scenario is DATA the game reads rather than something baked into a deploy. `/api/star/scenarios` is GET public / POST+DELETE admin-only via `isAdmin()`, exactly like `star_lineups`; `lib/star/scenarioStore.ts` keeps localStorage as a synchronous read cache, refreshed via `fetchSharedScenarios()` at load. Until this runs, the route degrades honestly instead of 500ing — GET returns an empty list with `migrationMissing: true` (both screens show a red banner naming this file), and a Save keeps the work in that browser while saying plainly "saved on this device ONLY," never a bare "Saved". |
 | `star_career_slots.sql` | **PENDING — RUN SO EXTRA SAVES FOLLOW A PLAYER ACROSS DEVICES** (new, Sep 2026) | Adds `star_careers.slot` (default 1, backfilling every existing save automatically) and swaps its `UNIQUE (user_id)` for `UNIQUE (user_id, slot)`, so an account can have up to three cloud saves instead of one — see Settings' new Saves panel. `app/api/star/career/route.ts` degrades the same way `league-squads/route.ts` already does: slot 1 (every existing save) works identically whether or not this has run; a second or third save simply stays local to whichever device created it until it has. |
+| `star_pass_config.sql` | **PENDING** (new, Oct 2026) | One shared row: which reward sits at each Star Pass level, plus idea cards and statuses set on `/admin/star-pass`. Until it runs, every career uses the five test rewards built into `lib/star/rewardCatalogue.ts` and the admin page's Save stays on that device (it says so). |
 | `star_scenario_corrections.sql` | **RUN** (Sep 2026, by Mikey) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Confirmed live 23 Sep 2026: the table answers the anon key and held 3 corrections. Browser-only corrections upload on the next sync. |
 
 ---

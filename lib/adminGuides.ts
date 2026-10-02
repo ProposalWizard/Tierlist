@@ -117,6 +117,69 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/page.tsx · components/AdminPanel.tsx · components/TicTacToeAdmin.tsx, TenableAdmin.tsx, admin/ObjectivesAdmin.tsx, admin/CardLibraryAdmin.tsx · /api/admin/*",
   },
 
+  "/admin/clubs": {
+    title: "Club Data",
+    what: "Every club in the game, and every piece of information the game uses about it, so you can see what's missing.",
+    buttons: [
+      { items: [
+        ["All divisions", "Shows one division (or the Step 3 clubs waiting, or the European lists) instead of every club."],
+        ["All information / Gaps in: …", "Shows one kind of information only, and only the clubs where it's missing or guessed."],
+        ["Search a club", "Narrows the list to clubs whose name contains what you type."],
+        ["Only clubs with gaps", "Hides clubs that have everything."],
+        ["Download spreadsheet", "Downloads what's on screen as a spreadsheet file (opens in Excel or Google Sheets)."],
+        ["A coloured box", "Green: you gave it. Amber: the game is making it up. Red: nothing at all. Hover (or long-press) to see why."],
+        ["The number under each column", "How many clubs have that piece of information, out of the clubs it applies to."],
+      ] },
+    ],
+    saving: [
+      "Nothing to save: this page only reads. To fill a gap, give the information in chat (or a club sheet) and it's added to the game's data in the code.",
+    ],
+    inGame: [
+      "Everything here is what the game uses: kits on the pitch, stadium names, club size in transfers and prestige, rivalries in the news, managers on the team sheet.",
+    ],
+    needs: [
+      "Badge pictures are read from the shared club badge table. If it can't be read, that column says so for every club rather than guessing.",
+    ],
+    dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
+  },
+  "/admin/star-pass": {
+    title: "Star Pass Rewards",
+    what: "Every reward in one catalogue, by type, and which reward sits at each Star Pass level (5 to 100).",
+    buttons: [
+      { group: "Levels (left)", items: [
+        ["A level row", "Selects that level. The next card you tap goes there."],
+        ["↑", "Swaps this level's reward with the level above."],
+        ["↓", "Swaps this level's reward with the level below."],
+        ["✕", "Empties the level."],
+      ] },
+      { group: "Catalogue (right)", items: [
+        ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card. The number is how many cards it has."],
+        ["Tap a card's picture", "Puts it at the selected level (taking it off any level it was on), then moves to the next level."],
+        ["👁", "A big preview. 3D ones can be dragged to spin and tapped to zoom."],
+        ["Idea / Designed / In game", "The card's status. Tap to move it on: idea, then designed, then in game."],
+        ["Lv 10", "Shows which level the card is on."],
+        ["+ Idea", "Adds a card for something not built yet: a name and a line about it. It shows as a 💡 until it's built."],
+        ["Delete", "Only on idea cards: removes it (and empties its level)."],
+      ] },
+      { group: "Top bar", items: [
+        ["Save", "Saves the layout for everyone. Lights up once something has changed."],
+        ["Reset", "Puts back the five test rewards at levels 5 to 25 and empties the rest. Nothing is saved until you press Save."],
+      ] },
+    ],
+    saving: [
+      "Save writes the layout (levels, idea cards, statuses) to the shared Star Pass row (Supabase table star_pass_config). Every career's Star Pass reads it the next time it opens.",
+      "Saving needs an admin sign-in. Without one, or without the table, it says \"Saved on this device only\" and only this browser sees the change.",
+      "The cards themselves (pictures, 3D, what you get) are in the code. Making a new design is a build job; this page only chooses and orders them.",
+    ],
+    inGame: [
+      "The Star Pass (tap the star rating in the top bar): each level shows its reward. Reach the level and a Claim button appears, with a red dot on the star.",
+      "Claim plays the reveal, then the reward goes into the Locker (the Locker button on the Star Pass). Run-ups and accessories are used in matches; cars, balls and sunglasses are kept for when the avatar is ready.",
+    ],
+    needs: [
+      "The star_pass_config table (supabase/migrations/star_pass_config.sql). Until it is run, the game uses the five test rewards built into the code and Save stays on this device.",
+    ],
+    dev: "app/admin/star-pass/page.tsx · lib/star/rewardCatalogue.ts · lib/star/starPassStore.ts · lib/star/starPassClaim.ts · app/api/star/star-pass/route.ts",
+  },
   "/admin/xp": {
     title: "XP & Rewards",
     what: "The rewards players unlock as they level up — card frames, manager titles and trophies — plus a read-out of the XP numbers.",
