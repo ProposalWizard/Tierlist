@@ -2,12 +2,13 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { LogLine } from "@/lib/star/matchLog";
 import { labelInk, type Kit } from "@/lib/star/kits";
-import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import type { EnergyMode } from "@/lib/star/energy";
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
 import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
+// The kick-off beat (v0.24: the tunnel picture) lives in its own file.
+import KickOffCard from "./KickOffCard";
 import { useUiVersion } from "@/lib/star/uiLook";
 
 /**
@@ -267,55 +268,6 @@ export default function MatchCommentary({
         </div>
       </div>
       )}
-    </div>
-  );
-}
-
-/**
- * The opening beat: the two sides in their colours, before the first line —
- * on a pitch, not a black box (Harry, 1 Oct 2026, P94: "this is the pitch
- * screen — that should definitely be more pitch related"). Mown stripes, the
- * touchlines, the halfway line and centre circle; the two teams' names are
- * set on it like a broadcast graphic.
- */
-function KickOffCard({ homeTeam, awayTeam, homeKit, awayKit }: { homeTeam: string; awayTeam: string; homeKit: Kit; awayKit: Kit }) {
-  const chip = (name: string, kit: Kit) => (
-    <div
-      className="min-w-0 flex-1 truncate px-2 py-2 text-center text-[12px] font-black uppercase tracking-normal"
-      style={{ backgroundColor: kit.shirt, color: labelInk(kit.shirt), borderRadius: 2, boxShadow: "inset 0 1px 0 rgba(255,255,255,.25), 0 4px 12px -6px rgba(0,0,0,.8)" }}
-    >
-      {CLUB_SHORT_NAMES[name] ?? name}
-    </div>
-  );
-  const line = "rgba(255,255,255,.78)";
-  return (
-    <div
-      data-kickoff-pitch
-      className="relative my-2 mr-3 flex min-h-[210px] flex-1 flex-col items-center justify-center overflow-hidden text-center"
-      style={{
-        marginLeft: 12,
-        paddingRight: 0, // the feed gives its rows a right gutter for the minute plate; a pitch runs full width
-        backgroundColor: "#1f7a3a",
-        backgroundImage: "repeating-linear-gradient(90deg, #22853f 0 38px, #1c6f35 38px 76px), radial-gradient(120% 90% at 50% 50%, rgba(255,255,255,.1), rgba(0,0,0,.28))",
-        backgroundBlendMode: "normal",
-        boxShadow: "inset 0 0 0 2px rgba(255,255,255,.5), inset 0 0 40px rgba(0,0,0,.45)",
-      }}
-    >
-      {/* The markings: halfway line, centre circle, both boxes. */}
-      <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" fill="none" stroke={line} strokeWidth="1.2">
-        <line x1="100" y1="0" x2="100" y2="120" />
-        <circle cx="100" cy="60" r="20" />
-        <rect x="0" y="32" width="26" height="56" />
-        <rect x="0" y="46" width="9" height="28" />
-        <rect x="174" y="32" width="26" height="56" />
-        <rect x="191" y="46" width="9" height="28" />
-      </svg>
-      <div className="relative flex w-full items-center gap-2 px-3">
-        {chip(homeTeam, homeKit)}
-        <span className="shrink-0 text-[15px] font-black italic text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.8)" }}>v</span>
-        {chip(awayTeam, awayKit)}
-      </div>
-      <div className="relative mt-2 text-[11px] font-black uppercase tracking-[0.25em] text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.8)" }}>⚽ Kick off</div>
     </div>
   );
 }
