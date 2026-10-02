@@ -6,6 +6,8 @@ import { starStatus } from "@/lib/star/starPoints";
 import { hasSeen } from "@/lib/star/unlocks";
 import KibCanIcon from "../KibCanIcon";
 import StarRatingSheet from "../StarRatingSheet";
+import { usePassLayout } from "@/lib/star/starPassStore";
+import { claimableLevels } from "@/lib/star/starPassClaim";
 import { SquareBar } from "./Flat";
 import { Shake } from "./juice";
 import { useCountUp, prefersReducedMotion } from "./motion";
@@ -32,21 +34,23 @@ export type HudScreen = "home" | "stats" | "training" | "shop" | "relations" | "
 const ENERGY_CAN = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];
 const CAN_ACCENT = "#fb923c";
 
-export default function TopHud({ career, screen, onUseCan, onOpenCans, className = "" }: {
+export default function TopHud({ career, screen, onUseCan, onOpenCans, onCareer, className = "" }: {
   career: CareerState;
   screen: HudScreen;
   onUseCan: (id: (typeof KIB_CANS)[number]["id"]) => void;
   /** BUY: take the player to the cans in the shop. */
   onOpenCans: () => void;
+  /** Saves a Star Pass claim / Locker change. Without it the Star Pass is look-only. */
+  onCareer?: (c: CareerState) => void;
   className?: string;
 }) {
   const [starPass, setStarPass] = useState(false);
   return (
     <div data-hud={screen} className={`shrink-0 px-2 pb-1 pt-1.5 ${className}`}>
-      {starPass && <StarRatingSheet career={career} onClose={() => setStarPass(false)} />}
+      {starPass && <StarRatingSheet career={career} onCareer={onCareer} onClose={() => setStarPass(false)} />}
       {/* One encapsulated block: rating | energy, a hairline between. */}
       <div data-hud-block className="grid grid-cols-2 gap-px overflow-hidden bg-black/55" style={{ borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge, rgba(255,255,255,.22))" }}>
-        <RatingCell career={career} onOpen={() => setStarPass(true)} />
+        <RatingCell career={career} onOpen={() => setStarPass(true)} claimable={!!onCareer} />
         <EnergyCell career={career} onUseCan={onUseCan} onOpenCans={onOpenCans} />
       </div>
     </div>
@@ -57,8 +61,11 @@ export default function TopHud({ career, screen, onUseCan, onOpenCans, className
 const CELL = "relative flex min-w-0 items-center gap-1.5 px-2";
 const WASH = { background: "linear-gradient(180deg, rgba(var(--sk-flat-rgb),.78), rgba(var(--sk-flat-rgb),.58))" } as const;
 
-function RatingCell({ career, onOpen }: { career: CareerState; onOpen: () => void }) {
+function RatingCell({ career, onOpen, claimable }: { career: CareerState; onOpen: () => void; claimable: boolean }) {
   const star = starStatus(career);
+  // A red dot while a Star Pass reward is waiting to be claimed.
+  const { layout } = usePassLayout();
+  const waiting = claimable && claimableLevels(career, layout.levels, star.stars).length > 0;
   const shown = useCountUp(star.stars);
   // The Star Pass stays locked until the tutorial is done (Harry, P15).
   const open = hasSeen(career, "tutorial");
@@ -70,6 +77,7 @@ function RatingCell({ career, onOpen }: { career: CareerState; onOpen: () => voi
       </span>
       <SquareBar value={Math.max(3, star.toNext * 100)} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate />
       {star.gate && <span className="shrink-0 text-[10px] font-black leading-none text-white">🔒</span>}
+      {waiting && open && <span data-claim-dot className="absolute left-1 top-0.5 h-2.5 w-2.5 animate-pulse bg-red-500" style={{ borderRadius: 1, boxShadow: "0 0 6px rgba(239,68,68,.9)" }} />}
     </button>
   );
 }

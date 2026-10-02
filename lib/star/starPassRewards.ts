@@ -41,42 +41,9 @@ export interface Live3D {
   zoom?: { at: [number, number, number]; dist: number };
 }
 
-export interface StarPassReward {
-  name: string;
-  /** A picture of it; the placeholder box shows when there is none. */
-  image?: string;
-  /** A whole picture of the reward standing on its podium (may be animated),
-   *  drawn in place of the plain podium + box. */
-  scene?: string;
-  /** The podium's width as a share of the scene picture's width, so the
-   *  podium comes out the same size as the plain ones (make_webp.py prints it). */
-  sceneFit?: number;
-  /** The scene picture's height as a share of its width (to leave road room). */
-  sceneAspect?: number;
-  /** Live 3D instead of a picture: drag or swipe to spin it. */
-  live?: Live3D;
-}
-
-/** The rewards, by level. Levels 5, 10, 15, 20 and 25 are DESIGN TESTS only
- *  (Mikey, 1-2 Oct 2026): to judge the look, nothing is given in the game.
- *  15 and 25 are live 3D you can spin; 20 and 25 use the realistic MakeHuman
- *  footballer (tools/star-pass-art/build_footballer.py), a placeholder until
- *  the player's avatar is settled.
- *  The car is a borrowed model shaped like a Ferrari 458 and must be swapped
- *  for an unbranded one before any of this is used for real. */
-export const STAR_PASS_REWARDS: Partial<Record<number, StarPassReward>> = {
-  5: { name: "Hop penalty run-up", scene: "/star/star-pass/reward-penalty.webp", sceneFit: 0.598, sceneAspect: 389 / 620 },
-  10: { name: "Red sports car", scene: "/star/star-pass/reward-car.webp", sceneFit: 0.882, sceneAspect: 358 / 500 },
-  15: { name: "Star ball", live: {
-    podium: "/star/star-pass/3d/podium-premier-medium.glb", item: "/star/star-pass/3d/reward-ball.glb",
-    look: 1.45, dist: 13.5, tilt: 70, w: 255, h: 200 } },
-  20: { name: "Slow run-up", scene: "/star/star-pass/reward-slow-runup.webp", sceneFit: 0.894, sceneAspect: 549 / 560 },
-  25: { name: "Gold aviators", live: {
-    podium: "/star/star-pass/3d/podium-europa-medium.glb", item: "/star/star-pass/3d/reward-glasses.glb",
-    itemAt: [0, 0, 0.79], itemScale: 2.3,
-    look: 2.45, dist: 15.5, tilt: 79, w: 290, h: 400,
-    zoom: { at: [0, 0, 4.62], dist: 2.2 } } },
-};
+// The rewards themselves live in the catalogue (lib/star/rewardCatalogue.ts)
+// and which one sits at which level is the shared layout
+// (lib/star/starPassStore.ts, set on /admin/star-pass).
 
 /** The look of each stretch of the road: a new one every 20 levels. */
 export interface StarPassTheme {

@@ -3435,7 +3435,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const screenHud = (screen: HudScreen) => (
     <>
       <GameBar career={career} onHome={() => handleNavigate("home")} onSettings={() => setPhase("settings")} />
-      <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} />
+      <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} onCareer={setCareer} />
     </>
   );
   // The league and the fixtures on ONE page, with the live-score bell in the
@@ -3811,6 +3811,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           })()}
           onUseCan={handleUseCan}
           onOpenCans={() => setPhase("shop-kib")}
+          onCareer={setCareer}
         />
       }
       // The home button top-left opens the main menu (Mikey, 28 Sep 2026:

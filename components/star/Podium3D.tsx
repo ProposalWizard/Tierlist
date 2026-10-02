@@ -28,6 +28,8 @@ const LENS_FOV = 28.7; // a 70 mm lens on a 36 mm sensor, as the Blender picture
 
 export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
+  // Rebuild only when the settings really change, not on every new object.
+  const cfgKey = JSON.stringify(cfg);
 
   useEffect(() => {
     const el = wrap.current;
@@ -266,7 +268,8 @@ export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: bool
     })().catch((e) => console.error("Podium3D failed", e));
 
     return () => { disposed = true; stop(); };
-  }, [cfg]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfgKey]);
 
   return (
     <div ref={wrap} style={{ width: cfg.w, height: cfg.h, filter: dim ? "saturate(.85) brightness(.85)" : undefined }} />
