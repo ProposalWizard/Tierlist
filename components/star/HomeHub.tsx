@@ -287,19 +287,21 @@ function HomeScene({ sky }: { sky: HomeSky }) {
  *  frame (928x496), so the picture's bottom edge IS the goal line. */
 const GOAL_SRC = "/home/goal.webp";
 const GOAL_ASPECT = 928 / 496;
-/** The goal's height for the player's box height: a little shorter than him,
- *  as it stands a few metres behind him. */
-const GOAL_TO_PLAYER = 0.8;
-/** Where across the goal mouth he stands (0 = left post, 1 = right post). */
-const GOAL_PLAYER_AT = 0.36;
+/** The goal's height for the player's box height. Harry (2 Oct 2026, with
+ *  picture "A on a small phone": "move the goal back and have it exactly like
+ *  image 2") — the goal stands well behind him, about half his height. */
+const GOAL_TO_PLAYER = 0.42;
+/** How far up the screen the goal line sits behind his boots, as a share of
+ *  his box height (image 2: the goal line is at his thighs). */
+const GOAL_BACK = 0.36;
 /** How far above the bottom of the player's box his boots meet the grass. */
 const FEET_LIFT = 0.035;
 /** The stadium picture's hoardings, as a share of the goal's height above
  *  the goal line. */
-const HOARDING_IN_GOAL = 0.3;
+const HOARDING_IN_GOAL = 0.08;
 /** Room kept between each post and the screen edge (the row has 12px of
  *  page padding either side, so this can be negative). */
-const GOAL_EDGE = -8;
+const GOAL_EDGE = 2;
 
 /**
  * Where Home's goal goes, in the player row's own pixels (x from the row's
@@ -310,11 +312,12 @@ const GOAL_EDGE = -8;
  * screen, so both posts always show; he stands left of centre in the mouth.
  */
 export function goalBoxFor(figW: number, figH: number, rowW: number) {
-  const bottom = Math.round(figH * FEET_LIFT);
+  const bottom = Math.round(figH * (FEET_LIFT + GOAL_BACK));
   const maxW = rowW > 0 ? rowW - 2 * GOAL_EDGE : Infinity;
   const width = Math.round(Math.min(figH * GOAL_TO_PLAYER * GOAL_ASPECT, maxW));
   const height = Math.round(width / GOAL_ASPECT);
-  const want = figW / 2 - width * GOAL_PLAYER_AT;
+  // Image 2: the left post near the screen's left edge, him in front of it.
+  const want = GOAL_EDGE;
   const left = Math.round(rowW > 0 ? Math.max(GOAL_EDGE, Math.min(want, rowW - GOAL_EDGE - width)) : want);
   return { left, bottom, width, height, hoardings: bottom + Math.round(height * HOARDING_IN_GOAL) };
 }
@@ -369,7 +372,7 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Pro
         {/* HomeScene lines the stadium picture's hoardings up with this
             marker: just behind the goal, seen through the net. */}
         <div data-goal-line aria-hidden className="pointer-events-none absolute -inset-x-3 h-0" style={{ bottom: g.hoardings }} />
-        {/* the goal, its bottom edge (the goal line) at his boots */}
+        {/* the goal, set back behind him where the pitch meets the stands */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={GOAL_SRC} alt="" aria-hidden draggable={false} data-home-goal
