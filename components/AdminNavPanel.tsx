@@ -147,6 +147,8 @@ const GROUPS: AdminGroup[] = [
       { name: "Blender 3D", href: "/star-blender-dev" },
       { name: "Spin your player", href: "/star-spin-dev" },
       { name: "3D", href: "/star-3d-dev" },
+      { name: "3D Test Area", href: "/star-3d-area-dev" },
+      { name: "3D Shop", href: "/star-shop3d-dev" },
       { name: "Scenario Builder", href: "/star-scenario-dev" },
       { name: "Training Levels", href: "/star-training-dev" },
       { name: "Squad Builder", href: "/lineups" },
