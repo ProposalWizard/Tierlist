@@ -60,6 +60,12 @@ interface Props {
   clubKits?: Record<string, import("@/lib/star/kits").ClubKits>;
   onKickOff: () => void;
   onBack: () => void;
+  /** Sits in the top-right corner of the pitch, beside the home keeper: the
+   *  line-up's "Play as" picker (LineupIntro.tsx). Harry, 2 Oct 2026, v0.24
+   *  P1-51: it sat on top of the VS; "maybe just put it here", his cursor at
+   *  the top of the pitch by the keeper. Outside the pitch's clipping box, so
+   *  the list it opens can hang down over the pitch. */
+  pitchCorner?: React.ReactNode;
 }
 
 /**
@@ -136,7 +142,7 @@ function scouted(s: TeamSheet): boolean {
   return s.xi.length >= 9;
 }
 
-export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack }: Props) {
+export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club, clubKits?.[home.club], clubKits?.[away.club]);
   const [showSubs, setShowSubs] = useState(false);
@@ -249,6 +255,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             substitutes bar and Kick Off's own margins are still trimmed
             from the earlier pass too. */}
         <div className="relative">
+          {pitchCorner && <div data-pitch-corner className="absolute right-1.5 top-1.5 z-20">{pitchCorner}</div>}
           <div className="sk-versus-pitch relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
             {/* Mown stripes as real alternating bands (not a near-invisible
                 0.025-opacity tint) plus a soft center-lit vignette, so the

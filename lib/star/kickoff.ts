@@ -11,10 +11,16 @@
  *   - Saturday: 12:30, 15:00 (most often) or 17:30
  *   - Sunday: 14:00 or 16:30
  * The slot is seeded off the fixture, so the same match always has the same
- * time. A slot played well before sunset is "day", one around sunset (the
- * middle of the first half within about 45 minutes of it) is "sunset", and
- * anything after is "night" — so a 15:00 game in December is a sunset game
- * and a 17:30 one is under lights, as in real life.
+ * time.
+ *
+ * SUNSET IS THE BASE PICTURE (Harry, 2 Oct 2026, v0.24 P1-18: "this sunset
+ * one for now should be the base image, even if it's not night time. And
+ * then if it's like a morning game, then obviously change it, just because
+ * it looks the best"). So:
+ *   - a kick-off before 13:00 (the Saturday 12:30) is "day";
+ *   - a game played after dark (the middle of the first half more than about
+ *     45 minutes after sunset) is "night", under lights;
+ *   - everything else is "sunset". Before v0.24 a 15:00 in August was "day".
  */
 import type { CareerState, Fixture } from "./types";
 import { divisionOf, fixtureTimestamp } from "./calendar";
@@ -39,13 +45,16 @@ export function kickoffHour(date: Date, seedKey: string): number {
   return r < 0.5 ? 19.75 : 20;
 }
 
+/** Kick-offs before this hour are morning games: the day sky. */
+export const MORNING_BEFORE = 13;
+
 /** Which sky a kick-off at `hour` in this month is played under. */
 export function skyAt(month: number, hour: number): HomeSky {
+  if (hour < MORNING_BEFORE) return "day";
   const mid = hour + 0.4; // the middle of the first half
   const sunset = UK_SUNSET[((month % 12) + 12) % 12];
-  if (mid < sunset - 0.75) return "day";
-  if (mid < sunset + 0.75) return "sunset";
-  return "night";
+  if (mid >= sunset + 0.75) return "night";
+  return "sunset";
 }
 
 /** "19:45" */
@@ -54,11 +63,12 @@ export function formatKickoff(hour: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-/** The sky behind Home's goal for the next match (day with nothing to play). */
+/** The sky behind Home's goal for the next match (sunset, the base picture,
+ *  with nothing to play). */
 export function homeSkyFor(career: CareerState, next: Fixture | null): HomeSky {
-  if (!next) return "day";
+  if (!next) return "sunset";
   const ts = fixtureTimestamp(career.player.startYear, career.season, next.week, next.kind, divisionOf(career));
-  if (!Number.isFinite(ts)) return "day";
+  if (!Number.isFinite(ts)) return "sunset";
   const date = new Date(ts);
   const hour = kickoffHour(date, `${career.season}:${next.week}:${next.kind ?? "league"}:${next.opponent}`);
   return skyAt(date.getMonth(), hour);
