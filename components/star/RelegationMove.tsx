@@ -11,10 +11,10 @@ import { Screen, Kicker } from "./ui/Screen";
 /**
  * THE OLD CLUB IS GONE. WHO NEXT?
  *
- * Reached only when relegation out of the National League (into its own
- * four-club pool, which has no fixtures, no table, no season) is certain —
- * every other boundary on the ladder is a real division now, so the
- * ordinary transfer window (TransferWindow.tsx) works fine for it.
+ * Reached when your club finishes in the bottom four of National League
+ * North or South: they drop to Step 3, which has no fixtures (Mikey, 2 Oct
+ * 2026) — every other boundary is a real division, so the ordinary transfer
+ * window (TransferWindow.tsx) handles it.
  * Otherwise built the same way: real offers, priced off the same reputation
  * and the same move-cost numbers, so a relegation does not feel like a
  * different game from a normal transfer.
@@ -37,7 +37,7 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
           <h1 className="kit-shake-x mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
             {career.player.club} are down. You need a new club.
           </h1>
-          <p className="mt-1 text-xs text-gray-200">
+          <p className="mt-1 text-xs text-white">
             Your reputation is <span className="font-black text-white">{rep}</span> — a season the
             club had, not one you personally have to answer for.
           </p>
@@ -56,12 +56,12 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
                     <span className="truncate text-lg font-black text-white">{o.club}</span>
                   </span>
                   <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest ${
-                    stepUp ? "text-emerald-300" : "text-gray-200"}`}
+                    stepUp ? "text-emerald-300" : "text-white"}`}
                   >
                     {leagueNameFor(offerDivision)}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-200">{o.pitch}</p>
+                <p className="mt-1 text-xs text-white">{o.pitch}</p>
 
                 <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
                   <Cell label="Wage" value={`★${o.wage}`} highlight={o.wage > career.contract.wage} />
@@ -75,7 +75,7 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
                   return clauses.length > 0 ? (
                     <div className="mt-2 space-y-0.5">
                       {clauses.map(c => (
-                        <div key={c.label} className="text-[10px] text-gray-200">
+                        <div key={c.label} className="text-[10px] text-white">
                           <span className="font-black text-white">{c.label}</span> — {c.detail}
                         </div>
                       ))}
@@ -95,8 +95,8 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
         </div>
 
         <div className="kit-card mt-4 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-200">What a move costs</div>
-          <p className="mt-1 text-[11px] text-gray-200">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white">What a move costs</div>
+          <p className="mt-1 text-[11px] text-white">
             A new dressing room does not know you and a new manager has not picked you before.
             Team-mates start at {MOVE_RESET.team}, the manager at {MOVE_RESET.boss}, and you lose a
             little sharpness settling in. Your place in the side is earned again.

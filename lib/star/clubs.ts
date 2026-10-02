@@ -128,26 +128,46 @@ export const NATIONAL_LEAGUE_CLUBS: readonly string[] = [
  * Scarborough Athletic, Dorking Wanderers, Torquay United), which was a
  * holding area with no fixtures. All four are in these lists now.
  *
- * Nothing sits below them: they are the bottom of the game's ladder, so they
- * promote (two each, see promotion.ts) but never relegate.
+ * Below them sit the Step 3 clubs (STEP3_*_CLUBS): each region sends two up
+ * (champion + play-off winner) and its bottom four down to Step 3, and Step
+ * 3's four all come up (promotion.ts).
  */
+// 2026/27, as given by Mikey (2 Oct 2026) from the FA's allocation and the
+// clubs' own announcements: 24 each. Replaced Alfreton Town, Curzon Ashton,
+// Leamington and Peterborough Sports (North) and Bath City, Chippenham Town,
+// Eastbourne Borough, Enfield Town and St Albans City (South) with the four
+// and five clubs promoted from Step 3. Old saves are moved across at their
+// next season rollover (promotion.ts, catchUpRegional).
 export const NATIONAL_LEAGUE_NORTH_CLUBS: readonly string[] = [
-  "AFC Telford United", "Alfreton Town", "Bedford Town", "Brackley Town",
-  "Buxton", "Chester", "Chorley", "Curzon Ashton", "Darlington",
-  "Hednesford Town", "Hereford", "King's Lynn Town", "Leamington",
-  "Macclesfield", "Marine", "Merthyr Town", "Morecambe", "Peterborough Sports",
-  "Radcliffe", "Scarborough Athletic", "South Shields", "Southport",
-  "Spennymoor Town", "Worksop Town",
+  "AFC Telford United", "Bedford Town", "Brackley Town", "Buxton", "Chester",
+  "Chorley", "Darlington", "Harborough Town", "Hebburn Town", "Hednesford Town",
+  "Hereford", "King's Lynn Town", "Macclesfield", "Marine", "Merthyr Town",
+  "Morecambe", "Oxford City", "Radcliffe", "Scarborough Athletic", "Southport",
+  "South Shields", "Spalding United", "Spennymoor Town", "Worksop Town",
 ];
 
 export const NATIONAL_LEAGUE_SOUTH_CLUBS: readonly string[] = [
-  "AFC Totton", "Bath City", "Braintree Town", "Chelmsford City",
-  "Chesham United", "Chippenham Town", "Dagenham & Redbridge",
-  "Dorking Wanderers", "Eastbourne Borough", "Ebbsfleet United", "Enfield Town",
-  "Farnborough", "Hampton & Richmond Borough", "Hemel Hempstead Town",
-  "Horsham", "Maidenhead United", "Maidstone United", "St Albans City",
-  "Salisbury", "Slough Town", "Tonbridge Angels", "Torquay United",
-  "Truro City", "Weston-super-Mare",
+  "AFC Totton", "Billericay Town", "Braintree Town", "Chelmsford City",
+  "Chesham United", "Dagenham & Redbridge", "Dorking Wanderers", "Dover Athletic",
+  "Ebbsfleet United", "Farnborough", "Farnham Town", "Folkestone Invicta",
+  "Hampton & Richmond Borough", "Hemel Hempstead Town", "Horsham",
+  "Maidenhead United", "Maidstone United", "Salisbury", "Slough Town",
+  "Tonbridge Angels", "Torquay United", "Truro City", "Walton & Hersham",
+  "Weston-super-Mare",
+];
+
+/**
+ * STEP 3: the clubs waiting below North and South (Mikey, 2 Oct 2026). Not a
+ * division: nobody plays a season in it. Each season all four go up into
+ * their region, and that region's bottom four (21st-24th) come down to take
+ * their place — the same "bank of clubs waiting" the ladder used to have
+ * under the National League.
+ */
+export const STEP3_NORTH_CLUBS: readonly string[] = [
+  "Guiseley", "Bury Town", "Cleethorpes Town", "Real Bedford",
+];
+export const STEP3_SOUTH_CLUBS: readonly string[] = [
+  "Enfield Town", "Welling United", "Lewes", "Uxbridge",
 ];
 
 /**
@@ -389,6 +409,12 @@ export const CLUB_SHORT_NAMES: Record<string, string> = {
   "Hereford": "Hereford", "King's Lynn Town": "King's Lynn", "Leamington": "Leamington",
   "Macclesfield": "Macclesfield", "Marine": "Marine", "Merthyr Town": "Merthyr",
   "Morecambe": "Morecambe", "Peterborough Sports": "P'boro Sports", "Radcliffe": "Radcliffe",
+  "Harborough Town": "Harborough", "Hebburn Town": "Hebburn", "Oxford City": "Oxford City",
+  "Spalding United": "Spalding", "Billericay Town": "Billericay", "Dover Athletic": "Dover",
+  "Farnham Town": "Farnham", "Folkestone Invicta": "Folkestone", "Walton & Hersham": "Walton",
+  // Step 3, waiting below.
+  "Guiseley": "Guiseley", "Bury Town": "Bury Town", "Cleethorpes Town": "Cleethorpes",
+  "Real Bedford": "Real Bedford", "Welling United": "Welling", "Lewes": "Lewes", "Uxbridge": "Uxbridge",
   "Scarborough Athletic": "Scarborough", "South Shields": "South Shields", "Southport": "Southport",
   "Spennymoor Town": "Spennymoor", "Worksop Town": "Worksop",
   "AFC Totton": "Totton", "Bath City": "Bath", "Braintree Town": "Braintree",
@@ -405,7 +431,7 @@ export const CLUB_SHORT_NAMES: Record<string, string> = {
 export type Division =
   | "premier" | "championship" | "pool" | "champions" | "europa"
   | "league_one" | "league_two" | "national_league"
-  | "national_league_north" | "national_league_south";
+  | "national_league_north" | "national_league_south" | "step3_north" | "step3_south";
 
 const DIVISION_BY_CLUB = new Map<string, Division>([
   ...PREMIER_LEAGUE_CLUBS.map(c => [c, "premier"] as const),
@@ -423,6 +449,8 @@ const DIVISION_BY_CLUB = new Map<string, Division>([
   ...NATIONAL_LEAGUE_CLUBS.map(c => [c, "national_league"] as const),
   ...NATIONAL_LEAGUE_NORTH_CLUBS.map(c => [c, "national_league_north"] as const),
   ...NATIONAL_LEAGUE_SOUTH_CLUBS.map(c => [c, "national_league_south"] as const),
+  ...STEP3_NORTH_CLUBS.map(c => [c, "step3_north"] as const),
+  ...STEP3_SOUTH_CLUBS.map(c => [c, "step3_south"] as const),
 ]);
 
 export function divisionOf(club: string): Division | null {

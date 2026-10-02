@@ -1,4 +1,5 @@
 import { DEFAULT_FORMATION } from "./formations";
+import { profileOf } from "./data/clubProfiles";
 
 /**
  * SAVED ELEVENS.
@@ -60,6 +61,12 @@ export function loadLineup(club: string): SavedLineup | null {
     bench: Array.isArray(saved.bench) ? saved.bench : undefined,
     manager: typeof saved.manager === "string" ? saved.manager : "",
   };
+}
+
+/** The club's manager: the one saved on the Lineups page, else the one given
+ *  in a club sheet (lib/star/data/clubProfiles.ts), else "". */
+export function managerFor(club: string): string {
+  return loadLineup(club)?.manager || profileOf(club)?.manager || "";
 }
 
 export function saveLineup(club: string, lineup: SavedLineup): void {

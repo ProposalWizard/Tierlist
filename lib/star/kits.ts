@@ -20,6 +20,7 @@
  * with that club's own home shirt and to read as that club. That is what the
  * game needs, and unlike a real kit it will not be wrong next August.
  */
+import { CLUB_PROFILES } from "./data/clubProfiles";
 
 export interface Kit {
   /** The shirt. */
@@ -183,6 +184,35 @@ const LOWER_LEAGUE_KITS: Record<string, ClubKits> = {
   "Weston-super-Mare": kits(k("white", "black"), k("black", "white")),
 };
 
+/** Home and away colours from the club sheets you've given (shirt + trim
+ *  only: patterns are kept in the profile but not drawn yet). */
+/**
+ *  Applied at the bottom of this file (it needs `clashes`). Where the given
+ *  colours can't be told apart on the pitch — a trim the same shade as its
+ *  shirt, or an away shirt like the home one (Dorking's sheet gives both as
+ *  white/blue) — only that part is swapped for a readable one; the words as
+ *  given stay in the profile and on /admin/clubs. */
+function legibleGivenKits(): Record<string, ClubKits> {
+  const contrast = (shirt: string) => (clashes(shirt, "#F2F4F7") ? "#17181A" : "#F2F4F7");
+  const out: Record<string, ClubKits> = {};
+  for (const p of Object.values(CLUB_PROFILES)) {
+    if (!p.homeKit?.shirtHex || !p.awayKit?.shirtHex) continue;
+    const home: Kit = { shirt: p.homeKit.shirtHex, trim: p.homeKit.trimHex! };
+    if (clashes(home.shirt, home.trim)) home.trim = contrast(home.shirt);
+    let away: Kit = { shirt: p.awayKit.shirtHex, trim: p.awayKit.trimHex! };
+    if (clashes(home.shirt, away.shirt)) {
+      // The away shirt in the sheet looks like the home one: wear the home
+      // trim colour instead, else a plain contrasting shirt.
+      const alt = !clashes(home.shirt, home.trim) && !clashes(home.trim, home.shirt) ? home.trim : contrast(home.shirt);
+      away = { shirt: alt, trim: home.shirt };
+      if (clashes(home.shirt, away.shirt)) away = { shirt: contrast(home.shirt), trim: home.shirt };
+    }
+    if (clashes(away.shirt, away.trim)) away.trim = contrast(away.shirt);
+    out[p.club] = { home, away };
+  }
+  return out;
+}
+
 /**
  * The twenty, keyed by the names the database uses.
  *
@@ -271,6 +301,8 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   // fourth English tier reads as distinct clubs rather than a wall of the
   // same six or seven generic shirts.
   ...LOWER_LEAGUE_KITS,
+  // Kits given in a club sheet (lib/star/data/clubProfiles.ts) win over the
+  // guesses above — added at the bottom of this file (legibleGivenKits).
 };
 
 /** A club nobody has colours for. Neutral, and it never clashes with much. */
@@ -514,3 +546,8 @@ export function kitLabelOnDark(shirt: string, trim: string): string {
   const trimHsl = hexToHsl(trim);
   return trimHsl.l >= 0.5 ? trim : "#E5E7EB";
 }
+
+// Kits given in a club sheet win over the guesses in CLUB_KITS: North/South
+// and Step 3 (2 Oct 2026). Here, not inside CLUB_KITS, because it needs
+// `clashes` (defined above) to keep each kit readable.
+Object.assign(CLUB_KITS, legibleGivenKits());

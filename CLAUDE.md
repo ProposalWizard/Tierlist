@@ -173,6 +173,25 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Club data lives in one place, and /admin/clubs shows the gaps
+
+Mikey, 2 Oct 2026: "make sure that you never lose this information again."
+- Every sheet of club information he gives goes into
+  `lib/star/data/sources/` untouched, then `python
+  scripts/club-data/build_club_profile_data.py` regenerates
+  `lib/star/data/clubProfileData.ts`. `lib/star/data/clubProfiles.ts`
+  (`profileOf`) merges the sheets, and the game falls back to it for kits,
+  grounds, club size, facilities, prestige, rivals, win chants and managers.
+- `/admin/clubs` (Club Data) lists every club with every field: green given,
+  amber guessed, red missing, plus a spreadsheet download. The checks are in
+  `lib/star/data/clubAudit.ts`. A new kind of club information gets a column
+  there too.
+- **North/South 2026/27:** the clubs as given. 1st goes up. 2nd–7th play off:
+  4v7 and 5v6, then 2nd and 3rd at home, then a one-off final at the higher
+  finisher's ground. 21st–24th go down to Step 3 (`STEP3_*_CLUBS`), whose four
+  all come up each season. Your own club finishing bottom four is forced to
+  move (Step 3 has no fixtures). Tests: `tests/star/regionalLadder.mts`.
+
 ## Tuner proposals live in the terminal
 
 When anyone asks for "the tuner proposals" (or what the Tune corrections add
