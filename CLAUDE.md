@@ -403,6 +403,13 @@ so each picture shows everything together. *"How am I meant to analyse if
 you've recorded everything separately? … put the patch notes together in a
 way where you can see everything, apply all the changes, and then record."*
 
+**Clear disk space before every new build (Harry, 2 Oct 2026).** *"from now on
+always clear the previous worktree and disc space when starting a new build."*
+Before launching builders: remove every old agent worktree from earlier rounds
+(`git worktree remove --force`, then `git worktree prune`), delete old film and
+render folders in the scratchpad that are no longer needed, and check `df -h`.
+Keep the current round's base and anything a builder is still using.
+
 **Perfection with efficiency (Harry, 1 Oct 2026).** *"we have to combine
 perfection with efficiency. If its gonna take 30 mins less to get to the same
 outcome at some points you can use a bit less effort but the layout should
