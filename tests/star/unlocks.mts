@@ -10,6 +10,7 @@ import {
   styleUnlockStar, styleLock, appInstalled, installApp, STARTER_APPS, APP_STORE, type Feature,
   recordMatchPlayed, pendingAnnouncements, markAnnounced, hasSponsorOffer, LOCK_HINT,
   FIRST_STEPS, nextStep, stepDone, firstStepsDone, bottomLeft, slotQuestionDue, setBottomLeft,
+  gameFirst, managerTalkDue, stepsFor, phonePrice, phoneShortfall, phoneStepLine, SHOP_AFTER_GAMES,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
 import { KIB_CANS, kibCanEffectLabel } from "../../lib/star/shopData";
@@ -29,6 +30,8 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
 const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+/** The v0.24 order (a save part-way through it): everything shut, no gameFirst. */
+const fresh24 = (): CareerState => { const c = fresh(); return { ...c, unlocks: { open: [], seen: [], drills: 0, pointsAtStart: c.unlocks!.pointsAtStart, apps: [] } }; };
 const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "relations", "phone"];
 
 // ── Start values ──
@@ -47,18 +50,18 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(Math.abs(selectionStanding(at60) - selectionStanding(c) - 4) < 1e-9, "manager 50 instead of 60 is 4 points of selection standing");
 }
 
-// ── A new career: only Home and Training ──
+// ── A new career: only Home and Training ── (v0.24 order)
 {
-  const c = fresh();
+  const c = fresh24();
   check(!!c.unlocks, "a new career carries the unlock chain");
   for (const f of ALL) check(!isOpen(c, f), `a new career starts with ${f} locked`);
   check(!hasSeen(c, "tutorial"), "the Home tutorial has not been seen");
   check(hasSeen(markSeen(c, "tutorial"), "tutorial"), "skipping/finishing the tutorial records it");
 }
 
-// ── The order ──
+// ── The order ── (v0.24 order)
 {
-  let c = fresh();
+  let c = fresh24();
   c = recordDrill(c, 100, 2);
   check(!isOpen(c, "league") && !drillMessageDue(c), "one drill opens nothing");
   check(recordLeagueVisit(c) === c, "visiting the League before it opens does nothing");
@@ -90,9 +93,9 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   for (const f of ALL) check(isOpen(c, f), `at the end of the chain ${f} is open`);
 }
 
-// ── v0.24: Relations after game 1; v0.25: Sponsors with your first offer ──
+// ── v0.24: Relations after game 1; v0.25: Sponsors with your first offer ── (v0.24 order)
 {
-  let c = fresh();
+  let c = fresh24();
   check(!isOpen(c, "sponsors"), "a new career starts with Sponsors locked (P1-45)");
   check(pendingAnnouncements(c).length === 0, "nothing to announce at the start");
   c = recordLeagueVisit(recordDrill(recordDrill(c)));
@@ -121,9 +124,9 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(isOpen(old, "sponsors") && recordMatchPlayed(old) === old, "an old save has Sponsors open and is never touched");
 }
 
-// ── v0.24: the first steps, the story list, the bottom-left button ──
+// ── v0.24: the first steps, the story list, the bottom-left button ── (v0.24 order)
 {
-  let c = fresh();
+  let c = fresh24();
   check(FIRST_STEPS.map(s => s.id).join() === "first-two-sessions,first-game,boss-meeting,buy-phone", "four first steps, in order");
   check(nextStep(c)?.id === "first-two-sessions" && !firstStepsDone(c), "a new career starts on step 1");
   check(bottomLeft(c) === "league", "the bottom-left starts as League (locked)");
@@ -146,6 +149,43 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(bottomLeft(no) === "achievements" && !slotQuestionDue(no), "no: Achievements stays, and the question is not asked again");
   const old = { ...c, unlocks: undefined };
   check(bottomLeft(old) === "league" && nextStep(old) === null && !slotQuestionDue(old), "an old save keeps League and has no first steps");
+}
+
+// ── v0.25: the game comes first (Harry and Mikey, live, 2 Oct 2026) ──
+{
+  const played = (n: number, x: CareerState): CareerState => ({ ...x, careerStats: { ...x.careerStats, appearances: n } });
+  let c = fresh();
+  check(gameFirst(c), "a new career is on the game-first order");
+  check(isOpen(c, "league") && isOpen(c, "stats") && isOpen(c, "play"), "League, Stats and Play are open at the start");
+  check(!isOpen(c, "training") && !isOpen(c, "relations") && !isOpen(c, "shop") && !isOpen(c, "achievements"), "Training, Relations, Shop and Achievements start shut");
+  check(stepsFor(c)[0].id === "first-game" && nextStep(c)?.id === "first-game" && nextStep(c)?.prompt === "You've got a game today", "step 1 is 'You've got a game today'");
+  check(!managerTalkDue(c), "no manager's talk before the first game");
+  c = recordFirstMatch(played(1, c));
+  check(isOpen(c, "training") && isOpen(c, "achievements"), "game 1 opens Training and Achievements");
+  check(pendingAnnouncements(c).join() === "training,achievements", "…both announced");
+  check(!isOpen(c, "relations") && !isOpen(c, "shop"), "game 1 does not open Relations or the Shop");
+  check(managerTalkDue(c) && nextStep(c)?.id === "boss-meeting", "then: your manager wants a word");
+  c = recordBossMeeting(markAnnounced(c));
+  check(isOpen(c, "relations") && pendingAnnouncements(c).join() === "relations" && !managerTalkDue(c), "the manager's talk opens Relations, announced");
+  check(nextStep(c)?.id === "first-two-sessions", "then training");
+  c = recordDrill(markAnnounced(c));
+  check(!isOpen(c, "shop"), "one drill: Shop still shut");
+  c = recordDrill(c);
+  check(isOpen(c, "shop") && pendingAnnouncements(c).join() === "shop" && c.achievements.includes("first-two-sessions"), "two drills open the Shop (announced) with the first-steps achievement");
+  check(!drillMessageDue(c), "no v0.24 'League unlocked' message");
+  check(nextStep(c)?.id === "buy-phone", "then the phone");
+  // No drills at all: the Shop still opens by game 3.
+  let d = recordBossMeeting(recordFirstMatch(played(1, fresh())));
+  d = recordMatchPlayed(played(2, d));
+  check(!isOpen(d, "shop"), "game 2 without drills: Shop still shut");
+  d = recordMatchPlayed(played(SHOP_AFTER_GAMES, d));
+  check(isOpen(d, "shop") && SHOP_AFTER_GAMES === 3, "game 3 opens the Shop without drills");
+  // The phone step says its price and the shortfall.
+  const price = phonePrice();
+  check(price > 0, `the first phone has a price (★${price})`);
+  check(phoneShortfall({ money: 0 }) === price && phoneStepLine({ money: 0 }).includes(`★${price - 0} more`), "broke: says how much more");
+  check(phoneShortfall({ money: price }) === 0 && /buy it now/.test(phoneStepLine({ money: price })), "enough: says you can buy it");
+  check(phoneShortfall({ money: price - 40 }) === 40, "the shortfall is the difference");
 }
 
 // ── Style: only the phone, the rest by star rating ──

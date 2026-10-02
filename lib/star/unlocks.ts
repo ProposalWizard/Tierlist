@@ -297,6 +297,40 @@ export const FIRST_STEPS: FirstStep[] = [
   { id: "buy-phone", label: "Connected", todo: "Buy a phone", prompt: "Buy your first phone in the Shop", opens: "Opens the Phone" },
 ];
 
+/** v0.25 (game first): the same steps in the new order, worded for it. */
+export const FIRST_STEPS_GAME_FIRST: FirstStep[] = [
+  { id: "first-game", label: "Debut", todo: "Play your first game", prompt: "You've got a game today", opens: "Opens Training and Achievements" },
+  { id: "boss-meeting", label: "Face to Face", todo: "Talk to your manager", prompt: "Your manager wants a word", opens: "Opens Relations" },
+  { id: "first-two-sessions", label: "First Two Sessions", todo: "Complete two training drills", prompt: "Go to training", opens: "Opens the Shop" },
+  { id: "buy-phone", label: "Connected", todo: "Buy a phone", prompt: "Buy your first phone in the Shop", opens: "Opens the Phone" },
+];
+
+/** The first steps for this career, in its order. */
+export function stepsFor(c: Pick<CareerState, "unlocks">): FirstStep[] {
+  return c.unlocks?.gameFirst ? FIRST_STEPS_GAME_FIRST : FIRST_STEPS;
+}
+
+// ── The phone step: never a step that silently does not work (v0.25) ──────
+
+/** What your first phone costs in the shop. */
+export function phonePrice(): number {
+  const lv = LIFESTYLE_ALL_LEVELS.filter((i) => (i.baseId ?? i.id) === "phone").sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
+  return lv?.price ?? LIFESTYLE_ITEMS.find((i) => i.id === "phone")?.price ?? 0;
+}
+
+/** How much more money the first phone needs (0 = you can buy it now). */
+export function phoneShortfall(c: Pick<CareerState, "money">): number {
+  return Math.max(0, phonePrice() - Math.floor(c.money));
+}
+
+/** The line the phone step shows: the price, and what is still needed. */
+export function phoneStepLine(c: Pick<CareerState, "money">): string {
+  const need = phoneShortfall(c);
+  return need > 0
+    ? `A phone costs ★${phonePrice()}. You need ★${need} more. Matches pay you`
+    : `A phone costs ★${phonePrice()}. You can buy it now`;
+}
+
 export function stepDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">, id: StepId): boolean {
   if (!c.unlocks) return true;
   if (id === "first-game") return (c.careerStats?.appearances ?? 0) >= 1 || c.fixtures.some((f) => f.played);
@@ -307,7 +341,7 @@ export function stepDone(c: Pick<CareerState, "unlocks" | "achievements" | "care
 /** The next first step to do, or null when every one is done. */
 export function nextStep(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): FirstStep | null {
   if (!c.unlocks) return null;
-  return FIRST_STEPS.find((s) => !stepDone(c, s.id)) ?? null;
+  return stepsFor(c).find((s) => !stepDone(c, s.id)) ?? null;
 }
 
 export function firstStepsDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
