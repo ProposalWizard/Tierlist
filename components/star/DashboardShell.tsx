@@ -57,7 +57,7 @@ interface Props {
    *  Achievements has opened (v0.23.1, P26/P60: "you got rid of the home button
    *  at the bottom … there's no way to get back"). League is then reached from
    *  Stats or the phone; Achievements from a link on Home. */
-  homeSlot?: { active: boolean; onClick: () => void };
+  homeSlot?: { active: boolean; onClick: () => void; /** v0.24 (P2-68, P2-89): the slot can be Achievements through the first steps. Default Home. */ label?: string; icon?: string };
   /** The top HUD (ui/TopHud.tsx): replaces the Star/Energy bars, the Age
    *  strip and the header's money chip, on every screen but the phone. */
   hud?: React.ReactNode;
@@ -168,7 +168,7 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
             </div>
           )}
           {homeSlot
-            ? <NavBtn tour="nav-league" label="Home" icon="🏠" active={homeSlot.active} onClick={homeSlot.onClick} />
+            ? <NavBtn tour="nav-league" label={homeSlot.label ?? "Home"} icon={homeSlot.icon ?? "🏠"} tight={(homeSlot.label ?? "").length > 8} active={homeSlot.active} onClick={homeSlot.onClick} />
             : <NavBtn tour="nav-league" label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
           <NavBtn tour="nav-training" label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
           <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />

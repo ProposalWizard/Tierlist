@@ -100,6 +100,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
                 key={n}
                 disabled={locked}
                 onClick={() => onPlay(n)}
+                data-tour={n === 1 ? "level-1" : undefined}
                 aria-label={locked ? `Level ${n}, locked` : `Level ${n}, ${s} stars`}
                 className={`kib-press relative aspect-square overflow-hidden rounded-xl text-center ${next ? "animate-pulse" : ""}`}
                 style={locked
@@ -112,12 +113,13 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
               >
                 {/* P68: the number is small, the stars are the square. */}
                 <div className={`absolute left-1.5 top-1 text-[10px] font-black leading-none tabular-nums ${locked ? "opacity-40" : "text-white/80"}`}>{locked ? "🔒" : n}</div>
-                <div className="flex h-full flex-col items-center justify-center pt-2">
-                  <Star3D on={s >= 3} size={27} />
-                  <div className="-mt-0.5 flex items-end gap-px">
-                    <Star3D on={s >= 1} size={23} />
-                    <Star3D on={s >= 2} size={23} />
-                  </div>
+                {/* Three stars in a row, filling 1, 2, 3 left to right (Harry,
+                    2 Oct 2026, P2-3: "one, two, and then three … not just
+                    three on its own" — the third star used to sit alone on top). */}
+                <div className="flex h-full items-center justify-center gap-px pt-2.5">
+                  <Star3D on={s >= 1} size={19} />
+                  <Star3D on={s >= 2} size={19} />
+                  <Star3D on={s >= 3} size={19} />
                 </div>
               </button>
             );

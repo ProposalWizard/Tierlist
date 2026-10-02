@@ -659,7 +659,7 @@ export interface Horse {
 
 /** See CareerState.unlocks and lib/star/unlocks.ts. */
 export interface CareerUnlocks {
-  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone". */
+  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone", "sponsors". */
   open: string[];
   /** One-off screens already shown: "tutorial", "drills-msg", "league-intro", "shop-intro", pop-ups. */
   seen: string[];
@@ -671,6 +671,12 @@ export interface CareerUnlocks {
   starsAtStart?: number;
   /** Phone apps installed from the App Store. */
   apps: string[];
+  /** Features opened but not yet announced (v0.24: "the moment ANY feature
+   *  unlocks … it is announced"). lib/star/unlocks.ts. */
+  announce?: string[];
+  /** The bottom-left button, once the first steps are done and the player
+   *  has answered "switch this to League?" (v0.24, P2-89). */
+  slot?: "achievements" | "league";
 }
 
 export interface CareerState {
