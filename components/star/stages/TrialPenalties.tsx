@@ -322,7 +322,9 @@ export function TeachCard(
         // A solid card that is one piece: its own cursor (not the pitch's),
         // and the button inside its edge rather than poking out of it
         // (Mikey, 28 Sep 2026: "the got it button is like hovering over").
-        "teach-card pointer-events-auto cursor-default w-full rounded-xl border-2 border-amber-400 bg-white shadow-xl "
+        // See-through, so the pitch shows behind it (Harry, 2 Oct 2026: "the pop
+        // ups should be lower opacity").
+        "teach-card pointer-events-auto cursor-default w-full rounded-xl border-2 border-amber-400/70 bg-white/75 shadow-xl backdrop-blur-[2px] "
         + (compact ? "px-2 py-1" : "px-3 py-2")
       }
     >
@@ -353,13 +355,16 @@ export function TeachCard(
               </span>
             </>
           )}
-        <button
+        {/* Only the inline form keeps a button: the full-screen form closes
+            on a tap anywhere and says so underneath (Harry, 2 Oct 2026:
+            "a very faint 'tap anywhere to continue' rather than GOT IT"). */}
+        {inline && <button
           type="button"
           onClick={e => { e.stopPropagation(); onDismiss(); }}
           className="teach-dismiss pointer-events-auto ml-auto min-h-[36px] shrink-0 cursor-pointer rounded-lg bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300"
         >
           Got it ✕
-        </button>
+        </button>}
       </div>
 
       {!compact && (
@@ -388,13 +393,18 @@ export function TeachCard(
     <div
       role="dialog"
       aria-modal="true"
-      className={`absolute inset-0 z-40 flex justify-center bg-black/40 px-4 ${
+      className={`absolute inset-0 z-40 flex cursor-pointer justify-center bg-black/25 px-4 ${
         place === "top" ? "items-start pt-[30%]" : "items-center"
       }`}
       onPointerDown={e => e.stopPropagation()}
       onClick={onDismiss}
     >
-      <div className="w-full max-w-[320px]">{panel}</div>
+      <div className="w-full max-w-[320px]">
+        {panel}
+        <div className="mt-2 animate-pulse text-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
+          Tap anywhere to continue
+        </div>
+      </div>
     </div>
   );
 }
