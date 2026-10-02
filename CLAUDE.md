@@ -318,6 +318,12 @@ through too much yap."* No preamble, no restating the request, no praise for
 the idea, no tour of the code. Name things the way they appear on screen; put
 the file in brackets after, once, only if someone needs to find it.
 
+**Write about 80% of the way to ASD-STE100; draw stats and rules (Harry, 2 Oct
+2026).** Short sentences (20–25 words at most), active voice, simple tenses,
+one word for one thing, no coder words. Any stat, rate or rule with conditions
+gets a picture (bar, flow diagram, ✓/✗ table) before the words. Applies to chat
+replies and every artifact. Full rules: `artifact-house-style` skill.
+
 **Every claim carries a number, or admits it has none.** "Scoring is hard" is
 not a finding. "A clean one-on-one converts at 0.0% over 250 simulated
 matches" is. Always give the before alongside the after.
