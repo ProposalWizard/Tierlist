@@ -144,7 +144,9 @@ export default function MatchCommentary({
             "the middle." — final playtest, 27 Sep 2026). The rows' colours
             still run the full width; only the words stop short of it. */}
         <div className="flex min-h-full flex-col justify-start [&>div]:pr-16">
-          {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
+          {/* While the kick-off card shows, its "KICK OFF" title replaces the
+              feed's own kick-off row, which read the same words twice (v0.24). */}
+          {!(lines.length <= 1 && !oldUi) && lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
           {/* Until the first real line lands the panel was only the "Kick Off"
               strip over a black screen for a couple of seconds (Harry's 1 Oct
               2026 recording, 14:59). This is the kick-off itself: who is

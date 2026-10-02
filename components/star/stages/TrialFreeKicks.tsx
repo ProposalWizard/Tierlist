@@ -163,7 +163,7 @@ export default function TrialFreeKicks({
       title="Free kicks"
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
       teach={{
-        headline: "There is no through the wall.",
+        headline: "There is no way through the wall.",
         // Measured at exactly the row width with nothing to spare, so it is
         // given a shorter form rather than left one font-render away from
         // clipping.

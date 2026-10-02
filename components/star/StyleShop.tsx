@@ -93,7 +93,7 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
       <div ref={mineRef} className="relative mb-1.5 flex items-center gap-2 px-0.5">
         {landKey === "style" && <Burst trigger={landed} colors={["#f0abfc", "#fde047", "#ffffff"]} count={16} spread={0.7} round className="left-1/2 top-1/2" />}
         <span className="shrink-0 text-[11px] font-black uppercase tracking-[0.14em] text-white">Fame</span>
-        <SquareBar value={Math.max(2, Math.min(100, (stuffFame / OWNED_FAME_MAX) * 100))} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate />
+        <SquareBar value={Math.max(2, Math.min(100, (stuffFame / OWNED_FAME_MAX) * 100))} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate square />
         <span className="shrink-0 text-[15px] font-black tabular-nums text-amber-300">{fameText(stuffFame)}</span>
       </div>
 
