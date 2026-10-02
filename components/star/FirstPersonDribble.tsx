@@ -2,11 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
+  CARRY, carryLead,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor } from "@/lib/star/firstPersonView";
 import { poseFor, closeness, type DribbleCamera } from "@/lib/star/dribbleCamera";
-import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
+import { renderFirstPerson, type DuelPip, type FpKits } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { revealOnScreen } from "@/lib/revealOnScreen";
@@ -290,11 +291,31 @@ export interface FirstPersonDribbleProps {
    * looks exactly as it did. A picture only.
    */
   calmCamera?: boolean;
+  /**
+   * Shirt and shorts for you and for the men you take on. Omit for the
+   * game's role colours (you green, them red). A picture only.
+   */
+  kits?: FpKits;
 }
+
+/** The New UI's top-bar edge (components/star/ui/TopHud.tsx): a dark glass
+ *  fill, square corners, a crisp white edge. The wave counter and the hint
+ *  strip wear it so this screen matches the rest of the game. */
+const HUD_BOX: React.CSSProperties = {
+  background: "linear-gradient(180deg, rgba(12,16,24,.9), rgba(12,16,24,.78))",
+  boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92), 0 2px 6px rgba(0,0,0,.45)",
+};
+
+const PIP_FILL: Record<DuelPip, string> = {
+  pending: "rgba(255,255,255,0.18)",
+  active: "#fbbf24",
+  beaten: "#34d399",
+  won: "#ef4444",
+};
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false,
+  hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false, kits,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -302,6 +323,10 @@ export default function FirstPersonDribble({
   const wrapRef = useRef<HTMLDivElement>(null);
   const runRef = useRef<FpRunState | null>(null);
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  /** The painted stadium behind the far end — the home screen's sunset. */
+  const backdropRef = useRef<HTMLImageElement | null>(null);
+  const kitsRef = useRef(kits);
+  kitsRef.current = kits;
   // Same cache shape CanvasMatch.tsx uses for real match figures — see
   // lib/star/faceImageCache.ts — and the same shared FaceStyle, loaded once,
   // so a defender here is tuned exactly as consistently as one in a real
@@ -338,6 +363,14 @@ export default function FirstPersonDribble({
   const sideDirRef = useRef(1);
   const sideRef = useRef(0);
   const closeRef = useRef(0);
+  /** A fresh run starts with the camera already over its shoulder, rather
+   *  than easing across from dead behind during the first second. */
+  const snapCamRef = useRef(true);
+
+  // The wave counter, drawn as a page element now (not painted into the
+  // canvas), updated only when it changes.
+  const [hud, setHud] = useState<{ cleared: number; total: number; pips: DuelPip[] }>({ cleared: 0, total: 0, pips: [] });
+  const hudKeyRef = useRef("");
 
   const phaseRef = useRef<Phase>("ready");
   const [phase, setPhaseState] = useState<Phase>("ready");
@@ -359,6 +392,9 @@ export default function FirstPersonDribble({
     const img = new Image();
     img.src = "/star/ball.png";
     ballImgRef.current = img;
+    const bg = new Image();
+    bg.src = "/home/scene-sunset.webp";
+    backdropRef.current = bg;
   }, []);
 
   useEffect(() => {
@@ -377,8 +413,9 @@ export default function FirstPersonDribble({
     const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng });
     runRef.current = run;
     camXRef.current = run.x;
-    ballXRef.current = run.x;
+    ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
     ballVXRef.current = 0;
+    snapCamRef.current = true;
     draggingRef.current = false;
     gestureStartRef.current = null;
     setResultText("");
@@ -579,7 +616,11 @@ export default function FirstPersonDribble({
         const diff = run.laneTarget - run.x;
         if (Math.abs(diff) > 0.15) touchDir = Math.sign(diff);
       }
-      const desiredBallX = run.x + touchDir * ballTouchReach * (run.burst ? 1.4 : 1);
+      // At rest it sits just outside the boot on the camera's side (CARRY in
+      // firstPersonDribble.ts) — on the old "today" camera, dead ahead as before.
+      const chaseCam = cameraRef.current !== "today";
+      const restX = run.x + (chaseCam ? sideDirRef.current * CARRY.restFootX : 0);
+      const desiredBallX = touchDir === 0 ? restX : run.x + touchDir * ballTouchReach * (run.burst ? 1.4 : 1);
       const accel = BALL_SPRING_K * (desiredBallX - ballXRef.current) - BALL_SPRING_C * ballVXRef.current;
       ballVXRef.current += accel * dt;
       ballXRef.current += ballVXRef.current * dt;
@@ -598,21 +639,29 @@ export default function FirstPersonDribble({
           if (d.y < run.y + 0.5) near = Math.min(near, run.y - d.y);
         }
         closeRef.current += (closeness(near) - closeRef.current) * (1 - Math.exp(-2.5 * dt));
+        if (snapCamRef.current) closeRef.current = closeness(near);
         const pose = poseFor(cameraRef.current, closeRef.current);
         // Lean towards the side the ball is on, so it is never behind your legs.
         const off = ballXRef.current - run.x;
         const lean = stepCameraLean({ dir: sideDirRef.current >= 0 ? 1 : -1, side: sideRef.current }, off, pose.side, feel, dt);
         sideDirRef.current = lean.dir;
-        sideRef.current = lean.side;
+        sideRef.current = snapCamRef.current ? lean.dir * pose.side * feel.sideScale : lean.side;
+        snapCamRef.current = false;
         camEye = pose.eye; camPitchDeg = pose.pitchDeg; camOffset = pose.offset; restLead = pose.lead; camLook = pose.look;
       } else {
         sideRef.current = 0;
       }
 
       const burstLead = run.burst ? Math.min(1, run.burst.t / BURST_T) : 0;
-      const baseLead = restLead + (BALL_BURST_LEAD - BALL_BASE_LEAD) * burstLead;
-      const wave = Math.sin((run.stride / TOUCH_WAVE_LEN) * Math.PI * 2) * TOUCH_WAVE_AMP;
-      const leadDepth = Math.max(0.3, baseLead + wave);
+      let leadDepth: number;
+      if (cameraRef.current !== "today") {
+        // Touched forward once a stride by the foot on its side (CARRY).
+        leadDepth = carryLead(run.stride, sideDirRef.current >= 0 ? 1 : -1, burstLead);
+      } else {
+        const baseLead = restLead + (BALL_BURST_LEAD - BALL_BASE_LEAD) * burstLead;
+        const wave = Math.sin((run.stride / TOUCH_WAVE_LEN) * Math.PI * 2) * TOUCH_WAVE_AMP;
+        leadDepth = Math.max(0.3, baseLead + wave);
+      }
 
       // Chase-cam: sits CHASE_OFFSET metres behind your (lagged) camera
       // position (larger y — the corridor runs toward y=0), elevated and
@@ -646,7 +695,14 @@ export default function FirstPersonDribble({
       // The body leans toward whichever side the ball is currently being
       // touched (reuses the same lateral shear a defender's telegraph
       // already draws with — see firstPersonRender.ts).
-      const lean = Math.max(-0.35, Math.min(0.35, (ballXRef.current - run.x) * 0.55));
+      // Measured from where the ball rests, so a ball carried by the boot
+      // does not lean him over all the time.
+      const lean = Math.max(-0.35, Math.min(0.35, (ballXRef.current - restX) * 0.55));
+      const hudKey = `${wavesCleared}/${run.roundSizes.length}/${pips.join(",")}`;
+      if (hudKey !== hudKeyRef.current) {
+        hudKeyRef.current = hudKey;
+        setHud({ cleared: wavesCleared, total: run.roundSizes.length, pips });
+      }
 
       renderFirstPerson(c, {
         cam, defenders: run.defenders, stride: run.stride,
@@ -654,8 +710,10 @@ export default function FirstPersonDribble({
         ball: { x: ballXRef.current, y: run.y - leadDepth, z: 0 },
         ballImage: ballImgRef.current,
         assist, reducedMotion: reducedMotionRef.current,
-        hud: { text: `${wavesCleared}/${run.roundSizes.length} waves`, pips },
         own: { x: run.x, y: run.y },
+        backdrop: backdropRef.current,
+        ballBehindYou: chaseCam,
+        kits: kitsRef.current,
         hideYou: hideYouRef.current,
         ownLean: lean,
         getFace: faceImageCacheRef.current.get,
@@ -691,9 +749,25 @@ export default function FirstPersonDribble({
         onPointerCancel={onPointerUp}
       />
 
+      {/* The wave counter: how many waves you have got past, and one square
+          per wave (amber = the one on you now, green = beaten, red = it beat you). */}
+      {hud.total > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center px-3">
+          <div className="flex items-center gap-2.5 px-3 py-1.5" style={HUD_BOX} aria-label={`${hud.cleared} of ${hud.total} waves beaten`}>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85">Waves</span>
+            <span className="text-lg font-black leading-none tabular-nums text-white">{hud.cleared}/{hud.total}</span>
+            <span className="flex items-center gap-1">
+              {hud.pips.map((p, i) => (
+                <span key={i} className="block h-2.5 w-2.5" style={{ background: PIP_FILL[p], boxShadow: "inset 0 0 0 1px rgba(255,255,255,.85)" }} />
+              ))}
+            </span>
+          </div>
+        </div>
+      )}
+
       {phase === "run" && !hideHint && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
-          <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[11px] font-bold text-white/80">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
+          <p className="px-3 py-2 text-center text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
             Tap left or right to touch the ball that way. Flick to burst past him.
           </p>
         </div>
@@ -708,12 +782,13 @@ export default function FirstPersonDribble({
           aria-label="Tap to start the run"
           className="absolute inset-0 z-30 bg-black/25"
         >
-          {/* Over the stand, not the men: the first wave is the thing to read. */}
-          <span className="absolute inset-x-0 top-[22%] flex flex-col items-center gap-2 px-6 text-center">
-            <span className="rounded-full bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950 shadow-lg shadow-black/50 motion-safe:animate-pulse">
+          {/* Over the stand, not the men: the first wave is the thing to read.
+              Just under the wave counter. */}
+          <span className="absolute inset-x-0 top-[8%] flex flex-col items-center gap-1.5 px-6 text-center">
+            <span className="bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950 motion-safe:animate-pulse" style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92), 0 2px 8px rgba(0,0,0,.5)" }}>
               Tap to start
             </span>
-            <span className="rounded-lg bg-black/55 px-3 py-1 text-[12px] font-bold leading-snug text-white">
+            <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
               Tap left or right to touch the ball. Flick to burst past him.
             </span>
           </span>

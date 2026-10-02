@@ -1,5 +1,5 @@
 import { project, horizonPx, type FpCamera } from "./firstPersonView";
-import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
+import { OWN_GAIT_M, type FpDefender, type DefenderPhase } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
 import { DEFAULT_FACE_STYLE, type FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
@@ -181,50 +181,237 @@ function limb(
   ], fill);
 }
 
-// ── Sky, stands, ground ────────────────────────────────────────────────────
+// ── The stadium, the pitch and its markings ─────────────────────────────────
+//
+// Harry, 2 Oct 2026: "we gotta get this dribbling screen looking better".
+// The old picture was a flat dark band for a stand and one flat green for the
+// pitch. Now: a sunset sky, a real painted stand (the home screen's own
+// sunset stadium, `public/home/scene-sunset.webp`, cut to the roof, crowd and
+// hoardings) standing behind the far goal line IN THE WORLD, so it grows as
+// you run at it; two floodlight towers; a pitch mown in real stripes fixed to
+// the turf; real white lines (touchlines, halfway line, centre circle);
+// evening light and a vignette. Still nothing goal-shaped (see the header).
+// A look only: nothing here is read by the run.
 
-function drawSky(ctx: CanvasRenderingContext2D, W: number, H: number, horizon: number) {
-  const g = ctx.createLinearGradient(0, 0, 0, horizon);
-  g.addColorStop(0, C.sky);
-  g.addColorStop(1, C.skyLow);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, horizon);
-  const bandTop = horizon * 0.55;
-  ctx.fillStyle = C.stand;
-  ctx.fillRect(0, bandTop, W, horizon - bandTop);
-  const crowd = crowdTile();
-  if (crowd) {
-    const pat = ctx.createPattern(crowd, "repeat");
-    if (pat) { ctx.fillStyle = pat; ctx.fillRect(0, bandTop, W, horizon - bandTop); }
+/** Pitch y of the far stand's front (behind the goal line, metres). */
+const STAND_Y = -8;
+/** Metres from the turf to the roof edge of that stand. */
+const STAND_H = 15;
+/** Metres of stand one copy of the painted strip covers. */
+const STAND_TILE_W = 26.8;
+/** Mowing stripe width, metres, fixed to the pitch. */
+const STRIPE_M = 5.25;
+/** Nothing nearer than this (camera-depth metres) is drawn on the turf. */
+const GROUND_NEAR = 0.45;
+
+/** The part of scene-sunset.webp used for the stand (fractions of the image). */
+const STRIP_SRC = { x0: 100 / 900, x1: 800 / 900, y0: 400 / 1609, y1: 794 / 1609 };
+
+interface StandStrip { a: HTMLCanvasElement; b: HTMLCanvasElement }
+const strips = new WeakMap<HTMLImageElement, StandStrip | null>();
+
+/** The stand cut out of the painted backdrop, once per image: its top fades
+ *  into the sky, and a mirrored copy so tiles join without a hard seam. */
+function standStrip(img: HTMLImageElement | null | undefined): StandStrip | null {
+  if (!img || !img.complete || img.naturalWidth === 0 || typeof document === "undefined") return null;
+  const hit = strips.get(img);
+  if (hit !== undefined) return hit;
+  const sx = img.naturalWidth * STRIP_SRC.x0, sw = img.naturalWidth * (STRIP_SRC.x1 - STRIP_SRC.x0);
+  const sy = img.naturalHeight * STRIP_SRC.y0, sh = img.naturalHeight * (STRIP_SRC.y1 - STRIP_SRC.y0);
+  const w = Math.round(sw), h = Math.round(sh);
+  const make = (flip: boolean): HTMLCanvasElement | null => {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    if (flip) { g.translate(w, 0); g.scale(-1, 1); }
+    g.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "destination-out";
+    const fade = g.createLinearGradient(0, 0, 0, h * 0.16);
+    fade.addColorStop(0, "rgba(0,0,0,1)");
+    fade.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = fade;
+    g.fillRect(0, 0, w, h * 0.16);
+    return c;
+  };
+  const a = make(false), b = make(true);
+  const out = a && b ? { a, b } : null;
+  strips.set(img, out);
+  return out;
+}
+
+/** Depth along the camera's view of a point on the turf (matches project()). */
+function groundDepth(cam: FpCamera, x: number, y: number): number {
+  const fwd = cam.forward ?? { x: 0, y: -1 };
+  const d0 = (x - cam.x) * fwd.x + (y - cam.y) * fwd.y;
+  const p = cam.pitch ?? 0;
+  return d0 * Math.cos(p) + cam.eye * Math.sin(p);
+}
+
+/** A polygon on the turf (world x/y), clipped at the near plane, projected
+ *  and filled. The clip matters: under the leaning camera a wide band's far
+ *  corner can sit behind the lens, and a band that just skipped itself left a
+ *  hole in the grass. */
+function groundPoly(ctx: CanvasRenderingContext2D, cam: FpCamera, pts: { x: number; y: number }[], fill: string | CanvasGradient) {
+  const out: { x: number; y: number }[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const da = groundDepth(cam, a.x, a.y) - GROUND_NEAR, db = groundDepth(cam, b.x, b.y) - GROUND_NEAR;
+    if (da >= 0) out.push(a);
+    if ((da >= 0) !== (db >= 0)) {
+      const t = da / (da - db);
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  if (out.length < 3) return;
+  const proj: Pt[] = [];
+  for (const p of out) {
+    const q = project(cam, p.x, p.y, 0);
+    if (!q) return;
+    proj.push(q);
+  }
+  quad(ctx, proj, fill);
+}
+
+/** A painted line on the turf, `w` metres wide, from a to b. */
+function groundLine(ctx: CanvasRenderingContext2D, cam: FpCamera, ax: number, ay: number, bx: number, by: number, w: number, fill: string) {
+  const len = Math.hypot(bx - ax, by - ay) || 1;
+  const nx = (-(by - ay) / len) * w / 2, ny = ((bx - ax) / len) * w / 2;
+  groundPoly(ctx, cam, [
+    { x: ax + nx, y: ay + ny }, { x: bx + nx, y: by + ny },
+    { x: bx - nx, y: by - ny }, { x: ax - nx, y: ay - ny },
+  ], fill);
+}
+
+/** Screen x of the camera's own vanishing point (straight down its view). */
+function vanishX(cam: FpCamera): number {
+  const fwd = cam.forward ?? { x: 0, y: -1 };
+  const p = project(cam, cam.x + fwd.x * 400, cam.y + fwd.y * 400, cam.eye);
+  return p ? p.px : cam.W / 2;
+}
+
+/** Sunset sky, the far stand (painted, or drawn when the picture is not in
+ *  yet), and two floodlight towers above it. */
+function drawStadium(ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H: number, backdrop?: HTMLImageElement | null) {
+  const horizon = horizonPx(cam);
+  const sky = ctx.createLinearGradient(0, 0, 0, Math.max(horizon, 1));
+  sky.addColorStop(0, "#2a1d55");
+  sky.addColorStop(0.38, "#6d3a77");
+  sky.addColorStop(0.72, "#d8684f");
+  sky.addColorStop(1, "#f8ad4c");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, Math.max(horizon, 1) + 2);
+  // The low sun, straight down the pitch.
+  const vx = vanishX(cam);
+  const sun = ctx.createRadialGradient(vx, horizon, 0, vx, horizon, W * 0.75);
+  sun.addColorStop(0, "rgba(255,226,150,0.75)");
+  sun.addColorStop(0.35, "rgba(255,170,90,0.25)");
+  sun.addColorStop(1, "rgba(255,150,80,0)");
+  ctx.fillStyle = sun;
+  ctx.fillRect(0, 0, W, horizon + 2);
+
+  // Floodlight towers, behind the stand's two ends.
+  for (const tx of [12, 56]) {
+    const base = project(cam, tx, STAND_Y - 6, 0), top = project(cam, tx, STAND_Y - 6, 19);
+    if (!base || !top) continue;
+    const s = top.scale;
+    ctx.strokeStyle = "rgba(30,22,40,0.9)";
+    ctx.lineWidth = Math.max(1, 0.7 * s);
+    ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(top.px, top.py); ctx.stroke();
+    const bw = 7 * s, bh = 3.2 * s;
+    ctx.fillStyle = "#2a2236";
+    ctx.fillRect(top.px - bw / 2, top.py - bh, bw, bh);
+    ctx.fillStyle = "#fff4c4";
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+      ctx.fillRect(top.px - bw / 2 + bw * (0.04 + c * 0.24), top.py - bh + bh * (0.08 + r * 0.46), bw * 0.2, bh * 0.38);
+    }
+    // The lamps' glare, over the lamp bank so it reads as light, not a box.
+    const gx = top.px, gy = top.py - bh / 2, gr = bw * 2.6;
+    const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+    glow.addColorStop(0, "rgba(255,252,235,0.95)");
+    glow.addColorStop(0.2, "rgba(255,244,205,0.6)");
+    glow.addColorStop(1, "rgba(255,220,160,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+  }
+
+  const strip = standStrip(backdrop);
+  if (strip) {
+    // The painted stand, in slices so it stays square to the camera's lean.
+    const SLICES = 12;
+    const sliceW = STAND_TILE_W / SLICES, srcW = strip.a.width / SLICES;
+    for (let k = -4; k <= 7; k++) {
+      const x0 = -40 + k * STAND_TILE_W;
+      const src = (k & 1) ? strip.b : strip.a;
+      for (let j = 0; j < SLICES; j++) {
+        const xa = x0 + j * sliceW, xb = xa + sliceW;
+        const pa = project(cam, xa, STAND_Y, 0), pb = project(cam, xb, STAND_Y, 0);
+        const ta = project(cam, xa, STAND_Y, STAND_H);
+        if (!pa || !pb || !ta) continue;
+        const dw = pb.px - pa.px;
+        if (dw <= 0 || pb.px < -2 || pa.px > W + 2) continue;
+        // +0.6 px each way so neighbouring slices never show a hairline gap.
+        ctx.drawImage(src, j * srcW, 0, srcW, src.height, pa.px - 0.6, ta.py, dw + 1.2, pa.py - ta.py);
+      }
+    }
+    // Advertising boards along the foot of the stand, lit by the evening.
+    const BOARD = 6, colours = ["#1d3b8f", "#eef2f8", "#c81e3a", "#eef2f8", "#0f7a5a", "#f2b632"];
+    for (let k = -14; k <= 26; k++) {
+      const xa = k * BOARD, xb = xa + BOARD - 0.15;
+      const a0 = project(cam, xa, STAND_Y + 1.2, 0), b0 = project(cam, xb, STAND_Y + 1.2, 0);
+      const a1 = project(cam, xa, STAND_Y + 1.2, 0.95), b1 = project(cam, xb, STAND_Y + 1.2, 0.95);
+      if (!a0 || !b0 || !a1 || !b1 || b0.px < 0 || a0.px > W) continue;
+      const col = colours[((k % colours.length) + colours.length) % colours.length];
+      quad(ctx, [a1, b1, b0, a0], col);
+      quad(ctx, [a1, b1, { px: b1.px, py: b1.py + (b0.py - b1.py) * 0.18 }, { px: a1.px, py: a1.py + (a0.py - a1.py) * 0.18 }], "rgba(255,255,255,0.35)");
+    }
+  } else {
+    // No picture yet (or the open-run mode, which turns): a drawn stand.
+    const yb = horizon + 3;
+    const yt = horizon - H * 0.14;
+    const g = ctx.createLinearGradient(0, yt, 0, yb);
+    g.addColorStop(0, "#241a2e");
+    g.addColorStop(1, "#3a2c38");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, yt, W, yb - yt);
+    const crowd = crowdTile();
+    if (crowd) {
+      const pat = ctx.createPattern(crowd, "repeat");
+      if (pat) { ctx.fillStyle = pat; ctx.fillRect(0, yt + (yb - yt) * 0.12, W, (yb - yt) * 0.76); }
+    }
+    ctx.fillStyle = "#1b1424";
+    ctx.fillRect(0, yt - 3, W, 5);
+    ctx.fillStyle = "rgba(255,236,190,0.9)";
+    for (let x = W * 0.04; x < W; x += W * 0.09) ctx.fillRect(x, yt - 2, Math.max(2, W * 0.012), 2);
+    const hb = Math.max(3, (yb - yt) * 0.12);
+    for (let i = 0, x = 0; x < W; i++, x += W / 6) {
+      ctx.fillStyle = i % 2 ? "#e8edf5" : "#1f3a8a";
+      ctx.fillRect(x, yb - hb, W / 6, hb);
+    }
   }
 }
 
-/** The moving mowing stripes — the single detail that sells forward motion.
- *  Bands are drawn in WORLD depth, keyed off `stride` (metres run), never
- *  off wall-clock time, so they can never drift out of sync with speed. */
-function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: FpCamera, stride: number, minX: number, maxX: number) {
+/** The pitch: lit turf, stripes fixed to the pitch, grain, the lines. */
+function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: FpCamera, minX: number, maxX: number, pitchLines = true) {
   const horizon = horizonPx(cam);
-  ctx.fillStyle = C.pitch;
+  const base = ctx.createLinearGradient(0, horizon, 0, H);
+  base.addColorStop(0, "#8fae4a");
+  base.addColorStop(0.12, "#58a02c");
+  base.addColorStop(0.55, "#3a8d1f");
+  base.addColorStop(1, "#2b7517");
+  ctx.fillStyle = base;
   ctx.fillRect(0, horizon, W, H - horizon);
 
-  const STRIPE_M = 5;
-  const offset = stride % (STRIPE_M * 2);
-  let d0 = -offset;
-  // Walk out from just in front of the camera to the far distance, alternating
-  // shade — each band is a trapezoid between two projected lateral lines,
-  // drawn across a lateral span wide enough that turning never reveals a
-  // gap at the edge of the stripes.
-  const wide = Math.max(maxX - minX, 30);
-  for (let i = 0; i < 24; i++) {
-    const near = d0 + i * STRIPE_M;
-    const far = near + STRIPE_M;
-    if (far <= 0.4) continue;
-    const dNear = Math.max(near, 0.4);
-    const y1 = cam.y - dNear, y2 = cam.y - far;
-    const a1 = project(cam, minX - wide, y1, 0), b1 = project(cam, maxX + wide, y1, 0);
-    const a2 = project(cam, minX - wide, y2, 0), b2 = project(cam, maxX + wide, y2, 0);
-    if (!a1 || !b1 || !a2 || !b2) continue;
-    quad(ctx, [a1, b1, b2, a2], i % 2 === 0 ? C.pitch : C.pitchDark);
+  // Mown stripes, fixed to the turf: they slide past at exactly your speed,
+  // which is what sells the run (see the file header).
+  const xl = cam.x - 90, xr = cam.x + 90;
+  const nearY = cam.y + 2;
+  const first = Math.floor(STAND_Y / STRIPE_M), last = Math.ceil(nearY / STRIPE_M);
+  for (let k = first; k <= last; k++) {
+    const y1 = k * STRIPE_M, y2 = y1 + STRIPE_M;
+    groundPoly(ctx, cam, [{ x: xl, y: y1 }, { x: xr, y: y1 }, { x: xr, y: y2 }, { x: xl, y: y2 }],
+      k % 2 === 0 ? "rgba(255,255,215,0.075)" : "rgba(0,30,0,0.10)");
   }
 
   const grass = grassTile();
@@ -232,28 +419,65 @@ function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: Fp
     const pat = ctx.createPattern(grass, "repeat");
     if (pat) {
       ctx.save();
-      ctx.globalAlpha = 0.5;
+      ctx.globalAlpha = 0.55;
       ctx.fillStyle = pat;
       ctx.fillRect(0, horizon, W, H - horizon);
       ctx.restore();
     }
   }
+
+  // Evening light coming down the pitch at you.
+  const vx = vanishX(cam);
+  const glare = ctx.createRadialGradient(vx, horizon, 0, vx, horizon, W * 0.9);
+  glare.addColorStop(0, "rgba(255,214,140,0.42)");
+  glare.addColorStop(0.45, "rgba(255,190,110,0.12)");
+  glare.addColorStop(1, "rgba(255,190,110,0)");
+  ctx.fillStyle = glare;
+  ctx.fillRect(0, horizon, W, H - horizon);
+
+  // The lines — a real pitch's, minus anything at the far end (no goal).
+  // The duel runs on real pitch metres (CX = 34, the run starts 48 m out);
+  // the open-run mode turns and has its own frame, so it keeps only its guides.
+  const LINE = "rgba(250,250,240,0.86)", LW = 0.12;
+  if (pitchLines) {
+  groundLine(ctx, cam, 0, 60, 0, STAND_Y + 6, LW, LINE);
+  groundLine(ctx, cam, 68, 60, 68, STAND_Y + 6, LW, LINE);
+  groundLine(ctx, cam, 0, 52.5, 68, 52.5, LW, LINE);
+  const N = 56;
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
+    groundLine(ctx, cam, 34 + Math.cos(a0) * 9.15, 52.5 + Math.sin(a0) * 9.15, 34 + Math.cos(a1) * 9.15, 52.5 + Math.sin(a1) * 9.15, LW, LINE);
+  }
+  const spot: { x: number; y: number }[] = [];
+  for (let i = 0; i < 12; i++) spot.push({ x: 34 + Math.cos((i / 12) * Math.PI * 2) * 0.2, y: 52.5 + Math.sin((i / 12) * Math.PI * 2) * 0.2 });
+  groundPoly(ctx, cam, spot, LINE);
+  }
+  // The run's own lane edges: a faint guide, not a pitch line.
+  const guideFar = pitchLines ? STAND_Y + 6 : cam.y - 60;
+  groundLine(ctx, cam, minX, nearY, minX, guideFar, 0.06, "rgba(255,255,250,0.16)");
+  groundLine(ctx, cam, maxX, nearY, maxX, guideFar, 0.06, "rgba(255,255,250,0.16)");
+
+  // Haze where the turf meets the stand.
+  const sb = pitchLines ? project(cam, cam.x, STAND_Y, 0) : null;
+  if (sb) {
+    const hz = ctx.createLinearGradient(0, sb.py - H * 0.03, 0, sb.py + H * 0.06);
+    hz.addColorStop(0, "rgba(255,196,140,0)");
+    hz.addColorStop(0.4, "rgba(255,196,140,0.28)");
+    hz.addColorStop(1, "rgba(255,196,140,0)");
+    ctx.fillStyle = hz;
+    ctx.fillRect(0, sb.py - H * 0.03, W, H * 0.09);
+  }
 }
 
-/** The two edges of the corridor — the only "markings" either mode draws.
- *  No goal, no boxes: neither mode runs toward one (see the file header). */
-function drawCorridorGuides(ctx: CanvasRenderingContext2D, cam: FpCamera, minX: number, maxX: number) {
-  ctx.lineWidth = Math.max(1, cam.W * 0.005);
-  ctx.strokeStyle = C.lineFaint;
-  const line = (x1: number, y1: number, x2: number, y2: number) => {
-    const a = project(cam, x1, y1, 0), b = project(cam, x2, y2, 0);
-    if (!a || !b) return;
-    seg(ctx, a, b);
-  };
-  const far = cam.y - 40;
-  line(minX, cam.y - 1, minX, far);
-  line(maxX, cam.y - 1, maxX, far);
+/** A soft darkening at the corners, drawn over everything but the HUD. */
+function drawVignette(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  const v = ctx.createRadialGradient(W / 2, H * 0.52, Math.min(W, H) * 0.42, W / 2, H * 0.52, Math.hypot(W, H) * 0.62);
+  v.addColorStop(0, "rgba(10,6,20,0)");
+  v.addColorStop(1, "rgba(10,6,20,0.42)");
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
 }
+
 
 // ── Defenders, front-on ─────────────────────────────────────────────────────
 
@@ -533,11 +757,38 @@ function drawShins(ctx: CanvasRenderingContext2D, cam: FpCamera, legs: LegPoints
   }
 }
 
+/**
+ * The long evening shadow. The low sun is straight down the pitch (the
+ * stadium picture), so every man's shadow falls back toward the camera — a
+ * soft, layered streak on the turf, then a dark contact patch under the
+ * boots. The contact patch is what plants a figure on the grass; without it
+ * the men read as stood on top of the picture.
+ */
+function drawCastShadow(ctx: CanvasRenderingContext2D, cam: FpCamera, pos: { x: number; y: number }) {
+  const layers = [[0.38, 0.8, 0.06], [0.29, 0.62, 0.08], [0.2, 0.45, 0.1]] as const;
+  for (const [rx, len, a] of layers) {
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i < 18; i++) {
+      const t = (i / 18) * Math.PI * 2;
+      pts.push({ x: pos.x + 0.06 + Math.cos(t) * rx, y: pos.y + len * 0.62 + Math.sin(t) * len * 0.75 });
+    }
+    groundPoly(ctx, cam, pts, `rgba(18,28,12,${a})`);
+  }
+}
+
 function drawShadow(ctx: CanvasRenderingContext2D, cam: FpCamera, pos: { x: number; y: number }) {
   const feet = project(cam, pos.x, pos.y, 0);
   if (!feet) return;
   const sc = feet.scale;
-  if (SKIN3D) { drawSoftShadow(ctx, feet.px, feet.py, 0.36 * sc, 0.13 * sc); return; }
+  drawCastShadow(ctx, cam, pos);
+  if (SKIN3D) {
+    drawSoftShadow(ctx, feet.px, feet.py, 0.36 * sc, 0.13 * sc);
+    ctx.beginPath();
+    ctx.ellipse(feet.px, feet.py, 0.26 * sc, 0.075 * sc, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(8,14,6,0.32)";
+    ctx.fill();
+    return;
+  }
   ctx.beginPath();
   ctx.ellipse(feet.px, feet.py, 0.36 * sc, 0.13 * sc, 0, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.38)";
@@ -643,6 +894,11 @@ function drawUpperBody(
       ctx.beginPath(); ctx.moveTo(fx(0.03), fy(0.2)); ctx.quadraticCurveTo(fx(0.08), fy(0.02), fx(0.33), fy(0.01)); ctx.stroke();
       ctx.strokeStyle = "rgba(255,240,205,0.7)"; ctx.lineWidth = Math.max(1, w * 0.05);
       ctx.beginPath(); ctx.moveTo(shoulderR.px - w * 0.01, shoulderR.py); ctx.lineTo(waistR.px - w * 0.01, waistR.py); ctx.stroke();
+      // The low sun behind: a warm rim down the other edge and over the
+      // shoulders too, so he sits in the same evening light as the stadium.
+      ctx.strokeStyle = "rgba(255,196,130,0.4)"; ctx.lineWidth = Math.max(1, w * 0.03);
+      ctx.beginPath(); ctx.moveTo(shoulderL.px + w * 0.01, shoulderL.py); ctx.lineTo(waistL.px + w * 0.01, waistL.py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(capL.px, capL.py + w * 0.01); ctx.lineTo(capR.px, capR.py + w * 0.01); ctx.stroke();
       ctx.restore();
       ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = Math.max(0.8, w * 0.025); ctx.lineJoin = "round";
       torso(); ctx.stroke();
@@ -797,7 +1053,7 @@ function drawFigure(
 function drawDefender(
   ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, assist: boolean,
   getFace?: (url: string | undefined) => HTMLImageElement | undefined, faceStyle?: FaceStyle,
-  fakeFaceStyle?: FakeFaceStyle,
+  fakeFaceStyle?: FakeFaceStyle, kit: { shirt: string; rim: string } = { shirt: C.opp, rim: C.oppRim },
 ) {
   // Drawn even while "waiting" — his wave was PLACED, not sprung on you
   // (see firstPersonDribble.ts's own header), so he's meant to be visible,
@@ -846,7 +1102,7 @@ function drawDefender(
   // A neutral standing pose while "waiting", since his depth (and so this
   // phase) genuinely never changes until he engages.
   const runPhase = def.phase === "waiting" ? 0 : (-def.y / 1.5) * Math.PI * 2;
-  drawFigure(ctx, cam, def, shear, { shirt: C.opp, rim: C.oppRim }, {
+  drawFigure(ctx, cam, def, shear, kit, {
     legSpread,
     armFlungSide: def.phase === "committed" ? def.commitSide : 0,
     armFlungAmount: flungOut,
@@ -1008,9 +1264,27 @@ export interface RenderFirstPersonOptions {
    *  through — see drawPlayerHead.ts's own doc. Omit to fall back to its
    *  default, same as `faceStyle`. */
   fakeFaceStyle?: FakeFaceStyle;
+  /** The painted stadium (public/home/scene-sunset.webp, loaded by the
+   *  caller). Until it has loaded, a drawn stand stands in. */
+  backdrop?: HTMLImageElement | null;
+  /** Draw the carried ball in its true depth (behind your body). The chase
+   *  cameras C1-C3 set it; the old "today" camera does not — see drawOwn. */
+  ballBehindYou?: boolean;
+  /** Shirt and shorts for you and for them. Omit for the game's role
+   *  colours (you green, them red — lib/star/fiveASide/render.ts ROLE_KIT). */
+  kits?: FpKits;
 }
 
-/** The one-on-one duel mode. */
+export interface FpKit { shirt: string; shorts: string }
+export interface FpKits { you?: FpKit; opp?: FpKit }
+
+/** The one-on-one duel mode.
+ *
+ * Everyone is drawn far to near (true depth), the way a camera sees them: a
+ * man you have just beaten, now beside or behind you, is drawn over you, not
+ * under you. With `ballBehindYou` the carried ball is drawn in its true place
+ * too — behind your body, since it is always ahead of you. See
+ * firstPersonDribble.ts's CARRY on why that no longer hides it. */
 export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPersonOptions): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -1018,57 +1292,81 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
-  drawSky(ctx, W, H, horizonPx(cam));
-  drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
-  drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
+  // Turf first, then the sky and stand over its far edge: the stand stands
+  // on the grass a little below the horizon, so it must cover the far turf.
+  drawGround(ctx, W, H, cam, opts.minX, opts.maxX);
+  drawStadium(ctx, cam, W, H, opts.backdrop);
 
-  for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle);
+  const oppKit = opts.kits?.opp ? { shirt: opts.kits.opp.shirt, rim: opts.kits.opp.shorts } : { shirt: C.opp, rim: C.oppRim };
+  const youKit = opts.kits?.you ? { shirt: opts.kits.you.shirt, rim: opts.kits.you.shorts } : { shirt: C.you, rim: C.youRim };
+
+  const items: { s: number; draw: () => void }[] = [];
+  for (const def of opts.defenders) {
+    const p = project(cam, def.x, def.y, 0);
+    if (!p) continue;
+    items.push({ s: p.scale, draw: () => drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle, oppKit) });
+  }
 
   if (opts.own && opts.hideYou) {
     // Just the ball, on the grass in front of the camera.
-    if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+    const ball = opts.ball;
+    const p = ball ? project(cam, ball.x, ball.y, 0) : null;
+    if (ball && p) items.push({ s: p.scale, draw: () => drawBall(ctx, cam, ball, opts.ballImage) });
   } else if (opts.own) {
-    const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;
-    const lean = opts.ownLean ?? 0;
-    // The near leg visibly reaches toward the ball while it's being
-    // touched — see drawFigure's own header — reusing the same lean signal
-    // that already leans the whole body, so a hard touch shows in the feet
-    // and legs, not just a sideways tilt.
-    const reachSide: -1 | 1 | 0 = Math.abs(lean) > 0.05 ? (lean > 0 ? 1 : -1) : 0;
-    const reachAmount = clamp(Math.abs(lean) / 0.35, 0, 1);
-    const colors = { shirt: C.you, rim: C.youRim };
-
-    // The ball is genuinely SANDWICHED here, not just drawn on top of
-    // everything: reported directly (with a screenshot) that seeing the
-    // whole ball, unobstructed, made no sense from a camera looking at
-    // your own back — "his legs will be blocking the ball sometimes... you
-    // shouldn't be able to see the ball perfectly all the time." True full-
-    // figure depth order was tried and measured (see the header this
-    // replaced) to hide the ball almost the ENTIRE run — your torso alone
-    // is tall/wide enough at this camera's distance to cover nearly its
-    // whole screen footprint regardless of lead distance, which is a worse
-    // bug than the one being fixed. The real fix is narrower: only the
-    // SHINS (`drawShins`, the one part of the figure actually down at
-    // ground level with the ball) ever draw after it, so it genuinely
-    // disappears behind a leg exactly when the two overlap on screen —
-    // which happens sometimes, not constantly — while the torso/arms/head
-    // (drawn first, well above where a ground-level ball could plausibly
-    // reach) never swallow it.
-    drawShadow(ctx, cam, opts.own);
-    const { bounce, legs } = computeLegs(opts.own, lean, { runPhase: ownRunPhase, reachSide, reachAmount });
-    drawThighs(ctx, cam, legs);
-    drawUpperBody(ctx, cam, opts.own, lean, colors, { runPhase: ownRunPhase, bounce, headKey: "you", back: true });
-    if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
-    drawShins(ctx, cam, legs, colors);
+    const own = opts.own;
+    const p = project(cam, own.x, own.y, 0);
+    if (p) items.push({ s: p.scale, draw: () => drawOwn(ctx, cam, opts, own, youKit) });
   } else {
     const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);
-    drawOwnBody(ctx, W, H, bob);
-    // No world position for the plain first-person forearms, so no leg to
-    // sandwich the ball with — unchanged from before, drawn on top.
-    if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+    items.push({ s: Infinity, draw: () => {
+      drawOwnBody(ctx, W, H, bob);
+      // No world position for the plain first-person forearms, so no leg to
+      // sandwich the ball with — unchanged from before, drawn on top.
+      if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+    } });
   }
 
+  items.sort((a, b) => a.s - b.s);
+  for (const it of items) it.draw();
+
+  drawVignette(ctx, W, H);
   if (opts.hud) drawHud(ctx, W, H, opts.hud.text, opts.hud.pips);
+}
+
+/** You, from behind, with the ball you are carrying. */
+function drawOwn(
+  ctx: CanvasRenderingContext2D, cam: FpCamera, opts: RenderFirstPersonOptions,
+  own: { x: number; y: number }, colors: { shirt: string; rim: string },
+) {
+  const ownRunPhase = (opts.stride / OWN_GAIT_M) * Math.PI * 2;
+  const lean = opts.ownLean ?? 0;
+  // The near leg visibly reaches toward the ball while it's being
+  // touched — see drawFigure's own header — reusing the same lean signal
+  // that already leans the whole body, so a hard touch shows in the feet
+  // and legs, not just a sideways tilt.
+  const reachSide: -1 | 1 | 0 = Math.abs(lean) > 0.05 ? (lean > 0 ? 1 : -1) : 0;
+  const reachAmount = clamp(Math.abs(lean) / 0.35, 0, 1);
+
+  drawShadow(ctx, cam, own);
+  const { bounce, legs } = computeLegs(own, lean, { runPhase: ownRunPhase, reachSide, reachAmount });
+  if (opts.ballBehindYou) {
+    // True depth: the ball is ahead of you, so farther from the camera than
+    // any part of you. Your body covers it only where it really would; the
+    // carry (firstPersonDribble.ts CARRY) keeps it out beside your boot, so
+    // what crosses it is your own boot as it touches it.
+    if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+    drawThighs(ctx, cam, legs);
+    drawUpperBody(ctx, cam, own, lean, colors, { runPhase: ownRunPhase, bounce, headKey: "you", back: true });
+    drawShins(ctx, cam, legs, colors);
+    return;
+  }
+  // The old camera ("today", the dev sandbox): the ball sits dead ahead of
+  // you, so in true depth your torso would hide it — only the shins are
+  // allowed to (the earlier fix, kept for that camera).
+  drawThighs(ctx, cam, legs);
+  drawUpperBody(ctx, cam, own, lean, colors, { runPhase: ownRunPhase, bounce, headKey: "you", back: true });
+  if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
+  drawShins(ctx, cam, legs, colors);
 }
 
 export interface RenderRoamOptions {
@@ -1091,9 +1389,8 @@ export function renderFirstPersonRoam(canvas: HTMLCanvasElement, opts: RenderRoa
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
-  drawSky(ctx, W, H, horizonPx(cam));
-  drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
-  drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
+  drawGround(ctx, W, H, cam, opts.minX, opts.maxX, false);
+  drawStadium(ctx, cam, W, H, null);
 
   opts.chasers.forEach((chaser, i) => drawChaser(ctx, cam, chaser, i));
   if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
