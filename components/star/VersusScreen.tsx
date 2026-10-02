@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
 import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, kitLabelOnDark, type Kit } from "@/lib/star/kits";
@@ -120,6 +120,10 @@ type Result = "W" | "D" | "L";
  * right. Fewer than five early in a season is not an error; it is simply how
  * many there have been.
  */
+/** How far the Substitutes tab hangs below the pitch box: all of it (28 px
+ *  button + its 1 px borders), so it never covers the bottom keeper. */
+const SUBS_TAB_BELOW = 30;
+
 function recentForm(club: string, results: LeagueResult[]): Result[] {
   return results
     .filter(r => r.home === club || r.away === club)
@@ -156,17 +160,40 @@ export default function VersusScreen({ matchday, date, competition, results, clu
   const [compHead, ...compTailParts] = competition.split(" · ");
   const compTail = compTailParts.join(" · ");
 
+  // ── The whole pitch fits above Kick Off (Harry, 2 Oct 2026) ──
+  // The pitch box is a fixed 3 : 4.9 at the full width, about 598 px tall on
+  // a 390 px phone. Under the header that ran past the Kick Off bar, which
+  // sat on our own keeper (390x844: pitch bottom 812, button top 788). Now
+  // the box keeps its shape but narrows until its bottom, and the
+  // Substitutes tab hanging 16 px under it, end above the button.
+  const pitchWrapRef = useRef<HTMLDivElement>(null);
+  const kickRef = useRef<HTMLDivElement>(null);
+  const [fitted, setFitted] = useState<{ w: number; full: number } | null>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const wrap = pitchWrapRef.current, kick = kickRef.current;
+      const full = wrap?.parentElement?.clientWidth;
+      if (!wrap || !kick || !full) return;
+      const scrollTop = window.scrollY || 0;
+      const top = wrap.getBoundingClientRect().top + scrollTop;
+      const roomH = kick.getBoundingClientRect().top - top - SUBS_TAB_BELOW - 6;
+      const w = Math.floor(Math.max(200, roomH * 3 / 4.9));
+      setFitted(w < full ? { w, full } : null);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  const pitchW = fitted?.w ?? null;
+  // A narrower pitch packs its rows closer, so the faces shrink with it a
+  // little (never below 78%); at near full width they stay the 34 px they
+  // always were.
+  const ratio = fitted ? fitted.w / fitted.full : 1;
+  const chip = ratio >= 0.9 ? 34 : Math.round(34 * Math.max(0.78, ratio));
+
   return (
     <Screen glow={glowOf(kits.home.shirt, kits.home.trim)} tone={glowOf(kits.away.shirt, kits.away.trim)} className="max-w-md px-3 py-3">
       <div className="w-full">
-        <PressButton
-          variant="secondary"
-          size="sm"
-          onClick={onBack}
-          className="mb-1.5 normal-case tracking-normal"
-        >
-          ← Back
-        </PressButton>
 
         {/* ── The header ──
             Plain gradient panel, deliberately no glow/beam effects at all.
@@ -188,6 +215,16 @@ export default function VersusScreen({ matchday, date, competition, results, clu
           className="kit-rise relative overflow-hidden rounded-t-2xl px-3 py-3"
           style={duelStyle(glowOf(kits.home.shirt, kits.home.trim), glowOf(kits.away.shirt, kits.away.trim))}
         >
+          {/* Back sits in the header's corner, not on a row of its own above
+              it: that row was 44 px the pitch needs to fit above Kick Off. */}
+          <PressButton
+            variant="secondary"
+            size="sm"
+            onClick={onBack}
+            className="absolute left-2 top-2 z-10 normal-case tracking-normal"
+          >
+            ← Back
+          </PressButton>
           <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             <BallIcon />
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
@@ -255,7 +292,10 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             substitutes bar and Kick Off's own margins are still trimmed
             from the earlier pass too. */}
         <div className="relative">
-          {pitchCorner && <div data-pitch-corner className="absolute right-1.5 top-1.5 z-20">{pitchCorner}</div>}
+        {/* Pinned to the full-width row, not the (maybe narrowed) pitch, so it
+            never lands on the keeper's name when the pitch shrinks. */}
+        {pitchCorner && <div data-pitch-corner className={`absolute z-20 ${fitted ? "-top-1 right-0" : "right-1.5 top-1.5"}`}>{pitchCorner}</div>}
+        <div ref={pitchWrapRef} className="relative mx-auto" style={pitchW ? { width: pitchW } : undefined}>
           <div className="sk-versus-pitch relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
             {/* Mown stripes as real alternating bands (not a near-invisible
                 0.025-opacity tint) plus a soft center-lit vignette, so the
@@ -275,10 +315,10 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             <PitchMarkings />
 
             {homeScouted
-              ? home.xi.map((p, i) => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} index={i} />)
+              ? home.xi.map((p, i) => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} index={i} chip={chip} />)
               : <UnscoutedHalf bottom={false} />}
             {awayScouted
-              ? away.xi.map((p, i) => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom index={i + 11} />)
+              ? away.xi.map((p, i) => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom index={i + 11} chip={chip} />)
               : <UnscoutedHalf bottom />}
           </div>
 
@@ -289,10 +329,13 @@ export default function VersusScreen({ matchday, date, competition, results, clu
               anchored, height growing) instead of adding height below it,
               and pressing it again collapses it straight back down to just
               the tab. */}
-          <div className="absolute inset-x-0 -bottom-4 z-10 overflow-hidden rounded-b-xl border border-white/15 bg-gray-950/95 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+          {/* The tab hangs wholly BELOW the pitch (it used to overlap the
+              bottom 13 px, over our own keeper); open, it still grows up
+              over the pitch. */}
+          <div style={{ bottom: -SUBS_TAB_BELOW }} className="absolute inset-x-0 z-10 overflow-hidden rounded-b-xl border border-white/15 bg-gray-950/95 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm">
             <button
               onClick={() => setShowSubs(s => !s)}
-              className="flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white/80"
+              className="flex h-[28px] w-full items-center justify-center gap-1.5 px-3 text-[11px] font-black uppercase tracking-widest text-white/80"
             >
               <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
               Substitutes
@@ -306,6 +349,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
               {awayScouted ? <Bench sheet={away} kit={kits.away} /> : <UnscoutedBench club={away.club} />}
             </div>
           </div>
+        </div>
         </div>
 
         {/* The substitutes bar above is `position: absolute`, so it takes up
@@ -334,7 +378,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
           className="fixed inset-x-0 bottom-0 z-30 pt-2"
           style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "linear-gradient(to top, #05070d 62%, rgba(5,7,13,0))" }}
         >
-          <div className="mx-auto w-full max-w-md px-3">
+          <div ref={kickRef} className="mx-auto w-full max-w-md px-3">
             <PressButton
               variant="primary"
               size="none"
@@ -513,8 +557,10 @@ function YouStar() {
   );
 }
 
-function Man({ p, kit, keeper, bottom, index = 0 }: {
+function Man({ p, kit, keeper, bottom, index = 0, chip = 34 }: {
   p: SheetPlayer; kit: Kit; keeper: Kit; bottom: boolean; index?: number;
+  /** The face's size in px (smaller on a pitch narrowed to fit a short phone). */
+  chip?: number;
 }) {
   const worn = p.role === "GK" ? keeper : kit;
   const flag = getFlagUrl(p.nation);
@@ -532,7 +578,7 @@ function Man({ p, kit, keeper, bottom, index = 0 }: {
           clipping the star along with everything else that strayed past its
           edge. This wrapper gives the star a positioning parent that doesn't
           also clip it. */}
-      <div className="relative order-2 h-[34px] w-[34px]">
+      <div className="relative order-2" style={{ width: chip, height: chip }}>
         {p.isYou && <YouStar />}
         <div
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"

@@ -180,12 +180,20 @@ export default function TitleScreen(p: TitleScreenProps) {
         </div>
         <TitleBall className={`kit-rise absolute ${plateFailed ? "bottom-[3.5%] left-[26%]" : "bottom-[15.5%] left-[28%]"}`} size={plateFailed ? 68 : 54} style={{ animationDelay: "700ms" }} />
 
-        {/* The menu: flush to the right edge, slanted like a boot's tongue. */}
-        <div className="absolute bottom-[4%] right-0 w-[50%] space-y-2">
+        {/* The menu: slanted like a boot's tongue, 16 px in from the right
+            edge (it used to run into the edge with no gutter). */}
+        <div className="absolute bottom-[4%] right-4 w-[50%] space-y-2">
           {career ? (
             <RiseIn index={0} delay={760}>
               <MenuButton primary icon="▶" label="Continue" onClick={p.onContinue}
-                hint={club ? <span className="flex items-center gap-1">{<ClubBadge club={career.player.club} kit={{ shirt: theme.shirt, trim: theme.trim }} size={13} />}{club} · S{career.season}</span> : (career.retired ? "Retired" : "No club yet")}
+                // Club on one line, season on the next: "CHELSEA · S1" on one
+                // line was cut to "CHELSEA · S" at 390 px.
+                hint={club ? (
+                  <span className="flex flex-col gap-0.5">
+                    <span className="flex min-w-0 items-center gap-1"><span className="shrink-0"><ClubBadge club={career.player.club} kit={{ shirt: theme.shirt, trim: theme.trim }} size={13} /></span><span className="truncate">{club}</span></span>
+                    <span className="whitespace-nowrap">Season {career.season}</span>
+                  </span>
+                ) : (career.retired ? "Retired" : "No club yet")}
                 badge={<span className="bg-gradient-to-b from-yellow-200 to-amber-400 px-1.5 py-0.5 text-[13px] font-black leading-none tabular-nums text-gray-950">★{starLevel(career)}</span>} />
             </RiseIn>
           ) : null}
@@ -306,7 +314,7 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
   return (
     <button
       onClick={onClick}
-      className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "h-[54px] text-white" : "h-[42px] text-white"}`}
+      className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "min-h-[54px] py-1.5 text-white" : "h-[42px] text-white"}`}
       style={{
         clipPath: "polygon(14px 0, 100% 0, 100% 100%, 0 100%)",
         background: primary ? "linear-gradient(180deg, #34d399, #059669)" : "linear-gradient(180deg, rgba(10,50,28,.92), rgba(5,32,17,.96))",
@@ -317,7 +325,7 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
       <span className="shrink-0 text-[17px] leading-none text-white/90">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate font-black uppercase leading-none tracking-wide ${primary ? "text-[22px]" : "text-[18px]"}`}>{label}</span>
-        {hint && <span className="mt-1 block truncate text-[12px] font-black uppercase leading-none tracking-tight text-white/80">{hint}</span>}
+        {hint && <span className={`mt-1 block min-w-0 text-[12px] font-black uppercase leading-none tracking-tight text-white/80 ${typeof hint === "string" ? "truncate" : ""}`}>{hint}</span>}
       </span>
       {badge}
     </button>

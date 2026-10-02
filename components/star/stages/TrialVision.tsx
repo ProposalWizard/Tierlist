@@ -5,7 +5,7 @@ import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
 import {
   REPS, visionSetup, visionQuality, visionFreeSeconds, weightedQuality, attemptSeed,
-  teachSeen, markTeachSeen, type VisionSetup,
+  markTeachSeen, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -17,7 +17,7 @@ import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
-import { TeachCard, TEACH_COMPACT_AFTER_REP, TEACH_PERSISTS } from "./TrialPenalties";
+import { TeachCard } from "./TrialPenalties";
 
 /**
  * FINDING THE PASS.
@@ -259,38 +259,22 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   const [count, setCount] = useState<number | null>(null);
 
   /**
-   * ── DISMISSING THE TEACHING HERE DOES NOT DISMISS THE COUNTDOWN ──
-   *
-   * "You should be able to get rid of the little tutorial" — and on this
-   * stage, more carefully than on the striking ones, because the first rep's
-   * overlay is two different things stacked in one box.
-   *
-   * The INSTRUCTION ("tap the team-mate in the most space, blue shirts are
-   * marking, it does not wait") is teaching, and a returning player has read
-   * it. The 3 · 2 · 1 is not teaching at all — it is live state, and the only
-   * thing telling you when a clock that can be under a second long actually
-   * starts. Hiding that with the paragraph would make the dismiss button the
-   * single most expensive tap in the trial.
-   *
-   * So dismissing drops the badge, the headline and the paragraph, and the
-   * countdown keeps running underneath in the same place it was. A player who
-   * has dismissed it before gets the countdown on rep 1 and no words, which is
-   * exactly what reps 2-6 already look like plus the clock he still needs.
-   *
-   * Read from storage on mount rather than in the initialiser: `window` does
-   * not exist during Next's server render of this client component, and a
-   * first client render that disagreed with the server's HTML is its own bug.
+   * ── One tap: the card goes and the 3 · 2 · 1 starts ──
+   * The card is the full-screen see-through `TeachCard` every stage uses.
+   * The countdown numeral is live state, not teaching, so it shows after the
+   * tap in its own overlay, and the clock starts on zero, never before.
    */
-  const [teachDone, setTeachDone] = useState(false);
-  useEffect(() => { if (teachSeen("vision")) setTeachDone(true); }, []);
-  /** The first rep waits for a Start press (Mikey, 28 Sep 2026: "I didn't
-   *  even get to read the tutorial… there should be a button saying start,
-   *  and then it goes to the countdown"). */
+  /** The first rep waits for a tap on the card (Mikey, 28 Sep 2026: "I
+   *  didn't even get to read the tutorial… then it goes to the countdown"). */
   const [go, setGo] = useState(false);
   const dismissTeach = useCallback(() => {
     markTeachSeen("vision");
-    setTeachDone(true);
   }, []);
+  /** One tap on the card closes it and starts the countdown. */
+  const startFromTeach = useCallback(() => {
+    dismissTeach();
+    setGo(true);
+  }, [dismissTeach]);
 
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
@@ -572,48 +556,34 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
           onPointerDown={tap}
         />
 
-        {phase === "ready" && (
-          <div className="absolute inset-0 z-30 grid place-items-center bg-white/75 px-5">
-            {/* ── One card, the same card every other drill uses ──
-                This stage used to hand-roll its own badge/headline/paragraph,
-                which drifted: a different badge ("First one" vs "How to
-                play"), a different dismiss button, no drawn gesture at all,
-                and a drag glyph would have been wrong here anyway — this is
-                the one stage you TAP. It is now `TeachCard` with the tap
-                glyph, so all four drills teach in the same box.
+        {/* ── The same see-through card every other stage uses ──
+            (Harry, 2 Oct 2026: "the pop ups should be lower opacity and it
+            should have a very faint 'tap anywhere to continue' underneath
+            rather than 'GOT IT'".) It is the full-screen `TeachCard`: one tap
+            anywhere closes it AND starts the 3 · 2 · 1, so there is no
+            separate Start button. The clock still cannot start before that
+            tap — the countdown effect waits on `go`. */}
+        {phase === "ready" && rep === 0 && !go && (
+          <TeachCard
+            gesture="tap"
+            headline="Tap the team-mate in the most space."
+            short="Tap the man in most space."
+            lines={[
+              "The blue shirts are marking.",
+              "The clock starts on zero and does not wait — never picking scores nothing.",
+            ]}
+            onDismiss={startFromTeach}
+          />
+        )}
 
-                And, as asked, it stays until it is tapped rather than until
-                the rep counter moves: `rep === 0` no longer gates it. */}
+        {phase === "ready" && !(rep === 0 && !go) && (
+          <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-white/75 px-5">
             <div className="w-full max-w-xs text-center">
-              {(TEACH_PERSISTS || rep === 0) && (!teachDone || (rep === 0 && !go)) && (
-                <TeachCard
-                  inline
-                  gesture="tap"
-                  compact={rep >= TEACH_COMPACT_AFTER_REP}
-                  headline="Tap the team-mate in the most space."
-                  short="Tap the man in most space."
-                  lines={[
-                    "The blue shirts are marking.",
-                    "The clock starts on zero and does not wait — never picking scores nothing.",
-                  ]}
-                  onDismiss={dismissTeach}
-                />
-              )}
-
-              {rep === 0 && !go ? (
-                <button
-                  onClick={() => setGo(true)}
-                  className="mt-4 w-full rounded-xl bg-emerald-500 py-3 text-base font-black text-emerald-950 active:scale-[0.98]"
-                >
-                  Start
-                </button>
-              ) : rep === 0 && count !== null ? (
+              {rep === 0 && count !== null ? (
                 /* ── The numeral cannot be dismissed, and never could ──
                    A stage that starts on its own needs to say so BEFORE it
                    starts, and this is the only thing telling you when a clock
-                   that can be under a second long actually begins. Dismissing
-                   drops the words above it and leaves this exactly where it
-                   was. */
+                   that can be under a second long actually begins. */
                 <div
                   key={count}
                   className="mt-3 text-7xl font-black tabular-nums text-emerald-600"
