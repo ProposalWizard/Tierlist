@@ -132,6 +132,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
+import Shop3D from "@/components/star/Shop3D";
 import CareerStore from "@/components/star/store/CareerStore";
 import { addCoins } from "@/lib/star/store/career";
 import { LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
@@ -318,6 +319,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** Swipe home screens: Stats (0) or Home (1); Training is the "skills"
    *  phase, see SwipePages below. */
   const [homePage, setHomePage] = useState<0 | 1 | 2>(1);
+  /** The 3D shop's "See it in the shop": which shop to open, on which item.
+   *  Forgotten as soon as you leave that shop. */
+  const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
+  useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
   const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
@@ -3618,6 +3623,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <CareerStore career={career} onChange={setCareer} onBack={handleBackToDashboard} hud={screenHud("shop")} />;
   }
 
+  if (phase === "shop-3d") {
+    // Walk the 3D shop (beta): a look round, then "See it in the shop" opens
+    // that item in the normal shop to buy it. Nothing is bought in 3D.
+    return (
+      <Shop3D
+        career={career}
+        onBack={() => { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }}
+        onGoToItem={(display, id, level) => {
+          const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
+          setShopFocus({ phase: to, id, level });
+          setPhase(to);
+        }}
+      />
+    );
+  }
+
   if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
     const kind = phase === "shop-kib" ? "kib" : phase === "shop-boots" ? "boots" : "lifestyle";
     const shopHelp: HelpScreen = kind === "kib" ? "cans" : kind === "boots" ? "boots" : "style";
@@ -3633,6 +3654,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onBuyFromBlackMarket={handleBuyFromBlackMarket}
           hud={screenHud(kind === "lifestyle" ? "style" : "shop", shopHelp)}
           onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
+          focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
         />
         {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {!helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}

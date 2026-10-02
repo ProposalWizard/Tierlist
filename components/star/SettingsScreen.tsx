@@ -1,5 +1,6 @@
 "use client";
 import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
+import { useSigning3d, setSigning3d } from "@/lib/star/signing3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
@@ -98,6 +99,7 @@ export default function SettingsScreen({
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
+  const signing3d = useSigning3d();
   const sfxNow = useSfxOn();
 
   const togglePostMatchReactions = () => {
@@ -243,6 +245,20 @@ export default function SettingsScreen({
           </div>
           <SetNote dim className="mt-1 text-[10px]">
             Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
+          </SetNote>
+
+          <SetDivider />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[14px] font-bold text-white">3D signing scene (beta)</span>
+            <SegTabs
+              className="w-[150px] shrink-0"
+              value={signing3d ? "on" : "off"}
+              onChange={(v) => setSigning3d(v === "on")}
+              tabs={[["off", "Off"], ["on", "On"]] as const}
+            />
+          </div>
+          <SetNote dim className="mt-1 text-[10px]">
+            Signing a contract plays as a live 3D scene with your own player in it. This phone only.
           </SetNote>
         </SetCard>
       </RiseIn>

@@ -44,7 +44,7 @@ function ownedLevelOf(mine: OwnedItem | undefined): number {
   return mine.level ?? LIFESTYLE_ALL_LEVELS.find((l) => l.id === mine.id)?.level ?? 1;
 }
 
-export default function StyleShop({ career, onBuyItem, reward, landed, landKey, lockOf, onBack, onHome }: {
+export default function StyleShop({ career, onBuyItem, reward, landed, landKey, lockOf, onBack, onHome, focus }: {
   career: CareerState;
   /** The bottom bar (Harry, 1 Oct 2026, P40/P41): Back, the group switch, Home. */
   onBack?: () => void;
@@ -56,11 +56,16 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
   /** Unlock chain: how far towards an item's star rating you are (0-1), or
    *  null when it is open. Absent = everything open. */
   lockOf?: (base: string) => number | null;
+  /** Open on this item's group with its sheet up (from the 3D shop). */
+  focus?: { id: string; level: number } | null;
 }) {
+  const focusItem = focus ? LIFESTYLE_ALL_LEVELS.find((i) => baseIdOf(i) === focus.id) : undefined;
   // The phone is the first thing to buy (Harry, 1 Oct 2026, P102): until you
   // have one, a new career opens on Gadgets, where it sits and flashes.
-  const [group, setGroup] = useState<StyleGroup>(() => (lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone") ? "gadgets" : "drip"));
-  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(null);
+  const [group, setGroup] = useState<StyleGroup>(() => (focusItem ? styleGroupOf(focusItem)
+    : lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone") ? "gadgets" : "drip"));
+  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(() =>
+    focusItem && focus && lockOf?.(focus.id) == null ? { base: focus.id, level: focus.level } : null);
   const mineRef = useRef<HTMLDivElement>(null);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
 

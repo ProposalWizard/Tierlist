@@ -1,5 +1,9 @@
 # 3D cutscenes in Blender (v0.24)
 
+> **The signing scene is now live 3D** (v0.25): three.js in the browser, built
+> from `tools/signing3d/build_assets.py` and `lib/star/signing3d{Scene,Rig,Textures}.ts`.
+> The pictures this script made are no longer shipped. `match_look.py` is still in use.
+
 Seen on the site in the **3D Test Area** (`/star-3d-area-dev`).
 
 | Script | What it makes | Where it goes |

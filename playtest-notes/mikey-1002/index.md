@@ -1,0 +1,553 @@
+# Playtest breakdown — mikey-1002
+
+- Video: `../mikey-1002/video.mp4` — 23:09 long
+- 183 pictures on 16 sheets, 515 lines of speech
+- Each section below is one sheet: the stretch of video it covers and everything said in it.
+- A moment too quick for a sheet: rerun with `--clip mm:ss-mm:ss --clip-fps 20`.
+
+## 00:00 – 01:11  ·  sheets/sheet_001.jpg
+- **[00:00]** All right, reviewing version 24 patch notes with Mikey.
+- **[00:06]** Hello, hello there.
+- **[00:09]** Highlights, some highlight fixes, the trial rework, new top bars.
+- **[00:14]** I don't really know if those are the keys.
+- **[00:16]** We can hang out a bit quicker.
+- **[00:17]** Okay, top bars are square with a white edge, the cannon full badge are gone.
+- **[00:23]** So this is before, this is one that probably didn't need to be filmed.
+- **[00:31]** This part, it has like, yeah, full thing with the symbol then the star.
+- **[00:40]** The star's gone.
+- **[00:42]** I don't really like that because you'll never really be, it will never really be full.
+- **[00:48]** Yeah, low key.
+- **[00:49]** But I think it should be like for each level.
+- **[00:51]** It should be that.
+- **[00:52]** Or maybe like for over 10 levels or something.
+- **[00:56]** But I think that's better, better system than like the how much space.
+- **[01:02]** No, but I made a change to the home screen.
+- **[01:05]** Okay.
+- **[01:06]** I think there's other pages as well.
+- **[01:08]** Yeah, like fame.
+- **[01:10]** Okay, globe.
+
+## 01:11 – 02:51  ·  sheets/sheet_002.jpg
+- **[01:13]** The happiness, maybe like this bar.
+- **[01:16]** Really?
+- **[01:17]** I think it doesn't.
+- **[01:18]** It is.
+- **[01:18]** It's like a different style than like, like, what like I specifically told it to go back to square.
+- **[01:30]** I just think first it looks a lot better.
+- **[01:32]** But I want to be personal preference.
+- **[01:34]** I might be getting worded by an SS because everything on that SS is
+- **[01:37]** I don't know if it's a square, but it might just be the outline of it.
+- **[01:41]** I know it just doesn't really get the same vibe to me.
+- **[01:45]** The outline of what?
+- **[01:46]** Like the actual bar has like the white outline.
+- **[01:49]** I don't know.
+- **[01:50]** I made it do that before it was just like blending.
+- **[01:54]** It doesn't need the hundred for sure.
+- **[01:56]** Doesn't need the hundred in there.
+- **[01:58]** I've known it looks too much like, you know, when you ask it to design something
+- **[02:04]** and it uses code to design it.
+- **[02:06]** Yeah, I mean, I was just trying to do that.
+- **[02:10]** See that look good.
+- **[02:12]** There's something in that and maybe it's the green.
+- **[02:15]** Yeah, maybe it doesn't need the outline, but the green,
+- **[02:18]** the green is like the exact same style as the rest of the page.
+- **[02:24]** Not that that isn't that different, but like the
+- **[02:29]** form and everything on that page is pretty similar design style.
+- **[02:34]** Yeah.
+- **[02:35]** I know.
+- **[02:35]** I'm not.
+- **[02:36]** I'm not huge fan of that.
+- **[02:38]** Yeah, I think I could at least the white outline is making it seem more like some
+- **[02:43]** sort of like PowerPoint presentation.
+- **[02:47]** I think we could generate.
+- **[02:50]** We could make the whole top part that's always there.
+
+## 02:51 – 04:24  ·  sheets/sheet_003.jpg
+- **[02:55]** Like maybe like a light gray or something and then just have the outline just be.
+- **[03:02]** Don't you don't have to have an outline.
+- **[03:04]** It's just like it fits in to the background, if that makes sense.
+- **[03:08]** Have a look at NSS's home screen and base your Higgs fields on your Higgs field image on that
+- **[03:15]** and adapt that a little bit.
+- **[03:17]** That's better than that.
+- **[03:18]** That's better than that though.
+- **[03:19]** Yeah, I think that even something maybe a bit more 3D look there like a bar that's actually
+- **[03:28]** like almost like a battery shape.
+- **[03:31]** I'm hesitant with the 3D.
+- **[03:32]** I feel like it's overcomplicating the look of things to be honest.
+- **[03:36]** I kind of just want like a 2D home screen kind of thing.
+- **[03:42]** Apart from the play everywhere though.
+- **[03:45]** Yeah, maybe.
+- **[03:46]** I mean that is meant to be 3D.
+- **[03:48]** Like the star like that.
+- **[03:51]** That is.
+- **[03:51]** Yeah, that's better.
+- **[03:52]** I don't think the actual bar should be.
+- **[03:54]** I don't know.
+- **[03:54]** We can we can test the 3D version of it.
+- **[03:57]** See what it looks like in game.
+- **[04:00]** What's this one?
+- **[04:00]** That is.
+- **[04:02]** I think I told it not to do that.
+- **[04:04]** It's pretty funny.
+- **[04:08]** Yeah, 3D.
+- **[04:08]** I can still I mean that's that one's probably the best one.
+- **[04:13]** What is that?
+- **[04:14]** It's a globe.
+- **[04:17]** See it again.
+- **[04:18]** I took a second to load.
+- **[04:24]** Oh, oh, I see.
+
+## 04:24 – 06:01  ·  sheets/sheet_004.jpg
+- **[04:28]** Fills to the end empties fills again slower and sweeter.
+- **[04:38]** They got some sort of SIM button.
+- **[04:40]** I don't know.
+- **[04:43]** Oh, it's in the game.
+- **[04:44]** And then it did like I swear that's not what I just did.
+- **[04:50]** I just had something I confused.
+- **[04:52]** Maybe something else somewhere along.
+- **[04:57]** Why is that fall?
+- **[04:58]** Oh, oh, oh, yeah.
+- **[05:01]** Oh, that was way better.
+- **[05:02]** Yeah.
+- **[05:02]** Okay.
+- **[05:03]** And this as well.
+- **[05:05]** It's not trying to show that but it has.
+- **[05:07]** I like to no longer start with the vendor standing on the wall.
+- **[05:10]** Oh yeah.
+- **[05:11]** Oh, wait.
+- **[05:13]** Oh, wait.
+- **[05:14]** Did it generate those of drawings?
+- **[05:16]** Oh, basically a lot of the times there was like a player on the ball so that you actually there
+- **[05:21]** was no possible way you could kick the ball.
+- **[05:24]** An opposition.
+- **[05:25]** Yeah, this was what was that highlight?
+- **[05:38]** It was whatever.
+- **[05:39]** There was a thumbnail there that was there was a thumbnail there that was the right thing.
+- **[05:46]** And then I press play and it's now the wrong thing.
+- **[05:49]** Wait, picture.
+- **[05:50]** Yeah.
+- **[05:50]** That.
+- **[05:51]** Oh, okay.
+- **[05:52]** Don't know what that video was, mate.
+- **[05:54]** I think the recording kind of broke this time.
+
+## 06:01 – 07:30  ·  sheets/sheet_005.jpg
+- **[06:03]** Oh, oh,
+- **[06:08]** the gameplay ones were probably last.
+- **[06:09]** So where was that point?
+- **[06:11]** The game plays happened.
+- **[06:12]** Help cards in the middle of the pitch one tap closes and yeah, I didn't.
+- **[06:15]** Okay.
+- **[06:16]** I wasn't too fond of this, to be honest.
+- **[06:19]** Yeah.
+- **[06:19]** So it's out the way and you could just play without.
+- **[06:21]** It's only a one time thing anyway.
+- **[06:23]** Yeah, I think just having it.
+- **[06:26]** And you can tap anywhere.
+- **[06:27]** Depending.
+- **[06:30]** Better system.
+- **[06:33]** I felt like the free kick probably pens as well,
+- **[06:38]** but just wasn't really explained what was happening,
+- **[06:41]** which I thought was maybe a bit confusing.
+- **[06:45]** There is no way through the wall.
+- **[06:47]** I was a bit of an AI statement like a different point to the free kick.
+- **[06:53]** It does the tutorial.
+- **[06:55]** Yes, that's good.
+- **[06:56]** Anything else?
+- **[06:59]** Scuffed.
+- **[07:00]** I cannot score a goal.
+- **[07:03]** Um, yeah, that was, I don't even know.
+- **[07:05]** Like over time this game would just slowly becoming weirder and weirder.
+- **[07:09]** That's why I said it needs to.
+- **[07:12]** Oh, hold on.
+- **[07:15]** Oh damn.
+- **[07:17]** I mean, the game's getting butchered, but it's looking better.
+- **[07:20]** I'm better.
+- **[07:20]** The game phase is so good.
+- **[07:23]** The look is that is something special right there.
+- **[07:27]** That could be that could be a robots game.
+- **[07:29]** Like you're just scrolling through picking stuff up.
+
+## 07:30 – 08:55  ·  sheets/sheet_006.jpg
+- **[07:32]** I turned this back to five goes.
+- **[07:33]** It was just one go before and it's like, that's a quick mode.
+- **[07:36]** You could just do.
+- **[07:38]** Yeah.
+- **[07:38]** For you.
+- **[07:39]** The other one is actually hooky.
+- **[07:40]** Just subway surface.
+- **[07:42]** Yeah, it actually can be that actually could.
+- **[07:45]** So that just goes down there.
+- **[07:47]** 0.5 seconds every time.
+- **[07:49]** What do you think of this white?
+- **[07:51]** Oh, that's part of it.
+- **[07:52]** Yeah, I don't.
+- **[07:53]** I don't know.
+- **[07:54]** I don't know where it came from, to be honest.
+- **[07:55]** Wait, is this a training game?
+- **[07:57]** This is the trial.
+- **[07:58]** This is the beginning trial.
+- **[07:59]** And then also the numbers all gone.
+- **[08:00]** It's just like next up.
+- **[08:02]** I don't know.
+- **[08:03]** Are you sure?
+- **[08:03]** Why it's done that?
+- **[08:04]** That just popped up one time.
+- **[08:05]** I've been able.
+- **[08:06]** I've been wanting to fix it.
+- **[08:09]** On the phone.
+- **[08:09]** It doesn't look that bad to us, but it probably should just be like almost full pitch.
+- **[08:14]** Oh, it's because it's had to put a background so they can add the pen.
+- **[08:17]** But I could just be a school card.
+- **[08:19]** Yeah, I think that's better.
+- **[08:22]** Yeah, maybe let's make that change.
+- **[08:23]** Take a pen.
+- **[08:24]** Oh yeah.
+- **[08:25]** So before it was making you take every pen, but I kind of like the idea that.
+- **[08:30]** It's just like a pen shoot out.
+- **[08:32]** Yeah.
+- **[08:32]** Oh, what the hell?
+- **[08:37]** It's because I rigged it.
+- **[08:39]** I think it's just sped up.
+- **[08:41]** I rigged it so that you, your garrother.
+- **[08:44]** Yeah, it's probably sped up.
+- **[08:45]** So you guaranteed have.
+- **[08:47]** Yeah, the final pen.
+- **[08:49]** I thought that was a better way than the five of sides.
+- **[08:51]** To be honest, that's relevant.
+
+## 08:55 – 10:26  ·  sheets/sheet_007.jpg
+- **[08:56]** Training power level one is an open goal.
+- **[08:58]** Oh yeah.
+- **[08:58]** So I did this spot because we just spoke about that.
+- **[09:03]** That's not level one.
+- **[09:04]** So yeah, probably.
+- **[09:09]** Oh yeah.
+- **[09:09]** You're seeing spoilers.
+- **[09:22]** See through card.
+- **[09:24]** No button.
+- **[09:25]** Well, yeah, we already saw that.
+- **[09:26]** Different.
+- **[09:30]** Yeah.
+- **[09:30]** Different view.
+- **[09:32]** Yeah.
+- **[09:33]** New look.
+- **[09:33]** We saw that.
+- **[09:35]** It looks 10 times better.
+- **[09:37]** It looks great.
+- **[09:37]** Actually looks amazing.
+- **[09:39]** But we'll see.
+- **[09:42]** Oh yeah.
+- **[09:42]** Okay.
+- **[09:42]** So this is the home screen change.
+- **[09:45]** I think that's doing the home screen.
+- **[09:47]** The service.
+- **[09:48]** Yeah, I'm not sure that it was exactly like that before.
+- **[09:53]** This is it.
+- **[09:53]** This is that image.
+- **[09:55]** It's not this reputation.
+- **[09:57]** I don't know what that means.
+- **[09:58]** Goal needs a little bit more fixing.
+- **[10:00]** The reputations.
+- **[10:02]** I don't like this stuff where it adds a title.
+- **[10:06]** That's pretty.
+- **[10:06]** Oh, it just doesn't even.
+- **[10:07]** I thought that was an existing thing.
+- **[10:09]** No, it's done this the whole time.
+- **[10:11]** It's it has its own title.
+- **[10:13]** So you are.
+- **[10:14]** Maybe just the goals and assists and goals.
+- **[10:16]** Assists age, maybe.
+- **[10:18]** Yeah, but not even just having like reputation,
+- **[10:21]** but with a bar and number is fine.
+- **[10:23]** Yeah.
+- **[10:24]** Yeah.
+- **[10:24]** But the other stuff, the names are just mean.
+
+## 10:26 – 11:56  ·  sheets/sheet_008.jpg
+- **[10:26]** That's really those about.
+- **[10:27]** Yeah.
+- **[10:28]** Achievements.
+- **[10:30]** So I think that looks that looks better.
+- **[10:33]** I've moved the guy off a bit as well.
+- **[10:35]** I think that goal is still a little bit weird.
+- **[10:37]** Always.
+- **[10:37]** And it needs to be.
+- **[10:40]** Needs to be a box for the texture of the grass as well.
+- **[10:42]** And then yeah, it needs to be a full size goal.
+- **[10:44]** So the goal just needs that look there.
+- **[10:48]** Play the strike.
+- **[10:49]** I just got moved from that to the.
+- **[10:55]** Again, that could just be the whole page.
+- **[10:57]** Which is actually just walking out down the tunnel.
+- **[11:01]** In the pre-market.
+- **[11:01]** That's way better.
+- **[11:03]** The team's.
+- **[11:06]** I don't know why it's like this.
+- **[11:07]** Like the game is playing and it's just that that should go.
+- **[11:12]** Yeah, that should go and just become the screen.
+- **[11:15]** As soon as you press play.
+- **[11:18]** Yeah, you had some notification thing.
+- **[11:20]** That's not like an actual.
+- **[11:22]** Notification.
+- **[11:28]** Probably should just not been off the record and just.
+- **[11:32]** This is you.
+- **[11:34]** Star rating.
+- **[11:35]** Your energy.
+- **[11:36]** Money.
+- **[11:40]** Nice.
+- **[11:41]** It's a little bell.
+- **[11:44]** No skip.
+- **[11:45]** Forced power drill.
+- **[11:46]** Help inside the drill.
+- **[11:47]** Then one more drill.
+
+## 11:56 – 13:29  ·  sheets/sheet_009.jpg
+- **[11:59]** Forced power drill.
+- **[12:00]** I was basically saying like if it's going to tell you to go and do a drill,
+- **[12:03]** then I should start with this one.
+- **[12:11]** One drill done.
+- **[12:12]** You got two drills a session.
+- **[12:13]** So you have to do one more.
+- **[12:15]** So there's another one and then.
+- **[12:18]** Oh, it's potentially not to that.
+- **[12:21]** I think that was better.
+- **[12:22]** I like that one more.
+- **[12:25]** It wasn't understanding when I was saying this.
+- **[12:27]** I was basically saying.
+- **[12:29]** One star, then two stars and then three stars for them.
+- **[12:32]** Yeah, go back to that.
+- **[12:33]** Basically, that's good.
+- **[12:35]** And this is an achievement.
+- **[12:39]** Yeah, like I said, there's like a story achievement.
+- **[12:42]** Basically, like the start of the game.
+- **[12:43]** That's like kind of pushing you where to go.
+- **[12:45]** Like what achievements to do first.
+- **[12:48]** Yeah, or like see all achievement.
+- **[12:50]** Maybe pushing you before it was just like play your first game.
+- **[12:54]** Should be like, okay, go and I go to go into the game kind of thing.
+- **[12:57]** Maybe like an intro of achievements.
+- **[12:59]** Yeah.
+- **[12:59]** More basic ones that you.
+- **[13:02]** I think this is it's called like first.
+- **[13:03]** It's called like first steps.
+- **[13:05]** Unlocks relations and shop after one game.
+- **[13:08]** Sponsors after 10 games.
+- **[13:09]** Again, I told it not to do.
+- **[13:16]** I told him not to do that to be honest.
+- **[13:18]** Well, we hold time to go meet your boss.
+- **[13:23]** That's what I wanted.
+- **[13:24]** Okay.
+- **[13:24]** Like after your first game, you have a meeting with the boss.
+- **[13:27]** And then it just.
+- **[13:29]** After like three games, you should have just like.
+
+## 13:29 – 15:06  ·  sheets/sheet_010.jpg
+- **[13:32]** Most of the stuff kind of.
+- **[13:33]** Yeah.
+- **[13:34]** I still think there's probably a better way to do that.
+- **[13:36]** I think we should just we could just play through this to see.
+- **[13:39]** As much energy explained at full time.
+- **[13:43]** Oh yeah, I wanted to show this.
+- **[13:47]** But this should probably just be the start of the game.
+- **[13:49]** Wait, that looks way better.
+- **[13:50]** I don't know.
+- **[14:02]** It didn't actually show what it said it was showing.
+- **[14:06]** On the screen.
+- **[14:08]** Again, the gotten.
+- **[14:11]** Well, that's just the right isn't it?
+- **[14:12]** Why is it showing nothing there?
+- **[14:14]** This one.
+- **[14:17]** That was just image.
+- **[14:19]** What's the change?
+- **[14:20]** It just always.
+- **[14:21]** I mean,
+- **[14:23]** looks that looks it's a natural goal now as well.
+- **[14:26]** That's.
+- **[14:27]** Yeah, that's a 2D thing.
+- **[14:29]** Yeah, that the ball needs changing.
+- **[14:31]** The goal needs to be further back.
+- **[14:32]** I'm also on the halfway line.
+- **[14:34]** So I'm not sure how the goals got there.
+- **[14:38]** Maybe just get rid of the goal.
+- **[14:40]** Yeah, on the start screen.
+- **[14:43]** The goals in the in the house.
+- **[14:44]** Anything will look better, but it's more like the stadium.
+- **[14:47]** Yeah, and the stadium is full.
+- **[14:48]** Imagine you could look left and right as well.
+- **[14:51]** And boots on the wooden plank.
+- **[14:52]** Oh yeah, I just wanted it to make.
+- **[14:56]** Then I wanted to put something glass to be honest.
+- **[15:00]** Like they're in a shop and they're like the special ones.
+- **[15:05]** I put hands on my plastic bag.
+
+## 15:06 – 16:42  ·  sheets/sheet_011.jpg
+- **[15:07]** No, they're not looking good enough.
+- **[15:09]** They were a snack that you just.
+- **[15:13]** Bina Blue opens the box.
+- **[15:14]** It drops the mid rise after the rises.
+- **[15:23]** It was it was good.
+- **[15:24]** I don't think they came out of the box at the right angle.
+- **[15:27]** Maybe yeah, I think that could be a little bit like maybe it's kind of facing.
+- **[15:31]** When you get level five, it should be like a cool animation.
+- **[15:37]** Oh yeah, basket.
+- **[15:39]** Just add the basket to the shop.
+- **[15:43]** You can add stuff to the basket and you can just like imagine you're buying a bunch of stuff
+- **[15:47]** from the home screen.
+- **[15:48]** Maybe I mean, that's not necessary.
+- **[15:50]** I feel like you just buy it in one tap.
+- **[15:53]** You could just buy it.
+- **[15:55]** I guess if you're going to doesn't money more than one at a time.
+- **[15:59]** If there was a reason for it, it would be worth it.
+- **[16:01]** Easier to just buy with one tap.
+- **[16:04]** Oh, it is still one tap though.
+- **[16:05]** Is it not still one tap still or do you have to add to basket?
+- **[16:11]** Oh no, I was everything.
+- **[16:13]** Just add the basket.
+- **[16:17]** I don't think we should.
+- **[16:18]** I think we should get rid of the green on some pages to be fair.
+- **[16:22]** I think that's probably what's making stuff look weird.
+- **[16:25]** Maybe but that's like.
+- **[16:26]** Also, it doesn't have to be that light vibe.
+- **[16:31]** I wanted this should be more like a shop.
+- **[16:33]** I wanted that animation of like you getting the shoe.
+- **[16:36]** Yeah, kind of combine that with a basket.
+- **[16:38]** I don't think unless there's a reason for the basket.
+- **[16:40]** The basket is cool, but like you should still be able to just press buy now.
+
+## 16:42 – 18:08  ·  sheets/sheet_012.jpg
+- **[16:43]** If you know you're going to buy like six things, maybe you just have them to a box.
+- **[16:46]** I feel like that animation should just go for the box.
+- **[16:50]** Like it should go straight.
+- **[16:52]** You know how I jumped down.
+- **[16:52]** Yeah, go into your box and then and then it does the animation of opening the box with the shoe.
+- **[16:58]** Basket school.
+- **[16:59]** It's not a need for right now.
+- **[17:00]** It is a cool idea.
+- **[17:02]** Soundboard admin page.
+- **[17:04]** So you can see all the sounds.
+- **[17:06]** 3D icons.
+- **[17:08]** See that is.
+- **[17:13]** Signing scene photo.
+- **[17:15]** Let's see.
+- **[17:16]** Oh, that's the other.
+- **[17:17]** Is it just an image?
+- **[17:21]** I just this was that is for.
+- **[17:26]** We know this is called.
+- **[17:35]** That is pretty good.
+- **[17:37]** Well, that's that's just amazing.
+- **[17:52]** If that could be the face of your avatar as well.
+- **[17:58]** Yeah, you have to explain to us.
+- **[17:59]** I think I said that.
+- **[18:01]** We need to look into if it can do that.
+- **[18:04]** The actual 3D model of your face when you upload it.
+
+## 18:08 – 19:47  ·  sheets/sheet_013.jpg
+- **[18:09]** Is that the t-sto?
+- **[18:12]** What is this?
+- **[18:13]** We only have one model.
+- **[18:14]** So everyone's looking at the path as well.
+- **[18:19]** Oh, it changed it.
+- **[18:21]** I said, can it change it to your avatar and your and accessories?
+- **[18:25]** But is that the change accessory?
+- **[18:28]** I think that's just changing between three presets.
+- **[18:32]** If they chose a certain skin color start of the game,
+- **[18:36]** and there's only three.
+- **[18:36]** Okay, everyone's got the same.
+- **[18:38]** Yeah, and then it knows to put an accessory on.
+- **[18:40]** That's fine.
+- **[18:41]** I might not show your face perfectly.
+- **[18:43]** We don't need to have it so that you add your face on there.
+- **[18:47]** We can just have like, like, you know, like,
+- **[18:48]** football chairman has like 20 different.
+- **[18:50]** Yeah, we could just have it.
+- **[18:52]** Because it might just be a bit ridiculous.
+- **[18:54]** We could just say like, you can choose the one that is the closest look to try and choose it.
+- **[18:58]** It could recommend one maybe.
+- **[19:02]** Let's answer these.
+- **[19:03]** Given GoPass always come with a back to you banner in a picture with no goal
+- **[19:07]** before it came back 73 100 times.
+- **[19:09]** I think put that back to how it was.
+- **[19:11]** I don't remember even changing that.
+- **[19:13]** So wait, back to you, did it say that it's like a back,
+- **[19:18]** they came back to you in the highlight kind of thing?
+- **[19:21]** I don't know what a given GoPass situation is like the build ups ones, I think.
+- **[19:26]** Yeah, but there's multiple board of ones.
+- **[19:28]** Originally, it was that if you picked the negative option,
+- **[19:33]** which was like a backwards parcel, the easiest option,
+- **[19:38]** then you still have a chance of it coming back to you.
+- **[19:41]** And but it's it's more unlikely than if you pass it with a more ambitious pass,
+
+## 19:47 – 21:53  ·  sheets/sheet_014.jpg
+- **[19:49]** like passing forwards or in a more dangerous position,
+- **[19:52]** that would basically always give you the ball back.
+- **[19:57]** So it should definitely be a lot more likely that if you pick the more ambitious pass
+- **[20:03]** in those scenarios, then get the ball back.
+- **[20:05]** I think 73 in 100 for the ambitious pass is to go.
+- **[20:11]** Because you're choosing to pass it.
+- **[20:14]** It's the only thing you should get it.
+- **[20:15]** I think it should be like at least 90, 95 out of 100.
+- **[20:19]** So you've already picked a difficult pass to make this a busy one.
+- **[20:24]** Yeah, I think that's that's probably the way we need to do that.
+- **[20:30]** Basket for style items.
+- **[20:31]** Style items probably does make more sense, but there's not that many.
+- **[20:34]** So I think the basket just put on hold for now.
+- **[20:39]** That's probably about right for the training.
+- **[20:43]** You should just keep moving further and further back as well.
+- **[20:46]** Yeah.
+- **[20:47]** Oh yeah, put all sounds in the game with Mikey's.
+- **[20:50]** Yeah.
+- **[20:51]** Yeah, I'm Mikey and can put that in the game.
+- **[20:54]** You'll never know if it was actually Mikey though.
+- **[20:57]** Sponsors unlock up to 10 games.
+- **[20:58]** Now I said this.
+- **[21:00]** I said it.
+- **[21:01]** I said sponsors should unlock.
+- **[21:05]** Like whenever your sponsor first sponsor happens.
+- **[21:10]** Whenever your first sponsor happens,
+- **[21:12]** it should then do the sponsorship like unveil unveil and it should all be locked until then.
+- **[21:20]** But don't set it to a certain amount of games.
+- **[21:22]** It should based on form and reputation, whatever.
+- **[21:24]** Like how we should have whether the natural system is.
+- **[21:27]** Maybe you should have a minimum.
+- **[21:30]** Like you don't really find if you've been playing trash,
+- **[21:32]** you're on your first sponsor to be in the second season or something.
+- **[21:36]** Because they don't even get the experience.
+- **[21:38]** No, we should make it probably like the bad sponsors pretty easy to get or something.
+- **[21:42]** Well, the way it is is that there's there's bad sponsors and good sponsors.
+- **[21:47]** But also sponsors are based on how much you own.
+- **[21:51]** So a sponsor in the National League South will be like two pounds.
+
+## 21:53 – 22:57  ·  sheets/sheet_015.jpg
+- **[21:55]** Yeah.
+- **[21:56]** So it's not a big deal if you get a sponsor.
+- **[22:01]** Match view with the blender players is one picture.
+- **[22:05]** What is that?
+- **[22:06]** I think you can see that.
+- **[22:10]** I think I did the filming for the gameplay stuff.
+- **[22:15]** That's nice.
+- **[22:16]** What that screen change was.
+- **[22:18]** How did it do the cutscene, by the way?
+- **[22:22]** What do you mean?
+- **[22:24]** Like it had like it was a story.
+- **[22:26]** Did you like specifically create a script for it or something?
+- **[22:33]** Is that from the thing you do with your work?
+- **[22:36]** Is it completely generated?
+- **[22:38]** Completely generated.
+- **[22:40]** No way.
+- **[22:43]** So this is so it's not.
+- **[22:44]** So you should have options as well.
+- **[22:48]** You should have options.
+- **[22:49]** So it's not avatars.
+- **[22:50]** No.
+- **[22:52]** What do you mean avatars?
+- **[22:53]** Like it's not your avatar.
+- **[22:55]** I'm not sure.
+- **[22:56]** I have no idea.
+
+## 22:57 – 23:10  ·  sheets/sheet_016.jpg
+- **[22:58]** There's something to ask it.
+- **[23:00]** I don't know.
+- **[23:02]** But it's changed.
+- **[23:04]** It's changed with like one of them had the headband and different skin color.
+- **[23:08]** So I.
