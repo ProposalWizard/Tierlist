@@ -127,12 +127,14 @@ export const ADMIN_GUIDES = {
         ["Search a club", "Narrows the list to clubs whose name contains what you type."],
         ["Only clubs with gaps", "Hides clubs that have everything."],
         ["Download spreadsheet", "Downloads what's on screen as a spreadsheet file (opens in Excel or Google Sheets)."],
-        ["A coloured box", "Green: you gave it. Amber: the game is making it up. Red: nothing at all. Hover (or long-press) to see why."],
+        ["A coloured box", "Green: you gave it. Blue: researched (hover to see the source page). Amber: the game is making it up. Red: nothing at all. Hover (or long-press) to see why."],
+        ["Only researched values", "Shows only clubs with researched (blue) boxes, so you can check them."],
         ["The number under each column", "How many clubs have that piece of information, out of the clubs it applies to."],
       ] },
     ],
     saving: [
       "Nothing to save: this page only reads. To fill a gap, give the information in chat (or a club sheet) and it's added to the game's data in the code.",
+      "Blue boxes come from research (2 Oct 2026, mostly Wikipedia club pages). They only ever fill empty boxes: anything you've given wins. League titles and cups count national competitions only.",
     ],
     inGame: [
       "Everything here is what the game uses: kits on the pitch, stadium names, club size in transfers and prestige, rivalries in the news, managers on the team sheet.",

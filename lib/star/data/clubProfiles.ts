@@ -22,6 +22,7 @@
  * Pure: no React.
  */
 import { CLUB_SHEET_2026_09, REGIONAL_SHEET_2026_10 } from "./clubProfileData";
+import RESEARCHED_2026_10 from "./sources/researched_2026-10.json";
 
 export interface KitInfo {
   shirt?: string;
@@ -68,6 +69,9 @@ export interface ClubProfile {
   manager?: string;
   formation?: string;
   notes?: string;
+  /** Boxes filled by research rather than given (the /admin/clubs column key
+   *  -> where it came from). Shown in their own colour so they can be checked. */
+  researched?: Record<string, string>;
 }
 
 /** Colour words as given, to hex. */
@@ -178,10 +182,61 @@ function merge(a: ClubProfile | undefined, b: ClubProfile): ClubProfile {
   return out;
 }
 
+interface ResearchedKit { shirtHex: string; trimHex: string; pattern?: string }
+interface ResearchedClub {
+  values: {
+    nickname?: string; founded?: string; country?: string; stadium?: string; capacity?: number;
+    manager?: string; leagueTitles?: string; domesticCups?: string; europeanTrophies?: string;
+    kits?: { home: ResearchedKit; away: ResearchedKit | null }; kitPattern?: string; badge?: string[];
+  };
+  sources: Record<string, string>;
+}
+
+/**
+ * Research (2 Oct 2026, sources/researched_2026-10.json) only FILLS boxes the
+ * sheets left empty — it never overrides anything given.
+ */
+function fillResearched(a: ClubProfile | undefined, club: string, r: ResearchedClub): ClubProfile {
+  const out: ClubProfile = a ? { ...a } : { club, sources: [] };
+  const v = r.values;
+  const used: Record<string, string> = {};
+  const fill = <K extends keyof ClubProfile>(key: K, val: ClubProfile[K] | undefined, auditKey: string) => {
+    if (val === undefined || out[key] !== undefined) return;
+    out[key] = val;
+    used[auditKey] = r.sources[auditKey] ?? "";
+  };
+  fill("nickname", v.nickname, "nickname");
+  fill("founded", v.founded, "founded");
+  fill("country", v.country, "country");
+  fill("stadium", v.stadium, "stadium");
+  fill("capacity", v.capacity, "capacity");
+  fill("manager", v.manager, "manager");
+  fill("leagueTitles", v.leagueTitles, "leagueTitles");
+  fill("domesticCups", v.domesticCups, "domesticCups");
+  fill("europeanTrophies", v.europeanTrophies, "europeanTrophies");
+  fill("badgeColours", v.badge, "badge");
+  if (v.kits && !out.homeKit) {
+    out.homeKit = { shirtHex: v.kits.home.shirtHex, trimHex: v.kits.home.trimHex, pattern: v.kits.home.pattern };
+    if (v.kits.away) out.awayKit = { shirtHex: v.kits.away.shirtHex, trimHex: v.kits.away.trimHex };
+    used.kits = r.sources.kits ?? "";
+  }
+  if (v.kitPattern && !out.homeKit?.pattern) {
+    out.homeKit = { ...(out.homeKit ?? {}), pattern: v.kitPattern };
+    used.kitPattern = r.sources.kitPattern ?? "";
+  }
+  if (Object.keys(used).length) {
+    out.researched = { ...(out.researched ?? {}), ...used };
+    out.sources = [...out.sources, "Research, 2 Oct 2026"];
+  }
+  return out;
+}
+
 export const CLUB_PROFILES: Record<string, ClubProfile> = (() => {
   const all: Record<string, ClubProfile> = {};
   for (const r of CLUB_SHEET_2026_09) if (r["Club"]) all[r["Club"]] = merge(all[r["Club"]], fromClubSheet(r));
   for (const r of REGIONAL_SHEET_2026_10) if (r.club) all[r.club] = merge(all[r.club], fromRegionalSheet(r));
+  const researched = (RESEARCHED_2026_10 as unknown as { clubs: Record<string, ResearchedClub> }).clubs;
+  for (const [club, r] of Object.entries(researched)) all[club] = fillResearched(all[club], club, r);
   return all;
 })();
 

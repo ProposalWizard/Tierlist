@@ -1,0 +1,5084 @@
+{
+ "_about": "Researched 2 Oct 2026 to fill empty boxes only: Wikipedia club pages (nickname, founded, country, stadium, capacity, manager, honours; national-level titles and cups only) and general knowledge for club colours (tagged). Every value carries its source. Anything given in a club sheet wins over this file.",
+ "clubs": {
+  "Arsenal": {
+   "values": {
+    "nickname": "The Gunners",
+    "manager": "Mikel Arteta",
+    "kitPattern": "Red with white sleeves",
+    "badge": [
+     "Red",
+     "Gold",
+     "Navy",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Arsenal_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Arsenal_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AFC Bournemouth": {
+   "values": {
+    "nickname": "The Cherries; Boscombe",
+    "manager": "Marco Rose",
+    "leagueTitles": "Championship 1; Third Division South/Third Division/League One 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None",
+    "kitPattern": "Red and black stripes",
+    "badge": [
+     "Red",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AFC_Bournemouth",
+    "manager": "https://en.wikipedia.org/wiki/AFC_Bournemouth",
+    "leagueTitles": "https://en.wikipedia.org/wiki/AFC_Bournemouth#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/AFC_Bournemouth#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/AFC_Bournemouth#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Liverpool": {
+   "values": {
+    "nickname": "The Reds",
+    "manager": "Andoni Iraola",
+    "kitPattern": "Plain"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Liverpool_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Liverpool_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Leeds United": {
+   "values": {
+    "nickname": "The Whites",
+    "manager": "Daniel Farke",
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Yellow",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Leeds_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Leeds_United_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Crystal Palace": {
+   "values": {
+    "nickname": "The Eagles; The Glaziers",
+    "manager": "Pierre Sage",
+    "leagueTitles": "Second Division/First Division/Championship 2; Third Division/Third Division South 1",
+    "domesticCups": "FA Cup 1; Full Members' Cup 1",
+    "europeanTrophies": "UEFA Conference League 1",
+    "kitPattern": "Red and blue stripes",
+    "badge": [
+     "Red",
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Crystal_Palace_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Crystal_Palace_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Crystal_Palace_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Crystal_Palace_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Crystal_Palace_F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Brentford": {
+   "values": {
+    "nickname": "The Bees",
+    "manager": "Keith Andrews",
+    "leagueTitles": "Second Division/Championship 1; Third Division South/Third Division/League One 2; Fourth Division/League Two 3",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Brentford_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Brentford_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Brentford_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Brentford_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Brentford_F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Hull City": {
+   "values": {
+    "nickname": "The Tigers",
+    "manager": "Sergej Jakirović",
+    "leagueTitles": "Third Division North/Third Division/League One 4",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "kitPattern": "Amber and black stripes",
+    "badge": [
+     "Amber",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Hull_City_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Hull_City_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hull_City_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Hull_City_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Hull_City_A.F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Brighton & Hove Albion": {
+   "values": {
+    "nickname": "The Seagulls; The Albion",
+    "manager": "Fabian Hürzeler",
+    "leagueTitles": "Third Division South/Second Division/League One 3; Fourth Division/Third Division 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "kitPattern": "Blue and white stripes",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Brighton_&_Hove_Albion_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Brighton_&_Hove_Albion_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Brighton_&_Hove_Albion_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Brighton_&_Hove_Albion_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Brighton_&_Hove_Albion_F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Everton": {
+   "values": {
+    "nickname": "The Blues; The Toffees; The People's Club; The School of Science",
+    "manager": "David Moyes",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Everton_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Everton_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Newcastle United": {
+   "values": {
+    "nickname": "The Magpies; The Toon",
+    "manager": "Matthias Jaissle",
+    "kitPattern": "Black and white stripes",
+    "badge": [
+     "Black",
+     "White",
+     "Blue",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Newcastle_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Newcastle_United_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Nottingham Forest": {
+   "values": {
+    "nickname": "Forest; The Garibaldis; The Reds; The Tricky Trees",
+    "manager": "Oliver Glasner",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Nottingham_Forest_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Nottingham_Forest_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Ipswich Town": {
+   "values": {
+    "nickname": "The Blues; The Tractor Boys",
+    "manager": "Gary O'Neil",
+    "leagueTitles": "First Division/Premier League 1; Second Division/First Division/Championship 3; Third Division/Second Division/League One 2",
+    "domesticCups": "FA Cup 1",
+    "europeanTrophies": "UEFA Cup 1",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Ipswich_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Ipswich_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Ipswich_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Ipswich_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Ipswich_Town_F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Manchester City": {
+   "values": {
+    "nickname": "The Citizens (Cityzens); The Blues; The Sky Blues",
+    "manager": "Enzo Maresca",
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "Navy",
+     "Gold",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Manchester_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Manchester_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Tottenham Hotspur": {
+   "values": {
+    "nickname": "The Lilywhites",
+    "manager": "Roberto De Zerbi",
+    "kitPattern": "Plain",
+    "badge": [
+     "Navy",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Tottenham_Hotspur_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Tottenham_Hotspur_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Aston Villa": {
+   "values": {
+    "nickname": "The Villans; The Lions",
+    "manager": "Unai Emery",
+    "kitPattern": "Claret with sky blue sleeves",
+    "badge": [
+     "Claret",
+     "Sky blue",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Aston_Villa_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Aston_Villa_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Chelsea": {
+   "values": {
+    "nickname": "The Blues",
+    "manager": "Xabi Alonso",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "Gold",
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Chelsea_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Chelsea_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Fulham FC": {
+   "values": {
+    "nickname": "The Cottagers",
+    "manager": "Álvaro Arbeloa",
+    "leagueTitles": "Second Division/First Division/Championship 3; Third Division South/Third Division/Second Division 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "UEFA Intertoto Cup 1",
+    "kitPattern": "Plain",
+    "badge": [
+     "Black",
+     "White",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Fulham_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Fulham_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Fulham_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Fulham_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Fulham_F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sunderland": {
+   "values": {
+    "nickname": "The Black Cats",
+    "manager": "Régis Le Bris",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Black",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sunderland_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Sunderland_A.F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Manchester United": {
+   "values": {
+    "nickname": "The Red Devils; United",
+    "manager": "Michael Carrick",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Gold",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Manchester_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Manchester_United_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Coventry City": {
+   "values": {
+    "nickname": "The Sky Blues",
+    "manager": "Frank Lampard",
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "White",
+     "Navy"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Coventry_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Coventry_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Queens Park Rangers": {
+   "values": {
+    "nickname": "The Rs; The Hoops; Super Hoops",
+    "manager": "Julien Stéphan",
+    "kitPattern": "Blue and white hoops",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Queens_Park_Rangers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Queens_Park_Rangers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Millwall FC": {
+   "values": {
+    "nickname": "The Lions",
+    "manager": "Alex Neil",
+    "kitPattern": "Plain",
+    "badge": [
+     "Navy",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Millwall_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Millwall_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Bolton Wanderers": {
+   "values": {
+    "nickname": "The Trotters; The Wanderers; The Whites",
+    "manager": "Steven Schumacher",
+    "kitPattern": "Plain",
+    "badge": [
+     "Navy",
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bolton_Wanderers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Bolton_Wanderers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Watford": {
+   "values": {
+    "nickname": "The Hornets; The Golden Boys",
+    "manager": "Alessio Dionisi",
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Red",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Watford_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Watford_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Middlesbrough": {
+   "values": {
+    "nickname": "Boro",
+    "manager": "Kim Hellberg",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Middlesbrough_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Middlesbrough_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Charlton Athletic": {
+   "values": {
+    "nickname": "The Addicks",
+    "manager": "Nathan Jones",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Charlton_Athletic_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Charlton_Athletic_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Swansea City": {
+   "values": {
+    "nickname": "The Swans",
+    "manager": "Vítor Matos",
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Swansea_City_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Swansea_City_A.F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "West Bromwich Albion": {
+   "values": {
+    "nickname": "The Baggies; The Throstles; The Albion",
+    "manager": "James Morrison",
+    "kitPattern": "Navy and white stripes",
+    "badge": [
+     "Navy",
+     "White",
+     "Green"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/West_Bromwich_Albion_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/West_Bromwich_Albion_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Blackburn Rovers": {
+   "values": {
+    "nickname": "Rovers; The Blue and Whites; The Riversiders",
+    "manager": "Tony Mowbray",
+    "kitPattern": "Blue and white halves",
+    "badge": [
+     "Blue",
+     "White",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Blackburn_Rovers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Blackburn_Rovers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Burnley": {
+   "values": {
+    "nickname": "The Clarets",
+    "manager": "Nicky Hayen",
+    "kitPattern": "Claret with sky blue sleeves",
+    "badge": [
+     "Claret",
+     "Sky blue",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Burnley_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Burnley_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "West Ham United": {
+   "values": {
+    "nickname": "The Irons; The Hammers",
+    "manager": "Nuno Espírito Santo",
+    "kitPattern": "Claret with sky blue sleeves",
+    "badge": [
+     "Claret",
+     "Sky blue",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/West_Ham_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/West_Ham_United_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Wolverhampton Wanderers": {
+   "values": {
+    "nickname": "The Old Gold",
+    "manager": "César Peixoto",
+    "kitPattern": "Plain",
+    "badge": [
+     "Gold",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Wolverhampton_Wanderers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Wolverhampton_Wanderers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Cardiff City": {
+   "values": {
+    "nickname": "The Bluebirds",
+    "manager": "Brian Barry-Murphy",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White",
+     "Red",
+     "Yellow"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Cardiff_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Cardiff_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Wrexham": {
+   "values": {
+    "nickname": "The Reds; The Red Dragons; The Robins; The Town",
+    "manager": "Phil Parkinson",
+    "leagueTitles": "Third Division North/Third Division/League One 1; National League 1",
+    "domesticCups": "EFL Trophy 1; FA Trophy 1; Welsh Cup 23",
+    "europeanTrophies": "None",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White",
+     "Green"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Wrexham_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Wrexham_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Wrexham_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Wrexham_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Wrexham_A.F.C.#Honours",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Birmingham City": {
+   "values": {
+    "nickname": "Blues",
+    "manager": "Chris Davies",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Birmingham_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Birmingham_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sheffield United": {
+   "values": {
+    "nickname": "The Blades",
+    "manager": "Chris Wilder",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sheffield_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Sheffield_United_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Lincoln City": {
+   "values": {
+    "nickname": "The Imps",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Lincoln_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Preston North End": {
+   "values": {
+    "nickname": "The Lilywhites; The Invincibles",
+    "manager": "Graham Alexander",
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Navy"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Preston_North_End_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Preston_North_End_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Norwich City": {
+   "values": {
+    "nickname": "The Canaries; Yellows",
+    "manager": "Philippe Clement",
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Green"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Norwich_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Norwich_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Stoke City": {
+   "values": {
+    "nickname": "The Potters",
+    "manager": "Mark Robins",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Stoke_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Stoke_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Derby County": {
+   "values": {
+    "nickname": "The Rams",
+    "manager": "John Eustace",
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Derby_County_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Derby_County_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Portsmouth": {
+   "values": {
+    "nickname": "Pompey",
+    "manager": "John Mousinho",
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "Gold",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Portsmouth_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Portsmouth_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Bristol City": {
+   "values": {
+    "nickname": "The Robins",
+    "manager": "Michael Skubala",
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bristol_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Bristol_City_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Southampton": {
+   "values": {
+    "nickname": "The Saints",
+    "manager": "Tonda Eckert",
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Black",
+     "Yellow"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Southampton_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Southampton_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AFC Wimbledon": {
+   "values": {
+    "nickname": "The Dons; The Wombles",
+    "founded": "2002",
+    "country": "England",
+    "stadium": "Plough Lane",
+    "capacity": 9215,
+    "manager": "Johnnie Jackson",
+    "leagueTitles": "Conference South 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "founded": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "country": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "stadium": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "capacity": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "manager": "https://en.wikipedia.org/wiki/AFC_Wimbledon",
+    "leagueTitles": "https://en.wikipedia.org/wiki/AFC_Wimbledon#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/AFC_Wimbledon#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/AFC_Wimbledon#Honours"
+   }
+  },
+  "Barnsley": {
+   "values": {
+    "nickname": "The Reds; The Tykes",
+    "founded": "1887",
+    "country": "England",
+    "stadium": "Oakwell",
+    "capacity": 23287,
+    "manager": "Daniel Stendel",
+    "leagueTitles": "Third Division North/Third Division/League One 3",
+    "domesticCups": "FA Cup 1; EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Barnsley_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Barnsley_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Barnsley_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Barnsley_F.C.#Honours"
+   }
+  },
+  "Blackpool": {
+   "values": {
+    "nickname": "The Seasiders; The Tangerines",
+    "founded": "1887",
+    "country": "England",
+    "stadium": "Bloomfield Road",
+    "capacity": 16500,
+    "manager": "Ian Evatt",
+    "leagueTitles": "Second Division/Championship 1",
+    "domesticCups": "FA Cup 1; EFL Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Blackpool_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Blackpool_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Blackpool_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Blackpool_F.C.#Honours"
+   }
+  },
+  "Bradford City": {
+   "values": {
+    "nickname": "The Bantams; The Paraders; The Citizens",
+    "founded": "1903",
+    "country": "England",
+    "stadium": "Valley Parade",
+    "capacity": 24840,
+    "leagueTitles": "Second Division/First Division 1; Third Division North/Third Division/Second Division 2",
+    "domesticCups": "FA Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.#Honours_and_records",
+    "domesticCups": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.#Honours_and_records",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Bradford_City_A.F.C.#Honours_and_records"
+   }
+  },
+  "Bromley": {
+   "values": {
+    "nickname": "The Ravens; The Lillywhites",
+    "founded": "1892",
+    "country": "England",
+    "stadium": "Hayes Lane",
+    "manager": "Andy Woodman",
+    "leagueTitles": "League Two 1; Conference South 1",
+    "domesticCups": "FA Trophy 1; FA Amateur Cup 3",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bromley_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Bromley_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Bromley_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Bromley_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Bromley_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Bromley_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Bromley_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Bromley_F.C.#Honours"
+   }
+  },
+  "Burton Albion": {
+   "values": {
+    "nickname": "The Brewers",
+    "founded": "1950",
+    "country": "England",
+    "stadium": "Pirelli Stadium",
+    "capacity": 6912,
+    "manager": "Gary Bowyer",
+    "leagueTitles": "League Two 1; Conference 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Burton_Albion_F.C.#Honours"
+   }
+  },
+  "Cambridge United": {
+   "values": {
+    "nickname": "The U's",
+    "founded": "1912",
+    "country": "England",
+    "stadium": "Cledara Abbey Stadium",
+    "capacity": 7937,
+    "manager": "Neil Harris",
+    "leagueTitles": "Third Division 1; Fourth Division/Third Division/League Two 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Cambridge_United_F.C.#Honours"
+   }
+  },
+  "Doncaster Rovers": {
+   "values": {
+    "nickname": "Donny; Rovers",
+    "founded": "1879",
+    "country": "England",
+    "stadium": "Club Doncaster Sports Village",
+    "capacity": 15231,
+    "manager": "Grant McCann",
+    "leagueTitles": "Third Division North/League One 4; Fourth Division/Third Division/League Two 4",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Doncaster_Rovers_F.C.#Honours"
+   }
+  },
+  "Huddersfield Town": {
+   "values": {
+    "nickname": "The Terriers",
+    "manager": "Martin Drury"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Huddersfield_Town_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Huddersfield_Town_A.F.C."
+   }
+  },
+  "Leicester City": {
+   "values": {
+    "nickname": "The Foxes",
+    "manager": "Russell Martin"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Leicester_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Leicester_City_F.C."
+   }
+  },
+  "Leyton Orient": {
+   "values": {
+    "nickname": "The O's",
+    "founded": "1881",
+    "country": "England",
+    "stadium": "Brisbane Road",
+    "capacity": 9271,
+    "manager": "Richie Wellens",
+    "leagueTitles": "Third Division South/Third Division 2; Fourth Division/League Two 1; National League 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Leyton_Orient_F.C.#Honours"
+   }
+  },
+  "Luton Town": {
+   "values": {
+    "nickname": "The Hatters",
+    "manager": "Jack Wilshere"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Luton_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Luton_Town_F.C."
+   }
+  },
+  "Mansfield Town": {
+   "values": {
+    "nickname": "The Stags",
+    "founded": "1897",
+    "country": "England",
+    "stadium": "One Call Stadium",
+    "capacity": 10022,
+    "manager": "Nigel Clough",
+    "leagueTitles": "Third Division 1; Fourth Division/Third Division/League Two 1; Conference 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Mansfield_Town_F.C.#Honours"
+   }
+  },
+  "Milton Keynes Dons": {
+   "values": {
+    "nickname": "The Dons",
+    "founded": "2004",
+    "country": "England",
+    "stadium": "Stadium MK",
+    "capacity": 30500,
+    "manager": "Paul Warne",
+    "leagueTitles": "League Two 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Milton_Keynes_Dons_F.C.#Honours"
+   }
+  },
+  "Notts County": {
+   "values": {
+    "nickname": "The Magpies",
+    "founded": "1862",
+    "country": "England",
+    "stadium": "Meadow Lane",
+    "capacity": 19841,
+    "manager": "Martin Paterson",
+    "leagueTitles": "Second Division 3; Third Division South/Third Division 2; Fourth Division/Third Division/League Two 3",
+    "domesticCups": "FA Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Notts_County_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Notts_County_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Notts_County_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Notts_County_F.C.#Honours"
+   }
+  },
+  "Oxford United": {
+   "values": {
+    "nickname": "The U's; Yellows",
+    "founded": "1893",
+    "country": "England",
+    "stadium": "Kassam Stadium",
+    "capacity": 12573,
+    "manager": "Aaron Ramsey",
+    "leagueTitles": "Second Division 1; Third Division/Second Division/League One 2",
+    "domesticCups": "League Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Oxford_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Oxford_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Oxford_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Oxford_United_F.C.#Honours"
+   }
+  },
+  "Peterborough United": {
+   "values": {
+    "nickname": "The Posh",
+    "founded": "1934",
+    "country": "England",
+    "stadium": "London Road",
+    "capacity": 13512,
+    "manager": "Robbie Savage",
+    "leagueTitles": "Fourth Division/Third Division/League Two 2",
+    "domesticCups": "EFL Trophy 3",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Peterborough_United_F.C.#Honours"
+   }
+  },
+  "Plymouth Argyle": {
+   "values": {
+    "nickname": "The Pilgrims; The Greens",
+    "founded": "1886",
+    "country": "England",
+    "stadium": "Home Park",
+    "capacity": 17000,
+    "manager": "Tom Cleverley",
+    "leagueTitles": "Third Division South/Third Division/Second Division/League One 5; Third Division/League Two 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Plymouth_Argyle_F.C.#Honours"
+   }
+  },
+  "Reading FC": {
+   "values": {
+    "nickname": "The Royals; The Biscuitmen",
+    "manager": "Leam Richardson"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Reading_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Reading_F.C."
+   }
+  },
+  "Sheffield Wednesday": {
+   "values": {
+    "nickname": "The Owls",
+    "founded": "1867",
+    "country": "England",
+    "stadium": "Hillsborough Stadium",
+    "capacity": 39732,
+    "manager": "Henrik Pedersen",
+    "leagueTitles": "First Division 4; Second Division 5",
+    "domesticCups": "FA Cup 3; League Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Sheffield_Wednesday_F.C.#Honours"
+   }
+  },
+  "Stevenage": {
+   "values": {
+    "nickname": "The Boro",
+    "founded": "1976",
+    "country": "England",
+    "stadium": "Broadhall Way",
+    "capacity": 7318,
+    "manager": "Alex Revell",
+    "leagueTitles": "Conference National 2",
+    "domesticCups": "FA Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Stevenage_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Stevenage_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Stevenage_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Stevenage_F.C.#Honours"
+   }
+  },
+  "Stockport County": {
+   "values": {
+    "nickname": "The Hatters",
+    "founded": "1883",
+    "country": "England",
+    "stadium": "Edgeley Park",
+    "capacity": 10852,
+    "manager": "Jimmy McNulty",
+    "leagueTitles": "Third Division North/Second Division 2; Fourth Division/League Two 2; National League 1; National League North 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Stockport_County_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Stockport_County_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Stockport_County_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Stockport_County_F.C.#Honours"
+   }
+  },
+  "Wigan Athletic": {
+   "values": {
+    "nickname": "The Latics; Tics",
+    "manager": "Gary Caldwell"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Wigan_Athletic_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Wigan_Athletic_F.C."
+   }
+  },
+  "Wycombe Wanderers": {
+   "values": {
+    "nickname": "The Chairboys; The Blues",
+    "founded": "1887",
+    "country": "England",
+    "stadium": "Adams Park",
+    "capacity": 9558,
+    "manager": "Tom Hounsell",
+    "leagueTitles": "Conference 1",
+    "domesticCups": "FA Trophy 2; FA Amateur Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Wycombe_Wanderers_F.C.#Honours"
+   }
+  },
+  "Accrington Stanley": {
+   "values": {
+    "nickname": "The Reds; The 'Owd Reds",
+    "founded": "1968",
+    "country": "England",
+    "stadium": "Crown Ground",
+    "capacity": 5450,
+    "manager": "John Doolan",
+    "leagueTitles": "League Two 1; Conference 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Accrington_Stanley_F.C.#Honours"
+   }
+  },
+  "Barnet": {
+   "values": {
+    "nickname": "The Bees",
+    "founded": "1888",
+    "country": "England",
+    "stadium": "The Hive Stadium",
+    "capacity": 6500,
+    "manager": "Dean Brennan",
+    "leagueTitles": "Conference/National League 4",
+    "domesticCups": "FA Amateur Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Barnet_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Barnet_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Barnet_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Barnet_F.C.#Honours"
+   }
+  },
+  "Bristol Rovers": {
+   "values": {
+    "nickname": "The Pirates; The Gas",
+    "founded": "1883",
+    "country": "England",
+    "stadium": "Memorial Stadium",
+    "capacity": 12534,
+    "manager": "Steve Evans",
+    "leagueTitles": "Third Division South/Third Division 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Bristol_Rovers_F.C.#Honours"
+   }
+  },
+  "Cheltenham Town": {
+   "values": {
+    "nickname": "The Robins",
+    "founded": "1887",
+    "country": "England",
+    "stadium": "Whaddon Road",
+    "capacity": 7066,
+    "manager": "Steve Cotterill",
+    "leagueTitles": "Third Division/League Two 1; Football Conference/National League 2",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Cheltenham_Town_F.C.#Honours"
+   }
+  },
+  "Chesterfield": {
+   "values": {
+    "nickname": "Spireites",
+    "country": "England",
+    "stadium": "SMH Group Stadium",
+    "capacity": 10600,
+    "manager": "Paul Cook",
+    "leagueTitles": "Third Division North 2; Fourth Division/Third Division/League Two 4; National League 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None",
+    "founded": "1866"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Chesterfield_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Chesterfield_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Chesterfield_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Chesterfield_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Chesterfield_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Chesterfield_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Chesterfield_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Chesterfield_F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Chesterfield_F.C."
+   }
+  },
+  "Colchester United": {
+   "values": {
+    "nickname": "The U's",
+    "founded": "1937",
+    "stadium": "Colchester Community Stadium",
+    "capacity": 10105,
+    "manager": "Danny Cowley",
+    "leagueTitles": "Conference 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Colchester_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Colchester_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Colchester_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Colchester_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Colchester_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Colchester_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Colchester_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Colchester_United_F.C.#Honours",
+    "country": "https://en.wikipedia.org/wiki/Colchester_United_F.C."
+   }
+  },
+  "Crawley Town": {
+   "values": {
+    "nickname": "The Red Devils",
+    "stadium": "Broadfield Stadium",
+    "capacity": 5567,
+    "manager": "Colin Kazim-Richards",
+    "leagueTitles": "Conference 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "founded": "1896",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Crawley_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Crawley_Town_F.C."
+   }
+  },
+  "Crewe Alexandra": {
+   "values": {
+    "nickname": "The Railwaymen; The Alex",
+    "founded": "1877",
+    "country": "England",
+    "stadium": "Gresty Road",
+    "capacity": 10153,
+    "manager": "Lee Bell",
+    "leagueTitles": "None at national level",
+    "domesticCups": "EFL Trophy 1; Welsh Cup 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Crewe_Alexandra_F.C.#Honours"
+   }
+  },
+  "Exeter City": {
+   "values": {
+    "nickname": "The Grecians",
+    "country": "England",
+    "stadium": "St James Park",
+    "capacity": 8720,
+    "manager": "Matt Taylor",
+    "leagueTitles": "Fourth Division/League Two 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "founded": "1901"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Exeter_City_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Exeter_City_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Exeter_City_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Exeter_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Exeter_City_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Exeter_City_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Exeter_City_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Exeter_City_F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Exeter_City_F.C."
+   }
+  },
+  "Fleetwood Town": {
+   "values": {
+    "nickname": "The Fishermen; The Cods",
+    "country": "England",
+    "stadium": "Highbury Stadium",
+    "capacity": 5327,
+    "manager": "Matt Lawlor",
+    "leagueTitles": "Conference 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "founded": "1908"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Fleetwood_Town_F.C."
+   }
+  },
+  "Gillingham": {
+   "values": {
+    "nickname": "The Gills",
+    "founded": "1893",
+    "country": "England",
+    "stadium": "Priestfield Stadium",
+    "capacity": 11582,
+    "manager": "Gareth Ainsworth",
+    "leagueTitles": "Fourth Division/Third Division/League Two 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Gillingham_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Gillingham_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Gillingham_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Gillingham_F.C.#Honours"
+   }
+  },
+  "Grimsby Town": {
+   "values": {
+    "nickname": "The Mariners",
+    "founded": "1878",
+    "country": "England",
+    "stadium": "Blundell Park",
+    "capacity": 9546,
+    "manager": "David Artell",
+    "leagueTitles": "Second Division 2; Third Division North/Third Division/Second Division 3; Fourth Division 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Grimsby_Town_F.C.#Honours"
+   }
+  },
+  "Newport County": {
+   "values": {
+    "nickname": "The Exiles",
+    "country": "Wales",
+    "stadium": "Rodney Parade",
+    "capacity": 7850,
+    "manager": "Hayden Mullins",
+    "leagueTitles": "Third Division South 1; Conference South 1",
+    "domesticCups": "Welsh Cup 1",
+    "europeanTrophies": "None",
+    "founded": "1912"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Newport_County_A.F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Newport_County_A.F.C."
+   }
+  },
+  "Northampton Town": {
+   "values": {
+    "nickname": "The Cobblers",
+    "founded": "1897",
+    "country": "England",
+    "stadium": "Sixfields Stadium",
+    "capacity": 8203,
+    "manager": "Chris Hogg",
+    "leagueTitles": "Third Division South/Third Division 1; Fourth Division/Third Division/League Two 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Northampton_Town_F.C.#Honours"
+   }
+  },
+  "Oldham Athletic": {
+   "values": {
+    "nickname": "Latics",
+    "founded": "1895",
+    "country": "England",
+    "stadium": "Boundary Park",
+    "capacity": 13560,
+    "manager": "Micky Mellon",
+    "leagueTitles": "Second Division 1; Third Division North/Third Division 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Oldham_Athletic_A.F.C.#Honours"
+   }
+  },
+  "Port Vale": {
+   "values": {
+    "nickname": "The Valiants",
+    "founded": "1876",
+    "country": "England",
+    "stadium": "Vale Park",
+    "capacity": 16800,
+    "manager": "Jon Brady",
+    "leagueTitles": "Third Division North/Third Division/Second Division 2; Fourth Division/League Two 1",
+    "domesticCups": "EFL Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Port_Vale_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Port_Vale_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Port_Vale_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Port_Vale_F.C.#Honours"
+   }
+  },
+  "Rochdale": {
+   "values": {
+    "nickname": "The Dale",
+    "founded": "1907",
+    "country": "England",
+    "stadium": "Spotland Stadium",
+    "capacity": 10249,
+    "manager": "Ian Watson",
+    "leagueTitles": "None at national level",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Rochdale_A.F.C.#Honours"
+   }
+  },
+  "Rotherham United": {
+   "values": {
+    "nickname": "The Millers",
+    "founded": "1925",
+    "country": "England",
+    "stadium": "New York Stadium",
+    "capacity": 12021,
+    "manager": "Alex Bruce",
+    "leagueTitles": "Third Division North/Third Division/Second Division/League One 2; Fourth Division/Third Division/League Two 1",
+    "domesticCups": "EFL Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Rotherham_United_F.C.#Honours"
+   }
+  },
+  "Salford City": {
+   "values": {
+    "nickname": "The Ammies",
+    "founded": "1940",
+    "country": "England",
+    "stadium": "Moor Lane",
+    "capacity": 5108,
+    "manager": "Peter Cklamovski",
+    "leagueTitles": "National League North 1",
+    "domesticCups": "EFL Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Salford_City_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Salford_City_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Salford_City_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Salford_City_F.C.#Honours"
+   }
+  },
+  "Shrewsbury Town": {
+   "values": {
+    "nickname": "The Shrews; Salop; The Town",
+    "founded": "1886",
+    "country": "England",
+    "stadium": "New Meadow",
+    "capacity": 9875,
+    "manager": "Gavin Cowan",
+    "leagueTitles": "Third Division 1; Fourth Division/Third Division/League Two 1",
+    "domesticCups": "Welsh Cup 6",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Shrewsbury_Town_F.C.#Honours"
+   }
+  },
+  "Swindon Town": {
+   "values": {
+    "nickname": "The Robins",
+    "founded": "1879",
+    "country": "England",
+    "stadium": "The County Ground",
+    "capacity": 15728,
+    "manager": "Ian Holloway",
+    "leagueTitles": "Third Division/Second Division 1; Fourth Division/League Two 3",
+    "domesticCups": "League Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Swindon_Town_F.C.#Honours"
+   }
+  },
+  "Tranmere Rovers": {
+   "values": {
+    "nickname": "The Rovers",
+    "country": "England",
+    "stadium": "Prenton Park",
+    "capacity": 16567,
+    "manager": "Darrell Clarke",
+    "leagueTitles": "Third Division North/Third Division 1",
+    "domesticCups": "EFL Trophy 1; Welsh Cup 1",
+    "europeanTrophies": "None",
+    "founded": "1884"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C.#Honours",
+    "founded": "https://en.wikipedia.org/wiki/Tranmere_Rovers_F.C."
+   }
+  },
+  "Walsall": {
+   "values": {
+    "nickname": "The Saddlers",
+    "founded": "1888",
+    "country": "England",
+    "stadium": "Bescot Stadium",
+    "capacity": 11300,
+    "manager": "Lee Grant",
+    "leagueTitles": "Fourth Division/Third Division/League Two 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Walsall_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Walsall_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Walsall_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Walsall_F.C.#Honours"
+   }
+  },
+  "York City": {
+   "values": {
+    "nickname": "The Minstermen",
+    "founded": "1922",
+    "country": "England",
+    "stadium": "York Community Stadium",
+    "capacity": 8500,
+    "manager": "Scott Lindsey",
+    "leagueTitles": "Fourth Division/Third Division 1; Conference Premier/National League 1",
+    "domesticCups": "FA Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "country": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/York_City_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/York_City_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/York_City_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/York_City_F.C.#Honours"
+   }
+  },
+  "AFC Fylde": {
+   "values": {
+    "nickname": "The Coasters",
+    "founded": "1988",
+    "country": "England",
+    "stadium": "Mill Farm",
+    "capacity": 6000,
+    "manager": "Craig Mahon",
+    "leagueTitles": "National League North 3",
+    "domesticCups": "FA Trophy 1; FA Vase 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "founded": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "country": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "stadium": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "capacity": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "manager": "https://en.wikipedia.org/wiki/AFC_Fylde",
+    "leagueTitles": "https://en.wikipedia.org/wiki/AFC_Fylde#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/AFC_Fylde#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/AFC_Fylde#Honours"
+   }
+  },
+  "Aldershot Town": {
+   "values": {
+    "nickname": "The Shots",
+    "founded": "1992",
+    "country": "England",
+    "stadium": "Recreation Ground",
+    "capacity": 7100,
+    "manager": "Scott Davies",
+    "leagueTitles": "Conference 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Aldershot_Town_F.C.#Honours"
+   }
+  },
+  "Altrincham": {
+   "values": {
+    "nickname": "The Robins",
+    "founded": "1891",
+    "country": "England",
+    "stadium": "Moss Lane",
+    "capacity": 7873,
+    "manager": "Neil Gibson",
+    "leagueTitles": "National League 2",
+    "domesticCups": "FA Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Altrincham_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Altrincham_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Altrincham_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Altrincham_F.C.#Honours"
+   }
+  },
+  "Barrow": {
+   "values": {
+    "nickname": "The Bluebirds",
+    "founded": "1901",
+    "country": "England",
+    "stadium": "Holker Street",
+    "capacity": 6306,
+    "manager": "Adam Murray",
+    "leagueTitles": "National League 1; Conference North 1",
+    "domesticCups": "FA Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Barrow_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Barrow_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Barrow_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Barrow_A.F.C.#Honours"
+   }
+  },
+  "Boreham Wood": {
+   "values": {
+    "nickname": "The Wood",
+    "founded": "1948",
+    "stadium": "Meadow Park",
+    "capacity": 4500,
+    "manager": "Luke Garrard",
+    "leagueTitles": "None at national level",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C.#Honours",
+    "country": "https://en.wikipedia.org/wiki/Boreham_Wood_F.C."
+   }
+  },
+  "Boston United": {
+   "values": {
+    "nickname": "The Pilgrims",
+    "founded": "1933",
+    "country": "England",
+    "stadium": "Boston Community Stadium",
+    "capacity": 5061,
+    "manager": "Paul Hurst",
+    "leagueTitles": "Football Conference 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Boston_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Boston_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Boston_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Boston_United_F.C.#Honours"
+   }
+  },
+  "Carlisle United": {
+   "values": {
+    "nickname": "The Cumbrians; The Blues",
+    "founded": "1896",
+    "country": "England",
+    "stadium": "Brunton Park",
+    "capacity": 17949,
+    "manager": "Rob Elliot",
+    "leagueTitles": "Third Division 1; Fourth Division/Third Division/League Two 2",
+    "domesticCups": "EFL Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Carlisle_United_F.C.#Honours"
+   }
+  },
+  "Eastleigh": {
+   "values": {
+    "nickname": "The Spitfires",
+    "founded": "1946",
+    "country": "England",
+    "stadium": "Ten Acres",
+    "capacity": 5192,
+    "manager": "Matt Gray",
+    "leagueTitles": "Conference South 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Eastleigh_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Eastleigh_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Eastleigh_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Eastleigh_F.C.#Honours"
+   }
+  },
+  "FC Halifax Town": {
+   "values": {
+    "nickname": "The Shaymen",
+    "founded": "2008",
+    "country": "England",
+    "stadium": "The Shay",
+    "capacity": 10401,
+    "manager": "John McGrath",
+    "leagueTitles": "None at national level",
+    "domesticCups": "FA Trophy 2",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "founded": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "country": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "stadium": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "capacity": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "manager": "https://en.wikipedia.org/wiki/FC_Halifax_Town",
+    "leagueTitles": "https://en.wikipedia.org/wiki/FC_Halifax_Town#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/FC_Halifax_Town#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/FC_Halifax_Town#Honours"
+   }
+  },
+  "Forest Green Rovers": {
+   "values": {
+    "nickname": "The Green; Rovers",
+    "founded": "1889",
+    "country": "England",
+    "stadium": "The New Lawn",
+    "capacity": 5147,
+    "leagueTitles": "League Two 1",
+    "domesticCups": "FA Vase 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Forest_Green_Rovers_F.C.#Honours"
+   }
+  },
+  "Gateshead": {
+   "values": {
+    "nickname": "The Tynesiders; The Heed",
+    "founded": "1977",
+    "stadium": "Gateshead International Stadium",
+    "capacity": 11800,
+    "manager": "Lee Cattermole",
+    "leagueTitles": "National League North 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Gateshead_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Gateshead_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Gateshead_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Gateshead_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Gateshead_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Gateshead_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Gateshead_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Gateshead_F.C.#Honours",
+    "country": "https://en.wikipedia.org/wiki/Gateshead_F.C."
+   }
+  },
+  "Harrogate Town": {
+   "values": {
+    "nickname": "Sulphurites",
+    "founded": "1914",
+    "country": "England",
+    "stadium": "Wetherby Road",
+    "capacity": 5000,
+    "manager": "Simon Weaver",
+    "leagueTitles": "None at national level",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "country": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Harrogate_Town_A.F.C.#Honours"
+   }
+  },
+  "Hartlepool United": {
+   "values": {
+    "nickname": "Pools; The Monkey Hangers",
+    "founded": "1908",
+    "country": "England",
+    "stadium": "Victoria Park",
+    "capacity": 7858,
+    "manager": "Pete Wild",
+    "leagueTitles": "None at national level",
+    "domesticCups": "FA Amateur Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Hartlepool_United_F.C.#Honours"
+   }
+  },
+  "Hornchurch": {
+   "values": {
+    "nickname": "The Urchins",
+    "founded": "1881",
+    "country": "England",
+    "stadium": "Hornchurch Stadium",
+    "manager": "Daryl McMahon",
+    "leagueTitles": "None at national level",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Hornchurch_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Hornchurch_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Hornchurch_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Hornchurch_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Hornchurch_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hornchurch_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Hornchurch_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Hornchurch_F.C.#Honours"
+   }
+  },
+  "Kidderminster Harriers": {
+   "values": {
+    "nickname": "Kiddy; The Carpetmen; The Reds",
+    "founded": "1886",
+    "country": "England",
+    "stadium": "Aggborough",
+    "capacity": 6444,
+    "manager": "Paul Wotton",
+    "leagueTitles": "Football Conference 2",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Kidderminster_Harriers_F.C.#Honours"
+   }
+  },
+  "Scunthorpe United": {
+   "values": {
+    "nickname": "The Iron",
+    "founded": "1899",
+    "country": "England",
+    "stadium": "Glanford Park",
+    "capacity": 9088,
+    "manager": "Andy Butler",
+    "leagueTitles": "Third Division North/League One 2",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Scunthorpe_United_F.C.#Honours"
+   }
+  },
+  "Solihull Moors": {
+   "values": {
+    "nickname": "The Moors",
+    "founded": "2007",
+    "stadium": "Damson Park",
+    "capacity": 5500,
+    "manager": "Chris Millington",
+    "leagueTitles": "National League North 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C.#Honours",
+    "country": "https://en.wikipedia.org/wiki/Solihull_Moors_F.C."
+   }
+  },
+  "Southend United": {
+   "values": {
+    "nickname": "The Shrimpers; The Blues; The Seasiders",
+    "founded": "1906",
+    "country": "England",
+    "stadium": "Roots Hall",
+    "capacity": 12392,
+    "manager": "Kieron Dyer",
+    "leagueTitles": "Third Division/League One 1; Fourth Division/League Two 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Southend_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Southend_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Southend_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Southend_United_F.C.#Honours"
+   }
+  },
+  "Sutton United": {
+   "values": {
+    "nickname": "The U's; The Amber and Chocolates",
+    "founded": "1898",
+    "stadium": "Gander Green Lane",
+    "capacity": 7032,
+    "manager": "Chris Agutter",
+    "leagueTitles": "National League 1; National League South 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None",
+    "country": "England"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sutton_United_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Sutton_United_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Sutton_United_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Sutton_United_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Sutton_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Sutton_United_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Sutton_United_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Sutton_United_F.C.#Honours",
+    "country": "https://en.wikipedia.org/wiki/Sutton_United_F.C."
+   }
+  },
+  "Tamworth": {
+   "values": {
+    "nickname": "The Lambs",
+    "founded": "1933",
+    "country": "England",
+    "stadium": "The Lamb Ground",
+    "capacity": 4963,
+    "manager": "Andy Peaks",
+    "leagueTitles": "Conference North/National League North 2",
+    "domesticCups": "FA Vase 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Tamworth_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Tamworth_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Tamworth_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Tamworth_F.C.#Honours"
+   }
+  },
+  "Wealdstone": {
+   "values": {
+    "nickname": "The Stones; The Royals",
+    "founded": "1899",
+    "country": "England",
+    "stadium": "Grosvenor Vale",
+    "capacity": 4085,
+    "manager": "Gary Waddock",
+    "leagueTitles": "Alliance Premier League 1; National League South 1",
+    "domesticCups": "FA Trophy 1; FA Amateur Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Wealdstone_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Wealdstone_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Wealdstone_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Wealdstone_F.C.#Honours"
+   }
+  },
+  "Woking": {
+   "values": {
+    "nickname": "The Cardinals; The Cards",
+    "founded": "1887",
+    "country": "England",
+    "stadium": "Kingfield Stadium",
+    "capacity": 6036,
+    "manager": "Jake Hyde; Craig Ross",
+    "leagueTitles": "National League South 1",
+    "domesticCups": "FA Trophy 3; FA Amateur Cup 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Woking_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Woking_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Woking_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Woking_F.C.#Honours"
+   }
+  },
+  "Worthing": {
+   "values": {
+    "nickname": "The Rebels; The Mackerel Men",
+    "founded": "1886",
+    "country": "England",
+    "stadium": "Woodside Road",
+    "manager": "Adam Hinshelwood",
+    "leagueTitles": "National League South 1",
+    "domesticCups": "None at national level",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Worthing_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Worthing_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Worthing_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Worthing_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Worthing_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Worthing_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Worthing_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Worthing_F.C.#Honours"
+   }
+  },
+  "Yeovil Town": {
+   "values": {
+    "nickname": "The Glovers",
+    "founded": "1895",
+    "country": "England",
+    "stadium": "Huish Park",
+    "capacity": 9565,
+    "manager": "Billy Rowley",
+    "leagueTitles": "League Two 1; Conference 1; National League South 1",
+    "domesticCups": "FA Trophy 1",
+    "europeanTrophies": "None"
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "founded": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "country": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "stadium": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "capacity": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.#Honours",
+    "domesticCups": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.#Honours",
+    "europeanTrophies": "https://en.wikipedia.org/wiki/Yeovil_Town_F.C.#Honours"
+   }
+  },
+  "AFC Telford United": {
+   "values": {
+    "leagueTitles": "Conference North 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/AFC_Telford_United#Honours"
+   }
+  },
+  "Bedford Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Bedford_Town_F.C.#Honours"
+   }
+  },
+  "Brackley Town": {
+   "values": {
+    "manager": "Gareth Dean",
+    "leagueTitles": "National League North 1"
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Brackley_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Brackley_Town_F.C.#Honours"
+   }
+  },
+  "Buxton": {
+   "values": {
+    "manager": "Jordan Broadbent",
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Buxton_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Buxton_F.C.#Honours"
+   }
+  },
+  "Chorley": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Chorley_F.C.#Honours"
+   }
+  },
+  "Darlington": {
+   "values": {
+    "leagueTitles": "Third Division North 1; Fourth Division 1; Football Conference 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Darlington_F.C."
+   }
+  },
+  "Harborough Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Harborough_Town_F.C.#Honours"
+   }
+  },
+  "Hednesford Town": {
+   "values": {
+    "capacity": 6039,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Hednesford_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hednesford_Town_F.C.#Honours"
+   }
+  },
+  "Hereford": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hereford_F.C.#Honours"
+   }
+  },
+  "King's Lynn Town": {
+   "values": {
+    "leagueTitles": "National League North 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/King's_Lynn_Town_F.C.#Honours"
+   }
+  },
+  "Macclesfield": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Macclesfield_F.C.#Honours"
+   }
+  },
+  "Marine": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Marine_A.F.C.#Honours"
+   }
+  },
+  "Merthyr Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Merthyr_Town_F.C.#Honours"
+   }
+  },
+  "Morecambe": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Morecambe_F.C.#Honours"
+   }
+  },
+  "Oxford City": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Oxford_City_F.C.#Honours"
+   }
+  },
+  "Scarborough Athletic": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Scarborough_Athletic_F.C.#Honours"
+   }
+  },
+  "Southport": {
+   "values": {
+    "leagueTitles": "Fourth Division 1; Conference North 2"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Southport_F.C.#Honours"
+   }
+  },
+  "South Shields": {
+   "values": {
+    "capacity": 4000,
+    "manager": "Mike Williamson",
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/South_Shields_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/South_Shields_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/South_Shields_F.C.#Honours"
+   }
+  },
+  "Spalding United": {
+   "values": {
+    "capacity": 2700,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Spalding_United_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Spalding_United_F.C.#Honours"
+   }
+  },
+  "Spennymoor Town": {
+   "values": {
+    "capacity": 4300,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Spennymoor_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Spennymoor_Town_F.C.#Honours"
+   }
+  },
+  "Worksop Town": {
+   "values": {
+    "capacity": 3400,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Worksop_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Worksop_Town_F.C.#Honours"
+   }
+  },
+  "AFC Totton": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/A.F.C._Totton#Honours"
+   }
+  },
+  "Billericay Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Billericay_Town_F.C.#Honours"
+   }
+  },
+  "Braintree Town": {
+   "values": {
+    "leagueTitles": "National League South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Braintree_Town_F.C.#Honours"
+   }
+  },
+  "Chelmsford City": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Chelmsford_City_F.C.#Honours"
+   }
+  },
+  "Chesham United": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Chesham_United_F.C.#Honours"
+   }
+  },
+  "Dagenham & Redbridge": {
+   "values": {
+    "leagueTitles": "Conference 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Dagenham_&_Redbridge_F.C.#Honours"
+   }
+  },
+  "Dorking Wanderers": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Dorking_Wanderers_F.C.#Honours"
+   }
+  },
+  "Dover Athletic": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Dover_Athletic_F.C.#Honours"
+   }
+  },
+  "Ebbsfleet United": {
+   "values": {
+    "leagueTitles": "Conference South/National League South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Ebbsfleet_United_F.C.#Honours"
+   }
+  },
+  "Farnborough": {
+   "values": {
+    "capacity": 6500,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Farnborough_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Farnborough_F.C.#Honours"
+   }
+  },
+  "Farnham Town": {
+   "values": {
+    "capacity": 2200,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Farnham_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Farnham_Town_F.C.#Honours"
+   }
+  },
+  "Folkestone Invicta": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Folkestone_Invicta_F.C.#Honours"
+   }
+  },
+  "Hampton & Richmond Borough": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hampton_&_Richmond_Borough_F.C.#Honours"
+   }
+  },
+  "Hemel Hempstead Town": {
+   "values": {
+    "manager": "Lee Bircham",
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Hemel_Hempstead_Town_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Hemel_Hempstead_Town_F.C.#Honours"
+   }
+  },
+  "Horsham": {
+   "values": {
+    "capacity": 3000,
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "capacity": "https://en.wikipedia.org/wiki/Horsham_F.C.",
+    "leagueTitles": "https://en.wikipedia.org/wiki/Horsham_F.C.#Honours"
+   }
+  },
+  "Maidenhead United": {
+   "values": {
+    "leagueTitles": "National League South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Maidenhead_United_F.C.#Honours"
+   }
+  },
+  "Salisbury": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Salisbury_F.C.#Honours"
+   }
+  },
+  "Tonbridge Angels": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Tonbridge_Angels_F.C.#Honours"
+   }
+  },
+  "Torquay United": {
+   "values": {
+    "leagueTitles": "National League South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Torquay_United_F.C.#Honours"
+   }
+  },
+  "Weston-super-Mare": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Weston-super-Mare_A.F.C.#Honours"
+   }
+  },
+  "Guiseley": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Guiseley_A.F.C.#Honours"
+   }
+  },
+  "Bury Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Bury_Town_F.C.#Honours"
+   }
+  },
+  "Cleethorpes Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Cleethorpes_Town_F.C.#Honours"
+   }
+  },
+  "Enfield Town": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Enfield_Town_F.C.#Honours"
+   }
+  },
+  "Welling United": {
+   "values": {
+    "leagueTitles": "Conference South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Welling_United_F.C.#Honours"
+   }
+  },
+  "Lewes": {
+   "values": {
+    "leagueTitles": "Conference South 1"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Lewes_F.C.#Honours"
+   }
+  },
+  "Uxbridge": {
+   "values": {
+    "leagueTitles": "None at national level"
+   },
+   "sources": {
+    "leagueTitles": "https://en.wikipedia.org/wiki/Uxbridge_F.C.#Honours"
+   }
+  },
+  "Atlético Madrid": {
+   "values": {
+    "nickname": "Rojiblancos (Red-and-Whites); Colchoneros (Mattress Makers)",
+    "manager": "Diego Simeone",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white stripes"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Atlético_Madrid",
+    "manager": "https://en.wikipedia.org/wiki/Atlético_Madrid",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Atlético_Madrid",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Borussia Dortmund": {
+   "values": {
+    "nickname": "Die Borussen (The Prussians); Die Schwarzgelben (The Black and Yellow)",
+    "manager": "Niko Kovač",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Borussia_Dortmund",
+    "manager": "https://en.wikipedia.org/wiki/Borussia_Dortmund",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Borussia_Dortmund",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Barcelona": {
+   "values": {
+    "nickname": "Barça; Blaugrana",
+    "manager": "Hansi Flick",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#7A263A",
+      "pattern": "Blue and claret stripes"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#7F20E0"
+     }
+    },
+    "kitPattern": "Blue and claret stripes",
+    "badge": [
+     "Blue",
+     "Claret",
+     "Red",
+     "Yellow",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Barcelona",
+    "manager": "https://en.wikipedia.org/wiki/FC_Barcelona",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Barcelona",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Bayern München": {
+   "values": {
+    "nickname": "Die Bayern (The Bavarians); Stern des Südens (Star of the South); Die Roten (The Reds); FC Hollywood",
+    "manager": "Vincent Kompany",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#000F5A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Bayern_Munich",
+    "manager": "https://en.wikipedia.org/wiki/FC_Bayern_Munich",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Bayern_Munich",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Club Brugge KV": {
+   "values": {
+    "nickname": "Blauw-Zwart (Blue-Black); Club",
+    "manager": "Ivan Leko",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#17181A",
+      "pattern": "Blue and black stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Blue and black stripes",
+    "badge": [
+     "Blue",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Club_Brugge_KV",
+    "manager": "https://en.wikipedia.org/wiki/Club_Brugge_KV",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Club_Brugge_KV",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Como": {
+   "values": {
+    "nickname": "I Lariani (Those from Lake Como); I Biancoblù (The Blue and Whites); I Voltiani (The Voltaics)",
+    "manager": "Cesc Fàbregas",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Como_1907",
+    "manager": "https://en.wikipedia.org/wiki/Como_1907",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Como_1907",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Feyenoord": {
+   "values": {
+    "nickname": "De club aan de Maas (The Club on the Meuse); De Stadionclub (The Stadium Club); De club van het volk (The Club of the People); De Trots van Zuid (The Pride of South)",
+    "manager": "Giovanni van Bronckhorst",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white halves"
+     },
+     "away": null
+    },
+    "kitPattern": "Red and white halves",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Feyenoord",
+    "manager": "https://en.wikipedia.org/wiki/Feyenoord",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Feyenoord",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Galatasaray SK": {
+   "values": {
+    "nickname": "Aslanlar (The Lions); Sarı-Kırmızılılar (The Yellow-Reds); Cimbom; Gala",
+    "manager": "Okan Buruk",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#D71920",
+      "pattern": "Yellow and red halves"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Yellow and red halves",
+    "badge": [
+     "Yellow",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Galatasaray_S.K._(football)",
+    "manager": "https://en.wikipedia.org/wiki/Galatasaray_S.K._(football)",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Galatasaray_S.K._(football)",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Inter": {
+   "values": {
+    "nickname": "I Nerazzurri (The Black and Blues); La Beneamata (The Well-Cherished One); Il Biscione (The Big Grass Snake)",
+    "manager": "Cristian Chivu",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#17181A",
+      "pattern": "Blue and black stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Blue and black stripes",
+    "badge": [
+     "Blue",
+     "Black",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Inter_Milan",
+    "manager": "https://en.wikipedia.org/wiki/Inter_Milan",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Inter_Milan",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "RB Leipzig": {
+   "values": {
+    "manager": "Martín Demichelis",
+    "nickname": "Die Roten Bullen (The Red Bulls)",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FF0000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/RB_Leipzig",
+    "nickname": "https://en.wikipedia.org/wiki/RB_Leipzig",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/RB_Leipzig",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "RC Lens": {
+   "values": {
+    "nickname": "Les Sang et Or (The Blood and Gold)",
+    "manager": "Yannick Cahuzac",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Yellow"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/RC_Lens",
+    "manager": "https://en.wikipedia.org/wiki/RC_Lens",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/RC_Lens",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Lille OSC": {
+   "values": {
+    "nickname": "Les Dogues (The Mastiffs); Les Nordistes (The Northmen); Les Lillois (The Lillois); La Machine de Guerre (The War Machine)",
+    "manager": "Davide Ancelotti",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#001F5B",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Navy",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Lille_OSC",
+    "manager": "https://en.wikipedia.org/wiki/Lille_OSC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Lille_OSC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Napoli": {
+   "values": {
+    "manager": "Massimiliano Allegri",
+    "nickname": "Gli Azzurri (The Blues); I Partenopei (The Parthenopeans)",
+    "kits": {
+     "home": {
+      "shirtHex": "#6CABDD",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/SSC_Napoli",
+    "nickname": "https://en.wikipedia.org/wiki/SSC_Napoli",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/SSC_Napoli",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Paris Saint-Germain": {
+   "values": {
+    "nickname": "Les Parisiens (The Parisians); Les Rouge-et-Bleu (The Red-and-Blues)",
+    "manager": "Luis Enrique",
+    "kits": {
+     "home": {
+      "shirtHex": "#001F5B",
+      "trimHex": "#D71920",
+      "pattern": "Navy with a central red stripe"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Navy with a central red stripe",
+    "badge": [
+     "Navy",
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Paris_Saint-Germain_FC",
+    "manager": "https://en.wikipedia.org/wiki/Paris_Saint-Germain_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Paris_Saint-Germain_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Porto": {
+   "values": {
+    "nickname": "Dragões (Dragons); Azuis e brancos (Blue-and-Whites)",
+    "manager": "Francesco Farioli",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Blue and white stripes"
+     },
+     "away": {
+      "shirtHex": "#41001D",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Blue and white stripes",
+    "badge": [
+     "Blue",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Porto",
+    "manager": "https://en.wikipedia.org/wiki/FC_Porto",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Porto",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "PSV": {
+   "values": {
+    "nickname": "Boeren (Farmers); Lampen (Lightbulbs); Rood-witten (Red-and-whites)",
+    "manager": "Peter Bosz",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/PSV_Eindhoven",
+    "manager": "https://en.wikipedia.org/wiki/PSV_Eindhoven",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/PSV_Eindhoven",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Real Betis Balompié": {
+   "values": {
+    "nickname": "Heliopolitanos (Heliopolitans); El Glorioso (The Glorious)",
+    "manager": "Manuel Pellegrini",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Green and white stripes"
+     },
+     "away": {
+      "shirtHex": "#005C29",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Green and white stripes",
+    "badge": [
+     "Green",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Real_Betis",
+    "manager": "https://en.wikipedia.org/wiki/Real_Betis",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Real_Betis",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Real Madrid": {
+   "values": {
+    "nickname": "Los Blancos (The Whites); Los Merengues (The Meringues); Los Vikingos (The Vikings)",
+    "manager": "José Mourinho",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#001F5B",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#162E32",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Gold",
+     "Navy",
+     "Purple"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Real_Madrid_CF",
+    "manager": "https://en.wikipedia.org/wiki/Real_Madrid_CF",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Real_Madrid_CF",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Roma": {
+   "values": {
+    "nickname": "I Giallorossi (The Yellow and Reds); I Lupi (The Wolves); La Magica (The Magic One)",
+    "manager": "Gian Piero Gasperini",
+    "kits": {
+     "home": {
+      "shirtHex": "#6C1D45",
+      "trimHex": "#F78F1E",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#ECE3DA",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Claret",
+     "Orange",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AS_Roma",
+    "manager": "https://en.wikipedia.org/wiki/AS_Roma",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AS_Roma",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Shakhtar Donetsk": {
+   "values": {
+    "nickname": "Hirnyky (The Miners); Kroty (The Moles)",
+    "manager": "Arda Turan",
+    "kits": {
+     "home": {
+      "shirtHex": "#F78F1E",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#CDEBEF",
+      "trimHex": "#FFFFFF"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Orange",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Shakhtar_Donetsk",
+    "manager": "https://en.wikipedia.org/wiki/FC_Shakhtar_Donetsk",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Shakhtar_Donetsk",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "SK Slavia Praha": {
+   "values": {
+    "nickname": "Červenobílí (The Red and Whites); Sešívaní (The Stitched)",
+    "manager": "Jindřich Trpišovský",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white halves"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Red and white halves",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/SK_Slavia_Prague",
+    "manager": "https://en.wikipedia.org/wiki/SK_Slavia_Prague",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/SK_Slavia_Prague",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sporting CP": {
+   "values": {
+    "nickname": "Leões (Lions); Verde e Brancos (Green-and-Whites)",
+    "manager": "Rui Borges",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Green and white hoops"
+     },
+     "away": {
+      "shirtHex": "#D3B06C",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Green and white hoops",
+    "badge": [
+     "Green",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sporting_CP",
+    "manager": "https://en.wikipedia.org/wiki/Sporting_CP",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Sporting_CP",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "VfB Stuttgart": {
+   "values": {
+    "nickname": "Die Roten (The Reds); Die Schwaben (The Swabians)",
+    "manager": "Sebastian Hoeneß",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#D71920",
+      "pattern": "White with a red chest band"
+     },
+     "away": {
+      "shirtHex": "#FF0000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "White with a red chest band",
+    "badge": [
+     "Red",
+     "Gold",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/VfB_Stuttgart",
+    "manager": "https://en.wikipedia.org/wiki/VfB_Stuttgart",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/VfB_Stuttgart",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Villarreal CF": {
+   "values": {
+    "nickname": "El Submarino Amarillo",
+    "manager": "Iñigo Pérez",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#0057B8",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#CBCBCB",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Villarreal_CF",
+    "manager": "https://en.wikipedia.org/wiki/Villarreal_CF",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Villarreal_CF",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FK Bodø/Glimt": {
+   "values": {
+    "nickname": "Glimt (Gleam); Superlaget (The Super Team)",
+    "manager": "Kjetil Knutsen",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#00093B",
+      "trimHex": "#EDE8D0"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FK_Bodø/Glimt",
+    "manager": "https://en.wikipedia.org/wiki/FK_Bodø/Glimt",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FK_Bodø/Glimt",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Celtic": {
+   "values": {
+    "nickname": "The Bhoys; The Celts; The Hoops",
+    "manager": "Martin O'Neill",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Green and white hoops"
+     },
+     "away": {
+      "shirtHex": "#114B40",
+      "trimHex": "#000000"
+     }
+    },
+    "kitPattern": "Green and white hoops",
+    "badge": [
+     "Green",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Celtic_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Celtic_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Celtic_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AEK Athens": {
+   "values": {
+    "nickname": "Dikéfalos (Double-Headed Eagle); Énosi (Union); Kitrinómavri (Yellow-Blacks)",
+    "manager": "Marko Nikolić",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AEK_Athens_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/AEK_Athens_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AEK_Athens_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Olympique Lyonnais": {
+   "values": {
+    "nickname": "Les Gones (The Kids)",
+    "manager": "Paulo Fonseca",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#0057B8",
+      "pattern": "White with red and blue trim"
+     },
+     "away": {
+      "shirtHex": "#F35764",
+      "trimHex": "#8C2B4C"
+     }
+    },
+    "kitPattern": "White with red and blue trim",
+    "badge": [
+     "Red",
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Olympique_Lyonnais",
+    "manager": "https://en.wikipedia.org/wiki/Olympique_Lyonnais",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Olympique_Lyonnais",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Fenerbahçe SK": {
+   "values": {
+    "manager": "İsmail Kartal",
+    "nickname": "Sarı-Lacivertliler (The Yellow-Navy Blues); Sarı Kanaryalar (The Yellow Canaries)",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#001F5B",
+      "pattern": "Yellow and navy stripes"
+     },
+     "away": null
+    },
+    "kitPattern": "Yellow and navy stripes",
+    "badge": [
+     "Yellow",
+     "Navy",
+     "White",
+     "Green"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Fenerbahçe_S.K._(football)",
+    "nickname": "https://en.wikipedia.org/wiki/Fenerbahçe_S.K._(football)",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Fenerbahçe_S.K._(football)",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Dinamo Zagreb": {
+   "values": {
+    "manager": "Mario Kovačević",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/GNK_Dinamo_Zagreb",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/GNK_Dinamo_Zagreb",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Eintracht Frankfurt": {
+   "values": {
+    "manager": "Adi Hütter",
+    "nickname": "Die Adler (The Eagles)",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#000000"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Eintracht_Frankfurt",
+    "nickname": "https://en.wikipedia.org/wiki/Eintracht_Frankfurt",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Eintracht_Frankfurt",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AZ Alkmaar": {
+   "values": {
+    "nickname": "De Kaasboeren (The Cheese Farmers)",
+    "manager": "Lee-Roy Echteld",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#0032FC",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AZ_Alkmaar",
+    "manager": "https://en.wikipedia.org/wiki/AZ_Alkmaar",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AZ_Alkmaar",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "RC Celta": {
+   "values": {
+    "nickname": "Os Celestes (The Sky Blues); O Celtiña",
+    "manager": "Claudio Giráldez",
+    "kits": {
+     "home": {
+      "shirtHex": "#6CABDD",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/RC_Celta_de_Vigo",
+    "manager": "https://en.wikipedia.org/wiki/RC_Celta_de_Vigo",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/RC_Celta_de_Vigo",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "TSG 1899 Hoffenheim": {
+   "values": {
+    "nickname": "Die Kraichgauer (The Kraichgauers)",
+    "manager": "Christian Ilzer",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#E0D9CC",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/TSG_1899_Hoffenheim",
+    "manager": "https://en.wikipedia.org/wiki/TSG_1899_Hoffenheim",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/TSG_1899_Hoffenheim",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Juventus": {
+   "values": {
+    "nickname": "La Vecchia Signora (The Old Lady); I Bianconeri (The White and Blacks); Le Zebre (The Zebras)",
+    "manager": "Luciano Spalletti",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#17181A",
+      "pattern": "Black and white stripes"
+     },
+     "away": {
+      "shirtHex": "#FFA8C6",
+      "trimHex": "#000000"
+     }
+    },
+    "kitPattern": "Black and white stripes",
+    "badge": [
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Juventus_FC",
+    "manager": "https://en.wikipedia.org/wiki/Juventus_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Juventus_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Bayer 04 Leverkusen": {
+   "values": {
+    "nickname": "Die Werkself (The Factory XI); Die Schwarzroten (The Black and Reds)",
+    "manager": "Carles Martínez Novell",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#D8E6E5",
+      "trimHex": "#587185"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Bayer_04_Leverkusen",
+    "manager": "https://en.wikipedia.org/wiki/Bayer_04_Leverkusen",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Bayer_04_Leverkusen",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Olympique de Marseille": {
+   "values": {
+    "nickname": "Les Phocéens (The Phocaeans); Les Olympiens (The Olympians)",
+    "manager": "Bruno Génésio",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#6CABDD",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#2C2C3E",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Olympique_de_Marseille",
+    "manager": "https://en.wikipedia.org/wiki/Olympique_de_Marseille",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Olympique_de_Marseille",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AC Milan": {
+   "values": {
+    "nickname": "I Rossoneri (The Red and Black); Il Diavolo (The Devil)",
+    "manager": "Ruben Amorim",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#17181A",
+      "pattern": "Red and black stripes"
+     },
+     "away": null
+    },
+    "kitPattern": "Red and black stripes",
+    "badge": [
+     "Red",
+     "Black",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AC_Milan",
+    "manager": "https://en.wikipedia.org/wiki/AC_Milan",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AC_Milan",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Olympiacos FC": {
+   "values": {
+    "nickname": "Thrylos (Legend); Erythrolefkoi (Red-Whites)",
+    "manager": "Imanol Alguacil",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFBE9",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Red and white stripes",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Olympiacos_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Olympiacos_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Olympiacos_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Real Sociedad": {
+   "values": {
+    "nickname": "Txuri-Urdin (The White-and-Blues); La Real",
+    "manager": "Pellegrino Matarazzo",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Blue and white stripes"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Blue and white stripes",
+    "badge": [
+     "Blue",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Real_Sociedad",
+    "manager": "https://en.wikipedia.org/wiki/Real_Sociedad",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Real_Sociedad",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Stade Rennais FC": {
+   "values": {
+    "nickname": "Les Rennais (The Rennais); Les Rouge et Noirs (The Red and Blacks)",
+    "manager": "Franck Haise",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Stade_Rennais_FC",
+    "manager": "https://en.wikipedia.org/wiki/Stade_Rennais_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Stade_Rennais_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sparta Praha": {
+   "values": {
+    "nickname": "Železná Sparta (Iron Sparta); Rudí (The Reds)",
+    "manager": "Brian Priske",
+    "kits": {
+     "home": {
+      "shirtHex": "#7A263A",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Maroon",
+     "Gold",
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AC_Sparta_Prague",
+    "manager": "https://en.wikipedia.org/wiki/AC_Sparta_Prague",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AC_Sparta_Prague",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "SK Sturm Graz": {
+   "values": {
+    "nickname": "Die Schwoazn (The Blacks)",
+    "manager": "Fabio Ingolitsch",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/SK_Sturm_Graz",
+    "manager": "https://en.wikipedia.org/wiki/SK_Sturm_Graz",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/SK_Sturm_Graz",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Union Saint-Gilloise": {
+   "values": {
+    "nickname": "Les Unionistes; Union",
+    "manager": "David Hubert",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#0057B8",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#B9E9FF",
+      "trimHex": "#00a8e0"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Royale_Union_Saint-Gilloise",
+    "manager": "https://en.wikipedia.org/wiki/Royale_Union_Saint-Gilloise",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Royale_Union_Saint-Gilloise",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Ferencvárosi Torna Club": {
+   "values": {
+    "nickname": "Fradi; FTC",
+    "manager": "Balázs Borbély",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Green and white stripes"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Green and white stripes",
+    "badge": [
+     "Green",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Ferencvárosi_TC",
+    "manager": "https://en.wikipedia.org/wiki/Ferencvárosi_TC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Ferencvárosi_TC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "RSC Anderlecht": {
+   "values": {
+    "nickname": "Paars-Wit (Purple and White); Sporting",
+    "manager": "Vítor Bruno",
+    "kits": {
+     "home": {
+      "shirtHex": "#5B2A86",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#F9F9EF",
+      "trimHex": "#5c2195"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Purple",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/RSC_Anderlecht",
+    "manager": "https://en.wikipedia.org/wiki/RSC_Anderlecht",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/RSC_Anderlecht",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Lech Poznań": {
+   "values": {
+    "nickname": "Kolejorz (The Railwayman); Pyry (Greater Poland potatoes); KKS; Duma Wielkopolski (The Pride of Greater Poland); Poznańska Lokomotywa (The Poznań Locomotive)",
+    "manager": "Niels Frederiksen",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#0000ff"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Lech_Poznań",
+    "manager": "https://en.wikipedia.org/wiki/Lech_Poznań",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Lech_Poznań",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Trabzonspor": {
+   "values": {
+    "nickname": "Karadeniz Fırtınası (Black Sea Storm); Bordo-Mavililer (The Claret-Blues)",
+    "manager": "Thomas Reis",
+    "kits": {
+     "home": {
+      "shirtHex": "#6C1D45",
+      "trimHex": "#6CABDD",
+      "pattern": "Claret and sky blue stripes"
+     },
+     "away": {
+      "shirtHex": "#74B7E6",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Claret and sky blue stripes",
+    "badge": [
+     "Claret",
+     "Sky blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Trabzonspor",
+    "manager": "https://en.wikipedia.org/wiki/Trabzonspor",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Trabzonspor",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "SL Benfica": {
+   "values": {
+    "manager": "Marco Silva",
+    "nickname": "As Águias (The Eagles); Os Encarnados (The Reds)",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/S.L._Benfica",
+    "nickname": "https://en.wikipedia.org/wiki/S.L._Benfica",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/S.L._Benfica",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Beşiktaş JK": {
+   "values": {
+    "nickname": "Kara Kartallar (Black Eagles); Siyah-Beyazlılar (The Black-Whites)",
+    "manager": "Vincenzo Italiano",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#F2F4F7",
+      "pattern": "Black and white stripes"
+     },
+     "away": null
+    },
+    "kitPattern": "Black and white stripes",
+    "badge": [
+     "Black",
+     "White",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Beşiktaş_J.K.",
+    "manager": "https://en.wikipedia.org/wiki/Beşiktaş_J.K.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Beşiktaş_J.K.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Red Bull Salzburg": {
+   "values": {
+    "nickname": "Die Roten Bullen (The Red Bulls)",
+    "manager": "Danny Röhl",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#900018",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White",
+     "Yellow"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Red_Bull_Salzburg",
+    "manager": "https://en.wikipedia.org/wiki/FC_Red_Bull_Salzburg",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Red_Bull_Salzburg",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Shamrock Rovers": {
+   "values": {
+    "nickname": "The Hoops",
+    "manager": "Stephen Bradley",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Green and white hoops"
+     },
+     "away": {
+      "shirtHex": "#CAB0D7",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Green and white hoops",
+    "badge": [
+     "Green",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Shamrock_Rovers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Shamrock_Rovers_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Shamrock_Rovers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Ajax": {
+   "values": {
+    "nickname": "De Godenzonen (Sons of the Gods); Lucky Ajax",
+    "manager": "Míchel",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#D71920",
+      "pattern": "White with a central red stripe"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "White with a central red stripe",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AFC_Ajax",
+    "manager": "https://en.wikipedia.org/wiki/AFC_Ajax",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AFC_Ajax",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Midtjylland": {
+   "values": {
+    "manager": "Mike Tullberg",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Black",
+     "Red"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/FC_Midtjylland",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Midtjylland",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "KRC Genk": {
+   "values": {
+    "nickname": "Blauw-Wit (Blue-White); Racing; KRC; De Smurfen (The Smurfs)",
+    "manager": "Jess Thorup",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#0000FF"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/KRC_Genk",
+    "manager": "https://en.wikipedia.org/wiki/KRC_Genk",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/KRC_Genk",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "BSC Young Boys": {
+   "values": {
+    "manager": "Gerardo Seoane",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#AEAEAE",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Black"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/BSC_Young_Boys",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/BSC_Young_Boys",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Basel 1893": {
+   "values": {
+    "nickname": "FCB; Bebbi (Citizen of Basel); RotBlau",
+    "manager": "Slaviša Jokanović",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#0057B8",
+      "pattern": "Red and blue halves"
+     },
+     "away": {
+      "shirtHex": "#FFFFCC",
+      "trimHex": "#e8e8e8"
+     }
+    },
+    "kitPattern": "Red and blue halves",
+    "badge": [
+     "Red",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Basel",
+    "manager": "https://en.wikipedia.org/wiki/FC_Basel",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Basel",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Malmö FF": {
+   "values": {
+    "nickname": "Di Blåe (The Blue Ones); Himmelsblått (Sky Blue)",
+    "kits": {
+     "home": {
+      "shirtHex": "#6CABDD",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Malmö_FF",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Malmö_FF",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sporting Clube de Braga": {
+   "values": {
+    "nickname": "Os Arcebispos (The Archbishops); Os Arsenalistas (The Arsenalists); Os Guerreiros do Minho (The Minho Warriors)",
+    "manager": "Carlos Vicens",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red with white sleeves"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#ff0000"
+     }
+    },
+    "kitPattern": "Red with white sleeves",
+    "badge": [
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/S.C._Braga",
+    "manager": "https://en.wikipedia.org/wiki/S.C._Braga",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/S.C._Braga",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "PAOK": {
+   "values": {
+    "nickname": "Dikefalos (Double-Headed Eagle); Asprómavri (White-Blacks)",
+    "manager": "Alessio Lisci",
+    "kits": {
+     "home": {
+      "shirtHex": "#17181A",
+      "trimHex": "#F2F4F7",
+      "pattern": "Black and white stripes"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Black and white stripes",
+    "badge": [
+     "Black",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/PAOK_FC",
+    "manager": "https://en.wikipedia.org/wiki/PAOK_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/PAOK_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Viktoria Plzeň": {
+   "values": {
+    "manager": "Radoslav Kováč",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#0057B8",
+      "pattern": "Red and blue halves"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Red and blue halves",
+    "badge": [
+     "Red",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/FC_Viktoria_Plzeň",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Viktoria_Plzeň",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Legia Warszawa": {
+   "values": {
+    "nickname": "Wojskowi (The Militarians); Legioniści (The Legionaries)",
+    "manager": "Marek Papszun",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#159C56",
+      "pattern": "White with green, red and black trim"
+     },
+     "away": {
+      "shirtHex": "#00842C",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "White with green, red and black trim",
+    "badge": [
+     "Green",
+     "Red",
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Legia_Warsaw",
+    "manager": "https://en.wikipedia.org/wiki/Legia_Warsaw",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Legia_Warsaw",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Lazio": {
+   "values": {
+    "nickname": "I Biancocelesti (The White and Sky Blues); I Biancazzurri (The White and Blues); Le Aquile (The Eagles); Gli Aquilotti (The Young Eagles)",
+    "manager": "Gennaro Gattuso",
+    "kits": {
+     "home": {
+      "shirtHex": "#6CABDD",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#242D4E"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Sky blue",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/SS_Lazio",
+    "manager": "https://en.wikipedia.org/wiki/SS_Lazio",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/SS_Lazio",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC København": {
+   "values": {
+    "nickname": "Byens Hold (The Team of the City); Løverne (The Lions)",
+    "manager": "Bo Svensson",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#0057B8",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/F.C._Copenhagen",
+    "manager": "https://en.wikipedia.org/wiki/F.C._Copenhagen",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/F.C._Copenhagen",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "FC Schalke 04": {
+   "values": {
+    "nickname": "Die Königsblauen (The Royal Blues); Die Knappen (The Miners)",
+    "manager": "Miron Muslić",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": null
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/FC_Schalke_04",
+    "manager": "https://en.wikipedia.org/wiki/FC_Schalke_04",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/FC_Schalke_04",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "AS Monaco": {
+   "values": {
+    "nickname": "Les Rouge et Blanc (The Red and Whites); Les Monégasques (The Monégasques); Le Rocher (The Rock)",
+    "manager": "Filipe Luís",
+    "kits": {
+     "home": {
+      "shirtHex": "#D71920",
+      "trimHex": "#F2F4F7",
+      "pattern": "Red and white diagonal halves"
+     },
+     "away": {
+      "shirtHex": "#542D34",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Red and white diagonal halves",
+    "badge": [
+     "Red",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/AS_Monaco_FC",
+    "manager": "https://en.wikipedia.org/wiki/AS_Monaco_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/AS_Monaco_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "RC Strasbourg Alsace": {
+   "values": {
+    "nickname": "Le Racing; Le RCS; Les Bleu et Blanc (The Blue and Whites)",
+    "manager": "Hugo Oliveira",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FAF7F0",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White",
+     "Red"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/RC_Strasbourg_Alsace",
+    "manager": "https://en.wikipedia.org/wiki/RC_Strasbourg_Alsace",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/RC_Strasbourg_Alsace",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Atalanta": {
+   "values": {
+    "nickname": "La Dea (The Goddess); Gli Orobici (The Orobics); I Nerazzurri (The Black and Blues)",
+    "manager": "Maurizio Sarri",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#17181A",
+      "pattern": "Blue and black stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Blue and black stripes",
+    "badge": [
+     "Blue",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Atalanta_BC",
+    "manager": "https://en.wikipedia.org/wiki/Atalanta_BC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Atalanta_BC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Al Hilal": {
+   "values": {
+    "nickname": "Al-Za'eem (The Boss)",
+    "manager": "Simone Inzaghi",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Al_Hilal_SFC",
+    "manager": "https://en.wikipedia.org/wiki/Al_Hilal_SFC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Al_Hilal_SFC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Al Nassr": {
+   "values": {
+    "manager": "Ange Postecoglou",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#0057B8",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#00122C",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Yellow",
+     "Blue"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Al-Nassr_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Al-Nassr_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Al Ahli SFC": {
+   "values": {
+    "nickname": "Al-Malaki (The Royals); Ma'aqil Al-Usood (Stronghold of Lions); Al-Raqi (The Classy Ones); Safir Al-Umam (Ambassador of Nations)",
+    "manager": "Marino Pušić",
+    "kits": {
+     "home": {
+      "shirtHex": "#159C56",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#008456",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Green",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Al-Ahli_Saudi_FC",
+    "manager": "https://en.wikipedia.org/wiki/Al-Ahli_Saudi_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Al-Ahli_Saudi_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Al Ittihad": {
+   "values": {
+    "manager": "Jens Wissing",
+    "kits": {
+     "home": {
+      "shirtHex": "#FBE300",
+      "trimHex": "#17181A",
+      "pattern": "Yellow and black stripes"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#17181A"
+     }
+    },
+    "kitPattern": "Yellow and black stripes",
+    "badge": [
+     "Yellow",
+     "Black"
+    ]
+   },
+   "sources": {
+    "manager": "https://en.wikipedia.org/wiki/Al-Ittihad_Club_(Jeddah)",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Al-Ittihad_Club_(Jeddah)",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Sevilla FC": {
+   "values": {
+    "nickname": "Los Nervionenses; Los Rojiblancos (The Red and Whites)",
+    "manager": "Luis García Plaza",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#D71920",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#E20001",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Red",
+     "White",
+     "Gold"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Sevilla_FC",
+    "manager": "https://en.wikipedia.org/wiki/Sevilla_FC",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Sevilla_FC",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Rangers FC": {
+   "values": {
+    "nickname": "The Gers; The Light Blues; The Teddy Bears",
+    "manager": "Derek McInnes",
+    "kits": {
+     "home": {
+      "shirtHex": "#0057B8",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#F4F5EF",
+      "trimHex": "#0000ff"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Blue",
+     "Red",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Rangers_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Rangers_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Rangers_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Hearts": {
+   "values": {
+    "nickname": "The Jam Tarts; The Jambos; The Gorgie Boys",
+    "manager": "Wouter Vrancken",
+    "kits": {
+     "home": {
+      "shirtHex": "#7A263A",
+      "trimHex": "#F2F4F7",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#FFFFFF",
+      "trimHex": "#601F2E"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "Maroon",
+     "White"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Heart_of_Midlothian_F.C.",
+    "manager": "https://en.wikipedia.org/wiki/Heart_of_Midlothian_F.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Heart_of_Midlothian_F.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  },
+  "Vitória SC": {
+   "values": {
+    "nickname": "Os Conquistadores (The Conquerors); Os Vimaranenses (The Ones from Guimarães); Os Branquinhos (The Little Whites)",
+    "manager": "Tiago Margarido",
+    "kits": {
+     "home": {
+      "shirtHex": "#F2F4F7",
+      "trimHex": "#17181A",
+      "pattern": "Plain"
+     },
+     "away": {
+      "shirtHex": "#000000",
+      "trimHex": "#F2F4F7"
+     }
+    },
+    "kitPattern": "Plain",
+    "badge": [
+     "White",
+     "Black"
+    ]
+   },
+   "sources": {
+    "nickname": "https://en.wikipedia.org/wiki/Vitória_S.C.",
+    "manager": "https://en.wikipedia.org/wiki/Vitória_S.C.",
+    "kits": "Home: Claude, general knowledge (2 Oct 2026) — check. Away: this season's colour on https://en.wikipedia.org/wiki/Vitória_S.C.",
+    "kitPattern": "Claude, general knowledge (2 Oct 2026) — check",
+    "badge": "Claude, general knowledge (2 Oct 2026) — check"
+   }
+  }
+ }
+}
