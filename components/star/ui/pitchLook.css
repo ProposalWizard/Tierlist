@@ -14,7 +14,8 @@
  *   - the Tailwind grays the older screens use are re-pointed to greens below
  *     (generated: gray/slate 400-950, the opacity steps the screens use, and
  *     the gradient from/via/to stops);
- *   - the shell, top bar and nav carry sk-shell / sk-bar / sk-nav.
+ *   - the shell and nav carry sk-shell / sk-nav (the top bar, sk-bar, stays
+ *     the light grey top area of ui/flat.css in both looks).
  * The match canvas is a canvas: none of this touches it.
  */
 .star-look-pitch {
@@ -35,13 +36,13 @@
   background: var(--sk-page) !important;
   background-attachment: fixed !important;
 }
-.star-look-pitch .sk-bar,
+/* The top bar is NOT greened: it is the light grey top area in both looks
+   (v0.25, P7: "a light grey that blends in", ui/flat.css 4). */
 .star-look-pitch .sk-nav {
   background: linear-gradient(180deg, #1c6a3b, #14562e) !important;
   border-color: rgba(255,255,255,.35) !important;
 }
 .star-look-pitch .sk-nav { border-top-width: 2px; }
-.star-look-pitch .sk-bar { border-bottom-width: 2px; }
 
 /* Display type: headings only. The big black-weight capitals and numbers are
    picked up by ui/flat.css (size-based); labels, tables and the nav stay in

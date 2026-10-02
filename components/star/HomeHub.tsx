@@ -158,7 +158,7 @@ export default function HomeHub(p: Props) {
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
       <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <div className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
+      <div data-home-league className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>

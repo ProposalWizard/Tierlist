@@ -8,9 +8,10 @@ import { SquareBar } from "./Flat";
  * lightning sit above, like in 3D above it, kind of like an overlay", "a 3D
  * Earth … sit above the bar", "the same treatment for every other top bar").
  *
- * Every bar at the top of a screen is the same thing: a SQUARE bar with a
- * white edge (P1-10, P1-35) and its icon standing on the bar's left end, big
- * enough to rise above it, like a 3D badge laid over the bar.
+ * Every bar at the top of a screen is the same thing: a flat, 2D, square bar
+ * (P1-10, P1-35) and its 3D icon standing on the bar's left end, big enough to
+ * rise above it, like a badge laid over the bar. v0.25 (P4, P5, P7, P9): no
+ * white edge, no number, sat in the light grey top area (flat.css 4).
  *
  *   <TopMeter icon={<HudIcon name="energy" />} value={energy} colors={levelColors(energy)}>{energy}</TopMeter>
  *   <TopMeter icon={<FillStar fraction={0.2}>12</FillStar>} value={20} colors={GOLD} />
@@ -18,7 +19,7 @@ import { SquareBar } from "./Flat";
  * Icons come from public/icons3d/<name>.png (rendered in Blender); until a
  * picture exists, or if it fails to load, a drawn icon stands in.
  */
-export function TopMeter({ icon, value, colors, children, className = "", barClass = "h-[18px]", tour, label, after }: {
+export function TopMeter({ icon, value, colors, children, className = "", barClass = "h-[16px]", tour, label, after, duration }: {
   icon: React.ReactNode;
   /** 0-100. */
   value: number;
@@ -32,10 +33,12 @@ export function TopMeter({ icon, value, colors, children, className = "", barCla
   label?: string;
   /** Anything after the bar (a lock). */
   after?: React.ReactNode;
+  /** Glide time in ms (LiquidBar's default when absent); 0 jumps. */
+  duration?: number;
 }) {
   return (
     <span data-tour={tour} aria-label={label} data-top-meter className={`relative flex min-w-0 items-center gap-1 pl-[30px] pr-2 ${className}`}>
-      <SquareBar value={value} colors={colors} className={`${barClass} min-w-0 flex-1`} animate square>{children}</SquareBar>
+      <SquareBar value={value} colors={colors} className={`${barClass} min-w-0 flex-1`} animate square duration={duration}>{children}</SquareBar>
       {after}
       {/* The icon stands on the bar's left end and rises above it. */}
       <span aria-hidden data-top-icon className="pointer-events-none absolute bottom-[1px] left-[1px] z-10 h-[44px] w-[44px]">{icon}</span>

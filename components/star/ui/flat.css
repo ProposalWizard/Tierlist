@@ -141,3 +141,31 @@
   .sk-star-fill, .sk-star-cut { transition: none; }
   .sk-liq-fill, .sk-liq-glow { transition: none; }
 }
+
+/* 4. THE TOP AREA (Harry and Mikey, 2 Oct 2026, v0.24 review, P4-P10). The
+   always-there top (ui/GameBar.tsx + ui/TopHud.tsx) is ONE light grey that
+   blends in, with no outline, after New Star Soccer's home screen: "it looks
+   like a PowerPoint presentation", "code designed", "doesn't need the hundred
+   in there". Same in both looks. Its bars are flat 2D wells with a plain
+   colour fill: no white edge, no glow, no bright rim; the 3D icons stay. */
+.sk-top {
+  --sk-top-bg: #e7eaed;
+  --sk-top-ink: #1f2a35;
+  --sk-top-soft: #5f6b77;
+}
+.sk-top-chip { background: rgba(31, 42, 53, .08); }
+.sk-top-btn {
+  color: var(--sk-top-ink, #1f2a35);
+  background: linear-gradient(180deg, #ffffff, #e3e7eb);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+}
+.sk-top .sk-liq-glow,
+.sk-top .sk-liq-rim { display: none; }
+.sk-top .sk-liq[data-shape="square"] .sk-liq-track {
+  border: 0; border-radius: 2px;
+  background: #c6ccd2;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .3);
+}
+.sk-top .sk-liq[data-shape="square"] .sk-liq-fill { border-radius: 2px; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12); }
+.sk-top .sk-liq[data-shape="square"] .sk-liq-gloss { background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .08)); }
+.sk-top .sk-liq-flow { opacity: .5; }
