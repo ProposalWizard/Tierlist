@@ -96,7 +96,7 @@ function pickRandomVisitors(career: CareerState): CareerState["squad"] {
  *  than losing the sides. */
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax meet" overflow="visible" className="absolute inset-0 h-full w-full">
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax meet" className="absolute inset-0 h-full w-full">
       {children}
     </svg>
   );
@@ -120,7 +120,7 @@ function GardenScene({ look, tier, shelf, outfit, faceUrl, faces }: {
   const hw = houseWidth(tier);
   const hs = Math.min(1, 372 / hw);
   const patioHalf = Math.min(170, (hw * hs) / 2);
-  const water = tier <= 1 ? { x: 318, y: 520 } : tier === 2 ? { x: 300, y: 560 } : { x: 306, y: 548 };
+  const water = tier <= 1 ? { x: 318, y: 520 } : tier === 2 ? { x: 300, y: 560 } : { x: 318, y: 548 };
   return (
     <Frame>
       <SkyAndDistance look={look} seed={1} stadium={52} />
@@ -390,6 +390,8 @@ function BenchScene({ look, tier, visitors, kit, faces }: {
         </g>
       ))}
       {look.lightsOn && tier >= 2 && <Glow x={195} y={720} r={110} color="255,150,60" strength={0.8} />}
+      {/* the fairy lights fall on the bench, so the faces still read after dark */}
+      {look.lightsOn && <Glow x={195} y={560} r={190} strength={look.moon ? 0.32 : 0.18} />}
     </Frame>
   );
 }
@@ -447,7 +449,7 @@ export default function GardenScreen({ career, onBack, sky }: {
             className="absolute inset-0 flex transition-transform duration-300 ease-out"
             style={{ width: `${SCENES.length * 100}%`, transform: `translateX(-${index * (100 / SCENES.length)}%)` }}
           >
-            <div className="relative h-full" style={{ width: `${100 / SCENES.length}%` }}>
+            <div className="relative h-full overflow-hidden" style={{ width: `${100 / SCENES.length}%` }}>
               <StableScene look={look} horse={career.horse} level={stable} />
               {career.horse && (
                 <div className="absolute right-3 top-14 flex flex-col items-end gap-1.5">
@@ -455,7 +457,7 @@ export default function GardenScreen({ career, onBack, sky }: {
                 </div>
               )}
             </div>
-            <div className="relative h-full" style={{ width: `${100 / SCENES.length}%` }}>
+            <div className="relative h-full overflow-hidden" style={{ width: `${100 / SCENES.length}%` }}>
               <GardenScene look={look} tier={tier} shelf={shelf} outfit={outfit} faceUrl={faceUrl} faces={faces} />
               {(trophyCount > 0 || ballonDors > 0) && (
                 <div className="absolute right-3 top-14 flex flex-col items-end gap-1.5">
@@ -464,7 +466,7 @@ export default function GardenScreen({ career, onBack, sky }: {
                 </div>
               )}
             </div>
-            <div className="relative h-full" style={{ width: `${100 / SCENES.length}%` }}>
+            <div className="relative h-full overflow-hidden" style={{ width: `${100 / SCENES.length}%` }}>
               <BenchScene look={look} tier={tier} visitors={visitors} kit={kit} faces={faces} />
             </div>
           </div>
