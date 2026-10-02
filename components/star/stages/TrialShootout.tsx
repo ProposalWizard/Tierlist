@@ -185,7 +185,9 @@ export default function TrialShootout({
     const n = st.kicks.length;
     const rng = mulberry32((seed * 7919 + n * 2654435761) >>> 0);
     const ourNo = rigKicksTaken(st.kicks, "you");
-    if (s === "you" && (isYourKick(st) || st.over)) {
+    // Once the shootout is over there is no next taker: keep the last picture
+    // (the "you" penalty) instead of asking for one. Fixes a null `taker` crash.
+    if (st.over || (s === "you" && isYourKick(st))) {
       const k = shootoutKeeperFor(trial, ourNo);
       const sc = buildScenario("penalty", rng, k.keeperStrength, 60, 55);
       initDefenders(sc, rng);
