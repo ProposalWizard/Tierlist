@@ -208,29 +208,34 @@ def make_fame():
 
 
 def make_happiness():
-    """A round, glossy smiley: warm yellow, dark eyes, a curved smile, pink cheeks."""
-    face = glossy('Face', '#ffce2e', rough=0.22)
-    dark = glossy('Eye', '#3b2410', rough=0.15)
-    pink = S.principled('Cheek', '#ff6fa8', rough=0.45, alpha=1.0)
-    parts = [sph('Head', (0, 0, 0), 1.0, face, scale=(1, 0.86, 1), seg=96, rings=48)]
+    """A round, glossy smiley in the bolt's yellow: two tall dark eyes and one
+    clean curved smile, sitting flush on the face. No cheeks (Harry, 2 Oct:
+    "remove the rosy pink cheeks", "cleaner and more polished")."""
+    face = glossy('Face', '#ffd21f', rough=0.14, emission='#ffb800', es=0.12)
+    dark = S.principled('Feature', '#2a1606', rough=0.12, coat=1.0, coat_rough=0.03, spec=0.7)
+    SY = 0.88  # the head is squashed front-to-back a little
+
+    def on_face(x, z, lift=0.0):
+        r2 = max(0.0, 1 - x * x - z * z)
+        return -SY * math.sqrt(r2) - lift
+
+    parts = [sph('Head', (0, 0, 0), 1.0, face, scale=(1, SY, 1), seg=128, rings=64)]
     for sx in (-1, 1):
-        e = sph(f'Eye{sx}', (0.34 * sx, -0.80, 0.24), 0.13, dark, scale=(0.8, 0.5, 1.25), seg=32, rings=16)
+        x, z = 0.31 * sx, 0.24
+        e = sph(f'Eye{sx}', (x, on_face(x, z, -0.02), z), 0.15, dark, scale=(0.80, 0.42, 1.50), seg=48, rings=24)
+        # turn each eye so it lies along the curve of the face
+        e.rotation_euler = (math.radians(-12), 0, math.radians(-18 * sx))
         parts.append(e)
-        c = sph(f'Cheek{sx}', (0.60 * sx, -0.62, -0.12), 0.17, pink, scale=(1.0, 0.35, 0.65), seg=32, rings=16)
-        c.rotation_euler = (0, 0, math.radians(-38 * sx))
-        parts.append(c)
-    # the smile: a curved tube following the front of the face
     from kit import tube
     pts = []
-    for k in range(13):
-        t = math.radians(-60 + 120 * k / 12)
-        x = 0.46 * math.sin(t)
-        z = -0.20 - 0.30 * math.cos(t) + 0.06
-        y = -0.86 * math.sqrt(max(0.0, 1 - x * x - z * z)) - 0.012
-        pts.append((x, y, z))
-    sm = tube('Smile', pts, 0.055, dark, res=6)
+    for k in range(17):
+        t = math.radians(-62 + 124 * k / 16)
+        x = 0.54 * math.sin(t)
+        z = -0.10 - 0.36 * math.cos(t) + 0.04
+        pts.append((x, on_face(x, z, 0.0), z))
+    sm = tube('Smile', pts, 0.085, dark, res=8)
     parts += convert_curves([sm])
-    return parts, dict(turn=-10, tilt=4, frame=[parts[0]], fill=0.80, expo=-0.35)
+    return parts, dict(turn=-10, tilt=4, frame=[parts[0]], fill=0.80, expo=-0.30)
 
 
 def make_heart():
