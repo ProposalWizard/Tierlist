@@ -46,70 +46,22 @@ export const ASSETS_3D: Asset3dFolder[] = [
   },
   {
     "id": "signing",
-    "title": "Signing scene",
-    "kind": "image",
-    "made": "tools/blender-signing/signing.py",
-    "note": "The beats of the 3D signing prototype: talk, contract over the shoulder, wide sign.",
+    "title": "Signing scene (live 3D)",
+    "kind": "model",
+    "made": "tools/signing3d/build_assets.py",
+    "note": "Loaded by three.js in the live signing scene: the rigged body with four hair styles, its sitting / standing clips, and the Star Pass aviators. CC0 Quaternius (LICENSE.txt in the same folder).",
     "files": [
       {
-        "path": "/star/signing3d/contract-dark.webp",
-        "bytes": 15858
+        "path": "/star/signing3d/anims.glb",
+        "bytes": 275024
       },
       {
-        "path": "/star/signing3d/contract-light.webp",
-        "bytes": 15474
+        "path": "/star/signing3d/aviators.glb",
+        "bytes": 57844
       },
       {
-        "path": "/star/signing3d/contract-medium.webp",
-        "bytes": 15774
-      },
-      {
-        "path": "/star/signing3d/reply-dark.webp",
-        "bytes": 15218
-      },
-      {
-        "path": "/star/signing3d/reply-light.webp",
-        "bytes": 15138
-      },
-      {
-        "path": "/star/signing3d/reply-medium.webp",
-        "bytes": 15474
-      },
-      {
-        "path": "/star/signing3d/signed-dark.webp",
-        "bytes": 19148
-      },
-      {
-        "path": "/star/signing3d/signed-light.webp",
-        "bytes": 19424
-      },
-      {
-        "path": "/star/signing3d/signed-medium.webp",
-        "bytes": 19370
-      },
-      {
-        "path": "/star/signing3d/signing-dark.webp",
-        "bytes": 19232
-      },
-      {
-        "path": "/star/signing3d/signing-light.webp",
-        "bytes": 19362
-      },
-      {
-        "path": "/star/signing3d/signing-medium.webp",
-        "bytes": 19424
-      },
-      {
-        "path": "/star/signing3d/talk-dark.webp",
-        "bytes": 19192
-      },
-      {
-        "path": "/star/signing3d/talk-light.webp",
-        "bytes": 19180
-      },
-      {
-        "path": "/star/signing3d/talk-medium.webp",
-        "bytes": 19184
+        "path": "/star/signing3d/people.glb",
+        "bytes": 1019808
       }
     ]
   },

@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
+import dynamic from "next/dynamic";
 import SigningScene from "./SigningScene";
+import { useSigning3d } from "@/lib/star/signing3d";
+
+// The live 3D signing (Settings → "3D signing scene (beta)"). Loaded only
+// when it is switched on, so three.js never reaches anyone who hasn't.
+const SigningScene3DCareer = dynamic(() => import("./SigningScene3DCareer"), { ssr: false });
 
 /**
  * WHAT THE TRIAL GETS YOU — the signing.
@@ -37,6 +43,22 @@ export default function TrialReward({
   managerName?: string;
 }) {
   const [signing, setSigning] = useState(false);
+  const signing3d = useSigning3d();
+  const [failed3d, setFailed3d] = useState(false);
+
+  if (career && signing3d && !failed3d) {
+    return (
+      <SigningScene3DCareer
+        career={career}
+        club={club}
+        playerName={playerName}
+        managerName={managerName || "The manager"}
+        terms={terms}
+        onDone={onDone}
+        onFail={() => setFailed3d(true)}
+      />
+    );
+  }
 
   if (career) {
     return (
