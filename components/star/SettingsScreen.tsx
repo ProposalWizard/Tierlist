@@ -1,16 +1,12 @@
 "use client";
-import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
 import { useSigning3d, setSigning3d } from "@/lib/star/signing3d";
-import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
-import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
-import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
-import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
-import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
+import { GameSwitches, LookSwitches } from "./DeviceSettings";
+import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import DevCareerPanel from "./DevCareerPanel";
@@ -25,7 +21,7 @@ import {
 import { PressButton, RiseIn, tint, useClubTheme } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { SegTabs } from "./screenKit";
-import { SetCard, SetHead, SetNote, SetDivider, SetSection, SetToggle, Switch } from "./settingsKit";
+import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch } from "./settingsKit";
 
 /**
  * SETTINGS — reskinned 28 Sep 2026 to the home screen's look (Harry: "all
@@ -73,6 +69,9 @@ interface Props {
    *  navigating away from Settings, this screen just reads/flips it. */
   immersiveActive: boolean;
   onToggleImmersive: () => void;
+  /** What full screen can do here (ImmersiveToggle.tsx): an iPhone gets the
+   *  "Add to Home Screen" tip instead of a switch that cannot work. */
+  fullscreenSupport?: FullscreenSupport;
   /** Equip a penalty run-up / a free-kick run-up you own (lib/star/runupStyles.ts). */
   onSetPenaltyRunup?: (id: PenaltyRunupId) => void;
   onSetFreeKickRunup?: (id: FreeKickRunupId) => void;
@@ -90,43 +89,16 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
+  immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
-  const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
-  // The player look (lib/star/figureSkin.ts): Classic for everyone until
-  // Harry says otherwise; this switch is for trying 3D on this device.
-  const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
-  const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
-  const uiNow = useUiVersion();
   const signing3d = useSigning3d();
-  const sfxNow = useSfxOn();
 
-  const togglePostMatchReactions = () => {
-    const next = !postMatchReactions;
-    setPostMatchReactions(next);
-    setPostMatchReactionsEnabled(next);
-  };
-
-  // Skip the line-up animation (lib/star/lineupPrefs.ts).
-  const [skipLineup, setSkipLineupState] = useState(() => getSkipLineup());
-  const flipSkipLineup = () => { const next = !skipLineup; setSkipLineupState(next); setSkipLineup(next); };
   // Live scores moved to the League page's bell (v0.23.1, P61).
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devOpen, setDevOpen] = useState(false);
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
-
-  // Quick on/off switches, separate from the full editor — read/write the
-  // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
-  // so a flip here takes effect the same "next match" way every other Player
-  // Graphics change already does.
-  const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
-  const toggleFaceStyle = (key: "facesEnabled" | "namesEnabled", value: boolean) => {
-    const next = { ...faceStyle, [key]: value };
-    setFaceStyle(next);
-    saveFaceStyle(next);
-  };
 
   let rise = 0;
   const next = () => rise++;
@@ -152,14 +124,7 @@ export default function SettingsScreen({
           scores live on the League page now. */}
       <RiseIn index={next()}><SetSection className="mb-1.5 mt-1">Game</SetSection></RiseIn>
       <RiseIn index={next()}>
-        <SetCard tone={glow} className="px-3 py-1">
-          <SetToggle label="Full screen" on={immersiveActive} onClick={onToggleImmersive} />
-          <SetToggle label="Post-match reactions" on={postMatchReactions} onClick={togglePostMatchReactions} />
-          <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
-          <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
-          <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => toggleFaceStyle("facesEnabled", !faceStyle.facesEnabled)} />
-          <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => toggleFaceStyle("namesEnabled", !faceStyle.namesEnabled)} last />
-        </SetCard>
+        <GameSwitches glow={glow} fullscreen={{ support: fullscreenSupport, on: immersiveActive, onToggle: onToggleImmersive }} />
       </RiseIn>
 
       {/* ── YOU ── */}
@@ -223,29 +188,7 @@ export default function SettingsScreen({
           </div>
 
           <SetDivider />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[14px] font-bold text-white">Player look</span>
-            <SegTabs
-              className="w-[150px] shrink-0"
-              value={look}
-              onChange={pickLook}
-              tabs={[["classic", "Classic"], ["3d", "3D"]] as const}
-            />
-          </div>
-
-          <SetDivider />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[14px] font-bold text-white">UI</span>
-            <SegTabs
-              className="w-[150px] shrink-0"
-              value={uiNow}
-              onChange={setUiVersion}
-              tabs={[["old", "Old"], ["new", "New"]] as const}
-            />
-          </div>
-          <SetNote dim className="mt-1 text-[10px]">
-            Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
-          </SetNote>
+          <LookSwitches />
 
           <SetDivider />
           <div className="flex items-center justify-between gap-2">

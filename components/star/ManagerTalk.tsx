@@ -3,6 +3,10 @@ import { useState } from "react";
 import { formatMoney } from "@/lib/star/money";
 import { leagueNameFor } from "@/lib/star/calendar";
 import type { ManagerTalk as Talk } from "@/lib/star/signingTalk";
+import ClubBadge from "./ClubBadge";
+import { clubTheme } from "./ui";
+import { Title } from "./ui/Screen";
+import { ScoutBackdrop, ScoutFigure } from "./ScoutArt";
 
 /**
  * THE MANAGER'S VERDICT.
@@ -68,79 +72,115 @@ export default function ManagerTalk({
   const [shown, setShown] = useState(1);
   const done = shown >= talk.lines.length;
 
-  return (
-    <div className="mx-auto flex w-full max-w-md flex-col px-4 py-3 text-white">
-      <div className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">
-        A scout has spotted you
-      </div>
-      <div className="text-xl font-black leading-tight">{talk.club}</div>
-      <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
-        {leagueNameFor(talk.division)} · {managerName}&apos;s scout watched you play
-      </div>
+  const glow = clubTheme(talk.club).glow;
 
-      {/* His office. Tapping moves him on to the next thing he has to say.
-          No `flex-1`: it is what used to push the offer card off the bottom
-          of a phone — see the note at the top of this file. */}
-      <button
-        onClick={() => setShown(s => Math.min(talk.lines.length, s + 1))}
-        disabled={done}
-        className="mt-3 space-y-1.5 rounded-2xl border border-white/10 bg-white/5 p-3 text-left"
-      >
-        {talk.lines.slice(0, shown).map((line, i) => (
-          <p key={i} className="text-[12px] font-bold leading-snug text-white">
-            “{line}”
-          </p>
-        ))}
-        {!done && (
-          <div className="pt-0.5 text-[10px] font-black uppercase tracking-widest text-amber-300/80">
-            Tap to hear him out →
+  // ── FULL SCREEN (Harry, 2 Oct 2026, v0.25 point 9: "a tiny box in the
+  // middle, the rest blank"). The floodlit stand behind everything, the club
+  // badge big at the top, the scout with his notebook saying his lines, and
+  // the offer pinned to the bottom of the phone. Same buttons, same handlers.
+  return (
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#05070d] text-white">
+      <ScoutBackdrop glow={glow} />
+      <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4 pt-5">
+        <div className="text-center">
+          <div className="scout-kick inline-block rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-amber-300 ring-1 ring-amber-300/40">
+            A scout has spotted you
+          </div>
+        </div>
+
+        {/* The club: the headline, not a caption (see the note above). */}
+        <div className="scout-rise mt-4 flex flex-col items-center text-center" style={{ animationDelay: "120ms" }}>
+          <div className="relative grid h-[104px] w-[104px] place-items-center">
+            <div aria-hidden className="scout-halo absolute inset-[-18px] rounded-full" style={{ background: `radial-gradient(closest-side, ${glow}aa, transparent)` }} />
+            <div className="relative"><ClubBadge club={talk.club} size={92} /></div>
+          </div>
+          <Title className="mt-2 text-[28px]">{talk.club}</Title>
+          <div className="text-[11px] font-black uppercase tracking-widest text-white/80">
+            {leagueNameFor(talk.division)}
+          </div>
+        </div>
+
+        {/* The scout, and what he says. Tapping moves him on. No `flex-1`
+            on the lines: it is what used to push the offer off a phone. */}
+        <button
+          onClick={() => setShown(s => Math.min(talk.lines.length, s + 1))}
+          disabled={done}
+          className="scout-rise mt-4 flex w-full items-start gap-3 rounded-2xl p-3 text-left"
+          style={{ animationDelay: "240ms", background: "linear-gradient(180deg, rgba(15,23,42,.82), rgba(5,7,13,.88))", boxShadow: `inset 0 0 0 1px ${glow}66, 0 12px 30px -12px rgba(0,0,0,.9)` }}
+        >
+          <div className="shrink-0 overflow-hidden rounded-xl" style={{ background: `linear-gradient(180deg, ${glow}55, rgba(0,0,0,.4))`, boxShadow: `inset 0 0 0 1px ${glow}88` }}>
+            <ScoutFigure className="h-[84px] w-[72px]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#fcd34d" }}>
+              {managerName}&apos;s scout
+            </div>
+            <div className="mt-1 space-y-1.5">
+              {talk.lines.slice(0, shown).map((line, i) => (
+                <p key={i} className="text-[13px] font-bold leading-snug text-white">“{line}”</p>
+              ))}
+            </div>
+            {!done && (
+              <div className="pt-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300">
+                Tap to hear him out →
+              </div>
+            )}
+          </div>
+        </button>
+
+        <div className="min-h-3 flex-1" />
+
+        {done && (
+          <div className="scout-rise rounded-2xl p-3.5" style={{ background: "linear-gradient(180deg, rgba(6,78,59,.92), rgba(2,44,34,.95))", boxShadow: "inset 0 0 0 1px rgba(52,211,153,.45), 0 -10px 30px -10px rgba(0,0,0,.8)" }}>
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">The offer</div>
+                <div className="text-[30px] font-black leading-none tabular-nums">
+                  ★{formatMoney(talk.openingWeekly)}
+                  <span className="ml-1 text-sm font-black text-white">a week</span>
+                </div>
+              </div>
+              <ClubBadge club={talk.club} size={34} />
+            </div>
+            <p className="mt-1.5 text-[11.5px] font-bold leading-snug text-white">
+              Take it, or argue for more. Push too hard and he comes back with a worse, final offer.
+            </p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <button
+                onClick={onAccept}
+                className="kib-press rounded-xl bg-emerald-500 py-3 text-[12px] font-black uppercase tracking-widest text-white hover:bg-emerald-400"
+              >
+                Accept &amp; sign
+              </button>
+              <button
+                onClick={onNegotiate}
+                className="kib-press rounded-xl bg-amber-400 py-3 text-[12px] font-black uppercase tracking-widest text-gray-950 hover:bg-amber-300"
+              >
+                Negotiate
+              </button>
+            </div>
+            {onSeeOthers && (
+              <button
+                onClick={onSeeOthers}
+                className="kib-press mt-2 w-full rounded-xl bg-white/10 py-2 text-[12px] font-black uppercase tracking-widest text-white hover:bg-white/20"
+              >
+                See other clubs
+              </button>
+            )}
           </div>
         )}
-      </button>
-
-      {done && (
-        <div className="mt-2.5 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
-            What he is offering
-          </div>
-          <div className="text-2xl font-black tabular-nums">
-            ★{formatMoney(talk.openingWeekly)}
-            <span className="ml-1 text-sm font-black text-white">a week</span>
-          </div>
-          <p className="mt-1.5 text-[11.5px] font-bold leading-snug text-white">
-            {talk.club} are opening below what the deal is worth, the way anybody
-            does. Take it, or sit down and argue about it.
-          </p>
-          {/* Side by side rather than stacked, and both measured back onto a
-              664 px phone — see the note at the top of this file. Stacked,
-              the second one sat 52 px past the bottom edge. */}
-          <div className="mt-2.5 grid grid-cols-2 gap-2">
-            <button
-              onClick={onAccept}
-              className="rounded-xl bg-emerald-500 py-2.5 text-[12px] font-black uppercase tracking-widest text-white hover:bg-emerald-400"
-            >
-              Accept &amp; sign
-            </button>
-            <button
-              onClick={onNegotiate}
-              className="rounded-xl bg-amber-400 py-2.5 text-[12px] font-black uppercase tracking-widest text-gray-950 hover:bg-amber-300"
-            >
-              Negotiate
-            </button>
-          </div>
-          {onSeeOthers && (
-            <button
-              onClick={onSeeOthers}
-              className="mt-2 w-full rounded-xl bg-white/10 py-2 text-[12px] font-black uppercase tracking-widest text-white hover:bg-white/20"
-            >
-              See other clubs
-            </button>
-          )}
-          <p className="mt-1.5 text-center text-[10.5px] font-bold text-white">
-            Negotiate for more money — push too hard and he comes back with a worse, final offer.
-          </p>
-        </div>
-      )}
+      </div>
+      <style>{SCOUT_CSS}</style>
     </div>
   );
 }
+
+const SCOUT_CSS = `
+@keyframes scoutRise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+@keyframes scoutHalo{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes scoutKick{0%{opacity:0;transform:scale(.8)}60%{opacity:1;transform:scale(1.06)}100%{transform:scale(1)}}
+.scout-rise{animation:scoutRise .5s cubic-bezier(.2,.9,.25,1) both}
+.scout-halo{animation:scoutHalo 2.6s ease-in-out infinite}
+.scout-kick{animation:scoutKick .5s cubic-bezier(.2,.9,.25,1) both}
+@media (prefers-reduced-motion: reduce){.scout-rise,.scout-halo,.scout-kick{animation:none}}
+`;

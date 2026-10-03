@@ -1,0 +1,18 @@
+{
+  "name": "Knowitball Star Career",
+  "short_name": "Knowitball",
+  "description": "Road to the Ballon d'Or — the Knowitball career game.",
+  "id": "/star-dev",
+  "start_url": "/star-dev",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "icons": [
+    { "src": "/star/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/star/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/star/app-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

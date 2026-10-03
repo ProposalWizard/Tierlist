@@ -126,6 +126,8 @@ import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
+import GlobalSettingsScreen from "@/components/star/GlobalSettingsScreen";
+import { askConfirm } from "@/lib/star/askConfirm";
 import TitleScreen, { titleScreenSkipped } from "@/components/star/TitleScreen";
 import FaceEditorScreen from "@/components/star/FaceEditorScreen";
 import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
@@ -495,6 +497,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** Settings opened FROM the title: its back button returns there, to the
    *  phase the game was on underneath. */
   const [settingsFromTitle, setSettingsFromTitle] = useState<StarPhase | null>(null);
+  /** The title screen's own Settings page (v0.25 points 1-2): this device's
+   *  settings only, no save, no top bar — Back returns to the title. */
+  const [globalSettings, setGlobalSettings] = useState(false);
   useEffect(() => { if (titleScreenSkipped()) setTitleOpen(false); }, []);
   // Left Settings some other way (switched save, a face editor's own exit):
   // its back button goes home again, not to the title.
@@ -809,9 +814,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
 
   const handleExit = useCallback(() => {
-    if (confirm("Leave the career? It stays saved — you will come back to exactly this. To start a new one or switch saves, use Saves in Settings.")) {
-      window.location.href = "/";
-    }
+    // In-app, not confirm(): a browser box throws the player out of full
+    // screen (v0.25 live test).
+    void askConfirm("Leave the career? It stays saved. You come back to exactly this.", "Leave").then(ok => {
+      if (ok) window.location.href = "/";
+    });
   }, []);
 
   const handleNavigate = useCallback((tab: NavTab) => {
@@ -2201,11 +2208,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setTitleOpen(false);
     if (phase === "dashboard" && career.unlocks) { setHomePage(1); setHelpTour(HELP_TOURS.home); }
   }, [career, phase, handleTitleNewGame]);
-  const handleTitleSettings = useCallback(() => {
-    setSettingsFromTitle(phase === "settings" ? "dashboard" : phase);
-    setTitleOpen(false);
-    setPhase("settings");
-  }, [phase]);
   const handleExitToTitle = useCallback(() => {
     if (settingsFromTitle) {
       setPhase(settingsFromTitle);
@@ -2220,13 +2222,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [settingsFromTitle, career]);
 
   const handleFullReset = useCallback(() => {
-    if (career?.retired || confirm("Delete this career and start over?")) {
+    const reset = () => {
       clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
       clearCareerFromCloud(activeSlotRef.current);
       resetTransientState();
       setCareer(null);
       setPhase("profile-setup");
-    }
+    };
+    // In-app, not confirm(): a browser box throws the player out of full screen.
+    if (career?.retired) reset();
+    else void askConfirm("Delete this career and start over?", "Delete").then(ok => { if (ok) reset(); });
   }, [career, resetTransientState]);
 
   // Shop buys
@@ -2875,6 +2880,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (titleOpen && globalSettings) {
+    return (
+      <GlobalSettingsScreen
+        onBack={() => setGlobalSettings(false)}
+        fullscreen={{ support: immersive.support, on: immersive.active, onToggle: immersive.toggle }}
+      />
+    );
+  }
   if (titleOpen) {
     return (
       <TitleScreen
@@ -2885,7 +2898,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onNewGameInSlot={handleTitleNewGame}
         onLoadSlot={handleTitleLoad}
         onDeleteSlot={handleDeleteSave}
-        onSettings={career ? handleTitleSettings : undefined}
+        onSettings={() => setGlobalSettings(true)}
         onTutorial={handleTitleTutorial}
         showPlayArea={offlineDevPlayEnabled()}
       />
@@ -3839,6 +3852,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onDeleteSave={handleDeleteSave}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
+        fullscreenSupport={immersive.support}
         onSetPenaltyRunup={handleSetPenaltyRunup}
         onSetFreeKickRunup={handleSetFreeKickRunup}
         onExitCareer={handleExit}
