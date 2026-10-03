@@ -168,7 +168,7 @@ export function LookSwitches() {
         <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        New: about 100 pictures of each chance, both full teams on the pitch, rarely the same twice. Classic: the chances as they were.
+        Classic (default): your drawn chances, in whichever match view you pick. New (to try): about 100 pictures of each chance with both full teams on the pitch.
       </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">

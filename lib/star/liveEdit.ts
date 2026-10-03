@@ -30,6 +30,7 @@ import { enforceHardRules } from "./kindRules";
 import { frameFromScenario, type Frame, type Item } from "./scenarioFrame";
 import { applyOverride, frameToMatchScenario, type PosOverride, type SaveTarget } from "./scenarioEdit";
 import type { MatchScenario } from "./scenarios";
+import { newChanceMark, NEW_CHANCE_REFUSAL, NewChanceRefused } from "./libraryMark";
 
 /** Seeds for cards made from a live chance — clear of every generated card. */
 export const LIVE_SEED_BASE = 900_000;
@@ -141,14 +142,28 @@ export function liveTarget(kind: string, seed: number, minute: number): SaveTarg
 }
 
 /**
+ * Why this live chance may not be saved, or null when it may. A chance served
+ * from the New set (libraryMark.ts) never goes into the gallery's drawings —
+ * Harry, 3 Oct 2026: kept apart "just in case they suck".
+ */
+export function liveSaveRefusal(live: Scenario): string | null {
+  return newChanceMark(live) ? NEW_CHANCE_REFUSAL : null;
+}
+
+/**
  * The live chance as a saved scenario — as it stood, or with a further drag on
  * top. The match screen's own Save/Commit (no editing) and the editor's both
  * come through here, so the two can never save different things.
+ *
+ * Throws NewChanceRefused for a New-set chance (see `liveSaveRefusal`); the
+ * screens check that first and show its message instead of saving.
  */
 export function liveMatchScenario(
   live: Scenario, minute: number, drag?: PosOverride,
-  card: { seed: number; base: Frame; override: PosOverride } = cardForLive(live),
+  card?: { seed: number; base: Frame; override: PosOverride },
 ): MatchScenario {
+  if (newChanceMark(live)) throw new NewChanceRefused();
+  card ??= cardForLive(live);
   const frame = applyOverride(applyOverride(card.base, card.override), drag);
   return frameToMatchScenario(liveTarget(live.kind, card.seed, minute), frame);
 }

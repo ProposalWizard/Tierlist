@@ -44,6 +44,7 @@ import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
+import { pinChanceSet } from "@/lib/star/chanceSet";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -160,7 +161,7 @@ const SQUAD_WAIT_MS = 4000;
 
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
-  onChanceServed, onChanceResolved, onComplete, fitParent = false,
+  onChanceServed, onChanceResolved, onComplete, fitParent = false, newChances = false,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -190,7 +191,22 @@ export default function EnginePlay({
    * as in a career — the pitch is just drawn smaller.
    */
   fitParent?: boolean;
+  /**
+   * Serve the New chance library here. Only the New chances page
+   * (/star-chances-dev) sets it — it has no Save or Commit. Absent: Classic.
+   */
+  newChances?: boolean;
 }) {
+  // ── Test screens play the CLASSIC chances ──
+  // Harry, 3 Oct 2026: the new chances stay "separate to the scenario gallery
+  // for now … just in case they suck". The test screens can Save and Commit
+  // a chance into the gallery's drawings, so they are pinned to Classic
+  // whatever Settings → Chances says (lib/star/chanceSet.ts). The real career
+  // match never mounts EnginePlay and keeps following the setting. Pinned in
+  // an effect, which is early enough: `career` starts null, so CanvasMatch
+  // only mounts (and builds its first chance) on a later render.
+  useEffect(() => pinChanceSet(newChances ? "new" : "classic"), [newChances]);
+
   // Cleaned even when handed in, so no caller can push a dial outside the
   // Play Area's own guardrails (a keeper of 0, a NaN power…).
   const s = useMemo(() => sanitizePlaySettings(settings ?? loadPlaySettings()), [settings]);
