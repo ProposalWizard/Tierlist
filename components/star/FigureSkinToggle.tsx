@@ -6,7 +6,7 @@ import { figureSkin, onFigureSkinChange, setStoredFigureSkin, type FigureSkin } 
  * The 3D / Classic flip for the players' look (lib/star/figureSkin.ts).
  * Harry, 28 Sep 2026: 3D "should be the base with a flip setting in the
  * homescreen and in match settings". Used on the home hero and in the match
- * bar; Settings → Player look is the same switch. Every renderer reads the
+ * bar; Settings → Drawn-player style is the same switch. Every renderer reads the
  * look each frame, so flipping it mid-match redraws the next frame in the
  * other look with no restart.
  */

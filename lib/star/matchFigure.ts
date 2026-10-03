@@ -20,6 +20,23 @@ import {
 import { drawSoftShadow } from "./figure3d";
 import type { FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
+import { drawSprite, type SpriteChar, type SpriteClip, type SpriteKit } from "./sprites";
+import { matchPlayersLook } from "./newLook";
+
+/**
+ * What the baked 3D figure should show (lib/star/sprites.ts). Used only in
+ * the new view with "Players in the match: 3D"; anywhere else, or before the
+ * sprites have loaded, the drawn figure is painted as before.
+ */
+export interface MatchSpriteHint {
+  char: SpriteChar;
+  clip: SpriteClip;
+  /** Seconds into the clip. */
+  t: number;
+  /** Screen angle he faces (0 = right, PI/2 = down the screen). */
+  facing: number;
+  kit: SpriteKit;
+}
 
 export interface MatchFigureSpec {
   look: FigureLook;
@@ -28,6 +45,8 @@ export interface MatchFigureSpec {
   opts: FigureDrawOpts;
   /** Given: a goalkeeper in this pose. */
   keeper?: KeeperPose;
+  /** Given: the baked 3D figure to draw instead, in the new view. */
+  sprite?: MatchSpriteHint;
 }
 
 /** Off-screen scratch canvases for the outline, reused for every figure. */
@@ -68,6 +87,19 @@ export function drawMatchFigure(
   const sr = spec.opts.shadowR ?? r * 0.34;
   drawSoftShadow(ctx, x + r * 0.22, groundY + r * 0.05, sr * 1.25, r * 0.17);
 
+  // ── The 3D figure (Settings → Look → Players in the match: 3D) ──
+  // Baked with its own 1 px outline, so it is drawn straight on. A man in the
+  // air (a wall jumping) is lifted off his shadow; a keeper's dive is in the
+  // clip itself.
+  if (spec.sprite && matchPlayersLook() === "3d") {
+    const lift = spec.keeper ? 0 : Math.max(0, spec.opts.liftPx ?? 0);
+    const height = r * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
+    if (drawSprite(ctx, x, groundY - lift, { ...spec.sprite, facingRad: spec.sprite.facing, height })) {
+      drawMarkers(ctx, x, groundY - lift - height, r, spec.opts);
+      return;
+    }
+  }
+
   // ── The body, outlined ──
   // Painted off screen, then stamped round itself in a dark silhouette so
   // the edge follows the actual figure (head, arms, a diving keeper) rather
@@ -100,4 +132,48 @@ export function drawMatchFigure(
   rim.drawImage(src, 0, 0, w, h, 0, 0, w, h);
 
   ctx.drawImage(rimCv!, 0, 0, w, h, x - halfW, groundY - top, w, h);
+}
+
+/**
+ * The baked man's boots-to-crown height against the drawn one's. Its outline
+ * and the tilt already add a little, so a touch under 1 puts both at about the
+ * same size on the pitch (about 22 px on a phone).
+ */
+const SPRITE_HEIGHT_K = 0.86;
+
+/** The star over your head and a name, upright, above a 3D figure's crown. */
+function drawMarkers(ctx: CanvasRenderingContext2D, x: number, crown: number, r: number, opts: FigureDrawOpts) {
+  if (opts.star) {
+    ctx.save();
+    ctx.beginPath();
+    const sr = r * 0.22, sy = crown - sr * 1.3;
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const rad = i % 2 === 0 ? sr : sr * 0.45;
+      const fx = x + Math.cos(a) * rad, fy = sy + Math.sin(a) * rad;
+      if (i === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
+    }
+    ctx.closePath();
+    if (opts.starRim) {
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(1.5, sr * 0.34);
+      ctx.strokeStyle = opts.starRim;
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#fde68a";
+    ctx.fill();
+    ctx.restore();
+  }
+  if (opts.label) {
+    ctx.font = `700 ${Math.max(8, r * 0.3)}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.lineWidth = Math.max(2, r * 0.1);
+    ctx.strokeStyle = "rgba(0,0,0,0.65)";
+    const ly = crown - r * (opts.star ? 0.78 : 0.16);
+    ctx.strokeText(opts.label, x, ly);
+    ctx.fillStyle = opts.labelColor ?? "#ffffff";
+    ctx.fillText(opts.label, x, ly);
+    ctx.textAlign = "start";
+  }
 }
