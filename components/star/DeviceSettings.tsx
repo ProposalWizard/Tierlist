@@ -65,6 +65,11 @@ export function FullScreenRow({ support, on, onToggle, last = false }: {
 function HomeScreenTip() {
   return (
     <div className="mt-2 rounded-lg bg-black/30 p-2.5">
+      {/* Safari and the Home Screen app keep separate saves on an iPhone
+          (Harry, 3 Oct 2026: the app opened with all three saves "gone"). */}
+      <p className="mb-2 rounded-md bg-amber-400/15 px-2 py-1.5 text-[12px] font-bold leading-snug text-amber-100" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)" }}>
+        Your saves stay in Safari. Before you add the game, sign in (save 1 follows you) or use Move my saves.
+      </p>
       <ol className="space-y-1.5 text-[12px] font-bold leading-snug text-white">
         <li className="flex items-center gap-2">
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>

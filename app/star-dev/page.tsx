@@ -2192,6 +2192,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     }
   }, [resetTransientState]);
 
+  /**
+   * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
+   * Safari and an iPhone Home Screen app keep separate saves). The career on
+   * screen may be one of the slots just replaced, so nothing of it may be
+   * saved again: its pending upload is dropped, not flushed. Then the chosen
+   * save opens fresh, through the same load as switching saves.
+   */
+  const handleImportedSaves = useCallback((slot: number) => {
+    pendingCloudSave.current = null;
+    if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+    latestCareerRef.current = null;
+    setGlobalSettings(false);
+    setActiveSlot(slot);
+    void loadCareerIntoState(slot);
+  }, [setActiveSlot, loadCareerIntoState]);
+
   // ── The title screen's choices ── each one is an existing handler; the
   // title only decides where to go.
   const handleTitleNewGame = useCallback((slot: number) => {
@@ -2891,6 +2907,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <GlobalSettingsScreen
         onBack={() => setGlobalSettings(false)}
         fullscreen={{ support: immersive.support, on: immersive.active, onToggle: immersive.toggle }}
+        moveSaves={{ scope: scopeRef.current, onImported: handleImportedSaves }}
       />
     );
   }
@@ -3856,6 +3873,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onSwitchSave={handleSwitchSave}
         onStartNewInSlot={handleStartNewInSlot}
         onDeleteSave={handleDeleteSave}
+        moveSaves={{ scope: scopeRef.current, onImported: handleImportedSaves }}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
         fullscreenSupport={immersive.support}
