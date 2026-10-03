@@ -210,7 +210,8 @@ for (const kind of KINDS) {
     // the generator takes each man from a different drawing, so nothing stops
     // three of them landing together. At a set piece a crowd is the picture.
     if (!SET_PIECE.has(kind)) {
-      const men = [sc.player, ...sc.defenders.filter((d) => !parked(d)), ...mateBodiesOf(sc).filter((m) => !parked(m))];
+      // The keeper counts too: tight angles 034 and 035 had two men stood on him.
+      const men = [sc.player, sc.keeper, ...sc.defenders.filter((d) => !parked(d)), ...mateBodiesOf(sc).filter((m) => !parked(m))];
       if (men.some((p) => men.filter((q) => q !== p && hyp(p, q) < 2.0).length >= 2)) { no("three men in a knot"); continue; }
     }
     const pic = pictureOf(sc);
