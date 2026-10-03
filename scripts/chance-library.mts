@@ -43,7 +43,7 @@ type Scenario = import("../lib/star/canvasEngine").Scenario;
 type Vec2 = import("../lib/star/canvasEngine").Vec2;
 const { setLiveScenarioPool, ruleSetFor, mateBodiesOf } = await import("../lib/star/authoredChance");
 const { drawingShape, generatorShape, canGenerate, servedFaults, pictureOf, pictureGap, memoryRule, drawingOwnFaults } = await import("../lib/star/chanceMaker");
-const { serveEntry, samePictureOfKind } = await import("../lib/star/chanceLibrary");
+const { serveEntry, samePictureOfKind, throughBallHasTarget } = await import("../lib/star/chanceLibrary");
 type LibEntry = import("../lib/star/chanceLibrary").LibEntry;
 const { addContext, isContext, withoutContext } = await import("../lib/star/contextShape");
 const { closestFigures, closestMarking, MIN_GAP, MARKING_GAP } = await import("../lib/star/spacing");
@@ -214,6 +214,10 @@ for (const kind of KINDS) {
       const men = [sc.player, sc.keeper, ...sc.defenders.filter((d) => !parked(d)), ...mateBodiesOf(sc).filter((m) => !parked(m))];
       if (men.some((p) => men.filter((q) => q !== p && hyp(p, q) < 2.0).length >= 2)) { no("three men in a knot"); continue; }
     }
+    // A through ball needs a man to play in: the pass target is the most
+    // advanced onside team-mate, 3 m+ ahead of the ball. A picture with
+    // everyone level with or behind the ball is not a through ball.
+    if (!throughBallHasTarget(sc)) { no("a through ball with nobody to play in"); continue; }
     const pic = pictureOf(sc);
     // Served on two other builds, the picture must land the same (the build
     // decides only who each man IS) — so what is looked at is what is served.

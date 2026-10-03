@@ -106,18 +106,25 @@ const KINDS: Record<string, { count: number; draw: (rng: () => number, s: number
       const dist = Math.hypot(ball.x - CX, ball.y);
       const line = dist * 0.62 + j(1.2);
       const shift = (ball.x - CX) * 0.4;
-      const xs = [-11, -3.8, 3.8, 11].map((x) => CX + shift + x + j(1));
-      const defs = xs.map((x, k) => ({ x, y: line + (k === 0 || k === 3 ? 0.6 : 0) + j(0.6) }));
-      // The runner goes through the gap on the ball's side or the far side.
-      const gap = rng() < 0.5 ? (s > 0 ? 2 : 0) : 1;
-      const runner = { x: (xs[gap] + xs[gap + 1]) / 2 + j(0.8), y: Math.min(...defs.map((d) => d.y)) + 0.6 + rng() * 0.9 }; // level, onside
+      // Centre-backs split 10–15 m (the classic builder's 10–18 m), full-backs
+      // 5–6 m outside them: a back four about 21–27 m wide. A through ball
+      // needs a real gap; a 7.6 m one converted 21% against classic's 40%.
+      const cb = 5 + rng() * 2.5, fb = cb + 5.5 + rng() * 1.5;
+      const xs = [-fb, -cb, cb, fb].map((x) => CX + shift + x + j(0.8));
+      // Full-backs a yard or two up from the centre-backs, as a back four steps.
+      const defs = xs.map((x, k) => ({ x, y: line + (k === 0 || k === 3 ? 1.2 + rng() : 0) + j(0.6) }));
+      // The runner goes through the centre-back gap, sometimes the gap on
+      // the ball's side. Level with the line or a stride behind it (classic:
+      // 0.15–2.4 m), onside.
+      const gap = rng() < 0.3 ? (s > 0 ? 2 : 0) : 1;
+      const runner = { x: (xs[gap] + xs[gap + 1]) / 2 + j(0.8), y: Math.min(...defs.map((d) => d.y)) + 0.15 + rng() * 2.2 };
       const strike2 = { x: CX - s * (6 + rng() * 6), y: line + 2.5 + rng() * 2.5 };
       const mid = { x: ball.x - s * (7 + rng() * 4), y: ball.y + 1.5 + rng() * 4 };
       const mates = [runner, strike2, mid];
-      if (rng() < 0.35) defs.splice(s > 0 ? 0 : 3, 1); // far full-back off the picture
-      if (rng() < 0.6) defs.push({ x: ball.x - s * 1.5 + j(1.5), y: ball.y - 4.2 + j(0.8) }); // a man stepping to you
+      if (rng() < 0.5) defs.splice(s > 0 ? 0 : 3, 1); // far full-back off the picture
+      if (rng() < 0.35) defs.push({ x: ball.x - s * 1.5 + j(1.5), y: ball.y - 5.5 + j(0.8) }); // a man stepping to you
       const you = { x: ball.x + (rng() < 0.5 ? -1.3 : 1.3), y: ball.y + 0.2 };
-      return { ball, you, gk: { x: CX + (ball.x - CX) * 0.2, y: Math.max(2.5, line * 0.3) }, defs, mates };
+      return { ball, you, gk: { x: CX + (ball.x - CX) * 0.1, y: 2 + rng() * 2 }, defs, mates };
     },
   },
 

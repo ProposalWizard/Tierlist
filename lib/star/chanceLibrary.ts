@@ -134,6 +134,7 @@ export interface ServeOptions {
  */
 export function serveEntry(sc: Scenario, e: LibEntry, o: ServeOptions = {}): { context: ContextReport | null } {
   applyAuthoredShape(sc, shapeOfEntry(e));
+  throughBallTarget(sc);
   setupKind(sc, seeded(e.seed), { appliedAuthored: true, appliedPlan: false, keeperStrength: o.keeperStrength ?? 62 });
   separateBodies(sc);
   finishServedFrame(sc);
@@ -141,6 +142,54 @@ export function serveEntry(sc: Scenario, e: LibEntry, o: ServeOptions = {}): { c
     ? null
     : addContext(sc, { ...o.context, laws: o.context.laws ?? libraryLaws(sc.kind) });
   return { context };
+}
+
+/**
+ * A through ball is played to the man going in behind: the most advanced
+ * team-mate who is onside and ahead of the ball.
+ *
+ * applyAuthoredShape gives the pass-target role to whichever drawn team-mate
+ * stands nearest the build's own runner, so on a library through ball it
+ * often went to the midfielder behind you (21% of served pictures had the
+ * target level with or behind the ball, measured). The aim marker then
+ * pointed backwards, and the bot's through balls scored 21% against
+ * Classic's 40%. Here the roles swap so the runner is the right man; nobody
+ * moves. Classic never comes here.
+ */
+function throughBallTarget(sc: Scenario): void {
+  if (sc.kind !== "through_ball" || !sc.runner) return;
+  const runner = sc.runner;
+  const best = throughBallCandidate(sc);
+  if (!best || best === runner.pos) return;
+  const x = runner.pos.x, y = runner.pos.y;
+  runner.pos.x = best.x; runner.pos.y = best.y;
+  best.x = x; best.y = y;
+  runner.to.x = runner.pos.x; runner.to.y = runner.pos.y;
+  for (const r of sc.secondaryRunners) { r.to.x = r.pos.x; r.to.y = r.pos.y; }
+  sc.passTarget = { x: runner.to.x, y: runner.to.y };
+}
+
+/** The man a through ball is for: the most advanced onside team-mate at
+ *  least 3 m ahead of the ball (the poacher counts). null when there is
+ *  nobody to play in, and then the picture is not a through ball. */
+function throughBallCandidate(sc: Scenario): Vec2 | null {
+  const line = [sc.keeper.y, ...sc.defenders.map((d) => d.y)].sort((a, b) => a - b)[1] ?? 0;
+  const bodies: Vec2[] = [
+    ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map((r) => r.pos), ...sc.teammates, sc.follower,
+  ];
+  let best: Vec2 | null = null;
+  for (const b of bodies) {
+    if (!b || b.y < line - 0.05 || b.y > sc.ball.y - 3) continue; // offside, or not ahead of the ball
+    if (!best || b.y < best.y) best = b;
+  }
+  return best;
+}
+
+/** For the library builder: a served through ball whose pass target really
+ *  is a man going in behind. */
+export function throughBallHasTarget(sc: Scenario): boolean {
+  if (sc.kind !== "through_ball") return true;
+  return !!sc.runner && throughBallCandidate(sc) === sc.runner.pos;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

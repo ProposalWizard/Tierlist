@@ -77,7 +77,7 @@ console.log("\n4. THE REST OF BOTH TEAMS");
 for (const k of KINDS) {
   const entries = libraryFor(k);
   const laws = ruleSetFor(k);
-  let differ = 0, exact = 0, broke = 0, tight = 0, mateShot = 0;
+  let differ = 0, exact = 0, broke = 0, tight = 0, mateShot = 0, badTarget = 0;
   let ctxNear = 0, ctxDeep = 0, ctxOffside = 0, ctxShot = 0, tooMany = 0, ctxMen = 0;
   const firstBreak: string[] = [];
   entries.forEach((e, i) => {
@@ -97,6 +97,14 @@ for (const k of KINDS) {
     const ball = a.ball, vx = CX - ball.x, vy = -ball.y, L = Math.hypot(vx, vy) || 1;
     const inLine = (m: Vec2) => m.y < ball.y && Math.abs(((m.x - ball.x) * vy - (m.y - ball.y) * vx) / L) < 2.2;
     if (SHOOT.has(k) && mateBodiesOf(chance).some((m) => !parked(m) && inLine(m))) mateShot++;
+    // A through ball is played to the man going in behind: the pass target
+    // is onside, 3 m+ ahead of the ball, and no onside team-mate is further on.
+    if (k === "through_ball") {
+      const r = chance.runner?.pos;
+      const line = [chance.keeper.y, ...chance.defenders.map((d) => d.y)].sort((p, q) => p - q)[1];
+      const onsideAhead = mateBodiesOf(chance).filter((m) => !parked(m) && m.y >= line - 0.05 && m.y <= ball.y - 3);
+      if (!r || r.y > ball.y - 3 || r.y < line - 0.05 || onsideAhead.some((m) => m.y < r.y - 1e-6)) badTarget++;
+    }
 
     const cd = a.defenders.filter((d) => isContext(d));
     const cm = mateBodiesOf(a).filter((m) => isContext(m));
@@ -121,13 +129,13 @@ for (const k of KINDS) {
   });
   const n = entries.length;
   // The engine's own spacing pass reads who is marking whom, which the build
-  // decides, so now and then one man ends up a step from his sheet spot.
-  // One through ball in 110 (through_ball-074) has a team-mate 1.6 m further
-  // back on some builds: the served frame's last word (goalFrame) brings a man
-  // the build cast as a runner inside the picture. At most 1 in 100.
+  // decides, so now and then one man could end up a step from his sheet spot
+  // (an earlier through ball had a team-mate 1.6 m further back on some
+  // builds). At most 1 in 100.
   ok(differ <= Math.floor(n / 100) && exact >= n * 0.95, `${k}: every picture served the same on two builds (${exact}/${n} exactly; ${n - exact - differ} with one man under 1.2 m off; ${differ} more)`);
   ok(broke === 0, `${k}: no picture breaks its kind's laws (${broke}/${n})${firstBreak.length ? " — " + firstBreak.join("; ") : ""}`);
   ok(tight === 0, `${k}: nobody on top of anybody (${tight}/${n})`);
+  if (k === "through_ball") ok(badTarget === 0, `${k}: the pass goes to the man in behind — onside, 3 m+ ahead of the ball, nobody onside further on (${badTarget}/${n} wrong)`);
   if (SHOOT.has(k)) ok(mateShot === 0, `${k}: no team-mate in your shot (${mateShot}/${n})`);
   ok(ctxNear + ctxDeep + ctxOffside + ctxShot + tooMany === 0,
     `${k}: ${ctxMen} context men — near the ball ${ctxNear}, deeper than the drawn defence ${ctxDeep}, offside ${ctxOffside}, in your shot ${ctxShot}, side over ten ${tooMany}`);
