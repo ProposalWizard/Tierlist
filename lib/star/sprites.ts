@@ -238,6 +238,12 @@ export interface DrawSpriteOpts {
    *  (the match draws its own). */
   shadow?: boolean;
   alpha?: number;
+  /** 0..1: how far to draw the frame's MIDDLE over (x, y − ¼ height) instead
+   *  of his boots (1 = fully), blended so the dive starts from his feet. For a
+   *  keeper's dive, whose boots fly off to one side of the frame. Anchored on
+   *  the boots, the stretched-out body landed a body-length past the ball he
+   *  was saving (Harry, 3 Oct 2026: "the goalie isn't in his goal"). */
+  centre?: number;
 }
 
 /**
@@ -260,7 +266,10 @@ export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   if (o.alpha != null) ctx.globalAlpha = prevA * o.alpha;
   const prevS = ctx.imageSmoothingEnabled;
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(atlas, cx, cy, cw, ch, x - ax * s, y - ay * s, cw * s, ch * s);
+  const k = Math.max(0, Math.min(1, o.centre ?? 0));
+  const dx = (x - ax * s) * (1 - k) + (x - (cw * s) / 2) * k;
+  const dy = (y - ay * s) * (1 - k) + (y - (o.height ?? 22) * 0.25 - (ch * s) / 2) * k;
+  ctx.drawImage(atlas, cx, cy, cw, ch, dx, dy, cw * s, ch * s);
   ctx.imageSmoothingEnabled = prevS;
   ctx.globalAlpha = prevA;
   return true;

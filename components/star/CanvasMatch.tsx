@@ -159,6 +159,7 @@ import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
 import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
@@ -1703,6 +1704,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  ball no longer has to drag back across it before any power starts (the
    *  ball can be grabbed from up to 28% of the frame away). */
   const thumbOriginRef = useRef<{ x: number; y: number } | null>(null);
+  /** The same landing spot on the glass (client px). With the camera tipped
+   *  back the drag is copied across on the SCREEN, so a given finger movement
+   *  is the same pull (and the same direction) wherever on the zone it starts. */
+  const thumbOriginClientRef = useRef<{ x: number; y: number } | null>(null);
   /** When the drag passed the dead zone (performance.now()). From then on an
    *  ordered run is under way, the nearest opponent closes you down, and the
    *  chance can no longer be taken back. */
@@ -2015,9 +2020,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  and the canvas's tilt geometry, rebuilt whenever the canvas is sized.
    *  Classic is always flat. */
   const tiltDegRef = useRef(0);
+  /** The angle chosen in Settings (0 in Classic). */
+  const tiltSettingRef = useRef(0);
+  /** The angle for this chance. Corners and byline crosses stay flat (Harry,
+   *  3 Oct 2026: "I don't think the 20 degrees should apply to the
+   *  crosses/byline and corners") — they are watched side-on, then cut. */
+  const tiltForChance = (sc: Scenario | null | undefined): number =>
+    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0 : tiltSettingRef.current;
+  /** Tip the canvas to `deg` (0 = flat) for its current size. */
+  const applyTilt = (deg: number) => {
+    tiltDegRef.current = deg;
+    const c = canvasRef.current;
+    if (!c) return;
+    const w = parseFloat(c.style.width) || c.offsetWidth, h = parseFloat(c.style.height) || c.offsetHeight;
+    tiltGeomRef.current = tiltFor(deg, w, h);
+    c.style.transform = tiltCss(tiltGeomRef.current);
+  };
   const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
+  /** Where the 3D keeper landed (canvas px), held while he lies there. */
+  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: "diveL" | "diveR" } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -2175,9 +2198,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       // The camera angle: the finished picture tipped back (cameraTilt.ts).
-      tiltDegRef.current = newViewRef.current ? cameraTilt() : 0;
-      tiltGeomRef.current = tiltFor(tiltDegRef.current, rect.width, rect.height);
-      canvas.style.transform = tiltCss(tiltGeomRef.current);
+      tiltSettingRef.current = newViewRef.current ? cameraTilt() : 0;
+      applyTilt(tiltForChance(scenarioRef.current));
       // New view: the camera holds the canvas's own shape, so a new shape
       // means a new frame — never while a ball is in flight.
       if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
@@ -2390,6 +2412,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       baseViewportRef.current = { ...sc.viewport };
       return;
     }
+    applyTilt(tiltForChance(sc));
     const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
@@ -2440,6 +2463,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const b = canvasBox();
     if (!(b.width > 0 && b.height > 0)) return { sx: 0, sy: 0 };
     return screenToCanvas(tiltGeomRef.current, clientX - b.left, clientY - b.top, b.width, b.height);
+  };
+
+  /** A pitch point -> where it is on the glass (client px). The inverse of
+   *  pitchFromPointer, turn and tilt and all. */
+  const pitchToClient = (p: { x: number; y: number }) => {
+    const vp = viewportRef.current, b = canvasBox(), f = facingRef.current;
+    const fx = (p.x - vp.x1) / (vp.x2 - vp.x1), fy = (p.y - vp.y1) / (vp.y2 - vp.y1);
+    const sx = f === "right" ? 1 - fy : f === "left" ? fy : fx;
+    const sy = f === "right" ? fx : f === "left" ? 1 - fx : fy;
+    const g = canvasToScreen(tiltGeomRef.current, sx, sy, b.width, b.height);
+    return { x: b.left + g.X, y: b.top + g.Y };
   };
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
@@ -3579,6 +3613,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // (or he is flinging himself well over) he dives, to his own left or
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
+      let keeperDrawAt: { x: number; y: number } | null = null;
       if (nv) {
         // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
         // his animations need slowing." He has four facings; turning to the
@@ -3589,21 +3624,45 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
         // Only a real save is a dive. His patrol lean used to trigger the dive
         // clip too, so he flopped about while shuffling across his line.
-        if (lunge > 0.04 && sign !== 0) {
+        // A ball going well wide of the goal is not a save to dive for: the
+        // engine still sends him after it (it judges every ball that crosses
+        // his line), but he shuffles across rather than throwing himself at a
+        // ball rolling out (playtest film, 3 Oct 2026). Drawing only.
+        const bl = ballRef.current;
+        const wideOfGoal = !!bl && kk.saves === 0 && Math.abs(bl.pos.x - (POST_L + POST_R) / 2) > (POST_R - POST_L) / 2 + 2.5;
+        if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
+          const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
+          keeperDiveStartRef.current = null;
+          keeperSprite = { char: "keeper", clip: "jog", t: kk.idleT, facing: Math.atan2(b.py - a.py, b.px - a.px), kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+        } else if (lunge > 0.04 && sign !== 0) {
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
           // The dive plays no faster than 0.75× the clip's own speed, however
           // quickly the save itself happens.
           if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = now;
           const t = Math.min(lunge * 0.6, (now - keeperDiveStartRef.current) * 0.75);
-          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          // Once he has landed he stays where he landed: the engine still
+          // walks him on toward the save point, and a man lying flat slid
+          // along the grass after the ball (playtest film, 3 Oct 2026).
+          const clip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
+          if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
+          keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
+        } else if (keeperLandRef.current?.sc === sc) {
+          // Down is down: once he has landed in this chance he stays lying
+          // where he landed until the next one (a goal briefly stood him back
+          // up mid-celebration — playtest film, 3 Oct 2026).
+          const land = keeperLandRef.current;
+          keeperDrawAt = land;
+          keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
         } else {
           keeperDiveStartRef.current = null;
+          keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
           keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
         }
       }
       drawMatchFigure(ctx, nv ? "new" : "classic",
-        cx + KR * weight * (1 - lunge), py, kr, {
+        keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), keeperDrawAt ? keeperDrawAt.y : py, kr, {
         sprite: keeperSprite,
         look: {
           shirt: gkKit.shirt,
@@ -3653,7 +3712,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // occludes the ball instead of the ball painting over him. Reported
     // directly: "the ball renders in front of goalie even when its behind
     // it in the goal."
-    const keeperInView = goalInView(sc.kind) && sceneRef.current?.keeper !== false;
+    // A chance with no goal in it (build-up, midfield pass) has no keeper —
+    // but the new view's camera can still show the goal mouth, and an empty
+    // net read as "the goalie isn't in his goal" (Harry, 3 Oct 2026). He
+    // stands on his line there, drawn only: nothing in the engine reads it.
+    const goalOnCamera = nv && (sc.facing ?? "up") === "up" && viewportRef.current.y1 < 1.5;
+    const keeperInView = (goalInView(sc.kind) || goalOnCamera) && sceneRef.current?.keeper !== false;
     const liveBall = ballRef.current;
     const onTheSpot = phaseRef.current === "aim" || phaseRef.current === "runup";
     const ballY = liveBall ? liveBall.pos.y : (onTheSpot ? sc.ball.y : null);
@@ -4514,6 +4578,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // fix above addresses; this is the other half — making the real
       // continuation actually visible, not just correct underneath.
       showAction("TOUCH ON");
+    } else if (res === "out" || res === "wide" || res === "over" || res === "short") {
+      // A ball that went out, wide, over or died used to end in silence: the
+      // screen sat still for a second and a half and read as "the ball stops"
+      // (Harry, 3 Oct 2026; filmed in build-ups and midfield passes). It says
+      // what happened, like every other ending.
+      showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
       nudge(0.28, 0.25);
       playPost();
@@ -6067,6 +6137,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // v0.15 item 21: measured from where the thumb landed, so the pull starts
     // at nothing wherever on the ball's grab zone it lands.
     thumbOriginRef.current = p;
+    thumbOriginClientRef.current = { x: e.clientX, y: e.clientY };
     dragRef.current = { x: b.x, y: b.y };
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
@@ -6097,7 +6168,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!draggingRef.current) return;
     const pp = pitchFromPointer(e.clientX, e.clientY);
     const o = thumbOriginRef.current, bb = scenarioRef.current.ball;
-    dragRef.current = o ? { x: bb.x + (pp.x - o.x), y: bb.y + (pp.y - o.y) } : pp;
+    const oc = thumbOriginClientRef.current;
+    if (tiltGeomRef.current && oc) {
+      // Tilted: the finger's movement on the glass, laid off from the ball's
+      // own spot on the glass (playtest: the pitch-space copy came out 5%
+      // weaker than flat, because the thumb lands where the picture is bigger).
+      const bc = pitchToClient(bb);
+      dragRef.current = pitchFromPointer(bc.x + (e.clientX - oc.x), bc.y + (e.clientY - oc.y));
+    } else {
+      dragRef.current = o ? { x: bb.x + (pp.x - o.x), y: bb.y + (pp.y - o.y) } : pp;
+    }
     // v0.15 item 22: past the dead zone, the aim is committed.
     if (aimCommitRef.current === null && phaseRef.current === "aim"
         && acceptsCaptainOrders(scenarioRef.current.kind) && screenPull(dragRef.current, bb) >= MIN_PULL) {

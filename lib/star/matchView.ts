@@ -224,6 +224,25 @@ function passersCamera(pts: Vec2[], facing: Facing, hw: number): Viewport {
 }
 
 /**
+ * The build-up camera. Its top edge IS the engine's goal-side out line and it
+ * is never narrower than the engine's frame, so the play area and the screen
+ * are the same rectangle: a long ball leaves the screen at the moment it goes
+ * out. Fitting the passers alone (3 Oct 2026, first version) let a ball go
+ * out in the middle of the visible grass and sit there — "the ball stops" —
+ * or fly off the top of a tighter camera while still in play (playtest film).
+ * The passers are always inside the engine's frame, so they are on screen.
+ */
+function passersCameraFor(sc: Scenario, engine: Viewport, facing: Facing, hw: number): Viewport {
+  if (facing !== "up") return passersCamera(passersOf(sc), facing, hw);
+  const h = Math.max(NEW_VIEW_MIN_HW, hw);
+  const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(PASSERS_MIN_M, engine.x2 - engine.x1 + 0.5));
+  const cx = (engine.x1 + engine.x2) / 2;
+  let x1 = cx - across / 2;
+  x1 = Math.max(Math.min(engine.x1, -EDGE_M), Math.min(Math.max(engine.x2, PITCH_W + EDGE_M) - across, x1));
+  return { x1, x2: x1 + across, y1: engine.y1, y2: engine.y1 + across * h };
+}
+
+/**
  * The new view's camera — and, applied to the scenario, its play area.
  *
  * `engine` is the frame the engine built the chance in (today's camera),
@@ -294,7 +313,7 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
 export function cameraFor(sc: Scenario, engineFrame: Viewport, hw: number): Viewport {
   const facing = sc.facing ?? "up";
   const across = acrossFor(sc.kind, engineFrame, facing);
-  if (across === "passers") return passersCamera(passersOf(sc), facing, hw);
+  if (across === "passers") return passersCameraFor(sc, engineFrame, facing, hw);
   return newViewCamera(engineFrame, facing, hw, sc.ball, across);
 }
 
@@ -342,11 +361,17 @@ export function newViewCanvasHeight(widthPx: number, roomPx: number): number {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** What must stay on the screen once the picture is tipped back: the ball,
- *  you, the man the pass is for, and the goal and keeper when they are part
- *  of the chance. */
+ *  you, every player in the chance, and the goal and keeper when they are
+ *  part of it. (Everyone, not just the ball and the pass target, since the
+ *  playtest at 30° cut an arm off a defender in the bottom corner. Measured
+ *  cost: at most 6% more zoom-out at 20°, 16% at 30°.) */
 export function keyPointsOf(sc: Scenario): Vec2[] {
-  const pts: Vec2[] = [sc.ball, sc.player];
+  // A volley's or header's team-mate is the crosser out by the touchline,
+  // which the engine never frames either (those two kinds are switched off).
+  const decorative = sc.kind === "volley" || sc.kind === "header";
+  const pts: Vec2[] = [sc.ball, sc.player, ...sc.defenders, ...(decorative ? [] : sc.teammates)];
   if (sc.runner) pts.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
   if (goalInView(sc.kind)) pts.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 });
   return pts;
 }

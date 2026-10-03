@@ -36,6 +36,8 @@ export interface MatchSpriteHint {
   /** Screen angle he faces (0 = right, PI/2 = down the screen). */
   facing: number;
   kit: SpriteKit;
+  /** 0..1: centre the frame on him rather than standing it on his boots (a dive). */
+  centre?: number;
 }
 
 export interface MatchFigureSpec {

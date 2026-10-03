@@ -92,6 +92,9 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
         const engineSide = f === "up" ? engine.y1 : f === "right" ? engine.x1 : -engine.x2;
         check(goalSide >= engineSide - EPS, `${kind}: play area reaches past the engine frame toward an empty goal`);
         check(f !== "up" || sc.viewport.y1 > 0.5, `${kind}: play area reaches the goal line`);
+        // The screen IS the play area: no out line in the middle of the grass
+        // (playtest, 3 Oct 2026: the ball "stops" at an invisible line).
+        if (f === "up") check(contains(a, sc.viewport) && contains(sc.viewport, a), `${kind}: the play area is not the screen`);
       }
     }
   }

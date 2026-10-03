@@ -202,6 +202,15 @@ only where one plain line would not be clear. A simple fact stays a sentence.
 - A conclusion built up to. Lead with it.
 - Emoji as section markers — coloured dots, not decorations.
 
+## V1 (the all-versions page) reads newest first
+
+Harry, 3 Oct 2026: "redo it so from now on the newest updates are at the TOP
+and go backwards." V1 (https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR) is
+newest first everywhere: the At-a-glance index, the days, the versions inside
+a day, Still open, the decision groups and Original pages. A new version goes
+at the TOP of its day, and a new day above the last one. The script that last
+rebuilt it is `references/generators/v1-newest-first.py`.
+
 ## Patch notes carry their own history
 
 Asked for directly: *"specifically for patch notes, if it could toggle to see
