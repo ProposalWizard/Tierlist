@@ -19,7 +19,7 @@
 import { useMemo, useState } from "react";
 import EditableFrame from "./EditableFrame";
 import type { Scenario } from "@/lib/star/canvasEngine";
-import { cardForLive, liveMatchScenario } from "@/lib/star/liveEdit";
+import { cardForLive, liveMatchScenario, liveSaveRefusal } from "@/lib/star/liveEdit";
 import {
   applyOverride, addFigureTo, removeFigureFrom, hasEdits, type PosOverride,
 } from "@/lib/star/scenarioEdit";
@@ -48,7 +48,11 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
   const asSaved = () => liveMatchScenario(scenario, minute, drag, card);
   const selected = frame.items.find((it) => it.id === selectedId);
 
+  // A New-library chance never goes into the gallery (libraryMark.ts).
+  const refusal = liveSaveRefusal(scenario);
+
   const save = async (): Promise<boolean> => {
+    if (refusal) { setFlash({ ok: false, text: refusal }); return false; }
     setBusy("saving");
     const res = await saveScenarioShared(asSaved());
     setBusy(null);
@@ -59,6 +63,7 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
   };
 
   const commit = async () => {
+    if (refusal) { setFlash({ ok: false, text: refusal }); return; }
     setBusy("committing");
     try {
       const r = await fetch("/api/star/scenarios/commit", {

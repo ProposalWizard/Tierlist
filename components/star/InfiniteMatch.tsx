@@ -38,7 +38,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import EnginePlay from "./EnginePlay";
 import { buildTestCareer } from "@/lib/star/engineProfile";
 import LiveChanceEditor from "./LiveChanceEditor";
-import { liveMatchScenario } from "@/lib/star/liveEdit";
+import { liveMatchScenario, liveSaveRefusal } from "@/lib/star/liveEdit";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
@@ -84,6 +84,9 @@ export default function InfiniteMatch({ settings, onBack }: {
   /** Save the chance on screen as it stands — no editing needed. */
   const saveCurrent = async () => {
     if (!current) return;
+    // A New-library chance never goes into the gallery (libraryMark.ts).
+    const no = liveSaveRefusal(current.scenario);
+    if (no) { setFlash({ ok: false, text: no }); return; }
     setBusy("saving");
     const res = await saveScenarioShared(liveMatchScenario(current.scenario, current.minute));
     setBusy(null);
@@ -94,6 +97,8 @@ export default function InfiniteMatch({ settings, onBack }: {
   /** Commit it straight into the game's code. */
   const commitCurrent = async () => {
     if (!current) return;
+    const no = liveSaveRefusal(current.scenario);
+    if (no) { setFlash({ ok: false, text: no }); return; }
     setBusy("committing");
     try {
       const r = await fetch("/api/star/scenarios/commit", {

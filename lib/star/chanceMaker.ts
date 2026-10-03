@@ -80,6 +80,7 @@ import { CX, PITCH_W } from "./pitch";
 import { libraryFor, serveEntry, shapeOfEntry, type ChanceDeck } from "./chanceLibrary";
 import { addContext, withoutContext } from "./contextShape";
 import type { ChanceSet } from "./chanceSet";
+import { markNewChance } from "./libraryMark";
 import { mulberry32 } from "./season";
 import { loadPlaySettings } from "./playArea";
 
@@ -754,6 +755,8 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
         const sc = first && first.kind === kind ? first : build(kind);
         const ctx = o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle } : {};
         serveEntry(sc, pick, { keeperStrength: ks, context: ctx });
+        // Never into the gallery (libraryMark.ts, Harry 3 Oct 2026).
+        markNewChance(sc, { from: "library", id: pick.id });
         o.memory?.remember(pictureOf(withoutContext(sc)));
         return {
           sc, shape: shapeOfEntry(pick), how: "library", appliedPlan: false, appliedAuthored: true, sourceId: pick.id,
@@ -766,6 +769,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
    *  with the rest of both teams around it. Classic: untouched. */
   const finishNew = (sc: Scenario) => {
     if (o.set !== "new") return;
+    markNewChance(sc, { from: "context" });
     addContext(sc, o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle, laws: ruleSetFor(sc.kind) } : { laws: ruleSetFor(sc.kind) });
   };
 
