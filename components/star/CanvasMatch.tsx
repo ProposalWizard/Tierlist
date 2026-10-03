@@ -3610,7 +3610,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // quickly the save itself happens.
           if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = now;
           const t = Math.min(lunge * 0.6, (now - keeperDiveStartRef.current) * 0.75);
-          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
         } else {
           keeperDiveStartRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
@@ -3668,7 +3668,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // occludes the ball instead of the ball painting over him. Reported
     // directly: "the ball renders in front of goalie even when its behind
     // it in the goal."
-    const keeperInView = goalInView(sc.kind) && sceneRef.current?.keeper !== false;
+    // A chance with no goal in it (build-up, midfield pass) has no keeper —
+    // but the new view's camera can still show the goal mouth, and an empty
+    // net read as "the goalie isn't in his goal" (Harry, 3 Oct 2026). He
+    // stands on his line there, drawn only: nothing in the engine reads it.
+    const goalOnCamera = nv && (sc.facing ?? "up") === "up" && viewportRef.current.y1 < 1.5;
+    const keeperInView = (goalInView(sc.kind) || goalOnCamera) && sceneRef.current?.keeper !== false;
     const liveBall = ballRef.current;
     const onTheSpot = phaseRef.current === "aim" || phaseRef.current === "runup";
     const ballY = liveBall ? liveBall.pos.y : (onTheSpot ? sc.ball.y : null);
