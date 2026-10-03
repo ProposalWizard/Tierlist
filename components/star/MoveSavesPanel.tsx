@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   packSaves, unpackSaves, applySaves, codeSizeLabel, BIG_CODE_CHARS, MAX_CODE_CHARS,
   type CheckedPack,
@@ -143,14 +143,18 @@ export default function MoveSavesPanel({ scope, onImported, glow = "#10b981" }: 
     }
   };
 
-  const here = listSaveSlots(scope);
-  const replacing = checked ? checked.slots.filter(s => !here.find(h => h.slot === s.slot)?.empty) : [];
+  // What this device holds now — read once per checked code, not per keystroke
+  // (each read opens all three saves).
+  const here = useMemo(() => (checked ? listSaveSlots(scope) : []), [checked, scope]);
+  const replacing = checked ? checked.slots.filter(s => here.some(h => h.slot === s.slot && !h.empty)) : [];
 
   const putSaves = async () => {
     if (!checked) return;
     if (replacing.length) {
-      const which = replacing.map(s => `Save ${s.slot}`).join(" and ");
-      const ok = await askConfirm(`${which} on this device will be replaced by the one${replacing.length > 1 ? "s" : ""} in the code. Replace?`, "Replace");
+      const nums = replacing.map(s => s.slot);
+      const which = nums.length === 1 ? `Save ${nums[0]}`
+        : `Saves ${nums.slice(0, -1).join(", ")} and ${nums[nums.length - 1]}`;
+      const ok = await askConfirm(`${which} on this device will be replaced by the one${nums.length > 1 ? "s" : ""} in the code. Replace?`, "Replace");
       if (!ok) return;
     }
     const out = applySaves(scope, checked);
@@ -264,7 +268,7 @@ export default function MoveSavesPanel({ scope, onImported, glow = "#10b981" }: 
                       <span className="font-black">Save {s.slot}</span> · {slotLine(s.summary)}
                       {willReplace && (
                         <div className="text-[10.5px] font-black text-amber-200">
-                          Replaces: {slotLine(here.find(h => h.slot === s.slot)!)}
+                          Replaces: {slotLine(here.find(h => h.slot === s.slot) ?? { slot: s.slot, empty: true })}
                         </div>
                       )}
                     </li>
