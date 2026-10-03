@@ -6009,7 +6009,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the
     // ball"; 10% put the thumb on top of the ball — Harry, 3 Oct 2026).
-    if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "y")) {
+    // New view: the same share of the screen's HEIGHT whichever way the
+    // pitch faces (side-on it used to be a share of the width, about 64 px
+    // against 100 px top-down — playtest, 3 Oct 2026). Classic is unchanged.
+    if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "height")) {
       // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
       return;
