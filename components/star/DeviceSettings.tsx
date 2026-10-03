@@ -7,6 +7,7 @@ import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
+import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import {
@@ -199,10 +200,15 @@ function NewViewLook() {
   const players = useMatchPlayersLook();
   const ball = useMatchBallLook();
   const you = useYouInOpenPlay();
+  const tilt = useCameraTilt();
   const row = "mt-2 flex items-center justify-between gap-2";
   return (
     <div className="mt-2 rounded-lg bg-white/[0.04] px-2.5 py-2">
       <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Look · new match view</div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Camera angle</span>
+        <SegTabs className="w-[130px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
+      </div>
       <div className={row}>
         <span className="text-[13px] font-bold text-white">Players in the match</span>
         <SegTabs className="w-[130px] shrink-0" value={players} onChange={setMatchPlayersLook} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
@@ -216,7 +222,7 @@ function NewViewLook() {
         <SegTabs className="w-[130px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
       </div>
       <SetNote dim className="mt-1.5 text-[10px]">
-        New match view only. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
+        New match view only. Camera angle: the pitch tipped back (20° default); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
       </SetNote>
     </div>
   );

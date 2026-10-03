@@ -24,7 +24,8 @@
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
-import { PITCH_W, NET_DEPTH } from "./pitch";
+import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
+import { tiltFor, visibleOnScreen } from "./cameraTilt";
 
 export type MatchView = "new" | "classic";
 
@@ -281,10 +282,10 @@ export function engineFrameOf(sc: Scenario): Viewport {
  * `keepPlayArea`: a goal replay keeps the play area it was recorded with, so
  * it replays exactly.
  */
-export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false): Viewport {
+export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, tiltDeg = 0): Viewport {
   const f = sc as Framed;
   if (!f.engineFrame) f.engineFrame = { ...sc.viewport };
-  const cam = cameraFor(sc, f.engineFrame, hw);
+  const cam = fitCameraToTilt(cameraFor(sc, f.engineFrame, hw), sc.facing ?? "up", hw, tiltDeg, keyPointsOf(sc));
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
@@ -322,9 +323,10 @@ export function playAreaFor(sc: Scenario, cam: Viewport, engineFrame: Viewport):
 }
 
 /** The up-the-pitch camera a cross cuts to once it reaches the box. */
-export function crossCutCamera(engineView: Viewport, hw: number, ball: Vec2): Viewport {
+export function crossCutCamera(engineView: Viewport, hw: number, ball: Vec2, tiltDeg = 0): Viewport {
   const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(NEW_VIEW_CROSS_CUT_WIDTH_M, engineView.x2 - engineView.x1 + 0.5));
-  return newViewCamera(engineView, "up", hw, ball, across);
+  const cam = newViewCamera(engineView, "up", hw, ball, across);
+  return fitCameraToTilt(cam, "up", hw, tiltDeg, [ball, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }]);
 }
 
 /** How tall the new view's canvas is on a screen: the room left under what
@@ -333,4 +335,53 @@ export function newViewCanvasHeight(widthPx: number, roomPx: number): number {
   const lo = widthPx * NEW_VIEW_MIN_HW, hi = widthPx * NEW_VIEW_MAX_HW;
   if (!(roomPx > 0)) return Math.round(hi);
   return Math.round(Math.max(lo, Math.min(hi, roomPx)));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The camera angle (lib/star/cameraTilt.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** What must stay on the screen once the picture is tipped back: the ball,
+ *  you, the man the pass is for, and the goal and keeper when they are part
+ *  of the chance. */
+export function keyPointsOf(sc: Scenario): Vec2[] {
+  const pts: Vec2[] = [sc.ball, sc.player];
+  if (sc.runner) pts.push(sc.runner.pos);
+  if (goalInView(sc.kind)) pts.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 });
+  return pts;
+}
+
+/** The largest the camera may grow to keep them in view (×). */
+const TILT_FIT_MAX = 1.45;
+/** Room kept from the screen's edge, as a share of its width. */
+const TILT_FIT_MARGIN = 0.03;
+
+function fracOf(v: Viewport, facing: Facing, p: Vec2): { sx: number; sy: number } {
+  const fx = (p.x - v.x1) / (v.x2 - v.x1), fy = (p.y - v.y1) / (v.y2 - v.y1);
+  if (facing === "right") return { sx: 1 - fy, sy: fx };
+  if (facing === "left") return { sx: fy, sy: 1 - fx };
+  return { sx: fx, sy: fy };
+}
+
+/**
+ * Tipping the picture back crops its near corners. When something that must
+ * be seen would fall off, the camera pulls back a step at a time about the
+ * top-centre of the screen (the far end, where the goal hangs) until it is
+ * in view. Flat, or nothing at risk: the camera comes back unchanged.
+ */
+export function fitCameraToTilt(cam: Viewport, facing: Facing, hw: number, tiltDeg: number, pts: Vec2[]): Viewport {
+  const t = tiltFor(tiltDeg, 1, Math.max(NEW_VIEW_MIN_HW, hw));
+  if (!t) return cam;
+  // The pitch point at the top-centre of the screen.
+  const ax = facing === "right" ? cam.x1 : facing === "left" ? cam.x2 : (cam.x1 + cam.x2) / 2;
+  const ay = facing === "up" ? cam.y1 : (cam.y1 + cam.y2) / 2;
+  const grow = (k: number): Viewport => ({
+    x1: ax + (cam.x1 - ax) * k, x2: ax + (cam.x2 - ax) * k,
+    y1: ay + (cam.y1 - ay) * k, y2: ay + (cam.y2 - ay) * k,
+  });
+  for (let k = 1; k <= TILT_FIT_MAX + 1e-9; k += 0.025) {
+    const v = grow(k);
+    if (pts.every((p) => { const c = fracOf(v, facing, p); return visibleOnScreen(t, c.sx, c.sy, TILT_FIT_MARGIN); })) return v;
+  }
+  return grow(TILT_FIT_MAX);
 }
