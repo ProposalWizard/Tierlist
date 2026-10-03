@@ -396,6 +396,12 @@ Settings "Look" group, default New, the old option exactly the old code.
 Bug fixes and economy changes just change (no toggle). Flag old options that
 have settled in the patch notes for deletion; never delete one unasked.
 
+**No test build link on patch notes (Harry, 3 Oct 2026, latest): mostly stills, clips only for gameplay.**
+*"the test build stuff doesn't work imo so stop doing that for patch notes, lets just stick to mostly stills except gameplay stuff."*
+Patch-notes pages no longer link or point to the Vercel test build, and never ask anyone to try things there.
+Each change gets a still; gameplay (and animation) changes also get a short "after" clip.
+This overrides the test-build parts of the two rules below.
+
 **Stills for looks, videos only for gameplay and animation (Harry, 3 Oct 2026).
 This refines the rule below.** *"the statics are fine, only gameplay and
 animations need videos and u can start with a still and then push and do
