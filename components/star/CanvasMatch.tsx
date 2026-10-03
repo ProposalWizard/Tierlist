@@ -159,6 +159,7 @@ import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
 import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
@@ -2010,6 +2011,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // New view, 3D figures (lib/star/sprites.ts): each man's smoothed speed,
   // heading and distance run, so the baked clip matches what he is doing and
   // his feet keep pace with the grass. Pictures only — nothing reads it back.
+  /** The camera angle (lib/star/cameraTilt.ts): degrees, read once at mount,
+   *  and the canvas's tilt geometry, rebuilt whenever the canvas is sized.
+   *  Classic is always flat. */
+  const tiltDegRef = useRef(0);
+  const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
@@ -2168,6 +2174,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       canvas.height = Math.round(rect.height * dpr);
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
+      // The camera angle: the finished picture tipped back (cameraTilt.ts).
+      tiltDegRef.current = newViewRef.current ? cameraTilt() : 0;
+      tiltGeomRef.current = tiltFor(tiltDegRef.current, rect.width, rect.height);
+      canvas.style.transform = tiltCss(tiltGeomRef.current);
       // New view: the camera holds the canvas's own shape, so a new shape
       // means a new frame — never while a ball is in flight.
       if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
@@ -2380,7 +2390,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       baseViewportRef.current = { ...sc.viewport };
       return;
     }
-    const cam = frameForNewView(sc, canvasHW(), replay);
+    const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     // Where the ball sits down the screen decides where the sandbox's
@@ -2415,16 +2425,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return { px: fx * W, py: fy * H, scale: 1 };
   }, []);
 
+  /** The canvas's own box on the page, as laid out (a tilted canvas's
+   *  getBoundingClientRect is the tipped picture's box, not this). */
+  const canvasBox = () => {
+    const c = canvasRef.current, w = wrapRef.current;
+    const r = (w ?? c)?.getBoundingClientRect();
+    return {
+      left: (r?.left ?? 0) + (w?.clientLeft ?? 0), top: (r?.top ?? 0) + (w?.clientTop ?? 0),
+      width: c?.offsetWidth || r?.width || 0, height: c?.offsetHeight || r?.height || 0,
+    };
+  };
+  /** A touch -> where it lands on the (untilted) canvas, as fractions. */
+  const clientToCanvasFrac = (clientX: number, clientY: number) => {
+    const b = canvasBox();
+    if (!(b.width > 0 && b.height > 0)) return { sx: 0, sy: 0 };
+    return screenToCanvas(tiltGeomRef.current, clientX - b.left, clientY - b.top, b.width, b.height);
+  };
+
   const pitchFromPointer = (clientX: number, clientY: number) => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
     const vp = viewportRef.current;
     // NOT clamped to the canvas. You aim by dragging back from the ball, and a
     // chance near the bottom of the frame needs to be dragged back past the
     // bottom of it — clamping turned that into an arrow that stuck and a shot
-    // you could not take.
-    const sx = (clientX - rect.left) / rect.width;
-    const sy = (clientY - rect.top) / rect.height;
+    // you could not take. Tilted, the touch is first un-tipped.
+    const { sx, sy } = clientToCanvasFrac(clientX, clientY);
     // The exact inverse of toPx, turn and all.
     const f = facingRef.current;
     const fx = f === "right" ? sy : f === "left" ? 1 - sy : sx;
@@ -2466,13 +2490,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const classicHeightPx = (): number | undefined => {
     if (dragRefHeightRef.current) return dragRefHeightRef.current;
     if (!newViewRef.current) return undefined;
-    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const w = canvasBox().width;
     return w > 0 ? w / VIEW_ASPECT : undefined;
   };
   /** New view: CSS pixels on screen to metres on the pitch, at this camera. */
   const pxToM = (px: number): number => {
     const vp = viewportRef.current;
-    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const w = canvasBox().width;
     const across = facingRef.current === "up" ? vp.x2 - vp.x1 : vp.y2 - vp.y1;
     return w > 0 ? (px * across) / w : 0;
   };
@@ -2484,7 +2508,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const sameOnScreenM = (classicM: number, share: number, axis: "height" | "y"): number => {
     if (!newViewRef.current) return classicM;
-    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const w = canvasBox().width;
     const refH = classicHeightPx() ?? 0;
     const classicPx = axis === "height" || facingRef.current === "up" ? refH : w;
     return pxToM(share * classicPx);
@@ -2500,13 +2524,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (f === "left") return { sx: fy, sy: 1 - fx };
       return { sx: fx, sy: fy };
     };
-    const a = toScreen(drag), b = toScreen(ball);
+    // Tilted: measured where the finger actually is on the glass, so the
+    // same movement kicks exactly as hard as it does flat.
+    const t = tiltGeomRef.current;
+    const onGlass = (q: { sx: number; sy: number }) => {
+      if (!t) return q;
+      const g = canvasToScreen(t, q.sx, q.sy, t.W, t.H);
+      return { sx: g.X / t.W, sy: g.Y / t.H };
+    };
+    const a = onGlass(toScreen(drag)), b = onGlass(toScreen(ball));
     // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
     // the same units before measuring.
     // New view: the canvas is not 5:8 any more, so its own shape is used.
-    const cr = canvasRef.current?.getBoundingClientRect();
-    const ownW = cr?.width ?? 0;
-    const ownH = cr?.height ?? 0;
+    const cr = canvasBox();
+    const ownW = cr.width;
+    const ownH = cr.height;
     const aspect = newViewRef.current && ownW > 0 && ownH > 0 ? ownW / ownH : VIEW_ASPECT;
     const pull = Math.hypot((a.sx - b.sx) * aspect, a.sy - b.sy);
     // A fixed reference height (see `dragReferenceHeightPx`): the same pixels
@@ -3771,12 +3803,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (phaseRef.current === "flight" && canCurve && curveSwipeStartRef.current && curveSwipeCurrentRef.current) {
       const canvas = canvasRef.current;
       if (canvas) {
-        const rect = canvas.getBoundingClientRect();
+        const rect = canvasBox();
         if (rect.width > 0 && rect.height > 0) {
-          const toCanvasPx = (clientX: number, clientY: number) => ({
-            px: ((clientX - rect.left) / rect.width) * canvas.width,
-            py: ((clientY - rect.top) / rect.height) * canvas.height,
-          });
+          const toCanvasPx = (clientX: number, clientY: number) => {
+            const q = clientToCanvasFrac(clientX, clientY);
+            return { px: q.sx * canvas.width, py: q.sy * canvas.height };
+          };
           const a = toCanvasPx(curveSwipeStartRef.current.x, curveSwipeStartRef.current.y);
           const b = toCanvasPx(curveSwipeCurrentRef.current.x, curveSwipeCurrentRef.current.y);
           ctx.save();
@@ -4053,7 +4085,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // New view: the up-the-pitch camera it cuts to is the zoomed-out one,
         // and so is the play area that comes with it.
         const view = sc.crossSwitchView && newViewRef.current
-          ? crossCutCamera(sc.crossSwitchView, canvasHW(), ballRef.current.pos)
+          ? crossCutCamera(sc.crossSwitchView, canvasHW(), ballRef.current.pos, tiltDegRef.current)
           : sc.crossSwitchView;
         // Y alone used to be the whole test. A corner is struck from a few
         // metres off the touchline and has to travel fifteen to thirty
@@ -6047,7 +6079,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // A penalty is always watched straight on ("up"), so sideways on the
         // screen is sideways along the goal line.
         const vp = viewportRef.current;
-        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvas.getBoundingClientRect().width,
+        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvasBox().width,
           // New view: the same finger nudges as far as it does in the classic frame.
           newViewRef.current ? engineFrameOf(scenarioRef.current).x2 - engineFrameOf(scenarioRef.current).x1 : vp.x2 - vp.x1);
         ru.nudgeM = Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeDragRef.current.base + m));
