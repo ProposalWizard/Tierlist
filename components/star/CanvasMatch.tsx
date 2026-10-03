@@ -21,6 +21,8 @@ import {
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode } from "@/lib/star/chanceMaker";
+import { chanceSet } from "@/lib/star/chanceSet";
+import { chanceDeck, careerDeckScope } from "@/lib/star/chanceLibrary";
 import { separateBodies } from "@/lib/star/spacing";
 import { newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { finishServedFrame } from "@/lib/star/goalFrame";
@@ -5632,6 +5634,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         selection: chanceMemoryRef.current,
         formation: formationShapeFor(),
         mode: chanceMakerRef.current,
+        // Settings → Chances (New: the checked library, dealt from this
+        // career's deck so a picture comes back as rarely as possible).
+        set: chanceSet(),
+        deck: chanceDeck(careerDeckScope(careerRef.current?.player)),
       });
       scenarioRef.current = made.sc;
       // v0.26: the match leans away from serving this kind straight back.

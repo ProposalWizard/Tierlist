@@ -8,6 +8,7 @@ import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceSty
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
+import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -133,6 +134,7 @@ export function LookSwitches() {
   const viewNow = useStoredMatchView();
   const signing3d = useSigning3d();
   const shopPlayer = useShop3dPlayerLook();
+  const chancesNow = useChanceSet();
   return (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -155,6 +157,14 @@ export function LookSwitches() {
         <span className="text-[14px] font-bold text-white">3D shop player</span>
         <SegTabs className="w-[150px] shrink-0" value={shopPlayer} onChange={setShop3dPlayerLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
       </div>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Chances</span>
+        <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: about 100 pictures of each chance, both full teams on the pitch, rarely the same twice. Classic: the chances as they were.
+      </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Player look</span>

@@ -77,6 +77,9 @@ import {
 import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
+import { libraryFor, serveEntry, shapeOfEntry, type ChanceDeck } from "./chanceLibrary";
+import { addContext, withoutContext } from "./contextShape";
+import type { ChanceSet } from "./chanceSet";
 import { mulberry32 } from "./season";
 import { loadPlaySettings } from "./playArea";
 
@@ -657,13 +660,23 @@ export interface MakeChanceOptions {
   mode?: ChanceMakerMode;
   /** A gallery cell: keep its base drawing as the pool grows. */
   stableKey?: number;
+  /**
+   * Which chances (Settings → Chances). "new": the checked library, dealt
+   * from `deck`, with the rest of both teams on the pitch
+   * (chanceLibrary.ts, contextShape.ts). Absent or "classic": exactly as
+   * before — so every caller that does not ask (the gallery's Sim, every
+   * test) is unchanged.
+   */
+  set?: ChanceSet;
+  /** The deck a "new" chance is dealt from (remembered across matches). */
+  deck?: ChanceDeck | null;
 }
 
 export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "generator" | "plan" | "builder";
+  how: "drawing" | "generator" | "plan" | "builder" | "library";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -725,6 +738,37 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     first = null;
   }
 
+  // ── 1b. New chances: a picture from the library, dealt from the deck ──
+  //
+  // Every picture in the library was made from the drawings, checked by the
+  // game's own checks and by eye, and is served exactly as checked (see
+  // chanceLibrary.ts). The deck never deals a picture again until every
+  // other one of its kind has been dealt. The rest of both teams stand
+  // around it (contextShape.ts), from the opponent's real formation.
+  if (o.set === "new") {
+    const entries = libraryFor(kind);
+    if (entries.length) {
+      const pickRng = saltedRng(rng, saltFor(o));
+      const pick = o.deck ? o.deck.next(kind, entries, pickRng) : entries[Math.floor(pickRng() * entries.length) % entries.length];
+      if (pick) {
+        const sc = first && first.kind === kind ? first : build(kind);
+        const ctx = o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle } : {};
+        serveEntry(sc, pick, { keeperStrength: ks, context: ctx });
+        o.memory?.remember(pictureOf(withoutContext(sc)));
+        return {
+          sc, shape: shapeOfEntry(pick), how: "library", appliedPlan: false, appliedAuthored: true, sourceId: pick.id,
+          faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated: 0, mode,
+        };
+      }
+    }
+  }
+  /** New chances on a kind the library has no picture of: today's chance,
+   *  with the rest of both teams around it. Classic: untouched. */
+  const finishNew = (sc: Scenario) => {
+    if (o.set !== "new") return;
+    addContext(sc, o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle, laws: ruleSetFor(sc.kind) } : { laws: ruleSetFor(sc.kind) });
+  };
+
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
   if (!servesDrawings(kind)) {
     // A kind with no drawings is laid out by the builder or the formula's
@@ -752,6 +796,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
+    finishNew(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
       faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated, mode,
@@ -800,12 +845,14 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
+    finishNew(sc);
     return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated, mode };
   }
   // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
   // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
   finishServedFrame(best.sc);
   o.memory?.remember(pictureOf(best.sc));
+  finishNew(best.sc);
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,
     faultRebuilds, memoryRebuilds, faults: best.faults, nearestRecent: best.gap, separated: best.separated, mode,
