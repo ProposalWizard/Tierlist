@@ -115,6 +115,9 @@ export interface StarPlayer {
    * (see playerIdentity.ts's resolveFoot) rather than undefined.
    */
   preferredFoot?: import("./playerIdentity").PreferredFoot;
+  /** His 3D avatar's hair (the live 3D signing). Absent = short, brown. */
+  hairStyle?: import("./playerIdentity").HairStyle;
+  hairColour?: import("./playerIdentity").HairColour;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
