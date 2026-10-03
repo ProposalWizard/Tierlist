@@ -22,6 +22,7 @@
  *  9. No defender nearer the ball than the drawings ever put one (v0.24).
  */
 import { buildScenario, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
+import { EVEN_KIND_MIX, EVEN_KINDS } from "../../lib/star/kindMix";
 import { mulberry32 } from "@/lib/star/season";
 import {
   makeChance, drawingShape, servesDrawings, PictureMemory, pictureOf, SAME_PICTURE_M, PICTURE_MEMORY,
@@ -120,7 +121,15 @@ console.log("\n5. A ONE-ON-ONE MOSTLY ON A BREAK");
   }
   // Settled play keeps a one-on-one on offer SETTLED_ONE_ON_ONE (10%) of the
   // time, so it is served a few times in 200 — far fewer than on a break.
-  ok(settled > 0 && settled * 4 < breaks, `settled play rarely offers one (${settled}/200, against ${breaks}/200 on a break)`);
+  if (EVEN_KIND_MIX) {
+    // The even mix (lib/star/kindMix.ts, Harry 3 Oct 2026) deals every
+    // open-play kind equally, break or not: about 1 in 8 either way.
+    const even = 200 / EVEN_KINDS.length;
+    ok(Math.abs(settled - even) < even * 0.6 && Math.abs(breaks - even) < even * 0.6,
+      `even mix: a one-on-one about 1 in ${EVEN_KINDS.length} either way (${settled}/200 settled, ${breaks}/200 on a break)`);
+  } else {
+    ok(settled > 0 && settled * 4 < breaks, `settled play rarely offers one (${settled}/200, against ${breaks}/200 on a break)`);
+  }
   ok(breaks > 20, `a break still does (${breaks}/200)`);
   const only = makeChance({ source: { from: "request", request: { ...base, kinds: ["one_on_one"] }, position: "ST" }, rng: mulberry32(9), memory: null });
   ok(only.sc.kind === "one_on_one", "when a one-on-one is the only thing on offer, it stays");

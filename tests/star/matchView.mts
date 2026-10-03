@@ -2,16 +2,21 @@ import { goalInView } from "../../lib/star/canvasEngine";
 import { buildScenario, initDefenders, SCENARIO_KINDS, type Scenario } from "../../lib/star/canvasEngine";
 import { PITCH_W } from "../../lib/star/pitch";
 import {
-  newViewCamera, frameForNewView, engineFrameOf, newViewCanvasHeight,
-  NEW_VIEW_WIDTH_M, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW, MATCH_VIEW_DEFAULT,
+  cameraFor, passersOf, frameForNewView, engineFrameOf, newViewCanvasHeight,
+  NEW_VIEW_WIDTH_M, NEW_VIEW_KIND_WIDTH_M, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW, MATCH_VIEW_DEFAULT,
 } from "../../lib/star/matchView";
 
 /**
  * THE NEW MATCH VIEW'S CAMERA (lib/star/matchView.ts, option D, 3 Oct 2026).
  *
  * - it holds the canvas's shape (same metres per pixel both ways);
- * - it always contains the frame the engine built the chance in, so nobody
- *   the engine placed is off the screen;
+ * - each kind has its own zoom (Harry, 3 Oct 2026): long range the full
+ *   38 m, the box chances tighter, build-up fitted to the passers;
+ * - a shot's camera always contains the frame the engine built the chance in,
+ *   so nobody the engine placed is off the screen; a build-up camera holds
+ *   the ball, you, every man you can pass to and defenders in those lanes;
+ * - the play area is never smaller than the engine's frame (Classic's out
+ *   line), so a tighter camera never makes a ball go out sooner;
  * - side-on (corners, byline crosses) it never shows more than a few metres
  *   of grass past either touchline — the "28 m past the touchline" picture
  *   the prototype warned about;
@@ -44,15 +49,27 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
       initDefenders(sc, rng);
       const engine = { ...sc.viewport };
       const f = sc.facing ?? "up";
-      const cam = newViewCamera(engine, f, hw, sc.ball);
+      const cam = cameraFor(sc, engine, hw);
       n++;
       const across = f === "up" ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
       const down = f === "up" ? cam.y2 - cam.y1 : cam.x2 - cam.x1;
-      check(Math.abs(across - NEW_VIEW_WIDTH_M) < 1e-6, `${kind}: ${across} m across`);
-      check(Math.abs(down / across - hw) < 1e-6, `${kind}: shape ${down / across} vs ${hw}`);
-      // Past the engine's own hard out line (2 m off a touchline) there is nothing to hold.
-      const onPitch = { ...engine, x1: Math.max(engine.x1, -2), x2: Math.min(engine.x2, PITCH_W + 2) };
-      if (!contains(cam, onPitch)) notContained++;
+      const want = NEW_VIEW_KIND_WIDTH_M[kind];
+      if (want === "passers") {
+        check(across >= 22 - EPS && across <= NEW_VIEW_WIDTH_M + EPS, `${kind}: ${across} m across`);
+        for (const p of passersOf(sc)) {
+          if (p.x < cam.x1 - EPS || p.x > cam.x2 + EPS || p.y < cam.y1 - EPS || p.y > cam.y2 + EPS) {
+            // Only the full zoom may fail to hold everyone.
+            check(across >= NEW_VIEW_WIDTH_M - EPS, `${kind}: a passer is off a ${across.toFixed(1)} m camera`);
+          }
+        }
+      } else {
+        check(across >= want - EPS && across <= NEW_VIEW_WIDTH_M + EPS, `${kind}: ${across} m across, wanted ${want}`);
+        // Past the engine's own hard out line (2 m off a touchline) there is nothing to hold.
+        const onPitch = { ...engine, x1: Math.max(engine.x1, -2), x2: Math.min(engine.x2, PITCH_W + 2) };
+        if (!contains(cam, onPitch)) notContained++;
+      }
+      if (kind === "long_range") check(Math.abs(across - NEW_VIEW_WIDTH_M) < 1e-6, "long range is the full zoom out");
+      check(Math.abs(down / across - Math.max(hw, NEW_VIEW_MIN_HW)) < 1e-6, `${kind}: shape ${down / across} vs ${hw}`);
       if (f !== "up") {
         const ballLow = f === "right" ? sc.ball.x > PITCH_W / 2 : sc.ball.x < PITCH_W / 2;
         const nearLine = ballLow ? (f === "right" ? cam.x2 - PITCH_W : 0 - cam.x1) : 0;
@@ -65,7 +82,10 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
       const b = frameForNewView(sc, hw);
       check(JSON.stringify(a) === JSON.stringify(b), `${kind}: framing is not stable`);
       check(JSON.stringify(engineFrameOf(sc)) === JSON.stringify(engine), `${kind}: engine frame lost`);
-      if (goalInView(kind)) check(JSON.stringify(sc.viewport) === JSON.stringify(a), `${kind}: play area is not the camera`);
+      // Never smaller than the engine's frame, and holds the whole camera.
+      check(contains(sc.viewport, { ...engine, y1: sc.viewport.y1, x1: f === "right" ? sc.viewport.x1 : engine.x1, x2: f === "left" ? sc.viewport.x2 : engine.x2 }),
+        `${kind}: play area smaller than the engine frame`);
+      if (goalInView(kind)) check(contains(sc.viewport, a), `${kind}: play area smaller than the camera`);
       else {
         // No keeper, no back line: the ball must go out before it reaches the goal.
         const goalSide = f === "up" ? sc.viewport.y1 : f === "right" ? sc.viewport.x1 : -sc.viewport.x2;
@@ -89,4 +109,4 @@ if (problems.length) {
   console.error(problems.slice(0, 20).join("\n"));
   process.exit(1);
 }
-console.log("matchView: camera holds its shape, holds the engine frame, and side-on stays on the pitch");
+console.log("matchView: per-kind zoom, camera holds its shape and the engine frame, play area never under Classic, side-on stays on the pitch");

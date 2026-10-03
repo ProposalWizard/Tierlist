@@ -1,4 +1,5 @@
 import { pickScenarioKindFrom, type ScenarioKind } from "./canvasEngine";
+import type { KindBag } from "./kindMix";
 import type { Zone, ScenarioRequest, Lane } from "./hiddenMatch";
 import {
   generateChance, withShape, ZONE_BANDS,
@@ -29,6 +30,8 @@ export const RECENT_MEMORY = 8;
 export interface SelectionMemory {
   /** Most recent first. */
   recent: string[];
+  /** The even-mix bag of highlight kinds (lib/star/kindMix.ts). */
+  kindBag?: KindBag;
 }
 
 export function newSelectionMemory(): SelectionMemory { return { recent: [] }; }

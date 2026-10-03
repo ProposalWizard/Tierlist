@@ -59,6 +59,7 @@ import {
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
 import type { ScenarioRequest } from "./hiddenMatch";
+import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind } from "./kindMix";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
 import { applyChancePlan, type ChancePlan } from "./chanceFormula";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
@@ -710,10 +711,18 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let plan: ChancePlan | null = null;
   let first: Scenario | null = null;
   const src = o.source;
+  // Harry, 3 Oct 2026 — an even mix of highlights for now (lib/star/kindMix.ts):
+  // open play and a move that carries on are dealt from a shuffled bag.
+  const evenDeal = (): ScenarioKind => {
+    if (!o.selection) return EVEN_KINDS[Math.floor(rng() * EVEN_KINDS.length) % EVEN_KINDS.length];
+    o.selection.kindBag ??= newKindBag();
+    return nextEvenKind(o.selection.kindBag, rng);
+  };
   if (src.from === "request") {
     const offered = offeredKinds(src.request.kinds, src.request, rng);
-    const req = { ...src.request, kinds: offered };
-    kind = rollKind(req, src.position, rng);
+    const openPlay = EVEN_KIND_MIX && !src.request.dribble && src.request.pattern !== "set_piece" && src.request.kinds.length > 1;
+    const req = openPlay ? { ...src.request, kinds: [evenDeal()] } : { ...src.request, kinds: offered };
+    kind = openPlay ? req.kinds[0] : rollKind(req, src.position, rng);
     if (!servesDrawings(kind)) {
       // The visit salt turns the plan too (v0.25 item 12) — see saltedRng.
       plan = selectChance({ request: { ...req, kinds: [kind] }, position: src.position, rng: saltedRng(rng, saltFor(o)), memory: o.selection ?? newSelectionMemory(), shape: o.formation ?? null });
@@ -721,7 +730,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   } else if (src.from === "chain") {
     // Built from where the pass actually arrived, so playing it into the
     // corner gives you a cutback and finding someone central a shot.
-    kind = playableKind(chainKindFor(src.pos, rng, src.ambition), rng);
+    kind = EVEN_KIND_MIX ? evenDeal() : playableKind(chainKindFor(src.pos, rng, src.ambition), rng);
   } else if (src.from === "attacking") {
     first = buildAttackingScenario(rng, ks, tr, vis);
     kind = first.kind;

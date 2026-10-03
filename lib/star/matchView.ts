@@ -22,7 +22,7 @@
  * touched: that still happens inside the engine's own 42 m frame.
  */
 import { useSyncExternalStore } from "react";
-import type { Facing, Scenario, Vec2, Viewport } from "./canvasEngine";
+import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
 import { PITCH_W, NET_DEPTH } from "./pitch";
 
@@ -120,6 +120,108 @@ const TURNED_NEAR_M = 8;
 /** Side-on, the ball is hung this far down the screen when that fits. */
 const TURNED_BALL_DOWN = 0.8;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// How far each kind of highlight is zoomed out
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Metres across the screen, per kind of highlight. Harry, 3 Oct 2026:
+ *   "different zooms for different highlights … Long shot - full zoom out,
+ *    Cutbacks/crosses - final 3rd, Build up - zoomed in on the passing players
+ *    only, Corner - final 3rd, etc etc."
+ *
+ * Facing up the pitch this is the screen's width. Side-on (a corner, a byline
+ * cross) the screen's width is pitch DEPTH, so the number is how far out from
+ * the goal you can see: 32 m is the box and the ground just past the D, the
+ * final third.
+ *
+ * "passers" (build-up, midfield pass) is not a fixed number: the camera fits
+ * the ball, you, the men you can pass to and any defender standing in those
+ * lanes, and nothing else (`PASSERS_*` below).
+ *
+ * A camera is never narrower than the frame the engine built the chance in, so
+ * nobody the engine placed for a shot is ever off the screen.
+ */
+export const NEW_VIEW_KIND_WIDTH_M: Record<ScenarioKind, number | "passers"> = {
+  long_range: NEW_VIEW_WIDTH_M,  // full zoom out
+  free_kick: 34,
+  through_ball: 32,
+  one_on_one: 30,
+  corner: 32,                    // side-on: goal to just past the D
+  byline_cross: 30,              // side-on
+  cutback: 28,                   // final third
+  tight_angle: 28,
+  volley: 27,
+  header: 27,
+  penalty: 27,
+  buildup: "passers",
+  midfield_pass: "passers",
+};
+/** Where a cross is watched once it reaches the box (the cut to "up"). */
+export const NEW_VIEW_CROSS_CUT_WIDTH_M = 28;
+
+/** Build-up: never tighter than this across (the figures stay legible)… */
+const PASSERS_MIN_M = 22;
+/** …room either side of the outermost passer, and above/below them. */
+const PASSERS_SIDE_M = 5;
+const PASSERS_END_M = 6;
+/** A defender this close to a passing lane is in the picture. */
+const PASSERS_LANE_M = 6;
+
+/** Metres across the screen for this chance: its kind's number, never narrower
+ *  than the engine's own frame (plus half a metre). */
+function acrossFor(kind: ScenarioKind, engine: Viewport, facing: Facing): number | "passers" {
+  const want = NEW_VIEW_KIND_WIDTH_M[kind] ?? NEW_VIEW_WIDTH_M;
+  if (want === "passers") return want;
+  const engineAcross = facing === "up" ? engine.x2 - engine.x1 : engine.y2 - engine.y1;
+  return Math.min(NEW_VIEW_WIDTH_M, Math.max(want, engineAcross + 0.5));
+}
+
+function distToSegment(p: Vec2, a: Vec2, b: Vec2): number {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+/** The people a build-up camera has to show: the ball, you, every man you can
+ *  pass to (where he is and where he is running), and defenders in those lanes. */
+export function passersOf(sc: Scenario): Vec2[] {
+  const pts: Vec2[] = [sc.ball, sc.player];
+  const runners = [...(sc.runner ? [sc.runner] : []), ...(sc.secondaryRunners ?? [])];
+  for (const r of runners) pts.push(r.pos, r.to);
+  const lanes: [Vec2, Vec2][] = runners.flatMap((r) => [[sc.ball, r.pos], [sc.ball, r.to]] as [Vec2, Vec2][]);
+  for (const d of sc.defenders) {
+    if (Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) <= PASSERS_LANE_M
+        || lanes.some(([a, b]) => distToSegment(d, a, b) <= PASSERS_LANE_M)) pts.push(d);
+  }
+  return pts;
+}
+
+/**
+ * The tight build-up camera: the smallest frame at the canvas's shape that
+ * holds `pts` with room round them, between PASSERS_MIN_M and the full zoom.
+ */
+function passersCamera(pts: Vec2[], facing: Facing, hw: number): Viewport {
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const x1 = Math.min(...xs), x2 = Math.max(...xs), y1 = Math.min(...ys), y2 = Math.max(...ys);
+  const h = Math.max(NEW_VIEW_MIN_HW, hw);
+  const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+  if (facing === "up") {
+    const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(PASSERS_MIN_M,
+      x2 - x1 + 2 * PASSERS_SIDE_M, (y2 - y1 + 2 * PASSERS_END_M) / h));
+    const down = across * h;
+    let vx1 = cx - across / 2;
+    vx1 = Math.max(-EDGE_M, Math.min(PITCH_W + EDGE_M - across, vx1));
+    return { x1: vx1, x2: vx1 + across, y1: cy - down / 2, y2: cy + down / 2 };
+  }
+  // Side-on: across the screen is pitch y, down it pitch x.
+  const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(PASSERS_MIN_M,
+    y2 - y1 + 2 * PASSERS_SIDE_M, (x2 - x1 + 2 * PASSERS_END_M) / h));
+  const down = across * h;
+  return { x1: cx - down / 2, x2: cx + down / 2, y1: cy - across / 2, y2: cy + across / 2 };
+}
+
 /**
  * The new view's camera — and, applied to the scenario, its play area.
  *
@@ -128,8 +230,10 @@ const TURNED_BALL_DOWN = 0.8;
  * exactly (same metres per pixel both ways) and always contains `engine`
  * where the screen is big enough to.
  */
-export function newViewCamera(engine: Viewport, facing: Facing, hw: number, ball: Vec2): Viewport {
-  const across = NEW_VIEW_WIDTH_M;                 // screen width, in metres
+export function newViewCamera(
+  engine: Viewport, facing: Facing, hw: number, ball: Vec2, acrossM: number = NEW_VIEW_WIDTH_M,
+): Viewport {
+  const across = acrossM;                          // screen width, in metres
   const down = across * Math.max(NEW_VIEW_MIN_HW, hw); // screen height, in metres
 
   if (facing === "up") {
@@ -180,9 +284,17 @@ export function engineFrameOf(sc: Scenario): Viewport {
 export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false): Viewport {
   const f = sc as Framed;
   if (!f.engineFrame) f.engineFrame = { ...sc.viewport };
-  const cam = newViewCamera(f.engineFrame, sc.facing ?? "up", hw, sc.ball);
+  const cam = cameraFor(sc, f.engineFrame, hw);
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
+}
+
+/** The camera for this chance: its kind's zoom (NEW_VIEW_KIND_WIDTH_M). */
+export function cameraFor(sc: Scenario, engineFrame: Viewport, hw: number): Viewport {
+  const facing = sc.facing ?? "up";
+  const across = acrossFor(sc.kind, engineFrame, facing);
+  if (across === "passers") return passersCamera(passersOf(sc), facing, hw);
+  return newViewCamera(engineFrame, facing, hw, sc.ball, across);
 }
 
 /**
@@ -194,17 +306,25 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false):
  * engine's own frame had it, as in Classic: past it the ball is out.
  */
 export function playAreaFor(sc: Scenario, cam: Viewport, engineFrame: Viewport): Viewport {
-  if (goalInView(sc.kind)) return { ...cam };
+  // Never smaller than the engine's own frame (Classic's out line): a tighter
+  // camera must not make a pass go out sooner than it does in Classic.
+  const area: Viewport = {
+    x1: Math.min(cam.x1, engineFrame.x1), x2: Math.max(cam.x2, engineFrame.x2),
+    y1: Math.min(cam.y1, engineFrame.y1), y2: Math.max(cam.y2, engineFrame.y2),
+  };
+  if (goalInView(sc.kind)) return area;
   const f = sc.facing ?? "up";
-  if (f === "up") return { ...cam, y1: Math.max(cam.y1, engineFrame.y1) };
+  // The goal-side edge is the engine's own, exactly as in Classic.
+  if (f === "up") return { ...area, y1: engineFrame.y1 };
   // Turned views put the goal at x = 0 ("right") or the far side ("left"): keep that edge too.
-  if (f === "right") return { ...cam, x1: Math.max(cam.x1, engineFrame.x1) };
-  return { ...cam, x2: Math.min(cam.x2, engineFrame.x2) };
+  if (f === "right") return { ...area, x1: engineFrame.x1 };
+  return { ...area, x2: engineFrame.x2 };
 }
 
 /** The up-the-pitch camera a cross cuts to once it reaches the box. */
 export function crossCutCamera(engineView: Viewport, hw: number, ball: Vec2): Viewport {
-  return newViewCamera(engineView, "up", hw, ball);
+  const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(NEW_VIEW_CROSS_CUT_WIDTH_M, engineView.x2 - engineView.x1 + 0.5));
+  return newViewCamera(engineView, "up", hw, ball, across);
 }
 
 /** How tall the new view's canvas is on a screen: the room left under what

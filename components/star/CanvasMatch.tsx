@@ -58,8 +58,14 @@ import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
 
 /** How close to the ball a drag has to start, as a fraction of the framed
- *  height (see onPointerDown). */
-const BALL_GRAB_FRACTION = 0.10;
+ *  height (see onPointerDown). 0.10 until 3 Oct 2026, when Harry: "make the
+ *  ball drag start from further away from the centre of the ball because rn
+ *  the thumb blocks the ball." 0.18 is about two thumb-widths on a phone, so
+ *  you can start BESIDE the ball and still see it; still well short of the
+ *  0.28 Mikey turned down on 28 Sep ("start dragging only from the ball").
+ *  The pull is measured from where the thumb lands, so starting further out
+ *  does not add power. */
+const BALL_GRAB_FRACTION = 0.18;
 
 /**
  * How the ball moves on the contact screen for this chance (Mikey, 27 Sep
@@ -5999,10 +6005,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
     if (ballD >= nearestCaptainCandidateDist(p)) return;
-    // The grab zone round the ball: 10% of the framed height (was 28%, which
-    // let a drag start from a third of the screen away — Mikey, 28 Sep 2026:
-    // "you're supposed to be able to start dragging only from the ball").
-    // Still roughly a thumb's width either side of the ball on a phone.
+    // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
+    // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
+    // 2026: "you're supposed to be able to start dragging only from the
+    // ball"; 10% put the thumb on top of the ball — Harry, 3 Oct 2026).
     if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "y")) {
       // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
