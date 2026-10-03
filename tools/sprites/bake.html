@@ -1,0 +1,464 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sprite baker</title></head>
+<body style="margin:0;background:#222">
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+<script type="module">
+/*
+ * The sprite baker's page. See bake.mjs for what it makes and why.
+ *
+ * Conventions shared with lib/star/sprites.ts:
+ *  - facing is a SCREEN angle, canvas style: 0 = right, PI/2 = down the screen.
+ *  - the camera sits above, tilted toward the bottom of the screen, so a man
+ *    facing down shows his front.
+ *  - each frame's anchor is the ground point under the man (his boots).
+ */
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const CFG = {
+  tilt: 25,          // degrees from straight down
+  ppm: 56,           // pixels per metre (image plane) in the baked (2x) sprite
+  ss: 4,             // supersampling of the render before the box-filter shrink
+  view: { l: -2.1, r: 2.1, t: 2.4, b: -1.2 }, // image-plane metres round the anchor
+  outlinePx: 2,      // 1 px at the game's size = 2 px in the 2x bake
+  outline: [16, 22, 18],
+  waist: 0.545, knee: 0.335, ankle: 0.072, // fractions of standing height
+};
+
+// ── GLB helpers ──
+async function fetchBuf(url) { const r = await fetch(url); if (!r.ok) throw new Error(url + " " + r.status); return r.arrayBuffer(); }
+/** A clip file is the whole model + one clip. Strip everything but the
+ *  skeleton and the animation so it parses in a blink (no 2048² textures). */
+function stripToAnimation(buf) {
+  const dv = new DataView(buf);
+  const jsonLen = dv.getUint32(12, true);
+  const json = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, jsonLen)));
+  delete json.images; delete json.textures; delete json.samplers; delete json.materials; delete json.meshes; delete json.skins;
+  for (const n of json.nodes) { delete n.mesh; delete n.skin; }
+  if (json.extensionsUsed) json.extensionsUsed = json.extensionsUsed.filter((e) => !/texture|material/i.test(e));
+  let js = new TextEncoder().encode(JSON.stringify(json));
+  const pad = (4 - (js.length % 4)) % 4;
+  const jsonChunk = new Uint8Array(js.length + pad); jsonChunk.set(js); jsonChunk.fill(0x20, js.length);
+  const binStart = 20 + jsonLen;
+  const bin = new Uint8Array(buf, binStart);
+  const out = new Uint8Array(12 + 8 + jsonChunk.length + bin.length);
+  const o = new DataView(out.buffer);
+  o.setUint32(0, 0x46546c67, true); o.setUint32(4, 2, true); o.setUint32(8, out.length, true);
+  o.setUint32(12, jsonChunk.length, true); o.setUint32(16, 0x4e4f534a, true);
+  out.set(jsonChunk, 20); out.set(bin, 20 + jsonChunk.length);
+  return out.buffer;
+}
+const loader = new GLTFLoader();
+const parse = (buf) => new Promise((res, rej) => loader.parse(buf, "/assets/", res, rej));
+
+// ── Renderer ──
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0xaab8ac, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 2.1);
+sun.position.set(-1.6, 4, 1.4); // from the upper left of the screen, like the shadow (thrown lower right)
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+fill.position.set(1.5, 1.2, 2.5);
+scene.add(fill);
+const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
+cam.up.set(0, 0, -1);
+function setCamera(tiltDeg) {
+  const t = (tiltDeg * Math.PI) / 180, D = 20;
+  cam.position.set(0, D * Math.cos(t), D * Math.sin(t));
+  cam.lookAt(0, 0, 0);
+  const v = CFG.view;
+  cam.left = v.l; cam.right = v.r; cam.top = v.t; cam.bottom = v.b;
+  cam.updateProjectionMatrix();
+}
+
+// ── Characters ──
+const chars = {};
+async function loadChar(name, file, kitTest) {
+  const gltf = await parse(await fetchBuf("/assets/" + file));
+  const holder = new THREE.Group();   // facing + dive roll live here
+  const inner = gltf.scene;           // mirroring lives here
+  holder.add(inner);
+  let skinned = null;
+  inner.traverse((o) => { if (o.isSkinnedMesh) skinned = o; o.frustumCulled = false; });
+  inner.updateMatrixWorld(true);
+  skinned.skeleton.update();
+  // Per-vertex body region, read in the rest pose.
+  const g = skinned.geometry, n = g.attributes.position.count;
+  const J = g.attributes.skinIndex, W = g.attributes.skinWeight;
+  const v = new THREE.Vector3();
+  const ys = new Float32Array(n);
+  let minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < n; i++) {
+    skinned.getVertexPosition(i, v); v.applyMatrix4(skinned.matrixWorld);
+    ys[i] = v.y; if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y;
+  }
+  const H = maxY - minY;
+  const region = new Float32Array(n);
+  const bones = skinned.skeleton.bones.map((b) => b.name);
+  for (let i = 0; i < n; i++) {
+    let best = 0, bw = -1;
+    for (let k = 0; k < 4; k++) { const w = W.getComponent(i, k); if (w > bw) { bw = w; best = J.getComponent(i, k); } }
+    const bn = bones[best] ?? "";
+    const f = (ys[i] - minY) / H;
+    let r;
+    if (/Head|head|neck/.test(bn)) r = 0;
+    else if (/Hand/.test(bn)) r = 5;
+    else if (/Arm|Shoulder/.test(bn)) r = 1;
+    else if (f > CFG.waist) r = 1;
+    else if (f > CFG.knee) r = 2;
+    else if (f > CFG.ankle) r = 3;
+    else r = 4;
+    region[i] = r;
+  }
+  g.setAttribute("aRegion", new THREE.BufferAttribute(region, 1));
+  const mat = skinned.material;
+  mat.emissiveMap = null; mat.emissive = new THREE.Color(0);
+  mat.metalnessMap = null; mat.roughnessMap = null; mat.metalness = 0; mat.roughness = 0.78;
+  const uniforms = { uMode: { value: 0 } };
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uMode = uniforms.uMode;
+    sh.vertexShader = sh.vertexShader
+      .replace("void main() {", "attribute float aRegion;\nvarying float vRegion;\nvoid main() {\n vRegion = aRegion;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("void main() {", "uniform float uMode;\nvarying float vRegion;\nfloat gKit = 0.0; float gReg = 0.0;\nvoid main() {")
+      .replace("#include <map_fragment>", `#include <map_fragment>
+        {
+          vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0/2.2));
+          float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
+          float sat = mx > 0.0 ? (mx - mn) / mx : 0.0;
+          gReg = floor(vRegion + 0.5);
+          bool kitLike = sat < ${kitTest.sat.toFixed(3)} && mx > ${kitTest.v.toFixed(3)};
+          if (gReg > 0.5 && gReg < 3.5 && kitLike) { gKit = 1.0; diffuseColor.rgb = vec3(0.86); }
+          else if (gReg > 3.5 && gReg < 4.5) { diffuseColor.rgb = vec3(0.022, 0.024, 0.028); }
+          else if (gReg > 4.5 && kitLike) { diffuseColor.rgb = vec3(0.72); }
+        }`)
+      .replace("#include <dithering_fragment>", `#include <dithering_fragment>
+        if (uMode > 0.5) {
+          vec3 m = vec3(0.0);
+          if (gKit > 0.5) m = gReg < 1.5 ? vec3(1.0,0.0,0.0) : (gReg < 2.5 ? vec3(0.0,1.0,0.0) : vec3(0.0,0.0,1.0));
+          gl_FragColor = vec4(m, 1.0);
+        }`);
+  };
+  mat.needsUpdate = true;
+  const mixer = new THREE.AnimationMixer(inner);
+  chars[name] = { holder, inner, skinned, mixer, uniforms, H, minY };
+  return chars[name];
+}
+
+const clipCache = {};
+async function loadClip(file, opts = {}) {
+  if (clipCache[file]) return clipCache[file];
+  const g = await parse(stripToAnimation(await fetchBuf("/assets/" + file)));
+  const clip = g.animations[0];
+  if (opts.inPlace) {
+    // Run_02 travels: take out the drift of the hips over the loop, keep the sway.
+    for (const tr of clip.tracks) {
+      if (!/Hips\.position$/.test(tr.name)) continue;
+      const v = tr.values, n = tr.times.length;
+      const x0 = v[0], z0 = v[2], x1 = v[(n - 1) * 3], z1 = v[(n - 1) * 3 + 2];
+      for (let i = 0; i < n; i++) {
+        const f = n > 1 ? i / (n - 1) : 0;
+        v[i * 3] -= x0 + (x1 - x0) * f;
+        v[i * 3 + 2] -= z0 + (z1 - z0) * f;
+      }
+    }
+  }
+  clipCache[file] = clip;
+  return clip;
+}
+
+// ── One frame ──
+function pose(ch, clip, time, facing, dive) {
+  ch.mixer.stopAllAction();
+  ch.mixer.uncacheRoot(ch.inner);
+  ch.inner.traverse((o) => { if (o.isBone && o.userData.rest) { o.position.copy(o.userData.rest.p); o.quaternion.copy(o.userData.rest.q); o.scale.copy(o.userData.rest.s); } });
+  const act = ch.mixer.clipAction(clip);
+  act.play();
+  ch.mixer.setTime(time);
+  // facing: screen angle a → model forward (+Z) to (cos a, sin a) in (x, z)
+  ch.holder.rotation.set(0, Math.PI / 2 - facing, 0);
+  ch.inner.scale.set(dive && dive.side < 0 ? -1 : 1, 1, 1);
+  ch.inner.position.set(0, 0, 0);
+  ch.inner.rotation.set(0, 0, 0);
+  if (dive) {
+    // The leap clip goes straight up. Lay it over sideways: roll about his
+    // own forward axis (pivot at the boots), carry him across, land him.
+    const p = dive.p;
+    const roll = dive.side * dive.maxRoll * p;          // + = to his right
+    ch.inner.rotation.set(0, 0, roll);
+    ch.inner.position.set(-dive.side * dive.carry * p, -dive.drop * p, 0);
+  }
+  ch.holder.updateMatrixWorld(true);
+}
+function restBones(ch) {
+  ch.inner.traverse((o) => { if (o.isBone) o.userData.rest = { p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() }; });
+}
+
+const W = Math.round((CFG.view.r - CFG.view.l) * CFG.ppm * CFG.ss);
+const Hh = Math.round((CFG.view.t - CFG.view.b) * CFG.ppm * CFG.ss);
+renderer.setSize(W, Hh, false);
+renderer.setPixelRatio(1);
+const anchorX = (-CFG.view.l / (CFG.view.r - CFG.view.l)) * W / CFG.ss;
+const anchorY = (CFG.view.t / (CFG.view.t - CFG.view.b)) * Hh / CFG.ss;
+
+const small = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+/** Box-filter shrink of the GL canvas by CFG.ss (exact average). */
+function shrink(srcCanvas) {
+  const s = CFG.ss, w = W / s | 0, h = Hh / s | 0;
+  const big = small(W, Hh); const bctx = big.getContext("2d", { willReadFrequently: true });
+  bctx.drawImage(srcCanvas, 0, 0);
+  const src = bctx.getImageData(0, 0, W, Hh).data;
+  const out = new ImageData(w, h); const d = out.data;
+  const n = s * s;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let r = 0, g = 0, b = 0, a = 0;
+    for (let j = 0; j < s; j++) for (let i = 0; i < s; i++) {
+      const k = ((y * s + j) * W + (x * s + i)) * 4;
+      const al = src[k + 3];
+      r += src[k] * al; g += src[k + 1] * al; b += src[k + 2] * al; a += al;
+    }
+    const o = (y * w + x) * 4;
+    if (a > 0) { d[o] = r / a; d[o + 1] = g / a; d[o + 2] = b / a; }
+    d[o + 3] = a / n;
+  }
+  return out;
+}
+function renderPass(ch, mode) {
+  ch.uniforms.uMode.value = mode;
+  renderer.setClearColor(0x000000, mode ? 1 : 0);
+  renderer.render(scene, cam);
+  return shrink(renderer.domElement);
+}
+/** Dark outline under the figure: alpha dilated by a disc. */
+function outlined(img) {
+  const { width: w, height: h, data } = img;
+  const R = CFG.outlinePx, out = new ImageData(w, h), o = out.data;
+  const [or, og, ob] = CFG.outline;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let m = 0;
+    for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+      const dd = Math.hypot(i, j); if (dd > R + 0.5) continue;
+      const xx = x + i, yy = y + j; if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+      const a = data[(yy * w + xx) * 4 + 3] * Math.min(1, R + 0.5 - dd + 0.5);
+      if (a > m) m = a;
+    }
+    const k = (y * w + x) * 4, fa = data[k + 3] / 255, oa = (m / 255) * 0.92;
+    const A = fa + oa * (1 - fa);
+    if (A <= 0) continue;
+    o[k] = (data[k] * fa + or * oa * (1 - fa)) / A;
+    o[k + 1] = (data[k + 1] * fa + og * oa * (1 - fa)) / A;
+    o[k + 2] = (data[k + 2] * fa + ob * oa * (1 - fa)) / A;
+    o[k + 3] = A * 255;
+  }
+  return out;
+}
+function trimBox(img) {
+  const { width: w, height: h, data } = img;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 2) {
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  if (x1 < 0) return { x: 0, y: 0, w: 1, h: 1 };
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+function crop(img, b) {
+  const c = small(img.width, img.height); c.getContext("2d").putImageData(img, 0, 0);
+  const o = small(b.w, b.h); o.getContext("2d").drawImage(c, b.x, b.y, b.w, b.h, 0, 0, b.w, b.h);
+  return o;
+}
+
+function bakeFrame(ch, clip, time, facing, dive) {
+  pose(ch, clip, time, facing, dive);
+  const col = outlined(renderPass(ch, 0));
+  const mask = renderPass(ch, 1);
+  const b = trimBox(col);
+  return { color: crop(col, b), mask: crop(mask, b), ax: anchorX - b.x, ay: anchorY - b.y, w: b.w, h: b.h };
+}
+
+// ── What to bake ──
+const DIRS8 = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4);
+const DIRS4 = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+const PLAYER_CLIPS = [
+  { name: "idle", file: "player-idle.glb", frames: 4, from: 0, to: 2.4, fps: 3, loop: "pingpong" },
+  { name: "jog", file: "player-jog.glb", frames: 8, inPlace: true, loop: "loop" },
+  { name: "sprint", file: "player-sprint.glb", frames: 8, inPlace: true, loop: "loop" },
+  { name: "kick", file: "player-kick.glb", frames: 6, from: 0.25, to: 0.95, fps: 9, loop: "once", strikeFrame: 3 },
+  { name: "celebrate", file: "player-celebrate.glb", frames: 6, loop: "loop" },
+];
+const KEEPER_CLIPS = [
+  { name: "ready", file: "keeper-ready.glb", frames: 4, from: 0, to: 1.4, fps: 4, loop: "pingpong" },
+  { name: "jog", file: "player-jog.glb", frames: 8, inPlace: true, loop: "loop" },
+  { name: "diveR", file: "keeper-dive.glb", frames: 6, from: 0.4, to: 1.2, fps: 9, loop: "once", dive: 1 },
+  { name: "diveL", file: "keeper-dive.glb", frames: 6, from: 0.4, to: 1.2, fps: 9, loop: "once", dive: -1 },
+];
+const DIVE = { maxRoll: (78 * Math.PI) / 180, carry: 0.55, drop: 0.25 };
+
+function timesFor(c, clip) {
+  const from = c.from ?? 0, to = c.to ?? clip.duration;
+  const out = [];
+  for (let i = 0; i < c.frames; i++) {
+    const f = c.loop === "loop" ? i / c.frames : c.frames > 1 ? i / (c.frames - 1) : 0;
+    out.push(from + (to - from) * f);
+  }
+  return out;
+}
+
+window.bakerReady = false;
+let ready = (async () => {
+  setCamera(CFG.tilt);
+  const p = await loadChar("player", "player.glb", { sat: 0.16, v: 0.62 });
+  restBones(p);
+  const k = await loadChar("keeper", "keeper.glb", { sat: 0.14, v: 0.42 });
+  restBones(k);
+  scene.add(p.holder);
+  window.bakerReady = true;
+})();
+
+function show(name) { for (const n of Object.keys(chars)) chars[n].holder.visible = n === name; }
+
+async function bakeChar(name, clips, dirs) {
+  show(name);
+  const ch = chars[name];
+  if (!ch.holder.parent) scene.add(ch.holder);
+  const out = [];
+  for (const c of clips) {
+    const clip = await loadClip(c.file, c);
+    const ts = timesFor(c, clip);
+    const fps = c.fps ?? c.frames / (((c.to ?? clip.duration) - (c.from ?? 0)) || clip.duration);
+    const cl = { name: c.name, fps: +fps.toFixed(3), loop: c.loop, dirs: dirs.length, frames: c.frames, strikeFrame: c.strikeFrame, cells: [] };
+    for (const fac of dirs) for (let i = 0; i < ts.length; i++) {
+      const dive = c.dive ? { side: c.dive, p: Math.min(1, (i / (ts.length - 1)) * 1.25), ...DIVE } : null;
+      cl.cells.push(bakeFrame(ch, clip, ts[i], fac, dive));
+    }
+    out.push(cl);
+  }
+  return out;
+}
+
+/** Shelf-pack every frame into one atlas canvas pair. */
+function pack(groups, maxW = 1024) {
+  const all = [];
+  for (const g of groups) for (const c of g.clips) for (const f of c.cells) all.push(f);
+  const order = [...all].sort((a, b) => b.h - a.h);
+  let x = 0, y = 0, rowH = 0;
+  for (const f of order) {
+    if (x + f.w + 2 > maxW) { x = 0; y += rowH + 2; rowH = 0; }
+    f.px = x; f.py = y; x += f.w + 2; rowH = Math.max(rowH, f.h);
+  }
+  const H = y + rowH;
+  const col = small(maxW, H), mask = small(maxW, H);
+  const cc = col.getContext("2d"), mc = mask.getContext("2d");
+  mc.fillStyle = "#000"; mc.fillRect(0, 0, maxW, H);
+  for (const f of all) { cc.drawImage(f.color, f.px, f.py); mc.drawImage(f.mask, f.px, f.py); }
+  return { col, mask, w: maxW, h: H };
+}
+
+window.bakeAll = async () => {
+  await ready;
+  const t = CFG.tilt;
+  const groups = [
+    { char: "player", clips: await bakeChar("player", PLAYER_CLIPS, DIRS8) },
+    { char: "keeper", clips: await bakeChar("keeper", KEEPER_CLIPS, DIRS4) },
+  ];
+  const atl = pack(groups);
+  // Standing height of a man (idle, facing down), for the game's sizing.
+  const standing = groups[0].clips[0].cells[2 * 4];
+  const index = {
+    version: 1, tilt: t, ppm: CFG.ppm, outlinePx: CFG.outlinePx,
+    standH: standing.ay, // px from boots to top of head in the bake
+    atlas: { color: "atlas-0.webp", mask: "mask-0.png", w: atl.w, h: atl.h },
+    chars: {},
+  };
+  let frames = 0;
+  for (const g of groups) {
+    const clips = {};
+    for (const c of g.clips) {
+      clips[c.name] = {
+        fps: c.fps, loop: c.loop, dirs: c.dirs, frames: c.frames, ...(c.strikeFrame != null ? { strikeFrame: c.strikeFrame } : {}),
+        // per cell: x, y, w, h, anchorX, anchorY  (cell = dir * frames + frame)
+        cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]),
+      };
+      frames += c.cells.length;
+    }
+    index.chars[g.char] = { clips };
+  }
+  return {
+    files: { "atlas-0.webp": atl.col.toDataURL("image/webp", 0.9), "mask-0.png": atl.mask.toDataURL("image/png") },
+    index, frames,
+  };
+};
+
+/** Contact sheets for choosing the tilt and the clip windows by eye. */
+window.preview = async (spec) => {
+  await ready;
+  const res = {};
+  const [kind, ...rest] = spec.split(":");
+  if (kind === "tilt") {
+    for (const tv of rest[0].split(",").map(Number)) {
+      setCamera(tv);
+      show("player");
+      const cells = [];
+      const clips = [PLAYER_CLIPS[0], PLAYER_CLIPS[1], PLAYER_CLIPS[3]];
+      for (const c of clips) {
+        const clip = await loadClip(c.file, c);
+        const ts = timesFor(c, clip);
+        for (const fac of DIRS8) cells.push(bakeFrame(chars.player, clip, ts[Math.min(2, ts.length - 1)], fac));
+      }
+      res[`tilt-${tv}.png`] = sheet(cells, 8).toDataURL("image/png");
+    }
+    setCamera(CFG.tilt);
+  } else if (kind === "clip") {
+    // clip:<char>:<file>:<n>:<facingDeg>[:dive]
+    const [cn, file, n, fd, dv] = rest;
+    show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
+    const clip = await loadClip(file, { inPlace: /jog/.test(file) });
+    const cells = [];
+    for (let i = 0; i < +n; i++) {
+      const tt = (clip.duration * i) / +n;
+      const dive = dv ? { side: +dv, p: i / (+n - 1), ...DIVE } : null;
+      cells.push(bakeFrame(chars[cn], clip, tt, (+fd * Math.PI) / 180, dive));
+    }
+    res[`clip-${cn}-${file.replace(".glb", "")}-${fd}${dv ? "-d" + dv : ""}.png`] = sheet(cells, +n > 8 ? 8 : +n).toDataURL("image/png");
+  } else if (kind === "mask") {
+    show("player");
+    const cells = [];
+    for (const cn of ["player", "keeper"]) {
+      show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
+      const clip = await loadClip(cn === "player" ? "player-idle.glb" : "keeper-ready.glb");
+      for (const fac of DIRS4) { const f = bakeFrame(chars[cn], clip, 0.3, fac); cells.push(f, { ...f, color: f.mask }); }
+    }
+    res["mask.png"] = sheet(cells, 8).toDataURL("image/png");
+  }
+  return res;
+};
+/** Cells laid out on a grass-ish background at 1x (game size) and 4x. */
+function sheet(cells, cols) {
+  const cw = 110, chh = 120, rows = Math.ceil(cells.length / cols);
+  const c = small(cols * cw, rows * chh * 2);
+  const g = c.getContext("2d");
+  g.fillStyle = "#3f8f3a"; g.fillRect(0, 0, c.width, c.height);
+  g.imageSmoothingEnabled = true;
+  cells.forEach((f, i) => {
+    const x = (i % cols) * cw, y = Math.floor(i / cols) * chh;
+    // 2x bake drawn at 2x (crisp phone) ...
+    g.drawImage(f.color, x + 55 - f.ax, y + 100 - f.ay);
+    // ... and at the game's 1x
+    g.drawImage(f.color, x + 90 - f.ax / 2, y + 100 - f.ay / 2, f.w / 2, f.h / 2);
+    g.fillStyle = "#f00"; g.fillRect(x + 54, y + 99, 2, 2);
+  });
+  // a 4x zoom row of the first cells under the sheet
+  g.imageSmoothingEnabled = false;
+  const zy = rows * chh;
+  let zx = 0;
+  for (const f of cells.slice(0, cols)) {
+    g.drawImage(f.color, 0, 0, f.w, f.h, zx, zy, f.w * 2, f.h * 2);
+    zx += f.w * 2 + 6; if (zx > c.width) break;
+  }
+  return c;
+}
+</script>
+</body></html>

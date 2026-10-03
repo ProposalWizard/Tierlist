@@ -874,6 +874,21 @@ export const ADMIN_GUIDES = {
     dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · character.glb + anims.glb from tools/shop3d/build_assets.py · three.js is the site's own package, loaded only when the shop opens",
   },
 
+  "/star-sprites-dev": {
+    title: "3D match figures",
+    what: "The new small 3D players and keepers on their own, at the real match size: two clubs in their real kits running, standing, striking, celebrating, and a keeper diving. A 4x zoom underneath shows one of each.",
+    buttons: [
+      {
+        items: [
+          ["Pause / Play", "Stops and starts the men moving, so one frame can be looked at closely."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. No career is touched."],
+    inGame: ["The same figures are drawn in the match's New view (Settings: Players in the match → 3D)."],
+    dev: "app/star-sprites-dev/page.tsx · lib/star/sprites.ts · public/star/sprites/ (made by tools/sprites/bake.mjs from the rigged models, which are not in the repo)",
+  },
+
   "/star-3d-dev": {
     title: "3D",
     what: "One of every mode in the game, with the players drawn in the new \"3D\" look (shaded kit, folds, socks and boots, a soft shadow, the fitted face) — and a switch to see the same moment in today's look.",
