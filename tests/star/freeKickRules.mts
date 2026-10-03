@@ -43,10 +43,14 @@ const SUB = 1 / 180;
 const pct = (n: number, d: number) => `${((100 * n) / Math.max(1, d)).toFixed(1)}%`;
 
 /** The free kick as CanvasMatch.loadScenario serves it (request path, no
- *  squad) — since v0.15 A2 every chance is made by chanceMaker's makeChance. */
+ *  squad) — since v0.15 A2 every chance is made by chanceMaker's makeChance,
+ *  and since v0.26 the game's default is the New chances (Settings →
+ *  Chances: New), so that is what is checked here. Classic serves the team's
+ *  14 drawn free kicks exactly as before; their median is 21.2 m, under the
+ *  real range — a fact about those drawings, which Classic keeps as they are. */
 function served(seed: number, ks = 62): Scenario {
   const rng = mulberry32(seed);
-  const sc = makeChance({ source: { from: "kind", kind: "free_kick" }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
+  const sc = makeChance({ source: { from: "kind", kind: "free_kick" }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
   initDefenders(sc, rng);
   return sc;
 }

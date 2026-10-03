@@ -268,6 +268,11 @@ function slideAlongTheLine(sc: Scenario, rngIn: () => number): void {
   for (const r of sc.secondaryRunners) bodies.push(r.pos);
   if (!parked(sc.follower)) bodies.push(sc.follower);
   for (const t of sc.teammates) bodies.push(t);
+  // Each man's step comes from his SPOT's place in the line, not from which
+  // part the engine cast him in (v0.26): the same drawing then always gives
+  // the same penalty, whichever man the build made the runner. Same steps,
+  // same spread — only who gets which draw is fixed.
+  bodies.sort((p, q) => p.x - q.x || p.y - q.y);
   for (const b of bodies) {
     if (parked(b)) continue;
     const side = Math.sign(b.x - CX) || 1;
