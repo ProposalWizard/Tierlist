@@ -3,7 +3,7 @@ import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
@@ -89,7 +89,7 @@ import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, FAKE_FACES, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
-  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
+  figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
   MAX_KEEPER_LEAN, ROLE_KIT,
   runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose, FIGURE_HEIGHT_R,
 } from "@/lib/star/fiveASide/render";
@@ -131,7 +131,12 @@ import {
   scuffStrike, cheekyStrike, isCheekyMiss,
   type RunupPath, type CheekyKind,
 } from "@/lib/star/penaltyRunup";
-import { revealOnScreen } from "@/lib/revealOnScreen";
+import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
+import {
+  matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, MATCH_VIEW_DEFAULT,
+} from "@/lib/star/matchView";
+import { drawMatchFigure } from "@/lib/star/matchFigure";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -465,6 +470,8 @@ const C = {
   // diagram rather than as a painted field.
   line: "rgba(255,255,250,0.85)",
   lineFaint: "rgba(255,255,250,0.5)",
+  // New view: thin lines read better a touch brighter.
+  lineNew: "rgba(255,255,255,0.92)",
   // you/youRim/mate/mateRim/opp/oppRim/gk/gkRim: the shared ROLE_KIT
   // (lib/star/fiveASide/render.ts) — one source now, not a fourth
   // independently-typed copy of the same numbers. See that constant's own
@@ -536,6 +543,78 @@ function makeGrassTile(): HTMLCanvasElement | null {
 }
 
 /**
+ * THE NEW VIEW'S GRASS (option D, Harry 3 Oct 2026): a soft two-tone checker
+ * mow — big squares turned 45° (diamonds), two close greens — the classic
+ * grain over it, and a soft vignette at the screen's edges. Pinned to PITCH
+ * space through `P`, so it turns with a side-on frame and sits still between
+ * chances. Painted once per frame and size into a cache (CanvasMatch's
+ * mowRef), never per animation frame.
+ */
+const MOW_SQUARE_M = 6.4;                 // side of one square of the mow
+const MOW_BASE = "#22920b";
+const MOW_LIGHT = "rgba(150,230,90,0.085)"; // the lighter pass, laid over the base
+function drawMowedPitch(
+  g: CanvasRenderingContext2D, W: number, H: number,
+  P: (x: number, y: number) => { px: number; py: number },
+  unit: number, grain: HTMLCanvasElement | null,
+) {
+  g.fillStyle = MOW_BASE;
+  g.fillRect(0, 0, W, H);
+
+  // The visible pitch rectangle, from the four screen corners.
+  // Diamond lattice: u = (x + y) / s, v = (x - y) / s, every cell with an odd
+  // (u + v) gets the lighter pass. Only the cells near the screen are drawn.
+  const s = MOW_SQUARE_M * Math.SQRT2 / 2;     // half-diagonal steps
+  const pxPerM = unit;
+  const spanM = Math.hypot(W, H) / Math.max(1e-6, pxPerM);
+  // Centre of the screen in pitch space: invert P on two axes by sampling.
+  const o = P(0, 0), ex = P(1, 0), ey = P(0, 1);
+  const ax = { x: ex.px - o.px, y: ex.py - o.py }, ay = { x: ey.px - o.px, y: ey.py - o.py };
+  const det = ax.x * ay.y - ax.y * ay.x || 1;
+  const toPitch = (sx: number, sy: number) => {
+    const dx = sx - o.px, dy = sy - o.py;
+    return { x: (dx * ay.y - dy * ay.x) / det, y: (ax.x * dy - ax.y * dx) / det };
+  };
+  const c = toPitch(W / 2, H / 2);
+  const reach = spanM / 2 + MOW_SQUARE_M * 2;
+  const u0 = Math.floor((c.x + c.y - reach * 1.5) / (2 * s)), u1 = Math.ceil((c.x + c.y + reach * 1.5) / (2 * s));
+  const v0 = Math.floor((c.x - c.y - reach * 1.5) / (2 * s)), v1 = Math.ceil((c.x - c.y + reach * 1.5) / (2 * s));
+  g.fillStyle = MOW_LIGHT;
+  g.beginPath();
+  for (let u = u0; u <= u1; u++) {
+    for (let v = v0; v <= v1; v++) {
+      if (((u + v) & 1) === 0) continue;
+      // Cell centre in pitch space (x + y = (2u+1)s, x - y = (2v+1)s).
+      const su = (2 * u + 1) * s, sv = (2 * v + 1) * s;
+      const cx = (su + sv) / 2, cy = (su - sv) / 2;
+      if (Math.abs(cx - c.x) > reach || Math.abs(cy - c.y) > reach) continue;
+      const a = P(cx - s, cy), b = P(cx, cy - s), d = P(cx + s, cy), e = P(cx, cy + s);
+      g.moveTo(a.px, a.py); g.lineTo(b.px, b.py); g.lineTo(d.px, d.py); g.lineTo(e.px, e.py); g.closePath();
+    }
+  }
+  g.fill();
+
+  // The grain, pinned to pitch space like the classic grass.
+  if (grain) {
+    const pat = g.createPattern(grain, "repeat");
+    if (pat) {
+      g.save();
+      g.translate(o.px % GRASS_TILE, o.py % GRASS_TILE);
+      g.fillStyle = pat;
+      g.fillRect(-GRASS_TILE, -GRASS_TILE, W + GRASS_TILE * 2, H + GRASS_TILE * 2);
+      g.restore();
+    }
+  }
+
+  // A soft vignette: the edges of the SCREEN a little darker.
+  const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.hypot(W, H) * 0.56);
+  vg.addColorStop(0, "rgba(0,20,0,0)");
+  vg.addColorStop(1, "rgba(0,20,0,0.26)");
+  g.fillStyle = vg;
+  g.fillRect(0, 0, W, H);
+}
+
+/**
  * A fresh rng from `seed`, wrapped to count its own draws into `counter` —
  * see rngCallCountRef's own comment on why the count matters. `counter` is
  * reset to 0 here, at the moment this rng is created, so it always reads
@@ -547,6 +626,9 @@ function countedRng(seed: number, counter: { current: number }): () => number {
   counter.current = 0;
   return () => { counter.current++; return raw(); };
 }
+
+/** useLayoutEffect in the browser, useEffect on the server (no warning). */
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /** How long "PASS" / "GOAL" stays on screen after the action. */
 const ACTION_BANNER_MS = 1000;
@@ -737,6 +819,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  /**
+   * The match view (lib/star/matchView.ts): Settings → Match view, read once
+   * when the match opens. "classic" draws, frames and plays exactly as before.
+   * The ref is for the render loop; the state is for the pitch's own height.
+   */
+  const newViewRef = useRef(typeof window !== "undefined" ? matchView() === "new" : MATCH_VIEW_DEFAULT === "new");
+  const newView = newViewRef.current;
+  /** New view: the pitch box's height in CSS px (fills the phone; see newViewCanvasHeight). */
+  const [newViewH, setNewViewH] = useState<number | null>(null);
+  const newViewHRef = useRef<number | null>(null);
+  newViewHRef.current = newViewH;
+  /** New view: the sandbox's commentary and hint sit at the top of the pitch
+   *  when the ball is down at the bottom (a corner), else at the bottom. */
+  const [overlayTop, setOverlayTop] = useState(false);
   const careerRef = useRef(career);
   careerRef.current = career;
   const preferredFootRef = useRef(preferredFoot);
@@ -2023,10 +2120,55 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       canvas.height = Math.round(rect.height * dpr);
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
+      // New view: the camera holds the canvas's own shape, so a new shape
+      // means a new frame — never while a ball is in flight.
+      if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
     };
     resize();
     window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+    // The new view's pitch box changes height after mount (it measures the
+    // room it has), which a window resize never reports.
+    const ro = newViewRef.current && typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    if (ro && wrapRef.current) ro.observe(wrapRef.current);
+    return () => { window.removeEventListener("resize", resize); ro?.disconnect(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── New view: the pitch fills the phone's height ──
+  //
+  // As tall as the room under whatever sits above it (the site's pinned bars,
+  // this match's own scoreboard), between the classic 5:8 and option D's
+  // 38 × 83 m. Measured once, and again only when the WIDTH changes — a phone's
+  // address bar sliding away changes the height every scroll, and the pitch
+  // must not change shape under a drag.
+  const measuredWRef = useRef(0);
+  useIsoLayoutEffect(() => {
+    if (!newViewRef.current) return;
+    const measure = (force: boolean) => {
+      const wrap = wrapRef.current, root = rootRef.current;
+      if (!wrap || !root) return;
+      const w = wrap.getBoundingClientRect().width;
+      if (!force && Math.abs(w - measuredWRef.current) < 1) return;
+      measuredWRef.current = w;
+      const above = wrap.getBoundingClientRect().top - root.getBoundingClientRect().top;
+      let room = window.innerHeight - pinnedTopHeight(root) - above - 12;
+      // Inside a clipped box smaller than the screen (the phone's Kickabout
+      // app), the box is the room. A wrapper that merely hugs this match
+      // (its bottom is ours) says nothing about the room, so it is skipped.
+      const rootBottom = root.getBoundingClientRect().bottom;
+      const rootTop = root.getBoundingClientRect().top;
+      for (let el = root.parentElement; el && el !== document.body; el = el.parentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if (oy !== "hidden" && oy !== "clip") continue;
+        const b = el.getBoundingClientRect().bottom;
+        if (b > rootBottom + 1 && b < window.innerHeight) room = Math.min(room, b - rootTop - above - 4);
+      }
+      setNewViewH(newViewCanvasHeight(w, room));
+    };
+    measure(true);
+    const on = () => measure(false);
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
   }, []);
 
   // --- Announce the very first scenario + set its viewport ---
@@ -2039,9 +2181,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (replayOfRef.current) {
       const r = replayOfRef.current;
       scenarioRef.current = JSON.parse(JSON.stringify(r.scenario));
-      facingRef.current = scenarioRef.current.facing ?? "up";
-      viewportRef.current = { ...scenarioRef.current.viewport };
-      baseViewportRef.current = { ...scenarioRef.current.viewport };
+      frameScenario(scenarioRef.current, true);
       const replayRng = countedRng(r.seed, rngCallCountRef);
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
@@ -2078,9 +2218,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     dressAutoKeeper(scenarioRef.current);
     standBackForRunup(scenarioRef.current);
     setUpKeeper(scenarioRef.current, (seed ^ 0x4b7e) >>> 0);
-    facingRef.current = scenarioRef.current.facing ?? "up";
-    viewportRef.current = { ...scenarioRef.current.viewport };
-    baseViewportRef.current = { ...scenarioRef.current.viewport };
+    frameScenario(scenarioRef.current);
     // In a real match, kick-off belongs to the match, not to you: it plays until
     // the ball finds you rather than dropping you into a chance in the first
     // minute. The sandbox still opens on a scenario, which is its whole point.
@@ -2176,6 +2314,42 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const facingRef = useRef<Facing>("up");
   /** The grass grain, built once on first paint. */
   const grassRef = useRef<HTMLCanvasElement | null>(null);
+  /** New view: the mown pitch under everything, cached per frame and size. */
+  const mowRef = useRef<{ key: string; cv: HTMLCanvasElement } | null>(null);
+
+  /**
+   * Point the camera at a chance.
+   *
+   * Classic: the engine's own frame, exactly as it always was. New view
+   * (lib/star/matchView.ts): the zoomed-out camera, and the play area — what
+   * the engine calls "out" — grows with it. `replay`: a saved goal keeps the
+   * play area it was recorded with, so it replays exactly.
+   */
+  function frameScenario(sc: Scenario, replay = false) {
+    facingRef.current = sc.facing ?? "up";
+    if (!newViewRef.current) {
+      viewportRef.current = { ...sc.viewport };
+      baseViewportRef.current = { ...sc.viewport };
+      return;
+    }
+    const cam = frameForNewView(sc, canvasHW(), replay);
+    viewportRef.current = { ...cam };
+    baseViewportRef.current = { ...cam };
+    // Where the ball sits down the screen decides where the sandbox's
+    // commentary goes: under a corner's ball it would cover the pull-back.
+    const fx = (sc.ball.x - cam.x1) / (cam.x2 - cam.x1);
+    const f = facingRef.current;
+    const down = f === "right" ? fx : f === "left" ? 1 - fx : (sc.ball.y - cam.y1) / (cam.y2 - cam.y1);
+    setOverlayTop(f !== "up" && down > 0.62);
+  }
+
+  /** The canvas's height / width; until it is measured, the height the pitch box is asking for. */
+  function canvasHW(): number {
+    const c = canvasRef.current;
+    if (c && c.width > 0 && c.height > 0) return c.height / c.width;
+    const w = wrapRef.current?.getBoundingClientRect().width ?? 0;
+    return w > 0 && newViewHRef.current ? newViewHRef.current / w : 83 / 38;
+  }
 
   const toPx = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current!;
@@ -2236,6 +2410,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const dragRefHeightRef = useRef(dragReferenceHeightPx);
   dragRefHeightRef.current = dragReferenceHeightPx;
+  /**
+   * The height a drag (and every size kept "the same on screen as today") is
+   * measured against: the prop when given; in the new view, the classic 5:8
+   * canvas this width would have had; otherwise nothing (the canvas itself).
+   */
+  const classicHeightPx = (): number | undefined => {
+    if (dragRefHeightRef.current) return dragRefHeightRef.current;
+    if (!newViewRef.current) return undefined;
+    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    return w > 0 ? w / VIEW_ASPECT : undefined;
+  };
+  /** New view: CSS pixels on screen to metres on the pitch, at this camera. */
+  const pxToM = (px: number): number => {
+    const vp = viewportRef.current;
+    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const across = facingRef.current === "up" ? vp.x2 - vp.x1 : vp.y2 - vp.y1;
+    return w > 0 ? (px * across) / w : 0;
+  };
+  /**
+   * A size the classic view takes as a share of its frame (a grab radius, the
+   * aim arrow), kept the same number of PIXELS in the new view. `classicM` is
+   * the classic expression; `share` of `axis` ("height" = the screen's height,
+   * "y" = the frame's pitch-y span, as the classic code reads it).
+   */
+  const sameOnScreenM = (classicM: number, share: number, axis: "height" | "y"): number => {
+    if (!newViewRef.current) return classicM;
+    const w = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const refH = classicHeightPx() ?? 0;
+    const classicPx = axis === "height" || facingRef.current === "up" ? refH : w;
+    return pxToM(share * classicPx);
+  };
   const screenPull = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
     const W = vp.x2 - vp.x1, H = vp.y2 - vp.y1;
@@ -2250,11 +2455,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const a = toScreen(drag), b = toScreen(ball);
     // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
     // the same units before measuring.
-    const pull = Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    // New view: the canvas is not 5:8 any more, so its own shape is used.
+    const cr = canvasRef.current?.getBoundingClientRect();
+    const ownW = cr?.width ?? 0;
+    const ownH = cr?.height ?? 0;
+    const aspect = newViewRef.current && ownW > 0 && ownH > 0 ? ownW / ownH : VIEW_ASPECT;
+    const pull = Math.hypot((a.sx - b.sx) * aspect, a.sy - b.sy);
     // A fixed reference height (see `dragReferenceHeightPx`): the same pixels
     // of finger travel, measured against the real match's canvas instead.
-    const refH = dragRefHeightRef.current;
-    const ownH = canvasRef.current?.getBoundingClientRect().height ?? 0;
+    // The new view's taller pitch always reads against the classic 5:8
+    // canvas this width would have had, so a drag kicks exactly as hard.
+    const refH = classicHeightPx();
     return refH && refH > 0 && ownH > 0 ? pull * (ownH / refH) : pull;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2285,7 +2496,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const sc = scenarioRef.current;
     if (!acceptsCaptainOrders(sc.kind)) return null;
     const vp = viewportRef.current;
-    const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
+    const grab = newViewRef.current
+      ? Math.max(sameOnScreenM(2.2, 2.2 / 42, "y"), sameOnScreenM(0, 0.09, "y"))
+      : Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
     let best: Runner | "follower" | null = null;
     let bestD = grab;
     for (const r of orderableRunners(sc)) {
@@ -2473,7 +2686,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const heightScale = uy;
     // A real ball is only 22 cm across — drawn true to scale it disappears, so it
     // is exaggerated a little and floored at a readable pixel size.
-    const BALL_PX = Math.max(4.5, unit * 0.5);
+    // New view (option D): the zoom already shrinks it; 0.7 of that again.
+    const nv = newViewRef.current;
+    const BALL_PX = nv ? Math.max(3, unit * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
 
     // Pitch-space drawing helpers — everything below goes through these so the
     // markings sit exactly where the physics thinks they are.
@@ -2514,6 +2729,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // What it does have is a very fine grain: luminance p5 to p95 spans about
     // eight levels, so the noise below is deliberately almost invisible. It stops
     // the pitch reading as flat paint without ever becoming a texture you notice.
+    // NEW VIEW (option D): a soft two-tone checker mow, the grain on top and
+    // a soft vignette at the screen's edges, painted once per frame and size
+    // (drawMowedPitch) and stamped here. Classic: the flat grass below.
+    if (nv) {
+      const key = `${W}x${H}|${facingRef.current}|${vp.x1.toFixed(2)},${vp.y1.toFixed(2)},${vp.x2.toFixed(2)},${vp.y2.toFixed(2)}`;
+      if (!mowRef.current || mowRef.current.key !== key) {
+        const cv = mowRef.current?.cv ?? document.createElement("canvas");
+        cv.width = W; cv.height = H;
+        const g = cv.getContext("2d");
+        if (!grassRef.current) grassRef.current = makeGrassTile();
+        if (g) drawMowedPitch(g, W, H, P, unit, grassRef.current);
+        mowRef.current = { key, cv };
+      }
+      ctx.drawImage(mowRef.current.cv, 0, 0);
+    } else {
     ctx.fillStyle = C.pitch;
     ctx.fillRect(0, 0, W, H);
 
@@ -2531,6 +2761,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.restore();
       }
     }
+    } // end classic grass
 
     // Worn grass where a season's football happens: the goalmouth, the penalty
     // spot, the centre. The reference has these and they are most of what stops
@@ -2576,9 +2807,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const facing = facingRef.current;
     const arcAngle = (pitchAngle: number) =>
       pitchAngle + (facing === "right" ? Math.PI / 2 : facing === "left" ? -Math.PI / 2 : 0);
-    const lw = Math.max(1, unit * 0.12); // ~12 cm painted line
+    // New view: thin and crisp — a fixed ~1.2 px, never thicker.
+    const lw = nv ? Math.max(1.4, Math.min(2.4, unit * 0.12)) : Math.max(1, unit * 0.12); // ~12 cm painted line
     ctx.lineWidth = lw;
-    ctx.strokeStyle = C.line;
+    ctx.strokeStyle = nv ? C.lineNew : C.line;
 
     // Touchlines + goal line
     pLine(0, 0, PITCH_W, 0);
@@ -2610,8 +2842,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.beginPath(); ctx.arc(c1.px, c1.py, unit * CORNER_R, arcAngle(0), arcAngle(Math.PI / 2)); ctx.stroke();
       ctx.beginPath(); ctx.arc(c2.px, c2.py, unit * CORNER_R, arcAngle(Math.PI / 2), arcAngle(Math.PI)); ctx.stroke();
     }
-    // Halfway line + centre circle
-    ctx.strokeStyle = C.lineFaint;
+    // Halfway line + centre circle (on screen in the new view: full strength)
+    ctx.strokeStyle = nv ? C.lineNew : C.lineFaint;
     pLine(0, HALF_LEN, PITCH_W, HALF_LEN);
     {
       const cc = P(CX, HALF_LEN);
@@ -2730,11 +2962,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // head on the line and his feet two metres in front of it, and looked
       // like he had come out. It also put the ball, which IS drawn at its
       // ground point, level with a player's waist rather than his boots.
-      drawFigureAt(
-        ctx, px, py, r,
-        { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
-        faceStyleRef.current, fakeFaceStyleRef.current,
-        {
+      drawMatchFigure(ctx, nv ? "new" : "classic", px, py, r, {
+        look: { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
+        faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
+        opts: {
           facing: opts.facing ?? (body?.lean || undefined),
           liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : undefined,
           shadowR: r * 0.42,
@@ -2746,7 +2977,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // edge or it dissolves into whatever is behind it.
           starRim: "rgba(0,0,0,0.55)",
         },
-      );
+      });
     };
 
     // Sized against the reference rather than against the laws of the game: a
@@ -2757,7 +2988,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Now that the projection is flat this holds everywhere on the frame, which
     // it never could before: a man at the goal used to be drawn at 64% of a man
     // at your feet.
-    const R = unit * MATCH_FIGURE_R_MULT;
+    // New view (option D): 0.8 of the zoomed-out size, ~22 px on a phone.
+    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE : 1);
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over
@@ -3065,6 +3297,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
     const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
     const tx = drawnTaker.at.x, ty = drawnTaker.at.y;
+    // New view (option D): a thin ring on the grass under the man on the
+    // ball, so he is findable at the smaller size. Under everyone: the figure
+    // queue has not painted anybody yet.
+    if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || sceneRef.current?.you !== false)) {
+      const f = toPx(tx, ty);
+      const rr = R * 0.62;
+      ctx.save();
+      ctx.lineWidth = Math.max(1.5, R * 0.07);
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath();
+      ctx.ellipse(f.px, f.py, rr, rr * 0.42, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (auto) {
       footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
         pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
@@ -3175,10 +3421,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a yellow disc drawn over it only told you what you had already seen.
       // Their penalty at YOUR keeper (a shootout): he wears your keeper's kit.
       const gkKit = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
-      drawKeeperAt(
-        ctx,
-        cx + KR * weight * (1 - lunge), py, kr,
-        {
+      drawMatchFigure(ctx, nv ? "new" : "classic",
+        cx + KR * weight * (1 - lunge), py, kr, {
+        look: {
           shirt: gkKit.shirt,
           shorts: gkKit.trim,
           trim: gkKit.trim,
@@ -3193,9 +3438,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // the shared renderer's generic one, so every save still pitches over
         // exactly as far as it did — hence dive 0 and the lean handed in as a
         // facing. `lunge` still drives the shared set-crouch-to-full-stretch.
-        { dive: 0, lunge },
-        faceStyleRef.current, fakeFaceStyleRef.current,
-        {
+        keeper: { dive: 0, lunge },
+        faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
+        opts: {
           facing: lean,
           // cyOff is the save's own vertical drop plus his breathing. It moves
           // the BODY, never the shadow, which is what a negative lift means.
@@ -3213,7 +3458,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // A kick you are watching names both men: who is taking it, who is in goal.
           label: faceStyleRef.current.namesEnabled || autoKickOf(sc) ? kk.who?.shortName : undefined,
         },
-      );
+      });
 
       ctx.restore();
     };
@@ -3414,7 +3659,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // it should have had — so the exact same power looked visibly shorter
       // on every corner and cross. Reported directly.
       const heightSpan = facingRef.current === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
-      const lineLen = power * heightSpan * 0.132;
+      const lineLen = power * sameOnScreenM(heightSpan, 1, "height") * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -3647,7 +3892,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (ballRef.current && facingRef.current !== "up") {
         const sc = scenarioRef.current;
         const at = sc.crossSwitchY ?? 0;
-        const view = sc.crossSwitchView;
+        // New view: the up-the-pitch camera it cuts to is the zoomed-out one,
+        // and so is the play area that comes with it.
+        const view = sc.crossSwitchView && newViewRef.current
+          ? crossCutCamera(sc.crossSwitchView, canvasHW(), ballRef.current.pos)
+          : sc.crossSwitchView;
         // Y alone used to be the whole test. A corner is struck from a few
         // metres off the touchline and has to travel fifteen to thirty
         // METRES sideways to reach the delivery frame's own width — and a
@@ -5025,9 +5274,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     standBackForRunup(sc);
     setUpKeeper(sc, (seedRef.current ^ 0x4b7e) >>> 0);
     scenarioRef.current = sc;
-    facingRef.current = sc.facing ?? "up";
-    viewportRef.current = { ...sc.viewport };
-    baseViewportRef.current = { ...sc.viewport };
+    frameScenario(sc);
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
@@ -5071,9 +5318,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     standBackForRunup(sc);
     setUpKeeper(sc, (seedRef.current ^ 0x4b7e) >>> 0);
     scenarioRef.current = sc;
-    facingRef.current = sc.facing ?? "up";
-    viewportRef.current = { ...sc.viewport };
-    baseViewportRef.current = { ...sc.viewport };
+    frameScenario(sc);
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
@@ -5212,9 +5457,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       dressAutoKeeper(scenarioRef.current);
       standBackForRunup(scenarioRef.current);
       setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
-      facingRef.current = scenarioRef.current.facing ?? "up";
-      viewportRef.current = { ...scenarioRef.current.viewport };
-      baseViewportRef.current = { ...scenarioRef.current.viewport };
+      frameScenario(scenarioRef.current);
       ballRef.current = null;
       setAim(null);
       runupRef.current = null;
@@ -5430,9 +5673,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     standBackForRunup(scenarioRef.current);
 
-    facingRef.current = scenarioRef.current.facing ?? "up";
-    viewportRef.current = { ...scenarioRef.current.viewport };
-    baseViewportRef.current = { ...scenarioRef.current.viewport };
+    frameScenario(scenarioRef.current);
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
@@ -5610,7 +5851,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // let a drag start from a third of the screen away — Mikey, 28 Sep 2026:
     // "you're supposed to be able to start dragging only from the ball").
     // Still roughly a thumb's width either side of the ball on a phone.
-    if (ballD > (vp.y2 - vp.y1) * BALL_GRAB_FRACTION) {
+    if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "y")) {
       // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
       return;
@@ -5631,7 +5872,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // A penalty is always watched straight on ("up"), so sideways on the
         // screen is sideways along the goal line.
         const vp = viewportRef.current;
-        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvas.getBoundingClientRect().width, vp.x2 - vp.x1);
+        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvas.getBoundingClientRect().width,
+          // New view: the same finger nudges as far as it does in the classic frame.
+          newViewRef.current ? engineFrameOf(scenarioRef.current).x2 - engineFrameOf(scenarioRef.current).x1 : vp.x2 - vp.x1);
         ru.nudgeM = Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeDragRef.current.base + m));
       }
       return;
@@ -6020,8 +6263,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   useFitWidth(actionBannerTextRef, actionBanner);
   useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
 
+  // ── The sandbox's live commentary and the situation hint ──
+  // Classic: two rows under the pitch. New view: the pitch fills the phone,
+  // so they sit ON it as compact translucent strips — at the bottom, or at
+  // the top when the ball is down at the bottom (a corner). Never shown in a
+  // real match (see below), only while learning the game.
+  const commentaryBox = (overlay: boolean) => (
+    <div className={overlay
+      ? `rounded-lg bg-gray-950/55 px-2.5 py-1.5 backdrop-blur-[2px] ${phase === "feed" ? "hidden" : ""}`
+      : `mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
+      <div className={`flex items-center gap-1.5 ${overlay ? "mb-0.5" : "mb-1"}`}>
+        <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
+        <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>
+      </div>
+      <div className="space-y-0.5">
+        {feed.length === 0 && <div className="text-[11px] text-white/65 italic">Kick-off…</div>}
+        {(overlay ? feed.slice(-2) : feed).map((line, i, arr) => (
+          <div
+            key={i}
+            className={`text-[11px] leading-snug pl-2 border-l-2 ${
+              i === arr.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-white/70 border-transparent"
+            }`}
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  const hintBox = (overlay: boolean) => (
+    <div className={overlay
+      ? "rounded-lg bg-gray-950/55 px-2.5 py-1 text-[10px] text-white/90 text-center backdrop-blur-[2px]"
+      : "mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-white/85 text-center"}>
+      <span className="text-amber-300">💡</span> {scenarioLabel.hint}
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-sm mx-auto">
+    <div ref={rootRef} className="w-full max-w-sm mx-auto">
       {/* Local keyframes; disabled wholesale under prefers-reduced-motion */}
       <style>{`
         @keyframes kibPop { 0% { transform: scale(0.55); opacity: 0; } 60% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
@@ -6105,8 +6384,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       <div
         ref={wrapRef}
-        className="relative w-full aspect-[5/8] rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60"
-        style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none" }}
+        className={`relative w-full ${newView && newViewH ? "" : "aspect-[5/8]"} rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60`}
+        style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", ...(newView && newViewH ? { height: newViewH } : {}) }}
       >
         <canvas
           ref={canvasRef}
@@ -6292,6 +6571,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             } : undefined}
           />
         )}
+
+        {/* New view: the sandbox's commentary and hint, on the pitch. */}
+        {newView && !matchMode && !bare && phase !== "feed" && phase !== "contact" && phase !== "fpDribble" && (
+          <div className={`pointer-events-none absolute inset-x-1.5 z-20 flex flex-col gap-1 ${overlayTop ? "top-1.5" : "bottom-1.5"}`}>
+            {commentaryBox(true)}
+            {hintBox(true)}
+          </div>
+        )}
       </div>
 
       {/* Live commentary ticker and the situation hint — both only for the
@@ -6301,31 +6588,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           returning player does not need re-explained to them every single
           chance. Reported directly: neither is wanted once you are actually
           playing, only while learning the game. */}
-      {!matchMode && !bare && (
+      {!matchMode && !bare && !newView && (
         <>
-          <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
-              <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>
-            </div>
-            <div className="space-y-0.5">
-              {feed.length === 0 && <div className="text-[11px] text-white/65 italic">Kick-off…</div>}
-              {feed.map((line, i) => (
-                <div
-                  key={i}
-                  className={`text-[11px] leading-snug pl-2 border-l-2 ${
-                    i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-white/70 border-transparent"
-                  }`}
-                >
-                  {line}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-white/85 text-center">
-            <span className="text-amber-300">💡</span> {scenarioLabel.hint}
-          </div>
+          {commentaryBox(false)}
+          {hintBox(false)}
         </>
       )}
 

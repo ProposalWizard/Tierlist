@@ -6,6 +6,7 @@ import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/li
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
+import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -123,13 +124,22 @@ export function GameSwitches({ glow, fullscreen }: {
   );
 }
 
-/** Player look (Classic/3D) and the UI (Old/New). Put inside a SetCard. */
+/** Player look (Classic/3D), the match view (New/Classic) and the UI (Old/New). Put inside a SetCard. */
 export function LookSwitches() {
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
+  const viewNow = useStoredMatchView();
   return (
     <>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Match view</span>
+        <SegTabs className="w-[150px] shrink-0" value={viewNow} onChange={setMatchView} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
+      </SetNote>
+      <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Player look</span>
         <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Classic"], ["3d", "3D"]] as const} />
