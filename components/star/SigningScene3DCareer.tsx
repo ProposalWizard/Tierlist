@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The 3D signing, played inside a career (Settings → "3D signing scene
- * (beta)"). Everything comes off the save: your skin tone, your face picture
+ * The 3D signing, played inside a career (Settings → Look → "Signing scene:
+ * 3D", the default). Everything comes off the save: your skin tone, your face picture
  * (or the default fake face), your equipped accessories and Star Pass
  * aviators, the club's kit, the shirt number, the seasons and the wage.
  * Whoever plays sees themself.

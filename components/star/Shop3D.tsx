@@ -25,6 +25,8 @@ import { baseIdOf, kibCanPrice, KIB_CANS } from "@/lib/star/shopData";
 import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import { SHOP_TIERS } from "@/lib/star/economy";
 import { divisionOf } from "@/lib/star/calendar";
+import { shop3dPlayerLook } from "@/lib/star/signing3d";
+import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -106,6 +108,14 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         }, kit, displays, {
           quality: q.get("q") === "low" ? "low" : "high",
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
+          // Settings → "3D shop player": the new character in your skin, hair
+          // and kit, or the old one exactly as it was. (?player=old on the test page.)
+          player: {
+            look: q.get("player") === "old" || q.get("player") === "new" ? (q.get("player") as "old" | "new") : shop3dPlayerLook(),
+            skin: career ? skinToneHex(career.player.skinTone) : undefined,
+            hair: career ? hairColourHex(career.player.hairColour) : undefined,
+            hairStyle: career ? resolveHairStyle(career.player.hairStyle) : undefined,
+          },
         });
         if (dead) { c.dispose(); return; }
         ctrlRef.current = c;

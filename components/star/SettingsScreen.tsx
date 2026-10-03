@@ -1,5 +1,4 @@
 "use client";
-import { useSigning3d, setSigning3d } from "@/lib/star/signing3d";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -96,7 +95,6 @@ export default function SettingsScreen({
   immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
-  const signing3d = useSigning3d();
 
   // Live scores moved to the League page's bell (v0.23.1, P61).
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
@@ -194,19 +192,6 @@ export default function SettingsScreen({
           <SetDivider />
           <LookSwitches />
 
-          <SetDivider />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[14px] font-bold text-white">3D signing scene (beta)</span>
-            <SegTabs
-              className="w-[150px] shrink-0"
-              value={signing3d ? "on" : "off"}
-              onChange={(v) => setSigning3d(v === "on")}
-              tabs={[["off", "Off"], ["on", "On"]] as const}
-            />
-          </div>
-          <SetNote dim className="mt-1 text-[10px]">
-            Signing a contract plays as a live 3D scene with your own player in it. This phone only.
-          </SetNote>
         </SetCard>
       </RiseIn>
 

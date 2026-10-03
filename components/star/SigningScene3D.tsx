@@ -6,8 +6,8 @@
  * Full screen, no black bars: the 3D fills the phone, and the words, the
  * TAP TO SIGN button, the SIGNED stamp and Skip sit on top of it. Used by the
  * 3D Test Area (/star-3d-area-dev/signing, with sample terms and a picker for
- * the look) and by the career's signing when Settings → "3D signing scene
- * (beta)" is on (TrialReward.tsx).
+ * the look) and by the career's signing when Settings → Look → "Signing scene"
+ * is 3D, the default (TrialReward.tsx, TransferSigning.tsx).
  *
  * three.js is only fetched when this mounts (signing3dScene.ts imports it).
  */
