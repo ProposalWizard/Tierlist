@@ -348,8 +348,9 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
  */
 /** When the star bar starts to fill on the post-match screen. */
 const STAR_IN_MS = 1400;
-const STAR_RISE_MS = 2000;
-const STAR_REFILL_MS = 1700;
+// 1.5x slower (Harry, 2 Oct 2026, live phone test): was 2000 / 1700.
+const STAR_RISE_MS = 3000;
+const STAR_REFILL_MS = 2550;
 const STAR_HOLD_MS = 350;
 
 /**
@@ -391,20 +392,34 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
   if (after === undefined) return null;
   const value = stage === 0 ? begin : stage === 1 ? (up ? 100 : endPct) : stage === 2 ? 0 : endPct;
   const duration = stage === 2 ? 0 : stage === 3 ? STAR_REFILL_MS : STAR_RISE_MS;
+  // The level the bar is filling: the old one until it empties on a level-up.
+  const left = Math.max(1, up && stage < 2 ? from : to);
   return (
     <div className="relative px-3 py-2.5" data-star-stage={stage}>
-      {/* P35: no numbers, just the words and the bar. */}
+      {/* P35: words and the bar; the only numbers are the two levels at its ends. */}
       <div className="mb-1.5 flex items-center gap-1.5">
         <Pop value={up && stage >= 2 ? 1 : 0}>
           <span className="block h-[20px] w-[20px]"><FillStar fraction={value / 100} duration={duration} /></span>
         </Pop>
         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Star rating</span>
       </div>
-      <div role="meter" aria-label="Star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
-        <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} square duration={duration} />
+      {/* The level at each end (Harry, 2 Oct 2026, live phone test): this
+          level on the left, the next on the right; after a level-up both
+          move on by one. No other numbers. */}
+      <div className="flex items-center gap-2">
+        <LevelEnd n={left} />
+        <div role="meter" aria-label={`Star rating, level ${left} to ${left + 1}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)} className="min-w-0 flex-1">
+          <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} square duration={duration} />
+        </div>
+        <LevelEnd n={left + 1} />
       </div>
     </div>
   );
+}
+
+/** A level number at one end of the post-match star bar. */
+function LevelEnd({ n }: { n: number }) {
+  return <span data-star-level-end className="w-[22px] shrink-0 text-center text-[15px] font-black tabular-nums leading-none text-amber-200" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>{n}</span>;
 }
 
 /** One achievement, big, with a Next — shown alone (Harry, P27: "you can't

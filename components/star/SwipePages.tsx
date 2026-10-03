@@ -22,7 +22,9 @@ if (typeof window !== "undefined") {
   try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) SETTLE = "1ms linear"; } catch { /* keep the spring */ }
 }
 
-export default function SwipePages({ index, onIndex, labels, children, inset = false, arrows }: {
+export type PageTone = "calm" | "pitch";
+
+export default function SwipePages({ index, onIndex, labels, children, inset = false, arrows, tones }: {
   index: number;
   onIndex: (i: number) => void;
   labels: [string, string, string];
@@ -38,6 +40,9 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
    *  (Stats → League). Pages in `bleed` draw under the arrows (Home's pitch);
    *  the rest get room at the bottom so nothing scrolls behind them. */
   arrows?: { icons: [string, string, string]; leftEnd?: EdgeArrow; bleed?: number[] };
+  /** A page's colours in the Pitch look (pitchLook.css): "calm" paints that
+   *  page in the neutral shop tone instead of the grass (v0.25, P44). */
+  tones?: [PageTone?, PageTone?, PageTone?];
 }) {
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
@@ -132,7 +137,7 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
             // never turned. Mouse drags were unaffected, which hid it.
             // data-page-active: the page on screen, so its cards can play
             // their rise-in each time it is opened (HomeFx.tsx).
-            <div key={i} data-scroll-root data-page-active={i === index} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""} ${arrows && !arrows.bleed?.includes(i) ? "pb-[38px]" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
+            <div key={i} data-scroll-root data-page-active={i === index} data-sk-tone={tones?.[i]} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""} ${arrows && !arrows.bleed?.includes(i) ? "pb-[38px]" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
           ))}
