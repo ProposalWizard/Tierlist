@@ -13,6 +13,7 @@ import {
   gameFirst, managerTalkDue, stepsFor, phonePrice, phoneShortfall, phoneStepLine, SHOP_AFTER_GAMES,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
+import { welcomeTour, bossTour, HELP_TOURS, TRAINING_TOUR } from "../../lib/star/tours";
 import { KIB_CANS, kibCanEffectLabel } from "../../lib/star/shopData";
 import { selectionStanding } from "../../lib/star/selection";
 import { LIFESTYLE_ITEMS } from "../../lib/star/shopData";
@@ -186,6 +187,40 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(phoneShortfall({ money: 0 }) === price && phoneStepLine({ money: 0 }).includes(`★${price - 0} more`), "broke: says how much more");
   check(phoneShortfall({ money: price }) === 0 && /buy it now/.test(phoneStepLine({ money: price })), "enough: says you can buy it");
   check(phoneShortfall({ money: price - 40 }) === 40, "the shortfall is the difference");
+}
+
+// ── v0.25: the game-first order, end to end (item 1 of the v0.25 round) ──
+// Harry and Mikey, live (points 10, 11, 22): play the first game BEFORE any
+// tutorial, then the boss, then training; the Shop does NOT open after game 1.
+{
+  const steps = (x: CareerState) => stepsFor(x).map(s => s.id).join(">");
+  let c = fresh();
+  check(steps(c) === "first-game>boss-meeting>first-two-sessions>buy-phone", "game first: game, then the boss, then training, then the phone");
+  // The first screen's tour: energy, then "You've got a game today" — it ends
+  // on pressing Play, never on Training, and it has no Skip.
+  const w = welcomeTour(true);
+  check(w.length <= 3 && w[w.length - 1].target === "nav-play" && !!w[w.length - 1].press, "the welcome tour ends on 'Tap Play' (pressed), at most 3 steps");
+  check(!w.some(t => t.target === "nav-training" || /training/i.test(t.text)), "the welcome tour says nothing about training");
+  check(welcomeTour(false).some(t => t.target === "nav-training"), "(a v0.24 save still goes to training first)");
+  check(!isOpen(c, "training") && LOCK_HINT.training === "Play your first game", "Training is locked until the first game, and says so");
+  // Game 1, counted the way a real save counts it (a played fixture, no appearance).
+  const withFixture = (x: CareerState): CareerState => ({ ...x, fixtures: x.fixtures.map((f, i) => (i === 0 ? { ...f, played: true } : f)) });
+  c = recordMatchPlayed(withFixture(c));
+  check(isOpen(c, "training") && isOpen(c, "achievements"), "a played first fixture opens Training and Achievements");
+  check(!isOpen(c, "shop"), "the Shop does NOT open after game 1");
+  check(!isOpen(c, "relations") && managerTalkDue(c), "Relations waits: the manager wants a word first");
+  check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-life", "the next step is the boss, and its tour points at Relations");
+  // One drill before the boss: still no Shop, still the boss next.
+  const early = recordDrill(c);
+  check(!isOpen(early, "shop") && nextStep(early)?.id === "boss-meeting", "one drill before the boss: no Shop, and the boss is still next");
+  c = recordBossMeeting(c);
+  check(isOpen(c, "relations") && nextStep(c)?.id === "first-two-sessions", "after the boss: Relations open, training next");
+  check(!isOpen(c, "shop"), "…and the Shop still shut");
+  c = recordDrill(recordDrill(c));
+  check(isOpen(c, "shop") && nextStep(c)?.id === "buy-phone", "two drills open the Shop; then the phone");
+  // Every tour stays short (point 22).
+  for (const [name, t] of Object.entries(HELP_TOURS)) check(t.length <= 3, `the ${name} tour is at most 3 steps`);
+  check(TRAINING_TOUR.length <= 3, "the training tour is at most 3 steps");
 }
 
 // ── Style: only the phone, the rest by star rating ──

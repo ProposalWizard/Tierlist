@@ -1749,6 +1749,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * which is what makes the energy bar fall live.
    */
   const MINUTE_TICK_MS = 700;
+  /** v0.25: the first stretch of a match you start skips the clock walk. */
+  const quickStartRef = useRef(false);
   useEffect(() => {
     if (pause || queue.length === 0) return;
     const next = queue[0];
@@ -2116,7 +2118,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         setPause({
           label: "You are going on",
           cta: "Get out there →",
-          onContinue: () => { setPause(null); startSimulation(); },
+          // v0.25: straight into your first chance, as for a starter.
+          onContinue: () => { setPause(null); quickStartRef.current = true; startSimulation(); },
         });
         return;
       }
@@ -2124,6 +2127,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // whistle — not on a pitch waiting for a chance that has not arrived.
       enteredAtRef.current = 0;
       setLog([logLine("Kick Off", "period", 0)]);
+      quickStartRef.current = true;
       startSimulation();
       return;
     }
@@ -4685,7 +4689,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
     if (stretchRef.current) stretchRef.current.queued = events.length;
-    setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    // ── v0.25: Play goes straight into the first chance ──
+    // Mikey, 2 Oct 2026 (review point 30): "as soon as you press Play" the
+    // match should become the chance, not a kick-off card while the clock
+    // walks up to it (measured: about 0.7 s a minute, so a first chance at
+    // 14' was ten seconds of nothing). The first stretch of a match you
+    // start is written straight into the log and the clock jumps to it.
+    // Only when a chance of yours is waiting, and never across half time.
+    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
+    quickStartRef.current = false;
+    if (quick) {
+      const lines = linesFrom(events, matchMinuteRef.current);
+      setLog(l => [...l, ...lines]);
+      setQueue([]);
+      setClock(st.minute);
+    } else {
+      setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    }
     setPhase("feed");
 
     simContinueRef.current = () => {
@@ -4833,6 +4853,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         loadScenario(false);
       }
     };
+    if (quick) {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => {
+        if (sceneGenRef.current !== gen) return;
+        const go = simContinueRef.current;
+        simContinueRef.current = null;
+        stretchRef.current = null;
+        go?.();
+      }, 0);
+    }
   };
 
   /**

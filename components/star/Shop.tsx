@@ -4,7 +4,7 @@ import BootUnbox from "./BootUnbox";
 import StylePicture from "./StylePicture";
 import ShopSheet from "./ShopSheet";
 import { BasketGlyph } from "./BootShelf";
-import { basket, useBasket, basketTotal, basketCount, MAX_PAIRS, type BasketEntry } from "./shopBasket";
+import { basket, useBasket, basketTotal, basketCount, MAX_PAIRS, BASKET_ON, type BasketEntry } from "./shopBasket";
 import { BOOT_LOOK } from "./BootPicture";
 import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
@@ -220,7 +220,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
       {flyLayer}
       {unbox && <BootUnbox base={baseIdOf(unbox.boot)} level={unbox.boot.level ?? 1} name={`${unbox.boot.name} L${unbox.boot.level ?? 1}`} pairs={unbox.pairs} onDone={unbox.done} />}
       {/* Always there on Boots (the flight target), seen once something is in it. */}
-      {(kind === "boots" || (kind === "lifestyle" && list.length > 0)) && (
+      {BASKET_ON && (kind === "boots" || (kind === "lifestyle" && list.length > 0)) && (
         <BasketButton ref={basketBtnRef} show={(list.length > 0 || paying) && !basketOpen && !unbox} count={basketCount(list)} total={basketTotal(list)} paying={paying} onClick={() => setBasketOpen(true)} />
       )}
       {note && (
