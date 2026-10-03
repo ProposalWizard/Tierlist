@@ -1,4 +1,6 @@
 "use client";
+import { createContext, useContext, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { Skills } from "@/lib/star/types";
 
 /**
@@ -6,7 +8,21 @@ import type { Skills } from "@/lib/star/types";
  * 25 Sep 2026: "a very short, small tutorial or pop-up… doesn't have to be
  * many words, just something that tells you how it works"). A small drawing,
  * three short lines, the star rule, one button.
+ *
+ * v0.24 (Harry, 2 Oct 2026, P2-57, P2-58): in the New UI the card no longer
+ * stands in front of level 1 ("once they've clicked on the page, this doesn't
+ * need to pop up"). The same drawing and lines sit ON the drill the first time
+ * you play it (DrillTutorial), and a "?" on the drill brings them back
+ * (DrillHelpButton). The Old UI (components/star/legacy/) still mounts the
+ * same TrainingMinigame, so the card stays there unless the page turns it off
+ * with <DrillIntroOff>.
  */
+
+/** Wrap a TrainingMinigame in this to skip its level-1 card (New UI). */
+const IntroOff = createContext(false);
+export function DrillIntroOff({ children }: { children: React.ReactNode }) {
+  return <IntroOff.Provider value>{children}</IntroOff.Provider>;
+}
 
 const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
   power: {
@@ -91,30 +107,53 @@ function Picture({ skill }: { skill: keyof Skills }) {
   );
 }
 
-export default function TrainingIntro({ skill, onStart }: { skill: keyof Skills; onStart: () => void }) {
+/** What each drill is for — the "why" line on the drill's tutorial. */
+const WHY: Record<keyof Skills, string> = {
+  power: "Power: long shots and stronger crosses",
+  technique: "Technique: ball control, curl and accurate shots",
+  freeKick: "Free Kick: free kicks, corners and penalties",
+  pace: "Pace: faster dribbles and more runs into space",
+  vision: "Vision: more team-mates to pass to",
+};
+
+/** The drill's how-it-works, as one block: drawing, three lines, stars. */
+function HowItWorks({ skill, compact = false }: { skill: keyof Skills; compact?: boolean }) {
   const it = INTRO[skill];
+  return (
+    <>
+      <div className="mt-1 text-2xl font-black text-white">{it.title}</div>
+      <div className="mt-0.5 text-[12px] font-bold text-emerald-200">{WHY[skill]}</div>
+      <div className={`mt-2.5 overflow-hidden rounded-xl ${compact ? "mx-auto max-w-[200px]" : ""}`}>
+        <Picture skill={skill} />
+      </div>
+      <ol className="mt-3 space-y-1.5">
+        {it.steps.map((s, i) => (
+          <li key={i} className="flex items-center gap-3">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-400 text-xs font-black text-emerald-950">{i + 1}</span>
+            <span className="text-sm font-bold text-white">{s}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-900/70 px-3 py-2 text-xs font-black">
+        <span className="text-white">3 tries</span>
+        <span className="text-amber-300">1st ★★★</span>
+        <span className="text-amber-300">2nd ★★</span>
+        <span className="text-amber-300">3rd ★</span>
+      </div>
+    </>
+  );
+}
+
+export default function TrainingIntro({ skill, onStart }: { skill: keyof Skills; onStart: () => void }) {
+  const off = useContext(IntroOff);
+  // New UI: no card in front of the drill — straight onto the pitch.
+  useEffect(() => { if (off) onStart(); }, [off, onStart]);
+  if (off) return null;
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex items-center justify-center px-4 py-6">
       <div className="w-full max-w-sm rounded-2xl border border-gray-600 bg-gray-800 p-5 shadow-2xl">
         <div className="text-[11px] font-black uppercase tracking-widest text-emerald-300">Level 1 · How it works</div>
-        <div className="mt-1 text-2xl font-black text-white">{it.title}</div>
-        <div className="mt-3 overflow-hidden rounded-xl">
-          <Picture skill={skill} />
-        </div>
-        <ol className="mt-4 space-y-2">
-          {it.steps.map((s, i) => (
-            <li key={i} className="flex items-center gap-3">
-              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-400 text-xs font-black text-emerald-950">{i + 1}</span>
-              <span className="text-sm font-bold text-white">{s}</span>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-gray-900/70 px-3 py-2 text-xs font-black">
-          <span className="text-white">3 tries</span>
-          <span className="text-amber-300">1st ★★★</span>
-          <span className="text-amber-300">2nd ★★</span>
-          <span className="text-amber-300">3rd ★</span>
-        </div>
+        <HowItWorks skill={skill} />
         <button
           onClick={onStart}
           className="mt-4 w-full rounded-xl bg-emerald-500 py-3 text-base font-black text-emerald-950 active:scale-[0.98]"
@@ -123,5 +162,52 @@ export default function TrainingIntro({ skill, onStart }: { skill: keyof Skills;
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * The drill's tutorial, ON the drill (v0.24, P2-58: "this should be a tutorial
+ * in here the first time they do it and then always have a question mark up").
+ * The pitch stays in view behind it, dimmed; one button closes it.
+ */
+export function DrillTutorial({ skill, onClose, first = false }: { skill: keyof Skills; onClose: () => void; /** The first drill of a career: one extra line on why. */ first?: boolean }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[97] flex items-end justify-center bg-black/55 px-3 pb-4" role="dialog" aria-label="How this drill works" onClick={onClose}>
+      <div
+        data-drill-tutorial
+        className="kit-rise w-full max-w-sm rounded-2xl p-4 text-white"
+        style={{ background: "linear-gradient(180deg,#1f2937,#0b1220)", boxShadow: "inset 0 0 0 2px #fde047, 0 16px 40px -10px rgba(0,0,0,.95)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-[11px] font-black uppercase tracking-widest text-amber-300">How it works</div>
+        {first && <div className="mt-1 text-[12.5px] font-bold text-white">Each drill is a small game. Do well and the skill goes up.</div>}
+        <HowItWorks skill={skill} compact />
+        <button
+          onClick={onClose}
+          className="kib-press mt-3 w-full rounded-xl bg-emerald-500 py-3 text-base font-black text-emerald-950"
+        >
+          Got it
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** The "?" that is always on a drill after its first time. */
+export function DrillHelpButton({ onClick }: { onClick: () => void }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <button
+      onClick={onClick}
+      data-help-button
+      aria-label="How this drill works"
+      className="kib-press fixed bottom-3 right-3 z-[60] grid h-10 w-10 place-items-center rounded-[3px] bg-gray-700 text-[18px] font-black leading-none text-amber-300"
+      style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.2), 0 4px 10px rgba(0,0,0,.6)" }}
+    >
+      ?
+    </button>,
+    document.body,
   );
 }

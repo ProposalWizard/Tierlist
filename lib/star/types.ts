@@ -115,6 +115,9 @@ export interface StarPlayer {
    * (see playerIdentity.ts's resolveFoot) rather than undefined.
    */
   preferredFoot?: import("./playerIdentity").PreferredFoot;
+  /** His 3D avatar's hair (the live 3D signing). Absent = short, brown. */
+  hairStyle?: import("./playerIdentity").HairStyle;
+  hairColour?: import("./playerIdentity").HairColour;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
@@ -659,7 +662,7 @@ export interface Horse {
 
 /** See CareerState.unlocks and lib/star/unlocks.ts. */
 export interface CareerUnlocks {
-  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone". */
+  /** Features open so far: "league", "stats", "play", "shop", "achievements", "relations", "phone", "sponsors". */
   open: string[];
   /** One-off screens already shown: "tutorial", "drills-msg", "league-intro", "shop-intro", pop-ups. */
   seen: string[];
@@ -671,6 +674,17 @@ export interface CareerUnlocks {
   starsAtStart?: number;
   /** Phone apps installed from the App Store. */
   apps: string[];
+  /** Features opened but not yet announced (v0.24: "the moment ANY feature
+   *  unlocks … it is announced"). lib/star/unlocks.ts. */
+  announce?: string[];
+  /** The bottom-left button, once the first steps are done and the player
+   *  has answered "switch this to League?" (v0.24, P2-89). */
+  slot?: "achievements" | "league";
+  /** v0.25 (Harry and Mikey, 2 Oct 2026): the game comes first. A career
+   *  started from v0.25 has this set: League and Play open at once, Training
+   *  after the first game, Relations after the manager's talk, the Shop by
+   *  about game 3. Absent = the v0.24 order (a save part-way through it). */
+  gameFirst?: boolean;
 }
 
 export interface CareerState {
@@ -907,6 +921,8 @@ export interface CareerState {
   unlocks?: CareerUnlocks;
   /** Set-piece duties the manager has already told you about, once each (v0.23, P78). */
   setPieceTold?: ("penalties" | "freeKicks")[];
+  /** How many matches you had played when the manager last gave a set-piece chat, so the next one waits for a later match (P86). */
+  setPieceTalkAt?: number;
   /**
    * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
    * for penalties and one for direct free kicks. Looks only, never who
@@ -1399,6 +1415,10 @@ export type StarPhase =
   | "shop-kib"
   | "shop-boots"
   | "shop-lifestyle"
+  /** Walk the 3D shop (beta) — a 3D showroom of the boots, cars, cans and
+   *  jewellery, opened from the Shop page. Buying is still done in the normal
+   *  shop. See components/star/Shop3D.tsx. */
+  | "shop-3d"
   /** The Store (daily specials, run-ups, accessories, boosts, Coins) — the
    *  test area's screen on the real career. See components/star/store/CareerStore. */
   | "store"

@@ -140,6 +140,19 @@ export interface StrikeStageProps {
   /** Marks one attempt: its 0-1 quality and the line shown under the pitch.
    *  The stage's quality is then the mean of these. */
   judge?: (info: ChanceResolved) => { quality: number; text: string };
+  /**
+   * ── Two more pop-ups, each at its own moment (Harry, 2 Oct 2026) ──
+   *
+   * "As soon as he's running up, we should pause the animation and it should
+   * say, you run up to take free kicks. As you hit the ball, you'll be met
+   * with a timed animation. And then when the time the animation comes, you
+   * give them another little pop-up." Each one freezes the match where it is
+   * (CanvasMatch `holdAt`) until it is closed, and each is shown once per
+   * device, like the first card.
+   */
+  pauseTeach?: Partial<Record<"runup" | "contact", {
+    drill: TeachableDrill; headline: string; lines: string[]; gesture?: TeachGesture; place?: "middle" | "top";
+  }>>;
 }
 
 
@@ -186,6 +199,13 @@ export interface StrikeStageProps {
  * pointer already captured by the canvas keeps moving over the button without
  * it ever seeing the gesture — the button can only ever take a fresh press.
  *
+ * ── SUPERSEDED (2 Oct 2026): the box is in the middle and play waits ──
+ *
+ * Harry played it and wanted the opposite trade: a box near where you look,
+ * that you close with one tap before you play. So the card no longer sits on
+ * the bottom strip and no longer lets a drag through — see the wrapper at the
+ * end of `TeachCard`. The notes above are why it once sat at the bottom.
+ *
  * ── Dismissing it is teaching only ──
  *
  * "You should be able to get rid of the little tutorial." What goes is the
@@ -196,7 +216,7 @@ export interface StrikeStageProps {
  * leaves the screen in the state rep 2 is in rather than in a state nothing
  * else in the game produces.
  */
-export type TeachGesture = "drag" | "tap" | "flick";
+export type TeachGesture = "drag" | "tap" | "flick" | "strike" | "run";
 
 /**
  * The gesture, drawn. The one thing a sentence is worst at describing, and
@@ -218,6 +238,26 @@ function TeachGlyph({ gesture, compact }: { gesture: TeachGesture; compact: bool
         <circle cx="30" cy="24" r="13" fill="none" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 3" />
         <circle cx="30" cy="24" r="6.5" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
         <path d="M44 38 L52 30 L58 42 Z" fill="#f97316" />
+      </svg>
+    );
+  }
+  if (gesture === "strike") {
+    // The strike screen: a big ball, the countdown ring round it, a tap on its side.
+    return (
+      <svg viewBox="0 0 64 48" className={cls} aria-hidden="true">
+        <circle cx="30" cy="24" r="17" fill="none" stroke="#fbbf24" strokeWidth="3" strokeDasharray="80 30" />
+        <circle cx="30" cy="24" r="12" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
+        <circle cx="38" cy="26" r="3.2" fill="#f97316" />
+      </svg>
+    );
+  }
+  if (gesture === "run") {
+    // You, jogging in to the ball.
+    return (
+      <svg viewBox="0 0 64 48" className={cls} aria-hidden="true">
+        <line x1="8" y1="40" x2="40" y2="30" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 3" />
+        <circle cx="10" cy="40" r="5" fill="#0ea5e9" stroke="#0f172a" strokeWidth="1.5" />
+        <circle cx="48" cy="28" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
       </svg>
     );
   }
@@ -244,7 +284,7 @@ function TeachGlyph({ gesture, compact }: { gesture: TeachGesture; compact: bool
 }
 
 export function TeachCard(
-  { headline, lines, short, onDismiss, compact = false, inline = false, gesture = "drag" }: {
+  { headline, lines, short, onDismiss, compact: compactAsked = false, inline = false, gesture = "drag", place = "middle" }: {
     headline: string; lines: string[]; onDismiss: () => void;
     /**
      * The headline again, short enough for the one-row compact card.
@@ -266,15 +306,25 @@ export function TeachCard(
      *  tap is worse than no picture at all — it is a wrong instruction in the
      *  one place a card is meant to be clearer than words. */
     gesture?: TeachGesture;
+    /** Where the box sits over the pitch: the middle (default), or high up
+     *  when the thing being taught sits in the middle (the strike screen's
+     *  ball). Ignored when `inline`. */
+    place?: "middle" | "top";
   },
 ) {
+  // The one-row form only existed to keep a card along the bottom edge off
+  // the ball. The box in the middle stops play until it is closed, so it can
+  // always say the whole thing.
+  const compact = inline ? compactAsked : false;
   const panel = (
     <div
       className={
         // A solid card that is one piece: its own cursor (not the pitch's),
         // and the button inside its edge rather than poking out of it
         // (Mikey, 28 Sep 2026: "the got it button is like hovering over").
-        "teach-card pointer-events-auto cursor-default w-full rounded-xl border-2 border-amber-400 bg-white shadow-xl "
+        // See-through, so the pitch shows behind it (Harry, 2 Oct 2026: "the pop
+        // ups should be lower opacity").
+        "teach-card pointer-events-auto cursor-default w-full rounded-xl border-2 border-amber-400/70 bg-white/75 shadow-xl backdrop-blur-[2px] "
         + (compact ? "px-2 py-1" : "px-3 py-2")
       }
     >
@@ -305,13 +355,16 @@ export function TeachCard(
               </span>
             </>
           )}
-        <button
+        {/* Only the inline form keeps a button: the full-screen form closes
+            on a tap anywhere and says so underneath (Harry, 2 Oct 2026:
+            "a very faint 'tap anywhere to continue' rather than GOT IT"). */}
+        {inline && <button
           type="button"
-          onClick={onDismiss}
+          onClick={e => { e.stopPropagation(); onDismiss(); }}
           className="teach-dismiss pointer-events-auto ml-auto min-h-[36px] shrink-0 cursor-pointer rounded-lg bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300"
         >
           Got it ✕
-        </button>
+        </button>}
       </div>
 
       {!compact && (
@@ -328,10 +381,30 @@ export function TeachCard(
   if (inline) return panel;
 
   return (
-    // Inset well inside the pitch's own edge, so it reads as part of the
-    // screen rather than hanging off the bottom of it.
-    <div className="pointer-events-none absolute inset-x-3 bottom-4 z-20 flex justify-center">
-      {panel}
+    // ── In the middle, and play waits (Harry, 2 Oct 2026) ──
+    //
+    // "A pop-up pops up near where you would be looking anyway … I can still
+    // just play right now whereas if that was here in like a box … then I
+    // would have to click to get it round." It used to sit along the bottom
+    // edge, pointer-transparent, so the drill carried on under it. Now it is
+    // a box in the middle of the pitch over a dimmed screen that takes every
+    // press: nothing can start until one tap — on the button or anywhere
+    // else — closes it.
+    <div
+      role="dialog"
+      aria-modal="true"
+      className={`absolute inset-0 z-40 flex cursor-pointer justify-center bg-black/25 px-4 ${
+        place === "top" ? "items-start pt-[30%]" : "items-center"
+      }`}
+      onPointerDown={e => e.stopPropagation()}
+      onClick={onDismiss}
+    >
+      <div className="w-full max-w-[320px]">
+        {panel}
+        <div className="mt-2 animate-pulse text-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
+          Tap anywhere to continue
+        </div>
+      </div>
     </div>
   );
 }
@@ -446,8 +519,30 @@ const LAST_RESULT_HOLD_MS = 1400;
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, keeperStrengthFor,
   penaltyRead, penaltyReadFor, onDone, forceCompactTeach = false, penaltyRunup, freeKickRunup,
-  scene, markersFor, onBallStep, judge,
+  scene, markersFor, onBallStep, judge, pauseTeach,
 }: StrikeStageProps) {
+  // The pop-up that has the match frozen right now, and how to let it go.
+  const [paused, setPaused] = useState<{ moment: "runup" | "contact"; release: () => void } | null>(null);
+  const pauseTeachRef = useRef(pauseTeach);
+  pauseTeachRef.current = pauseTeach;
+  const holdAt = useCallback((moment: "runup" | "contact", release: () => void) => {
+    const t = pauseTeachRef.current?.[moment];
+    if (!t || teachSeen(t.drill)) return false;
+    setPaused({ moment, release });
+    return true;
+  }, []);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+  const closePause = useCallback(() => {
+    const p = pausedRef.current;
+    if (!p) return;
+    pausedRef.current = null;
+    const t = pauseTeachRef.current?.[p.moment];
+    if (t) markTeachSeen(t.drill);
+    setPaused(null);
+    p.release();
+  }, []);
+  const pauseCard = paused ? pauseTeach?.[paused.moment] : undefined;
   const [rep, setRep] = useState(0);
   const repRef = useRef(0);
   const [scores, setScores] = useState<number[]>([]);
@@ -569,7 +664,17 @@ export function StrikeStage({
           onBallStep={onBallStep}
           penaltyRunup={penaltyRunup}
           freeKickRunup={freeKickRunup}
+          holdAt={pauseTeach ? holdAt : undefined}
         />
+        {pauseCard && (
+          <TeachCard
+            headline={pauseCard.headline}
+            lines={pauseCard.lines}
+            gesture={pauseCard.gesture}
+            place={pauseCard.place}
+            onDismiss={closePause}
+          />
+        )}
         {showTeach && teach && (
           <TeachCard
             headline={teach.headline}

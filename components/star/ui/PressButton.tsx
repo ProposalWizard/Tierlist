@@ -1,6 +1,7 @@
 "use client";
 import type React from "react";
 import { rgba, tint } from "./theme";
+import { sfx as playSfx, type SfxName } from "@/lib/star/sfx";
 
 type Variant = "primary" | "secondary" | "danger" | "gold" | "accent" | "plain";
 type Size = "sm" | "md" | "lg" | "none";
@@ -54,17 +55,30 @@ function variantStyle(variant: Variant, accent: string, disabled: boolean): Reac
  *
  * `accent` is any hex colour, lit like the can buttons. `size="none"` leaves
  * the padding and rounding to `className`.
+ *
+ * Sound (lib/star/sfx.ts): only the green primary and gold buttons —
+ * Continue, Confirm, Play — make one, the confirm blip. Every other button is
+ * silent (v0.25 item 6, Harry and Mikey live: "the sound effects are too
+ * frequent" — a tap sound on every button was most of it). `sfx="ui-tap"` or
+ * `sfx="coin-in"` gives a button one on purpose, `sfx={false}` keeps a
+ * primary silent (a button whose handler plays its own).
  */
-export default function PressButton({ variant = "plain", size, accent = "#34d399", pulse = false, className = "", style, disabled, children, ...rest }: {
+export default function PressButton({ variant = "plain", size, accent = "#34d399", pulse = false, sfx, className = "", style, disabled, children, onClick, ...rest }: {
   variant?: Variant;
   size?: Size;
   accent?: string;
   pulse?: boolean;
+  sfx?: SfxName | false;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const sz = SIZE[size ?? (variant === "plain" || variant === "accent" ? "none" : "md")];
   const cls = ["kib-press", pulse && !disabled ? "kib-play-pulse" : "", sz, VARIANT_CLASS[variant], className].filter(Boolean).join(" ");
   return (
-    <button disabled={disabled} className={cls} style={{ ...variantStyle(variant, accent, !!disabled), ...style }} {...rest}>
+    <button disabled={disabled} className={cls} style={{ ...variantStyle(variant, accent, !!disabled), ...style }} {...rest}
+      onClick={(e) => {
+        const sound = sfx === false ? null : sfx ?? (variant === "primary" || variant === "gold" ? "ui-confirm" : null);
+        if (sound) playSfx(sound);
+        onClick?.(e);
+      }}>
       {children}
     </button>
   );

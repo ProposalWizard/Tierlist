@@ -93,10 +93,10 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
   };
 
   // What the game is worth, rolled once when it ends (lib/star/relationshipGame.ts):
-  // a loss costs 4; a win is +2 low down, +1 higher up, and near the top only
-  // sometimes +1. Was 8 for losing (v0.21) and +4 before that.
+  // the boss meeting is +3 for a win and −2 for a loss; the others lose 4 and
+  // win +2 low down, +1 higher up, and near the top only sometimes +1.
   const [roll] = useState(() => Math.random());
-  const gain = phase === "playing" ? 0 : relationshipGameGain(phase === "won", currentValue, roll);
+  const gain = phase === "playing" ? 0 : relationshipGameGain(phase === "won", currentValue, roll, kind);
   const sign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
   const finalise = () => {
     onComplete(gain);

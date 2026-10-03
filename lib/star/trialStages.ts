@@ -133,7 +133,9 @@ export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
   technique: 1,
   /** One run (its waves are `dribbleSetup`'s). */
   dribbling: 1,
-  vision: 1,
+  /** Five quick goes, each with less time (Harry, 2 Oct 2026 — the one
+   *  exception to "one attempt": "it's really quick"). See VISION_WINDOWS. */
+  vision: 5,
   /** Up to three kicks each, rigged so the last is yours
    *  (lib/star/trialShootoutRig.ts, `SHOOTOUT_KICKS`). Both keepers' ramp
    *  runs over these three kicks. */
@@ -707,6 +709,20 @@ export const CROWDED_PICTURE_MAX = 9;
 export const TIGHT_MARGINS_SCALE = 0.65;
 export const TIGHT_MARGINS_FLOOR = 0.6;
 
+/**
+ * ── FIND THE PASS: FIVE GOES, LESS TIME EACH (Harry, 2 Oct 2026) ──
+ *
+ * "This should still be five or six goes instead of one, just because it's
+ * really quick … It should be 2.5 seconds, two seconds, 1.5 seconds, one
+ * second, and then half a second." One window per go, in seconds. A go past
+ * the end of the list keeps the last one.
+ */
+export const VISION_WINDOWS = [2.5, 2, 1.5, 1, 0.5];
+
+export function visionWindowFor(rep: number): number {
+  return VISION_WINDOWS[Math.max(0, Math.min(VISION_WINDOWS.length - 1, Math.floor(rep)))];
+}
+
 export function visionSetup(trial: TrialProgress, rep: number): VisionSetup {
   const d = difficultyFor(trial, "vision");
   const base = visionDrill(ladderLevel(d), rep);
@@ -718,9 +734,12 @@ export function visionSetup(trial: TrialProgress, rep: number): VisionSetup {
     options: ev?.id === "crowded-picture"
       ? Math.min(CROWDED_PICTURE_MAX, base.options + CROWDED_PICTURE_MEN)
       : base.options,
+    // Harry's clock for this go (VISION_WINDOWS), not the ladder's. The
+    // snap-decision event still takes a quarter off, but never below the
+    // floor — and never makes a go LONGER than Harry's own number for it.
     window: ev?.id === "snap-decision"
-      ? Math.max(SNAP_DECISION_FLOOR, base.window * SNAP_DECISION_WINDOW)
-      : base.window,
+      ? Math.min(visionWindowFor(rep), Math.max(SNAP_DECISION_FLOOR, visionWindowFor(rep) * SNAP_DECISION_WINDOW))
+      : visionWindowFor(rep),
     margin: ev?.id === "tight-margins"
       ? Math.max(TIGHT_MARGINS_FLOOR, base.margin * TIGHT_MARGINS_SCALE)
       : base.margin,
@@ -905,7 +924,11 @@ export function strikeQuality(outcome: string, crossX: number | null): number {
  * `faceStyle.ts` reaches it, so a test can inject one), and the honest
  * failure here is "show the tutorial" — never a stage that will not open.
  */
-export type TeachableDrill = Exclude<TrialStage, "fiveASide">;
+export type TeachableDrill =
+  | Exclude<TrialStage, "fiveASide">
+  /** The free kick's two mid-kick pop-ups (Harry, 2 Oct 2026): as the run-up
+   *  starts, and as the strike screen opens. */
+  | "freeKickRunup" | "freeKickStrike";
 
 export const TEACH_SEEN_KEY = "star-trial-taught";
 
@@ -913,6 +936,7 @@ export const TEACH_SEEN_KEY = "star-trial-taught";
  *  first rep to hang an instruction on. */
 export const TEACHABLE_DRILLS: TeachableDrill[] = [
   "penalties", "freeKicks", "technique", "dribbling", "vision", "shootout",
+  "freeKickRunup", "freeKickStrike",
 ];
 
 function teachKeyFor(drill: TeachableDrill): string {

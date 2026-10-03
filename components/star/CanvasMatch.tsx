@@ -2,6 +2,7 @@
 import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
+import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildScenario,
@@ -40,6 +41,9 @@ import {
 import { mulberry32 } from "@/lib/star/season";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
+import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
+import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
+import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
@@ -376,6 +380,21 @@ interface Props {
    */
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
+  /**
+   * The foot you kick with (v0.25 item 4) — looks only: which leg swings,
+   * and on a penalty or direct free kick which side of the ball you run up
+   * from. Absent: the career's foot, else the star page's (kickFoot.ts),
+   * else right.
+   */
+  preferredFoot?: PreferredFoot;
+  /**
+   * A feature's teaching pause (the trial's free kick, 2 Oct 2026): called the
+   * moment YOUR run-up starts and the moment the strike screen opens. Return
+   * true to freeze the match right there — nobody moves, the strike screen's
+   * clock does not start — until the feature calls `release()`. Absent (the
+   * real match): never called, nothing is ever held.
+   */
+  holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
 }
 
 
@@ -539,7 +558,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -720,6 +739,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
   careerRef.current = career;
+  const preferredFootRef = useRef(preferredFoot);
+  preferredFootRef.current = preferredFoot;
 
   // Career-match mode is active when the career flow passes a fixture + callback.
   const matchMode = !!(fixture && onComplete);
@@ -1473,6 +1494,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   /** The strike screen's countdown for this kick, seconds — null = no limit (every kick but a run-up). */
   const [contactTimerS, setContactTimerS] = useState<number | null>(null);
+  // ── A feature's teaching pause (`holdAt`) — never set in the real match ──
+  const holdAtRef = useRef(holdAt);
+  holdAtRef.current = holdAt;
+  const heldRef = useRef(false);
+  const [held, setHeld] = useState(false);
+  /** Ask the feature whether to freeze here; if so, stay frozen until it lets go. */
+  const tryHold = (moment: "runup" | "contact") => {
+    const ask = holdAtRef.current;
+    if (!ask) return;
+    let done = false;
+    const release = () => {
+      if (done) return;
+      done = true;
+      heldRef.current = false;
+      setHeld(false);
+    };
+    if (ask(moment, release) && !done) {
+      heldRef.current = true;
+      setHeld(true);
+    }
+  };
   // Item 5r — a "cheeky" kick (a penalty chipped or down the middle, or an
   // open-play chip) that didn't go in costs a little reputation. The kind of the kick just struck,
   // and the misses so far this match (handed out with the match's stats).
@@ -1719,6 +1761,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * which is what makes the energy bar fall live.
    */
   const MINUTE_TICK_MS = 700;
+  /** v0.25: the first stretch of a match you start skips the clock walk. */
+  const quickStartRef = useRef(false);
   useEffect(() => {
     if (pause || queue.length === 0) return;
     const next = queue[0];
@@ -2086,7 +2130,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         setPause({
           label: "You are going on",
           cta: "Get out there →",
-          onContinue: () => { setPause(null); startSimulation(); },
+          // v0.25: straight into your first chance, as for a starter.
+          onContinue: () => { setPause(null); quickStartRef.current = true; startSimulation(); },
         });
         return;
       }
@@ -2094,6 +2139,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // whistle — not on a pitch waiting for a chance that has not arrived.
       enteredAtRef.current = 0;
       setLog([logLine("Kick Off", "period", 0)]);
+      quickStartRef.current = true;
       startSimulation();
       return;
     }
@@ -2611,6 +2657,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement;
       /** A run-up style's own body (runupStyles.ts): stride, arms, crouch, a skip off the ground, a lean. Replaces `pose`. */
       body?: RunupPose | null;
+      /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). Looks only. */
+      kickFoot?: number;
     };
 
     // ── Nearer men in front of further ones ──
@@ -2671,7 +2719,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const body = opts.body;
       const limbs = body
         ? { legSwing: body.legSwing, kick: 0, armSpread: body.armSpread, armLift: body.armLift, crouch: body.crouch }
-        : bodyPoseFor(pose, phase);
+        : bodyPoseFor(pose, phase, opts.kickFoot);
 
       // ── Anchored at the FEET ──
       //
@@ -3006,12 +3054,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const takerKit = auto?.side === "them" ? theirKit() : ourKit();
     // During a run-up the taker moves the way his style does (runupStyles.ts).
     const ruNow = phaseRef.current === "runup" ? runupRef.current : null;
-    const runBody = ruNow && !ruNow.arrived && kickPoseRef.current <= 0 ? runupPoseAt(ruNow.styled, ruNow.t) : null;
+    const runBody0 = ruNow && !ruNow.arrived && kickPoseRef.current <= 0 ? runupPoseAt(ruNow.styled, ruNow.t) : null;
+    // v0.25 item 4 — the foot he kicks with (lib/star/kickFoot.ts). Picture
+    // only: on a penalty or a direct free kick a left-footer is DRAWN coming
+    // from the right of the ball, the mirror of a right-footer, and the kick
+    // swings that foot. `sc.player`, the aim and the ball are untouched.
+    const takerFoot = auto
+      ? takerFootSign(auto.taker.id || auto.taker.name)
+      : footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
+    const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
+    const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
+    const tx = drawnTaker.at.x, ty = drawnTaker.at.y;
     if (auto) {
-      footballer(sc.player.x, sc.player.y, R, takerKit.shirt, takerKit.trim, {
-        pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
-        phase: runPhase(sc.player.x),
+      footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
+        pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
+        phase: runPhase(tx),
         body: runBody,
+        kickFoot: takerFoot,
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
@@ -3020,12 +3079,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
     // (A feature can leave you off the picture: `scene.you === false`.)
-    footballer(sc.player.x, sc.player.y, R, ourKit().shirt, ourKit().trim, {
+    footballer(tx, ty, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
-      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
-      phase: runPhase(sc.player.x),
+      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
+      phase: runPhase(tx),
       body: runBody,
+      kickFoot: takerFoot,
       star: true,
       // Your own photo (Settings → Photo, PortraitPicker) — every OTHER
       // figure already gets one when there's a real identity to draw from;
@@ -3546,7 +3606,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // camera stays put. On a penalty the keeper brain may hop (brainRunUp:
       // his one decision, made visible). Nothing else moves and the ball is
       // not touched: the kick itself is still handleContact → launch().
-      if (phaseRef.current === "runup") {
+      if (phaseRef.current === "runup" && !heldRef.current) {
         const ru = runupRef.current;
         const sc = scenarioRef.current;
         stepKeeper(sc, dt);
@@ -3565,6 +3625,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             setAim({ dir: dirNow, power: ru.power });
             setContactTimerS(strikeTimerFor(sc.kind));
             setPhase("contact");
+            tryHold("contact");
             // The page was scrolled to show the strike screen when the jog
             // began (startRunup). Only if it has moved since — the one cheap
             // check — scroll again.
@@ -3686,6 +3747,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             deflectionsRef.current += 1;
             const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) ^ 0xdef1) >>> 0);
             deflectBlock(ballRef.current, scenarioRef.current, incoming, r);
+            // v0.25 item 20: on a rebound (the keeper or the post has had it)
+            // the defender plays it away, never on at his own keeper.
+            steerDeflectionFromOwnGoal(ballRef.current, scenarioRef.current);
             res = null;
             showAction("DEFLECTED");
             pushLine("Blocked — and it's come off him loose!");
@@ -3702,6 +3766,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // resolveOutcome's own "touchOn" branch does the rest — see its own
           // doc there.
           if (!res && caughtUp) res = "touchOn";
+          // v0.25 item 20: a defender who wins the loose ball does not leave it
+          // rolling on at his own goal after the whistle.
+          if (res === "short") clearLooseWin(ballRef.current, scenarioRef.current);
           if (res) { resolveOutcome(res); break; }
         }
         // Surface mid-flight moments (pass reception / the teammate's own shot /
@@ -4209,10 +4276,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (res === "delivered") {
       const depth = sc.chainDepth ?? 0;
       const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
-      if (at && depth < CHAIN_MAX && rngRef.current() < chainReturnChance(sc)) {
+      // ── THE GIVE-AND-GO (v0.24, Harry's first National League match) ──
+      // "When I pass off the ball there, I should get the ball back, and I
+      // don't know if that's what happened." Two things were wrong:
+      //  1. In a picture with no goal in it (a midfield pass, a build-up) a
+      //     pass is the only thing you can do, and it still came back only
+      //     about half the time (chainReturnChance: 0.30 + how brave it was).
+      //     There, a completed pass now always comes back (still at most
+      //     CHAIN_MAX links). Anywhere with a goal it is the same roll as before.
+      //  2. Either way, nothing on screen said so: these lines went to the
+      //     sandbox-only ticker. Now a banner says it came back, and the match
+      //     commentary says which.
+      //  v0.25 (review of v0.24, point 49): "always" was too much. In a
+      //  no-goal picture a forward pass now comes back 92 in 100 and a
+      //  sideways or backward one 60 in 100 (lib/star/giveAndGo.ts). Pictures
+      //  with a goal keep chainReturnChance.
+      const onlyPlay = !goalInView(sc.kind);
+      const who = sc.receivedBy?.who?.shortName ?? targetName(sc);
+      // One roll, drawn in exactly the cases it always was, so the rest of
+      // the match's random stream is what it was.
+      const returnChance = onlyPlay && at ? giveAndGoChance(sc, at) : chainReturnChance(sc);
+      if (at && depth < CHAIN_MAX && rngRef.current() < returnChance) {
         const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
+        logMoment(`${who ?? "He"} plays it back to ${playerLabel()}.`, "chance");
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) showAction("BACK TO YOU"); }, ACTION_BANNER_MS - 100);
+      } else {
+        logMoment(`${who ?? "He"} keeps it — the move goes on without ${playerLabel()}.`, "chance");
       }
     } else if (res === "touchOn") {
       // Touch Mode's own chain — deterministic, not chainReturnChance's
@@ -4629,7 +4721,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
     if (stretchRef.current) stretchRef.current.queued = events.length;
-    setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    // ── v0.25: Play goes straight into the first chance ──
+    // Mikey, 2 Oct 2026 (review point 30): "as soon as you press Play" the
+    // match should become the chance, not a kick-off card while the clock
+    // walks up to it (measured: about 0.7 s a minute, so a first chance at
+    // 14' was ten seconds of nothing). The first stretch of a match you
+    // start is written straight into the log and the clock jumps to it.
+    // Only when a chance of yours is waiting, and never across half time.
+    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
+    quickStartRef.current = false;
+    if (quick) {
+      const lines = linesFrom(events, matchMinuteRef.current);
+      setLog(l => [...l, ...lines]);
+      setQueue([]);
+      setClock(st.minute);
+    } else {
+      setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    }
     setPhase("feed");
 
     simContinueRef.current = () => {
@@ -4777,6 +4885,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         loadScenario(false);
       }
     };
+    if (quick) {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => {
+        if (sceneGenRef.current !== gen) return;
+        const go = simContinueRef.current;
+        simContinueRef.current = null;
+        stretchRef.current = null;
+        go?.();
+      }, 0);
+    }
   };
 
   /**
@@ -5683,6 +5801,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     nudgeDragRef.current = null;
     setAim({ dir: dir0, power });
     setPhase("runup");
+    tryHold("runup");
     pushLine("He runs up…");
     // The strike screen at the end of this jog has a countdown, so all of it
     // must be on screen when it opens. Measured on a 390x664 phone: the real
@@ -6076,6 +6195,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             technique={skills.technique}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
+            hold={held}
           />
         )}
 

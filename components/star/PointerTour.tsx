@@ -15,7 +15,7 @@
  * A `press` step is the one that makes you DO it: the hole is open, the real
  * button underneath takes your tap, and the tour moves on when you press it.
  *
- * If a target is not on screen for three seconds (a swipe page that is not
+ * If a target is not on screen for 1.2 seconds (a swipe page that is not
  * open, a button that is not there), the step is skipped rather than
  * leaving you stuck behind a dim screen.
  */
@@ -31,9 +31,15 @@ const HAND_H = 46;
 
 type Box = { x: number; y: number; w: number; h: number };
 
-/** The first element with this tour name that is actually on screen. */
+/** The first element with this tour name that is actually on screen.
+ *  "css:<selector>" finds by selector instead (a thing with no tour name). */
 function findTarget(name: string): HTMLElement | null {
-  const all = document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`);
+  let all: NodeListOf<HTMLElement>;
+  try {
+    all = name.startsWith("css:")
+      ? document.querySelectorAll<HTMLElement>(name.slice(4))
+      : document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`);
+  } catch { return null; }
   const vw = window.innerWidth, vh = window.innerHeight;
   for (const el of Array.from(all)) {
     const r = el.getBoundingClientRect();
@@ -67,7 +73,14 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
   const [box, setBox] = useState<Box | null>(null);
   const [vp, setVp] = useState({ w: 390, h: 844 });
   const [mounted, setMounted] = useState(false);
+  // A press step whose button is disabled (no energy, no sessions) would
+  // leave you stuck behind the dim: it becomes a tap-to-go-on step instead.
+  const [dead, setDead] = useState(false);
   const doneRef = useRef(false);
+  // The bubble's real height, so it can always be kept on screen (v0.25
+  // point 14: the social-media tutorial sat off the screen).
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [bubbleH, setBubbleH] = useState(84);
   const step = steps[i];
 
   useEffect(() => setMounted(true), []);
@@ -81,6 +94,14 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
     setBox(null);
     if (i + 1 >= steps.length) finish(); else setI(i + 1);
   };
+  // Skip jumps to the next step you have to DO (the welcome tour's "Go to
+  // training"), so skipping the words never skips the one thing you must
+  // press (Harry, 2 Oct 2026, P2-55: no Skip on that one).
+  const skip = () => {
+    const mustDo = steps.findIndex((s, k) => k > i && s.press);
+    setBox(null);
+    if (mustDo < 0) finish(); else setI(mustDo);
+  };
 
   // Find the target and keep its box up to date (pages slide, bars animate).
   useLayoutEffect(() => {
@@ -93,14 +114,19 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
       if (step.target === "screen") {
         const s = findTarget("screen");
         if (s) { const r = s.getBoundingClientRect(); setBox({ x: r.left, y: r.top, w: r.width, h: r.height }); gone = 0; return; }
+        // A full screen with no "screen" box (Achievements, Sponsors): the
+        // bubble sits on the whole page.
+        setBox({ x: 0, y: 0, w: window.innerWidth, h: window.innerHeight });
+        return;
       }
       const found = findTarget(step.target);
       if (!found) {
         gone += 1;
-        if (gone > 30) next(); // 3 s with no such thing on screen: move on
+        if (gone > 12) next(); // 1.2 s with no such thing on screen: move on
         return;
       }
       gone = 0;
+      setDead(!!step.press && found.matches(":disabled"));
       if (found !== el) {
         off?.();
         el = found;
@@ -120,7 +146,13 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, step?.target]);
 
+  useLayoutEffect(() => {
+    const h = bubbleRef.current?.offsetHeight;
+    if (h && Math.abs(h - bubbleH) > 1) setBubbleH(h);
+  });
+
   if (!mounted || !step || !box) return null;
+  const press = !!step.press && !dead;
 
   const wholeScreen = step.target === "screen";
   const hole: Box = wholeScreen ? { x: 0, y: 0, w: 0, h: 0 } : { x: box.x - PAD, y: box.y - PAD, w: box.w + PAD * 2, h: box.h + PAD * 2 };
@@ -128,23 +160,40 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
   const cy = box.y + box.h / 2;
   const bubbleW = Math.min(268, vp.w - 24);
   const left = Math.max(12, Math.min(vp.w - bubbleW - 12, cx - bubbleW / 2));
-  const above = wholeScreen ? false : cy > vp.h * 0.5;
   const DIM = "rgba(0,0,0,.62)";
   const last = i === steps.length - 1;
 
   // Where the bubble goes: above or below the hole, with the hand between.
+  // A target nearly as tall as the phone (a whole feed) leaves room on
+  // neither side: then the bubble sits inside the hole, near its top, with
+  // no hand. Whatever happens it stays fully on screen.
+  const EDGE = 12;
+  const need = bubbleH + HAND_H + 4;
+  const roomAbove = hole.y - EDGE;
+  const roomBelow = vp.h - (hole.y + hole.h) - EDGE;
+  const wantAbove = cy > vp.h * 0.5;
+  const place: "above" | "below" | "inside" = wholeScreen ? "inside"
+    : wantAbove && roomAbove >= need ? "above"
+    : !wantAbove && roomBelow >= need ? "below"
+    : roomAbove >= need ? "above"
+    : roomBelow >= need ? "below"
+    : "inside";
+  const above = place === "above";
+  const clampTop = (t: number) => Math.max(EDGE, Math.min(vp.h - bubbleH - EDGE, t));
   const bubbleStyle: React.CSSProperties = wholeScreen
-    ? { left, width: bubbleW, top: Math.max(80, box.y + Math.min(80, box.h * 0.2)) }
-    : above
-      ? { left, width: bubbleW, bottom: vp.h - hole.y + HAND_H + 2 }
-      : { left, width: bubbleW, top: hole.y + hole.h + HAND_H + 2 };
+    ? { left, width: bubbleW, top: clampTop(Math.max(80, box.y + Math.min(80, box.h * 0.2))) }
+    : place === "above"
+      ? { left, width: bubbleW, top: clampTop(hole.y - HAND_H - 2 - bubbleH) }
+      : place === "below"
+        ? { left, width: bubbleW, top: clampTop(hole.y + hole.h + HAND_H + 2) }
+        : { left, width: bubbleW, top: clampTop(Math.max(hole.y, 0) + 24) };
   const handLeft = Math.max(8, Math.min(vp.w - 42, cx - 17));
   const handStyle: React.CSSProperties = above
     ? { left: handLeft, top: hole.y - HAND_H - 2, ["--hy" as string]: "8px" }
     : { left: handLeft, top: hole.y + hole.h + 2, ["--hy" as string]: "-8px" };
 
   const panel = (key: string, s: React.CSSProperties) => (
-    <div key={key} className="fixed" style={{ background: DIM, pointerEvents: "auto", ...s }} onClick={step.press ? undefined : next} />
+    <div key={key} className="fixed" style={{ background: DIM, pointerEvents: "auto", ...s }} onClick={press ? undefined : next} />
   );
 
   return createPortal(
@@ -160,24 +209,25 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         {/* The hole: a normal step takes the tap itself; a press step lets it through to the real button. */}
         <div
           className="kit-tour-ring fixed"
-          style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h, borderRadius: 4, pointerEvents: step.press ? "none" : "auto" }}
-          onClick={step.press ? undefined : next}
+          style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h, borderRadius: 4, pointerEvents: press ? "none" : "auto" }}
+          onClick={press ? undefined : next}
         />
-        <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>
+        {place !== "inside" && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
       </>)}
       <div
         key={i}
+        ref={bubbleRef}
         className="kit-rise fixed rounded-[6px] px-3 py-2.5 text-white"
         style={{ ...bubbleStyle, pointerEvents: "auto", background: "linear-gradient(180deg,#1f2937,#0b1220)", boxShadow: "inset 0 0 0 2px #fde047, 0 12px 30px -8px rgba(0,0,0,.9)" }}
-        onClick={step.press ? undefined : next}
+        onClick={press ? undefined : next}
       >
         <div className="text-[16px] font-black leading-snug">{step.text}</div>
-        {(!step.press || skippable) && (
+        {!press && (
           <div className="mt-1 flex items-center justify-between">
             {skippable
-              ? <button onClick={(e) => { e.stopPropagation(); finish(); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/55">Skip</button>
+              ? <button onClick={(e) => { e.stopPropagation(); skip(); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/55">Skip</button>
               : <span />}
-            {!step.press && <span className="text-[12px] font-black uppercase tracking-widest text-amber-300">{last ? "Got it" : "Next ▸"}</span>}
+            {!press && <span className="text-[12px] font-black uppercase tracking-widest text-amber-300">{last ? "Got it" : "Next ▸"}</span>}
           </div>
         )}
       </div>

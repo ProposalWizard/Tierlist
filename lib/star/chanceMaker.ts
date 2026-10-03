@@ -188,7 +188,17 @@ export class PictureMemory {
     if (!this.persist) return;
     try {
       if (typeof window !== "undefined") window.localStorage.setItem(this.key(), JSON.stringify(this.byKind));
-    } catch { /* full or blocked: memory still works for this visit */ }
+    } catch {
+      // Full (v0.25 item 15: a well-used test computer): keep only what the
+      // rule reads — the last PICTURE_MEMORY of each kind — and try once more.
+      // Still refused: the memory works for this visit, and visitSalt below
+      // keeps the next visit from opening on the same picture.
+      try {
+        const small: Record<string, Picture[]> = {};
+        for (const [k, v] of Object.entries(this.byKind)) small[k] = Array.isArray(v) ? v.slice(-PICTURE_MEMORY) : [];
+        if (typeof window !== "undefined") window.localStorage.setItem(this.key(), JSON.stringify(small));
+      } catch { /* blocked: this visit only */ }
+    }
   }
 
   recent(kind: string): Picture[] {
@@ -219,6 +229,35 @@ export class PictureMemory {
     this.loaded = true;
     this.save();
   }
+}
+
+/**
+ * THE SAME LONG SHOT EVERY TIME (v0.25 item 15). Harry: "on one computer the
+ * same long-shot highlight comes up every time." A match is seeded by its
+ * week, so starting the same match again asks for the same chance with the
+ * same random numbers; only the memory above stops it being served again —
+ * and on a browser whose storage is full or blocked the memory is gone at
+ * every reload. Measured, 50 restarts of one match: 1 distinct opening long
+ * shot with storage refused, 6 with storage working.
+ *
+ * So each page visit also gets its own small offset for WHICH drawing is
+ * tried first. It draws no extra random numbers (the match plays out as
+ * before) and is used only when a memory is passed — the game and the review
+ * tools. A gallery cell (no memory) and a test (no browser) are unchanged.
+ */
+let visitSalt: number | undefined;
+export function setVisitSalt(v: number | undefined): void { visitSalt = v; }
+function saltFor(o: { memory?: PictureMemory | null }): number {
+  if (!o.memory) return 0;
+  if (visitSalt === undefined) {
+    if (typeof window === "undefined") return 0;
+    try {
+      const a = new Uint32Array(1);
+      crypto.getRandomValues(a);
+      visitSalt = a[0];
+    } catch { visitSalt = Math.floor(Math.random() * 0x7fffffff); }
+  }
+  return visitSalt >>> 0;
 }
 
 const memories = new Map<string, PictureMemory>();
@@ -265,7 +304,43 @@ export function servedFaults(sc: Scenario): string[] {
   if (goalInView(sc.kind) && sc.kind !== "corner" && s.keeper.y > s.ball.y) out.add("keeper beyond the ball");
   const set = ruleSetFor(sc.kind);
   if (set) for (const v of violations(s, set)) out.add(`breaks its rule: ${v}`);
+  const onBall = defenderOnTheBall(s, set);
+  if (onBall) out.add(onBall);
   return Array.from(out);
+}
+
+/**
+ * A DEFENDER NEARER THE BALL THAN ANY DRAWING PUTS ONE (v0.24, Harry's first
+ * National League match).
+ *
+ * Harry: "this is a bad highlight where you always get intercepted … I'm
+ * definitely not gonna get to do this." Filmed: a tight angle served with a
+ * defender standing on the ball, between it and the goal and every team-mate.
+ * The ball was hidden under him. Every kick went into him.
+ *
+ * The drawings never do this. The closest any tight-angle drawing puts a
+ * defender is 1.56 m (cutback 2.53 m, one-on-one 1.92 m). The serving's 2 m
+ * nudge, and the spacing pass that moves a defender off YOU, can walk him onto
+ * the ball. Measured over 250 served tight angles: 4% had a defender within
+ * 1 m, and with him there the obvious plays worked 60% of the time against
+ * 100% with nobody within 2 m.
+ *
+ * No new number: the floor is the kind's own "Nearest defender to the ball"
+ * minimum, scanned off its drawings (scenarioRules.ts's defNearest). Only with
+ * enough drawings to call it a range (MIN_SAMPLES_FOR_INVARIANT).
+ */
+export const DEFENDER_ON_BALL = "a defender nearer the ball than any drawing puts one";
+export function defenderOnTheBall(s: ShapeSample, set: RuleSet | null): string | null {
+  if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
+  const rule = set.rules.find((r) => r.id === "defNearest");
+  const m = MEASURES.find((x) => x.id === "defNearest");
+  if (!rule || !m) return null;
+  const defs = s.defenders.filter((d) => !parked(d));
+  if (!defs.length) return null;
+  const v = m.of({ ...s, defenders: defs });
+  // A centimetre of rounding either way is the same picture. The words carry
+  // no number: drawingOwnFaults matches a fault by its exact text.
+  return v < rule.min - 0.01 ? DEFENDER_ON_BALL : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -380,7 +455,7 @@ const DEFAULT_CAMERA = { centerX: CX, centerY: 17, viewHeight: 42, facing: "up" 
 export type DrawnShape = AuthoredShape & { mirrored: boolean };
 
 export function drawingShape(
-  kind: string, rng: () => number, stableKey?: number,
+  kind: string, rng: () => number, stableKey?: number, salt = 0,
 ): DrawnShape | null {
   const set = ruleSetFor(kind);
   if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
@@ -388,14 +463,16 @@ export function drawingShape(
   const bad = new Set(outliersOf(set).map((o) => o.id));
   const clean = pool.filter((s) => !bad.has(s.id));
   const from = clean.length ? clean : pool;
-  const start = stableKey === undefined ? Math.floor(rng() * from.length) % from.length : stableIndex(from.map((s) => s.id), stableKey);
+  // `salt` (visitSalt) only turns the starting drawing; the same one rng() is drawn.
+  const start = stableKey === undefined ? (Math.floor(rng() * from.length) + salt) % from.length : stableIndex(from.map((s) => s.id), stableKey);
   for (let i = 0; i < from.length; i++) {
     const base = from[(start + i) % from.length];
     // (A penalty and a free kick are served exactly as drawn — see
     // randomiseAuthored's DEAD_BALL_EXACT.)
     const shape = randomiseAuthored(base, set, rng, { fixedBall: FIXED_BALL.has(kind) });
     if (!shape) continue;
-    const mirrored = rng() < 0.5;
+    // The visit salt can flip the side too (same one rng() drawn).
+    const mirrored = (rng() < 0.5) !== (((salt >>> 16) & 1) === 1);
     return { ...(mirrored ? mirrorShape(shape) : shape), mirrored };
   }
   return null;
@@ -669,7 +746,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     let own: string[] = [];
     if (useGen) { shape = generatorShape(kind, rng); how = "generator"; }
     if (!shape) {
-      const d = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined);
+      const d = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o));
       if (d) own = drawingOwnFaults(kind, d.sourceId, d.mirrored);
       shape = d;
       how = "drawing";

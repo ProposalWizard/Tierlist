@@ -1,13 +1,12 @@
 "use client";
-import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
+import { useSigning3d, setSigning3d } from "@/lib/star/signing3d";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
-import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { followedClubs, toggleFollowedClub, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
-import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
-import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
+import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { GameSwitches, LookSwitches } from "./DeviceSettings";
+import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import DevCareerPanel from "./DevCareerPanel";
@@ -19,10 +18,10 @@ import {
   ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
   type PenaltyRunupId, type FreeKickRunupId, type RunupId, type RunupStyle,
 } from "@/lib/star/runupStyles";
-import { PressButton, RiseIn, Pop, tint, useClubTheme } from "./ui";
+import { PressButton, RiseIn, tint, useClubTheme } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { SegTabs } from "./screenKit";
-import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch } from "./settingsKit";
+import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch } from "./settingsKit";
 
 /**
  * SETTINGS — reskinned 28 Sep 2026 to the home screen's look (Harry: "all
@@ -70,6 +69,9 @@ interface Props {
    *  navigating away from Settings, this screen just reads/flips it. */
   immersiveActive: boolean;
   onToggleImmersive: () => void;
+  /** What full screen can do here (ImmersiveToggle.tsx): an iPhone gets the
+   *  "Add to Home Screen" tip instead of a switch that cannot work. */
+  fullscreenSupport?: FullscreenSupport;
   /** Equip a penalty run-up / a free-kick run-up you own (lib/star/runupStyles.ts). */
   onSetPenaltyRunup?: (id: PenaltyRunupId) => void;
   onSetFreeKickRunup?: (id: FreeKickRunupId) => void;
@@ -87,42 +89,16 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
+  immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
-  const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
-  // The player look (lib/star/figureSkin.ts): Classic for everyone until
-  // Harry says otherwise; this switch is for trying 3D on this device.
-  const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
-  const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
-  const uiNow = useUiVersion();
+  const signing3d = useSigning3d();
 
-  const togglePostMatchReactions = () => {
-    const next = !postMatchReactions;
-    setPostMatchReactions(next);
-    setPostMatchReactionsEnabled(next);
-  };
-
-  // Live-score alerts (v0.15 item 35): the clubs whose goals pop up during
-  // your match. None ticked by default; the bell in the in-match Scores
-  // panel writes the same list.
-  const [following, setFollowing] = useState<string[]>(() => followedClubs());
-  const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
+  // Live scores moved to the League page's bell (v0.23.1, P61).
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devOpen, setDevOpen] = useState(false);
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
-
-  // Quick on/off switches, separate from the full editor — read/write the
-  // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
-  // so a flip here takes effect the same "next match" way every other Player
-  // Graphics change already does.
-  const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
-  const toggleFaceStyle = (key: "facesEnabled" | "namesEnabled", value: boolean) => {
-    const next = { ...faceStyle, [key]: value };
-    setFaceStyle(next);
-    saveFaceStyle(next);
-  };
 
   let rise = 0;
   const next = () => rise++;
@@ -143,55 +119,12 @@ export default function SettingsScreen({
         )}
       />
 
-      {/* ── GAME ── */}
+      {/* ── GAME ── small on/off switches, one line each (v0.23.1, P61: "certain
+          things should be small things, like full screen and on and off"). Live
+          scores live on the League page now. */}
       <RiseIn index={next()}><SetSection className="mb-1.5 mt-1">Game</SetSection></RiseIn>
       <RiseIn index={next()}>
-        <SetCard tone={glow}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <SetHead>Full Screen</SetHead>
-              <SetNote>The game already hides the site menu. This also hides your browser bar, where it can.</SetNote>
-            </div>
-            <Switch on={immersiveActive} onClick={onToggleImmersive} />
-          </div>
-          <SetDivider />
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <SetHead>Post-Match Reactions</SetHead>
-              <SetNote>After your rating and match money, skip the phone screen and go straight back to the dashboard.</SetNote>
-            </div>
-            <Switch on={postMatchReactions} onClick={togglePostMatchReactions} />
-          </div>
-        </SetCard>
-      </RiseIn>
-
-      <RiseIn index={next()} className="mt-2.5">
-        <SetCard tone={glow}>
-          <SetHead right={<span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black tabular-nums text-amber-200"><Pop value={following.length}>🔔 {following.length}</Pop></span>}>
-            Live scores
-          </SetHead>
-          <SetNote>Tick a club to see its goals pop up during your match. The Scores button under the match clock shows every game.</SetNote>
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
-            {divisionClubs.map((club) => {
-              const on = following.includes(club);
-              return (
-                <button
-                  key={club}
-                  onClick={() => setFollowing(toggleFollowedClub(club))}
-                  role="checkbox"
-                  aria-checked={on}
-                  className={`kib-press flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] font-black ${on ? "text-gray-950" : "text-white"}`}
-                  style={on
-                    ? { background: "linear-gradient(180deg, #fde68a, #fbbf24 55%, #d97706)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px -5px rgba(245,158,11,.8)" }
-                    : { background: "linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.07)" }}
-                >
-                  <span aria-hidden>{on ? "🔔" : "○"}</span>
-                  <span className="truncate">{club}</span>
-                </button>
-              );
-            })}
-          </div>
-        </SetCard>
+        <GameSwitches glow={glow} fullscreen={{ support: fullscreenSupport, on: immersiveActive, onToggle: onToggleImmersive }} />
       </RiseIn>
 
       {/* ── YOU ── */}
@@ -245,9 +178,6 @@ export default function SettingsScreen({
       <RiseIn index={next()}>
         <SetCard tone={glow}>
           <SetHead>Face editors</SetHead>
-          <SetNote>
-            Size, position, backing circle and outline for every face on the pitch — two full editors with a live preview, not just a slider.
-          </SetNote>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <PressButton variant="primary" size="none" onClick={onOpenFaceEditor} className="rounded-xl py-2 text-[11px] font-black">
               Real Photos →
@@ -256,53 +186,22 @@ export default function SettingsScreen({
               Fake Faces →
             </PressButton>
           </div>
-          <SetNote dim className="mt-1.5 text-[10px]">
-            Real photos and the seven fake faces are different images with different framing, so each gets its own size/position/crop — pick the one you want to tune.
-          </SetNote>
+
+          <SetDivider />
+          <LookSwitches />
 
           <SetDivider />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-black text-white/90">Player look</span>
+            <span className="text-[14px] font-bold text-white">3D signing scene (beta)</span>
             <SegTabs
               className="w-[150px] shrink-0"
-              value={look}
-              onChange={pickLook}
-              tabs={[["classic", "Classic"], ["3d", "3D"]] as const}
+              value={signing3d ? "on" : "off"}
+              onChange={(v) => setSigning3d(v === "on")}
+              tabs={[["off", "Off"], ["on", "On"]] as const}
             />
           </div>
           <SetNote dim className="mt-1 text-[10px]">
-            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Applies to the home screen and the match bar too. This phone only.
-          </SetNote>
-
-          <SetDivider />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-black text-white/90">UI</span>
-            <SegTabs
-              className="w-[150px] shrink-0"
-              value={uiNow}
-              onChange={setUiVersion}
-              tabs={[["old", "Old"], ["new", "New"]] as const}
-            />
-          </div>
-          <SetNote dim className="mt-1 text-[10px]">
-            Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
-          </SetNote>
-
-          <SetDivider />
-          <label className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-black text-white/90">Player faces</span>
-            <CheckSwitch checked={faceStyle.facesEnabled} onChange={(v) => toggleFaceStyle("facesEnabled", v)} />
-          </label>
-          <SetNote dim className="mt-1 text-[10px]">
-            Off shows the plain shirt-coloured circle every figure already falls back to when it has no photo.
-          </SetNote>
-
-          <label className="mt-3 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-black text-white/90">Player names</span>
-            <CheckSwitch checked={faceStyle.namesEnabled} onChange={(v) => toggleFaceStyle("namesEnabled", v)} />
-          </label>
-          <SetNote dim className="mt-1 text-[10px]">
-            Shows each player&apos;s name in clear text above their head — works alongside faces, not instead of them, unless you turn faces off too.
+            Signing a contract plays as a live 3D scene with your own player in it. This phone only.
           </SetNote>
         </SetCard>
       </RiseIn>

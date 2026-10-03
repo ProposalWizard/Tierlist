@@ -61,7 +61,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
             "1 of 2 sessions left" sentence (Harry, 30 Sep 2026: "it should be
             only seen through energy… it shouldn't just say 1 out of 2 sessions
             remaining"). The rule is unchanged: 2 a week, back after Saturday. */}
-        <div className="mt-2 flex items-center justify-center gap-2" aria-label={`${left} training session${left === 1 ? "" : "s"} left this week`}>
+        <div data-tour="sessions" className="mt-2 flex items-center justify-center gap-2" aria-label={`${left} training session${left === 1 ? "" : "s"} left this week`}>
           {Array.from({ length: TRAINING_SESSIONS_PER_WEEK }, (_, i) => (
             <SessionCell key={i} full={i < left} />
           ))}
@@ -148,6 +148,7 @@ function SkillCard({ skill, label, icon, desc, value, stars, canTrain, outOfSess
     <button
       disabled={!canTrain && !outOfSessions}
       onClick={onTrain}
+      data-tour={`skill-${skill}`}
       className="kib-press relative block w-full overflow-hidden rounded-2xl p-3 text-left disabled:opacity-60"
       style={{
         background: `radial-gradient(120% 140% at 0% 0%, ${rgba(c1, canTrain ? 0.3 : 0.14)} 0%, transparent 55%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,

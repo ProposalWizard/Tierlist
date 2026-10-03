@@ -50,6 +50,17 @@ alongside the page) and reference them relatively.
 Every screenshot gets a one-line caption saying what to look at — not what it
 is.
 
+> **Latest (Harry, 3 Oct 2026):** stills for anything that is a look; a short
+> "after" video only for gameplay and animation, filmed AFTER the page and the
+> push go out, then added to the same page. Don't write "needs Mikey's yes".
+> See CLAUDE.md.
+
+> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
+> test build (the Vercel preview of the branch) and use stills; a short
+> "after" clip only when a still cannot show it (motion, timing, a fixed
+> problem). Befores only as a quick still of a simple UI or specific gameplay
+> change. Full rule: CLAUDE.md, "No filming phase".
+
 ### 4b. Every new thing gets a real video — standard (Harry, 1 Oct 2026)
 *"why is the framing off the videos so cooked and there no playhead … redo
 with real videos and screenshots for every single element, remember
@@ -144,6 +155,41 @@ the main headline."*
 - **What is blocked on whom.** Use a pill: `blocked on Harry`, `half fixed`.
 - **Anything unverified says it is.** "Not seen in a live match" belongs on the
   page, not in your head.
+
+## Write it 80% of the way to ASD-STE100, and draw the hard parts
+
+Harry, 2 Oct 2026, after a Karpathy post on making model output easy to
+understand: *"not saying to change the format/style of the patch notes but a
+lot of times when it's stats or more confusing the vernacular and diagrams you
+can use is quite confusing. Try and approach it with these principles."* The
+page layout stays the same. What changes is how each sentence is written and
+how numbers are shown.
+
+**Sentences (Simplified Technical English, softened):**
+- One instruction or one fact in each sentence. 20 words at most for an
+  instruction, 25 for a description.
+- Active voice. "The keeper saves 7 in 10", not "7 in 10 are saved".
+- Simple tenses: now, past, future. No "is being", "has been", "would have".
+- Common words, one meaning each. Use the same word for the same thing every
+  time on the page (the button's name on screen, always).
+- No noun piles. "The trial's kick power", not "trial kick power curve value".
+  Three nouns together at most.
+- Keep "the" and "a". Telegraph style is harder to read, not easier.
+- Lists for steps and for anything with three or more parts.
+- No coder words in the main flow: no "state", "render", "ref", "prop",
+  "commit hash". Say what the player sees.
+
+**Numbers and confusing ideas: a picture first, words second — but don't get
+crazy with diagrams (Harry, 2 Oct: "don't get crazy on the diagrams").** Draw
+only where one plain line would not be clear. A simple fact stays a sentence.
+- A number with a before and after is a bar or a dial, never only a sentence.
+- A rate is "7 in 10" or "70 of 100 kicks", not "0.7" or "p = 0.7".
+- A rule with conditions ("only if…, unless…") is a small flow diagram or a
+  table with ✓ and ✗, not a paragraph.
+- A size, a position or a timing is shown on a phone-sized picture with a
+  marked line, not described.
+- Every diagram has a one-line caption: what to look at, in plain words.
+- If a stat needs more than one sentence to explain, it needs a diagram.
 
 ## What never goes in
 

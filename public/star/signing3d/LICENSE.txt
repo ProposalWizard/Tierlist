@@ -1,0 +1,38 @@
+LIVE 3D SIGNING SCENE (/star-3d-area-dev/signing) — where these files come from
+
+people.glb and anims.glb were made by tools/signing3d/build_assets.py from two
+packs by Quaternius (https://quaternius.com), both released under:
+
+  CC0 1.0 Universal (CC0 1.0) — Public Domain Dedication
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution is required. Credit anyway: models and animations by @Quaternius.
+
+people.glb (about 1.0 MB)
+  - Body, eyes, eyebrows: "Superhero_Male_FullBody" from Universal Base
+    Characters (Standard, free edition), https://quaternius.itch.io/universal-base-characters
+    (the pack's own License_Standard.txt: CC0 1.0).
+  - Hair: "Hair_SimpleParted", "Hair_Long", "Hair_Buzzed", "Hair_Beard" from
+    the same pack.
+  - The LIGHT skin texture (the page tints it to any skin tone), shrunk to
+    1024 px JPEG; normal map 512 px; hair 512 px. Unused vertex data dropped.
+
+anims.glb (about 0.27 MB)
+  - Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Sitting_Exit, Idle_Loop and
+    Idle_Talking_Loop from Quaternius' Universal Animation Library (Standard,
+    free edition), file "UAL1_Standard.glb" (the same copy public/star/shop3d
+    was built from). Rotations only, plus the pelvis re-based onto the body.
+    The reach, the pen grip, the writing, the head turns and the handshake are
+    worked out live on top of these in lib/star/signing3dScene.ts.
+
+aviators.glb (about 0.06 MB)
+  - The gold aviator sunglasses from public/star/star-pass/3d/reward-glasses.glb
+    (Mikey's Star Pass reward, made in Blender by tools/star-pass-art), cut out on
+    their own so they can sit on this body's head.
+
+room-golden-hour.webp is a generated picture, used as the view out of the window.
+
+The clothes, the face picture, the accessories, the office, the desk, the chairs,
+the pen and the contract are built in code (lib/star/signing3dRig.ts,
+signing3dScene.ts, signing3dTextures.ts). three.js (MIT) is the site's own
+"three" package, loaded only when this scene starts.

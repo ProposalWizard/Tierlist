@@ -52,12 +52,12 @@ def f1(M, lv):
         P += ground(M, 17, 13, grass='path')
         P += road(M, 0, -4.8, 16.4, 3.0)
         # ours is the narrow middle one of three
-        P += tower(M, 0, 0, 5.6, 6.5, 3, 3.0, dict(base='#9b5a3f', brick=BR_OLD, cw=2.8, wa=(0.2, 0.8), wz=(0.22, 0.8), lit=0.2), roof='gable', hi=(1, 2), name='Mid')
-        P += tower(M, -5.9, 0.4, 5.6, 6.3, 3, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.8, lit=0.25), roof='gable', name='L')
-        P += tower(M, 5.9, 0.4, 5.6, 6.3, 3, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.8, lit=0.25), roof='gable', name='R')
-        P += H.door(-1.0, -3.25, M, w=0.9)
-        P.append(box('Dorm', (0.8, -2.6, 9.6), (1.4, 1.4, 1.6), M['white'], bevel=0.03))
-        P.append(box('DormGl', (0.8, -3.32, 9.6), (0.9, 0.05, 0.9), M['glass']))
+        P += tower(M, 0, 0, 5.0, 5.6, 2, 3.0, dict(base='#9b5a3f', brick=BR_OLD, cw=2.5, wa=(0.2, 0.8), wz=(0.22, 0.8), lit=0.2), roof='gable', hi=(1, 1), name='Mid')
+        P += tower(M, -5.3, 0.3, 5.0, 5.4, 2, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.5, lit=0.25), roof='gable', name='L')
+        P += tower(M, 5.3, 0.3, 5.0, 5.4, 2, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.5, lit=0.25), roof='gable', name='R')
+        P += H.door(-1.0, -2.85, M, w=0.9)
+        P.append(box('Dorm', (0.8, -2.2, 6.9), (1.2, 1.2, 1.4), M['white'], bevel=0.03))
+        P.append(box('DormGl', (0.8, -2.82, 6.9), (0.8, 0.05, 0.8), M['glass']))
         P += small_car(M, 3, -4.8, 0, '#9a8a6a')
     elif lv == 2:
         P += ground(M, 19, 14, grass='path')
@@ -113,9 +113,9 @@ def f2(M, lv):
         # shared flat: a tall Victorian house cut into flats, between two painted neighbours
         P += ground(M, 20, 14, grass='path')
         P += road(M, 0, -5.4, 19.4, 3.0)
-        P += tower(M, 0, 0, 6.4, 7, 4, 3.0, dict(base='#9b5a3f', brick=BR_RED, cw=3.2, lit=0.4), roof='gable', hi=(0, 2), name='Mid')
-        P += tower(M, -6.6, 0.2, 6.4, 6.6, 4, 3.0, dict(base='#e5d6a8', cw=3.2, lit=0.3), roof='gable', name='L')
-        P += tower(M, 6.6, 0.2, 6.4, 6.6, 4, 3.0, dict(base='#a9c6c9', cw=3.2, lit=0.3), roof='gable', name='R')
+        P += tower(M, 0, 0, 6.4, 7, 3, 3.0, dict(base='#9b5a3f', brick=BR_RED, cw=3.2, lit=0.4), roof='gable', hi=(0, 1), name='Mid')
+        P += tower(M, -6.6, 0.2, 6.4, 6.6, 3, 3.0, dict(base='#e5d6a8', cw=3.2, lit=0.3), roof='gable', name='L')
+        P += tower(M, 6.6, 0.2, 6.4, 6.6, 3, 3.0, dict(base='#a9c6c9', cw=3.2, lit=0.3), roof='gable', name='R')
         P += H.door(1.2, -3.5, M, w=1.0)
         for fl in range(2):
             P.append(box('Bay', (-1.0, -3.9, 1.5 + fl * 3.0), (2.0, 1.0, 2.0), M['white'], bevel=0.05))

@@ -25,7 +25,7 @@ import StylePicture from "./StylePicture";
 import { RiseIn, Shine, useClubTheme, rgba } from "./ui";
 import type React from "react";
 
-export default function ShopPage({ career, onOpen }: { career: CareerState; onOpen: (ph: HubPhase) => void }) {
+export default function ShopPage({ career, onOpen, sponsorsLock }: { career: CareerState; onOpen: (ph: HubPhase) => void; /** v0.24 (P1-45): Sponsors locked at the start — the line that says how to open it. */ sponsorsLock?: string }) {
   const { glow } = useClubTheme(career);
   const cans = KIB_CANS.reduce((n, c) => n + (career.kibCans[c.id] ?? 0), 0);
   const boot = career.currentBoot;
@@ -75,7 +75,9 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
             color="#34d399"
             title="Sponsors"
             sub="Deals and objectives"
-            chip={deals === 0 ? "No deals yet" : `${deals} deal${deals === 1 ? "" : "s"} signed`}
+            chip={sponsorsLock ? `🔒 ${sponsorsLock}` : deals === 0 ? "No deals yet" : `${deals} deal${deals === 1 ? "" : "s"} signed`}
+            locked={!!sponsorsLock}
+            tour="shop-sponsors"
             art={<span className="text-[58px] leading-none" style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,.55))" }}>🤝</span>}
           />
         </div>
@@ -87,6 +89,31 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
           <SmallHero onClick={() => onOpen("casino-menu")} icon="🎰" title="Casino" sub="Slots, cards, racing" colors={["#facc15", "#dc2626"]} />
         </div>
       </RiseIn>
+      {/* Walk the 3D shop (beta) — Harry, 2 Oct 2026: "Don't replace the
+          current store area with the new 3D one. Just have it as maybe a
+          button that you can press." */}
+      <RiseIn onPageActive index={2}>
+        <button
+          onClick={() => onOpen("shop-3d")}
+          data-shop3d-open
+          className="kib-press relative flex w-full items-center gap-3 overflow-hidden rounded-2xl p-2.5 text-left"
+          style={{
+            background: "radial-gradient(70% 140% at 0% 50%, rgba(250,204,21,.32) 0%, transparent 65%), var(--sk-card, linear-gradient(180deg, #1f1912, #0d0a07))",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(250,204,21,.4), 0 10px 22px -12px rgba(250,204,21,.6)",
+          }}
+        >
+          <Shine loop every={7} />
+          <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-black/40 text-[26px] ring-1 ring-amber-300/30">🕶️</span>
+          <div className="relative min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[15px] font-black uppercase leading-none tracking-wide text-white">Walk the 3D shop</span>
+              <span className="rounded-full bg-amber-300 px-1.5 py-0.5 text-[9px] font-black leading-none text-black">BETA</span>
+            </div>
+            <div className="mt-1 truncate text-[10.5px] font-bold text-white/75">Boots and cars in 3D · tap one to buy it here</div>
+          </div>
+          <span className="relative text-[22px] font-black text-amber-300">›</span>
+        </button>
+      </RiseIn>
       {/* "My stuff" no longer sits here (Harry, 1 Oct 2026, 05:22): it lives on
           the Style page, behind its My stuff button. */}
     </div>
@@ -94,8 +121,9 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
 }
 
 /** One of the four big shop tiles: a picture, a name, a live line. */
-function BigTile({ onClick, color, title, sub, chip, art, tour }: {
+function BigTile({ onClick, color, title, sub, chip, art, tour, locked = false }: {
   /** data-tour name, for the pointer tutorial. */ tour?: string;
+  /** Not open yet: the picture is dimmed and a lock sits on it. */ locked?: boolean;
   onClick: () => void; color: string; title: string; sub: string; chip: string; art: React.ReactNode;
 }) {
   return (
@@ -109,7 +137,8 @@ function BigTile({ onClick, color, title, sub, chip, art, tour }: {
       }}
     >
       <Shine loop every={6} />
-      <div className="relative flex h-[92px] items-center justify-center">{art}</div>
+      <div className={`relative flex h-[92px] items-center justify-center ${locked ? "opacity-30 grayscale" : ""}`}>{art}</div>
+      {locked && <div className="absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-[3px] bg-black/60 text-[16px] ring-1 ring-white/20">🔒</div>}
       <div className="relative mt-auto">
         <div className="text-[19px] font-black leading-none text-white" style={{ textShadow: `0 2px 10px ${rgba(color, 0.6)}` }}>{title}</div>
         <div className="mt-0.5 text-[10.5px] font-bold text-white/75">{sub}</div>

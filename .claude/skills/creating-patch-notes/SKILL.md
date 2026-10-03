@@ -30,6 +30,17 @@ session.
 > picture; answers to questions go low. See `artifact-house-style` → Every
 > item is Problem → Why → Fix.
 
+> **Latest (Harry, 3 Oct 2026):** stills for anything that is a look; a short
+> "after" video only for gameplay and animation, filmed AFTER the page and the
+> push go out, then added to the same page. Don't write "needs Mikey's yes".
+> See CLAUDE.md.
+
+> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
+> test build (the Vercel preview of the branch) and use stills; a short
+> "after" clip only when a still cannot show it (motion, timing, a fixed
+> problem). Befores only as a quick still of a simple UI or specific gameplay
+> change. Full rule: CLAUDE.md, "No filming phase".
+
 > **Standing rule (Harry, 1 Oct 2026):** every new thing gets a real video
 > plus a still — a before clip and an after clip of the whole phone screen,
 > filmed with `scripts/film/rec.mjs`, shown one full-width clip at a time with

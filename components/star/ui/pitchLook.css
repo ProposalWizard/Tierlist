@@ -14,7 +14,8 @@
  *   - the Tailwind grays the older screens use are re-pointed to greens below
  *     (generated: gray/slate 400-950, the opacity steps the screens use, and
  *     the gradient from/via/to stops);
- *   - the shell, top bar and nav carry sk-shell / sk-bar / sk-nav.
+ *   - the shell and nav carry sk-shell / sk-nav (the top bar, sk-bar, stays
+ *     the light grey top area of ui/flat.css in both looks).
  * The match canvas is a canvas: none of this touches it.
  */
 .star-look-pitch {
@@ -28,436 +29,456 @@
   --sk-chalk: rgba(255,255,255,.30);
   --sk-flat-rgb: 6, 52, 26; --sk-flat-alpha: .46; --sk-band-dark: #2a8447; --sk-band-light: #339555; --sk-shade-top: .30;
   --sk-display: var(--font-pitch), Anton, Impact, "Arial Narrow", "Roboto Condensed", sans-serif;
+  /* The Tailwind grays the older screens use, as pitch greens (the generated
+     block below reads these, so a tone can swap them in one place). */
+  --sk-g400: 64 156 100; --sk-g500: 50 140 87; --sk-g600: 38 122 76; --sk-g700: 29 107 65; --sk-g800: 21 95 56; --sk-g900: 16 82 47; --sk-g950: 12 71 38;
+  --sk-tint-rgb: 6, 52, 26;
 }
+
+/* THE CALM TONE (Harry and Mikey, 2 Oct 2026, v0.24 review, P44: "get rid of
+   the green on some pages, that's probably what's making stuff look weird …
+   the shop should be more like a shop, it doesn't need to be that light").
+   The same tokens as the pitch, set to a darker, neutral charcoal with a warm
+   light from above, like a shop at night. Any page or panel takes it with
+   data-sk-tone="calm": the Shop tab (SwipePages `tones`) and the shop, store
+   and casino screens (ScreenShell `tone`). Football pages stay the pitch. */
+.star-look-pitch [data-sk-tone="calm"] {
+  --sk-page: radial-gradient(120% 50% at 50% -6%, rgba(255,232,196,.10) 0%, transparent 62%), radial-gradient(140% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.28) 100%), linear-gradient(180deg, #262a31 0%, #1b1e23 55%, #15171b 100%);
+  --sk-card: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+  --sk-chalk: rgba(255,255,255,.16);
+  --sk-flat-rgb: 12, 14, 18; --sk-band-dark: #23272d; --sk-band-light: #2b3037;
+  --sk-g400: 128 134 144; --sk-g500: 96 102 112; --sk-g600: 70 75 84; --sk-g700: 52 56 64; --sk-g800: 40 43 50; --sk-g900: 30 32 38; --sk-g950: 21 23 27;
+  --sk-tint-rgb: 0, 0, 0;
+}
+/* A calm panel inside the green shell paints its own floor. */
+.star-look-pitch [data-sk-tone="calm"][data-scroll-root] { background: var(--sk-page); }
 .star-look-pitch .sk-shell,
 .star-look-pitch .bg-\[\#05070d\],
 .star-look-pitch .bg-\[\#05080f\] {
   background: var(--sk-page) !important;
   background-attachment: fixed !important;
 }
-.star-look-pitch .sk-bar,
+/* The top bar is NOT greened: it is the light grey top area in both looks
+   (v0.25, P7: "a light grey that blends in", ui/flat.css 4). */
 .star-look-pitch .sk-nav {
   background: linear-gradient(180deg, #1c6a3b, #14562e) !important;
   border-color: rgba(255,255,255,.35) !important;
 }
 .star-look-pitch .sk-nav { border-top-width: 2px; }
-.star-look-pitch .sk-bar { border-bottom-width: 2px; }
 
-/* Display type: headings, the big black-weight capitals, scoreboard numbers
-   and the nav labels. Anton has one (heavy) weight, so no faux-bold. */
-.star-look-pitch :is(h1, h2, h3),
-.star-look-pitch .font-black.uppercase,
-.star-look-pitch .font-black.tabular-nums,
-.star-look-pitch .sk-nav button > span:last-of-type {
+/* Display type: headings only. The big black-weight capitals and numbers are
+   picked up by ui/flat.css (size-based); labels, tables and the nav stay in
+   the normal font (v0.23.1, P58/P78). */
+.star-look-pitch :is(h1, h2, h3) {
   font-family: var(--sk-display);
   font-weight: 400;
 }
 /* Scoreboard digits: a touch of LED glow. */
-.star-look-pitch .font-black.tabular-nums { text-shadow: 0 0 10px rgba(255,255,255,.18), 0 1px 0 rgba(0,0,0,.6); }
+.star-look-pitch .font-black.tabular-nums:is([class*="text-[16"], [class*="text-[17"], [class*="text-[18"], [class*="text-[19"], [class*="text-[2"], [class*="text-[3"], .text-lg, .text-xl, .text-2xl, .text-3xl) { text-shadow: 0 0 10px rgba(255,255,255,.18), 0 1px 0 rgba(0,0,0,.6); }
 
 /* Generated: Tailwind grays → pitch greens. */
-.star-look-pitch .bg-gray-400 { background-color: #409c64; }
-.star-look-pitch .bg-gray-400\/10 { background-color: rgb(64 156 100 / 0.1); }
-.star-look-pitch .bg-gray-400\/15 { background-color: rgb(64 156 100 / 0.15); }
-.star-look-pitch .bg-gray-400\/20 { background-color: rgb(64 156 100 / 0.2); }
-.star-look-pitch .bg-gray-400\/30 { background-color: rgb(64 156 100 / 0.3); }
-.star-look-pitch .bg-gray-400\/40 { background-color: rgb(64 156 100 / 0.4); }
-.star-look-pitch .bg-gray-400\/50 { background-color: rgb(64 156 100 / 0.5); }
-.star-look-pitch .bg-gray-400\/60 { background-color: rgb(64 156 100 / 0.6); }
-.star-look-pitch .bg-gray-400\/70 { background-color: rgb(64 156 100 / 0.7); }
-.star-look-pitch .bg-gray-400\/75 { background-color: rgb(64 156 100 / 0.75); }
-.star-look-pitch .bg-gray-400\/80 { background-color: rgb(64 156 100 / 0.8); }
-.star-look-pitch .bg-gray-400\/85 { background-color: rgb(64 156 100 / 0.85); }
-.star-look-pitch .bg-gray-400\/90 { background-color: rgb(64 156 100 / 0.9); }
-.star-look-pitch .bg-gray-400\/92 { background-color: rgb(64 156 100 / 0.92); }
-.star-look-pitch .bg-gray-400\/95 { background-color: rgb(64 156 100 / 0.95); }
-.star-look-pitch .from-gray-400 { --tw-gradient-from: #409c64 var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-400 { --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #409c64 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400 { --tw-gradient-to: #409c64 var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-400\/50 { --tw-gradient-from: rgb(64 156 100 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400\/50 { --tw-gradient-to: rgb(64 156 100 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-400\/60 { --tw-gradient-from: rgb(64 156 100 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400\/60 { --tw-gradient-to: rgb(64 156 100 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-400\/70 { --tw-gradient-from: rgb(64 156 100 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400\/70 { --tw-gradient-to: rgb(64 156 100 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-400\/80 { --tw-gradient-from: rgb(64 156 100 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400\/80 { --tw-gradient-to: rgb(64 156 100 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-400\/90 { --tw-gradient-from: rgb(64 156 100 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-400\/90 { --tw-gradient-to: rgb(64 156 100 / 0.9) var(--tw-gradient-to-position); }
-.star-look-pitch .bg-gray-500 { background-color: #328c57; }
-.star-look-pitch .bg-gray-500\/10 { background-color: rgb(50 140 87 / 0.1); }
-.star-look-pitch .bg-gray-500\/15 { background-color: rgb(50 140 87 / 0.15); }
-.star-look-pitch .bg-gray-500\/20 { background-color: rgb(50 140 87 / 0.2); }
-.star-look-pitch .bg-gray-500\/30 { background-color: rgb(50 140 87 / 0.3); }
-.star-look-pitch .bg-gray-500\/40 { background-color: rgb(50 140 87 / 0.4); }
-.star-look-pitch .bg-gray-500\/50 { background-color: rgb(50 140 87 / 0.5); }
-.star-look-pitch .bg-gray-500\/60 { background-color: rgb(50 140 87 / 0.6); }
-.star-look-pitch .bg-gray-500\/70 { background-color: rgb(50 140 87 / 0.7); }
-.star-look-pitch .bg-gray-500\/75 { background-color: rgb(50 140 87 / 0.75); }
-.star-look-pitch .bg-gray-500\/80 { background-color: rgb(50 140 87 / 0.8); }
-.star-look-pitch .bg-gray-500\/85 { background-color: rgb(50 140 87 / 0.85); }
-.star-look-pitch .bg-gray-500\/90 { background-color: rgb(50 140 87 / 0.9); }
-.star-look-pitch .bg-gray-500\/92 { background-color: rgb(50 140 87 / 0.92); }
-.star-look-pitch .bg-gray-500\/95 { background-color: rgb(50 140 87 / 0.95); }
-.star-look-pitch .from-gray-500 { --tw-gradient-from: #328c57 var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-500 { --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #328c57 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500 { --tw-gradient-to: #328c57 var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-500\/50 { --tw-gradient-from: rgb(50 140 87 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500\/50 { --tw-gradient-to: rgb(50 140 87 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-500\/60 { --tw-gradient-from: rgb(50 140 87 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500\/60 { --tw-gradient-to: rgb(50 140 87 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-500\/70 { --tw-gradient-from: rgb(50 140 87 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500\/70 { --tw-gradient-to: rgb(50 140 87 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-500\/80 { --tw-gradient-from: rgb(50 140 87 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500\/80 { --tw-gradient-to: rgb(50 140 87 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-500\/90 { --tw-gradient-from: rgb(50 140 87 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-500\/90 { --tw-gradient-to: rgb(50 140 87 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-400 { background-color: rgb(var(--sk-g400)); }
+.star-look-pitch .bg-gray-400\/10 { background-color: rgb(var(--sk-g400) / 0.1); }
+.star-look-pitch .bg-gray-400\/15 { background-color: rgb(var(--sk-g400) / 0.15); }
+.star-look-pitch .bg-gray-400\/20 { background-color: rgb(var(--sk-g400) / 0.2); }
+.star-look-pitch .bg-gray-400\/30 { background-color: rgb(var(--sk-g400) / 0.3); }
+.star-look-pitch .bg-gray-400\/40 { background-color: rgb(var(--sk-g400) / 0.4); }
+.star-look-pitch .bg-gray-400\/50 { background-color: rgb(var(--sk-g400) / 0.5); }
+.star-look-pitch .bg-gray-400\/60 { background-color: rgb(var(--sk-g400) / 0.6); }
+.star-look-pitch .bg-gray-400\/70 { background-color: rgb(var(--sk-g400) / 0.7); }
+.star-look-pitch .bg-gray-400\/75 { background-color: rgb(var(--sk-g400) / 0.75); }
+.star-look-pitch .bg-gray-400\/80 { background-color: rgb(var(--sk-g400) / 0.8); }
+.star-look-pitch .bg-gray-400\/85 { background-color: rgb(var(--sk-g400) / 0.85); }
+.star-look-pitch .bg-gray-400\/90 { background-color: rgb(var(--sk-g400) / 0.9); }
+.star-look-pitch .bg-gray-400\/92 { background-color: rgb(var(--sk-g400) / 0.92); }
+.star-look-pitch .bg-gray-400\/95 { background-color: rgb(var(--sk-g400) / 0.95); }
+.star-look-pitch .from-gray-400 { --tw-gradient-from: rgb(var(--sk-g400)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-400 { --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g400)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400 { --tw-gradient-to: rgb(var(--sk-g400)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-400\/50 { --tw-gradient-from: rgb(var(--sk-g400) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400\/50 { --tw-gradient-to: rgb(var(--sk-g400) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-400\/60 { --tw-gradient-from: rgb(var(--sk-g400) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400\/60 { --tw-gradient-to: rgb(var(--sk-g400) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-400\/70 { --tw-gradient-from: rgb(var(--sk-g400) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400\/70 { --tw-gradient-to: rgb(var(--sk-g400) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-400\/80 { --tw-gradient-from: rgb(var(--sk-g400) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400\/80 { --tw-gradient-to: rgb(var(--sk-g400) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-400\/90 { --tw-gradient-from: rgb(var(--sk-g400) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-400\/90 { --tw-gradient-to: rgb(var(--sk-g400) / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-500 { background-color: rgb(var(--sk-g500)); }
+.star-look-pitch .bg-gray-500\/10 { background-color: rgb(var(--sk-g500) / 0.1); }
+.star-look-pitch .bg-gray-500\/15 { background-color: rgb(var(--sk-g500) / 0.15); }
+.star-look-pitch .bg-gray-500\/20 { background-color: rgb(var(--sk-g500) / 0.2); }
+.star-look-pitch .bg-gray-500\/30 { background-color: rgb(var(--sk-g500) / 0.3); }
+.star-look-pitch .bg-gray-500\/40 { background-color: rgb(var(--sk-g500) / 0.4); }
+.star-look-pitch .bg-gray-500\/50 { background-color: rgb(var(--sk-g500) / 0.5); }
+.star-look-pitch .bg-gray-500\/60 { background-color: rgb(var(--sk-g500) / 0.6); }
+.star-look-pitch .bg-gray-500\/70 { background-color: rgb(var(--sk-g500) / 0.7); }
+.star-look-pitch .bg-gray-500\/75 { background-color: rgb(var(--sk-g500) / 0.75); }
+.star-look-pitch .bg-gray-500\/80 { background-color: rgb(var(--sk-g500) / 0.8); }
+.star-look-pitch .bg-gray-500\/85 { background-color: rgb(var(--sk-g500) / 0.85); }
+.star-look-pitch .bg-gray-500\/90 { background-color: rgb(var(--sk-g500) / 0.9); }
+.star-look-pitch .bg-gray-500\/92 { background-color: rgb(var(--sk-g500) / 0.92); }
+.star-look-pitch .bg-gray-500\/95 { background-color: rgb(var(--sk-g500) / 0.95); }
+.star-look-pitch .from-gray-500 { --tw-gradient-from: rgb(var(--sk-g500)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-500 { --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g500)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500 { --tw-gradient-to: rgb(var(--sk-g500)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-500\/50 { --tw-gradient-from: rgb(var(--sk-g500) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500\/50 { --tw-gradient-to: rgb(var(--sk-g500) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-500\/60 { --tw-gradient-from: rgb(var(--sk-g500) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500\/60 { --tw-gradient-to: rgb(var(--sk-g500) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-500\/70 { --tw-gradient-from: rgb(var(--sk-g500) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500\/70 { --tw-gradient-to: rgb(var(--sk-g500) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-500\/80 { --tw-gradient-from: rgb(var(--sk-g500) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500\/80 { --tw-gradient-to: rgb(var(--sk-g500) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-500\/90 { --tw-gradient-from: rgb(var(--sk-g500) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-500\/90 { --tw-gradient-to: rgb(var(--sk-g500) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-gray-500, .star-look-pitch .ring-gray-500 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-gray-600 { background-color: #267a4c; }
-.star-look-pitch .bg-gray-600\/10 { background-color: rgb(38 122 76 / 0.1); }
-.star-look-pitch .bg-gray-600\/15 { background-color: rgb(38 122 76 / 0.15); }
-.star-look-pitch .bg-gray-600\/20 { background-color: rgb(38 122 76 / 0.2); }
-.star-look-pitch .bg-gray-600\/30 { background-color: rgb(38 122 76 / 0.3); }
-.star-look-pitch .bg-gray-600\/40 { background-color: rgb(38 122 76 / 0.4); }
-.star-look-pitch .bg-gray-600\/50 { background-color: rgb(38 122 76 / 0.5); }
-.star-look-pitch .bg-gray-600\/60 { background-color: rgb(38 122 76 / 0.6); }
-.star-look-pitch .bg-gray-600\/70 { background-color: rgb(38 122 76 / 0.7); }
-.star-look-pitch .bg-gray-600\/75 { background-color: rgb(38 122 76 / 0.75); }
-.star-look-pitch .bg-gray-600\/80 { background-color: rgb(38 122 76 / 0.8); }
-.star-look-pitch .bg-gray-600\/85 { background-color: rgb(38 122 76 / 0.85); }
-.star-look-pitch .bg-gray-600\/90 { background-color: rgb(38 122 76 / 0.9); }
-.star-look-pitch .bg-gray-600\/92 { background-color: rgb(38 122 76 / 0.92); }
-.star-look-pitch .bg-gray-600\/95 { background-color: rgb(38 122 76 / 0.95); }
-.star-look-pitch .from-gray-600 { --tw-gradient-from: #267a4c var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-600 { --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #267a4c var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600 { --tw-gradient-to: #267a4c var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-600\/50 { --tw-gradient-from: rgb(38 122 76 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600\/50 { --tw-gradient-to: rgb(38 122 76 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-600\/60 { --tw-gradient-from: rgb(38 122 76 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600\/60 { --tw-gradient-to: rgb(38 122 76 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-600\/70 { --tw-gradient-from: rgb(38 122 76 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600\/70 { --tw-gradient-to: rgb(38 122 76 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-600\/80 { --tw-gradient-from: rgb(38 122 76 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600\/80 { --tw-gradient-to: rgb(38 122 76 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-600\/90 { --tw-gradient-from: rgb(38 122 76 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-600\/90 { --tw-gradient-to: rgb(38 122 76 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-600 { background-color: rgb(var(--sk-g600)); }
+.star-look-pitch .bg-gray-600\/10 { background-color: rgb(var(--sk-g600) / 0.1); }
+.star-look-pitch .bg-gray-600\/15 { background-color: rgb(var(--sk-g600) / 0.15); }
+.star-look-pitch .bg-gray-600\/20 { background-color: rgb(var(--sk-g600) / 0.2); }
+.star-look-pitch .bg-gray-600\/30 { background-color: rgb(var(--sk-g600) / 0.3); }
+.star-look-pitch .bg-gray-600\/40 { background-color: rgb(var(--sk-g600) / 0.4); }
+.star-look-pitch .bg-gray-600\/50 { background-color: rgb(var(--sk-g600) / 0.5); }
+.star-look-pitch .bg-gray-600\/60 { background-color: rgb(var(--sk-g600) / 0.6); }
+.star-look-pitch .bg-gray-600\/70 { background-color: rgb(var(--sk-g600) / 0.7); }
+.star-look-pitch .bg-gray-600\/75 { background-color: rgb(var(--sk-g600) / 0.75); }
+.star-look-pitch .bg-gray-600\/80 { background-color: rgb(var(--sk-g600) / 0.8); }
+.star-look-pitch .bg-gray-600\/85 { background-color: rgb(var(--sk-g600) / 0.85); }
+.star-look-pitch .bg-gray-600\/90 { background-color: rgb(var(--sk-g600) / 0.9); }
+.star-look-pitch .bg-gray-600\/92 { background-color: rgb(var(--sk-g600) / 0.92); }
+.star-look-pitch .bg-gray-600\/95 { background-color: rgb(var(--sk-g600) / 0.95); }
+.star-look-pitch .from-gray-600 { --tw-gradient-from: rgb(var(--sk-g600)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-600 { --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g600)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600 { --tw-gradient-to: rgb(var(--sk-g600)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-600\/50 { --tw-gradient-from: rgb(var(--sk-g600) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600\/50 { --tw-gradient-to: rgb(var(--sk-g600) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-600\/60 { --tw-gradient-from: rgb(var(--sk-g600) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600\/60 { --tw-gradient-to: rgb(var(--sk-g600) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-600\/70 { --tw-gradient-from: rgb(var(--sk-g600) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600\/70 { --tw-gradient-to: rgb(var(--sk-g600) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-600\/80 { --tw-gradient-from: rgb(var(--sk-g600) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600\/80 { --tw-gradient-to: rgb(var(--sk-g600) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-600\/90 { --tw-gradient-from: rgb(var(--sk-g600) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-600\/90 { --tw-gradient-to: rgb(var(--sk-g600) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-gray-600, .star-look-pitch .ring-gray-600 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-gray-700 { background-color: #1d6b41; }
-.star-look-pitch .bg-gray-700\/10 { background-color: rgb(29 107 65 / 0.1); }
-.star-look-pitch .bg-gray-700\/15 { background-color: rgb(29 107 65 / 0.15); }
-.star-look-pitch .bg-gray-700\/20 { background-color: rgb(29 107 65 / 0.2); }
-.star-look-pitch .bg-gray-700\/30 { background-color: rgb(29 107 65 / 0.3); }
-.star-look-pitch .bg-gray-700\/40 { background-color: rgb(29 107 65 / 0.4); }
-.star-look-pitch .bg-gray-700\/50 { background-color: rgb(29 107 65 / 0.5); }
-.star-look-pitch .bg-gray-700\/60 { background-color: rgb(29 107 65 / 0.6); }
-.star-look-pitch .bg-gray-700\/70 { background-color: rgb(29 107 65 / 0.7); }
-.star-look-pitch .bg-gray-700\/75 { background-color: rgb(29 107 65 / 0.75); }
-.star-look-pitch .bg-gray-700\/80 { background-color: rgb(29 107 65 / 0.8); }
-.star-look-pitch .bg-gray-700\/85 { background-color: rgb(29 107 65 / 0.85); }
-.star-look-pitch .bg-gray-700\/90 { background-color: rgb(29 107 65 / 0.9); }
-.star-look-pitch .bg-gray-700\/92 { background-color: rgb(29 107 65 / 0.92); }
-.star-look-pitch .bg-gray-700\/95 { background-color: rgb(29 107 65 / 0.95); }
-.star-look-pitch .from-gray-700 { --tw-gradient-from: #1d6b41 var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-700 { --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #1d6b41 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700 { --tw-gradient-to: #1d6b41 var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-700\/50 { --tw-gradient-from: rgb(29 107 65 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700\/50 { --tw-gradient-to: rgb(29 107 65 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-700\/60 { --tw-gradient-from: rgb(29 107 65 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700\/60 { --tw-gradient-to: rgb(29 107 65 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-700\/70 { --tw-gradient-from: rgb(29 107 65 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700\/70 { --tw-gradient-to: rgb(29 107 65 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-700\/80 { --tw-gradient-from: rgb(29 107 65 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700\/80 { --tw-gradient-to: rgb(29 107 65 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-700\/90 { --tw-gradient-from: rgb(29 107 65 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-700\/90 { --tw-gradient-to: rgb(29 107 65 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-700 { background-color: rgb(var(--sk-g700)); }
+.star-look-pitch .bg-gray-700\/10 { background-color: rgb(var(--sk-g700) / 0.1); }
+.star-look-pitch .bg-gray-700\/15 { background-color: rgb(var(--sk-g700) / 0.15); }
+.star-look-pitch .bg-gray-700\/20 { background-color: rgb(var(--sk-g700) / 0.2); }
+.star-look-pitch .bg-gray-700\/30 { background-color: rgb(var(--sk-g700) / 0.3); }
+.star-look-pitch .bg-gray-700\/40 { background-color: rgb(var(--sk-g700) / 0.4); }
+.star-look-pitch .bg-gray-700\/50 { background-color: rgb(var(--sk-g700) / 0.5); }
+.star-look-pitch .bg-gray-700\/60 { background-color: rgb(var(--sk-g700) / 0.6); }
+.star-look-pitch .bg-gray-700\/70 { background-color: rgb(var(--sk-g700) / 0.7); }
+.star-look-pitch .bg-gray-700\/75 { background-color: rgb(var(--sk-g700) / 0.75); }
+.star-look-pitch .bg-gray-700\/80 { background-color: rgb(var(--sk-g700) / 0.8); }
+.star-look-pitch .bg-gray-700\/85 { background-color: rgb(var(--sk-g700) / 0.85); }
+.star-look-pitch .bg-gray-700\/90 { background-color: rgb(var(--sk-g700) / 0.9); }
+.star-look-pitch .bg-gray-700\/92 { background-color: rgb(var(--sk-g700) / 0.92); }
+.star-look-pitch .bg-gray-700\/95 { background-color: rgb(var(--sk-g700) / 0.95); }
+.star-look-pitch .from-gray-700 { --tw-gradient-from: rgb(var(--sk-g700)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-700 { --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g700)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700 { --tw-gradient-to: rgb(var(--sk-g700)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-700\/50 { --tw-gradient-from: rgb(var(--sk-g700) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700\/50 { --tw-gradient-to: rgb(var(--sk-g700) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-700\/60 { --tw-gradient-from: rgb(var(--sk-g700) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700\/60 { --tw-gradient-to: rgb(var(--sk-g700) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-700\/70 { --tw-gradient-from: rgb(var(--sk-g700) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700\/70 { --tw-gradient-to: rgb(var(--sk-g700) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-700\/80 { --tw-gradient-from: rgb(var(--sk-g700) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700\/80 { --tw-gradient-to: rgb(var(--sk-g700) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-700\/90 { --tw-gradient-from: rgb(var(--sk-g700) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-700\/90 { --tw-gradient-to: rgb(var(--sk-g700) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-gray-700, .star-look-pitch .ring-gray-700 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-gray-800 { background-color: #155f38; }
-.star-look-pitch .bg-gray-800\/10 { background-color: rgb(21 95 56 / 0.1); }
-.star-look-pitch .bg-gray-800\/15 { background-color: rgb(21 95 56 / 0.15); }
-.star-look-pitch .bg-gray-800\/20 { background-color: rgb(21 95 56 / 0.2); }
-.star-look-pitch .bg-gray-800\/30 { background-color: rgb(21 95 56 / 0.3); }
-.star-look-pitch .bg-gray-800\/40 { background-color: rgb(21 95 56 / 0.4); }
-.star-look-pitch .bg-gray-800\/50 { background-color: rgb(21 95 56 / 0.5); }
-.star-look-pitch .bg-gray-800\/60 { background-color: rgb(21 95 56 / 0.6); }
-.star-look-pitch .bg-gray-800\/70 { background-color: rgb(21 95 56 / 0.7); }
-.star-look-pitch .bg-gray-800\/75 { background-color: rgb(21 95 56 / 0.75); }
-.star-look-pitch .bg-gray-800\/80 { background-color: rgb(21 95 56 / 0.8); }
-.star-look-pitch .bg-gray-800\/85 { background-color: rgb(21 95 56 / 0.85); }
-.star-look-pitch .bg-gray-800\/90 { background-color: rgb(21 95 56 / 0.9); }
-.star-look-pitch .bg-gray-800\/92 { background-color: rgb(21 95 56 / 0.92); }
-.star-look-pitch .bg-gray-800\/95 { background-color: rgb(21 95 56 / 0.95); }
-.star-look-pitch .from-gray-800 { --tw-gradient-from: #155f38 var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-800 { --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #155f38 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800 { --tw-gradient-to: #155f38 var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-800\/50 { --tw-gradient-from: rgb(21 95 56 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800\/50 { --tw-gradient-to: rgb(21 95 56 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-800\/60 { --tw-gradient-from: rgb(21 95 56 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800\/60 { --tw-gradient-to: rgb(21 95 56 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-800\/70 { --tw-gradient-from: rgb(21 95 56 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800\/70 { --tw-gradient-to: rgb(21 95 56 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-800\/80 { --tw-gradient-from: rgb(21 95 56 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800\/80 { --tw-gradient-to: rgb(21 95 56 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-800\/90 { --tw-gradient-from: rgb(21 95 56 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-800\/90 { --tw-gradient-to: rgb(21 95 56 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-800 { background-color: rgb(var(--sk-g800)); }
+.star-look-pitch .bg-gray-800\/10 { background-color: rgb(var(--sk-g800) / 0.1); }
+.star-look-pitch .bg-gray-800\/15 { background-color: rgb(var(--sk-g800) / 0.15); }
+.star-look-pitch .bg-gray-800\/20 { background-color: rgb(var(--sk-g800) / 0.2); }
+.star-look-pitch .bg-gray-800\/30 { background-color: rgb(var(--sk-g800) / 0.3); }
+.star-look-pitch .bg-gray-800\/40 { background-color: rgb(var(--sk-g800) / 0.4); }
+.star-look-pitch .bg-gray-800\/50 { background-color: rgb(var(--sk-g800) / 0.5); }
+.star-look-pitch .bg-gray-800\/60 { background-color: rgb(var(--sk-g800) / 0.6); }
+.star-look-pitch .bg-gray-800\/70 { background-color: rgb(var(--sk-g800) / 0.7); }
+.star-look-pitch .bg-gray-800\/75 { background-color: rgb(var(--sk-g800) / 0.75); }
+.star-look-pitch .bg-gray-800\/80 { background-color: rgb(var(--sk-g800) / 0.8); }
+.star-look-pitch .bg-gray-800\/85 { background-color: rgb(var(--sk-g800) / 0.85); }
+.star-look-pitch .bg-gray-800\/90 { background-color: rgb(var(--sk-g800) / 0.9); }
+.star-look-pitch .bg-gray-800\/92 { background-color: rgb(var(--sk-g800) / 0.92); }
+.star-look-pitch .bg-gray-800\/95 { background-color: rgb(var(--sk-g800) / 0.95); }
+.star-look-pitch .from-gray-800 { --tw-gradient-from: rgb(var(--sk-g800)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-800 { --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g800)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800 { --tw-gradient-to: rgb(var(--sk-g800)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-800\/50 { --tw-gradient-from: rgb(var(--sk-g800) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800\/50 { --tw-gradient-to: rgb(var(--sk-g800) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-800\/60 { --tw-gradient-from: rgb(var(--sk-g800) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800\/60 { --tw-gradient-to: rgb(var(--sk-g800) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-800\/70 { --tw-gradient-from: rgb(var(--sk-g800) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800\/70 { --tw-gradient-to: rgb(var(--sk-g800) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-800\/80 { --tw-gradient-from: rgb(var(--sk-g800) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800\/80 { --tw-gradient-to: rgb(var(--sk-g800) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-800\/90 { --tw-gradient-from: rgb(var(--sk-g800) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-800\/90 { --tw-gradient-to: rgb(var(--sk-g800) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-gray-800, .star-look-pitch .ring-gray-800 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-gray-900 { background-color: #10522f; }
-.star-look-pitch .bg-gray-900\/10 { background-color: rgb(16 82 47 / 0.1); }
-.star-look-pitch .bg-gray-900\/15 { background-color: rgb(16 82 47 / 0.15); }
-.star-look-pitch .bg-gray-900\/20 { background-color: rgb(16 82 47 / 0.2); }
-.star-look-pitch .bg-gray-900\/30 { background-color: rgb(16 82 47 / 0.3); }
-.star-look-pitch .bg-gray-900\/40 { background-color: rgb(16 82 47 / 0.4); }
-.star-look-pitch .bg-gray-900\/50 { background-color: rgb(16 82 47 / 0.5); }
-.star-look-pitch .bg-gray-900\/60 { background-color: rgb(16 82 47 / 0.6); }
-.star-look-pitch .bg-gray-900\/70 { background-color: rgb(16 82 47 / 0.7); }
-.star-look-pitch .bg-gray-900\/75 { background-color: rgb(16 82 47 / 0.75); }
-.star-look-pitch .bg-gray-900\/80 { background-color: rgb(16 82 47 / 0.8); }
-.star-look-pitch .bg-gray-900\/85 { background-color: rgb(16 82 47 / 0.85); }
-.star-look-pitch .bg-gray-900\/90 { background-color: rgb(16 82 47 / 0.9); }
-.star-look-pitch .bg-gray-900\/92 { background-color: rgb(16 82 47 / 0.92); }
-.star-look-pitch .bg-gray-900\/95 { background-color: rgb(16 82 47 / 0.95); }
-.star-look-pitch .from-gray-900 { --tw-gradient-from: #10522f var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-900 { --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #10522f var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900 { --tw-gradient-to: #10522f var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-900\/50 { --tw-gradient-from: rgb(16 82 47 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900\/50 { --tw-gradient-to: rgb(16 82 47 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-900\/60 { --tw-gradient-from: rgb(16 82 47 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900\/60 { --tw-gradient-to: rgb(16 82 47 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-900\/70 { --tw-gradient-from: rgb(16 82 47 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900\/70 { --tw-gradient-to: rgb(16 82 47 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-900\/80 { --tw-gradient-from: rgb(16 82 47 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900\/80 { --tw-gradient-to: rgb(16 82 47 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-900\/90 { --tw-gradient-from: rgb(16 82 47 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-900\/90 { --tw-gradient-to: rgb(16 82 47 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-900 { background-color: rgb(var(--sk-g900)); }
+.star-look-pitch .bg-gray-900\/10 { background-color: rgb(var(--sk-g900) / 0.1); }
+.star-look-pitch .bg-gray-900\/15 { background-color: rgb(var(--sk-g900) / 0.15); }
+.star-look-pitch .bg-gray-900\/20 { background-color: rgb(var(--sk-g900) / 0.2); }
+.star-look-pitch .bg-gray-900\/30 { background-color: rgb(var(--sk-g900) / 0.3); }
+.star-look-pitch .bg-gray-900\/40 { background-color: rgb(var(--sk-g900) / 0.4); }
+.star-look-pitch .bg-gray-900\/50 { background-color: rgb(var(--sk-g900) / 0.5); }
+.star-look-pitch .bg-gray-900\/60 { background-color: rgb(var(--sk-g900) / 0.6); }
+.star-look-pitch .bg-gray-900\/70 { background-color: rgb(var(--sk-g900) / 0.7); }
+.star-look-pitch .bg-gray-900\/75 { background-color: rgb(var(--sk-g900) / 0.75); }
+.star-look-pitch .bg-gray-900\/80 { background-color: rgb(var(--sk-g900) / 0.8); }
+.star-look-pitch .bg-gray-900\/85 { background-color: rgb(var(--sk-g900) / 0.85); }
+.star-look-pitch .bg-gray-900\/90 { background-color: rgb(var(--sk-g900) / 0.9); }
+.star-look-pitch .bg-gray-900\/92 { background-color: rgb(var(--sk-g900) / 0.92); }
+.star-look-pitch .bg-gray-900\/95 { background-color: rgb(var(--sk-g900) / 0.95); }
+.star-look-pitch .from-gray-900 { --tw-gradient-from: rgb(var(--sk-g900)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-900 { --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g900)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900 { --tw-gradient-to: rgb(var(--sk-g900)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-900\/50 { --tw-gradient-from: rgb(var(--sk-g900) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900\/50 { --tw-gradient-to: rgb(var(--sk-g900) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-900\/60 { --tw-gradient-from: rgb(var(--sk-g900) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900\/60 { --tw-gradient-to: rgb(var(--sk-g900) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-900\/70 { --tw-gradient-from: rgb(var(--sk-g900) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900\/70 { --tw-gradient-to: rgb(var(--sk-g900) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-900\/80 { --tw-gradient-from: rgb(var(--sk-g900) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900\/80 { --tw-gradient-to: rgb(var(--sk-g900) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-900\/90 { --tw-gradient-from: rgb(var(--sk-g900) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-900\/90 { --tw-gradient-to: rgb(var(--sk-g900) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-gray-900, .star-look-pitch .ring-gray-900 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-gray-950 { background-color: #0c4726; }
-.star-look-pitch .bg-gray-950\/10 { background-color: rgb(12 71 38 / 0.1); }
-.star-look-pitch .bg-gray-950\/15 { background-color: rgb(12 71 38 / 0.15); }
-.star-look-pitch .bg-gray-950\/20 { background-color: rgb(12 71 38 / 0.2); }
-.star-look-pitch .bg-gray-950\/30 { background-color: rgb(12 71 38 / 0.3); }
-.star-look-pitch .bg-gray-950\/40 { background-color: rgb(12 71 38 / 0.4); }
-.star-look-pitch .bg-gray-950\/50 { background-color: rgb(12 71 38 / 0.5); }
-.star-look-pitch .bg-gray-950\/60 { background-color: rgb(12 71 38 / 0.6); }
-.star-look-pitch .bg-gray-950\/70 { background-color: rgb(12 71 38 / 0.7); }
-.star-look-pitch .bg-gray-950\/75 { background-color: rgb(12 71 38 / 0.75); }
-.star-look-pitch .bg-gray-950\/80 { background-color: rgb(12 71 38 / 0.8); }
-.star-look-pitch .bg-gray-950\/85 { background-color: rgb(12 71 38 / 0.85); }
-.star-look-pitch .bg-gray-950\/90 { background-color: rgb(12 71 38 / 0.9); }
-.star-look-pitch .bg-gray-950\/92 { background-color: rgb(12 71 38 / 0.92); }
-.star-look-pitch .bg-gray-950\/95 { background-color: rgb(12 71 38 / 0.95); }
-.star-look-pitch .from-gray-950 { --tw-gradient-from: #0c4726 var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-gray-950 { --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #0c4726 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950 { --tw-gradient-to: #0c4726 var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-950\/50 { --tw-gradient-from: rgb(12 71 38 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950\/50 { --tw-gradient-to: rgb(12 71 38 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-950\/60 { --tw-gradient-from: rgb(12 71 38 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950\/60 { --tw-gradient-to: rgb(12 71 38 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-950\/70 { --tw-gradient-from: rgb(12 71 38 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950\/70 { --tw-gradient-to: rgb(12 71 38 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-950\/80 { --tw-gradient-from: rgb(12 71 38 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950\/80 { --tw-gradient-to: rgb(12 71 38 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-gray-950\/90 { --tw-gradient-from: rgb(12 71 38 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-gray-950\/90 { --tw-gradient-to: rgb(12 71 38 / 0.9) var(--tw-gradient-to-position); }
-.star-look-pitch .bg-slate-400 { background-color: #409c64; }
-.star-look-pitch .bg-slate-400\/10 { background-color: rgb(64 156 100 / 0.1); }
-.star-look-pitch .bg-slate-400\/15 { background-color: rgb(64 156 100 / 0.15); }
-.star-look-pitch .bg-slate-400\/20 { background-color: rgb(64 156 100 / 0.2); }
-.star-look-pitch .bg-slate-400\/30 { background-color: rgb(64 156 100 / 0.3); }
-.star-look-pitch .bg-slate-400\/40 { background-color: rgb(64 156 100 / 0.4); }
-.star-look-pitch .bg-slate-400\/50 { background-color: rgb(64 156 100 / 0.5); }
-.star-look-pitch .bg-slate-400\/60 { background-color: rgb(64 156 100 / 0.6); }
-.star-look-pitch .bg-slate-400\/70 { background-color: rgb(64 156 100 / 0.7); }
-.star-look-pitch .bg-slate-400\/75 { background-color: rgb(64 156 100 / 0.75); }
-.star-look-pitch .bg-slate-400\/80 { background-color: rgb(64 156 100 / 0.8); }
-.star-look-pitch .bg-slate-400\/85 { background-color: rgb(64 156 100 / 0.85); }
-.star-look-pitch .bg-slate-400\/90 { background-color: rgb(64 156 100 / 0.9); }
-.star-look-pitch .bg-slate-400\/92 { background-color: rgb(64 156 100 / 0.92); }
-.star-look-pitch .bg-slate-400\/95 { background-color: rgb(64 156 100 / 0.95); }
-.star-look-pitch .from-slate-400 { --tw-gradient-from: #409c64 var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-400 { --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #409c64 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400 { --tw-gradient-to: #409c64 var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-400\/50 { --tw-gradient-from: rgb(64 156 100 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400\/50 { --tw-gradient-to: rgb(64 156 100 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-400\/60 { --tw-gradient-from: rgb(64 156 100 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400\/60 { --tw-gradient-to: rgb(64 156 100 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-400\/70 { --tw-gradient-from: rgb(64 156 100 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400\/70 { --tw-gradient-to: rgb(64 156 100 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-400\/80 { --tw-gradient-from: rgb(64 156 100 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400\/80 { --tw-gradient-to: rgb(64 156 100 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-400\/90 { --tw-gradient-from: rgb(64 156 100 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(64 156 100 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-400\/90 { --tw-gradient-to: rgb(64 156 100 / 0.9) var(--tw-gradient-to-position); }
-.star-look-pitch .bg-slate-500 { background-color: #328c57; }
-.star-look-pitch .bg-slate-500\/10 { background-color: rgb(50 140 87 / 0.1); }
-.star-look-pitch .bg-slate-500\/15 { background-color: rgb(50 140 87 / 0.15); }
-.star-look-pitch .bg-slate-500\/20 { background-color: rgb(50 140 87 / 0.2); }
-.star-look-pitch .bg-slate-500\/30 { background-color: rgb(50 140 87 / 0.3); }
-.star-look-pitch .bg-slate-500\/40 { background-color: rgb(50 140 87 / 0.4); }
-.star-look-pitch .bg-slate-500\/50 { background-color: rgb(50 140 87 / 0.5); }
-.star-look-pitch .bg-slate-500\/60 { background-color: rgb(50 140 87 / 0.6); }
-.star-look-pitch .bg-slate-500\/70 { background-color: rgb(50 140 87 / 0.7); }
-.star-look-pitch .bg-slate-500\/75 { background-color: rgb(50 140 87 / 0.75); }
-.star-look-pitch .bg-slate-500\/80 { background-color: rgb(50 140 87 / 0.8); }
-.star-look-pitch .bg-slate-500\/85 { background-color: rgb(50 140 87 / 0.85); }
-.star-look-pitch .bg-slate-500\/90 { background-color: rgb(50 140 87 / 0.9); }
-.star-look-pitch .bg-slate-500\/92 { background-color: rgb(50 140 87 / 0.92); }
-.star-look-pitch .bg-slate-500\/95 { background-color: rgb(50 140 87 / 0.95); }
-.star-look-pitch .from-slate-500 { --tw-gradient-from: #328c57 var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-500 { --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #328c57 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500 { --tw-gradient-to: #328c57 var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-500\/50 { --tw-gradient-from: rgb(50 140 87 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500\/50 { --tw-gradient-to: rgb(50 140 87 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-500\/60 { --tw-gradient-from: rgb(50 140 87 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500\/60 { --tw-gradient-to: rgb(50 140 87 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-500\/70 { --tw-gradient-from: rgb(50 140 87 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500\/70 { --tw-gradient-to: rgb(50 140 87 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-500\/80 { --tw-gradient-from: rgb(50 140 87 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500\/80 { --tw-gradient-to: rgb(50 140 87 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-500\/90 { --tw-gradient-from: rgb(50 140 87 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(50 140 87 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-500\/90 { --tw-gradient-to: rgb(50 140 87 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-gray-950 { background-color: rgb(var(--sk-g950)); }
+.star-look-pitch .bg-gray-950\/10 { background-color: rgb(var(--sk-g950) / 0.1); }
+.star-look-pitch .bg-gray-950\/15 { background-color: rgb(var(--sk-g950) / 0.15); }
+.star-look-pitch .bg-gray-950\/20 { background-color: rgb(var(--sk-g950) / 0.2); }
+.star-look-pitch .bg-gray-950\/30 { background-color: rgb(var(--sk-g950) / 0.3); }
+.star-look-pitch .bg-gray-950\/40 { background-color: rgb(var(--sk-g950) / 0.4); }
+.star-look-pitch .bg-gray-950\/50 { background-color: rgb(var(--sk-g950) / 0.5); }
+.star-look-pitch .bg-gray-950\/60 { background-color: rgb(var(--sk-g950) / 0.6); }
+.star-look-pitch .bg-gray-950\/70 { background-color: rgb(var(--sk-g950) / 0.7); }
+.star-look-pitch .bg-gray-950\/75 { background-color: rgb(var(--sk-g950) / 0.75); }
+.star-look-pitch .bg-gray-950\/80 { background-color: rgb(var(--sk-g950) / 0.8); }
+.star-look-pitch .bg-gray-950\/85 { background-color: rgb(var(--sk-g950) / 0.85); }
+.star-look-pitch .bg-gray-950\/90 { background-color: rgb(var(--sk-g950) / 0.9); }
+.star-look-pitch .bg-gray-950\/92 { background-color: rgb(var(--sk-g950) / 0.92); }
+.star-look-pitch .bg-gray-950\/95 { background-color: rgb(var(--sk-g950) / 0.95); }
+.star-look-pitch .from-gray-950 { --tw-gradient-from: rgb(var(--sk-g950)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-gray-950 { --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g950)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950 { --tw-gradient-to: rgb(var(--sk-g950)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-950\/50 { --tw-gradient-from: rgb(var(--sk-g950) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950\/50 { --tw-gradient-to: rgb(var(--sk-g950) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-950\/60 { --tw-gradient-from: rgb(var(--sk-g950) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950\/60 { --tw-gradient-to: rgb(var(--sk-g950) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-950\/70 { --tw-gradient-from: rgb(var(--sk-g950) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950\/70 { --tw-gradient-to: rgb(var(--sk-g950) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-950\/80 { --tw-gradient-from: rgb(var(--sk-g950) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950\/80 { --tw-gradient-to: rgb(var(--sk-g950) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-gray-950\/90 { --tw-gradient-from: rgb(var(--sk-g950) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-gray-950\/90 { --tw-gradient-to: rgb(var(--sk-g950) / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-400 { background-color: rgb(var(--sk-g400)); }
+.star-look-pitch .bg-slate-400\/10 { background-color: rgb(var(--sk-g400) / 0.1); }
+.star-look-pitch .bg-slate-400\/15 { background-color: rgb(var(--sk-g400) / 0.15); }
+.star-look-pitch .bg-slate-400\/20 { background-color: rgb(var(--sk-g400) / 0.2); }
+.star-look-pitch .bg-slate-400\/30 { background-color: rgb(var(--sk-g400) / 0.3); }
+.star-look-pitch .bg-slate-400\/40 { background-color: rgb(var(--sk-g400) / 0.4); }
+.star-look-pitch .bg-slate-400\/50 { background-color: rgb(var(--sk-g400) / 0.5); }
+.star-look-pitch .bg-slate-400\/60 { background-color: rgb(var(--sk-g400) / 0.6); }
+.star-look-pitch .bg-slate-400\/70 { background-color: rgb(var(--sk-g400) / 0.7); }
+.star-look-pitch .bg-slate-400\/75 { background-color: rgb(var(--sk-g400) / 0.75); }
+.star-look-pitch .bg-slate-400\/80 { background-color: rgb(var(--sk-g400) / 0.8); }
+.star-look-pitch .bg-slate-400\/85 { background-color: rgb(var(--sk-g400) / 0.85); }
+.star-look-pitch .bg-slate-400\/90 { background-color: rgb(var(--sk-g400) / 0.9); }
+.star-look-pitch .bg-slate-400\/92 { background-color: rgb(var(--sk-g400) / 0.92); }
+.star-look-pitch .bg-slate-400\/95 { background-color: rgb(var(--sk-g400) / 0.95); }
+.star-look-pitch .from-slate-400 { --tw-gradient-from: rgb(var(--sk-g400)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-400 { --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g400)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400 { --tw-gradient-to: rgb(var(--sk-g400)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-400\/50 { --tw-gradient-from: rgb(var(--sk-g400) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400\/50 { --tw-gradient-to: rgb(var(--sk-g400) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-400\/60 { --tw-gradient-from: rgb(var(--sk-g400) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400\/60 { --tw-gradient-to: rgb(var(--sk-g400) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-400\/70 { --tw-gradient-from: rgb(var(--sk-g400) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400\/70 { --tw-gradient-to: rgb(var(--sk-g400) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-400\/80 { --tw-gradient-from: rgb(var(--sk-g400) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400\/80 { --tw-gradient-to: rgb(var(--sk-g400) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-400\/90 { --tw-gradient-from: rgb(var(--sk-g400) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g400) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-400\/90 { --tw-gradient-to: rgb(var(--sk-g400) / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-500 { background-color: rgb(var(--sk-g500)); }
+.star-look-pitch .bg-slate-500\/10 { background-color: rgb(var(--sk-g500) / 0.1); }
+.star-look-pitch .bg-slate-500\/15 { background-color: rgb(var(--sk-g500) / 0.15); }
+.star-look-pitch .bg-slate-500\/20 { background-color: rgb(var(--sk-g500) / 0.2); }
+.star-look-pitch .bg-slate-500\/30 { background-color: rgb(var(--sk-g500) / 0.3); }
+.star-look-pitch .bg-slate-500\/40 { background-color: rgb(var(--sk-g500) / 0.4); }
+.star-look-pitch .bg-slate-500\/50 { background-color: rgb(var(--sk-g500) / 0.5); }
+.star-look-pitch .bg-slate-500\/60 { background-color: rgb(var(--sk-g500) / 0.6); }
+.star-look-pitch .bg-slate-500\/70 { background-color: rgb(var(--sk-g500) / 0.7); }
+.star-look-pitch .bg-slate-500\/75 { background-color: rgb(var(--sk-g500) / 0.75); }
+.star-look-pitch .bg-slate-500\/80 { background-color: rgb(var(--sk-g500) / 0.8); }
+.star-look-pitch .bg-slate-500\/85 { background-color: rgb(var(--sk-g500) / 0.85); }
+.star-look-pitch .bg-slate-500\/90 { background-color: rgb(var(--sk-g500) / 0.9); }
+.star-look-pitch .bg-slate-500\/92 { background-color: rgb(var(--sk-g500) / 0.92); }
+.star-look-pitch .bg-slate-500\/95 { background-color: rgb(var(--sk-g500) / 0.95); }
+.star-look-pitch .from-slate-500 { --tw-gradient-from: rgb(var(--sk-g500)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-500 { --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g500)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500 { --tw-gradient-to: rgb(var(--sk-g500)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-500\/50 { --tw-gradient-from: rgb(var(--sk-g500) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500\/50 { --tw-gradient-to: rgb(var(--sk-g500) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-500\/60 { --tw-gradient-from: rgb(var(--sk-g500) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500\/60 { --tw-gradient-to: rgb(var(--sk-g500) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-500\/70 { --tw-gradient-from: rgb(var(--sk-g500) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500\/70 { --tw-gradient-to: rgb(var(--sk-g500) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-500\/80 { --tw-gradient-from: rgb(var(--sk-g500) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500\/80 { --tw-gradient-to: rgb(var(--sk-g500) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-500\/90 { --tw-gradient-from: rgb(var(--sk-g500) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g500) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-500\/90 { --tw-gradient-to: rgb(var(--sk-g500) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-slate-500, .star-look-pitch .ring-slate-500 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-slate-600 { background-color: #267a4c; }
-.star-look-pitch .bg-slate-600\/10 { background-color: rgb(38 122 76 / 0.1); }
-.star-look-pitch .bg-slate-600\/15 { background-color: rgb(38 122 76 / 0.15); }
-.star-look-pitch .bg-slate-600\/20 { background-color: rgb(38 122 76 / 0.2); }
-.star-look-pitch .bg-slate-600\/30 { background-color: rgb(38 122 76 / 0.3); }
-.star-look-pitch .bg-slate-600\/40 { background-color: rgb(38 122 76 / 0.4); }
-.star-look-pitch .bg-slate-600\/50 { background-color: rgb(38 122 76 / 0.5); }
-.star-look-pitch .bg-slate-600\/60 { background-color: rgb(38 122 76 / 0.6); }
-.star-look-pitch .bg-slate-600\/70 { background-color: rgb(38 122 76 / 0.7); }
-.star-look-pitch .bg-slate-600\/75 { background-color: rgb(38 122 76 / 0.75); }
-.star-look-pitch .bg-slate-600\/80 { background-color: rgb(38 122 76 / 0.8); }
-.star-look-pitch .bg-slate-600\/85 { background-color: rgb(38 122 76 / 0.85); }
-.star-look-pitch .bg-slate-600\/90 { background-color: rgb(38 122 76 / 0.9); }
-.star-look-pitch .bg-slate-600\/92 { background-color: rgb(38 122 76 / 0.92); }
-.star-look-pitch .bg-slate-600\/95 { background-color: rgb(38 122 76 / 0.95); }
-.star-look-pitch .from-slate-600 { --tw-gradient-from: #267a4c var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-600 { --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #267a4c var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600 { --tw-gradient-to: #267a4c var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-600\/50 { --tw-gradient-from: rgb(38 122 76 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600\/50 { --tw-gradient-to: rgb(38 122 76 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-600\/60 { --tw-gradient-from: rgb(38 122 76 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600\/60 { --tw-gradient-to: rgb(38 122 76 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-600\/70 { --tw-gradient-from: rgb(38 122 76 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600\/70 { --tw-gradient-to: rgb(38 122 76 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-600\/80 { --tw-gradient-from: rgb(38 122 76 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600\/80 { --tw-gradient-to: rgb(38 122 76 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-600\/90 { --tw-gradient-from: rgb(38 122 76 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 122 76 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-600\/90 { --tw-gradient-to: rgb(38 122 76 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-600 { background-color: rgb(var(--sk-g600)); }
+.star-look-pitch .bg-slate-600\/10 { background-color: rgb(var(--sk-g600) / 0.1); }
+.star-look-pitch .bg-slate-600\/15 { background-color: rgb(var(--sk-g600) / 0.15); }
+.star-look-pitch .bg-slate-600\/20 { background-color: rgb(var(--sk-g600) / 0.2); }
+.star-look-pitch .bg-slate-600\/30 { background-color: rgb(var(--sk-g600) / 0.3); }
+.star-look-pitch .bg-slate-600\/40 { background-color: rgb(var(--sk-g600) / 0.4); }
+.star-look-pitch .bg-slate-600\/50 { background-color: rgb(var(--sk-g600) / 0.5); }
+.star-look-pitch .bg-slate-600\/60 { background-color: rgb(var(--sk-g600) / 0.6); }
+.star-look-pitch .bg-slate-600\/70 { background-color: rgb(var(--sk-g600) / 0.7); }
+.star-look-pitch .bg-slate-600\/75 { background-color: rgb(var(--sk-g600) / 0.75); }
+.star-look-pitch .bg-slate-600\/80 { background-color: rgb(var(--sk-g600) / 0.8); }
+.star-look-pitch .bg-slate-600\/85 { background-color: rgb(var(--sk-g600) / 0.85); }
+.star-look-pitch .bg-slate-600\/90 { background-color: rgb(var(--sk-g600) / 0.9); }
+.star-look-pitch .bg-slate-600\/92 { background-color: rgb(var(--sk-g600) / 0.92); }
+.star-look-pitch .bg-slate-600\/95 { background-color: rgb(var(--sk-g600) / 0.95); }
+.star-look-pitch .from-slate-600 { --tw-gradient-from: rgb(var(--sk-g600)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-600 { --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g600)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600 { --tw-gradient-to: rgb(var(--sk-g600)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-600\/50 { --tw-gradient-from: rgb(var(--sk-g600) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600\/50 { --tw-gradient-to: rgb(var(--sk-g600) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-600\/60 { --tw-gradient-from: rgb(var(--sk-g600) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600\/60 { --tw-gradient-to: rgb(var(--sk-g600) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-600\/70 { --tw-gradient-from: rgb(var(--sk-g600) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600\/70 { --tw-gradient-to: rgb(var(--sk-g600) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-600\/80 { --tw-gradient-from: rgb(var(--sk-g600) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600\/80 { --tw-gradient-to: rgb(var(--sk-g600) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-600\/90 { --tw-gradient-from: rgb(var(--sk-g600) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g600) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-600\/90 { --tw-gradient-to: rgb(var(--sk-g600) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-slate-600, .star-look-pitch .ring-slate-600 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-slate-700 { background-color: #1d6b41; }
-.star-look-pitch .bg-slate-700\/10 { background-color: rgb(29 107 65 / 0.1); }
-.star-look-pitch .bg-slate-700\/15 { background-color: rgb(29 107 65 / 0.15); }
-.star-look-pitch .bg-slate-700\/20 { background-color: rgb(29 107 65 / 0.2); }
-.star-look-pitch .bg-slate-700\/30 { background-color: rgb(29 107 65 / 0.3); }
-.star-look-pitch .bg-slate-700\/40 { background-color: rgb(29 107 65 / 0.4); }
-.star-look-pitch .bg-slate-700\/50 { background-color: rgb(29 107 65 / 0.5); }
-.star-look-pitch .bg-slate-700\/60 { background-color: rgb(29 107 65 / 0.6); }
-.star-look-pitch .bg-slate-700\/70 { background-color: rgb(29 107 65 / 0.7); }
-.star-look-pitch .bg-slate-700\/75 { background-color: rgb(29 107 65 / 0.75); }
-.star-look-pitch .bg-slate-700\/80 { background-color: rgb(29 107 65 / 0.8); }
-.star-look-pitch .bg-slate-700\/85 { background-color: rgb(29 107 65 / 0.85); }
-.star-look-pitch .bg-slate-700\/90 { background-color: rgb(29 107 65 / 0.9); }
-.star-look-pitch .bg-slate-700\/92 { background-color: rgb(29 107 65 / 0.92); }
-.star-look-pitch .bg-slate-700\/95 { background-color: rgb(29 107 65 / 0.95); }
-.star-look-pitch .from-slate-700 { --tw-gradient-from: #1d6b41 var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-700 { --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #1d6b41 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700 { --tw-gradient-to: #1d6b41 var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-700\/50 { --tw-gradient-from: rgb(29 107 65 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700\/50 { --tw-gradient-to: rgb(29 107 65 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-700\/60 { --tw-gradient-from: rgb(29 107 65 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700\/60 { --tw-gradient-to: rgb(29 107 65 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-700\/70 { --tw-gradient-from: rgb(29 107 65 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700\/70 { --tw-gradient-to: rgb(29 107 65 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-700\/80 { --tw-gradient-from: rgb(29 107 65 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700\/80 { --tw-gradient-to: rgb(29 107 65 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-700\/90 { --tw-gradient-from: rgb(29 107 65 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(29 107 65 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-700\/90 { --tw-gradient-to: rgb(29 107 65 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-700 { background-color: rgb(var(--sk-g700)); }
+.star-look-pitch .bg-slate-700\/10 { background-color: rgb(var(--sk-g700) / 0.1); }
+.star-look-pitch .bg-slate-700\/15 { background-color: rgb(var(--sk-g700) / 0.15); }
+.star-look-pitch .bg-slate-700\/20 { background-color: rgb(var(--sk-g700) / 0.2); }
+.star-look-pitch .bg-slate-700\/30 { background-color: rgb(var(--sk-g700) / 0.3); }
+.star-look-pitch .bg-slate-700\/40 { background-color: rgb(var(--sk-g700) / 0.4); }
+.star-look-pitch .bg-slate-700\/50 { background-color: rgb(var(--sk-g700) / 0.5); }
+.star-look-pitch .bg-slate-700\/60 { background-color: rgb(var(--sk-g700) / 0.6); }
+.star-look-pitch .bg-slate-700\/70 { background-color: rgb(var(--sk-g700) / 0.7); }
+.star-look-pitch .bg-slate-700\/75 { background-color: rgb(var(--sk-g700) / 0.75); }
+.star-look-pitch .bg-slate-700\/80 { background-color: rgb(var(--sk-g700) / 0.8); }
+.star-look-pitch .bg-slate-700\/85 { background-color: rgb(var(--sk-g700) / 0.85); }
+.star-look-pitch .bg-slate-700\/90 { background-color: rgb(var(--sk-g700) / 0.9); }
+.star-look-pitch .bg-slate-700\/92 { background-color: rgb(var(--sk-g700) / 0.92); }
+.star-look-pitch .bg-slate-700\/95 { background-color: rgb(var(--sk-g700) / 0.95); }
+.star-look-pitch .from-slate-700 { --tw-gradient-from: rgb(var(--sk-g700)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-700 { --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g700)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700 { --tw-gradient-to: rgb(var(--sk-g700)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-700\/50 { --tw-gradient-from: rgb(var(--sk-g700) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700\/50 { --tw-gradient-to: rgb(var(--sk-g700) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-700\/60 { --tw-gradient-from: rgb(var(--sk-g700) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700\/60 { --tw-gradient-to: rgb(var(--sk-g700) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-700\/70 { --tw-gradient-from: rgb(var(--sk-g700) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700\/70 { --tw-gradient-to: rgb(var(--sk-g700) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-700\/80 { --tw-gradient-from: rgb(var(--sk-g700) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700\/80 { --tw-gradient-to: rgb(var(--sk-g700) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-700\/90 { --tw-gradient-from: rgb(var(--sk-g700) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g700) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-700\/90 { --tw-gradient-to: rgb(var(--sk-g700) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-slate-700, .star-look-pitch .ring-slate-700 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-slate-800 { background-color: #155f38; }
-.star-look-pitch .bg-slate-800\/10 { background-color: rgb(21 95 56 / 0.1); }
-.star-look-pitch .bg-slate-800\/15 { background-color: rgb(21 95 56 / 0.15); }
-.star-look-pitch .bg-slate-800\/20 { background-color: rgb(21 95 56 / 0.2); }
-.star-look-pitch .bg-slate-800\/30 { background-color: rgb(21 95 56 / 0.3); }
-.star-look-pitch .bg-slate-800\/40 { background-color: rgb(21 95 56 / 0.4); }
-.star-look-pitch .bg-slate-800\/50 { background-color: rgb(21 95 56 / 0.5); }
-.star-look-pitch .bg-slate-800\/60 { background-color: rgb(21 95 56 / 0.6); }
-.star-look-pitch .bg-slate-800\/70 { background-color: rgb(21 95 56 / 0.7); }
-.star-look-pitch .bg-slate-800\/75 { background-color: rgb(21 95 56 / 0.75); }
-.star-look-pitch .bg-slate-800\/80 { background-color: rgb(21 95 56 / 0.8); }
-.star-look-pitch .bg-slate-800\/85 { background-color: rgb(21 95 56 / 0.85); }
-.star-look-pitch .bg-slate-800\/90 { background-color: rgb(21 95 56 / 0.9); }
-.star-look-pitch .bg-slate-800\/92 { background-color: rgb(21 95 56 / 0.92); }
-.star-look-pitch .bg-slate-800\/95 { background-color: rgb(21 95 56 / 0.95); }
-.star-look-pitch .from-slate-800 { --tw-gradient-from: #155f38 var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-800 { --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #155f38 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800 { --tw-gradient-to: #155f38 var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-800\/50 { --tw-gradient-from: rgb(21 95 56 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800\/50 { --tw-gradient-to: rgb(21 95 56 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-800\/60 { --tw-gradient-from: rgb(21 95 56 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800\/60 { --tw-gradient-to: rgb(21 95 56 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-800\/70 { --tw-gradient-from: rgb(21 95 56 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800\/70 { --tw-gradient-to: rgb(21 95 56 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-800\/80 { --tw-gradient-from: rgb(21 95 56 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800\/80 { --tw-gradient-to: rgb(21 95 56 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-800\/90 { --tw-gradient-from: rgb(21 95 56 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(21 95 56 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-800\/90 { --tw-gradient-to: rgb(21 95 56 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-800 { background-color: rgb(var(--sk-g800)); }
+.star-look-pitch .bg-slate-800\/10 { background-color: rgb(var(--sk-g800) / 0.1); }
+.star-look-pitch .bg-slate-800\/15 { background-color: rgb(var(--sk-g800) / 0.15); }
+.star-look-pitch .bg-slate-800\/20 { background-color: rgb(var(--sk-g800) / 0.2); }
+.star-look-pitch .bg-slate-800\/30 { background-color: rgb(var(--sk-g800) / 0.3); }
+.star-look-pitch .bg-slate-800\/40 { background-color: rgb(var(--sk-g800) / 0.4); }
+.star-look-pitch .bg-slate-800\/50 { background-color: rgb(var(--sk-g800) / 0.5); }
+.star-look-pitch .bg-slate-800\/60 { background-color: rgb(var(--sk-g800) / 0.6); }
+.star-look-pitch .bg-slate-800\/70 { background-color: rgb(var(--sk-g800) / 0.7); }
+.star-look-pitch .bg-slate-800\/75 { background-color: rgb(var(--sk-g800) / 0.75); }
+.star-look-pitch .bg-slate-800\/80 { background-color: rgb(var(--sk-g800) / 0.8); }
+.star-look-pitch .bg-slate-800\/85 { background-color: rgb(var(--sk-g800) / 0.85); }
+.star-look-pitch .bg-slate-800\/90 { background-color: rgb(var(--sk-g800) / 0.9); }
+.star-look-pitch .bg-slate-800\/92 { background-color: rgb(var(--sk-g800) / 0.92); }
+.star-look-pitch .bg-slate-800\/95 { background-color: rgb(var(--sk-g800) / 0.95); }
+.star-look-pitch .from-slate-800 { --tw-gradient-from: rgb(var(--sk-g800)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-800 { --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g800)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800 { --tw-gradient-to: rgb(var(--sk-g800)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-800\/50 { --tw-gradient-from: rgb(var(--sk-g800) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800\/50 { --tw-gradient-to: rgb(var(--sk-g800) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-800\/60 { --tw-gradient-from: rgb(var(--sk-g800) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800\/60 { --tw-gradient-to: rgb(var(--sk-g800) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-800\/70 { --tw-gradient-from: rgb(var(--sk-g800) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800\/70 { --tw-gradient-to: rgb(var(--sk-g800) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-800\/80 { --tw-gradient-from: rgb(var(--sk-g800) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800\/80 { --tw-gradient-to: rgb(var(--sk-g800) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-800\/90 { --tw-gradient-from: rgb(var(--sk-g800) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g800) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-800\/90 { --tw-gradient-to: rgb(var(--sk-g800) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-slate-800, .star-look-pitch .ring-slate-800 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-slate-900 { background-color: #10522f; }
-.star-look-pitch .bg-slate-900\/10 { background-color: rgb(16 82 47 / 0.1); }
-.star-look-pitch .bg-slate-900\/15 { background-color: rgb(16 82 47 / 0.15); }
-.star-look-pitch .bg-slate-900\/20 { background-color: rgb(16 82 47 / 0.2); }
-.star-look-pitch .bg-slate-900\/30 { background-color: rgb(16 82 47 / 0.3); }
-.star-look-pitch .bg-slate-900\/40 { background-color: rgb(16 82 47 / 0.4); }
-.star-look-pitch .bg-slate-900\/50 { background-color: rgb(16 82 47 / 0.5); }
-.star-look-pitch .bg-slate-900\/60 { background-color: rgb(16 82 47 / 0.6); }
-.star-look-pitch .bg-slate-900\/70 { background-color: rgb(16 82 47 / 0.7); }
-.star-look-pitch .bg-slate-900\/75 { background-color: rgb(16 82 47 / 0.75); }
-.star-look-pitch .bg-slate-900\/80 { background-color: rgb(16 82 47 / 0.8); }
-.star-look-pitch .bg-slate-900\/85 { background-color: rgb(16 82 47 / 0.85); }
-.star-look-pitch .bg-slate-900\/90 { background-color: rgb(16 82 47 / 0.9); }
-.star-look-pitch .bg-slate-900\/92 { background-color: rgb(16 82 47 / 0.92); }
-.star-look-pitch .bg-slate-900\/95 { background-color: rgb(16 82 47 / 0.95); }
-.star-look-pitch .from-slate-900 { --tw-gradient-from: #10522f var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-900 { --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #10522f var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900 { --tw-gradient-to: #10522f var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-900\/50 { --tw-gradient-from: rgb(16 82 47 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900\/50 { --tw-gradient-to: rgb(16 82 47 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-900\/60 { --tw-gradient-from: rgb(16 82 47 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900\/60 { --tw-gradient-to: rgb(16 82 47 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-900\/70 { --tw-gradient-from: rgb(16 82 47 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900\/70 { --tw-gradient-to: rgb(16 82 47 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-900\/80 { --tw-gradient-from: rgb(16 82 47 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900\/80 { --tw-gradient-to: rgb(16 82 47 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-900\/90 { --tw-gradient-from: rgb(16 82 47 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(16 82 47 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-900\/90 { --tw-gradient-to: rgb(16 82 47 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-900 { background-color: rgb(var(--sk-g900)); }
+.star-look-pitch .bg-slate-900\/10 { background-color: rgb(var(--sk-g900) / 0.1); }
+.star-look-pitch .bg-slate-900\/15 { background-color: rgb(var(--sk-g900) / 0.15); }
+.star-look-pitch .bg-slate-900\/20 { background-color: rgb(var(--sk-g900) / 0.2); }
+.star-look-pitch .bg-slate-900\/30 { background-color: rgb(var(--sk-g900) / 0.3); }
+.star-look-pitch .bg-slate-900\/40 { background-color: rgb(var(--sk-g900) / 0.4); }
+.star-look-pitch .bg-slate-900\/50 { background-color: rgb(var(--sk-g900) / 0.5); }
+.star-look-pitch .bg-slate-900\/60 { background-color: rgb(var(--sk-g900) / 0.6); }
+.star-look-pitch .bg-slate-900\/70 { background-color: rgb(var(--sk-g900) / 0.7); }
+.star-look-pitch .bg-slate-900\/75 { background-color: rgb(var(--sk-g900) / 0.75); }
+.star-look-pitch .bg-slate-900\/80 { background-color: rgb(var(--sk-g900) / 0.8); }
+.star-look-pitch .bg-slate-900\/85 { background-color: rgb(var(--sk-g900) / 0.85); }
+.star-look-pitch .bg-slate-900\/90 { background-color: rgb(var(--sk-g900) / 0.9); }
+.star-look-pitch .bg-slate-900\/92 { background-color: rgb(var(--sk-g900) / 0.92); }
+.star-look-pitch .bg-slate-900\/95 { background-color: rgb(var(--sk-g900) / 0.95); }
+.star-look-pitch .from-slate-900 { --tw-gradient-from: rgb(var(--sk-g900)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-900 { --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g900)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900 { --tw-gradient-to: rgb(var(--sk-g900)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-900\/50 { --tw-gradient-from: rgb(var(--sk-g900) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900\/50 { --tw-gradient-to: rgb(var(--sk-g900) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-900\/60 { --tw-gradient-from: rgb(var(--sk-g900) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900\/60 { --tw-gradient-to: rgb(var(--sk-g900) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-900\/70 { --tw-gradient-from: rgb(var(--sk-g900) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900\/70 { --tw-gradient-to: rgb(var(--sk-g900) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-900\/80 { --tw-gradient-from: rgb(var(--sk-g900) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900\/80 { --tw-gradient-to: rgb(var(--sk-g900) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-900\/90 { --tw-gradient-from: rgb(var(--sk-g900) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g900) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-900\/90 { --tw-gradient-to: rgb(var(--sk-g900) / 0.9) var(--tw-gradient-to-position); }
 .star-look-pitch .border-slate-900, .star-look-pitch .ring-slate-900 { border-color: rgba(255,255,255,.26); --tw-ring-color: rgba(255,255,255,.26); }
-.star-look-pitch .bg-slate-950 { background-color: #0c4726; }
-.star-look-pitch .bg-slate-950\/10 { background-color: rgb(12 71 38 / 0.1); }
-.star-look-pitch .bg-slate-950\/15 { background-color: rgb(12 71 38 / 0.15); }
-.star-look-pitch .bg-slate-950\/20 { background-color: rgb(12 71 38 / 0.2); }
-.star-look-pitch .bg-slate-950\/30 { background-color: rgb(12 71 38 / 0.3); }
-.star-look-pitch .bg-slate-950\/40 { background-color: rgb(12 71 38 / 0.4); }
-.star-look-pitch .bg-slate-950\/50 { background-color: rgb(12 71 38 / 0.5); }
-.star-look-pitch .bg-slate-950\/60 { background-color: rgb(12 71 38 / 0.6); }
-.star-look-pitch .bg-slate-950\/70 { background-color: rgb(12 71 38 / 0.7); }
-.star-look-pitch .bg-slate-950\/75 { background-color: rgb(12 71 38 / 0.75); }
-.star-look-pitch .bg-slate-950\/80 { background-color: rgb(12 71 38 / 0.8); }
-.star-look-pitch .bg-slate-950\/85 { background-color: rgb(12 71 38 / 0.85); }
-.star-look-pitch .bg-slate-950\/90 { background-color: rgb(12 71 38 / 0.9); }
-.star-look-pitch .bg-slate-950\/92 { background-color: rgb(12 71 38 / 0.92); }
-.star-look-pitch .bg-slate-950\/95 { background-color: rgb(12 71 38 / 0.95); }
-.star-look-pitch .from-slate-950 { --tw-gradient-from: #0c4726 var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .via-slate-950 { --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), #0c4726 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950 { --tw-gradient-to: #0c4726 var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-950\/50 { --tw-gradient-from: rgb(12 71 38 / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950\/50 { --tw-gradient-to: rgb(12 71 38 / 0.5) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-950\/60 { --tw-gradient-from: rgb(12 71 38 / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950\/60 { --tw-gradient-to: rgb(12 71 38 / 0.6) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-950\/70 { --tw-gradient-from: rgb(12 71 38 / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950\/70 { --tw-gradient-to: rgb(12 71 38 / 0.7) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-950\/80 { --tw-gradient-from: rgb(12 71 38 / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950\/80 { --tw-gradient-to: rgb(12 71 38 / 0.8) var(--tw-gradient-to-position); }
-.star-look-pitch .from-slate-950\/90 { --tw-gradient-from: rgb(12 71 38 / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(12 71 38 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.star-look-pitch .to-slate-950\/90 { --tw-gradient-to: rgb(12 71 38 / 0.9) var(--tw-gradient-to-position); }
+.star-look-pitch .bg-slate-950 { background-color: rgb(var(--sk-g950)); }
+.star-look-pitch .bg-slate-950\/10 { background-color: rgb(var(--sk-g950) / 0.1); }
+.star-look-pitch .bg-slate-950\/15 { background-color: rgb(var(--sk-g950) / 0.15); }
+.star-look-pitch .bg-slate-950\/20 { background-color: rgb(var(--sk-g950) / 0.2); }
+.star-look-pitch .bg-slate-950\/30 { background-color: rgb(var(--sk-g950) / 0.3); }
+.star-look-pitch .bg-slate-950\/40 { background-color: rgb(var(--sk-g950) / 0.4); }
+.star-look-pitch .bg-slate-950\/50 { background-color: rgb(var(--sk-g950) / 0.5); }
+.star-look-pitch .bg-slate-950\/60 { background-color: rgb(var(--sk-g950) / 0.6); }
+.star-look-pitch .bg-slate-950\/70 { background-color: rgb(var(--sk-g950) / 0.7); }
+.star-look-pitch .bg-slate-950\/75 { background-color: rgb(var(--sk-g950) / 0.75); }
+.star-look-pitch .bg-slate-950\/80 { background-color: rgb(var(--sk-g950) / 0.8); }
+.star-look-pitch .bg-slate-950\/85 { background-color: rgb(var(--sk-g950) / 0.85); }
+.star-look-pitch .bg-slate-950\/90 { background-color: rgb(var(--sk-g950) / 0.9); }
+.star-look-pitch .bg-slate-950\/92 { background-color: rgb(var(--sk-g950) / 0.92); }
+.star-look-pitch .bg-slate-950\/95 { background-color: rgb(var(--sk-g950) / 0.95); }
+.star-look-pitch .from-slate-950 { --tw-gradient-from: rgb(var(--sk-g950)) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .via-slate-950 { --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--sk-g950)) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950 { --tw-gradient-to: rgb(var(--sk-g950)) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-950\/50 { --tw-gradient-from: rgb(var(--sk-g950) / 0.5) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950\/50 { --tw-gradient-to: rgb(var(--sk-g950) / 0.5) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-950\/60 { --tw-gradient-from: rgb(var(--sk-g950) / 0.6) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950\/60 { --tw-gradient-to: rgb(var(--sk-g950) / 0.6) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-950\/70 { --tw-gradient-from: rgb(var(--sk-g950) / 0.7) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950\/70 { --tw-gradient-to: rgb(var(--sk-g950) / 0.7) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-950\/80 { --tw-gradient-from: rgb(var(--sk-g950) / 0.8) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950\/80 { --tw-gradient-to: rgb(var(--sk-g950) / 0.8) var(--tw-gradient-to-position); }
+.star-look-pitch .from-slate-950\/90 { --tw-gradient-from: rgb(var(--sk-g950) / 0.9) var(--tw-gradient-from-position); --tw-gradient-to: rgb(var(--sk-g950) / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.star-look-pitch .to-slate-950\/90 { --tw-gradient-to: rgb(var(--sk-g950) / 0.9) var(--tw-gradient-to-position); }
 
 /* v0.23: Home's night-stand sky is not drawn on the grass look (the page is
    already the pitch), and the team sheet's own pitch is see-through chalk on
@@ -477,10 +498,10 @@
 /* v0.23 (Harry, 1 Oct 2026: "make everything a lighter version … rather than
    everything being so dark"): the translucent black chips and stat blocks are
    a deep-green tint instead, so they read as part of the lighter pitch. */
-.star-look-pitch .bg-black\/20 { background-color: rgba(6,52,26,.16); }
-.star-look-pitch .bg-black\/25 { background-color: rgba(6,52,26,.20); }
-.star-look-pitch .bg-black\/30 { background-color: rgba(6,52,26,.26); }
-.star-look-pitch .bg-black\/35 { background-color: rgba(6,52,26,.32); }
-.star-look-pitch .bg-black\/40 { background-color: rgba(6,52,26,.38); }
-.star-look-pitch .bg-black\/45 { background-color: rgba(6,52,26,.42); }
-.star-look-pitch .bg-black\/50 { background-color: rgba(6,52,26,.46); }
+.star-look-pitch .bg-black\/20 { background-color: rgba(var(--sk-tint-rgb), .16); }
+.star-look-pitch .bg-black\/25 { background-color: rgba(var(--sk-tint-rgb), .20); }
+.star-look-pitch .bg-black\/30 { background-color: rgba(var(--sk-tint-rgb), .26); }
+.star-look-pitch .bg-black\/35 { background-color: rgba(var(--sk-tint-rgb), .32); }
+.star-look-pitch .bg-black\/40 { background-color: rgba(var(--sk-tint-rgb), .38); }
+.star-look-pitch .bg-black\/45 { background-color: rgba(var(--sk-tint-rgb), .42); }
+.star-look-pitch .bg-black\/50 { background-color: rgba(var(--sk-tint-rgb), .46); }

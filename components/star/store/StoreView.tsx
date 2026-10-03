@@ -22,6 +22,9 @@ import Link from "next/link";
 import RunupPreview from "@/components/star/store/RunupPreview";
 import AccessoryFigure from "@/components/star/store/AccessoryFigure";
 import KibCanIcon from "@/components/star/KibCanIcon";
+import BootPicture from "@/components/star/BootPicture";
+import { useRenderFailed } from "@/components/star/StylePicture";
+import { baseIdOf } from "@/lib/star/shopData";
 import { KitStyles, WalletPill, PressButton, RiseIn, Shine, Glow, Burst, useTrigger, rgba } from "@/components/star/ui";
 import {
   ANIMATIONS, ACCESSORIES, BOOSTS, bootsAtLevel, findItem, itemName, isPayToWin, isConsumable,
@@ -146,16 +149,45 @@ function rarityOf(item: StoreItem): Rarity | null {
   return item.kind === "animation" || item.kind === "accessory" ? item.rarity : null;
 }
 
+/**
+ * v0.23.1 (Harry, "redo the whole store with all the new Blender stuff"): the Store's pictures are Blender renders from the
+ * same studio as the Style shop (public/shop/store/*.webp, made by tools/blender-shop/scripts/store.py). Every one falls back
+ * to the old drawing if its file can't load. Celebrations are poses, not objects, so they stay the drawn player.
+ */
+export function storeRenderFor(item: StoreItem): string | null {
+  if (item.kind === "accessory") return item.slot === "celebration" ? null : `/shop/store/acc-${item.id}.webp`;
+  if (item.kind === "boost") return item.id === "training-boost" ? "/shop/store/boost-training.webp" : item.id === "stat-can" ? "/shop/store/boost-stat.webp" : null;
+  return null;
+}
+
+function StoreRender({ src, className = "", alt = "", fallback }: { src: string; className?: string; alt?: string; fallback: ReactNode }) {
+  const failed = useRenderFailed(src);
+  // eslint-disable-next-line @next/next/no-img-element
+  return failed ? <>{fallback}</> : <img src={src} alt={alt} loading="lazy" draggable={false} className={className} />;
+}
+
 /** The picture for any item, at a given size. */
-function ItemArt({ item, size, equippedWear }: { item: StoreItem; size: number; equippedWear?: AccessoryItem[] }) {
+function ItemArt({ item, size, equippedWear, tryOn = true }: { item: StoreItem; size: number; equippedWear?: AccessoryItem[]; tryOn?: boolean }) {
   if (item.kind === "animation") {
     return <RunupPreview style={item.id} className="block rounded-xl" />;
   }
   if (item.kind === "accessory") {
     const wear = [...(equippedWear ?? []).filter((w) => w.slot !== item.slot), item];
-    return (
+    const figure = (
       <div className="flex justify-center rounded-xl bg-gradient-to-b from-[#12263f] to-[#0c1a12]">
         <AccessoryFigure wear={wear} width={size} height={Math.round(size * 1.05)} />
+      </div>
+    );
+    const src = storeRenderFor(item);
+    if (!src) return figure;
+    return (
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#1b2a44] to-[#0c1522]" style={{ aspectRatio: "4 / 3" }}>
+        <StoreRender src={src} alt={item.name} className="h-full w-full object-contain" fallback={figure} />
+        {tryOn && (
+          <div className="absolute bottom-1 right-1 rounded-lg bg-black/45 ring-1 ring-white/15">
+            <AccessoryFigure wear={wear} width={Math.round(size * 0.3)} height={Math.round(size * 0.32)} />
+          </div>
+        )}
       </div>
     );
   }
@@ -167,7 +199,7 @@ function ItemArt({ item, size, equippedWear }: { item: StoreItem; size: number; 
         </div>
       );
     }
-    return (
+    const drawn = (
       <div className="flex items-center justify-center rounded-xl bg-white/[0.04]" style={{ height: size * 0.8 }}>
         <svg viewBox="0 0 40 40" style={{ height: size * 0.5 }} aria-hidden>
           {item.id === "training-boost" ? (
@@ -185,16 +217,19 @@ function ItemArt({ item, size, equippedWear }: { item: StoreItem; size: number; 
         </svg>
       </div>
     );
+    const src = storeRenderFor(item);
+    if (!src) return drawn;
+    return (
+      <div className="flex items-center justify-center rounded-xl bg-white/[0.04]" style={{ height: size * 0.8 }}>
+        <StoreRender src={src} alt={item.name} className="h-full w-full object-contain" fallback={drawn} />
+      </div>
+    );
   }
-  // A boot, as a simple side-on boot in the shop's colours.
-  const hue = (item.boot.name.charCodeAt(3) * 37) % 360;
+  // A boot: the same Blender render the Boots shelf uses (it used to be one hue-shifted drawing for every boot).
+  const base = baseIdOf(item.boot);
   return (
     <div className="flex items-center justify-center rounded-xl bg-white/[0.04]" style={{ height: size * 0.8 }}>
-      <svg viewBox="0 0 60 30" style={{ width: size * 0.7 }} aria-hidden>
-        <path d="M4 20 Q4 8 14 8 L26 9 Q32 15 44 16 Q56 18 56 23 L56 25 L4 25 Z" fill={`hsl(${hue} 70% 50%)`} />
-        <path d="M4 25 L56 25 L56 27 L4 27 Z" fill="#0f172a" />
-        <path d="M14 9 L20 16 M18 9 L23 15 M22 9 L26 14" stroke="#fff" strokeWidth="1.2" opacity="0.7" />
-      </svg>
+      <BootPicture base={base} level={item.boot.level ?? 1} className="w-[84%]" />
     </div>
   );
 }
@@ -524,6 +559,18 @@ function DailyTab({ specials, state, ctx, dateKey, now, dayOffset, equippedWear,
   );
 }
 
+/** A coin pack's picture: the Blender render (a handful of coins up to a heap with a trophy), the old stacked coins if it won't load. */
+function PackArt({ id, index }: { id: string; index: number }) {
+  const drawn = (
+    <div className="mt-1 flex items-center">
+      {Array.from({ length: Math.min(5, 1 + index) }).map((_, i) => (
+        <CoinIcon key={i} className={`h-7 w-7 ${i ? "-ml-3" : ""}`} />
+      ))}
+    </div>
+  );
+  return <StoreRender src={`/shop/store/coins-${id}.webp`} alt="" className="mx-auto h-[96px] w-auto object-contain" fallback={drawn} />;
+}
+
 function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
   state: StoreState; wage: number; value: ReturnType<typeof coinValueLine>; packs: "test" | "soon";
   onPack: (id: string) => void; onSwap: (coins: number) => void;
@@ -554,11 +601,7 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
               {p.bestValue && <Shine loop every={4} />}
               {p.bestValue && <span className="absolute inset-x-0 top-0 bg-amber-400 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">Best value</span>}
               {doubled && <span className="absolute inset-x-0 top-0 bg-emerald-400 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-950">First purchase ×2</span>}
-              <div className="mt-1 flex items-center">
-                {Array.from({ length: Math.min(5, 1 + COIN_PACKS.indexOf(p)) }).map((_, i) => (
-                  <CoinIcon key={i} className={`h-7 w-7 ${i ? "-ml-3" : ""}`} />
-                ))}
-              </div>
+              <PackArt id={p.id} index={COIN_PACKS.indexOf(p)} />
               <div className="mt-1.5 text-[11px] font-black uppercase tracking-wide text-slate-400">{p.name}</div>
               <div className="text-[20px] font-black tabular-nums text-amber-50">{n(now)}</div>
               <div className="h-4 text-[11px] font-black text-emerald-300">

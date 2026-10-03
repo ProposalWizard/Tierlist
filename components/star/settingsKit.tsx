@@ -92,6 +92,33 @@ export function Switch({ on, onClick, label }: { on: boolean; onClick: () => voi
   );
 }
 
+/** One small on/off row: a one-line label and a small switch, no sentence
+ *  under it (v0.23.1, P61). Stack several in one card. */
+export function SetToggle({ label, on, onClick, last = false }: { label: string; on: boolean; onClick: () => void; last?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      role="switch"
+      aria-checked={on}
+      className={`kib-press flex w-full items-center justify-between gap-3 py-2.5 text-left ${last ? "" : "border-b border-white/10"}`}
+    >
+      <span className="text-[14px] font-bold leading-tight text-white">{label}</span>
+      <span
+        aria-hidden
+        className="relative block h-[20px] w-[36px] shrink-0 rounded-full transition-[background,box-shadow] duration-200"
+        style={on
+          ? { background: "linear-gradient(180deg, #4ade80, #10b981 60%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 0 10px -2px rgba(16,185,129,.8)" }
+          : { background: "linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04))", boxShadow: "inset 0 2px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.14)" }}
+      >
+        <span
+          className="absolute left-0 top-[2px] h-4 w-4 rounded-full bg-gradient-to-b from-white to-gray-200 transition-transform duration-200 motion-reduce:transition-none"
+          style={{ transform: `translateX(${on ? 18 : 2}px)`, boxShadow: "0 1px 3px rgba(0,0,0,.45)" }}
+        />
+      </span>
+    </button>
+  );
+}
+
 /** An on/off switch that is still a real checkbox underneath. */
 export function CheckSwitch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
   return (

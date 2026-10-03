@@ -93,6 +93,71 @@ export function powerDrill(level: number, rep: number): PowerDrillConfig {
   };
 }
 
+/**
+ * ── POWER, BY TRAINING LEVEL — AN OPEN GOAL FIRST, AND SCALED TO YOUR POWER ──
+ *
+ * Harry, 2 Oct 2026, on Power level 1 (20 m, one man in the way, a keeper,
+ * and him on 40 Power): "Level one should literally be an open goal … already
+ * I have no power. So how am I meant to win that one?" And: "we need to still
+ * power scale some of these."
+ *
+ * The 30 training levels used to be `powerDrill` at 40-100 on its 0-100
+ * ladder, so level 1 was the ladder's 40 — the old "a 40-Power player's
+ * drill" — with a 60-rated keeper and a man in the lane already. Measured
+ * on the real engine (scratch numbers in the v0.24 report): a 40-Power shooter
+ * scored about one shot in five there, so three tries passed only half the
+ * time, and Power hardly changed it — what decides a long shot in this engine
+ * is whether there is a keeper at all.
+ *
+ * Now, by level number (1-30):
+ *
+ *  - Levels 1-2: an open goal, 12-13 m out. No keeper, nobody in the way.
+ *  - Level 3 on: a keeper, starting weak (about 30) and rising to 95.
+ *  - Level 5 on: men in the lane, one at a time, up to four.
+ *  - Distance climbs from 12 m to 34 m.
+ *
+ * Scaled to your Power: every number above follows `progress`, how far up
+ * the 30 levels this one is. When your Power is BEHIND the level (Power 40 on
+ * level 10), three quarters of the gap is taken off, so the drill is pitched
+ * nearer the player you are. Power at or ahead of the level changes nothing:
+ * a strong player is never handed a harder level than its number says.
+ */
+export const POWER_LEVELS = 30;
+/** Levels with no keeper at all. */
+export const OPEN_GOAL_LEVELS = 2;
+/** The first level with a man in the way. */
+export const FIRST_BLOCKER_LEVEL = 5;
+/** Share of the gap (level ahead of your Power) that is taken off. */
+export const POWER_EASE = 0.75;
+
+export interface PowerLevelConfig extends PowerDrillConfig {
+  /** false: an open goal — no keeper on the pitch. */
+  keeper: boolean;
+}
+
+/** 0-1: how far up the 30 levels, after easing for a Power behind it. */
+export function powerProgress(trainingLevel: number, power?: number): number {
+  const n = Math.max(1, Math.min(POWER_LEVELS, Math.round(trainingLevel)));
+  const q = (n - 1) / (POWER_LEVELS - 1);
+  if (power === undefined || !Number.isFinite(power)) return q;
+  // The level your Power stands at, on the same 0-1 (40 Power = level 1, 100 = level 30).
+  const qp = Math.max(0, Math.min(1, (power - 40) / 60));
+  return q - POWER_EASE * Math.max(0, q - qp);
+}
+
+export function powerDrillForLevel(trainingLevel: number, rep: number, power?: number): PowerLevelConfig {
+  const n = Math.max(1, Math.min(POWER_LEVELS, Math.round(trainingLevel)));
+  const q = powerProgress(n, power);
+  const keeper = n > OPEN_GOAL_LEVELS;
+  return {
+    distance: 12 + 22 * q + rep * 1.2,
+    offset: (rep % 2 === 0 ? -1 : 1) * 7 * q * (0.6 + (rep % 3) * 0.2),
+    blockers: n < FIRST_BLOCKER_LEVEL ? 0 : Math.max(1, Math.min(4, Math.round(q * 4.4))),
+    keeperStrength: keeper ? 25 + 70 * q : 0,
+    keeper,
+  };
+}
+
 // ── Technique: the cone gate ────────────────────────────────────────────────
 
 export interface TechniqueDrillConfig {

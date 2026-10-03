@@ -1,7 +1,7 @@
 "use client";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
 import { rgba } from "./theme";
+import LiquidBar from "./LiquidBar";
 
 /**
  * THE FLAT PANEL — the replacement for the floating rounded card (Harry,
@@ -36,38 +36,33 @@ export function FlatPanel({ glow, fade = "both", edge = false, bleed = false, cl
 }
 
 /**
- * THE SQUARE BAR — a square-cornered, clearly outlined progress bar with ten
- * ruler ticks (Harry, P85/P107: "squares with very clear, maybe even
- * animated, progress"). `animate` marches stripes along the fill; going UP
- * flashes it once. Give it a height with `className` (h-3 by default). Put a
- * number or label over it with `children`.
+ * THE BAR (kept under its v0.23 name). Since v0.23.1 it is the LIQUID bar
+ * (ui/LiquidBar.tsx): one smooth glowing fill, rounded ends, no ticks, glides
+ * to a new value (Harry and Mikey, P8/P15/P96). `animate` keeps the light
+ * drifting along the fill; `ticks` is accepted and ignored. Give it a height
+ * with `className` (h-3 by default). A number over it goes in `children`.
  *
  *   <SquareBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4" animate>85</SquareBar>
+ *
+ * `square` (v0.24) gives it square ends and a white edge: use it for any bar
+ * at the top of a screen, or use TopMeter (ui/TopMeter.tsx), which adds the
+ * icon sitting on top of the bar.
  */
-export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, ticks = true, children }: {
+export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, square = false, duration, children }: {
   /** 0-100. */
   value: number;
   colors?: [string, string];
   className?: string;
   animate?: boolean;
+  /** Ignored: the liquid bar has no tick marks. */
   ticks?: boolean;
+  /** Square ends and a white edge — every bar at the TOP of a screen (Harry,
+   *  2 Oct 2026, P1-35: "everything that's at the top should be a square bar"). */
+  square?: boolean;
+  /** Glide time in ms (900 by default); 0 jumps. */
+  duration?: number;
   /** Over the bar, centred (a number). */
   children?: React.ReactNode;
 }) {
-  const v = Math.max(0, Math.min(100, value));
-  const prev = useRef(v);
-  const [pop, setPop] = useState(0);
-  useEffect(() => {
-    if (v > prev.current) setPop((n) => n + 1);
-    prev.current = v;
-  }, [v]);
-  return (
-    <div className={`sk-sqbar ${className}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)}>
-      <div key={pop} className={`sk-sqbar-fill ${pop ? "sk-sqbar-pop" : ""}`} style={{ width: `${v}%`, background: `linear-gradient(180deg, ${colors[1]}, ${colors[0]} 70%)` }}>
-        {animate && v > 0 && <div className="sk-sqbar-anim" />}
-      </div>
-      {ticks && <div className="sk-sqbar-ticks" />}
-      {children != null && <div className="absolute inset-0 flex items-center justify-center text-[11px] font-black leading-none tabular-nums text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.8)" }}>{children}</div>}
-    </div>
-  );
+  return <LiquidBar value={value} colors={colors} className={className} sheen={animate} square={square} duration={duration}>{children}</LiquidBar>;
 }

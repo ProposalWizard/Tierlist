@@ -733,3 +733,99 @@ export function runProgress(s: FpRunState): number {
   if (total <= 0) return 1;
   return clamp((s.startY - s.y) / total, 0, 1);
 }
+
+// ── The chase camera's shoulder lean (a picture only — the run never reads it) ──
+//
+// Harry, 2 Oct 2026, playing the trial's Take Him On: "the changing of the
+// camera angle is a bit crazy." The C1 camera leans to whichever side the
+// ball is on and aims at a point ahead of you, so every touch across your
+// body swung it from one shoulder to the other: about 22° of turn in about
+// half a second. The calm feel swaps shoulder only once the ball is clearly
+// across (0.5 m, not 0.15 m), eases there 2.5 times more slowly, and slides
+// after your lane at 3/s, not 5.5/s. It keeps the full lean: a half lean was
+// tried and, now that your player is drawn again, it put the ball on his
+// back (seen in a still at 390x844).
+// The real match keeps the lively feel (FirstPersonDribble's `calmCamera`).
+export interface CameraFeel {
+  /** Share of the camera's own lean (`CamPose.side`) actually used. */
+  sideScale: number;
+  /** How far across (m) the ball must be before the lean swaps sides. */
+  flipAt: number;
+  /** /s, how fast the lean eases to its target. */
+  sideRate: number;
+  /** /s, how fast the camera slides after your lane (an upper limit). */
+  followRate: number;
+}
+export const LIVELY_CAMERA: CameraFeel = { sideScale: 1, flipAt: 0.15, sideRate: 3, followRate: 5.5 };
+export const CALM_CAMERA: CameraFeel = { sideScale: 1, flipAt: 0.5, sideRate: 1.2, followRate: 3 };
+
+/** One frame of the lean: which shoulder, and how far over the camera is now. */
+export function stepCameraLean(
+  lean: { dir: 1 | -1; side: number },
+  ballOff: number, poseSide: number, feel: CameraFeel, dt: number,
+): { dir: 1 | -1; side: number } {
+  let dir = lean.dir;
+  if (ballOff > feel.flipAt) dir = 1;
+  else if (ballOff < -feel.flipAt) dir = -1;
+  const side = lean.side + (dir * poseSide * feel.sideScale - lean.side) * (1 - Math.exp(-feel.sideRate * dt));
+  return { dir, side };
+}
+
+// ── Where the carried ball is DRAWN (a picture only — the run never reads it) ──
+//
+// Harry, 2 Oct 2026, on the trial's Take Him On: the ball drew on the
+// player's hip. The real cause was two things, both in the picture:
+//
+//  1. Draw order. The ball is always AHEAD of you, so from a camera behind
+//     you it is always FARTHER away than your body. It was drawn on top of
+//     your shorts, shirt and arms anyway, so wherever its sight line crossed
+//     your body it was painted onto it.
+//  2. Where it sat. 1.6 m ahead, dead centre. From the C1 camera (2.4 m up,
+//     2.8 m behind) a ground point 1.6 m beyond your boots lines up with your
+//     waist — every point ahead of you lines up with some height on your
+//     body, and the farther ahead, the higher. The camera's lean only moved
+//     that sight line 0.47 m sideways, which is inside your drawn arm (0.44 m
+//     out), so it landed on your hand and hip.
+//
+// The fix: carry it the way a dribbler does, close and just outside the
+// boot on the camera's side (`restFootX`), touched forward once a stride by
+// that foot (`carryLead`). Close means its sight line crosses your body at
+// thigh height, not waist height; outside the boot means it crosses beside
+// you, not through you. Then it can be drawn in true depth order (behind
+// you) and still be seen — your own boot passes in front of it as you touch
+// it, which is what a ball at your feet looks like.
+// tests/star/fpBallCarry.mts measures it against the drawn body.
+
+/** Metres run per full gait cycle of your own figure (both feet once). */
+export const OWN_GAIT_M = 1.4;
+
+export const CARRY = {
+  /** Metres out from your centre line the ball rests: just outside the boot. */
+  restFootX: 0.36,
+  /** Metres ahead of your feet at the moment the boot touches it. */
+  leadMin: 0.42,
+  /** How much farther ahead the touch pushes it before you catch it up. */
+  push: 0.34,
+  /** Extra lead at the height of a burst (it is knocked on, not carried). */
+  burstExtra: 0.5,
+} as const;
+
+/**
+ * How far ahead of your feet the carried ball is drawn, this frame.
+ *
+ * One touch per gait cycle, by the foot on the ball's side, at the moment
+ * that foot is furthest forward (the render's own gait: the right foot leads
+ * at phase 3π/2, the left at π/2, phase = stride / OWN_GAIT_M · 2π). Straight
+ * after the touch the ball runs away from you quickly, then you close the
+ * gap until the next one.
+ *
+ * `burst` is 0-1, how far into a burst you are.
+ */
+export function carryLead(stride: number, footSide: 1 | -1, burst = 0): number {
+  const phase = (stride / OWN_GAIT_M) * Math.PI * 2;
+  const touchAt = footSide > 0 ? Math.PI * 1.5 : Math.PI * 0.5;
+  let u = ((phase - touchAt) / (Math.PI * 2)) % 1;
+  if (u < 0) u += 1;
+  const away = Math.sin(Math.PI * Math.pow(u, 0.6));
+  return CARRY.leadMin + CARRY.push * away + CARRY.burstExtra * clamp(burst, 0, 1);
+}

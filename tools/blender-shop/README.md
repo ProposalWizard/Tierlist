@@ -54,6 +54,29 @@ Level names are in `lib/star/lifestyleLevels.ts`. Script = which file builds it.
 
 The `compare/` and `mockups/` folders and `renders/300/` are from the first test round (drawings vs renders). The 45 renders in `renders/300/` were re-rendered at the new settings and replaced in `public/shop/`.
 
+## v0.23.1 (Harry and Mikey's review of v0.23)
+- **House-1 level 1** is now one small, tired two-up-two-down with a yard (it was a row of three big houses: "quite big. That should be the starter house", P52). Box Room (`flat-1` L1) and Shared Flat (`flat-2` L1) were trimmed to 2 and 3 floors for the same reason.
+- **Boots shelf** (BootShelf.tsx): the picture stands at 72% of the card (it was 100%, so a boot was almost as wide as its card, "size 18", P55), and the 35 boot WebPs had the hard edge of the floor shadow softened (`shadow` pixels faded 16% in from each edge) so a smaller picture shows no box.
+- **Redone**: suit (all 5: a jacket on a display form with sleeves, lapels, tie/bow tie, pocket square, pinstripe / tweed / gold thread), silver (chunky links, sized per level, a stone on every link at L5), diamond (a real display bust; the stones are a grey-blue mid tone with medium gloss, so they keep their facets and no longer clip to white; riviera necklace, collar), and the whole **stable ladder** with proper horses (`horses.py`: lofted body, neck and head, jointed legs, mane, tail, ears, eyes; five coats; stand / graze / trot poses; tighter paddocks so the horses read at 400 px).
+- **Store pictures** (`store.py`, `public/shop/store/`): 6 coin packs, 2 boosts (Training Boost, Stat Can), 10 accessories and 3 accessory boots (`acc-<id>.webp`). The Store page (components/star/store/StoreView.tsx) uses them where a picture exists today and falls back to the old drawing if one won't load; the Boots tab now shows the same boot renders as the shop shelf. Celebrations and the run-up animation cards stay as they are (a pose and an animated sketch, not objects). Same studio, same 400x300 WebP.
+- `drip.py` gem material fixed; `run.py` can frame on the jewellery only (`frame_parts`).
+
 ## Not seen / known soft spots
-- Horses are simple (barrel body, tube legs); jewellery stones are flat-shaded cut stones that blow out to white at 400 px.
+- Horses are stylised (no rider, one pose per level); the three celebrations in the Store have no render.
 - Level pictures inside one family were checked on contact sheets; the in-game crop was checked on the Style grid, item sheet and boots shelf only.
+
+## Top-bar icons (v0.24)
+Harry, 2 Oct (P1-37, P1-38): a 3D icon sits ABOVE each top bar, as an overlay.
+| File | What | Bar |
+|---|---|---|
+| `public/icons3d/energy.png` | yellow lightning bolt | Energy |
+| `public/icons3d/world.png` | small Earth with clouds | Reputation ("world") |
+| `public/icons3d/fame.png` | gold crown with stones | Fame |
+| `public/icons3d/happiness.png` | yellow smiley, no cheeks (redone 2 Oct: "cleaner and more polished") | Happiness |
+| `public/icons3d/heart.png` | pink heart (spare) | — |
+| `public/icons3d/money.png` | gold coin with a raised ★ | Money |
+| `public/icons3d/star-full.png`, `star-empty.png` | gold star and grey star, same shape and framing | Star rating: draw the grey one, then the gold one clipped from the bottom to the % through the level |
+
+- 256x256 PNG, transparent, no floor shadow. All about 18-73 KB.
+- Script: `scripts/icons3d.py -- <name> <out.png> [samples] [size]`. Rendered at 512, 32 samples, then scaled to 256 (LANCZOS).
+- One style: "puffy" extruded outlines (bolt, star, heart) and glossy round shapes, turned a little left so the thickness shows, lit by `studio.py`.

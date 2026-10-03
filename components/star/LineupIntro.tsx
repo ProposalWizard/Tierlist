@@ -30,6 +30,7 @@ import { formationOf } from "@/lib/star/formations";
 import { offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
 import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
 import { loadLineup } from "@/lib/star/lineupStore";
+import { getSkipLineup } from "@/lib/star/lineupPrefs";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import VersusScreen from "./VersusScreen";
@@ -71,13 +72,15 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     [career.player.club, nextFixture, preMatchSelection?.status, playAs],
   );
   const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
-  const showLineup = !watching && (!tired || asked) && teamsReady;
+  // "Skip the line-up" in Settings (v0.23.1, P30/P75): straight into the match.
+  const skipIt = useRef(typeof window !== "undefined" && getSkipLineup());
+  const showLineup = !watching && (!tired || asked) && teamsReady && !skipIt.current;
 
   // Nothing to draw (an international, or a squad too thin): straight in.
   const went = useRef(false);
   const go = () => { if (went.current) return; went.current = true; onPlayMatch(); };
   useEffect(() => {
-    if (watching || (tired && !asked) || teamsReady) return;
+    if (watching || (tired && !asked) || (teamsReady && !skipIt.current)) return;
     go();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watching, tired, asked, teamsReady]);
@@ -104,46 +107,59 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showLineup, held]);
 
+  // In the pitch's top-right corner, beside the home keeper (Harry, 2 Oct
+  // 2026, v0.24 P1-51: it sat on top of the VS between the crests; "maybe
+  // just put it here"). The list opens down and to the left, over the pitch.
+  const playAsPicker = canPick ? (
+    <div className="relative">
+      <button
+        onClick={() => { setPicking((o) => !o); setHeld(true); }}
+        aria-label="Play as"
+        aria-expanded={picking}
+        className="kib-press flex h-8 items-center gap-1.5 px-2.5 text-[14px] font-black uppercase leading-none text-white"
+        style={{ background: "rgba(3,32,15,.9)", borderRadius: 2, boxShadow: `inset 0 0 0 1px ${playAs ? "#fbbf24" : "rgba(255,255,255,.45)"}, 0 3px 8px rgba(0,0,0,.45)` }}
+      >
+        <span className="text-[11px] text-white/75">Play as</span>
+        <span className={playAs ? "text-amber-300" : "text-white"}>{here}</span>
+        <span className="text-[10px] text-amber-300">▾</span>
+      </button>
+      {picking && (
+        <div data-playas-picker className="absolute right-0 top-[36px] flex gap-px bg-black/60 p-px" style={{ boxShadow: "0 8px 20px rgba(0,0,0,.6)" }}>
+          {[{ role: null as Role | null, label: career.player.position }, ...alternates.map((a) => ({ role: a.role as Role | null, label: a.role as string }))].map(({ role, label }) => {
+            const on = (playAs ?? null) === role;
+            return (
+              <button
+                key={role ?? "own"}
+                onClick={() => { onPlayAs?.(role); setPicking(false); }}
+                aria-pressed={on}
+                title={role ? POSITION_NAMES[role] : undefined}
+                className={`kib-press min-w-[46px] px-2.5 py-2 text-[15px] font-black uppercase leading-none ${on ? "bg-amber-400 text-gray-950" : "bg-[#0c2a18] text-white"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  ) : null;
+
   if (showLineup && matchday) {
     return (
-      <div data-lineup-intro>
+      // A tap anywhere that is not a button kicks off (P75: "you can just tap
+      // and you get through it"); while the position list is open it closes it.
+      <div
+        data-lineup-intro
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button, a, [role=button]")) return;
+          if (picking) { setPicking(false); return; }
+          go();
+        }}
+      >
         {/* The timer along the top: the line-up kicks off when it fills. */}
         {!held && (
           <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[4px] bg-black/60">
             <div className="h-full bg-emerald-400" style={{ width: "100%", transformOrigin: "left", animation: `kib-lineup-fill ${LINEUP_MS}ms linear 1 both`, boxShadow: "0 0 8px rgba(52,211,153,.9)" }} />
-          </div>
-        )}
-        {canPick && (
-          <div className="fixed left-1/2 top-[116px] z-50 -translate-x-1/2">
-            <button
-              onClick={() => { setPicking((o) => !o); setHeld(true); }}
-              aria-label="Play as"
-              aria-expanded={picking}
-              className="kib-press flex h-9 items-center gap-1.5 px-3 text-[15px] font-black uppercase leading-none text-white"
-              style={{ background: "rgba(3,32,15,.88)", borderRadius: 2, boxShadow: `inset 0 0 0 1px ${playAs ? "#fbbf24" : "rgba(255,255,255,.45)"}` }}
-            >
-              <span className="text-[12px] text-white/70">Play as</span>
-              <span className={playAs ? "text-amber-300" : "text-white"}>{here}</span>
-              <span className="text-[10px] text-amber-300">▾</span>
-            </button>
-            {picking && (
-              <div data-playas-picker className="absolute left-1/2 top-[42px] flex -translate-x-1/2 gap-px bg-black/60 p-px" style={{ boxShadow: "0 8px 20px rgba(0,0,0,.6)" }}>
-                {[{ role: null as Role | null, label: career.player.position }, ...alternates.map((a) => ({ role: a.role as Role | null, label: a.role as string }))].map(({ role, label }) => {
-                  const on = (playAs ?? null) === role;
-                  return (
-                    <button
-                      key={role ?? "own"}
-                      onClick={() => { onPlayAs?.(role); setPicking(false); }}
-                      aria-pressed={on}
-                      title={role ? POSITION_NAMES[role] : undefined}
-                      className={`kib-press min-w-[46px] px-2.5 py-2 text-[15px] font-black uppercase leading-none ${on ? "bg-amber-400 text-gray-950" : "bg-[#0c2a18] text-white"}`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         )}
         <style>{`@keyframes kib-lineup-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } } @media (prefers-reduced-motion: reduce) { [data-lineup-intro] [style*="kib-lineup-fill"] { animation: none !important; } }`}</style>
@@ -167,10 +183,14 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           }
           onKickOff={go}
           onBack={onBack}
+          pitchCorner={playAsPicker}
         />
       </div>
     );
   }
+
+  // Going straight in (skip setting, or nothing to draw): no prompt flashes up.
+  if (!watching && !(tired && !asked)) return <div className="min-h-[100dvh] bg-[#05080f]" />;
 
   // The one prompt: low energy as you press Play, or left out of the squad.
   const can = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];

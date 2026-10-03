@@ -1,5 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import BootUnbox from "./BootUnbox";
+import StylePicture from "./StylePicture";
+import ShopSheet from "./ShopSheet";
+import { BasketGlyph } from "./BootShelf";
+import { basket, useBasket, basketTotal, basketCount, MAX_PAIRS, BASKET_ON, type BasketEntry } from "./shopBasket";
+import { BOOT_LOOK } from "./BootPicture";
 import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, baseIdOf, type KibCan } from "@/lib/star/shopData";
@@ -7,6 +13,7 @@ import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { formatMoney } from "@/lib/star/money";
+import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import KibCanIcon from "./KibCanIcon";
 import BootPicture from "./BootPicture";
 import BootShelf from "./BootShelf";
@@ -69,6 +76,9 @@ interface Props {
   hud?: React.ReactNode;
   /** Home from the Style page's bottom bar. */
   onHome?: () => void;
+  /** Open on this item's sheet (a boot or Style base id, at that level) —
+   *  set when you tap "See it in the shop" in the 3D shop. */
+  focus?: { id: string; level: number } | null;
 }
 
 /**
@@ -80,7 +90,7 @@ interface Props {
  * item's own row), "−★X" floats up off your money, and the money counts
  * down to its new value. Every price, level, rule and handler is unchanged.
  */
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome, focus }: Props) {
   const theme = useClubTheme(career);
   // Five levels of everything (27 Sep 2026). The shop opens on the level
   // priced for the league you're in: National League level 1 … Premier League 5.
@@ -119,6 +129,80 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
     });
   };
 
+  // ── v0.24: unboxing, the basket and "Sold out" (Harry, 2 Oct 2026, P2-24/25) ──
+  /** Boot levels bought on this visit: their shelf spot says "Sold out" until you leave. */
+  const [soldOut, setSoldOut] = useState<Set<string>>(() => new Set());
+  const markSold = (id: string) => setSoldOut((s) => new Set(s).add(id));
+  const [unbox, setUnbox] = useState<null | { boot: Boot; pairs: number; done: (el: Element | null) => void }>(null);
+  /** Play the box opening; when it ends, fly the boot into "Wearing now". */
+  const playUnbox = (boot: Boot, pairs: number, price: number, color = "#34d399") =>
+    new Promise<void>((resolve) => {
+      setUnbox({
+        boot, pairs,
+        done: (el) => {
+          reward(price, el, bootRef.current, <BootPicture base={baseIdOf(boot)} level={boot.level ?? 1} className="h-12 w-[75px]" />, color, "boot");
+          setUnbox(null);
+          resolve();
+        },
+      });
+    });
+  const list = useBasket();
+  const basketBtnRef = useRef<HTMLButtonElement>(null);
+  const [basketOpen, setBasketOpen] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showNote = (t: string) => {
+    setNote(t);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setNote(null), 2600);
+  };
+  /** Into the basket: it flies off the shelf into the basket button. */
+  const addBootToBasket = (b: Boot, from: Element | null) => {
+    const msg = basket.addBoot(b);
+    if (msg) showNote(msg);
+    fly(from, basketBtnRef.current, <BootPicture base={baseIdOf(b)} level={b.level ?? 1} className="h-10 w-[62px]" />);
+  };
+
+  // Paying for the basket runs the real buy handlers ONE AT A TIME: each one
+  // reads `career` from its own render, so two in the same tick would undo
+  // each other. After each buy we wait for the new career to arrive.
+  const latest = useRef({ career, onBuyBoot, onBuyItem });
+  latest.current = { career, onBuyBoot, onBuyItem };
+  const waiters = useRef<(() => void)[]>([]);
+  useEffect(() => { const w = waiters.current; waiters.current = []; w.forEach((f) => f()); }, [career]);
+  const afterUpdate = () => new Promise<void>((r) => { waiters.current.push(r); setTimeout(r, 600); });
+  const alive = useRef(true);
+  // Set true on mount too: in development React mounts, unmounts and mounts again.
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const [paying, setPaying] = useState(false);
+  const pay = async (entries: BasketEntry[]) => {
+    setBasketOpen(false);
+    setPaying(true);
+    basket.clear();
+    for (const e of entries) {
+      if (!alive.current) return;
+      if (e.kind === "boot") {
+        let bought = 0;
+        for (let i = 0; i < e.qty; i++) {
+          if (latest.current.career.money < e.boot.price) break;
+          latest.current.onBuyBoot(e.boot);
+          bought++;
+          await afterUpdate();
+        }
+        if (!bought || !alive.current) continue;
+        markSold(e.boot.id);
+        await playUnbox(e.boot, bought, e.boot.price * bought);
+      } else {
+        if (latest.current.career.money < e.item.price) continue;
+        latest.current.onBuyItem(e.item);
+        await afterUpdate();
+        reward(e.item.price, basketBtnRef.current, null, <StylePicture base={baseIdOf(e.item)} level={e.item.level ?? 1} className="h-12 w-[75px]" />, "#f0abfc", "style");
+        await new Promise((r) => setTimeout(r, 650));
+      }
+    }
+    if (alive.current) setPaying(false);
+  };
+
   const title = kind === "kib" ? "KIB Cans" : kind === "boots" ? "Boots" : "Style";
   const icon = kind === "kib" ? "🥤" : kind === "boots" ? "👟" : "💎";
 
@@ -134,6 +218,20 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
       right={hud ? <SpentFloat n={spent.n} text={spent.text} /> : <WalletPill ref={walletRef} value={career.money} format={formatMoney} spent={spent.n} spentText={spent.text} />}
     >
       {flyLayer}
+      {unbox && <BootUnbox base={baseIdOf(unbox.boot)} level={unbox.boot.level ?? 1} name={`${unbox.boot.name} L${unbox.boot.level ?? 1}`} pairs={unbox.pairs} onDone={unbox.done} />}
+      {/* Always there on Boots (the flight target), seen once something is in it. */}
+      {BASKET_ON && (kind === "boots" || (kind === "lifestyle" && list.length > 0)) && (
+        <BasketButton ref={basketBtnRef} show={(list.length > 0 || paying) && !basketOpen && !unbox} count={basketCount(list)} total={basketTotal(list)} paying={paying} onClick={() => setBasketOpen(true)} />
+      )}
+      {note && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+92px)] z-[70] flex justify-center px-6">
+          <div className="rounded-full bg-black/85 px-3 py-1.5 text-center text-[12px] font-black text-white ring-1 ring-white/15">{note}</div>
+        </div>
+      )}
+      {basketOpen && (
+        <BasketSheet career={career} entries={list} onClose={() => setBasketOpen(false)} onPay={() => void pay(list)}
+          onAddPair={(b) => { const m = basket.addBoot(b); if (m) showNote(m); }} />
+      )}
 
       {kind === "kib" && (
         <div className="space-y-2.5">
@@ -218,10 +316,20 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
             boots={BOOTS_ALL_LEVELS}
             banned={bannedBoots}
             homeLevel={homeLevel}
-            bootTarget={() => bootRef.current}
-            reward={reward}
-            onBuyBoot={onBuyBoot}
-            onBuyFromBlackMarket={onBuyFromBlackMarket}
+            focus={focus}
+            soldOut={soldOut}
+            onBuyNow={(b) => {
+              if (career.money < b.price) return;
+              onBuyBoot(b);
+              markSold(b.id);
+              void playUnbox(b, 1, b.price);
+            }}
+            onAddToBasket={addBootToBasket}
+            onBuyFromBlackMarket={(b, lawyers) => {
+              const r = onBuyFromBlackMarket(b, lawyers);
+              if (r.ok) { markSold(b.id); void playUnbox(b, 1, blackMarketPrice(b.price) + (lawyers ? LAWYER_FEE : 0), "#f87171"); }
+              return r;
+            }}
           />
           <div ref={bootRef} className="relative">
             <ClubCard glow="#38bdf8" className="relative flex items-center gap-3 overflow-hidden rounded-2xl p-3">
@@ -251,6 +359,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           career={career}
           onBack={onBack}
           onHome={onHome}
+          focus={focus}
           onBuyItem={onBuyItem}
           reward={(price, from, to, node, color, key) => reward(price, from, to, node, color, key)}
           landed={landed}
@@ -265,5 +374,82 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
         />
       )}
     </ScreenShell>
+  );
+}
+
+/** The basket, bottom right: how many things and what they cost. */
+const BasketButton = forwardRef<HTMLButtonElement, { show: boolean; count: number; total: number; paying: boolean; onClick: () => void }>(
+  function BasketButton({ show, count, total, paying, onClick }, ref) {
+    return (
+      <button
+        ref={ref}
+        onClick={onClick}
+        disabled={paying || !show}
+        aria-label={`Basket, ${count} item${count === 1 ? "" : "s"}`}
+        data-basket
+        className={`kib-press fixed right-3 z-[60] flex items-center gap-2 rounded-full py-2 pl-3 pr-3.5 text-white transition duration-300 ${show ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"}`}
+        style={{ bottom: "max(18px, calc(env(safe-area-inset-bottom) + 12px))", background: "linear-gradient(180deg, #34d399, #059669)", boxShadow: "0 10px 24px -8px rgba(5,150,105,.9), inset 0 1px 0 rgba(255,255,255,.4)" }}
+      >
+        <span className="relative">
+          <BasketGlyph size={22} />
+          {count > 0 && <span className="absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-white px-1 text-[11px] font-black leading-none text-emerald-700"><Pop value={count}>{count}</Pop></span>}
+        </span>
+        <span className="text-left leading-none">
+          <span className="block text-[12px] font-black uppercase tracking-wide">{paying ? "Paying…" : "Basket"}</span>
+          {!paying && <span className="block text-[11px] font-black text-yellow-100">★{formatMoney(total)}</span>}
+        </span>
+      </button>
+    );
+  },
+);
+
+/** What is in the basket, one row each, and one button to pay for all of it. */
+function BasketSheet({ career, entries, onClose, onPay, onAddPair }: {
+  career: CareerState; entries: BasketEntry[]; onClose: () => void; onPay: () => void; onAddPair: (b: Boot) => void;
+}) {
+  const total = basketTotal(entries);
+  const short = total - career.money;
+  return (
+    <ShopSheet open onClose={onClose} title={<span className="flex items-center gap-1.5"><BasketGlyph size={14} /> Your basket</span>} accent="#34d399">
+      {entries.length === 0 ? (
+        <div className="py-6 text-center text-[13px] font-bold text-white/70">Your basket is empty. Tap + on a boot to add it.</div>
+      ) : (
+        <div className="space-y-2">
+          {entries.map((e) => (
+            <div key={e.key} className="flex items-center gap-2.5 rounded-xl bg-white/[0.05] p-2 ring-1 ring-white/10">
+              <span className="grid h-11 w-[68px] shrink-0 place-items-center rounded-lg" style={{ background: rgba(e.kind === "boot" ? (BOOT_LOOK[baseIdOf(e.boot)] ?? BOOT_LOOK.starter).upper : "#e879f9", 0.25) }}>
+                {e.kind === "boot"
+                  ? <BootPicture base={baseIdOf(e.boot)} level={e.boot.level ?? 1} className="h-10 w-[62px]" />
+                  : <StylePicture base={baseIdOf(e.item)} level={e.item.level ?? 1} className="h-10 w-[62px]" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-black text-white">{e.kind === "boot" ? e.boot.name : e.item.name} L{(e.kind === "boot" ? e.boot.level : e.item.level) ?? 1}</div>
+                <div className="text-[11px] font-black text-yellow-300">
+                  ★{formatMoney(e.kind === "boot" ? e.boot.price * e.qty : e.item.price)}
+                  {e.kind === "boot" && <span className="ml-1 text-[10px] font-bold text-white/65">{e.qty} pair{e.qty === 1 ? "" : "s"} · {e.boot.matches * e.qty} matches</span>}
+                </div>
+              </div>
+              {e.kind === "boot" && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <button onClick={() => basket.removeOne(e.key)} aria-label="One pair less" className="kib-press grid h-7 w-7 place-items-center rounded-full bg-white/10 text-[16px] font-black text-white">−</button>
+                  <span className="w-4 text-center text-[13px] font-black text-white">{e.qty}</span>
+                  <button onClick={() => onAddPair(e.boot)} disabled={e.qty >= MAX_PAIRS} aria-label="One more pair" className="kib-press grid h-7 w-7 place-items-center rounded-full bg-white/10 text-[16px] font-black text-white disabled:opacity-30">+</button>
+                </div>
+              )}
+              <button onClick={() => basket.remove(e.key)} aria-label="Put it back" className="kib-press grid h-7 w-7 shrink-0 place-items-center rounded-full bg-red-500/20 text-[15px] font-black text-red-200">×</button>
+            </div>
+          ))}
+          <div className="text-[10.5px] font-bold text-white/65">You wear one pair of boots. More pairs of the same boot add their matches together.</div>
+          <div className="flex items-center justify-between px-1 pt-1">
+            <span className="text-[12px] font-black uppercase tracking-wide text-white/80">Total</span>
+            <span className="text-[18px] font-black text-yellow-300">★{formatMoney(total)}</span>
+          </div>
+          <PressButton variant="primary" size="none" disabled={short > 0} pulse={short <= 0} onClick={onPay}
+            className="w-full rounded-2xl py-3 text-[14px] font-black">
+            {short > 0 ? `Not enough money — ★${formatMoney(short)} short` : `Pay for all — ★${formatMoney(total)}`}
+          </PressButton>
+        </div>
+      )}
+    </ShopSheet>
   );
 }

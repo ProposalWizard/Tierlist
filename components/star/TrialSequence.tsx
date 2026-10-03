@@ -1,4 +1,5 @@
 "use client";
+import { ScoutBackdrop, ScoutFigure } from "./ScoutArt";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
@@ -335,20 +336,23 @@ export default function TrialSequence({
       finished ? (
         // ── No trial score, no "No contract" card (Harry, P36) ──
         // The whole trial ends on this: a scout has spotted you.
+        // Full screen, not a small card (Harry, 2 Oct 2026, v0.25 point 9).
         <button
           type="button"
           onClick={() => completeOnce(trial)}
-          className="scout-card mt-4 flex w-full flex-col items-center rounded-2xl bg-emerald-50 px-5 py-10 text-center"
+          className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden bg-[#05070d] px-6 text-center text-white"
           aria-live="polite"
         >
-          <svg viewBox="0 0 48 48" className="h-14 w-14" aria-hidden="true">
-            <circle cx="20" cy="20" r="12" fill="none" stroke="#059669" strokeWidth="4" />
-            <line x1="29" y1="29" x2="42" y2="42" stroke="#059669" strokeWidth="5" strokeLinecap="round" />
-            <circle cx="20" cy="20" r="4" fill="#34d399" />
-          </svg>
-          <div className="mt-4 text-2xl font-black leading-tight text-gray-900">A scout has spotted you.</div>
-          <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-emerald-700">Tap to carry on</div>
-          <style>{`@keyframes scoutIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}.scout-card{animation:scoutIn .45s cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.scout-card{animation:none}}`}</style>
+          <ScoutBackdrop />
+          <div className="scout-card relative flex flex-col items-center">
+            <ScoutFigure className="h-56 w-48" />
+            <div className="mt-4 text-[34px] font-black uppercase leading-[1.02] tracking-tight">
+              A scout has<br />spotted you
+            </div>
+            <div className="mt-3 text-[13px] font-bold text-white/90">Somebody was watching. He wants a word.</div>
+            <div className="scout-tap mt-8 rounded-full bg-emerald-500 px-6 py-3 text-[12px] font-black uppercase tracking-widest text-white">Tap to carry on</div>
+          </div>
+          <style>{`@keyframes scoutIn{0%{opacity:0;transform:translateY(18px) scale(.94)}100%{opacity:1;transform:none}}@keyframes scoutTap{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}.scout-card{animation:scoutIn .55s cubic-bezier(.2,.9,.25,1) both}.scout-tap{animation:scoutTap 1.6s ease-in-out .8s infinite}@media (prefers-reduced-motion: reduce){.scout-card,.scout-tap{animation:none}}`}</style>
         </button>
       ) : (
         // Deliberately no `eventBanner` here. On this card `stage` is the one
@@ -379,13 +383,18 @@ export default function TrialSequence({
             the screen. `attemptSeed` rather than `trial.seed`, like the vision
             and penalty stages: reproducible while you play it, and a resume
             gets new waves at the bumped difficulty. `embedded` needs a box, and
-            this is the same shape the striking stages use. Your figure is not
-            drawn (`hideYou`): Harry, "on penalties I like our guy being there,
-            and maybe free kick … outside of that we just don't have him". */}
+            this is the same shape the striking stages use.
+            Your figure IS drawn again (Harry, 2 Oct 2026: "I'm now invisible,
+            which in this game mode I think isn't great. It should probably be
+            a visible player for that"), and the camera is the calm one ("the
+            changing of the camera angle is a bit crazy" — see CALM_CAMERA in
+            FirstPersonDribble.tsx; the real match keeps its own). */}
         <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-gray-200">
           <FirstPersonDribble
             embedded
-            hideYou
+            calmCamera
+            // Blue like you are in every other trial stage (Harry, 2 Oct 2026).
+            kits={{ you: { shirt: "#2563eb", shorts: "#f8fafc" } }}
             seed={attemptSeed(trial)}
             pace={skills.pace}
             oppStrength={dribble.oppStrength}
@@ -419,7 +428,7 @@ export default function TrialSequence({
   // Each one reports a 0-1 mean quality for the whole stage and nothing else —
   // the difficulty scaling is `recordStage`'s job, and a screen that applied
   // it too would apply it twice. Every drill is ONE attempt (Harry: "it's just
-  // a tutorial on how to play the game"); only the shootout has more.
+  // a tutorial on how to play the game"); only Find the Pass (five quick goes, 2 Oct) and the shootout have more.
   if (stage === "freeKicks") {
     return shell(
       <>
@@ -447,18 +456,24 @@ export default function TrialSequence({
     );
   }
 
+  // v0.25 (Mikey, point 22; Harry, point 5): the shootout is the pitch, full
+  // width, with a scoreboard on it — not a white card with a pitch inside.
   if (stage === "shootout") {
-    return shell(
-      <>
-        {eventBanner}
-        <TrialShootout
-          trial={trial}
-          skills={skills}
-          playerName={playerName}
-          penaltyRunup={penaltyRunup}
-          onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
-        />
-      </>,
+    return (
+      <div className="min-h-[100dvh] w-full pb-3" style={{ background: "radial-gradient(90% 50% at 50% 30%, #14532d, #052e16 70%, #02140a)" }} data-trial-shootout>
+        <div className="mx-auto w-full max-w-md">
+          {devPanel}
+          <div className="px-3 pt-2 [&_.bg-gray-200]:bg-white/20 [&_.bg-gray-800]:bg-white [&_.text-gray-400]:text-white/60">{progress}</div>
+          {eventBanner}
+          <TrialShootout
+            trial={trial}
+            skills={skills}
+            playerName={playerName}
+            penaltyRunup={penaltyRunup}
+            onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
+          />
+        </div>
+      </div>
     );
   }
 

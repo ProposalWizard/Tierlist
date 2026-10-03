@@ -40,88 +40,87 @@ def jump(M, x, y, ang=0, col='red'):
     return P
 
 
+def hz(M, x, y, ang, coat, s=1.4, pose='stand', cloth=None, blaze=False):
+    from horses import horse2
+    return horse2(M, x, y, 0.0, ang, coat, s * 1.18, pose, cloth, blaze)
+
+
 def st(M, lv):
+    """The stable ladder (v0.23.1): proper lofted horses, tighter paddocks so the horses read at 400px."""
     P = []
     M['woodbarn'] = S.principled('Barn', '#6b4a2e', rough=0.65)
     M['redbarn'] = S.principled('RedBarn', '#a3262a', rough=0.55)
     M['trough'] = S.principled('Trough', '#6b7280', rough=0.5, metal=0.6)
+    FH = 1.7
     if lv == 1:
-        P += ground(M, 22, 15)
-        P.append(box('Mud', (0, 0, 0.0), (10, 6, 0.14), S.principled('Mud', '#6b4a30', rough=0.95), bevel=0.05))
-        P += fence_loop(M, -10, 10, -7, 7, h=1.1, rails=2)
-        # open shelter: four posts and a lean-to roof
-        for dx in (-1.6, 1.6):
-            for dy in (-1.0, 1.0):
-                P.append(box('SP', (6.2 + dx, 4.0 + dy, 1.2), (0.16, 0.16, 2.4), M['woodfence']))
-        P.append(box('SRoof', (6.2, 4.0, 2.55), (3.8, 2.8, 0.14), M['dark'], bevel=0.02, rot=(0.12, 0, 0)))
-        P += [box('Trough', (-6, -4.5, 0.4), (2.0, 0.7, 0.5), M['trough'], bevel=0.05), box('TW', (-6, -4.5, 0.62), (1.8, 0.5, 0.05), M['water'])]
-        P += horse(M, 0, 0, 0.0, 0.5, 'horse_b', s=1.3, graze=True)
-        P += tree_(M, -11.5, 5, 0.9, 1) + tree_(M, 11.5, -5, 1.0, 2)
+        P += ground(M, 17, 12)
+        P.append(box('Mud', (0, 0, 0.0), (8.4, 5.2, 0.14), S.principled('Mud', '#6b4a30', rough=0.95), bevel=0.05))
+        P += fence_loop(M, -7.6, 7.6, -5.0, 5.0, h=FH, rails=2)
+        for dx in (-1.4, 1.4):
+            for dy in (-0.9, 0.9):
+                P.append(box('SP', (5.0 + dx, 2.6 + dy, 1.3), (0.16, 0.16, 2.6), M['woodfence']))
+        P.append(box('SRoof', (5.0, 2.6, 2.75), (3.4, 2.6, 0.14), M['dark'], bevel=0.02, rot=(0.12, 0, 0)))
+        P += [box('Trough', (-4.8, -3.4, 0.4), (2.0, 0.7, 0.5), M['trough'], bevel=0.05), box('TW', (-4.8, -3.4, 0.62), (1.8, 0.5, 0.05), M['water'])]
+        P += hz(M, -0.6, 0.2, 0.55, 'bay', 1.5, 'graze')
+        P += tree_(M, -8.0, 4.2, 0.9, 1)
     elif lv == 2:
-        P += ground(M, 23, 17)
-        P += stable_block(M, -4.0, 5.0, 7.0, 4.2, 3.2, M['dark'], M['woodbarn'], doors=2, name='Stb')
-        P.append(sph('Head', (-5.0, 2.7, 2.35), 0.45, M['horse_b'], scale=(0.5, 0.8, 0.5)))
-        P += horse(M, -1.0, 5.4, 0, 0, 'horse_b', s=0.0001) if False else []
+        P += ground(M, 18, 13)
+        P += stable_block(M, -3.6, 4.2, 6.2, 3.6, 3.2, M['dark'], M['woodbarn'], doors=2, name='Stb')
         for k in range(3):
-            P.append(box('Bale', (2.0 + k * 1.3, 6.5, 0.4), (1.1, 0.9, 0.8), M['hay'], bevel=0.05))
-        P += fence_loop(M, -6.5, 9.5, -6.5, 2.5, h=1.0)
-        P += horse(M, 3.5, -2.5, 0, 0.6, 'horse_w', s=1.2)
-        P += tree_(M, 10.5, 6.5, 0.9, 2) + tree_(M, -11, -4, 0.8, 3)
+            P.append(box('Bale', (3.4 + k * 1.3, 5.2, 0.4), (1.1, 0.9, 0.8), M['hay'], bevel=0.05))
+        P += fence_loop(M, -6.0, 7.5, -5.0, 1.8, h=FH)
+        P += hz(M, 1.6, -1.6, 0.5, 'grey', 1.45, 'stand', blaze=False)
+        P += tree_(M, 8.0, 5.0, 0.9, 2)
     elif lv == 3:
-        P += ground(M, 27, 19)
-        P += stable_block(M, -2.0, 6.5, 14.0, 5.0, 3.4, M['dark'], M['redbarn'], doors=4, cupola=True, name='Stb')
-        P += fence_loop(M, -12, 13, -8, 2.5, h=1.1)
-        P += horse(M, -3, -2.0, 0, 0.3, 'horse_b', s=1.2)
-        P += horse(M, 5, -3.5, 0, 2.4, 'horse_k', s=1.2, graze=True)
+        P += ground(M, 21, 14)
+        P += stable_block(M, -1.0, 5.0, 12.0, 4.0, 3.4, M['dark'], M['redbarn'], doors=4, cupola=True, name='Stb')
+        P += fence_loop(M, -9.0, 9.0, -6.0, 2.2, h=FH)
+        P += hz(M, -3.5, -2.0, 0.35, 'chestnut', 1.5, 'stand', blaze=True)
+        P += hz(M, 3.8, -3.0, 2.5, 'black', 1.45, 'graze')
         for k in range(3):
-            P.append(box('Bale', (11 + 0, 6 - k * 1.2, 0.4), (1.1, 0.9, 0.8), M['hay'], bevel=0.05))
-        P += [box('Trough', (-9, -6.5, 0.4), (2.0, 0.7, 0.5), M['trough'], bevel=0.05)]
-        P += tree_(M, 13.5, 8, 1.0, 2) + tree_(M, -13.5, 8, 0.9, 3)
+            P.append(box('Bale', (8.2, 5.2 - k * 1.1, 0.4), (1.1, 0.9, 0.8), M['hay'], bevel=0.05))
+        P += [box('Trough', (-6.5, -4.6, 0.4), (2.0, 0.7, 0.5), M['trough'], bevel=0.05)]
+        P += tree_(M, 9.0, 6.4, 1.0, 2)
     elif lv == 4:
-        P += ground(M, 33, 23)
-        # riding centre: indoor school (big barn) + sand arena with jumps
-        P.append(box('School', (-8, 6, 3.6), (14, 9, 7.2), M['white'] if False else S.principled('Clad', '#3b82f6', rough=0.5), bevel=0.05))
-        P.append(H.gable_roof('SchoolR', -15, -1, 1.5, 10.5, 7.2, 2.6, M['dark'], over=0.4, ridge_axis='X'))
-        P.append(box('Big', (-8, 1.45, 2.3), (6, 0.1, 4.6), M['white'], bevel=0.03))
-        P += stable_block(M, 7, 8, 8.0, 4.2, 3.2, M['dark'], M['redbarn'], doors=3, name='Stb')
-        P.append(box('Sand', (4, -4.5, 0.03), (20, 11, 0.12), S.principled('Arena', '#d9bf8a', rough=0.95)))
-        P += fence_loop(M, -6, 14, -10, 1.0, h=1.1, mat='fence', rails=2)
-        P += jump(M, 2, -4.5, 0.0) + jump(M, 8, -7, 1.2) + jump(M, 10, -2.5, -0.5)
-        P += horse(M, 5, -5.5, 0, 0.9, 'horse_b', s=1.25)
-        P += small_car(M, -12, -6, 0.2, '#d9d9d9') if False else []
-        P += tree_(M, 15, 9, 1.0, 3) + tree_(M, -16, -4, 1.0, 4)
+        P += ground(M, 27, 19)
+        P.append(box('School', (-7.5, 5.5, 3.4), (12, 7.5, 6.8), S.principled('Clad', '#3b82f6', rough=0.5), bevel=0.05))
+        P.append(H.gable_roof('SchoolR', -13.5, -1.5, 1.75, 9.25, 6.8, 2.4, M['dark'], over=0.4, ridge_axis='X'))
+        P.append(box('Big', (-7.5, 1.7, 2.2), (5.5, 0.1, 4.4), M['white'], bevel=0.03))
+        P += stable_block(M, 6.5, 7.0, 7.0, 3.8, 3.2, M['dark'], M['redbarn'], doors=3, name='Stb')
+        P.append(box('Sand', (2.5, -3.6, 0.03), (17, 9, 0.12), S.principled('Arena', '#d9bf8a', rough=0.95)))
+        P += fence_loop(M, -6.0, 11.0, -8.1, 0.9, h=FH, mat='fence', rails=2)
+        P += jump(M, 8.0, -2.2, 0.0) + jump(M, -1.0, -6.0, 1.3)
+        P += hz(M, 3.2, -3.8, 0.3, 'bay', 1.5, 'trot')
+        P += hz(M, 9.5, -6.2, 2.7, 'grey', 1.3, 'graze')
+        P += tree_(M, 12.0, 8.0, 1.0, 3) + tree_(M, -13.0, -4.0, 1.0, 4)
     else:
-        P += ground(M, 40, 27)
-        # racing stud: courtyard stables with a gold-topped clock tower, white-rail gallop track
+        P += ground(M, 33, 23)
         for sx in (-1, 1):
-            P += stable_block(M, sx * 8.0, 9.0, 3.8, 11.0, 3.4, M['dark'], M['plaster'], doors=0, ridge='Y', name='Side')
-        P += stable_block(M, 0, 13.0, 14.0, 4.2, 3.6, M['dark'], M['plaster'], doors=0, name='Back')
+            P += stable_block(M, sx * 7.0, 8.0, 3.8, 9.0, 3.4, M['dark'], M['plaster'], doors=0, ridge='Y', name='Side')
+        P += stable_block(M, 0, 11.5, 14.0, 4.0, 3.6, M['dark'], M['plaster'], doors=0, name='Back')
         for k in range(5):
-            P.append(box('SD', (-5 + k * 2.5, 10.9, 1.35), (1.4, 0.08, 2.4), M['red']))
-        P.append(box('Tower', (0, 13.0, 6.3), (3.4, 3.4, 5.4), M['plaster'], bevel=0.04))
-        P.append(box('Clk', (0, 11.28, 6.5), (1.5, 0.06, 1.5), M['white']))
-        P.append(cyl('TRoof', (0, 13.0, 9.9), 2.5, 2.6, 'Z', mat=M['gold'], r2=0.08, verts=4))
-        P.append(cyl('Fin', (0, 13.0, 11.6), 0.08, 1.4, 'Z', mat=M['gold']))
-        P.append(cyl('Cobble', (0, 8.8, 0.03), 5.0, 0.06, 'Z', mat=M['path']))
-        # oval track
-        R = 8.0
-        ell = lambda rx, ry, z: [(math.cos(2 * math.pi * k / 48) * rx, -6.0 + math.sin(2 * math.pi * k / 48) * ry, z) for k in range(49)]
-        tr = tube('Track', ell(14.5, 6.4, 0.08), 1.7, S.principled('Track', '#c8a46a', rough=0.95), smooth=False, res=3, cap=False)
+            P.append(box('SD', (-5 + k * 2.5, 9.5, 1.35), (1.4, 0.08, 2.4), M['red']))
+        P.append(box('Tower', (0, 11.5, 6.3), (3.4, 3.4, 5.4), M['plaster'], bevel=0.04))
+        P.append(box('Clk', (0, 9.78, 6.5), (1.5, 0.06, 1.5), M['white']))
+        P.append(cyl('TRoof', (0, 11.5, 9.9), 2.5, 2.6, 'Z', mat=M['gold'], r2=0.08, verts=4))
+        P.append(cyl('Fin', (0, 11.5, 11.6), 0.08, 1.4, 'Z', mat=M['gold']))
+        P.append(cyl('Cobble', (0, 7.4, 0.03), 4.6, 0.06, 'Z', mat=M['path']))
+        ell = lambda rx, ry, z: [(math.cos(2 * math.pi * k / 48) * rx, -5.0 + math.sin(2 * math.pi * k / 48) * ry, z) for k in range(49)]
+        tr = tube('Track', ell(12.0, 5.0, 0.08), 1.7, S.principled('Track', '#c8a46a', rough=0.95), smooth=False, res=3, cap=False)
         tr.scale[2] = 0.05
         P.append(tr)
-        for (rx, ry) in ((13.0, 5.0), (16.0, 7.8)):
-            P.append(tube('Rail', ell(rx, ry, 1.0), 0.07, M['fence'], smooth=False, res=4, cap=False))
-            P.append(tube('Rail2', ell(rx, ry, 0.55), 0.07, M['fence'], smooth=False, res=4, cap=False))
+        for (rx, ry) in ((10.5, 3.6), (13.5, 6.4)):
+            P.append(tube('Rail', ell(rx, ry, 1.2), 0.07, M['fence'], smooth=False, res=4, cap=False))
+            P.append(tube('Rail2', ell(rx, ry, 0.65), 0.07, M['fence'], smooth=False, res=4, cap=False))
             for k in range(0, 48, 3):
                 x, y, _ = ell(rx, ry, 0)[k]
-                P.append(box('Pst', (x, y, 0.55), (0.12, 0.12, 1.1), M['fence']))
-        P += horse(M, 13.4, -6.0, 0, math.pi / 2, 'horse_b', s=1.2)
-        P += horse(M, -2.0, -11.6, 0, math.pi, 'horse_k', s=1.2)
-        P += horse(M, -13.4, -6.0, 0, -math.pi / 2, 'horse_w', s=1.2)
-        # trophy
-        P += [cyl('TrB', (17.5, -12.5, 0.4), 0.8, 0.8, 'Z', mat=M['stone']), cyl('TrS', (17.5, -12.5, 1.1), 0.12, 0.8, 'Z', mat=M['gold']), cyl('TrC', (17.5, -12.5, 1.9), 0.55, 0.9, 'Z', mat=M['gold'], r2=0.3)]
-        P += tree_(M, -19, 10, 1.1, 2) + tree_(M, 19, 10, 1.1, 3)
-    cfg = city_cfg({1: 24, 2: 26, 3: 30, 4: 36, 5: 44}[lv])
+                P.append(box('Pst', (x, y, 0.65), (0.12, 0.12, 1.3), M['fence']))
+        P += hz(M, 11.9, -5.0, math.pi / 2, 'black', 2.5, 'trot', cloth='#d4202a')
+        P += hz(M, -1.0, -9.8, math.pi, 'chestnut', 2.5, 'trot', cloth='#2563eb')
+        P += hz(M, -11.9, -5.0, -math.pi / 2, 'grey', 2.5, 'trot', cloth='#facc15')
+        P += [cyl('TrB', (14.5, -9.5, 0.4), 0.8, 0.8, 'Z', mat=M['stone']), cyl('TrS', (14.5, -9.5, 1.1), 0.12, 0.8, 'Z', mat=M['gold']), cyl('TrC', (14.5, -9.5, 1.9), 0.55, 0.9, 'Z', mat=M['gold'], r2=0.3)]
+        P += tree_(M, -15.0, 8.0, 1.1, 2) + tree_(M, 15.0, 8.0, 1.1, 3)
+    cfg = city_cfg({1: 17, 2: 19, 3: 22, 4: 27, 5: 33}[lv])
     cfg['cam'] = (0.8 * cfg['scale'], -1.25 * cfg['scale'], 0.8 * cfg['scale'])
     return P, cfg
 

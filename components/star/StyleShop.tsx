@@ -44,7 +44,7 @@ function ownedLevelOf(mine: OwnedItem | undefined): number {
   return mine.level ?? LIFESTYLE_ALL_LEVELS.find((l) => l.id === mine.id)?.level ?? 1;
 }
 
-export default function StyleShop({ career, onBuyItem, reward, landed, landKey, lockOf, onBack, onHome }: {
+export default function StyleShop({ career, onBuyItem, reward, landed, landKey, lockOf, onBack, onHome, focus }: {
   career: CareerState;
   /** The bottom bar (Harry, 1 Oct 2026, P40/P41): Back, the group switch, Home. */
   onBack?: () => void;
@@ -56,11 +56,16 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
   /** Unlock chain: how far towards an item's star rating you are (0-1), or
    *  null when it is open. Absent = everything open. */
   lockOf?: (base: string) => number | null;
+  /** Open on this item's group with its sheet up (from the 3D shop). */
+  focus?: { id: string; level: number } | null;
 }) {
+  const focusItem = focus ? LIFESTYLE_ALL_LEVELS.find((i) => baseIdOf(i) === focus.id) : undefined;
   // The phone is the first thing to buy (Harry, 1 Oct 2026, P102): until you
   // have one, a new career opens on Gadgets, where it sits and flashes.
-  const [group, setGroup] = useState<StyleGroup>(() => (lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone") ? "gadgets" : "drip"));
-  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(null);
+  const [group, setGroup] = useState<StyleGroup>(() => (focusItem ? styleGroupOf(focusItem)
+    : lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone") ? "gadgets" : "drip"));
+  const [sheet, setSheet] = useState<{ base: string; level: number } | null>(() =>
+    focusItem && focus && lockOf?.(focus.id) == null ? { base: focus.id, level: focus.level } : null);
   const mineRef = useRef<HTMLDivElement>(null);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
 
@@ -93,7 +98,7 @@ export default function StyleShop({ career, onBuyItem, reward, landed, landKey, 
       <div ref={mineRef} className="relative mb-1.5 flex items-center gap-2 px-0.5">
         {landKey === "style" && <Burst trigger={landed} colors={["#f0abfc", "#fde047", "#ffffff"]} count={16} spread={0.7} round className="left-1/2 top-1/2" />}
         <span className="shrink-0 text-[11px] font-black uppercase tracking-[0.14em] text-white">Fame</span>
-        <SquareBar value={Math.max(2, Math.min(100, (stuffFame / OWNED_FAME_MAX) * 100))} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate />
+        <SquareBar value={Math.max(2, Math.min(100, (stuffFame / OWNED_FAME_MAX) * 100))} colors={["#f59e0b", "#fde047"]} className="h-[14px] min-w-0 flex-1" animate square />
         <span className="shrink-0 text-[15px] font-black tabular-nums text-amber-300">{fameText(stuffFame)}</span>
       </div>
 
@@ -260,6 +265,10 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
         {mine && !worn && ownLv === lv && <span className="absolute right-2 top-2 rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] font-black text-emerald-950">✓ YOURS</span>}
       </div>
       <div className="mt-2 text-[20px] font-black leading-tight text-white">{levelName(it)}</div>
+      {/* The phone was the one sheet with nothing on it but three numbers
+          (Harry, 2 Oct 2026, v0.25 point 12: "the Phone page looks dead").
+          Now it shows what the phone opens, and what it costs you. */}
+      {base === "phone" && <PhoneOpens />}
 
       {/* All five levels — tap (or hover, on a computer) to look at one. */}
       {levels.length > 1 && <div className="mt-2 grid grid-cols-5 gap-1.5">
@@ -301,6 +310,13 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
         </div>
       </div>}
 
+      {/* Not enough money: say how far off you are, never just a grey button
+          (v0.25 point 12: the "Buy a phone" step could not be done and
+          nothing said why). */}
+      {!blocked && career.money < it.price && (
+        <SaveUp have={career.money} need={it.price} wage={career.contract.wage} />
+      )}
+
       <div className="mt-2 flex items-center justify-between px-1">
         <div className="text-[18px] font-black text-yellow-300">★{formatMoney(it.price)}</div>
         <div className="text-[10px] font-bold text-white/70">{weeksText(weeksOfWallet(it.price, career.contract.wage))} of your income</div>
@@ -326,6 +342,56 @@ function Stat({ big, small, color }: { big: string; small: string; color: string
     <div className="rounded-xl bg-white/[0.06] px-1 py-1.5 ring-1 ring-white/10">
       <div className="text-[14px] font-black leading-tight" style={{ color }}>{big}</div>
       <div className="text-[9.5px] font-bold leading-tight text-white/70">{small}</div>
+    </div>
+  );
+}
+
+/** What the phone opens: the apps you get, one line each. */
+const PHONE_APPS: { icon: string; name: string; what: string; bg: [string, string] }[] = [
+  { icon: "💬", name: "Social", what: "Fans and the press react to you", bg: ["#34d399", "#047857"] },
+  { icon: "💌", name: "Messages", what: "Your boss, agent and family", bg: ["#f472b6", "#e11d48"] },
+  { icon: "🛒", name: "App Store", what: "More apps as you go up", bg: ["#60a5fa", "#1d4ed8"] },
+];
+
+function PhoneOpens() {
+  return (
+    <div className="mt-2 rounded-xl bg-white/[0.05] p-2 ring-1 ring-white/10">
+      <div className="mb-1.5 px-0.5 text-[10px] font-black uppercase tracking-widest text-fuchsia-300">What you get</div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {PHONE_APPS.map((a, k) => (
+          <div key={a.name} className="phone-app-pop flex flex-col items-center text-center" style={{ animationDelay: `${120 + k * 90}ms` }}>
+            <span
+              className="grid h-11 w-11 place-items-center rounded-[13px] text-[22px] shadow-lg"
+              style={{ background: `linear-gradient(160deg, ${a.bg[0]}, ${a.bg[1]})`, boxShadow: `0 6px 14px -6px ${a.bg[1]}` }}
+              aria-hidden
+            >
+              {a.icon}
+            </span>
+            <span className="mt-1 text-[11px] font-black leading-tight text-white">{a.name}</span>
+            <span className="text-[9.5px] font-bold leading-tight text-white/80">{a.what}</span>
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes phoneAppPop{0%{opacity:0;transform:translateY(8px) scale(.85)}100%{opacity:1;transform:none}}.phone-app-pop{animation:phoneAppPop .4s cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.phone-app-pop{animation:none}}`}</style>
+    </div>
+  );
+}
+
+/** How far you are from affording it: a bar, what is missing, and how long. */
+function SaveUp({ have, need, wage }: { have: number; need: number; wage: number }) {
+  const short = Math.max(0, need - have);
+  const pct = Math.max(3, Math.min(100, (have / need) * 100));
+  const weeks = weeksOfWallet(short, wage);
+  return (
+    <div className="mt-2 rounded-xl bg-red-500/10 p-2 ring-1 ring-red-400/40">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12px] font-black text-white">You need ★{formatMoney(short)} more</span>
+        <span className="text-[10.5px] font-bold text-white/80">{weeksText(weeks)} of income</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/40">
+        <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="mt-1 text-[10px] font-bold text-white/80">You have ★{formatMoney(have)}. Play matches to earn your wage.</div>
     </div>
   );
 }

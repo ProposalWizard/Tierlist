@@ -337,6 +337,14 @@ through too much yap."* No preamble, no restating the request, no praise for
 the idea, no tour of the code. Name things the way they appear on screen; put
 the file in brackets after, once, only if someone needs to find it.
 
+**Write about 80% of the way to ASD-STE100; draw stats and rules (Harry, 2 Oct
+2026).** Short sentences (20–25 words at most), active voice, simple tenses,
+one word for one thing, no coder words. Any stat, rate or rule with conditions
+gets a picture (bar, flow diagram, ✓/✗ table) before the words. Applies to chat
+replies and every artifact. **Don't overdo the diagrams (Harry, 2 Oct): only
+where a picture is clearer than one plain line.** Use the new skills as needed,
+not by default. Full rules: `artifact-house-style` skill.
+
 **Every claim carries a number, or admits it has none.** "Scoring is hard" is
 not a finding. "A clean one-on-one converts at 0.0% over 250 simulated
 matches" is. Always give the before alongside the after.
@@ -358,6 +366,12 @@ see a frozen figure or a box sitting on the ball. Use `star-playtest`.
 message on one unclear clause. Build what is clear, then ask one question with
 its options so it can be answered in a word from a phone.
 
+**When Harry points at a picture, name it back before building (2 Oct 2026).**
+In v0.24 the Home goal was built from the wrong picture and had to be moved
+twice ("move the goal back and have it exactly like image 2"). Say which
+picture you are copying, in one line ("copying image 2: the goal set back where
+the pitch meets the stands"), and build from that.
+
 **Do not agree to be agreeable.** Caught directly: *"a lot of times you're
 just agreeing with us… I want to know for sure if that is a good idea."*
 Before agreeing with a design call, go and find what argues against it. If
@@ -375,7 +389,28 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
-**Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
+**Stills for looks, videos only for gameplay and animation (Harry, 3 Oct 2026).
+This refines the rule below.** *"the statics are fine, only gameplay and
+animations need videos and u can start with a still and then push and do
+those last."* Order: stills on the page, push, publish; THEN film the short
+"after" clips for gameplay/animation changes and add them to the same page.
+Never hold the page or the push back for a video.
+Also (Harry, 3 Oct): don't write "needs Mikey's yes" on patch notes.
+
+**No filming phase — patch notes + a test build link (Harry, 2 Oct 2026). This
+replaces the video rules below.** *"Get rid of the whole recording phase, and
+we just do the patch notes and a test build as a link in the patch notes."*
+- Every patch-notes page links the **test build**: the Vercel preview of the
+  branch, `https://tierlist-git-harry-proposalwizards-projects.vercel.app`
+  (opens when signed in to Vercel). They try the new things there themselves.
+- **Stills by default.** A still of the after for each change, taken by the
+  builder while checking their work. No "before" unless it is a quick still
+  of a simple UI change or of one very specific gameplay change.
+- **A video only when a still cannot show it**: motion, timing, an animation,
+  or proof that a reported problem is fixed. Even then: one short "after"
+  clip, no before, no filming pass, no filmer agents.
+
+**(Superseded 2 Oct — see above.) Every new thing gets a real video, as standard (Harry, 1 Oct 2026).** On any
 patch-notes or review page: a before and an after clip of the whole phone
 screen plus a still, filmed with `scripts/film/rec.mjs`, shown one
 full-width clip at a time with a playhead and ½×/¼× speed. Never GIFs, crops
@@ -388,12 +423,24 @@ shared base, every "after" on the merged copy. The only exception: things Harry
 judges by eye before they're built for real (a size, a camera, a figure) still
 get a quick prototype he can see first.
 
+**Filming fast (Harry, 2 Oct 2026):** load the `film-pass` skill before any
+filming pass. Film from a built copy, start the "before" clips while the builders work, jump to
+screens with saved games, share one claimed clip list, and add a filmer
+whenever memory frees up.
+
 **Film the "after" on the final combined copy (Harry, 1 Oct 2026).** When a
 batch is built in parallel parts, every "after" clip on the page is filmed on
 the ONE merged copy with all changes in, and every "before" on the same base,
 so each picture shows everything together. *"How am I meant to analyse if
 you've recorded everything separately? … put the patch notes together in a
 way where you can see everything, apply all the changes, and then record."*
+
+**Clear disk space before every new build (Harry, 2 Oct 2026).** *"from now on
+always clear the previous worktree and disc space when starting a new build."*
+Before launching builders: remove every old agent worktree from earlier rounds
+(`git worktree remove --force`, then `git worktree prune`), delete old film and
+render folders in the scratchpad that are no longer needed, and check `df -h`.
+Keep the current round's base and anything a builder is still using.
 
 **Perfection with efficiency (Harry, 1 Oct 2026).** *"we have to combine
 perfection with efficiency. If its gonna take 30 mins less to get to the same

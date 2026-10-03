@@ -16,28 +16,41 @@ import { selectionFor } from "./selection";
 export type SetPieceDuty = "penalties" | "freeKicks";
 
 export interface SetPieceTalk {
-  /** Every duty this one conversation covers (both, when both are new). */
+  /** The one duty this chat covers. Never both: they are two chats (P86). */
   duties: SetPieceDuty[];
   /** What he says, one line a tap. */
   lines: string[];
 }
 
-/** The talk due right now, or null. Penalties first when both are new. */
+const matchesPlayed = (career: CareerState) => career.fixtures.filter((f) => f.played).length;
+
+/**
+ * The talk due right now, or null.
+ *
+ * Harry and Mikey, P86: "two chats" — the penalty-taker talk and the
+ * free-kick-taker talk are separate, each at its own moment. If both duties
+ * arrive together, the penalty chat comes first and the free-kick chat waits
+ * for a LATER match; they are never one conversation and never back to back.
+ */
 export function setPieceTalkDue(career: CareerState): SetPieceTalk | null {
-  if (!career.fixtures.some((f) => f.played)) return null;
+  const played = matchesPlayed(career);
+  if (played < 1) return null;
+  // The last chat was after `setPieceTalkAt` matches; the next needs another one.
+  if (career.setPieceTalkAt !== undefined && played <= career.setPieceTalkAt) return null;
   const told = career.setPieceTold ?? [];
   const duties = setPieceDuties(career, selectionFor(career).status);
   const first = career.player.firstName;
-  const pen = duties.penalties && !told.includes("penalties");
-  const fk = duties.freeKicks && !told.includes("freeKicks");
-  if (pen && fk) return { duties: ["penalties", "freeKicks"], lines: [`${first}, a word.`, "Penalties and free kicks — I want you on both.", "Don't let me down."] };
-  if (pen) return { duties: ["penalties"], lines: [`${first}, a word.`, "I'm making you our penalty taker.", "Keep calm. Pick your spot."] };
-  if (fk) return { duties: ["freeKicks"], lines: [`${first}, a word.`, "Free kicks are yours now.", "Make them count."] };
+  if (duties.penalties && !told.includes("penalties")) {
+    return { duties: ["penalties"], lines: [`${first}, a word.`, "I'm making you our penalty taker.", "Keep calm. Pick your spot."] };
+  }
+  if (duties.freeKicks && !told.includes("freeKicks")) {
+    return { duties: ["freeKicks"], lines: [`${first}, a word.`, "Free kicks are yours now.", "Technique and vision — make them count."] };
+  }
   return null;
 }
 
 export function markSetPieceTold(career: CareerState, duties: SetPieceDuty[]): CareerState {
   const told = career.setPieceTold ?? [];
   const add = duties.filter((d) => !told.includes(d));
-  return add.length ? { ...career, setPieceTold: [...told, ...add] } : career;
+  return add.length ? { ...career, setPieceTold: [...told, ...add], setPieceTalkAt: matchesPlayed(career) } : career;
 }
