@@ -188,6 +188,7 @@ interface ResearchedClub {
     nickname?: string; founded?: string; country?: string; stadium?: string; capacity?: number;
     manager?: string; leagueTitles?: string; domesticCups?: string; europeanTrophies?: string;
     kits?: { home: ResearchedKit; away: ResearchedKit | null }; kitPattern?: string; badge?: string[];
+    badgeStyle?: string; ballonDor?: string;
   };
   sources: Record<string, string>;
 }
@@ -215,6 +216,13 @@ function fillResearched(a: ClubProfile | undefined, club: string, r: ResearchedC
   fill("domesticCups", v.domesticCups, "domesticCups");
   fill("europeanTrophies", v.europeanTrophies, "europeanTrophies");
   fill("badgeColours", v.badge, "badge");
+  fill("badgeStyle", v.badgeStyle, "badgeStyle");
+  // Ballon d'Or follows one rule for every club — winners who won it while
+  // at the club (Mikey, 2 Oct 2026) — so this one REPLACES the sheet's value.
+  if (v.ballonDor !== undefined) {
+    out.ballonDor = v.ballonDor;
+    used.ballonDor = r.sources.ballonDor ?? "";
+  }
   if (v.kits && !out.homeKit) {
     out.homeKit = { shirtHex: v.kits.home.shirtHex, trimHex: v.kits.home.trimHex, pattern: v.kits.home.pattern };
     if (v.kits.away) out.awayKit = { shirtHex: v.kits.away.shirtHex, trimHex: v.kits.away.trimHex };

@@ -836,6 +836,25 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/signing3dRig.ts (clothes, face, accessories, IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/signing3d/*.glb (tools/signing3d/build_assets.py) · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
+  "/star-garden3d-dev": {
+    title: "3D Garden",
+    what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
+    buttons: [
+      { items: [
+        ["‹ Home", "Back to the 3D Test Area."],
+        ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
+        ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
+        ["Restart", "Builds the garden again from the start."],
+        ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
+        ["Drag the view", "Swings the camera round him."],
+        ["Walk up to something", "The trophy cabinet, the bench, the paddock, the cars or the teqball table: its little card shows."],
+        ["Walk into the shop's doors", "Opens the 3D Shop test page. In a career it opens the 3D shop, and its front doors bring you back out."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The career here is made up each time."],
+    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop."],
+    dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
+  },
   "/star-shop3d-dev": {
     title: "3D Shop",
     what: "The walk-around 3D shop, with test controls. It is the same screen a career opens from the Shop page's \"Walk the 3D shop (beta)\" button. Here nothing reaches a career.",
@@ -848,6 +867,7 @@ export const ADMIN_GUIDES = {
           ["Drag the view", "Swings the camera round him."],
           ["Tap something", "A boot, the car, a light box or the fridge: its card opens and the camera moves in on it, wherever you are standing."],
           ["Walk up to a display", "Boots, the car on the turntable, the KIB can fridge or the counter. Its card opens on its own."],
+          ["Walk out through the front doors", "Opens the 3D Garden test page, standing at the shop's doors. In a career it opens your 3D garden."],
         ],
       },
       {
