@@ -1,3 +1,4 @@
+import { goalInView } from "../../lib/star/canvasEngine";
 import { buildScenario, initDefenders, SCENARIO_KINDS, type Scenario } from "../../lib/star/canvasEngine";
 import { PITCH_W } from "../../lib/star/pitch";
 import {
@@ -64,7 +65,14 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
       const b = frameForNewView(sc, hw);
       check(JSON.stringify(a) === JSON.stringify(b), `${kind}: framing is not stable`);
       check(JSON.stringify(engineFrameOf(sc)) === JSON.stringify(engine), `${kind}: engine frame lost`);
-      check(JSON.stringify(sc.viewport) === JSON.stringify(a), `${kind}: play area is not the camera`);
+      if (goalInView(kind)) check(JSON.stringify(sc.viewport) === JSON.stringify(a), `${kind}: play area is not the camera`);
+      else {
+        // No keeper, no back line: the ball must go out before it reaches the goal.
+        const goalSide = f === "up" ? sc.viewport.y1 : f === "right" ? sc.viewport.x1 : -sc.viewport.x2;
+        const engineSide = f === "up" ? engine.y1 : f === "right" ? engine.x1 : -engine.x2;
+        check(goalSide >= engineSide - EPS, `${kind}: play area reaches past the engine frame toward an empty goal`);
+        check(f !== "up" || sc.viewport.y1 > 0.5, `${kind}: play area reaches the goal line`);
+      }
     }
   }
   check(notContained === 0, `hw ${hw}: ${notContained}/${n} cameras miss part of the engine frame`);

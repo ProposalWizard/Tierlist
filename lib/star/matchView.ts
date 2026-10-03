@@ -23,6 +23,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, Vec2, Viewport } from "./canvasEngine";
+import { goalInView } from "./canvasEngine";
 import { PITCH_W, NET_DEPTH } from "./pitch";
 
 export type MatchView = "new" | "classic";
@@ -180,8 +181,25 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false):
   const f = sc as Framed;
   if (!f.engineFrame) f.engineFrame = { ...sc.viewport };
   const cam = newViewCamera(f.engineFrame, sc.facing ?? "up", hw, sc.ball);
-  if (!keepPlayArea) sc.viewport = { ...cam };
+  if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
+}
+
+/**
+ * The play area (what the engine calls "out") for the new view: the camera,
+ * EXCEPT on the goal side of a chance whose goal the engine never puts in
+ * view (build-up, midfield pass). Those chances have no keeper and no back
+ * line near goal, so a camera-sized play area let a long ball roll 48 m into
+ * an empty net (playtest, 3 Oct 2026). Their goal-side edge stays where the
+ * engine's own frame had it, as in Classic: past it the ball is out.
+ */
+export function playAreaFor(sc: Scenario, cam: Viewport, engineFrame: Viewport): Viewport {
+  if (goalInView(sc.kind)) return { ...cam };
+  const f = sc.facing ?? "up";
+  if (f === "up") return { ...cam, y1: Math.max(cam.y1, engineFrame.y1) };
+  // Turned views put the goal at x = 0 ("right") or the far side ("left"): keep that edge too.
+  if (f === "right") return { ...cam, x1: Math.max(cam.x1, engineFrame.x1) };
+  return { ...cam, x2: Math.min(cam.x2, engineFrame.x2) };
 }
 
 /** The up-the-pitch camera a cross cuts to once it reaches the box. */
