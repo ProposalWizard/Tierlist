@@ -141,6 +141,12 @@ Record each new link here so the next round can find the latest one:
 - v0.17: https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S
 - v0.18: https://claude.ai/artifact/HvagWBceebfaR9KmxRKhgh
 - v0.19: (next, new link)
+- Site 0.22 (UI & Home): https://claude.ai/artifact/AHUmDmsxzNfG1UhEkn3N7n
+- Site 0.23: https://claude.ai/artifact/HBE3svQRyVBbVcUMWjMW1g
+- Site 0.23.1: https://claude.ai/artifact/8wzaQV41ZmrhtBXZV46Rav
+- Site 0.24: https://claude.ai/artifact/CQ5gkXrcPk2gptL1EjX3au
+- Site 0.25: https://claude.ai/artifact/7LXrEgwm72sUVZH5Kcmeyz
+- (These five pages are kept in the admin archive with every video swapped for its still and a "Watch the clip on the artifact page" link: never commit .mp4 files. Site 0.22 also exists as a files-less duplicate at https://claude.ai/artifact/1nqUW1kkiuUsPmFXERm678; use the first link.)
 
 ### The site archive: `lib/patchNotesData.ts`
 
