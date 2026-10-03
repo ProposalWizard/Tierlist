@@ -181,7 +181,7 @@ import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
-import GardenScreen from "@/components/star/GardenScreen";
+import Garden3D from "@/components/star/Garden3D";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 import { setActiveFoot } from "@/lib/star/kickFoot";
@@ -329,6 +329,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** The 3D shop's "See it in the shop": which shop to open, on which item.
    *  Forgotten as soon as you leave that shop. */
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
+  // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
+  // door you came through decides where you appear.
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate">("gate");
+  const [shopAtDoor, setShopAtDoor] = useState(false);
   useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
@@ -3628,7 +3632,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <Shop3D
         career={career}
-        onBack={() => { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }}
+        atDoor={shopAtDoor}
+        onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
+        onBack={() => { setShopAtDoor(false); setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }}
         onGoToItem={(display, id, level) => {
           const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
           setShopFocus({ phase: to, id, level });
@@ -3774,7 +3780,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
-  if (phase === "garden") return <GardenScreen career={career} onBack={handleBackToDashboard} />;
+  if (phase === "garden") {
+    return (
+      <Garden3D
+        career={career}
+        arrive={gardenArrive}
+        onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
+        onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
+      />
+    );
+  }
   if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToOwnership} />;
 
   if (phase === "ownership") {

@@ -36,6 +36,10 @@ export interface KitColours { shirt: string; trim: string }
 export interface ShopCallbacks {
   onNear: (id: DisplayId | null) => void;
   onFps: (fps: number) => void;
+  /** He walked out through the shop's open doorway (the bright doors at the
+   *  front). Given only in a career: it leads out into the 3D garden (Mikey,
+   *  3 Oct 2026). Without it the doorway stays a wall you can't pass. */
+  onDoor?: () => void;
 }
 
 export interface Picked { display: DisplayId; index: number }
@@ -118,7 +122,12 @@ export interface ShopOptions {
   /** Filming only: every drawn frame moves the game on by exactly this many
    *  seconds, however long it took to draw. Off in normal use. */
   fixedStep?: number;
+  /** Start just inside the front doors, facing in (arriving from the garden). */
+  atDoor?: boolean;
 }
+
+/** The doorway in the front (south) wall: x between ±DOOR_HALF. */
+const DOOR_HALF = 1.1;
 
 export async function startShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
@@ -537,10 +546,12 @@ export async function startShop(
     loader.loadAsync("/star/shop3d/anims.glb"),
   ]);
   const player = charGltf.scene;
-  player.position.set(START.x, 0, START.z);
+  // from the garden: a few steps in from the doors, so the camera fits behind
+  const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
+  player.position.set(start.x, 0, start.z);
   player.rotation.y = Math.PI; // facing into the shop (-z)
   scene.add(player);
-  const playerBlob = blob(0.9, 0.9, START.x, START.z, scene, 0.014, 0.9);
+  const playerBlob = blob(0.9, 0.9, start.x, start.z, scene, 0.014, 0.9);
   const kitU = {
     uShirt: { value: new THREE.Color(kit0.shirt) },
     uTrim: { value: new THREE.Color(kit0.trim) },
@@ -622,10 +633,14 @@ export async function startShop(
     return d;
   };
 
+  let leftByDoor = false;
   const collide = (x: number, z: number) => {
     const r = 0.32;
     x = Math.max(-ROOM.x + r, Math.min(ROOM.x - r, x));
-    z = Math.max(-ROOM.z + r, Math.min(ROOM.z - 0.4, z));
+    // the front doorway leads outside when there is somewhere to go
+    const inDoor = !!cb.onDoor && Math.abs(x) < DOOR_HALF - 0.15;
+    z = Math.max(-ROOM.z + r, Math.min(inDoor ? ROOM.z + 0.9 : ROOM.z - 0.4, z));
+    if (inDoor && z > ROOM.z + 0.25 && !leftByDoor) { leftByDoor = true; cb.onDoor?.(); }
     for (const [x0, x1, z0, z1] of BOXES) {
       if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) {
         const push = [x - (x0 - r), x1 + r - x, z - (z0 - r), z1 + r - z];
@@ -740,6 +755,7 @@ export async function startShop(
     }
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
+    // walking out of the door: the camera stays inside, looking out
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
     camera.position.copy(camPos);
@@ -874,7 +890,7 @@ export async function startShop(
 
 /** Paint the kit onto the bare body (see kit.ts): shirt, shorts in the trim
  *  colour, socks with a trim band, dark boots and a number on the back. */
-function dressInKit(THREE: any, mesh: any, U: any) {
+export function dressInKit(THREE: any, mesh: any, U: any, cacheKey = "shop3d-kit") {
   const g = mesh.geometry;
   const sk = mesh.skeleton;
   sk.calculateInverses?.();
@@ -957,6 +973,6 @@ float kitKitAmt = 0.0; float kitRough = 0.8;`)
       .replace("#include <normal_fragment_begin>", "#include <normal_fragment_begin>\nvec3 kitGeoN = normal;")
       .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\nnormal = normalize(mix(normal, kitGeoN, kitKitAmt * 0.85));");
   };
-  m.customProgramCacheKey = () => "shop3d-kit";
+  m.customProgramCacheKey = () => cacheKey;
   m.needsUpdate = true;
 }

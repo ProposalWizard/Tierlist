@@ -10,15 +10,22 @@
  * an fps counter and a pretend Buy. Nothing reaches a career and nothing is
  * saved.
  */
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import Shop3D from "@/components/star/Shop3D";
 
 export default function Shop3DPage() {
+  return <Suspense><Shop3DTest /></Suspense>;
+}
+
+function Shop3DTest() {
   const router = useRouter();
+  const q = useSearchParams();
+  // its front doors lead out to the 3D garden test page, as in a career
   return (
     <>
-      <Shop3D dev backLabel="3D area" onBack={() => router.push("/star-3d-area-dev")} />
+      <Shop3D dev backLabel="3D area" atDoor={q.get("door") === "1"} onBack={() => router.push("/star-3d-area-dev")} onDoor={() => router.push("/star-garden3d-dev?arrive=shop")} />
       <PageGuide page="/star-shop3d-dev" corner="bottom-left" />
     </>
   );
