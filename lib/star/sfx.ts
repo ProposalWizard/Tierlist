@@ -15,6 +15,8 @@
  */
 import { useSyncExternalStore } from "react";
 import { uiVersion } from "./uiLook";
+import { audioContext, resumeAudio } from "./audioOut";
+import { makeSoundGate, nowMs } from "./soundGate";
 
 export type SfxName =
   | "ui-tap" | "ui-confirm" | "coin-in" | "star-tick" | "level-up" | "achievement-pop"
@@ -28,6 +30,10 @@ const VOLUME: Partial<Record<SfxName, number>> = { "ui-tap": 0.45, "ui-confirm":
 let on: boolean | undefined;
 const listeners = new Set<() => void>();
 const cache = new Map<SfxName, HTMLAudioElement>();
+/** Decoded copies for the Web Audio path (audioOut.ts): `null` = tried and failed. */
+const buffers = new Map<SfxName, AudioBuffer | null | Promise<void>>();
+/** How often each sound may play (soundGate.ts, v0.25 item 6). */
+const gate = makeSoundGate();
 
 /**
  * REPLACEMENT SOUNDS. An admin can upload a replacement for any sound on the
@@ -76,7 +82,7 @@ function refreshOverrides(): void {
       try { localStorage.setItem(SFX_OVERRIDES_KEY, JSON.stringify(next)); } catch { /* fine */ }
       // Drop any already-loaded copy whose file changed, so the next play uses the new one.
       Object.keys({ ...before, ...next }).forEach((k) => {
-        if (before[k] !== next[k]) cache.delete(k as SfxName);
+        if (before[k] !== next[k]) { cache.delete(k as SfxName); buffers.delete(k as SfxName); }
       });
     })
     .catch(() => { /* keep the bundled sounds */ });
@@ -124,19 +130,68 @@ function load(name: SfxName): HTMLAudioElement | null {
   return a;
 }
 
-/** Fetch the files ahead of the first play, so a tap sounds on the tap. */
-export function preloadSfx(names: SfxName[] = ["ui-tap", "ui-confirm", "coin-in", "star-tick", "level-up", "achievement-pop", "breaking-news", "phone-notification", "can-open"]): void {
-  try { names.forEach(load); } catch { /* no audio here */ }
+/** Fetch and decode a sound for the Web Audio path. Never throws. */
+function decode(name: SfxName): void {
+  const c = audioContext();
+  if (!c || buffers.has(name) || typeof fetch === "undefined") return;
+  refreshOverrides();
+  const job = fetch(sfxUrl(name))
+    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("no file"))))
+    .then((data) => new Promise<AudioBuffer>((res, rej) => {
+      // The callback form: old iOS Safari has no promise-returning decodeAudioData.
+      const p = c.decodeAudioData(data, res, rej);
+      if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(res, rej);
+    }))
+    .then((b) => { buffers.set(name, b); })
+    .catch(() => { buffers.set(name, null); });
+  buffers.set(name, job);
 }
 
-/** Play one sound. Overlapping plays of the same sound each get their own copy. */
+/** Fetch the files ahead of the first play, so a tap sounds on the tap. */
+export function preloadSfx(names: SfxName[] = ["ui-tap", "ui-confirm", "coin-in", "star-tick", "level-up", "achievement-pop", "breaking-news", "phone-notification", "can-open"]): void {
+  try {
+    if (audioContext()) names.forEach(decode);
+    else names.forEach(load);
+  } catch { /* no audio here */ }
+}
+
+/**
+ * Play one sound — at most once per its gap, and never more than a few at
+ * once (soundGate.ts). Through Web Audio where there is one, so the volume
+ * holds on an iPhone; an old browser without it uses an <audio> element.
+ */
 export function sfx(name: SfxName): void {
   try {
     if (!sfxOn() || uiVersion() !== "new") return;
+    if (!gate(name, nowMs())) return;
+    const vol = VOLUME[name] ?? 0.85;
+    const c = audioContext();
+    if (c) {
+      const b = buffers.get(name);
+      if (b === undefined || b instanceof Promise) { decode(name); return; }   // not ready yet: skip, never stack later
+      if (b === null) return;
+      const play = () => {
+        const src = c.createBufferSource();
+        src.buffer = b;
+        const g = c.createGain();
+        g.gain.value = vol;
+        src.connect(g);
+        g.connect(c.destination);
+        src.start();
+      };
+      if (c.state === "running") { play(); return; }
+      // Still locked (no tap yet): play only if it unlocks now, inside this
+      // tap. A sound queued on a locked context would all fire together at
+      // the first tap — the stacking heard on the iPhone.
+      const t0 = nowMs();
+      resumeAudio();
+      c.resume().then(() => { if (nowMs() - t0 < 250) play(); }).catch(() => { /* still locked */ });
+      return;
+    }
     const base = load(name);
     if (!base) return;
     const a = base.paused || base.currentTime === 0 ? base : (base.cloneNode(true) as HTMLAudioElement);
-    a.volume = VOLUME[name] ?? 0.85;
+    a.volume = vol;
     a.currentTime = 0;
     const p = a.play();
     if (p && typeof p.catch === "function") p.catch(() => { /* blocked until the first tap */ });

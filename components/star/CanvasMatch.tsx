@@ -40,6 +40,9 @@ import {
 import { mulberry32 } from "@/lib/star/season";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
+import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
+import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
+import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
@@ -377,6 +380,13 @@ interface Props {
   penaltyRunup?: PenaltyRunupId;
   freeKickRunup?: FreeKickRunupId;
   /**
+   * The foot you kick with (v0.25 item 4) — looks only: which leg swings,
+   * and on a penalty or direct free kick which side of the ball you run up
+   * from. Absent: the career's foot, else the star page's (kickFoot.ts),
+   * else right.
+   */
+  preferredFoot?: PreferredFoot;
+  /**
    * A feature's teaching pause (the trial's free kick, 2 Oct 2026): called the
    * moment YOUR run-up starts and the moment the strike screen opens. Return
    * true to freeze the match right there — nobody moves, the strike screen's
@@ -547,7 +557,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -728,6 +738,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const wrapRef = useRef<HTMLDivElement>(null);
   const careerRef = useRef(career);
   careerRef.current = career;
+  const preferredFootRef = useRef(preferredFoot);
+  preferredFootRef.current = preferredFoot;
 
   // Career-match mode is active when the career flow passes a fixture + callback.
   const matchMode = !!(fixture && onComplete);
@@ -2640,6 +2652,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement;
       /** A run-up style's own body (runupStyles.ts): stride, arms, crouch, a skip off the ground, a lean. Replaces `pose`. */
       body?: RunupPose | null;
+      /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). Looks only. */
+      kickFoot?: number;
     };
 
     // ── Nearer men in front of further ones ──
@@ -2700,7 +2714,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const body = opts.body;
       const limbs = body
         ? { legSwing: body.legSwing, kick: 0, armSpread: body.armSpread, armLift: body.armLift, crouch: body.crouch }
-        : bodyPoseFor(pose, phase);
+        : bodyPoseFor(pose, phase, opts.kickFoot);
 
       // ── Anchored at the FEET ──
       //
@@ -3035,12 +3049,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const takerKit = auto?.side === "them" ? theirKit() : ourKit();
     // During a run-up the taker moves the way his style does (runupStyles.ts).
     const ruNow = phaseRef.current === "runup" ? runupRef.current : null;
-    const runBody = ruNow && !ruNow.arrived && kickPoseRef.current <= 0 ? runupPoseAt(ruNow.styled, ruNow.t) : null;
+    const runBody0 = ruNow && !ruNow.arrived && kickPoseRef.current <= 0 ? runupPoseAt(ruNow.styled, ruNow.t) : null;
+    // v0.25 item 4 — the foot he kicks with (lib/star/kickFoot.ts). Picture
+    // only: on a penalty or a direct free kick a left-footer is DRAWN coming
+    // from the right of the ball, the mirror of a right-footer, and the kick
+    // swings that foot. `sc.player`, the aim and the ball are untouched.
+    const takerFoot = auto
+      ? takerFootSign(auto.taker.id || auto.taker.name)
+      : footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
+    const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
+    const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
+    const tx = drawnTaker.at.x, ty = drawnTaker.at.y;
     if (auto) {
-      footballer(sc.player.x, sc.player.y, R, takerKit.shirt, takerKit.trim, {
-        pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
-        phase: runPhase(sc.player.x),
+      footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
+        pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
+        phase: runPhase(tx),
         body: runBody,
+        kickFoot: takerFoot,
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
@@ -3049,12 +3074,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
     // (A feature can leave you off the picture: `scene.you === false`.)
-    footballer(sc.player.x, sc.player.y, R, ourKit().shirt, ourKit().trim, {
+    footballer(tx, ty, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
-      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
-      phase: runPhase(sc.player.x),
+      pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
+      phase: runPhase(tx),
       body: runBody,
+      kickFoot: takerFoot,
       star: true,
       // Your own photo (Settings → Photo, PortraitPicker) — every OTHER
       // figure already gets one when there's a real identity to draw from;
@@ -3716,6 +3742,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             deflectionsRef.current += 1;
             const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) ^ 0xdef1) >>> 0);
             deflectBlock(ballRef.current, scenarioRef.current, incoming, r);
+            // v0.25 item 20: on a rebound (the keeper or the post has had it)
+            // the defender plays it away, never on at his own keeper.
+            steerDeflectionFromOwnGoal(ballRef.current, scenarioRef.current);
             res = null;
             showAction("DEFLECTED");
             pushLine("Blocked — and it's come off him loose!");
@@ -3732,6 +3761,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // resolveOutcome's own "touchOn" branch does the rest — see its own
           // doc there.
           if (!res && caughtUp) res = "touchOn";
+          // v0.25 item 20: a defender who wins the loose ball does not leave it
+          // rolling on at his own goal after the whistle.
+          if (res === "short") clearLooseWin(ballRef.current, scenarioRef.current);
           if (res) { resolveOutcome(res); break; }
         }
         // Surface mid-flight moments (pass reception / the teammate's own shot /

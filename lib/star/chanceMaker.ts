@@ -188,7 +188,17 @@ export class PictureMemory {
     if (!this.persist) return;
     try {
       if (typeof window !== "undefined") window.localStorage.setItem(this.key(), JSON.stringify(this.byKind));
-    } catch { /* full or blocked: memory still works for this visit */ }
+    } catch {
+      // Full (v0.25 item 15: a well-used test computer): keep only what the
+      // rule reads — the last PICTURE_MEMORY of each kind — and try once more.
+      // Still refused: the memory works for this visit, and visitSalt below
+      // keeps the next visit from opening on the same picture.
+      try {
+        const small: Record<string, Picture[]> = {};
+        for (const [k, v] of Object.entries(this.byKind)) small[k] = Array.isArray(v) ? v.slice(-PICTURE_MEMORY) : [];
+        if (typeof window !== "undefined") window.localStorage.setItem(this.key(), JSON.stringify(small));
+      } catch { /* blocked: this visit only */ }
+    }
   }
 
   recent(kind: string): Picture[] {
@@ -219,6 +229,35 @@ export class PictureMemory {
     this.loaded = true;
     this.save();
   }
+}
+
+/**
+ * THE SAME LONG SHOT EVERY TIME (v0.25 item 15). Harry: "on one computer the
+ * same long-shot highlight comes up every time." A match is seeded by its
+ * week, so starting the same match again asks for the same chance with the
+ * same random numbers; only the memory above stops it being served again —
+ * and on a browser whose storage is full or blocked the memory is gone at
+ * every reload. Measured, 50 restarts of one match: 1 distinct opening long
+ * shot with storage refused, 6 with storage working.
+ *
+ * So each page visit also gets its own small offset for WHICH drawing is
+ * tried first. It draws no extra random numbers (the match plays out as
+ * before) and is used only when a memory is passed — the game and the review
+ * tools. A gallery cell (no memory) and a test (no browser) are unchanged.
+ */
+let visitSalt: number | undefined;
+export function setVisitSalt(v: number | undefined): void { visitSalt = v; }
+function saltFor(o: { memory?: PictureMemory | null }): number {
+  if (!o.memory) return 0;
+  if (visitSalt === undefined) {
+    if (typeof window === "undefined") return 0;
+    try {
+      const a = new Uint32Array(1);
+      crypto.getRandomValues(a);
+      visitSalt = a[0];
+    } catch { visitSalt = Math.floor(Math.random() * 0x7fffffff); }
+  }
+  return visitSalt >>> 0;
 }
 
 const memories = new Map<string, PictureMemory>();
@@ -416,7 +455,7 @@ const DEFAULT_CAMERA = { centerX: CX, centerY: 17, viewHeight: 42, facing: "up" 
 export type DrawnShape = AuthoredShape & { mirrored: boolean };
 
 export function drawingShape(
-  kind: string, rng: () => number, stableKey?: number,
+  kind: string, rng: () => number, stableKey?: number, salt = 0,
 ): DrawnShape | null {
   const set = ruleSetFor(kind);
   if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
@@ -424,14 +463,16 @@ export function drawingShape(
   const bad = new Set(outliersOf(set).map((o) => o.id));
   const clean = pool.filter((s) => !bad.has(s.id));
   const from = clean.length ? clean : pool;
-  const start = stableKey === undefined ? Math.floor(rng() * from.length) % from.length : stableIndex(from.map((s) => s.id), stableKey);
+  // `salt` (visitSalt) only turns the starting drawing; the same one rng() is drawn.
+  const start = stableKey === undefined ? (Math.floor(rng() * from.length) + salt) % from.length : stableIndex(from.map((s) => s.id), stableKey);
   for (let i = 0; i < from.length; i++) {
     const base = from[(start + i) % from.length];
     // (A penalty and a free kick are served exactly as drawn — see
     // randomiseAuthored's DEAD_BALL_EXACT.)
     const shape = randomiseAuthored(base, set, rng, { fixedBall: FIXED_BALL.has(kind) });
     if (!shape) continue;
-    const mirrored = rng() < 0.5;
+    // The visit salt can flip the side too (same one rng() drawn).
+    const mirrored = (rng() < 0.5) !== (((salt >>> 16) & 1) === 1);
     return { ...(mirrored ? mirrorShape(shape) : shape), mirrored };
   }
   return null;
@@ -705,7 +746,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     let own: string[] = [];
     if (useGen) { shape = generatorShape(kind, rng); how = "generator"; }
     if (!shape) {
-      const d = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined);
+      const d = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o));
       if (d) own = drawingOwnFaults(kind, d.sourceId, d.mirrored);
       shape = d;
       how = "drawing";
