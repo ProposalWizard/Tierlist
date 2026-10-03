@@ -1703,6 +1703,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  ball no longer has to drag back across it before any power starts (the
    *  ball can be grabbed from up to 28% of the frame away). */
   const thumbOriginRef = useRef<{ x: number; y: number } | null>(null);
+  /** The same landing spot on the glass (client px). With the camera tipped
+   *  back the drag is copied across on the SCREEN, so a given finger movement
+   *  is the same pull (and the same direction) wherever on the zone it starts. */
+  const thumbOriginClientRef = useRef<{ x: number; y: number } | null>(null);
   /** When the drag passed the dead zone (performance.now()). From then on an
    *  ordered run is under way, the nearest opponent closes you down, and the
    *  chance can no longer be taken back. */
@@ -2440,6 +2444,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const b = canvasBox();
     if (!(b.width > 0 && b.height > 0)) return { sx: 0, sy: 0 };
     return screenToCanvas(tiltGeomRef.current, clientX - b.left, clientY - b.top, b.width, b.height);
+  };
+
+  /** A pitch point -> where it is on the glass (client px). The inverse of
+   *  pitchFromPointer, turn and tilt and all. */
+  const pitchToClient = (p: { x: number; y: number }) => {
+    const vp = viewportRef.current, b = canvasBox(), f = facingRef.current;
+    const fx = (p.x - vp.x1) / (vp.x2 - vp.x1), fy = (p.y - vp.y1) / (vp.y2 - vp.y1);
+    const sx = f === "right" ? 1 - fy : f === "left" ? fy : fx;
+    const sy = f === "right" ? fx : f === "left" ? 1 - fx : fy;
+    const g = canvasToScreen(tiltGeomRef.current, sx, sy, b.width, b.height);
+    return { x: b.left + g.X, y: b.top + g.Y };
   };
 
   const pitchFromPointer = (clientX: number, clientY: number) => {
@@ -6067,6 +6082,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // v0.15 item 21: measured from where the thumb landed, so the pull starts
     // at nothing wherever on the ball's grab zone it lands.
     thumbOriginRef.current = p;
+    thumbOriginClientRef.current = { x: e.clientX, y: e.clientY };
     dragRef.current = { x: b.x, y: b.y };
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
@@ -6097,7 +6113,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!draggingRef.current) return;
     const pp = pitchFromPointer(e.clientX, e.clientY);
     const o = thumbOriginRef.current, bb = scenarioRef.current.ball;
-    dragRef.current = o ? { x: bb.x + (pp.x - o.x), y: bb.y + (pp.y - o.y) } : pp;
+    const oc = thumbOriginClientRef.current;
+    if (tiltGeomRef.current && oc) {
+      // Tilted: the finger's movement on the glass, laid off from the ball's
+      // own spot on the glass (playtest: the pitch-space copy came out 5%
+      // weaker than flat, because the thumb lands where the picture is bigger).
+      const bc = pitchToClient(bb);
+      dragRef.current = pitchFromPointer(bc.x + (e.clientX - oc.x), bc.y + (e.clientY - oc.y));
+    } else {
+      dragRef.current = o ? { x: bb.x + (pp.x - o.x), y: bb.y + (pp.y - o.y) } : pp;
+    }
     // v0.15 item 22: past the dead zone, the aim is committed.
     if (aimCommitRef.current === null && phaseRef.current === "aim"
         && acceptsCaptainOrders(scenarioRef.current.kind) && screenPull(dragRef.current, bb) >= MIN_PULL) {
