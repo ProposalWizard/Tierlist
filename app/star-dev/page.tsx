@@ -4197,6 +4197,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             setPhase("dashboard");
           }}
           labels={["Stats", "Home", "Shop"]}
+          // The Shop is a shop, not a light-green page (v0.25, P44).
+          tones={[undefined, undefined, "calm"]}
           // Small arrows at the bottom edge instead of a tab row (Harry, 1 Oct
           // 2026); Stats' left arrow is the League, Home's pitch runs under them.
           arrows={{
