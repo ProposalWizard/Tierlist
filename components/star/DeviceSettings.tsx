@@ -222,7 +222,7 @@ function NewViewLook() {
         <SegTabs className="w-[130px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
       </div>
       <SetNote dim className="mt-1.5 text-[10px]">
-        New match view only. Camera angle: the pitch tipped back (20° default); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
+        New match view only. Camera angle: the pitch tipped back (20° default; corners and byline crosses stay flat); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
       </SetNote>
     </div>
   );

@@ -361,11 +361,17 @@ export function newViewCanvasHeight(widthPx: number, roomPx: number): number {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** What must stay on the screen once the picture is tipped back: the ball,
- *  you, the man the pass is for, and the goal and keeper when they are part
- *  of the chance. */
+ *  you, every player in the chance, and the goal and keeper when they are
+ *  part of it. (Everyone, not just the ball and the pass target, since the
+ *  playtest at 30° cut an arm off a defender in the bottom corner. Measured
+ *  cost: at most 6% more zoom-out at 20°, 16% at 30°.) */
 export function keyPointsOf(sc: Scenario): Vec2[] {
-  const pts: Vec2[] = [sc.ball, sc.player];
+  // A volley's or header's team-mate is the crosser out by the touchline,
+  // which the engine never frames either (those two kinds are switched off).
+  const decorative = sc.kind === "volley" || sc.kind === "header";
+  const pts: Vec2[] = [sc.ball, sc.player, ...sc.defenders, ...(decorative ? [] : sc.teammates)];
   if (sc.runner) pts.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
   if (goalInView(sc.kind)) pts.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 });
   return pts;
 }

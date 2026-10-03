@@ -8,8 +8,9 @@ import { CAMERA_TILT_DEFAULT, tiltFor, canvasToScreen, screenToCanvas, visibleOn
  * - touch goes through the exact inverse of the tilt;
  * - flat is the identity;
  * - the tipped picture still fills the screen's top edge;
- * - the ball, you, the pass target, the keeper and both posts stay on screen
- *   for every kind at 20° and 30°, on every phone shape.
+ * - the ball, you, every player, the keeper and both posts stay on screen
+ *   for every tilted kind at 20° and 30°, on every phone shape (corners and
+ *   byline crosses are never tilted).
  */
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -37,7 +38,10 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.85, NEW_VIEW_MIN_HW]) {
     check(tl.X <= 1e-6 && tr.X >= W - 1e-6 && tl.Y <= 1e-6, `${deg}° hw ${hw}: the top of the picture leaves a gap`);
     // Everything that matters stays on screen.
     let off = 0, n = 0;
+    // Corners and byline crosses are never tilted (Harry, 3 Oct 2026): they
+    // are watched side-on and then cut, flat.
     for (const kind of SCENARIO_KINDS) for (let s = 0; s < 80; s++) {
+      if (kind === "corner" || kind === "byline_cross") continue;
       const r = mulberry32(s * 31 + kind.length);
       const sc: Scenario = buildScenario(kind, r, 60, 60, 60); initDefenders(sc, r);
       const cam: Viewport = frameForNewView(sc, hw, false, deg);
@@ -53,4 +57,4 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.85, NEW_VIEW_MIN_HW]) {
   }
 }
 if (problems.length) { console.error(problems.slice(0, 20).join("\n")); process.exit(1); }
-console.log("cameraTilt: exact inverse, top filled, ball/you/target/keeper/posts on screen at 20° and 30°");
+console.log("cameraTilt: exact inverse, top filled, ball, you, every player, keeper and posts on screen at 20° and 30°");

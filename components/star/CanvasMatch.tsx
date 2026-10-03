@@ -159,6 +159,7 @@ import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
 import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
@@ -2019,6 +2020,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  and the canvas's tilt geometry, rebuilt whenever the canvas is sized.
    *  Classic is always flat. */
   const tiltDegRef = useRef(0);
+  /** The angle chosen in Settings (0 in Classic). */
+  const tiltSettingRef = useRef(0);
+  /** The angle for this chance. Corners and byline crosses stay flat (Harry,
+   *  3 Oct 2026: "I don't think the 20 degrees should apply to the
+   *  crosses/byline and corners") — they are watched side-on, then cut. */
+  const tiltForChance = (sc: Scenario | null | undefined): number =>
+    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0 : tiltSettingRef.current;
+  /** Tip the canvas to `deg` (0 = flat) for its current size. */
+  const applyTilt = (deg: number) => {
+    tiltDegRef.current = deg;
+    const c = canvasRef.current;
+    if (!c) return;
+    const w = parseFloat(c.style.width) || c.offsetWidth, h = parseFloat(c.style.height) || c.offsetHeight;
+    tiltGeomRef.current = tiltFor(deg, w, h);
+    c.style.transform = tiltCss(tiltGeomRef.current);
+  };
   const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
@@ -2181,9 +2198,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       // The camera angle: the finished picture tipped back (cameraTilt.ts).
-      tiltDegRef.current = newViewRef.current ? cameraTilt() : 0;
-      tiltGeomRef.current = tiltFor(tiltDegRef.current, rect.width, rect.height);
-      canvas.style.transform = tiltCss(tiltGeomRef.current);
+      tiltSettingRef.current = newViewRef.current ? cameraTilt() : 0;
+      applyTilt(tiltForChance(scenarioRef.current));
       // New view: the camera holds the canvas's own shape, so a new shape
       // means a new frame — never while a ball is in flight.
       if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
@@ -2396,6 +2412,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       baseViewportRef.current = { ...sc.viewport };
       return;
     }
+    applyTilt(tiltForChance(sc));
     const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
@@ -3607,7 +3624,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
         // Only a real save is a dive. His patrol lean used to trigger the dive
         // clip too, so he flopped about while shuffling across his line.
-        if (lunge > 0.04 && sign !== 0) {
+        // A ball going well wide of the goal is not a save to dive for: the
+        // engine still sends him after it (it judges every ball that crosses
+        // his line), but he shuffles across rather than throwing himself at a
+        // ball rolling out (playtest film, 3 Oct 2026). Drawing only.
+        const bl = ballRef.current;
+        const wideOfGoal = !!bl && kk.saves === 0 && Math.abs(bl.pos.x - (POST_L + POST_R) / 2) > (POST_R - POST_L) / 2 + 2.5;
+        if (lunge > 0.04 && sign !== 0 && wideOfGoal && keeperLandRef.current?.sc !== sc) {
+          const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
+          keeperDiveStartRef.current = null;
+          keeperSprite = { char: "keeper", clip: "jog", t: kk.idleT, facing: Math.atan2(b.py - a.py, b.px - a.px), kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+        } else if (lunge > 0.04 && sign !== 0) {
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
           // The dive plays no faster than 0.75× the clip's own speed, however
           // quickly the save itself happens.
