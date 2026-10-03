@@ -123,6 +123,9 @@ function choose(n: number, k: number, rng: () => number): Set<number> {
   return new Set(idx.slice(0, k));
 }
 
+/** The kick numbers (0-4) your two team-mates take: Academy goes first. */
+export const MATE_KICK_INDEX = [1, 3] as const;
+
 /** Roll the path to your kick for one save. Same seed, same path. */
 export function createRigScript(seed: number): RigScript {
   const rng = mulberry32((seed ^ 0x5b007) >>> 0);
@@ -144,10 +147,32 @@ export function createRigScript(seed: number): RigScript {
         const b = Math.floor(rng() * (a + 1));
         [bag[a], bag[b]] = [bag[b], bag[a]];
       }
+      // A fresh bag never starts with the style the last miss used.
+      const last = [...misses].reverse().find((_, k) => !intents[misses.length - 1 - k]);
+      if (last && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
     }
     misses.push(intents[i] ? "wide" : bag.pop()!);
   }
   const sides = intents.map(() => (rng() < 0.5 ? -1 : 1) as 1 | -1);
+  // ── Team-mates never miss the same way twice (v0.25, Harry's live test,
+  // point 8) ── On the 0-0 path the miss bag refilled between the two
+  // team-mates' kicks, so both could drag it wide; and a planned goal that
+  // had to miss after all (rigIntent going off script) was always "wide".
+  // Now the two team-mates' styles always differ and they go opposite ways.
+  const [m1, m2] = MATE_KICK_INDEX;
+  const other = (...not: (MissStyle | undefined)[]) => MISS_STYLES.find(m => !not.includes(m)) ?? MISS_STYLES[0];
+  if (!intents[m1] && !intents[m2] && misses[m1] === misses[m2]) {
+    misses[m2] = other(misses[m1], intents[m2 - 1] ? undefined : misses[m2 - 1]);
+    const after = m2 + 1;
+    if (after < misses.length && !intents[after] && misses[after] === misses[m2]) misses[after] = other(misses[m2], intents[m2 - 1] ? undefined : misses[m2 - 1]);
+  }
+  // A planned goal's fallback miss: unlike its team-mate's and the kick before.
+  for (let i = 0; i < misses.length; i++) {
+    if (!intents[i]) continue;
+    const mate = (MATE_KICK_INDEX as readonly number[]).indexOf(i);
+    misses[i] = other(mate >= 0 ? misses[MATE_KICK_INDEX[1 - mate]] : undefined, i > 0 ? misses[i - 1] : undefined);
+  }
+  sides[m2] = (-sides[m1]) as 1 | -1;
   return { intents, sides, misses, level };
 }
 

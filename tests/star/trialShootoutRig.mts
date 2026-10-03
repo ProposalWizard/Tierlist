@@ -10,7 +10,8 @@
  *     every one of the 10 paths turns up, 0-0 / 1-1 / 2-2 each about a third,
  *     and consecutive saves usually differ.
  *  2. The misses and the run-ups: no two of a save's first three misses look
- *     alike, and five takers run up five different ways.
+ *     alike, the two team-mates never miss the same way (v0.25), and five
+ *     takers run up five different ways.
  *  3. The plans that rule hands the real engine, struck the way CanvasMatch
  *     strikes an automatic penalty (rules, run-up, keeper brain, launch()), at
  *     every keeper strength the shootout uses on either side: a "goal" plan
@@ -122,6 +123,25 @@ console.log("\nMISSES AND RUN-UPS");
   ok(distinct === total, `no two of a save's first three misses look alike (${distinct}/${total})`);
   ok(bothSides > 900, `kicks go both ways in a save (${bothSides}/1000)`);
   ok(MISS_STYLES.length === 3, "three ways to miss: wide, skied, over");
+
+  // v0.25 (Harry's live test, point 8: "team-mates missed the same way
+  // twice"). Before: the 0-0 path could give both team-mates the same style
+  // (the miss bag refilled between them), and an off-script miss was always
+  // "wide". Now, whatever happens on the night, they differ.
+  let mateSame = 0, mateSameSide = 0, backToBack = 0, pairs = 0;
+  for (let s = 0; s < 5000; s++) {
+    const sc = createRigScript(s * 7 + 11);
+    if (sc.misses[1] === sc.misses[3]) mateSame++;
+    if (sc.sides[1] === sc.sides[3]) mateSameSide++;
+    // Planned misses back to back, and an off-script miss against the kick before it.
+    for (let i = 0; i + 1 < sc.misses.length; i++) {
+      if (sc.intents[i] && !sc.intents[i + 1]) continue;
+      pairs++; if (sc.misses[i] === sc.misses[i + 1]) backToBack++;
+    }
+  }
+  ok(mateSame === 0, `the two team-mates never miss the same way (${mateSame}/5000 saves)`);
+  ok(mateSameSide === 0, `the two team-mates go opposite ways (${mateSameSide}/5000 saves)`);
+  ok(backToBack === 0, `no two kicks in a row miss the same way (${backToBack}/${pairs} pairs)`);
 
   let allDistinct = true, allMatch = true;
   for (let s = 0; s < 300; s++) {

@@ -2,6 +2,7 @@
 import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
+import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildScenario,
@@ -1760,6 +1761,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * which is what makes the energy bar fall live.
    */
   const MINUTE_TICK_MS = 700;
+  /** v0.25: the first stretch of a match you start skips the clock walk. */
+  const quickStartRef = useRef(false);
   useEffect(() => {
     if (pause || queue.length === 0) return;
     const next = queue[0];
@@ -2127,7 +2130,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         setPause({
           label: "You are going on",
           cta: "Get out there →",
-          onContinue: () => { setPause(null); startSimulation(); },
+          // v0.25: straight into your first chance, as for a starter.
+          onContinue: () => { setPause(null); quickStartRef.current = true; startSimulation(); },
         });
         return;
       }
@@ -2135,6 +2139,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // whistle — not on a pitch waiting for a chance that has not arrived.
       enteredAtRef.current = 0;
       setLog([logLine("Kick Off", "period", 0)]);
+      quickStartRef.current = true;
       startSimulation();
       return;
     }
@@ -4282,11 +4287,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       //  2. Either way, nothing on screen said so: these lines went to the
       //     sandbox-only ticker. Now a banner says it came back, and the match
       //     commentary says which.
+      //  v0.25 (review of v0.24, point 49): "always" was too much. In a
+      //  no-goal picture a forward pass now comes back 92 in 100 and a
+      //  sideways or backward one 60 in 100 (lib/star/giveAndGo.ts). Pictures
+      //  with a goal keep chainReturnChance.
       const onlyPlay = !goalInView(sc.kind);
       const who = sc.receivedBy?.who?.shortName ?? targetName(sc);
-      // The roll is drawn in exactly the cases it always was, so the rest of
+      // One roll, drawn in exactly the cases it always was, so the rest of
       // the match's random stream is what it was.
-      if (at && depth < CHAIN_MAX && (rngRef.current() < chainReturnChance(sc) || onlyPlay)) {
+      const returnChance = onlyPlay && at ? giveAndGoChance(sc, at) : chainReturnChance(sc);
+      if (at && depth < CHAIN_MAX && rngRef.current() < returnChance) {
         const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
@@ -4711,7 +4721,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
     if (stretchRef.current) stretchRef.current.queued = events.length;
-    setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    // ── v0.25: Play goes straight into the first chance ──
+    // Mikey, 2 Oct 2026 (review point 30): "as soon as you press Play" the
+    // match should become the chance, not a kick-off card while the clock
+    // walks up to it (measured: about 0.7 s a minute, so a first chance at
+    // 14' was ten seconds of nothing). The first stretch of a match you
+    // start is written straight into the log and the clock jumps to it.
+    // Only when a chance of yours is waiting, and never across half time.
+    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
+    quickStartRef.current = false;
+    if (quick) {
+      const lines = linesFrom(events, matchMinuteRef.current);
+      setLog(l => [...l, ...lines]);
+      setQueue([]);
+      setClock(st.minute);
+    } else {
+      setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
+    }
     setPhase("feed");
 
     simContinueRef.current = () => {
@@ -4859,6 +4885,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         loadScenario(false);
       }
     };
+    if (quick) {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => {
+        if (sceneGenRef.current !== gen) return;
+        const go = simContinueRef.current;
+        simContinueRef.current = null;
+        stretchRef.current = null;
+        go?.();
+      }, 0);
+    }
   };
 
   /**

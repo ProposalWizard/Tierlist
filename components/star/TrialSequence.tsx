@@ -452,18 +452,24 @@ export default function TrialSequence({
     );
   }
 
+  // v0.25 (Mikey, point 22; Harry, point 5): the shootout is the pitch, full
+  // width, with a scoreboard on it — not a white card with a pitch inside.
   if (stage === "shootout") {
-    return shell(
-      <>
-        {eventBanner}
-        <TrialShootout
-          trial={trial}
-          skills={skills}
-          playerName={playerName}
-          penaltyRunup={penaltyRunup}
-          onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
-        />
-      </>,
+    return (
+      <div className="min-h-[100dvh] w-full pb-3" style={{ background: "radial-gradient(90% 50% at 50% 30%, #14532d, #052e16 70%, #02140a)" }} data-trial-shootout>
+        <div className="mx-auto w-full max-w-md">
+          {devPanel}
+          <div className="px-3 pt-2 [&_.bg-gray-200]:bg-white/20 [&_.bg-gray-800]:bg-white [&_.text-gray-400]:text-white/60">{progress}</div>
+          {eventBanner}
+          <TrialShootout
+            trial={trial}
+            skills={skills}
+            playerName={playerName}
+            penaltyRunup={penaltyRunup}
+            onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
+          />
+        </div>
+      </div>
     );
   }
 

@@ -1,6 +1,6 @@
 // Sponsors, rebuilt (lib/star/sponsorDeals.ts; Mikey, 30 Sep 2026).
 import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow.ts";
-import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_CLUBS } from "../../lib/star/clubs.ts";
+import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS } from "../../lib/star/clubs.ts";
 import { finaliseMatch } from "../../lib/star/matchStats.ts";
 import { applyGettingCaught } from "../../lib/star/corruption.ts";
 import {
@@ -10,6 +10,7 @@ import {
   type BrandOffer, type BrandDeal, type BrandsState,
 } from "../../lib/star/sponsorDeals.ts";
 import { mulberry32 } from "../../lib/star/season.ts";
+import { weeklyWageFor } from "../../lib/star/economy.ts";
 import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types.ts";
 
 let fail = 0;
@@ -26,7 +27,7 @@ const famous = (c: CareerState, fame: number): CareerState => ({ ...c, fame, own
 {
   const c = prem();
   const at = (f: number) => slotsFor(famous(c, f));
-  check(at(0) === 0 && at(10) === 1 && at(25) === 2 && at(40) === 3 && at(60) === 4 && at(80) === 5, "slots: 0 unknown, 1 Local Name … 5 Icon");
+  check(at(0) === 1 && at(10) === 1 && at(25) === 2 && at(40) === 3 && at(60) === 4 && at(80) === 5, "slots: 1 unknown (v0.25), 1 Local Name … 5 Icon");
   check(new Set(BRAND_CATEGORIES.map(x => x.category)).size === BRAND_CATEGORIES.length && BRAND_CATEGORIES.every(x => x.brands.length >= 2), "every category is unique and has two brands to bid");
   check(["Headphones", "Video Game"].every(n => BRAND_CATEGORIES.some(x => x.category === n)), "headphones and a video game are in");
 }
@@ -143,6 +144,41 @@ const famous = (c: CareerState, fame: number): CareerState => ({ ...c, fame, own
   const wage = c.contract.wage;
   const w = fairWeekly(c, "Boots", mulberry32(3));
   check(w > wage * 0.1 && w < wage * 0.3, `a boots deal is about a sixth of your wage (★${w} on ★${wage})`);
+}
+
+// ── v0.25 (points 36, 53): the first offer comes from form, not fame ──
+// A new National League South player is "Unknown" (fame 1). Played through
+// creditMatchResult: a player in good form (7.0-8.0) and one in poor form
+// (5.0-6.0), 60 seeds each, up to 30 games. How many games to the first offer?
+{
+  const firstOffer = (lo: number, hi: number, seed: number): { game: number | null; weekly: number } => {
+    let c = makeInitialCareer(P(NATIONAL_LEAGUE_SOUTH_CLUBS[3]), [...NATIONAL_LEAGUE_SOUTH_CLUBS], "national_league_south");
+    // The real wage, as the scout offer writes it (makeInitialCareer's is a placeholder).
+    c = { ...c, contract: { ...c.contract, wage: weeklyWageFor(c.player.club, "national_league_south") } };
+    const rng = mulberry32(seed);
+    for (let g = 1; g <= 30; g++) {
+      const f = c.fixtures.find(x => !x.played); if (!f) break;
+      // Kept in the side and fresh: this measures form, not selection.
+      c = { ...c, status: "1st Team", energy: 100 };
+      c = creditMatchResult(c, f, stats({ goals: rng() < 0.3 ? 1 : 0, rating: lo + rng() * (hi - lo), homeScore: 1, awayScore: 1 })).career;
+      c = { ...c, status: "1st Team" };
+      const o = brandsOf(c).offers[0];
+      if (o) return { game: g, weekly: o.weekly };
+    }
+    return { game: null, weekly: 0 };
+  };
+  const good = Array.from({ length: 60 }, (_, i) => firstOffer(7.0, 8.0, 500 + i));
+  const bad = Array.from({ length: 60 }, (_, i) => firstOffer(5.0, 6.0, 900 + i));
+  const got = good.filter(r => r.game !== null);
+  const games = got.map(r => r.game!).sort((a, b) => a - b);
+  const median = games.length ? games[Math.floor(games.length / 2)] : null;
+  const pay = got.map(r => r.weekly).sort((a, b) => a - b);
+  const prem0 = { ...prem(), contract: { ...prem().contract, wage: weeklyWageFor(PREMIER_LEAGUE_CLUBS[0], "premier") } };
+  console.log(`  NLS, good form: ${got.length}/60 had an offer within 30 games, median game ${median}, weekly pay ★${pay[0]}-★${pay[pay.length - 1]} (Premier League boots deal ★${fairWeekly(prem0, "Boots", mulberry32(3))})`);
+  console.log(`  NLS, poor form: ${bad.filter(r => r.game !== null).length}/60 had an offer`);
+  check(got.length >= 50, `a player in good form gets a first offer in his first 30 games (${got.length}/60)`);
+  check(bad.every(r => r.game === null), "a player in poor form gets nothing");
+  check(pay.length > 0 && pay[pay.length - 1] < fairWeekly(prem0, "Boots", mulberry32(3)) / 10, "a National League South deal pays a small fraction of a Premier League one");
 }
 
 // ── Played through: offers really arrive, and the totals sit against the wage ──

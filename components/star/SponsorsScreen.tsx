@@ -9,10 +9,10 @@
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import {
-  brandsOf, slotsFor, weeklySponsorTotal, targetLabel, moodOf, categoryStatus, BRAND_CATEGORIES,
+  brandsOf, slotsFor, weeklySponsorTotal, targetLabel, moodOf, categoryStatus, BRAND_CATEGORIES, fameNeeded,
   BOOT_DEAL_DISCOUNT, OFFER_WEEKS, type BrandDeal, type BrandOffer, type BrandTarget,
 } from "@/lib/star/sponsorDeals";
-import { fameOf, fameLevel, nextFameLevel } from "@/lib/star/fame";
+import { fameOf, fameLevel, FAME_LEVELS } from "@/lib/star/fame";
 import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
 import { ClubCard, PressButton, Shine, StatBar, clubTheme, rgba } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
@@ -195,10 +195,12 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
   const slots = slotsFor(career);
   const fame = fameOf(career);
   const total = weeklySponsorTotal(career);
-  // Progress to the next fame level, which is also the next deal slot.
-  const next = nextFameLevel(fame);
-  const cur = fameLevel(fame);
-  const nextPct = next ? Math.max(0, Math.min(100, ((fame - cur.min) / Math.max(1, next.min - cur.min)) * 100)) : 100;
+  // Progress to the fame level that opens the next deal slot (v0.25: Unknown
+  // and Local Name both have one, so the next slot is Rising Star).
+  const SLOT_FAME = [0, 25, 40, 60, 80];
+  const next = FAME_LEVELS.find(l => l.min > fame && SLOT_FAME.includes(l.min)) ?? null;
+  const curMin = Math.max(...SLOT_FAME.filter(m => m <= fame));
+  const nextPct = next ? Math.max(0, Math.min(100, ((fame - curMin) / Math.max(1, next.min - curMin)) * 100)) : 100;
   return (
     <Screen glow={theme.glow}>
       <div className="w-full flex-1">
@@ -280,7 +282,7 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
               const status = deal ? `Signed with ${deal.brand}` : categoryStatus(career, c);
               const open = !deal && status === "Could send an offer";
               const color = c.brands[0][1];
-              const needsFame = !deal && fame < c.fame;
+              const needsFame = !deal && fame < fameNeeded(c);
               return (
                 <div key={c.category} className="flex items-center gap-3 rounded-xl p-2.5" style={brandStyle(color, deal ? 0.34 : open ? 0.2 : 0.06)}>
                   <BrandMark category={c.category} color={color} />
