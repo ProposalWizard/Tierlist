@@ -3,11 +3,11 @@
  *
  * Harry's standing rule (1 Oct 2026): every new look gets a toggle and the old
  * one stays playable.
- *   - New (default): the checked chance library (lib/star/chanceLibrary.ts),
+ *   - New (try it): the checked chance library (lib/star/chanceLibrary.ts),
  *     made for the new match view — about 100 pictures a kind, the rest of
  *     both teams on the pitch, dealt like a deck so a picture comes back as
  *     rarely as possible.
- *   - Classic: the chances exactly as they were — the team's drawings, nudged,
+ *   - Classic (default): the chances exactly as they were — the team's drawings, nudged,
  *     with the 5-picture memory — and nothing else on the pitch.
  *
  * Like the match view (matchView.ts) this is a module-level value per device,
@@ -27,7 +27,11 @@ import { useSyncExternalStore } from "react";
 export type ChanceSet = "new" | "classic";
 
 /** THE ONE LINE: the chances everyone gets when nobody has chosen. */
-export const CHANCE_SET_DEFAULT: ChanceSet = "new";
+// Harry, 3 Oct 2026: "I think most likely we won't have 11 players on the
+// pitch at all times, I think just take our current scenarios and then zoom
+// the pitch out." So the team's own drawings stay the default in the new
+// zoomed-out view; the library is there to try, behind Settings → Chances.
+export const CHANCE_SET_DEFAULT: ChanceSet = "classic";
 export const CHANCE_SET_KEY = "star-chance-set";
 
 let stored: ChanceSet | null | undefined;
