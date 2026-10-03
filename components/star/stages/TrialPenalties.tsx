@@ -14,6 +14,7 @@ import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 import type { ScenePicture } from "@/lib/star/scenePicture";
+import { TrialBoard, TrialCaption, TrialSlots, type SlotState } from "./TrialFrame";
 
 /**
  * THE PENALTIES STAGE — and the striking stage the FREE KICKS stage runs on.
@@ -632,20 +633,30 @@ export function StrikeStage({
   const trial = trialInvisibleStats();
   const showTeach = !struckOnce && rep === 0 && !!teach && !teachDone;
 
+  // The scoreboard over the pitch, in the shootout's style (Harry, 3 Oct
+  // 2026: "how the penalties are in the trial is how all of them should be
+  // looks wise"): a ✓ / ✗ per attempt and the score. The same marks the old
+  // pip row under the pitch used — looks only.
+  const goodAt = drill === "technique" ? 0.45 : 0.55;
+  const slotStates: SlotState[] = scores.map(q => (q >= goodAt ? "scored" : q >= 0.3 ? "close" : "missed"));
+  const good = scores.filter(q => q >= goodAt).length;
+
   return (
     <div className="w-full">
-      <div className="mb-1 flex items-baseline justify-between">
-        <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">{title}</span>
-        {/* One attempt (the v0.23 trial): nothing to count. */}
-        {reps > 1 && (
-          <span className="text-[11px] font-black tabular-nums text-gray-500">
-            {Math.min(rep + 1, reps)} / {reps}
-          </span>
-        )}
-      </div>
-      {subtitle && (
-        <div className="mb-1 text-[11px] font-bold text-gray-500">{subtitle(rep)}</div>
-      )}
+      <TrialBoard
+        title="You"
+        left={<TrialSlots states={slotStates} total={reps} />}
+        centreLabel={title}
+        centreValue={`${good}/${reps}`}
+        // One attempt (the v0.23 trial): nothing to count.
+        right={reps > 1 ? (
+          <>
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">Attempt</div>
+            <div className="text-[15px] font-black tabular-nums leading-tight text-white">{Math.min(rep + 1, reps)}/{reps}</div>
+          </>
+        ) : undefined}
+        footer={subtitle?.(rep)}
+      />
 
       <div className="relative">
         <EngineFeature
@@ -686,24 +697,8 @@ export function StrikeStage({
         )}
       </div>
 
-      {reps > 1 && <div className="mt-1 flex items-center gap-1">
-        {Array.from({ length: reps }, (_, i) => {
-          const q = scores[i];
-          return (
-            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
-              {q !== undefined && (
-                <div
-                  className={`h-full ${q >= 0.55 ? "bg-emerald-400" : q >= 0.3 ? "bg-amber-400" : "bg-rose-500"}`}
-                  style={{ width: `${Math.max(8, q * 100)}%` }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>}
-      <p className="mt-1 min-h-[16px] text-center text-[11px] font-bold text-gray-600">
-        {resultText || (showTeach ? "" : hint)}
-      </p>
+      {/* What just happened, then what to do — the shootout's two lines. */}
+      <TrialCaption line={resultText} prompt={resultText || showTeach ? "" : hint} />
     </div>
   );
 }

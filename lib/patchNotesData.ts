@@ -27,6 +27,2104 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.25",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-03T01:42:00Z",
+      "summary": "Live 3D scenes: your own player signs live in 3D, there is a 3D shop to walk round, and the garden is rebuilt. You now play your first game before the tutorials, Play goes straight into the first chance, and the shootout, defenders, full screen and sounds play fairer. Live on knowitball.co.uk from 3 Oct; stills only, so try the rest on the test build.",
+      "stats": [
+        {
+          "value": "15.2 s → 0.5 s",
+          "label": "from Play to your first chance"
+        },
+        {
+          "value": "554 → 0",
+          "label": "shootouts where both team-mates miss the same way (of 1,660 and 5,000)"
+        },
+        {
+          "value": "31 of 48 → 0",
+          "label": "won 50-50s that rolled at the defender's own goal"
+        },
+        {
+          "value": "140 → 37",
+          "label": "buttons that make a sound"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D signing scene: your player signs live",
+              "detail": "Career Settings → 3D signing scene (beta) → sign for a club. Or Play Area → 3D Test Area → Signing"
+            },
+            {
+              "title": "3D shop you can walk round",
+              "detail": "Shop page (swipe right from Home) → Walk the 3D shop (beta)"
+            },
+            {
+              "title": "New garden",
+              "detail": "Home → Garden"
+            },
+            {
+              "title": "Full goal on Home; no Reputation/Fame words",
+              "detail": "Home"
+            },
+            {
+              "title": "Match ball on the title screen; Shop is charcoal",
+              "detail": "Title screen; Shop page"
+            },
+            {
+              "title": "First game before the tutorials",
+              "detail": "New game → finish the trial"
+            },
+            {
+              "title": "Play goes straight into the first chance",
+              "detail": "Home → Play"
+            },
+            {
+              "title": "Scout moment is full screen",
+              "detail": "End of the trial"
+            },
+            {
+              "title": "Shootout scorecard; team-mates miss differently",
+              "detail": "Trial → penalties"
+            },
+            {
+              "title": "Defender clears the ball away from his own goal",
+              "detail": "Any match"
+            },
+            {
+              "title": "Left foot kicks with the left",
+              "detail": "New game → Profile → Left foot → a pen or free kick"
+            },
+            {
+              "title": "Different long shots after a restart",
+              "detail": "Restart the same match a few times"
+            },
+            {
+              "title": "Settings on the title screen is for this phone only",
+              "detail": "Title → Settings"
+            },
+            {
+              "title": "Full screen on iPhone: Add to Home Screen",
+              "detail": "Title → Settings → Full screen → How?"
+            },
+            {
+              "title": "Exit career uses the game's own pop-up",
+              "detail": "Settings → Exit career"
+            },
+            {
+              "title": "Fewer sounds; quiet taps on iPhone",
+              "detail": "Tap round the menus"
+            },
+            {
+              "title": "Boots: new box, level-5 reveal, Buy now",
+              "detail": "Shop → Boots"
+            },
+            {
+              "title": "Phone card says what you get and what you need",
+              "detail": "Shop → Style → Phone"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Live 3D scenes",
+          "items": [
+            {
+              "title": "The signing is a live 3D scene, and it is your player",
+              "detail": "Your skin tone, face picture, club kit and number, and your Store and Star Pass accessories. He picks up the pen, signs, and shakes the manager's hand. About 5 seconds; tap to skip.",
+              "pill": {
+                "text": "off by default",
+                "tone": "amber"
+              },
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Turn it on in Career Settings → 3D signing scene (beta). Off means the old drawn scene.",
+                  "The contract shows your real club, number and wage. Hair style and colour are picked on the profile screen; old saves get short brown hair.",
+                  "Polish round: the manager is fully dressed from behind, no torn cloth in the handshake, palm meets palm, the face sits on the head, normal arms, a real pen grip.",
+                  "Seen in stills at phone size, dark and light skin, in the 3D Test Area. Not yet seen inside a real career."
+                ]
+              }
+            },
+            {
+              "title": "Walk round a 3D shop",
+              "detail": "New button on the Shop page: Walk the 3D shop (beta). Real 3D boots (7) and cars (6); watches and jewellery hang as pictures in light boxes. Tap an item to look at it. Nothing is bought in 3D; 'See it in the shop' takes you to the normal shop.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Seen in stills at phone size."
+                ]
+              }
+            },
+            {
+              "title": "Left foot or right foot",
+              "detail": "The foot you chose now swings the kick. A left-footer runs up from the right of the ball on a penalty or direct free kick. Team-mates and opponents get a fixed foot each; about 1 in 5 are left-footed. Only the picture changes.",
+              "pill": {
+                "text": "being fixed",
+                "tone": "amber"
+              },
+              "more": {
+                "summary": "Status",
+                "points": [
+                  "Harry said it isn't right. A builder is checking every kick in a real browser; a short clip follows."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Problem: the start explained every page before you played. You now play your first game first",
+              "detail": "New career: League, Stats and Play are open; Training, Relations and Phone are locked. After game 1 the manager wants a word, then Training opens. The Shop opens after the boss meeting and two drills. Every tour is 3 steps or fewer.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Seen in a browser; new tests check the order."
+                ]
+              }
+            },
+            {
+              "title": "Problem: after Play, the clock walked up slowly before anything happened",
+              "detail": "The lines go straight into the commentary and the first chance loads half a second after kick-off. It never jumps past half time.",
+              "bars": [
+                {
+                  "label": "Play to first chance, coming on as a sub",
+                  "was": 15.2,
+                  "now": 0.5,
+                  "state": "good",
+                  "unit": " s"
+                }
+              ],
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured coming on as a sub. Starting the match uses the same code but was not timed."
+                ]
+              }
+            },
+            {
+              "title": "Problem: a defender 'shot' at his own keeper",
+              "detail": "When a defender wins a loose ball, or a rebound hits him, the ball now goes up the pitch. A shot blocked by a defender can still go in at an odd angle, as you asked in v0.15.",
+              "bars": [
+                {
+                  "label": "Won 50-50s that roll at his own goal (of 4,800 chances)",
+                  "was": 31,
+                  "now": 0,
+                  "state": "good"
+                },
+                {
+                  "label": "Blocked rebounds that carry on at the keeper",
+                  "was": 27,
+                  "now": 0,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured over 4,800 chances. Not seen on screen."
+                ]
+              }
+            },
+            {
+              "title": "Problem: the same long-shot highlight came every restart",
+              "detail": "Only a list of recent pictures in the browser stopped repeats, and a full browser store lost it on every reload. Now each visit starts on a different drawing.",
+              "bars": [
+                {
+                  "label": "Different opening long shots in 50 restarts, storage full",
+                  "was": 1,
+                  "now": 16,
+                  "state": "good"
+                },
+                {
+                  "label": "Different opening long shots in 50 restarts, storage working",
+                  "was": 6,
+                  "now": 18,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured in tests. Being checked on screen with real restarts."
+                ]
+              }
+            },
+            {
+              "title": "Problem: full screen did not work on iPhone",
+              "detail": "iPhone Safari does not let a web page go full screen. The way round is Add to Home Screen: the game then opens with no browser bars. Settings → Full screen shows 'How?' with 3 steps. Exit career and Delete career now use the game's own pop-up, which was what knocked you out of full screen.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Seen in a phone-sized browser. Not tried on a real iPhone or Android."
+                ]
+              }
+            },
+            {
+              "title": "Problem: sounds played too often, and taps were loud on iPhone",
+              "detail": "Only green and gold buttons (Continue, Confirm, Play) make a sound. The same sound can't repeat straight away, and no more than 3 start at once. Sound effects off now also mutes the match.",
+              "bars": [
+                {
+                  "label": "Buttons that make a sound",
+                  "was": 140,
+                  "now": 37,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Rate limit measured (5 quick pops became 1). The iPhone part is worked out, not tried on a phone."
+                ]
+              }
+            },
+            {
+              "title": "Problem: a tutorial started 13 px above the top of the phone",
+              "detail": "If there is no room above or below the thing a tutorial points at, the bubble now sits inside it.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured on a stand-in page with the same feed (13 px off screen → 167 px from the top). Not seen on the real reactions screen."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Shootout: full pitch and a scorecard",
+              "detail": "No white card; a scoreboard above the pitch with a tick or cross per kick, the score, who is next and a star on your kick. Team-mates never miss the same way twice.",
+              "bars": [
+                {
+                  "label": "Shootouts where both team-mates miss the same way",
+                  "was": 554,
+                  "now": 0,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured: 554 of 1,660 shootouts before, 0 of 5,000 after."
+                ]
+              }
+            },
+            {
+              "title": "'A scout has spotted you' is full screen",
+              "detail": "A floodlit stadium, the scout, a big headline and 'Tap to carry on'. The offer screen is full screen too, with the club badge."
+            },
+            {
+              "title": "The garden is rebuilt",
+              "detail": "Three layered scenes (garden, bench, stable) with real light in day, sunset and night. The house grows with the home you own, team-mates sit on the bench, fairy lights glow at night.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Seen in stills in day, sunset and night at 390×844."
+                ]
+              }
+            },
+            {
+              "title": "The Phone card says what you get and what you still need",
+              "detail": "It lists Social, Messages and App Store. When you can't pay it says how much more and how many weeks: 'You need ★110 more · 2.6 wks of income'. The price itself is not changed."
+            },
+            {
+              "title": "Home: the full goal, and no title words",
+              "detail": "The goal is set back where the pitch meets the stands, both posts showing (copying your image 2). Reputation and Fame show the bar and number only."
+            },
+            {
+              "title": "Title screen, Shop and the post-match star bar",
+              "detail": "Title: no goal, the match ball at his feet. Shop: calm charcoal instead of green. Post-match star bar: the level number at each end, 1.5× slower."
+            },
+            {
+              "title": "Settings on the title screen is for this phone only",
+              "detail": "Only full screen, sound, reactions, skip the line-up, faces, names, player look and Old/New UI. The way out is '← Main menu'."
+            },
+            {
+              "title": "Boots: a new box, a level-5 reveal, and Buy now",
+              "detail": "The boot lies in the box, then rises upright facing you. Level 5 gets a gold box, two spotlights and a 'LEVEL 5 · MAX' plate. Every boot has a one-tap Buy now; the basket is switched off."
+            },
+            {
+              "title": "Give-and-go and sponsors",
+              "detail": "A forward pass comes back 92 in 100 times, a safe pass 60 in 100. Sponsors open with your first offer, not after 10 games.",
+              "more": {
+                "summary": "How we know",
+                "points": [
+                  "Measured in tests."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The other trial drills still sit on the white card",
+              "detail": "Only the shootout lost it."
+            },
+            {
+              "title": "Reputation and Fame words still show on Stats, Reputation and Ownership",
+              "detail": "Only Home was asked for."
+            },
+            {
+              "title": "3D signing: handshake fingers are fairly flat",
+              "detail": "When he bends to write, the aviators show as thin gold lines; arms are still a little muscular."
+            },
+            {
+              "title": "Three tests fail, the same as before this round",
+              "detail": "The drawings check (4 drawings deleted), the free-kick distance check and the long-range team-mate check. 231 of 234 pass."
+            },
+            {
+              "title": "Not on a real phone yet",
+              "detail": "Add to Home Screen, iPhone sound, full screen on Android.",
+              "pill": {
+                "text": "not seen",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Not decided: the unclear points from your recording",
+              "detail": "'Spam through this area', 'needs to be bigger', the odd highlight, 'so many errors' in the 3D Test Area, the help-card position, 'numbers gone, says next up', the Star Pass badge reading like a notification, and the white 'Who's free?' card. Say which screen each was on and they go in v0.26."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls and next",
+          "items": [
+            {
+              "title": "The phone price: in National League South it costs ★150, you start with ★0 and earn about ★28 a week",
+              "detail": "Options: give ★150 starting money; a cheaper first phone (about ★50); or keep it, with the card saying how long."
+            },
+            {
+              "title": "60 goals in National League South: should the bottom league be this easy?",
+              "detail": "Say harder, or leave it."
+            },
+            {
+              "title": "The green bottom bar on Shop pages",
+              "detail": "Every page shares it, so it stayed green. Make it charcoal on Shop pages too?"
+            },
+            {
+              "title": "Next",
+              "detail": "Left foot and long shots checked on screen with a short clip; the white card off the other trial drills; v0.26 for the unclear points."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/7LXrEgwm72sUVZH5Kcmeyz",
+      "updatedAt": null
+    },
+    {
+      "version": "0.24",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-02T22:06:00Z",
+      "summary": "Highlights you can win, a reworked trial, and square top bars with 3D icons. Also a new Home with the energy cans under your player, help that opens by itself, a guided first training, unlocks announced one by one, a new title screen, boots on a plank with an unboxing and a basket, a Sound Board admin page, a 3D Test Area and a signing prototype. Everything is from your v0.23.1 review; nothing was live when written.",
+      "stats": [
+        {
+          "value": "6.6% → 0%",
+          "label": "tight-angle chances with a defender on the ball (measured)"
+        },
+        {
+          "value": "13° → 6.5°",
+          "label": "Take Him On camera swing"
+        },
+        {
+          "value": "6% → 100%",
+          "label": "Training Power level 1: pass within 3 tries at Power 40 (measured)"
+        },
+        {
+          "value": "19",
+          "label": "game sounds you can replace from one admin page"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Square top bars with a white edge",
+              "detail": "Home, Shop, Style → top strip"
+            },
+            {
+              "title": "Can and FULL badge gone; energy bar runs to the end",
+              "detail": "Every screen → top strip"
+            },
+            {
+              "title": "Bars slide instead of jumping",
+              "detail": "Any bar that changes"
+            },
+            {
+              "title": "3D star, bolt, Earth and smiley over the bars",
+              "detail": "Home, Style, Relations → top strip"
+            },
+            {
+              "title": "The star fills gold as you climb the level",
+              "detail": "Home → star on the left of the strip"
+            },
+            {
+              "title": "After-match star bar: fills, empties, refills; slower; square",
+              "detail": "Play or sim a match → after-match"
+            },
+            {
+              "title": "No defender on the ball at the start of a highlight",
+              "detail": "Match on highlights → shooting stage"
+            },
+            {
+              "title": "The give-and-go pass always comes back",
+              "detail": "Highlights with a midfield pass"
+            },
+            {
+              "title": "Help cards sit mid-pitch; one tap closes them",
+              "detail": "New career → trial → free kick, cones"
+            },
+            {
+              "title": "Trial pop-ups are see-through; tap anywhere",
+              "detail": "Trial → any stage"
+            },
+            {
+              "title": "Free kick pauses at the run-up and at the strike",
+              "detail": "Trial → free kick"
+            },
+            {
+              "title": "Take Him On: your player is back, camera calmer",
+              "detail": "Trial → Take Him On"
+            },
+            {
+              "title": "Take Him On new look: stadium, mown pitch, ball by his boot",
+              "detail": "Trial → Take Him On"
+            },
+            {
+              "title": "Find the Pass: five goes, 2.5 s down to 0.5 s",
+              "detail": "Trial → Find the Pass"
+            },
+            {
+              "title": "Shootout: team-mates kick first, you win it last",
+              "detail": "Trial → penalty shootout"
+            },
+            {
+              "title": "Training Power levels scale to your Power",
+              "detail": "Training → Power → levels"
+            },
+            {
+              "title": "Home: bigger player, cans at the bottom, goal behind him",
+              "detail": "Home"
+            },
+            {
+              "title": "PLAY AS ST sits in the pitch corner",
+              "detail": "Home → Play → line-up"
+            },
+            {
+              "title": "Kick-off page: the teams walk out",
+              "detail": "Line-up → Kick off"
+            },
+            {
+              "title": "Star Pass is a round “!” badge",
+              "detail": "Home"
+            },
+            {
+              "title": "Help opens by itself the first time on a screen",
+              "detail": "Any screen, first visit"
+            },
+            {
+              "title": "Training tutorial, forced Power drill, two drills a session",
+              "detail": "First Training visit"
+            },
+            {
+              "title": "Training level stars: three in a row",
+              "detail": "Training → levels"
+            },
+            {
+              "title": "First steps list; bottom-left button; shortcut question",
+              "detail": "Achievements; Home → bottom-left"
+            },
+            {
+              "title": "Unlocks: Relations and Shop after game 1, Sponsors after 10",
+              "detail": "Home, Relations, Shop"
+            },
+            {
+              "title": "Full-time energy tutorial; energy back; reactions tutorial not seen yet",
+              "detail": "First match → full time → after-match"
+            },
+            {
+              "title": "Title: logo lower, stadium picture, new goal",
+              "detail": "Title screen"
+            },
+            {
+              "title": "Boots on a plank, glass cases on the special pairs",
+              "detail": "Shop → Boots"
+            },
+            {
+              "title": "Unboxing when you buy a boot",
+              "detail": "Shop → Boots → buy"
+            },
+            {
+              "title": "Basket: up to 3 pairs, Pay for all, Sold out",
+              "detail": "Shop → Boots"
+            },
+            {
+              "title": "Sound Board admin page: play, replace, put the original back",
+              "detail": "Admin → Sound Board"
+            },
+            {
+              "title": "3D Test Area page",
+              "detail": "Admin menu → 3D Test Area"
+            },
+            {
+              "title": "Signing scene prototype",
+              "detail": "3D Test Area → Signing"
+            },
+            {
+              "title": "Blender 3D icons",
+              "detail": "Top bars"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: three things you said were wrong",
+          "items": [
+            {
+              "title": "1. Highlights were impossible: a defender could start right on the ball",
+              "detail": "In your first match, 2 of 7 highlights started that way. A defender can no longer start closer than 1.5 m to the ball.",
+              "bars": [
+                {
+                  "label": "Tight angle: defender within 1.5 m of the ball",
+                  "was": 6.6,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Cutback: defender within 1.5 m of the ball",
+                  "was": 6,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Tight angle where the obvious play works",
+                  "was": 97.6,
+                  "now": 99.6,
+                  "state": "good",
+                  "unit": "%",
+                  "target": 100
+                }
+              ],
+              "more": {
+                "summary": "Why and how we know",
+                "points": [
+                  "Nothing stopped the game putting a defender closer to the ball than any drawing ever does; the game now uses the drawings' own smallest gap, about 1.6 m.",
+                  "Measured on simulated chances, not seen in a real match."
+                ]
+              }
+            },
+            {
+              "title": "2. The trial: 'They take a pen every single time, the opponents miss in the same exact way and everyone does a Bruno run-up'",
+              "detail": "Help cards sit mid-pitch and wait for one tap. Take Him On shows you and the camera is calmer. Find the Pass has five goes. The shootout has team-mates, 10 different paths and a run-up for each taker."
+            },
+            {
+              "title": "3. New top bars",
+              "detail": "Every top bar is square with a white edge. The can and FULL badge are gone. A 3D star, bolt, Earth and smiley sit over the left end of each bar. The star fills as you climb the level."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: highlights and the trial",
+          "items": [
+            {
+              "title": "The give-and-go pass always comes back, with a BACK TO YOU banner",
+              "detail": "In a picture with no goal the pass came back only 73 in 100 times and said nothing either way. It is your call: see Your calls.",
+              "bars": [
+                {
+                  "label": "How often the pass comes back to you",
+                  "was": 73,
+                  "now": 100,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "Help cards sit in the middle of the pitch; one tap closes them",
+              "detail": "Before, the card sat at the bottom and play went on under it. Now it is see-through, with a faint 'Tap anywhere to continue', and nothing starts before that."
+            },
+            {
+              "title": "Free kick: a card at the run-up and a second card at the strike",
+              "detail": "The game pauses when the run-up starts and again on the strike screen. Each card shows once per device."
+            },
+            {
+              "title": "Take Him On: your player is visible again, and the camera is calmer",
+              "detail": "In v0.23 your figure was removed from the drills, which also took it out of Take Him On.",
+              "bars": [
+                {
+                  "label": "Camera swing",
+                  "was": 13,
+                  "now": 6.5,
+                  "state": "good",
+                  "unit": "°"
+                },
+                {
+                  "label": "Fastest camera turn",
+                  "was": 51,
+                  "now": 17,
+                  "state": "good",
+                  "unit": "°/s"
+                }
+              ]
+            },
+            {
+              "title": "Find the Pass has five goes, each shorter than the last",
+              "detail": "2.5, 2, 1.5, 1 and 0.5 seconds (before: one go of 2.5 s)."
+            },
+            {
+              "title": "Penalty shootout: team-mates take your first two kicks, you take the last and win it",
+              "detail": "10 different ways to reach your kick, and the score before it is 0-0, 1-1 or 2-2. Each taker has his own run-up and his name shows. It stays 3 kicks each."
+            },
+            {
+              "title": "Training Power: level 1 is an open goal, and every level scales to your Power",
+              "detail": "Levels 1 and 2 are an open goal; a keeper joins from level 3, defenders from level 5.",
+              "bars": [
+                {
+                  "label": "Level 1: pass within 3 tries (Power 40)",
+                  "was": 6,
+                  "now": 100,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Level 3",
+                  "was": 48,
+                  "now": 86,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Level 5",
+                  "was": 20,
+                  "now": 48,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "Trial pop-ups: see-through card, no GOT IT button, a faint 'Tap anywhere to continue'",
+              "detail": "The free-kick card now reads 'There is no way through the wall.'"
+            },
+            {
+              "title": "Take Him On has a new look: a stadium, a mown pitch, and the ball by his boot",
+              "detail": "The ball no longer draws on his body.",
+              "bars": [
+                {
+                  "label": "Frames where the ball draws on his body",
+                  "was": 55,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "After-match star bar: fills to the end, empties, fills again. Slower and square",
+              "detail": "Before, a level-up slid the bar backwards, so it looked like you lost rating. Measured on the bar: 70% → 99% → 0% → 35%, over about 2 seconds."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Home, match day, tutorials and unlocks",
+          "items": [
+            {
+              "title": "Top bars: square with a white edge, the can and FULL badge gone, bars slide, 3D icons over them",
+              "detail": "The energy cans move to the bottom of Home. The star fills gold with your progress through the level (20% through is 20% full)."
+            },
+            {
+              "title": "Home: a bigger player, the cans under him, the new goal behind him",
+              "detail": "The goal stands back where the pitch meets the stands. The sky is sunset by default, day only for 12:30 kick-offs and night only after dark (400 August Saturdays: 342 sunset, 58 day)."
+            },
+            {
+              "title": "PLAY AS ST sits in the pitch corner by the keeper, not on the VS"
+            },
+            {
+              "title": "A new look for the page before kick-off: the teams walk out",
+              "detail": "A tunnel view with both crests; the duplicate KICK OFF row is gone."
+            },
+            {
+              "title": "The Star Pass red square is now a round glossy '!' badge"
+            },
+            {
+              "title": "Help opens by itself the first time you visit a screen",
+              "detail": "13 screens; it starts with that screen's top bar. The ? stays so you can replay it."
+            },
+            {
+              "title": "Training tutorial: no Skip, a forced Power drill, help inside the drill, then one more drill",
+              "detail": "After the second drill: 'Training done. Next: the match.'"
+            },
+            {
+              "title": "Training level stars: three in a row, filling left to right"
+            },
+            {
+              "title": "First steps: a list on Achievements, and the bottom-left button follows your progress",
+              "detail": "Two drills, first game, meet your boss, buy a phone, each with a Go button. When done, Home asks 'Switch this to League as a shortcut?'"
+            },
+            {
+              "title": "Unlocks: Relations and Shop after game 1, Sponsors after 10 games",
+              "detail": "Each unlock shows a pop-up, then 'See all achievements', then Go, then that feature's own tour."
+            },
+            {
+              "title": "First match: energy explained at full time, '+N energy back' on Home, and the reactions explained",
+              "pill": {
+                "text": "not seen in a browser",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Title screen: logo lower, a stadium behind, a new goal, the player higher"
+            },
+            {
+              "title": "Boots on a wooden plank, no card outlines, the special pairs in glass cases"
+            },
+            {
+              "title": "Buying a boot opens a box: it drops, the lid flies off, the boot rises",
+              "detail": "About 1.7 seconds; a tap skips it.",
+              "pill": {
+                "text": "stills only",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Basket: the boot flies in, up to 3 pairs, 'Pay for all', and the shelf shows Sold out",
+              "detail": "Style items cannot go in the basket yet."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A Sound Board admin page: play each sound, replace it, or put the original back",
+              "detail": "At /admin/sound-board. It lists all 19 game sounds; replace with mp3, wav, ogg, m4a, aac or webm under 2 MB. 10 of the 19 are not in the game yet (kicks, goal net, keeper save, crowd, whistles)."
+            },
+            {
+              "title": "A 3D Test Area page: every cutscene and 3D area in one list, and a store of the Blender files",
+              "detail": "8 scenes and 250 files in 14 folders. The match view with Blender players is one mock-up picture only."
+            },
+            {
+              "title": "Signing scene prototype: you sit across the desk, the contract turns to you, and you sign",
+              "detail": "Five lines of talk, a SIGNED stamp, 3 skin tones. Not wired into the career."
+            },
+            {
+              "title": "3D icons made in Blender: bolt, Earth, crown, smiley, coin, heart and star"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The signing prototype has weak spots",
+              "detail": "The 'superhero' build shows through the suit, the pen floats near the hand, there is no handshake and thick black bars sit above and below the picture."
+            },
+            {
+              "title": "Style items cannot go in the basket",
+              "pill": {
+                "text": "not done",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "10 of 19 sounds are not in the game",
+              "detail": "Putting them in the match needs Mikey's yes."
+            },
+            {
+              "title": "Box Room and Shared Flat still read as a block of three",
+              "detail": "Carried from v0.23.1.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Horses have one pose per level",
+              "detail": "Carried from v0.23.1."
+            },
+            {
+              "title": "Not seen live",
+              "detail": "Highlights (measured only), the unboxing (single frames), Sound Board upload, sound itself, two highlight clips, and the full-time energy tutorial, after-match pop-ups and reactions tutorial (not seen in a browser)."
+            },
+            {
+              "title": "3 tests were already failing",
+              "detail": "authoredChance, freeKickRules and longRangeRules fail on main and failed before this round."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls and next",
+          "items": [
+            {
+              "title": "Should the give-and-go always come back? Default yes.",
+              "detail": "Other: bring back the old 73-in-100 chance."
+            },
+            {
+              "title": "A basket for Style items too? Default later."
+            },
+            {
+              "title": "Is the Training Power shape right? Default yes.",
+              "detail": "Open goal for levels 1-2, a keeper from 3, defenders from 5."
+            },
+            {
+              "title": "Put the 10 missing sounds in the match next?",
+              "detail": "Needs Mikey's yes. Default next version."
+            },
+            {
+              "title": "Are the unlock numbers right?",
+              "detail": "Sponsors after 10 games, Relations and Shop after game 1."
+            },
+            {
+              "title": "Wire the signing scene into the career next? Default not yet."
+            },
+            {
+              "title": "Next",
+              "detail": "Do all the Higgsfield pictures in one go; the full shop redesign (later); wire the signing scene into the career and build the match view with Blender players."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.23.1: liquid bars, signing and title look, sounds",
+              "detail": "Smooth glowing bars, quieter arrows, Home bottom-left; a ? on Style, Settings and Shop; tap anywhere to start the match; boss meeting win +3, loss −2; contract paper; smaller starter house; Blender pictures in the Store; sound effects outside the match. Still open: Box Room and Shared Flat read as three flats; horses have one pose."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/CQ5gkXrcPk2gptL1EjX3au",
+      "updatedAt": null
+    },
+    {
+      "version": "0.23.1",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-01T20:05:00Z",
+      "summary": "Fixes from your v0.23 review: liquid bars, a quieter look, a simple way home, a nicer signing and title screen, a smaller starter house, and sounds. Filmed once on one combined copy: every Before is v0.23 and every After is v0.23.1. Nothing was live.",
+      "stats": [
+        {
+          "value": "−4 → −2",
+          "label": "lost boss meeting (measured: 50 → 46 became 50 → 48)"
+        },
+        {
+          "value": "3 + 9",
+          "label": "sounds remade, and sounds now played outside the match"
+        },
+        {
+          "value": "23",
+          "label": "before and after clips of the game, plus shop stills"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Smooth glowing star and energy bars",
+              "detail": "Home → top strip"
+            },
+            {
+              "title": "Quieter bottom arrows",
+              "detail": "Home, Stats, Shop → bottom corners"
+            },
+            {
+              "title": "Heavy font only on titles and big numbers",
+              "detail": "League, Stats, lists"
+            },
+            {
+              "title": "Home bottom-left, Achievements as a ⭐ on Home",
+              "detail": "Home → bottom-left and the ⭐ link"
+            },
+            {
+              "title": "Each screen shows its own bar",
+              "detail": "Relations, Style → top strip"
+            },
+            {
+              "title": "? on Style, Settings and Shop",
+              "detail": "Top bar → ?"
+            },
+            {
+              "title": "Settings: compact switches, Sound effects, no Live scores",
+              "detail": "Settings → Game"
+            },
+            {
+              "title": "Line-up: tap anywhere to start. Bolts yellow, orange, red.",
+              "detail": "Home → Play → line-up"
+            },
+            {
+              "title": "Skip the line-up setting",
+              "detail": "Settings → Game → Skip the line-up"
+            },
+            {
+              "title": "After-match star bar, no numbers; achievement and record pop-ups",
+              "detail": "Play a match → after-match; Home"
+            },
+            {
+              "title": "Boss meeting win +3, loss −2",
+              "detail": "Relations → boss meeting"
+            },
+            {
+              "title": "Two set-piece chats, penalty then free kick",
+              "detail": "Home → after your first match"
+            },
+            {
+              "title": "Training level squares: bigger stars, smaller numbers",
+              "detail": "Training → Technique → levels"
+            },
+            {
+              "title": "Signing: contract paper with the full terms, varied manager faces",
+              "detail": "Transfer signing → the desk"
+            },
+            {
+              "title": "Title screen: smaller net, logo on one line, floodlights, Tutorial",
+              "detail": "Title screen"
+            },
+            {
+              "title": "Smaller starter house",
+              "detail": "Shop → Style → Homes → Suburban House"
+            },
+            {
+              "title": "Smaller boots on the shelf",
+              "detail": "Shop → Boots"
+            },
+            {
+              "title": "Suit, silver chain, diamond necklace and stable horses redone",
+              "detail": "Shop → Style → item sheets"
+            },
+            {
+              "title": "Blender pictures in the Store tabs",
+              "detail": "Store → Coins, Accessories, Boots"
+            },
+            {
+              "title": "Sound effects outside the match, with a Settings switch",
+              "detail": "Settings → Game → Sound effects"
+            },
+            {
+              "title": "Achievement and record pop-ups on Home",
+              "detail": "Home → after earning one"
+            },
+            {
+              "title": "Grass behind the match card kept as it was",
+              "detail": "Match opening (unchanged: Harry prefers it)"
+            },
+            {
+              "title": "Bolts yellow, orange, red",
+              "detail": "Match → energy bolts"
+            },
+            {
+              "title": "Live scores moved to League",
+              "detail": "League → bell"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Look and flow",
+          "items": [
+            {
+              "title": "Home: smooth glowing bars, quieter arrows, Home bottom-left",
+              "detail": "Star rating and energy are one smooth bar each (they were ticked yellow blocks). Bottom-left is Home (it was Achievements, so there was no way home); Achievements is now a ⭐ link on Home. The heavy font is only on titles and big numbers."
+            },
+            {
+              "title": "Each screen shows its own bar",
+              "detail": "Relations shows happiness, Style shows reputation, every other screen shows star rating. Energy is always on the right."
+            },
+            {
+              "title": "A ? on Style, Settings and Shop",
+              "detail": "Tap it and a short pointer tour explains the screen."
+            },
+            {
+              "title": "Settings is one card of small switches",
+              "detail": "Full screen, post-match reactions, skip the line-up, sound effects, player faces and player names. Live scores moved to the bell on the League page."
+            },
+            {
+              "title": "Line-up: tap anywhere to start the match",
+              "detail": "Before, the line-up started the match by itself after about 4 seconds. The bolt buttons are yellow, orange and red. The grass behind the match card is kept as it was."
+            },
+            {
+              "title": "New switch: Skip the line-up",
+              "detail": "Play goes straight to the match."
+            },
+            {
+              "title": "After the match: a Star rating bar with no numbers",
+              "detail": "Achievement pop-ups also come up on Home, and for records broken (furthest goal or assist, most goals in a match or season, Premier League records). Seen in a test page, not yet in a full match."
+            },
+            {
+              "title": "Boss meeting: win +3, loss −2",
+              "detail": "Lost meeting: −4 became −2 (50 → 46 became 50 → 48). Win is +3 (tested, not filmed).",
+              "bars": [
+                {
+                  "label": "Points lost on a failed boss meeting",
+                  "was": 4,
+                  "now": 2,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Two separate set-piece chats",
+              "detail": "The manager talks about penalties first, on its own; the free-kick chat comes after a later match."
+            },
+            {
+              "title": "Training levels: big stars, small numbers"
+            },
+            {
+              "title": "Signing: a real contract paper, and different manager faces",
+              "detail": "The paper lists length, wage, shirt, position and every bonus. Managers get varied drawn faces from a list made from memory: please check a few."
+            },
+            {
+              "title": "Title screen: logo on one line, floodlights, Tutorial button",
+              "detail": "With a save the Tutorial button replays the pointer tour on Home; with no save it starts a new career."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Shop pictures and sounds",
+          "items": [
+            {
+              "title": "Starter house is smaller",
+              "detail": "The first house was a row of three big houses; it is now one small tired two-up-two-down with a yard."
+            },
+            {
+              "title": "Boots on the shelf are smaller",
+              "detail": "About three-quarters of the card width, so they sit inside their cards."
+            },
+            {
+              "title": "Suit, silver chain, diamond necklace and stable horses redone",
+              "detail": "A proper jacket on a display form; chunky chain links; stones that keep their facets; real horses in tighter paddocks."
+            },
+            {
+              "title": "The Store has Blender pictures",
+              "detail": "Coin packs, the two boosts, ten accessories and three accessory boots. The Boots tab shows the same boots as the shop shelf."
+            },
+            {
+              "title": "Sounds: three remade, nine played outside the match",
+              "detail": "Coin-in, star-tick and achievement-pop were remade. Button taps and confirms, level-up, breaking news, phone notification and can-open now play outside the match. Settings → Game → Sound effects turns them off; the Old UI stays silent.",
+              "pill": {
+                "text": "not filmable",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "3 tests were already failing",
+              "detail": "authoredChance, freeKickRules and longRangeRules failed before this round and still do."
+            },
+            {
+              "title": "Box Room and Shared Flat still read as a block of three",
+              "detail": "The starter house is fixed; these two are not.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Horses have one pose per level"
+            },
+            {
+              "title": "Not seen live",
+              "detail": "Sound, the boss-meeting win (tested, not filmed), the free-kick chat (from a seeded save), and the shop pictures (stills from the shop test page)."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Home bottom-left on older saves? Built for new-style careers only. Default no."
+            },
+            {
+              "title": "Liquid bars on every bar, or only star rating and energy? Default all."
+            },
+            {
+              "title": "Is 'gold suit' right as suit level 5? Default yes."
+            },
+            {
+              "title": "The Tutorial button on the title: replay with a save, new career without. Right?"
+            },
+            {
+              "title": "Do the manager faces look right? Default fine."
+            },
+            {
+              "title": "Shootout: 3 kicks each (about 42 s) or 2 each (about 28 s)? Default 3."
+            },
+            {
+              "title": "The shootout is rigged so Academy never lead and you take the last kick. OK? Default yes."
+            },
+            {
+              "title": "Want the legs back in Take Him On and Find the Pass? Default as now."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/8wzaQV41ZmrhtBXZV46Rav",
+      "updatedAt": null
+    },
+    {
+      "version": "0.23",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-01T18:10:00Z",
+      "summary": "Harry's HUGE UPDATES review, built as test copies and filmed. Home and every screen now look like an app, National League North and South are playable, a new career starts with a scout and a pointer tutorial, the trial is half as long, and every shop picture is a Blender render. Settings has an Old UI / New UI switch. Nothing was live.",
+      "stats": [
+        {
+          "value": "0 px",
+          "label": "Home scroll at 360×640, 375×667 and 390×844, with the new 46 px top strip"
+        },
+        {
+          "value": "5 → 7",
+          "label": "playable divisions: 48 real non-league clubs in North and South"
+        },
+        {
+          "value": "126 → 30 px",
+          "label": "Stats tab rows: three rows now one arrow row"
+        },
+        {
+          "value": "3 → 1",
+          "label": "taps from Home to the match (was Play, Team sheets, Kick Off)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Top HUD on Home",
+              "detail": "Home → top strip"
+            },
+            {
+              "title": "Home still fits one screen",
+              "detail": "Home on a small phone (no scroll)"
+            },
+            {
+              "title": "Next match back, mini league under it",
+              "detail": "Home → under the player"
+            },
+            {
+              "title": "You on a pitch, goal behind",
+              "detail": "Home → the player"
+            },
+            {
+              "title": "Spin and celebrate",
+              "detail": "Home → drag or tap the player"
+            },
+            {
+              "title": "Can: USE, or BUY when you have none",
+              "detail": "Home → can beside the energy bar"
+            },
+            {
+              "title": "Can button with none left",
+              "detail": "Home → can with none left"
+            },
+            {
+              "title": "HUD changes per screen",
+              "detail": "Stats, League, Training, Relations, Shop → top strip"
+            },
+            {
+              "title": "One heavy font",
+              "detail": "Any screen → bold labels"
+            },
+            {
+              "title": "Square bars",
+              "detail": "Training, Relations → bars"
+            },
+            {
+              "title": "Sponsors: a small arrow",
+              "detail": "Home → bottom right"
+            },
+            {
+              "title": "Pitch look: Home blends",
+              "detail": "Settings → Pitch look → Home"
+            },
+            {
+              "title": "Pitch look: team sheet",
+              "detail": "Pitch look → team sheet"
+            },
+            {
+              "title": "Your figure only on penalties and free kicks",
+              "detail": "New career → trial → run, gate, find the pass"
+            },
+            {
+              "title": "Technique drill without the penalty box",
+              "detail": "Trial → technique (gate) drill"
+            },
+            {
+              "title": "Find the Pass back as the 5th drill",
+              "detail": "Trial → 4th of 5 drills"
+            },
+            {
+              "title": "One attempt per drill",
+              "detail": "Trial → every drill"
+            },
+            {
+              "title": "Rigged Trialist v Academy shootout, up to 3 kicks each",
+              "detail": "Trial → last stage"
+            },
+            {
+              "title": "'A scout has spotted you', no score, no No contract",
+              "detail": "New career → end of the trial"
+            },
+            {
+              "title": "Light, basic cards",
+              "detail": "Trial → countdown and score cards"
+            },
+            {
+              "title": "Whole trial shorter",
+              "detail": "New career → whole trial"
+            },
+            {
+              "title": "National League North and South become playable",
+              "detail": "Career → League table, bottom divisions"
+            },
+            {
+              "title": "Stats: three tab rows become one row of arrows",
+              "detail": "Stats → top row"
+            },
+            {
+              "title": "Style: no title, no Back, no My stuff, bottom bar",
+              "detail": "Shop → Style"
+            },
+            {
+              "title": "Relations: no text, square animated bars, a ? on each",
+              "detail": "Relations"
+            },
+            {
+              "title": "Phone: a home bar instead of the Close pill",
+              "detail": "Phone → bottom of the phone"
+            },
+            {
+              "title": "Phone: the red dot shows only while something is unread",
+              "detail": "Home → Phone button"
+            },
+            {
+              "title": "Phone: empty pages are not blank, missing apps are blacked out",
+              "detail": "Phone → Social, Fixtures, Messages"
+            },
+            {
+              "title": "Pre-match: Play goes to a line-up animation, then the match",
+              "detail": "Home → Play"
+            },
+            {
+              "title": "Match opening: a pitch, not a black box",
+              "detail": "Match → first seconds"
+            },
+            {
+              "title": "Bolt buttons: green, yellow, red",
+              "detail": "Match → energy bolts"
+            },
+            {
+              "title": "Run-ups move to a Play style section",
+              "detail": "Settings → Play style"
+            },
+            {
+              "title": "Energy HUD on the shop pages, Store, Casino and Settings",
+              "detail": "Shop pages, Store, Casino, Settings → top"
+            },
+            {
+              "title": "Pointer tutorial, new career",
+              "detail": "New career → first screen"
+            },
+            {
+              "title": "Pointers after the two drills",
+              "detail": "New career → after the two drills"
+            },
+            {
+              "title": "Help button (?)",
+              "detail": "Any main screen → ? beside settings"
+            },
+            {
+              "title": "Post-match in order",
+              "detail": "Play a match → after-match"
+            },
+            {
+              "title": "Breaking news is a full-screen TV page",
+              "detail": "After signing, first goal, trophy"
+            },
+            {
+              "title": "Manager tells you about set pieces",
+              "detail": "After your first match → manager chat"
+            },
+            {
+              "title": "The phone",
+              "detail": "Shop → Style → Gadgets"
+            },
+            {
+              "title": "A broken phone locks the Phone button until you repair it",
+              "detail": "Home → Phone button (after two seasons)"
+            },
+            {
+              "title": "App Store prices",
+              "detail": "Phone → App Store"
+            },
+            {
+              "title": "Boss meeting loss",
+              "detail": "Relations → boss meeting"
+            },
+            {
+              "title": "Star rating popup",
+              "detail": "Tap the star rating"
+            },
+            {
+              "title": "Star Pass is a scrolling strip of levels",
+              "detail": "Tap the star rating → Star Pass"
+            },
+            {
+              "title": "Training: no explanation lines",
+              "detail": "Training"
+            },
+            {
+              "title": "Match tab: no penalty note",
+              "detail": "Pre-match → Match tab"
+            },
+            {
+              "title": "Every shop picture is a Blender render",
+              "detail": "Shop → every Style tab, My stuff"
+            },
+            {
+              "title": "Item sheet shows renders at every level",
+              "detail": "Shop → tap an item → all five levels"
+            },
+            {
+              "title": "Boots shelf with rendered boots",
+              "detail": "Shop → Boots shelf"
+            },
+            {
+              "title": "Signing scene: no real face on the manager",
+              "detail": "Transfer signing → the manager"
+            },
+            {
+              "title": "League page: fixtures, results, table and scout on one page",
+              "detail": "Home → League"
+            },
+            {
+              "title": "Bell in the middle of the bottom bar",
+              "detail": "League → bottom bar"
+            },
+            {
+              "title": "Play as: the position picker is back on the line-up",
+              "detail": "Home → Play → line-up"
+            },
+            {
+              "title": "League page has a ?",
+              "detail": "League → beside the page name"
+            },
+            {
+              "title": "Title screen like NSS, in our own style",
+              "detail": "Title screen"
+            },
+            {
+              "title": "Title screen clear of the menu on narrow phones",
+              "detail": "Title screen on a small phone"
+            },
+            {
+              "title": "Training screens use the pitch look in both looks",
+              "detail": "Training"
+            },
+            {
+              "title": "Match screen chrome uses the pitch look in both looks",
+              "detail": "Match → scoreboard and buttons"
+            },
+            {
+              "title": "The trial ends with 'a scout has spotted you'",
+              "detail": "New career → end of the trial"
+            },
+            {
+              "title": "The star rating can go down",
+              "detail": "Measured only: no screen change"
+            },
+            {
+              "title": "Settings → UI: Old | New",
+              "detail": "Settings → UI"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: Home and the whole look, like an app and not a website",
+          "items": [
+            {
+              "title": "Problem: 'On the phone it looks so much worse.' Every screen had its own header, thin rounded bars, floating dark cards and a different font",
+              "detail": "Home is now the one from your screenshot: you stand bottom-left in front of the goal, stat cards to your right, a mini league table and the next match on top. One top bar and star/energy strip on every screen, small arrows at the bottom, one heavy font, square bars, a lighter green. Nothing scrolls on three phone sizes.",
+              "bars": [
+                {
+                  "label": "Home scroll at 390×844 (px)",
+                  "was": 302,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                },
+                {
+                  "label": "Home scroll at 375×667 (px)",
+                  "was": 479,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                },
+                {
+                  "label": "Home scroll at 360×640 (px)",
+                  "was": 506,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Home and the new look",
+          "items": [
+            {
+              "title": "Lighter green on every screen",
+              "detail": "Grass #22763f / #1b6232 → #2c8a4b / #257a41; page darkening 42% → 18%. One change in the shared colours, so every screen follows."
+            },
+            {
+              "title": "Top strip on all 11 screens",
+              "detail": "Before, the strip sat at 102, 151 or 152 px, 34 or 54 px tall."
+            },
+            {
+              "title": "Spin and celebrate",
+              "detail": "Drag the player to turn him 360°; tap for one of 5 celebrations."
+            },
+            {
+              "title": "Can: USE, or BUY when you have none",
+              "detail": "2 cans: USE (55 → 100); 0 cans: BUY opens the cans shop."
+            },
+            {
+              "title": "Sponsors is a small arrow at the bottom right"
+            },
+            {
+              "title": "Pitch look: Home blends, and the team sheet is one pitch, not two"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The trial: half as long, and a scout at the end",
+          "items": [
+            {
+              "title": "Your figure only on penalties and free kicks",
+              "detail": "The run, gate and find-the-pass drills drew your figure although they only test the ball."
+            },
+            {
+              "title": "Technique drill without the penalty box"
+            },
+            {
+              "title": "One attempt per drill",
+              "detail": "Free kick 3 → 1, gate 3 → 1, find the pass 6 → 1, run 3 waves → 2 waves."
+            },
+            {
+              "title": "A rigged Trialist v Academy shootout, up to 3 kicks each",
+              "detail": "Their kicks are rigged: 0 of 600 rigged misses went in, 599 of 600 rigged goals did."
+            },
+            {
+              "title": "'A scout has spotted you', no score, no No-contract card",
+              "detail": "The trial ends on one white scout card."
+            },
+            {
+              "title": "Light, basic cards instead of dark rounded ones"
+            },
+            {
+              "title": "The whole trial is shorter",
+              "detail": "Bot, start to the scout card.",
+              "bars": [
+                {
+                  "label": "Trial time (s)",
+                  "was": 163,
+                  "now": 75.8,
+                  "state": "good",
+                  "unit": " s"
+                }
+              ],
+              "more": {
+                "summary": "How it was measured",
+                "points": [
+                  "Before: 163 s or more, and Five-a-side unfinished, so the real time is longer. Same bot, final merged copy."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Non-League North and South, and the Old UI switch",
+          "items": [
+            {
+              "title": "National League North and South become playable",
+              "detail": "Playable divisions 5 → 7. 24 clubs each, 46 games, real 2025/26 members. 2 up from each region; 4 down from the National League, split two and two by where the ground is. Nobody goes down out of North/South.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Squads are generated, average 52 (National League 55). Wages are the National League floor. Relegation from the National League no longer forces a move to a new club.",
+                  "20 seasons played from each region: sizes stay 20/24/24/24/24/24/24, nobody doubled up."
+                ]
+              }
+            },
+            {
+              "title": "Settings → UI: Old | New",
+              "detail": "Old is today's game exactly: 11 screens at 0.00% of pixels different from branch Harry at 390×844 (53% before the fixes). New is v0.23. New players get New; saves carry across both ways."
+            },
+            {
+              "title": "A scout places you: 'a scout has spotted you'",
+              "detail": "Scored the last penalty: 50% National League, 25% North, 25% South; missed: 20 / 40 / 40 (measured over 40,000 each)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Screens",
+          "items": [
+            {
+              "title": "Stats: three tab rows become one row of arrows",
+              "detail": "126 px → 30 px; first table row 501 px → 173 px down."
+            },
+            {
+              "title": "Style: no title, no Back, no My stuff, a bottom bar",
+              "detail": "First item 294 px → 129 px down."
+            },
+            {
+              "title": "Relations: no text, square animated bars, a ? on each",
+              "detail": "No scroll; Fame row at 506 px instead of off screen at 1022 px."
+            },
+            {
+              "title": "Phone: a home bar instead of the Close pill; a red dot while something is unread; blacked-out apps and empty pages"
+            },
+            {
+              "title": "Pre-match: Play goes to a line-up animation, then the match",
+              "detail": "3 taps → 1."
+            },
+            {
+              "title": "Match opening is a pitch, not a black box"
+            },
+            {
+              "title": "Bolt buttons run green, yellow, red",
+              "detail": "Red is the most intense."
+            },
+            {
+              "title": "Run-ups move to a Play style section in Settings"
+            },
+            {
+              "title": "Energy HUD on the shop pages, Store, Casino and Settings",
+              "detail": "No energy on 5 screens → energy and money strip on all of them."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Tutorial, help and after-match",
+          "items": [
+            {
+              "title": "Pointer tutorial for a new career",
+              "detail": "4 'This is…' cards → 5 pointers on the real screen (Home, your player, star rating, energy, Go to training)."
+            },
+            {
+              "title": "Pointers after the two drills",
+              "detail": "League unlocked, Your league, then 'To earn coins, play your first game'. The Shop opens after the first game."
+            },
+            {
+              "title": "A help button (?)",
+              "detail": "Replays that screen's pointers on Home, Stats, Shop, Training, Relations and League."
+            },
+            {
+              "title": "Post-match in order",
+              "detail": "Star bar rises (no text), rating, relationships, pay, achievements one at a time."
+            },
+            {
+              "title": "Breaking news is a full-screen TV page",
+              "detail": "Seen for the first goal; signing and trophy are wired but not filmed."
+            },
+            {
+              "title": "The manager tells you about set pieces, once",
+              "detail": "Penalty and free-kick lines on the Match tab and Training card are gone."
+            },
+            {
+              "title": "The phone: one phone, ★150, lasts 2 seasons",
+              "detail": "A broken phone locks the Phone button until you repair it in Style (★150). The App Store has 7 apps priced ★1k to ★15k."
+            },
+            {
+              "title": "Boss meeting: a loss costs 4 (50 → 46)",
+              "detail": "Before, a lost meeting gave +4."
+            },
+            {
+              "title": "Star rating popup is the Star Pass: a scrolling strip of levels",
+              "detail": "The gold 'What it's for' box is gone."
+            },
+            {
+              "title": "Training: no explanation lines. Match tab: no penalty note"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Shop pictures in Blender",
+          "items": [
+            {
+              "title": "Every shop picture is a Blender render: 186 pictures",
+              "detail": "Every Style item at 5 levels, plus all 7 boots at 5 levels. Style shop pictures: 155 drawings → 151 renders. Weakest, still in: the gold suit, chains and necklaces, the horses, and the phone and tablet screens."
+            },
+            {
+              "title": "Signing scene: no real face on the manager",
+              "detail": "Real faces on the signing figures: 2 → 1 (only yours)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "League page, title screen and pitch look",
+          "items": [
+            {
+              "title": "League page: fixtures, results, table and scout on one page",
+              "detail": "First club row 352 px → 202 px; bells on every game of the next 5 weeks."
+            },
+            {
+              "title": "A bell in the middle of the bottom bar",
+              "detail": "Live-score clubs: only in Settings → one tap."
+            },
+            {
+              "title": "Play as: the position picker is back on the line-up",
+              "detail": "ST / CAM / LW / RW."
+            },
+            {
+              "title": "Title screen like NSS, in our own style",
+              "detail": "Net behind, pitch, ball, you on the left, menu flush right; checked clear of the menu at 360 px."
+            },
+            {
+              "title": "Training and match screens use the pitch look in both looks"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Game rules",
+          "items": [
+            {
+              "title": "The star rating can go down",
+              "detail": "Five poor matches in a row (rating under 5.5) costs a level. Measured on 20 played careers per row.",
+              "bars": [
+                {
+                  "label": "A struggling player (avg 5.7): level after 92 matches",
+                  "was": 10,
+                  "now": 3,
+                  "state": "good"
+                },
+                {
+                  "label": "5 poor matches from level 8: level after",
+                  "was": 8,
+                  "now": 7,
+                  "state": "good"
+                },
+                {
+                  "label": "15 poor matches from level 8: level after",
+                  "was": 9,
+                  "now": 5,
+                  "state": "good"
+                },
+                {
+                  "label": "A rising player (avg 7.3): level after 92 matches",
+                  "was": 13,
+                  "now": 13,
+                  "state": "warn"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls and still working",
+          "items": [
+            {
+              "title": "Scouted start odds: scored = 50 / 25 / 25, missed = 20 / 40 / 40. Default yes."
+            },
+            {
+              "title": "Star rating can drop: five poor matches in a row costs a level. Default yes."
+            },
+            {
+              "title": "Team sheet: the line-up animation IS the team sheet and kicks off by itself after 3.8 s. Default animation."
+            },
+            {
+              "title": "Where should the Play as picker live? Default on the line-up."
+            },
+            {
+              "title": "Nobody is relegated out of North/South. Default yes."
+            },
+            {
+              "title": "Low-energy prompt under 65. Default 65."
+            },
+            {
+              "title": "Old UI shows the star rating ÷10 as before. Default keep."
+            },
+            {
+              "title": "Inside a match the Old UI keeps the old energy-icon colours. Right line? Default yes."
+            },
+            {
+              "title": "Still working",
+              "detail": "Gameplay look and the 3D walk-around (v0.24); sound effects (19 made, not wired in)."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/HBE3svQRyVBbVcUMWjMW1g",
+      "updatedAt": null
+    },
+    {
+      "version": "0.22",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-01T11:15:00Z",
+      "summary": "UI & Home: Harry's review of the home screen, built as test copies and filmed. Home fits one phone screen with no scrolling on three phone sizes, a new career unlocks the game step by step, and there is a green Pitch look to try. Nothing was live.",
+      "stats": [
+        {
+          "value": "105 → 0 px",
+          "label": "Home scroll at 390×844 (197 px spare)"
+        },
+        {
+          "value": "282 → 0 px",
+          "label": "Home scroll at 375×667 (20 px spare)"
+        },
+        {
+          "value": "309 → 0 px",
+          "label": "Home scroll at 360×640 (8 px spare)"
+        },
+        {
+          "value": "138 → 0 px",
+          "label": "Kick Off scroll on the team sheet"
+        },
+        {
+          "value": "+18 → +2",
+          "label": "boss meeting win, the most you can now get"
+        },
+        {
+          "value": "+4 → −8",
+          "label": "boss meeting loss"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Home fits one phone screen",
+              "detail": "Home → bottom, at 390×844, 375×667 and 360×640"
+            },
+            {
+              "title": "Dressing-room player card",
+              "detail": "Home → player card"
+            },
+            {
+              "title": "Energy and one can inside the card",
+              "detail": "Home → energy row"
+            },
+            {
+              "title": "Next match as one thin line",
+              "detail": "Home"
+            },
+            {
+              "title": "One money chip in the top bar",
+              "detail": "League, Training, Relations, Shop"
+            },
+            {
+              "title": "3D / 2D moves to Settings",
+              "detail": "Settings → Player look"
+            },
+            {
+              "title": "Sponsors pill off Home",
+              "detail": "Home; the Shop tile stays"
+            },
+            {
+              "title": "Relations page: calmer, one line each",
+              "detail": "Relations"
+            },
+            {
+              "title": "Phone: a Close phone button",
+              "detail": "Phone → bottom"
+            },
+            {
+              "title": "Red dot on the Phone button removed",
+              "detail": "Home → Phone button"
+            },
+            {
+              "title": "Pre-match at 100% energy: only sharpness and energy",
+              "detail": "Pre-match → Match tab"
+            },
+            {
+              "title": "Team sheet: Kick Off always on screen",
+              "detail": "Team sheet"
+            },
+            {
+              "title": "Match opening: no empty black panel",
+              "detail": "Match → first seconds"
+            },
+            {
+              "title": "Stats: the league card is one button",
+              "detail": "Stats → Premier League card"
+            },
+            {
+              "title": "Shop: My stuff strip removed",
+              "detail": "Shop"
+            },
+            {
+              "title": "New careers start at 50 / 50 / 50 / 45",
+              "detail": "Relations"
+            },
+            {
+              "title": "Boss meeting: losing costs 8, a win is +1 or +2",
+              "detail": "Relations → boss meeting"
+            },
+            {
+              "title": "Premium and Elite cans also give energy",
+              "detail": "Home / Shop → KIB Cans"
+            },
+            {
+              "title": "New career: tutorial, then only Home and Training",
+              "detail": "New career → first screen"
+            },
+            {
+              "title": "Two drills open League and Play",
+              "detail": "Training"
+            },
+            {
+              "title": "League explained once, then the first achievement",
+              "detail": "League; Achievements"
+            },
+            {
+              "title": "'Have a meeting with your boss' unlocks Relations",
+              "detail": "Achievements → Go"
+            },
+            {
+              "title": "Shop explained; Style locked except the phone",
+              "detail": "Shop → Style"
+            },
+            {
+              "title": "Phone: League + Settings + App Store",
+              "detail": "Phone"
+            },
+            {
+              "title": "Pitch look: Settings → Look: Classic | Pitch",
+              "detail": "Settings"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Home on one screen",
+          "items": [
+            {
+              "title": "Home fits one phone screen",
+              "detail": "Home was 677 px tall in a 572 px room at 390×844, so you scrolled; it is now 375 px. The player card measures the room it is given.",
+              "bars": [
+                {
+                  "label": "Home scroll at 390×844",
+                  "was": 105,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                },
+                {
+                  "label": "375×667",
+                  "was": 282,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                },
+                {
+                  "label": "360×640",
+                  "was": 309,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                }
+              ]
+            },
+            {
+              "title": "The player card is a dressing room: you, and four boxes",
+              "detail": "Reputation, fame, goals and assists this season sit to the right of you; the rating pill still opens the star rating sheet. The layout is the best reading of Harry pointing left and right."
+            },
+            {
+              "title": "Energy and one can live inside your card",
+              "detail": "Tap Use: the can shakes and energy goes 55% → 100% (a Basic can gives 65). With no cans the button becomes Buy with the price."
+            },
+            {
+              "title": "The next match is one thin line",
+              "detail": "A card of about 190 px plus Last 5 boxes became one line 36 px tall."
+            },
+            {
+              "title": "One money chip in the top bar",
+              "detail": "Money showed on Home, Shop and the age strip; the big YOUR MONEY panel on Shop is gone."
+            },
+            {
+              "title": "3D / 2D moves to Settings, and the Sponsors pill is off Home",
+              "detail": "Nothing else links to Sponsors from Home now."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Screens",
+          "items": [
+            {
+              "title": "Relations page: calmer, one line each, no week or lifestyle",
+              "detail": "3 blocks removed; each card has a plain 'what it does' line."
+            },
+            {
+              "title": "Phone: a Close phone button, and no red dot on the Phone button",
+              "detail": "Before, the phone had no way out."
+            },
+            {
+              "title": "Pre-match at 100% energy shows only sharpness and energy"
+            },
+            {
+              "title": "Team sheet: Kick Off always on screen",
+              "detail": "Scroll to reach it: 138 / 291 / 293 px → 0."
+            },
+            {
+              "title": "Match opening: no empty black KICK OFF panel",
+              "detail": "Team names in kit colours until the first line."
+            },
+            {
+              "title": "Stats: the league card is one button. Shop: My stuff strip removed"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Unlock chain and relationship numbers",
+          "items": [
+            {
+              "title": "New careers start at 50 / 50 / 50 / 45, reputation 0, fame 1",
+              "detail": "Manager 60→50, team-mates 60→50, fans 40→50, you 60→45, reputation 20→0, fame 0→1. Side effect measured: 9 of 20 Premier League and 12 of 24 Championship clubs now start a new player as a Substitute (0 of 44 before)."
+            },
+            {
+              "title": "Boss meeting: losing costs 8, a win is +1 or +2",
+              "detail": "Lose: +4 always before, now −8. Win: +14 to +18 before, now +1 or +2. The same scale for Team Bonding, Meet the Fans, Sponsor Event and Take a Break.",
+              "bars": [
+                {
+                  "label": "Win: the most you can get",
+                  "was": 18,
+                  "now": 2,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Premium and Elite cans also give energy",
+              "detail": "Premium +0 → +30, Elite +0 → +40 (Basic stays +65)."
+            },
+            {
+              "title": "New career: tutorial, then only Home and Training",
+              "detail": "Four skippable cards; League and Play open after two training drills; Relations after any boss meeting; the Phone says 'Find out more in the future'. Existing saves: nothing locked, no tutorial."
+            },
+            {
+              "title": "League explained once, then the first achievement",
+              "detail": "Achievements takes the League slot in the bottom bar."
+            },
+            {
+              "title": "Shop explained; Style locked except the phone",
+              "detail": "Style: 1 of 36 items open at the start. Items unlock at star rating 4, 6, 8, 10, 15, 30."
+            },
+            {
+              "title": "Phone: League + Settings + App Store",
+              "detail": "Apps at start 13 → 6 (plus the App Store); Casino and the rest are GET in the App Store (free for now)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Pitch look",
+          "items": [
+            {
+              "title": "A second look for the whole game: green grass stripes, flat panels with chalk-white lines, club colours, tall heavy capitals",
+              "detail": "Settings → Look: Classic | Pitch. Default Classic; layout, animations and sizes are untouched.",
+              "pill": {
+                "text": "reasoned, not measured",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A new player starts on the bench at about half the clubs",
+              "detail": "A measured side effect of the manager starting at 50 instead of 60."
+            },
+            {
+              "title": "Sponsors has no way in from Home",
+              "detail": "The Shop tile is the only door."
+            },
+            {
+              "title": "The friend's two phone screenshots are missing",
+              "detail": "Home fits three sizes, but other phone shapes are untested; 320×568 would still scroll a little."
+            },
+            {
+              "title": "Daily energy ('5 to 6 a day') is not built",
+              "detail": "The energy rule is that it returns only from Rest or Skip to Match Day."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Your calls",
+          "items": [
+            {
+              "title": "Keep the manager at 50 (as built), start him at 58, or lower the bar to start?"
+            },
+            {
+              "title": "Existing careers: everything unlocked, no tutorial? Default yes."
+            },
+            {
+              "title": "Make Pitch the default look? Default no."
+            },
+            {
+              "title": "Should Play stay locked until the two drills? Default yes."
+            },
+            {
+              "title": "Want a way into Sponsors from Home? Default no."
+            },
+            {
+              "title": "Does daily energy (5 to 6 a day) replace the Rest-only rule?",
+              "detail": "Needs a yes or no."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/AHUmDmsxzNfG1UhEkn3N7n",
+      "updatedAt": null
+    },
+    {
       "version": "0.21",
       "title": "Mikey's patch notes — Sponsors Revamp",
       "publishedAt": "2026-09-30T20:00:00Z",
@@ -1458,23 +3556,23 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "1.0",
       "title": "V1: every problem and its fix",
       "publishedAt": "2026-09-26T18:00:00Z",
-      "summary": "Every change from every patch notes version so far (v0.1 to v0.19), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The headlines are the drawing is the team (v0.16) and the guard (v0.10). v0.15 is the plan that v0.16 built; v0.19 is Mikey's page, first published as 1.1.",
+      "summary": "Every change from every patch notes version so far (v0.1 to v0.25), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The headlines are the drawing is the team (v0.16) and the guard (v0.10). v0.15 is the plan that v0.16 built; v0.19 is Mikey's page, first published as 1.1. Added 1 Oct: Mikey's v0.20 and v0.21, Harry's review of v0.20 and his v0.22. Added 3 Oct: Harry's v0.23, v0.23.1, v0.24 and v0.25, which went live that day.",
       "stats": [
         {
-          "value": "252",
-          "label": "problems fixed or features added, 21–28 Sep"
+          "value": "450",
+          "label": "problems fixed or features added, 21 Sep to 3 Oct"
         },
         {
-          "value": "20",
-          "label": "patch notes versions folded into this one"
+          "value": "28",
+          "label": "patch notes and review pages folded into this one"
         },
         {
-          "value": "188 · 13 · 51",
+          "value": "367 · 13 · 70",
           "label": "changes by Harry · Leo · Mikey"
         },
         {
-          "value": "57",
-          "label": "known issues still open (21 raised along the way are now fixed), plus 13 decisions for Harry"
+          "value": "81",
+          "label": "known issues still open (24 raised along the way are now fixed), plus 53 decisions for Harry"
         }
       ],
       "sections": [
@@ -5140,10 +7238,154 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               }
             }
           ]
+        },
+        {
+          "kind": "changed",
+          "title": "Added in the 1 Oct and 3 Oct updates (v0.20 to v0.25)",
+          "items": [
+            {
+              "title": "v0.20 · Mikey (12): a new 1 to 10 star rating, 7 boots, dearer Style, 2 training sessions a week",
+              "detail": "Your star rating was just your skills divided by 20, so it told you nothing about your career.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: one number was doing two jobs, how good you are and how far you have come.",
+                  "Fix: a separate star rating that you earn through your career. Overall stays what the manager picks on."
+                ]
+              }
+            },
+            {
+              "title": "v0.21 · Mikey (7): Sponsors rebuilt",
+              "detail": "Sponsor deals lasted forever once signed, and money came from a bar rather than from the brand.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: brands send you offers, you have deal slots that grow with fame, deals pay every week with your wage, and each brand's happiness decides the renewal."
+                ]
+              }
+            },
+            {
+              "title": "v0.20 review · Harry (35): star rating out of 100, a four-stage trial with a shootout, a picture shop, a signing scene",
+              "detail": "Harry's review of Mikey's v0.20, built as test copies. Went live with v0.25."
+            },
+            {
+              "title": "v0.22 · Harry (25): Home on one screen, an unlock chain, a green Pitch look",
+              "detail": "Home was 677 px tall in a 572 px room, so you scrolled; a new career had everything open at once.",
+              "bars": [
+                {
+                  "label": "Home scroll at 390×844",
+                  "was": 105,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                },
+                {
+                  "label": "Home scroll at 360×640",
+                  "was": 309,
+                  "now": 0,
+                  "state": "good",
+                  "unit": " px"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: Home is 375 px tall at 390×844 and fits three phone sizes. A new career starts with only Home and Training open and unlocks the rest step by step."
+                ]
+              }
+            },
+            {
+              "title": "v0.23 · Harry (52): an app-style Home and look, a shorter trial, National League North and South, every shop picture in Blender",
+              "detail": "Every screen had its own header, thin rounded bars and floating dark cards, and the trial dragged on.",
+              "bars": [
+                {
+                  "label": "Whole trial, same bot (s)",
+                  "was": 163,
+                  "now": 75.8,
+                  "state": "good",
+                  "unit": " s"
+                },
+                {
+                  "label": "Stats tab rows (px)",
+                  "was": 126,
+                  "now": 30,
+                  "state": "good",
+                  "unit": " px"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: one top strip on every screen, a Home that never scrolls, one go per drill, a rigged shootout and a scout at the end. 186 shop pictures are now Blender renders, and North and South are playable divisions (5 to 7)."
+                ]
+              }
+            },
+            {
+              "title": "v0.23.1 · Harry (17): liquid bars, a quieter look, a simple way home, a nicer signing and title screen, sounds",
+              "detail": "The bars were ticked blocks and bottom-left said Achievements, so there was no button to get home.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: smooth glowing bars, Home bottom-left, a ? on every main screen, tap anywhere to start the match, a full contract paper, and sounds outside the match."
+                ]
+              }
+            },
+            {
+              "title": "v0.24 · Harry (31): winnable highlights, a reworked trial, square top bars with 3D icons",
+              "detail": "Almost every highlight was impossible: a defender could start right on the ball.",
+              "bars": [
+                {
+                  "label": "Tight angle with a defender on the ball (%)",
+                  "was": 6.6,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Training Power level 1: pass within 3 tries (%)",
+                  "was": 6,
+                  "now": 100,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: a defender can no longer start closer than 1.5 m to the ball. Also a guided first training, help that opens by itself, a Sound Board admin page, a 3D Test Area, boots on a plank with an unboxing."
+                ]
+              }
+            },
+            {
+              "title": "v0.25 · Harry (19): live 3D signing, a 3D shop, a rebuilt garden, a first game before the tutorials",
+              "detail": "The signing was a flat picture, and the start explained every page before you played.",
+              "bars": [
+                {
+                  "label": "Play to first chance (s)",
+                  "was": 15.2,
+                  "now": 0.5,
+                  "state": "good",
+                  "unit": " s"
+                },
+                {
+                  "label": "Shootouts where both team-mates miss the same way",
+                  "was": 554,
+                  "now": 0,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Fix: your own player signs live in 3D (off by default), a 3D shop you can walk round, and the first game comes before the tutorials. Shootouts and defenders play fairer, iPhone full screen works through Add to Home Screen, and fewer buttons make a sound."
+                ]
+              }
+            }
+          ]
         }
       ],
       "artifactUrl": "https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR",
-      "updatedAt": "2026-09-30T12:00:00Z"
+      "updatedAt": "2026-10-03T03:00:00Z"
     },
     {
       "version": "0.13",

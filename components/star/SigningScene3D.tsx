@@ -18,6 +18,29 @@ import { SIGNATURE_D } from "./TrialReward";
 
 const INK = "#f8fafc";
 
+/** Why the 3D can't run here, or null if it can. three.js (r163 on) needs
+ *  WebGL 2; an old phone, a locked-down browser or a lost GPU has none. */
+export function signing3dBlocker(): string | null {
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl2");
+    if (!gl) return "this browser has no WebGL 2 (three.js needs it)";
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return null;
+  } catch (e) {
+    return `WebGL 2 check threw: ${(e as Error)?.message ?? e}`;
+  }
+}
+
+/** Say out loud why the 3D signing fell back to the drawn one. */
+function report3dFailure(reason: string, err?: unknown) {
+  console.warn(`[3D signing] not playing — ${reason}. Showing the drawn signing instead.`, err ?? "");
+  (window as unknown as { __sign3dFail?: string }).__sign3dFail = reason;
+}
+
+/** The longest the office may take to load before the drawn signing takes over. */
+const LOAD_LIMIT_MS = 30000;
+
 type Stage = "loading" | "talk" | "contract" | "signing" | "done" | "failed";
 
 export interface SigningScene3DProps {
@@ -56,6 +79,20 @@ export default function SigningScene3D(props: SigningScene3DProps) {
     if (!el) return;
     let disposed = false;
     setStage("loading"); setLine(0); setStamp(false);
+    (window as unknown as { __sign3dFail?: string }).__sign3dFail = undefined;
+    const fail = (reason: string, err?: unknown) => {
+      if (disposed) return;
+      report3dFailure(reason, err);
+      setStage("failed");
+    };
+    const blocker = signing3dBlocker();
+    if (blocker) { fail(blocker); return () => { disposed = true; }; }
+    // Never sit on "Walking into the office…" for good (a stalled download).
+    const slow = window.setTimeout(() => { if (!handle.current) fail(`still loading after ${LOAD_LIMIT_MS / 1000} s`); }, LOAD_LIMIT_MS);
+    // A phone that runs out of GPU memory drops the context: the picture
+    // freezes black. Fall back rather than leave a dead screen.
+    const onLost = (e: Event) => { e.preventDefault(); fail("the phone dropped the 3D (WebGL context lost)"); };
+    el.addEventListener("webglcontextlost", onLost, true);
     (async () => {
       try {
         const { createSigningScene } = await import("@/lib/star/signing3dScene");
@@ -67,18 +104,21 @@ export default function SigningScene3D(props: SigningScene3DProps) {
           },
         });
         if (disposed) { h.dispose(); return; }
+        window.clearTimeout(slow);
         handle.current = h;
         (window as unknown as { __sign3d?: SigningSceneHandle; __sign3dReady?: boolean }).__sign3d = h;
         (window as unknown as { __sign3dReady?: boolean }).__sign3dReady = true;
         h.setShot(lines[0]?.shot ?? "talk");
         setStage("talk");
       } catch (err) {
-        console.error("3D signing failed", err);
-        if (!disposed) setStage("failed");
+        window.clearTimeout(slow);
+        fail(`it threw while building: ${(err as Error)?.message ?? err}`, err);
       }
     })();
     return () => {
       disposed = true;
+      window.clearTimeout(slow);
+      el.removeEventListener("webglcontextlost", onLost, true);
       handle.current?.dispose();
       handle.current = null;
       (window as unknown as { __sign3dReady?: boolean }).__sign3dReady = false;

@@ -6,6 +6,7 @@ import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/li
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
+import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -65,6 +66,11 @@ export function FullScreenRow({ support, on, onToggle, last = false }: {
 function HomeScreenTip() {
   return (
     <div className="mt-2 rounded-lg bg-black/30 p-2.5">
+      {/* Safari and the Home Screen app keep separate saves on an iPhone
+          (Harry, 3 Oct 2026: the app opened with all three saves "gone"). */}
+      <p className="mb-2 rounded-md bg-amber-400/15 px-2 py-1.5 text-[12px] font-bold leading-snug text-amber-100" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)" }}>
+        Your saves stay in Safari. Before you add the game, sign in (save 1 follows you) or use Move my saves.
+      </p>
       <ol className="space-y-1.5 text-[12px] font-bold leading-snug text-white">
         <li className="flex items-center gap-2">
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>
@@ -118,13 +124,22 @@ export function GameSwitches({ glow, fullscreen }: {
   );
 }
 
-/** Player look (Classic/3D) and the UI (Old/New). Put inside a SetCard. */
+/** Player look (Classic/3D), the match view (New/Classic) and the UI (Old/New). Put inside a SetCard. */
 export function LookSwitches() {
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
+  const viewNow = useStoredMatchView();
   return (
     <>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Match view</span>
+        <SegTabs className="w-[150px] shrink-0" value={viewNow} onChange={setMatchView} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
+      </SetNote>
+      <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Player look</span>
         <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Classic"], ["3d", "3D"]] as const} />

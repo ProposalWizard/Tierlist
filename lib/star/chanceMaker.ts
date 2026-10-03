@@ -260,6 +260,18 @@ function saltFor(o: { memory?: PictureMemory | null }): number {
   return visitSalt >>> 0;
 }
 
+/**
+ * The match's own random numbers, turned by the visit salt: every draw is
+ * moved round the [0, 1) circle by the same amount, so exactly as many
+ * numbers are drawn as before and each is still evenly spread. No salt
+ * (a test, a gallery cell): the stream itself, untouched.
+ */
+export function saltedRng(rng: () => number, salt: number): () => number {
+  if (!salt) return rng;
+  const shift = ((salt >>> 0) % 1000003) / 1000003;
+  return () => { const v = rng() + shift; return v - Math.floor(v); };
+}
+
 const memories = new Map<string, PictureMemory>();
 /**
  * One memory per scope: "game" for every real match (a career, Infinite
@@ -689,7 +701,8 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const req = { ...src.request, kinds: offered };
     kind = rollKind(req, src.position, rng);
     if (!servesDrawings(kind)) {
-      plan = selectChance({ request: { ...req, kinds: [kind] }, position: src.position, rng, memory: o.selection ?? newSelectionMemory(), shape: o.formation ?? null });
+      // The visit salt turns the plan too (v0.25 item 12) — see saltedRng.
+      plan = selectChance({ request: { ...req, kinds: [kind] }, position: src.position, rng: saltedRng(rng, saltFor(o)), memory: o.selection ?? newSelectionMemory(), shape: o.formation ?? null });
     }
   } else if (src.from === "chain") {
     // Built from where the pass actually arrived, so playing it into the
@@ -714,18 +727,29 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
 
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
   if (!servesDrawings(kind)) {
+    // A kind with no drawings is laid out by the builder or the formula's
+    // plan, from the match's own random numbers — and a match is seeded by
+    // its week. So the visit salt has to reach this path as well, or the
+    // same match restarted opens on the same picture every time. Seen
+    // (v0.25 item 12, Harry: "the same long-shot highlight keeps coming"):
+    // a National League opening chance restarted 6 times, the ball on the
+    // same pixel all 6, and the picture memory empty — this path never
+    // used the salt or the memory. saltedRng draws the same count.
+    const salt = saltFor(o);
+    const prng = saltedRng(rng, salt);
+    const sbuild = (k: ScenarioKind) => buildScenario(k, prng, ks, tr, vis);
     let sc: Scenario;
     let appliedPlan = false;
     if (plan && plan.kind === kind) {
-      sc = build(kind);
+      sc = sbuild(kind);
       fixBaseScenario(sc);
-      applyChancePlan(sc, plan, rng);
+      applyChancePlan(sc, plan, prng);
       appliedPlan = true;
     } else {
-      sc = first ?? build(kind);
+      sc = (salt && first) ? sbuild(kind) : first ?? sbuild(kind);
     }
     if (!appliedPlan) applyFormationShape(sc, o.formation ?? null);
-    setupKind(sc, rng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
+    setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
     return {

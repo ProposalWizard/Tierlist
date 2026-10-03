@@ -53,6 +53,37 @@ const okBefore = restarts(false), okAfter = restarts(true);
 console.log(`  distinct opening long shots: before ${okBefore}, after ${okAfter}`);
 ok(okAfter >= okBefore, "no worse where the memory already worked");
 
+// v0.25 item 12, seen on screen: a career match's opening chance was a kind
+// with no drawings (the builder / the formula's plan). That path never read
+// the salt, so restarting the match put the ball on the same pixel 6 times
+// out of 6, salt or no salt.
+console.log("\nA KIND WITH NO DRAWINGS (THE BUILDER / THE PLAN)");
+for (const kind of ["through_ball"] as const) {
+  ok(!C.servesDrawings(kind), `${kind} has no drawings, so it takes this path`);
+  const open = (salt: number) => {
+    C.setVisitSalt(salt);
+    const mem = new C.PictureMemory("game", true);
+    return key(C.makeChance({ source: { from: "kind", kind }, rng: mulberry32(2005), memory: mem }).sc);
+  };
+  const unsalted = new Set<string>(), salted = new Set<string>();
+  for (let i = 0; i < 30; i++) { unsalted.add(open(0)); salted.add(open(Math.imul(i + 1, 2654435761) >>> 0)); }
+  console.log(`  ${kind}, 30 restarts: distinct opening pictures ${unsalted.size} without the salt, ${salted.size} with it`);
+  ok(unsalted.size === 1, "without the salt it is the same picture every restart (what Harry saw)");
+  ok(salted.size >= 10, "with it the picture changes from visit to visit");
+}
+{
+  // Same count of random numbers drawn, salt or not (the match plays on).
+  let n0 = 0, n1 = 0;
+  const counted = (cnt: () => void) => { const r = mulberry32(99); return () => { cnt(); return r(); }; };
+  C.setVisitSalt(0);
+  C.makeChance({ source: { from: "kind", kind: "through_ball" }, rng: counted(() => n0++), memory: new C.PictureMemory("game", true) });
+  C.setVisitSalt(424242);
+  C.makeChance({ source: { from: "kind", kind: "through_ball" }, rng: counted(() => n1++), memory: new C.PictureMemory("game", true) });
+  ok(n0 > 0 && Math.abs(n0 - n1) <= Math.max(2, n0 * 0.5), `about as many random numbers drawn either way (${n0} vs ${n1})`);
+  const r = C.saltedRng(mulberry32(5), 0), base = mulberry32(5);
+  ok(r() === base(), "no salt: the stream itself, untouched");
+}
+
 console.log("\nNO MEMORY (a gallery cell) IS UNCHANGED");
 C.setVisitSalt(123456789);
 const a = key(C.makeChance({ source: { from: "kind", kind: "long_range" }, rng: mulberry32(77), memory: null }).sc);
