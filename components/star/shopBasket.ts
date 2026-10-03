@@ -29,6 +29,16 @@ export type BasketEntry =
   | { key: string; kind: "boot"; boot: Boot; qty: number }
   | { key: string; kind: "item"; item: OwnedItem; qty: 1 };
 
+/**
+ * THE BASKET IS SWITCHED OFF (v0.25). Mikey and Harry, reviewing v0.24
+ * (points 43 and 50): "not necessary … easier to just buy with one tap",
+ * "you should still be able to press Buy Now", and the basket for Style items
+ * is "on hold for now". With this off, every boot has a one-tap Buy now and
+ * no basket button shows. The basket code stays, so turning it back on is
+ * this one line.
+ */
+export const BASKET_ON = false;
+
 /** Most pairs of one boot in one go. */
 export const MAX_PAIRS = 3;
 

@@ -192,10 +192,25 @@ const categoryOf = (category: string) => BRAND_CATEGORIES.find(c => c.category =
 
 // ── Slots, money ────────────────────────────────────────────────────────────
 
-/** Deal slots by fame level: Unknown 0, Local Name 1, … Icon 5. */
+/**
+ * THE SMALL BRANDS NEED NO FAME (v0.25, review of v0.24, point 53). Mikey:
+ * "make the bad sponsors pretty easy to get". Fame only comes from big moments
+ * (fame.ts), so a new player is "Unknown" for a season or more, and with no
+ * slot and a 10-fame floor no brand ever called. Now the small brands (the
+ * ones that wanted Local Name, 10 fame) ask for no fame, and an Unknown player
+ * has one slot. Form still decides it (offerChance): nothing while you play
+ * badly. The pay is a share of your wage (fairWeekly), so it is small low down.
+ */
+export const STARTER_FAME = 10;
+/** The fame this kind of brand really needs before it gets in touch. */
+export function fameNeeded(c: Pick<BrandCategory, "fame">): number {
+  return c.fame <= STARTER_FAME ? 0 : c.fame;
+}
+
+/** Deal slots by fame level: Unknown 1 (v0.25; was 0), Local Name 1, … Icon 5. */
 export function slotsFor(career: CareerState): number {
   const f = fameOf(career);
-  return f >= 80 ? 5 : f >= 60 ? 4 : f >= 40 ? 3 : f >= 25 ? 2 : f >= 10 ? 1 : 0;
+  return f >= 80 ? 5 : f >= 60 ? 4 : f >= 40 ? 3 : f >= 25 ? 2 : 1;
 }
 
 /** Weeks in a season's worth of a deal, for the guaranteed (buy-out) value. */
@@ -321,14 +336,14 @@ export function openCategories(career: CareerState): BrandCategory[] {
   const s = brandsOf(career);
   const fame = fameOf(career);
   return BRAND_CATEGORIES.filter(c =>
-    fame >= c.fame && c.fits(career)
+    fame >= fameNeeded(c) && c.fits(career)
     && !s.deals.some(d => d.category === c.category)
     && !s.offers.some(o => o.category === c.category && o.kind !== "milestone"));
 }
 
 /** Why a category isn't offering, for the Sponsors screen. */
 export function categoryStatus(career: CareerState, c: BrandCategory): string {
-  if (fameOf(career) < c.fame) return `Needs ${fameLevel(c.fame).name} (${c.fame} fame)`;
+  if (fameOf(career) < fameNeeded(c)) return `Needs ${fameLevel(c.fame).name} (${c.fame} fame)`;
   if (!c.fits(career)) return `Wants ${c.wants}`;
   return "Could send an offer";
 }

@@ -34,7 +34,8 @@ import {
   newMatch, advanceTo, advanceUntilInvolved, resolveScenario, lateSubQuota,
   type HiddenMatchInputs, type HiddenMatchEvent, type ScenarioResult,
 } from "./hiddenMatch";
-import { pickScenarioKindFrom, buildScenario, chainKindFor, chainReturnChance, CHAIN_MAX, type ScenarioKind } from "./canvasEngine";
+import { pickScenarioKindFrom, buildScenario, chainKindFor, chainReturnChance, CHAIN_MAX, goalInView, type ScenarioKind } from "./canvasEngine";
+import { giveAndGoChance } from "./giveAndGo";
 import { CX, PEN_SPOT_Y } from "./pitch";
 import { pickWaveSizes } from "./firstPersonDribble";
 import { selectChance, newSelectionMemory } from "./scenarioSelect";
@@ -232,7 +233,8 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
         sc.passDifficulty = Math.max(0, Math.min(1, forward / 25 + Math.hypot(at.x - sc.ball.x, at.y - sc.ball.y) / 45));
         sc.passAmbition = forward > 2 && sc.forwardMostY !== undefined ? Math.max(0, Math.min(1, 1 - (at.y - sc.forwardMostY) / 8)) : 0;
       }
-      if (at && rng() < chainReturnChance(sc)) {
+      // v0.25: in a picture with no goal, the give-and-go's own odds (giveAndGo.ts).
+      if (at && rng() < (goalInView(kind) ? chainReturnChance(sc) : giveAndGoChance(sc, at))) {
         resolveScenario(st, "delivered");
         const next = playableKind(chainKindFor(at, rng, Math.max(sc.passDifficulty, sc.passAmbition ?? 0)), rng);
         return settle(next, minute, depth + 1);

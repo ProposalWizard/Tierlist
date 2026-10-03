@@ -124,7 +124,6 @@ export default function TitleScreen(p: TitleScreenProps) {
   const sky: HomeSky = career && next ? homeSkyFor(career, next) : "sunset";
   const plate = `/home/title-stadium-${sky}.webp`;
   const plateFailed = useRenderFailed(plate);
-  const goalFailed = useRenderFailed(GOAL_SRC);
 
   return (
     <div
@@ -135,22 +134,22 @@ export default function TitleScreen(p: TitleScreenProps) {
       <KitStyles />
       {/* THE SET. v0.24 (Harry, 2 Oct 2026, P2-18: "the background needs to
           be like a stadium"): a generated stadium seen from the pitch
-          (public/home/title-stadium-<sky>.webp), the real goal behind you
-          (public/home/goal.webp). If either picture fails to load, the v0.23
-          set (the stand plate, a drawn net and a drawn pitch) shows instead. */}
+          (public/home/title-stadium-<sky>.webp). If it fails to load, the
+          v0.23 set (the stand plate and a drawn pitch) shows instead.
+          v0.25 (Harry and Mikey, 2 Oct 2026, P39): no goal. He stands on the
+          halfway line, so a goal behind him made no sense; the full stadium
+          stays. */}
       <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
         {plateFailed ? (
           <div className="kit-fade absolute inset-[-4%]">
             <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
             <SkyPlate sky={sky} />
             {sky !== "day" && <Floodlights />}
-            <GoalNet glow={theme.glow} />
             <PitchFloor />
           </div>
         ) : (
           <div className="kit-fade absolute inset-[-4%]">
             <div className="absolute inset-0" aria-hidden style={{ backgroundImage: `url(${plate})`, backgroundSize: "cover", backgroundPosition: "center 62%" }} />
-            {goalFailed ? <GoalNet glow={theme.glow} /> : <GoalPicture glow={theme.glow} />}
           </div>
         )}
       </div>
@@ -332,44 +331,6 @@ function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { ic
   );
 }
 
-/** The real goal (public/home/goal.webp, a generated picture with a
- *  see-through net), standing a few yards behind you (Harry, 2 Oct 2026,
- *  P2-19: "the goal isn't looking perfect"). Its goal line is at 64% of the
- *  screen; your feet are lower, so you stand in front of it. A soft shadow
- *  under the frame and a glow in your club's colour inside it. */
-const GOAL_SRC = "/home/goal.webp";
-function GoalPicture({ glow }: { glow: string }) {
-  // The box is the set's inset-[-4%] layer, so screen Y% = (4 + Y) / 108 of it.
-  return (
-    <div className="absolute" aria-hidden style={{ left: "3%", width: "80%", bottom: `${100 - ((4 + GOAL_LINE) / 108) * 100}%` }}>
-      <div className="absolute inset-x-[6%] bottom-[2%] top-[18%]" style={{ background: `radial-gradient(70% 70% at 50% 85%, ${rgba(glow, 0.35)}, transparent 75%)` }} />
-      <div className="absolute inset-x-[-4%] bottom-[-6%] h-[16%] rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.45), transparent)" }} />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={GOAL_SRC} alt="" draggable={false} className="relative block w-full select-none" style={{ aspectRatio: "928 / 496", filter: "drop-shadow(0 2px 3px rgba(0,0,0,.45))" }} />
-    </div>
-  );
-}
-/** Where the goal line is, in % of the screen height (the generated set). */
-const GOAL_LINE = 64;
-
-/** A small goal on the pitch behind him (P64: "the net's way too big"): the
- *  frame with its net lit in your club's colour, standing on the goal line. */
-function GoalNet({ glow }: { glow: string }) {
-  return (
-    <div className="absolute left-[2%] top-[36%] h-[16%] w-[54%]" aria-hidden>
-      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 90% at 40% 100%, ${rgba(glow, 0.4)} 0%, transparent 75%), linear-gradient(180deg, rgba(3,16,10,.9), rgba(10,45,22,.7))` }} />
-      <div
-        className="absolute inset-0"
-        style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.3) 0 1px, transparent 1px 9px), repeating-linear-gradient(-45deg, rgba(255,255,255,.3) 0 1px, transparent 1px 9px)" }}
-      />
-      {/* crossbar and both posts */}
-      <div className="absolute inset-x-0 top-0 h-[5px] bg-white/90" style={{ boxShadow: "0 3px 8px rgba(0,0,0,.6)" }} />
-      <div className="absolute bottom-0 left-0 top-0 w-[5px] bg-white/90" />
-      <div className="absolute bottom-0 right-0 top-0 w-[5px] bg-white/90" />
-    </div>
-  );
-}
-
 /** The stand behind the goal and the sky above it (public/home/, the same
  *  three pictures as Home). Its grass meets the goal line at 52%. */
 function SkyPlate({ sky }: { sky: HomeSky }) {
@@ -395,18 +356,17 @@ function PitchFloor() {
   );
 }
 
-/** A big match ball with a soft shadow, at his feet. */
+/** The ball at his feet: the match's own ball (public/star/ball.png, the
+ *  one the real match draws), with a soft shadow on the grass under it.
+ *  v0.25 (Harry and Mikey, 2 Oct 2026, P39: "the ball needs changing"): it
+ *  was a hand-drawn ball with one black patch. */
+const BALL_SRC = "/star/ball.png";
 function TitleBall({ className = "", style, size = 68 }: { className?: string; style?: React.CSSProperties; size?: number }) {
   return (
-    <div className={className} style={style} aria-hidden>
-      <svg width={size} height={Math.round(size * 1.045)} viewBox="0 0 96 100">
-        <ellipse cx="50" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.45)" />
-        <circle cx="46" cy="46" r="42" fill="#fff" stroke="#0f172a" strokeWidth="2" />
-        <path d="M46 24 62 36 56 55H36L30 36Z" fill="#111827" />
-        <path d="M46 24V8M62 36 78 30M56 55 66 70M36 55 26 70M30 36 14 30" stroke="#111827" strokeWidth="2.4" fill="none" />
-        <path d="M78 30 84 46 72 58 66 70M14 30 8 46 20 58 26 70" stroke="#cbd5e1" strokeWidth="1.6" fill="none" />
-        <ellipse cx="34" cy="28" rx="13" ry="7" fill="rgba(255,255,255,.65)" transform="rotate(-30 34 28)" />
-      </svg>
+    <div className={className} style={{ ...style, width: size, height: Math.round(size * 1.12) }} aria-hidden>
+      <div className="absolute inset-x-[4%] bottom-0 h-[20%] rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.55), transparent)" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={BALL_SRC} alt="" draggable={false} className="absolute left-0 top-0 block select-none" style={{ width: size, height: size, filter: "drop-shadow(0 2px 2px rgba(0,0,0,.35))" }} />
     </div>
   );
 }

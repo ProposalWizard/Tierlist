@@ -17,7 +17,7 @@ import { FloatText, Pop } from "./juice";
  *
  * Renders KitStyles itself (these screens sit outside the dashboard).
  */
-export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Back", right, children, className = "", accent, hud, bare = false, bottomBar }: {
+export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Back", right, children, className = "", accent, hud, bare = false, bottomBar, tone = "calm" }: {
   glow: string;
   title: React.ReactNode;
   icon?: React.ReactNode;
@@ -37,9 +37,14 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
   /** A fixed bottom bar (ui/Nav.tsx's BottomBar). Pads the page so nothing
    *  hides behind it. */
   bottomBar?: React.ReactNode;
+  /** The page's colours in the Pitch look (pitchLook.css). "calm" (the
+   *  default: the shop, its screens and the casino) is a neutral charcoal,
+   *  not the green (v0.25, P44: "the shop should be more like a shop");
+   *  "pitch" keeps the grass for a football page (the League). */
+  tone?: "calm" | "pitch";
 }) {
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-white">
+    <div data-sk-tone={tone} className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-white">
       <KitStyles />
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div

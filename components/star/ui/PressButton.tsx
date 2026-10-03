@@ -56,10 +56,12 @@ function variantStyle(variant: Variant, accent: string, disabled: boolean): Reac
  * `accent` is any hex colour, lit like the can buttons. `size="none"` leaves
  * the padding and rounding to `className`.
  *
- * Every press makes a sound (lib/star/sfx.ts): the green primary and gold
- * buttons — Continue, Confirm, Play — the confirm blip, the rest a tap.
- * `sfx="coin-in"` picks another, `sfx={false}` keeps it silent (a button
- * whose handler plays its own).
+ * Sound (lib/star/sfx.ts): only the green primary and gold buttons —
+ * Continue, Confirm, Play — make one, the confirm blip. Every other button is
+ * silent (v0.25 item 6, Harry and Mikey live: "the sound effects are too
+ * frequent" — a tap sound on every button was most of it). `sfx="ui-tap"` or
+ * `sfx="coin-in"` gives a button one on purpose, `sfx={false}` keeps a
+ * primary silent (a button whose handler plays its own).
  */
 export default function PressButton({ variant = "plain", size, accent = "#34d399", pulse = false, sfx, className = "", style, disabled, children, onClick, ...rest }: {
   variant?: Variant;
@@ -73,7 +75,8 @@ export default function PressButton({ variant = "plain", size, accent = "#34d399
   return (
     <button disabled={disabled} className={cls} style={{ ...variantStyle(variant, accent, !!disabled), ...style }} {...rest}
       onClick={(e) => {
-        if (sfx !== false) playSfx(sfx ?? (variant === "primary" || variant === "gold" ? "ui-confirm" : "ui-tap"));
+        const sound = sfx === false ? null : sfx ?? (variant === "primary" || variant === "gold" ? "ui-confirm" : null);
+        if (sound) playSfx(sound);
         onClick?.(e);
       }}>
       {children}
