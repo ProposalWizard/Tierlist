@@ -36,8 +36,12 @@
  *   2. The first game opens Training and Achievements (announced).
  *   3. "Your manager wants a word": tapping Relations goes straight into the
  *      manager's talk, and the talk is what opens Relations (announced).
- *   4. Training: two drills, with its tutorial.
- *   5. The Shop opens after two drills or three games, whichever comes first
+ *      v0.25.1 (Harry, 3 Oct 2026): after the talk you stay on Relations and a
+ *      short tour says what the page is and what the bars do, then points at
+ *      Training (lib/star/tours.ts, relationsTour).
+ *   4. Training: ONE drill, with its tutorial (v0.25.1, Harry: "drop it from
+ *      2 forced training drills to 1"; DRILLS_TO_OPEN_SHOP).
+ *   5. The Shop opens after one drill or three games, whichever comes first
  *      (announced). Then the phone (the step says what it costs and how much
  *      you still need when you cannot afford it yet).
  *   6. Sponsors open with your first sponsor offer.
@@ -54,7 +58,7 @@ export function gameFirst(c: Pick<CareerState, "unlocks">): boolean {
   return !!c.unlocks?.gameFirst;
 }
 
-/** v0.25: the Shop opens after this many games (or two drills, if sooner). */
+/** v0.25: the Shop opens after this many games (or one drill, if sooner). */
 export const SHOP_AFTER_GAMES = 3;
 
 /**
@@ -70,8 +74,17 @@ export function hasSponsorOffer(c: Pick<CareerState, "brands">): boolean {
   return (c.brands?.offers.length ?? 0) > 0 || (c.brands?.deals.length ?? 0) > 0;
 }
 
-/** How many drills open the League. */
+/** How many drills open the League (the v0.24 order only). */
 export const DRILLS_TO_UNLOCK = 2;
+
+/** v0.25.1: how many drills open the Shop on the game-first order (Harry,
+ *  3 Oct 2026: "drop it from 2 forced training drills to 1"). */
+export const DRILLS_TO_OPEN_SHOP = 1;
+
+/** The drills this career's training step needs. */
+export function drillsNeeded(c: Pick<CareerState, "unlocks">): number {
+  return c.unlocks?.gameFirst ? DRILLS_TO_OPEN_SHOP : DRILLS_TO_UNLOCK;
+}
 
 /** The achievements the chain hands out (shown on the Achievements screen,
  *  above the usual list). */
@@ -86,7 +99,7 @@ export const LOCK_HINT: Record<Feature, string> = {
   league: "Finish 2 training drills",
   stats: "Finish 2 training drills",
   play: "Finish 2 training drills",
-  shop: "Finish 2 training drills, or play 3 games",
+  shop: "Finish a training drill, or play 3 games",
   achievements: "Play your first game",
   relations: "Talk to your manager after your first game",
   phone: "Buy a phone in Style",
@@ -118,6 +131,9 @@ export function isOpen(c: Pick<CareerState, "unlocks">, f: Feature): boolean {
   if (!c.unlocks) return true;
   // Training was never locked before v0.25.
   if (f === "training" && !c.unlocks.gameFirst) return true;
+  // v0.25.1: one drill opens the Shop. A save that did its one drill under
+  // the old two-drill rule is open at once, never stuck on a shut Shop.
+  if (f === "shop" && c.unlocks.gameFirst && c.unlocks.drills >= DRILLS_TO_OPEN_SHOP) return true;
   return c.unlocks.open.includes(f);
 }
 
@@ -169,7 +185,8 @@ export function markSeen(c: CareerState, key: string): CareerState {
 }
 
 /** A training drill finished. The second one opens League, Stats and Play
- *  (v0.24 order), or the Shop with the first-steps achievement (v0.25). */
+ *  (v0.24 order); the first opens the Shop with the first-steps achievement
+ *  (v0.25 game-first order, one drill since v0.25.1). */
 /** `pointsBefore`: star points before this drill — kept from the first one,
  *  so the message can say how much training added. */
 export function recordDrill(c: CareerState, pointsBefore?: number, starsBefore?: number): CareerState {
@@ -179,8 +196,8 @@ export function recordDrill(c: CareerState, pointsBefore?: number, starsBefore?:
   const starsAtStart = c.unlocks.drills === 0 && starsBefore !== undefined ? starsBefore : c.unlocks.starsAtStart;
   if (c.unlocks.gameFirst) {
     let u: CareerUnlocks = { ...c.unlocks, drills, pointsAtStart, starsAtStart };
-    if (drills >= DRILLS_TO_UNLOCK) u = openFeatures(u, ["shop"], ["shop"]);
-    return { ...withU(c, u), achievements: drills >= DRILLS_TO_UNLOCK ? grant(c, "first-two-sessions") : c.achievements };
+    if (drills >= DRILLS_TO_OPEN_SHOP) u = openFeatures(u, ["shop"], ["shop"]);
+    return { ...withU(c, u), achievements: drills >= DRILLS_TO_OPEN_SHOP ? grant(c, "first-two-sessions") : c.achievements };
   }
   const open = drills >= DRILLS_TO_UNLOCK ? addTo(c.unlocks.open, "league", "stats", "play") : c.unlocks.open;
   return withU(c, { ...c.unlocks, drills, open, pointsAtStart, starsAtStart });
@@ -204,7 +221,9 @@ export function recordLeagueVisit(c: CareerState): CareerState {
 
 /** A game was played. Call it after every match.
  *  v0.25 order: the first opens Training and Achievements; the third opens the
- *  Shop if two drills have not already. Relations waits for the manager's talk.
+ *  Shop if a drill has not already. Relations waits for the manager's talk.
+ *  A save that did one drill under the old two-drill rule (its Shop is open at
+ *  once, see isOpen) gets the step's achievement here, at its next game.
  *  v0.24 order: the first opens the Shop and Relations.
  *  Either way, your first sponsor offer opens Sponsors. All announced. */
 export function recordMatchPlayed(c: CareerState): CareerState {
@@ -213,9 +232,11 @@ export function recordMatchPlayed(c: CareerState): CareerState {
   let u = c.unlocks;
   if (u.gameFirst) {
     if (games >= 1) u = openFeatures(u, ["training", "achievements"], ["training", "achievements"]);
-    if (games >= SHOP_AFTER_GAMES) u = openFeatures(u, ["shop"], ["shop"]);
+    if (games >= SHOP_AFTER_GAMES || u.drills >= DRILLS_TO_OPEN_SHOP) u = openFeatures(u, ["shop"], ["shop"]);
   } else if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
   if (hasSponsorOffer(c)) u = openFeatures(u, ["sponsors"], ["sponsors"]);
+  const owed = !!u.gameFirst && u.drills >= DRILLS_TO_OPEN_SHOP && !c.achievements.includes("first-two-sessions");
+  if (owed) return { ...withU(c, u), achievements: grant(c, "first-two-sessions") };
   return u === c.unlocks ? c : withU(c, u);
 }
 
@@ -301,7 +322,7 @@ export const FIRST_STEPS: FirstStep[] = [
 export const FIRST_STEPS_GAME_FIRST: FirstStep[] = [
   { id: "first-game", label: "Debut", todo: "Play your first game", prompt: "You've got a game today", opens: "Opens Training and Achievements" },
   { id: "boss-meeting", label: "Face to Face", todo: "Talk to your manager", prompt: "Your manager wants a word", opens: "Opens Relations" },
-  { id: "first-two-sessions", label: "First Two Sessions", todo: "Complete two training drills", prompt: "Go to training", opens: "Opens the Shop" },
+  { id: "first-two-sessions", label: "First Session", todo: "Complete a training drill", prompt: "Go to training", opens: "Opens the Shop" },
   { id: "buy-phone", label: "Connected", todo: "Buy a phone", prompt: "Buy your first phone in the Shop", opens: "Opens the Phone" },
 ];
 
@@ -334,7 +355,7 @@ export function phoneStepLine(c: Pick<CareerState, "money">): string {
 export function stepDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">, id: StepId): boolean {
   if (!c.unlocks) return true;
   if (id === "first-game") return (c.careerStats?.appearances ?? 0) >= 1 || c.fixtures.some((f) => f.played);
-  if (id === "first-two-sessions") return c.achievements.includes(id) || c.unlocks.drills >= DRILLS_TO_UNLOCK;
+  if (id === "first-two-sessions") return c.achievements.includes(id) || c.unlocks.drills >= drillsNeeded(c);
   return c.achievements.includes(id);
 }
 
@@ -354,7 +375,7 @@ export function firstStepsDone(c: Pick<CareerState, "unlocks" | "achievements" |
  * all of their first steps, then maybe it says, do you wanna switch this to
  * league as a shortcut?"
  *
- *   "league"       — League (locked until two drills), and every old save.
+ *   "league"       — League (locked until two drills on the v0.24 order), and every old save.
  *   "achievements" — once Achievements has opened, through the first steps,
  *                    and after them if the player says no to the switch.
  */

@@ -11,9 +11,10 @@ import {
   recordMatchPlayed, pendingAnnouncements, markAnnounced, hasSponsorOffer, LOCK_HINT,
   FIRST_STEPS, nextStep, stepDone, firstStepsDone, bottomLeft, slotQuestionDue, setBottomLeft,
   gameFirst, managerTalkDue, stepsFor, phonePrice, phoneShortfall, phoneStepLine, SHOP_AFTER_GAMES,
+  DRILLS_TO_OPEN_SHOP, DRILLS_TO_UNLOCK, drillsNeeded, FIRST_STEPS_GAME_FIRST,
 } from "../../lib/star/unlocks";
 import { relationshipGameGain, applyGameGain, GAME_LOSS } from "../../lib/star/relationshipGame";
-import { welcomeTour, bossTour, HELP_TOURS, TRAINING_TOUR } from "../../lib/star/tours";
+import { welcomeTour, bossTour, HELP_TOURS, TRAINING_TOUR, relationsTour } from "../../lib/star/tours";
 import { KIB_CANS, kibCanEffectLabel } from "../../lib/star/shopData";
 import { selectionStanding } from "../../lib/star/selection";
 import { LIFESTYLE_ITEMS } from "../../lib/star/shopData";
@@ -169,10 +170,23 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   c = recordBossMeeting(markAnnounced(c));
   check(isOpen(c, "relations") && pendingAnnouncements(c).join() === "relations" && !managerTalkDue(c), "the manager's talk opens Relations, announced");
   check(nextStep(c)?.id === "first-two-sessions", "then training");
+  // v0.25.1 (Harry, 3 Oct 2026): one forced drill, not two.
+  check(DRILLS_TO_OPEN_SHOP === 1 && drillsNeeded(c) === 1 && drillsNeeded(fresh24()) === DRILLS_TO_UNLOCK, "game first needs one drill; the v0.24 order keeps two");
+  check(!isOpen(c, "shop"), "no drills yet: Shop still shut");
   c = recordDrill(markAnnounced(c));
-  check(!isOpen(c, "shop"), "one drill: Shop still shut");
-  c = recordDrill(c);
-  check(isOpen(c, "shop") && pendingAnnouncements(c).join() === "shop" && c.achievements.includes("first-two-sessions"), "two drills open the Shop (announced) with the first-steps achievement");
+  check(isOpen(c, "shop") && pendingAnnouncements(c).join() === "shop" && c.achievements.includes("first-two-sessions"), "one drill opens the Shop (announced) with the first-steps achievement");
+  const twice = recordDrill(c);
+  check(twice.achievements.filter(a => a === "first-two-sessions").length === 1 && pendingAnnouncements(twice).join() === "shop", "a second drill hands out nothing new");
+  check(!/2|two/i.test(LOCK_HINT.shop) && !FIRST_STEPS_GAME_FIRST.some(s => /2|two/i.test(`${s.label} ${s.todo}`)), "nothing on the game-first order still says two drills");
+  // A save that did one drill under the old two-drill rule (Shop shut, no
+  // achievement) is never stuck: the Shop is open at once, its next game hands out the step.
+  {
+    let stuck = recordBossMeeting(recordFirstMatch(played(1, fresh())));
+    stuck = { ...stuck, unlocks: { ...stuck.unlocks!, drills: 1 } };
+    check(isOpen(stuck, "shop") && stepDone(stuck, "first-two-sessions") && nextStep(stuck)?.id === "buy-phone", "an old one-drill save: Shop open at once, the phone next");
+    stuck = recordMatchPlayed(played(2, stuck));
+    check(isOpen(stuck, "shop") && stuck.achievements.includes("first-two-sessions"), "…and gets the step's achievement at its next game");
+  }
   check(!drillMessageDue(c), "no v0.24 'League unlocked' message");
   check(nextStep(c)?.id === "buy-phone", "then the phone");
   // No drills at all: the Shop still opens by game 3.
@@ -210,14 +224,21 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(!isOpen(c, "shop"), "the Shop does NOT open after game 1");
   check(!isOpen(c, "relations") && managerTalkDue(c), "Relations waits: the manager wants a word first");
   check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-life", "the next step is the boss, and its tour points at Relations");
-  // One drill before the boss: still no Shop, still the boss next.
+  // One drill before the boss: the Shop opens (one drill is the rule), and the boss is still next.
   const early = recordDrill(c);
-  check(!isOpen(early, "shop") && nextStep(early)?.id === "boss-meeting", "one drill before the boss: no Shop, and the boss is still next");
+  check(isOpen(early, "shop") && nextStep(early)?.id === "boss-meeting", "one drill before the boss: Shop open, and the boss is still next");
   c = recordBossMeeting(c);
   check(isOpen(c, "relations") && nextStep(c)?.id === "first-two-sessions", "after the boss: Relations open, training next");
   check(!isOpen(c, "shop"), "…and the Shop still shut");
-  c = recordDrill(recordDrill(c));
-  check(isOpen(c, "shop") && nextStep(c)?.id === "buy-phone", "two drills open the Shop; then the phone");
+  // After the talk you stay on Relations: its tour says what the page and the
+  // bars are, then (training next) points at Training — at most 3 steps.
+  const rt = relationsTour(nextStep(c)?.id === "first-two-sessions");
+  check(rt.length <= 3 && rt[rt.length - 1].target === "nav-training" && !!rt[rt.length - 1].press, "the Relations tour is at most 3 steps and ends on 'Tap Training' (pressed)");
+  check(/boss/i.test(rt.map(t => t.text).join(" ")) && /team-mates/i.test(rt[0].text) && /fans/i.test(rt[0].text), "it names the boss, team-mates and fans");
+  check(!relationsTour(false).some(t => t.target === "nav-training"), "replayed (training done): no pointer to Training");
+  check(HELP_TOURS.relations.every(t => t.target !== "nav-training"), "the ? replay never sends you to Training");
+  c = recordDrill(c);
+  check(isOpen(c, "shop") && nextStep(c)?.id === "buy-phone", "one drill opens the Shop; then the phone");
   // Every tour stays short (point 22).
   for (const [name, t] of Object.entries(HELP_TOURS)) check(t.length <= 3, `the ${name} tour is at most 3 steps`);
   check(TRAINING_TOUR.length <= 3, "the training tour is at most 3 steps");
