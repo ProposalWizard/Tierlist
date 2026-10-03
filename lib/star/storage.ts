@@ -9,6 +9,7 @@ import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { catchUpAwards, compactPotmHistory } from "./potm";
 import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
+import { setActiveFoot } from "./kickFoot";
 import {
   type SaveStamp, type SyncRecord, type SyncedVersion, type DeviceKind, type OtherDeviceWarning,
   type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
@@ -294,6 +295,9 @@ function isSignedInScope(scope: string): boolean {
  * local copy look newer than the cloud.
  */
 export function saveCareer(state: CareerState, scope: string): boolean {
+  // The foot the trial and training draw you kicking with (v0.25 item 11).
+  // The New UI's page sets it too; the Old UI only ever reaches it here.
+  setActiveFoot(state.player?.preferredFoot);
   try {
     // The star rating is banked on every save, so it can never drop and a
     // save from before Star Points picks its ledger up here (starPoints.ts).

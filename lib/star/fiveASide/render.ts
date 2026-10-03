@@ -9,7 +9,7 @@ import type { FakeFaceStyle } from "../fakeFaceStyle";
 import type { MatchRules } from "./rules";
 import { FIVE_HALFWAY_Y } from "./geometry";
 import { figureSkin, type FigureSkin } from "../figureSkin";
-import { paintBody3d, drawSoftShadow } from "../figure3d";
+import { paintBody3d, drawSoftShadow, oneFootKickFeet } from "../figure3d";
 
 /**
  * DRAWING A SMALL-SIDED MATCH.
@@ -702,16 +702,9 @@ export function feetFor(r: number, pose?: BodyPose): { lx: number; ly: number; r
   const kick = pose?.kick ?? 0;
   const kf = Math.sign(pose?.kickFoot ?? 0);
   if (kick > 0 && kf !== 0) {
-    // One leg through the ball: the kicking foot swings forward (up the
-    // screen, away from the camera) and a little across the body; the other
-    // is the standing foot, planted a touch wider.
-    const strikeX = kf * r * (0.19 - kick * 0.1);
-    const strikeY = FEET_Y * r - kick * r * 0.34;
-    const plantX = -kf * r * 0.22;
-    const plantY = FEET_Y * r;
-    return kf > 0
-      ? { lx: plantX, ly: plantY, rx: strikeX, ry: strikeY }
-      : { lx: strikeX, ly: strikeY, rx: plantX, ry: plantY };
+    // One leg out to the ball and up; the other is the standing foot
+    // (figure3d.ts's oneFootKickFeet — both skins swing the same leg).
+    return oneFootKickFeet(r, FEET_Y, kick, kf);
   }
   // The legs scissor apart and back; an old-style kick opens both. Both feet
   // lift a little as they open, which is what stops a stride reading as a man
