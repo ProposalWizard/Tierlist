@@ -231,7 +231,9 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const numberCanvas = newNumberCanvas();
   const numberTex = new T.CanvasTexture(numberCanvas);
   let youBuildId = 0;
+  let lastYou: SigningYou = opts.you;
   const buildYou = async (y: SigningYou) => {
+    lastYou = y;
     const id = ++youBuildId;
     const model = playerModelFor(y.hairStyle);
     if (model !== you.model) {
@@ -335,7 +337,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     m.position.set(x, y, z); m.rotation.y = rotY; room.add(m);
   };
   shirtFrame(-0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.shirt, opts.contract.trim);
-  shirtFrame(0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.trim, opts.contract.shirt);
+  // (every frame is the home shirt: a trim-coloured one read as the wrong club)
+  shirtFrame(0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.shirt, opts.contract.trim);
   shirtFrame(-SIDE + 0.03, 1.75, -0.6, Math.PI / 2, opts.contract.shirt, opts.contract.trim);
   shirtFrame(SIDE - 0.03, 1.75, -0.6, -Math.PI / 2, opts.contract.shirt, opts.contract.trim);
 
@@ -510,7 +513,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     reply: { pos: v3(-0.22, 1.42, -1.42), look: v3(0.05, 1.12, 0.6), fov: 44 },
     contract: { pos: v3(0.26, 1.62, 0.98), look: v3(-0.02, DESK.top, 0.12), fov: 40 },
     sign: { pos: v3(0.7, 1.55, -0.45), look: v3(-0.02, 0.95, 0.42), fov: 46 },
-    shake: { pos: v3(2.6, 1.5, 0.9), look: v3(0, 1.1, 0.0), fov: 50 },
+    // From behind the manager's side, across the desk: your face to camera,
+    // both men whole with a margin on a 390×844 phone (a side-on shot from your
+    // side cut you off at the left edge).
+    shake: { pos: v3(2.3, 1.5, -1.45), look: v3(0, 1.05, 0.0), fov: 58 },
   };
   let camFrom = SHOTS.talk, camTo = SHOTS.talk;
   let camA = 0, camB = 0;
@@ -868,6 +874,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         handL: r(wpos(you.bones.LeftHand)), mode, t: clock - modeStart, model: you.model,
         head: r(wpos(you.bones.Head)), hips: r(wpos(you.bones.Hips)),
         bossHead: r(wpos(boss.bones.Head)), bossHand: r(wpos(boss.bones.RightHand)), bossHips: r(wpos(boss.bones.Hips)),
+        kit: lastYou.kit, contractKit: [opts.contract.shirt, opts.contract.trim], club: opts.contract.club,
         youBend: bendOf(you), bossBend: bendOf(boss), headGap: +wpos(you.bones.Head).distanceTo(wpos(boss.bones.Head)).toFixed(3), cam: [...r(camera.position), +camera.fov.toFixed(1)],
         palmR: r(you.hand.R.palm.clone().applyQuaternion(handQ(you, "R"))), alongR: r(you.hand.R.along.clone().applyQuaternion(handQ(you, "R"))),
         bossPalmR: r(boss.hand.R.palm.clone().applyQuaternion(handQ(boss, "R"))),
