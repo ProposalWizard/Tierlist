@@ -7,6 +7,8 @@ import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
 import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
+import PlaystyleIcon from "./PlaystyleIcon";
+import type { Playstyle } from "@/lib/star/types";
 // The kick-off beat (v0.24: the tunnel picture) lives in its own file.
 import KickOffCard from "./KickOffCard";
 import { useUiVersion } from "@/lib/star/uiLook";
@@ -52,6 +54,10 @@ interface Props {
   energyMode?: EnergyMode;
   /** Absent (dev screens): no energy bar is shown. */
   onEnergyMode?: (mode: EnergyMode) => void;
+  /** v0.26: Defensive / Balanced / Attacking, beside the energy modes.
+   *  Absent `onPlaystyle`: no playstyle buttons. */
+  playstyle?: Playstyle;
+  onPlaystyle?: (ps: Playstyle) => void;
   /** Basic KIB cans you still have — usable at half time only. */
   kibCans?: number;
   onUseKib?: () => void;
@@ -67,7 +73,7 @@ interface Props {
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
-  speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
+  speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, playstyle = "balanced", onPlaystyle, kibCans = 0, onUseKib,
   minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -243,7 +249,8 @@ export default function MatchCommentary({
           </div>
           <span className="w-8 text-right text-sm font-black tabular-nums text-white">{Math.round(energy)}</span>
         </div>
-        <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
+        <div className="mt-2 flex items-stretch gap-2">
+        <div className={`${onPlaystyle ? "flex-1" : "w-full"} grid grid-cols-3 gap-1.5`} role="radiogroup" aria-label="Energy mode">
           {(["low", "medium", "high"] as EnergyMode[]).map(m => {
             const on = energyMode === m;
             // Icons, not words (owners, 23 Sep 2026). Green Low, amber
@@ -263,10 +270,39 @@ export default function MatchCommentary({
                 className={`grid place-items-center rounded-lg py-0.5 transition active:scale-[0.95] ${
                   on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
               >
-                <EnergyModeIcon mode={m} active={on} size={46} />
+                <EnergyModeIcon mode={m} active={on} size={onPlaystyle ? 38 : 46} />
               </button>
             );
           })}
+        </div>
+        {/* v0.26: how you play — drop deep, balanced, stay up top. Same
+            buttons as the energy modes, one thin line between the two. */}
+        {onPlaystyle && (
+          <>
+            <div className="w-px shrink-0 bg-white/15" aria-hidden />
+            <div className="grid flex-1 grid-cols-3 gap-1.5" role="radiogroup" aria-label="Playstyle">
+              {(["defensive", "balanced", "attacking"] as Playstyle[]).map(ps => {
+                const on = playstyle === ps;
+                const ring = ps === "defensive" ? "ring-sky-400/70" : ps === "attacking" ? "ring-pink-400/70" : "ring-slate-200/70";
+                const word = ps === "defensive" ? "Defensive" : ps === "attacking" ? "Attacking" : "Balanced";
+                return (
+                  <button
+                    key={ps}
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={`${word} playstyle`}
+                    title={word}
+                    onClick={() => onPlaystyle(ps)}
+                    className={`grid place-items-center rounded-lg py-0.5 transition active:scale-[0.95] ${
+                      on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
+                  >
+                    <PlaystyleIcon style={ps} active={on} size={38} />
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
         </div>
       </div>
       )}

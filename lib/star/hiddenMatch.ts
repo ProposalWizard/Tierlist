@@ -2,6 +2,7 @@ import { pickFresh, EXTRA_QUIET_USER, EXTRA_QUIET_OPP, EXTRA_MISS_USER, EXTRA_MI
 import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { getTuning } from "@/lib/star/tuningStore";
 import { OFF_PITCH_PEN_CONVERT } from "@/lib/star/penaltyTaking";
+import type { Playstyle } from "@/lib/star/types";
 
 const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
 const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
@@ -136,6 +137,14 @@ export interface HiddenMatchState {
   turnoverZone?: Zone;
   /** Added time, chasing: the "everyone forward" line has been read out. */
   chargeAnnounced?: boolean;
+  /**
+   * The last few kinds of chance actually served to you, newest last (v0.26).
+   * Filled by `noteServedKind`, which the real match calls once it knows the
+   * kind. While it is there, the next request leans away from repeating
+   * them — see KIND_REPEAT_WEIGHT. Absent (every caller that never notes a
+   * kind): no repeat weighting at all.
+   */
+  recentKinds?: ScenarioKind[];
 }
 
 /** The channel the ball is in. See HiddenMatchState.lane. */
@@ -244,6 +253,215 @@ export interface HiddenMatchInputs {
    * and the match is exactly what it always was.
    */
   fergie?: { from: number; to: number };
+  /**
+   * WHO YOU ARE AND HOW YOU ARE PLAYING (v0.26, Harry: "scenarios and
+   * gameplay needs to take into account" your team-mates, the fans, the gap
+   * to the opposition, your stats, and a playstyle toggle). See MatchContext.
+   * Absent — every test screen, the /star-match-dev fork, the unit tests —
+   * the match is exactly what it was.
+   */
+  context?: MatchContext;
+}
+
+/**
+ * MATCH CONTEXT (v0.26).
+ *
+ * Passing a context at all (even `{}`) switches on what needs only the
+ * strengths already in the inputs: the gap to the opposition decides how
+ * often your side wins the ball back (GAP_REGAIN) and leans the kind of
+ * chance (gapKindWeight). Each field below adds its own effect when present.
+ */
+export interface MatchContext {
+  /** Drop deep / balanced / stay up top. Absent or "balanced": no effect. */
+  playstyle?: Playstyle;
+  /** Switches made part-way through a stretch already simulated ahead —
+   *  the same idea as `energyModeChanges`. */
+  playstyleChanges?: { minute: number; playstyle: Playstyle }[];
+  /** 0-100, how your team-mates rate you. 60 (a new career) is neutral. */
+  teamRelationship?: number;
+  /** 0-100, how the fans rate you. 50 is neutral. A small effect. */
+  fanRelationship?: number;
+  /** Your own stats, 0-100. Each leans the kind of chance gently. */
+  skills?: { pace?: number; power?: number; technique?: number; vision?: number };
+}
+
+/** The playstyle in force at this minute (the latest switch at or before it). */
+export function playstyleAt(ctx: MatchContext | undefined, minute: number): Playstyle {
+  let ps: Playstyle = ctx?.playstyle ?? "balanced";
+  let at = -Infinity;
+  for (const c of ctx?.playstyleChanges ?? []) {
+    if (c.minute <= minute && c.minute >= at) { ps = c.playstyle; at = c.minute; }
+  }
+  return ps;
+}
+
+// ── Context constants (v0.26). Set by measuring whole matches —
+// tests/star/matchContext.mts holds the before/after bounds. ──
+
+/** How much harder the ball is to win BACK per unit of strength gap
+ *  (quality, -1..1). On top of TURNOVER_EDGE, which already tilts it. */
+export const GAP_REGAIN = getTuning("context.gapRegain");
+/** The same, for keeping it once you have it — smaller on purpose. */
+const GAP_KEEP = 0.04;
+/** Team-mates: share of the ball per relationship point away from 60. */
+export const TEAM_REL_INVOLVE = getTuning("context.teamRelInvolve");
+/** Fans: the most a full (or empty) fan relationship moves involvement,
+ *  at home. Away it is a third of this. */
+export const FAN_INVOLVE = 0.06;
+/** Fans at home: the most they move winning the ball back. */
+const FAN_REGAIN = 0.02;
+/** Playstyle: the team concedes a little less / more. Scales the
+ *  opponent's chance rate. */
+export const PLAYSTYLE_CONCEDE: Record<Playstyle, number> = {
+  defensive: getTuning("context.defensiveConcede"),
+  balanced: 1,
+  attacking: getTuning("context.attackingConcede"),
+};
+/** Playstyle: dropping deep helps win the ball back; staying up doesn't. */
+const PLAYSTYLE_REGAIN: Record<Playstyle, number> = { defensive: 0.03, balanced: 0, attacking: -0.02 };
+/**
+ * Playstyle: how likely a move in each area finds YOU. Defensive's deep
+ * numbers also grow with how much stronger the opposition is (the reason
+ * to pick it): × (1 + DEF_UNDERDOG × how far below them you are).
+ */
+const PLAYSTYLE_PULL: Record<Playstyle, Record<Zone, number>> = {
+  defensive: { own_box: 1.3, defensive: 1.3, middle: 1.3, attacking: 0.95, box: 0.72 },
+  balanced: { own_box: 1, defensive: 1, middle: 1, attacking: 1, box: 1 },
+  attacking: { own_box: 0.5, defensive: 0.5, middle: 0.7, attacking: 1.08, box: 1.3 },
+};
+const DEF_UNDERDOG = 0.8;
+/**
+ * Defensive: per minute your side has the ball in midfield or its own half,
+ * the chance you drop in and are the one on it. This is where Defensive's
+ * build-up chances come from — the match otherwise only makes chances in the
+ * final third.
+ */
+export const DEF_DROP_RATE = getTuning("context.defensiveDropRate");
+/** Attacking: how much less often you come short for the ball when starved. */
+const ATT_STARVE = 0.6;
+
+/** Playstyle: the kind mix. 1 for anything unlisted. */
+export const PLAYSTYLE_KIND: Record<Playstyle, Partial<Record<ScenarioKind, number>>> = {
+  defensive: {
+    buildup: 1.6, midfield_pass: 1.8, through_ball: 1.5, long_range: 1.5,
+    one_on_one: 0.6, tight_angle: 0.55, cutback: 0.8, byline_cross: 0.8,
+  },
+  balanced: {},
+  attacking: {
+    one_on_one: 1.7, cutback: 1.5, byline_cross: 1.4, tight_angle: 1.1,
+    buildup: 0.45, midfield_pass: 0.45, long_range: 0.7, through_ball: 0.75,
+  },
+};
+
+/** Kinds that are the ball being played INTO you to finish (a team-mate
+ *  finding you). A good relationship leans toward them. In this game a
+ *  through ball, a cutback and a cross are passes YOU play. */
+const RECEIVED_KINDS: ScenarioKind[] = ["one_on_one", "tight_angle"];
+
+/** The served-kind memory: how many to remember, and how much less likely
+ *  each is to come straight back (newest first). */
+export const RECENT_KINDS = 2;
+export const KIND_REPEAT_WEIGHT = [0.3, 0.7];
+/** Weights are turned into whole copies of each kind, this many per 1.0. */
+const KIND_RES = 8;
+
+const clampN = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+/** -1..1 around 50, for a 0-100 stat. */
+const lean = (v: number | undefined) => (v === undefined ? 0 : clampN((v - 50) / 50, -1, 1));
+
+/** Remember a kind the match actually served you (see recentKinds). */
+export function noteServedKind(state: HiddenMatchState, kind: ScenarioKind): void {
+  state.recentKinds = [...(state.recentKinds ?? []), kind].slice(-RECENT_KINDS);
+}
+
+/** Team-mates and fans: how much more (or less) the ball finds you. */
+export function relationshipInvolvement(ctx: MatchContext | undefined, home?: boolean): number {
+  if (!ctx) return 1;
+  let m = 1;
+  if (ctx.teamRelationship !== undefined) m *= clampN(1 + (ctx.teamRelationship - 60) * TEAM_REL_INVOLVE, 0.6, 1.3);
+  if (ctx.fanRelationship !== undefined) {
+    m *= 1 + lean(ctx.fanRelationship) * (home === true ? FAN_INVOLVE : home === false ? FAN_INVOLVE / 3 : FAN_INVOLVE / 2);
+  }
+  return m;
+}
+
+/** Playstyle: how likely a move in this area finds you. */
+export function playstylePull(ps: Playstyle, zone: Zone, quality: number): number {
+  const base = PLAYSTYLE_PULL[ps][zone];
+  if (ps === "defensive" && (zone === "own_box" || zone === "defensive" || zone === "middle")) {
+    return base * (1 + DEF_UNDERDOG * Math.max(0, -quality));
+  }
+  return base;
+}
+
+/** The gap leans the kind: against a much better side you get it on the
+ *  break (balls in behind, long shots); against a much worse one they sit
+ *  deep and you work it wide (cutbacks, crosses, long shots). */
+export function gapKindWeight(kind: ScenarioKind, quality: number): number {
+  const u = Math.max(0, -quality), f = Math.max(0, quality);
+  switch (kind) {
+    case "one_on_one": return (1 + 0.5 * u) * (1 - 0.3 * f);
+    case "through_ball": return (1 + 0.4 * u) * (1 - 0.3 * f);
+    case "long_range": return (1 + 0.3 * u) * (1 + 0.15 * f);
+    case "cutback": return (1 - 0.3 * u) * (1 + 0.4 * f);
+    case "byline_cross": return (1 - 0.3 * u) * (1 + 0.4 * f);
+    case "tight_angle": return 1 - 0.2 * u;
+    default: return 1;
+  }
+}
+
+/** Your stats lean the kind — gently, at most about ±45% on one kind. */
+export function skillKindWeight(kind: ScenarioKind, sk: MatchContext["skills"]): number {
+  if (!sk) return 1;
+  const shooting = sk.power === undefined && sk.technique === undefined
+    ? undefined : ((sk.power ?? 50) + (sk.technique ?? 50)) / 2;
+  switch (kind) {
+    case "one_on_one": return 1 + 0.45 * lean(sk.pace);            // quick: in behind
+    case "long_range": return 1 + 0.45 * lean(shooting);           // strikes it: from range
+    case "tight_angle": return 1 + 0.12 * lean(sk.technique);
+    case "through_ball": return 1 + 0.4 * lean(sk.vision);         // sees it: the pass
+    case "midfield_pass": return 1 + 0.25 * lean(sk.vision);
+    case "cutback": return 1 + 0.2 * lean(sk.vision);
+    case "byline_cross": return 1 + 0.15 * lean(sk.vision);
+    default: return 1;
+  }
+}
+
+/**
+ * The kinds a request offers, re-weighted for the context and for what you
+ * have just been served. Turned into whole copies (pickScenarioKindFrom and
+ * the chance maker both count copies), so the list stays plain kinds.
+ * Unchanged — the very same array — when there is nothing to weigh, and a
+ * single-kind list (a set piece) is never touched.
+ */
+export function weightKinds(kinds: ScenarioKind[], state: HiddenMatchState, inputs: HiddenMatchInputs): ScenarioKind[] {
+  const ctx = inputs.context;
+  const recent = state.recentKinds;
+  if (!ctx && !(recent && recent.length)) return kinds;
+  const counts = new Map<ScenarioKind, number>();
+  for (const k of kinds) counts.set(k, (counts.get(k) ?? 0) + 1);
+  if (counts.size <= 1) return kinds;
+  const quality = clamp1((inputs.teamStrength - inputs.oppStrength) / 40);
+  const ps = playstyleAt(ctx, state.minute);
+  const rel = ctx?.teamRelationship;
+  const out: ScenarioKind[] = [];
+  counts.forEach((c, k) => {
+    let w = 1;
+    if (ctx) {
+      w *= PLAYSTYLE_KIND[ps][k] ?? 1;
+      w *= gapKindWeight(k, quality);
+      w *= skillKindWeight(k, ctx.skills);
+      if (rel !== undefined && RECEIVED_KINDS.includes(k)) w *= clampN(1 + (rel - 60) * 0.008, 0.7, 1.32);
+    }
+    if (recent) {
+      for (let i = 0; i < recent.length && i < KIND_REPEAT_WEIGHT.length; i++) {
+        if (recent[recent.length - 1 - i] === k) { w *= KIND_REPEAT_WEIGHT[i]; break; }
+      }
+    }
+    const n = Math.max(1, Math.round(c * w * KIND_RES));
+    for (let i = 0; i < n; i++) out.push(k);
+  });
+  return out;
 }
 
 export interface HiddenMatchEvent {
@@ -679,7 +897,7 @@ export function tick(
 
   // ── Possession ──
   if (rng() < TURNOVER) {
-    const userWins = rng() < 0.5 + edge * TURNOVER_EDGE + state.momentum * 0.1;
+    const userWins = rng() < 0.5 + edge * TURNOVER_EDGE + state.momentum * 0.1 + contextRegain(state, inputs, quality);
     const next: Side = userWins ? "user" : "opponent";
     if (next !== state.possession) {
       state.possession = next;
@@ -724,7 +942,10 @@ export function tick(
     const rate = (inBox ? CHANCE_BOX : CHANCE_DEEP)
       * (1 + (userHasIt ? edge : -edge) * 0.1)
       * (1 + Math.max(0, userHasIt ? state.momentum : -state.momentum) * 0.2)
-      * (lateCharge ? (userHasIt ? FERGIE_CHANCES : FERGIE_EXPOSED) : 1);
+      * (lateCharge ? (userHasIt ? FERGIE_CHANCES : FERGIE_EXPOSED) : 1)
+      // Playstyle: dropping deep, your side concedes a little less; staying
+      // up, a little more (v0.26). Balanced or no context: × 1.
+      * (!userHasIt && inputs.context ? PLAYSTYLE_CONCEDE[playstyleAt(inputs.context, state.minute)] : 1);
 
     // One roll decides both, so Medium and Low use the random stream exactly
     // as before; only High has the extra slice above the normal rate.
@@ -780,7 +1001,12 @@ export function tick(
         // pitch this position is used, and which lane it lives in.
         const pulled = baseInvolvement
           * positionPull(inputs.position, state.zone)
-          * lanePull(inputs.position, state.lane);
+          * lanePull(inputs.position, state.lane)
+          // v0.26: team-mates, fans and playstyle (1 with no context).
+          * (inputs.context
+            ? relationshipInvolvement(inputs.context, inputs.home)
+              * playstylePull(playstyleAt(inputs.context, state.minute), state.zone, quality)
+            : 1);
         // Item 24: once a sub is actually on, the later he came on, the likelier
         // the ball finds him (his chances squeezed into the minutes left).
         const involvement = inputs.lateSub ? Math.min(0.95, pulled * lateSubInvolvement(inputs.lateSub))
@@ -837,14 +1063,34 @@ export function tick(
   // from his own half. Measured, that pushed a striker's build-up share UP
   // from 10.6% to 11.0% while the change was supposed to cut it. A striker
   // drops in to get the ball in the final third, not on his own 18-yard line.
+  // Playstyle Defensive (v0.26): you drop into midfield and are on the ball
+  // in the build-up — more often the stronger they are. Only rolled on
+  // Defensive, so every other game uses the random stream exactly as before.
+  const style = inputs.context ? playstyleAt(inputs.context, state.minute) : "balanced";
+  if (style === "defensive" && userHasIt && (state.zone === "middle" || state.zone === "defensive")
+      && rng() < DEF_DROP_RATE * (1 + DEF_UNDERDOG * Math.max(0, -quality))
+        * relationshipInvolvement(inputs.context, inputs.home)) {
+    state.sinceInvolved = 0;
+    const lane = state.lane ?? "centre";
+    return {
+      events,
+      request: {
+        zone: state.zone,
+        kinds: weightKinds(kindsForZone(state.zone, lane), state, inputs),
+        lane,
+        pattern: "settled",
+        reason: "You drop deep and get on the ball",
+      },
+    };
+  }
   if (userHasIt && state.sinceInvolved >= STARVED_MIN && state.zone !== "own_box"
-      && rng() < 0.45 * positionPull(inputs.position, state.zone)) {
+      && rng() < 0.45 * positionPull(inputs.position, state.zone) * (style === "attacking" ? ATT_STARVE : 1)) {
     state.sinceInvolved = 0;
     return {
       events,
       request: {
         zone: state.zone,
-        kinds: kindsForZone(state.zone),
+        kinds: weightKinds(kindsForZone(state.zone), state, inputs),
         reason: "You drop in and demand the ball",
       },
     };
@@ -858,6 +1104,23 @@ export function tick(
   }
 
   return { events, request: null };
+}
+
+/**
+ * v0.26: the extra tilt on who wins a turnover. The gap counts most when the
+ * opponent has the ball — the bigger it is against you, the less often you
+ * get it back. Plus the playstyle and, at home, the crowd. 0 with no context.
+ */
+function contextRegain(state: HiddenMatchState, inputs: HiddenMatchInputs, quality: number): number {
+  const ctx = inputs.context;
+  if (!ctx) return 0;
+  const regaining = state.possession === "opponent";
+  let t = quality * (regaining ? GAP_REGAIN : GAP_KEEP);
+  if (regaining) {
+    t += PLAYSTYLE_REGAIN[playstyleAt(ctx, state.minute)];
+    if (inputs.home === true && ctx.fanRelationship !== undefined) t += lean(ctx.fanRelationship) * FAN_REGAIN;
+  }
+  return t;
 }
 
 /**
@@ -1006,7 +1269,9 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
 
   return {
     zone: state.zone,
-    kinds,
+    // v0.26: leaned by playstyle, the gap, your stats, team-mates, and away
+    // from what you were just served. The same list with no context.
+    kinds: weightKinds(kinds, state, inputs),
     lane,
     pattern,
     ...(lateCharge ? { lateCharge: true } : {}),

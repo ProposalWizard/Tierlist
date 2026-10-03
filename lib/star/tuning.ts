@@ -154,13 +154,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "energy.fullMatchHigh", category: "Energy", label: "Full match on High (Premier League)",
-    description: "Energy a full 90 minutes costs on High in the Premier League.",
-    default: 95, min: 0, max: 200, step: 1,
+    description: "Energy a full 90 minutes costs on High in the Premier League. Was 95; 120 from v0.26 (Harry: High should cost much more, in return for its extra chances).",
+    default: 120, min: 0, max: 200, step: 1,
   },
   {
     key: "energy.fullMatchLow", category: "Energy", label: "Full match on Low (Premier League)",
-    description: "Energy a full 90 minutes costs on Low in the Premier League.",
-    default: 30, min: 0, max: 200, step: 1,
+    description: "Energy a full 90 minutes costs on Low in the Premier League. Was 30; 25 from v0.26.",
+    default: 25, min: 0, max: 200, step: 1,
   },
   {
     key: "energy.highModeChances", category: "Energy", label: "High mode — chance multiplier",
@@ -199,8 +199,40 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "energy.tiredSkillCut", category: "Energy", label: "Most power/curve lost when exhausted",
-    description: "At 0 energy your power arrow and curve are this much weaker (0.30 = 30%); scales down with energy.",
-    default: 0.3, min: 0, max: 1, step: 0.05,
+    description: "At 0 energy your power, technique and free-kick rating are this much weaker (0.40 = 40%). Nothing is lost above 'Full strength above'; below it the cut grows smoothly (v0.26: was a straight line from 100, max 0.30).",
+    default: 0.4, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "energy.fatigueFreshAbove", category: "Energy", label: "Full strength above",
+    description: "Live energy at or above this is full strength — no power or technique lost (v0.26: 80 energy is about full strength, 19 is clearly weaker).",
+    default: 85, min: 1, max: 100, step: 1,
+  },
+
+  // ── Match context (v0.26) ───────────────────────────────────────────
+  {
+    key: "context.gapRegain", category: "Match Context", label: "Strength gap — winning the ball back",
+    description: "How much harder the ball is to win back per unit of strength gap (a 40-point gap is 1 unit). Bigger = a much better opponent keeps it from you longer, so fewer chances.",
+    default: 0.14, min: 0, max: 0.5, step: 0.01,
+  },
+  {
+    key: "context.teamRelInvolve", category: "Match Context", label: "Team-mates — share of the ball per point",
+    description: "How much more often team-mates find you per relationship point above 60 (and less below). 0.007 = +28% at 100, -28% at 20 (capped at x0.6 / x1.3).",
+    default: 0.007, min: 0, max: 0.02, step: 0.001,
+  },
+  {
+    key: "context.defensiveConcede", category: "Match Context", label: "Defensive — opponent chance rate",
+    description: "On Defensive, the opponent's chances are multiplied by this (0.88 = 12% fewer).",
+    default: 0.88, min: 0.5, max: 1, step: 0.01,
+  },
+  {
+    key: "context.attackingConcede", category: "Match Context", label: "Attacking — opponent chance rate",
+    description: "On Attacking, the opponent's chances are multiplied by this (1.12 = 12% more).",
+    default: 1.12, min: 1, max: 1.5, step: 0.01,
+  },
+  {
+    key: "context.defensiveDropRate", category: "Match Context", label: "Defensive — dropping deep for the ball",
+    description: "On Defensive, per minute your side has the ball in midfield or its own half, the chance you are the one on it (a build-up chance). Grows against a stronger side.",
+    default: 0.04, min: 0, max: 0.2, step: 0.005,
   },
   {
     key: "energy.injuryFloor", category: "Energy", label: "Extra injury risk below",

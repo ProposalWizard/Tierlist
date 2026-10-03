@@ -17,7 +17,7 @@ import {
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
 import {
-  newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota,
+  newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode } from "@/lib/star/chanceMaker";
@@ -116,8 +116,8 @@ import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPl
 import ContactBall, { type BallMotion } from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
-import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
-import { getTuning } from "@/lib/star/tuningStore";
+import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
+import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
@@ -997,6 +997,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [liveEnergy, setLiveEnergy] = useState(career?.energy ?? 100);
   const energyModeRef = useRef<EnergyMode>("medium");
   const [energyMode, setEnergyModeState] = useState<EnergyMode>("medium");
+  /** v0.26: Defensive / Balanced / Attacking — kept on the career, changed
+   *  live (see setPlaystyle). `playstyleChangesRef` holds switches made
+   *  inside the stretch in flight, like the energy mode's `changes`. */
+  const playstyleRef = useRef<Playstyle>(career?.playstyle ?? "balanced");
+  const [playstyle, setPlaystyleState] = useState<Playstyle>(career?.playstyle ?? "balanced");
+  const playstyleChangesRef = useRef<{ minute: number; playstyle: Playstyle }[]>([]);
   const energyFactorRef = useRef(career ? energyFactorFor(career, fixture) : 1);
   /** Basic KIB cans drunk at half time this match — reported back in the
    *  match stats and taken off your stock once the match is over. */
@@ -1274,6 +1280,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     matchMinuteRef.current = minute;
     setMatchMinute(minute);
   };
+  /** v0.26: switch playstyle. Like the energy mode, it takes over from the
+   *  next minute of the stretch already being read out. */
+  const setPlaystyle = (ps: Playstyle) => {
+    if (ps === playstyleRef.current) return;
+    playstyleRef.current = ps;
+    setPlaystyleState(ps);
+    const stretch = stretchRef.current;
+    if (stretch && phaseRef.current === "feed" && !hookedRef.current) {
+      playstyleChangesRef.current = [...playstyleChangesRef.current, { minute: matchMinuteRef.current + 1, playstyle: ps }];
+      startSimulation(true);
+    }
+  };
   const setEnergyMode = (mode: EnergyMode) => {
     if (mode === energyModeRef.current) return;
     // Bank what the old mode cost up to now before the new rate applies.
@@ -1308,11 +1326,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * required drag distance never becomes a moving target mid-match; see the
    * note by dragForFullPower's call site.
    */
-  const TIRED_SKILLS_MAX_CUT = getTuning("energy.tiredSkillCut");
+  // v0.26: full strength at 85+ energy, then a smooth drop to 40% off at 0
+  // (energy.ts's fatigueCut). Starts from the career's kick-off energy.
   const tiredSkills = (): KickSkills => {
-    const energy = liveEnergyAt(matchMinuteRef.current);
-    const cut = (1 - energy / 100) * TIRED_SKILLS_MAX_CUT;
-    return { power: skills.power * (1 - cut), technique: skills.technique * (1 - cut) };
+    const t = tiredKickSkills(skills, liveEnergyAt(matchMinuteRef.current));
+    return { power: t.power, technique: t.technique };
   };
 
   /**
@@ -1358,6 +1376,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // v0.26: playstyle, team-mates, fans and your stats shape the chances.
+      context: {
+        playstyle: playstyleRef.current,
+        ...(car ? {
+          teamRelationship: car.relationships.team,
+          fanRelationship: car.relationships.fans,
+          skills: { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision },
+        } : {}),
+      },
       // v0.15 item 6: penalties won in any move, not only yours.
       livePenalties: true,
       // Item 24: once you are on as a sub, your chances are squeezed into the
@@ -4626,6 +4653,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
           kibCansUsed: kibUsedRef.current,
+          playstyle: playstyleRef.current,
           ...cheekyStats(),
         };
         const gen = sceneGenRef.current;
@@ -4781,8 +4809,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     st.userScore = userScoreRef.current;
     st.oppScore = oppScoreRef.current;
 
+    if (!prior) playstyleChangesRef.current = [];
     const baseInputs: HiddenMatchInputs = prior
-      ? { ...prior.inputs, energyModeChanges: prior.changes }
+      ? { ...prior.inputs, energyModeChanges: prior.changes, context: { ...prior.inputs.context, playstyleChanges: playstyleChangesRef.current } }
       : hiddenInputs();
     if (!prior) {
       stretchRef.current = {
@@ -5013,6 +5042,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // the minute you were hooked — not necessarily 90.
             endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
             kibCansUsed: kibUsedRef.current,
+            playstyle: playstyleRef.current,
             ...(wentToExtraTimeRef.current ? { wentToExtraTime: true } : {}),
             ...(shootoutResultRef.current ? { shootout: shootoutResultRef.current } : {}),
             ...cheekyStats(),
@@ -5358,6 +5388,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ...matchExtras().extra,
       endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
       kibCansUsed: kibUsedRef.current,
+      playstyle: playstyleRef.current,
       wentToExtraTime: wentToExtraTimeRef.current,
       shootout: result,
       ...cheekyStats(),
@@ -5603,6 +5634,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         mode: chanceMakerRef.current,
       });
       scenarioRef.current = made.sc;
+      // v0.26: the match leans away from serving this kind straight back.
+      noteServedKind(matchStateRef.current, made.sc.kind);
     }
     if (chain) {
       scenarioRef.current.chainDepth = chain.depth;
@@ -5745,6 +5778,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setLiveEnergy(energyRef.current);
     energyModeRef.current = "medium";
     setEnergyModeState("medium");
+    playstyleRef.current = careerRef.current?.playstyle ?? playstyleRef.current;
+    setPlaystyleState(playstyleRef.current);
+    playstyleChangesRef.current = [];
     kibUsedRef.current = 0;
     setKibUsed(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
@@ -6075,9 +6111,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // A dead ball is struck with your free-kick rating, not your general
     // technique — the one strike in football that is purely placement and curl.
     const tired = tiredSkills();
+    // v0.26: the free-kick rating tires like power and technique do.
+    const fkRaw = careerRef.current?.skills.freeKick ?? setPieceSkillRef.current;
     const strikeWith = auto ? auto.skills : setPieceSkills(
       tired,
-      careerRef.current?.skills.freeKick ?? setPieceSkillRef.current ?? tired.technique,
+      fkRaw === undefined ? tired.technique : fkRaw * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current))),
       scenarioRef.current.kind,
     );
     // ── Shot power: the top is flattened (v0.15, item 11b) ── the ball is
@@ -6557,6 +6595,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             energy={liveEnergy}
             energyMode={energyMode}
             onEnergyMode={setEnergyMode}
+            playstyle={playstyle}
+            onPlaystyle={setPlaystyle}
             kibCans={Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
             onUseKib={drinkHalfTimeKib}
             // Tapping the commentary empties the queue in one go. Nobody wants
