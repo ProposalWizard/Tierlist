@@ -151,7 +151,7 @@ import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
 import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
-import { showYouFigure, matchBallLook } from "@/lib/star/newLook";
+import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
@@ -1971,6 +1971,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Seconds remaining on the player's kicking pose. A strike takes one frame,
   // so without a hold the swing would never actually be seen.
   const kickPoseRef = useRef(0);
+  const playersLook = useMatchPlayersLook();
   // New view, 3D figures (lib/star/sprites.ts): each man's smoothed speed,
   // heading and distance run, so the baked clip matches what he is doing and
   // his feet keep pace with the grass. Pictures only — nothing reads it back.
@@ -3385,7 +3386,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.lineWidth = Math.max(1.5, R * 0.07);
       ctx.strokeStyle = "rgba(255,255,255,0.85)";
       ctx.beginPath();
-      ctx.ellipse(f.px, f.py, rr, rr * 0.42, 0, 0, Math.PI * 2);
+      // On the ball it is a round ring a clear gap outside it: the flat
+      // ellipse a man stands in, put round a ball, made ball + ring read as
+      // an eye (Harry, 3 Oct 2026).
+      if (ringOnBall) ctx.arc(f.px, f.py, Math.max(BALL_PX * f.scale * 2.3, R * 0.34), 0, Math.PI * 2);
+      else ctx.ellipse(f.px, f.py, rr, rr * 0.42, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
@@ -6462,10 +6467,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               // the stats screen, not a preview that gets recalculated.
             ).toFixed(1), "text-sky-300")}
           </div>
-          {/* Players' look, 3D or Classic, flipped mid-match. */}
+          {/* Players' look, 3D or Classic, flipped mid-match. Hidden when the
+              new view draws the baked 3D players, which it does not change. */}
+          {!(newViewRef.current && playersLook === "3d") && (
           <div className="flex items-center border-l border-white/10 px-1.5">
             <FigureSkinToggle compact />
           </div>
+          )}
           <button
             onClick={toggleMuted}
             aria-label={muted ? "Unmute sound" : "Mute sound"}

@@ -176,6 +176,21 @@ function dirIndex(facing: number, dirs: number): number {
   return k;
 }
 
+/**
+ * The facing frame to show. Seen from above with the tilt, a man running
+ * straight across the screen leans and strides flat and reads as lying down;
+ * the up-diagonal frame (running across and a touch away from the camera)
+ * stands him up. So pure sideways running uses that frame instead.
+ */
+function cellDir(clip: string, facing: number, dirs: number): number {
+  const k = dirIndex(facing, dirs);
+  if (dirs === 8 && (clip === "jog" || clip === "sprint")) {
+    if (k === 0) return 7;
+    if (k === 4) return 5;
+  }
+  return k;
+}
+
 /** Which frame of a clip `t` seconds in. */
 export function spriteFrame(clip: { fps: number; loop: string; frames: number }, t: number): number {
   const n = clip.frames;
@@ -236,7 +251,7 @@ export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   if (!clip) return false;
   const atlas = atlasFor(o.kit);
   if (!atlas) return false;
-  const cell = clip.cells[dirIndex(o.facingRad, clip.dirs) * clip.frames + spriteFrame(clip, o.t)];
+  const cell = clip.cells[cellDir(o.clip, o.facingRad, clip.dirs) * clip.frames + spriteFrame(clip, o.t)];
   if (!cell) return false;
   const [cx, cy, cw, ch, ax, ay] = cell;
   const s = (o.height ?? 22) / index.standH;
@@ -287,7 +302,7 @@ export function spriteCell(char: SpriteChar, clip: SpriteClip, t: number, facing
   if (!spritesReady() || !index) return null;
   const c = index.chars[char]?.clips[clip];
   if (!c) return null;
-  const cell = c.cells[dirIndex(facingRad, c.dirs) * c.frames + spriteFrame(c, t)];
+  const cell = c.cells[cellDir(clip, facingRad, c.dirs) * c.frames + spriteFrame(c, t)];
   if (!cell) return null;
   const [sx, sy, sw, sh, ax, ay] = cell;
   return { sx, sy, sw, sh, ax, ay, scale: height / index.standH, atlasW: index.atlas.w, atlasH: index.atlas.h };

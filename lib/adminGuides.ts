@@ -923,7 +923,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "Nowhere yet — the real game still draws everyone in the Classic look.",
-      "To try 3D in a real career on one phone: Settings → Player Graphics → Player look → 3D (that phone only). Harry decides when it becomes everyone's look.",
+      "To try 3D in a real career on one phone: Settings → Look → Drawn-player style → Shaded (that phone only). Harry decides when it becomes everyone's look.",
     ],
     dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
   },

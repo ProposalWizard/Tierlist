@@ -4,7 +4,7 @@
  * Harry, 3 Oct 2026: "That ball is horrible." At about 7 px across the photo
  * ball turns into a grey blob. This one is drawn: crisp white, lit from the
  * upper left like the players, a hint of dark pentagon panels (one in the
- * middle, five round the edge) that turn with the ball's roll, a 1 px dark rim
+ * middle, three cut by the edge) that turn with the ball's roll, a 1 px dark rim
  * so it never melts into the white lines or a pale shirt, and a small soft
  * shadow thrown to the lower right like the men's.
  *
@@ -68,32 +68,27 @@ export function drawMatchBall(
     ctx.closePath();
     ctx.fill();
   };
-  pent(0, 0, r * 0.34, 0);
-  for (let i = 0; i < 5; i++) {
-    const a = (i * Math.PI * 2) / 5 + Math.PI / 2;
-    // Squashed toward the edge, as a panel on the far side of a sphere is.
-    ctx.save();
-    ctx.translate(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
-    ctx.rotate(a);
-    ctx.scale(0.45, 0.85);
-    ctx.globalAlpha = 0.6;
-    pent(0, 0, r * 0.26, Math.PI / 2);
-    ctx.globalAlpha = 1;
-    ctx.restore();
+  // One dark pentagon in the middle and three cut off by the edge — the
+  // classic ball picture. All of it is clipped to the circle, so the
+  // outline of the ball stays perfectly round however it rolls.
+  pent(0, 0, r * 0.32, 0);
+  for (let i = 0; i < 3; i++) {
+    const a = (i * Math.PI * 2) / 3 + Math.PI / 6;
+    pent(Math.cos(a) * r * 0.98, Math.sin(a) * r * 0.98, r * 0.3, a + Math.PI / 2);
   }
   ctx.restore();
 
   // A small highlight, upper left, so it reads as round.
   ctx.beginPath();
-  ctx.arc(-r * 0.36, -r * 0.4, r * 0.22, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.arc(-r * 0.4, -r * 0.42, r * 0.16, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.fill();
 
   // The rim: one device pixel, dark, so it separates from grass and lines.
   ctx.beginPath();
   ctx.arc(0, 0, r - px1 * 0.5, 0, Math.PI * 2);
   ctx.lineWidth = px1;
-  ctx.strokeStyle = "rgba(10,16,24,0.9)";
+  ctx.strokeStyle = "rgba(10,16,24,0.55)";
   ctx.stroke();
   ctx.restore();
 }

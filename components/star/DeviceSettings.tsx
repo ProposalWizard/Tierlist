@@ -128,7 +128,7 @@ export function GameSwitches({ glow, fullscreen }: {
   );
 }
 
-/** Player look (Classic/3D), the match view (New/Classic) and the UI (Old/New). Put inside a SetCard. */
+/** Drawn-player style (Flat/Shaded, figureSkin "classic"/"3d"), the match view (New/Classic) with its Look group, and the UI (Old/New). Put inside a SetCard. */
 export function LookSwitches() {
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
@@ -146,9 +146,12 @@ export function LookSwitches() {
       <NewViewLook />
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Player look</span>
-        <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Classic"], ["3d", "3D"]] as const} />
+        <span className="text-[14px] font-bold text-white">Drawn-player style</span>
+        <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Flat"], ["3d", "Shaded"]] as const} />
       </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        For drawn players only: &quot;Drawn&quot; above, the Classic view, five-a-side and the dribble. The 3D players ignore it.
+      </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">UI</span>
