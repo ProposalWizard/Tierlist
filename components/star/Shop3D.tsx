@@ -43,9 +43,15 @@ export interface Shop3DProps {
   backLabel?: string;
   /** Jump to this item in the normal shop (career only). */
   onGoToItem?: (display: DisplayId, itemId: string, level: number) => void;
+  /** Walking out through the front doors: into the 3D garden (career only). */
+  onDoor?: () => void;
+  /** Start just inside the front doors (arriving from the garden). */
+  atDoor?: boolean;
 }
 
-export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem }: Shop3DProps) {
+export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false }: Shop3DProps) {
+  const doorRef = useRef(onDoor);
+  doorRef.current = onDoor;
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<ShopController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -105,7 +111,9 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             setFps(f);
             (window as unknown as { __shop3dFps?: number }).__shop3dFps = f;
           },
+          ...(onDoor ? { onDoor: () => doorRef.current?.() } : {}),
         }, kit, displays, {
+          atDoor,
           quality: q.get("q") === "low" ? "low" : "high",
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           // Settings → "3D shop player": the new character in your skin, hair
@@ -126,7 +134,12 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         if (!dead) setStatus("error");
       }
     })();
-    return () => { dead = true; ctrlRef.current?.dispose(); ctrlRef.current = null; };
+    return () => {
+      dead = true;
+      ctrlRef.current?.dispose();
+      ctrlRef.current = null;
+      delete (window as unknown as { __shop3d?: ShopController }).__shop3d;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -312,7 +325,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
 }
 
 /** The on-screen stick: drag inside the circle; the further, the faster. */
-function Stick({ onMove }: { onMove: (x: number, y: number) => void }) {
+export function Stick({ onMove }: { onMove: (x: number, y: number) => void }) {
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const base = useRef<HTMLDivElement>(null);
   const id = useRef<number | null>(null);
@@ -348,16 +361,16 @@ function Stick({ onMove }: { onMove: (x: number, y: number) => void }) {
   );
 }
 
-const pill: React.CSSProperties = {
+export const pill: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", height: 36, padding: "0 12px", borderRadius: 999,
   background: "rgba(18,13,10,0.62)", border: "1px solid rgba(255,230,200,0.14)", color: INK,
   fontSize: 13, fontWeight: 800, textDecoration: "none", backdropFilter: "blur(6px)",
 };
-const round: React.CSSProperties = {
+export const round: React.CSSProperties = {
   width: 34, height: 34, borderRadius: 999, flex: "none", cursor: "pointer", fontSize: 20, fontWeight: 900, lineHeight: 1,
   border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.06)", color: INK,
 };
-const cta: React.CSSProperties = {
+export const cta: React.CSSProperties = {
   width: "100%", height: 48, borderRadius: 14, border: "none", background: GOLD, color: "#111", cursor: "pointer",
   fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center",
 };

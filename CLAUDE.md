@@ -173,6 +173,23 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## The garden is 3D, and joined to the 3D shop (Mikey, 3 Oct 2026)
+
+From his recording: *"make this garden area also a 3D area … you will be the
+same person in the garden as you are in the store."*
+- Home → Garden opens `components/star/Garden3D.tsx` (three.js scene in
+  `lib/star/garden3d/scene.ts`). The old drawn `GardenScreen` is now only the
+  fallback when a phone can't run 3D.
+- Same footballer as the 3D shop (`public/star/shop3d/character.glb`, kit via
+  the shop's exported `dressInKit`). Team-mates sit on the bench with extra
+  clips from `public/star/garden3d/anims.glb`.
+- The shop stands where the house was. Its doors open the 3D shop
+  (phase `shop-3d`, `atDoor`); the shop's front doors (`onDoor`) bring you back
+  out (`gardenArrive` in page.tsx).
+- Models are free CC0 packs (Kenney, Quaternius) packed by
+  `tools/garden3d/export_models.py` (Blender) and `build_anims.py`. Credits:
+  `public/star/garden3d/LICENSE.txt`. Test page: `/star-garden3d-dev`.
+
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
 Mikey, 2 Oct 2026: "make sure that you never lose this information again."

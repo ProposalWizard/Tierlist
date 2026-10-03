@@ -1,0 +1,44 @@
+3D GARDEN (Home → Garden, /star-garden3d-dev) — where these files come from
+
+Every model here is from a free pack released under:
+
+  CC0 1.0 Universal (CC0 1.0) — Public Domain Dedication
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution is required. Credit anyway.
+
+props.glb (made by tools/garden3d/export_models.py, Blender 4.5)
+  Trees, lanterns, fence, hedges, stone wall and pillars, the fountain basin,
+  potted plants, side table, bucket, logs — from Kenney (https://kenney.nl):
+    - Nature Kit          https://kenney.nl/assets/nature-kit
+    - Furniture Kit       https://kenney.nl/assets/furniture-kit
+    - Fantasy Town Kit 2  https://kenney.nl/assets/fantasy-town-kit
+    - Survival Kit        https://kenney.nl/assets/survival-kit
+  Each pack's License.txt: "Creative Commons Zero, CC0".
+  Joined into one object per piece and Draco-compressed; nothing else changed.
+
+horse.glb
+  "Horse" from Quaternius' LowPoly Animated Farm Animal Pack (CC0),
+  https://opengameart.org/content/lowpoly-animated-farm-animal-pack
+  (also https://quaternius.com). FBX converted to glTF with its animations
+  (Idle, Walk, WalkSlow, Run, Jump, Death). Its materials load with opacity 0;
+  the garden sets them solid at runtime.
+
+bird.glb
+  "Eagle" from Quaternius' Animal Pack Vol.2 (CC0),
+  https://opengameart.org/content/animated-animales-low-poly
+  Animations Flying and Idle. Shrunk to garden-bird size in the scene.
+
+anims.glb (made by tools/garden3d/build_anims.py)
+  Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Idle_Talking_Loop (UAL1) and
+  Consume, Idle_TalkingPhone_Loop, Idle_FoldArms_Loop (UAL2) from Quaternius'
+  Universal Animation Library 1 and 2 (Standard, free, CC0),
+  https://quaternius.com/packs/universalanimationlibrary.html — fetched from
+  the same public GitHub mirror as the 3D shop's clips
+  (wataqsk/project_clara, assets/universal_animation_library/). Rotations
+  only, plus the pelvis height re-based onto the shop footballer's body
+  (public/star/shop3d/character.glb), so they play on the same person.
+
+The footballer himself is the 3D shop's: see public/star/shop3d/LICENSE.txt.
+The stable, gazebo, bench, teqball table, trophy cabinet, shop front, flower
+beds, bushes, hay and sky are drawn in code (lib/star/garden3d/scene.ts).
