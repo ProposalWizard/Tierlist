@@ -149,6 +149,10 @@ import { followedTeams, toggleFollowedTeam } from "@/lib/star/matchDayPrefs";
 import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
+import type { MatchSpriteHint } from "@/lib/star/matchFigure";
+import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { showYouFigure, matchBallLook } from "@/lib/star/newLook";
+import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -1967,6 +1971,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Seconds remaining on the player's kicking pose. A strike takes one frame,
   // so without a hold the swing would never actually be seen.
   const kickPoseRef = useRef(0);
+  // New view, 3D figures (lib/star/sprites.ts): each man's smoothed speed,
+  // heading and distance run, so the baked clip matches what he is doing and
+  // his feet keep pace with the grass. Pictures only — nothing reads it back.
+  const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
+  // Whose goal it was, while the result is up (they celebrate). Picture only.
+  const goalSideRef = useRef<"us" | "them" | null>(null);
   // Action banner ("PASS" / "GOAL") and how long it stays up.
   const [actionBanner, setActionBanner] = useState<string | null>(null);
   const actionBannerTextRef = useRef<HTMLDivElement>(null);
@@ -2891,6 +2901,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       body?: RunupPose | null;
       /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). Looks only. */
       kickFoot?: number;
+      /** Who this is, for the 3D figure's own motion (new view). Looks only. */
+      sid?: string;
     };
 
     // ── Nearer men in front of further ones ──
@@ -2904,6 +2916,61 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // where their boots land on screen — the one depth that is right from
     // every camera facing, since up the screen is always further away.
     let figureQueue: { py: number; draw: () => void }[] | null = null;
+
+    // ── The 3D figure's clip (new view; Settings → Look → Players: 3D) ──
+    // From how the man actually moved: standing, jogging, sprinting; the
+    // strike on your kick; a celebration once a goal is in. Running clips are
+    // timed by the ground he covers, so the feet keep pace with the grass.
+    // Facing: where he is heading, or the ball when he is standing.
+    const spriteMotion = spriteMotionRef.current;
+    const spriteBall = ballRef.current ? ballRef.current.pos : sc.ball;
+    const spriteSeed = (id: string) => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return (Math.abs(h) % 997) / 97; };
+    const screenAngle = (x: number, y: number, wx: number, wy: number) => {
+      const a = toPx(x, y), b = toPx(wx, wy);
+      return Math.atan2(b.py - a.py, b.px - a.px);
+    };
+    const spriteHint = (x: number, y: number, opts: FigureOpts, shirt: string, shorts: string): MatchSpriteHint | undefined => {
+      if (!nv || !opts.sid) return undefined;
+      const id = opts.sid;
+      let m = spriteMotion.get(id);
+      if (!m) { m = { x, y, t: now, vx: 0, vy: 0, dist: 0, facing: NaN }; spriteMotion.set(id, m); }
+      const dt = now - m.t;
+      if (dt > 0) {
+        const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
+        if (dt < 0.25 && d < 4) {
+          const k = Math.min(1, dt * 8);
+          m.vx += (dx / dt - m.vx) * k; m.vy += (dy / dt - m.vy) * k;
+          m.dist += d;
+        } else { m.vx = 0; m.vy = 0; } // a new picture, not a run
+        m.x = x; m.y = y; m.t = now;
+      }
+      const speed = Math.hypot(m.vx, m.vy);
+      let facing: number;
+      if (speed > 0.6) facing = screenAngle(x, y, x + m.vx, y + m.vy);
+      else if (Math.hypot(spriteBall.x - x, spriteBall.y - y) > 0.25) facing = screenAngle(x, y, spriteBall.x, spriteBall.y);
+      else facing = Number.isFinite(m.facing) ? m.facing : -Math.PI / 2;
+      // A little hysteresis so a man between two of the eight facings does not flicker.
+      if (Number.isFinite(m.facing)) {
+        const diff = Math.atan2(Math.sin(facing - m.facing), Math.cos(facing - m.facing));
+        if (Math.abs(diff) < 0.3) facing = m.facing;
+      }
+      m.facing = facing;
+      const them = id.startsWith("def") || id.startsWith("chase") || (id === "you" && autoKickOf(sc)?.side === "them");
+      let clip: SpriteClip, t: number;
+      if (opts.pose === "kick" && id === "you") {
+        clip = "kick";
+        t = Math.max(0, spriteKickStrikeT() - 0.12 + (KICK_POSE_S - kickPoseRef.current));
+      } else if (phaseRef.current === "result" && goalSideRef.current === (them ? "them" : "us")) {
+        clip = "celebrate"; t = now + spriteSeed(id);
+      } else if (speed > 4.8) {
+        clip = "sprint"; t = m.dist / 5.2;
+      } else if (speed > 0.6) {
+        clip = "jog"; t = m.dist / 2.8;
+      } else {
+        clip = "idle"; t = now + spriteSeed(id);
+      }
+      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt } };
+    };
     const footballer = (
       x: number, y: number, rBase: number,
       shirt: string, rim: string,
@@ -2963,6 +3030,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // like he had come out. It also put the ball, which IS drawn at its
       // ground point, level with a player's waist rather than his boots.
       drawMatchFigure(ctx, nv ? "new" : "classic", px, py, r, {
+        sprite: spriteHint(x, y, opts, shirt, shorts),
         look: { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
         faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
         opts: {
@@ -3057,6 +3125,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       dr.chasers.forEach((c, i) => {
         ctx.globalAlpha = c.awake ? 1 : 0.62;
         footballer(c.x, c.y, R, theirKit().shirt, theirKit().trim, {
+          sid: `chase${i}`,
           pose: c.awake ? poseFor(`chase${i}`, c.x, c.y) : "idle",
           phase: runPhase(c.x),
         });
@@ -3073,6 +3142,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.beginPath(); ctx.moveTo(base.px, base.py); ctx.lineTo(tip.px, tip.py); ctx.stroke();
 
       footballer(dr.pos.x, dr.pos.y, R, ourKit().shirt, ourKit().trim, {
+        sid: "you",
         pose: "run",
         phase: runPhase(dr.pos.x),
         star: true,
@@ -3116,6 +3186,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     figureQueue = [];
     if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
+        sid: "follower",
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
         face: getFaceImage(sc.follower.who?.face ?? fakeFaceFor("follower")),
@@ -3221,6 +3292,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // crosser. Reported directly: "on corners not all players face show."
     sc.teammates.forEach((t, i) => {
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
+        sid: `mate${i}`,
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
         face: getFaceImage(t.who?.face ?? fakeFaceFor(`mate${i}`)),
@@ -3236,6 +3308,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // on the pitch and not only in the commentary.
       const receiving = i === 0 && !!rb && rb.receiverControlT > 0;
       footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
+        sid: `run${i}`,
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
         face: getFaceImage(r.who?.face ?? fakeFaceFor(`run${i}`)),
@@ -3274,6 +3347,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     sc.defenders.forEach((d, i) => {
       const lift = (d.z ?? 0) * 0.42;
       footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
+        sid: `def${i}`,
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
         face: getFaceImage(d.who?.face ?? fakeFaceFor(`def${i}`)),
@@ -3300,8 +3374,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // New view (option D): a thin ring on the grass under the man on the
     // ball, so he is findable at the smaller size. Under everyone: the figure
     // queue has not painted anybody yet.
-    if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || sceneRef.current?.you !== false)) {
-      const f = toPx(tx, ty);
+    // Harry, 3 Oct 2026: in open play your own man is not drawn (new view) —
+    // the ball, with this ring under it, is "you". lib/star/newLook.ts.
+    const youShown = showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
+    const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
+    if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
+      const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
       const rr = R * 0.62;
       ctx.save();
       ctx.lineWidth = Math.max(1.5, R * 0.07);
@@ -3313,6 +3391,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     if (auto) {
       footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
+        sid: "you",
         pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
         phase: runPhase(tx),
         body: runBody,
@@ -3320,7 +3399,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
-    } else if (sceneRef.current?.you !== false)
+    } else if (youShown)
     // You wear the same shirt as everybody else on your side — you are one of
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
@@ -3328,6 +3407,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     footballer(tx, ty, R, ourKit().shirt, ourKit().trim, {
       // Held briefly after a strike so the swing is visible rather than
       // happening entirely between two frames.
+      sid: "you",
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
       phase: runPhase(tx),
       body: runBody,
@@ -3421,8 +3501,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a yellow disc drawn over it only told you what you had already seen.
       // Their penalty at YOUR keeper (a shootout): he wears your keeper's kit.
       const gkKit = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+      // The 3D keeper (new view): faces the ball; once a save is being played
+      // (or he is flinging himself well over) he dives, to his own left or
+      // right as seen on screen, as far into the clip as the lunge has got.
+      let keeperSprite: MatchSpriteHint | undefined;
+      if (nv) {
+        const kFacing = screenAngle(kk.x, kk.y, spriteBall.x, spriteBall.y);
+        const diving = lunge > 0.04 || Math.abs(kk.dive) > 1.1;
+        if (diving && sign !== 0) {
+          const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
+          const p = lunge > 0.04 ? lunge : clamp((Math.abs(kk.dive) - 1.1) / 0.5, 0, 1);
+          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t: p * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+        } else {
+          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+        }
+      }
       drawMatchFigure(ctx, nv ? "new" : "classic",
         cx + KR * weight * (1 - lunge), py, kr, {
+        sprite: keeperSprite,
         look: {
           shirt: gkKit.shirt,
           shorts: gkKit.trim,
@@ -3511,14 +3607,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       // Ground shadow — stays ON the pitch, directly under the ball.
       const shadowShrink = 1 / (1 + h * 0.16);
+      if (!(nv && matchBallLook() === "new")) {
       ctx.beginPath();
       ctx.ellipse(px, py, bScale * 1.05 * shadowShrink, bScale * 0.5 * shadowShrink, 0, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(0,0,0,${0.34 * shadowShrink})`;
       ctx.fill();
+      }
 
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
       const br = bScale * (1 + Math.min(h, 8) * 0.055);
+      // New view, Settings → Look → Ball: New — a clean drawn match ball with
+      // its own soft offset shadow (lib/star/matchBall.ts). Classic: below.
+      if (nv && matchBallLook() === "new") {
+        drawMatchBall(ctx, px, py, by, br, seamRef.current, h, 1);
+        return;
+      }
       const img = ballImgRef.current;
       const a = seamRef.current;
       if (img && img.complete && img.naturalWidth > 0) {
@@ -4156,6 +4260,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setOutcome(res);
     setPhase("result");
     const sc = scenarioRef.current;
+    goalSideRef.current = res === "goal" ? (autoKickOf(sc)?.side === "them" ? "them" : "us") : null;
     // Read off the ball and off what the team-mate actually did, never off the
     // scenario's shape. See creditChance.
     // ── What YOU did, not what the ball is doing ──

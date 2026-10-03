@@ -7,6 +7,10 @@ import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
+import {
+  useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
+  useYouInOpenPlay, setYouInOpenPlay,
+} from "@/lib/star/newLook";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -139,6 +143,7 @@ export function LookSwitches() {
       <SetNote dim className="mt-1 text-[10px]">
         New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
       </SetNote>
+      <NewViewLook />
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Player look</span>
@@ -153,5 +158,37 @@ export function LookSwitches() {
         Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
       </SetNote>
     </>
+  );
+}
+
+/**
+ * Look — the new match view's own switches (Harry, 3 Oct 2026: every new look
+ * gets a toggle, the old one stays playable). lib/star/newLook.ts. They only
+ * change the New match view; Classic is drawn as it always was.
+ */
+function NewViewLook() {
+  const players = useMatchPlayersLook();
+  const ball = useMatchBallLook();
+  const you = useYouInOpenPlay();
+  const row = "mt-2 flex items-center justify-between gap-2";
+  return (
+    <div className="mt-2 rounded-lg bg-white/[0.04] px-2.5 py-2">
+      <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Look · new match view</div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Players in the match</span>
+        <SegTabs className="w-[130px] shrink-0" value={players} onChange={setMatchPlayersLook} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
+      </div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Ball</span>
+        <SegTabs className="w-[130px] shrink-0" value={ball} onChange={setMatchBallLook} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Your player in open play</span>
+        <SegTabs className="w-[130px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
+      </div>
+      <SetNote dim className="mt-1.5 text-[10px]">
+        New match view only. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
+      </SetNote>
+    </div>
   );
 }

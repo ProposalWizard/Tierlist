@@ -290,12 +290,16 @@ const PLAYER_CLIPS = [
   { name: "celebrate", file: "player-celebrate.glb", frames: 6, loop: "loop" },
 ];
 const KEEPER_CLIPS = [
-  { name: "ready", file: "keeper-ready.glb", frames: 4, from: 0, to: 1.4, fps: 4, loop: "pingpong" },
+  // The keeper-ready clip crouches so far forward that from above he reads
+  // as already diving; standing tall reads as a keeper waiting.
+  { name: "ready", file: "player-idle.glb", frames: 4, from: 0, to: 2.4, fps: 3, loop: "pingpong" },
   { name: "jog", file: "player-jog.glb", frames: 8, inPlace: true, loop: "loop" },
   { name: "diveR", file: "keeper-dive.glb", frames: 6, from: 0.4, to: 1.2, fps: 9, loop: "once", dive: 1 },
   { name: "diveL", file: "keeper-dive.glb", frames: 6, from: 0.4, to: 1.2, fps: 9, loop: "once", dive: -1 },
 ];
-const DIVE = { maxRoll: (78 * Math.PI) / 180, carry: 0.55, drop: 0.25 };
+// carry < 0: the feet go the other way, so the stretched body (not his
+// boots) lies over the spot the engine puts him at, the save point.
+const DIVE = { maxRoll: (78 * Math.PI) / 180, carry: -0.75, drop: 0.25 };
 
 function timesFor(c, clip) {
   const from = c.from ?? 0, to = c.to ?? clip.duration;
