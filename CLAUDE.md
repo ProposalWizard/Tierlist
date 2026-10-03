@@ -389,6 +389,14 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**Stills for looks, videos only for gameplay and animation (Harry, 3 Oct 2026).
+This refines the rule below.** *"the statics are fine, only gameplay and
+animations need videos and u can start with a still and then push and do
+those last."* Order: stills on the page, push, publish; THEN film the short
+"after" clips for gameplay/animation changes and add them to the same page.
+Never hold the page or the push back for a video.
+Also (Harry, 3 Oct): don't write "needs Mikey's yes" on patch notes.
+
 **No filming phase — patch notes + a test build link (Harry, 2 Oct 2026). This
 replaces the video rules below.** *"Get rid of the whole recording phase, and
 we just do the patch notes and a test build as a link in the patch notes."*

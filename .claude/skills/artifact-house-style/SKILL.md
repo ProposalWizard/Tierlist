@@ -50,6 +50,11 @@ alongside the page) and reference them relatively.
 Every screenshot gets a one-line caption saying what to look at — not what it
 is.
 
+> **Latest (Harry, 3 Oct 2026):** stills for anything that is a look; a short
+> "after" video only for gameplay and animation, filmed AFTER the page and the
+> push go out, then added to the same page. Don't write "needs Mikey's yes".
+> See CLAUDE.md.
+
 > **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
 > test build (the Vercel preview of the branch) and use stills; a short
 > "after" clip only when a still cannot show it (motion, timing, a fixed
