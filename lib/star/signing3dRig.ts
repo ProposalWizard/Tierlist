@@ -190,6 +190,8 @@ export function kitSpec(L: Landmarks, k: { shirt: string; trim: string; shorts: 
 export function suitSpec(L: Landmarks, k: { suit: string; tie: string; shirt?: string }): GarmentSpec[] {
   const shirtCol = k.shirt ?? "#eef1f5";
   const hem = L.hipY - 0.14;
+  /** How high the collar stands at the back of the neck, above the neck joint. */
+  const BACK_COLLAR = 0.085;
   const jacket: GarmentSpec = {
     name: "jacket",
     glsl: `${lmGlsl(L)}
@@ -201,7 +203,14 @@ export function suitSpec(L: Landmarks, k: { suit: string; tie: string; shirt?: s
         return vec4(SU, 1.0);
       }
       if (r.y < ${hem.toFixed(4)}) return vec4(0.0);
-      if (r.y > NECK + 0.11 || headZone) return vec4(0.0);
+      // Round the back of the neck the collar stands up to just under the
+      // hair (a jacket never shows the nape and upper back); at the front it
+      // stays low for the V.
+      float backK = 1.0 - smoothstep(-0.075, -0.02, r.z);
+      float colTop = NECK + 0.035 + ${(BACK_COLLAR - 0.035).toFixed(4)} * backK;
+      if (r.y > NECK + 0.13 || (r.y > colTop && ax < 0.13 && !arm)) return vec4(0.0);
+      if (backK > 0.5 && nd < 0.1 && r.y > colTop - 0.026) return vec4(SHT, 1.0);
+      if (backK > 0.5 && nd < 0.1 && r.y > colTop - 0.032) return vec4(SU * 0.6, 1.0);
       // The front opening: shirt and tie in a V up to the collar.
       float vb = NECK - 0.25;
       float vHalf = 0.072 * clamp((r.y - vb) / (NECK + 0.035 - vb), 0.0, 1.0);
@@ -210,17 +219,20 @@ export function suitSpec(L: Landmarks, k: { suit: string; tie: string; shirt?: s
         if (ax < tw && r.y < NECK - 0.002) return vec4(r.y > NECK - 0.03 ? TIE * 0.85 : TIE, 1.0);
         return vec4(SHT, 1.0);
       }
-      // The shirt collar round the back and sides of the neck.
-      if (nd < 0.1 && r.y > NECK - 0.035) return vec4(SHT, 1.0);
+      // The shirt collar round the sides of the neck.
+      if (nd < 0.1 && r.y > NECK - 0.035 && backK <= 0.5) return vec4(SHT, 1.0);
       if (r.z > 0.0) {
         if (ax < vHalf + 0.012 && r.y > vb) return vec4(SU * 0.6, 1.0);
         if (ax < 0.006 && r.y < vb) return vec4(SU * 0.55, 1.0);
       }
       if (r.y < ${(hem + 0.012).toFixed(4)}) return vec4(SU * 0.7, 1.0);
       return vec4(SU, 1.0);`,
-    touches: (x, y, z) => (isArm(L, x, y) ? Math.abs(x) < L.wristX : y > hem - 0.04 && y < L.neckY + 0.13 && !isHead(L, x, y, z)),
+    touches: (x, y, z) => (isArm(L, x, y) ? Math.abs(x) < L.wristX
+      : y > hem - 0.04 && y < L.neckY + 0.13 && (!isHead(L, x, y, z) || (z < -0.02 && y < L.neckY + BACK_COLLAR + 0.02 && Math.abs(x) < 0.1))),
     covers: (x, y, z) => (isArm(L, x, y) ? Math.abs(x) < L.wristX - 0.05 : y > hem + 0.04 && (y < L.neckY - 0.06 || (y < L.neckY + 0.03 && Math.hypot(x, z + 0.045) > 0.1))),
-    offset: (x, y) => (isArm(L, x, y) ? 0.016 : 0.022 + 0.022 * smoothstep(L.hipY + 0.36, L.hipY + 0.06, y)),
+    // Close round the neck (a collar, not a ruff), looser over the belly.
+    offset: (x, y) => (isArm(L, x, y) ? 0.016
+      : (0.022 + 0.022 * smoothstep(L.hipY + 0.36, L.hipY + 0.06, y)) * (1 - 0.55 * smoothstep(L.neckY - 0.1, L.neckY - 0.01, y))),
     smooth: 50,
     roughness: 0.7,
     layer: 2,
@@ -374,6 +386,55 @@ function smoothstep(e0: number, e1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/**
+ * Bring the "superhero" arms to a footballer's: every arm point is drawn in
+ * towards the bone line (upper arm the most, forearm less, the hand not at
+ * all), fading out into the shoulder. Rest pose only, before anything is
+ * built from the body, so clothes and accessories follow.
+ */
+/** How thick the arms stay (1 = the model's "superhero" arms). */
+export const ARM_KEEP = { upper: 0.72, fore: 0.76 };
+/** The hands, scaled about the wrist (the model's are a size too big). */
+export const HAND_SCALE = 0.88;
+
+export function slimArms(T: Three, root: THREE.Object3D, geo: THREE.BufferGeometry, L: Landmarks) {
+  root.updateMatrixWorld(true);
+  const inv = new T.Matrix4().copy(root.matrixWorld).invert();
+  const at = (n: string) => { const v = new T.Vector3(); root.getObjectByName(n)!.getWorldPosition(v); return v.applyMatrix4(inv); };
+  const sh = at("upperarm_l"), el = at("lowerarm_l"), wr = at("hand_l");
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.min(1, Math.max(0, t));
+  const axisAt = (ax: number) => (ax < el.x
+    ? [lerp(sh.y, el.y, (ax - sh.x) / (el.x - sh.x)), lerp(sh.z, el.z, (ax - sh.x) / (el.x - sh.x))]
+    : [lerp(el.y, wr.y, (ax - el.x) / (wr.x - el.x)), lerp(el.z, wr.z, (ax - el.x) / (wr.x - el.x))]);
+  // How much of each ring is kept: about three-quarters along the upper arm
+  // and the forearm (a footballer's, not a bodybuilder's), full at the wrist.
+  const k = (ax: number) => {
+    if (ax < L.shoulderX - 0.07) return 1;
+    if (ax < L.shoulderX + 0.06) return lerp(1, ARM_KEEP.upper, (ax - (L.shoulderX - 0.07)) / 0.13);
+    if (ax < L.elbowX - 0.03) return ARM_KEEP.upper;
+    if (ax < L.elbowX + 0.03) return lerp(ARM_KEEP.upper, ARM_KEEP.fore, (ax - (L.elbowX - 0.03)) / 0.06);
+    if (ax < L.wristX - 0.06) return ARM_KEEP.fore;
+    if (ax < L.wristX) return lerp(ARM_KEEP.fore, 0.9, (ax - (L.wristX - 0.06)) / 0.06);
+    return lerp(0.9, 1, (ax - L.wristX) / 0.03);
+  };
+  const p = geo.attributes.position.array as Float32Array;
+  for (let i = 0; i < p.length; i += 3) {
+    const ax = Math.abs(p[i]);
+    if (ax < L.shoulderX - 0.07 || ax > L.wristX + 0.03) continue;
+    const [cy, cz] = axisAt(ax);
+    const dy = p[i + 1] - cy, dz = p[i + 2] - cz;
+    const r = Math.hypot(dy, dz);
+    // Near the bone line only: the chest and back next to the armpit stay.
+    const near = 1 - Math.min(1, Math.max(0, (r - 0.085) / 0.04));
+    if (near <= 0) continue;
+    const f = 1 + (k(ax) - 1) * near;
+    p[i + 1] = cy + dy * f;
+    p[i + 2] = cz + dz * f;
+  }
+  geo.attributes.position.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+
 /** The welded body: rest positions shared across the UV seams. */
 export interface WeldedBody {
   pos: Float32Array;     // per original vertex, rest
@@ -464,13 +525,23 @@ export function buildGarment(T: Three, body: THREE.SkinnedMesh, W: WeldedBody, s
     const ox = pos[i * 3], oy = pos[i * 3 + 1], oz = pos[i * 3 + 2];
     const nx = nrm[i * 3], ny = nrm[i * 3 + 1], nz = nrm[i * 3 + 2];
     const off = spec.offset(ox, oy, oz);
-    let x = cp[c * 3] + nx * off, y = cp[c * 3 + 1] + ny * off, z = cp[c * 3 + 2] + nz * off;
-    const d = (x - ox) * nx + (y - oy) * ny + (z - oz) * nz;
-    // Where the skin under it is taken out, the cloth may sit inside where
-    // the muscles were (that is what slims the "superhero" build). Near an
-    // edge, where skin still shows, it must stay outside it.
-    const min = spec.covers(ox, oy, oz) ? -0.012 : off * 0.85;
-    if (d < min) { x += nx * (min - d); y += ny * (min - d); z += nz * (min - d); }
+    // Only the part of the smoothing along the normal is kept: each cloth
+    // point stays straight over its own skin point, so it bends with exactly
+    // the same bones and never tears away from it when an arm or the back
+    // moves. It still fills the dips between the muscles and eases over the
+    // bulges, which is what hides the "superhero" build.
+    let d = (cp[c * 3] - ox) * nx + (cp[c * 3 + 1] - oy) * ny + (cp[c * 3 + 2] - oz) * nz + off;
+    // Where the skin under it is taken out, the cloth may sit a little inside
+    // where a muscle was. Near an edge, where skin still shows, it stays out.
+    // Near an edge it also never stands further out than its own offset:
+    // the smoothing bridges the hollow between neck and shoulder, and at a
+    // collar or a cuff that bridge is a loose flap of cloth that tears and
+    // flies about as the neck or the wrist turns.
+    const cov = spec.covers(ox, oy, oz);
+    const min = cov ? off * 0.25 : off * 0.85;
+    const max = cov ? off + 0.04 : off * 1.12;
+    d = Math.min(max, Math.max(min, d));
+    const x = ox + nx * d, y = oy + ny * d, z = oz + nz * d;
     out[i * 3] = x; out[i * 3 + 1] = y; out[i * 3 + 2] = z;
   }
   // Compact to the used vertices.
@@ -561,7 +632,7 @@ export function hideCoveredSkin(T: Three, body: THREE.SkinnedMesh, W: WeldedBody
 // ── The face picture ────────────────────────────────────────────────────────
 
 /** Where the body's own face is, in the rest pose. */
-export interface FaceFrame { chinY: number; browY: number; frontZ: number; }
+export interface FaceFrame { chinY: number; eyeY: number; browY: number; frontZ: number; }
 
 export function faceFrameOf(W: WeldedBody, L: Landmarks): FaceFrame {
   const { pos } = W;
@@ -573,8 +644,9 @@ export function faceFrameOf(W: WeldedBody, L: Landmarks): FaceFrame {
       if (z > frontZ) frontZ = z;
     }
   }
-  // Brow to chin on this head is about 0.43 of the head's height above the neck.
-  return { chinY, browY: chinY + 0.118, frontZ };
+  // Measured on this head (its own eye and eyebrow meshes): the eyes sit
+  // 0.119 m over the chin, the brows 0.13 m.
+  return { chinY, eyeY: chinY + 0.119, browY: chinY + 0.13, frontZ };
 }
 
 /**
@@ -590,9 +662,14 @@ export function faceFrameOf(W: WeldedBody, L: Landmarks): FaceFrame {
  * This CHANGES `body`'s rest positions: the caller keeps a clean copy and
  * puts it back before building a different face.
  */
+/** A photo's face box (chin to brow line, faceFit.ts) in metres on this head, across. */
+const FACE_SPAN_M = 0.118;
+
 export function buildFaceDecal(
   T: Three, body: THREE.SkinnedMesh, W: WeldedBody, F: FaceFrame,
   img: { canvas: HTMLCanvasElement | HTMLImageElement; chinX: number; chinY: number; faceH: number },
+  /** Multiplies the photo's colour, so its skin meets the body's skin tone. */
+  tint: [number, number, number] = [1, 1, 1],
 ): THREE.SkinnedMesh {
   const { nrm, index } = W;
   const src = body.geometry;
@@ -600,7 +677,13 @@ export function buildFaceDecal(
   const pos = posAttr.array as Float32Array;
   const count = posAttr.count;
   const cw = img.canvas.width, ch = img.canvas.height;
-  const scale = img.faceH / (F.browY - F.chinY); // picture px per metre
+  // Picture px per metre. Across: the photo's eyes as far apart as this
+  // head's. Up and down a touch less, and anchored on the eyes (the photo's
+  // eyes are 3/4 of its face box over its chin), so the photo's eyes, nose
+  // and mouth land on this head's and its chin melts into this (longer) jaw.
+  const sx = img.faceH / FACE_SPAN_M;
+  const sy = sx / 1.15;
+  const eyePx = img.chinY - 0.75 * img.faceH;
   const zMin = F.frontZ - 0.12;
   const inFace = (x: number, y: number, z: number) => z > zMin && y > F.chinY - 0.045 && y < F.browY + 0.12 && Math.abs(x) < 0.1;
 
@@ -667,14 +750,20 @@ export function buildFaceDecal(
     // Picture pixel straight in front of the ORIGINAL point. (His left, +x,
     // is the picture's right: the photo looks at us.)
     const ox = orig[c * 3], oy = orig[c * 3 + 1];
-    const px = img.chinX + ox * scale;
-    const py = img.chinY - (oy - F.chinY) * scale;
+    const px = img.chinX + ox * sx;
+    const py = eyePx - (oy - F.eyeY) * sy;
     UV[j * 2] = px / cw;
     UV[j * 2 + 1] = 1 - py / ch;
     // Fade where the head turns away from the projection, and at the sides.
     const facing = Math.min(1, Math.max(0, (nz - 0.2) / 0.35));
     const side = Math.min(1, Math.max(0, (0.095 - Math.abs(ox)) / 0.03));
-    A[j] = facing * side;
+    // Only the face itself (an oval from the chin to just above the brows):
+    // the photo's own hair, ears and neck are left to the 3D head, and the
+    // oval's edge fades into the skin.
+    const ex = (px - img.chinX) / (img.faceH * 0.47);
+    const ey = (py - (img.chinY - img.faceH * 0.56)) / (img.faceH * 0.66);
+    const oval = 1 - sm(0.72, 1.0, Math.hypot(ex, ey));
+    A[j] = facing * side * oval;
     for (let q = 0; q < 4; q++) { SI[j * 4 + q] = si[i * 4 + q]; SW[j * 4 + q] = sw[i * 4 + q]; }
   }
   const idx = new Uint32Array(tris.length);
@@ -701,9 +790,13 @@ export function buildFaceDecal(
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvFade = fade;");
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", "#include <common>\nvarying float vFade;")
-      .replace("#include <map_fragment>", "#include <map_fragment>\nif (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;\ndiffuseColor.a *= vFade;\nif (diffuseColor.a < 0.02) discard;");
+      .replace("#include <map_fragment>", `#include <map_fragment>
+if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
+diffuseColor.rgb *= vec3(${tint.map((v) => v.toFixed(4)).join(", ")});
+diffuseColor.a *= vFade;
+if (diffuseColor.a < 0.02) discard;`);
   };
-  mat.customProgramCacheKey = () => "face-decal";
+  mat.customProgramCacheKey = () => `face-decal-${tint.map((v) => v.toFixed(3)).join(",")}`;
   const mesh = new T.SkinnedMesh(geo, mat);
   mesh.name = "face-decal";
   mesh.frustumCulled = false;

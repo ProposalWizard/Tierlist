@@ -7,6 +7,7 @@ import { ALL_NATIONALITIES, getFlagUrl } from "@/lib/nationalities";
 import {
   SKIN_TONES, DEFAULT_SKIN_TONE, type SkinTone,
   DEFAULT_FOOT, type PreferredFoot,
+  HAIR_STYLES, HAIR_COLOURS, DEFAULT_HAIR_STYLE, DEFAULT_HAIR_COLOUR, type HairStyle, type HairColour,
   MIN_SQUAD_NUMBER, MAX_SQUAD_NUMBER, clampSquadNumber,
 } from "@/lib/star/playerIdentity";
 import PortraitPicker from "./PortraitPicker";
@@ -112,6 +113,8 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
   const [nickname, setNickname] = useState("");
   const [skin, setSkin] = useState<SkinTone>(DEFAULT_SKIN_TONE);
   const [foot, setFoot] = useState<PreferredFoot>(DEFAULT_FOOT);
+  const [hairStyle, setHairStyle] = useState<HairStyle>(DEFAULT_HAIR_STYLE);
+  const [hairColour, setHairColour] = useState<HairColour>(DEFAULT_HAIR_COLOUR);
   const [preferredNumber, setPreferredNumber] = useState(DEFAULT_PREFERRED_NUMBER);
   const [nationality, setNationality] = useState("England");
   const [nationalitySearch, setNationalitySearch] = useState("");
@@ -207,6 +210,8 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
         startYear: STAR_FIFA_YEAR,
         preferredNumber,
         preferredFoot: foot,
+        hairStyle,
+        hairColour,
         // Omitted rather than stored empty, so "has no nickname" is one state
         // and not two — `displayName` only has to check truthiness.
         ...(nickname.trim() ? { nickname: nickname.trim() } : {}),
@@ -383,6 +388,35 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
                   >
                     {skin === t.id && <span className="text-lg font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">✓</span>}
                   </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-[10px] font-black uppercase tracking-wider text-emerald-300 mb-1.5 text-center">Hair</div>
+              <div className="grid grid-cols-4 gap-2">
+                {HAIR_STYLES.map((h) => (
+                  <button
+                    key={h.id}
+                    onClick={() => setHairStyle(h.id)}
+                    className={`rounded-xl py-2.5 text-[12px] font-black uppercase tracking-wide transition ${
+                      hairStyle === h.id ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-white/70 hover:bg-gray-700"}`}
+                  >
+                    {h.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {HAIR_COLOURS.map((h) => (
+                  <button
+                    key={h.id}
+                    onClick={() => setHairColour(h.id)}
+                    aria-label={h.label}
+                    title={h.label}
+                    className={`h-9 rounded-lg border-2 transition ${
+                      hairColour === h.id ? "border-white ring-2 ring-emerald-300" : "border-black/30"}`}
+                    style={{ background: h.hex }}
+                  />
                 ))}
               </div>
             </div>
