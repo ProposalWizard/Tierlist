@@ -20,6 +20,13 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  // Harry's own pages, 22 Sep to 3 Oct 2026 (videos swapped for their stills;
+  // each page links its clips on the artifact).
+  "0.25": "pages/0.25/index.html",
+  "0.24": "pages/0.24/index.html",
+  "0.23.1": "pages/0.23.1/index.html",
+  "0.23": "pages/0.23/index.html",
+  "0.22": "pages/0.22/index.html",
   "0.21": "mikey/v0.8.html",
   "0.20": "mikey/v0.7.html",
   "1.0": "pages/1.0/index.html",
