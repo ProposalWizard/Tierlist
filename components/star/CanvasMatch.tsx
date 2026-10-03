@@ -2022,6 +2022,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const tiltGeomRef = useRef<Tilt | null>(null);
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
+  /** Where the 3D keeper landed (canvas px), held while he lies there. */
+  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: "diveL" | "diveR" } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -3594,6 +3596,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // (or he is flinging himself well over) he dives, to his own left or
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
+      let keeperDrawAt: { x: number; y: number } | null = null;
       if (nv) {
         // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
         // his animations need slowing." He has four facings; turning to the
@@ -3610,15 +3613,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // quickly the save itself happens.
           if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = now;
           const t = Math.min(lunge * 0.6, (now - keeperDiveStartRef.current) * 0.75);
-          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
+          // Once he has landed he stays where he landed: the engine still
+          // walks him on toward the save point, and a man lying flat slid
+          // along the grass after the ball (playtest film, 3 Oct 2026).
+          const clip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
+          if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
+          keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
+        } else if (keeperLandRef.current?.sc === sc) {
+          // Down is down: once he has landed in this chance he stays lying
+          // where he landed until the next one (a goal briefly stood him back
+          // up mid-celebration — playtest film, 3 Oct 2026).
+          const land = keeperLandRef.current;
+          keeperDrawAt = land;
+          keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
         } else {
           keeperDiveStartRef.current = null;
+          keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
           keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
         }
       }
       drawMatchFigure(ctx, nv ? "new" : "classic",
-        cx + KR * weight * (1 - lunge), py, kr, {
+        keeperDrawAt ? keeperDrawAt.x : cx + KR * weight * (1 - lunge), keeperDrawAt ? keeperDrawAt.y : py, kr, {
         sprite: keeperSprite,
         look: {
           shirt: gkKit.shirt,
@@ -4534,6 +4551,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // fix above addresses; this is the other half — making the real
       // continuation actually visible, not just correct underneath.
       showAction("TOUCH ON");
+    } else if (res === "out" || res === "wide" || res === "over" || res === "short") {
+      // A ball that went out, wide, over or died used to end in silence: the
+      // screen sat still for a second and a half and read as "the ball stops"
+      // (Harry, 3 Oct 2026; filmed in build-ups and midfield passes). It says
+      // what happened, like every other ending.
+      showAction(res === "wide" ? "WIDE" : res === "over" ? "OVER" : res === "short" ? "NOBODY THERE" : "OUT OF PLAY");
     } else if (res === "post") {
       nudge(0.28, 0.25);
       playPost();

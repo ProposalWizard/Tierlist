@@ -224,6 +224,25 @@ function passersCamera(pts: Vec2[], facing: Facing, hw: number): Viewport {
 }
 
 /**
+ * The build-up camera. Its top edge IS the engine's goal-side out line and it
+ * is never narrower than the engine's frame, so the play area and the screen
+ * are the same rectangle: a long ball leaves the screen at the moment it goes
+ * out. Fitting the passers alone (3 Oct 2026, first version) let a ball go
+ * out in the middle of the visible grass and sit there — "the ball stops" —
+ * or fly off the top of a tighter camera while still in play (playtest film).
+ * The passers are always inside the engine's frame, so they are on screen.
+ */
+function passersCameraFor(sc: Scenario, engine: Viewport, facing: Facing, hw: number): Viewport {
+  if (facing !== "up") return passersCamera(passersOf(sc), facing, hw);
+  const h = Math.max(NEW_VIEW_MIN_HW, hw);
+  const across = Math.min(NEW_VIEW_WIDTH_M, Math.max(PASSERS_MIN_M, engine.x2 - engine.x1 + 0.5));
+  const cx = (engine.x1 + engine.x2) / 2;
+  let x1 = cx - across / 2;
+  x1 = Math.max(Math.min(engine.x1, -EDGE_M), Math.min(Math.max(engine.x2, PITCH_W + EDGE_M) - across, x1));
+  return { x1, x2: x1 + across, y1: engine.y1, y2: engine.y1 + across * h };
+}
+
+/**
  * The new view's camera — and, applied to the scenario, its play area.
  *
  * `engine` is the frame the engine built the chance in (today's camera),
@@ -294,7 +313,7 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
 export function cameraFor(sc: Scenario, engineFrame: Viewport, hw: number): Viewport {
   const facing = sc.facing ?? "up";
   const across = acrossFor(sc.kind, engineFrame, facing);
-  if (across === "passers") return passersCamera(passersOf(sc), facing, hw);
+  if (across === "passers") return passersCameraFor(sc, engineFrame, facing, hw);
   return newViewCamera(engineFrame, facing, hw, sc.ball, across);
 }
 
