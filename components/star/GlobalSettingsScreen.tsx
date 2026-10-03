@@ -7,6 +7,7 @@ import { RiseIn } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { GameSwitches, LookSwitches } from "./DeviceSettings";
 import { SetCard, SetSection } from "./settingsKit";
+import MoveSavesPanel from "./MoveSavesPanel";
 
 /**
  * THE TITLE SCREEN'S SETTINGS (Harry, 2 Oct 2026, v0.25 points 1 and 2).
@@ -29,9 +30,12 @@ const TOUR: TourStep[] = [
   { target: "back", text: "Back to the main menu" },
 ];
 
-export default function GlobalSettingsScreen({ onBack, fullscreen }: {
+export default function GlobalSettingsScreen({ onBack, fullscreen, moveSaves }: {
   onBack: () => void;
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
+  /** "Move my saves" — Safari and the Home Screen app keep separate saves
+   *  on an iPhone (MoveSavesPanel). Absent: not shown. */
+  moveSaves?: { scope: string; onImported: (openSlot: number) => void };
 }) {
   const [help, setHelp] = useState(false);
   return (
@@ -62,6 +66,13 @@ export default function GlobalSettingsScreen({ onBack, fullscreen }: {
 
         <RiseIn index={2}><SetSection>Look</SetSection></RiseIn>
         <RiseIn index={3}><SetCard tone={GREEN}><LookSwitches /></SetCard></RiseIn>
+
+        {moveSaves && (
+          <>
+            <RiseIn index={4}><SetSection>Saves</SetSection></RiseIn>
+            <RiseIn index={5}><MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={GREEN} /></RiseIn>
+          </>
+        )}
       </div>
       {help && <PointerTour key="global-settings" steps={TOUR} onDone={() => setHelp(false)} />}
     </Screen>

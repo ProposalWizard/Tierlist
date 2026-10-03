@@ -564,23 +564,119 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
     // Slot 1 still gets the legacy/anon claim exactly as loadCareer always
     // has; slots 2+ never had anything to claim — see loadCareerRaw's note.
     const career = slot === 1 ? loadCareer(scope) : loadCareerRaw(scope);
-    if (!career) { out.push({ slot, empty: true }); continue; }
-    const signed = hasClub(career);
-    out.push({
-      slot,
-      empty: false,
-      signed,
-      // Blank for a trial rather than "" — the panel says what is happening
-      // instead of printing an empty club name.
-      club: signed ? career.player.club : undefined,
-      playerName: `${career.player.firstName} ${career.player.lastName}`,
-      season: career.season,
-      // The star rating players see is the career one (starPoints.ts).
-      starRating: starLevel(career),
-      retired: !!career.retired,
-    });
+    out.push(career ? summariseSave(slot, career) : { slot, empty: true });
   }
   return out;
+}
+
+/** One save's card line — shared by the Saves list and "Move my saves". */
+export function summariseSave(slot: number, career: CareerState): SaveSlotSummary {
+  const signed = hasClub(career);
+  return {
+    slot,
+    empty: false,
+    signed,
+    // Blank for a trial rather than "" — the panel says what is happening
+    // instead of printing an empty club name.
+    club: signed ? career.player.club : undefined,
+    playerName: `${career.player.firstName} ${career.player.lastName}`,
+    season: career.season,
+    // The star rating players see is the career one (starPoints.ts).
+    starRating: starLevel(career),
+    retired: !!career.retired,
+  };
+}
+
+// ── Moving saves to another browser (lib/star/saveTransfer.ts) ───────────────
+//
+// An iPhone Home Screen app has its own storage, apart from Safari's. A save
+// made in Safari is still there, but the app cannot see it. "Move my saves"
+// packs every slot into one code here and unpacks it on the other side.
+
+/** One slot exactly as this device stores it (the thin saved form). */
+export interface StoredSlot {
+  slot: number;
+  /** The saved form, parsed but otherwise untouched. */
+  career: unknown;
+  phase?: SavedPhase;
+}
+
+/**
+ * Every occupied slot of `accountScope`, as stored. Slot 1 claims a legacy
+ * or signed-out save first, exactly as the Saves list does, so what is
+ * copied is what the player sees.
+ */
+export function readStoredSlots(accountScope: string): StoredSlot[] {
+  const out: StoredSlot[] = [];
+  for (let slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+    const scope = slotScope(accountScope, slot);
+    if (slot === 1) { claimLegacySave(scope); claimAnonSave(scope); }
+    // Only a slot that really loads is copied — a broken one would only be
+    // refused on the other side.
+    if (!loadCareerRaw(scope)) continue;
+    try {
+      const raw = localStorage.getItem(scoped(KEY, scope));
+      if (!raw) continue;
+      const phase = loadStarPhase(scope);
+      out.push({ slot, career: JSON.parse(raw), ...(phase ? { phase } : {}) });
+    } catch { /* skip a slot this browser cannot read */ }
+  }
+  return out;
+}
+
+/**
+ * A saved form from somewhere else (a pasted code) through the SAME loader a
+ * normal save goes through: version check, squads filled back in, every
+ * backfill. Null when it does not load. Never throws.
+ */
+export function loadCareerFromStoredForm(raw: unknown): CareerState | null {
+  try {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const c = raw as CareerState;
+    if (c.version !== 2) return null;
+    if (!c.player || typeof c.player !== "object") return null;
+    if (typeof c.player.firstName !== "string" || typeof c.player.lastName !== "string") return null;
+    if (typeof c.season !== "number" || !Number.isFinite(c.season)) return null;
+    const out = backfill(fromSavedForm(c));
+    // A photo can only be one the game made (a data: image) or one of its
+    // own files — never a link to somewhere else.
+    const portrait = out.player.portrait as unknown;
+    if (portrait !== undefined && (typeof portrait !== "string"
+      || !(portrait.startsWith("data:image/") || (portrait.startsWith("/") && !portrait.startsWith("//"))))) {
+      out.player = { ...out.player, portrait: undefined };
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** A saved phase from somewhere else, or null if it is not a real one. */
+export function sanitizeSavedPhase(x: unknown): SavedPhase | null {
+  if (!x || typeof x !== "object") return null;
+  const p = x as SavedPhase;
+  if (typeof p.phase !== "string" || !RESUMABLE.includes(p.phase)) return null;
+  const out: SavedPhase = { phase: p.phase };
+  if (p.offerReason === "form" || p.offerReason === "star") out.offerReason = p.offerReason;
+  if (typeof p.wonBallonDor === "boolean") out.wonBallonDor = p.wonBallonDor;
+  return out;
+}
+
+/**
+ * Writes a moved save into `slot`, replacing what was there. The old slot's
+ * cloud-sync note and resume screen go with it: they belonged to the save
+ * being replaced. Returns false if this device would not take it.
+ */
+export function writeMovedSave(accountScope: string, slot: number, career: CareerState, phase?: SavedPhase | null): boolean {
+  const scope = slotScope(accountScope, slot);
+  try {
+    localStorage.removeItem(scoped(SYNC_KEY, scope));
+    localStorage.removeItem(scoped(PHASE_KEY, scope));
+  } catch { /* ignore */ }
+  heldScopes.delete(scope);
+  if (!saveCareer(career, scope)) return false;
+  if (phase) saveStarPhase(phase.phase, scope, phase.offerReason, phase.wonBallonDor);
+  return true;
 }
 
 const ACTIVE_SLOT_KEY = "star-career-active-slot-v1";
