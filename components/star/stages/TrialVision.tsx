@@ -18,6 +18,7 @@ import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle"
 import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { TeachCard } from "./TrialPenalties";
+import { TrialBoard, TrialCaption, TrialPitchBox, TrialSlots, type SlotState } from "./TrialFrame";
 
 /**
  * FINDING THE PASS.
@@ -248,7 +249,11 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     };
     resize();
     window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+    // The box takes the real match's width, which is known a frame after
+    // mount — follow the box's own width, not just the window's.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    ro?.observe(wrap);
+    return () => { window.removeEventListener("resize", resize); ro?.disconnect(); };
   }, []);
 
   const [rep, setRep] = useState(0);
@@ -509,20 +514,28 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     }
   };
 
+  // The scoreboard over the pitch, in the shootout's style (Harry, 3 Oct
+  // 2026): a ✓ / ✗ per go, and how many you found. The same marks the old
+  // pip row under the pitch used — looks only.
+  const slotStates: SlotState[] = scoresRef.current.map(q => (q >= 0.65 ? "scored" : q >= 0.2 ? "close" : "missed"));
+  const found = scoresRef.current.filter(q => q >= 0.65).length;
+
   return (
     <div className="w-full">
-      <div className="mb-1 flex items-baseline justify-between">
-        <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">Find the pass</span>
-        {/* One attempt (the v0.23 trial): nothing to count. */}
-        {REPS.vision > 1 && (
-          <span className="text-[11px] font-black tabular-nums text-gray-500">
-            {Math.min(rep + 1, REPS.vision)} / {REPS.vision}
-          </span>
-        )}
-      </div>
-      <div className="mb-1 text-[11px] font-bold text-gray-500">
-        {setup.options} options · {setup.window.toFixed(1)}s
-      </div>
+      <TrialBoard
+        title="You"
+        left={<TrialSlots states={slotStates} total={REPS.vision} />}
+        centreLabel="Find the pass"
+        centreValue={`${found}/${REPS.vision}`}
+        // One attempt (the v0.23 trial): nothing to count.
+        right={REPS.vision > 1 ? (
+          <>
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">Go</div>
+            <div className="text-[15px] font-black tabular-nums leading-tight text-white">{Math.min(rep + 1, REPS.vision)}/{REPS.vision}</div>
+          </>
+        ) : undefined}
+        footer={`${setup.options} options · ${setup.window.toFixed(1)}s`}
+      />
 
       {/* ── A phone-shaped box, not a picture-shaped one ──
           3:4 with no height cap put you, and the ball at your feet, off the
@@ -545,9 +558,8 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
           same 64vh applies here too — `max-h` caps a PIXEL height, so the box's own aspect ratio
           (4:5 here, 5:8 there) has no bearing on what a given vh number
           means; only the chrome around the box does. */}
-      <div
-        ref={wrapRef}
-        className="relative mx-auto w-full overflow-hidden rounded-xl border border-gray-200"
+      <TrialPitchBox
+        boxRef={wrapRef}
         style={{ height: boxH ?? "auto", aspectRatio: boxH == null ? "4 / 5" : undefined }}
       >
         <canvas
@@ -577,8 +589,8 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         )}
 
         {phase === "ready" && !(rep === 0 && !go) && (
-          <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-white/75 px-5">
-            <div className="w-full max-w-xs text-center">
+          <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-black/45 px-5">
+            <div className="w-full max-w-xs text-center [text-shadow:0_2px_10px_rgba(0,0,0,.6)]">
               {rep === 0 && count !== null ? (
                 /* ── The numeral cannot be dismissed, and never could ──
                    A stage that starts on its own needs to say so BEFORE it
@@ -586,44 +598,29 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                    that can be under a second long actually begins. */
                 <div
                   key={count}
-                  className="mt-3 text-7xl font-black tabular-nums text-emerald-600"
+                  className="mt-3 text-7xl font-black tabular-nums text-emerald-300"
                 >
                   {count}
                 </div>
               ) : (
                 <div className="mt-3">
-                  <div className="text-sm font-black uppercase tracking-widest text-gray-700">Heads up</div>
-                  <div className="mt-1 text-2xl font-black text-gray-900">Who&apos;s free?</div>
+                  <div className="text-sm font-black uppercase tracking-widest text-white/80">Heads up</div>
+                  <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {phase === "reveal" && verdict && (
-          <div className="pointer-events-none absolute inset-x-0 top-5 z-30 flex justify-center px-4">
-            <div className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-center text-lg font-black text-gray-900 shadow-lg">
-              {verdict}
-            </div>
-          </div>
-        )}
-      </div>
+      </TrialPitchBox>
 
-      {REPS.vision > 1 && <div className="mt-1 flex items-center gap-1">
-        {Array.from({ length: REPS.vision }, (_, i) => {
-          const q = scoresRef.current[i];
-          return (
-            <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
-              {q !== undefined && (
-                <div
-                  className={`h-full ${q >= 0.65 ? "bg-emerald-400" : q >= 0.2 ? "bg-amber-400" : "bg-rose-500"}`}
-                  style={{ width: `${Math.max(8, q * 100)}%` }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>}
+      {/* The shootout's two lines under the pitch: the verdict sits here, not
+          over the goal (the ✓ / ✗ lands on the board above). */}
+      <TrialCaption
+        prompt={phase === "reveal" ? verdict
+          : phase === "ready" && rep === 0 && !go ? "" // the teaching card says it
+            : "Tap the team-mate in the most space."}
+      />
     </div>
   );
 }

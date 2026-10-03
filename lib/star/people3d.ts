@@ -1,0 +1,486 @@
+/**
+ * THE NEW 3D PEOPLE — the approved characters (Harry, 3 Oct 2026: simple,
+ * clean, modern adults with a thin outline), shared by the live 3D signing
+ * (signing3dScene.ts) and the walk-around 3D shop (shop3d/scene.ts).
+ *
+ * Files (public/star/people3d/, made small by scripts/people3d/build_people3d.py):
+ *   player.glb (short hair), player-buzz.glb, player-long.glb, manager.glb
+ *     — one skinned body each, 24 joints, a 1024 colour + normal texture.
+ *       The player wears a plain WHITE kit; the manager a navy suit.
+ *   anims.glb — the skeleton and every clip (bone turns + hip height only,
+ *     so one clip plays on every body).
+ *
+ * Your player is painted live in the body's own shader, from where each
+ * point sits in the REST pose (an A-pose, metres, y up, facing +z, his left
+ * at +x) and the texture's own colour:
+ *   - the white kit takes the club's shirt / shorts / socks colours, split
+ *     by height (the shirt hem, under the knee, the ankle), keeping every
+ *     fold and line of the white cloth; the shirt number goes on the back;
+ *   - skin is brought to the chosen tone, hair to the chosen colour;
+ *   - a face picture is laid over the face from the front, an oval that
+ *     fades into the skin, its colour brought to the body's skin tone;
+ *   - accessories are painted on the body where they sit (sleeves, wrist
+ *     tape, gloves, headband, snood, armband, boots).
+ * A second copy of the body, pushed out and drawn back-faces only, is the
+ * thin dark outline.
+ *
+ * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
+ */
+import type * as THREE from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+type Three = typeof import("three");
+
+export const PEOPLE3D_FILES = {
+  player: "/star/people3d/player.glb",
+  "player-buzz": "/star/people3d/player-buzz.glb",
+  "player-long": "/star/people3d/player-long.glb",
+  manager: "/star/people3d/manager.glb",
+  anims: "/star/people3d/anims.glb",
+} as const;
+
+export type PlayerModel = "player" | "player-buzz" | "player-long";
+export type PersonModel = PlayerModel | "manager";
+
+/** The saved hair style → the body that has it ("none" → the buzz cut). */
+export function playerModelFor(style: "short" | "long" | "buzz" | "none" | undefined | null): PlayerModel {
+  if (style === "long") return "player-long";
+  if (style === "buzz" || style === "none") return "player-buzz";
+  return "player";
+}
+
+type V3 = [number, number, number];
+
+/** What build_people3d.py measured on each body (glb scene extras). */
+export interface PersonMeta {
+  model: PersonModel;
+  skinAvg: V3;
+  hairAvg: V3;
+  face: { chinY: number; eyeY: number; browY: number; frontZ: number };
+  kit: { hemY: number; sockY: number; bootY: number };
+  joints: Record<string, V3>;
+  hands: Record<"L" | "R", { along: V3; palm: V3; thumb: V3; len: number }>;
+}
+
+/** A hand's axes in its own bone's space. */
+export interface HandFrame { along: THREE.Vector3; palm: THREE.Vector3; thumb: THREE.Vector3; len: number }
+
+export interface Person3D {
+  root: THREE.Group;
+  body: THREE.SkinnedMesh;
+  outline: THREE.SkinnedMesh;
+  bones: Record<string, THREE.Bone>;
+  mixer: THREE.AnimationMixer;
+  actions: Record<string, THREE.AnimationAction>;
+  meta: PersonMeta;
+  u: Record<string, { value: unknown }>;
+  hand: Record<"L" | "R", HandFrame>;
+  /** Every bone as the clips last left it (see poseClips). */
+  base: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>;
+  /** Every bone in the bind pose (the file's own). */
+  rest: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>;
+  /** The Hips bone's rest position (its parent's units: cm). */
+  hipsRest: THREE.Vector3;
+  /** The Armature's scale (cm → m). */
+  unit: number;
+}
+
+/** A face picture fitted by faceFit.ts (or anything shaped like it). */
+export interface FacePic {
+  canvas: HTMLCanvasElement | HTMLImageElement;
+  chinX: number; chinY: number; faceH: number;
+}
+
+export interface WornThing { slot: string; color: string; color2?: string; stripes?: string[] }
+
+export interface PersonLook {
+  skin: string;
+  hair?: string;
+  /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
+  kit?: { shirt: string; trim: string };
+  /** The back of the shirt (a canvas texture of the number), or none. */
+  number?: THREE.Texture | null;
+  face?: FacePic | null;
+  /** The photo's own skin tone, so its colour can be brought to the body's. */
+  faceSkin?: string;
+  accessories?: WornThing[];
+  /** Manager: how grey his hair is (0..1). */
+  grey?: number;
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────
+
+const cache = new Map<string, Promise<GLTF>>();
+
+/** Load (once per page) a body or the clips. */
+export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES): Promise<GLTF> {
+  const url = PEOPLE3D_FILES[which];
+  let p = cache.get(url);
+  if (!p) {
+    p = loader.loadAsync(url) as Promise<GLTF>;
+    p.catch(() => cache.delete(url));
+    cache.set(url, p);
+  }
+  return p;
+}
+
+// ── The shader ────────────────────────────────────────────────────────────
+
+const VERT_HEAD = `
+varying vec3 vRest;
+varying vec3 vRestN;`;
+
+const FRAG_HEAD = `
+varying vec3 vRest;
+varying vec3 vRestN;
+uniform float uKit;
+uniform vec3 uShirt, uShorts, uSocks, uBoots, uTrim;
+uniform vec4 uLines;      // hem, sock top, boot top, -
+uniform vec4 uFaceF;      // chin, eye, brow, front z
+uniform vec3 uSkinK, uHairK;
+uniform float uHairL;
+uniform float uSkinRef;
+uniform sampler2D uNum;
+uniform float uNumOn;
+uniform vec4 uNumBox;     // centre x, centre y, width, height
+uniform sampler2D uFaceTex;
+uniform float uFaceOn;
+uniform vec4 uFaceA;      // chin x, eye y (picture 0..1), picture units per metre across, down
+uniform vec4 uFaceO;      // oval centre x, y, radius x, y (picture 0..1)
+uniform vec3 uFaceK;
+uniform vec4 uSleeve, uTape, uGlove, uBand, uSnood;
+uniform vec3 uGlove2, uBand2;
+uniform vec3 uArmC[6];
+uniform float uArmN;
+uniform vec3 uShL, uElL, uWrL, uShR, uElR, uWrR, uNeck;
+float p3Face = 0.0;
+float p3SegT(vec3 p, vec3 a, vec3 b) { vec3 ab = b - a; return dot(p - a, ab) / dot(ab, ab); }
+float p3SegD(vec3 p, vec3 a, vec3 b, float lo, float hi) { vec3 ab = b - a; float t = clamp(dot(p - a, ab) / dot(ab, ab), lo, hi); return length(p - (a + ab * t)); }`;
+
+const FRAG_BODY = `
+{
+  vec3 r = vRest;
+  vec3 c = diffuseColor.rgb;
+  vec3 cs = pow(max(c, vec3(1e-5)), vec3(1.0 / 2.2));
+  float mx = max(cs.r, max(cs.g, cs.b));
+  float mn = min(cs.r, min(cs.g, cs.b));
+  float sat = (mx - mn) / max(mx, 1e-3);
+  float lum = max(c.r, max(c.g, c.b));
+  float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
+  float offFace = max(step(uFaceF.z - 0.012, r.y), max(step(r.z, uFaceF.w - 0.07), step(0.064, abs(r.x))));
+  float eye = (1.0 - step(0.013, abs(r.y - uFaceF.y))) * step(uFaceF.w - 0.05, r.z);
+  float hairCol = uKit > 0.5 ? (1.0 - smoothstep(0.3, 0.5, mx)) : (1.0 - smoothstep(0.12, 0.22, sat)) * smoothstep(0.2, 0.32, mx);
+  float hair = head * offFace * (1.0 - eye) * hairCol;
+  float kit = uKit * (1.0 - smoothstep(0.1, 0.2, sat)) * smoothstep(0.2, 0.45, mx) * (1.0 - head);
+  float skin = (1.0 - kit) * (1.0 - hair) * smoothstep(0.1, 0.2, sat) * smoothstep(0.25, 0.45, mx) * smoothstep(0.03, 0.09, cs.r - cs.b);
+  vec3 col = c;
+  col = mix(col, min(c * uSkinK, vec3(1.0)), skin);
+  col = mix(col, min(uHairK * (dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL), vec3(1.0)), hair);
+  float shade = clamp(lum / uSkinRef, 0.35, 1.15);
+
+  // The kit: shirt over the hem, shorts to the knee, socks to the ankle, boots.
+  float shirtW = step(uLines.x, r.y);
+  float bootW = 1.0 - step(uLines.z, r.y);
+  float shortsW = step(uLines.y, r.y) * (1.0 - shirtW);
+  float socksW = max(0.0, 1.0 - shirtW - shortsW - bootW);
+  vec3 part = uShirt * shirtW + uShorts * shortsW + uSocks * socksW + uBoots * bootW;
+  if (uNumOn > 0.5 && shirtW > 0.5 && vRestN.z < -0.25 && r.z < 0.0) {
+    vec2 nuv = vec2(0.5 - (r.x - uNumBox.x) / uNumBox.z, (r.y - uNumBox.y) / uNumBox.w + 0.5);
+    if (nuv.x > 0.0 && nuv.x < 1.0 && nuv.y > 0.0 && nuv.y < 1.0) part = mix(part, uTrim, texture2D(uNum, nuv).a);
+  }
+  col = mix(col, part * lum, kit);
+
+  // The face picture, straight on from the front, an oval fading into the skin.
+  if (uFaceOn > 0.5) {
+    vec2 fp = vec2(uFaceA.x + r.x * uFaceA.z, uFaceA.y - (r.y - uFaceF.y) * uFaceA.w);
+    vec2 e = (fp - uFaceO.xy) / uFaceO.zw;
+    float oval = 1.0 - smoothstep(0.7, 1.0, length(e));
+    float facing = smoothstep(0.15, 0.5, vRestN.z) * step(uFaceF.w - 0.11, r.z);
+    float inside = step(0.0, fp.x) * step(fp.x, 1.0) * step(0.0, fp.y) * step(fp.y, 1.0);
+    vec4 ph = texture2D(uFaceTex, vec2(fp.x, 1.0 - fp.y));
+    p3Face = oval * facing * inside * ph.a;
+    col = mix(col, ph.rgb * uFaceK, p3Face);
+  }
+
+  // Arms: forearm/hand line and upper arm, each side.
+  bool lft = r.x > 0.0;
+  vec3 S = lft ? uShL : uShR; vec3 E = lft ? uElL : uElR; vec3 W = lft ? uWrL : uWrR;
+  float tf = p3SegT(r, E, W);
+  float df = p3SegD(r, E, W, -0.3, 1.9);
+  float tu = p3SegT(r, S, E);
+  float du = p3SegD(r, S, E, 0.0, 1.0);
+  float limb = step(0.12, abs(r.x));
+  float onFore = step(df, 0.085) * step(-0.05, tf) * limb;
+  float onUpper = step(du, 0.095) * step(0.15, tu) * step(tu, 1.05) * limb;
+  if (uSleeve.a > 0.5) col = mix(col, uSleeve.rgb * shade, skin * max(onUpper, onFore * step(tf, 0.97)));
+  if (uTape.a > 0.5) col = mix(col, uTape.rgb * max(shade, 0.6), onFore * step(0.8, tf) * step(tf, 0.97));
+  if (uGlove.a > 0.5) {
+    float g = step(df, 0.1) * step(0.97, tf) * limb;
+    col = mix(col, mix(uGlove.rgb, uGlove2, step(tf, 1.07)) * max(shade, 0.6), g);
+  }
+  if (uArmN > 0.5 && lft) {
+    float a = onUpper * step(0.36, tu) * step(tu, 0.6) * step(du, 0.09);
+    int k = int(clamp(floor((tu - 0.36) / 0.24 * uArmN), 0.0, uArmN - 1.0));
+    vec3 ac = uArmC[0];
+    for (int i = 1; i < 6; i++) if (i == k) ac = uArmC[i];
+    col = mix(col, ac * max(lum, 0.55), a);
+  }
+  // Head and neck.
+  if (uBand.a > 0.5) {
+    float y0 = uFaceF.z + 0.016, y1 = uFaceF.z + 0.05;
+    float b = step(y0, r.y) * step(r.y, y1) * head;
+    float mid = 1.0 - step(0.005, abs(r.y - (y0 + y1) * 0.5));
+    col = mix(col, mix(uBand.rgb, uBand2, mid) * 0.9, b);
+  }
+  if (uSnood.a > 0.5) {
+    float rad = length(vec2(r.x - uNeck.x, r.z - uNeck.z));
+    float s = step(uFaceF.x - 0.095, r.y) * step(r.y, uFaceF.x - 0.012) * step(rad, 0.085);
+    col = mix(col, uSnood.rgb * 0.85, s);
+  }
+  diffuseColor.rgb = col;
+}`;
+
+function lin(T: Three, hex: string): THREE.Color { return new T.Color(hex); }
+
+function makeUniforms(T: Three, meta: PersonMeta) {
+  const j = (n: string) => new T.Vector3(...(meta.joints[n] ?? [0, 0, 0]));
+  const blank = new T.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
+  blank.needsUpdate = true;
+  return {
+    uKit: { value: meta.model === "manager" ? 0 : 1 },
+    uShirt: { value: new T.Color(1, 1, 1) }, uShorts: { value: new T.Color(1, 1, 1) },
+    uSocks: { value: new T.Color(1, 1, 1) }, uBoots: { value: new T.Color(0.02, 0.02, 0.025) }, uTrim: { value: new T.Color(0, 0, 0) },
+    uLines: { value: new T.Vector4(meta.kit.hemY, meta.kit.sockY, meta.kit.bootY, 0) },
+    uFaceF: { value: new T.Vector4(meta.face.chinY, meta.face.eyeY, meta.face.browY, meta.face.frontZ) },
+    uSkinK: { value: new T.Vector3(1, 1, 1) }, uHairK: { value: new T.Vector3(...meta.hairAvg) },
+    uHairL: { value: 0.2126 * meta.hairAvg[0] + 0.7152 * meta.hairAvg[1] + 0.0722 * meta.hairAvg[2] },
+    uSkinRef: { value: Math.max(...meta.skinAvg) },
+    uNum: { value: blank as THREE.Texture }, uNumOn: { value: 0 },
+    uNumBox: { value: new T.Vector4(0, (meta.kit.hemY + meta.joints.Spine[1]) / 2 + 0.03, 0.27, 0.27) },
+    uFaceTex: { value: blank as THREE.Texture }, uFaceOn: { value: 0 },
+    uFaceA: { value: new T.Vector4() }, uFaceO: { value: new T.Vector4(0.5, 0.5, 1, 1) }, uFaceK: { value: new T.Vector3(1, 1, 1) },
+    uSleeve: { value: new T.Vector4(0, 0, 0, 0) }, uTape: { value: new T.Vector4(0, 0, 0, 0) }, uGlove: { value: new T.Vector4(0, 0, 0, 0) },
+    uBand: { value: new T.Vector4(0, 0, 0, 0) }, uSnood: { value: new T.Vector4(0, 0, 0, 0) },
+    uGlove2: { value: new T.Color() }, uBand2: { value: new T.Color() },
+    uArmC: { value: [0, 1, 2, 3, 4, 5].map(() => new T.Color()) }, uArmN: { value: 0 },
+    uShL: { value: j("LeftArm") }, uElL: { value: j("LeftForeArm") }, uWrL: { value: j("LeftHand") },
+    uShR: { value: j("RightArm") }, uElR: { value: j("RightForeArm") }, uWrR: { value: j("RightHand") },
+    uNeck: { value: j("neck") },
+  };
+}
+
+function patchBody(mat: THREE.MeshStandardMaterial, u: Record<string, { value: unknown }>) {
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", `#include <common>${VERT_HEAD}`)
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = position;\nvRestN = normal;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", `#include <common>${FRAG_HEAD}`)
+      .replace("#include <map_fragment>", `#include <map_fragment>${FRAG_BODY}`)
+      // Under the face picture the head's own modelled features go smooth, so
+      // the photo's eyes and mouth are the only ones there.
+      .replace("#include <normal_fragment_begin>", "#include <normal_fragment_begin>\nvec3 p3GeoN = normal;")
+      .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\nnormal = normalize(mix(normal, p3GeoN, 0.35 + 0.65 * p3Face));");
+  };
+  mat.customProgramCacheKey = () => "people3d-body-v2";
+}
+
+/** The outline: the body pushed out along its normals, back faces only. */
+function outlineMaterial(T: Three, width: number): THREE.MeshBasicMaterial {
+  const m = new T.MeshBasicMaterial({ color: 0x15171c, side: T.BackSide });
+  m.onBeforeCompile = (sh) => {
+    // Pushed out along the (seam-welded) normals, and 1.5 cm back from the
+    // camera, so it shows round the edge and never pokes through a fold.
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <begin_vertex>", `vec3 transformed = vec3(position) + normalize(normal) * ${width.toFixed(4)};`)
+      .replace("#include <project_vertex>", "#include <project_vertex>\nmvPosition.z -= 0.015;\ngl_Position = projectionMatrix * mvPosition;");
+  };
+  m.customProgramCacheKey = () => `people3d-outline-${width.toFixed(4)}`;
+  return m;
+}
+
+// ── A person ──────────────────────────────────────────────────────────────
+
+export interface MakePersonOptions {
+  /** Outline thickness, metres (0 for none). */
+  outline?: number;
+  castShadow?: boolean;
+}
+
+/**
+ * One person from a loaded body and the loaded clips. `SkeletonUtils` is
+ * three's (passed in, so this file never imports three at load time).
+ */
+export function makePerson3d(
+  T: Three, SkeletonUtils: { clone(o: THREE.Object3D): THREE.Object3D },
+  model: GLTF, anims: GLTF, opts: MakePersonOptions = {},
+): Person3D {
+  const meta = model.scene.userData as PersonMeta;
+  const root = new T.Group();
+  const inner = SkeletonUtils.clone(model.scene);
+  root.add(inner);
+  const body = inner.getObjectByName("Body") as THREE.SkinnedMesh;
+  const bones: Record<string, THREE.Bone> = {};
+  inner.traverse((o) => { if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone; });
+  const armature = inner.getObjectByName("Armature")!;
+  const unit = armature.scale.y || 0.01;
+
+  const u = makeUniforms(T, meta);
+  const mat = (body.material as THREE.MeshStandardMaterial).clone();
+  mat.metalness = 0;
+  mat.roughness = 0.72;
+  patchBody(mat, u);
+  body.material = mat;
+  body.frustumCulled = false;
+  body.castShadow = !!opts.castShadow;
+  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, opts.outline ?? 0.0045));
+  outline.name = "Outline";
+  outline.frustumCulled = false;
+  outline.visible = (opts.outline ?? 0.0045) > 0;
+  body.parent!.add(outline);
+  outline.bind(body.skeleton, body.bindMatrix);
+
+  // The file's own bone turns ARE the bind pose (and skeleton.pose() can't be
+  // used: it writes the Hips' world metres into its cm-scaled local slot).
+  const rest = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
+  for (const b of Object.values(bones)) rest.set(b, [b.position.clone(), b.quaternion.clone()]);
+  root.updateMatrixWorld(true);
+  const handOf = (side: "L" | "R"): HandFrame => {
+    const h = meta.hands[side];
+    const q = new T.Quaternion();
+    bones[side === "L" ? "LeftHand" : "RightHand"].getWorldQuaternion(q);
+    const inv = q.invert();
+    return {
+      along: new T.Vector3(...h.along).applyQuaternion(inv),
+      palm: new T.Vector3(...h.palm).applyQuaternion(inv),
+      thumb: new T.Vector3(...h.thumb).applyQuaternion(inv),
+      len: h.len,
+    };
+  };
+  const hand = { L: handOf("L"), R: handOf("R") };
+  const hipsRest = bones.Hips.position.clone();
+
+  // Clips, the hips' height brought to this body's.
+  const k = hipsRest.y / ((anims.scene.userData as { hipsY?: number }).hipsY || hipsRest.y);
+  const mixer = new T.AnimationMixer(inner);
+  const actions: Record<string, THREE.AnimationAction> = {};
+  for (const clip of anims.animations) {
+    const c = clip.clone();
+    for (const tr of c.tracks) {
+      if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
+    }
+    const a = mixer.clipAction(c);
+    a.play();
+    a.setEffectiveWeight(0);
+    actions[clip.name] = a;
+  }
+  const base = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
+  for (const b of Object.values(bones)) base.set(b, [b.position.clone(), b.quaternion.clone()]);
+  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit };
+}
+
+/**
+ * Set the clips' weights and times and pose the bones from them. Every bone
+ * goes back to the clips' own pose first (the mixer only writes a bone whose
+ * value changed, so posing on top would otherwise pile up frame on frame).
+ */
+export function poseClips(p: Person3D, entries: [string, number, number][]) {
+  for (const a of Object.values(p.actions)) a.setEffectiveWeight(0);
+  for (const [name, time, w] of entries) {
+    const a = p.actions[name];
+    if (!a) continue;
+    a.setEffectiveWeight(w);
+    a.time = Math.max(0, Math.min(time, a.getClip().duration - 1e-3));
+  }
+  p.base.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
+  p.mixer.update(0);
+  p.base.forEach(([pos, q], b) => { pos.copy(b.position); q.copy(b.quaternion); });
+  p.root.updateMatrixWorld(true);
+}
+
+/** Put every bone back in the bind pose (to hang things on bones, or measure). */
+export function poseRest(p: Person3D) {
+  p.rest.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
+  p.root.updateMatrixWorld(true);
+}
+
+/** Put the hips at (x, z) metres in the person's own frame (clips keep the height). */
+export function setHipsXZ(p: Person3D, x: number, z: number) {
+  p.bones.Hips.position.x = x / p.unit;
+  p.bones.Hips.position.z = z / p.unit;
+  p.root.updateMatrixWorld(true);
+}
+
+
+/** Paint a look onto a person (cheap: uniforms only). */
+export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
+  const u = p.u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const m = p.meta;
+  const ratio = (hex: string, avg: V3, cap = 6) => {
+    const c = lin(T, hex);
+    return new T.Vector3(Math.min(cap, c.r / avg[0]), Math.min(cap, c.g / avg[1]), Math.min(cap, c.b / avg[2]));
+  };
+  u.uSkinK.value = ratio(look.skin, m.skinAvg);
+  // Hair: the chosen colour, shaded strand by strand as the texture is.
+  const hair = m.model === "manager"
+    ? new T.Color(look.hair ?? "#3a2a20").lerp(new T.Color("#c9c9c9"), look.grey ?? 0.6)
+    : lin(T, look.hair ?? "#2b1b12");
+  u.uHairK.value = new T.Vector3(hair.r, hair.g, hair.b);
+  if (look.kit) {
+    u.uShirt.value = lin(T, look.kit.shirt);
+    u.uShorts.value = lin(T, look.kit.trim);
+    u.uSocks.value = lin(T, look.kit.shirt);
+    u.uTrim.value = lin(T, look.kit.trim);
+  }
+  u.uNumOn.value = look.number ? 1 : 0;
+  if (look.number) u.uNum.value = look.number;
+  const acc = (slot: string) => look.accessories?.find((a) => a.slot === slot);
+  const on4 = (hex: string | undefined) => (hex ? new T.Vector4(...lin(T, hex).toArray(), 1) : new T.Vector4(0, 0, 0, 0));
+  const boots = acc("boots");
+  u.uBoots.value = lin(T, boots?.color ?? "#141416");
+  u.uSleeve.value = on4(acc("arms")?.color);
+  u.uTape.value = on4(acc("wrists")?.color);
+  const gl = acc("hands");
+  u.uGlove.value = on4(gl?.color);
+  u.uGlove2.value = lin(T, gl?.color2 ?? gl?.color ?? "#000000");
+  const hb = acc("head");
+  u.uBand.value = on4(hb?.color);
+  u.uBand2.value = lin(T, hb?.color2 ?? hb?.color ?? "#000000");
+  u.uSnood.value = on4(acc("neck")?.color);
+  const ab = acc("armband");
+  const stripes = ab ? (ab.stripes ?? (ab.color2 ? [ab.color, ab.color2] : [ab.color])).slice(0, 6) : [];
+  u.uArmN.value = stripes.length;
+  stripes.forEach((s, i) => { (u.uArmC.value as THREE.Color[])[i] = lin(T, s); });
+
+  // The face picture.
+  const f = look.face;
+  if (f) {
+    const old = u.uFaceTex.value as THREE.Texture;
+    const tex = f.canvas instanceof HTMLCanvasElement ? new T.CanvasTexture(f.canvas) : new T.Texture(f.canvas);
+    tex.colorSpace = T.SRGBColorSpace;
+    tex.needsUpdate = true;
+    if (old && old !== tex && (old as THREE.Texture & { userData: { mine?: boolean } }).userData?.mine) old.dispose();
+    tex.userData.mine = true;
+    u.uFaceTex.value = tex;
+    const cw = f.canvas.width, ch = f.canvas.height;
+    const F = m.face;
+    // Picture px per metre: the photo's eyes three quarters of its face box
+    // over its chin, on this head's eyes; its chin on this head's chin.
+    const sy = (0.75 * f.faceH) / (F.eyeY - F.chinY);
+    const sx = sy * 1.25; // the photo's eyes as far apart as this head's
+    const eyePx = f.chinY - 0.75 * f.faceH;
+    u.uFaceA.value = new T.Vector4(f.chinX / cw, eyePx / ch, sx / cw, sy / ch);
+    u.uFaceO.value = new T.Vector4(f.chinX / cw, (f.chinY - f.faceH * 0.55) / ch, (f.faceH * 0.47) / cw, (f.faceH * 0.66) / ch);
+    const want = lin(T, look.skin);
+    const has = lin(T, look.faceSkin ?? look.skin);
+    const k = (a: number, b: number) => Math.min(1.8, Math.max(0.25, a / Math.max(0.004, b)));
+    u.uFaceK.value = new T.Vector3(k(want.r, has.r), k(want.g, has.g), k(want.b, has.b));
+    u.uFaceOn.value = 1;
+  } else {
+    u.uFaceOn.value = 0;
+  }
+}
+
+/** World position of a bone. */
+export function bonePos(T: Three, b: THREE.Object3D): THREE.Vector3 { const v = new T.Vector3(); b.getWorldPosition(v); return v; }

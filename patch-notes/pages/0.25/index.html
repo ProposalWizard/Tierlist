@@ -1,0 +1,359 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.25</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3d5249;--ink3:#667b71;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:700px;margin:0 auto;padding:0 16px 80px}
+  p{margin:0 0 10px}
+  header{padding:36px 0 8px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,38px);line-height:1.08;margin:12px 0 10px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink2);font-size:15px;margin:0 0 8px}
+  .legend{font-size:13px;color:var(--ink3);margin:10px 0 0}
+  .legend span{display:block;margin:4px 0}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:46px 0 14px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .c-g{color:var(--green)} .c-g i{background:var(--green)}
+  .c-b{color:var(--blue)} .c-b i{background:var(--blue)}
+  .c-v{color:var(--violet)} .c-v i{background:var(--violet)}
+  .c-a{color:var(--amber)} .c-a i{background:var(--amber)}
+  .c-t{color:var(--teal)} .c-t i{background:var(--teal)}
+  .c-m{color:var(--ink3)} .c-m i{background:var(--ink3)}
+  .c-r{color:var(--red)} .c-r i{background:var(--red)}
+
+  /* the one-line-per-item checklist */
+  ul.look{list-style:none;margin:0;padding:0}
+  ul.look li{border-bottom:1px solid var(--line);padding:10px 0}
+  ul.look li:last-child{border-bottom:0}
+  ul.look label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  ul.look input{margin:4px 0 0;width:18px;height:18px;flex:0 0 auto;accent-color:var(--green)}
+  ul.look .t{font-weight:700}
+  ul.look .t a{color:inherit;text-decoration:none}
+  ul.look .w{display:block;font-size:13px;color:var(--ink3);font-weight:400;margin-top:2px}
+
+  /* big numbers */
+  .nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 6px}
+  .nums div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .nums b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .nums span{display:block;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.35}
+
+  /* an item */
+  article.it{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 12px;margin:16px 0;scroll-margin-top:12px}
+  .it-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .no{font-size:12px;font-weight:800;color:var(--ink3);letter-spacing:.06em;margin-right:4px}
+  article.it h3{font-size:19px;line-height:1.25;margin:8px 0 4px;letter-spacing:-.01em;text-wrap:balance}
+  .blk{margin:16px 0 0}
+  .blk h4{margin:0 0 4px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .blk p,.blk li{color:var(--ink2)}
+  .blk b{color:var(--ink)}
+  .blk ul,.blk ol{margin:0 0 10px;padding-left:20px}
+  .blk li{margin:4px 0}
+  .said p{color:var(--ink);font-style:italic}
+  .ask{border-left:3px solid var(--amber);padding-left:12px}
+  ul.opts{list-style:none;padding-left:0!important;margin:4px 0 8px}
+  ul.opts li{margin:0 0 8px;padding-left:28px;text-indent:-28px}
+  ul.opts li b{display:inline-block;width:28px;text-indent:0}
+  p.rec{font-weight:700}
+  .ask h4{color:var(--amber)}
+  .how{display:block;font-size:12.5px;color:var(--ink3);margin-top:6px}
+  .how b{font-weight:700;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:999px;line-height:1.4;white-space:nowrap}
+  .p-ok{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+  .p-chg{background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+  .p-deep{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+  .p-new{background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal)}
+  .p-exp{background:color-mix(in srgb,var(--teal) 12%,transparent);color:var(--teal)}
+  .p-park{background:var(--card2);color:var(--ink3)}
+  .p-core{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
+  .p-wait{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+
+  /* pictures and clips: pairs side by side, everything else full width */
+  .media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:6px 0 4px}
+  .media.one{grid-template-columns:minmax(0,1fr)}
+  figure{margin:0}
+  figure img,figure video{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#05070d}
+  figure a{display:block}
+  figcaption{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.4}
+  figcaption b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+  .tag.b{color:var(--ink3)} .tag.a{color:var(--green)}
+
+  .tbl{overflow-x:auto;margin:4px 0 8px}
+  .tbl table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+  .tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .tbl th{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .tbl td:not(:first-child),.tbl th:not(:first-child){text-align:right;white-space:nowrap}
+  @media (max-width:480px){.tbl table{font-size:13px}.tbl th,.tbl td{padding:6px 5px}.tbl td:not(:first-child),.tbl th:not(:first-child){white-space:normal}}
+
+  /* stacked steps */
+  ol.steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  ol.steps>li{counter-increment:st;padding:12px 0 12px 38px;border-bottom:1px solid var(--line);position:relative}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li::before{content:counter(st);position:absolute;left:0;top:12px;width:26px;height:26px;border-radius:50%;
+    background:var(--teal);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}
+  :root:not([data-theme="light"]) ol.steps>li::before{color:#041b1e}
+  ol.steps .hd{display:block;font-weight:700;color:var(--ink)}
+  ol.steps p{margin:4px 0 0;color:var(--ink2)}
+
+  .box{border:2px solid var(--red);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .box .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
+  .box h3{font-size:20px;margin:4px 0 10px}
+  .hl{border:2px solid var(--green);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .hl .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+  .hl h3{font-size:20px;margin:4px 0 10px}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:12px 0;font-size:14px;font-weight:700;color:var(--ink2);display:flex;gap:8px;align-items:baseline}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";color:var(--ink3);transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+  footer{margin-top:40px;font-size:13px;color:var(--ink3)}
+</style>
+<style>
+  .status{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;margin-left:6px;
+    background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);padding:4px 10px;border-radius:999px}
+  .strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 8px}
+  @media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .strip div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .strip b{display:block;font-size:clamp(19px,5vw,24px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .strip span{display:block;font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.35}
+  .bars{margin:8px 0 4px}
+  .bar{display:grid;grid-template-columns:minmax(84px,120px) minmax(0,1fr) auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  :root:not([data-theme="light"]) .fill.was{background:color-mix(in srgb,var(--ink3) 45%,transparent)}
+  :root[data-theme="light"] .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.warn{background:var(--amber)} .fill.now.bad{background:var(--red)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.85;margin-left:3px}
+  .bcap{font-size:12.5px;color:var(--ink3);margin:2px 0 6px}
+  .it p.one{color:var(--ink2);margin:2px 0 0;font-size:15px}
+  .pwf{margin:12px 0 0}
+  .pwf h4{margin:10px 0 2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf h4.fx{color:var(--green)} .pwf h4.st{color:var(--amber)}
+  .pwf p{margin:0;color:var(--ink2)}
+  .sub-h{font-size:17px;font-weight:800;margin:30px 0 4px;letter-spacing:-.01em}
+  .hl .mean{background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:14px}
+  .hl .mean b{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+  .p-dec{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+  .p-bug{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+  .p-plan{background:var(--card2);color:var(--ink3)}
+  ul.look .tag2{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:4px}
+  ol.dec{list-style:none;margin:0;padding:0}
+  .dec article.it{border-left:3px solid var(--amber)}
+  ul.hist{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.hist li{margin:4px 0}
+  ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.plain li{margin:3px 0}
+  ul.ts{list-style:none;margin:8px 0 0;padding:0}
+  ul.ts li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14.5px}
+  ul.ts li:last-child{border-bottom:0}
+  ul.ts b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .tbl td:first-child{white-space:normal}
+  figure video{max-height:78vh;object-fit:contain}
+  .media.one figure img{width:auto;max-width:100%;max-height:82vh;margin:0 auto}
+  code{font-size:12.5px;background:var(--card2);padding:1px 5px;border-radius:5px;word-break:break-word}
+</style><style>
+.area{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 15px;margin:14px 0}
+.area h3{margin:0 0 4px;font-size:18px}
+.st{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.st.done{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.st.wip{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.st.dec{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+.chg{list-style:none;margin:8px 0 0;padding:0}
+.chg>li{padding:9px 0;border-bottom:1px solid var(--line)} .chg>li:last-child{border-bottom:0}
+.chg b.t{display:block;color:var(--ink)} .chg .w{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.chg .ev{display:inline-block;font:700 10.5px/1 system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 2px}
+.ba figure{margin:0} .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+.ba figcaption{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.ba .lab{display:inline-block;font:800 10px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:5px;margin-bottom:4px}
+.lab.b{background:var(--card2);color:var(--ink3)} .lab.a{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.solo{margin:10px 0} .solo img{max-width:100%;border-radius:8px;border:1px solid var(--line)}
+.note{border-left:3px solid var(--line);padding:6px 0 6px 11px;margin:9px 0}
+.note.bug{border-color:var(--red)} .note.chg2{border-color:var(--amber)} .note.like{border-color:var(--green)} .note.q{border-color:var(--blue)}
+.note q{display:block;color:var(--ink);font-style:normal} .note small{color:var(--ink3)}
+.note .tb{font:800 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.toc a{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card2);color:var(--ink);text-decoration:none}
+.dq{border:1px solid color-mix(in srgb,var(--amber) 45%,var(--line));border-radius:12px;padding:11px 13px;margin:10px 0;background:color-mix(in srgb,var(--amber) 6%,var(--card))}
+.dq b{color:var(--ink)} .dq span{display:block;color:var(--ink2);font-size:13.5px;margin-top:3px}
+/* change cards: one clip at a time on a phone, both side by side when wide */
+body{font-size:16px}
+.cx{border-top:1px solid var(--line);padding:18px 0 6px;margin-top:6px}
+.cx:first-of-type{border-top:0}
+.cxh{display:flex;gap:10px;align-items:baseline}
+.cxh .n{flex:none;font:800 13px/1 system-ui,sans-serif;color:var(--ink3);font-variant-numeric:tabular-nums}
+.cxh h4{margin:0;font-size:17.5px;line-height:1.3;color:var(--ink);text-wrap:balance}
+.cx .w{margin:6px 0 0;color:var(--ink2);font-size:15.5px;line-height:1.5}
+.cx .look{margin:8px 0 0;font-size:15px;color:var(--ink);background:var(--card2);border-radius:10px;padding:9px 12px}
+.cx .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.cx .ev{font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-left:auto;white-space:nowrap}
+.seg{display:flex;gap:6px;margin:12px 0 8px}
+.seg button{flex:1;font:800 14px/1 system-ui,sans-serif;padding:11px 0;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:pointer}
+.seg button.on[data-s="before"]{background:var(--ink3);border-color:var(--ink3);color:var(--bg)}
+.seg button.on[data-s="after"]{background:var(--green);border-color:var(--green);color:#06170e}
+.panes{display:grid;gap:14px}
+.pane[hidden]{display:none!important}
+.pane .lab{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px}
+.pane.before .lab{background:var(--card2);color:var(--ink2)} .pane.after .lab{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.pane video,.pane img.still{display:block;width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+.spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+.spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+.spd button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.spd a{margin-left:auto;color:var(--ink2)}
+.pane .pnote{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+.cx .w2{margin:0;color:var(--ink2);font-size:15px;line-height:1.5} .cx .evs{color:var(--ink3);font-size:13px}
+.cx details{margin-top:10px}
+.pics{display:grid;gap:10px;margin-top:10px}
+.pics img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block}
+@media (min-width:760px){.seg{display:none}.panes{grid-template-columns:repeat(2,minmax(0,1fr))}.pane[hidden]{display:block!important}}
+</style><style>
+.dq .df{display:block;margin-top:5px;color:var(--ink);font-weight:700;font-size:14px}
+.dq .df i{font-style:normal;color:var(--green);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.dq .nn{color:var(--ink3);margin-right:6px;font-variant-numeric:tabular-nums}
+.shopstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:12px 0 4px}
+.shopstrip .fl{grid-column:1/-1;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-top:6px}
+.shopstrip a{display:block;min-width:0}
+.shopstrip img{display:block;width:100%;height:auto;border-radius:6px;background:var(--card2)}
+.strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* evidence tag + Problem / Why / Fix rows */
+.evt{margin-left:auto;flex:none;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap;align-self:center}
+.evt.seen{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.evt.meas{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.evt.reas{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.evt.nf{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
+.cxh{flex-wrap:wrap}
+.pwf{margin:10px 0 0}
+.pwf h5{margin:0 0 2px;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.pwf h5.fx{color:var(--green)}
+.pwf p{margin:0;font-size:15px;line-height:1.5;color:var(--ink2)}
+.pwf p.q{color:var(--ink);border-left:3px solid var(--amber);padding-left:10px}
+.pwf p.q small{color:var(--ink3);font-size:12px;margin-left:4px}
+.pwf p.fixl{color:var(--ink);font-weight:700}
+.pane .pnote{margin:8px 0 0}
+.cx .pstill{display:block;margin-top:10px}
+/* headline block */
+.hl{border:2px solid var(--green);border-radius:16px;padding:16px 16px 12px;margin:20px 0;background:var(--card)}
+.hl h2{margin:0 0 6px}
+.hl .tag{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#06170e;background:var(--green);padding:5px 9px;border-radius:999px;margin-bottom:8px}
+.hl .mean{background:var(--card2);border-radius:10px;padding:10px 12px;margin:12px 0 4px;font-size:15px}
+.hl .mean b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+/* check these */
+ul.ck{list-style:none;margin:8px 0 0;padding:0}
+ul.ck li{border-bottom:1px solid var(--line)} ul.ck li:last-child{border-bottom:0}
+ul.ck label{display:flex;gap:11px;align-items:flex-start;padding:9px 0;cursor:pointer}
+ul.ck input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--green)}
+ul.ck span b{display:block;color:var(--ink);font-size:15px;line-height:1.3}
+ul.ck span small{display:block;color:var(--ink3);font-size:12.5px;margin-top:1px}
+ul.ck input:checked + span b{color:var(--ink3);text-decoration:line-through}
+.ckh{margin:14px 0 0;font:800 11.5px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+/* number bars */
+.bars{margin:10px 0 4px}
+.bars .br{margin:10px 0}
+.bars .br>b{display:block;font-size:14px;color:var(--ink);margin-bottom:4px}
+.bars .tr{display:flex;align-items:center;gap:8px;margin:3px 0}
+.bars .tr .bw{flex:1;position:relative;height:16px;background:var(--card2);border-radius:5px;overflow:hidden}
+.bars .tr .bw i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.bars .tr i.o{background:var(--ink3);opacity:.55} .bars .tr i.n{background:var(--green)} .bars .tr i.n.am{background:var(--amber)}
+.bars .tr em{flex:none;width:74px;font:700 12px/16px system-ui,sans-serif;font-style:normal;color:var(--ink2)}
+.bars .lg{font-size:12.5px;color:var(--ink3)}
+/* still working */
+.sw{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--card)}
+.sw .top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sw .top b{font-size:16px;color:var(--ink)}
+.sw p{margin:4px 0 0;color:var(--ink2);font-size:15px}
+.sp{font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.sp.b{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.sp.r{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.sp.a{background:var(--card2);color:var(--ink3)}
+.lane{border-left:4px solid var(--green);padding:6px 0 6px 12px;margin:10px 0}
+.lane.w{border-color:var(--amber)}
+.lane b{color:var(--ink)} .lane p{margin:3px 0 0;font-size:14.5px;color:var(--ink2)}
+.lane code,.mono{font:12.5px/1.45 ui-monospace,Menlo,monospace;color:var(--ink3);word-break:break-word}
+.later{border:1px dashed color-mix(in srgb,var(--red) 45%,var(--line));border-radius:12px;padding:6px 14px 10px;margin:14px 0}
+.nb{margin:18px 0;padding:11px 14px;border-radius:12px;background:var(--card2);color:var(--ink2);font-size:15px}
+.nb b{color:var(--ink)}
+</style>
+<style>
+.c-d{color:var(--amber)} .c-d i{background:var(--amber)}
+.c-o{color:var(--red)} .c-o i{background:var(--red)}
+.hb{border-top:1px solid var(--line);padding:14px 0 2px;margin-top:10px}
+.hb:first-of-type{border-top:0}
+.hb h3{font-size:18px;line-height:1.3;margin:0 0 4px;text-wrap:balance}
+.hb .more{margin:8px 0 0;font-size:14px}
+.hb .more a,.sub a,.sw a,details a,.cx .w2 a{color:var(--blue)}
+.cxh h4{flex:1 1 60%;min-width:0}
+.cx.slot{border:1px dashed color-mix(in srgb,var(--red) 50%,var(--line));border-radius:14px;padding:14px 14px 8px;margin:14px 0;background:color-mix(in srgb,var(--red) 3%,transparent)}
+.slotb{margin:8px 0 0;font-size:13px;color:var(--red)}
+.tbd{margin:0;font-size:15px;color:var(--ink3);font-style:italic}
+ul.plain.fl{margin-top:4px}
+.wt{font:800 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:6px;white-space:nowrap}
+.pstill{margin:12px 0 0}
+.pstill img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+.pstill figcaption{font-size:13px;color:var(--ink3);margin-top:6px}
+.pwf ul.plain{margin:2px 0 0}
+.slot-line{margin:12px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;color:var(--ink3);font-size:14px}
+#draft-banner{margin:14px 0 0;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--ink);font-size:14px;border:1px solid color-mix(in srgb,var(--red) 40%,var(--line))}
+.cx .w2{margin-top:8px}
+</style><style>.media.one-up{grid-template-columns:minmax(0,1fr)} .hl h3 a{color:var(--green)}</style><div class="wrap"><header><span class="ver">Knowitball v0.25</span><span class="status">Live · your phone test + Mikey's review</span>
+<h1>Knowitball v0.25: live 3D scenes</h1>
+<p class="sub">Built 3 Oct 2026 on branch Harry. No filming this time: try it yourself on the test build. Every change has a still.</p></header><div class="hl"><div class="kick">Live now · test build</div><h3><a href="https://tierlist-git-harry-proposalwizards-projects.vercel.app/star-dev" target="_blank" rel="noopener">Open the test build →</a></h3>
+<p class="w2">v0.25 is on the live game (knowitball.co.uk) as of 3 Oct. The test build is the Vercel preview of branch Harry. It opens when you are signed in to Vercel. Mikey must be on the Vercel team to open it, or turn off Vercel Authentication for previews (Vercel → Project → Settings → Deployment Protection).</p>
+<p class="w2"><b>Why an old save shows little:</b> most changes are at the start of a career (trial shootout, scout, first-game order, tours, phone). Start a <b>New Game</b> to see them. The 3D signing needs Career Settings → 3D signing scene (beta) switched on first.</p><p class="w2">Google sign-in there may need the preview address added to Supabase's redirect list. The game also plays signed out on that link.</p></div><div class="strip">
+<div><b>15.2 s → 0.5 s</b><span>from Play to your first chance</span></div>
+<div><b>554 → 0</b><span>shootouts where both team-mates miss the same way (of 1,660 / 5,000)</span></div>
+<div><b>31 of 48 → 0</b><span>won 50-50s that rolled at the defender's own goal</span></div>
+<div><b>140 → 37</b><span>buttons that make a sound</span></div></div><h2 class="c-g"><i></i>Check these</h2><ul class="ck"><li><label><input type="checkbox" data-k="v025-s1"><span><b><a href="#s1" style="color:inherit;text-decoration:none">3D signing scene: your player signs live</a></b><small>Career Settings → 3D signing scene (beta) → sign for a club. Or Play Area → 3D Test Area → Signing</small></span></label></li><li><label><input type="checkbox" data-k="v025-s2"><span><b><a href="#s2" style="color:inherit;text-decoration:none">3D shop you can walk round</a></b><small>Shop page (swipe right from Home) → Walk the 3D shop (beta)</small></span></label></li><li><label><input type="checkbox" data-k="v025-s3"><span><b><a href="#s3" style="color:inherit;text-decoration:none">New garden</a></b><small>Home → Garden</small></span></label></li><li><label><input type="checkbox" data-k="v025-l1"><span><b><a href="#l1" style="color:inherit;text-decoration:none">Full goal on Home; no Reputation/Fame words</a></b><small>Home</small></span></label></li><li><label><input type="checkbox" data-k="v025-l2"><span><b><a href="#l2" style="color:inherit;text-decoration:none">Match ball on the title screen; Shop is charcoal</a></b><small>Title screen; Shop page</small></span></label></li><li><label><input type="checkbox" data-k="v025-f1"><span><b><a href="#f1" style="color:inherit;text-decoration:none">First game before the tutorials</a></b><small>New game → finish the trial</small></span></label></li><li><label><input type="checkbox" data-k="v025-f2"><span><b><a href="#f2" style="color:inherit;text-decoration:none">Play goes straight into the first chance</a></b><small>Home → Play</small></span></label></li><li><label><input type="checkbox" data-k="v025-f3"><span><b><a href="#f3" style="color:inherit;text-decoration:none">Scout moment is full screen</a></b><small>End of the trial</small></span></label></li><li><label><input type="checkbox" data-k="v025-t1"><span><b><a href="#t1" style="color:inherit;text-decoration:none">Shootout scorecard; team-mates miss differently</a></b><small>Trial → penalties</small></span></label></li><li><label><input type="checkbox" data-k="v025-t2"><span><b><a href="#t2" style="color:inherit;text-decoration:none">Defender clears the ball away from his own goal</a></b><small>Any match</small></span></label></li><li><label><input type="checkbox" data-k="v025-t3"><span><b><a href="#t3" style="color:inherit;text-decoration:none">Left foot kicks with the left</a></b><small>New game → Profile → Left foot → a pen or free kick</small></span></label></li><li><label><input type="checkbox" data-k="v025-t4"><span><b><a href="#t4" style="color:inherit;text-decoration:none">Different long shots after a restart</a></b><small>Restart the same match a few times</small></span></label></li><li><label><input type="checkbox" data-k="v025-e1"><span><b><a href="#e1" style="color:inherit;text-decoration:none">Settings on the title screen is for this phone only</a></b><small>Title → Settings</small></span></label></li><li><label><input type="checkbox" data-k="v025-e2"><span><b><a href="#e2" style="color:inherit;text-decoration:none">Full screen on iPhone: Add to Home Screen</a></b><small>Title → Settings → Full screen → How?</small></span></label></li><li><label><input type="checkbox" data-k="v025-e3"><span><b><a href="#e3" style="color:inherit;text-decoration:none">Exit career uses the game's own pop-up</a></b><small>Settings → Exit career</small></span></label></li><li><label><input type="checkbox" data-k="v025-e4"><span><b><a href="#e4" style="color:inherit;text-decoration:none">Fewer sounds; quiet taps on iPhone</a></b><small>Tap round the menus</small></span></label></li><li><label><input type="checkbox" data-k="v025-b1"><span><b><a href="#b1" style="color:inherit;text-decoration:none">Boots: new box, level-5 reveal, Buy now</a></b><small>Shop → Boots</small></span></label></li><li><label><input type="checkbox" data-k="v025-b2"><span><b><a href="#b2" style="color:inherit;text-decoration:none">Phone card says what you get and what you need</a></b><small>Shop → Style → Phone</small></span></label></li></ul><h2 id="s1" class="c-t"><i></i>Live 3D scenes</h2><article class="it" id="s1a"><div class="it-top"><span class="no">1</span><span class="pill p-new">New</span></div><h3>The signing is a live 3D scene, and it is your player</h3><div class="blk"><h4>Problem</h4><p>The signing was a flat picture. You asked for a live 3D scene with real movement: pick up the pen, write, shake hands.</p></div><div class="blk"><h4>Fix</h4><ul><li>A rigged 3D body wears your skin tone, your face picture (or a fake face), your club kit with your number, and your accessories from the Store and the Star Pass.</li><li>He picks up the pen, writes his name, the SIGNED stamp lands, then he shakes the manager's hand. About 5 seconds. Tap to skip.</li><li>The contract shows your real club, number and wage.</li><li>Hair style and colour are now picked on the profile screen and saved. Old saves get short brown hair.</li><li>Polish round: the manager is fully dressed from behind, no torn cloth in the handshake, the hands meet palm to palm, the face sits on the head (not a sticker), normal arms, and a real pen grip.</li><li><b>It is off by default.</b> Turn it on in Career Settings → 3D signing scene (beta). If it is off, you get the old drawn scene.</li></ul></div><div class="media "><figure><a href="img/sign-writing.jpg" target="_blank"><img src="img/sign-writing.jpg" alt="&lt;b&gt;Writing.&lt;/b&gt; Your face, your kit, the aviators." loading="lazy"></a><figcaption><b>Writing.</b> Your face, your kit, the aviators.</figcaption></figure><figure><a href="img/sign-handshake.jpg" target="_blank"><img src="img/sign-handshake.jpg" alt="&lt;b&gt;Handshake.&lt;/b&gt; Palm to palm, manager fully dressed." loading="lazy"></a><figcaption><b>Handshake.</b> Palm to palm, manager fully dressed.</figcaption></figure><figure><a href="img/sign-pen.jpg" target="_blank"><img src="img/sign-pen.jpg" alt="&lt;b&gt;Pen grip.&lt;/b&gt; Was a fist." loading="lazy"></a><figcaption><b>Pen grip.</b> Was a fist.</figcaption></figure><figure><a href="img/sign-face.jpg" target="_blank"><img src="img/sign-face.jpg" alt="&lt;b&gt;Face picture&lt;/b&gt; on the head, tinted to the skin." loading="lazy"></a><figcaption><b>Face picture</b> on the head, tinted to the skin.</figcaption></figure><figure><a href="img/sign-hands.jpg" target="_blank"><img src="img/sign-hands.jpg" alt="&lt;b&gt;Light skin, no face picture.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Light skin, no face picture.</b></figcaption></figure><figure><a href="img/sign-back.jpg" target="_blank"><img src="img/sign-back.jpg" alt="&lt;b&gt;Manager from behind.&lt;/b&gt; Was a bare back." loading="lazy"></a><figcaption><b>Manager from behind.</b> Was a bare back.</figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills at phone size, dark and light skin, in the 3D Test Area. The career uses the same code.</span></article><article class="it" id="s2"><div class="it-top"><span class="no">2</span><span class="pill p-new">New</span></div><h3>Walk round a 3D shop</h3><div class="blk"><h4>Problem</h4><p>You asked for the old 3D shop in the game, as a button, with the real models bigger and a better-looking shop. The normal Store stays.</p></div><div class="blk"><h4>Fix</h4><ul><li>New button on the Shop page: Walk the 3D shop (beta).</li><li>Real 3D boots (7) and cars (6), bigger. Watches and jewellery hang as pictures in light boxes.</li><li>Showroom lighting. Tap an item to look at it. 'See it in the shop' takes you to the normal shop to buy it. Nothing is bought in 3D.</li></ul></div><div class="media "><figure><a href="img/shop3d-button.jpg" target="_blank"><img src="img/shop3d-button.jpg" alt="&lt;b&gt;The button&lt;/b&gt; under Store and Casino." loading="lazy"></a><figcaption><b>The button</b> under Store and Casino.</figcaption></figure><figure><a href="img/shop3d-room.jpg" target="_blank"><img src="img/shop3d-room.jpg" alt="&lt;b&gt;The showroom.&lt;/b&gt; Walk with the stick, drag to look." loading="lazy"></a><figcaption><b>The showroom.</b> Walk with the stick, drag to look.</figcaption></figure><figure><a href="img/shop3d-boots.jpg" target="_blank"><img src="img/shop3d-boots.jpg" alt="&lt;b&gt;Boots wall.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Boots wall.</b></figcaption></figure><figure><a href="img/shop3d-car.jpg" target="_blank"><img src="img/shop3d-car.jpg" alt="&lt;b&gt;A car&lt;/b&gt; on its stand." loading="lazy"></a><figcaption><b>A car</b> on its stand.</figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills at phone size.</span></article><article class="it" id="s3"><div class="it-top"><span class="no">3</span><span class="pill p-chg">Changed</span></div><h3>The garden is rebuilt</h3><div class="blk"><h4>Problem</h4><p>"Garden looking ass."</p></div><div class="blk"><h4>Fix</h4><ul><li>Three layered scenes (garden, bench, stable) with real light: day, sunset and night.</li><li>The house grows with the home you own. Team-mates sit on the bench. Fairy lights glow at night. Nothing is cut off at the sides.</li></ul></div><div class="media "><figure><a href="img/garden-before.jpg" target="_blank"><img src="img/garden-before.jpg" alt="&lt;b&gt;Before.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Before.</b></figcaption></figure><figure><a href="img/garden-after.jpg" target="_blank"><img src="img/garden-after.jpg" alt="&lt;b&gt;After.&lt;/b&gt; Sunset, trophy cabinet." loading="lazy"></a><figcaption><b>After.</b> Sunset, trophy cabinet.</figcaption></figure><figure><a href="img/garden-night.jpg" target="_blank"><img src="img/garden-night.jpg" alt="&lt;b&gt;Night&lt;/b&gt;, with a bigger home." loading="lazy"></a><figcaption><b>Night</b>, with a bigger home.</figcaption></figure><figure><a href="img/garden-bench.jpg" target="_blank"><img src="img/garden-bench.jpg" alt="&lt;b&gt;The bench.&lt;/b&gt;" loading="lazy"></a><figcaption><b>The bench.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills in day, sunset and night at 390×844.</span></article><h2 id="f1" class="c-b"><i></i>The first minutes</h2><article class="it" id="f1a"><div class="it-top"><span class="no">4</span><span class="pill p-chg">Changed</span></div><h3>You play your first game before the tutorials</h3><div class="blk"><h4>Problem</h4><p>The start explained every page before you played. You said: play the first game first, then the boss, then training. The Shop should not open after game 1.</p></div><div class="blk"><h4>Fix</h4><ul><li>New career: League, Stats and Play are open. Training, Relations and Phone are locked.</li><li>The welcome tour is 3 steps: energy, Low/Medium/High, then "You've got a game today. Tap Play".</li><li>After game 1: Training and Achievements open. Then "Your manager wants a word. Tap Relations" opens the boss meeting.</li><li>The Shop opens after the boss meeting and two drills. Every tour is 3 steps or fewer.</li></ul></div><div class="media "><figure><a href="img/first-game.jpg" target="_blank"><img src="img/first-game.jpg" alt="&lt;b&gt;Game day.&lt;/b&gt; The tour points at Play." loading="lazy"></a><figcaption><b>Game day.</b> The tour points at Play.</figcaption></figure><figure><a href="img/first-boss.jpg" target="_blank"><img src="img/first-boss.jpg" alt="&lt;b&gt;After game 1.&lt;/b&gt; The manager wants a word." loading="lazy"></a><figcaption><b>After game 1.</b> The manager wants a word.</figcaption></figure></div><span class="how"><b>How we know:</b> seen in a browser; new tests check the order.</span></article><article class="it" id="f2"><div class="it-top"><span class="no">5</span><span class="pill p-ok">Fixed</span></div><h3>Play goes straight into the first chance</h3><div class="blk"><h4>Problem</h4><p>After you pressed Play, the clock walked up slowly before anything happened.</p></div><div class="blk"><h4>Fix</h4><p>The lines go straight into the commentary and the first chance loads. It never jumps past half time.</p></div><div class="media "><figure><a href="img/first-chance.jpg" target="_blank"><img src="img/first-chance.jpg" alt="&lt;b&gt;The first chance&lt;/b&gt;, half a second after kick-off." loading="lazy"></a><figcaption><b>The first chance</b>, half a second after kick-off.</figcaption></figure></div><span class="how"><b>How we know:</b> measured coming on as a sub: 15.2 s → 0.5 s. Starting the match uses the same code but was not timed.</span></article><article class="it" id="f3"><div class="it-top"><span class="no">6</span><span class="pill p-chg">Changed</span></div><h3>"A scout has spotted you" is full screen</h3><div class="blk"><h4>Problem</h4><p>It was a tiny box.</p></div><div class="blk"><h4>Fix</h4><p>A floodlit stadium, the scout, a big headline and "Tap to carry on". The offer screen is full screen too, with the club badge.</p></div><div class="media "><figure><a href="img/scout.jpg" target="_blank"><img src="img/scout.jpg" alt="&lt;b&gt;The scout moment.&lt;/b&gt;" loading="lazy"></a><figcaption><b>The scout moment.</b></figcaption></figure><figure><a href="img/scout-offer.jpg" target="_blank"><img src="img/scout-offer.jpg" alt="&lt;b&gt;The offer.&lt;/b&gt;" loading="lazy"></a><figcaption><b>The offer.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills.</span></article><article class="it" id="b2"><div class="it-top"><span class="no">7</span><span class="pill p-chg">Changed</span></div><h3>The Phone card says what you get and what you still need</h3><div class="blk"><h4>Problem</h4><p>The phone looked dead, and in National League South you can't afford it (it costs 150; you start with 0 and earn 28 a week).</p></div><div class="blk"><h4>Fix</h4><ul><li>It lists what you get: Social, Messages, App Store.</li><li>When you can't pay, it says how much more and how many weeks: "You need ★110 more · 2.6 wks of income".</li></ul></div><div class="media "><figure><a href="img/phone.jpg" target="_blank"><img src="img/phone.jpg" alt="&lt;b&gt;Phone card&lt;/b&gt; when you are short." loading="lazy"></a><figcaption><b>Phone card</b> when you are short.</figcaption></figure></div><span class="how"><b>How we know:</b> seen in a still. The price itself is not changed: see Your calls.</span></article><article class="it" id="tour"><div class="it-top"><span class="no">8</span><span class="pill p-ok">Fixed</span></div><h3>Tutorials stay on screen</h3><div class="blk"><h4>Problem</h4><p>The social-media tutorial started 13 px above the top of the phone.</p></div><div class="blk"><h4>Fix</h4><p>If there is no room above or below the thing a tutorial points at, the bubble sits inside it. This works for every tutorial.</p></div><div class="media "><figure><a href="img/tour.jpg" target="_blank"><img src="img/tour.jpg" alt="&lt;b&gt;Reactions tutorial&lt;/b&gt;, now on screen." loading="lazy"></a><figcaption><b>Reactions tutorial</b>, now on screen.</figcaption></figure></div><span class="how"><b>How we know:</b> measured on a stand-in page with the same feed (13 px off screen → 167 px from the top). Not seen on the real reactions screen.</span></article><h2 id="t1" class="c-v"><i></i>Trial and match</h2><article class="it" id="t1a"><div class="it-top"><span class="no">9</span><span class="pill p-chg">Changed</span></div><h3>Shootout: full pitch and a scorecard</h3><div class="blk"><h4>Problem</h4><p>The shootout sat on a white card, and both team-mates could miss the same way.</p></div><div class="blk"><h4>Fix</h4><ul><li>No white card. The pitch is full width.</li><li>A scoreboard above the pitch: a ✓ or ✗ for each kick, the score, who is next, and a ★ on your kick.</li><li>Team-mates never miss the same way twice. They shoot to opposite sides.</li></ul></div><div class="media "><figure><a href="img/shootout.jpg" target="_blank"><img src="img/shootout.jpg" alt="&lt;b&gt;Your kick.&lt;/b&gt; Scorecard above the pitch." loading="lazy"></a><figcaption><b>Your kick.</b> Scorecard above the pitch.</figcaption></figure></div><span class="how"><b>How we know:</b> measured: both team-mates missed the same way in 554 of 1,660 shootouts before, 0 of 5,000 after.</span></article><article class="it" id="t2"><div class="it-top"><span class="no">10</span><span class="pill p-chg">Changed</span></div><h3>A defender who wins the ball clears it away from his own goal</h3><div class="blk"><h4>Problem</h4><p>You saw a defender "shoot" at his own keeper. When he won a loose ball, the game left the ball rolling, often at his own goal.</p></div><div class="blk"><h4>Fix</h4><p>When a defender wins the ball, or a rebound hits him, the ball now goes up the pitch at the same speed. A shot blocked by a defender can still go in at an odd angle, as you asked in v0.15.</p><div class="tbl"><table><tr><th>Over 4,800 chances</th><th>Before</th><th>After</th></tr><tr><td>Won 50-50 rolls at his own goal</td><td>31 of 48</td><td>0 of 47</td></tr><tr><td>Blocked rebound carries on at the keeper</td><td>27 of 97</td><td>0 of 97</td></tr><tr><td>Blocked first shot heads at goal (kept)</td><td>102 of 296</td><td>102 of 296</td></tr></table></div><p><b>Kept, as you asked.</b></p></div><span class="how"><b>How we know:</b> measured over 4,800 chances. Not seen on screen.</span></article><article class="it" id="t3"><div class="it-top"><span class="no">11</span><span class="pill p-new">New</span></div><h3>Left foot or right foot</h3><div class="blk"><h4>Problem</h4><p>The foot you chose did nothing.</p></div><div class="blk"><h4>Fix</h4><ul><li>Your chosen foot swings the kick. A left-footed kick is the mirror of a right-footed one.</li><li>On a penalty or a direct free kick, a left-footer runs up from the right of the ball.</li><li>Team-mates and opponents get a fixed foot each; about 1 in 5 are left-footed.</li><li>Only the picture changes. The ball, the aim and the shot do not.</li></ul></div><span class="how"><b>How we know:</b> <b>Being fixed now</b> (you said it isn't right). A builder is checking every kick in a real browser; a short clip follows here.</span></article><article class="it" id="t4"><div class="it-top"><span class="no">12</span><span class="pill p-ok">Fixed</span></div><h3>A different long shot after a restart</h3><div class="blk"><h4>Problem</h4><p>The same long-shot highlight came every time you restarted.</p></div><div class="blk"><h4>Fix</h4><p>A match always started on the same picture. Only a list of recent pictures in the browser stopped repeats, and if that browser's storage is full, the list is lost on every reload. Now each visit starts on a different drawing.</p><div class="tbl"><table><tr><th>50 restarts of one match</th><th>Before</th><th>After</th></tr><tr><td>Different opening long shots, storage full</td><td>1</td><td>16</td></tr><tr><td>Different opening long shots, storage working</td><td>6</td><td>18</td></tr></table></div></div><span class="how"><b>How we know:</b> measured in tests. <b>Being checked on screen now</b> with real restarts; fixed further if it still repeats.</span></article><article class="it" id="t5"><div class="it-top"><span class="no">13</span><span class="pill p-chg">Changed</span></div><h3>Give-and-go and sponsors</h3><div class="blk"><h4>Fix</h4><ul><li>Give-and-go: a forward pass comes back 92 in 100 times, a safe pass 60 in 100.</li><li>Sponsors open with your first offer, not after 10 games.</li></ul></div><span class="how"><b>How we know:</b> measured in tests.</span></article><h2 id="l1" class="c-a"><i></i>Look</h2><article class="it" id="l1a"><div class="it-top"><span class="no">14</span><span class="pill p-chg">Changed</span></div><h3>Home: the full goal, and no title words</h3><div class="blk"><h4>Problem</h4><p>Home showed a cut-off goal, and the Reputation/Fame boxes said "Unknown".</p></div><div class="blk"><h4>Fix</h4><ul><li>Copying your image 2: the full goal set back where the pitch meets the stands, both posts showing.</li><li>Reputation and Fame show the bar and the number only. Words like "Unknown" and "Rising Star" are gone from Home.</li><li>Top area: light grey, no bar outline, no numbers, the star bar fills on a level up.</li></ul></div><div class="media "><figure><a href="img/home.jpg" target="_blank"><img src="img/home.jpg" alt="&lt;b&gt;Home.&lt;/b&gt; Full goal, no title words." loading="lazy"></a><figcaption><b>Home.</b> Full goal, no title words.</figcaption></figure><figure><a href="img/tophud.jpg" target="_blank"><img src="img/tophud.jpg" alt="&lt;b&gt;Top area.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Top area.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills.</span></article><article class="it" id="l2"><div class="it-top"><span class="no">15</span><span class="pill p-chg">Changed</span></div><h3>Title screen, Shop and the post-match star bar</h3><div class="blk"><h4>Fix</h4><ul><li>Title screen: no goal; the match ball at his feet.</li><li>Shop: calm charcoal instead of green. The League screen keeps the grass.</li><li>Post-match star bar: the level number at each end, 1.5× slower.</li></ul></div><div class="media "><figure><a href="img/title.jpg" target="_blank"><img src="img/title.jpg" alt="&lt;b&gt;Title screen.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Title screen.</b></figcaption></figure><figure><a href="img/shop.jpg" target="_blank"><img src="img/shop.jpg" alt="&lt;b&gt;Shop.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Shop.</b></figcaption></figure><figure><a href="img/starbar.jpg" target="_blank"><img src="img/starbar.jpg" alt="&lt;b&gt;Post-match star bar.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Post-match star bar.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills.</span></article><h2 id="e1" class="c-r"><i></i>Settings and full screen</h2><article class="it" id="e1a"><div class="it-top"><span class="no">16</span><span class="pill p-chg">Changed</span></div><h3>Settings on the title screen is for this phone only</h3><div class="blk"><h4>Problem</h4><p>Title → Settings showed career things (star bar, energy, name, team, penalties) and Home teleported into a save.</p></div><div class="blk"><h4>Fix</h4><ul><li>Device settings only: full screen, sound, post-match reactions, skip the line-up, player faces and names, player look, Old/New UI. The "?" stays.</li><li>The only way out is "← Main menu", back to the title.</li></ul></div><div class="media "><figure><a href="img/gsettings.jpg" target="_blank"><img src="img/gsettings.jpg" alt="&lt;b&gt;Title → Settings.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Title → Settings.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen; checked with a save that Main menu goes to the title.</span></article><article class="it" id="e2"><div class="it-top"><span class="no">17</span><span class="pill p-ok">Fixed</span></div><h3>Full screen on iPhone</h3><div class="blk"><h4>Problem</h4><p>Full screen did not work for you or Mikey.</p></div><div class="blk"><h4>Fix</h4><ul><li>iPhone Safari does not let a web page go full screen. The way round it is Add to Home Screen: the game then opens with no browser bars.</li><li>The game is now set up for that (app name and icons). On iPhone, Settings → Full screen shows "How?" with the 3 steps.</li><li>On Android, if full screen drops, the next tap brings it back.</li><li>Exit career and Delete career now use the game's own pop-up. The browser's pop-up was what knocked you out of full screen.</li></ul></div><div class="media "><figure><a href="img/ios-tip.jpg" target="_blank"><img src="img/ios-tip.jpg" alt="&lt;b&gt;iPhone:&lt;/b&gt; the 3 steps." loading="lazy"></a><figcaption><b>iPhone:</b> the 3 steps.</figcaption></figure><figure><a href="img/confirm.jpg" target="_blank"><img src="img/confirm.jpg" alt="&lt;b&gt;The game&#x27;s own pop-up.&lt;/b&gt;" loading="lazy"></a><figcaption><b>The game's own pop-up.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in a phone-sized browser. Not tried on a real iPhone or Android.</span></article><article class="it" id="e4"><div class="it-top"><span class="no">18</span><span class="pill p-ok">Fixed</span></div><h3>Fewer sounds, and quiet taps on iPhone</h3><div class="blk"><h4>Problem</h4><p>Sounds played too often, and taps sounded loud on iPhone.</p></div><div class="blk"><h4>Fix</h4><ul><li>Only green and gold buttons (Continue, Confirm, Play) make a sound: 37 of 140 buttons.</li><li>The same sound can't repeat straight away; no more than 3 sounds start at once.</li><li>iPhone Safari ignored the volume on quiet taps. Sounds now go through one output where the volume works.</li><li>Settings → Sound effects off now also mutes the match.</li></ul></div><span class="how"><b>How we know:</b> rate limit measured (5 quick pops: 5 → 1). iPhone part worked out from the code, not tried on a phone.</span></article><h2 id="b1" class="c-g"><i></i>Boots</h2><article class="it" id="b1a"><div class="it-top"><span class="no">19</span><span class="pill p-chg">Changed</span></div><h3>New box, a level-5 reveal, and Buy now</h3><div class="blk"><h4>Fix</h4><ul><li>The box is seen from above and the side. The boot lies in it, then rises upright, facing you.</li><li>Level 5: gold box, two spotlights, a light sweep and a "LEVEL 5 · MAX" plate.</li><li>Every boot has a one-tap Buy now. The basket is switched off.</li></ul></div><div class="media "><figure><a href="img/boots-shelf.jpg" target="_blank"><img src="img/boots-shelf.jpg" alt="&lt;b&gt;Shelf&lt;/b&gt; with Buy now." loading="lazy"></a><figcaption><b>Shelf</b> with Buy now.</figcaption></figure><figure><a href="img/boots-rise.jpg" target="_blank"><img src="img/boots-rise.jpg" alt="&lt;b&gt;The boot rises&lt;/b&gt; out of the box." loading="lazy"></a><figcaption><b>The boot rises</b> out of the box.</figcaption></figure><figure><a href="img/boots-l5.jpg" target="_blank"><img src="img/boots-l5.jpg" alt="&lt;b&gt;Level-5 reveal.&lt;/b&gt;" loading="lazy"></a><figcaption><b>Level-5 reveal.</b></figcaption></figure></div><span class="how"><b>How we know:</b> seen in stills.</span></article><h2 id="calls" class="c-a"><i></i>Your calls</h2>
+<article class="it"><div class="blk ask"><h4>1. The phone price at the bottom</h4><p>In National League South the phone costs ★150, you start with ★0 and earn about ★28 a week, so it takes 5–6 weeks.</p>
+<ul class="opts"><li><b>A</b> Give ★150 starting money.</li><li><b>B</b> A cheaper first phone (about ★50).</li><li><b>C</b> Keep it; the card now says how long.</li></ul></div>
+<div class="blk ask"><h4>2. 60 goals in National League South</h4><p>Should the bottom league be this easy? Say harder, or leave it.</p></div>
+<div class="blk ask"><h4>3. The green bottom bar on Shop pages</h4><p>Every page shares it, so it stayed green. Make it charcoal on Shop pages too?</p></div></article><h2 id="known" class="c-r"><i></i>Known issues</h2>
+<article class="it"><ul><li><b>The other trial drills still sit on the white card.</b> Only the shootout lost it.</li><li><b>Reputation/Fame words</b> still show on the Stats, Reputation and Ownership screens (only Home was asked for).</li><li><b>3D signing:</b> handshake fingers are fairly flat; when he bends to write, the aviators show as thin gold lines; arms are still a little muscular.</li><li><b>Three tests fail</b>, the same as before this round: the drawings check (4 drawings deleted), the free-kick distance check and the long-range team-mate check. 231 of 234 pass.</li><li><b>Not on a real phone yet:</b> Add to Home Screen, iPhone sound, full screen on Android.</li><li><b>Not decided:</b> the unclear points from your recording: "spam through this area", "needs to be bigger", the odd highlight, "so many errors" in the 3D Test Area, the help-card position, "numbers gone, says next up", the Star Pass badge reading like a notification, and the white "Who's free?" card. Say which screen each was on and they go in v0.26.</li></ul></article><h2 id="seen" class="c-m"><i></i>Not seen live</h2><article class="it"><p class="w2">A checker is playing the combined build now. Its findings get added here. Until then, these have not been seen on screen:</p>
+<ul class="hist"><li>Left foot in a real match</li><li>Play to the first chance when you start the match (not a sub)</li><li>The 3D signing scene inside a real career</li><li>Anything on a real phone</li></ul>
+</article><h2 id="next" class="c-b"><i></i>Next</h2><article class="it"><ul><li>Left foot (11) and long shots (12) fixed and checked on screen, with a short clip.</li><li>Your answers to the 3 calls.</li><li>The unclear points above, once you say where they were.</li><li>White card off the other trial drills.</li></ul></article><h2 id="prev" class="c-m"><i></i>Previous versions</h2><details><summary>v0.24 — 2 Oct 2026 — highlights, trial rework, top bars</summary><p class="w2"><a href="https://claude.ai/artifact/CQ5gkXrcPk2gptL1EjX3au" target="_blank" rel="noopener"><b>Open the v0.24 page</b></a>. It holds every older version too.</p><ul class="hist"><li>Highlights no longer impossible</li><li>The trial reworked</li><li>New square top bars</li><li>Home and match day fixes</li><li>Tutorials, first steps and unlocks</li><li>Title screen and boots</li><li>Sound Board</li><li>3D icons, the 3D Test Area and a signing prototype</li></ul><p class="w2"><b>Still open from v0.24:</b> three tests that failed before (above).</p></details><details><summary>v0.23.1 — 2 Oct 2026 — liquid bars, signing and title look, sounds</summary><p class="w2"><a href="https://claude.ai/artifact/8wzaQV41ZmrhtBXZV46Rav" target="_blank" rel="noopener"><b>Open the v0.23.1 page</b></a>. It also holds the whole v0.23 page.</p><ul class="hist"><li>Smooth glowing bars, quieter arrows, Home bottom-left</li><li>Each screen shows its own bar</li><li>A ? on Style, Settings and Shop</li><li>Settings: compact switches, Sound effects</li><li>Line-up: tap anywhere to start; skip-the-line-up setting</li><li>After-match star bar; achievement and record pop-ups</li><li>Boss meeting win +3, loss −2; two set-piece chats</li><li>Training level squares: big stars, small numbers</li><li>Signing with the contract paper; title screen with floodlights</li><li>Smaller starter house and boots; suit, chain, necklace and horses redone; Blender pictures in the Store</li><li>Sound effects outside the match, with a Settings switch</li></ul><p class="w2">Numbers: lost boss meeting −4 → −2; 3 sounds remade and 9 now played outside the match; 23 before and after clips.</p><p class="w2"><b>Still open from v0.23.1:</b> Box Room and Shared Flat read as three flats; horses have one pose; three tests failed before.</p></details><footer>Knowitball v0.25 · built 3 Oct 2026 on branch Harry from your live phone test and Mikey's review. Stills only: try the rest on the test build.</footer></div><script>
+(function () {
+  var KEY = "v025-checks", st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  document.querySelectorAll("ul.ck input").forEach(function (i) {
+    if (st[i.dataset.k]) i.checked = true;
+    i.addEventListener("change", function () {
+      st[i.dataset.k] = i.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+    });
+  });
+})();
+</script>
+</body></html>

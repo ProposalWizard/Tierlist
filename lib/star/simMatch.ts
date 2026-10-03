@@ -31,7 +31,7 @@
 
 import type { CareerState, Fixture, MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "./types";
 import {
-  newMatch, advanceTo, advanceUntilInvolved, resolveScenario, lateSubQuota,
+  newMatch, advanceTo, advanceUntilInvolved, resolveScenario, lateSubQuota, noteServedKind,
   type HiddenMatchInputs, type HiddenMatchEvent, type ScenarioResult,
 } from "./hiddenMatch";
 import { pickScenarioKindFrom, buildScenario, chainKindFor, chainReturnChance, CHAIN_MAX, goalInView, type ScenarioKind } from "./canvasEngine";
@@ -46,7 +46,7 @@ import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type SelectionVerdict, type H
 import { matchTeamStrength } from "./matchday";
 import { rollAddedTime, addedTimeSeed } from "./addedTime";
 import type { ChanceEntry, ChanceOutcome } from "./chanceLog";
-import { energyFactorFor, energyPerMinute, clampEnergy } from "./energy";
+import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills } from "./energy";
 import { pickSquadScorer, pickSquadAssist } from "./squadData";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "./teamsheet";
 
@@ -139,6 +139,13 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
     impactSub: sub,
     talisman: !!career.ownedClubs?.[career.player.club]?.talisman,
     fergie: { from: 90, to: whistle },
+    // v0.26: the same match context the played match passes.
+    context: {
+      playstyle: career.playstyle ?? "balanced",
+      teamRelationship: career.relationships.team,
+      fanRelationship: career.relationships.fans,
+      skills: { pace: career.skills.pace, power: career.skills.power, technique: career.skills.technique, vision: career.skills.vision },
+    },
     lateSub: subOn
       ? { enteredAt, owed: Math.max(0, lateSubQuota(enteredAt) - subChances), fitness: energyAt(enteredAt) }
       : undefined,
@@ -191,7 +198,8 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
   /** One chance of yours: roll it, tally it, and tell the match. */
   const settle = (kind: ScenarioKind, minute: number, depth = 0): ScenarioResult => {
     t.attempts += 1;
-    const odds = simOdds(kind, skills, keeper);
+    // v0.26: tired legs strike it weaker, as in the played match.
+    const odds = simOdds(kind, tiredKickSkills(skills, energyAt(minute)), keeper);
     if (odds.shot) {
       const u = rng();
       if (u < odds.goal) {
@@ -303,6 +311,7 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
     const playable = { ...req, kinds: withoutSwitchedOff(req.kinds) };
     const plan = selectChance({ request: playable, position, rng, memory });
     const kind = playableKind(plan ? plan.kind : pickScenarioKindFrom(position, rng, playable.kinds), rng);
+    noteServedKind(st, kind);
     resolveScenario(st, settle(kind, minute));
   }
 

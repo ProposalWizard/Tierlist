@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import SigningScene from "./SigningScene";
 import { useSigning3d } from "@/lib/star/signing3d";
 
-// The live 3D signing (Settings → "3D signing scene (beta)"). Loaded only
+// The live 3D signing (Settings → Look → "Signing scene: 3D | Drawn", 3D by default). Loaded only
 // when it is switched on, so three.js never reaches anyone who hasn't.
 const SigningScene3DCareer = dynamic(() => import("./SigningScene3DCareer"), { ssr: false });
 

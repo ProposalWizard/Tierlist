@@ -330,7 +330,10 @@ ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials
 // with a proper avalanche it is 9%, against a theoretical floor of 1/12 = 8%.
 
 {
-  const seeds = Array.from({ length: 400 }, (_, i) => 7000 + i * 7);
+  // 2,000 cells: with 29 drawings that is ~69 a drawing. At 400 (~14 each)
+  // plain chance alone spreads them 5 to 24 — the bar below measured noise,
+  // not the hashing (v0.26: 1.64 over 2,000 cells).
+  const seeds = Array.from({ length: 2000 }, (_, i) => 7000 + i * 7);
   const idsNow = () => seeds.map(sd =>
     nextAuthoredShape("one_on_one", mulberry32(sd ^ 0x5bf03635), [], sd)!.sourceId);
   const b = idsNow();
@@ -490,13 +493,16 @@ ok(lines.some(l => /near-post cover[^:]*: 0\.\d\d to 0\.\d\d/.test(l)),
   const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
   const fake = (i: number) => ({
     ...donor, id: `min5-${i}`, updatedAt: i,
-    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: "corner" },
+    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: "header" },
   });
   setLiveScenarioPool([0, 1, 2, 3].map(fake));
-  ok(nextAuthoredShape("corner", mulberry32(1)) === null,
+  // A header: switched off, so nobody has drawn one. (This used corners until
+  // nine corners were committed — then 9 + 4 served, and the test measured
+  // the pool, not the rule.)
+  ok(nextAuthoredShape("header", mulberry32(1)) === null,
     "4 drawings of a kind are not enough — the game keeps building it procedurally");
   setLiveScenarioPool([0, 1, 2, 3, 4].map(fake));
-  ok(nextAuthoredShape("corner", mulberry32(1)) !== null,
+  ok(nextAuthoredShape("header", mulberry32(1)) !== null,
     "the 5th drawing is the one that switches the kind over");
   setLiveScenarioPool(null);
 }

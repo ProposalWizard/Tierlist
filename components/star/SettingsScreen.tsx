@@ -1,5 +1,4 @@
 "use client";
-import { useSigning3d, setSigning3d } from "@/lib/star/signing3d";
 import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -13,6 +12,7 @@ import DevCareerPanel from "./DevCareerPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
+import MoveSavesPanel from "./MoveSavesPanel";
 import RefreshPhotosPanel from "./RefreshPhotosPanel";
 import {
   ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
@@ -62,6 +62,9 @@ interface Props {
   onSwitchSave: (slot: number) => void;
   onStartNewInSlot: (slot: number) => void;
   onDeleteSave: (slot: number) => void;
+  /** "Move my saves" (MoveSavesPanel): whose saves, and what to do once a
+   *  pasted code has been written. Absent: the panel is not shown. */
+  moveSaves?: { scope: string; onImported: (openSlot: number) => void };
   /** The full-screen toggle used to be a fixed floating button — reported
    *  directly as blocking the real Settings button on most phones. Moved
    *  here as a plain on/off switch instead; the actual mechanism
@@ -88,11 +91,10 @@ export default function SettingsScreen({
   career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
-  onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
+  onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave, moveSaves,
   immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
-  const signing3d = useSigning3d();
 
   // Live scores moved to the League page's bell (v0.23.1, P61).
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
@@ -190,19 +192,6 @@ export default function SettingsScreen({
           <SetDivider />
           <LookSwitches />
 
-          <SetDivider />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[14px] font-bold text-white">3D signing scene (beta)</span>
-            <SegTabs
-              className="w-[150px] shrink-0"
-              value={signing3d ? "on" : "off"}
-              onChange={(v) => setSigning3d(v === "on")}
-              tabs={[["off", "Off"], ["on", "On"]] as const}
-            />
-          </div>
-          <SetNote dim className="mt-1 text-[10px]">
-            Signing a contract plays as a live 3D scene with your own player in it. This phone only.
-          </SetNote>
         </SetCard>
       </RiseIn>
 
@@ -218,6 +207,11 @@ export default function SettingsScreen({
           glow={glow}
         />
       </RiseIn>
+      {moveSaves && (
+        <RiseIn index={next()} className="mt-2">
+          <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={glow} />
+        </RiseIn>
+      )}
 
       {/* ── DEVELOPER TOOLS ── hidden behind one button (Mikey, 28 Sep 2026:
           "the developer tools should be almost hidden… click on it and it

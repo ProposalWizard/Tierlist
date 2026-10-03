@@ -55,6 +55,9 @@ is.
 > push go out, then added to the same page. Don't write "needs Mikey's yes".
 > See CLAUDE.md.
 
+> **Latest (Harry, 3 Oct 2026): no test build link.** *"the test build stuff doesn't work imo so stop doing that for patch notes"*.
+> Mostly stills; a short clip only for gameplay. Don't link or point at the Vercel preview. See CLAUDE.md.
+
 > **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
 > test build (the Vercel preview of the branch) and use stills; a short
 > "after" clip only when a still cannot show it (motion, timing, a fixed

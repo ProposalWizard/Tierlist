@@ -34,6 +34,8 @@ export default function Signing3dPage() {
   const [hair, setHair] = useState<string>("#3d2616");
   const [worn, setWorn] = useState<Record<string, string>>({});
   const [aviators, setAviators] = useState(false);
+  // ?club=Name: sign for another club (its home kit on you and on the walls).
+  const [club, setClub] = useState<string>(SAMPLE_TERMS.club);
   const [open, setOpen] = useState(false);
   const [replay, setReplay] = useState(0);
 
@@ -55,6 +57,7 @@ export default function Signing3dPage() {
       setWorn(w);
     }
     if (q.get("aviators") === "1") setAviators(true);
+    const cl = q.get("club"); if (cl) setClub(cl);
   }, []);
 
   // The face picture, fitted the way the home avatar fits it.
@@ -77,7 +80,7 @@ export default function Signing3dPage() {
   }, [faceUrl]);
   const waitingForFace = !mounted || (!!faceUrl && !fitted);
 
-  const kit = kitsOf(SAMPLE_TERMS.club).home;
+  const kit = kitsOf(club).home;
   const you: SigningYou = useMemo(() => ({
     skin: SKIN_TONES.find((t) => t.id === skin)!.hex,
     face: fitted,
@@ -93,7 +96,7 @@ export default function Signing3dPage() {
   const look = managerLook(SAMPLE_TERMS.manager);
   const manager = { skin: look.skin, hairColour: look.hairColour, grey: look.grey, beard: look.beard !== "none", bald: look.hair === "bald", buzz: look.hair === "buzz" || look.hair === "receding" || look.hair === "ring" };
   const contract = {
-    club: SAMPLE_TERMS.club, playerName: SAMPLE_TERMS.playerName, managerName: SAMPLE_TERMS.manager,
+    club, playerName: SAMPLE_TERMS.playerName, managerName: SAMPLE_TERMS.manager,
     rows: contractRows({ seasons: SAMPLE_TERMS.seasons, wage: SAMPLE_TERMS.wage, number: SAMPLE_TERMS.number, position: SAMPLE_TERMS.position, season: "2026/27" }),
     shirt: kit.shirt, trim: kit.trim,
   };
@@ -111,7 +114,7 @@ export default function Signing3dPage() {
           manager={manager}
           contract={contract}
           lines={signingLines({ seasons: SAMPLE_TERMS.seasons, number: SAMPLE_TERMS.number })}
-          title={`Signing for ${SAMPLE_TERMS.club}`}
+          title={`Signing for ${club}`}
           onDone={() => setReplay((r) => r + 1)}
           doneLabel="Continue (replays here)"
           replayKey={replay}

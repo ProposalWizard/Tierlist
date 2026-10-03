@@ -829,11 +829,11 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The picker only changes this page."],
     inGame: [
-      "In a career only when Settings → \"3D signing scene (beta)\" is On (off by default, per phone). Then the first contract's signing plays this scene with your own player, the club's kit, your shirt number, seasons and wage. Off, the career keeps the drawn signing.",
+      "In a career when Settings → Look → \"Signing scene\" is 3D (the default, per phone): the first contract and every club move play this scene with your own player (skin, face picture, hair, accessories, aviators), the club's kit, your shirt number, seasons and wage. Drawn keeps the picture signing as it was.",
       "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
       "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
     ],
-    dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/signing3dRig.ts (clothes, face, accessories, IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/signing3d/*.glb (tools/signing3d/build_assets.py) · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
+    dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
   "/star-garden3d-dev": {
@@ -891,7 +891,22 @@ export const ADMIN_GUIDES = {
     needs: [
       "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own.",
     ],
-    dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · character.glb + anims.glb from tools/shop3d/build_assets.py · three.js is the site's own package, loaded only when the shop opens",
+    dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · the footballer: the new player (lib/star/people3d.ts, public/star/people3d/) by default, or the old character.glb + anims.glb (tools/shop3d/build_assets.py) when Settings → Look → \"3D shop player\" is Old (?player=old here) · three.js is the site's own package, loaded only when the shop opens",
+  },
+
+  "/star-sprites-dev": {
+    title: "3D match figures",
+    what: "The new small 3D players and keepers on their own, at the real match size: two clubs in their real kits running, standing, striking, celebrating, and a keeper diving. A 4x zoom underneath shows one of each.",
+    buttons: [
+      {
+        items: [
+          ["Pause / Play", "Stops and starts the men moving, so one frame can be looked at closely."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. No career is touched."],
+    inGame: ["The same figures are drawn in the match's New view (Settings: Players in the match → 3D)."],
+    dev: "app/star-sprites-dev/page.tsx · lib/star/sprites.ts · public/star/sprites/ (made by tools/sprites/bake.mjs from the rigged models, which are not in the repo)",
   },
 
   "/star-3d-dev": {
@@ -928,7 +943,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "Nowhere yet — the real game still draws everyone in the Classic look.",
-      "To try 3D in a real career on one phone: Settings → Player Graphics → Player look → 3D (that phone only). Harry decides when it becomes everyone's look.",
+      "To try 3D in a real career on one phone: Settings → Look → Drawn-player style → Shaded (that phone only). Harry decides when it becomes everyone's look.",
     ],
     dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
   },

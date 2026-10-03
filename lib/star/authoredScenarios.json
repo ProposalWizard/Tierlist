@@ -5454,8 +5454,8 @@
           "label": "SUP"
         },
         {
-          "x": 24.76,
-          "y": 19.68,
+          "x": 27.07,
+          "y": 20.84,
           "id": "i7",
           "side": "teammate",
           "label": "SUP"
@@ -5475,7 +5475,7 @@
           "label": "YOU"
         }
       ],
-      "updatedAt": 1790212693564
+      "updatedAt": 1790212693565
     },
     "gallery-sim-long_range-1445785911": {
       "id": "gallery-sim-long_range-1445785911",
@@ -5562,8 +5562,8 @@
           "label": "SUP"
         },
         {
-          "x": 33.21,
-          "y": 17.13,
+          "x": 35.59,
+          "y": 17.35,
           "id": "i9",
           "side": "teammate",
           "label": "POACH"
@@ -5576,7 +5576,7 @@
           "label": "YOU"
         }
       ],
-      "updatedAt": 1790212674292
+      "updatedAt": 1790212674293
     },
     "gallery-sim-long_range-54338947": {
       "id": "gallery-sim-long_range-54338947",
@@ -5792,8 +5792,8 @@
           "label": "GK"
         },
         {
-          "x": 24.2,
-          "y": 18.53,
+          "x": 21.62,
+          "y": 17.21,
           "id": "i7",
           "side": "teammate",
           "label": "TARGET"
@@ -5834,7 +5834,7 @@
           "label": "MATE"
         }
       ],
-      "updatedAt": 1790212444284
+      "updatedAt": 1790212444285
     },
     "gallery-sim-long_range-1492608205": {
       "id": "gallery-sim-long_range-1492608205",

@@ -1,5 +1,9 @@
 import { signingLines, contractRows, wornAccessories, AVIATORS_CARD, SIGNING3D_ACCESSORY_SLOTS } from "../../lib/star/signing3d";
 import { ACCESSORIES } from "../../lib/star/store/catalogue";
+import { signing3dOn, shop3dPlayerLook } from "../../lib/star/signing3d";
+import { playerModelFor, PEOPLE3D_FILES } from "../../lib/star/people3d";
+import { statSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * THE LIVE 3D SIGNING — the plain parts: the words carry the career's real
@@ -18,6 +22,10 @@ check(a.map((l) => l.shot).join(",") === "talk,reply,talk,reply,talk", `talk/rep
 check(a[2].text.includes("Three seasons") && a[2].text.includes("number 17 shirt"), `the offer line names 3 seasons and #17 (${a[2].text})`);
 check(signingLines({ seasons: 1 })[2].text.includes("One season."), `one season, no shirt number when there is none (${signingLines({ seasons: 1 })[2].text})`);
 check(signingLines()[2].text.includes("Two seasons"), "no terms falls back to two seasons");
+// A move to a new club: no trial behind it, same five beats.
+const mv = signingLines({ seasons: 2, kind: "transfer" });
+check(mv.length === 5 && !/trial/i.test(mv[0].text), `a transfer never mentions the trial (${mv[0].text})`);
+check(/trial/i.test(signingLines({ seasons: 2 })[0].text), "the first contract still talks about the trial");
 
 // The contract: only rows with a value, in the printed order.
 const rows = contractRows({ seasons: 2, wage: 1250, number: 39, position: "ST", season: null });
@@ -37,6 +45,20 @@ check((rainbow?.stripes?.length ?? 0) === 6, "the rainbow armband keeps its six 
 const slots = new Set(ACCESSORIES.map((x) => x.slot).filter((s) => s !== "celebration"));
 for (const s of slots) check((SIGNING3D_ACCESSORY_SLOTS as readonly string[]).includes(s), `slot "${s}" has a 3D piece`);
 check(AVIATORS_CARD === "pass-gold-aviators", "the aviators are the Star Pass Gold Aviators card");
+
+// The new characters (people3d.ts): the saved hair style picks the body,
+// "none" (shaved) is the buzz cut, anything unknown the short hair.
+check(playerModelFor("short") === "player" && playerModelFor("long") === "player-long", "short → player, long → player-long");
+check(playerModelFor("buzz") === "player-buzz" && playerModelFor("none") === "player-buzz", "buzz and shaved → the buzz body");
+check(playerModelFor(undefined) === "player", "no saved style → the short-hair body");
+// Every body and the clips are small enough for a phone (≤ 2 MB each).
+for (const f of Object.values(PEOPLE3D_FILES)) {
+  const bytes = statSync(join(process.cwd(), "public", f)).size;
+  check(bytes <= 2_000_000, `${f} is ${(bytes / 1e6).toFixed(2)} MB (≤ 2 MB)`);
+}
+// The switches: 3D signing and the new shop player are the defaults.
+check(signing3dOn() === true, "Signing scene defaults to 3D");
+check(shop3dPlayerLook() === "new", "3D shop player defaults to New");
 
 if (problems.length) {
   console.log("FAIL");

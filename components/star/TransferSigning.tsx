@@ -5,6 +5,14 @@ import ClubBadge from "./ClubBadge";
 import { Burst, PressButton, Shine, clubTheme } from "./ui";
 import { Screen, Rays } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
+import dynamic from "next/dynamic";
+import type { CareerState } from "@/lib/star/types";
+import { useSigning3d } from "@/lib/star/signing3d";
+import { loadLineup } from "@/lib/star/lineupStore";
+
+// The live 3D signing (Settings → Look → "Signing scene: 3D | Drawn", 3D by default), for a move too —
+// not only the first contract. Loaded only when it is switched on.
+const SigningScene3DCareer = dynamic(() => import("./SigningScene3DCareer"), { ssr: false });
 
 /**
  * SIGNING FOR A NEW CLUB.
@@ -35,7 +43,11 @@ export default function TransferSigning({
   club,
   onDone,
   terms,
+  career,
 }: {
+  /** Who is moving. With it, and the 3D signing switched on, the move is
+   *  signed in the live 3D office (the new club's manager across the desk). */
+  career?: CareerState;
   playerName: string;
   club: string;
   onDone: () => void;
@@ -45,6 +57,8 @@ export default function TransferSigning({
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
   const theme = clubTheme(club);
+  const signing3d = useSigning3d();
+  const [failed3d, setFailed3d] = useState(false);
 
   // The celebration holds for a beat, then the move goes through — once,
   // whether the timer or the Continue button gets there first.
@@ -63,6 +77,21 @@ export default function TransferSigning({
     const t = setTimeout(finish, prefersReducedMotion() ? 0 : 2600);
     return () => clearTimeout(t);
   }, [signed, finish]);
+
+  if (career && signing3d && !failed3d) {
+    return (
+      <SigningScene3DCareer
+        career={career}
+        club={club}
+        playerName={playerName}
+        managerName={loadLineup(club)?.manager || "The manager"}
+        terms={terms}
+        kind="transfer"
+        onDone={finish}
+        onFail={() => setFailed3d(true)}
+      />
+    );
+  }
 
   return (
     <Screen glow={theme.glow} center className="max-w-sm px-4 py-8">
