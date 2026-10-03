@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { sfx } from "@/lib/star/sfx";
-import { APP_STORE, LOCK_HINT, FEATURE_INFO, FIRST_STEPS, SPONSORS_AFTER_GAMES, appInstalled, gamesUntilSponsors, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
+import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, appInstalled, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
 import { formatMoney } from "@/lib/star/money";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
@@ -213,16 +213,16 @@ export type StepGo = StepId | "sponsors";
 
 export function UnlockChallenges({ career, onGo }: { career: CareerState; onGo: (step: StepGo) => void }) {
   const next = nextStep(career);
-  const toSponsors = gamesUntilSponsors(career);
+  const STEPS = stepsFor(career);
   const sponsorsOpen = isOpen(career, "sponsors");
   const sponsorsNew = sponsorsOpen && !hasSeen(career, "help-sponsors");
   return (
     <div className="mb-3 overflow-hidden rounded-2xl ring-1 ring-amber-300/30" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.12), rgba(0,0,0,.25))" }}>
       <div className="flex items-center justify-between px-3 pt-2.5">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Your first steps</span>
-        <span className="text-[10px] font-black tabular-nums text-white/75">{FIRST_STEPS.filter((s) => stepDone(career, s.id)).length} / {FIRST_STEPS.length}</span>
+        <span className="text-[10px] font-black tabular-nums text-white/75">{STEPS.filter((s) => stepDone(career, s.id)).length} / {STEPS.length}</span>
       </div>
-      {FIRST_STEPS.map((s, i) => {
+      {STEPS.map((s, i) => {
         const got = stepDone(career, s.id);
         const isNext = next?.id === s.id;
         const later = !got && !isNext;
@@ -234,6 +234,11 @@ export function UnlockChallenges({ career, onGo }: { career: CareerState; onGo: 
             <div className="min-w-0 flex-1">
               <div className={`text-sm font-black ${got ? "text-yellow-300" : later ? "text-white/55" : "text-white"}`}>{s.todo}</div>
               <div className="text-[10.5px] font-bold text-white/75">{got ? "Done" : s.opens}</div>
+              {/* v0.25: the phone step says what it costs and what is still
+                  needed, so it never silently does not work. */}
+              {isNext && s.id === "buy-phone" && (
+                <div className={`text-[10.5px] font-black ${phoneShortfall(career) > 0 ? "text-amber-300" : "text-emerald-300"}`}>{phoneStepLine(career)}</div>
+              )}
             </div>
             {got && <div className="text-lg font-black text-emerald-400">✓</div>}
             {isNext && (
@@ -248,13 +253,8 @@ export function UnlockChallenges({ career, onGo }: { career: CareerState; onGo: 
         <div className="min-w-0 flex-1">
           <div className={`text-sm font-black ${sponsorsOpen ? "text-white" : "text-white/70"}`}>{sponsorsOpen ? "Sponsors are open" : "Sponsors"}</div>
           <div className="text-[10.5px] font-bold text-white/75">
-            {sponsorsOpen ? FEATURE_INFO.sponsors.line : `Opens after ${SPONSORS_AFTER_GAMES} games · ${toSponsors} to go`}
+            {sponsorsOpen ? FEATURE_INFO.sponsors.line : `Opens with your first offer · ${LOCK_HINT.sponsors}`}
           </div>
-          {!sponsorsOpen && (
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-amber-300" style={{ width: `${((SPONSORS_AFTER_GAMES - toSponsors) / SPONSORS_AFTER_GAMES) * 100}%` }} />
-            </div>
-          )}
         </div>
         {sponsorsOpen && (
           <PressButton variant={sponsorsNew ? "primary" : "plain"} size="none" pulse={sponsorsNew && !next} onClick={() => onGo("sponsors")} data-tour={sponsorsNew && !next ? "step-go" : undefined} className="rounded-xl px-3 py-1.5 text-[12px] font-black">Go →</PressButton>

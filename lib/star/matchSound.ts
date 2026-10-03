@@ -4,8 +4,20 @@
 // public/star/sfx/*.mp3, swap the body of the relevant function for an
 // <audio>/decodeAudioData playback and every call site stays the same.
 
+import { audioContext } from "./audioOut";
+import { makeSoundGate, nowMs } from "./soundGate";
+import { sfxOn } from "./sfx";
+
 let ctx: AudioContext | null = null;
 let muted = false;
+/** v0.25 item 6: the same match sound is not repeated on top of itself (soundGate.ts). */
+const gate = makeSoundGate();
+/** May this one play now? Muted in the match, Settings → Sound effects off, or too soon: no. */
+function may(name: string): boolean {
+  if (!ctx || muted) return false;
+  try { if (!sfxOn()) return false; } catch { /* no storage: on */ }
+  return gate(name, nowMs());
+}
 
 export function setMatchSoundMuted(m: boolean) {
   muted = m;
@@ -19,11 +31,10 @@ export function isMatchSoundMuted() {
 // block AudioContext output until one has happened.
 export function primeMatchSound() {
   if (typeof window === "undefined") return;
-  if (!ctx) {
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    ctx = new AC();
-  }
+  // One context for the whole game, shared with the UI sounds (audioOut.ts):
+  // iOS allows only a few per page.
+  if (!ctx) ctx = audioContext();
+  if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
 }
 
@@ -78,31 +89,35 @@ function noiseBurst(duration: number, peak: number, filterFreq: number, filterQ 
 
 // PLUG-IN (optional asset): boot-on-ball thump, ~0.15s, /public/star/sfx/kick.mp3
 export function playKick() {
+  if (!may("kick")) return;
   tone(120, 0.12, "sine", 0.55, 55);
   noiseBurst(0.08, 0.22, 1800, 0.7, "bandpass");
 }
 
 // PLUG-IN (optional asset): net ripple/rustle, ~0.35s, /public/star/sfx/net.mp3
 export function playNet() {
+  if (!may("net")) return;
   noiseBurst(0.32, 0.35, 2600, 0.5, "bandpass");
   noiseBurst(0.22, 0.18, 5200, 0.4, "highpass");
 }
 
 // PLUG-IN (optional asset): metallic woodwork clang, ~0.5s, /public/star/sfx/post.mp3
 export function playPost() {
+  if (!may("post")) return;
   tone(880, 0.5, "triangle", 0.4, 760);
   tone(1320, 0.45, "sine", 0.22, 1180);
 }
 
 // PLUG-IN (optional asset): glove catch / block thud, ~0.15s, /public/star/sfx/save.mp3
 export function playSave() {
+  if (!may("save")) return;
   tone(180, 0.14, "sine", 0.4, 90);
   noiseBurst(0.1, 0.25, 700, 1.2, "lowpass");
 }
 
 // PLUG-IN (optional asset): referee whistle, ~0.25s, /public/star/sfx/whistle.mp3
 export function playWhistle() {
-  if (!ctx || muted) return;
+  if (!may("whistle") || !ctx) return;
   const osc = ctx.createOscillator();
   osc.type = "square";
   const t = now();
@@ -120,7 +135,7 @@ export function playWhistle() {
 // PLUG-IN (optional asset): crowd cheer / groan swell, ~1-1.6s,
 // /public/star/sfx/crowd-cheer.mp3 and /public/star/sfx/crowd-groan.mp3
 export function playCrowdSwell(kind: "cheer" | "groan") {
-  if (!ctx || muted) return;
+  if (!may(`crowd-${kind}`) || !ctx) return;
   const dur = kind === "cheer" ? 1.6 : 0.9;
   const peak = kind === "cheer" ? 0.28 : 0.16;
   const freq = kind === "cheer" ? 1400 : 500;

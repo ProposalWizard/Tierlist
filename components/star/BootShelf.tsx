@@ -28,7 +28,7 @@ import { formatMoney } from "@/lib/star/money";
 import BootPicture, { BOOT_LOOK } from "./BootPicture";
 import ShopSheet, { weeksText } from "./ShopSheet";
 import { PressButton, Shine, rgba } from "./ui";
-import { useBasket, MAX_PAIRS } from "./shopBasket";
+import { useBasket, MAX_PAIRS, BASKET_ON } from "./shopBasket";
 
 interface ActionResult { ok: boolean; reason?: string }
 
@@ -124,8 +124,22 @@ export default function BootShelf({ career, boots, banned, homeLevel, soldOut, o
                       </div>
                       {wearing === id && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[9px] font-black text-emerald-950">WEARING</span>}
                     </button>
+                    {/* v0.25: one tap buys it (the basket is off — shopBasket.ts). */}
+                    {!BASKET_ON && !isBanned && !sold && (
+                      <PressButton
+                        variant="primary"
+                        size="none"
+                        disabled={career.money < shown.price}
+                        aria-label={`Buy ${shown.name} now`}
+                        data-buy-now={id}
+                        onClick={() => { if (career.money >= shown.price) onBuyNow(shown); }}
+                        className="mx-1.5 mb-1 w-[calc(100%-12px)] rounded-xl py-1.5 text-[11px] font-black uppercase tracking-wide"
+                      >
+                        {career.money >= shown.price ? "Buy now" : "Not enough"}
+                      </PressButton>
+                    )}
                     {/* Straight into the basket, without opening the sheet. */}
-                    {!isBanned && !sold && (!inBasket || (inBasket.boot.id === shown.id && inBasket.qty < MAX_PAIRS)) && (
+                    {BASKET_ON && !isBanned && !sold && (!inBasket || (inBasket.boot.id === shown.id && inBasket.qty < MAX_PAIRS)) && (
                       <button
                         aria-label={`Add ${shown.name} to basket`}
                         data-add-basket={id}
@@ -281,12 +295,14 @@ function BootSheet({ career, levels, level, banned, soldOut, pairsInBasket, setL
         <div className="mt-1.5 rounded-2xl bg-white/[0.06] py-3 text-center text-[13px] font-black uppercase tracking-wide text-red-300 ring-1 ring-red-400/40">Sold out — back next visit</div>
       ) : (
         <div className="mt-1.5 flex gap-2">
-          <PressButton variant="secondary" size="none" disabled={pairs >= MAX_PAIRS}
-            onClick={(e) => onAdd(b, e.currentTarget)}
-            className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3 py-3 text-[12px] font-black">
-            <BasketGlyph size={15} plus />
-            {pairs > 0 ? `In basket ×${pairs}` : "Add"}
-          </PressButton>
+          {BASKET_ON && (
+            <PressButton variant="secondary" size="none" disabled={pairs >= MAX_PAIRS}
+              onClick={(e) => onAdd(b, e.currentTarget)}
+              className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3 py-3 text-[12px] font-black">
+              <BasketGlyph size={15} plus />
+              {pairs > 0 ? `In basket ×${pairs}` : "Add"}
+            </PressButton>
+          )}
           <PressButton variant="primary" size="none" pulse={canBuy} disabled={!canBuy}
             onClick={() => { if (canBuy) onBuy(b); }}
             className="relative min-w-0 flex-1 overflow-hidden rounded-2xl py-3 text-[14px] font-black">

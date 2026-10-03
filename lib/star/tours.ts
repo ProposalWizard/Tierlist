@@ -36,30 +36,35 @@ const BAR = {
   help: { target: "css:[data-help-button]", text: "Tap ? on any screen to see this again" },
 } satisfies Record<string, TourStep>;
 
-/** A new career's first screen: Home, your player, the bars, then training.
- *  "Go to training" has no Skip (P2-55: "You shouldn't have a skip option
- *  on that one"). */
-export const WELCOME_TOUR: TourStep[] = [
-  { target: "home", text: "This is Home" },
-  { target: "player", text: "This is you" },
-  BAR.rating,
-  BAR.energy,
-  BAR.money,
-  BAR.help,
-  { target: "nav-training", text: "Go to training", press: true },
-];
+/**
+ * v0.25 (Harry and Mikey, live on their phones, 2 Oct 2026): "it doesn't have
+ * to tell you about every single aspect on every page, maybe it should just be
+ * the key things." Every tour is at most 3 short steps. Steps that only named
+ * an obvious button are gone. The steps an unlock flow needs (a "press" step)
+ * stay.
+ */
 
-/** The first time on the Training page (P2-56): what training is, why it
- *  matters, each drill, then you must start Power. */
+/** Energy, at the very start (v0.25, point 37: "this should probably just be
+ *  the start of the game"). It used to be explained at the first full time. */
+const ENERGY_MODES: TourStep = { target: "energy", text: "In a match you pick Low, Medium or High. High: the ball comes to you more, but energy drops fast" };
+
+/** A new career's first screen. v0.25 (game first): energy, then "You've got
+ *  a game today". No Skip on the last step (P2-55). */
+export function welcomeTour(gameFirst: boolean): TourStep[] {
+  return [
+    BAR.energy,
+    ENERGY_MODES,
+    gameFirst
+      ? { target: "nav-play", text: "You've got a game today. Tap Play", press: true }
+      : { target: "nav-training", text: "Go to training", press: true },
+  ];
+}
+/** The v0.24 order's welcome (kept for a save part-way through it). */
+export const WELCOME_TOUR: TourStep[] = welcomeTour(false);
+
+/** The first time on the Training page: what it is, then you must start Power. */
 export const TRAINING_TOUR: TourStep[] = [
-  { target: "screen", text: "This is Training. Drills make your skills better, and better skills win matches" },
-  { target: "sessions", text: "You get two drills each week. They come back after the match" },
-  BAR.energy,
-  { target: "skill-pace", text: "Pace: faster dribbles and more runs into space" },
-  { target: "skill-power", text: "Power: long shots and stronger crosses" },
-  { target: "skill-technique", text: "Technique: ball control, curl and accurate shots" },
-  { target: "skill-vision", text: "Vision: more team-mates to pass to" },
-  { target: "skill-freeKick", text: "Free Kick: free kicks, corners and penalties" },
+  { target: "sessions", text: "Drills make your skills better. You get two each week" },
   { target: "skill-power", text: "Start with Power. Tap it", press: true },
 ];
 
@@ -70,10 +75,10 @@ export const LEVEL_TOUR: TourStep[] = [
 
 /** Back on Training after the first drill (P2-63). */
 export const ONE_MORE_DRILL_TOUR: TourStep[] = [
-  { target: "sessions", text: "One drill done. You get two drills a session. Do one more" },
+  { target: "sessions", text: "One drill done. Do one more" },
 ];
 
-/** Both drills done: training is over for the week, and the League opens (P2-65, P2-66). */
+/** Both drills done (v0.24 order): the League opens (P2-65, P2-66). */
 export const LEAGUE_TOUR: TourStep[] = [
   { target: "sessions", text: "Training done for this week. Next: the match" },
   { target: "nav-league", text: "League unlocked", press: true },
@@ -82,30 +87,33 @@ export const LEAGUE_TOUR: TourStep[] = [
 /** Inside the League, once. */
 export const LEAGUE_SCREEN_TOUR: TourStep[] = [
   { target: "screen", text: "Your league. Win matches to go up the table. The top teams go up a division" },
-  BAR.help,
 ];
 
-/** Back home before the first game: where the first steps live, then Play (P2-68, P2-69). */
+/** Back home before the first game (v0.24 order). */
 export const FIRST_GAME_TOUR: TourStep[] = [
-  { target: "nav-league", text: "Achievements. Your first steps are here" },
   { target: "nav-play", text: "To earn coins, play your first game", press: true },
 ];
 
-/** After the first game: go and meet the boss (P2-86, P2-87). */
-export const BOSS_TOUR: TourStep[] = [
-  { target: "nav-life", text: "Time to meet your boss. Tap Relations", press: true },
-];
+/** After the first game: go and meet the boss (P2-86, P2-87). v0.25: the
+ *  manager's talk is what opens Relations. */
+export function bossTour(gameFirst: boolean): TourStep[] {
+  return [{ target: "nav-life", text: gameFirst ? "Your manager wants a word. Tap Relations" : "Time to meet your boss. Tap Relations", press: true }];
+}
+export const BOSS_TOUR: TourStep[] = bossTour(false);
 
 /** On Relations, while the boss meeting is the next first step. */
 export const BOSS_MEETING_TOUR: TourStep[] = [
   { target: "css:button[aria-label^='Boss meeting']", text: "Tap here to meet your boss", press: true },
 ];
 
-/** After the boss meeting the Shop is next; the phone is the first thing to buy. */
-export const SHOP_TOUR: TourStep[] = [
-  { target: "tab-2", text: "The Shop", press: true },
-  { target: "shop-style", text: "Buy your first phone in Style", press: true },
-];
+/** The phone step: the Shop, and the phone in it. v0.25: when you cannot pay
+ *  for it yet, the tour says so (price, how much more) and asks for no tap. */
+export function shopTour(line: string, canBuy: boolean): TourStep[] {
+  return canBuy
+    ? [{ target: "tab-2", text: "The Shop", press: true }, { target: "shop-style", text: `${line}. Buy it in Style`, press: true }]
+    : [{ target: "tab-2", text: `Your next step is a phone. ${line}` }];
+}
+export const SHOP_TOUR: TourStep[] = shopTour("Your first phone", true);
 
 /** The phone was bought: open it. */
 export const PHONE_TOUR: TourStep[] = [
@@ -117,28 +125,9 @@ export const stepTour = (prompt: string): TourStep[] => [
   { target: "step-go", text: `${prompt}. Tap Go`, press: true },
 ];
 
-/** The first match, at full time (P2-81, P2-82). `back` = energy the rest
- *  days give back before the next match. */
-export function energyTour(back: number | null): TourStep[] {
-  return [
-    { target: "css:[role=meter][aria-label=Energy]", text: "Your energy goes down while you play" },
-    { target: "css:[aria-label='low energy']", text: "Low: you save energy, but the ball comes to you less" },
-    { target: "css:[aria-label='medium energy']", text: "Medium: the normal amount" },
-    { target: "css:[aria-label='high energy']", text: "High: the ball comes to you more, but your energy goes down fast" },
-    {
-      target: "css:[role=meter][aria-label=Energy]",
-      text: back && back > 0
-        ? `Rest days before your next match give you ${back} energy back`
-        : "Rest days before your next match give energy back",
-    },
-  ];
-}
-
 /** Post Match Reactions, the first time (P2-85). */
 export const REACTIONS_TOUR: TourStep[] = [
-  { target: "reactions-feed", text: "After every match, fans, the press and clubs react to how you played" },
-  { target: "reactions-feed", text: "Good games make your fans happy and make you more famous" },
-  { target: "reactions-continue", text: "Tap Continue when you are done" },
+  { target: "reactions-feed", text: "After every match, fans, the press and clubs react. Good games make you more famous" },
 ];
 
 /** Replayed from the "?" button, and shown by itself the first time you open
@@ -147,72 +136,23 @@ export const REACTIONS_TOUR: TourStep[] = [
 export type HelpScreen = "home" | "stats" | "shop" | "training" | "relations" | "league" | "style" | "settings" | "achievements" | "phone" | "sponsors" | "cans" | "boots";
 
 export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
-  home: [
-    { target: "home", text: "This is Home" },
-    { target: "player", text: "This is you" },
-    BAR.rating,
-    BAR.energy,
-    BAR.money,
-  ],
-  stats: [
-    BAR.rating,
-    BAR.energy,
-    { target: "screen", text: "Your stats, your form and your records" },
-  ],
-  shop: [
-    BAR.rating,
-    BAR.energy,
-    BAR.money,
-    { target: "screen", text: "Cans give energy. Boots make your shots better. Style raises your fame" },
-  ],
-  cans: [
-    BAR.energy,
-    BAR.money,
-    { target: "screen", text: "A can gives you energy. Keep some for weeks with two matches" },
-  ],
-  boots: [
-    BAR.rating,
-    BAR.money,
-    { target: "screen", text: "Boots add power and technique for a number of matches" },
-  ],
+  home: [BAR.rating, BAR.energy, BAR.money],
+  stats: [{ target: "screen", text: "Your stats, your form and your records" }],
+  shop: [{ target: "screen", text: "Cans give energy. Boots make your shots better. Style raises your fame" }],
+  cans: [{ target: "screen", text: "A can gives you energy. Keep some for weeks with two matches" }],
+  boots: [{ target: "screen", text: "Boots add power and technique for a number of matches" }],
   training: [
-    BAR.rating,
-    BAR.energy,
     { target: "sessions", text: "You get two drills each week" },
     { target: "screen", text: "Pick a drill. Stars on each level make the skill better" },
   ],
   relations: [
-    BAR.happiness,
-    BAR.energy,
     { target: "screen", text: "Your boss, your team-mates and the fans. Each one changes your career" },
     { target: "css:button[aria-label^='Boss meeting']", text: "A meeting with your boss. He picks you more when he likes you" },
   ],
-  league: [
-    BAR.rating,
-    BAR.energy,
-    { target: "screen", text: "Your league. Win matches to go up the table. The top teams go up a division" },
-  ],
-  // v0.23.1 (P62: "every page should have one of these").
-  style: [
-    BAR.reputation,
-    BAR.energy,
-    BAR.money,
-    { target: "screen", text: "Buy things to raise your fame. More open as your star rating goes up" },
-  ],
-  settings: [
-    BAR.rating,
-    BAR.energy,
-    { target: "home", text: "Home takes you back to your career" },
-    { target: "screen", text: "Sound, the look of the game and your saves" },
-  ],
-  achievements: [
-    { target: "screen", text: "Your first steps are at the top. Each one opens something new" },
-  ],
-  phone: [
-    { target: "screen", text: "Your phone. Messages, social media and an App Store for more apps" },
-  ],
-  sponsors: [
-    { target: "screen", text: "Sponsors pay you every week. Each deal has a target to hit" },
-    { target: "screen", text: "Sign a deal, then play well to keep the sponsor happy" },
-  ],
+  league: [{ target: "screen", text: "Your league. Win matches to go up the table. The top teams go up a division" }],
+  style: [{ target: "screen", text: "Buy things to raise your fame. More open as your star rating goes up" }],
+  settings: [{ target: "screen", text: "Sound, the look of the game and your saves" }],
+  achievements: [{ target: "screen", text: "Your first steps are at the top. Each one opens something new" }],
+  phone: [{ target: "screen", text: "Your phone. Messages, social media and an App Store for more apps" }],
+  sponsors: [{ target: "screen", text: "Sponsors pay you every week. Hit a deal's target and keep the brand happy" }],
 };

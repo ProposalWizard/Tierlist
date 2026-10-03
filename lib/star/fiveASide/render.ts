@@ -605,6 +605,14 @@ export interface BodyPose {
    * everybody else does, so no existing figure changes.
    */
   armLead?: number;
+  /**
+   * Which foot a kick is struck with (v0.25 item 4): +1 right, −1 left. With
+   * it, a kick swings THAT leg through the ball while the other stays planted,
+   * and the opposite arm goes out for balance — a left-footer is the mirror
+   * of a right-footer. Absent (the default), a kick opens both legs as it
+   * always has, so no other figure changes.
+   */
+  kickFoot?: number;
 }
 
 /**
@@ -669,8 +677,8 @@ export function poseFor(
  * still figure every screen already drew.
  */
 export function bodyPoseFor(
-  pose: FigurePose, phase: number,
-): Pick<BodyPose, "legSwing" | "kick" | "armSpread" | "armLift"> {
+  pose: FigurePose, phase: number, kickFoot?: number,
+): Pick<BodyPose, "legSwing" | "kick" | "armSpread" | "armLift" | "kickFoot"> {
   const swing = pose === "run" ? Math.sin(phase) : 0;
   const kick = pose === "kick" ? 1 : 0;
   const open = pose === "receive" ? 1 : 0;
@@ -679,7 +687,38 @@ export function bodyPoseFor(
     kick,
     armSpread: open * 0.5 + kick * 0.3,
     armLift: -0.55 + open * 0.5,
+    ...(kick && kickFoot ? { kickFoot: Math.sign(kickFoot) } : {}),
   };
+}
+
+/**
+ * Where the feet are, in the figure's own units (`r`): standing, running, or
+ * kicking. Exported so a test can check that a left-footed kick is the exact
+ * mirror of a right-footed one. Positive x is the figure's right as seen from
+ * behind; smaller y is higher up the screen (further up the pitch).
+ */
+export function feetFor(r: number, pose?: BodyPose): { lx: number; ly: number; rx: number; ry: number } {
+  const swing = pose?.legSwing ?? 0;
+  const kick = pose?.kick ?? 0;
+  const kf = Math.sign(pose?.kickFoot ?? 0);
+  if (kick > 0 && kf !== 0) {
+    // One leg through the ball: the kicking foot swings forward (up the
+    // screen, away from the camera) and a little across the body; the other
+    // is the standing foot, planted a touch wider.
+    const strikeX = kf * r * (0.19 - kick * 0.1);
+    const strikeY = FEET_Y * r - kick * r * 0.34;
+    const plantX = -kf * r * 0.22;
+    const plantY = FEET_Y * r;
+    return kf > 0
+      ? { lx: plantX, ly: plantY, rx: strikeX, ry: strikeY }
+      : { lx: strikeX, ly: strikeY, rx: plantX, ry: plantY };
+  }
+  // The legs scissor apart and back; an old-style kick opens both. Both feet
+  // lift a little as they open, which is what stops a stride reading as a man
+  // doing the splits.
+  const stride = (swing * 0.42 + kick * 0.55) * r;
+  const footY = FEET_Y * r - Math.abs(stride) * 0.15;
+  return { lx: -r * 0.19 - stride * 0.35, ly: footY, rx: r * 0.19 + stride * 0.35, ry: footY };
 }
 
 function paintBody(
@@ -693,31 +732,25 @@ function paintBody(
   const lift = pose?.armLift ?? -0.55;
   const crouch = pose?.crouch ?? 0;
   const swing = pose?.legSwing ?? 0;
-  const kick = pose?.kick ?? 0;
   // A crouch shortens the man rather than moving him: knees bend, head drops.
   const sink = crouch * r * 0.16;
-  // How far the feet travel from their standing spot. The legs scissor apart
-  // and back; a kick throws one leg right through. Both feet lift a little as
-  // they open, which is what stops a stride reading as a man doing the splits.
-  const stride = (swing * 0.42 + kick * 0.55) * r;
-  const footRise = Math.abs(stride) * 0.15;
+  // Where the feet are: a stride, an old two-legged kick, or (with
+  // `kickFoot`) one leg through the ball — see feetFor.
+  const feet = feetFor(r, pose);
 
   // ── Legs ──
   ctx.lineCap = "round";
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.4, r * 0.15);
-  const footY = FEET_Y * r - footRise;
-  const footL = -r * 0.19 - stride * 0.35;
-  const footR = r * 0.19 + stride * 0.35;
   ctx.beginPath();
-  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(footL, footY);
-  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(footR, footY);
+  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(feet.lx, feet.ly);
+  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(feet.rx, feet.ry);
   ctx.stroke();
   // Boots, so the legs end in something rather than fading out.
   ctx.fillStyle = TC.boot;
-  for (const fx of [footL, footR]) {
+  for (const [fx, fy] of [[feet.lx, feet.ly], [feet.rx, feet.ry]]) {
     ctx.beginPath();
-    ctx.ellipse(fx, footY, r * 0.11, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.ellipse(fx, fy, r * 0.11, r * 0.06, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -760,7 +793,8 @@ function paintBody(
   const handYFor = (s: number) => handY - s * swing * r * 0.22;
   // The trailing arm of a dive stays tucked; without this a keeper thrown to
   // one side reaches equally far the other way and reads as a starfish.
-  const lead = pose?.armLead ?? 0;
+  // A one-footed kick throws the OTHER arm out for balance.
+  const lead = pose?.armLead ?? ((pose?.kick ?? 0) > 0 && pose?.kickFoot ? -Math.sign(pose.kickFoot) : 0);
   const handXFor = (s: number) => s * outX * (lead === 0 || Math.sign(s) === Math.sign(lead) ? 1 : 0.62);
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.2, r * 0.115);
