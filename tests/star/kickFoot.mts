@@ -49,6 +49,18 @@ const plain = feetFor(r, bodyPoseFor("kick", 0));
 ok(near(plain.ly, plain.ry) && near(plain.lx, -plain.rx), "with no foot given, the old two-legged kick is unchanged");
 ok(bodyPoseFor("run", 1, -1).kickFoot === undefined, "running is not affected by the foot");
 
+// v0.25 item 11 (Harry, testing the build): the swing could not be seen. The
+// first cut moved the kicking foot 0.09 r sideways and lifted it 0.08 r — on
+// a phone figure (r ≈ 10 px) that is 1 px — and the shaded "3d" skin, which
+// is what the game draws, ignored the foot altogether.
+console.log("\nYOU CAN SEE IT");
+const { oneFootKickFeet } = await import("@/lib/star/figure3d");
+const k3 = oneFootKickFeet(r, 0.26, 1, -1);
+ok(near(k3.lx, left.lx) && near(k3.ly, left.ly) && near(k3.rx, left.rx) && near(k3.ry, left.ry), "both skins swing the same leg to the same place");
+ok(left.lx <= -0.35 * r && right.rx >= 0.35 * r, `the kicking foot reaches out to the ball's side (${(-left.lx / r).toFixed(2)} r)`);
+ok(left.ry - left.ly >= 0.25 * r, `and comes off the ground (${((left.ry - left.ly) / r).toFixed(2)} r above the standing foot)`);
+ok(Math.abs(left.rx) < Math.abs(left.lx) / 2, "the standing foot stays under him");
+
 console.log("\nOTHER PLAYERS AND THE TRIAL");
 let lefties = 0;
 for (let i = 0; i < 1000; i++) if (takerFootSign(`player-${i}`) < 0) lefties++;
