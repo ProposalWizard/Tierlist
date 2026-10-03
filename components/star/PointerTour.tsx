@@ -77,6 +77,10 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
   // leave you stuck behind the dim: it becomes a tap-to-go-on step instead.
   const [dead, setDead] = useState(false);
   const doneRef = useRef(false);
+  // The bubble's real height, so it can always be kept on screen (v0.25
+  // point 14: the social-media tutorial sat off the screen).
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [bubbleH, setBubbleH] = useState(84);
   const step = steps[i];
 
   useEffect(() => setMounted(true), []);
@@ -142,6 +146,11 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, step?.target]);
 
+  useLayoutEffect(() => {
+    const h = bubbleRef.current?.offsetHeight;
+    if (h && Math.abs(h - bubbleH) > 1) setBubbleH(h);
+  });
+
   if (!mounted || !step || !box) return null;
   const press = !!step.press && !dead;
 
@@ -151,16 +160,33 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
   const cy = box.y + box.h / 2;
   const bubbleW = Math.min(268, vp.w - 24);
   const left = Math.max(12, Math.min(vp.w - bubbleW - 12, cx - bubbleW / 2));
-  const above = wholeScreen ? false : cy > vp.h * 0.5;
   const DIM = "rgba(0,0,0,.62)";
   const last = i === steps.length - 1;
 
   // Where the bubble goes: above or below the hole, with the hand between.
+  // A target nearly as tall as the phone (a whole feed) leaves room on
+  // neither side: then the bubble sits inside the hole, near its top, with
+  // no hand. Whatever happens it stays fully on screen.
+  const EDGE = 12;
+  const need = bubbleH + HAND_H + 4;
+  const roomAbove = hole.y - EDGE;
+  const roomBelow = vp.h - (hole.y + hole.h) - EDGE;
+  const wantAbove = cy > vp.h * 0.5;
+  const place: "above" | "below" | "inside" = wholeScreen ? "inside"
+    : wantAbove && roomAbove >= need ? "above"
+    : !wantAbove && roomBelow >= need ? "below"
+    : roomAbove >= need ? "above"
+    : roomBelow >= need ? "below"
+    : "inside";
+  const above = place === "above";
+  const clampTop = (t: number) => Math.max(EDGE, Math.min(vp.h - bubbleH - EDGE, t));
   const bubbleStyle: React.CSSProperties = wholeScreen
-    ? { left, width: bubbleW, top: Math.max(80, box.y + Math.min(80, box.h * 0.2)) }
-    : above
-      ? { left, width: bubbleW, bottom: vp.h - hole.y + HAND_H + 2 }
-      : { left, width: bubbleW, top: hole.y + hole.h + HAND_H + 2 };
+    ? { left, width: bubbleW, top: clampTop(Math.max(80, box.y + Math.min(80, box.h * 0.2))) }
+    : place === "above"
+      ? { left, width: bubbleW, top: clampTop(hole.y - HAND_H - 2 - bubbleH) }
+      : place === "below"
+        ? { left, width: bubbleW, top: clampTop(hole.y + hole.h + HAND_H + 2) }
+        : { left, width: bubbleW, top: clampTop(Math.max(hole.y, 0) + 24) };
   const handLeft = Math.max(8, Math.min(vp.w - 42, cx - 17));
   const handStyle: React.CSSProperties = above
     ? { left: handLeft, top: hole.y - HAND_H - 2, ["--hy" as string]: "8px" }
@@ -186,10 +212,11 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
           style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h, borderRadius: 4, pointerEvents: press ? "none" : "auto" }}
           onClick={press ? undefined : next}
         />
-        <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>
+        {place !== "inside" && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
       </>)}
       <div
         key={i}
+        ref={bubbleRef}
         className="kit-rise fixed rounded-[6px] px-3 py-2.5 text-white"
         style={{ ...bubbleStyle, pointerEvents: "auto", background: "linear-gradient(180deg,#1f2937,#0b1220)", boxShadow: "inset 0 0 0 2px #fde047, 0 12px 30px -8px rgba(0,0,0,.9)" }}
         onClick={press ? undefined : next}

@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { kitsOf } from "@/lib/star/kits";
-import { skinToneHex } from "@/lib/star/playerIdentity";
+import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
 import { managerLook } from "@/lib/star/managerFace";
@@ -57,7 +57,9 @@ export default function SigningScene3DCareer({
     aviators: career.equippedRewards?.eyes === AVIATORS_CARD,
     kit,
     number,
-  }), [career.player.skinTone, fitted, career.equippedAccessories, career.equippedRewards, kit, number]);
+    hairStyle: resolveHairStyle(career.player.hairStyle),
+    hair: hairColourHex(career.player.hairColour),
+  }), [career.player.skinTone, career.player.hairStyle, career.player.hairColour, fitted, career.equippedAccessories, career.equippedRewards, kit, number]);
 
   const look = managerLook(managerName);
   const manager = {

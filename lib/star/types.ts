@@ -115,6 +115,9 @@ export interface StarPlayer {
    * (see playerIdentity.ts's resolveFoot) rather than undefined.
    */
   preferredFoot?: import("./playerIdentity").PreferredFoot;
+  /** His 3D avatar's hair (the live 3D signing). Absent = short, brown. */
+  hairStyle?: import("./playerIdentity").HairStyle;
+  hairColour?: import("./playerIdentity").HairColour;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
@@ -677,6 +680,11 @@ export interface CareerUnlocks {
   /** The bottom-left button, once the first steps are done and the player
    *  has answered "switch this to League?" (v0.24, P2-89). */
   slot?: "achievements" | "league";
+  /** v0.25 (Harry and Mikey, 2 Oct 2026): the game comes first. A career
+   *  started from v0.25 has this set: League and Play open at once, Training
+   *  after the first game, Relations after the manager's talk, the Shop by
+   *  about game 3. Absent = the v0.24 order (a save part-way through it). */
+  gameFirst?: boolean;
 }
 
 export interface CareerState {

@@ -26,7 +26,7 @@ import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   landmarksOf, weldBody, buildGarment, hideCoveredSkin, kitSpec, suitSpec, footSpec, sleevesSpec, wristTapeSpec,
-  glovesSpec, armbandSpec, headbandSpec, snoodSpec, faceFrameOf, buildFaceDecal, solveArm, handAxesOf, handWorldQuat,
+  glovesSpec, armbandSpec, headbandSpec, snoodSpec, slimArms, HAND_SCALE, faceFrameOf, buildFaceDecal, solveArm, handAxesOf, handWorldQuat,
   setBoneWorldQuat, rotateBoneWorld, curlFinger, aimBone, type GarmentSpec, type HandAxes, type Landmarks, type WeldedBody,
 } from "./signing3dRig";
 import {
@@ -46,7 +46,11 @@ export const SIGNING3D_FILES = {
 export type SigningShot = "talk" | "reply" | "contract";
 
 /** A fitted face picture (faceFit.ts's FittedHead, or anything shaped like it). */
-export interface FacePicture { canvas: HTMLCanvasElement | HTMLImageElement; chinX: number; chinY: number; faceH: number }
+export interface FacePicture {
+  canvas: HTMLCanvasElement | HTMLImageElement; chinX: number; chinY: number; faceH: number;
+  /** The photo's own skin tone (faceFit.ts samples the cheeks), "#rrggbb". */
+  skin?: string;
+}
 
 export interface SigningYou {
   skin: string;
@@ -114,6 +118,14 @@ const SIGN_T = {
   standA: 2.6, standB: 3.63, stepB: 3.95, shakeA: 3.7, shakeB: 4.05, pumpEnd: 4.85, done: 4.9,
 };
 export const SIGN_SECONDS = SIGN_T.done;
+
+/** The writing grip: how far the pen sits under the first finger's pad,
+ *  towards the thumb, where it rests on the web, and how much nib shows. */
+const PEN_GRIP = { pad: 0.011, side: 0.004, web: 0.014, webUp: 0.006, tip: 0.024 };
+
+/** The handshake: where the palms meet (height), how far each wrist sits
+ *  back from the middle, and each palm's distance off the middle plane. */
+const SHAKE = { y: 1.07, back: 0.08, gap: 0.021 };
 
 const ease = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const seg = (t: number, a: number, b: number) => ease((t - a) / (b - a));
@@ -211,6 +223,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const handAxR = handAxesOf(T, bones.hand_r, bones.middle_01_r);
     const handAxL = handAxesOf(T, bones.hand_l, bones.middle_01_l);
     body.geometry = body.geometry.clone();
+    slimArms(T, root, body.geometry, L);
     const weld = weldBody(body.geometry);
     const skinMat = (body.material as THREE.MeshStandardMaterial).clone();
     body.material = skinMat;
@@ -232,6 +245,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       actions[clip.name] = a;
     }
     scene.add(root);
+    // Hands a size down, about the wrist (bones, so the fingers and their
+    // joints shrink together; the clips never touch a bone's scale).
+    bones.hand_l.scale.setScalar(HAND_SCALE);
+    bones.hand_r.scale.setScalar(HAND_SCALE);
     return { root, body, weld, L, mixer, actions, bones, handAxR, handAxL, extras: [], skinMat, hairMat, hairMat2, facing, rest };
   };
 
@@ -297,7 +314,12 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     // The face picture over the head; his own modelled eyes and brows go.
     hideCoveredSkin(T, you.body, you.weld, specs);
     if (y.face) {
-      const d = buildFaceDecal(T, you.body, you.weld, F, y.face);
+      // The photo's skin brought to the body's skin tone (so a fair photo on
+      // a dark body, or the other way, doesn't read as a mask).
+      const want = tinted(y.skin, [1, 1, 1]);
+      const has = new T.Color(y.face.skin ?? y.skin);
+      const k = (a: number, b: number) => Math.min(1.8, Math.max(0.25, a / Math.max(0.004, b)));
+      const d = buildFaceDecal(T, you.body, you.weld, F, y.face, [k(want.r, has.r), k(want.g, has.g), k(want.b, has.b)]);
       you.body.parent!.add(d); you.extras.push(d);
     }
     show(you, "Eyes", !y.face);
@@ -317,24 +339,26 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       glasses.position.sub(centre);
       holder.add(glasses);
       holder.scale.setScalar(s);
-      attachRest(you, holder, "Head", new T.Vector3(0, F.browY - 0.022, F.frontZ - 0.035 + (size.z * s) / 2));
+      // The lenses (the front of the model's box) just clear of the nose
+      // tip, their middle on the eyes; the arms run back over the ears.
+      attachRest(you, holder, "Head", new T.Vector3(0, F.eyeY - 0.004, F.frontZ + 0.004 - (size.z * s) / 2));
       restoreRest(you, restMats);
     }
   };
 
   // Rest pose, briefly, to hang things on bones in the measured places.
   const poseRest = (p: Person) => {
-    const saved = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
-    p.rest.forEach((_, b) => saved.set(b, [b.position.clone(), b.quaternion.clone()]));
+    const saved = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion, THREE.Vector3]>();
+    p.rest.forEach((_, b) => saved.set(b, [b.position.clone(), b.quaternion.clone(), b.scale.clone()]));
     // The bind pose: the one the body's own vertices (and so every rest
     // measurement here) are in.
     p.body.skeleton.pose();
     p.root.updateMatrixWorld(true);
     return saved;
   };
-  const restoreRest = (p: Person, saved: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>) => {
-    // (the clips set every bone again on the next frame anyway)
-    saved.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
+  const restoreRest = (p: Person, saved: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion, THREE.Vector3]>) => {
+    // (the clips set every bone's turn again on the next frame anyway; not its scale)
+    saved.forEach(([pos, q, sc], b) => { b.position.copy(pos); b.quaternion.copy(q); b.scale.copy(sc); });
     p.root.updateMatrixWorld(true);
   };
   const attachRest = (p: Person, obj: THREE.Object3D, boneName: string, restPos: THREE.Vector3) => {
@@ -560,16 +584,20 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const q = new T.Quaternion(); p.bones[`hand_${s}`].getWorldQuaternion(q);
     return (s === "r" ? p.handAxR : p.handAxL).palm.clone().applyQuaternion(q);
   };
-  /** Grips, 0 = as the clip has them. */
+  /** Grips, radians of curl per finger joint, from straight. */
   const GRIPS = {
     flat: { index: [0.05, 0.08, 0.05], middle: [0.05, 0.08, 0.05], ring: [0.08, 0.1, 0.05], pinky: [0.1, 0.1, 0.05], thumb: [0, 0, 0] },
-    pen: { index: [0.3, 0.45, 0.3], middle: [0.55, 0.6, 0.4], ring: [0.8, 0.8, 0.5], pinky: [0.95, 0.8, 0.5], thumb: [0.15, 0.3, 0.25] },
-    shake: { index: [0.55, 0.6, 0.35], middle: [0.6, 0.65, 0.4], ring: [0.65, 0.7, 0.4], pinky: [0.7, 0.7, 0.4], thumb: [0.1, 0.2, 0.1] },
+    pen: { index: [0.22, 0.38, 0.28], middle: [0.55, 0.85, 0.55], ring: [1.0, 1.1, 0.7], pinky: [1.1, 1.1, 0.7], thumb: [0.2, 0.3, 0.2] },
+    shake: { index: [0.06, 0.12, 0.08], middle: [0.06, 0.12, 0.08], ring: [0.08, 0.12, 0.08], pinky: [0.1, 0.14, 0.08], thumb: [0.05, 0.12, 0.05] },
     open: { index: [0.1, 0.1, 0.05], middle: [0.1, 0.12, 0.05], ring: [0.15, 0.15, 0.05], pinky: [0.2, 0.15, 0.05], thumb: [0, 0.05, 0] },
   } as const;
   type GripName = keyof typeof GRIPS;
   const grip = (p: Person, s: Side, a: GripName, b: GripName = a, t = 0) => {
     const f = fingersOf(p, s);
+    // From straight fingers (the rest pose's), not the clip's own half-closed
+    // ones: a curl on top of those turned every grip into a fist.
+    for (const k of ["index", "middle", "ring", "pinky", "thumb"] as const) for (const bone of f[k]) bone.quaternion.copy(p.rest.get(bone)![1]);
+    p.bones[`hand_${s}`].updateMatrixWorld(true);
     const palm = palmOf(p, s);
     for (const k of ["index", "middle", "ring", "pinky", "thumb"] as const) {
       const A = GRIPS[a][k], B = GRIPS[b][k];
@@ -593,14 +621,23 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   };
   /** Where the pen sits between thumb and first finger. */
   const pinchOf = (p: Person, s: Side) => wpos(p.bones[`thumb_03_${s}`]).add(wpos(p.bones[`index_03_${s}`])).multiplyScalar(0.5);
-  /** The pen held in the hand: through the pinch, resting back on the web
-   *  between thumb and first finger (from the bones, so it sits in the hand). */
+  /** The pen held in a writer's (tripod) grip, from the bones: it lies
+   *  under the pad of the first finger, near its tip, with the thumb on its
+   *  side, and rests back over the web between thumb and first finger. */
   const penInHandOf = (p: Person, s: Side) => {
-    const pinch = pinchOf(p, s);
-    const web = wpos(p.bones[`thumb_02_${s}`]).multiplyScalar(0.55).add(wpos(p.bones[`index_01_${s}`]).multiplyScalar(0.45))
-      .add(palmOf(p, s).multiplyScalar(-0.012));
-    const axis = web.sub(pinch).normalize();
-    return { tip: pinch.clone().sub(axis.clone().multiplyScalar(0.03)), axis };
+    const palm = palmOf(p, s);
+    const i1 = wpos(p.bones[`index_01_${s}`]);
+    const i3 = wpos(p.bones[`index_03_${s}`]);
+    const iTip = wpos(p.bones[`index_04_leaf_${s}`]);
+    const hand = wpos(p.bones[`hand_${s}`]);
+    const along = wpos(p.bones[`middle_01_${s}`]).sub(hand).normalize();
+    // Towards the thumb, square to the fingers and the palm.
+    const thumb = wpos(p.bones[`thumb_02_${s}`]).sub(hand);
+    thumb.sub(along.clone().multiplyScalar(thumb.dot(along))).sub(palm.clone().multiplyScalar(thumb.dot(palm))).normalize();
+    const pad = i3.clone().lerp(iTip, 0.6).add(palm.clone().multiplyScalar(PEN_GRIP.pad)).add(thumb.clone().multiplyScalar(PEN_GRIP.side));
+    const web = i1.add(thumb.clone().multiplyScalar(PEN_GRIP.web)).add(palm.clone().multiplyScalar(-PEN_GRIP.webUp));
+    const axis = web.sub(pad).normalize();
+    return { tip: pad.clone().sub(axis.clone().multiplyScalar(PEN_GRIP.tip)), axis };
   };
 
   // Rest head facing, for the head turn.
@@ -742,7 +779,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     }
     // Leans: you over the paper; both forward over the desk for the shake.
     const writeLean = 0.3 * seg(e, 0, S.reachB) * (1 - seg(e, S.putDown - 0.1, S.standA + 0.3));
-    const shakeLean = 0.16 * seg(e, S.shakeA - 0.2, S.shakeB);
+    const shakeLean = 0.13 * seg(e, S.shakeA - 0.2, S.shakeB);
     lean(you, 0.06 + writeLean + shakeLean);
     lean(boss, 0.08 * (1 - standK) + shakeLean);
 
@@ -836,19 +873,23 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       void tip;
     } else placePen(penRestPos, penRestQ);
 
-    // The handshake: right hands meet over the middle of the desk.
+    // The handshake: right hands meet palm to palm over the middle of the
+    // desk. Each palm faces the other man's on the plane x = 0, a hand's
+    // half-thickness (and a hair) off it, so the two never pass through each
+    // other; thumbs up, fingers forward and only lightly closed, the wrists
+    // back far enough that each man's fingers end at the other's wrist.
     if (e >= S.shakeA - 0.3) {
       const w = seg(e, S.shakeA - 0.3, S.shakeB);
-      const pump = e > S.shakeB ? Math.sin((e - S.shakeB) * Math.PI * 2 * 2.4) * 0.028 * (1 - seg(e, S.pumpEnd - 0.2, S.pumpEnd)) : 0;
-      const M = v3(0, 1.02 + pump, 0);
+      const pump = e > S.shakeB ? Math.sin((e - S.shakeB) * Math.PI * 2 * 2.4) * 0.024 * (1 - seg(e, S.pumpEnd - 0.2, S.pumpEnd)) : 0;
+      const M = v3(0, SHAKE.y + pump, 0);
       for (const p of [you, boss]) {
-        // His palm faces the other man's; the wrist sits back towards his own body.
-        const wrist = M.clone();
-        wrist.x = M.x + (p === you ? 0.02 : -0.02);
-        wrist.z = M.z - p.facing * 0.07;
-        const along = dirOf(p, 0.12, -0.15, 1);
-        const palm = dirOf(p, 1, 0.05, 0);
-        placeHand(p, "r", wrist, along, palm, dirOf(p, -0.6, -0.8, -0.2), w);
+        // The shoulder comes forward into the reach.
+        rotateBoneWorld(T, p.bones.clavicle_r, new T.Quaternion().setFromAxisAngle(v3(0, 1, 0), 0.22 * w));
+        const palm = dirOf(p, 1, 0, 0);
+        const wrist = M.clone().add(palm.clone().multiplyScalar(-SHAKE.gap));
+        wrist.z = M.z - p.facing * SHAKE.back;
+        const along = dirOf(p, 0, -0.08, 1);
+        placeHand(p, "r", wrist, along, palm, dirOf(p, -0.7, -0.7, -0.15), w);
         grip(p, "r", "open", "shake", w);
       }
       if (e >= S.shakeB) fire("shake");
@@ -935,6 +976,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         pinch: r(pinchOf(you, "r")), penTip: r(penInHandOf(you, "r").tip), hand: r(wpos(you.bones.hand_r)), shoulder: r(wpos(you.bones.upperarm_r)),
         handL: r(wpos(you.bones.hand_l)), mode, t: clock - modeStart,
         head: r(wpos(you.bones.Head)),
+        bossHead: r(wpos(boss.bones.Head)), bossHand: r(wpos(boss.bones.hand_r)), youHandR: r(wpos(you.bones.hand_r)),
+        L: you.L,
         extras: you.extras.map((e) => [e.name || e.type, e.parent?.name, r(wpos(e))]),
       };
     },

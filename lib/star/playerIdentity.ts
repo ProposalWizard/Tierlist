@@ -92,6 +92,39 @@ export function shortDisplayName(player: Pick<StarPlayer, "firstName" | "lastNam
   return player.lastName;
 }
 
+// ── Hair (the 3D avatar's) ──────────────────────────────────────────────────
+
+/**
+ * The hair his 3D body wears (the live 3D signing scene). Picked on the
+ * profile screen; absent on every older save, which reads as short and dark
+ * brown — what the scene always drew before this existed.
+ */
+export const HAIR_STYLES = [
+  { id: "short", label: "Short" },
+  { id: "long", label: "Long" },
+  { id: "buzz", label: "Buzz" },
+  { id: "none", label: "Shaved" },
+] as const;
+export type HairStyle = (typeof HAIR_STYLES)[number]["id"];
+export const DEFAULT_HAIR_STYLE: HairStyle = "short";
+
+export const HAIR_COLOURS = [
+  { id: "black", label: "Black", hex: "#17110d" },
+  { id: "brown", label: "Brown", hex: "#3d2616" },
+  { id: "fair", label: "Fair", hex: "#b88a4a" },
+  { id: "blond", label: "Blond", hex: "#d7b26a" },
+] as const;
+export type HairColour = (typeof HAIR_COLOURS)[number]["id"];
+export const DEFAULT_HAIR_COLOUR: HairColour = "brown";
+
+export function resolveHairStyle(value: unknown): HairStyle {
+  return HAIR_STYLES.some((h) => h.id === value) ? (value as HairStyle) : DEFAULT_HAIR_STYLE;
+}
+
+export function hairColourHex(value: unknown): string {
+  return (HAIR_COLOURS.find((h) => h.id === value) ?? HAIR_COLOURS.find((h) => h.id === DEFAULT_HAIR_COLOUR)!).hex;
+}
+
 // ── Which foot ──────────────────────────────────────────────────────────────
 
 export type PreferredFoot = "left" | "right";
