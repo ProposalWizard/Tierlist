@@ -2010,6 +2010,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // New view, 3D figures (lib/star/sprites.ts): each man's smoothed speed,
   // heading and distance run, so the baked clip matches what he is doing and
   // his feet keep pace with the grass. Pictures only — nothing reads it back.
+  /** When the 3D keeper's dive clip started (seconds), or null. */
+  const keeperDiveStartRef = useRef<number | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -3546,14 +3548,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // right as seen on screen, as far into the clip as the lunge has got.
       let keeperSprite: MatchSpriteHint | undefined;
       if (nv) {
-        const kFacing = screenAngle(kk.x, kk.y, spriteBall.x, spriteBall.y);
-        const diving = lunge > 0.04 || Math.abs(kk.dive) > 1.1;
-        if (diving && sign !== 0) {
+        // Harry, 3 Oct 2026: "he's usually not facing the right way, I think
+        // his animations need slowing." He has four facings; turning to the
+        // ball snapped him side-on whenever it was more than 45° off straight
+        // out, and flicked between frames as it moved. A keeper stays square
+        // to the pitch, so he faces straight out of his goal.
+        const f = facingRef.current;
+        const kFacing = f === "right" ? Math.PI : f === "left" ? 0 : Math.PI / 2;
+        // Only a real save is a dive. His patrol lean used to trigger the dive
+        // clip too, so he flopped about while shuffling across his line.
+        if (lunge > 0.04 && sign !== 0) {
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
-          const p = lunge > 0.04 ? lunge : clamp((Math.abs(kk.dive) - 1.1) / 0.5, 0, 1);
-          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t: p * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          // The dive plays no faster than 0.75× the clip's own speed, however
+          // quickly the save itself happens.
+          if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = now;
+          const t = Math.min(lunge * 0.6, (now - keeperDiveStartRef.current) * 0.75);
+          keeperSprite = { char: "keeper", clip: keeperDiveClip(kFacing, b.px - a.px, b.py - a.py), t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
         } else {
-          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          keeperDiveStartRef.current = null;
+          // The ready bounce at 60% speed (about 2 frames a second).
+          keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
         }
       }
       drawMatchFigure(ctx, nv ? "new" : "classic",
