@@ -136,6 +136,9 @@ export interface Skills {
   freeKick: number;
 }
 
+/** Defensive / Balanced / Attacking — see CareerState.playstyle. */
+export type Playstyle = "defensive" | "balanced" | "attacking";
+
 export interface Relationships {
   boss: number;
   team: number;
@@ -503,6 +506,9 @@ export interface MatchStats {
   /** Basic KIB cans drunk at half time this match (energy.ts). Taken off
    *  `kibCans.basic` by creditMatchResult. */
   kibCansUsed?: number;
+  /** The playstyle you finished the match on, saved to the career so the
+   *  next match starts on it (CareerState.playstyle). */
+  playstyle?: Playstyle;
   /** True when a level knockout tie needed extra time (added into
    *  `homeScore`/`awayScore` already) to try to separate the sides — see
    *  shootout.ts's `hasExtraTime`/CanvasMatch's extra-time phase. */
@@ -882,6 +888,13 @@ export interface CareerState {
    * way).
    */
   energy: number;
+  /**
+   * How you play in a match: drop deep, stay balanced, or stay up top
+   * (v0.26, Harry). Chosen on the match screen next to the energy mode and
+   * kept from match to match. Absent on an old save reads as "balanced".
+   * See hiddenMatch.ts's MatchContext.
+   */
+  playstyle?: Playstyle;
   /**
    * Set the moment a match-fatigue roll goes against you (creditMatchResult),
    * cleared the moment `weeksRemaining` counts down to it. While this is
