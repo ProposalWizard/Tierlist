@@ -17,6 +17,7 @@ import TrialTechnique from "./stages/TrialTechnique";
 import TrialShootout from "./stages/TrialShootout";
 import TrialVision from "./stages/TrialVision";
 import { TeachCard } from "./stages/TrialPenalties";
+import { TrialBoard, TrialCaption, TrialPage, TrialPitchBox } from "./stages/TrialFrame";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 
 /**
@@ -48,8 +49,10 @@ const FINAL_BEAT_MS = 2600;
  * get a trial rating, you just get scouted. That's it, like a scout has spotted
  * you. It doesn't have to be complicated." And on the look: "I like the pitch
  * and the white and the basic. The animations and the feel of it are good" —
- * so the trial sits on a white card instead of dark ones, and keeps its
- * countdown animation.
+ * so the trial sat on a white card instead of dark ones, and keeps its
+ * countdown animation. (Superseded 3 Oct 2026 — "how the penalties are in
+ * the trial is how all of them should be looks wise, remove the white bar":
+ * every stage now uses the shootout's frame, stages/TrialFrame.tsx.)
  *
  * The scores are still worked out and written to the career (the score drives
  * a free agent's second look); nothing here puts one on screen. What the
@@ -263,20 +266,20 @@ export default function TrialSequence({
   const event = stage ? adversityOn(trial, stage) : null;
   const eventBanner = event && (
     <div
-      className={`mb-2 rounded-xl border px-3 py-2 ${
+      className={`mx-3 mb-1.5 rounded-xl border px-3 py-2 ${
         event.flavour
-          ? "border-gray-200 bg-gray-50"
-          : "border-amber-300 bg-amber-50"
+          ? "border-white/15 bg-black/30"
+          : "border-amber-400/50 bg-amber-500/15"
       }`}
     >
       <div
         className={`text-[10px] font-black uppercase tracking-widest ${
-          event.flavour ? "text-gray-500" : "text-amber-700"
+          event.flavour ? "text-white/60" : "text-amber-300"
         }`}
       >
         {event.flavour ? "Trial day" : "That's not ideal"} · {event.label}
       </div>
-      <p className="mt-1 text-[11px] font-bold leading-snug text-gray-700">{event.blurb}</p>
+      <p className="mt-1 text-[11px] font-bold leading-snug text-white/85">{event.blurb}</p>
     </div>
   );
 
@@ -294,7 +297,7 @@ export default function TrialSequence({
   // rather than under them, and "Trial day" — branding, not information —
   // is gone outright.
   const progress = (
-    <div className="mb-2 flex items-center gap-2">
+    <div className="mb-2 flex items-center gap-2 px-3 pt-2">
       <div className="flex flex-1 items-center gap-1">
         {stages.map(s => {
           const r = trial.results[s];
@@ -303,30 +306,29 @@ export default function TrialSequence({
             <div
               key={s}
               className={`h-1.5 flex-1 rounded-full ${
-                r ? "bg-emerald-500" : current ? "bg-gray-800" : "bg-gray-200"
+                r ? "bg-emerald-500" : current ? "bg-white" : "bg-white/20"
               }`}
             />
           );
         })}
       </div>
-      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-gray-400">
+      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-white/60">
         {stage ? `${done.length + 1}/${stages.length}` : "Done"}
       </span>
     </div>
   );
 
   /**
-   * The white card every stage sits on (Harry: "I like the pitch and the white
-   * and the basic"). The dev panel stays above it, on the page's own dark.
+   * Every stage looks like the penalty shootout (Harry, 3 Oct 2026: "how the
+   * penalties are in the trial is how all of them should be looks wise,
+   * remove the white bar"): the dark-green page, the dev bar, the stage pips,
+   * then the stage's own scoreboard and its full-width pitch. No white card.
+   * See stages/TrialFrame.tsx.
    */
-  const shell = (children: React.ReactNode) => (
-    <div className="mx-auto w-full max-w-md px-3 pt-2 pb-3">
-      {devPanel}
-      <div className="rounded-2xl bg-white p-2.5 text-gray-900 shadow-xl">
-        {progress}
-        {children}
-      </div>
-    </div>
+  const shell = (children: React.ReactNode, attrs?: Record<string, string | boolean>) => (
+    <TrialPage {...attrs} top={<>{devPanel}{progress}</>}>
+      {children}
+    </TrialPage>
   );
 
   // ── Between stages: 3-2-1 into the next one — no score on screen ──────
@@ -359,10 +361,10 @@ export default function TrialSequence({
         // you have not walked into yet, so printing it would announce the bad
         // break before the stage it belongs to, and then print it again on
         // arrival. It belongs on the stage, once.
-        <div className="mt-4 flex flex-col items-center rounded-2xl bg-emerald-50 px-5 py-8 text-center" aria-live="polite">
-          <div className="text-[11px] font-black uppercase tracking-widest text-gray-500">Next up</div>
-          <div className="mt-1 text-xl font-black uppercase tracking-wide text-gray-900">{stage ? STAGE_LABEL[stage] : ""}</div>
-          <div key={count} className="trial-count mt-4 text-7xl font-black tabular-nums text-emerald-600">
+        <div className="mx-3 mt-4 flex flex-col items-center rounded-xl px-5 py-8 text-center" style={{ background: "linear-gradient(180deg, rgba(8,14,28,.9), rgba(8,14,28,.78))", boxShadow: "0 6px 16px -6px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.12)" }} aria-live="polite">
+          <div className="text-[11px] font-black uppercase tracking-widest text-white/60">Next up</div>
+          <div className="mt-1 text-xl font-black uppercase tracking-wide text-white">{stage ? STAGE_LABEL[stage] : ""}</div>
+          <div key={count} className="trial-count mt-4 text-7xl font-black tabular-nums text-emerald-300">
             {Math.max(1, count)}
           </div>
           <style>{`@keyframes trialCount{0%{opacity:0;transform:scale(.55)}35%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}.trial-count{animation:trialCount ${COUNTDOWN_STEP_MS}ms cubic-bezier(.2,.9,.25,1) both}@media (prefers-reduced-motion: reduce){.trial-count{animation:none}}`}</style>
@@ -389,7 +391,15 @@ export default function TrialSequence({
             a visible player for that"), and the camera is the calm one ("the
             changing of the camera angle is a bit crazy" — see CALM_CAMERA in
             FirstPersonDribble.tsx; the real match keeps its own). */}
-        <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-gray-200">
+        {/* The scoreboard strip, in the shootout's style. The live wave
+            count stays on the run itself (FirstPersonDribble's own counter). */}
+        <TrialBoard
+          title="You"
+          centreLabel={STAGE_LABEL.dribbling}
+          centreValue={`${dribble.waveSizes.length} waves`}
+          footer={`${dribble.waveSizes.reduce((a, b) => a + b, 0)} men to get past`}
+        />
+        <TrialPitchBox className="aspect-[5/8]">
           <FirstPersonDribble
             embedded
             calmCamera
@@ -399,7 +409,8 @@ export default function TrialSequence({
             pace={skills.pace}
             oppStrength={dribble.oppStrength}
             waveSizes={dribble.waveSizes}
-            hideHint={!dribbleTeachDone}
+            // The hint lives under the pitch now (TrialCaption below).
+            hideHint
             // Nobody moves while the card is up. After the card, the run waits
             // for its own "Tap to start".
             hold={!dribbleTeachDone}
@@ -418,7 +429,10 @@ export default function TrialSequence({
               onDismiss={dismissDribbleTeach}
             />
           )}
-        </div>
+        </TrialPitchBox>
+        {/* What to do, under the pitch like every other stage — so the run's
+            own hint line is kept off the pitch. */}
+        <TrialCaption prompt={dribbleTeachDone ? "Tap left or right to touch the ball. Flick to burst past him." : ""} />
       </>,
     );
   }
@@ -459,21 +473,18 @@ export default function TrialSequence({
   // v0.25 (Mikey, point 22; Harry, point 5): the shootout is the pitch, full
   // width, with a scoreboard on it — not a white card with a pitch inside.
   if (stage === "shootout") {
-    return (
-      <div className="min-h-[100dvh] w-full pb-3" style={{ background: "radial-gradient(90% 50% at 50% 30%, #14532d, #052e16 70%, #02140a)" }} data-trial-shootout>
-        <div className="mx-auto w-full max-w-md">
-          {devPanel}
-          <div className="px-3 pt-2 [&_.bg-gray-200]:bg-white/20 [&_.bg-gray-800]:bg-white [&_.text-gray-400]:text-white/60">{progress}</div>
-          {eventBanner}
-          <TrialShootout
-            trial={trial}
-            skills={skills}
-            playerName={playerName}
-            penaltyRunup={penaltyRunup}
-            onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
-          />
-        </div>
-      </div>
+    return shell(
+      <>
+        {eventBanner}
+        <TrialShootout
+          trial={trial}
+          skills={skills}
+          playerName={playerName}
+          penaltyRunup={penaltyRunup}
+          onDone={(q, finalPenScored) => finishStage("shootout", q, finalPenScored)}
+        />
+      </>,
+      { "data-trial-shootout": true },
     );
   }
 
