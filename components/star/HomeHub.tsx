@@ -37,8 +37,7 @@ import { kitsOf } from "@/lib/star/kits";
 import KibCanIcon from "./KibCanIcon";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { isOpen } from "@/lib/star/unlocks";
-import { fameOf, fameLevel } from "@/lib/star/fame";
-import { reputationLabel } from "@/lib/star/reputation";
+import { fameOf } from "@/lib/star/fame";
 import { useAvatarStyle } from "./PlayerAvatar";
 import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
@@ -158,7 +157,7 @@ export default function HomeHub(p: Props) {
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
       <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <div className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
+      <div data-home-league className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>
@@ -284,21 +283,28 @@ function HomeScene({ sky }: { sky: HomeSky }) {
 // ── 2. You, on the pitch, the goal at your feet, the cans under you ────────
 
 /** The goal: a generated, transparent, front-on goal cropped tight to its
- *  frame (928x496), so the picture's bottom edge IS the goal line. */
-const GOAL_SRC = "/home/goal.webp";
-const GOAL_ASPECT = 928 / 496;
-/** The goal's height for the player's box height. Harry (2 Oct 2026, with
- *  picture "A on a small phone": "move the goal back and have it exactly like
- *  image 2") — the goal stands well behind him, about half his height. */
-const GOAL_TO_PLAYER = 0.42;
+ *  frame, so the picture's bottom edge IS the goal line. v0.25 (Harry and
+ *  Mikey, 2 Oct 2026, P28: "needs to be a full-size goal"): the old picture
+ *  (/home/goal.webp, 928x496) had a small goal's shape, under 2 to 1. This
+ *  one (1483x496) is the same goal with its back net widened to a real
+ *  goal's 3 to 1 (7.32 m by 2.44 m), made by repeating a strip of the net. */
+const GOAL_SRC = "/home/goal-full.webp";
+const GOAL_ASPECT = 1483 / 496;
+/** The goal's height for the player's box height, at most. Harry (2 Oct
+ *  2026, with picture "A on a small phone": "move the goal back and have it
+ *  exactly like image 2") — the goal stands well behind him, about half his
+ *  height. As a full-size goal it is as wide as the screen allows. */
+const GOAL_TO_PLAYER = 0.5;
 /** How far up the screen the goal line sits behind his boots, as a share of
  *  his box height (image 2: the goal line is at his thighs). */
 const GOAL_BACK = 0.36;
 /** How far above the bottom of the player's box his boots meet the grass. */
 const FEET_LIFT = 0.035;
 /** The stadium picture's hoardings, as a share of the goal's height above
- *  the goal line. */
-const HOARDING_IN_GOAL = 0.08;
+ *  the goal line. Above the foot of the back net (12% up the picture), so
+ *  the floor inside the goal is the picture's grass, not the hoardings
+ *  (v0.25, P28: "it needs the grass texture in a box"). */
+const HOARDING_IN_GOAL = 0.17;
 /** Room kept between each post and the screen edge (the row has 12px of
  *  page padding either side, so this can be negative). */
 const GOAL_EDGE = 2;
@@ -383,8 +389,10 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Pro
           <SpinPlayer career={career} width={figW} height={figH} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
         </div>
         <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-1 self-center">
-          <StandBox label="Reputation" name={reputationLabel(career.reputation)} value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
-          <StandBox label="Fame" name={fameLevel(fame).name} value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
+          {/* No title words ("Trusted", "Rising Star", "Unknown"): the bar and
+              the number only (v0.25, P27: "the names are just meaningless"). */}
+          <StandBox label="Reputation" value={Math.round(career.reputation)} bar={career.reputation} colors={["#0ea5e9", "#7dd3fc"]} />
+          <StandBox label="Fame" value={fame} bar={Math.min(100, fame)} colors={["#d946ef", "#f0abfc"]} />
           <div className="grid grid-cols-2 gap-1.5">
             <SeasonStat label="Goals" value={ps.goals} />
             <SeasonStat label="Assists" value={ps.assists} />
@@ -403,15 +411,14 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Pro
 }
 
 /** Reputation or Fame: a flat block with a square bar — no rounded card. */
-function StandBox({ label, name, value, bar, colors }: { label: string; name: string; value: number; bar: number; colors: [string, string] }) {
+function StandBox({ label, value, bar, colors }: { label: string; value: number; bar: number; colors: [string, string] }) {
   return (
-    <div className="bg-black/55 px-2 py-[3px]" style={{ borderLeft: `3px solid ${colors[0]}` }}>
-      <div className="text-[8.5px] font-black uppercase leading-none tracking-[0.18em] text-white/75">{label}</div>
-      <div className="mt-0.5 flex items-baseline justify-between gap-1">
-        <span className="min-w-0 truncate text-[12.5px] font-black leading-tight text-white">{name}</span>
-        <span className="text-[12.5px] font-black tabular-nums leading-tight text-white">{value}</span>
+    <div className="bg-black/55 px-2 py-[4px]" style={{ borderLeft: `3px solid ${colors[0]}` }}>
+      <div className="flex items-baseline justify-between gap-1">
+        <span className="min-w-0 truncate text-[9px] font-black uppercase leading-none tracking-[0.16em] text-white/80">{label}</span>
+        <span className="text-[14px] font-black tabular-nums leading-none text-white">{value}</span>
       </div>
-      <SquareBar value={bar} colors={colors} className="mt-0.5 h-[7px]" ticks={false} />
+      <SquareBar value={bar} colors={colors} className="mt-1 h-[7px]" ticks={false} />
     </div>
   );
 }

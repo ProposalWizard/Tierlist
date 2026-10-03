@@ -61,6 +61,7 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
   return (
     <ScreenShell
       bare
+      tone="pitch"
       glow={glow}
       title="League"
       hud={hud}

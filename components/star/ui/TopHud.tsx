@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { KIB_CANS } from "@/lib/star/shopData";
 import { starStatus } from "@/lib/star/starPoints";
@@ -7,9 +7,7 @@ import { hasSeen } from "@/lib/star/unlocks";
 import StarRatingSheet from "../StarRatingSheet";
 import { usePassLayout } from "@/lib/star/starPassStore";
 import { claimableLevels } from "@/lib/star/starPassClaim";
-import { useCountUp } from "./motion";
 import { levelColors } from "./StatBar";
-import { reputationLabel } from "@/lib/star/reputation";
 import { TopMeter, HudIcon, FillStar } from "./TopMeter";
 
 /**
@@ -34,6 +32,17 @@ import { TopMeter, HudIcon, FillStar } from "./TopMeter";
  *    (ui/TopMeter.tsx): the Blender bolt / Earth / smiley from
  *    public/icons3d/, and for the star rating a star that fills with your way
  *    through the level.
+ *
+ * v0.25 (Harry and Mikey, 2 Oct 2026, review of v0.24, P2-P10):
+ *  - no white outline anywhere, and no number on a bar ("doesn't need the
+ *    hundred in there");
+ *  - the whole always-there top area (this and ui/GameBar.tsx) is one light
+ *    grey that blends in, no outline, after New Star Soccer's home screen:
+ *    calm, flat 2D bars, nothing "code designed" (the --sk-top-* tokens and
+ *    `.sk-top` rules in ui/flat.css 4);
+ *  - the 3D icons stay on the bars;
+ *  - the star bar fills within the level, and a level-up fills it to the
+ *    end, empties it and fills it again (P2: "it will never really be full").
  */
 export type HudScreen = "home" | "stats" | "training" | "shop" | "style" | "relations" | "league" | "other" | "casino" | "settings";
 
@@ -65,14 +74,14 @@ export default function TopHud({ career, screen, onCareer, className = "" }: {
   const [starPass, setStarPass] = useState(false);
   return (
     // Room on top for the icons that rise above the bars.
-    <div data-hud={screen} className={`shrink-0 px-2 pb-1.5 pt-3 ${className}`}>
+    <div data-hud={screen} className={`sk-top relative z-10 shrink-0 px-2 pb-2 pt-2.5 ${className}`} style={{ background: "var(--sk-top-bg)", boxShadow: "0 4px 10px -4px rgba(0,0,0,.4)" }}>
       {starPass && <StarRatingSheet career={career} onCareer={onCareer} onClose={() => setStarPass(false)} />}
-      {/* One block, a WHITE frame (P1-9: "white around"), rating | energy. */}
-      <div data-hud-block className="relative grid grid-cols-2" style={{ background: "linear-gradient(180deg, rgba(12,16,24,.9), rgba(12,16,24,.78))", boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92), 0 2px 6px rgba(0,0,0,.45)" }}>
+      {/* One block, rating | energy, on the light grey: no frame (P4, P7). */}
+      <div data-hud-block className="relative grid grid-cols-2">
         {HUD_SPEC[screen] === "happiness" ? <HappinessCell career={career} /> : HUD_SPEC[screen] === "reputation" ? <ReputationCell career={career} /> : <RatingCell career={career} onOpen={() => setStarPass(true)} claimable={!!onCareer} />}
         <EnergyCell career={career} />
         {/* The divider between the two cells. */}
-        <span aria-hidden className="pointer-events-none absolute bottom-[5px] left-1/2 top-[5px] w-px bg-white/35" />
+        <span aria-hidden className="pointer-events-none absolute bottom-[7px] left-1/2 top-[7px] w-px" style={{ background: "rgba(31,42,53,.14)" }} />
       </div>
     </div>
   );
@@ -86,19 +95,20 @@ function RatingCell({ career, onOpen, claimable }: { career: CareerState; onOpen
   // A red dot while a Star Pass reward is waiting to be claimed.
   const { layout } = usePassLayout();
   const waiting = claimable && claimableLevels(career, layout.levels, star.stars).length > 0;
-  const shown = useCountUp(star.stars);
   // The Star Pass stays locked until the tutorial is done (Harry, P15).
   const open = hasSeen(career, "tutorial");
   // The bar and the star show the same thing: your way through this level.
   const pct = Math.max(0, Math.min(100, star.toNext * 100));
+  const { shownPct, shownLevel, duration } = useLevelFill(star.stars, pct);
   return (
     <button onClick={open ? onOpen : undefined} data-tour="rating" aria-label={open ? `Star Pass, star rating ${star.stars}` : `Star rating ${star.stars}`} className={`kib-press relative block min-w-0 text-left ${CELL_H}`}>
       <TopMeter
         className="h-full"
-        icon={<FillStar fraction={pct / 100}>{Math.round(shown)}</FillStar>}
-        value={Math.max(3, pct)}
+        icon={<FillStar fraction={shownPct / 100} duration={duration}>{shownLevel}</FillStar>}
+        value={Math.max(3, shownPct)}
+        duration={duration}
         colors={GOLD}
-        after={star.gate ? <span className="shrink-0 text-[10px] font-black leading-none text-white">🔒</span> : undefined}
+        after={star.gate ? <span className="shrink-0 text-[10px] font-black leading-none">🔒</span> : undefined}
       />
       {/* A round, glossy "!" badge (Harry, 2 Oct 2026: the flat red square
           looked out of place next to the 3D icons). Same place, same meaning. */}
@@ -118,35 +128,52 @@ function RatingCell({ career, onOpen, claimable }: { career: CareerState; onOpen
   );
 }
 
+/** How long each part of a level-up takes on the star bar, in ms. */
+const LEVEL_FILL_MS = 1100;
+const LEVEL_HOLD_MS = 350;
+
+/**
+ * The star bar's way through the level, with a level-up shown as one (P2:
+ * "it will never really be full"): when the level goes up, the bar fills to
+ * the end with the old level on the star, empties in one jump as the new
+ * level appears, then fills again to where you now are. A level going down
+ * (a slump) just moves.
+ */
+export function useLevelFill(level: number, pct: number): { shownPct: number; shownLevel: number; duration: number | undefined } {
+  const [shown, setShown] = useState({ pct, level, duration: undefined as number | undefined });
+  const prev = useRef(level);
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = level;
+    if (level <= from) { setShown({ pct, level, duration: undefined }); return; }
+    setShown({ pct: 100, level: from, duration: LEVEL_FILL_MS });
+    const t1 = window.setTimeout(() => setShown({ pct: 0, level, duration: 0 }), LEVEL_FILL_MS + LEVEL_HOLD_MS);
+    const t2 = window.setTimeout(() => setShown({ pct, level, duration: LEVEL_FILL_MS }), LEVEL_FILL_MS + LEVEL_HOLD_MS + 90);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [level, pct]);
+  return { shownPct: shown.pct, shownLevel: shown.level, duration: shown.duration };
+}
+
 /** Relations: how happy you are, in place of the star rating (P13). */
 function HappinessCell({ career }: { career: CareerState }) {
   const h = Math.max(0, Math.min(100, Math.round(career.happiness)));
-  const shown = useCountUp(h);
   return (
-    <TopMeter tour="happiness" label={`Happiness ${h}`} className={CELL_H} icon={<HudIcon name="happiness" />} value={Math.max(3, h)} colors={levelColors(h)}>
-      {Math.round(shown)}
-    </TopMeter>
+    <TopMeter tour="happiness" label={`Happiness ${h}`} className={CELL_H} icon={<HudIcon name="happiness" />} value={Math.max(3, h)} colors={levelColors(h)} />
   );
 }
 
 /** Style: your reputation, in place of the star rating (P13). The world bar (P1-38). */
 function ReputationCell({ career }: { career: CareerState }) {
   const r = Math.max(0, Math.min(100, Math.round(career.reputation)));
-  const shown = useCountUp(r);
   return (
-    <TopMeter tour="reputation" label={`${reputationLabel(r)} ${r}`} className={CELL_H} icon={<HudIcon name="world" />} value={Math.max(3, r)} colors={["#0ea5e9", "#a5f3fc"]}>
-      {Math.round(shown)}
-    </TopMeter>
+    <TopMeter tour="reputation" label={`Reputation ${r}`} className={CELL_H} icon={<HudIcon name="world" />} value={Math.max(3, r)} colors={["#0ea5e9", "#38bdf8"]} />
   );
 }
 
-/** Energy, on every screen: the bar runs to the end of its cell (P1-14). */
+/** Energy, on every screen: the bar runs to the end of its cell (P1-14), no number (P5). */
 function EnergyCell({ career }: { career: CareerState }) {
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
-  const shown = useCountUp(e, 900);
   return (
-    <TopMeter tour="energy" label={`Energy ${e}`} className={CELL_H} icon={<HudIcon name="energy" />} value={e} colors={levelColors(e)}>
-      {Math.round(shown)}
-    </TopMeter>
+    <TopMeter tour="energy" label={`Energy ${e}`} className={CELL_H} icon={<HudIcon name="energy" />} value={e} colors={levelColors(e)} />
   );
 }

@@ -182,6 +182,7 @@ import { AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal }
 import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
+import { setActiveFoot } from "@/lib/star/kickFoot";
 
 /**
  * THE CLUBS THAT CAME IN, from the trial's own seed and final score.
@@ -313,6 +314,10 @@ function NewUiStarDevPage() {
 
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
+  // v0.25 item 4: the foot you kick with, for the trial and training (they
+  // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
+  const careerFoot = career?.player.preferredFoot;
+  useEffect(() => { setActiveFoot(careerFoot); }, [careerFoot]);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
   const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");
@@ -4192,6 +4197,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             setPhase("dashboard");
           }}
           labels={["Stats", "Home", "Shop"]}
+          // The Shop is a shop, not a light-green page (v0.25, P44).
+          tones={[undefined, undefined, "calm"]}
           // Small arrows at the bottom edge instead of a tab row (Harry, 1 Oct
           // 2026); Stats' left arrow is the League, Home's pitch runs under them.
           arrows={{
