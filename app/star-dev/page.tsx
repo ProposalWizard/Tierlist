@@ -3528,6 +3528,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           position: (POSITION_NAMES as Record<string, string>)[career.player.position] ?? career.player.position,
         }}
         onDone={handleSigningDone}
+        // The 3D signing (Settings → beta), for a move as well as the first contract.
+        career={career}
       />
     );
   }

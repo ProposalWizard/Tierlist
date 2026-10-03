@@ -103,6 +103,9 @@ export interface SigningSceneHandle {
   debugInfo(): Record<string, unknown>;
   /** Hold the current beat at `t` seconds into it. */
   debugHold(t: number): void;
+  /** Run `n` frames of `dt` seconds each, exactly as the live loop does
+   *  (same delta cap), and draw the last one. For slow-frame checks. */
+  debugStep(dt: number, n?: number): void;
   dispose(): void;
 }
 
@@ -148,6 +151,9 @@ interface Person {
   restHeadInv?: THREE.Quaternion;
   /** Each bone's own rest position and turn (the file's), for hanging things on bones. */
   rest: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>;
+  /** Every bone as the clips last left it, before this frame's leans, IK and
+   *  grips. Put back at the start of each frame (see `clips`). */
+  base: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>;
 }
 
 export async function createSigningScene(container: HTMLElement, opts: SigningSceneOptions): Promise<SigningSceneHandle> {
@@ -249,7 +255,9 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     // joints shrink together; the clips never touch a bone's scale).
     bones.hand_l.scale.setScalar(HAND_SCALE);
     bones.hand_r.scale.setScalar(HAND_SCALE);
-    return { root, body, weld, L, mixer, actions, bones, handAxR, handAxL, extras: [], skinMat, hairMat, hairMat2, facing, rest };
+    const base = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
+    for (const b of Object.values(bones)) base.set(b, [b.position.clone(), b.quaternion.clone()]);
+    return { root, body, weld, L, mixer, actions, bones, handAxR, handAxL, extras: [], skinMat, hairMat, hairMat2, facing, rest, base };
   };
 
   const you = makePerson(-1, YOU_Z);
@@ -546,9 +554,19 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       const a = p.actions[name];
       if (!a) continue;
       a.setEffectiveWeight(w);
-      a.time = Math.min(time, a.getClip().duration - 1e-3);
+      a.time = Math.max(0, Math.min(time, a.getClip().duration - 1e-3));
     }
+    // three.js's mixer only writes a bone when its clip value CHANGED since
+    // the last frame. spine_01 (and the clavicles, root, pelvis, some fingers)
+    // never move in these clips, so the mixer stopped writing them after the
+    // first frame — and the lean, head turn and shoulder roll below, which
+    // turn bones from where they are, piled up frame on frame until both men
+    // folded over the desk. So put every bone back to the clips' own pose
+    // first: whether or not the mixer writes a bone, it then starts the frame
+    // from the clips, and everything after it is the same every frame.
+    p.base.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
     p.mixer.update(0);
+    p.base.forEach(([pos, q], b) => { pos.copy(b.position); q.copy(b.quaternion); });
     p.root.updateMatrixWorld(true);
   };
   const lean = (p: Person, rad: number) => {
@@ -927,12 +945,18 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   let visible = true;
   const io = new IntersectionObserver((es) => { visible = es.some((x) => x.isIntersecting); });
   io.observe(container);
+  /** One frame's worth of time: never backwards (the first frame's time can
+   *  be stamped before the scene finished building), never more than a tenth
+   *  of a second (a slow phone or a tab coming back from the background plays
+   *  on from where it was instead of jumping). */
+  const MAX_DT = 0.1;
+  const stepClock = (dtRaw: number) => { clock += Math.min(MAX_DT, Math.max(0, Number.isFinite(dtRaw) ? dtRaw : 0)); };
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = (now - last) / 1000;
     last = now;
     if (frozen) return; // a held still (debugSeek) is drawn once, by itself
-    clock += dt;
+    stepClock(dt);
     if (!visible || document.hidden) return;
     frame(clock);
     renderer.render(scene, camera);
@@ -941,6 +965,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   frame(0);
   raf = requestAnimationFrame(loop);
 
+  const bendOf = (p: Person) => {
+    const d = wpos(p.bones.neck_01).sub(wpos(p.bones.pelvis)).normalize();
+    return +(Math.acos(Math.max(-1, Math.min(1, d.y))) * 180 / Math.PI).toFixed(1);
+  };
   const handle: SigningSceneHandle = {
     setShot(shot) {
       if (mode === "sign") return;
@@ -977,6 +1005,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         handL: r(wpos(you.bones.hand_l)), mode, t: clock - modeStart,
         head: r(wpos(you.bones.Head)),
         bossHead: r(wpos(boss.bones.Head)), bossHand: r(wpos(boss.bones.hand_r)), youHandR: r(wpos(you.bones.hand_r)),
+        // How far each man's back leans off upright, degrees (pelvis → neck).
+        youBend: bendOf(you), bossBend: bendOf(boss),
         L: you.L,
         extras: you.extras.map((e) => [e.name || e.type, e.parent?.name, r(wpos(e))]),
       };
@@ -985,6 +1015,11 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       frozen = true;
       clock = modeStart + t;
       frame(clock);
+      renderer.render(scene, camera);
+    },
+    debugStep(dt, n = 1) {
+      frozen = true;
+      for (let i = 0; i < n; i++) { stepClock(dt); frame(clock); }
       renderer.render(scene, camera);
     },
     debugCamera(pos, look, fov = 40) {

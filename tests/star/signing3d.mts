@@ -18,6 +18,10 @@ check(a.map((l) => l.shot).join(",") === "talk,reply,talk,reply,talk", `talk/rep
 check(a[2].text.includes("Three seasons") && a[2].text.includes("number 17 shirt"), `the offer line names 3 seasons and #17 (${a[2].text})`);
 check(signingLines({ seasons: 1 })[2].text.includes("One season."), `one season, no shirt number when there is none (${signingLines({ seasons: 1 })[2].text})`);
 check(signingLines()[2].text.includes("Two seasons"), "no terms falls back to two seasons");
+// A move to a new club: no trial behind it, same five beats.
+const mv = signingLines({ seasons: 2, kind: "transfer" });
+check(mv.length === 5 && !/trial/i.test(mv[0].text), `a transfer never mentions the trial (${mv[0].text})`);
+check(/trial/i.test(signingLines({ seasons: 2 })[0].text), "the first contract still talks about the trial");
 
 // The contract: only rows with a value, in the printed order.
 const rows = contractRows({ seasons: 2, wage: 1250, number: 39, position: "ST", season: null });
