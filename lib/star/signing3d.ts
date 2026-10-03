@@ -17,13 +17,16 @@ export interface SigningLine { who: "boss" | "you"; shot: "talk" | "reply"; text
 const WORD_NUM = ["no", "one", "two", "three", "four", "five", "six"];
 
 /** The approved script, with the real seasons and shirt number dropped in. */
-export function signingLines(t: { seasons?: number | null; number?: number | null } = {}): SigningLine[] {
+export function signingLines(t: { seasons?: number | null; number?: number | null; kind?: "trial" | "transfer" } = {}): SigningLine[] {
   const seasons = t.seasons ?? 2;
   const len = seasons >= 1 && seasons < WORD_NUM.length ? WORD_NUM[seasons] : String(seasons);
   const lenWords = `${len[0].toUpperCase()}${len.slice(1)} season${seasons === 1 ? "" : "s"}`;
   const shirt = t.number != null ? `, the number ${t.number} shirt` : "";
   return [
-    { who: "boss", shot: "talk", text: "Sit down, son. I watched every kick of that trial." },
+    // A transfer has no trial behind it: he has been watching you play.
+    t.kind === "transfer"
+      ? { who: "boss", shot: "talk", text: "Sit down, son. I've wanted you here for a while." }
+      : { who: "boss", shot: "talk", text: "Sit down, son. I watched every kick of that trial." },
     { who: "you", shot: "reply", text: "Thanks, boss. I want to play." },
     { who: "boss", shot: "talk", text: `You'll get your chance. ${lenWords}${shirt}.` },
     { who: "you", shot: "reply", text: "Where do I sign?" },
