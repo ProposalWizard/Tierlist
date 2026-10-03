@@ -921,7 +921,7 @@ export const ADMIN_GUIDES = {
       "A New chance can never go into the gallery: every Save and Commit elsewhere refuses one with \"This chance is from the new library — it can't go into the gallery.\"",
     ],
     inGame: [
-      "Real career matches serve these pictures when Settings → Chances is New (the default).",
+      "Real career matches serve these pictures only when Settings → Chances is New. Classic is the default.",
       "Every test screen — the Play Area, Infinite Match, Infinite Highlights and the gallery's Play — plays the Classic chances whatever Settings says. This page is the only test screen that plays the New ones.",
       "The pictures show the other side in a formation and block that change picture by picture (named under the open picture). In a match it is the real opponent's.",
     ],
