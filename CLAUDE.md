@@ -389,6 +389,13 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**Every new look gets a toggle; the old one stays playable (Harry, 3 Oct 2026).**
+Looks and feel only (match view, players, ball, your figure in open play,
+signing scene, 3D shop model, UI): a "New | Old" row in the shared device
+Settings "Look" group, default New, the old option exactly the old code.
+Bug fixes and economy changes just change (no toggle). Flag old options that
+have settled in the patch notes for deletion; never delete one unasked.
+
 **Stills for looks, videos only for gameplay and animation (Harry, 3 Oct 2026).
 This refines the rule below.** *"the statics are fine, only gameplay and
 animations need videos and u can start with a still and then push and do
