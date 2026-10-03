@@ -1065,6 +1065,35 @@ export const ASSETS_3D: Asset3dFolder[] = [
     ]
   },
   {
+    "id": "people3d",
+    "title": "3D people: player and manager (live in the browser)",
+    "kind": "model",
+    "made": "scripts/people3d/build_people3d.py (from the approved Higgsfield characters)",
+    "note": "The new 3D signing's and the 3D shop's people: the player (short / buzz / long hair, plain white kit recoloured live) and the manager, plus every clip. ~1.3 MB each.",
+    "files": [
+      {
+        "path": "/star/people3d/anims.glb",
+        "bytes": 1089284
+      },
+      {
+        "path": "/star/people3d/manager.glb",
+        "bytes": 1376168
+      },
+      {
+        "path": "/star/people3d/player-buzz.glb",
+        "bytes": 1268372
+      },
+      {
+        "path": "/star/people3d/player-long.glb",
+        "bytes": 1247564
+      },
+      {
+        "path": "/star/people3d/player.glb",
+        "bytes": 1271092
+      }
+    ]
+  },
+  {
     "id": "models",
     "title": "3D models (live in the browser)",
     "kind": "model",

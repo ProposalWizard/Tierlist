@@ -1,5 +1,9 @@
 import { signingLines, contractRows, wornAccessories, AVIATORS_CARD, SIGNING3D_ACCESSORY_SLOTS } from "../../lib/star/signing3d";
 import { ACCESSORIES } from "../../lib/star/store/catalogue";
+import { signing3dOn, shop3dPlayerLook } from "../../lib/star/signing3d";
+import { playerModelFor, PEOPLE3D_FILES } from "../../lib/star/people3d";
+import { statSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * THE LIVE 3D SIGNING — the plain parts: the words carry the career's real
@@ -41,6 +45,20 @@ check((rainbow?.stripes?.length ?? 0) === 6, "the rainbow armband keeps its six 
 const slots = new Set(ACCESSORIES.map((x) => x.slot).filter((s) => s !== "celebration"));
 for (const s of slots) check((SIGNING3D_ACCESSORY_SLOTS as readonly string[]).includes(s), `slot "${s}" has a 3D piece`);
 check(AVIATORS_CARD === "pass-gold-aviators", "the aviators are the Star Pass Gold Aviators card");
+
+// The new characters (people3d.ts): the saved hair style picks the body,
+// "none" (shaved) is the buzz cut, anything unknown the short hair.
+check(playerModelFor("short") === "player" && playerModelFor("long") === "player-long", "short → player, long → player-long");
+check(playerModelFor("buzz") === "player-buzz" && playerModelFor("none") === "player-buzz", "buzz and shaved → the buzz body");
+check(playerModelFor(undefined) === "player", "no saved style → the short-hair body");
+// Every body and the clips are small enough for a phone (≤ 2 MB each).
+for (const f of Object.values(PEOPLE3D_FILES)) {
+  const bytes = statSync(join(process.cwd(), "public", f)).size;
+  check(bytes <= 2_000_000, `${f} is ${(bytes / 1e6).toFixed(2)} MB (≤ 2 MB)`);
+}
+// The switches: 3D signing and the new shop player are the defaults.
+check(signing3dOn() === true, "Signing scene defaults to 3D");
+check(shop3dPlayerLook() === "new", "3D shop player defaults to New");
 
 if (problems.length) {
   console.log("FAIL");

@@ -7,6 +7,7 @@ import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
+import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -124,12 +125,14 @@ export function GameSwitches({ glow, fullscreen }: {
   );
 }
 
-/** Player look (Classic/3D), the match view (New/Classic) and the UI (Old/New). Put inside a SetCard. */
+/** Player look (Classic/3D), the match view (New/Classic), the signing scene (3D/Drawn), the 3D shop's player (New/Old) and the UI (Old/New). Put inside a SetCard. */
 export function LookSwitches() {
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
   const viewNow = useStoredMatchView();
+  const signing3d = useSigning3d();
+  const shopPlayer = useShop3dPlayerLook();
   return (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -139,6 +142,19 @@ export function LookSwitches() {
       <SetNote dim className="mt-1 text-[10px]">
         New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
       </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Signing scene</span>
+        <SegTabs className="w-[150px] shrink-0" value={signing3d ? "3d" : "drawn"} onChange={(v) => setSigning3d(v === "3d")} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        3D: a live scene with your own player in it. Drawn: the picture signing, as before.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D shop player</span>
+        <SegTabs className="w-[150px] shrink-0" value={shopPlayer} onChange={setShop3dPlayerLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Player look</span>

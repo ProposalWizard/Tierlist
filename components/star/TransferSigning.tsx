@@ -10,7 +10,7 @@ import type { CareerState } from "@/lib/star/types";
 import { useSigning3d } from "@/lib/star/signing3d";
 import { loadLineup } from "@/lib/star/lineupStore";
 
-// The live 3D signing (Settings → "3D signing scene (beta)"), for a move too —
+// The live 3D signing (Settings → Look → "Signing scene: 3D | Drawn", 3D by default), for a move too —
 // not only the first contract. Loaded only when it is switched on.
 const SigningScene3DCareer = dynamic(() => import("./SigningScene3DCareer"), { ssr: false });
 

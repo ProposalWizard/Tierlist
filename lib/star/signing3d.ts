@@ -1,6 +1,6 @@
 /**
  * The 3D signing scene's words and settings (/star-3d-area-dev/signing, and
- * the career's signing when Settings → "3D signing scene (beta)" is on).
+ * the career's signing when Settings → Look → "Signing scene" is 3D, the default).
  *
  * The scene itself is live three.js: lib/star/signing3dScene.ts (the office,
  * camera and timeline) and lib/star/signing3dRig.ts (the people). This file
@@ -83,7 +83,10 @@ export const AVIATORS_CARD = "pass-gold-aviators";
 /** Which store accessories have a 3D model in the signing scene, and which don't. */
 export const SIGNING3D_ACCESSORY_SLOTS = ["head", "neck", "arms", "wrists", "hands", "boots", "armband"] as const;
 
-// ── The Settings switch: "3D signing scene (beta)", per device, off by default ──
+// ── The Settings switch: "Signing scene: 3D | Drawn", per device ──
+// 3D by default since 3 Oct 2026 (it plays and is fixed); "Drawn" is the
+// picture signing exactly as it was. The stored values stay "on"/"off" (3D /
+// Drawn), so a phone that already chose keeps its choice.
 
 export const SIGNING_3D_KEY = "star-signing-3d";
 let stored: boolean | undefined;
@@ -91,9 +94,9 @@ const listeners = new Set<() => void>();
 
 function read(): boolean {
   try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(SIGNING_3D_KEY) === "on";
+    return typeof localStorage === "undefined" || localStorage.getItem(SIGNING_3D_KEY) !== "off";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -119,7 +122,47 @@ function subscribe(f: () => void): () => void {
   return () => { listeners.delete(f); };
 }
 
-/** The switch, re-rendering when Settings flips it. Off on the server. */
+/** The switch, re-rendering when Settings flips it. (The server can't know: Drawn there.) */
 export function useSigning3d(): boolean {
   return useSyncExternalStore(subscribe, signing3dOn, () => false);
+}
+
+// ── The Settings switch: "3D shop player: New | Old", per device, New by default ──
+// Old is the first CC0 footballer the walk-around shop had, exactly as it was.
+
+export type Shop3dPlayerLook = "new" | "old";
+export const SHOP3D_PLAYER_KEY = "star-shop3d-player";
+let storedShop: Shop3dPlayerLook | undefined;
+const shopListeners = new Set<() => void>();
+
+function readShop(): Shop3dPlayerLook {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem(SHOP3D_PLAYER_KEY) === "old" ? "old" : "new";
+  } catch {
+    return "new";
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === SHOP3D_PLAYER_KEY) { storedShop = undefined; shopListeners.forEach((f) => f()); }
+  });
+}
+
+export function shop3dPlayerLook(): Shop3dPlayerLook {
+  if (storedShop === undefined) storedShop = readShop();
+  return storedShop;
+}
+
+export function setShop3dPlayerLook(v: Shop3dPlayerLook): void {
+  try { localStorage.setItem(SHOP3D_PLAYER_KEY, v); } catch { /* in-memory still changes */ }
+  storedShop = v;
+  shopListeners.forEach((f) => f());
+}
+
+export function useShop3dPlayerLook(): Shop3dPlayerLook {
+  return useSyncExternalStore(
+    (f) => { shopListeners.add(f); return () => { shopListeners.delete(f); }; },
+    shop3dPlayerLook, () => "new" as const,
+  );
 }
