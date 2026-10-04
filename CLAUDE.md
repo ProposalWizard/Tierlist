@@ -140,6 +140,8 @@ Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset
 
 ## What Needs Improvement / Future Work
 
+> **Star career revamp order: `STAR_ROADMAP.md`** (Mikey, 4 Oct 2026). Base game first, then ambitious projects. Keep it current.
+
 - [ ] **Mobile drag-and-drop UX** — Regular tierlists could use a tap-to-place system like vote tierlists have
 - [ ] **Google Ads integration** — Planned for monetization
 - [ ] **Combined XI builder** — Future game mode

@@ -38,6 +38,14 @@ export interface ScenePicture {
    * to have the box in it at all times." Lines only — nothing is a rule here.
    */
   box?: boolean;
+  /**
+   * true: keep the feature's own close camera (the scenario's viewport)
+   * instead of the new view's zoomed-out one. Look only — the ball, kick and
+   * flight are unchanged. Mikey, 4 Oct 2026: the woodwork challenge needs to
+   * see the posts and the bar it is aiming at. Off by default; the real match
+   * never passes a scene.
+   */
+  ownFrame?: boolean;
 }
 
 /**

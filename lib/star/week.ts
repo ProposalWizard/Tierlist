@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { happinessEnergyFactor } from "./relationships";
 import { getTuning } from "./tuningStore";
 
 /**
@@ -67,7 +68,8 @@ export function rest(career: CareerState): CareerState {
   return {
     ...spendAction(career),
     happiness: Math.min(100, career.happiness + REST_HAPPINESS),
-    energy: Math.min(100, career.energy + REST_ENERGY),
+    // Happier players recover better (relationships.ts).
+    energy: Math.min(100, Math.round(career.energy + REST_ENERGY * happinessEnergyFactor(career.happiness))),
   };
 }
 

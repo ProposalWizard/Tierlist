@@ -1,0 +1,262 @@
+<title>Relationships Revamp Plan</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .tw{overflow-x:auto;margin:10px 0 4px}
+  table{border-collapse:collapse;font-size:13.5px;min-width:100%}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink3);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td b{color:var(--green)}
+  .bad{color:var(--red);font-weight:800}
+  .dec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:10px 0}
+  .dec .q{font-weight:800;color:var(--ink)}
+  .dec .o{color:var(--ink2);font-size:14px;margin-top:4px}
+  .dec .o b{color:var(--green)}
+  .verdict{background:var(--card2);border-left:4px solid var(--green);border-radius:8px;padding:12px 14px;margin:0 0 26px;color:var(--ink);font-size:15px}
+  .phase{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;margin:10px 0}
+  .phase b{color:var(--green);font-size:13px;white-space:nowrap}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">PLAN</span>
+  <h1>Relationships revamp</h1>
+  <p class="sub">For Mikey to review · 4 October 2026 · read from the code and measured in simulated careers; nothing is built yet</p>
+</header>
+
+<div class="verdict"><b>In one line:</b> today the bars fill to 100 within about 20 matches for an average player, so the relationship games barely matter. The plan gives each bar one clear job, makes the bars move slowly and sensibly, and gives each relationship its own game.</div>
+
+<div class="strip">
+  <div class="s"><b>~20</b><span>Matches until an average player has boss, team and fans all at 100</span></div>
+  <div class="s"><b>+1 / −4</b><span>A relationship game win / loss once a bar is over 60</span></div>
+  <div class="s"><b>1 game</b><span>The same memory game for all five relationships</span></div>
+  <div class="s"><b>2 of 5</b><span>Bars with a big job in the game (boss, team)</span></div>
+</div>
+
+<h2 class="bug"><i></i>Decisions for you</h2>
+<div class="dec"><div class="q">1. The Sponsors bar</div><div class="o">Since the Sponsors revamp, each brand has its own happiness, and that is what decides renewals. The Sponsors bar on Relations changes nothing any more. <b>My pick: remove it</b>, and turn the Sponsor Event game into a game that raises one brand's happiness, on the Sponsors screen. Or: keep it as the average of your brands' happiness.</div></div>
+<div class="dec"><div class="q">2. Happiness ("You")</div><div class="o">Today it only matters for 2 sponsor brands (they want 45 or more). <b>My pick: give it a real job</b>: low happiness gives you less energy back when you rest; high happiness gives a little more. Or: remove it.</div></div>
+<div class="dec"><div class="q">3. Should bars slowly drift back towards the middle?</div><div class="o">Without it, a bar you never look after stays high forever. <b>My pick: yes, slowly</b> (above 60 it eases down a little each match, below 40 it eases up), so you have a reason to keep a relationship going.</div></div>
+<div class="dec"><div class="q">4. The four new games</div><div class="o">See "The new games" below. Say yes, no, or change each one.</div></div>
+
+<h2 class="chg"><i></i>How relationships work now</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The five bars and what each really does</div>
+    <div class="tw"><table>
+      <tr><th>Bar</th><th>What it really does in the game</th><th>What the "?" says</th></tr>
+      <tr><td><b>Boss</b></td><td>40% of whether you're picked. Under 40 you're benched, under 30 you're left out. Captaincy needs 70+.</td><td>You get picked more often. ✓</td></tr>
+      <tr><td><b>Team</b></td><td>How often the ball comes to you in a match (×0.93 at 50, ×1.28 at 100) and how well team-mates finish your passes. Captaincy needs 78+.</td><td>You'll get more chances. ✓</td></tr>
+      <tr><td><b>Fans</b></td><td>A small boost to how much you're involved in home matches. 4 sponsor brands need 40–55. The tone of the social feed.</td><td class="bad">"Send fan mail" — fan mail isn't in the game.</td></tr>
+      <tr><td><b>Sponsors</b></td><td class="bad">Nothing since the Sponsors revamp. Each brand's own happiness does this job now.</td><td class="bad">"Happy sponsors keep paying you" — not true of this bar.</td></tr>
+      <tr><td><b>You (happiness)</b></td><td>2 sponsor brands need 45+. Nothing else.</td><td>How you are feeling.</td></tr>
+    </table></div>
+  </li>
+  <li>
+    <div class="hd">How each match moves the bars</div>
+    <div class="dt">Every match you play, by your match rating:</div>
+    <div class="tw"><table>
+      <tr><th>Match rating</th><th>Boss</th><th>Team</th><th>Fans</th></tr>
+      <tr><td>8 or more</td><td class="num">+6</td><td class="num">+3</td><td class="num">+8</td></tr>
+      <tr><td>7 – 7.9</td><td class="num">+3</td><td class="num">+2</td><td class="num">+4</td></tr>
+      <tr><td>6 – 6.9</td><td class="num">+1</td><td class="num">+1</td><td class="num">+1</td></tr>
+      <tr><td>5 – 5.9</td><td class="num">−2</td><td class="num">−1</td><td class="num">−2</td></tr>
+      <tr><td>Under 5</td><td class="num">−5</td><td class="num">−3</td><td class="num">−4</td></tr>
+      <tr><td>Each goal</td><td class="num"></td><td class="num"></td><td class="num">+3</td></tr>
+      <tr><td>Each assist</td><td class="num"></td><td class="num">+3</td><td class="num">+1</td></tr>
+      <tr><td>Star man</td><td class="num">+4</td><td class="num">+2</td><td class="num">+5</td></tr>
+    </table></div>
+    <div class="dt">Derbies count for more. Other things that move them:</div>
+    <ul style="margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px">
+      <li>Boss: −3 when you're taken off for poor form; +5 per goal or assist off the bench (at most +10); up to ±18 at the end of the season for how the club did; +3 for a week you don't play.</li>
+      <li>Team: +3 when you're made captain, then +1 every match as captain.</li>
+      <li>A new club: team starts at 52, boss at 62, fans are capped. A new manager: boss starts between 35 and 68, by your star rating.</li>
+      <li>Nothing lowers a bar over time.</li>
+    </ul>
+  </li>
+  <li>
+    <div class="hd">The relationship games</div>
+    <div class="dt">Boss Meeting, Team Bonding, Meet the Fans, Sponsor Event and Take a Break are all the <b>same memory game</b>: 16 cards (8 pairs of emoji), 3 lives. Only the emoji change. Each game uses one of your 3 actions for the week.</div>
+    <div class="tw"><table>
+      <tr><th>Result</th><th>Boss</th><th>The other four</th></tr>
+      <tr><td>Win</td><td class="num">+3</td><td class="num">+2 below 60 · +1 from 60 to 85 · above 85, +1 half the time</td></tr>
+      <tr><td>Lose</td><td class="num">−2</td><td class="num">−4</td></tr>
+    </table></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>What's wrong with it</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The bars fill to 100 almost straight away</div>
+    <div class="dt">Median of 200 simulated careers each, using the game's own per-match table; level of each bar after that many matches, starting at 50. Played-out careers through the real season code gave the same picture: an average player had all three at 100 by match 11–24. <span class="tag">measured</span></div>
+    <div class="tw"><table>
+      <tr><th>Player (average rating)</th><th>After 10</th><th>After 20</th><th>After 46 (a season)</th></tr>
+      <tr><td>Struggling (5.9)</td><td class="num">B48 T57 F54</td><td class="num">B46 T63 F59</td><td class="num">B43 T81 F76</td></tr>
+      <tr><td>Average (6.7)</td><td class="num">B75 T74 F97</td><td class="num bad">B100 T100 F100</td><td class="num bad">B100 T100 F100</td></tr>
+      <tr><td>Good (7.4)</td><td class="num bad">B100 T90 F100</td><td class="num bad">B100 T100 F100</td><td class="num bad">B100 T100 F100</td></tr>
+    </table></div>
+    <div class="dt">Why: a 7.0 rating already pays +3/+2/+4 a match, goals and star man add more, and nothing ever brings a bar back down. Even a struggling player gets team and fans near 100 in two seasons.</div>
+  </li>
+  <li>
+    <div class="hd">The games are not worth playing</div>
+    <div class="dt">Once a bar is over 60, a win pays +1 and a loss costs −4: you have to win 4 games in 5 just to stay level. A single 7.0 match pays more than three won games. And because the bars are full after ~20 matches, there is nothing left to raise.</div>
+  </li>
+  <li>
+    <div class="hd">Every relationship is the same game</div>
+    <div class="dt">Matching emoji pairs has nothing to do with your manager, your team-mates or the fans.</div>
+  </li>
+  <li>
+    <div class="hd">Two bars do little or nothing, and two "?" lines aren't true</div>
+    <div class="dt">The Sponsors bar does nothing (decision 1). Happiness only matters to two brands (decision 2). The Fans "?" promises fan mail; the Sponsors "?" says the bar keeps them paying.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>The plan</h2>
+<ul class="n">
+  <li>
+    <div class="hd">A. One clear job per bar, and a true "?" line</div>
+    <div class="tw"><table>
+      <tr><th>Bar</th><th>Its job</th></tr>
+      <tr><td><b>Boss</b></td><td>Whether you play. Benched when it's low, captain-ready when it's high. (As now.)</td></tr>
+      <tr><td><b>Team</b></td><td>How often team-mates pass to you, and how well your passes get finished. (As now.)</td></tr>
+      <tr><td><b>Fans</b></td><td>Your home-match boost, sponsor brands that want popular players, and the tone of the social feed. (As now, with the "?" fixed.)</td></tr>
+      <tr><td><b>You</b></td><td>Decision 2: how much energy Rest gives back.</td></tr>
+      <tr><td>Sponsors</td><td>Decision 1: removed from Relations; each brand's happiness does the job.</td></tr>
+    </table></div>
+    <div class="dt">On each bar, small marks show where something changes (benched below here, captain above here), with no numbers, as you asked for the fame levels.</div>
+  </li>
+  <li>
+    <div class="hd">B. Bars that move slowly and make sense</div>
+    <div class="dt">Three rules:</div>
+    <ul style="margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px">
+      <li><b>Centred on a fair rating.</b> A match rated about 6.3 moves nothing; better ratings raise the bars, worse ones lower them, in proportion.</li>
+      <li><b>Harder near the top.</b> The closer a bar is to 100, the less a good match adds; the closer to 0, the less a bad one takes.</li>
+      <li><b>Slow drift</b> (decision 3): above 60 a bar eases down a little each match; below 40 it eases up.</li>
+    </ul>
+    <div class="dt" style="margin-top:8px">The same 200 simulated careers per player, with the new rule: <span class="tag">measured</span></div>
+    <div class="tw"><table>
+      <tr><th>Player</th><th>After 10</th><th>After 20</th><th>After 46</th><th>After 92</th></tr>
+      <tr><td>Struggling (5.9)</td><td class="num">B45 T50 F48</td><td class="num">B41 T50 F45</td><td class="num">B39 T50 F43</td><td class="num">B39 T50 F42</td></tr>
+      <tr><td>Average (6.7)</td><td class="num">B60 T59 F61</td><td class="num">B66 T64 F68</td><td class="num"><b>B76 T73 F78</b></td><td class="num">B84 T80 F85</td></tr>
+      <tr><td>Good (7.4)</td><td class="num">B70 T65 F71</td><td class="num">B81 T75 F83</td><td class="num"><b>B94 T88 F95</b></td><td class="num">B98 T94 F98</td></tr>
+      <tr><td>Great (8.3)</td><td class="num">B81 T73 F81</td><td class="num">B93 T85 F93</td><td class="num">B100 T96 F100</td><td class="num">B100 T99 F100</td></tr>
+    </table></div>
+    <div class="dt">A struggling player settles around 40 (on the edge of the bench), so the games are his way back. An average player builds up over a season. Only a great player reaches 100, and he has to keep playing well to stay there.</div>
+  </li>
+  <li>
+    <div class="hd">C. The new games: one per relationship</div>
+    <div class="tw"><table>
+      <tr><th>Relationship</th><th>Game</th><th>How it plays</th></tr>
+      <tr><td><b>Boss</b></td><td>Talk to your manager</td><td>Not a reflex game: a short chat. He raises something from your real situation (you were benched, you scored twice, a new position). You pick one of three replies. His style (trusts his players, or rotates) decides which reply lands.</td></tr>
+      <tr><td><b>Team</b></td><td>Training-ground challenge</td><td>A crossbar challenge or a rondo with team-mates, played with the real ball and kick (built on the one match engine, with a "you and team-mates" scene).</td></tr>
+      <tr><td><b>Fans</b></td><td>Signing session</td><td>Fans queue at the barrier holding a shirt, a ball or a photo. Tap the right one and sign before each fan gives up. More fans come the more famous you are.</td></tr>
+      <tr><td><b>A sponsor</b></td><td>Shoot an advert</td><td>On the Sponsors screen, for one brand. A timing game: hit your marks when the director calls. Raises that brand's happiness, which decides your renewal.</td></tr>
+      <tr><td><b>You</b></td><td>Day off</td><td>Pick how to spend it: the garden, golf, a trip. Better options cost money or use things you own. No way to fail.</td></tr>
+    </table></div>
+    <div class="dt" style="margin-top:6px"><b>What a game pays:</b> more when the bar is low and less when it's high (Harry's rule: "the higher up you go, the harder it is"). For example +6 below 40, +4 from 40 to 70, +2 above 70, +1 sometimes above 85. A loss costs −1 (the boss chat −2). Each game once a week, using one of your 3 actions. I'll measure these numbers on the new bars before building.</div>
+  </li>
+  <li>
+    <div class="hd">D. Fix now, whatever you decide</div>
+    <div class="dt">The Fans "?" line (no fan mail) and the Sponsors "?" line.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Order of work</h2>
+<div class="phase">
+  <b>Part 1</b><span>Bars that move sensibly (B), one job each with true "?" lines (A, D), and your decisions on Sponsors and happiness. Small, and every career feels it at once.</span>
+  <b>Part 2</b><span>The new games, one at a time: the boss chat first (it matters most, since boss decides whether you play), then team, fans, the advert, the day off.</span>
+  <b>Later</b><span>Tie-ins with the manager and transfers revamps: a manager who talks to you, and team and fans that affect whether clubs want you.</span>
+</div>
+
+<h2 class="nxt"><i></i>What this is based on</h2>
+<ul class="n">
+  <li><div class="dt">Everything in "How relationships work now" is read from the code. The "fills to 100" table is a simulation using the game's own per-match table, confirmed by six careers played out through the real season code. The "new bars" table is a simulation of the proposed rule, not built yet. None of the new games exist yet, so nothing here has been seen on a screen.</div></li>
+</ul>
+</div>

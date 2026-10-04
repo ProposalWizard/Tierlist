@@ -67,8 +67,16 @@
     "version": "0.9",
     "date": "2026-10-03",
     "fromCommit": "5bf61571",
-    "toCommit": "HEAD",
+    "toCommit": "41d20ef3",
     "url": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
     "headline": "XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data"
+  },
+  {
+    "version": "0.10",
+    "date": "2026-10-04",
+    "fromCommit": "41d20ef3",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
+    "headline": "Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off"
   }
 ]

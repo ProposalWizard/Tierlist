@@ -1,4 +1,5 @@
 import { withStars, isOldStarScale, starLevel } from "./starPoints";
+import { INJURIES_ON, isRolledInjury } from "./injurySwitch";
 import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
@@ -399,6 +400,9 @@ function backfill(c: CareerState): CareerState {
   // would otherwise silently corrupt into NaN from here on).
   if (out.energy === undefined) out.energy = 100;
   if (out.injury === undefined) out.injury = null;
+  // Injuries are switched off (careerFlow.ts INJURIES_ON): a save carrying
+  // one is healed on load. A suspension is kept.
+  if (!INJURIES_ON && isRolledInjury(out.injury)) out.injury = null;
   // A career saved before attribute decay existed has no record of when
   // anything was last trained — treated as "just now" (this week), not
   // "never", so it gets the same fresh grace period a brand-new career

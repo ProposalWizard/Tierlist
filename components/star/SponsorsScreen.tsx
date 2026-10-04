@@ -28,6 +28,10 @@ export interface SponsorActions {
   onAskEasier: (offerId: string) => void;
   onCounter: (offerId: string) => void;
   onWalkAway: (dealId: string) => void;
+  /** Shoot an advert for this brand (once a week; raises its happiness). */
+  onAdvert?: (dealId: string) => void;
+  /** Already shot this week. */
+  advertDone?: boolean;
 }
 
 const FACE = { happy: "😊", neutral: "😐", angry: "😠" } as const;
@@ -78,7 +82,7 @@ function TargetRow({ t, color }: { t: BrandTarget; color: string }) {
   );
 }
 
-function DealCard({ d, money, onWalkAway }: { d: BrandDeal; money: number; onWalkAway: (id: string) => void }) {
+function DealCard({ d, money, onWalkAway, onAdvert, advertDone }: { d: BrandDeal; money: number; onWalkAway: (id: string) => void; onAdvert?: (id: string) => void; advertDone?: boolean }) {
   const [confirm, setConfirm] = useState(false);
   const mood = moodOf(d.happiness);
   return (
@@ -103,6 +107,11 @@ function DealCard({ d, money, onWalkAway }: { d: BrandDeal; money: number; onWal
           <StatBar value={d.happiness} colors={mood === "happy" ? ["#34d399", "#a7f3d0"] : mood === "neutral" ? ["#fbbf24", "#fde68a"] : ["#f87171", "#fecaca"]} className="mt-1 h-2" sheen={false} />
         </div>
       </div>
+      {onAdvert && (
+        <button onClick={() => onAdvert(d.id)} disabled={advertDone} data-advert={d.id} className="kib-press relative mt-2 w-full rounded-xl bg-black/35 py-2 text-[12px] font-black uppercase tracking-wide text-white ring-1 ring-white/30 disabled:opacity-45">
+          {advertDone ? "🎬 Advert shot this week" : "🎬 Shoot an advert · 1 day"}
+        </button>
+      )}
       {d.clause && <div className="relative mt-2 text-[10.5px] font-bold text-white">📎 {d.clause === "exclusive" ? CLAUSE.exclusive(d.category) : CLAUSE.behaviour()}</div>}
       {d.category === "Boots" && <div className="relative mt-1 text-[10.5px] font-black text-emerald-300">👟 {Math.round(BOOT_DEAL_DISCOUNT * 100)}% off every pair of boots in the shop</div>}
       {!confirm ? (
@@ -243,7 +252,7 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
 
         {tab === "deals" && (
           <div className="mt-2 space-y-2">
-            {b.deals.map(d => <DealCard key={d.id} d={d} money={career.money} onWalkAway={act.onWalkAway} />)}
+            {b.deals.map(d => <DealCard key={d.id} d={d} money={career.money} onWalkAway={act.onWalkAway} onAdvert={act.onAdvert} advertDone={act.advertDone} />)}
             {b.deals.length === 0 && (
               <ClubCard glow={theme.glow} strength={0.15} className="p-4 text-center">
                 <div className="text-[28px]">🤝</div>

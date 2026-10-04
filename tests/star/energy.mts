@@ -1,6 +1,6 @@
 import {
   makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason,
-  ENERGY_MATCH_COST, INJURY_RISK_BASE, INJURY_FATIGUE_FLOOR, INJURY_RISK_FATIGUE_EXTRA,
+  ENERGY_MATCH_COST, INJURY_RISK_BASE, INJURY_FATIGUE_FLOOR, INJURY_RISK_FATIGUE_EXTRA, INJURIES_ON,
 } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
@@ -113,8 +113,18 @@ function firstFixture(c: CareerState): Fixture {
   check(rolled.injury === null, "nobody carries a knock into a new season untreated");
 }
 
+// ── Injuries switched off until the revamp (Mikey, 4 Oct 2026) ──
+if (!INJURIES_ON) {
+  let hurt = 0;
+  for (let i = 0; i < 300; i++) {
+    const c = { ...base(), season: i + 1 };
+    if (creditMatchResult(c, firstFixture(c), stats({ minutes: 90, endEnergy: i % 2 ? 0 : 90 })).career.injury) hurt++;
+  }
+  check(hurt === 0, `injuries are switched off: no match injures you (${hurt} of 300)`);
+}
+
 // ── Injury risk: rare when fresh, real but not certain when running on empty ─
-{
+if (INJURIES_ON) {
   const rng = (seed: number) => {
     let a = seed | 0;
     return () => {
@@ -155,7 +165,7 @@ function firstFixture(c: CareerState): Fixture {
 }
 
 // ── An injury forces you out, and the duration is weighted toward a knock ──
-{
+if (INJURIES_ON) {
   let minor = 0, medium = 0, major = 0, n = 0;
   for (let i = 0; i < 4000 && n < 300; i++) {
     const c = { ...base(), season: i + 1 };

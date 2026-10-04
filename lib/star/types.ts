@@ -903,6 +903,10 @@ export interface CareerState {
    */
   injury: { weeksRemaining: number; note: string } | null;
   happiness: number;
+  /** Fractions of a relationship point not yet shown (relationships.ts). */
+  relCarry?: Partial<Record<"boss" | "team" | "fans", number>>;
+  /** Which relationship games have been played this week (each once a week). */
+  relGamesPlayed?: { season: number; week: number; kinds: string[] };
   money: number;
   starRating: number;
   fame: number;
@@ -1465,6 +1469,7 @@ export type StarPhase =
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"
+  | "advert-shoot"
   | "season-transfer"
   | "retirement"
   | "legacy"
