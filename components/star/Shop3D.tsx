@@ -112,6 +112,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           ...(onDoor ? { onDoor: () => doorRef.current?.() } : {}),
         }, kit, displays, {
           atDoor,
+          number: career?.squadNumber ?? 10,
           quality: q.get("q") === "low" ? "low" : "high",
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
         });

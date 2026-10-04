@@ -124,6 +124,8 @@ export interface ShopOptions {
   fixedStep?: number;
   /** Start just inside the front doors, facing in (arriving from the garden). */
   atDoor?: boolean;
+  /** The shirt number on his back (your squad number; 10 on the test page). */
+  number?: number;
 }
 
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
@@ -556,7 +558,7 @@ export async function startShop(
     uShirt: { value: new THREE.Color(kit0.shirt) },
     uTrim: { value: new THREE.Color(kit0.trim) },
     uBoot: { value: new THREE.Color("#141416") },
-    uNum: { value: canvasTex(numberCanvas(10, "#ffffff")) },
+    uNum: { value: canvasTex(numberCanvas(opts.number ?? 10, "#ffffff")) },
     uPelvis: { value: new THREE.Vector3() },
     uUp: { value: new THREE.Vector3(0, 1, 0) },
     uRight: { value: new THREE.Vector3(1, 0, 0) },

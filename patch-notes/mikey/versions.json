@@ -5,7 +5,7 @@
     "fromCommit": "88c1966",
     "toCommit": "a406c46",
     "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
-    "headline": "Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers"
+    "headline": "Economy, fame and reputation rebuild: Premier League wages to \u00e2\u02dc\u2026100k, fame levels, one reputation number, 50-season careers"
   },
   {
     "version": "0.2",
@@ -59,8 +59,16 @@
     "version": "0.8",
     "date": "2026-09-30",
     "fromCommit": "bffca8f7",
-    "toCommit": "HEAD",
+    "toCommit": "5bf61571",
     "url": "https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz",
     "headline": "Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals"
+  },
+  {
+    "version": "0.9",
+    "date": "2026-10-03",
+    "fromCommit": "5bf61571",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
+    "headline": "XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data"
   }
 ]

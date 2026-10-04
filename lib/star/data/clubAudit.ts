@@ -104,9 +104,7 @@ export function auditClub(
     c[key] = given(typeof v === "number" || typeof v === "string" ? v : undefined) ?? fallback ?? missing();
   };
 
-  c.shortName = group.english
-    ? given(CLUB_SHORT_NAMES[club]) ?? missing("The game cuts the name down itself")
-    : na();
+  c.shortName = given(CLUB_SHORT_NAMES[club]) ?? missing("The game cuts the name down itself");
   field("nickname");
   field("founded");
   field("country");

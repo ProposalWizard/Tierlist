@@ -52,6 +52,7 @@ import { currentTie } from "@/lib/star/euro";
 import { fixtureDateLabel, divisionOf, isRegionalDivision, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
+import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
@@ -781,6 +782,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     //
     // The shared team sheets are not club-specific and still fire now.
     fetchSharedLineups();
+    // The XP Book (/admin/star-xp): the XP amounts every career uses.
+    refreshXpConfig();
     void clubs;
     // Whoever the database currently has out of contract — signable by any
     // club, yours included, the moment a transfer window opens. See

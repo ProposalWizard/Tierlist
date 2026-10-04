@@ -1,0 +1,541 @@
+{
+ "_about": "Claude's own ratings (2 Oct 2026) for clubs the club sheets left empty, on the sheets' own 1-10 scale (the Championship sits at 5). Opinions, not facts: check and change freely. Fill-only: anything in a club sheet wins.",
+ "clubs": {
+  "AFC Wimbledon": {
+   "training": 3,
+   "youth": 4,
+   "currentRep": 3,
+   "historicalRep": 4,
+   "transferSpending": 2,
+   "transferStrategy": "Academy first"
+  },
+  "Barnsley": {
+   "training": 4,
+   "youth": 4,
+   "currentRep": 3,
+   "historicalRep": 4,
+   "transferSpending": 3,
+   "transferStrategy": "Develop and sell"
+  },
+  "Blackpool": {
+   "training": 4,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 5,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Bradford City": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 4,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Bromley": {
+   "training": 3,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 1,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Burton Albion": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 3,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Cambridge United": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Doncaster Rovers": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Leyton Orient": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Mansfield Town": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 2,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Milton Keynes Dons": {
+   "training": 4,
+   "youth": 4,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Develop and sell"
+  },
+  "Notts County": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 4,
+   "transferSpending": 4,
+   "transferStrategy": "Spends big for the division"
+  },
+  "Oxford United": {
+   "training": 4,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Peterborough United": {
+   "training": 4,
+   "youth": 4,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 4,
+   "transferStrategy": "Develop and sell"
+  },
+  "Plymouth Argyle": {
+   "training": 4,
+   "youth": 4,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 4,
+   "transferStrategy": "Develop and sell"
+  },
+  "Sheffield Wednesday": {
+   "training": 4,
+   "youth": 4,
+   "currentRep": 4,
+   "historicalRep": 6,
+   "transferSpending": 4,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Stevenage": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Stockport County": {
+   "training": 4,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 4,
+   "transferStrategy": "Spends big for the division"
+  },
+  "Wycombe Wanderers": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 2,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Accrington Stanley": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Barnet": {
+   "training": 2,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Bristol Rovers": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Cheltenham Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Chesterfield": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Colchester United": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Academy first"
+  },
+  "Crawley Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Crewe Alexandra": {
+   "training": 3,
+   "youth": 5,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 2,
+   "transferStrategy": "Academy first"
+  },
+  "Exeter City": {
+   "training": 3,
+   "youth": 4,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Academy first"
+  },
+  "Fleetwood Town": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Gillingham": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Grimsby Town": {
+   "training": 3,
+   "youth": 2,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Newport County": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Northampton Town": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Oldham Athletic": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 4,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Port Vale": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Rochdale": {
+   "training": 2,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Rotherham United": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 3,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Salford City": {
+   "training": 3,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 1,
+   "transferSpending": 4,
+   "transferStrategy": "Spends big for the division"
+  },
+  "Shrewsbury Town": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Swindon Town": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Tranmere Rovers": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Walsall": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "York City": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "AFC Fylde": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Aldershot Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Altrincham": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Barrow": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Boreham Wood": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Boston United": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Carlisle United": {
+   "training": 3,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Eastleigh": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "FC Halifax Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Forest Green Rovers": {
+   "training": 3,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 1,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Gateshead": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Harrogate Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Hartlepool United": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Hornchurch": {
+   "training": 1,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Kidderminster Harriers": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Scunthorpe United": {
+   "training": 2,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 2,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Solihull Moors": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Southend United": {
+   "training": 2,
+   "youth": 3,
+   "currentRep": 2,
+   "historicalRep": 3,
+   "transferSpending": 3,
+   "transferStrategy": "Balanced / selective spending"
+  },
+  "Sutton United": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Tamworth": {
+   "training": 2,
+   "youth": 1,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Wealdstone": {
+   "training": 1,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Woking": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 2,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Worthing": {
+   "training": 1,
+   "youth": 1,
+   "currentRep": 1,
+   "historicalRep": 1,
+   "transferSpending": 1,
+   "transferStrategy": "Loans and free transfers"
+  },
+  "Yeovil Town": {
+   "training": 2,
+   "youth": 2,
+   "currentRep": 1,
+   "historicalRep": 3,
+   "transferSpending": 2,
+   "transferStrategy": "Loans and free transfers"
+  }
+ }
+}
