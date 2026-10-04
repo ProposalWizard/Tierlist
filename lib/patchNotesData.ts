@@ -27,6 +27,122 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.27",
+      "title": "Mikey's patch notes — Relationships",
+      "publishedAt": "2026-10-04T12:00:00Z",
+      "updatedAt": "2026-10-04T12:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
+      "summary": "Relationships rebuilt: bars move slowly (an ordinary 6.0-6.6 game moves nothing, harder near 100, drift to the middle), one game per relationship (Talk to your manager, Woodwork challenge, Signing session, Day off, Shoot an advert), happiness decides how much energy rest gives back, and the Sponsors bar is gone. Injuries switched off until their revamp.",
+      "stats": [
+        {
+          "value": "~20 → never",
+          "label": "matches until an average player's bars are all 100"
+        },
+        {
+          "value": "1 → 5",
+          "label": "relationship games"
+        },
+        {
+          "value": "0.7× – 1.3×",
+          "label": "energy back from rest, by happiness"
+        },
+        {
+          "value": "Off",
+          "label": "injuries, until their revamp"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Every relationship game on a test player",
+              "detail": "Admin menu → Star Career → Relationship games (/star-relgames-dev)."
+            },
+            {
+              "title": "Relations: no Sponsors bar, marks on Boss and Team",
+              "detail": "Relations, after your first game."
+            },
+            {
+              "title": "The four Relations games",
+              "detail": "Relations → ▶ on each row, once a week each."
+            },
+            {
+              "title": "Shoot an advert",
+              "detail": "Sponsors → Deals → 🎬 on a deal."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The headline: relationships rebuilt",
+          "items": [
+            {
+              "title": "Bars no longer fill to 100 straight away",
+              "detail": "Problem: an average player hit 100 on all three in ~20 matches. Fix: 6.0-6.6 moves nothing, gains shrink near 100, bars drift to the middle. After a season: average B68 T67 F82, good B87 T80 F97 (was all 100)."
+            },
+            {
+              "title": "One game per relationship",
+              "detail": "Talk to your manager (boss), Woodwork challenge on the real engine (team), Signing session (fans), Day off (you), Shoot an advert (one sponsor). Win +6 below 40, +4 to 70, +2 to 85; a loss -1 (manager chat -2)."
+            },
+            {
+              "title": "Happiness decides recovery",
+              "detail": "Rest days and Rest give 0.7× energy at 0 happiness, 1× at 50, 1.3× at 100."
+            },
+            {
+              "title": "Relations page",
+              "detail": "Sponsors bar removed (each brand has its own happiness); marks on Boss and Team; true ? lines (no fan mail)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Relationship games test page",
+              "detail": "/star-relgames-dev: every game on a made-up player."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Injuries switched off",
+              "detail": "No match injures you; old-save injuries heal on load. Kept behind one switch for the revamp."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Taps went nowhere in the new games",
+              "detail": "The bar's number was stretched over the whole screen; it stays on its bar now."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "No post/bar hit seen yet in the woodwork challenge",
+              "detail": "Tested, not yet landed in a browser."
+            },
+            {
+              "title": "Training's Power drill has the zoomed-out camera",
+              "detail": "Left for Harry and Leo."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.26",
       "title": "Mikey's patch notes — XP rebuilt and the XP Book",
       "publishedAt": "2026-10-03T22:30:00Z",

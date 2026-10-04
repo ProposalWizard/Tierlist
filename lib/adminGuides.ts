@@ -144,6 +144,21 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/star-relgames-dev": {
+    title: "Relationship games",
+    what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
+    buttons: [
+      { items: [
+        ["▶ Talk to your manager / Woodwork challenge / Signing session / Day off / Shoot an advert", "Opens that game. Back or Continue returns here."],
+        ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
+        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Change what the manager talks about and which replies land."],
+        ["Last game", "What the last game returned: won or lost, and the change."],
+      ] },
+    ],
+    saving: ["Nothing is saved. It is a test player that resets when you leave."],
+    inGame: ["Relations (boss, team, fans, you) and the Sponsors screen (the advert, on each deal)."],
+    dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts and lib/star/bossChat.ts.",
+  },
   "/admin/star-xp": {
     title: "XP Book",
     what: "Every amount of XP the career gives, on one page. Change a number, tick it off as checked, or leave a note on what should change. New achievements, records, awards and milestones go in New ideas.",

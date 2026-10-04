@@ -23,6 +23,7 @@ import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft } from "@/lib/star/week";
+import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { fameOf } from "@/lib/star/fame";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { brandsOf } from "@/lib/star/sponsorDeals";
@@ -37,7 +38,7 @@ type Open = "reputation" | "sponsors";
 const toneColors = (v: number): [string, string] => (v >= 70 ? ["#10b981", "#6ee7b7"] : v >= 40 ? ["#eab308", "#fde047"] : ["#ef4444", "#fda4af"]);
 
 const GAME_LABEL: Record<RelationshipKind, string> = {
-  boss: "Boss meeting", team: "Team bonding", fans: "Meet the fans", sponsors: "Sponsor event", happiness: "Take a break",
+  boss: "Talk to your manager", team: "Woodwork challenge", fans: "Signing session", sponsors: "Shoot an advert", happiness: "Day off",
 };
 /** Each card's own light. */
 const CARD_TONE: Record<RelationshipKind, string> = {
@@ -51,9 +52,9 @@ const GAME_ICON: Record<RelationshipKind, string> = { boss: "🗣️", team: "�
 const HELP: Record<RelationshipKind | "reputation" | "fame", string> = {
   boss: "A good relationship with your boss means you get picked more often.",
   team: "A good relationship with the team means you'll get more chances during a match.",
-  fans: "Happy fans send fan mail and open up some sponsor deals.",
-  sponsors: "Happy sponsors keep paying you every week. Good matches keep them happy.",
-  happiness: "How you are feeling. Resting and taking a break lift it.",
+  fans: "Happy fans lift you in home matches, open up some sponsor deals and set the tone online.",
+  sponsors: "Each brand has its own happiness, on the Sponsors screen. It decides whether they renew.",
+  happiness: "Happier players get more energy back when they rest. A day off lifts it.",
   reputation: "How the people who run football see you.",
   fame: "Goals, trophies and what you own make you famous.",
 };
@@ -80,9 +81,11 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
   const offers = brands.offers.length;
   const gf = career.girlfriend;
   /** The minigame: one square play button, no words. */
-  const game = (k: RelationshipKind) => (
-    <ActBtn tone={CARD_TONE[k]} disabled={!canPlay} label={`${GAME_LABEL[k]} · 1 day`} onClick={() => onPlayRelationshipGame(k)}>▶</ActBtn>
-  );
+  // Each game once a week (relationships.ts): a played one shows a tick.
+  const game = (k: RelationshipKind) => {
+    const done = gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, k);
+    return <ActBtn tone={CARD_TONE[k]} disabled={!canPlay || done} label={done ? `${GAME_LABEL[k]} · done this week` : `${GAME_LABEL[k]} · 1 day`} onClick={() => onPlayRelationshipGame(k)}>{done ? "✓" : "▶"}</ActBtn>;
+  };
 
   return (
     <div className="pb-2">
@@ -93,6 +96,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
           face={<Face src={m ? managerFace(m.name, career.player.portrait ?? DEFAULT_FAKE_FACE) : undefined} tone={CARD_TONE.boss} />}
           value={r.boss}
           seenKey={`${scope}:rel:boss`}
+          marks={[40, 70]}
           action={game("boss")}
         />
         {/* The dressing room */}
@@ -101,6 +105,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
           face={<div className="flex -space-x-2">{(mates.length ? mates.slice(0, 2) : []).map((p) => <Face key={p.id} src={p.imageUrl} fallback={fakeFaceFor(p.id)} small tone={CARD_TONE.team} />)}{mates.length === 0 && <div className="grid h-[40px] w-[40px] place-items-center text-[22px]">👥</div>}</div>}
           value={r.team}
           seenKey={`${scope}:rel:team`}
+          marks={[78]}
           action={game("team")}
         />
         {/* The fans */}
@@ -111,16 +116,9 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
           seenKey={`${scope}:rel:fans`}
           action={game("fans")}
         />
-        {/* Sponsors: blacked out until you have a deal, like NSS's empty slots (P90). */}
-        <Row
-          kind="sponsors"
-          face={<div className="grid h-[40px] w-[40px] place-items-center rounded-full bg-gradient-to-b from-amber-300/45 to-amber-700/35 text-[20px] ring-1 ring-amber-200/40">🤝</div>}
-          value={r.sponsors}
-          seenKey={`${scope}:rel:sponsors`}
-          blackedOut={activeDeals.length === 0}
-          action={<ActBtn tone={CARD_TONE.sponsors} label={offers ? `${offers} offer${offers === 1 ? "" : "s"}` : "Deals"} onClick={() => onOpen("sponsors")} dot={offers > 0}>→</ActBtn>}
-          extraAction={activeDeals.length > 0 ? game("sponsors") : undefined}
-        />
+        {/* Sponsors: no bar any more — each brand has its own happiness on
+            the Sponsors screen (Mikey, 4 Oct 2026). Just the way in. */}
+        <PlainRow icon="🤝" name={activeDeals.length ? `Sponsors · ${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}` : "Sponsors"} tone={CARD_TONE.sponsors} help={HELP.sponsors} onClick={() => onOpen("sponsors")} dot={offers > 0} />
         {/* You, and a partner slot (blacked out when single) */}
         <Row
           kind="happiness"
@@ -185,8 +183,11 @@ const ROW = "relative flex items-center gap-2.5 px-1 py-2";
  * rounded floating card (P87). The bar glides and flashes when a minigame
  * moved it (useSeen), and its stripes march.
  */
-function Row({ kind, face, value, seenKey, action, extraAction, blackedOut = false }: {
+function Row({ kind, face, value, seenKey, action, extraAction, blackedOut = false, marks = [] }: {
   kind: RelationshipKind; face: React.ReactNode; value: number; seenKey: string; action: React.ReactNode; extraAction?: React.ReactNode; blackedOut?: boolean;
+  /** Where something changes on this bar (boss: benched below 40, captain-ready
+   *  at 70; team: captain-ready at 78). Drawn as ticks, never as numbers. */
+  marks?: number[];
 }) {
   const v = Math.round(value);
   // The minigame is played on another screen: when you come back the bar
@@ -200,7 +201,10 @@ function Row({ kind, face, value, seenKey, action, extraAction, blackedOut = fal
         <div className="shrink-0">{face}</div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 text-[11px] font-black uppercase leading-none tracking-[0.16em] text-white">{NAME[kind]}</div>
-          <DeltaBar seen={blackedOut ? { shown: 0, delta: 0, trigger: 0 } : seen} colors={toneColors(seen.shown)} className="h-[20px]" square />
+          <div className="relative">
+            <DeltaBar seen={blackedOut ? { shown: 0, delta: 0, trigger: 0 } : seen} colors={toneColors(seen.shown)} className="h-[20px]" square />
+            {marks.map((m) => <span key={m} aria-hidden data-mark={m} className="pointer-events-none absolute -top-[3px] -bottom-[3px] w-[2px] bg-white" style={{ left: `${m}%`, boxShadow: "0 0 0 1px rgba(0,0,0,.6)" }} />)}
+          </div>
         </div>
       </div>
       {extraAction}
@@ -211,14 +215,14 @@ function Row({ kind, face, value, seenKey, action, extraAction, blackedOut = fal
 }
 
 /** Reputation and Fame: the same row, no minigame. */
-function PlainRow({ icon, name, value, shown, tone, help, onClick }: { icon: string; name: string; value: number; shown?: number; tone: string; help: string; onClick?: () => void }) {
+function PlainRow({ icon, name, value, shown, tone, help, onClick, dot }: { icon: string; name: string; value?: number; shown?: number; tone: string; help: string; onClick?: () => void; dot?: boolean }) {
   const inner = (
     <>
       <span aria-hidden className="absolute inset-y-1 left-0 w-[3px]" style={{ background: tone }} />
       <div className="grid h-[40px] w-[40px] shrink-0 place-items-center text-[24px]">{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="mb-1 text-[11px] font-black uppercase leading-none tracking-[0.16em] text-white">{name}</div>
-        <SquareBar value={value} colors={[tone, rgba(tone, 0.6) as string] as [string, string]} className="h-[20px]" animate>{Math.round(shown ?? value)}</SquareBar>
+        {value !== undefined && <SquareBar value={value} colors={[tone, rgba(tone, 0.6) as string] as [string, string]} className="h-[20px]" animate>{Math.round(shown ?? value)}</SquareBar>}
       </div>
     </>
   );
@@ -227,7 +231,7 @@ function PlainRow({ icon, name, value, shown, tone, help, onClick }: { icon: str
       {onClick
         ? <button onClick={onClick} aria-label={`${name} — open`} className="kib-press relative flex min-w-0 flex-1 items-center gap-2.5 text-left">{inner}</button>
         : inner}
-      {onClick && <span aria-hidden className="shrink-0 pr-1 text-[16px] font-black text-amber-300">→</span>}
+      {onClick && <span aria-hidden className="relative shrink-0 pr-1 text-[16px] font-black text-amber-300">→{dot && <span className="absolute -right-1 -top-1 h-3 w-3 bg-red-500" style={{ borderRadius: 1 }} />}</span>}
       <HelpDot text={help} />
     </FlatPanel>
   );

@@ -51,7 +51,7 @@ const FORM_WINDOW = 3;
  * anybody picks a side. Padding means one poor game moves you a fifth of the
  * way, and it takes a genuine run to cost you your place.
  */
-function recentForm(form: number[]): number {
+export function recentForm(form: number[]): number {
   const recent = form.slice(0, FORM_WINDOW);
   const sum = recent.reduce((s, r) => s + r, 0) + NEUTRAL_FORM * (FORM_WINDOW - recent.length);
   return sum / FORM_WINDOW;

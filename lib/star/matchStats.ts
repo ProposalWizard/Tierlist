@@ -174,7 +174,9 @@ export function finaliseMatch(
   let boss = 0, team = 0, fans = 0;
   if (rating >= 8) { boss += 6; fans += 8; team += 3; }
   else if (rating >= 7) { boss += 3; fans += 4; team += 2; }
-  else if (rating >= 6) { boss += 1; fans += 1; team += 1; }
+  // Mikey, 4 Oct 2026: an ordinary game is about 6.5, so 6.0-6.6 moves nothing.
+  else if (rating >= 6.7) { boss += 1; fans += 1; team += 1; }
+  else if (rating >= 6) { /* an ordinary game */ }
   else if (rating >= 5) { boss -= 2; fans -= 2; team -= 1; }
   else { boss -= 5; fans -= 4; team -= 3; }
   if (goals > 0) fans += goals * 3;

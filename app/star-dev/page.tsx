@@ -183,7 +183,11 @@ import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGr
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import Garden3D from "@/components/star/Garden3D";
-import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
+import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
+import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
+import AdvertShoot from "@/components/star/relgames/AdvertShoot";
+import { gamePlayedThisWeek } from "@/lib/star/relationships";
+import { changeDealHappiness } from "@/lib/star/sponsorDeals";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 import { setActiveFoot } from "@/lib/star/kickFoot";
 
@@ -407,6 +411,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    *  flat-timeout way the achievement toast above already is. */
   const [ratingChange, setRatingChange] = useState<{ from: number; to: number } | null>(null);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
+  const [advertDealId, setAdvertDealId] = useState<string | null>(null);
   /** The one vote in flight, of any of the kinds this engine now proposes —
    *  Phase 2's proof-of-concept (selling a player) plus Phase 3's kit and
    *  presidency votes, all sharing the exact same VoteCeremony/resolve
@@ -2343,6 +2348,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [sponsorNegId, setSponsorNegId] = useState<string | null>(null);
   const noteSponsor = (msg: string) => { setSponsorNote(msg); setTimeout(() => setSponsorNote(null), 4000); };
   const sponsorActions = {
+    onAdvert: (id: string) => {
+      if (!career || !canAct(career)) { noteSponsor("No days left this week."); return; }
+      setAdvertDealId(id); setPhase("advert-shoot");
+    },
+    advertDone: !!career && gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, "advert"),
     onSign: (id: string) => {
       if (!career) return;
       const r = signOffer(career, id);
@@ -2762,10 +2772,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("relationship-game");
   }, []);
 
-  const handleRelationshipGameComplete = useCallback((gain: number) => {
+  // The new games (relgames/, Mikey 4 Oct 2026) hand back what moved, and
+  // each is played once a week (relationships.ts).
+  const markGamePlayed = (c: CareerState, kind: string): CareerState => {
+    const p = c.relGamesPlayed;
+    const same = p && p.season === c.season && p.week === c.week;
+    return { ...c, relGamesPlayed: { season: c.season, week: c.week, kinds: [...(same ? p.kinds : []), kind] } };
+  };
+  const handleRelationshipGameComplete = useCallback((res: GameResult) => {
     if (!career || !relationshipGameKind) return;
-    let updated: CareerState = { ...career };
-    // A loss costs (−4), so clamp at 0 as well as 100 (relationshipGame.ts).
+    const gain = res.gain;
+    let updated: CareerState = markGamePlayed({ ...career, money: Math.max(0, career.money - (res.cost ?? 0)) }, relationshipGameKind);
     if (relationshipGameKind === "happiness") {
       updated.happiness = applyGameGain(career.happiness, gain);
     } else {
@@ -3911,15 +3928,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "fake-face-editor") {
     return <FakeFaceEditorScreen career={career} onBack={() => setPhase("settings")} />;
   }
+  if (phase === "advert-shoot") {
+    const deal = brandsOf(career).deals.find((d) => d.id === advertDealId);
+    if (!deal) { setPhase("sponsors"); return null; }
+    return (
+      <AdvertShoot
+        deal={deal}
+        onFinish={(res) => {
+          setCareer(spendAction(markGamePlayed(changeDealHappiness(career, deal.id, res.gain), "advert")));
+          setAdvertDealId(null);
+          setPhase("sponsors");
+        }}
+        onCancel={() => { setAdvertDealId(null); setPhase("sponsors"); }}
+      />
+    );
+  }
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"
       ? career.happiness
       : (career.relationships[relationshipGameKind] as number);
+    void currentValue;
     return (
-      <RelationshipMinigame
+      <RelationshipGame
         kind={relationshipGameKind}
-        currentValue={currentValue}
-        onComplete={handleRelationshipGameComplete}
+        career={career}
+        onFinish={handleRelationshipGameComplete}
         onCancel={() => {
           setRelationshipGameKind(null);
           // Relations still locked: the boss meeting was opened from Achievements.

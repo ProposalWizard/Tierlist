@@ -660,3 +660,10 @@ export function brandScandal(career: CareerState, what: string): CareerState {
 
 export const moodOf = (happiness: number): "happy" | "neutral" | "angry" =>
   happiness >= HAPPY.renew ? "happy" : happiness >= HAPPY.wheel ? "neutral" : "angry";
+
+/** The advert shoot (components/star/relgames/AdvertShoot.tsx): one brand's
+ *  happiness moves by `change` (Mikey, 4 Oct 2026, relationships revamp). */
+export function changeDealHappiness(career: CareerState, dealId: string, change: number): CareerState {
+  const b = brandsOf(career);
+  return { ...career, brands: { ...b, deals: b.deals.map((d) => (d.id === dealId ? { ...d, happiness: clamp(d.happiness + change, 0, 100) } : d)) } };
+}

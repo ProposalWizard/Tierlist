@@ -47,6 +47,8 @@ import { considerRecommendations, payPresidentWages } from "./clubPowers";
 import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./facilities";
 import { ruleBookFor } from "./ruleBook";
 import { otherGamesRng } from "./liveScores";
+import { INJURIES_ON } from "./injurySwitch";
+import { stepBar, drift, happinessEnergyFactor, REL_KEYS } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { dayFor, transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
@@ -83,6 +85,8 @@ export const ENERGY_MATCH_COST = getTuning("energy.matchCost");
 // empty. INJURY_RISK_BASE is what a fully-rested player faces;
 // INJURY_RISK_FATIGUE_EXTRA is the most fatigue alone can add on top, phased
 // in as end-of-match energy falls through INJURY_FATIGUE_FLOOR.
+export { INJURIES_ON, isRolledInjury } from "./injurySwitch";
+
 export const INJURY_RISK_BASE = 0.015;
 export const INJURY_FATIGUE_FLOOR = getTuning("energy.injuryFloor");
 export const INJURY_RISK_FATIGUE_EXTRA = 0.085;
@@ -651,7 +655,8 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   const days = restDaysBetween(from, to);
   const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
   const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
-  return days * dailyRecovery(ownsProperty, tier);
+  // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
+  return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(career.happiness);
 }
 
 export function creditMatchResult(
@@ -808,7 +813,7 @@ export function creditMatchResult(
   const fatigueAtFullTime = stats.endEnergy ?? career.energy;
   const injuryRisk = injuryRiskFor(fatigueAtFullTime);
   const injuryRng = mulberry32(career.season * 8191 + fixture.week * 97 + fixture.opponent.length * 3);
-  const nextInjury = !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
+  const nextInjury = INJURIES_ON && !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
     ? rollInjury(injuryRng)
     : career.injury;
 
@@ -1149,13 +1154,18 @@ export function creditMatchResult(
     // second time either — a derby win credited twice inflated exactly the
     // numbers the manager/dressing-room/fanbase systems are built to track
     // honestly.
-    relationships: alreadyPlayed ? { ...career.relationships, sponsors: newSponsorRel } : {
-      ...career.relationships,
-      boss: clamp01to100(career.relationships.boss + Math.round(stats.bossChange * derbyScale.boss)),
-      team: clamp01to100(career.relationships.team + Math.round(stats.teamChange * derbyScale.team)),
-      fans: clamp01to100(career.relationships.fans + Math.round(stats.fansChange * derbyScale.fans)),
-      sponsors: newSponsorRel,
-    },
+    // Scaled, kept as fractions and drifting to the middle (relationships.ts).
+    ...(alreadyPlayed ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
+      const raw = { boss: stats.bossChange * derbyScale.boss, team: stats.teamChange * derbyScale.team, fans: stats.fansChange * derbyScale.fans };
+      const rel = { ...career.relationships, sponsors: newSponsorRel };
+      const relCarry = { ...(career.relCarry ?? {}) };
+      for (const k of REL_KEYS) {
+        const s = stepBar(career.relationships[k], relCarry[k] ?? 0, raw[k], career.week);
+        rel[k] = s.value;
+        relCarry[k] = s.carry;
+      }
+      return { relationships: rel, relCarry, happiness: drift(career.happiness, career.week) };
+    })()),
     sponsors,
     // Recomputed below, once this result's achievements (which can
     // themselves move it — a fresh "trophy-cabinet" unlock, say) are final.
@@ -1990,8 +2000,11 @@ export function simulateMissedFixture(
       : null,
     relationships: {
       ...career.relationships,
-      boss: clamp01to100(career.relationships.boss + MISSED_WEEK.boss),
+      boss: drift(clamp01to100(career.relationships.boss + MISSED_WEEK.boss), career.week),
+      team: drift(career.relationships.team, career.week),
+      fans: drift(career.relationships.fans, career.week),
     },
+    happiness: drift(career.happiness, career.week),
     week: career.week + 1,
     horse: career.horse
       ? { ...career.horse, energy: Math.min(100, career.horse.energy + 20) }

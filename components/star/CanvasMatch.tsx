@@ -2407,7 +2407,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   function frameScenario(sc: Scenario, replay = false) {
     facingRef.current = sc.facing ?? "up";
-    if (!newViewRef.current) {
+    // A feature that asks for its own close camera keeps it (scene.ownFrame).
+    if (!newViewRef.current || sceneRef.current?.ownFrame) {
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
       return;
