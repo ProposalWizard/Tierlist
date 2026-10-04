@@ -23,6 +23,7 @@
  */
 import { CLUB_SHEET_2026_09, REGIONAL_SHEET_2026_10 } from "./clubProfileData";
 import RESEARCHED_2026_10 from "./sources/researched_2026-10.json";
+import CLAUDE_RATINGS_2026_10 from "./sources/claude_ratings_2026-10.json";
 
 export interface KitInfo {
   shirt?: string;
@@ -245,6 +246,18 @@ export const CLUB_PROFILES: Record<string, ClubProfile> = (() => {
   for (const r of REGIONAL_SHEET_2026_10) if (r.club) all[r.club] = merge(all[r.club], fromRegionalSheet(r));
   const researched = (RESEARCHED_2026_10 as unknown as { clubs: Record<string, ResearchedClub> }).clubs;
   for (const [club, r] of Object.entries(researched)) all[club] = fillResearched(all[club], club, r);
+  // Ratings out of 10 the sheets left empty: Claude's own, labelled as such.
+  const ratings = (CLAUDE_RATINGS_2026_10 as unknown as { clubs: Record<string, Record<string, number | string>> }).clubs;
+  const RATING_NOTE = "Claude's rating (2 Oct 2026), not a fact — check and change";
+  for (const [club, v] of Object.entries(ratings)) {
+    const p: ClubProfile = all[club] ?? { club, sources: [] };
+    const used: Record<string, string> = {};
+    for (const k of ["training", "youth", "currentRep", "historicalRep", "transferSpending", "transferStrategy"] as const) {
+      if (p[k] === undefined && v[k] !== undefined) { (p as unknown as Record<string, unknown>)[k] = v[k]; used[k] = RATING_NOTE; }
+    }
+    if (Object.keys(used).length) p.researched = { ...(p.researched ?? {}), ...used };
+    all[club] = p;
+  }
   return all;
 })();
 

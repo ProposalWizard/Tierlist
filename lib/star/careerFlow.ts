@@ -1690,6 +1690,12 @@ export function advanceSeason(
     starLedger: {
       ...ledgerOf(career),
       promotions: ledgerOf(career).promotions + (ladder.yourMove === "promoted" ? 1 : 0),
+      // Up without the title (2nd, 3rd or the play-offs): a share of that
+      // league's title XP (Mikey, 3 Oct 2026). Winning it pays the title only.
+      promotedFrom: ladder.yourMove === "promoted"
+        && !career.trophies.some(t => t.season === career.season && t.competition === leagueNameFor(divisionOf(career)))
+        ? [...(ledgerOf(career).promotedFrom ?? []), divisionOf(career)]
+        : ledgerOf(career).promotedFrom,
       ballonRanks: ballonRank > 0 ? [...ledgerOf(career).ballonRanks, ballonRank] : ledgerOf(career).ballonRanks,
     },
     sponsors: sponsorRoll.sponsors,

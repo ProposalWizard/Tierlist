@@ -144,6 +144,36 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/admin/star-xp": {
+    title: "XP Book",
+    what: "Every amount of XP the career gives, on one page. Change a number, tick it off as checked, or leave a note on what should change. New achievements, records, awards and milestones go in New ideas.",
+    buttons: [
+      { group: "Top bar", items: [
+        ["In a match / Multipliers / Trophies / Awards / Achievements / Records / Milestones & status / New ideas", "Shows that part of the book. \"3 to check\" counts the items not yet marked Confirmed or Change it."],
+        ["Save", "Saves every amount, check and note for everyone. Lights up once something has changed."],
+        ["Reset amounts", "Puts every XP amount back to what the code ships with. Your checks, notes and ideas stay. Nothing is saved until you press Save."],
+      ] },
+      { group: "Each row", items: [
+        ["The number box", "The XP it pays (or the multiplier, or a %). Type a new amount."],
+        ["Was … in the code", "Shows when your amount is different from the code's."],
+        ["Not checked / Confirmed ✓ / Change it", "Tap to move it on. Change it opens a note box: write what should change and it gets built from that."],
+        ["Easy / Medium / Hard / Own amount", "Achievements only: which level it pays, or Own amount to type its own XP."],
+      ] },
+      { group: "New ideas", items: [
+        ["+ Add an idea", "A new achievement, record, award or milestone: its name, how you get it, and the XP it should pay."],
+        ["Delete", "Removes an idea."],
+      ] },
+    ],
+    saving: [
+      "Save writes everything to the shared XP Book row (Supabase table star_xp_config). Every career uses the amounts the next time it loads.",
+      "Saving needs an admin sign-in. Without one, or without the table, it says \"Saved on this device only\" and only this browser's game uses the change.",
+      "A level a player already has never goes down when you lower an amount: their best is kept. A raise shows straight away.",
+      "Ideas pay nothing until they're built. Achievements and records themselves (what unlocks them) are in the code; this page sets what they pay.",
+    ],
+    inGame: ["The star bar and every XP number in the career: the after-match XP card, the Star Pass breakdown, and the level you're on."],
+    needs: ["supabase/migrations/star_xp_config.sql must be run in the Supabase SQL Editor for Save to reach everyone. Until then the page says \"shared save not set up\"."],
+    dev: "lib/star/xpConfig.ts (DEFAULT_XP, xp(), setXpConfig), lib/star/xpStore.ts, app/api/star/xp-config/route.ts. lib/star/starPoints.ts reads every amount through xp(). app/star-dev/page.tsx calls refreshXpConfig() on load.",
+  },
   "/admin/star-pass": {
     title: "Star Pass Rewards",
     what: "Every reward in one catalogue, by type, and which reward sits at each Star Pass level (5 to 100).",

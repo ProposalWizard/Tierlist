@@ -1,11 +1,13 @@
 import type { CareerState, Fixture, MatchStats, Skills } from "./types";
-import { divisionOf, type CareerDivision } from "./calendar";
+import { divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { clubReputation } from "./clubReputation";
 import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { RECORDS, recordBeaten } from "./records";
 import { fameOf } from "./fame";
 import { ACHIEVEMENTS } from "./achievements";
 import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
+import { xp, achievementXp, type MultKey } from "./xpConfig";
+export { xp, setXpConfig, DEFAULT_XP, achievementXp } from "./xpConfig";
 
 /**
  * THE STAR RATING — your career, 1 to 100 (Mikey, 30 Sep 2026; moved from
@@ -51,17 +53,25 @@ import { starsOf as trainingStarsOf, totalStars } from "./trainingLevels";
 
 // ── 1. What earns points ────────────────────────────────────────────────────
 
-export type StarTier = CareerDivision | "cup" | "intl" | "europe";
+/**
+ * Where a match was played, for its multiplier. "europe" is the Champions
+ * League; "cup" is an old save's cup matches (before a cup took your league's
+ * multiplier, Mikey 3 Oct 2026) and counts ×1.
+ */
+export type StarTier = CareerDivision | `cup_${CareerDivision}` | "cup" | "intl" | "europe" | "europa" | "conference";
 
-/** A match's points are multiplied by where it was played. */
-export const TIER_MULT: Record<StarTier, number> = {
-  // North and South (1 Oct 2026) count like the National League: ×1 is the
-  // floor of the scale, and a lower multiplier would make the bottom of the
-  // ladder slower still than the curve was tuned on.
-  national_league_north: 1, national_league_south: 1,
-  national_league: 1, league_two: 1.5, league_one: 2, championship: 3, premier: 4,
-  cup: 4, intl: 4, europe: 5,
-};
+/** A match's XP is multiplied by where it was played. The amounts live in
+ *  the XP Book (lib/star/xpConfig.ts, /admin/star-xp). */
+export function tierMult(tier: StarTier): number {
+  const m = xp().mult;
+  if (tier === "europe") return m.champions_league;
+  if (tier === "europa") return m.europa_league;
+  if (tier === "conference") return m.conference_league;
+  if (tier === "intl") return m.intl;
+  if (tier === "cup") return 1;
+  if (tier.startsWith("cup_")) return m[tier.slice(4) as MultKey] ?? 1;
+  return m[tier as MultKey] ?? 1;
+}
 
 /**
  * Every point value in this file is written in the old (Sep 2026) units and
@@ -72,17 +82,19 @@ export const TIER_MULT: Record<StarTier, number> = {
 export const SP_SCALE = 120;
 const S = SP_SCALE;
 
-export const MATCH_SP = {
-  play: 5 * S, start: 3 * S, win: 3 * S, draw: 1 * S, goal: 12 * S, assist: 8 * S, hatTrick: 20 * S, starMan: 20 * S,
-  /** A match rating of this or better… */
-  highRating: 8, /** …is worth this. */ highRatingSp: 8 * S,
-};
+/** The rating bonus counts each point above this. Fixed, because the
+ *  ledger stores the points above it (TierTally.ratingPts). */
+export const RATING_BONUS_FROM = 6;
 
 export interface TierTally {
   apps: number; starts: number; wins: number; draws: number;
   goals: number; assists: number; hatTricks: number; starMan: number; high: number;
+  /** Minutes on the pitch, and match-rating points above RATING_BONUS_FROM.
+   *  Absent on a tally from before 3 Oct 2026: estimated from apps/starts/high. */
+  minutes?: number;
+  ratingPts?: number;
 }
-const EMPTY: TierTally = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatTricks: 0, starMan: 0, high: 0 };
+const EMPTY: TierTally = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatTricks: 0, starMan: 0, high: 0, minutes: 0, ratingPts: 0 };
 
 /** What the star rating needs remembering that the career didn't already keep. */
 export interface StarLedger {
@@ -93,6 +105,9 @@ export interface StarLedger {
    *  matches in a row without a good one. Absent until the first poor match. */
   slump?: { debt: number; streak: number };
   promotions: number;
+  /** The divisions you went up from WITHOUT winning them (2nd, 3rd, play-offs).
+   *  Each pays the XP Book's promotionShare of that league's title. */
+  promotedFrom?: CareerDivision[];
   /** The standing of your first club, and of the biggest you've played for. */
   firstRep?: number;
   maxRep?: number;
@@ -131,9 +146,15 @@ export function clubStature(club: string): number {
 
 export function tierOfFixture(career: CareerState, fixture: Fixture): StarTier {
   const kind = fixture.kind ?? "league";
-  if (kind === "europe") return "europe";
+  if (kind === "europe") {
+    if (fixture.competition === "Europa League") return "europa";
+    if (fixture.competition === "Conference League") return "conference";
+    return "europe";
+  }
   if (kind === "international") return "intl";
-  if (kind === "cup") return "cup";
+  // A cup tie is worth what your league is (Mikey, 3 Oct 2026): a National
+  // League side in the FA Cup is not playing at Premier League rates.
+  if (kind === "cup") return `cup_${divisionOf(career)}`;
   return divisionOf(career); // league and play-off
 }
 
@@ -147,96 +168,64 @@ function tallyFor(career: CareerState, stats: MatchStats): TierTally {
     goals: stats.goals, assists: stats.assists,
     hatTricks: stats.goals >= 3 ? 1 : 0,
     starMan: stats.starMan ? 1 : 0,
-    high: stats.rating >= MATCH_SP.highRating ? 1 : 0,
+    high: stats.rating >= 8 ? 1 : 0,
+    minutes: Math.max(0, Math.min(120, stats.minutes ?? (career.status === "Substitute" ? 25 : 90))),
+    ratingPts: Math.max(0, stats.rating - RATING_BONUS_FROM),
   };
 }
 
+/** An old tally with its minutes and rating points filled in by estimate,
+ *  so the next match can add to them. */
+function withEstimates(t: TierTally): TierTally {
+  return {
+    ...t,
+    minutes: t.minutes ?? (t.starts * 90 + (t.apps - t.starts) * 25),
+    ratingPts: t.ratingPts ?? (t.high * 2.5 + (t.apps - t.high) * 0.8),
+  };
+}
+
+/** A tally's XP at ×1. Minutes and rating points are estimated for a tally
+ *  saved before they were kept (a start ~90 minutes, a sub ~25; a high
+ *  rating ~2.5 points above 6, any other ~0.8). */
 function tallySp(t: TierTally): number {
-  return t.apps * MATCH_SP.play + t.starts * MATCH_SP.start + t.wins * MATCH_SP.win + t.draws * MATCH_SP.draw
-    + t.goals * MATCH_SP.goal + t.assists * MATCH_SP.assist + t.hatTricks * MATCH_SP.hatTrick
-    + t.starMan * MATCH_SP.starMan + t.high * MATCH_SP.highRatingSp;
+  const m = xp().match;
+  const minutes = t.minutes ?? (t.starts * 90 + (t.apps - t.starts) * 25);
+  const ratingPts = t.ratingPts ?? (t.high * 2.5 + (t.apps - t.high) * 0.8);
+  return Math.round(minutes * m.perMinute + t.wins * m.win + t.draws * m.draw
+    + t.goals * m.goal + t.assists * m.assist + ratingPts * m.ratingPerPoint);
 }
 
 /** What one match is worth, for the post-match screen. */
 export function matchStarPoints(career: CareerState, fixture: Fixture, stats: MatchStats): { base: number; mult: number; total: number; tier: StarTier } {
   const tier = tierOfFixture(career, fixture);
   const base = tallySp(tallyFor(career, stats));
-  return { base, mult: TIER_MULT[tier], total: Math.round(base * TIER_MULT[tier]), tier };
+  return { base, mult: tierMult(tier), total: Math.round(base * tierMult(tier)), tier };
 }
 
 /** The ledger after a match. `career` is the career the match was played from. */
 export function ledgerAfterMatch(career: CareerState, fixture: Fixture, stats: MatchStats): StarLedger {
   const led = ledgerOf(career);
   const tier = tierOfFixture(career, fixture);
-  const add = tallyFor(career, stats), was = led.tiers[tier] ?? EMPTY;
-  const now = Object.fromEntries((Object.keys(EMPTY) as (keyof TierTally)[]).map(k => [k, was[k] + add[k]])) as unknown as TierTally;
+  const add = tallyFor(career, stats), was = withEstimates(led.tiers[tier] ?? EMPTY);
+  const now = Object.fromEntries((Object.keys(EMPTY) as (keyof TierTally)[]).map(k => [k, (was[k] ?? 0) + (add[k] ?? 0)])) as unknown as TierTally;
   return {
     ...led,
     tiers: { ...led.tiers, [tier]: now },
     uclApps: led.uclApps + (fixture.competition === "Champions League" ? 1 : 0),
-    ...slumpAfterMatch(career, led, stats, Math.round(tallySp(add) * TIER_MULT[tier])),
+    ...slumpAfterMatch(career, led, stats, Math.round(tallySp(add) * tierMult(tier))),
   };
 }
 
-/** Flat points for silverware. A trophy not listed here is worth OTHER_TROPHY_SP. */
-const scaleAll = <T extends Record<string, number>>(o: T): T =>
-  Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v * S])) as T;
-
-export const TROPHY_SP: Record<string, number> = scaleAll({
-  "National League North": 180, "National League South": 180,
-  "National League": 250, "League Two": 350, "League One": 500, "Championship": 800,
-  "Premier League": 2000,
-  "Community Shield": 150, "Super Cup": 150,
-  // The League Cup and the Conference League are a level; so are the FA Cup
-  // and the Europa League (Mikey, 30 Sep 2026).
-  "League Cup": 900, "Conference League": 900,
-  "FA Cup": 1200, "Europa League": 1300,
-  "Champions League": 3000,
-  "World Cup": 3000, "European Championship": 2000,
-  "Play-Offs": 0, // the promotion it wins is paid below
-});
-export const OTHER_TROPHY_SP = 100 * S;
-export const PROMOTION_SP = 300 * S;
-
-const DIV_ORDER: CareerDivision[] = ["national_league", "league_two", "league_one", "championship", "premier"];
-/** Individual awards, by the division they were won in (bottom to top). */
-export const AWARD_SP: Record<string, number[]> = {
-  "Player of the Month": [50, 100, 150, 200, 250].map(n => n * S),
-  "Golden Boot": [200, 500, 800, 1100, 1500].map(n => n * S),
-  "Player of the Season": [300, 700, 1100, 1500, 2000].map(n => n * S),
-};
-export const BALLON_SP = scaleAll({ win: 6000, top3: 2500, top10: 1000 });
-
-const steps = (xs: [number, number][]) => xs.map(([at, sp]) => [at, sp * S] as [number, number]);
-export const MILESTONES = {
-  apps: steps([[50, 100], [100, 200], [250, 400], [500, 800]]),
-  goals: steps([[50, 200], [100, 400], [200, 800], [300, 1500]]),
-  caps: steps([[1, 400], [25, 300], [50, 600], [100, 1200]]),
-};
-// Both of these were the ones that made a first match look like it moved the
-// rating ten times what the card said (Harry, 1 Oct 2026: "+68 star points
-// just took me from 1.0 to 2.1"): a Premier League debut was worth more than
-// a whole star, and the four achievements a first match unlocks almost
-// another. Cut down, and the card now lists them (starGain).
-// 1 Oct 2026, again ("you should never jump 2 levels"): 18,000 was still
-// ~2.5 levels at the start. Now 6,000, about one level, and the one-level-a-
-// match cap (MAX_RISE_PER_MATCH) holds back anything a match brings beyond that.
-export const PREMIER_DEBUT_SP = 50 * S;
-export const BIGGER_CLUB_SP_PER_POINT = 10 * S;
-export const RECORD_SP = 2500 * S;
-export const ACHIEVEMENT_SP = 20 * S;
-export const SKILL_MAXED_SP = 200 * S;
-export const TRAINING_STAR_SP = 3 * S;
+// Every amount below lives in the XP Book: lib/star/xpConfig.ts (defaults)
+// and /admin/star-xp (Mikey's edits, shared by every career). Mikey, 3 Oct
+// 2026, took out the things that paid twice for one thing: appearance and goal
+// milestones (every match and goal already pays), the 25/50/100-cap steps,
+// "a bigger club" (its bigger multiplier already pays), and skills at 100
+// (they are achievements already).
 
 /** Your best fame level so far: Rising Star, National Name, Global Star, Icon. */
-export const FAME_SP: [number, number][] = steps([[25, 150], [40, 400], [60, 1000], [80, 2500]]);
-export const CLUB_OWNER_SP = 1500 * S;
-export const TOP_ITEM_SP = 300 * S;
-export const ISLAND_SP = 1000 * S;
-export const PRESIDENT_SP = 3000 * S;
-
 const SKILLS: (keyof Skills)[] = ["pace", "power", "technique", "vision", "freeKick"];
-const stepSum = (n: number, steps: readonly (readonly [number, number])[]) => steps.reduce((s, [at, sp]) => s + (n >= at ? sp : 0), 0);
+const DIV_ORDER: CareerDivision[] = ["national_league", "league_two", "league_one", "championship", "premier"];
 const count = (career: CareerState, competition: string) => career.trophies.filter(t => t.competition === competition).length;
 const ownsClub = (career: CareerState) => (career.investments ?? []).some(i => i.percent >= 50.1);
 const topItems = (career: CareerState) => (career.ownedItems ?? []).filter(i => i.level === 5);
@@ -257,7 +246,11 @@ export interface StarLine {
 const TIER_NAME: Record<StarTier, string> = {
   national_league_north: "National League North", national_league_south: "National League South",
   national_league: "National League", league_two: "League Two", league_one: "League One",
-  championship: "Championship", premier: "Premier League", cup: "Cups", intl: "Internationals", europe: "Europe",
+  championship: "Championship", premier: "Premier League", cup: "Cups", intl: "Internationals",
+  europe: "Champions League", europa: "Europa League", conference: "Conference League",
+  cup_national_league_north: "Cups (National League North)", cup_national_league_south: "Cups (National League South)",
+  cup_national_league: "Cups (National League)", cup_league_two: "Cups (League Two)", cup_league_one: "Cups (League One)",
+  cup_championship: "Cups (Championship)", cup_premier: "Cups (Premier League)",
 };
 
 /** Every source of Star Points, as the career stands right now. livePoints is their sum. */
@@ -267,46 +260,43 @@ export function pointLines(career: CareerState): StarLine[] {
   const add = (key: string, cat: keyof StarBreakdown, label: string, sp: number, n?: number) => { if (sp > 0) out.push({ key, cat, label, sp, n }); };
 
   for (const [tier, t] of Object.entries(led.tiers)) {
-    add(`match:${tier}`, "match", `Matches · ${TIER_NAME[tier as StarTier]}`, Math.round(tallySp(t!) * TIER_MULT[tier as StarTier]), t!.apps);
+    add(`match:${tier}`, "match", `Matches · ${TIER_NAME[tier as StarTier]}`, Math.round(tallySp(t!) * tierMult(tier as StarTier)), t!.apps);
   }
 
+  const X = xp();
   const byComp = new Map<string, number>();
   for (const t of career.trophies) byComp.set(t.competition, (byComp.get(t.competition) ?? 0) + 1);
-  for (const [comp, n] of Array.from(byComp)) add(`trophy:${comp}`, "trophies", comp, n * (TROPHY_SP[comp] ?? OTHER_TROPHY_SP), n);
-  add("promotion", "trophies", "Promotion", led.promotions * PROMOTION_SP, led.promotions);
+  for (const [comp, n] of Array.from(byComp)) add(`trophy:${comp}`, "trophies", comp, n * (X.trophies[comp] ?? X.otherTrophy), n);
+  // Going up without winning the league pays a share of that league's title
+  // (Mikey, 3 Oct 2026). Winning it pays the title alone.
+  const ups = led.promotedFrom ?? [];
+  add("promotion", "trophies", "Promotion", Math.round(ups.reduce((s, d) => s + (X.trophies[leagueNameFor(d)] ?? 0) * X.promotionShare, 0)), ups.length);
 
   const byAward = new Map<string, { sp: number; n: number }>();
   for (const a of career.awards ?? []) {
-    const row = AWARD_SP[a.kind];
+    const row = X.awards[a.kind];
     if (!row) continue;
     const was = byAward.get(a.kind) ?? { sp: 0, n: 0 };
-    byAward.set(a.kind, { sp: was.sp + row[Math.max(0, DIV_ORDER.indexOf(a.division ?? "national_league"))], n: was.n + 1 });
+    byAward.set(a.kind, { sp: was.sp + (row[a.division ?? "national_league"] ?? 0), n: was.n + 1 });
   }
   for (const [kind, v] of Array.from(byAward)) add(`award:${kind}`, "awards", kind, v.sp, v.n);
-  add("ballon", "awards", "Ballon d'Or placings", led.ballonRanks.reduce((s, r) => s + (r === 1 ? BALLON_SP.win : r <= 3 ? BALLON_SP.top3 : BALLON_SP.top10), 0), led.ballonRanks.length);
+  add("ballon", "awards", "Ballon d'Or placings", led.ballonRanks.reduce((s, r) => s + (r === 1 ? X.ballon.win : r <= 3 ? X.ballon.top3 : X.ballon.top10), 0), led.ballonRanks.length);
 
-  const cs = career.careerStats;
-  add("apps", "milestones", "Appearance milestones", stepSum(cs.appearances, MILESTONES.apps));
-  add("goals", "milestones", "Goal milestones", stepSum(cs.goals, MILESTONES.goals));
-  add("caps", "milestones", "International caps", stepSum(career.caps ?? 0, MILESTONES.caps));
-  add("pl-debut", "milestones", "Premier League debut", (led.tiers.premier?.apps ?? 0) > 0 ? PREMIER_DEBUT_SP : 0);
-  add("bigger-club", "milestones", "A bigger club", Math.max(0, (led.maxRep ?? 0) - (led.firstRep ?? led.maxRep ?? 0)) * BIGGER_CLUB_SP_PER_POINT);
-  const records = RECORDS.filter(r => recordBeaten(career, r)).length;
-  add("records", "milestones", "Records broken", records * RECORD_SP, records);
-  // "first-contract" comes with signing, so it earns nothing: a career starts on exactly 1.
-  const ach = career.achievements.filter(id => id !== "first-contract").length;
-  add("achievements", "milestones", "Achievements", ach * ACHIEVEMENT_SP, ach);
-  const maxed = SKILLS.filter(k => career.skills[k] >= 100).length;
-  add("maxed", "milestones", "Skills at 100", maxed * SKILL_MAXED_SP, maxed);
+  add("caps", "milestones", "First cap", (career.caps ?? 0) >= 1 ? X.milestones.firstCap : 0);
+  add("pl-debut", "milestones", "Premier League debut", (led.tiers.premier?.apps ?? 0) > 0 ? X.milestones.premierDebut : 0);
+  const beaten = RECORDS.filter(r => recordBeaten(career, r));
+  add("records", "milestones", "Records broken", beaten.reduce((s, r) => s + (X.records[r.id] ?? 0), 0), beaten.length);
+  const ach = career.achievements;
+  add("achievements", "milestones", "Achievements", ach.reduce((s, id) => s + achievementXp(id, X), 0), ach.filter(id => achievementXp(id, X) > 0).length);
   const tStars = SKILLS.reduce((s, k) => s + totalStars(trainingStarsOf(career, k)), 0);
-  add("training", "milestones", "Training stars", tStars * TRAINING_STAR_SP, tStars);
+  add("training", "milestones", "Training stars", tStars * X.trainingStar, tStars);
 
   const fame = fameOf(career);
-  add("fame", "status", "Fame", FAME_SP.reduce((s, [min, sp]) => (fame >= min ? sp : s), 0));
-  add("owner", "status", "Owning a club", ownsClub(career) ? CLUB_OWNER_SP : 0);
+  add("fame", "status", "Fame", X.fame.reduce((s, [min, sp]) => (fame >= min ? sp : s), 0));
+  add("owner", "status", "Owning a club", ownsClub(career) ? X.clubOwner : 0);
   const top = topItems(career);
-  add("items", "status", "Top-level things you own", top.reduce((s, i) => s + ((i.baseId ?? i.id) === "island" ? ISLAND_SP : TOP_ITEM_SP), 0), top.length);
-  add("president", "status", "A presidency", career.governingBodyPresidencies?.length ? PRESIDENT_SP : 0);
+  add("items", "status", "Top-level things you own", top.reduce((s, i) => s + ((i.baseId ?? i.id) === "island" ? X.island : X.topItem), 0), top.length);
+  add("president", "status", "A presidency", career.governingBodyPresidencies?.length ? X.president : 0);
   return out;
 }
 
@@ -352,8 +342,12 @@ export const STAR_CURVES = {
 } as const;
 export type StarCurve = keyof typeof STAR_CURVES;
 export const STAR_CURVE: StarCurve = "recommended";
-/** 1→2, 2→3, 3→4: about one match each. */
-export const EARLY_LEVEL_COST = [8_000, 4_000, 4_000];
+/** Fixed costs for the first levels, ahead of the curve. Empty now: Mikey,
+ *  3 Oct 2026, "you go up loads of star rating levels right at the beginning"
+ *  — 8,000/4,000/4,000 put a typical player on level 5 after 5 matches and
+ *  level 10 after 24. On the curve (12,000/13,000/14,000) it is level 5 after
+ *  about 9 matches and level 10 after about 30 (simulated, 1,000 careers). */
+export const EARLY_LEVEL_COST: number[] = [];
 /** Where the steeper climb gives way to the gentler top one. */
 export const CURVE_KNEE = 60;
 

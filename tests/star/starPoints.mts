@@ -32,8 +32,8 @@ import { NATIONAL_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PREMIER_LEAGUE_CLUBS } from 
 import {
   starStatus, withStars, matchStarPoints, livePoints, levelFromPoints, pointsForLevel, ledgerFromHistory, starGain,
   pointLines, starLevel, isOldStarScale, STAR_TITLES, starTitle,
-  LEVEL_THRESHOLDS, LEVEL_COST, STAR_CURVE, levelCosts, STAR_GATES, LEGEND_TASKS, TROPHY_SP, MATCH_SP, TIER_MULT, SP_SCALE, emptyLedger,
-  PREMIER_DEBUT_SP, MAX_RISE_PER_MATCH, POINTS_CAP_LEVEL,
+  LEVEL_THRESHOLDS, LEVEL_COST, STAR_CURVE, levelCosts, STAR_GATES, LEGEND_TASKS, tierMult, tierOfFixture, xp, setXpConfig, DEFAULT_XP, achievementXp, SP_SCALE, emptyLedger,
+  MAX_RISE_PER_MATCH, POINTS_CAP_LEVEL,
   POOR_MATCH_RATING, GOOD_MATCH_RATING, SLUMP_MATCHES, SLUMP_SHARE,
 } from "../../lib/star/starPoints.ts";
 import { ACHIEVEMENTS } from "../../lib/star/achievements.ts";
@@ -48,23 +48,43 @@ const fresh = () => makeInitialCareer(P, [...NATIONAL_LEAGUE_CLUBS], "national_l
 const freshChelsea = () => withStars(makeInitialCareer({ ...P, club: "Chelsea" }, [...PREMIER_LEAGUE_CLUBS], "premier"));
 const stats = (o: Partial<MatchStats>): MatchStats => ({ chances: 4, goals: 0, assists: 0, passes: 20, rating: 6.5, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0, wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0, homeScore: 0, awayScore: 1, ...o });
 const leagueFixture = (c: CareerState) => c.fixtures.find(f => !f.played && (f.kind ?? "league") === "league")!;
-const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatTricks: 0, starMan: 0, high: 0 };
+const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatTricks: 0, starMan: 0, high: 0, minutes: 0, ratingPts: 0 };
 
 // ── A new career, and what a match is worth ──
 {
   const c = fresh();
   check(c.stars === 1 && starStatus(c).stars === 1, `a new career is on 1 (${c.stars})`);
   const f = leagueFixture(c);
+  // Mikey, 3 Oct 2026: 10 XP a minute, no hat-trick bonus, one rating bonus
+  // (400 per point above 6) instead of star man + "rating 8+".
   const big = matchStarPoints(c, f, stats({ goals: 1, starMan: true, rating: 8.1, homeScore: 1, awayScore: 0 }));
-  check(big.base === 51 * S && big.total === 51 * S, `a 1-goal Star Man win, started, 8.0+: ${51 * S} SP in the National League (${big.total})`);
-  check(matchStarPoints(c, f, stats({ homeScore: 1, awayScore: 1 })).base === (5 + 3 + 1) * S, "a draw is 1 unit");
-  check(matchStarPoints(c, f, stats({})).base === (5 + 3) * S, "a defeat is 0 for the result");
+  check(big.base === 900 + 360 + 1200 + 840 && big.total === Math.round(3300 * 1.25), `a 1-goal 8.1 win: 3,300 XP, ×1.25 in the National League (${big.base} → ${big.total})`);
+  check(matchStarPoints(c, f, stats({ homeScore: 1, awayScore: 1 })).base === 900 + 120 + 200, "a 6.5 draw: 90 minutes + draw + half a rating point");
+  check(matchStarPoints(c, f, stats({})).base === 900 + 200, "a defeat pays nothing for the result");
   const hat = matchStarPoints(c, f, stats({ goals: 3, homeScore: 3 })).base;
-  check(hat === (5 + 3 + 3 + 36) * S + MATCH_SP.hatTrick && MATCH_SP.hatTrick === 20 * S, `a hat-trick bonus is +${20 * S} (${hat})`);
-  check(matchStarPoints({ ...c, status: "Substitute" }, f, stats({})).base === 5 * S, "coming off the bench: no start points");
-  check(TIER_MULT.premier === 4 && TIER_MULT.europe === 5 && TIER_MULT.national_league === 1, "x1 at the bottom, x4 Premier League, x5 Europe");
-  check(TROPHY_SP["League Cup"] === 900 * S && TROPHY_SP["Conference League"] === 900 * S && TROPHY_SP["FA Cup"] === 1200 * S, "League Cup level with the Conference League, FA Cup above");
-  check(MATCH_SP.highRating === 8, "the high-rating threshold is a match rating, not points, and is not scaled");
+  check(hat === 900 + 360 + 3 * 1200 + 200, `no hat-trick bonus: three goals pay three goals (${hat})`);
+  check(matchStarPoints(c, f, stats({ goals: 3, homeScore: 3, starMan: true })).base === hat, "star man pays nothing on top of the rating bonus");
+  check(matchStarPoints({ ...c, status: "Substitute" }, f, stats({ minutes: 24 })).base === 240 + 200, "24 minutes off the bench: 240 XP for the minutes");
+  check(matchStarPoints(c, f, stats({ minutes: 73 })).base === 730 + 200, "taken off after 73 minutes: 730");
+  check(matchStarPoints(c, f, stats({ rating: 5 })).base === 900, "a rating under 6 earns no rating bonus (never negative)");
+  check(tierMult("national_league_north") === 1 && tierMult("national_league") === 1.25 && tierMult("premier") === 4, "North/South ×1, National League ×1.25, Premier League ×4");
+  check(tierMult("europe") === 5 && tierMult("europa") === 4 && tierMult("conference") === 3, "Champions League ×5, Europa ×4, Conference ×3");
+  const cup = { ...f, kind: "cup" as const, competition: "FA Cup" };
+  check(tierOfFixture(c, cup) === "cup_national_league" && tierMult(tierOfFixture(c, cup)) === 1.25, "a cup tie is worth your league's multiplier, not ×4");
+  check(xp().trophies["World Cup"] === 400_000 && xp().trophies["European Championship"] === 300_000 && xp().trophies["Super Cup"] === 65_000, "World Cup 400k, Euros 300k, Super Cup 65k");
+  check(achievementXp("first-match") === 600 && achievementXp("hat-trick") === 2_400 && achievementXp("ballon-dor") === 12_000 && achievementXp("first-contract") === 0, "achievements: easy 600, medium 2,400, hard 12,000, signing 0");
+}
+
+// ── The XP Book: a saved copy changes the game, a broken one never does ──
+{
+  const c = fresh(), f = leagueFixture(c);
+  setXpConfig({ match: { goal: 2000 }, mult: { national_league: 2 } });
+  const one = matchStarPoints(c, f, stats({ goals: 1 }));
+  check(one.base === 900 + 2000 + 200 && one.mult === 2, `an edited goal and multiplier are used (${one.base} ×${one.mult})`);
+  setXpConfig({ match: { goal: -5, win: "lots" }, mult: null, fame: "x" });
+  check(xp().match.goal === DEFAULT_XP.match.goal && xp().match.win === DEFAULT_XP.match.win && xp().fame === DEFAULT_XP.fame, "a negative or broken value keeps the default");
+  setXpConfig(null);
+  check(xp() === DEFAULT_XP, "null goes back to the defaults");
 }
 
 // ── A match is banked once, however often it is credited ──
@@ -80,7 +100,7 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
 {
   check(LEVEL_THRESHOLDS.slice(2).every((t, i) => t > LEVEL_THRESHOLDS[i + 1]), "every level costs something");
   check(LEVEL_COST.slice(5).every((c, i) => c >= LEVEL_COST[i + 4]) && LEVEL_COST[4] > LEVEL_COST[3], "from level 4 every level costs at least the one before");
-  check(LEVEL_COST.slice(1, 4).every(c => c <= 8_000), `1→4 is cheap, about a match a level (${LEVEL_COST.slice(1, 4).join(", ")})`);
+  check(LEVEL_COST.slice(1, 4).every(c => c >= 10_000 && c < LEVEL_COST[4]), `1→4 is on the curve, no cheap start (Mikey, 3 Oct 2026) (${LEVEL_COST.slice(1, 4).join(", ")})`);
   check(levelFromPoints(0) === 1 && levelFromPoints(LEVEL_COST[1] - 1) === 1 && levelFromPoints(LEVEL_COST[1]) === 2, `${LEVEL_COST[1].toLocaleString()} SP is level 2`);
   const low = pointsForLevel(20) - pointsForLevel(11), high = pointsForLevel(90) - pointsForLevel(81);
   // Harry's earlier anchors were ~100,000 and ~10 million. The steeper curve
@@ -196,7 +216,7 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(gain.lines.some(l => l.key === "achievements" && (l.n ?? 0) >= 1), "and so are the achievements the match unlocked");
   const moved = after.stars! - c.stars!;
   check(moved === 1, `a first Premier League draw with an assist moves you one level (${c.stars} → ${after.stars})`);
-  check(PREMIER_DEBUT_SP === 6_000 && PREMIER_DEBUT_SP <= LEVEL_COST[1], `the Premier League debut is about one level at the start (${PREMIER_DEBUT_SP})`);
+  check(xp().milestones.premierDebut <= LEVEL_COST[1], `the Premier League debut is under one level at the start (${xp().milestones.premierDebut})`);
   const nl = fresh();
   const nlAfter = creditMatchResult(nl, leagueFixture(nl), stats({ goals: 1, assists: 1, starMan: true, rating: 8.4, homeScore: 2, awayScore: 0 })).career;
   check(nlAfter.stars! - nl.stars! <= 2, `a dream National League debut is a level or two (${nl.stars} → ${nlAfter.stars})`);
@@ -294,7 +314,7 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(share <= 1, `after level 4, at most 1% of matches pay for a whole level on their own (${share.toFixed(2)}% of ${n})`);
   // …and 1→4 still come about one a match.
   const first4 = [...stars, ...risers].map(r => r.findIndex(m => m.after >= 4) + 1);
-  check(first4.every(i => i >= 3 && i <= 4), `level 4 comes in the 3rd or 4th match (${first4.join(", ")})`);
+  check(first4.every(i => i >= 4) && first4.some(i => i >= 5), `level 4 is no longer a match a level: it takes 4+ matches (${first4.join(", ")})`);
 
   // 2. 60→61 takes many times the matches 4→5 does. 4→5 is the rating you
   // see; 60→61 is the points, averaged over 60→65, because a gate (59) or a
@@ -302,9 +322,11 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   const at = (r: typeof stars[0], L: number) => r.findIndex(m => m.after >= L) + 1;
   const pts = (r: typeof stars[0], L: number) => r.findIndex(m => m.total >= pointsForLevel(L)) + 1;
   const four = med(stars.map(r => at(r, 5) - at(r, 4)));
-  const sixty = med(stars.map(r => (pts(r, 65) > 0 && pts(r, 60) > 0 ? (pts(r, 65) - pts(r, 60)) / 5 : NaN)));
-  check(sixty / four >= 10, `60→61 takes at least 10× the matches of 4→5 (${sixty} vs ${four} matches: ${(sixty / four).toFixed(0)}×)`);
-  console.log(`  curve: after level 4, ${share.toFixed(2)}% of matches pay a whole level; 4→5 ${four} match(es), 60→61 ${sixty} (${(sixty / four).toFixed(0)}×); level 4 at match ${first4.join("/")}`);
+  // 3 Oct 2026: with no hat-trick/star-man stacking a star reaches ~60-65 in
+  // ten seasons (was 64-69), so the high stretch is measured over 50→55.
+  const sixty = med(stars.map(r => (pts(r, 55) > 0 && pts(r, 50) > 0 ? (pts(r, 55) - pts(r, 50)) / 5 : NaN)));
+  check(sixty / four >= 6, `50→51 takes at least 6× the matches of 4→5 (the curve is unchanged; 60→61 was the 10× bar) (${sixty} vs ${four} matches: ${(sixty / four).toFixed(0)}×)`);
+  console.log(`  curve: after level 4, ${share.toFixed(2)}% of matches pay a whole level; 4→5 ${four} match(es), 50→51 ${sixty} (${(sixty / four).toFixed(0)}×); level 4 at match ${first4.join("/")}`);
   check(med(risers.map(r => at(r, 5) - at(r, 4))) >= 2, `a riser's 4→5 takes more than one match (${risers.map(r => at(r, 5) - at(r, 4)).join(", ")})`);
 }
 

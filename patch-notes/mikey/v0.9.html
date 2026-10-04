@@ -1,0 +1,231 @@
+<title>Knowitball Patch Notes Mikey v0.9</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .shot{display:block;width:100%;max-width:300px;border-radius:14px;border:1px solid var(--line);margin:10px 0 2px}
+  .shots{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .shots img{flex:1 1 200px;max-width:260px;width:100%;border-radius:14px;border:1px solid var(--line)}
+  .tw{overflow-x:auto;margin:10px 0 2px}
+  table{border-collapse:collapse;font-size:13.5px;min-width:100%}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--ink3);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  td b{color:var(--green)}
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:4px 14px;margin:0 0 6px}
+  .build{display:inline-block;margin:0 0 22px;font-weight:800;color:var(--green)}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.9</span>
+  <h1>Knowitball Patch Notes Mikey v0.9</h1>
+  <p class="sub">3 October 2026 · branch Mikey · 4 commits since v0.8, plus this round · tests: 231 of 234 pass (the 3 that fail also fail on main)</p>
+</header>
+<a class="build" href="https://tierlist-git-mikey-proposalwizards-projects.vercel.app">Test build (Mikey branch, sign in to Vercel) →</a>
+
+<div class="strip">
+  <div class="s"><b>16k → 39k</b><span>XP to reach level 4 (no more cheap start)</span></div>
+  <div class="s"><b>26 → 31</b><span>Typical player: match number at level 10</span></div>
+  <div class="s"><b>8.6× → 3.8×</b><span>A hat-trick game vs a quiet win</span></div>
+  <div class="s"><b>1 page</b><span>Every XP amount, editable: the XP Book</span></div>
+</div>
+
+<h2 class="chg"><i></i>Check these</h2>
+<ul class="n check">
+  <li><div class="hd">The XP Book</div><div class="dt">Admin menu → Star Career → XP Book (<code>/admin/star-xp</code>).</div></li>
+  <li><div class="hd">The star bar over your first 10 matches</div><div class="dt">Start a new career. Level 2 now needs 12,000 XP.</div></li>
+  <li><div class="hd">The after-match XP card</div><div class="dt">After any match: minutes, result, goals, assists and the rating bonus.</div></li>
+  <li><div class="hd">The 3D garden, and walking into the shop and back</div><div class="dt">Home → Garden. Walk through the shop's doors; the shop's front doors bring you back.</div></li>
+  <li><div class="hd">Club Data, now 75% filled</div><div class="dt">Admin → Club Data (<code>/admin/clubs</code>). Blue boxes are researched.</div></li>
+  <li><div class="hd">National League North and South 2026/27</div><div class="dt">A career in either league: new clubs, six-club play-offs, Step 3 below.</div></li>
+</ul>
+
+<h2 class="chg"><i></i>The headline: XP rebuilt</h2>
+<ul class="n">
+  <li>
+    <div class="hd">You no longer shoot up the levels at the start</div>
+    <div class="dt"><b>Problem:</b> one level every match up to about level 5; one game could take you from 1 to 3. <b>Why:</b> levels 1→4 cost only 8,000 / 4,000 / 4,000 XP, and every achievement paid 2,400 (a first match unlocks about four). <b>Fix:</b> levels 1→4 now cost 12,000 / 13,000 / 14,000, and achievements pay by how hard they are. <span class="tag">measured</span></div>
+    <div class="dt" style="margin-top:8px">Match number when you reach each level, the median of 1,000 simulated careers:</div>
+    <div class="tw"><table>
+      <tr><th>Player</th><th>Level 5</th><th>Level 10</th><th>Level 15</th><th>Level 20</th></tr>
+      <tr><td>Typical (rating ~6.8), before</td><td class="num">4</td><td class="num">26</td><td class="num">61</td><td class="num">over 80</td></tr>
+      <tr><td>Typical, now</td><td class="num"><b>11</b></td><td class="num"><b>31</b></td><td class="num"><b>62</b></td><td class="num">over 80</td></tr>
+      <tr><td>Rated 9.5 every game, before</td><td class="num">4</td><td class="num">10</td><td class="num">24</td><td class="num">44</td></tr>
+      <tr><td>Rated 9.5 every game, now</td><td class="num"><b>6</b></td><td class="num"><b>17</b></td><td class="num"><b>34</b></td><td class="num"><b>58</b></td></tr>
+    </table></div>
+    <details><summary>Over ten seasons</summary><p>Played-out careers through the real game, level at the end of season 10: an average player 29 before and 29 now (held at the level-29 gate); a rising player 62–64 before, 61–62 now; a star 64–69 before, 60–65 now. The great players lose the most because the extras that stacked on a great match are gone.</p></details>
+  </li>
+  <li>
+    <div class="hd">Match XP is by the minute, with one bonus for playing well</div>
+    <div class="dt"><b>Problem:</b> a sub who came on at 88 minutes got 63% of a full match's XP, and a great game paid for the same thing three times. <b>Why:</b> 600 for playing and 360 for starting, whatever the minutes; a hat-trick bonus on top of the three goals; star man and "rating 8+" both rewarding a good game. <b>Fix:</b> <span class="tag">measured</span></div>
+    <div class="tw"><table>
+      <tr><th>What you do</th><th>Before</th><th>Now</th></tr>
+      <tr><td>Play / start</td><td class="num">600 + 360</td><td class="num"><b>10 a minute</b> (90 min = 900)</td></tr>
+      <tr><td>Win / draw</td><td class="num">360 / 120</td><td class="num">360 / 120</td></tr>
+      <tr><td>Each goal</td><td class="num">1,440</td><td class="num"><b>1,200</b></td></tr>
+      <tr><td>Each assist</td><td class="num">960</td><td class="num"><b>840</b></td></tr>
+      <tr><td>Hat-trick</td><td class="num">2,400</td><td class="num"><b>gone</b></td></tr>
+      <tr><td>Star man + rating 8+</td><td class="num">2,400 + 960</td><td class="num"><b>400 per rating point above 6</b></td></tr>
+    </table></div>
+    <div class="dt" style="margin-top:6px">A quiet win (rating 7) went from 1,320 to 1,660 XP. A hat-trick win (rating 9.5) went from 11,400 to 6,260.</div>
+  </li>
+  <li>
+    <div class="hd">Multipliers: National League ×1.25, Europa ×4, Conference ×3, cups at your league's rate</div>
+    <div class="dt"><b>Problem:</b> the National League counted the same as North and South, every European game was ×5, and every cup tie was ×4, so a National League side earned Premier League XP in the FA Cup. <b>Fix:</b> North/South ×1, National League ×1.25, League Two ×1.5, League One ×2, Championship ×3, Premier League ×4, Champions League ×5, Europa ×4, Conference ×3, internationals ×4. A cup tie now uses your league's multiplier. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Promotion pays a share of the title, not extra on top of it</div>
+    <div class="dt"><b>Problem:</b> winning the league paid the title plus 36,000 for promotion. <b>Fix:</b> win it and you get the title XP only; go up any other way (2nd, 3rd or the play-offs) and you get 0.8× that league's title XP. Up from the National League without the title: 24,000 (was 30,000 + 36,000). <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Trophies, awards, achievements, fame</div>
+    <div class="dt">World Cup 360,000 → <b>400,000</b>. European Championship 240,000 → <b>300,000</b>. Super Cup 18,000 → <b>65,000</b> (the Community Shield stays at 18,000). Awards now have North/South amounts (0.8× the National League's). Achievements: <b>easy 600, medium 2,400, hard 12,000</b> (were all 2,400; signing still pays 0). Fame: Rising Star 18,000 → <b>9,000</b>, National Name 48,000 → <b>24,000</b>. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Things that paid twice are gone</div>
+    <div class="dt">Appearance and goal milestones (every match and goal already pays), the 25/50/100-cap steps (the first cap stays, 48,000), "a bigger club" (its bigger multiplier already pays), and skills at 100 (they're achievements already). A level a player already has is kept: their best is never taken away. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The XP Book: every XP amount on one page you can edit</div>
+    <div class="dt">Every amount of XP the career gives, in 8 tabs: In a match, Multipliers, Trophies, Awards, Achievements, Records, Milestones &amp; status, New ideas. Change any number, mark each item Confirmed or Change it (with a note), pick each achievement's level or give it its own amount, and add ideas for new achievements, records, awards and milestones with how you get them and what they should pay. Save makes it the amounts every career uses. <span class="tag seen">seen</span></div>
+    <div class="shots"><img src="v0.9/img/xp-book-match.jpg" alt="XP Book, the In a match tab at phone size"><img src="v0.9/img/xp-book-achievements.jpg" alt="XP Book, achievements with a level picker and a Change it note"></div>
+    <details><summary>How it works</summary><p>The amounts live in <code>lib/star/xpConfig.ts</code>; the page saves your copy to a shared table (<code>star_xp_config</code>) and the game loads it when a career opens. Ideas pay nothing until they're built: I build them from your list. Lowering an amount never takes a level away from anyone.</p></details>
+  </li>
+  <li>
+    <div class="hd">The garden is a 3D place you walk round, joined to the 3D shop</div>
+    <div class="dt">From your recording. You're the same footballer as in the 3D shop. Sky (day, sunset or night), trees, a stable and paddock (your horse grazes if you own one), a trophy cabinet with your real trophies, a fountain with a bird that drinks, a gazebo with three team-mates on the bench, cans, a plant pot, a teqball table, and parking for your cars. The shop stands where the house was: walk through its doors into the 3D shop, and its front doors bring you back. <span class="tag seen">seen</span></div>
+    <img class="shot" src="v0.9/img/garden.jpg" alt="The 3D garden: your player on the path, the shop with its doors behind the fountain">
+  </li>
+  <li>
+    <div class="hd">National League North and South 2026/27, Step 3 and six-club play-offs</div>
+    <div class="dt">Both leagues hold the 24 clubs you gave. 1st goes up; 2nd–7th play off (4v7 and 5v6, then 2nd and 3rd at home, then a one-off final); 21st–24th go down to Step 3, whose four waiting clubs come up each season. If your club finishes bottom four, you have to move (Step 3 has no fixtures). <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Club Data: every club, every field, and the gaps filled</div>
+    <div class="dt">Admin → Club Data shows every field for every club: green given, amber guessed, red missing, blue researched (with the source). Filled boxes 51% → 75%. Kit patterns, badge colours and badge shape for every club; ratings (training, youth, reputation, transfer spending) for 67 League One, League Two and National League clubs; short names for the 76 European and Other clubs. Ballon d'Or follows one rule: winners who won it while at the club. <span class="tag seen">seen</span></div>
+    <img class="shot" src="v0.9/img/club-data.jpg" alt="Club Data page, League Two clubs">
+  </li>
+</ul>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Your shirt number matches between the garden and the 3D shop</div>
+    <div class="dt"><b>Problem:</b> the shop always showed number 10. <b>Why:</b> the shop never read your squad number. <b>Fix:</b> it uses yours, like the garden. <span class="tag seen">seen</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">Run star_xp_config.sql so the XP Book saves for everyone <span class="pill p-red">High</span></div><div class="dt">Until it runs in the Supabase SQL Editor, Save keeps changes on that one device and the page says so. The game uses the built-in amounts meanwhile.</div></li>
+  <li><div class="hd">The Old UI only picks up XP Book changes after the New UI has opened once on that device <span class="pill p-amb">Low</span></div><div class="dt">The Old UI is frozen, so it doesn't load the book itself.</div></li>
+  <li><div class="hd">3 star tests fail <span class="pill p-amb">Low</span></div><div class="dt">authoredChance, freeKickRules and longRangeRules. They fail on main too; nothing in this round touches them.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Your XP for each record and achievement</div><div class="dt">Waiting on: you going through the XP Book's Records and Achievements tabs. Every record is 300,000 for now.</div></li>
+  <li><div class="hd">Building your ideas</div><div class="dt">Anything you add under New ideas gets built from that list.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 30 September 2026 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 30 September 2026 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 27 September 2026 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 26 September 2026 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, 50-season careers</li>
+</ul>
+</div>

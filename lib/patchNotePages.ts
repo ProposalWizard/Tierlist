@@ -20,6 +20,7 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  "0.26": "mikey/v0.9.html",
   // Harry's own pages, 22 Sep to 3 Oct 2026 (videos swapped for their stills;
   // each page links its clips on the artifact).
   "0.25": "pages/0.25/index.html",

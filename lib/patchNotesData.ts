@@ -27,6 +27,140 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.26",
+      "title": "Mikey's patch notes — XP rebuilt and the XP Book",
+      "publishedAt": "2026-10-03T22:30:00Z",
+      "updatedAt": "2026-10-03T22:30:00Z",
+      "artifactUrl": "https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg",
+      "summary": "XP rebuilt: no cheap start (levels 1-4 cost 12k/13k/14k), XP by the minute, one rating bonus instead of star man + rating 8+ + hat-trick, cups at your league's multiplier, promotion pays 0.8x the title. Every amount now lives in the XP Book (/admin/star-xp). Plus the 3D garden, National League North/South 2026/27 and Club Data.",
+      "stats": [
+        {
+          "value": "16k → 39k",
+          "label": "XP to reach level 4"
+        },
+        {
+          "value": "26 → 31",
+          "label": "typical player: match at level 10"
+        },
+        {
+          "value": "8.6× → 3.8×",
+          "label": "hat-trick game vs a quiet win"
+        },
+        {
+          "value": "1 page",
+          "label": "every XP amount, editable"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The XP Book",
+              "detail": "Admin menu → Star Career → XP Book (/admin/star-xp)."
+            },
+            {
+              "title": "The star bar over your first 10 matches",
+              "detail": "Start a new career. Level 2 now needs 12,000 XP."
+            },
+            {
+              "title": "The after-match XP card",
+              "detail": "After any match."
+            },
+            {
+              "title": "The 3D garden, into the shop and back",
+              "detail": "Home → Garden."
+            },
+            {
+              "title": "Club Data, now 75% filled",
+              "detail": "Admin → Club Data (/admin/clubs)."
+            },
+            {
+              "title": "National League North and South 2026/27",
+              "detail": "A career in either league."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "The headline: XP rebuilt",
+          "items": [
+            {
+              "title": "No more shooting up the levels at the start",
+              "detail": "Problem: a level every match up to about 5. Why: levels 1→4 cost 8,000/4,000/4,000 and every achievement paid 2,400. Fix: 12,000/13,000/14,000; achievements 600/2,400/12,000 by difficulty. Typical player: level 5 at match 11 (was 4), level 10 at match 31 (was 26)."
+            },
+            {
+              "title": "Match XP by the minute, one rating bonus",
+              "detail": "10 XP a minute (was 600 play + 360 start), goal 1,200 (was 1,440), assist 840 (was 960), 400 per rating point above 6; hat-trick, star man and rating-8+ bonuses gone. A quiet win 1,320 → 1,660; a hat-trick win 11,400 → 6,260."
+            },
+            {
+              "title": "Multipliers",
+              "detail": "North/South ×1, National League ×1.25 (was ×1), Europa ×4 and Conference ×3 (were ×5); a cup tie uses your league's multiplier (was ×4 for everyone)."
+            },
+            {
+              "title": "Promotion",
+              "detail": "Win the league: the title XP only (was title + 36,000). Up any other way, play-offs included: 0.8× that league's title XP."
+            },
+            {
+              "title": "Trophies, awards, achievements, fame",
+              "detail": "World Cup 400,000, Euros 300,000, Super Cup 65,000; North/South award amounts; achievements by difficulty; Rising Star 9,000, National Name 24,000."
+            },
+            {
+              "title": "Things that paid twice are gone",
+              "detail": "Appearance and goal milestones, the 25/50/100-cap steps, a bigger club, skills at 100."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The XP Book",
+              "detail": "Every XP amount on one page: change numbers, mark each item Confirmed or Change it with a note, set each achievement's level, and add ideas for new achievements, records, awards and milestones."
+            },
+            {
+              "title": "The 3D garden, joined to the 3D shop",
+              "detail": "Walk round as the same footballer as the shop: stable, horse, trophy cabinet, fountain and bird, gazebo with team-mates, teqball, your cars. The shop's doors join the two."
+            },
+            {
+              "title": "National League North/South 2026/27, Step 3, six-club play-offs",
+              "detail": "The 24 clubs given; 1st up, 2nd-7th play off, 21st-24th down to Step 3."
+            },
+            {
+              "title": "Club Data",
+              "detail": "Every club and field: given, guessed, missing or researched. 51% → 75% filled; ratings for 67 lower-league clubs; 76 short names."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Shirt number matches between the garden and the 3D shop",
+              "detail": "The shop always showed 10; it now reads your number."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run star_xp_config.sql",
+              "detail": "Until then the XP Book saves on that device only and the game uses the built-in amounts."
+            },
+            {
+              "title": "3 star tests fail",
+              "detail": "authoredChance, freeKickRules and longRangeRules; they fail on main too."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.25",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-03T01:42:00Z",
