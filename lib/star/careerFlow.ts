@@ -1136,6 +1136,8 @@ export function creditMatchResult(
     // and a replay does not sharpen you again.
     matchFitness: alreadyPlayed ? career.matchFitness : Math.min(100, career.matchFitness + 3 * minuteShare),
     energy: nextEnergy,
+    // v0.26: the next match starts on the playstyle you finished this one on.
+    ...(stats.playstyle ? { playstyle: stats.playstyle } : {}),
     // Basic KIB cans drunk at half time come off your stock now the match is saved.
     // A can's boot ability lasts one match played — this one.
     kibAbility: alreadyPlayed ? career.kibAbility : undefined,

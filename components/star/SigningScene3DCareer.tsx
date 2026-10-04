@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The 3D signing, played inside a career (Settings → "3D signing scene
- * (beta)"). Everything comes off the save: your skin tone, your face picture
+ * The 3D signing, played inside a career (Settings → Look → "Signing scene:
+ * 3D", the default). Everything comes off the save: your skin tone, your face picture
  * (or the default fake face), your equipped accessories and Star Pass
  * aviators, the club's kit, the shirt number, the seasons and the wage.
  * Whoever plays sees themself.
@@ -21,7 +21,7 @@ import { useScannedPortrait } from "./useScannedPortrait";
 import type { ContractTerms } from "./TrialReward";
 
 export default function SigningScene3DCareer({
-  career, club, playerName, managerName, terms, onDone, onFail,
+  career, club, playerName, managerName, terms, onDone, onFail, kind = "trial",
 }: {
   career: CareerState;
   club: string;
@@ -31,6 +31,10 @@ export default function SigningScene3DCareer({
   onDone: () => void;
   /** The 3D could not start: show the drawn signing instead. */
   onFail: () => void;
+  /** The first contract after the trial, or a move to a new club later. A
+   *  move has no new shirt number yet, and the manager talks about your
+   *  play, not a trial. */
+  kind?: "trial" | "transfer";
 }) {
   const scanned = useScannedPortrait(career.player.portrait);
   const faceUrl = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
@@ -40,15 +44,21 @@ export default function SigningScene3DCareer({
     const done = () => setFitted(getFittedHead(faceUrl));
     if (img.complete && img.naturalWidth) { done(); return; }
     const fail = () => setFitted(null);
+    // The picture is cached: one that already FAILED is "complete" with no
+    // width and will never fire another event — waiting for it left a blank
+    // screen with no Skip, for good. Go on without the face instead, and
+    // never wait more than a few seconds for one that is slow.
+    if (img.complete) { fail(); return; }
+    const slow = window.setTimeout(() => setFitted((f) => (f === undefined ? null : f)), 4000);
     img.addEventListener("load", done, { once: true });
     img.addEventListener("error", fail, { once: true });
-    return () => { img.removeEventListener("load", done); img.removeEventListener("error", fail); };
+    return () => { window.clearTimeout(slow); img.removeEventListener("load", done); img.removeEventListener("error", fail); };
   }, [faceUrl]);
 
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const c = career.contract;
   const seasons = terms?.seasons ?? c?.seasonsRemaining;
-  const number = terms?.squadNumber ?? career.squadNumber ?? null;
+  const number = terms?.squadNumber ?? (kind === "transfer" ? null : career.squadNumber ?? null);
 
   const you: SigningYou = useMemo(() => ({
     skin: skinToneHex(career.player.skinTone),
@@ -83,7 +93,7 @@ export default function SigningScene3DCareer({
       you={you}
       manager={manager}
       contract={contract}
-      lines={signingLines({ seasons, number })}
+      lines={signingLines({ seasons, number, kind })}
       title={`Signing for ${club}`}
       onDone={onDone}
       onFail={onFail}

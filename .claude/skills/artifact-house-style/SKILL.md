@@ -55,6 +55,9 @@ is.
 > push go out, then added to the same page. Don't write "needs Mikey's yes".
 > See CLAUDE.md.
 
+> **Latest (Harry, 3 Oct 2026): no test build link.** *"the test build stuff doesn't work imo so stop doing that for patch notes"*.
+> Mostly stills; a short clip only for gameplay. Don't link or point at the Vercel preview. See CLAUDE.md.
+
 > **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
 > test build (the Vercel preview of the branch) and use stills; a short
 > "after" clip only when a still cannot show it (motion, timing, a fixed
@@ -198,6 +201,15 @@ only where one plain line would not be clear. A simple fact stays a sentence.
 - "We", "I", or any narration of the process. The reader wants the outcome.
 - A conclusion built up to. Lead with it.
 - Emoji as section markers — coloured dots, not decorations.
+
+## V1 (the all-versions page) reads newest first
+
+Harry, 3 Oct 2026: "redo it so from now on the newest updates are at the TOP
+and go backwards." V1 (https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR) is
+newest first everywhere: the At-a-glance index, the days, the versions inside
+a day, Still open, the decision groups and Original pages. A new version goes
+at the TOP of its day, and a new day above the last one. The script that last
+rebuilt it is `references/generators/v1-newest-first.py`.
 
 ## Patch notes carry their own history
 

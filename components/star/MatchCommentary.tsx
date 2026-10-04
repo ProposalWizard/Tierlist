@@ -7,6 +7,8 @@ import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
 import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
+import PlaystyleIcon, { PLAYSTYLE_GLOW, PLAYSTYLE_WORD } from "./PlaystyleIcon";
+import type { Playstyle } from "@/lib/star/types";
 // The kick-off beat (v0.24: the tunnel picture) lives in its own file.
 import KickOffCard from "./KickOffCard";
 import { useUiVersion } from "@/lib/star/uiLook";
@@ -23,6 +25,8 @@ import { useUiVersion } from "@/lib/star/uiLook";
  * middle is the only part that moves, and it stays pinned to its newest line so
  * the thing that just happened is always the thing you are looking at.
  */
+
+const PLAYSTYLES: Playstyle[] = ["defensive", "balanced", "attacking"];
 
 interface Props {
   lines: LogLine[];
@@ -52,6 +56,10 @@ interface Props {
   energyMode?: EnergyMode;
   /** Absent (dev screens): no energy bar is shown. */
   onEnergyMode?: (mode: EnergyMode) => void;
+  /** v0.26: Defensive / Balanced / Attacking, floating just above the
+   *  energy panel. Absent `onPlaystyle`: no playstyle buttons. */
+  playstyle?: Playstyle;
+  onPlaystyle?: (ps: Playstyle) => void;
   /** Basic KIB cans you still have — usable at half time only. */
   kibCans?: number;
   onUseKib?: () => void;
@@ -67,7 +75,7 @@ interface Props {
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
-  speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
+  speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, playstyle = "balanced", onPlaystyle, kibCans = 0, onUseKib,
   minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -143,7 +151,7 @@ export default function MatchCommentary({
             line's text ("breaks dow…" under 90+5', the Scores button over
             "the middle." — final playtest, 27 Sep 2026). The rows' colours
             still run the full width; only the words stop short of it. */}
-        <div className="flex min-h-full flex-col justify-start [&>div]:pr-16">
+        <div className={`flex min-h-full flex-col justify-start [&>div]:pr-16 ${onPlaystyle ? "pb-12" : ""}`}>
           {/* While the kick-off card shows, its "KICK OFF" title replaces the
               feed's own kick-off row, which read the same words twice (v0.24). */}
           {!(lines.length <= 1 && !oldUi) && lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
@@ -187,89 +195,140 @@ export default function MatchCommentary({
         </button>
       )}
 
-      {/* ── Waiting on you ── */}
-      {pause && (
-        <div className="shrink-0 border-t border-amber-400/40 bg-amber-950/40 px-3 pt-2 pb-2.5">
-          {pause.label && (
-            <div className="text-center text-[11px] font-black uppercase tracking-widest text-amber-200">
-              {pause.label}
-            </div>
-          )}
-          <div className={`flex gap-2 ${pause.label ? "mt-2.5" : ""}`}>
-            {/* Half time only: drink a Basic KIB can (+65) before the second
-                half. Takes the left third of the row, same height as the
-                button beside it, so the two read as one bar. */}
-            {pause.halfTime && onUseKib && (
-              <button
-                onClick={onUseKib}
-                disabled={kibCans <= 0 || energy >= 100}
-                aria-label={`Use a Basic KIB can, ${kibCans} left`}
-                className="flex basis-1/3 items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-1.5 py-1 text-gray-950 transition hover:bg-orange-400 active:scale-[0.98] disabled:bg-gray-700 disabled:text-white"
-              >
-                <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-8 w-5 shrink-0" />
-                <span className="flex flex-col items-start leading-none">
-                  <span className="text-[10px] font-black uppercase tracking-wide">Use KIB can</span>
-                  <span className="mt-0.5 text-sm font-black tabular-nums">&times;{kibCans}</span>
-                </span>
-              </button>
-            )}
-            <button
-              onClick={pause.onContinue}
-              className="flex-1 rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
-            >
-              {pause.cta}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Your energy ──
-          Replaces the stats row that used to sit here (it only repeated the
-          stats at the top of the match screen). Falls live as the clock
-          runs, at the rate of the mode you pick — see lib/star/energy.ts. */}
-      {onEnergyMode && (
-      <div className="shrink-0 border-t border-white/10 bg-gray-900 px-3 pt-2 pb-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-white">Energy</span>
+      {/* The bottom stack: the half-time bar (when paused) and your energy.
+          `relative` so the playstyle icons can float just above it. */}
+      <div className="relative shrink-0">
+        {/* ── How you play (v0.26) ──
+            Harry, 3 Oct 2026: "make them floating icons above the energy."
+            No card behind them — they hover over the bottom-right of the
+            feed, just above the energy panel (and above the half-time bar
+            when it shows, so they never cover its buttons), and the
+            commentary scrolls behind them. The chosen one is full size with
+            a glow ring in its own colour; the other two sit smaller and dim.
+            Every button is a 44px tap target whatever size its picture is. */}
+        {onPlaystyle && (
           <div
-            className="relative h-3 flex-1 overflow-hidden rounded-full bg-gray-700"
-            role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(energy)} aria-label="Energy"
+            role="radiogroup"
+            aria-label="Playstyle"
+            className="pointer-events-none absolute bottom-full right-2 z-20 mb-1.5 flex items-end gap-1"
           >
-            <div
-              className={`h-full rounded-full transition-[width] duration-500 ease-out ${
-                energy >= MIN_ENERGY_TO_START ? "bg-emerald-500" : energy >= 30 ? "bg-amber-400" : "bg-red-500"}`}
-              style={{ width: `${Math.max(0, Math.min(100, energy))}%` }}
-            />
+            {PLAYSTYLES.map(ps => {
+              const on = playstyle === ps;
+              const glow = PLAYSTYLE_GLOW[ps];
+              const px = on ? 42 : 32;
+              return (
+                <button
+                  key={ps}
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={`${PLAYSTYLE_WORD[ps]} playstyle`}
+                  title={PLAYSTYLE_WORD[ps]}
+                  onClick={() => onPlaystyle(ps)}
+                  className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full transition active:scale-90"
+                >
+                  <span
+                    className="grid place-items-center rounded-full transition-all duration-150"
+                    style={{
+                      width: px,
+                      height: px,
+                      opacity: on ? 1 : 0.55,
+                      boxShadow: on ? `0 0 0 2px rgba(${glow},0.85), 0 0 12px 2px rgba(${glow},0.55)` : "none",
+                      filter: on
+                        ? "drop-shadow(0 2px 4px rgba(0,0,0,0.6))"
+                        : "drop-shadow(0 2px 3px rgba(0,0,0,0.55)) saturate(0.6)",
+                    }}
+                  >
+                    <PlaystyleIcon style={ps} size={px} />
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <span className="w-8 text-right text-sm font-black tabular-nums text-white">{Math.round(energy)}</span>
-        </div>
-        <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
-          {(["low", "medium", "high"] as EnergyMode[]).map(m => {
-            const on = energyMode === m;
-            // Icons, not words (owners, 23 Sep 2026). Green Low, amber
-            // Medium, red High — red is the most intense (Harry, 1 Oct 2026,
-            // P95); see EnergyModeIcon.
-            const ring = oldUi
-              ? (m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70")
-              : (m === "low" ? "ring-green-500/70" : m === "high" ? "ring-red-500/70" : "ring-amber-400/70");
-            return (
+        )}
+        {/* ── Waiting on you ── */}
+        {pause && (
+          <div className="shrink-0 border-t border-amber-400/40 bg-amber-950/40 px-3 pt-2 pb-2.5">
+            {pause.label && (
+              <div className="text-center text-[11px] font-black uppercase tracking-widest text-amber-200">
+                {pause.label}
+              </div>
+            )}
+            <div className={`flex gap-2 ${pause.label ? "mt-2.5" : ""}`}>
+              {/* Half time only: drink a Basic KIB can (+65) before the second
+                  half. Takes the left third of the row, same height as the
+                  button beside it, so the two read as one bar. */}
+              {pause.halfTime && onUseKib && (
+                <button
+                  onClick={onUseKib}
+                  disabled={kibCans <= 0 || energy >= 100}
+                  aria-label={`Use a Basic KIB can, ${kibCans} left`}
+                  className="flex basis-1/3 items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-1.5 py-1 text-gray-950 transition hover:bg-orange-400 active:scale-[0.98] disabled:bg-gray-700 disabled:text-white"
+                >
+                  <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-8 w-5 shrink-0" />
+                  <span className="flex flex-col items-start leading-none">
+                    <span className="text-[10px] font-black uppercase tracking-wide">Use KIB can</span>
+                    <span className="mt-0.5 text-sm font-black tabular-nums">&times;{kibCans}</span>
+                  </span>
+                </button>
+              )}
               <button
-                key={m}
-                role="radio"
-                aria-checked={on}
-                aria-label={`${m} energy`}
-                title={`${m[0].toUpperCase()}${m.slice(1)} energy`}
-                onClick={() => onEnergyMode(m)}
-                className={`grid place-items-center rounded-lg py-0.5 transition active:scale-[0.95] ${
-                  on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
+                onClick={pause.onContinue}
+                className="flex-1 rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
               >
-                <EnergyModeIcon mode={m} active={on} size={46} />
+                {pause.cta}
               </button>
-            );
-          })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Your energy ──
+            Replaces the stats row that used to sit here (it only repeated the
+            stats at the top of the match screen). Falls live as the clock
+            runs, at the rate of the mode you pick — see lib/star/energy.ts. */}
+        {onEnergyMode && (
+        <div className="shrink-0 border-t border-white/10 bg-gray-900 px-3 pt-2 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">Energy</span>
+            <div
+              className="relative h-3 flex-1 overflow-hidden rounded-full bg-gray-700"
+              role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(energy)} aria-label="Energy"
+            >
+              <div
+                className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                  energy >= MIN_ENERGY_TO_START ? "bg-emerald-500" : energy >= 30 ? "bg-amber-400" : "bg-red-500"}`}
+                style={{ width: `${Math.max(0, Math.min(100, energy))}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-sm font-black tabular-nums text-white">{Math.round(energy)}</span>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
+            {(["low", "medium", "high"] as EnergyMode[]).map(m => {
+              const on = energyMode === m;
+              // Icons, not words (owners, 23 Sep 2026). Green Low, amber
+              // Medium, red High — red is the most intense (Harry, 1 Oct 2026,
+              // P95); see EnergyModeIcon.
+              const ring = oldUi
+                ? (m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70")
+                : (m === "low" ? "ring-green-500/70" : m === "high" ? "ring-red-500/70" : "ring-amber-400/70");
+              return (
+                <button
+                  key={m}
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={`${m} energy`}
+                  title={`${m[0].toUpperCase()}${m.slice(1)} energy`}
+                  onClick={() => onEnergyMode(m)}
+                  className={`grid place-items-center rounded-lg py-0.5 transition active:scale-[0.95] ${
+                    on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
+                >
+                  <EnergyModeIcon mode={m} active={on} size={46} />
+                </button>
+              );
+            })}
+          </div>
         </div>
+        )}
       </div>
-      )}
     </div>
   );
 }

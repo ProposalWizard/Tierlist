@@ -15,15 +15,23 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AuthPage() {
+export default async function AuthPage({
+  searchParams,
+}: {
+  searchParams?: { next?: string | string[] };
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Already logged in – go to the home page
+  // Already logged in – go where they were heading (same open-redirect check
+  // as /auth/callback: only a relative path, never "//" or a backslash trick),
+  // else the home page. The game's Home Screen app reloads /auth?next=/star-dev.
   if (user) {
-    redirect("/");
+    const raw = typeof searchParams?.next === "string" ? searchParams.next : "/";
+    const next = raw.startsWith("/") && !raw.startsWith("//") && !raw.includes("\\") ? raw : "/";
+    redirect(next);
   }
 
   return (

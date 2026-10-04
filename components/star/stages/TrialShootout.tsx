@@ -14,13 +14,14 @@ import {
 import {
   createRig, createRigScript, rigApply, rigNextSide, rigIntent, rigKicksTaken, rigPlanFor, rigKeeperRead,
   isYourKick, winningPenaltyScored, rigGoals, pickRunups, idForRunup, MISS_LINE, SHOOTOUT_KICKS,
-  type RigKick, type RigState, type RigScript,
+  type RigState, type RigScript,
 } from "@/lib/star/trialShootoutRig";
 import type { TrialProgress } from "@/lib/star/trial";
 import { EngineFeature } from "@/components/star/EnginePlay";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { PenaltyRunupId } from "@/lib/star/runupStyles";
 import { TeachCard } from "./TrialPenalties";
+import { TrialBoard, TrialCaption, TrialSlots, type SlotState } from "./TrialFrame";
 
 /**
  * THE PENALTY SHOOTOUT — the trial's last stage.
@@ -85,19 +86,6 @@ function takersFor(trial: TrialProgress, seed: number): { them: PenaltyTaker[]; 
   };
 }
 
-function Slot({ k, you }: { k?: RigKick; you?: boolean }) {
-  return (
-    <span
-      data-kick={k ? (k.scored ? "scored" : "missed") : "to-come"}
-      className={`grid h-[22px] w-[22px] place-items-center rounded-full text-[12px] font-black leading-none ${
-        !k ? `border-2 ${you ? "border-sky-300" : "border-white/45"} bg-white/10`
-          : k.scored ? "bg-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,.7)]" : "bg-rose-500 text-white shadow-[0_0_8px_rgba(244,63,94,.6)]"}`}
-    >
-      {k ? (k.scored ? "✓" : "✗") : you ? <span className="text-[10px] text-sky-200">★</span> : ""}
-    </span>
-  );
-}
-
 /**
  * THE SCOREBOARD — over the top of the pitch, a ✓ or ✗ for every kick.
  *
@@ -108,34 +96,25 @@ function Slot({ k, you }: { k?: RigKick; you?: boolean }) {
  * (on the pitch it hid the goal and the keeper).
  */
 function ShootoutCard({ rig, upNext }: { rig: RigState; upNext: string | null }) {
-  const row = (side: "you" | "them") => {
-    const ks = rig.kicks.filter(k => k.side === side);
-    return Array.from({ length: SHOOTOUT_KICKS }, (_, i) => ks[i]);
-  };
+  const states = (side: "you" | "them"): SlotState[] =>
+    rig.kicks.filter(k => k.side === side).map(k => (k.scored ? "scored" : "missed"));
   const you = rigGoals(rig.kicks, "you"), them = rigGoals(rig.kicks, "them");
   return (
-    <div data-shootout-board className="mx-3 mb-1.5 rounded-xl px-3 pb-1.5 pt-1" style={{ background: "linear-gradient(180deg, rgba(8,14,28,.9), rgba(8,14,28,.78))", boxShadow: "0 6px 16px -6px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.12)" }}>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-wide text-sky-300">{US}</div>
-          {/* The last slot is yours (★): the first two are your team-mates'. */}
-          <div className="mt-0.5 flex gap-1">{row("you").map((k, i) => <Slot key={i} k={k} you={i === SHOOTOUT_KICKS - 1} />)}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">Pens</div>
-          <div className="text-[24px] font-black tabular-nums leading-none text-white">{you}<span className="px-0.5 text-white/50">–</span>{them}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-[11px] font-black uppercase tracking-wide text-rose-300">{THEM}</div>
-          <div className="mt-0.5 flex justify-end gap-1">{row("them").map((k, i) => <Slot key={i} k={k} />)}</div>
-        </div>
-      </div>
-      <div className="mt-1 min-h-[14px] text-center text-[10.5px] font-black uppercase tracking-wide">
-        {rig.over
-          ? <span className="text-emerald-300">{rig.winner === "you" ? `${US} win ${you}–${them} on penalties` : `Level at ${you}–${them}`}</span>
-          : upNext && <span className="text-white/75">Next: <span className={upNext === THEM ? "text-rose-300" : "text-sky-300"}>{upNext}</span></span>}
-      </div>
-    </div>
+    <TrialBoard
+      data-shootout-board
+      title={US}
+      // The last slot is yours (★): the first two are your team-mates'.
+      left={<TrialSlots states={states("you")} total={SHOOTOUT_KICKS} youAt={SHOOTOUT_KICKS - 1} />}
+      centreLabel="Pens"
+      centreValue={<>{you}<span className="px-0.5 text-white/50">–</span>{them}</>}
+      right={<>
+        <div className="text-[11px] font-black uppercase tracking-wide text-rose-300">{THEM}</div>
+        <TrialSlots states={states("them")} total={SHOOTOUT_KICKS} align="right" />
+      </>}
+      footer={rig.over
+        ? <span className="text-emerald-300">{rig.winner === "you" ? `${US} win ${you}–${them} on penalties` : `Level at ${you}–${them}`}</span>
+        : upNext && <span>Next: <span className={upNext === THEM ? "text-rose-300" : "text-sky-300"}>{upNext}</span></span>}
+    />
   );
 }
 
@@ -290,10 +269,7 @@ export default function TrialShootout({
         )}
       </div>
       {/* What just happened, then who is up next. */}
-      <p className="mt-1.5 min-h-[16px] text-center text-[12px] font-bold text-white/75">{line}</p>
-      <p className="min-h-[16px] text-center text-[13px] font-black text-white">
-        {rig.over ? "" : yours ? "The winning penalty — it's all on you." : stepsUp}
-      </p>
+      <TrialCaption line={line} prompt={rig.over ? "" : yours ? "The winning penalty — it's all on you." : stepsUp} />
     </div>
   );
 }

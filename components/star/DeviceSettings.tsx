@@ -6,6 +6,14 @@ import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/li
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
+import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
+import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
+import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
+import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
+import {
+  useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
+  useYouInOpenPlay, setYouInOpenPlay,
+} from "@/lib/star/newLook";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
@@ -65,6 +73,11 @@ export function FullScreenRow({ support, on, onToggle, last = false }: {
 function HomeScreenTip() {
   return (
     <div className="mt-2 rounded-lg bg-black/30 p-2.5">
+      {/* Safari and the Home Screen app keep separate saves on an iPhone
+          (Harry, 3 Oct 2026: the app opened with all three saves "gone"). */}
+      <p className="mb-2 rounded-md bg-amber-400/15 px-2 py-1.5 text-[12px] font-bold leading-snug text-amber-100" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)" }}>
+        Your saves stay in Safari. Before you add the game, sign in (save 1 follows you) or use Move my saves.
+      </p>
       <ol className="space-y-1.5 text-[12px] font-bold leading-snug text-white">
         <li className="flex items-center gap-2">
           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-white/15" aria-hidden>
@@ -118,17 +131,54 @@ export function GameSwitches({ glow, fullscreen }: {
   );
 }
 
-/** Player look (Classic/3D) and the UI (Old/New). Put inside a SetCard. */
+/** Match view (New/Classic) with its Look group, the signing scene (3D/Drawn), the 3D shop's player (New/Old), Chances (New/Classic), the drawn-player style (Flat/Shaded) and the UI (Old/New). Put inside a SetCard. */
 export function LookSwitches() {
   const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
   const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
   const uiNow = useUiVersion();
+  const viewNow = useStoredMatchView();
+  const signing3d = useSigning3d();
+  const shopPlayer = useShop3dPlayerLook();
+  const chancesNow = useChanceSet();
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Player look</span>
-        <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Classic"], ["3d", "3D"]] as const} />
+        <span className="text-[14px] font-bold text-white">Match view</span>
+        <SegTabs className="w-[150px] shrink-0" value={viewNow} onChange={setMatchView} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
       </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
+      </SetNote>
+      <NewViewLook />
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Signing scene</span>
+        <SegTabs className="w-[150px] shrink-0" value={signing3d ? "3d" : "drawn"} onChange={(v) => setSigning3d(v === "3d")} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        3D: a live scene with your own player in it. Drawn: the picture signing, as before.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D shop player</span>
+        <SegTabs className="w-[150px] shrink-0" value={shopPlayer} onChange={setShop3dPlayerLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Chances</span>
+        <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        Classic (default): your drawn chances, in whichever match view you pick. New (to try): about 100 pictures of each chance with both full teams on the pitch.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Drawn-player style</span>
+        <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Flat"], ["3d", "Shaded"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        For drawn players only: &quot;Drawn&quot; above, the Classic view, five-a-side and the dribble. The 3D players ignore it.
+      </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">UI</span>
@@ -138,5 +188,42 @@ export function LookSwitches() {
         Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
       </SetNote>
     </>
+  );
+}
+
+/**
+ * Look — the new match view's own switches (Harry, 3 Oct 2026: every new look
+ * gets a toggle, the old one stays playable). lib/star/newLook.ts. They only
+ * change the New match view; Classic is drawn as it always was.
+ */
+function NewViewLook() {
+  const players = useMatchPlayersLook();
+  const ball = useMatchBallLook();
+  const you = useYouInOpenPlay();
+  const tilt = useCameraTilt();
+  const row = "mt-2 flex items-center justify-between gap-2";
+  return (
+    <div className="mt-2 rounded-lg bg-white/[0.04] px-2.5 py-2">
+      <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Look · new match view</div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Camera angle</span>
+        <SegTabs className="w-[130px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
+      </div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Players in the match</span>
+        <SegTabs className="w-[130px] shrink-0" value={players} onChange={setMatchPlayersLook} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
+      </div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Ball</span>
+        <SegTabs className="w-[130px] shrink-0" value={ball} onChange={setMatchBallLook} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
+      </div>
+      <div className={row}>
+        <span className="text-[13px] font-bold text-white">Your player in open play</span>
+        <SegTabs className="w-[130px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
+      </div>
+      <SetNote dim className="mt-1.5 text-[10px]">
+        New match view only. Camera angle: the pitch tipped back (20° default; corners and byline crosses stay flat); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
+      </SetNote>
+    </div>
   );
 }

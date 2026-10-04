@@ -30,6 +30,7 @@ import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
 import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas } from "./textures";
 import { formatMoney } from "../money";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, type Person3D } from "../people3d";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -122,10 +123,22 @@ export interface ShopOptions {
   /** Filming only: every drawn frame moves the game on by exactly this many
    *  seconds, however long it took to draw. Off in normal use. */
   fixedStep?: number;
+  /** Which footballer walks the shop: "new" (the approved characters, with
+   *  your skin, hair and kit; the default) or "old" (the first CC0 body, kept
+   *  exactly as it was — Settings → "3D shop player"). */
+  player?: ShopPlayer;
   /** Start just inside the front doors, facing in (arriving from the garden). */
   atDoor?: boolean;
   /** The shirt number on his back (your squad number; 10 on the test page). */
   number?: number;
+}
+
+/** Your footballer in the shop. Skin and hair are "#rrggbb". */
+export interface ShopPlayer {
+  look: "new" | "old";
+  skin?: string;
+  hair?: string;
+  hairStyle?: "short" | "long" | "buzz" | "none";
 }
 
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
@@ -543,17 +556,11 @@ export async function startShop(
   displays.counter.items.forEach((_, i) => showPicture(i, 3));
 
   // ── The footballer ──
-  const [charGltf, animGltf] = await Promise.all([
-    loader.loadAsync("/star/shop3d/character.glb"),
-    loader.loadAsync("/star/shop3d/anims.glb"),
-  ]);
-  const player = charGltf.scene;
-  // from the garden: a few steps in from the doors, so the camera fits behind
-  const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
-  player.position.set(start.x, 0, start.z);
-  player.rotation.y = Math.PI; // facing into the shop (-z)
-  scene.add(player);
-  const playerBlob = blob(0.9, 0.9, start.x, start.z, scene, 0.014, 0.9);
+  const newLook = (opts.player?.look ?? "new") === "new";
+  let player: any;
+  let mixer: any;
+  let idleA: any, walkA: any, jogA: any, buyA: any;
+  let person: Person3D | null = null;
   const kitU = {
     uShirt: { value: new THREE.Color(kit0.shirt) },
     uTrim: { value: new THREE.Color(kit0.trim) },
@@ -564,27 +571,64 @@ export async function startShop(
     uRight: { value: new THREE.Vector3(1, 0, 0) },
     uFwd: { value: new THREE.Vector3(0, 0, 1) },
   };
-  player.traverse((o: any) => {
-    if (!o.isMesh) return;
-    o.castShadow = true;
-    o.frustumCulled = false;
-    if (o.isSkinnedMesh && o.material?.name === "Skin") dressInKit(THREE, o, kitU);
-    // the pack's hair texture is grey: tint it dark brown (eyebrows share it)
-    if (o.material?.name === "Hair") o.material.color.set("#4a2e1c");
-  });
-  const mixer = new THREE.AnimationMixer(player);
-  const clip = (n: string) => animGltf.animations.find((a: any) => a.name === n);
-  const act = (n: string) => {
-    const a = mixer.clipAction(clip(n));
-    a.play();
-    a.setEffectiveWeight(0);
-    return a;
+  const dressNew = (k: KitColours) => {
+    if (!person) return;
+    dressPerson3d(THREE, person, {
+      skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12",
+      kit: k, number: kitU.uNum.value,
+    });
   };
-  const idleA = act("Idle_Loop");
-  const walkA = act("Walk_Loop");
-  const jogA = act("Jog_Fwd_Loop");
+  if (newLook) {
+    // The approved character (people3d.ts): your skin, hair and kit. There is
+    // no walk clip: the jog, slowed down, is the walk. The jog has its travel
+    // taken out, so the body moves only where the stick moves it.
+    const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
+    const model = playerModelFor(opts.player?.hairStyle);
+    const [g, a] = await Promise.all([loadPeople3d(loader, model), loadPeople3d(loader, "anims")]);
+    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: 0.006, castShadow: true });
+    player = person.root;
+    mixer = person.mixer;
+    idleA = person.actions.idle;
+    walkA = person.actions.jog;
+    jogA = mixer.clipAction(person.actions.jog.getClip().clone());
+    jogA.play(); jogA.setEffectiveWeight(0);
+    buyA = person.actions.celebrate;
+    dressNew(kit0);
+  } else {
+    const [charGltf, animGltf] = await Promise.all([
+      loader.loadAsync("/star/shop3d/character.glb"),
+      loader.loadAsync("/star/shop3d/anims.glb"),
+    ]);
+    player = charGltf.scene;
+    player.traverse((o: any) => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      o.frustumCulled = false;
+      if (o.isSkinnedMesh && o.material?.name === "Skin") dressInKit(THREE, o, kitU);
+      // the pack's hair texture is grey: tint it dark brown (eyebrows share it)
+      if (o.material?.name === "Hair") o.material.color.set("#4a2e1c");
+    });
+    mixer = new THREE.AnimationMixer(player);
+    const clip = (n: string) => animGltf.animations.find((a: any) => a.name === n);
+    const act = (n: string) => {
+      const a = mixer.clipAction(clip(n));
+      a.play();
+      a.setEffectiveWeight(0);
+      return a;
+    };
+    idleA = act("Idle_Loop");
+    walkA = act("Walk_Loop");
+    jogA = act("Jog_Fwd_Loop");
+    buyA = mixer.clipAction(clip("Interact"));
+  }
+  // from the garden: a few steps in from the doors, so the camera fits behind
+  const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
+  player.position.set(start.x, 0, start.z);
+  player.rotation.y = Math.PI; // facing into the shop (-z)
+  scene.add(player);
+  const playerBlob = blob(0.9, 0.9, start.x, start.z, scene, 0.014, 0.9);
+  for (const a of [idleA, walkA, jogA]) a.setEffectiveWeight(0);
   idleA.setEffectiveWeight(1);
-  const buyA = mixer.clipAction(clip("Interact"));
   buyA.setLoop(THREE.LoopOnce, 1);
   buyA.clampWhenFinished = false;
   let buying = 0; // seconds left of the buy gesture
@@ -730,8 +774,14 @@ export async function startShop(
     walkA.setEffectiveWeight(wWalk * (1 - busy));
     jogA.setEffectiveWeight(wJog * (1 - busy));
     buyA.setEffectiveWeight(busy);
-    walkA.timeScale = Math.max(0.6, speed / 1.45);
-    jogA.timeScale = Math.max(0.8, speed / 3.2);
+    if (newLook) {
+      // the jog clip covers about 3 m/s; slowed right down, it is the walk
+      walkA.timeScale = Math.max(0.45, speed / 2.6);
+      jogA.timeScale = Math.max(0.8, speed / 3.0);
+    } else {
+      walkA.timeScale = Math.max(0.6, speed / 1.45);
+      jogA.timeScale = Math.max(0.8, speed / 3.2);
+    }
     if (buying > 0) buying -= dt;
     mixer.update(dt);
 
@@ -825,7 +875,7 @@ export async function startShop(
   const ctrl: ShopController = {
     setStick: (x, y) => { stick = { x, y }; },
     setCardOpen: (open) => { framed = open; if (open) orbitHold = 0; },
-    setKit: (k) => { kitU.uShirt.value.set(k.shirt); kitU.uTrim.value.set(k.trim); },
+    setKit: (k) => { kitU.uShirt.value.set(k.shirt); kitU.uTrim.value.set(k.trim); dressNew(k); },
     select: (display, index) => {
       sel = { display, index };
       if (display === "car") showCar(index);

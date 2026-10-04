@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { newChanceMark, NEW_CHANCE_REFUSAL } from "@/lib/star/libraryMark";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -111,6 +112,10 @@ export async function POST(req: NextRequest) {
       { error: "scenario must be a MatchScenario (id, name, kind, camera, ball, players[])" },
       { status: 400 },
     );
+  }
+  // The New chance library stays out of the gallery (lib/star/libraryMark.ts).
+  if (newChanceMark(body.scenario as object)) {
+    return NextResponse.json({ error: NEW_CHANCE_REFUSAL }, { status: 400 });
   }
   const sc = body.scenario as { id: string; name: string; kind: string };
 

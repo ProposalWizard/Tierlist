@@ -22,7 +22,8 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
 /**
  * THE ENERGY MASTER PLAN (22 Sep 2026).
  *
- * Premier League, full 90: Low 30 · Medium 60 · High 95. Every competition
+ * Premier League, full 90: Low 25 · Medium 60 · High 120 (v0.26, Harry: High
+ * costs much more for its extra chances; was Low 30 · High 95). Every competition
  * scales that by its own factor. Rest days between fixtures give energy
  * back; unused weekly actions no longer do.
  */
@@ -33,17 +34,17 @@ const near = (a: number, b: number, eps = 0.01) => Math.abs(a - b) < eps;
 
 // ── Per-minute rates add up to the agreed full-match totals ──
 {
-  check(ENERGY_FULL_MATCH_HIGH === 95 && ENERGY_FULL_MATCH_MEDIUM === 60 && ENERGY_FULL_MATCH_LOW === 30,
-    "Premier League full 90: High 95, Medium 60, Low 30");
-  check(near(energyPerMinute("high") * 90, 95), "High per minute x 90 = 95");
+  check(ENERGY_FULL_MATCH_HIGH === 120 && ENERGY_FULL_MATCH_MEDIUM === 60 && ENERGY_FULL_MATCH_LOW === 25,
+    "Premier League full 90: High 120, Medium 60, Low 25");
+  check(near(energyPerMinute("high") * 90, 120), "High per minute x 90 = 120");
   check(near(energyPerMinute("medium") * 90, 60), "Medium per minute x 90 = 60");
-  check(near(energyPerMinute("low") * 90, 30), "Low per minute x 90 = 30");
-  check(near(energyPerMinute("low"), energyPerMinute("medium") * 0.5), "Low is half of Medium");
+  check(near(energyPerMinute("low") * 90, 25), "Low per minute x 90 = 25");
+  check(near(energyPerMinute("high"), energyPerMinute("medium") * 2), "High is double Medium");
 
   // A mixed match: 10 High, 4 Medium, 2 Low, 72 High — the example asked about.
   const mixed = 10 * energyPerMinute("high") + 4 * energyPerMinute("medium")
     + 2 * energyPerMinute("low") + 72 * energyPerMinute("high");
-  check(mixed > 88 && mixed < 90, `a mixed match costs what its minutes add up to (${mixed.toFixed(1)})`);
+  check(mixed > 112 && mixed < 113.2, `a mixed match costs what its minutes add up to (${mixed.toFixed(1)})`);
 }
 
 // ── Competition factors ──

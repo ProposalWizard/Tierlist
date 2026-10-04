@@ -140,3 +140,33 @@ export function dailyRecovery(ownsWorkingProperty: boolean, trainingGroundTier: 
 export function clampEnergy(n: number): number {
   return Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
 }
+
+// ── Fatigue on your stats (v0.26) ───────────────────────────────────────────
+//
+// Harry: "the less energy you have, some sort of fatigue happens on your
+// stats — less power at 19 energy compared to 80". Before this the cut was a
+// straight line from 100 (80 energy already lost 6%, 19 lost 24%). Now
+// nothing is lost at or above FATIGUE_FRESH_ABOVE (85), and below it the cut
+// grows smoothly (an S-curve) to FATIGUE_MAX_CUT at 0:
+//
+//   energy   100   80    50    19    0
+//   cut      0%    0.4%  15%   35%   40%
+//
+// The live in-match energy is used, which starts from the career's own
+// energy at kick-off, so a player who starts tired is weaker from minute one.
+
+export const FATIGUE_MAX_CUT = getTuning("energy.tiredSkillCut");
+export const FATIGUE_FRESH_ABOVE = getTuning("energy.fatigueFreshAbove");
+
+/** Share of power/technique lost at this live energy, 0..FATIGUE_MAX_CUT. */
+export function fatigueCut(energy: number): number {
+  const fresh = Math.max(1, FATIGUE_FRESH_ABOVE);
+  const t = Math.max(0, Math.min(1, (fresh - clampEnergy(energy)) / fresh));
+  return FATIGUE_MAX_CUT * t * t * (3 - 2 * t);
+}
+
+/** Power and technique as they are at this energy. */
+export function tiredKickSkills<S extends { power: number; technique: number }>(skills: S, energy: number): S {
+  const keep = 1 - fatigueCut(energy);
+  return { ...skills, power: skills.power * keep, technique: skills.technique * keep };
+}

@@ -56,6 +56,32 @@ export interface Pose3d {
   legSwing?: number;
   kick?: number;
   armLead?: number;
+  /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). */
+  kickFoot?: number;
+}
+
+/**
+ * THE ONE-FOOTED KICK (v0.25 item 11) — where the feet go when a kick is
+ * struck with one named foot, in the figure's own units. Shared by both skins
+ * (fiveASide/render.ts's feetFor reads it), so the classic figure and this
+ * shaded one swing the same leg. Positive x is the figure's right as seen from
+ * behind; smaller y is higher.
+ *
+ * The kicking foot goes out to the BALL's side and up — a right-footer stands
+ * to the left of the ball, so his right leg reaches right to it; a left-footer
+ * is the mirror. The standing foot is planted under him, a touch across.
+ * Harry, testing v0.25: the first cut swung the foot 1 px out and 3 px up on
+ * a phone, so both feet read the same; this is the swing he can see.
+ */
+export function oneFootKickFeet(r: number, feetY: number, kick: number, kickFoot: number): { lx: number; ly: number; rx: number; ry: number } {
+  const kf = Math.sign(kickFoot) || 1;
+  const strikeX = kf * r * (0.19 + kick * 0.24);
+  const strikeY = feetY * r - kick * r * 0.3;
+  const plantX = -kf * r * 0.12;
+  const plantY = feetY * r;
+  return kf > 0
+    ? { lx: plantX, ly: plantY, rx: strikeX, ry: strikeY }
+    : { lx: strikeX, ly: strikeY, rx: plantX, ry: plantY };
 }
 
 export interface Look3d {
@@ -381,7 +407,10 @@ export function paintBody3d(
     // Harry, 28 Sep 2026, "yes" to smoothing it). Only the man striking the
     // ball is mid-kick, so this adds a handful of pictures, not hundreds.
     kick: q(pose?.kick, 0, 0.0625),
-    armLead: Math.sign(pose?.armLead ?? 0), gloves: !!pose?.gloves,
+    // A one-footed kick throws the OTHER arm out for balance (as paintBody does).
+    armLead: Math.sign(pose?.armLead ?? ((pose?.kick ?? 0) > 0 && pose?.kickFoot ? -pose.kickFoot : 0)),
+    gloves: !!pose?.gloves,
+    kickFoot: (pose?.kick ?? 0) > 0 ? Math.sign(pose?.kickFoot ?? 0) : 0,
   };
   const t = ctx.getTransform();
   const k = Math.hypot(t.a, t.b) || 1; // device pixels per local unit
@@ -390,7 +419,7 @@ export function paintBody3d(
     // Size in 2-device-pixel steps, then stamp the cached picture scaled to r.
     const rq = Math.max(2, Math.round(rDev / 2) * 2) / k;
     const key = [look.shirt, look.shorts, look.trim, skin, mode, mode === "drawn" ? hk : "",
-      qp.armSpread, qp.armLift, qp.crouch, qp.legSwing, qp.kick, qp.armLead, qp.gloves ? 1 : 0, Math.round(rq * k)].join("|");
+      qp.armSpread, qp.armLift, qp.crouch, qp.legSwing, qp.kick, qp.armLead, qp.kickFoot, qp.gloves ? 1 : 0, Math.round(rq * k)].join("|");
     let sp = sprites.get(key);
     if (sp) { sprites.delete(key); sprites.set(key, sp); }
     else {
@@ -460,13 +489,17 @@ function drawBody3d(
   const sink = crouch * r * 0.16;
   const stride = (swing * 0.42 + kick * 0.55) * r;
   const footRise = Math.abs(stride) * 0.15;
-  const footY = A.FEET_Y * r - footRise;
-  const footL = -r * 0.19 - stride * 0.35;
-  const footR = r * 0.19 + stride * 0.35;
+  // A kick with a named foot swings that one leg (oneFootKickFeet); without
+  // one, both legs open as they always have.
+  const one = kick > 0 && pose?.kickFoot ? oneFootKickFeet(r, A.FEET_Y, kick, pose.kickFoot) : null;
+  const footL = one ? one.lx : -r * 0.19 - stride * 0.35;
+  const footR = one ? one.rx : r * 0.19 + stride * 0.35;
+  const footYL = one ? one.ly : A.FEET_Y * r - footRise;
+  const footYR = one ? one.ry : A.FEET_Y * r - footRise;
   const hipY = A.HIP_Y * r + sink;
 
   // ── Legs: thigh, shin, sock with a trim band, boot ──
-  for (const [hx, fx] of [[-r * 0.16, footL], [r * 0.16, footR]] as const) {
+  for (const [hx, fx, footY] of [[-r * 0.16, footL, footYL], [r * 0.16, footR, footYR]] as const) {
     const hip: P = [hx, hipY];
     const ankle: P = [fx, footY - r * 0.07];
     // A little outward bend at the knee, so a leg is two pieces, not a pole.

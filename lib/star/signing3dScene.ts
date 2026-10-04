@@ -15,30 +15,35 @@
  *             and shake hands across the desk while the camera pulls back.
  *
  * The office, desk, chairs, contract, pen and lamp are modelled here in code.
- * The two men are the rigged body (signing3dRig.ts). The contract is a canvas
- * texture drawn from the career (club, seasons, wage, shirt number), so no
- * words are baked into any picture.
+ * The two men are the approved characters (people3d.ts, 3 Oct 2026): your
+ * player — your skin tone, face picture, hair (short / buzz / long, "none" is
+ * the buzz), club kit and number, accessories and the Star Pass aviators —
+ * and the manager in his suit. Their clips (sitting, standing up, standing)
+ * are posed on top of each frame: hands on the desk, the pen, the lean, the
+ * head turn and the handshake are arm IK. The models have no finger bones,
+ * so a grip is the hand placed round the pen, and the pen sits in it.
+ *
+ * The contract is a canvas texture drawn from the career (club, seasons,
+ * wage, shirt number), so no words are baked into any picture.
  *
  * three.js is imported only when this scene starts (the page lazy-loads it).
  * No shadow maps; a soft dark patch under each person and object instead.
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
 import {
-  landmarksOf, weldBody, buildGarment, hideCoveredSkin, kitSpec, suitSpec, footSpec, sleevesSpec, wristTapeSpec,
-  glovesSpec, armbandSpec, headbandSpec, snoodSpec, slimArms, HAND_SCALE, faceFrameOf, buildFaceDecal, solveArm, handAxesOf, handWorldQuat,
-  setBoneWorldQuat, rotateBoneWorld, curlFinger, aimBone, type GarmentSpec, type HandAxes, type Landmarks, type WeldedBody,
-} from "./signing3dRig";
-import {
-  averageColour, newNumberCanvas, drawShirtNumber, woodGrainCanvas, framedShirtCanvas, namePlateCanvas, softShadowCanvas,
+  newNumberCanvas, drawShirtNumber, woodGrainCanvas, framedShirtCanvas, namePlateCanvas, softShadowCanvas,
   newContractCanvas, drawContract, CONTRACT_W, CONTRACT_H, CONTRACT_SIG,
 } from "./signing3dTextures";
+import {
+  loadPeople3d, makePerson3d, dressPerson3d, poseClips, poseRest, setHipsXZ, playerModelFor,
+  type Person3D, type PersonModel,
+} from "./people3d";
 
 type Three = typeof import("three");
 
 export const SIGNING3D_FILES = {
-  people: "/star/signing3d/people.glb",
-  anims: "/star/signing3d/anims.glb",
   aviators: "/star/signing3d/aviators.glb",
   window: "/star/signing3d/room-golden-hour.webp",
 };
@@ -103,51 +108,57 @@ export interface SigningSceneHandle {
   debugInfo(): Record<string, unknown>;
   /** Hold the current beat at `t` seconds into it. */
   debugHold(t: number): void;
+  /** Run `n` frames of `dt` seconds each, exactly as the live loop does
+   *  (same delta cap), and draw the last one. For slow-frame checks. */
+  debugStep(dt: number, n?: number): void;
   dispose(): void;
 }
 
 // ── Where everything is (metres; desk centre on the floor at the origin) ──
 
 const DESK = { w: 1.4, d: 0.68, top: 0.76 };
-const YOU_Z = 0.5;     // your chair, facing -z
-const BOSS_Z = -0.5;   // his chair, facing +z
+/** Each man's hips, seated (his chair is behind them). */
+const SEAT_Z = 0.72;
+const YOU_Z = SEAT_Z - 0.3;   // your chair, facing -z
+const BOSS_Z = -(SEAT_Z - 0.3);   // his chair, facing +z
+/** How far forward the hips travel standing up (the clip's own step, cut down to fit the desk). */
+const RISE_TRAVEL = 0.5;
 const PAPER = { w: 0.26, h: 0.36, z: 0.13 };
-const PEN_REST = { x: 0.24, z: 0.12 };
+const PEN_REST = { x: 0.2, z: 0.2 };
 const SIGN_T = {
-  pull: 0.8, reachA: 0.1, reachB: 0.6, grip: 0.75, toLine: 1.0, writeEnd: 2.1, lift: 2.3, stamp: 2.3, putDown: 2.6,
-  standA: 2.6, standB: 3.63, stepB: 3.95, shakeA: 3.7, shakeB: 4.05, pumpEnd: 4.85, done: 4.9,
+  pull: 0.8, reachA: 0.1, reachB: 0.6, grip: 0.75, toLine: 1.0, writeEnd: 2.2, lift: 2.4, stamp: 2.4, putDown: 2.75,
+  standA: 2.8, standB: 4.1, shakeA: 3.85, shakeB: 4.45, pumpEnd: 5.3, done: 5.35,
 };
 export const SIGN_SECONDS = SIGN_T.done;
+/** Where in the stand-to-sit clip he is fully sat, and fully stood. */
+const RISE_CLIP = { sat: 4.3, stood: 0.75 };
+/** The upright part of the seated clip (it slumps into a "thinker" later). */
+const SIT_CLIP = { mid: 0.45, swing: 0.35 };
+/** The most his back may lean forward while he gets up (radians). */
+const RISE_MAX_BEND = 0.18;
 
-/** The writing grip: how far the pen sits under the first finger's pad,
- *  towards the thumb, where it rests on the web, and how much nib shows. */
-const PEN_GRIP = { pad: 0.011, side: 0.004, web: 0.014, webUp: 0.006, tip: 0.024 };
+/** The pen in the (fingerless) hand, in the hand's own frame: the pad under
+ *  the fingers' ends (`along` × hand length, a little off the palm), and where
+ *  it rests back over the web of the thumb. Metres. */
+const PEN_GRIP = { padAlong: 0.82, padPalm: 0.02, padThumb: 0.03, webAlong: 0.3, webThumb: 0.075, webPalm: 0.004, tip: 0.026 };
 
-/** The handshake: where the palms meet (height), how far each wrist sits
+/** The handshake: where the hands meet (height), how far each wrist sits
  *  back from the middle, and each palm's distance off the middle plane. */
-const SHAKE = { y: 1.07, back: 0.08, gap: 0.021 };
+const SHAKE = { y: 1.1, back: 0.085, gap: 0.024 };
 
 const ease = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const seg = (t: number, a: number, b: number) => ease((t - a) / (b - a));
 
-interface Person {
-  root: THREE.Object3D;
-  body: THREE.SkinnedMesh;
-  weld: WeldedBody;
-  L: Landmarks;
-  mixer: THREE.AnimationMixer;
-  actions: Record<string, THREE.AnimationAction>;
-  bones: Record<string, THREE.Bone>;
-  handAxR: HandAxes;
-  handAxL: HandAxes;
-  extras: THREE.Object3D[];
-  skinMat: THREE.MeshStandardMaterial;
-  hairMat: THREE.MeshStandardMaterial;
-  hairMat2: THREE.MeshStandardMaterial;
+interface Person extends Person3D {
   facing: 1 | -1; // +1 faces +z
-  restHeadInv?: THREE.Quaternion;
-  /** Each bone's own rest position and turn (the file's), for hanging things on bones. */
-  rest: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>;
+  seatZ: number;  // world z of his hips, seated
+  restHeadInv: THREE.Quaternion;
+  /** Hips (clip) z where the rise clip has him sat, metres. */
+  riseSatZ: number;
+  /** How far forward his hips end up once stood (metres, his own frame). */
+  riseTravel: number;
+  extras: THREE.Object3D[];
+  model: PersonModel;
 }
 
 export async function createSigningScene(container: HTMLElement, opts: SigningSceneOptions): Promise<SigningSceneHandle> {
@@ -179,9 +190,9 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   // ── Load ──
   const loader = new GLTFLoader();
   const texLoader = new T.TextureLoader();
-  const [people, anims] = await Promise.all([
-    loader.loadAsync(SIGNING3D_FILES.people) as Promise<GLTF>,
-    loader.loadAsync(SIGNING3D_FILES.anims) as Promise<GLTF>,
+  const youModel0 = playerModelFor(opts.you.hairStyle);
+  const [anims, bossGltf, youGltf0] = await Promise.all([
+    loadPeople3d(loader, "anims"), loadPeople3d(loader, "manager"), loadPeople3d(loader, youModel0),
   ]);
   let aviatorsGltf: GLTF | null = null;
   const loadAviators = async () => {
@@ -189,186 +200,87 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     return aviatorsGltf;
   };
 
-  // The average colour of each texture, so a tint lands on the colour asked for.
-  const avgOf = (tex: THREE.Texture | null) => averageColour(tex?.image as CanvasImageSource | undefined);
-  let skinAvg: [number, number, number] = [0.5, 0.4, 0.35];
-  let hairAvg: [number, number, number] = [0.3, 0.3, 0.3];
-  let hair2Avg: [number, number, number] = [0.3, 0.3, 0.3];
-  people.scene.traverse((o) => {
-    const m = o as THREE.SkinnedMesh;
-    if (!m.isMesh) return;
-    const mat = m.material as THREE.MeshStandardMaterial;
-    if (m.name === "Body") skinAvg = avgOf(mat.map);
-    if (m.name === "Hair_SimpleParted") hairAvg = avgOf(mat.map);
-    if (m.name === "Hair_Long") hair2Avg = avgOf(mat.map);
-  });
-  const tinted = (hex: string, avg: [number, number, number], k = 1) => {
-    const c = new T.Color(hex); // linear
-    return new T.Color(Math.min(4, (c.r / avg[0]) * k), Math.min(4, (c.g / avg[1]) * k), Math.min(4, (c.b / avg[2]) * k));
-  };
+  const v3 = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
+  const wpos = (o: THREE.Object3D) => { const v = new T.Vector3(); o.getWorldPosition(v); return v; };
 
   // ── People ──
-  const makePerson = (facing: 1 | -1, z: number): Person => {
-    const root = SkeletonUtils.clone(people.scene) as THREE.Object3D;
-    root.position.set(0, 0, z);
-    root.rotation.y = facing === 1 ? 0 : Math.PI;
-    const body = root.getObjectByName("Body") as THREE.SkinnedMesh;
-    const bones: Record<string, THREE.Bone> = {};
-    root.traverse((o) => { if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone; });
-    // Rest-pose measurements, before any clip touches the bones.
-    root.updateMatrixWorld(true);
-    const rootInv = new T.Matrix4().copy(root.matrixWorld).invert();
-    void rootInv;
-    const L = landmarksOf(T, root);
-    const handAxR = handAxesOf(T, bones.hand_r, bones.middle_01_r);
-    const handAxL = handAxesOf(T, bones.hand_l, bones.middle_01_l);
-    body.geometry = body.geometry.clone();
-    slimArms(T, root, body.geometry, L);
-    const weld = weldBody(body.geometry);
-    const skinMat = (body.material as THREE.MeshStandardMaterial).clone();
-    body.material = skinMat;
-    const hairMat = ((root.getObjectByName("Hair_SimpleParted") as THREE.Mesh).material as THREE.MeshStandardMaterial).clone();
-    const hairMat2 = ((root.getObjectByName("Hair_Long") as THREE.Mesh).material as THREE.MeshStandardMaterial).clone();
-    root.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh && (m.name.startsWith("Hair_") || m.name === "Eyebrows")) { m.material = m.name === "Hair_Long" ? hairMat2 : hairMat; }
-      if (m.isMesh) m.frustumCulled = false;
-    });
-    const rest = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
-    for (const b of Object.values(bones)) rest.set(b, [b.position.clone(), b.quaternion.clone()]);
-    const mixer = new T.AnimationMixer(root);
-    const actions: Record<string, THREE.AnimationAction> = {};
-    for (const clip of anims.animations) {
-      const a = mixer.clipAction(clip);
-      a.play();
-      a.setEffectiveWeight(0);
-      actions[clip.name] = a;
-    }
-    scene.add(root);
-    // Hands a size down, about the wrist (bones, so the fingers and their
-    // joints shrink together; the clips never touch a bone's scale).
-    bones.hand_l.scale.setScalar(HAND_SCALE);
-    bones.hand_r.scale.setScalar(HAND_SCALE);
-    return { root, body, weld, L, mixer, actions, bones, handAxR, handAxL, extras: [], skinMat, hairMat, hairMat2, facing, rest };
+  const makePerson = (gltf: GLTF, model: PersonModel, facing: 1 | -1): Person => {
+    const p3 = makePerson3d(T, SkeletonUtils, gltf, anims, { outline: 0.0035 });
+    const seatZ = facing === 1 ? -SEAT_Z : SEAT_Z;
+    p3.root.position.set(0, 0, seatZ);
+    p3.root.rotation.y = facing === 1 ? 0 : Math.PI;
+    scene.add(p3.root);
+    // Rest head facing, for the head turn (bind pose).
+    poseRest(p3);
+    const hq = new T.Quaternion(); p3.bones.Head.getWorldQuaternion(hq);
+    // Where the rise clip has the hips when he is fully sat.
+    // and how far forward his hips go standing up (cut down to fit the desk).
+    poseClips(p3, [["sitdown", RISE_CLIP.sat, 1]]);
+    const riseSatZ = p3.bones.Hips.position.z * p3.unit;
+    poseClips(p3, [["sitdown", RISE_CLIP.stood, 1]]);
+    const riseTravel = RISE_TRAVEL * (p3.bones.Hips.position.z * p3.unit - riseSatZ);
+    return Object.assign(p3, { facing, seatZ, restHeadInv: hq.invert(), riseSatZ, riseTravel, extras: [] as THREE.Object3D[], model });
   };
 
-  const you = makePerson(-1, YOU_Z);
-  const boss = makePerson(1, BOSS_Z);
+  const boss = makePerson(bossGltf, "manager", 1);
+  dressPerson3d(T, boss, { skin: opts.manager.skin, hair: opts.manager.hairColour, grey: opts.manager.bald ? 0.85 : opts.manager.grey });
+  let you = makePerson(youGltf0, youModel0, -1);
 
-  const show = (p: Person, name: string, on: boolean) => { const o = p.root.getObjectByName(name); if (o) o.visible = on; };
-
-  // The manager: suit, hair, beard.
-  {
-    const m = opts.manager;
-    boss.skinMat.color.copy(tinted(m.skin, skinAvg));
-    const hair = new T.Color(m.hairColour).lerp(new T.Color("#c9c9c9"), m.grey);
-    boss.hairMat.color.copy(tinted("#" + hair.getHexString(T.LinearSRGBColorSpace), hairAvg));
-    show(boss, "Hair_SimpleParted", !m.bald && !m.buzz);
-    show(boss, "Hair_Buzzed", m.buzz);
-    show(boss, "Hair_Beard", m.beard);
-    show(boss, "Hair_Long", false);
-    const specs = [...suitSpec(boss.L, { suit: "#1c2433", tie: new T.Color(opts.contract.shirt).getHSL({ h: 0, s: 0, l: 0 }).l > 0.6 ? opts.contract.trim : opts.contract.shirt }), footSpec(boss.L, "#0b0b0c", "#1f1a17", true)];
-    for (const s of specs) { const g = buildGarment(T, boss.body, boss.weld, s); boss.body.parent!.add(g); }
-    hideCoveredSkin(T, boss.body, boss.weld, specs);
-  }
-
-  // You: kit, number, face, accessories. Rebuilt when the look changes.
+  // You: kit, number, face, accessories, aviators. A different hair style is
+  // a different body, built again; anything else is paint.
   const numberCanvas = newNumberCanvas();
   const numberTex = new T.CanvasTexture(numberCanvas);
-  const drawNumber = (n: number | null | undefined) => { drawShirtNumber(numberCanvas, n); numberTex.needsUpdate = true; };
-  const youBaseIndex = you.body.geometry.index!.clone();
-  const youRestPos = (you.body.geometry.attributes.position.array as Float32Array).slice();
   let youBuildId = 0;
+  let lastYou: SigningYou = opts.you;
   const buildYou = async (y: SigningYou) => {
+    lastYou = y;
     const id = ++youBuildId;
+    const model = playerModelFor(y.hairStyle);
+    if (model !== you.model) {
+      const g = await loadPeople3d(loader, model);
+      if (id !== youBuildId) return;
+      const old = you;
+      you = makePerson(g, model, -1);
+      you.root.position.copy(old.root.position);
+      for (const e of old.extras) e.parent?.remove(e);
+      scene.remove(old.root);
+    }
     for (const e of you.extras) e.parent?.remove(e);
     you.extras = [];
-    you.body.geometry.setIndex(youBaseIndex.clone());
-    // A clean face (a face picture softens it in place).
-    (you.body.geometry.attributes.position.array as Float32Array).set(youRestPos);
-    you.body.geometry.attributes.position.needsUpdate = true;
-    you.skinMat.color.copy(tinted(y.skin, skinAvg));
-    you.hairMat.color.copy(tinted(y.hair ?? "#2b1b12", hairAvg));
-    you.hairMat2.color.copy(tinted(y.hair ?? "#2b1b12", hair2Avg));
-    const style = y.hairStyle ?? "short";
-    show(you, "Hair_Buzzed", style === "buzz");
-    show(you, "Hair_Beard", false);
-    show(you, "Hair_SimpleParted", style === "short");
-    show(you, "Hair_Long", style === "long");
-    drawNumber(y.number);
-    const acc = (slot: string) => y.accessories.find((a) => a.slot === slot);
-    const L = you.L;
-    const kit = { shirt: y.kit.shirt, trim: y.kit.trim, shorts: y.kit.trim, socks: y.kit.shirt };
-    const specs: GarmentSpec[] = kitSpec(L, kit);
-    specs[0].uniforms = { uNumber: { value: numberTex } };
-    const boots = acc("boots");
-    specs.push(footSpec(L, boots?.color ?? "#111214", boots?.color2 ?? "#f4f4f5", !!boots));
-    const sl = acc("arms"); if (sl) specs.push(sleevesSpec(L, sl.color));
-    const tp = acc("wrists"); if (tp) specs.push(wristTapeSpec(L, tp.color));
-    const gl = acc("hands"); if (gl) specs.push(glovesSpec(L, gl.color, gl.color2));
-    const ab = acc("armband"); if (ab) specs.push(armbandSpec(L, ab.stripes ?? (ab.color2 ? [ab.color, ab.color] : [ab.color])));
-    const F = faceFrameOf(you.weld, L);
-    const hb = acc("head"); if (hb) specs.push(headbandSpec(L, F.browY, hb.color, hb.color2));
-    const sn = acc("neck"); if (sn) specs.push(snoodSpec(L, sn.color));
-    for (const s of specs) { const g = buildGarment(T, you.body, you.weld, s); you.body.parent!.add(g); you.extras.push(g); }
-    // The face picture over the head; his own modelled eyes and brows go.
-    hideCoveredSkin(T, you.body, you.weld, specs);
-    if (y.face) {
-      // The photo's skin brought to the body's skin tone (so a fair photo on
-      // a dark body, or the other way, doesn't read as a mask).
-      const want = tinted(y.skin, [1, 1, 1]);
-      const has = new T.Color(y.face.skin ?? y.skin);
-      const k = (a: number, b: number) => Math.min(1.8, Math.max(0.25, a / Math.max(0.004, b)));
-      const d = buildFaceDecal(T, you.body, you.weld, F, y.face, [k(want.r, has.r), k(want.g, has.g), k(want.b, has.b)]);
-      you.body.parent!.add(d); you.extras.push(d);
-    }
-    show(you, "Eyes", !y.face);
-    show(you, "Eyebrows", !y.face);
-    // The sunglasses: hung on the head bone in the rest pose, then they ride it.
+    drawShirtNumber(numberCanvas, y.number);
+    numberTex.needsUpdate = true;
+    dressPerson3d(T, you, {
+      skin: y.skin, hair: y.hair, kit: y.kit, number: y.number != null ? numberTex : null,
+      face: y.face ?? null, faceSkin: y.face?.skin, accessories: y.accessories,
+    });
+    // The sunglasses: hung on the head bone in the bind pose, then they ride it.
     if (y.aviators) {
       const g = await loadAviators();
       if (id !== youBuildId) return;
-      const restMats = poseRest(you);
+      const saved = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
+      for (const b of Object.values(you.bones)) saved.set(b, [b.position.clone(), b.quaternion.clone()]);
+      poseRest(you);
       const glasses = g.scene.clone(true);
-      // Fit Mikey's aviators to this head: the lens line on the eyes.
       const box = new T.Box3().setFromObject(glasses);
       const size = new T.Vector3(); box.getSize(size);
       const centre = new T.Vector3(); box.getCenter(centre);
-      const s = 0.152 / size.x;
+      const F = you.meta.face;
+      const s = 0.158 / size.x;
       const holder = new T.Group();
       glasses.position.sub(centre);
       holder.add(glasses);
       holder.scale.setScalar(s);
-      // The lenses (the front of the model's box) just clear of the nose
-      // tip, their middle on the eyes; the arms run back over the ears.
-      attachRest(you, holder, "Head", new T.Vector3(0, F.eyeY - 0.004, F.frontZ + 0.004 - (size.z * s) / 2));
-      restoreRest(you, restMats);
+      // The lenses just clear of the nose tip, their middle on the eyes; the
+      // arms run back over the ears. (Placed in the body's own rest frame.)
+      holder.position.set(0, F.eyeY + 0.007, F.frontZ + 0.006 - (size.z * s) / 2);
+      you.root.children[0].add(holder);
+      holder.updateMatrixWorld(true);
+      you.bones.Head.attach(holder);
+      you.extras.push(holder);
+      saved.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
+      you.root.updateMatrixWorld(true);
     }
   };
-
-  // Rest pose, briefly, to hang things on bones in the measured places.
-  const poseRest = (p: Person) => {
-    const saved = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion, THREE.Vector3]>();
-    p.rest.forEach((_, b) => saved.set(b, [b.position.clone(), b.quaternion.clone(), b.scale.clone()]));
-    // The bind pose: the one the body's own vertices (and so every rest
-    // measurement here) are in.
-    p.body.skeleton.pose();
-    p.root.updateMatrixWorld(true);
-    return saved;
-  };
-  const restoreRest = (p: Person, saved: Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion, THREE.Vector3]>) => {
-    // (the clips set every bone's turn again on the next frame anyway; not its scale)
-    saved.forEach(([pos, q, sc], b) => { b.position.copy(pos); b.quaternion.copy(q); b.scale.copy(sc); });
-    p.root.updateMatrixWorld(true);
-  };
-  const attachRest = (p: Person, obj: THREE.Object3D, boneName: string, restPos: THREE.Vector3) => {
-    obj.position.copy(restPos);
-    p.root.add(obj);
-    obj.updateMatrixWorld(true);
-    p.bones[boneName].attach(obj);
-    p.extras.push(obj);
-  };
-
   await buildYou(opts.you);
 
   // ── The room ──
@@ -425,7 +337,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     m.position.set(x, y, z); m.rotation.y = rotY; room.add(m);
   };
   shirtFrame(-0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.shirt, opts.contract.trim);
-  shirtFrame(0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.trim, opts.contract.shirt);
+  // (every frame is the home shirt: a trim-coloured one read as the wrong club)
+  shirtFrame(0.75, 1.75, FRONT - 0.03, Math.PI, opts.contract.shirt, opts.contract.trim);
   shirtFrame(-SIDE + 0.03, 1.75, -0.6, Math.PI / 2, opts.contract.shirt, opts.contract.trim);
   shirtFrame(SIDE - 0.03, 1.75, -0.6, -Math.PI / 2, opts.contract.shirt, opts.contract.trim);
 
@@ -459,13 +372,13 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   // Chairs: a seat, a tall back, arms, one pedestal.
   const makeChair = (z: number, facing: 1 | -1) => {
     const g = new T.Group();
-    const seat = new T.Mesh(new T.BoxGeometry(0.52, 0.09, 0.5), leather); seat.position.set(0, 0.46, -0.23); g.add(seat);
-    const back = new T.Mesh(new T.BoxGeometry(0.52, 0.66, 0.1), leather); back.position.set(0, 0.86, -0.52); back.rotation.x = -0.1; g.add(back);
+    const seat = new T.Mesh(new T.BoxGeometry(0.52, 0.09, 0.5), leather); seat.position.set(0, 0.515, -0.23); g.add(seat);
+    const back = new T.Mesh(new T.BoxGeometry(0.52, 0.66, 0.1), leather); back.position.set(0, 0.92, -0.52); back.rotation.x = -0.1; g.add(back);
     for (const s of [-1, 1]) {
-      const a = new T.Mesh(new T.BoxGeometry(0.05, 0.04, 0.4), leather); a.position.set(s * 0.29, 0.66, -0.25); g.add(a);
-      const p = new T.Mesh(new T.CylinderGeometry(0.012, 0.012, 0.2, 8), brass); p.position.set(s * 0.29, 0.56, -0.2); g.add(p);
+      const a = new T.Mesh(new T.BoxGeometry(0.05, 0.04, 0.4), leather); a.position.set(s * 0.29, 0.72, -0.25); g.add(a);
+      const p = new T.Mesh(new T.CylinderGeometry(0.012, 0.012, 0.2, 8), brass); p.position.set(s * 0.29, 0.62, -0.2); g.add(p);
     }
-    const stem = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.36, 10), std(0x222222, 0.4, 0.6)); stem.position.set(0, 0.22, -0.23); g.add(stem);
+    const stem = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.44, 10), std(0x222222, 0.4, 0.6)); stem.position.set(0, 0.25, -0.23); g.add(stem);
     for (let i = 0; i < 5; i++) {
       const leg = new T.Mesh(new T.BoxGeometry(0.03, 0.025, 0.3), std(0x222222, 0.4, 0.6));
       const a = (i / 5) * Math.PI * 2;
@@ -518,6 +431,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const band = new T.Mesh(new T.CylinderGeometry(0.0055, 0.0055, 0.006, 16), brass); band.position.y = 0.1; pen.add(band);
     const clip = new T.Mesh(new T.BoxGeometry(0.0018, 0.04, 0.003), brass); clip.position.set(0, 0.105, 0.0058); pen.add(clip);
   }
+  // A touch bigger than life, so it reads in the hand from across the desk.
+  pen.scale.setScalar(1.35);
   scene.add(pen);
   const penRestPos = new T.Vector3(PEN_REST.x, DESK.top + 0.0055, PEN_REST.z);
   // Lying on the desk, tip towards the manager.
@@ -532,129 +447,76 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const front = new T.DirectionalLight(0xdfe6ff, 0.7); front.position.set(0.8, 2.2, 3); scene.add(front);
   const lampLight = new T.PointLight(0xffcf8a, 2.2, 3.2, 1.6); lampLight.position.set(-0.4, 1.25, -0.1); scene.add(lampLight);
   const fill = new T.PointLight(0xffe2b8, 1.6, 4, 1.5); fill.position.set(-0.8, 2.2, 1.2); scene.add(fill);
+  // A soft light on your face from the manager's side (a darker skin tone or
+  // a face picture otherwise sinks into the warm dark of the reply shot).
+  const faceFill = new T.DirectionalLight(0xfff1e0, 0.9); faceFill.position.set(0.5, 1.9, -2.6); faceFill.target.position.set(0, 1.2, 0.6); scene.add(faceFill, faceFill.target);
 
   // ── Posing helpers ──
-  const v3 = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
   /** A direction in a person's own frame (x = his left, z = his front) to world. */
   const dirOf = (p: Person, x: number, y: number, z: number) => v3(x * p.facing, y, z * p.facing).normalize();
   const ptOf = (p: Person, x: number, y: number, z: number) => v3(x * p.facing, y, p.root.position.z + z * p.facing);
-  const wpos = (o: THREE.Object3D) => { const v = new T.Vector3(); o.getWorldPosition(v); return v; };
 
-  const clips = (p: Person, entries: [string, number, number][]) => {
-    for (const a of Object.values(p.actions)) a.setEffectiveWeight(0);
-    for (const [name, time, w] of entries) {
-      const a = p.actions[name];
-      if (!a) continue;
-      a.setEffectiveWeight(w);
-      a.time = Math.min(time, a.getClip().duration - 1e-3);
-    }
-    p.mixer.update(0);
-    p.root.updateMatrixWorld(true);
+  type Side = "R" | "L";
+  const bn = (s: Side, part: "Shoulder" | "Arm" | "ForeArm" | "Hand") => (s === "R" ? "Right" : "Left") + part;
+  const axesOf = (p: Person, s: Side): HandAxes => {
+    const h = p.hand[s];
+    return { along: h.along, palm: h.palm, side: new T.Vector3().crossVectors(h.along, h.palm).normalize() };
   };
+  const handQ = (p: Person, s: Side) => { const q = new T.Quaternion(); p.bones[bn(s, "Hand")].getWorldQuaternion(q); return q; };
+
   const lean = (p: Person, rad: number) => {
     if (!rad) return;
     const axis = new T.Vector3(0, 1, 0).cross(dirOf(p, 0, 0, 1)).normalize();
-    for (const b of ["spine_01", "spine_02", "spine_03"]) rotateBoneWorld(T, p.bones[b], new T.Quaternion().setFromAxisAngle(axis, rad / 3));
+    for (const b of ["Spine02", "Spine01", "Spine"]) rotateBoneWorld(T, p.bones[b], new T.Quaternion().setFromAxisAngle(axis, rad / 3));
   };
   const lookAt = (p: Person, target: THREE.Vector3, w: number) => {
     const head = p.bones.Head;
     const hq = new T.Quaternion(); head.getWorldQuaternion(hq);
-    // The head's forward, measured off the face (rest: +z of the body).
     const fwd = dirOf(p, 0, 0, 1);
-    const rootQ = new T.Quaternion(); p.root.getWorldQuaternion(rootQ);
-    void rootQ;
-    const h = wpos(head).add(v3(0, 0.09, 0));
+    const h = wpos(head).add(v3(0, 0.1, 0));
     const want = target.clone().sub(h).normalize();
-    // Current facing of the head = its rest facing turned by how the head has turned since rest.
-    const cur = fwd.clone().applyQuaternion(hq.clone().multiply(p.restHeadInv!));
+    // The head's facing now = its rest facing turned by how far the head has turned since.
+    const cur = fwd.clone().applyQuaternion(hq.clone().multiply(p.restHeadInv));
     const q = new T.Quaternion().setFromUnitVectors(cur, want);
     q.slerp(new T.Quaternion(), 1 - w);
     rotateBoneWorld(T, p.bones.Head, new T.Quaternion().copy(q).slerp(new T.Quaternion(), 0.45));
-    rotateBoneWorld(T, p.bones.neck_01, new T.Quaternion().copy(q).slerp(new T.Quaternion(), 0.55));
-  };
-  type Side = "r" | "l";
-  const fingersOf = (p: Person, s: Side) => ({
-    index: [p.bones[`index_01_${s}`], p.bones[`index_02_${s}`], p.bones[`index_03_${s}`]],
-    middle: [p.bones[`middle_01_${s}`], p.bones[`middle_02_${s}`], p.bones[`middle_03_${s}`]],
-    ring: [p.bones[`ring_01_${s}`], p.bones[`ring_02_${s}`], p.bones[`ring_03_${s}`]],
-    pinky: [p.bones[`pinky_01_${s}`], p.bones[`pinky_02_${s}`], p.bones[`pinky_03_${s}`]],
-    thumb: [p.bones[`thumb_01_${s}`], p.bones[`thumb_02_${s}`], p.bones[`thumb_03_${s}`]],
-  });
-  const palmOf = (p: Person, s: Side) => {
-    const q = new T.Quaternion(); p.bones[`hand_${s}`].getWorldQuaternion(q);
-    return (s === "r" ? p.handAxR : p.handAxL).palm.clone().applyQuaternion(q);
-  };
-  /** Grips, radians of curl per finger joint, from straight. */
-  const GRIPS = {
-    flat: { index: [0.05, 0.08, 0.05], middle: [0.05, 0.08, 0.05], ring: [0.08, 0.1, 0.05], pinky: [0.1, 0.1, 0.05], thumb: [0, 0, 0] },
-    pen: { index: [0.22, 0.38, 0.28], middle: [0.55, 0.85, 0.55], ring: [1.0, 1.1, 0.7], pinky: [1.1, 1.1, 0.7], thumb: [0.2, 0.3, 0.2] },
-    shake: { index: [0.06, 0.12, 0.08], middle: [0.06, 0.12, 0.08], ring: [0.08, 0.12, 0.08], pinky: [0.1, 0.14, 0.08], thumb: [0.05, 0.12, 0.05] },
-    open: { index: [0.1, 0.1, 0.05], middle: [0.1, 0.12, 0.05], ring: [0.15, 0.15, 0.05], pinky: [0.2, 0.15, 0.05], thumb: [0, 0.05, 0] },
-  } as const;
-  type GripName = keyof typeof GRIPS;
-  const grip = (p: Person, s: Side, a: GripName, b: GripName = a, t = 0) => {
-    const f = fingersOf(p, s);
-    // From straight fingers (the rest pose's), not the clip's own half-closed
-    // ones: a curl on top of those turned every grip into a fist.
-    for (const k of ["index", "middle", "ring", "pinky", "thumb"] as const) for (const bone of f[k]) bone.quaternion.copy(p.rest.get(bone)![1]);
-    p.bones[`hand_${s}`].updateMatrixWorld(true);
-    const palm = palmOf(p, s);
-    for (const k of ["index", "middle", "ring", "pinky", "thumb"] as const) {
-      const A = GRIPS[a][k], B = GRIPS[b][k];
-      const angles = [0, 1, 2].map((i) => A[i] + (B[i] - A[i]) * t);
-      const pl = k === "thumb" ? palm.clone().add(handSide(p, s).multiplyScalar(s === "r" ? -0.8 : 0.8)).normalize() : palm;
-      curlFinger(T, f[k], angles, pl);
-    }
-  };
-  const handSide = (p: Person, s: Side) => {
-    const q = new T.Quaternion(); p.bones[`hand_${s}`].getWorldQuaternion(q);
-    return (s === "r" ? p.handAxR : p.handAxL).side.clone().applyQuaternion(q);
+    rotateBoneWorld(T, p.bones.neck, new T.Quaternion().copy(q).slerp(new T.Quaternion(), 0.55));
   };
   /** Wrist on `wrist`, fingers along `along`, palm towards `palm` (all world). */
   const placeHand = (p: Person, s: Side, wrist: THREE.Vector3, along: THREE.Vector3, palm: THREE.Vector3, pole: THREE.Vector3, w = 1) => {
-    const up = p.bones[`upperarm_${s}`], lo = p.bones[`lowerarm_${s}`], ha = p.bones[`hand_${s}`];
+    const up = p.bones[bn(s, "Arm")], lo = p.bones[bn(s, "ForeArm")], ha = p.bones[bn(s, "Hand")];
     const q0 = ha.quaternion.clone();
     solveArm(T, up, lo, ha, wrist, pole, w);
-    const want = handWorldQuat(T, s === "r" ? p.handAxR : p.handAxL, along, palm);
-    setBoneWorldQuat(T, ha, want);
+    setBoneWorldQuat(T, ha, handWorldQuat(T, axesOf(p, s), along, palm));
     if (w < 1) { ha.quaternion.copy(q0.slerp(ha.quaternion.clone(), w)); ha.updateMatrixWorld(true); }
   };
-  /** Where the pen sits between thumb and first finger. */
-  const pinchOf = (p: Person, s: Side) => wpos(p.bones[`thumb_03_${s}`]).add(wpos(p.bones[`index_03_${s}`])).multiplyScalar(0.5);
-  /** The pen held in a writer's (tripod) grip, from the bones: it lies
-   *  under the pad of the first finger, near its tip, with the thumb on its
-   *  side, and rests back over the web between thumb and first finger. */
+  /** The pen held in the hand: under the ends of the fingers, resting back
+   *  over the web of the thumb (the models have no finger bones). */
   const penInHandOf = (p: Person, s: Side) => {
-    const palm = palmOf(p, s);
-    const i1 = wpos(p.bones[`index_01_${s}`]);
-    const i3 = wpos(p.bones[`index_03_${s}`]);
-    const iTip = wpos(p.bones[`index_04_leaf_${s}`]);
-    const hand = wpos(p.bones[`hand_${s}`]);
-    const along = wpos(p.bones[`middle_01_${s}`]).sub(hand).normalize();
-    // Towards the thumb, square to the fingers and the palm.
-    const thumb = wpos(p.bones[`thumb_02_${s}`]).sub(hand);
-    thumb.sub(along.clone().multiplyScalar(thumb.dot(along))).sub(palm.clone().multiplyScalar(thumb.dot(palm))).normalize();
-    const pad = i3.clone().lerp(iTip, 0.6).add(palm.clone().multiplyScalar(PEN_GRIP.pad)).add(thumb.clone().multiplyScalar(PEN_GRIP.side));
-    const web = i1.add(thumb.clone().multiplyScalar(PEN_GRIP.web)).add(palm.clone().multiplyScalar(-PEN_GRIP.webUp));
+    const h = p.hand[s];
+    const q = handQ(p, s);
+    const along = h.along.clone().applyQuaternion(q), palm = h.palm.clone().applyQuaternion(q), thumb = h.thumb.clone().applyQuaternion(q);
+    const W = wpos(p.bones[bn(s, "Hand")]);
+    const G = PEN_GRIP;
+    const pad = W.clone().addScaledVector(along, h.len * G.padAlong).addScaledVector(palm, G.padPalm).addScaledVector(thumb, G.padThumb);
+    const web = W.clone().addScaledVector(along, h.len * G.webAlong).addScaledVector(thumb, G.webThumb).addScaledVector(palm, G.webPalm);
     const axis = web.sub(pad).normalize();
-    return { tip: pad.clone().sub(axis.clone().multiplyScalar(PEN_GRIP.tip)), axis };
+    return { tip: pad.clone().addScaledVector(axis, -G.tip), axis };
   };
-
-  // Rest head facing, for the head turn.
-  for (const p of [you, boss]) {
-    const saved = poseRest(p);
-    const hq = new T.Quaternion(); p.bones.Head.getWorldQuaternion(hq);
-    p.restHeadInv = hq.invert();
-    restoreRest(p, saved);
-  }
+  const ARM_R = ["RightShoulder", "RightArm", "RightForeArm", "RightHand"];
+  const snapshot = (p: Person, names: string[]) => names.map((n) => [p.bones[n], p.bones[n].quaternion.clone()] as const);
+  const restore = (p: Person, s: (readonly [THREE.Bone, THREE.Quaternion])[]) => { for (const [b, q] of s) b.quaternion.copy(q); p.root.updateMatrixWorld(true); };
 
   // ── The camera shots ──
   const SHOTS: Record<string, { pos: THREE.Vector3; look: THREE.Vector3; fov: number }> = {
-    talk: { pos: v3(0.2, 1.46, 1.32), look: v3(-0.06, 1.17, -0.6), fov: 44 },
-    reply: { pos: v3(-0.2, 1.46, -1.32), look: v3(0.06, 1.17, 0.6), fov: 44 },
-    contract: { pos: v3(0.26, 1.68, 0.92), look: v3(-0.02, DESK.top, 0.1), fov: 38 },
-    sign: { pos: v3(0.78, 1.32, -0.08), look: v3(0.02, 0.9, 0.3), fov: 46 },
-    shake: { pos: v3(1.85, 1.55, 0.9), look: v3(0, 1.08, 0.02), fov: 48 },
+    talk: { pos: v3(0.22, 1.42, 1.42), look: v3(-0.05, 1.12, -0.6), fov: 44 },
+    reply: { pos: v3(-0.22, 1.42, -1.42), look: v3(0.05, 1.12, 0.6), fov: 44 },
+    contract: { pos: v3(0.26, 1.62, 0.98), look: v3(-0.02, DESK.top, 0.12), fov: 40 },
+    sign: { pos: v3(0.7, 1.55, -0.45), look: v3(-0.02, 0.95, 0.42), fov: 46 },
+    // From behind the manager's side, across the desk: your face to camera,
+    // both men whole with a margin on a 390×844 phone (a side-on shot from your
+    // side cut you off at the left edge).
+    shake: { pos: v3(2.3, 1.5, -1.45), look: v3(0, 1.05, 0.0), fov: 58 },
   };
   let camFrom = SHOTS.talk, camTo = SHOTS.talk;
   let camA = 0, camB = 0;
@@ -692,49 +554,55 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     camA = t; camB = t + blend;
   };
 
-  // Hand poses in each person's own frame: [wrist x,y,z], along, palm.
-  const restR = { w: [-0.2, DESK.top + 0.035, 0.27], along: [0.15, -0.12, 1], palm: [0, -1, 0.05] };
-  const restL = { w: [0.2, DESK.top + 0.035, 0.27], along: [-0.15, -0.12, 1], palm: [0, -1, 0.05] };
+  // Hand poses in each person's own frame (from his seated hips): [wrist x,y,z], along, palm.
+  const restR = { w: [-0.19, DESK.top + 0.035, 0.4], along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05] };
+  const restL = { w: [0.19, DESK.top + 0.035, 0.4], along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05] };
 
   // The writing hand's direction (fixed while writing).
-  const writeAlong = () => dirOf(you, 0.25, -0.62, 0.72);
-  const writePalm = () => dirOf(you, 0.55, -0.55, -0.35);
+  const writeAlong = () => dirOf(you, 0.2, -0.7, 0.68);
+  const writePalm = () => dirOf(you, 0.85, -0.5, -0.1);
 
-  /** Pose the writing hand so the pen tip is on `tip`. Returns where the pen is. */
-  const handToTip = (tip: THREE.Vector3, w: number, along: THREE.Vector3, palm: THREE.Vector3, gripK: number) => {
+  /** Pose the writing hand so the pen tip is on `tip`. */
+  const handToTip = (tip: THREE.Vector3, along: THREE.Vector3, palm: THREE.Vector3) => {
     const p = you;
     const pole = dirOf(p, -0.7, -0.6, -0.2);
     const saved = snapshot(p, ARM_R);
-    // Twice: the first pass measures where the pinch lands for this hand.
     // Measure where the tip lands for this hand, and move the wrist by the miss.
-    let wrist = tip.clone().add(v3(0.04 * -p.facing, 0.1, 0.09 * -p.facing));
+    let wrist = tip.clone().add(v3(0.03 * -p.facing, 0.1, 0.1 * -p.facing));
     for (let i = 0; i < 4; i++) {
       restore(p, saved);
-      placeHand(p, "r", wrist, along, palm, pole, w);
-      grip(p, "r", "flat", "pen", gripK);
-      const miss = tip.clone().sub(penInHandOf(p, "r").tip);
-      wrist = wrist.add(miss);
+      placeHand(p, "R", wrist, along, palm, pole, 1);
+      wrist = wrist.add(tip.clone().sub(penInHandOf(p, "R").tip));
     }
   };
-  const ARM_R = ["upperarm_r", "lowerarm_r", "hand_r", "index_01_r", "index_02_r", "index_03_r", "middle_01_r", "middle_02_r", "middle_03_r", "ring_01_r", "ring_02_r", "ring_03_r", "pinky_01_r", "pinky_02_r", "pinky_03_r", "thumb_01_r", "thumb_02_r", "thumb_03_r"];
-  const snapshot = (p: Person, names: string[]) => names.map((n) => [p.bones[n], p.bones[n].quaternion.clone()] as const);
-  const restore = (p: Person, s: (readonly [THREE.Bone, THREE.Quaternion])[]) => { for (const [b, q] of s) b.quaternion.copy(q); p.root.updateMatrixWorld(true); };
 
   const restHands = (p: Person, w = 1, talk = 0, t = 0) => {
-    const g = talk * Math.max(0, Math.sin(t * 2.1)) ;
-    const wr = ptOf(p, restR.w[0] - g * 0.04, restR.w[1] + g * 0.09, restR.w[2] + g * 0.03);
+    const g = talk * Math.max(0, Math.sin(t * 2.1));
+    const wr = ptOf(p, restR.w[0] - g * 0.04, restR.w[1] + g * 0.1, restR.w[2] - g * 0.02);
     const alongR = dirOf(p, restR.along[0], restR.along[1] + g * 0.6, restR.along[2]);
-    const palmR = dirOf(p, -g * 0.6, -1 + g * 0.7, 0.05 + g * 0.3);
-    placeHand(p, "r", wr, alongR, palmR, dirOf(p, -0.8, -0.5, -0.3), w);
-    grip(p, "r", "flat", "open", g);
+    const palmR = dirOf(p, restR.palm[0] - g * 0.6, -1 + g * 0.7, 0.05 + g * 0.3);
+    placeHand(p, "R", wr, alongR, palmR, dirOf(p, -0.8, -0.5, -0.3), w);
     const g2 = talk * Math.max(0, Math.sin(t * 1.7 + 2.2)) * 0.6;
-    const wl = ptOf(p, restL.w[0] + g2 * 0.03, restL.w[1] + g2 * 0.07, restL.w[2]);
-    placeHand(p, "l", wl, dirOf(p, restL.along[0], restL.along[1] + g2 * 0.5, restL.along[2]), dirOf(p, g2 * 0.5, -1 + g2 * 0.6, 0.05), dirOf(p, 0.8, -0.5, -0.3), w);
-    grip(p, "l", "flat", "open", g2);
+    const wl = ptOf(p, restL.w[0] + g2 * 0.03, restL.w[1] + g2 * 0.08, restL.w[2]);
+    placeHand(p, "L", wl, dirOf(p, restL.along[0], restL.along[1] + g2 * 0.5, restL.along[2]), dirOf(p, restL.palm[0] + g2 * 0.5, -1 + g2 * 0.6, 0.05), dirOf(p, 0.8, -0.5, -0.3), w);
   };
 
-  const youHead = () => wpos(you.bones.Head).add(v3(0, 0.09, 0));
-  const bossHead = () => wpos(boss.bones.Head).add(v3(0, 0.09, 0));
+  const headTop = (p: Person) => wpos(p.bones.Head).add(v3(0, 0.1, 0));
+
+  /** The seated clip (its upright part, swaying a little) for each man. */
+  const sitClip = (p: Person) => (p.model === "manager" ? "boss-sit" : "sitidle");
+  const idleClip = (p: Person) => (p.model === "manager" ? "boss-idle" : "idle");
+  const sitTime = (p: Person, t: number) => SIT_CLIP.mid + SIT_CLIP.swing * Math.sin(t * 0.45 + (p === you ? 1.3 : 0));
+  /** Feet on the floor: the clips' own legs are a little shorter than these bodies'. */
+  const plantFeet = (p: Person, w: number) => {
+    p.root.position.y = 0;
+    if (w <= 0) return;
+    p.root.updateMatrixWorld(true);
+    const low = Math.min(wpos(p.bones.LeftFoot).y, wpos(p.bones.RightFoot).y);
+    const want = p.meta.joints.LeftFoot[1];
+    p.root.position.y = Math.max(0, Math.min(0.06, want - low)) * w;
+    p.root.updateMatrixWorld(true);
+  };
 
   const frame = (t: number) => {
     const e = t - modeStart;
@@ -747,14 +615,18 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     if (mode !== "sign") {
       const bossTalk = talking === "boss" ? 1 : 0;
       const youTalk = talking === "you" ? 1 : 0;
-      clips(boss, [["Sitting_Idle_Loop", t % 1.6667, 1 - bossTalk * 0.6], ["Sitting_Talking_Loop", t % 2.9333, bossTalk * 0.6]]);
-      clips(you, [["Sitting_Idle_Loop", (t + 0.7) % 1.6667, 1 - youTalk * 0.5], ["Sitting_Talking_Loop", (t + 1.1) % 2.9333, youTalk * 0.5]]);
-      lean(boss, 0.08);
-      lean(you, mode === "contract" ? 0.2 * seg(e, 0.3, 1.2) + 0.06 : 0.06);
+      for (const p of [boss, you]) {
+        poseClips(p, [[sitClip(p), sitTime(p, t), 1]]);
+        setHipsXZ(p, 0, 0);
+        plantFeet(p, 0);
+        youChair.position.z = YOU_Z; bossChair.position.z = BOSS_Z;
+      }
+      lean(boss, 0.12);
+      lean(you, mode === "contract" ? 0.22 * seg(e, 0.3, 1.2) + 0.12 : 0.12);
       restHands(boss, 1, bossTalk, t);
       restHands(you, 1, youTalk * 0.6, t + 1);
-      lookAt(boss, mode === "contract" ? paperPoint(CW / 2, CH / 2) : youHead(), 0.8);
-      lookAt(you, mode === "contract" ? paperPoint(CW / 2, CH * 0.45) : bossHead(), 0.75);
+      lookAt(boss, mode === "contract" ? paperPoint(CW / 2, CH / 2) : headTop(you), 0.8);
+      lookAt(you, mode === "contract" ? paperPoint(CW / 2, CH * 0.45) : headTop(boss), 0.75);
       placePen(penRestPos, penRestQ);
       setCam(t);
       return;
@@ -763,43 +635,51 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     // ── TAP TO SIGN ──
     const S = SIGN_T;
     const standK = seg(e, S.standA, S.standB);
-    const stepK = seg(e, S.standB - 0.25, S.stepB);
-    // Both men: sitting → standing (the clip), then a step in to the desk.
-    const exitT = Math.min(1.0333, Math.max(0, e - S.standA));
-    const standing = e >= S.standA;
-    const idleT = Math.max(0, e - S.standB);
+    const riseK = Math.min(1, Math.max(0, (e - S.standA) / (S.standB - S.standA)));
+    const preK = seg(e, S.standA - 0.25, S.standA + 0.1);
+    const idleW = seg(e, S.standB - 0.2, S.standB + 0.3);
     for (const p of [you, boss]) {
-      const back = 0.07 * standK - 0.24 * stepK;
-      p.root.position.z = (p === you ? YOU_Z : BOSS_Z) + p.facing * -back;
       const chair = p === you ? youChair : bossChair;
-      chair.position.z = (p === you ? YOU_Z : BOSS_Z) - p.facing * 0.16 * standK;
-      if (!standing) clips(p, [["Sitting_Idle_Loop", (t + (p === you ? 0.7 : 0)) % 1.6667, 1]]);
-      else if (e < S.standB) clips(p, [["Sitting_Exit", exitT, 1]]);
-      else clips(p, [["Sitting_Exit", 1.0333, 1 - seg(idleT, 0, 0.3)], ["Idle_Loop", idleT % 2.5, seg(idleT, 0, 0.3)]]);
+      chair.position.z = (p === you ? YOU_Z : BOSS_Z) - p.facing * 0.2 * seg(e, S.standA + 0.2, S.standB);
+      if (e < S.standA - 0.25) poseClips(p, [[sitClip(p), sitTime(p, t), 1]]);
+      else {
+        const tc = RISE_CLIP.sat + (RISE_CLIP.stood - RISE_CLIP.sat) * ease(riseK);
+        const idleT = Math.max(0, e - S.standB + 0.2);
+        poseClips(p, [[sitClip(p), sitTime(p, t), 1 - preK], ["sitdown", tc, preK * (1 - idleW)], [idleClip(p), 1.2 + idleT, idleW]]);
+      }
+      setHipsXZ(p, 0, p.riseTravel * ease(riseK));
+      // Getting up, the clip folds him far forward: both men at one desk
+      // would meet head to head. Keep each back nearer upright.
+      if (e > S.standA - 0.3) {
+        // (a few passes: one spine turn only gets part of the way back)
+        for (let i = 0; i < 4; i++) {
+          const d = wpos(p.bones.neck).sub(wpos(p.bones.Hips));
+          const bend = Math.atan2(d.dot(dirOf(p, 0, 0, 1)), d.y);
+          if (bend <= RISE_MAX_BEND + 0.01) break;
+          lean(p, -(bend - RISE_MAX_BEND));
+        }
+      }
+      plantFeet(p, seg(e, S.standA + 0.5, S.standB));
     }
-    // Leans: you over the paper; both forward over the desk for the shake.
+    // Leans: you over the paper; both a touch forward into the handshake.
     const writeLean = 0.3 * seg(e, 0, S.reachB) * (1 - seg(e, S.putDown - 0.1, S.standA + 0.3));
-    const shakeLean = 0.13 * seg(e, S.shakeA - 0.2, S.shakeB);
-    lean(you, 0.06 + writeLean + shakeLean);
-    lean(boss, 0.08 * (1 - standK) + shakeLean);
+    const shakeLean = 0.12 * seg(e, S.shakeA - 0.2, S.shakeB);
+    lean(you, 0.12 * (1 - standK) + writeLean + shakeLean);
+    lean(boss, 0.12 * (1 - standK) + shakeLean);
 
     // The manager: hands on the desk until he stands.
-    const handsW = 1 - seg(e, S.standA - 0.05, S.standA + 0.35);
+    const handsW = 1 - seg(e, S.standA - 0.05, S.standA + 0.4);
     if (handsW > 0) restHands(boss, handsW, 0, t);
 
     // Your left hand holds the paper while you write.
-    const lW = 1 - seg(e, S.standA - 0.05, S.standA + 0.35);
-    if (lW > 0) {
-      placeHand(you, "l", paperPoint(40, CH * 0.62, 0.03), dirOf(you, -0.35, -0.1, 1), dirOf(you, 0, -1, 0), dirOf(you, 0.8, -0.5, -0.3), lW);
-      grip(you, "l", "flat");
-    }
+    const lW = 1 - seg(e, S.standA - 0.05, S.standA + 0.4);
+    if (lW > 0) placeHand(you, "L", paperPoint(40, CH * 0.66, 0.03), dirOf(you, -0.35, -0.15, 1), dirOf(you, -0.1, -1, 0), dirOf(you, 0.8, -0.5, -0.3), lW);
 
     // Your right hand: rest → over the pen → grip → to the line → write → lift → put down.
     const sigStart = paperPoint(SIG.x + (sigPts[0][0] / 300) * SIG.w, SIG.y + (sigPts[0][1] / 60) * SIG.h);
-    const penGripOnDesk = penRestPos.clone().add(new T.Vector3(-0.15, 0, 1).normalize().multiplyScalar(0.045));
+    const penGripOnDesk = penRestPos.clone();
     let pickK = 0;
     let penInHand = false;
-    let tip: THREE.Vector3 | null = null;
     if (e < S.standA) {
       const reach = seg(e, S.reachA, S.reachB);
       const toLine = seg(e, S.grip, S.toLine);
@@ -807,11 +687,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       const lift = seg(e, S.writeEnd, S.lift);
       const down = seg(e, S.lift + 0.02, S.putDown);
       pickK = seg(e, S.reachB, S.grip);
+      let tip: THREE.Vector3;
       if (e < S.toLine) {
-        // Over the pen, then lifting it to the line.
-        const over = penGripOnDesk.clone().add(v3(0, 0.035 * (1 - reach) + 0.012, 0));
-        const lineHover = sigStart.clone().add(v3(0, 0.01, 0));
-        tip = over.clone().lerp(lineHover, toLine);
+        const over = penGripOnDesk.clone().add(v3(0, 0.03 * (1 - reach) + 0.012, 0));
+        tip = over.clone().lerp(sigStart.clone().add(v3(0, 0.01, 0)), toLine);
         if (toLine > 0) tip.y += Math.sin(toLine * Math.PI) * 0.04;
       } else if (e < S.writeEnd) {
         const n = writeK * (sigPts.length - 1);
@@ -835,24 +714,39 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       const pa = restPalm.clone().lerp(palm, k).normalize();
       if (k < 0.999 && e < S.reachB) {
         // Still coming from the rest pose: blend the IK in.
-        const restWrist = ptOf(you, restR.w[0], restR.w[1], restR.w[2]);
         const saved = snapshot(you, ARM_R);
-        handToTip(tip, 1, al, pa, pickK);
+        handToTip(tip, al, pa);
         const solved = snapshot(you, ARM_R);
         restore(you, saved);
-        placeHand(you, "r", restWrist, restAlong, restPalm, dirOf(you, -0.8, -0.5, -0.3), 1);
-        grip(you, "r", "flat");
-        for (let j = 0; j < solved.length; j++) {
-          const [bone, q] = solved[j];
-          bone.quaternion.slerp(q, reach);
-        }
+        placeHand(you, "R", ptOf(you, restR.w[0], restR.w[1], restR.w[2]), restAlong, restPalm, dirOf(you, -0.8, -0.5, -0.3), 1);
+        for (let j = 0; j < solved.length; j++) solved[j][0].quaternion.slerp(solved[j][1], reach);
         you.root.updateMatrixWorld(true);
+      } else if (e < S.standA - 0.05) {
+        handToTip(tip, al, pa);
       } else {
-        const gripK = e < S.lift ? pickK : 1 - down;
-        handToTip(tip, 1, al, pa, gripK);
+        // Hand back to the desk edge as he gets up.
+        const back = seg(e, S.standA - 0.05, S.standA + 0.35);
+        placeHand(you, "R", ptOf(you, restR.w[0], restR.w[1], restR.w[2]), restAlong, restPalm, dirOf(you, -0.8, -0.5, -0.3), 1 - back);
       }
     } else {
       inkUpTo = 1;
+    }
+    // Getting up, both men push off the desk edge: the clip's own hands go
+    // forward and down (to the knees) and would pass through the desk. They
+    // let go once nearly up, and the clip's hands hang at their sides.
+    if (e >= S.standA - 0.05) {
+      const span = S.standB - S.standA;
+      const release = 1 - seg(e, S.standA + 0.5 * span, S.standA + 0.8 * span);
+      for (const p of [you, boss]) {
+        for (const s of ["R", "L"] as const) {
+          const R = s === "R" ? restR : restL;
+          const comeIn = p === you && s === "L" ? seg(e, S.standA - 0.05, S.standA + 0.2) : 1;
+          const w = release * comeIn;
+          if (w <= 0) continue;
+          placeHand(p, s, ptOf(p, R.w[0], R.w[1], R.w[2]), dirOf(p, R.along[0], R.along[1], R.along[2]), dirOf(p, R.palm[0], R.palm[1], R.palm[2]),
+            dirOf(p, s === "R" ? -0.8 : 0.8, -0.5, -0.3), w);
+        }
+      }
     }
     // Ink and the stamp on the paper.
     const wantStamp = e >= S.stamp;
@@ -862,35 +756,27 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
     // The pen: on the desk, in the fingers, or on its way between.
     if (penInHand) {
-      const held = penInHandOf(you, "r");
+      const held = penInHandOf(you, "R");
       const q = new T.Quaternion().setFromUnitVectors(v3(0, 1, 0), held.axis);
-      const inHandTip = held.tip;
-      if (pickK < 1) {
-        const k = pickK;
-        const tq = penRestQ.clone().slerp(q, k);
-        placePen(penRestPos.clone().lerp(inHandTip, k), tq);
-      } else placePen(inHandTip, q);
-      void tip;
+      if (pickK < 1) placePen(penRestPos.clone().lerp(held.tip, pickK), penRestQ.clone().slerp(q, pickK));
+      else placePen(held.tip, q);
     } else placePen(penRestPos, penRestQ);
 
     // The handshake: right hands meet palm to palm over the middle of the
-    // desk. Each palm faces the other man's on the plane x = 0, a hand's
-    // half-thickness (and a hair) off it, so the two never pass through each
-    // other; thumbs up, fingers forward and only lightly closed, the wrists
-    // back far enough that each man's fingers end at the other's wrist.
+    // desk, upright, at arm's length. Each palm faces the other man's on the
+    // plane x = 0, a hand's half-thickness (and a hair) off it, so the two
+    // never pass through each other; thumbs up, fingers forward.
     if (e >= S.shakeA - 0.3) {
       const w = seg(e, S.shakeA - 0.3, S.shakeB);
       const pump = e > S.shakeB ? Math.sin((e - S.shakeB) * Math.PI * 2 * 2.4) * 0.024 * (1 - seg(e, S.pumpEnd - 0.2, S.pumpEnd)) : 0;
       const M = v3(0, SHAKE.y + pump, 0);
       for (const p of [you, boss]) {
         // The shoulder comes forward into the reach.
-        rotateBoneWorld(T, p.bones.clavicle_r, new T.Quaternion().setFromAxisAngle(v3(0, 1, 0), 0.22 * w));
+        rotateBoneWorld(T, p.bones.RightShoulder, new T.Quaternion().setFromAxisAngle(v3(0, 1, 0), 0.2 * w));
         const palm = dirOf(p, 1, 0, 0);
         const wrist = M.clone().add(palm.clone().multiplyScalar(-SHAKE.gap));
         wrist.z = M.z - p.facing * SHAKE.back;
-        const along = dirOf(p, 0, -0.08, 1);
-        placeHand(p, "r", wrist, along, palm, dirOf(p, -0.7, -0.7, -0.15), w);
-        grip(p, "r", "open", "shake", w);
+        placeHand(p, "R", wrist, dirOf(p, 0, -0.05, 1), palm, dirOf(p, -0.7, -0.7, -0.15), w);
       }
       if (e >= S.shakeB) fire("shake");
     }
@@ -898,12 +784,14 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
     // Eyes: on the paper while writing, then on each other.
     const eyesUp = seg(e, S.lift, S.standA + 0.4);
-    lookAt(you, paperPoint(SIG.x + SIG.w / 2, SIG.y).lerp(bossHead(), eyesUp), 0.8);
-    lookAt(boss, paperPoint(CW / 2, CH * 0.7).lerp(youHead(), Math.max(eyesUp, 1 - seg(e, 0, 0.6))), 0.75);
+    lookAt(you, paperPoint(SIG.x + SIG.w / 2, SIG.y).lerp(headTop(boss), eyesUp), 0.8);
+    lookAt(boss, paperPoint(CW / 2, CH * 0.7).lerp(headTop(you), Math.max(eyesUp, 1 - seg(e, 0, 0.6))), 0.75);
 
     // Camera: pulled back from the paper to the desk, then wider for the shake.
-    if (e < S.standA) { camFrom = SHOTS.contract; camTo = SHOTS.sign; camA = modeStart; camB = modeStart + S.pull; }
-    else { camFrom = SHOTS.sign; camTo = SHOTS.shake; camA = modeStart + S.standA; camB = modeStart + S.shakeB + 0.2; }
+    // (a cut to the desk: a pan from your side to his flew through your head)
+    if (e < S.standA) { camFrom = SHOTS.sign; camTo = SHOTS.sign; camA = camB = modeStart; }
+    // (a cut as he starts to rise: a pan from the paper would lose his head)
+    else { camFrom = SHOTS.shake; camTo = SHOTS.shake; camA = camB = modeStart + S.standA; }
     setCam(t);
   };
   let lastInk = -1, lastStamp = false;
@@ -927,12 +815,18 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   let visible = true;
   const io = new IntersectionObserver((es) => { visible = es.some((x) => x.isIntersecting); });
   io.observe(container);
+  /** One frame's worth of time: never backwards (the first frame's time can
+   *  be stamped before the scene finished building), never more than a tenth
+   *  of a second (a slow phone or a tab coming back from the background plays
+   *  on from where it was instead of jumping). */
+  const MAX_DT = 0.1;
+  const stepClock = (dtRaw: number) => { clock += Math.min(MAX_DT, Math.max(0, Number.isFinite(dtRaw) ? dtRaw : 0)); };
   const loop = (now: number) => {
     raf = requestAnimationFrame(loop);
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = (now - last) / 1000;
     last = now;
     if (frozen) return; // a held still (debugSeek) is drawn once, by itself
-    clock += dt;
+    stepClock(dt);
     if (!visible || document.hidden) return;
     frame(clock);
     renderer.render(scene, camera);
@@ -941,6 +835,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   frame(0);
   raf = requestAnimationFrame(loop);
 
+  const bendOf = (p: Person) => {
+    const d = wpos(p.bones.neck).sub(wpos(p.bones.Hips)).normalize();
+    return +(Math.acos(Math.max(-1, Math.min(1, d.y))) * 180 / Math.PI).toFixed(1);
+  };
   const handle: SigningSceneHandle = {
     setShot(shot) {
       if (mode === "sign") return;
@@ -972,19 +870,26 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     debugInfo() {
       const r = (v: THREE.Vector3) => [v.x, v.y, v.z].map((n) => +n.toFixed(3));
       return {
-        pen: r(pen.position), penVisible: pen.visible,
-        pinch: r(pinchOf(you, "r")), penTip: r(penInHandOf(you, "r").tip), hand: r(wpos(you.bones.hand_r)), shoulder: r(wpos(you.bones.upperarm_r)),
-        handL: r(wpos(you.bones.hand_l)), mode, t: clock - modeStart,
-        head: r(wpos(you.bones.Head)),
-        bossHead: r(wpos(boss.bones.Head)), bossHand: r(wpos(boss.bones.hand_r)), youHandR: r(wpos(you.bones.hand_r)),
-        L: you.L,
-        extras: you.extras.map((e) => [e.name || e.type, e.parent?.name, r(wpos(e))]),
+        pen: r(pen.position), penTip: r(penInHandOf(you, "R").tip), hand: r(wpos(you.bones.RightHand)), shoulder: r(wpos(you.bones.RightArm)),
+        handL: r(wpos(you.bones.LeftHand)), mode, t: clock - modeStart, model: you.model,
+        head: r(wpos(you.bones.Head)), hips: r(wpos(you.bones.Hips)),
+        bossHead: r(wpos(boss.bones.Head)), bossHand: r(wpos(boss.bones.RightHand)), bossHips: r(wpos(boss.bones.Hips)),
+        kit: lastYou.kit, contractKit: [opts.contract.shirt, opts.contract.trim], club: opts.contract.club,
+        youBend: bendOf(you), bossBend: bendOf(boss), headGap: +wpos(you.bones.Head).distanceTo(wpos(boss.bones.Head)).toFixed(3), cam: [...r(camera.position), +camera.fov.toFixed(1)],
+        palmR: r(you.hand.R.palm.clone().applyQuaternion(handQ(you, "R"))), alongR: r(you.hand.R.along.clone().applyQuaternion(handQ(you, "R"))),
+        bossPalmR: r(boss.hand.R.palm.clone().applyQuaternion(handQ(boss, "R"))),
+        extras: you.extras.map((x) => [x.name || x.type, x.parent?.name, r(wpos(x))]),
       };
     },
     debugHold(t) {
       frozen = true;
       clock = modeStart + t;
       frame(clock);
+      renderer.render(scene, camera);
+    },
+    debugStep(dt, n = 1) {
+      frozen = true;
+      for (let i = 0; i < n; i++) { stepClock(dt); frame(clock); }
       renderer.render(scene, camera);
     },
     debugCamera(pos, look, fov = 40) {
@@ -997,10 +902,13 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       ro.disconnect(); io.disconnect();
       scene.traverse((o) => {
         const m = o as THREE.Mesh;
+        // The bodies' geometry and textures are shared with the page's cache.
+        if ((m as unknown as THREE.SkinnedMesh).isSkinnedMesh) { const mt = m.material as THREE.Material; mt.dispose(); return; }
         if (m.geometry) m.geometry.dispose();
         const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
         for (const mt of mats) { for (const v of Object.values(mt)) if (v && (v as THREE.Texture).isTexture) (v as THREE.Texture).dispose(); mt.dispose(); }
       });
+      numberTex.dispose();
       pmrem.dispose();
       renderer.dispose();
       canvas.remove();
@@ -1022,7 +930,7 @@ function sampleSignature(d: string): [number, number][] {
   const len = path.getTotalLength();
   const pts: [number, number][] = [];
   const n = 90;
-  for (let i = 0; i <= n; i++) { const p = path.getPointAtLength((i / n) * len); pts.push([p.x, p.y]); }
+  for (let i = 0; i < n; i++) { const p = path.getPointAtLength((i / (n - 1)) * len); pts.push([p.x, p.y]); }
   svg.remove();
   return pts;
 }

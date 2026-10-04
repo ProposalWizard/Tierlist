@@ -59,6 +59,7 @@ import {
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
 import type { ScenarioRequest } from "./hiddenMatch";
+import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind } from "./kindMix";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
 import { applyChancePlan, type ChancePlan } from "./chanceFormula";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
@@ -77,6 +78,10 @@ import {
 import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
+import { libraryFor, serveEntry, shapeOfEntry, type ChanceDeck } from "./chanceLibrary";
+import { addContext, withoutContext } from "./contextShape";
+import type { ChanceSet } from "./chanceSet";
+import { markNewChance } from "./libraryMark";
 import { mulberry32 } from "./season";
 import { loadPlaySettings } from "./playArea";
 
@@ -258,6 +263,18 @@ function saltFor(o: { memory?: PictureMemory | null }): number {
     } catch { visitSalt = Math.floor(Math.random() * 0x7fffffff); }
   }
   return visitSalt >>> 0;
+}
+
+/**
+ * The match's own random numbers, turned by the visit salt: every draw is
+ * moved round the [0, 1) circle by the same amount, so exactly as many
+ * numbers are drawn as before and each is still evenly spread. No salt
+ * (a test, a gallery cell): the stream itself, untouched.
+ */
+export function saltedRng(rng: () => number, salt: number): () => number {
+  if (!salt) return rng;
+  const shift = ((salt >>> 0) % 1000003) / 1000003;
+  return () => { const v = rng() + shift; return v - Math.floor(v); };
 }
 
 const memories = new Map<string, PictureMemory>();
@@ -645,13 +662,23 @@ export interface MakeChanceOptions {
   mode?: ChanceMakerMode;
   /** A gallery cell: keep its base drawing as the pool grows. */
   stableKey?: number;
+  /**
+   * Which chances (Settings → Chances). "new": the checked library, dealt
+   * from `deck`, with the rest of both teams on the pitch
+   * (chanceLibrary.ts, contextShape.ts). Absent or "classic": exactly as
+   * before — so every caller that does not ask (the gallery's Sim, every
+   * test) is unchanged.
+   */
+  set?: ChanceSet;
+  /** The deck a "new" chance is dealt from (remembered across matches). */
+  deck?: ChanceDeck | null;
 }
 
 export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "generator" | "plan" | "builder";
+  how: "drawing" | "generator" | "plan" | "builder" | "library";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -684,17 +711,26 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let plan: ChancePlan | null = null;
   let first: Scenario | null = null;
   const src = o.source;
+  // Harry, 3 Oct 2026 — an even mix of highlights for now (lib/star/kindMix.ts):
+  // open play and a move that carries on are dealt from a shuffled bag.
+  const evenDeal = (): ScenarioKind => {
+    if (!o.selection) return EVEN_KINDS[Math.floor(rng() * EVEN_KINDS.length) % EVEN_KINDS.length];
+    o.selection.kindBag ??= newKindBag();
+    return nextEvenKind(o.selection.kindBag, rng);
+  };
   if (src.from === "request") {
     const offered = offeredKinds(src.request.kinds, src.request, rng);
-    const req = { ...src.request, kinds: offered };
-    kind = rollKind(req, src.position, rng);
+    const openPlay = EVEN_KIND_MIX && !src.request.dribble && src.request.pattern !== "set_piece" && src.request.kinds.length > 1;
+    const req = openPlay ? { ...src.request, kinds: [evenDeal()] } : { ...src.request, kinds: offered };
+    kind = openPlay ? req.kinds[0] : rollKind(req, src.position, rng);
     if (!servesDrawings(kind)) {
-      plan = selectChance({ request: { ...req, kinds: [kind] }, position: src.position, rng, memory: o.selection ?? newSelectionMemory(), shape: o.formation ?? null });
+      // The visit salt turns the plan too (v0.25 item 12) — see saltedRng.
+      plan = selectChance({ request: { ...req, kinds: [kind] }, position: src.position, rng: saltedRng(rng, saltFor(o)), memory: o.selection ?? newSelectionMemory(), shape: o.formation ?? null });
     }
   } else if (src.from === "chain") {
     // Built from where the pass actually arrived, so playing it into the
     // corner gives you a cutback and finding someone central a shot.
-    kind = playableKind(chainKindFor(src.pos, rng, src.ambition), rng);
+    kind = EVEN_KIND_MIX ? evenDeal() : playableKind(chainKindFor(src.pos, rng, src.ambition), rng);
   } else if (src.from === "attacking") {
     first = buildAttackingScenario(rng, ks, tr, vis);
     kind = first.kind;
@@ -712,22 +748,68 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     first = null;
   }
 
+  // ── 1b. New chances: a picture from the library, dealt from the deck ──
+  //
+  // Every picture in the library was made from the drawings, checked by the
+  // game's own checks and by eye, and is served exactly as checked (see
+  // chanceLibrary.ts). The deck never deals a picture again until every
+  // other one of its kind has been dealt. The rest of both teams stand
+  // around it (contextShape.ts), from the opponent's real formation.
+  if (o.set === "new") {
+    const entries = libraryFor(kind);
+    if (entries.length) {
+      const pickRng = saltedRng(rng, saltFor(o));
+      const pick = o.deck ? o.deck.next(kind, entries, pickRng) : entries[Math.floor(pickRng() * entries.length) % entries.length];
+      if (pick) {
+        const sc = first && first.kind === kind ? first : build(kind);
+        const ctx = o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle } : {};
+        serveEntry(sc, pick, { keeperStrength: ks, context: ctx });
+        // Never into the gallery (libraryMark.ts, Harry 3 Oct 2026).
+        markNewChance(sc, { from: "library", id: pick.id });
+        o.memory?.remember(pictureOf(withoutContext(sc)));
+        return {
+          sc, shape: shapeOfEntry(pick), how: "library", appliedPlan: false, appliedAuthored: true, sourceId: pick.id,
+          faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated: 0, mode,
+        };
+      }
+    }
+  }
+  /** New chances on a kind the library has no picture of: today's chance,
+   *  with the rest of both teams around it. Classic: untouched. */
+  const finishNew = (sc: Scenario) => {
+    if (o.set !== "new") return;
+    markNewChance(sc, { from: "context" });
+    addContext(sc, o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle, laws: ruleSetFor(sc.kind) } : { laws: ruleSetFor(sc.kind) });
+  };
+
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
   if (!servesDrawings(kind)) {
+    // A kind with no drawings is laid out by the builder or the formula's
+    // plan, from the match's own random numbers — and a match is seeded by
+    // its week. So the visit salt has to reach this path as well, or the
+    // same match restarted opens on the same picture every time. Seen
+    // (v0.25 item 12, Harry: "the same long-shot highlight keeps coming"):
+    // a National League opening chance restarted 6 times, the ball on the
+    // same pixel all 6, and the picture memory empty — this path never
+    // used the salt or the memory. saltedRng draws the same count.
+    const salt = saltFor(o);
+    const prng = saltedRng(rng, salt);
+    const sbuild = (k: ScenarioKind) => buildScenario(k, prng, ks, tr, vis);
     let sc: Scenario;
     let appliedPlan = false;
     if (plan && plan.kind === kind) {
-      sc = build(kind);
+      sc = sbuild(kind);
       fixBaseScenario(sc);
-      applyChancePlan(sc, plan, rng);
+      applyChancePlan(sc, plan, prng);
       appliedPlan = true;
     } else {
-      sc = first ?? build(kind);
+      sc = (salt && first) ? sbuild(kind) : first ?? sbuild(kind);
     }
     if (!appliedPlan) applyFormationShape(sc, o.formation ?? null);
-    setupKind(sc, rng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
+    setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
+    finishNew(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
       faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated, mode,
@@ -776,12 +858,14 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
+    finishNew(sc);
     return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated, mode };
   }
   // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
   // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
   finishServedFrame(best.sc);
   o.memory?.remember(pictureOf(best.sc));
+  finishNew(best.sc);
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,
     faultRebuilds, memoryRebuilds, faults: best.faults, nearestRecent: best.gap, separated: best.separated, mode,

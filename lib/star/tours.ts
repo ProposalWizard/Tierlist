@@ -73,7 +73,8 @@ export const LEVEL_TOUR: TourStep[] = [
   { target: "level-1", text: "Each level gives you three tries. Score on the first try for three stars. Tap level 1", press: true },
 ];
 
-/** Back on Training after the first drill (P2-63). */
+/** Back on Training after the first drill (P2-63). The v0.24 order only:
+ *  on the game-first order one drill is enough (v0.25.1). */
 export const ONE_MORE_DRILL_TOUR: TourStep[] = [
   { target: "sessions", text: "One drill done. Do one more" },
 ];
@@ -100,6 +101,37 @@ export function bossTour(gameFirst: boolean): TourStep[] {
   return [{ target: "nav-life", text: gameFirst ? "Your manager wants a word. Tap Relations" : "Time to meet your boss. Tap Relations", press: true }];
 }
 export const BOSS_TOUR: TourStep[] = bossTour(false);
+
+/**
+ * RELATIONS, EXPLAINED (v0.25.1, Harry, 3 Oct 2026: "once relations is
+ * unlocked you're straight away re-routed to training, it should explain the
+ * page and what relations do"). After the manager's talk you stay on
+ * Relations and this runs. Every line is read off the real rules:
+ *   - the bars: green at 70+, yellow at 40+, red below (RelationsPage.tsx);
+ *     a match moves boss, team and fans up or down with your rating
+ *     (matchStats.ts, careerFlow.ts creditMatchResult);
+ *   - boss: 40% of whether you are picked; under 40 you are benched, under
+ *     30 left out (selection.ts);
+ *   - team: how well team-mates pass and finish in your chances, and how
+ *     often the ball comes back to you (canvasEngine.ts, teamRelationship);
+ *   - fans: fan mail (fanmail.ts), and some sponsor deals need 40-45 with the
+ *     fans (sponsorDeals.ts);
+ *   - the play button is a short game that costs one day of the week; a win
+ *     lifts the bar, a loss drops it (relationshipGame.ts).
+ * Two steps, then (on a new career) a pointer to Training.
+ */
+const RELATIONS_EXPLAIN: TourStep[] = [
+  { target: "screen", text: "Relations: your boss, your team-mates, the fans and you. Green bars are good, red are bad. Good matches push them up, bad ones pull them down" },
+  { target: "css:[data-relation='boss']", text: "A happy boss picks you more. Happy team-mates pass and finish better. Happy fans send fan mail and bring sponsors. ▶ is a quick game that uses a day" },
+];
+
+/** The Relations tour. `trainingNext`: training is the next first step, so the
+ *  last step sends you there. */
+export function relationsTour(trainingNext: boolean): TourStep[] {
+  return trainingNext
+    ? [...RELATIONS_EXPLAIN, { target: "nav-training", text: "Next: do a training drill. Tap Training", press: true }]
+    : RELATIONS_EXPLAIN;
+}
 
 /** On Relations, while the boss meeting is the next first step. */
 export const BOSS_MEETING_TOUR: TourStep[] = [
@@ -145,10 +177,7 @@ export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
     { target: "sessions", text: "You get two drills each week" },
     { target: "screen", text: "Pick a drill. Stars on each level make the skill better" },
   ],
-  relations: [
-    { target: "screen", text: "Your boss, your team-mates and the fans. Each one changes your career" },
-    { target: "css:button[aria-label^='Boss meeting']", text: "A meeting with your boss. He picks you more when he likes you" },
-  ],
+  relations: RELATIONS_EXPLAIN,
   league: [{ target: "screen", text: "Your league. Win matches to go up the table. The top teams go up a division" }],
   style: [{ target: "screen", text: "Buy things to raise your fame. More open as your star rating goes up" }],
   settings: [{ target: "screen", text: "Sound, the look of the game and your saves" }],
