@@ -435,6 +435,40 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
   },
 
+  "/admin/testers": {
+    title: "Tester Access",
+    what: "Make links that turn a signed-in person into a tester, switch links off, and remove testers. A tester gets the Star Career developer tools and the test pages that only play the game.",
+    buttons: [
+      { group: "Links", items: [
+        ["Who it's for (optional)", "A short note so you remember who the link went to. Only admins see it."],
+        ["New tester link", "Makes a new link like knowitball.co.uk/tester/K7Q2XM. Send it to your tester."],
+        ["Copy link", "Copies that link, ready to paste into a message."],
+        ["Switch off / Switch on", "A switched-off link stops working. People who already used it stay testers — use Remove for that."],
+        ["On / Off (tag)", "Whether the link works right now. \"Used N times\" is how many people became testers with it."],
+      ] },
+      { group: "Testers", items: [
+        ["Remove", "Takes tester access away from that person. It asks first. An admin who is also a tester stays an admin."],
+      ] },
+      { group: "What the tester sees", items: [
+        ["The link", "Signed out: \"Sign in with Google\", then they come back to the link. Signed in: one button, \"Become a tester\". Opening the link alone changes nothing."],
+      ] },
+    ],
+    saving: [
+      "Shared, at once. Links are kept in the Supabase table tester_links; who is a tester is the is_tester mark in user_roles. There is no Save button.",
+      "Only admins can make or change links, through the site's server. Nobody can write either table from their own browser.",
+    ],
+    inGame: [
+      "A tester sees Road to Ballon d'Or → Settings → Developer tools (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
+      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
+      "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
+      "Testers never get admin pages or anything that changes what other players see.",
+    ],
+    needs: [
+      "supabase/migrations/tester_access.sql must be run in the Supabase SQL Editor. Until then this page shows a red line, \"New tester link\" is off, nobody is a tester, tester links say they aren't switched on yet, and everything else works as before.",
+    ],
+    dev: "app/admin/testers/ · app/api/admin/testers/route.ts · app/tester/[code]/ · app/api/tester/claim/route.ts · lib/testerLinks.ts · lib/roles.ts · lib/admin.ts (roleOf, isTester) · lib/useIsAdmin.ts (useIsTester) · components/TesterOnly.tsx · lib/star/godMode.ts",
+  },
+
   "/admin/app-plan": {
     title: "App Plan",
     what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",

@@ -46,6 +46,9 @@ Waiting on: you, to merge Harry → main
 
 ## When to send one
 
+- **As you go, without being asked (Harry, 5 Oct 2026: "run the progress
+  skills as you go").** Each time a piece of work changes stage (built,
+  pushed, checked on screen, blocked), send a fresh set of bars.
 - Whenever asked (any of the trigger phrases).
 - After a long round finishes, as the first thing in the reply, before detail.
 - Mid-round, if more than about 20 minutes have passed with no word.

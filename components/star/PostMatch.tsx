@@ -16,6 +16,8 @@ import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
 const exact = (n: number) => Math.round(n).toLocaleString("en-GB");
 
 interface Props {
+  /** This match was your boots' last: say so, and where to get new ones. */
+  bootsWornOut?: boolean;
   stats: MatchStats;
   homeTeam: string;
   awayTeam: string;
@@ -75,7 +77,7 @@ const RESULT_LOOK: Record<Result, { word: string; color: string }> = {
  * counts up big, then the money and the relationship changes float up off
  * their rows. For a phone set to reduce motion every beat lands at once.
  */
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star, achievements = [] }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star, achievements = [], bootsWornOut = false }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
   const kits = kitsFor(homeTeam, awayTeam);
@@ -153,6 +155,15 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
         >
           {through && <Shine trigger={verdict ? 1 : 0} />}
           {knockout}
+        </div>
+      )}
+
+      {bootsWornOut && (
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-amber-400/15 px-3 py-2 text-left ring-1 ring-amber-300/50">
+          <span className="text-[18px]" aria-hidden>🥾</span>
+          <div className="min-w-0 text-[12.5px] font-black leading-snug text-white">
+            Your boots just wore out. Buy a new pair in the Shop before your next match.
+          </div>
         </div>
       )}
 

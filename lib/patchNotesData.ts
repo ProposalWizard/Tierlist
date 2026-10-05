@@ -27,6 +27,277 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.29",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-05T14:45:00Z",
+      "summary": "Cheat menus and 18 test pages locked to admins, a much harder Ballon d'Or, a play-off bug fixed, a trial shootout that is always 2-2 before your kick, a tour Later button, commentary up to 8× and boots warnings. Harry's v0.29.",
+      "stats": [
+        {
+          "value": "19 → 3 of 20",
+          "label": "careers from a Championship start that win a Ballon d'Or (simulated)"
+        },
+        {
+          "value": "70 → 4",
+          "label": "Ballon d'Or wins in 213 simulated Premier League seasons"
+        },
+        {
+          "value": "18",
+          "label": "test pages that now say Admins only on the live site"
+        },
+        {
+          "value": "1 in 3 → 5 of 5",
+          "label": "trial shootouts at 2-2 before your kick (5 of 5 seen on screen)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The cheat menu is for admins only",
+              "detail": "Settings → Developer tools. A normal account sees nothing. Can't be checked in a test copy."
+            },
+            {
+              "title": "18 test pages say Admins only",
+              "detail": "Type a test page's address (the Play Area, a 3D test area, the gallery) on the live site as a normal player"
+            },
+            {
+              "title": "A new play-off every season",
+              "detail": "Play on past season 1 in League One or Two, or the Championship"
+            },
+            {
+              "title": "Ballon d'Or is much harder",
+              "detail": "Awards after a season: Premier League only, and you need a major trophy"
+            },
+            {
+              "title": "The trial shootout is 2-2 before your kick",
+              "detail": "New game → trial → penalties"
+            },
+            {
+              "title": "The tour has a Later button",
+              "detail": "Home → the Tap Play pointer → Later"
+            },
+            {
+              "title": "Commentary speed goes up to 8×",
+              "detail": "Any match → the speed button under the minute"
+            },
+            {
+              "title": "Boots warnings",
+              "detail": "Line-up before kick-off, and the full-time screen after the match the boots die (New UI only)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The cheat menu and 18 test pages are for admins only",
+              "detail": "Developer tools (add money, coins, max skills, switch club, skip ahead) sat behind a plain Show button any player could press, and test pages opened for anyone who typed the address. Now admins only, in the New UI and the Old UI.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Problem: any player could give themselves money and skills, and open pages like the Play Area, the 3D test areas and the gallery.",
+                  "Why: they were built as test tools and nothing checked who was using them.",
+                  "Fix: Developer tools shows for admins only. The 18 test pages say Admins only on the live site.",
+                  "Local and test copies treat everyone as an admin, so the lock cannot be seen there. Reasoned from the code, not seen as a normal player on the live site.",
+                  "Testers who used the menu on the live site lose it too, until tester access is built."
+                ]
+              }
+            },
+            {
+              "title": "The Ballon d'Or is much harder to win",
+              "detail": "Premier League only, and you need a major trophy that season (Premier League, Champions League, World Cup or Euros). Championship: only as top scorer on the list AND a World Cup winner. League One and below are not shortlisted. The world's best rivals (86+) now have superstar seasons.",
+              "bars": [
+                {
+                  "label": "Championship start: careers that win (of 20)",
+                  "was": 19,
+                  "now": 3,
+                  "target": 20,
+                  "state": "good"
+                },
+                {
+                  "label": "National League start: careers that win (of 20)",
+                  "was": 9,
+                  "now": 3,
+                  "target": 20,
+                  "state": "good"
+                },
+                {
+                  "label": "Wins in 213 Premier League seasons",
+                  "was": 70,
+                  "now": 4,
+                  "target": 70,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Before: a Championship start won it in 19 of 20 simulated careers, the first time in season 3. A National League start won in 9 of 20. Wins from League Two came in seasons 1 and 2.",
+                  "A 90-rated striker now scores about 25 to 45 goals; a 93-rated one about 30 to 55.",
+                  "A Championship start now wins about 4 seasons after reaching the Premier League.",
+                  "Measured on simulated careers, not played by hand. It may be too hard once you play the matches yourself. It is one number to loosen."
+                ]
+              }
+            },
+            {
+              "title": "The trial shootout is always 2-2 before your kick",
+              "detail": "Harry: at least have 3 penalties scored. Both team-mates score and the Academy miss one of three. Before it was 0-0, 1-1 or 2-2, about a third each.",
+              "bars": [
+                {
+                  "label": "Shootouts at 2-2 before your kick",
+                  "was": 33,
+                  "now": 100,
+                  "target": 100,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Seen on screen: 2-2 before the kick on 5 of 5 shootouts."
+                ]
+              }
+            },
+            {
+              "title": "The tour has a Later button",
+              "detail": "Steps that make you press a button used to block every other tap. Now a Later button hides the tour until that screen opens again.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              },
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "A first step on Harry's ask to fix the tour flow. The flow itself still needs a proper rethink.",
+                  "Seen working: the Home screen before and after tapping Later."
+                ]
+              }
+            },
+            {
+              "title": "Commentary goes up to 8× speed",
+              "detail": "The speed button now goes 1× → 2× → 4× → 8×. At 8× there are about 3 seconds between your chances.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Measured on screen: 3 gaps of 2.9 to 3.0 seconds."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Last season's play-off result carried into every later season",
+              "detail": "Last year's winner was promoted again from wherever they finished (15th in League Two and 19th in the Championship were seen in a 14-season simulation) and no new play-off was ever held. The result is now cleared each season.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Why: the play-off result was never cleared at the end of a season.",
+                  "A new test fails without the fix and passes with it."
+                ]
+              }
+            },
+            {
+              "title": "Boots wore out with no warning",
+              "detail": "The line-up says Last match in these boots before kick-off. After the match they die, full time says Your boots just wore out. Buy a new pair in the Shop. New UI only.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Seen on screen: both messages.",
+                  "A first try put the pre-match line on an old screen nobody sees any more. The browser check caught it."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The security database fix is still waiting",
+              "detail": "Two SQL files (security_rls_hardening_jul2026.sql, security_user_profiles_columns_aug2026.sql) are not run in Supabase. Until they run, anyone with the public database key can still write straight into community votes, the Draft leaderboards, multiplayer draft rooms and XP. (This is separate from the cheat menus: Star Career money and stats are still trusted from the saved career, which needs its own server fix.)",
+              "pill": {
+                "text": "blocked on running them",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Player money and stats are still trusted from the saved career",
+              "detail": "Needs a server fix before real money is involved."
+            },
+            {
+              "title": "Tester access is not built yet",
+              "detail": "Until it is, only admin accounts see the cheat menu and the test pages on the live site."
+            },
+            {
+              "title": "The ‹ Back button overlaps the competition header on the line-up screen",
+              "detail": "Seen by the browser check. Not from this round."
+            },
+            {
+              "title": "The tour flow still needs a proper rethink",
+              "detail": "Later is only a first step.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The Ballon d'Or may now be too hard when you play the matches yourself",
+              "detail": "The numbers come from simulated careers."
+            },
+            {
+              "title": "Still open from v0.27 and earlier",
+              "detail": "The wall chasing a loose free kick, a cutback along the byline sitting for 1.6 s, two players overlapping on byline crosses, new-chance extras off screen when flat, and the v0.26 items (3D kick foot for left-footers, signing hands, long-hair model, shop walk). Still to run in Supabase after the two security files: fix_two_digit_fifa_years.sql, draft_records_full_fix.sql, perf_indexes_jul2026.sql, sofifa_search_indexes.sql, fc27_clone_lower_leagues.sql."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Tester access links",
+              "detail": "God mode for testers, so locking the cheat menu does not stop testing."
+            },
+            {
+              "title": "One 3D body for every cutscene",
+              "detail": "Being built now: the signing scene (fingers on the pen, a handshake), the manager's office for conversations, and the garden's look."
+            },
+            {
+              "title": "Short gameplay clips",
+              "detail": "For the trial shootout and the 8× commentary, added to the page after it is published."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.27 — 3 Oct 2026 — a tipped-back camera, a keeper who behaves",
+              "detail": "The pitch tipped back 20°, a zoom for each kind of highlight, an even mix of highlights, a drag that starts beside the ball, a keeper who faces out and stays down, a ball that no longer stops on the grass. Harry's own page numbering; not listed on this site.",
+              "more": {
+                "summary": "Open from v0.27",
+                "points": [
+                  "The wall chasing a loose free kick, a cutback along the byline sitting for 1.6 s, two players overlapping on byline crosses, new-chance extras off screen when flat. All listed in Known issues above."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/SRj5ZaVsgWFWca9Dy5bNWx",
+      "updatedAt": null
+    },
+    {
       "version": "0.28",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-05T03:30:00Z",

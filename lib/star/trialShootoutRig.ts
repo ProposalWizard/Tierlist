@@ -79,7 +79,7 @@ export interface RigScript {
   intents: boolean[];
   sides: (1 | -1)[];
   misses: MissStyle[];
-  /** Goals each side has before your kick (0, 1 or 2). */
+  /** Goals each side has before your kick (always RIG_LEVEL, 2). */
   level: number;
 }
 
@@ -123,13 +123,24 @@ function choose(n: number, k: number, rng: () => number): Set<number> {
   return new Set(idx.slice(0, k));
 }
 
+/**
+ * Goals each side has before your kick. Harry, 5 Oct 2026: "I'd rather there
+ * be more goals scored … your team scores 2, they scored 2, they miss their
+ * 3rd, and then you take the winning pen. At least have 3 penalties scored."
+ * Level means even, so that is 2-2 every time: both team-mates score and the
+ * Academy miss one of their three (3 paths). Was 0, 1 or 2, a third each,
+ * which allowed five misses in a row before yours.
+ */
+export const RIG_LEVEL = 2;
+
 /** The kick numbers (0-4) your two team-mates take: Academy goes first. */
 export const MATE_KICK_INDEX = [1, 3] as const;
 
 /** Roll the path to your kick for one save. Same seed, same path. */
 export function createRigScript(seed: number): RigScript {
   const rng = mulberry32((seed ^ 0x5b007) >>> 0);
-  const level = Math.min(SHOOTOUT_KICKS - 1, Math.floor(rng() * SHOOTOUT_KICKS));
+  rng(); // was the level roll; kept so every later draw stays where it was
+  const level = RIG_LEVEL;
   const theirs = choose(SHOOTOUT_KICKS, level, rng);       // which of their 3
   const ours = choose(SHOOTOUT_KICKS - 1, level, rng);     // which of our 2
   const intents: boolean[] = [];

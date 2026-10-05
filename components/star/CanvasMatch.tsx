@@ -1079,12 +1079,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   useEffect(() => {
     try {
       const saved = Number(localStorage.getItem("star-match-speed"));
-      if (saved === 1 || saved === 2 || saved === 4) setSpeed(saved);
+      if (saved === 1 || saved === 2 || saved === 4 || saved === 8) setSpeed(saved);
     } catch { /* ignore */ }
   }, []);
   const cycleSpeed = () => {
     setSpeed((sp) => {
-      const next = sp === 1 ? 2 : sp === 2 ? 4 : 1;
+      // 8x added (Harry, 5 Oct 2026: "maybe we just make it even quicker, the
+      // top one"; the first-time playtest waited 4-9 s of ticker per chance).
+      const next = sp === 1 ? 2 : sp === 2 ? 4 : sp === 4 ? 8 : 1;
       try { localStorage.setItem("star-match-speed", String(next)); } catch { /* ignore */ }
       return next;
     });
