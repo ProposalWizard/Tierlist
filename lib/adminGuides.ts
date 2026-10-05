@@ -882,6 +882,28 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
+  "/star-3d-area-dev/office": {
+    title: "Manager's office (3D stage)",
+    what: "The signing's office, rebuilt as a stage for \"Talk to your manager\": the manager behind his desk, you across it, a rug, a bookcase, a trophy cabinet, a plant, a laptop and a mug. The camera goes to whoever is talking. Sample lines here; the real ones come from the boss game.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["Next line", "Steps through four sample lines, switching who talks."],
+          ["👁 (bottom left)", "This guide."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "Talk to your manager (Life tab) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat screen exactly as before. The lines, replies and results are the boss game's own, unchanged.",
+      "If the phone cannot run the 3D, the chat carries on without the office.",
+      "The people are the one body (Settings → Look → \"3D people\").",
+    ],
+    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
+  },
+
   "/star-garden3d-dev": {
     title: "3D Garden",
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",

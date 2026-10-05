@@ -24,6 +24,8 @@
  */
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands } from "../people3d";
+import { people3dLook } from "../look3d";
 import {
   lawnCanvas, gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
 } from "./textures";
@@ -50,6 +52,8 @@ export interface GardenData {
   mates: number[];
   /** Where you appear: at the shop's doors (coming out of it) or the gate. */
   arrive: "shop" | "gate";
+  /** Your looks, for the one body (Settings → Look → "3D people: New"). */
+  you?: { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none" };
 }
 
 export interface GardenCallbacks {
@@ -812,17 +816,40 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     });
     return U;
   };
-  const player = SkeletonUtils.clone(charG.scene);
-  dress(player, data.number, "garden-kit-you");
-  player.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set("#4a2e1c"); });
+  // You: the one body, same as the 3D shop and the signing (Settings → Look →
+  // "3D people: New", Harry 5 Oct 2026: "the same person in the garden as in
+  // the store"), or the first CC0 body exactly as before ("Old").
+  let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
+  const oneBody = people3dLook() === "new";
+  if (oneBody) {
+    const [g, a] = await Promise.all([
+      loadPeople3d(loader, playerModelFor(data.you?.hairStyle), "new"), loadPeople3d(loader, "anims"),
+    ]);
+    const person = makePerson3d(THREE, SkeletonUtils, g, a, { outline: 0.006, castShadow: true });
+    dressPerson3d(THREE, person, {
+      skin: data.you?.skin ?? "#c68642", hair: data.you?.hair ?? "#2b1b12", kit: data.kit,
+      number: canvasTex(numberCanvas(data.number, "#ffffff")),
+    });
+    relaxHands(THREE, person);
+    player = person.root;
+    mixer = person.mixer;
+    idleA = person.actions.idle;
+    walkA = person.actions.jog;
+    jogA = mixer.clipAction(person.actions.jog.getClip().clone());
+    jogA.play(); jogA.setEffectiveWeight(0);
+  } else {
+    player = SkeletonUtils.clone(charG.scene);
+    dress(player, data.number, "garden-kit-you");
+    player.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set("#4a2e1c"); });
+    mixer = new THREE.AnimationMixer(player);
+    const act = (n: string) => { const a = mixer.clipAction(clip(animG, n)); a.play(); a.setEffectiveWeight(0); return a; };
+    idleA = act("Idle_Loop"); walkA = act("Walk_Loop"); jogA = act("Jog_Fwd_Loop");
+  }
   const st0 = data.arrive === "shop" ? START_SHOP : START_GATE;
   player.position.set(st0.x, 0, st0.z);
   player.rotation.y = st0.yaw;
   scene.add(player);
   const playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
-  const mixer = new THREE.AnimationMixer(player);
-  const act = (n: string) => { const a = mixer.clipAction(clip(animG, n)); a.play(); a.setEffectiveWeight(0); return a; };
-  const idleA = act("Idle_Loop"), walkA = act("Walk_Loop"), jogA = act("Jog_Fwd_Loop");
   idleA.setEffectiveWeight(1);
 
   // three team-mates, sitting and chatting; one has a can and drinks from it
@@ -992,7 +1019,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
     walkA.setEffectiveWeight(wWalk);
     jogA.setEffectiveWeight(wJog);
-    walkA.timeScale = Math.max(0.6, speed / 1.45);
+    walkA.timeScale = oneBody ? Math.max(0.45, speed / 2.6) : Math.max(0.6, speed / 1.45);
     jogA.timeScale = Math.max(0.8, speed / 3.2);
     mixer.update(dt);
 

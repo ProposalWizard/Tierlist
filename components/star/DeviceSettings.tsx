@@ -10,6 +10,7 @@ import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/st
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
+import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import {
   useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
@@ -140,6 +141,8 @@ export function LookSwitches() {
   const viewNow = useStoredMatchView();
   const signing3d = useSigning3d();
   const shopPlayer = useShop3dPlayerLook();
+  const people3d = usePeople3dLook();
+  const bossRoom = useBossRoomLook();
   const chancesNow = useChanceSet();
   return (
     <>
@@ -163,6 +166,19 @@ export function LookSwitches() {
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">3D shop player</span>
         <SegTabs className="w-[150px] shrink-0" value={shopPlayer} onChange={setShop3dPlayerLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D people</span>
+        <SegTabs className="w-[150px] shrink-0" value={people3d} onChange={setPeople3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: one body in the signing, the shop and the garden — a normal waist, fingers that hold the pen and grip the handshake. Old: as before.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Talk to your manager</span>
+        <SegTabs className="w-[150px] shrink-0" value={bossRoom} onChange={setBossRoomLook} tabs={[["3d", "3D office"], ["old", "Old"]] as const} />
       </div>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">

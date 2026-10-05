@@ -34,6 +34,14 @@ export const SCENES_3D: Scene3d[] = [
     files: "app/star-3d-area-dev/signing · components/star/SigningScene3D.tsx · lib/star/signing3d{Scene,Rig,Textures}.ts · public/star/signing3d · tools/signing3d",
   },
   {
+    id: "office",
+    title: "Manager's office",
+    line: "Live 3D: the signing's office rebuilt as the stage for Talk to your manager. He sits behind his desk, you across it; the camera goes to whoever talks.",
+    status: "Prototype",
+    href: "/star-3d-area-dev/office",
+    files: "app/star-3d-area-dev/office · components/star/Office3D.tsx · lib/star/signing3dScene.ts (stage: \"office\") · components/star/relgames/BossChat.tsx",
+  },
+  {
     id: "shop3d",
     title: "Walk-around shop",
     line: "Walk a footballer round a lit showroom: the real Blender boots and cars in 3D. Also in the game, as a beta button on the Shop page.",

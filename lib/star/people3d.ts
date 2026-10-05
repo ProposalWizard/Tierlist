@@ -39,6 +39,25 @@ export const PEOPLE3D_FILES = {
   anims: "/star/people3d/anims.glb",
 } as const;
 
+/**
+ * THE ONE BODY (Harry, 5 Oct 2026: "use the same models across all cutscenes
+ * and 3D sections … they have really wide torsos and thin waists … his
+ * fingers obviously don't move"). The same people as above, rebuilt by
+ * scripts/people3d/build_onebody.py: an ordinary waist (the lats and
+ * shoulders brought in, the waist filled out), and 15 finger bones a hand.
+ * Settings → Look → "3D people: New | Old" picks these (New, the default) or
+ * the files above exactly as they were (Old).
+ */
+export const ONEBODY_FILES = {
+  player: "/star/onebody/player.glb",
+  "player-buzz": "/star/onebody/player-buzz.glb",
+  "player-long": "/star/onebody/player-long.glb",
+  manager: "/star/onebody/manager.glb",
+  anims: "/star/people3d/anims.glb",
+} as const;
+
+export type PeopleBody = "new" | "old";
+
 export type PlayerModel = "player" | "player-buzz" | "player-long";
 export type PersonModel = PlayerModel | "manager";
 
@@ -60,6 +79,37 @@ export interface PersonMeta {
   kit: { hemY: number; sockY: number; bootY: number };
   joints: Record<string, V3>;
   hands: Record<"L" | "R", { along: V3; palm: V3; thumb: V3; len: number }>;
+  /** The one body only: each finger's bones and the axes it bends about
+   *  (rest pose, world). `axis` curls it towards the palm; the thumb's
+   *  `swing` takes it across towards the fingers. */
+  fingers?: Record<"L" | "R", Record<FingerName, { bones: string[]; axis: V3; dir: V3; len: number; swing?: V3 }>>;
+  /** The one body only: positions are stored as 16-bit steps (see makePerson3d). */
+  quant?: { scale: number; offset: V3 };
+}
+
+export type FingerName = "thumb" | "index" | "middle" | "ring" | "little";
+export const FINGER_NAMES: FingerName[] = ["thumb", "index", "middle", "ring", "little"];
+
+/** A hand's finger bends, radians, root joint first. `thumbSwing` takes the
+ *  thumb across the palm towards the fingers. Missing fingers stay straight. */
+export interface FingerPose {
+  thumb?: [number, number, number];
+  index?: [number, number, number];
+  middle?: [number, number, number];
+  ring?: [number, number, number];
+  little?: [number, number, number];
+  thumbSwing?: number;
+}
+
+interface FingerRig {
+  bones: THREE.Bone[];
+  rest: THREE.Quaternion[];
+  /** The bend axis in each bone's own frame. */
+  axis: THREE.Vector3[];
+  swing?: THREE.Vector3;
+  /** Root-to-tip direction in the last bone's own frame, and that bone's length. */
+  dir: THREE.Vector3;
+  tipLen: number;
 }
 
 /** A hand's axes in its own bone's space. */
@@ -83,6 +133,8 @@ export interface Person3D {
   hipsRest: THREE.Vector3;
   /** The Armature's scale (cm → m). */
   unit: number;
+  /** The one body only: each hand's fingers. */
+  fingers?: Record<"L" | "R", Record<FingerName, FingerRig>>;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -112,9 +164,9 @@ export interface PersonLook {
 
 const cache = new Map<string, Promise<GLTF>>();
 
-/** Load (once per page) a body or the clips. */
-export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES): Promise<GLTF> {
-  const url = PEOPLE3D_FILES[which];
+/** Load (once per page) a body or the clips. `body` "new" is the one body. */
+export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
+  const url = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES)[which];
   let p = cache.get(url);
   if (!p) {
     p = loader.loadAsync(url) as Promise<GLTF>;
@@ -317,6 +369,7 @@ export function makePerson3d(
   model: GLTF, anims: GLTF, opts: MakePersonOptions = {},
 ): Person3D {
   const meta = model.scene.userData as PersonMeta;
+  if (meta.quant) dequantize(T, model, meta.quant);
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
@@ -377,7 +430,135 @@ export function makePerson3d(
   }
   const base = new Map<THREE.Bone, [THREE.Vector3, THREE.Quaternion]>();
   for (const b of Object.values(bones)) base.set(b, [b.position.clone(), b.quaternion.clone()]);
-  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit };
+
+  // The one body's fingers: each bone's bend axis in its own frame.
+  let fingers: Person3D["fingers"];
+  if (meta.fingers) {
+    fingers = {} as NonNullable<Person3D["fingers"]>;
+    for (const side of ["L", "R"] as const) {
+      const out = {} as Record<FingerName, FingerRig>;
+      for (const f of FINGER_NAMES) {
+        const m = meta.fingers[side][f];
+        const bs = m.bones.map((n) => bones[n]);
+        const local = (v: V3, b: THREE.Bone) => {
+          const q = new T.Quaternion(); b.getWorldQuaternion(q);
+          return new T.Vector3(...v).applyQuaternion(q.invert()).normalize();
+        };
+        out[f] = {
+          bones: bs,
+          rest: bs.map((b) => b.quaternion.clone()),
+          axis: bs.map((b) => local(m.axis, b)),
+          swing: m.swing ? local(m.swing, bs[0]) : undefined,
+          dir: local(m.dir, bs[2]),
+          tipLen: m.len * 0.24 / unit,
+        };
+      }
+      fingers[side] = out;
+    }
+  }
+  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers };
+}
+
+/**
+ * The one body's positions are 16-bit steps with the decode folded into the
+ * bind matrices (KHR_mesh_quantization). The body's shader reads rest-pose
+ * METRES (kit lines, face, sleeves), so they go back to metres here, once per
+ * loaded file, and the bind matrices lose the decode again.
+ */
+function dequantize(T: Three, model: GLTF, q: { scale: number; offset: V3 }) {
+  const ud = model.scene.userData as { __deq?: boolean };
+  if (ud.__deq) return;
+  ud.__deq = true;
+  const body = model.scene.getObjectByName("Body") as THREE.SkinnedMesh;
+  const g = body.geometry;
+  const pos = g.getAttribute("position");
+  const n = pos.count;
+  const P = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    P[i * 3] = pos.getX(i) * q.scale + q.offset[0];
+    P[i * 3 + 1] = pos.getY(i) * q.scale + q.offset[1];
+    P[i * 3 + 2] = pos.getZ(i) * q.scale + q.offset[2];
+  }
+  g.setAttribute("position", new T.BufferAttribute(P, 3));
+  const nor = g.getAttribute("normal");
+  if (nor) {
+    const N = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const x = nor.getX(i), y = nor.getY(i), z = nor.getZ(i);
+      const l = Math.hypot(x, y, z) || 1;
+      N[i * 3] = x / l; N[i * 3 + 1] = y / l; N[i * 3 + 2] = z / l;
+    }
+    g.setAttribute("normal", new T.BufferAttribute(N, 3));
+  }
+  const uv = g.getAttribute("uv");
+  if (uv) {
+    const U = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { U[i * 2] = uv.getX(i); U[i * 2 + 1] = uv.getY(i); }
+    g.setAttribute("uv", new T.BufferAttribute(U, 2));
+  }
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  const D = new T.Matrix4().makeScale(q.scale, q.scale, q.scale).setPosition(q.offset[0], q.offset[1], q.offset[2]);
+  const Dinv = D.clone().invert();
+  for (const m of body.skeleton.boneInverses) m.multiply(Dinv);
+}
+
+/** Does this person have finger bones (the one body)? */
+export function hasFingers(p: Person3D): boolean { return !!p.fingers; }
+
+/** Bend one hand's fingers (after the arm is posed). Straight = 0. */
+export function poseFingers(T: Three, p: Person3D, side: "L" | "R", pose: FingerPose, w = 1) {
+  const rig = p.fingers?.[side];
+  if (!rig) return;
+  const q = new T.Quaternion();
+  for (const f of FINGER_NAMES) {
+    const r = rig[f];
+    const a = pose[f] ?? [0, 0, 0];
+    for (let k = 0; k < 3; k++) {
+      const b = r.bones[k];
+      b.quaternion.copy(r.rest[k]);
+      if (k === 0 && f === "thumb" && r.swing && pose.thumbSwing) b.quaternion.multiply(q.setFromAxisAngle(r.swing, pose.thumbSwing * w));
+      if (a[k]) b.quaternion.multiply(q.setFromAxisAngle(r.axis[k], a[k] * w));
+    }
+  }
+  rig.thumb.bones[0].parent?.updateMatrixWorld(true);
+}
+
+/** Blend two finger poses (k = 0 → a, 1 → b). */
+export function mixFingers(a: FingerPose, b: FingerPose, k: number): FingerPose {
+  const out: FingerPose = {};
+  for (const f of FINGER_NAMES) {
+    const x = a[f] ?? [0, 0, 0], y = b[f] ?? [0, 0, 0];
+    out[f] = [0, 1, 2].map((i) => x[i] + (y[i] - x[i]) * k) as [number, number, number];
+  }
+  out.thumbSwing = (a.thumbSwing ?? 0) + ((b.thumbSwing ?? 0) - (a.thumbSwing ?? 0)) * k;
+  return out;
+}
+
+/** World position of a fingertip (the end of its last bone), and the pad a
+ *  little towards the palm side. */
+export function fingerTip(T: Three, p: Person3D, side: "L" | "R", f: FingerName): THREE.Vector3 | null {
+  const r = p.fingers?.[side]?.[f];
+  if (!r) return null;
+  const b = r.bones[2];
+  b.updateMatrixWorld(true);
+  return new T.Vector3().copy(r.dir).multiplyScalar(r.tipLen).applyMatrix4(b.matrixWorld);
+}
+
+/** Both hands in a loose, natural curl (the one body's fingers otherwise stay
+ *  dead straight, as modelled). The clips never move a finger, so once is
+ *  enough unless something else bends them. */
+export function relaxHands(T: Three, p: Person3D) {
+  if (!p.fingers) return;
+  const relaxed = fingersDeg({ thumb: [5, 10, 8], index: [10, 16, 9], middle: [13, 19, 11], ring: [15, 21, 12], little: [17, 23, 14], thumbSwing: 8 });
+  poseFingers(T, p, "L", relaxed);
+  poseFingers(T, p, "R", relaxed);
+}
+
+/** Degrees → a FingerPose in radians (all fingers [a,b,c]). */
+export function fingersDeg(d: { [K in FingerName]?: [number, number, number] } & { thumbSwing?: number }): FingerPose {
+  const r = (v?: [number, number, number]) => (v ? (v.map((x) => (x * Math.PI) / 180) as [number, number, number]) : undefined);
+  return { thumb: r(d.thumb), index: r(d.index), middle: r(d.middle), ring: r(d.ring), little: r(d.little), thumbSwing: ((d.thumbSwing ?? 0) * Math.PI) / 180 };
 }
 
 /**
