@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useIsAdmin } from "@/lib/useIsAdmin";
+import { useIsTester } from "@/lib/useIsAdmin";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
@@ -109,7 +109,7 @@ export default function SettingsScreen({
   const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devOpen, setDevOpen] = useState(false);
-  const isAdmin = useIsAdmin();
+  const isTester = useIsTester();
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
@@ -320,8 +320,8 @@ export default function SettingsScreen({
       {/* ── DEVELOPER TOOLS ── hidden behind one button (Mikey, 28 Sep 2026:
           "the developer tools should be almost hidden… click on it and it
           shows you all of this stuff, click again to hide it"). */}
-      {/* LEGACY CHANGE 6 (security, 5 Oct 2026): admins only. */}
-      {isAdmin && (
+      {/* LEGACY CHANGE 6 (security, 5 Oct 2026): admins and testers only. */}
+      {isTester && (
       <RiseIn index={next()} className="mt-6">
         <button
           onClick={() => setDevOpen(o => !o)}
@@ -334,7 +334,7 @@ export default function SettingsScreen({
         </button>
       </RiseIn>
       )}
-      {isAdmin && devOpen && (<>
+      {isTester && devOpen && (<>
       <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play.</p>
 
       <RiseIn index={next()} className="mt-2">

@@ -1,6 +1,6 @@
-import AdminOnly from "@/components/AdminOnly";
+import TesterOnly from "@/components/TesterOnly";
 
-/** Admins only (Harry, 5 Oct 2026: "lock the doors"). */
+/** Admins and testers (Harry, 5 Oct 2026: tester access). Only plays the game; saves nothing anyone else sees. */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <AdminOnly>{children}</AdminOnly>;
+  return <TesterOnly>{children}</TesterOnly>;
 }

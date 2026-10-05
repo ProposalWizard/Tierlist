@@ -24,7 +24,10 @@ What was changed in these copies, and only this (each marked in the code):
    (compile fix for the new divisions).
 5. `SettingsScreen.tsx` gains the UI: Old | New switch — the way back.
 6. `SettingsScreen.tsx`: Developer tools shown to admins only (security,
-   5 Oct 2026 — every player could open the cheat menus).
+   5 Oct 2026 — every player could open the cheat menus). Same day, tester
+   access: admins and testers. `LegacyStarDevPage.tsx` wraps the cheat
+   handlers with `withGodMode` so a used cheat marks the save
+   (`usedGodMode`, lib/star/godMode.ts).
 
 Inside the shared match, `MatchCommentary` / `EnergyModeIcon` read the UI
 setting to keep their pre-v0.23 colours and no kick-off card in Old UI, and

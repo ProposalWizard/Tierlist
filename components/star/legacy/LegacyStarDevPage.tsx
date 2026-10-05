@@ -67,6 +67,8 @@ import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
+// LEGACY CHANGE 6 (tester access, 5 Oct 2026): a used cheat marks the save.
+import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos } from "@/lib/star/leagueSquads";
@@ -1699,6 +1701,8 @@ function StarDevInner({ immersive, Match }: { immersive: ReturnType<typeof useIm
     if (!career) return;
     setCareer(attachClub(career, club, career.league.map(t => t.name), career.division ?? "premier"));
   }, [career]);
+  // LEGACY CHANGE 6 (tester access): any cheat above marks the save.
+  const markGod = () => setCareer(c => markGodMode(c));
 
   /**
    * "Refresh Player Photos" (SettingsScreen) — a user-triggered version of
@@ -3507,16 +3511,16 @@ function StarDevInner({ immersive, Match }: { immersive: ReturnType<typeof useIm
         career={career}
         onBack={settingsFromTitle ? handleExitToTitle : handleBackFromSettings}
         onExitToTitle={handleExitToTitle}
-        onSkip={handleDevSkip}
-        onAddMoney={handleAddMoney}
-        onAddCoins={handleAddCoins}
-        onSetCaptain={handleSetCaptain}
-        onSetReputation={handleSetReputation}
-        onSetFame={handleSetFame}
-        onMaxSkills={handleMaxSkills}
-        onUnlockTraining={handleUnlockTraining}
-        onSetHappiness={handleSetHappiness}
-        onSwitchClub={handleSwitchClub}
+        onSkip={withGodMode(handleDevSkip, markGod)}
+        onAddMoney={withGodMode(handleAddMoney, markGod)}
+        onAddCoins={withGodMode(handleAddCoins, markGod)}
+        onSetCaptain={withGodMode(handleSetCaptain, markGod)}
+        onSetReputation={withGodMode(handleSetReputation, markGod)}
+        onSetFame={withGodMode(handleSetFame, markGod)}
+        onMaxSkills={withGodMode(handleMaxSkills, markGod)}
+        onUnlockTraining={withGodMode(handleUnlockTraining, markGod)}
+        onSetHappiness={withGodMode(handleSetHappiness, markGod)}
+        onSwitchClub={withGodMode(handleSwitchClub, markGod)}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}
