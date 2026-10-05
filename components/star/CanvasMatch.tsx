@@ -6729,7 +6729,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : phase === "runup" ? "cursor-ew-resize" : "cursor-default"}`}
+          className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : phase === "runup" ? "cursor-ew-resize" : "cursor-default"}${
+            // Under the strike screen the pitch is fully covered, so it is
+            // taken out of the picture and out of touch altogether: tipped
+            // back in 3D, iOS Safari could draw or hit-test its near half
+            // through the strike screen (Harry, 5 Oct 2026: only the bottom
+            // of the ball took a tap). It keeps drawing; nothing else changes.
+            phase === "contact" ? " invisible pointer-events-none" : ""}`}
         />
 
         {/* Added time on the pitch (item 30): the clock otherwise only lives on

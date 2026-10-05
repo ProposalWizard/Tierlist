@@ -13,13 +13,17 @@
  *  - some fans want two things signed, in order;
  *  - a journalist sometimes steps up with a microphone: sign nothing and let
  *    him pass — tapping anything is a mistake;
- *  - two mistakes and the session is over (was three).
+ *  - (two mistakes ended it — see below: now you always finish).
+ *
+ * Then (Mikey, 5 Oct 2026): no early exit — you always do all ten fans and
+ * are scored at the end: +1 for each fan done right, then −5, so 10 right is
+ * +5, 5 right is no change and fewer than 5 right (more than five mistakes)
+ * takes the fans down. A fan can want up to THREE things now; the first two
+ * fans always want one, and from there the odds of two and three climb.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { fameOf } from "@/lib/star/fame";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
-import { gameReward } from "@/lib/star/relationships";
 import { GameShell, ResultPanel, type GameResult } from "./Shell";
 
 const ITEMS = [
@@ -29,12 +33,22 @@ const ITEMS = [
   { id: "boot", icon: "👟", label: "Boot" },
 ] as const;
 type ItemId = (typeof ITEMS)[number]["id"];
-export const SIGNING_MISSES = 2;
+/** Always ten fans (journalists count as one of them). */
+export const SIGNING_QUEUE = 10;
+/** The score: +1 per fan done right, then this taken off. */
+export const SIGNING_PAR = 5;
+export const signingGain = (done: number) => done - SIGNING_PAR;
 /** How long fan number n waits (ms): 1.7 s down to 0.8 s. */
 export const signingPatience = (n: number) => Math.max(800, 1700 - n * 75);
-/** From the 4th fan, the chance a fan wants two things; and of a journalist. */
-const TWO_CHANCE = 0.3;
+/** From the 3rd fan: the chance of a journalist, and of two or three things
+ *  (rising fan by fan, to about 45% two and 30% three by the last). */
 const PRESS_CHANCE = 0.15;
+export function itemsWanted(n: number, roll: number): number {
+  if (n < 2) return 1;
+  const three = Math.min(0.3, 0.04 * (n - 1));
+  const two = Math.min(0.45, 0.07 * (n - 1));
+  return roll < three ? 3 : roll < three + two ? 2 : 1;
+}
 const PRESS_MS = 1300;
 
 type Fan = { n: number; press: boolean; want: ItemId[]; got: number; until: number; total: number };
@@ -47,7 +61,7 @@ const shuffled = <T,>(xs: readonly T[]): T[] => {
 
 export default function SigningSession({ career, onFinish, onCancel }: { career: CareerState; onFinish: (r: GameResult) => void; onCancel: () => void }) {
   const current = career.relationships.fans;
-  const queue = 10 + Math.floor(Math.min(100, fameOf(career)) / 20); // 10-15
+  const queue = SIGNING_QUEUE;
   const [started, setStarted] = useState(false);
   const [fan, setFan] = useState<Fan | null>(null);
   const [order, setOrder] = useState<ItemId[]>(ITEMS.map((i) => i.id));
@@ -61,19 +75,20 @@ export default function SigningSession({ career, onFinish, onCancel }: { career:
   const nextFan = useCallback(() => {
     const n = served.current++;
     const press = n >= 2 && Math.random() < PRESS_CHANCE;
-    const two = !press && n >= 3 && Math.random() < TWO_CHANCE;
+    const k = press ? 0 : itemsWanted(n, Math.random());
     const pick = () => ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
-    const want = press ? [] : two ? [pick(), pick()] : [pick()];
-    const total = press ? PRESS_MS : Math.round(signingPatience(n) * (two ? 1.6 : 1));
+    const want = Array.from({ length: k }, pick);
+    // Each extra thing to sign buys a bit more time (×1.6 for two, ×2.2 for three).
+    const total = press ? PRESS_MS : Math.round(signingPatience(n) * (1 + 0.6 * (k - 1)));
     setOrder(shuffled(ITEMS.map((i) => i.id)));
     setFan({ n, press, want, got: 0, until: performance.now() + total, total });
   }, []);
 
   const finish = useCallback((s: number, m: number) => {
-    const won = m < SIGNING_MISSES && s + m >= queue;
+    const gain = signingGain(s);
     setFan(null);
-    setResult({ won, gain: gameReward(won, current, Math.random(), "fans"), line: `${s} done, ${m} mistake${m === 1 ? "" : "s"}.` });
-  }, [current, queue]);
+    setResult({ won: gain > 0, gain, line: `${s} of ${queue} done right, ${m} mistake${m === 1 ? "" : "s"}.` });
+  }, [queue]);
 
   const blink = (k: "ok" | "bad") => { setFlash(k); window.setTimeout(() => setFlash(null), 250); };
 
@@ -101,7 +116,7 @@ export default function SigningSession({ career, onFinish, onCancel }: { career:
   // When nobody is at the barrier, the next fan steps up — or it's over.
   useEffect(() => {
     if (!started || result || fan) return;
-    if (missed >= SIGNING_MISSES || signed + missed >= queue) { finish(signed, missed); return; }
+    if (signed + missed >= queue) { finish(signed, missed); return; }
     const t = window.setTimeout(nextFan, 260);
     return () => window.clearTimeout(t);
   }, [started, result, fan, signed, missed, queue, nextFan, finish]);
@@ -124,7 +139,7 @@ export default function SigningSession({ career, onFinish, onCancel }: { career:
     <GameShell title="Signing session" who="Fans" current={current} tone="#f472b6" onBack={started ? undefined : onCancel}>
       <div className="mb-2 flex justify-between text-[13px] font-black uppercase">
         <span>Done {signed} / {queue}</span>
-        <span>{Array.from({ length: SIGNING_MISSES }).map((_, i) => <span key={i} className={i < missed ? "" : "opacity-30"}>✕</span>)}</span>
+        <span className={missed ? "text-red-300" : "opacity-40"}>✕ {missed}</span>
       </div>
       <div className={`relative grid h-[240px] place-items-center ring-2 ${flash === "ok" ? "ring-emerald-400" : flash === "bad" ? "ring-red-500" : "ring-white/15"}`} style={{ borderRadius: 4, background: "linear-gradient(180deg,#1e293b,#0f172a)" }}>
         {!started && !result && (

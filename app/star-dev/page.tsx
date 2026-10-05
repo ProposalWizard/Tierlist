@@ -2810,7 +2810,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // at Training. The tour is the announcement, so none waits on Home.
       if (gameFirst(career)) updated = markAnnounced(updated, ["relations"]);
       setChainPop(gameFirst(career)
-        ? { label: "Talk to your manager", unlocked: "Relations unlocked", stay: true }
+        ? { label: "The manager's penalties", unlocked: "Relations unlocked", stay: true }
         : { label: "Have a meeting with your boss", unlocked: "Next: buy your first phone" });
     }
     checkAndSetAchievements(updated);

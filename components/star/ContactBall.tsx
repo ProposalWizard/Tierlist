@@ -63,6 +63,10 @@ interface Props {
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
 const TOO_SLOW_MS = 350;
 
+/** How far out from the ball's centre a touch still strikes it, in ball
+ *  radii: the ball plus a margin reaching the countdown ring (1.14). */
+export const STRIKE_ZONE_R = 1.18;
+
 // Phase 2 — pick where on the ball to strike.
 export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
@@ -123,18 +127,37 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   // are the moment you tap (or run out).
   const countdownState = started && !spark && !timedOut ? "running" : "paused";
 
+  /**
+   * A touch anywhere on this screen, measured against where the ball is drawn
+   * right now.
+   *
+   * Harry, 5 Oct 2026 (iPhone): "the ball has like opacity around it and I
+   * can hit the bottom like 25% of the ball". The tap used to be heard only by
+   * the ball's own element, so anything iOS put in front of it (the match
+   * canvas underneath is tipped back in 3D, and Safari can let a 3D layer
+   * catch touches over a flat overlay; the moving ball's transformed wrapper)
+   * swallowed it. Now the whole overlay listens and the ball's own on-screen
+   * box decides, so no layer can sit between your thumb and the ball.
+   *
+   * The zone is the ball plus a margin out to the countdown ring (114% of the
+   * ball): a touch in the margin strikes the edge of the ball it is nearest.
+   * Inside the ball, cx/cy are exactly what they always were.
+   */
   const handleTap = (e: React.PointerEvent) => {
     if (locked.current || !ballRef.current) return;
     const rect = ballRef.current.getBoundingClientRect();
     const r = rect.width / 2;
+    if (!(r > 0)) return;
     const dx = e.clientX - (rect.left + r);
     const dy = e.clientY - (rect.top + r);
-    const cx = dx / r; // +right
-    const cy = dy / r; // +down (bottom of ball)
-    if (cx * cx + cy * cy > 1.1) return; // outside the ball — ignore
+    let cx = dx / r; // +right
+    let cy = dy / r; // +down (bottom of ball)
+    const d = Math.hypot(cx, cy);
+    if (d > STRIKE_ZONE_R) return; // well off the ball — ignore
+    if (d > 1) { cx /= d; cy /= d; } // the margin: the edge of the ball
 
     locked.current = true;
-    setSpark({ left: e.clientX - rect.left, top: e.clientY - rect.top });
+    setSpark({ left: r + cx * r, top: r + cy * r });
     setTimeout(() => onContact({ cx, cy }), 200);
   };
 
@@ -153,9 +176,14 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   return (
     <div
       className="absolute inset-0 z-30 flex flex-col overflow-hidden"
+      onPointerDown={handleTap}
       style={{
         background: "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
         touchAction: "none",
+        // Its own flat layer, lifted in front: the match canvas under it is
+        // tipped back in 3D, and iOS Safari can otherwise draw or hit-test
+        // the near half of that tipped picture through this overlay.
+        transform: "translateZ(400px)",
       }}
     >
       {timed && (
@@ -277,7 +305,6 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         <div ref={moverRef} className="flex w-full items-end justify-center" style={{ willChange: motion === "still" ? undefined : "transform" }}>
         <div
           ref={ballRef}
-          onPointerDown={handleTap}
           className="relative cursor-pointer"
           style={{ width: motion === "still" ? "56%" : "40%", aspectRatio: "1 / 1", touchAction: "none" }}
         >
@@ -297,11 +324,18 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               leather grain or an actual reflection, so this is the club's own
               ball, pre-cropped to a circle with a transparent surround (see
               public/star/ball.png) and dropped straight in. */}
+          {/* The ball's own shadow, as a plain round shadow behind it. It was
+              a CSS drop-shadow filter on the picture, which iOS Safari can
+              draw as a see-through box round a moving or layered picture. */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{ boxShadow: "0 10px 14px rgba(0,0,0,0.55)" }}
+          />
           <img
             src="/star/ball.png"
             alt=""
             draggable={false}
-            className="w-full h-full object-cover rounded-full select-none pointer-events-none drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]"
+            className="relative w-full h-full object-cover rounded-full select-none pointer-events-none"
           />
 
           {/* The countdown again, as a ring round the ball itself — where
