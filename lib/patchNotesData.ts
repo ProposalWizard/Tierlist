@@ -27,6 +27,323 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.30",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-05T17:30:00Z",
+      "summary": "3D people are one body with fingers, a 3D manager's office, a rebuilt garden, tester access links, the security database fix, a new match-engine rule and 244 of 244 tests passing. Harry's v0.30.",
+      "stats": [
+        {
+          "value": "3 bodies → 1",
+          "label": "different 3D people in the signing scene, shop and garden"
+        },
+        {
+          "value": "0 → 15",
+          "label": "finger joints on each hand"
+        },
+        {
+          "value": "~half → all",
+          "label": "of the garden's scenery now shows (trees, fence, fountain basin, plants were missing)"
+        },
+        {
+          "value": "4 of 4",
+          "label": "database tables that now refuse anonymous writes (tried on the live site)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D people are one body, with fingers",
+              "detail": "Settings → Look → 3D people: New | Old. Then open the signing scene, the 3D shop and the garden"
+            },
+            {
+              "title": "Fingers close round the pen, hands grip in the handshake",
+              "detail": "The signing scene when you join a club"
+            },
+            {
+              "title": "Talk to your manager opens a 3D office",
+              "detail": "Settings → Look → Talk to your manager: 3D office | Old. Then Talk to your manager"
+            },
+            {
+              "title": "The garden has all its scenery and a new shop front",
+              "detail": "Settings → Look → 3D garden: New | Old. Then Home → Garden"
+            },
+            {
+              "title": "Tester access links",
+              "detail": "Admin → Testers makes a link. A signed-in player opens it and taps Become a tester"
+            },
+            {
+              "title": "The security database fix is done",
+              "detail": "Nothing to tap. Both SQL files are run in Supabase"
+            },
+            {
+              "title": "The match engine can change now, with a warning",
+              "detail": "Nothing to tap. A warning shows each time a session changes the engine"
+            },
+            {
+              "title": "The full game test list passes",
+              "detail": "Nothing to tap. 244 of 244 passed today"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Talk to your manager happens in a 3D office",
+              "detail": "A desk, a laptop, a trophy cabinet and a window onto the stadium. The camera turns to whoever is talking. Same words and choices. Switch: Settings → Look → Talk to your manager: 3D office | Old.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Seen on a combined copy of today's work: the close-up and the wide shots.",
+                  "The window showed black once, in an earlier check. It showed correctly in the later one, so it may depend on how the page loads. It is on the In progress list."
+                ]
+              }
+            },
+            {
+              "title": "Tester access links",
+              "detail": "v0.29 locked the cheat menu and test pages to admins, so testers had no way in. /admin/testers makes links like /tester/K7Q2XM. A signed-in player opens one and taps Become a tester. A tester gets god mode (Settings → Developer tools) and the 13 play-only test pages, including the Play Area. The scenario gallery stays admin only. A career that used god mode carries a Tester save mark.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Mikey ran tester_access.sql. A live check showed both new parts answer.",
+                  "Not seen: the whole flow. No tester link has been used yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "3D people are one body, with fingers",
+              "detail": "The signing scene, the shop and the garden each used a different body, with a bodybuilder shape (waist 0.27 m under shoulders 0.46 m) and no fingers. Now one body everywhere, including the 3 garden bench team-mates, with a 0.30 m waist and 15 finger joints on each hand. Switch: Settings → Look → 3D people: New | Old.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Problem: three different bodies, a bodybuilder shape, and no fingers. The pen floated beside the hand and the handshake hands stopped 7 cm apart.",
+                  "Why: each scene loaded its own body, and the hand was one flat piece with no finger joints.",
+                  "Fix: one body everywhere; waist 0.27 → 0.30 m, shoulders about 2 cm narrower; fingers close round the pen; the hands meet and grip.",
+                  "Seen in the pictures (old and new, same scene and camera). Sizes measured on the model.",
+                  "Still rough: jagged finger edges, bent left thumbs, fingers poking through in the handshake, the pen sitting low. All on the In progress list."
+                ]
+              },
+              "bars": [
+                {
+                  "label": "Different 3D bodies",
+                  "was": 3,
+                  "now": 1,
+                  "target": 3,
+                  "state": "good"
+                },
+                {
+                  "label": "Finger joints per hand",
+                  "was": 0,
+                  "now": 15,
+                  "target": 15,
+                  "state": "good"
+                },
+                {
+                  "label": "Thumb-to-finger gap on the pen (cm)",
+                  "was": 4.8,
+                  "now": 1.2,
+                  "target": 4.8,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "The garden makeover, and a bug that hid half the scenery",
+              "detail": "Every tree, the paddock fence, the fountain basin and the potted plants never appeared. Fixed. The shop is a brick shop front with awnings and shirts in your club's kit. Evening sun, mown lawn, hedge and brick boundary, tree line, a brighter stable. The camera no longer cuts into the fountain or gazebo roof. Switch: Settings → Look → 3D garden: New | Old.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Up to 263 thousand triangles at the bench, against 142 thousand before. A slow phone may lag.",
+                  "Seen in the pictures. The weight numbers are measured on the scene.",
+                  "Still to fix: the car-park camera, the see-through fountain over your player, team-mates floating above the bench, blocky trees."
+                ]
+              },
+              "pill": {
+                "text": "heavier, being cut",
+                "tone": "amber"
+              },
+              "bars": [
+                {
+                  "label": "Garden weight (k triangles; lower is lighter)",
+                  "was": 142,
+                  "now": 263,
+                  "target": 263,
+                  "state": "bad"
+                }
+              ]
+            },
+            {
+              "title": "The match engine can change now, with a warning",
+              "detail": "Mikey's rule said never change the match engine, so two match bugs could not be fixed. The ban is gone (Harry's call). A check warns every time any session changes the engine, and the change must be named in the patch notes with before and after numbers and the match tests run.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "The two bugs: the wall chases the loose ball after a deflected free kick; a byline cutback sits for 1.6 s before it is called intercepted. Both will now be fixed in the engine itself.",
+                  "Not seen: the warning firing. No engine change is in v0.30."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The security database fix is done",
+              "detail": "Both SQL files are run. July: votes, XP, objectives, rewards, draft rooms. August: cosmetics, streak trophies, username cooldown. A live check tried to write to four tables with no sign-in (community votes, XP, objectives, rewards). All four refused.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Seen live: 4 of 4 tables refused. The check covered these four only.",
+                  "A player can still edit their own saved career. See Known issues."
+                ]
+              }
+            },
+            {
+              "title": "The three tests that failed before now pass",
+              "detail": "The full game test list passes: 244 of 244, run today."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "In progress",
+          "items": [
+            {
+              "title": "The strike-screen ball",
+              "detail": "On Where do you strike it?, only about the bottom 25% of the ball takes a tap, and a see-through ring sits round it. Being reproduced and fixed.",
+              "pill": {
+                "text": "building now",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Two match bugs, now fixed in the engine itself",
+              "detail": "The wall chases the loose ball after a deflected free kick. A cutback along the byline sits for 1.6 s before it is called intercepted. Each engine change will be named with before and after numbers, with the match tests run."
+            },
+            {
+              "title": "3D fixes, signing and office",
+              "detail": "The black office window in the close-up, jagged finger edges and bent left thumbs, fingers poking through in the handshake, the pen sitting low, the laptop lid, the You talk button highlight."
+            },
+            {
+              "title": "3D fixes, garden and other",
+              "detail": "The car-park camera, the see-through fountain over your player, team-mates floating above the bench, blocky trees, the shop walk (a slowed jog), the long-hair model."
+            },
+            {
+              "title": "Less lag in the 3D scenes",
+              "detail": "Measured numbers, before and after, when it lands."
+            },
+            {
+              "title": "Tap to move",
+              "detail": "In the garden and the 3D shop, next to the joystick."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The new garden is heavier than the old one",
+              "detail": "Up to 263 thousand triangles at the bench, against 142 thousand. Slow phones may lag.",
+              "pill": {
+                "text": "being cut",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The black office window may come back",
+              "detail": "It showed correctly in today's check."
+            },
+            {
+              "title": "The 3D hands still look rough",
+              "detail": "Jagged finger edges, bent left thumbs and fingers poking through in the handshake."
+            },
+            {
+              "title": "Tester links are untried",
+              "detail": "No link has been used yet, so Become a tester has not been tapped."
+            },
+            {
+              "title": "Player money and stats are still trusted from the saved career",
+              "detail": "A player can edit their own save. Needs a server fix before real money is involved."
+            },
+            {
+              "title": "Next for the match builder",
+              "detail": "Two players overlap and flip between lying and standing on byline crosses; left-footers kick with the wrong foot in 3D; the tight-angle defender; new chances put extra players off screen when the pitch is flat."
+            },
+            {
+              "title": "Box Room and Shared Flat look the same",
+              "detail": "Horses have one pose."
+            },
+            {
+              "title": "The Back button overlaps the competition header on the line-up screen",
+              "detail": "Not from this round."
+            },
+            {
+              "title": "The tour flow still needs a proper rethink",
+              "detail": "The Later button is only a first step.",
+              "pill": {
+                "text": "half fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The Ballon d'Or may be too hard when you play the matches yourself",
+              "detail": "The numbers come from simulated careers. The boots warnings are in the New UI only."
+            },
+            {
+              "title": "Still to run in Supabase (Mikey)",
+              "detail": "Five files, in plain English.",
+              "more": {
+                "summary": "What each file does",
+                "points": [
+                  "fix_two_digit_fifa_years.sql cleans up player rows saved with a two-digit year (26 instead of 2027) and an age of -1977. They hide next to the real rows.",
+                  "draft_records_full_fix.sql fixes Career Records. Today every career record fails to save, because the database rules reject them.",
+                  "perf_indexes_jul2026.sql speeds up tierlist like counts and the Draft records, which have no shortcut in the database yet.",
+                  "sofifa_search_indexes.sql stops searches on a player's position or league from timing out.",
+                  "fc27_clone_lower_leagues.sql gives League One, League Two and some National League clubs real players, copied from last year (43 clubs, 1,154 players). Today most of them play invented names."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.29 — 5 Oct 2026 — cheat menus locked, a harder Ballon d'Or",
+              "detail": "The cheat menu and 18 test pages for admins only; the Ballon d'Or Premier League only with a major trophy; a new play-off every season; the trial shootout always 2-2; a Later button on the tour; commentary up to 8×; boots warnings. Numbers: 19 → 3 of 20 Championship starts win a Ballon d'Or; 70 → 4 in 213 seasons.",
+              "more": {
+                "summary": "Open from v0.29",
+                "points": [
+                  "Open on the artifact: https://claude.ai/artifact/SRj5ZaVsgWFWca9Dy5bNWx",
+                  "Still open from v0.29: money and stats trusted from the saved career, the Back button overlap, the tour flow (half fixed), a possibly too hard Ballon d'Or, boots warnings in the New UI only. All listed above."
+                ]
+              }
+            },
+            {
+              "title": "v0.27 — 3 Oct 2026 — a tipped-back camera, a keeper who behaves",
+              "detail": "The pitch tipped back 20°, a zoom for each kind of highlight, an even mix of highlights, a drag that starts beside the ball, a keeper who faces out and stays down, a ball that no longer stops on the grass. Harry's own page numbering; not listed on this site."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/AN3EiQVU8kb1cBWCFjn39A",
+      "updatedAt": null
+    },
+    {
       "version": "0.29",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-05T14:45:00Z",
