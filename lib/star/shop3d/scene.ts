@@ -30,7 +30,8 @@ import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
 import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas } from "./textures";
 import { formatMoney } from "../money";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, type Person3D } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
+import { people3dLook } from "../look3d";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -584,7 +585,8 @@ export async function startShop(
     // taken out, so the body moves only where the stick moves it.
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
-    const [g, a] = await Promise.all([loadPeople3d(loader, model), loadPeople3d(loader, "anims")]);
+    // The body: the one body (Settings → Look → "3D people: New") or the old one.
+    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
     person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: 0.006, castShadow: true });
     player = person.root;
     mixer = person.mixer;
@@ -594,6 +596,7 @@ export async function startShop(
     jogA.play(); jogA.setEffectiveWeight(0);
     buyA = person.actions.celebrate;
     dressNew(kit0);
+    relaxHands(THREE, person);
   } else {
     const [charGltf, animGltf] = await Promise.all([
       loader.loadAsync("/star/shop3d/character.glb"),

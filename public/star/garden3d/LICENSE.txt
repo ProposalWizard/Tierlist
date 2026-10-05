@@ -42,3 +42,7 @@ anims.glb (made by tools/garden3d/build_anims.py)
 The footballer himself is the 3D shop's: see public/star/shop3d/LICENSE.txt.
 The stable, gazebo, bench, teqball table, trophy cabinet, shop front, flower
 beds, bushes, hay and sky are drawn in code (lib/star/garden3d/scene.ts).
+The 5 Oct 2026 look (scene.ts; the old garden is sceneOld.ts) adds no files:
+its brick, slate, hedge, meadow, lawn and awning pictures are canvas drawings
+(lib/star/garden3d/textures.ts), and in it you and the team-mates are the 3D
+shop's own player, public/star/people3d/ (see lib/star/people3d.ts).
