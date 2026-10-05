@@ -1,0 +1,1 @@
+__M.hook = (r, scene, cam) => { if (!__M.held && __M.ctrl) { __M.held = 1; const p = cam.position.clone(); const d = new THREE.Vector3(); cam.getWorldDirection(d); const l = p.clone().add(d); __M.ctrl.debugCamera([p.x, p.y, p.z], [l.x, l.y, l.z], cam.fov); } };

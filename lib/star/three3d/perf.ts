@@ -67,9 +67,29 @@
  *     outside this repo's tools), and three's basis transcoder copying to
  *     /star/three/basis/ (node_modules/three/examples/jsm/libs/basis/).
  *
- * The measurements behind each step (before → after, software-rendered
- * harness) are in the 5 Oct 2026 perf report; numbers quoted in comments
- * below are from that harness unless they say "reasoned".
+ *  8. FROZEN SHADOWS. freezeStaticShadows(renderer, scene) after building:
+ *     the sun's shadow map is drawn once from the static set; people keep
+ *     their blob shadows. The garden must then keep its sun FIXED over the
+ *     whole garden (today it follows the player; ±22 m already covers it).
+ *
+ *  9. 3D IN A WORKER (biggest change, biggest "page never freezes" win):
+ *     ./offscreen.ts — the scene moves into a worker, the page only passes
+ *     size and touches.
+ *
+ * MEASURED, 5 Oct 2026 (a headless Chrome with software rendering —
+ * SwiftShader, no GPU — CPU slowed 4× as a phone stand-in, on a shared,
+ * busy 4-core machine; so read the % changes, not the ms; same-page A/B
+ * where marked, which both sides see the same load):
+ *   render scale 1.5 → 1.0 (phone, DPR 3), garden    frame −48% (A/B)
+ *   frozen shadow map, garden                        frame −18% (A/B), render() CPU −15% (A/B)
+ *   3 team-mates as cards instead of bodies, garden  frame −34% (A/B), render() CPU −25% (A/B)
+ *   static meshes merged by material, garden         draws 170 → 147, frame −3% (A/B), render() CPU −17% (A/B)
+ *   office room pre-rendered behind the people       draws 53 → 5, frame −16% / −20% (A/B, 1× and 3× DPR)
+ *   scene in a Web Worker (garden-sized)             page frozen 12.7 s → 0.7-1.1 s of 14 s; worst freeze 3.4-5.3 s → 0.25 s
+ *   meshopt + resampled clips (file size)            garden's first files 2.1 MB → 1.1 MB (props stay Draco)
+ *   warm-up (compile + 1-pixel prime)                moves the 2-7 s first-frame cost behind the cover; SwiftShader
+ *                                                    has no parallel compile, so the total is the same here (reasoned
+ *                                                    to be shorter on phones that have KHR_parallel_shader_compile)
  */
 import type * as THREE from "three";
 import { quality3dSetting, QUALITY3D_AUTO_KEY, type Quality3d } from "./quality";
@@ -621,6 +641,27 @@ export async function makeKTX2Loader(renderer: THREE.WebGLRenderer, transcoderPa
   l.detectSupport(renderer);
   return l;
 }
+
+/**
+ * FROZEN SHADOWS — the cheap version of baked lighting. The sun's shadow
+ * map is drawn ONCE with only the things that never move casting (walls,
+ * trees, the shop, benches), then never again; people and animals keep the
+ * blob shadow the garden already gives them. Measured (harness): skipping
+ * the per-frame shadow pass cut the garden's frame 18% (GPU, same-page A/B)
+ * and the page's own render() time 15% (CPU, 4× slowed). Call again
+ * (refreshShadows) after anything static moves or the sun changes.
+ */
+export function freezeStaticShadows(renderer: THREE.WebGLRenderer, scene: THREE.Object3D) {
+  scene.traverse((o) => {
+    let moving = !!o.userData?.dynamic;
+    for (let p: THREE.Object3D | null = o; p && !moving; p = p.parent) if ((p as THREE.SkinnedMesh).isSkinnedMesh || (p as THREE.Bone).isBone) moving = true;
+    if (moving && (o as THREE.Mesh).isMesh) o.castShadow = false;
+  });
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true; // drawn on the next render, then held
+}
+/** Redraw a frozen shadow map once (a static thing moved; the sky changed). */
+export function refreshShadows(renderer: THREE.WebGLRenderer) { renderer.shadowMap.needsUpdate = true; }
 
 /**
  * Bake a picture of `obj` (a team-mate on the bench, a crowd member) from
