@@ -39,6 +39,19 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 5 Oct 2026 — the phone's Back button (Mikey)
+- **The phone gets a Back button on the right, like an Android phone's** —
+  "that white thing at the bottom… it's not very noticeable." On every phone
+  page: in an app it goes to the home screen; on the home screen it puts the
+  phone down. Replaces the home pill (strikes "Closing it is the home bar" in
+  the 1 Oct screens review below).
+- **A button in a corner must look like it belongs there.** The first version
+  (a white pill) "doesn't fit that screen properly because the phone has curved
+  corners… looks like you've just stuck it on there." Fix: the same tile as the
+  game's bottom bar (DashboardShell's NavBtn), in the right third of the bar,
+  padded clear of the curve. "It should be the same style as the rest of the
+  things."
+
 ### 1 Oct 2026 — football screens, the title, the league page (v0.23 W7)
 - **"When it's in the training or drills or match, we definitely use the pitch
   kind of UI."** (P92) Training, the drills and the match chrome are green with

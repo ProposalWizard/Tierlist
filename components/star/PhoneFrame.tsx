@@ -99,22 +99,30 @@ export default function PhoneFrame({
         {/* App content — MediaFeed supplies everything from here down. */}
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 
-        {/* Navigation bar: Back on the right, on every page of the phone. */}
+        {/* Navigation bar: Back on the right, on every page of the phone
+            (Mikey, 5 Oct 2026). Three equal slots like an Android bar, Back in
+            the right one, drawn as the same tile as the game's bottom bar
+            (DashboardShell's NavBtn). The bar's side and bottom padding keep
+            the tile clear of the screen's curved corner, so it sits in the
+            corner rather than squashed against it. */}
         {onBack && (
           <div
-            className="relative z-20 flex h-[48px] shrink-0 items-center justify-end border-t border-white/10 px-3"
-            style={{ background: "linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.8))" }}
+            className="relative z-20 grid shrink-0 grid-cols-3 gap-2 border-t border-white/10 px-5 pb-3 pt-2"
+            style={{ background: "linear-gradient(180deg, rgba(17,24,39,.85), rgba(3,7,18,.95))" }}
           >
+            <span />
+            <span />
             <button
               onClick={onBack}
               aria-label={backLabel}
               data-phone-back
-              className="kib-press flex h-[34px] items-center gap-1.5 rounded-full bg-white px-3.5 text-[12.5px] font-black uppercase tracking-wide text-gray-950 shadow-[0_0_14px_rgba(255,255,255,.35)]"
+              className="kib-press flex h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[4px] bg-gradient-to-b from-gray-600 to-gray-700 text-[11px] font-black leading-tight text-gray-100"
+              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.10), 0 2px 4px rgba(0,0,0,.35)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M19 12H5" /><path d="M11 5l-7 7 7 7" />
               </svg>
-              Back
+              <span>Back</span>
             </button>
           </div>
         )}
