@@ -144,6 +144,21 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     </div>
   ) : null;
 
+  // Boots warning (Harry, 5 Oct 2026: "fix the boots warning"). The old
+  // match-day page had it, but that page is gone since v0.23, so the line-up
+  // is the last screen before kick-off. Top-left of the pitch, mirroring Play as.
+  const bootsLeft = career.currentBoot.matches;
+  const bootsWarning = bootsLeft <= 1 ? (
+    <div
+      data-boots-warning
+      className="flex h-8 items-center gap-1.5 px-2 text-[10.5px] font-black uppercase leading-[1.05] text-amber-100"
+      style={{ background: "rgba(3,32,15,.9)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(251,191,36,.7), 0 3px 8px rgba(0,0,0,.45)" }}
+    >
+      <span aria-hidden className="text-[14px]">🥾</span>
+      <span>{bootsLeft === 1 ? <>Last match<br />in these boots</> : <>No boots<br />buy in the Shop</>}</span>
+    </div>
+  ) : null;
+
   if (showLineup && matchday) {
     return (
       // A tap anywhere that is not a button kicks off (P75: "you can just tap
@@ -184,6 +199,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           onKickOff={go}
           onBack={onBack}
           pitchCorner={playAsPicker}
+          pitchCornerLeft={bootsWarning}
         />
       </div>
     );
