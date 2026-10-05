@@ -256,6 +256,33 @@ export interface BallonDorResult {
 
 const SHORTLIST_SIZE = 10;
 
+/**
+ * WHO CAN WIN IT FROM WHERE. Harry, 5 Oct 2026: "No one in the history of the
+ * game has ever won the Ballon d'Or in the Championship. Unless you score the
+ * most goals in world football and you win a World Cup with your country from
+ * the Championship, you should not be winning the Ballon d'Or." The pacing
+ * audit (3 Oct) had players winning it from League Two in seasons 1-2.
+ *
+ *   Premier League                       → can win
+ *   Championship                         → shortlisted; wins only as the top
+ *                                          scorer on the list AND a World Cup
+ *                                          winner this season
+ *   League One and below                 → not on the shortlist
+ */
+export type BallonDorReach = "win" | "shortlist" | "none";
+
+export function ballonDorReach(career: CareerState, pool: { isPlayer: boolean; goals: number }[]): BallonDorReach {
+  const division = divisionOf(career);
+  if (division === "championship") {
+    const you = pool.find(c => c.isPlayer);
+    const topScorer = !!you && pool.every(c => c.isPlayer || c.goals < you.goals);
+    const wonWorldCup = (career.trophies ?? []).some(t => t.season === career.season && t.competition === "World Cup");
+    return topScorer && wonWorldCup ? "win" : "shortlist";
+  }
+  if (division === "premier") return "win";
+  return "none";
+}
+
 export function computeBallonDorShortlist(career: CareerState): BallonDorResult {
   const world = worldClubTrophies(career);
   const yourInternationalTrophies = (career.trophies ?? [])
@@ -269,11 +296,20 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
     ...internationalRivals(career, career.season),
   ];
 
-  const scored = pool.map(c => {
-    const { score, trophyNames } = scoreOf(c, world, internationalTrophyPoints);
-    return { c, score, trophyNames };
-  });
+  const reach = ballonDorReach(career, pool);
+  const scored = pool
+    .filter(c => !(c.isPlayer && reach === "none"))
+    .map(c => {
+      const { score, trophyNames } = scoreOf(c, world, internationalTrophyPoints);
+      return { c, score, trophyNames };
+    });
   scored.sort((a, b) => b.score - a.score);
+  // Nominated but not allowed to win: the best rival takes it, you are second.
+  // With nobody to give it to, you are left off rather than handed it.
+  if (reach === "shortlist" && scored[0]?.c.isPlayer) {
+    if (scored.length > 1) [scored[0], scored[1]] = [scored[1], scored[0]];
+    else scored.shift();
+  }
 
   const top = scored.slice(0, SHORTLIST_SIZE);
   const entries: BallonDorEntry[] = top.map((t, i) => ({

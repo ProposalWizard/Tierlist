@@ -1,10 +1,11 @@
-import { computeBallonDorShortlist, trophyTierOf } from "../../lib/star/ballonDor";
+import { computeBallonDorShortlist, trophyTierOf, ballonDorReach } from "../../lib/star/ballonDor";
 import { leagueMultiplierFor, isBigFiveLeagueClub } from "../../lib/star/clubLeagues";
 import { resolveSeasonWinners } from "../../lib/star/careerFlow";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
-import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_TWO_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer, LeagueSquad, Trophy } from "../../lib/star/types";
 import type { CupState } from "../../lib/star/cups";
+import type { CareerDivision } from "../../lib/star/calendar";
 
 /**
  * THE BALLON D'OR SHORTLIST.
@@ -197,6 +198,33 @@ function baseCareer(): CareerState {
   const career: CareerState = { ...baseCareer(), season: 5, cupState: [faCup] };
   const winners = resolveSeasonWinners(career);
   check(winners.faCup === "Chelsea", `a real winner this season resolves correctly, whoever it was (${winners.faCup})`);
+}
+
+// ── Where you can win it from (Harry, 5 Oct 2026) ─────────────────────────
+{
+  const huge = { appearances: 46, goals: 60, hatTricks: 6, passes: 0, assists: 25, starMan: 30, totalRating: 46 * 9.2, ratingCount: 46 };
+  const inDivision = (clubs: readonly string[], division: CareerDivision, trophies: Trophy[] = []): CareerState => {
+    const base = makeInitialCareer(player({ club: clubs[0] }), [...clubs], division);
+    return { ...base, leagueSquads: [], externalSquads: [], trophies, seasonStats: huge };
+  };
+  const wc: Trophy = { season: 1, competition: "World Cup", club: "England" } as Trophy;
+
+  const l2 = inDivision(LEAGUE_TWO_CLUBS, "league_two");
+  const l2r = computeBallonDorShortlist(l2);
+  check(!l2r.playerNominated && l2r.playerRank === 0, `League Two, 60 goals: not on the shortlist (rank ${l2r.playerRank})`);
+
+  const ch = inDivision(CHAMPIONSHIP_CLUBS, "championship");
+  const chr = computeBallonDorShortlist(ch);
+  check(chr.playerRank !== 1, `Championship, 60 goals, no World Cup: does not win (rank ${chr.playerRank})`);
+
+  const chWc = inDivision(CHAMPIONSHIP_CLUBS, "championship", [{ ...wc, season: ch.season }]);
+  check(ballonDorReach(chWc, [{ isPlayer: true, goals: 60 }, { isPlayer: false, goals: 40 }]) === "win",
+    "Championship + top scorer + World Cup: can win");
+  check(ballonDorReach(chWc, [{ isPlayer: true, goals: 60 }, { isPlayer: false, goals: 61 }]) === "shortlist",
+    "Championship + World Cup but not top scorer: cannot");
+
+  const pl = inDivision(PREMIER_LEAGUE_CLUBS, "premier");
+  check(ballonDorReach(pl, [{ isPlayer: true, goals: 1 }]) === "win", "Premier League: can win");
 }
 
 if (problems.length) {

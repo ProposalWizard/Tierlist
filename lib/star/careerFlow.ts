@@ -1632,6 +1632,11 @@ export function advanceSeason(
       ? [...(career.seasonArchive ?? []).filter(r => r.season !== career.season), archiveRowFor(career)]
       : career.seasonArchive,
     thisSeasonClub: undefined,
+    // Last season's play-off belongs to last season. Carried over, it made
+    // resolveLadder promote last year's winner again from wherever they
+    // finished (15th in League Two was seen) and seedPlayOffs refuse to run
+    // a new one ever again (pacing audit, 3 Oct 2026).
+    playOffState: undefined,
     // Only the clubs you are actually playing next season. Going up or down
     // replaces most of the division, and a squad for a club that is no longer
     // in it is dead weight the team sheet would never read; the ones now

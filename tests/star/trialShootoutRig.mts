@@ -78,10 +78,11 @@ console.log("\nTHE SCRIPTS, OVER 3,000 SAVES");
   ok(level === N, `level every time your kick is up (${level}/${N})`);
   ok(yoursLast === N, "your kick is always the sixth and last");
   ok(mateFirstTwo === N, "the Trialists' first two kicks are always team-mates'");
-  ok(paths.size === 10, `all 10 paths to level turn up (${paths.size})`);
-  ok(levels.every(n => n > N * 0.28 && n < N * 0.39), "0-0, 1-1 and 2-2 each about a third");
-  ok(sameAsLast < N * 0.2, "one save rarely repeats the path of the save before");
-  ok(paths.has("00000"), "Harry's example turns up: they miss three, we miss two, then you");
+  // Harry, 5 Oct 2026: at least three goals; level means 2-2 every time.
+  ok(paths.size === 3, `the 3 paths to 2-2 turn up (${paths.size})`);
+  ok(levels[2] === N, `2-2 before your kick every time (${levels[2]}/${N})`);
+  ok(sameAsLast < N * 0.45, "one save often has a different path from the save before");
+  ok(paths.has("11110"), "Harry's example turns up: 2-2, they miss their third, then you");
 
   // Your kick decides it.
   let winOnGoal = true;

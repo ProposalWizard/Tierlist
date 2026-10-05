@@ -180,7 +180,7 @@ export default function MatchCommentary({
         <span className={`mt-0.5 text-[9px] font-black leading-none ${
           speed > 1 ? "text-amber-300" : "text-white/45"}`}
         >
-          {"▶".repeat(speed === 4 ? 3 : speed)}
+          {"▶".repeat(speed >= 8 ? 4 : speed === 4 ? 3 : speed)}
         </span>
       </button>
 

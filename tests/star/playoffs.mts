@@ -1,6 +1,6 @@
 import { seedPlayOffs, settlePlayOffFixture } from "../../lib/star/playoffs";
 import { resolveLadder } from "../../lib/star/promotion";
-import { makeInitialCareer } from "../../lib/star/careerFlow";
+import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { mulberry32, sortLeague } from "../../lib/star/season";
 import { CHAMPIONSHIP_CLUBS, PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { PLAY_OFF_SLOTS } from "../../lib/star/calendar";
@@ -161,6 +161,26 @@ function seasonEndingAt(place: number, you = clubs[10]): CareerState {
   const table = sortLeague(career.league).map(t => t.name);
   check(table.slice(2, 6).includes(ladder.playOffs!.promoted),
     "the play-off place went to one of 3rd-6th");
+}
+
+// ── Last season's play-off does not carry into the next season ──────────────
+// Pacing audit, 3 Oct 2026: advanceSeason kept playOffState, so the next
+// rollover promoted last year's winner again from wherever they finished
+// (15th in League Two was seen) and seedPlayOffs refused to run a new one.
+{
+  const base = seasonEndingAt(4);
+  // You lost the final: another club went up through the play-offs.
+  const winner = sortLeague(base.league)[2].name;
+  const career: CareerState = { ...base, playOffState: { ...seedPlayOffs(base)!.state, promoted: winner } };
+  const next = advanceSeason(career, false).career;
+  check(next.playOffState === undefined, "a new season starts with no play-off state");
+  // Next season you finish 4th again: a fresh play-off is seeded.
+  const you = next.player.club;
+  const order = next.league.map(t => t.name).filter(c => c !== you);
+  order.splice(3, 0, you);
+  const again = seedPlayOffs(withStandings(next, order));
+  check(next.league.length === 24, "you stayed in the Championship");
+  check(again !== null, "and the next season can seed a play-off again");
 }
 
 if (problems.length) {
