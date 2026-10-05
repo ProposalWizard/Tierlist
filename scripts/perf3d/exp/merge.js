@@ -1,0 +1,1 @@
+__M.hook = (r, scene) => { if (!__M.done) { __M.done = 1; const a = performance.now(); const res = P.mergeStaticByMaterial(THREE, mergeGeometries, scene); __M.extra = { ...res, mergeMs: Math.round(performance.now() - a) }; } };

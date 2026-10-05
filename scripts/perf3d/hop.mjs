@@ -1,0 +1,16 @@
+import { chromium } from "playwright";
+const mode = process.argv[2] || "fresh";
+const visits = +(process.argv[3] || 4);
+const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+const page = await ctx.newPage();
+const warns = [];
+page.on("console", (m) => { const t = m.text(); if (/context|WebGL/i.test(t)) warns.push(t.slice(0, 160)); });
+page.on("pageerror", (e) => warns.push(String(e).slice(0, 200)));
+await page.goto("http://localhost:3502/hop.html");
+const cdp = await ctx.newCDPSession(page);
+await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+await page.evaluate(([m, v]) => { window.__p = window.runHop(m, v).catch((e) => { window.__hop = { err: String(e) }; }); }, [mode, visits]);
+await page.waitForFunction(() => window.__hop, null, { timeout: 600000, polling: 1000 });
+console.log(JSON.stringify({ mode, ...(await page.evaluate(() => window.__hop)), warns: [...new Set(warns)].slice(0, 4) }));
+await browser.close();
