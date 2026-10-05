@@ -48,7 +48,7 @@ import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./fa
 import { ruleBookFor } from "./ruleBook";
 import { otherGamesRng } from "./liveScores";
 import { INJURIES_ON } from "./injurySwitch";
-import { stepBar, drift, happinessEnergyFactor, REL_KEYS } from "./relationships";
+import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { dayFor, transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
@@ -656,7 +656,7 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
   const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
   // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
-  return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(career.happiness);
+  return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career));
 }
 
 export function creditMatchResult(
@@ -1164,7 +1164,8 @@ export function creditMatchResult(
         rel[k] = s.value;
         relCarry[k] = s.carry;
       }
-      return { relationships: rel, relCarry, happiness: drift(career.happiness, career.week) };
+      // Happiness is the average of the three (happinessOf); stored for old screens.
+      return { relationships: rel, relCarry, happiness: happinessOf({ relationships: rel }) };
     })()),
     sponsors,
     // Recomputed below, once this result's achievements (which can
@@ -2004,7 +2005,11 @@ export function simulateMissedFixture(
       team: drift(career.relationships.team, career.week),
       fans: drift(career.relationships.fans, career.week),
     },
-    happiness: drift(career.happiness, career.week),
+    happiness: happinessOf({ relationships: {
+      boss: drift(clamp01to100(career.relationships.boss + MISSED_WEEK.boss), career.week),
+      team: drift(career.relationships.team, career.week),
+      fans: drift(career.relationships.fans, career.week),
+    } }),
     week: career.week + 1,
     horse: career.horse
       ? { ...career.horse, energy: Math.min(100, career.horse.energy + 20) }

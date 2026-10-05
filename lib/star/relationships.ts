@@ -19,7 +19,10 @@ import { POST_L, POST_R, GOAL_H } from "./pitch";
  *    it adds up.
  *
  * Happiness has one job: how much energy resting gives back
- * (happinessEnergyFactor).
+ * (happinessEnergyFactor). It is not bought or played for: it is the average
+ * of your boss, team and fans (Mikey, 5 Oct 2026: "your happiness should be
+ * determined by your relationships… those become an average"). Always read it
+ * through happinessOf; `career.happiness` is kept in step but never trusted.
  */
 
 export type RelKey = "boss" | "team" | "fans";
@@ -56,6 +59,13 @@ export function drift(value: number, matchNo: number): number {
   if (value > DRIFT_HIGH && matchNo % 3 === 0) return value - 1;
   if (value < DRIFT_LOW && matchNo % 2 === 0) return value + 1;
   return value;
+}
+
+/** Your happiness: the average of boss, team and fans, 0-100. */
+export function happinessOf(c: { relationships?: { boss: number; team: number; fans: number } }): number {
+  const r = c.relationships;
+  if (!r) return 50;
+  return clamp(Math.round((r.boss + r.team + r.fans) / 3));
 }
 
 /** How much of the usual energy resting gives back: 0.7× at 0 happiness,

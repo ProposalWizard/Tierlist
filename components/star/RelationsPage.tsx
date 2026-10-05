@@ -119,14 +119,9 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
         {/* Sponsors: no bar any more — each brand has its own happiness on
             the Sponsors screen (Mikey, 4 Oct 2026). Just the way in. */}
         <PlainRow icon="🤝" name={activeDeals.length ? `Sponsors · ${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}` : "Sponsors"} tone={CARD_TONE.sponsors} help={HELP.sponsors} onClick={() => onOpen("sponsors")} dot={offers > 0} />
-        {/* You, and a partner slot (blacked out when single) */}
-        <Row
-          kind="happiness"
-          face={<Face src={career.player.portrait ?? DEFAULT_FAKE_FACE} tone={CARD_TONE.happiness} />}
-          value={career.happiness}
-          seenKey={`${scope}:rel:happiness`}
-          action={game("happiness")}
-        />
+        {/* Your own happiness has no row and no game (Mikey, 5 Oct 2026): it
+            is the average of boss, team and fans, shown in the top bar. */}
+        {/* A partner slot (blacked out when single) */}
         <PartnerRow gf={gf} />
         {/* Standing: reputation + fame, the same row */}
         <PlainRow icon="🌐" name="Reputation" value={career.reputation} tone="#38bdf8" help={HELP.reputation} onClick={() => onOpen("reputation")} />

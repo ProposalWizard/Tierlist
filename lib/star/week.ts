@@ -1,5 +1,5 @@
 import type { CareerState } from "./types";
-import { happinessEnergyFactor } from "./relationships";
+import { happinessEnergyFactor, happinessOf } from "./relationships";
 import { getTuning } from "./tuningStore";
 
 /**
@@ -62,14 +62,15 @@ export function spendAction(career: CareerState): CareerState {
   return { ...career, weekActions: left - 1 };
 }
 
-/** Put your feet up. Costs a day, buys back some happiness and energy. */
+/** Put your feet up. Costs a day, buys back energy (more when you're happy).
+ *  It no longer lifts happiness: that comes from boss, team and fans
+ *  (relationships.ts's happinessOf). */
 export function rest(career: CareerState): CareerState {
   if (!canAct(career)) return career;
   return {
     ...spendAction(career),
-    happiness: Math.min(100, career.happiness + REST_HAPPINESS),
     // Happier players recover better (relationships.ts).
-    energy: Math.min(100, Math.round(career.energy + REST_ENERGY * happinessEnergyFactor(career.happiness))),
+    energy: Math.min(100, Math.round(career.energy + REST_ENERGY * happinessEnergyFactor(happinessOf(career)))),
   };
 }
 
