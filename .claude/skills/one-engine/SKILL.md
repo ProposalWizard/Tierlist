@@ -40,7 +40,9 @@ and the real match moved on without it.
 
    If a feature needs something the engine does not do yet, add it to the
    engine as an optional prop that is **off by default**, so the real match is
-   untouched. Never modify `lib/star/canvasEngine.ts` (Mikey's rule).
+   untouched. Changing `lib/star/canvasEngine.ts` itself is allowed
+   (Harry, 5 Oct 2026), but a hook warns on every edit: name the change in
+   the reply and patch notes, and run the match tests.
 3. **Shared mechanics, not a shared picture.** Harry (24 Sep 2026):
    *"different modes and training/trials will be COMPLETELY looking different -
    and that can't be seen as a new build it has to be allowed - i.e technique
