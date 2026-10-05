@@ -278,9 +278,12 @@
     <figure><img src="img/wage-negotiation.jpg" alt="Wage negotiation with settings"><figcaption>Wage talk: Settings at the top right.</figcaption></figure>
   </div>
   <p class="cap"><b>Seen in a browser</b> on all three kinds of screen. Each button opened the right place. The trial Exit's destination was read from the code, not clicked.</p>
-  <details><summary>A clash the playtest caught (fixed, not re-checked yet)</summary>
+  <details><summary>A clash the playtest caught (fixed and seen)</summary>
     <p>On the scout talk screen, the first Settings button sat on top of the "A SCOUT HAS SPOTTED YOU" banner. It is now a small ⚙ in the corner, clear of the banner. The picture below is the before.</p>
-    <figure class="one"><img src="img/scout-talk-late.jpg" alt="Before: Settings overlapping the banner"><figcaption>Before: "SETTINGS" runs into "YOU".</figcaption></figure>
+    <div class="pair">
+      <figure><img src="img/scout-talk-late.jpg" alt="Before: Settings overlapping the banner"><figcaption>Before: "SETTINGS" runs into "YOU".</figcaption></figure>
+      <figure><img src="img/scout-gear.jpg" alt="After: gear button clear of the banner"><figcaption>After: a ⚙ in the corner, clear of the banner. Seen.</figcaption></figure>
+    </div>
   </details>
 </div>
 
@@ -326,7 +329,11 @@
     <tr><td>Clear past 7+ men</td><td>11 m · one-on-one 7 in 10</td></tr>
   </table>
   <p class="cap">Measured with a test bot over 2,000 runs. Seen once in a browser on a temporary test page; <b>not yet seen in a real career match</b>.</p>
-  <div id="drib-stills"></div>
+  <div class="pair">
+    <figure><img src="img/dribble-passes.jpg" alt="Dribble run with team-mates"><figcaption>Team-mates ahead with green and amber rings, and a dot over each head.</figcaption></figure>
+    <figure><img src="img/dribble-pass-after.jpg" alt="The chance after a pass"><figcaption>After tapping the green man: a close-range chance and the PASS banner.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b>, with a test-only boost so a dribble came up sooner (normally about 1 chance in 10). Not confirmed: in the second picture the keeper already holds the ball, so the chance after a pass may play out too fast to read. Worth a look.</p>
 </div>
 
 <div class="card">
@@ -402,6 +409,7 @@
 </div>
 <ul class="n">
   <li><div class="hd">The power-shot wind-up has no leg pull-back <span class="pill p-amb">half done</span></div><div class="dt">It shows "WINDING UP…" text instead of an animation.</div></li>
+  <li><div class="hd">The chance after a dribble pass may resolve too fast <span class="pill p-amb">to check</span></div><div class="dt">In one test the keeper already held the ball in the first picture after the pass. Not yet reproduced.</div></li>
   <li><div class="hd">Dribble team-mates are plain blue shirts</div><div class="dt">No real names or faces yet, and the pass is instant: no ball flight to the team-mate.</div></li>
   <li><div class="hd">Some test screens get the easier free-kick keeper</div><div class="dt">Gallery Play and Infinite Highlights copy a free kick before playing it, so they count as a drill.</div></li>
   <li><div class="hd">Other screens can still be taller than the phone</div><div class="dt">The shared screen frame many menus use is not fixed to the phone's height. Not touched: these are menus, not the game.</div></li>
