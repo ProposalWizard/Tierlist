@@ -43,7 +43,7 @@ import EnginePlay from "./EnginePlay";
 import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
-import { ClubCard, CountUp, RiseIn, Glow, Badge, HomeBar, EmptySlots, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
+import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
 type Leave = HubPhase | "settings";
@@ -167,7 +167,8 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
       {size && (
         <div style={{ width: size.w, height: size.h }}>
-          <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar>
+          <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar
+            onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
               {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} />}
               {app !== null && (
@@ -186,9 +187,6 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
                   {app === "messages" && <Messages msgs={msgs} />}
                   {app === "appstore" && <AppStore career={career} onInstall={(id) => onInstall?.(id)} />}
-                  {/* The phone's home bar: tap it or swipe up to go home (Harry,
-                      P88: "more like an actual phone"; it was a "◀ Home" pill). */}
-                  <HomeBar onActivate={goHome} label="Home" />
                 </div>
               )}
             </div>
@@ -282,9 +280,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
           <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
         ))}
       </div>
-      {/* Putting the phone down is the home bar too — tap it or swipe up
-          (it was a "✕ Close phone" pill, P88). */}
-      {onClose && <HomeBar onActivate={onClose} label="Close phone" />}
+      {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}
     </div>
   );
 }

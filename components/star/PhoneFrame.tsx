@@ -22,6 +22,8 @@ export default function PhoneFrame({
   wallpaper,
   rim,
   ownHomeBar = false,
+  onBack,
+  backLabel = "Back",
 }: {
   children: React.ReactNode;
   /** The screen's background (the phone home screen's club wallpaper).
@@ -36,6 +38,12 @@ export default function PhoneFrame({
   /** The content draws a working home bar (ui/Nav.tsx's HomeBar): skip the
    *  decorative one so there are not two. */
   ownHomeBar?: boolean;
+  /** Draws the phone's navigation bar with a Back button on the right, like
+   *  an Android phone's (Mikey, 5 Oct 2026: the old home pill in the middle
+   *  "is not very noticeable"). Replaces the home indicator. */
+  onBack?: () => void;
+  /** What the Back button says to a screen reader (e.g. "Close phone"). */
+  backLabel?: string;
 }) {
   return (
     <div
@@ -91,8 +99,28 @@ export default function PhoneFrame({
         {/* App content — MediaFeed supplies everything from here down. */}
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 
+        {/* Navigation bar: Back on the right, on every page of the phone. */}
+        {onBack && (
+          <div
+            className="relative z-20 flex h-[48px] shrink-0 items-center justify-end border-t border-white/10 px-3"
+            style={{ background: "linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.8))" }}
+          >
+            <button
+              onClick={onBack}
+              aria-label={backLabel}
+              data-phone-back
+              className="kib-press flex h-[34px] items-center gap-1.5 rounded-full bg-white px-3.5 text-[12.5px] font-black uppercase tracking-wide text-gray-950 shadow-[0_0_14px_rgba(255,255,255,.35)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M19 12H5" /><path d="M11 5l-7 7 7 7" />
+              </svg>
+              Back
+            </button>
+          </div>
+        )}
+
         {/* Home indicator */}
-        {!ownHomeBar && (
+        {!ownHomeBar && !onBack && (
           <div className="pointer-events-none relative z-20 flex shrink-0 justify-center pb-1.5 pt-1">
             <div className="h-[4px] w-[108px] rounded-full bg-white/60" />
           </div>
