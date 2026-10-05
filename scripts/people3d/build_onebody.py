@@ -37,7 +37,7 @@ import glb  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "..", "public", "star", "people3d")
-OUT = os.path.join(HERE, "..", "..", "public", "star", "onebody")
+OUT = os.environ.get("ONEBODY_OUT") or os.path.join(HERE, "..", "..", "public", "star", "onebody")
 os.makedirs(OUT, exist_ok=True)
 
 # Width (x) multiplier by rest height y, for the trunk. Measured on player.glb
@@ -53,6 +53,8 @@ FIELD["player-buzz"] = FIELD["player"]
 FIELD["player-long"] = FIELD["player"]
 
 FINGERS = ["index", "middle", "ring", "little"]
+# Passes of smoothing the finger weights over the skin (see the weights step).
+SMOOTH_ITERS = int(os.environ.get("ONEBODY_SMOOTH", "4"))
 
 
 def field(name, y):
@@ -132,9 +134,10 @@ def build(name):
     # ── 2. Fingers ──
     newbones = []  # (name, parentJointIndex, worldPoint)
     fingers_meta = {}
-
     extra_w = []  # list of (boneIndex, weight array) to merge after
-    for hs, bone in (("L", "LeftHand"), ("R", "RightHand")):
+    rot = lambda v, ax, ang: v * np.cos(ang) + np.cross(ax, v) * np.sin(ang) + ax * (ax @ v) * (1 - np.cos(ang))
+
+    def hand_geom(hs, bone):
         hm = ex["hands"][hs]
         wr = Mw[bi[bone]][:3, 3]
         al, pa, th = (np.array(hm[k]) for k in ("along", "palm", "thumb"))
@@ -142,16 +145,13 @@ def build(name):
         a, sv, pv = Q @ al, Q @ th, Q @ pa
         hw = wof(bone)
         H = hw > 0.02
-        meta = {}
-
         # Fingers: the outer part of the hand (past the palm), split four ways.
         amax = float(np.quantile(a[H], 0.995))
         far = H & (a > amax - 0.05)
-        slope = 0.4
-        lab, c = kmeans1d(sv[far] - slope * a[far], 4)
+        lab, c = kmeans1d(sv[far] - 0.4 * a[far], 4)
         order = np.argsort(-c)  # index (thumb side, +s) first
         lines = []
-        for fi, k in enumerate(order):
+        for k in order:
             m = np.where(far)[0][lab == k]
             fa = a[m]
             # The finger's centre line: through the middle of its lowest and
@@ -163,22 +163,8 @@ def build(name):
             kp = np.array([(pv[m][hi_m].mean() - pv[m][lo_m].mean()) / (a1 - a0), 0.0])
             kp[1] = pv[m][lo_m].mean() - kp[0] * a0
             lines.append({"ks": ks, "kp": kp, "tip": float(fa.max())})
-        # The web: walking back from the tips down the gap between each pair of
-        # fingers, the first skin met.
-        tipmin = min(L["tip"] for L in lines)
-        webs = []
-        for k in range(3):
-            A0, A1 = lines[k], lines[k + 1]
-            for at in np.arange(tipmin - 0.012, tipmin - 0.09, -0.001):
-                mid = 0.5 * (np.polyval(A0["ks"], at) + np.polyval(A1["ks"], at))
-                pm = 0.5 * (np.polyval(A0["kp"], at) + np.polyval(A1["kp"], at))
-                hit = H & (np.abs(a - at) < 0.0015) & (np.abs(sv - mid) < 0.0015) & (np.abs(pv - pm) < 0.02)
-                if hit.any():
-                    webs.append(at)
-                    break
-        # (The gap search above only reports. The knuckles themselves sit at a
-        # fixed share of the hand, as on a real one: 53% of the way from the
-        # wrist to the longest finger's tip.)
+        # The knuckles sit at a fixed share of the hand, as on a real one: 53%
+        # of the way from the wrist to the longest finger's tip.
         mcp_a = 0.53 * max(L["tip"] for L in lines)
         web = mcp_a + 0.016
         # The thumb's tip: the point of the hand below the web that stands
@@ -188,9 +174,32 @@ def build(name):
         pmed = float(np.median(pv[below]))
         stick = np.maximum(sv - s_idx, 0) + np.maximum(pv - pmed, 0) * 1.2
         cand_i = np.where(below)[0]
-        thumb_tip_i = cand_i[np.argmax(stick[cand_i])]
+        ti = cand_i[np.argmax(stick[cand_i])]
+        return dict(bone=bone, wr=wr, al=al, pa=pa, th=th, Q=Q, a=a, sv=sv, pv=pv, hw=hw, H=H, lines=lines,
+                    mcp_a=mcp_a, web=web, below=below, ti=ti)
+
+    G = {hs: hand_geom(hs, bone) for hs, bone in (("L", "LeftHand"), ("R", "RightHand"))}
+    # The two hands mirror each other, in each hand's own frame. The search
+    # above is fooled by a thumb lying along the index finger (the buzz cut's
+    # left hand found a tip 4 cm short, and that thumb bent from the middle of
+    # the palm): a tip much shorter than the other hand's takes the other's,
+    # snapped onto this hand's own skin.
+    abc = {hs: np.array([g["a"][g["ti"]], g["sv"][g["ti"]], g["pv"][g["ti"]]]) for hs, g in G.items()}
+    for hs, other in (("L", "R"), ("R", "L")):
+        if abc[other][0] - abc[hs][0] > 0.015:
+            g = G[hs]
+            want = abc[other]
+            cand = np.where(g["H"])[0]
+            dd = (g["a"][cand] - want[0]) ** 2 + (g["sv"][cand] - want[1]) ** 2 + (g["pv"][cand] - want[2]) ** 2
+            g["ti"] = cand[np.argmin(dd)]
+            print(f"  {hs} thumb tip taken from the {other} hand ({abc[hs][0]:.3f} -> {want[0]:.3f} along)")
+
+    for hs, g in G.items():
+        bone, wr, al, pa, th, Q = g["bone"], g["wr"], g["al"], g["pa"], g["th"], g["Q"]
+        a, sv, pv, hw, H, lines, mcp_a, web, below = (g[k] for k in ("a", "sv", "pv", "hw", "H", "lines", "mcp_a", "web", "below"))
+        meta = {}
         # The thumb: CMC, MCP, IP on the line from its root to its tip (3D).
-        T = Q[thumb_tip_i]
+        T = Q[g["ti"]]
         C = T * 0.22
         C = C - pa * (C @ pa) + pa * float(np.median(pv[below & (a < 0.04)]))
         seg_v = T - C
@@ -201,46 +210,35 @@ def build(name):
         rad = 0.026 - 0.01 * np.clip(tt, 0, 1)  # thicker at the root
         thumbsel = H & (tt > -0.1) & (tt < 1.1) & (perp < rad)
         jt = [0.0, 0.5, 0.76]
-        tp = [wr + C + seg_v * x for x in jt]
+        tp = [C + seg_v * x for x in jt]
         dT = Tu
         flex = unit(np.cross(dT, pa))
         swing = unit(pa - dT * (pa @ dT))
-        # positive swing takes the tip towards the fingers (along)
-        rot = lambda v, ax, ang: v * np.cos(ang) + np.cross(ax, v) * np.sin(ang) + ax * (ax @ v) * (1 - np.cos(ang))
-        if rot(dT, swing, 0.2) @ al < dT @ al:
+        if rot(dT, swing, 0.2) @ al < dT @ al:  # positive swing: tip towards the fingers
             swing = -swing
-        # positive flex takes the tip towards the palm side
-        if rot(dT, flex, 0.2) @ pa < dT @ pa:
+        if rot(dT, flex, 0.2) @ pa < dT @ pa:  # positive flex: tip towards the palm
             flex = -flex
         tb = [f"{bone}Thumb{k + 1}" for k in range(3)]
         for k in range(3):
-            newbones.append((tb[k], bone if k == 0 else tb[k - 1], tp[k]))
-        fade = 1 - smooth(rad - 0.005, rad, perp)
-        g0 = smooth(-0.1, 0.25, tt) * fade
-        g1 = smooth(jt[1] - 0.06, jt[1] + 0.06, tt)
-        g2 = smooth(jt[2] - 0.05, jt[2] + 0.05, tt)
-        tseg = [g0 * (1 - g1), g0 * g1 * (1 - g2), g0 * g2]
-        for k in range(3):
-            extra_w.append((tb[k], np.where(thumbsel, hw * tseg[k], 0.0), bone))
+            newbones.append((tb[k], bone if k == 0 else tb[k - 1], wr + tp[k]))
         meta["thumb"] = {"bones": tb, "axis": [round(float(v), 5) for v in flex], "swing": [round(float(v), 5) for v in swing],
                          "dir": [round(float(v), 5) for v in dT], "len": round(Tl, 4)}
 
-        # Which finger each other vertex follows (nearest line across).
-        dist = np.stack([np.abs(sv - np.polyval(L["ks"], a)) for L in lines], 1)
-        near = np.argmin(dist, 1)
-        mind = dist[np.arange(len(P)), near]
+        # The four fingers' joints (hand-relative), and each one's polyline.
+        chains = []  # (bone names, [j0, j1, j2, tip], radius, root fade (lo, hi), joint bands)
         for fi, L in enumerate(lines):
             fname = FINGERS[fi]
             tip = L["tip"]
             ln = tip - mcp_a
             ja = [mcp_a, mcp_a + 0.45 * ln, mcp_a + 0.76 * ln]
+
             def pt(aa, L=L):
                 # kept inside the hand's own width at that height
                 sl = H & (np.abs(a - aa) < 0.004) & ~thumbsel
                 s_ = np.polyval(L["ks"], aa)
                 if sl.sum() > 4:
                     s_ = float(np.clip(s_, sv[sl].min() + 0.008, sv[sl].max() - 0.008))
-                return wr + al * aa + th * s_ + pa * np.polyval(L["kp"], aa)
+                return al * aa + th * s_ + pa * np.polyval(L["kp"], aa)
             pts = [pt(x) for x in ja]
             d = unit(pt(tip) - pt(mcp_a))
             axis = unit(np.cross(d, pa))
@@ -248,19 +246,53 @@ def build(name):
                 axis = -axis
             bnames = [f"{bone}{fname.capitalize()}{k + 1}" for k in range(3)]
             for k in range(3):
-                newbones.append((bnames[k], bone if k == 0 else bnames[k - 1], pts[k]))
-            mine = H & ~thumbsel & (near == fi) & (a > mcp_a - 0.014) & (mind < 0.03)
-            f0 = smooth(mcp_a - 0.012, mcp_a + 0.008, a)
-            f1 = smooth(ja[1] - 0.005, ja[1] + 0.005, a)
-            f2 = smooth(ja[2] - 0.004, ja[2] + 0.004, a)
-            seg = [f0 * (1 - f1), f1 * (1 - f2), f2]
-            for k in range(3):
-                extra_w.append((bnames[k], np.where(mine, hw * seg[k], 0.0), bone))
+                newbones.append((bnames[k], bone if k == 0 else bnames[k - 1], wr + pts[k]))
             meta[fname] = {"bones": bnames, "axis": [round(float(v), 5) for v in axis], "dir": [round(float(v), 5) for v in d],
                            "len": round(float(ln), 4)}
+            chains.append((bnames, pts + [pt(tip) + d * 0.01], 0.013, (-0.012, 0.006), 0.005))
+        chains.append((tb, tp + [T + Tu * 0.01], 0.02, (-0.1 * Tl, 0.25 * Tl), 0.05 * Tl))
+
+        # Which finger each vertex of the hand follows: the nearest bone line
+        # in 3D (a side-to-side split alone sent skin between two fingers, and
+        # thumb skin lying on the index, to the wrong one: torn spikes when they
+        # bent apart). Soft at the boundaries, then smoothed over the surface.
+        dists, us, cums = [], [], []
+        for _, J, _, _, _ in chains:
+            best = np.full(len(P), np.inf)
+            ubest = np.zeros(len(P))
+            cum = 0.0
+            cs = [0.0]
+            for k in range(3):
+                A_, B_ = J[k], J[k + 1]
+                ab = B_ - A_
+                L2 = float(ab @ ab)
+                t = (Q - A_) @ ab / L2
+                tc = np.clip(t, 0 if k else -np.inf, 1)
+                dd = np.linalg.norm(Q - (A_ + np.outer(np.clip(tc, 0, 1), ab)), axis=1)
+                u = cum + t * np.sqrt(L2) if k == 0 else cum + np.clip(t, 0, None) * np.sqrt(L2)
+                closer = dd < best
+                best = np.where(closer, dd, best)
+                ubest = np.where(closer, u, ubest)
+                cum += np.sqrt(L2)
+                cs.append(cum)
+            dists.append(best); us.append(ubest); cums.append(cs)
+        Dm = np.stack(dists, 1)
+        soft = np.exp(-(Dm - Dm.min(1, keepdims=True)) / 0.0025)
+        soft /= soft.sum(1, keepdims=True)
+        for ci, (bn, J, r, (lo, hi), band) in enumerate(chains):
+            u, cs = us[ci], cums[ci]
+            gate = soft[:, ci] * (1 - smooth(r - 0.004, r + 0.004, Dm[:, ci])) * smooth(lo, hi, u)
+            if ci == 4:
+                # the thumb: only its own cylinder, faded at the edge
+                gate = gate * (1 - smooth(rad - 0.005, rad, perp)) * (tt > -0.1) * (tt < 1.1)
+            f1 = smooth(cs[1] - band, cs[1] + band, u)
+            f2 = smooth(cs[2] - band, cs[2] + band, u)
+            seg = [1 - f1, f1 * (1 - f2), f2]
+            for k in range(3):
+                extra_w.append((bn[k], np.where(H, hw * gate * seg[k], 0.0), bone))
         meta["web"] = round(float(web), 4)
         fingers_meta[hs] = meta
-        print(f"  {hs} hand: web {web:.3f}, tips {[round(L['tip'], 3) for L in lines]}, thumb tip {np.round(T @ np.stack([al, th, pa], 1), 3)}")
+        print(f"  {hs} hand: web {web:.3f}, tips {[round(L['tip'], 3) for L in lines]}, thumb tip {np.round(np.array([T @ al, T @ th, T @ pa]), 3)}")
 
     # New joints: nodes (children of their parent bone), bind matrices.
     for bname, pname, wpt in newbones:
@@ -286,6 +318,37 @@ def build(name):
         Wfull[:, names.index(bname)] += w
         Wfull[:, names.index(hand)] -= w
     Wfull = np.clip(Wfull, 0, None)
+    # Smoothed over the skin (the same point on both sides of a texture seam is
+    # one point here): no finger's share stops dead from one triangle to the
+    # next, which tore the low-poly knuckles into spikes once bent.
+    key = np.round(P / 1e-5).astype(np.int64)
+    _, weld = np.unique(key, axis=0, return_inverse=True)
+    weld = weld.reshape(-1)
+    nw = int(weld.max()) + 1
+    E = np.concatenate([weld[I.reshape(-1, 3)][:, [0, 1]], weld[I.reshape(-1, 3)][:, [1, 2]], weld[I.reshape(-1, 3)][:, [2, 0]]])
+    E = np.concatenate([E, E[:, ::-1]])
+    deg = np.bincount(E[:, 0], minlength=nw).astype(np.float64)
+    for hand in ("LeftHand", "RightHand"):
+        hi = names.index(hand)
+        fc = [names.index(n) for n in names if n.startswith(hand) and n != hand]
+        fam = Wfull[:, [hi] + fc].sum(1)
+        region_v = np.zeros(nw)
+        np.maximum.at(region_v, weld, (Wfull[:, hi] + Wfull[:, fc].sum(1) > 0.02).astype(np.float64))
+        F = np.zeros((nw, len(fc)))
+        cnt = np.bincount(weld, minlength=nw).astype(np.float64)
+        np.add.at(F, weld, Wfull[:, fc])
+        F /= np.maximum(cnt, 1)[:, None]
+        famw = np.zeros(nw); np.add.at(famw, weld, fam); famw /= np.maximum(cnt, 1)
+        for _ in range(SMOOTH_ITERS):
+            S_ = np.zeros_like(F)
+            np.add.at(S_, E[:, 0], F[E[:, 1]])
+            avg = S_ / np.maximum(deg, 1)[:, None]
+            F = np.where(region_v[:, None] > 0, 0.5 * F + 0.5 * avg, F)
+            tot = F.sum(1)
+            over = tot > famw
+            F[over] *= (famw[over] / np.maximum(tot[over], 1e-9))[:, None]
+        Wfull[:, fc] = F[weld]
+        Wfull[:, hi] = np.clip(fam - Wfull[:, fc].sum(1), 0, None)
     top = np.argsort(-Wfull, 1)[:, :4]
     tw = np.take_along_axis(Wfull, top, 1)
     tw = tw / np.maximum(tw.sum(1, keepdims=True), 1e-9)
