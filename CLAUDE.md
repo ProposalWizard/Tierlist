@@ -188,6 +188,11 @@ same person in the garden as you are in the store."*
 - The shop stands where the house was. Its doors open the 3D shop
   (phase `shop-3d`, `atDoor`); the shop's front doors (`onDoor`) bring you back
   out (`gardenArrive` in page.tsx).
+- Look pass (Harry, 5 Oct 2026): Settings → Look → "3D garden: New | Old"
+  (`lib/star/garden3d/look.ts`). New = `scene.ts` (golden hour, a real shop
+  front, and YOU are whatever the shop shows: people3d when "3D shop player"
+  is New). Old = `sceneOld.ts`, frozen; never restyle it. ?look=old|new on
+  the test page.
 - Models are free CC0 packs (Kenney, Quaternius) packed by
   `tools/garden3d/export_models.py` (Blender) and `build_anims.py`. Credits:
   `public/star/garden3d/LICENSE.txt`. Test page: `/star-garden3d-dev`.

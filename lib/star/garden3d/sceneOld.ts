@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
+ * OLD 3D GARDEN — frozen copy (Harry, 5 Oct 2026: every new look gets a
+ * toggle, the old one stays playable). This is the garden exactly as it was
+ * before the 5 Oct look pass; Settings → Look → "3D garden: Old" opens it.
+ * Do not restyle or "fix" anything here. The live garden is ./scene.ts.
+ *
  * THE 3D GARDEN — your place as a footballer, walked in 3D (Mikey, 3 Oct
  * 2026: "make this garden area also a 3D area where it's basically your
  * garden as a footballer in your life … everything is 3D").
@@ -21,34 +26,11 @@
  * tools/garden3d/export_models.py; the people's extra moves (sitting,
  * drinking) by tools/garden3d/build_anims.py — see
  * public/star/garden3d/LICENSE.txt. three.js loads only when this opens.
- *
- * THE 5 OCT 2026 LOOK PASS (Harry: "the garden … needs a lot of work
- * visually … the model has to be the same as the 3D shop"). This file is the
- * NEW garden; the garden as it was is frozen in ./sceneOld.ts and opens when
- * Settings → Look → "3D garden" is Old (lib/star/garden3d/look.ts).
- *   - YOU are the shop's own player: the approved people3d character in your
- *     skin, hair and kit when the shop's "3D shop player" is New (the shop's
- *     default), the old character.glb when it is Old — same files, scale,
- *     kit dressing and outline as lib/star/shop3d/scene.ts. The team-mates on
- *     the bench are the same body, sat with the clips' own "sitidle".
- *   - golden-hour light from behind the gate, so the shop front, the stable
- *     doors and the trophy cabinet face the sun; long soft shadows; a soft
- *     sky reflection (the shop's RoomEnvironment) so he is lit as in the shop
- *   - a mown lawn inside the boundary, rough meadow outside it, kerbed paths
- *   - the boundary as long clean runs (fence / clipped hedge / brick wall),
- *     a tree line behind the shop, clipped topiary instead of lumpy bushes
- *   - the shop as a real small shop front: brick, slate roof, a green painted
- *     shopfront with lit display windows, striped awnings and open doors
- *   - a lower camera further back; the fountain fades when the camera is in it
- * Static pieces are merged by material (one draw call each), so the extra
- * detail costs few draw calls.
  */
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, type Person3D } from "../people3d";
 import {
-  gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
-  lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
+  lawnCanvas, gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
 } from "./textures";
 
 export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball";
@@ -73,10 +55,6 @@ export interface GardenData {
   mates: number[];
   /** Where you appear: at the shop's doors (coming out of it) or the gate. */
   arrive: "shop" | "gate";
-  /** Who you are: the 3D shop's own player (its Settings → "3D shop player"
-   *  switch and your saved skin, hair and hair style). Absent → the shop's
-   *  default, the new player. */
-  player?: { look: "new" | "old"; skin?: string; hair?: string; hairStyle?: "short" | "long" | "buzz" | "none" };
 }
 
 export interface GardenCallbacks {
@@ -118,19 +96,13 @@ const PADDOCK = { x0: -13.0, x1: -6.4, z0: 0.8, z1: 12.6, gate: [5.6, 7.4] as [n
 const PARK = { x0: 5.5, x1: 16.5, z0: 9.2, z1: 17.2 };
 const START_SHOP = { x: 0, z: -5.3, yaw: 0 };
 const START_GATE = { x: 0, z: 15.5, yaw: Math.PI };
-/** The follow camera: how far behind him, and how high. */
-const CAM_BACK = 6.3;
-const CAM_UP = 2.75;
 const WALK = 1.55;
 const JOG = 3.6;
 
-// Golden hour by day; a deep orange sunset; a cool night. The sun sits low
-// behind the gate (south-east), so walking in from the gate you look at the
-// lit fronts of the shop, the stable and the cabinet with long shadows.
-const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: string; sun: string; sunI: number; hemi: [string, string, number]; exp: number; dir: [number, number, number]; env: number; hill: string }> = {
-  day: { top: "#3f78bf", mid: "#9cc2e4", low: "#f4dcb4", fog: "#e3d3b6", sun: "#ffd7a0", sunI: 3.1, hemi: ["#cfe0f4", "#4f4428", 0.55], exp: 1.0, dir: [0.55, 0.6, 0.85], env: 0.32, hill: "#7f9a5c" },
-  sunset: { top: "#2b2f66", mid: "#e2835a", low: "#ffcf8c", fog: "#eeb789", sun: "#ffa45a", sunI: 2.7, hemi: ["#ffcfa4", "#463624", 0.45], exp: 1.02, dir: [0.75, 0.26, 0.6], env: 0.24, hill: "#7d7a4f" },
-  night: { top: "#04070f", mid: "#0c1730", low: "#1b2747", fog: "#111a30", sun: "#9db8ff", sunI: 0.45, hemi: ["#5a6f9c", "#1a2216", 0.42], exp: 1.15, dir: [0.45, 0.9, -0.5], env: 0.1, hill: "#1d2c22" },
+const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: string; sun: string; sunI: number; hemi: [string, string, number]; exp: number }> = {
+  day: { top: "#3d7fd0", mid: "#8cc0ee", low: "#dcebf5", fog: "#cfe2ee", sun: "#fff4e0", sunI: 2.4, hemi: ["#d8ecff", "#5b7a3a", 1.0], exp: 1.0 },
+  sunset: { top: "#2a2c66", mid: "#e0805a", low: "#ffd39a", fog: "#e9b48c", sun: "#ffb06a", sunI: 1.9, hemi: ["#ffcfa6", "#4b4a2c", 0.8], exp: 1.05 },
+  night: { top: "#04070f", mid: "#0c1730", low: "#1b2747", fog: "#111a30", sun: "#9db8ff", sunI: 0.45, hemi: ["#5a6f9c", "#1a2216", 0.42], exp: 1.15 },
 };
 
 export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
@@ -143,8 +115,6 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   const night = data.sky === "night";
 
   // ── Renderer ──
-  const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
-  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -159,15 +129,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(look.fog, 30, 110);
+  scene.fog = new THREE.Fog(look.fog, 34, 95);
   scene.background = new THREE.Color(look.fog);
-  // The shop's soft room reflection, so the people and the glass are lit as
-  // they are in the shop (the old garden had none).
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
-  scene.environment = envTex;
-  scene.environmentIntensity = look.env;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   let disposed = false;
 
@@ -204,47 +167,15 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     return m;
   };
 
-  /**
-   * Static pieces merged by material into one draw each. Add boxes or any
-   * geometry (with a position/rotation/scale); `done()` builds the meshes and
-   * puts them in `parent` (the parent's own frame).
-   */
-  const batch = (parent: any = scene, cast = true) => {
-    const byMat = new Map<any, any[]>();
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
-    const put = (geo: any, m: any, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
-      const g = geo.index ? geo.toNonIndexed() : geo;
-      g.applyMatrix4(m4.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), sc.set(sx, sy, sz)));
-      for (const k of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(k)) g.deleteAttribute(k);
-      if (!byMat.has(m)) byMat.set(m, []);
-      byMat.get(m)!.push(g);
-    };
-    return {
-      put,
-      box: (w: number, h: number, d: number, m: any, x: number, y: number, z: number, ry = 0, rx = 0, rz = 0) => put(new THREE.BoxGeometry(w, h, d), m, x, y, z, rx, ry, rz),
-      done: () => {
-        const out: any[] = [];
-        byMat.forEach((list, m) => {
-          const me = new THREE.Mesh(mergeGeometries(list), m);
-          me.castShadow = cast && !m.transparent;
-          me.receiveShadow = true;
-          parent.add(me);
-          out.push(me);
-        });
-        return out;
-      },
-    };
-  };
-
   // ── The sky: a dome, the sun (or moon), far hills, clouds ──
   const dome = new THREE.Mesh(new THREE.SphereGeometry(120, 24, 16),
     new THREE.MeshBasicMaterial({ map: canvasTex(skyCanvas(look.top, look.mid, look.low)), side: THREE.BackSide, fog: false, depthWrite: false }));
   dome.rotation.x = 0;
   scene.add(dome);
-  const sunDir = new THREE.Vector3(...look.dir);
+  const sunDir = data.sky === "day" ? new THREE.Vector3(-0.5, 1.0, -0.35) : data.sky === "sunset" ? new THREE.Vector3(-0.9, 0.22, -0.6) : new THREE.Vector3(0.45, 0.9, -0.5);
   sunDir.normalize();
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(glowCanvas(night ? "210,225,255" : data.sky === "sunset" ? "255,170,100" : "255,245,215")), fog: false, depthWrite: false, transparent: true }));
-  sunSprite.scale.setScalar(night ? 9 : 22);
+  sunSprite.scale.setScalar(night ? 9 : 16);
   sunSprite.position.copy(sunDir).multiplyScalar(105);
   scene.add(sunSprite);
   if (night) {
@@ -257,24 +188,21 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: "#ffffff", size: 0.55, fog: false, sizeAttenuation: true })));
   }
-  // far rolling hills: smooth, hazy, merged into one draw
-  const hillM = mat(look.hill, { roughness: 1 });
-  const hillGeos: any[] = [];
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2 + 0.2;
-    const g = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2);
-    g.scale(22 + (i % 3) * 8, 5 + ((i * 7) % 5) * 1.6, 16);
-    g.rotateY(-a);
-    g.translate(Math.cos(a) * 78, -0.5, Math.sin(a) * 78);
-    hillGeos.push(g);
+  const hillM = mat(night ? "#1d2c22" : data.sky === "sunset" ? "#4d6a3b" : "#6c9a52", { flatShading: true });
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + 0.2;
+    const h = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), hillM);
+    h.scale.set(16 + (i % 3) * 6, 5 + (i % 4) * 2.2, 14);
+    h.position.set(Math.cos(a) * 70, -1.5, Math.sin(a) * 70);
+    h.rotation.y = a;
+    scene.add(h);
   }
-  scene.add(new THREE.Mesh(mergeGeometries(hillGeos), hillM));
-  const cloudM = mat(data.sky === "sunset" ? "#ffe0c4" : "#ffffff", { transparent: true, opacity: night ? 0.18 : 0.9, emissive: data.sky === "sunset" ? "#ffb98a" : "#ffffff", emissiveIntensity: night ? 0 : 0.35 });
+  const cloudM = mat("#ffffff", { flatShading: true, transparent: true, opacity: night ? 0.18 : 0.92, emissive: "#ffffff", emissiveIntensity: night ? 0 : 0.25 });
   const clouds: any[] = [];
   for (let i = 0; i < 7; i++) {
     const c = new THREE.Group();
     for (let k = 0; k < 4; k++) {
-      const p = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), cloudM);
+      const p = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), cloudM);
       p.scale.set(2.4 + Math.random() * 1.6, 1.3 + Math.random() * 0.6, 1.8);
       p.position.set(k * 2.1 - 3, Math.random() * 0.7, Math.random() * 1.2);
       c.add(p);
@@ -292,7 +220,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   sun.position.copy(sunDir).multiplyScalar(40);
   sun.castShadow = quality === "high";
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 100 });
+  Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 100 });
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
@@ -301,16 +229,10 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   scene.add(fillLight);
 
   // ── The ground ──
-  // the mown lawn stops at the boundary; long meadow grass beyond it
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(39, 39), mat("#ffffff", { map: canvasTex(lawnCanvasSoft(), [9, 9]), roughness: 0.95 }));
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mat("#ffffff", { map: canvasTex(lawnCanvas(), [36, 36]), roughness: 0.95 }));
   lawn.rotation.x = -Math.PI / 2;
-  lawn.position.y = 0.004;
   lawn.receiveShadow = true;
   scene.add(lawn);
-  const meadow = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), mat("#ffffff", { map: canvasTex(meadowCanvas(), [50, 50]), roughness: 1 }));
-  meadow.rotation.x = -Math.PI / 2;
-  meadow.receiveShadow = true;
-  scene.add(meadow);
   const flat = (w: number, d: number, m: any, x: number, z: number, y = 0.012, ry = 0) => {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
     p.rotation.x = -Math.PI / 2;
@@ -324,15 +246,10 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   const pave = (w: number, d: number, x: number, z: number) => {
     const t = paveT.clone();
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(w / 0.9, d / 0.9);
+    t.repeat.set(w / 1.2, d / 1.2);
     t.needsUpdate = true;
-    return flat(w, d, mat("#f3ece0", { map: t, roughness: 0.9 }), x, z, 0.015);
+    return flat(w, d, mat("#ffffff", { map: t, roughness: 0.9 }), x, z, 0.015);
   };
-  // a stone kerb along each side of a path (x0..x1 or z0..z1 at a fixed line)
-  const kerbM = mat("#bdb3a2", { roughness: 0.85 });
-  const kerbs = batch(scene, false);
-  const kerbX = (x: number, z0: number, z1: number) => kerbs.box(0.14, 0.08, Math.abs(z1 - z0), kerbM, x, 0.04, (z0 + z1) / 2);
-  const kerbZ = (z: number, x0: number, x1: number) => kerbs.box(Math.abs(x1 - x0), 0.08, 0.14, kerbM, (x0 + x1) / 2, 0.04, z);
   // the path: from the shop's doors down to the gate, and out to each place
   pave(2.6, 25, 0, 3.5);
   pave(7.0, 1.8, -3.6, -5.8);
@@ -343,12 +260,6 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   flat(PADDOCK.x1 - PADDOCK.x0, PADDOCK.z1 - PADDOCK.z0, mat("#7b8d43", { roughness: 1 }), (PADDOCK.x0 + PADDOCK.x1) / 2, (PADDOCK.z0 + PADDOCK.z1) / 2, 0.008);
   flat(6.2, 3.6, mat("#ffffff", { map: canvasTex(gravelCanvas("#b8a17a"), [3, 2]), roughness: 1 }), -10.6, 6.5, 0.011); // the stable yard
   flat(GAZEBO.w + 1.0, GAZEBO.d + 1.0, mat("#ffffff", { map: canvasTex(boardsCanvas("#9c7552"), [3, 4]), roughness: 0.8 }), GAZEBO.x, GAZEBO.z, 0.03);
-  // kerbs: the main path (gaps where the side paths and the fountain court join)
-  kerbX(-1.37, 0.5, 16.0);
-  kerbX(1.37, 0.5, 1.3); kerbX(1.37, 3.1, 16.0);
-  kerbZ(-4.83, -7.1, -4.2); kerbZ(-6.77, -7.1, -4.2); // to the cabinet
-  kerbZ(1.23, 1.37, 7.1); kerbZ(3.17, 1.37, 7.1); // to the gazebo
-  kerbs.done();
 
   // Things the camera must not sit behind: it moves in front of them instead.
   const occluders: any[] = [];
@@ -366,144 +277,73 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   loader.setDRACOLoader(draco);
   let loaded = 0;
   const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
-  // You are the 3D shop's own player: the approved people3d body when the
-  // shop's player is New (its default), else the old character.glb.
-  const newPerson = (data.player?.look ?? "new") === "new";
-  const personModel = playerModelFor(data.player?.hairStyle);
-  const [propsG, charG, animG, gardenAnimG] = await Promise.all(newPerson ? [
-    load("/star/garden3d/props.glb"),
-    loadPeople3d(loader, personModel).then((g: any) => { loaded++; return g; }),
-    loadPeople3d(loader, "anims").then((g: any) => { loaded++; return g; }),
-    Promise.resolve(null),
-  ] : [
+  const [propsG, charG, animG, gardenAnimG] = await Promise.all([
     load("/star/garden3d/props.glb"),
     load("/star/shop3d/character.glb"),
     load("/star/shop3d/anims.glb"),
     load("/star/garden3d/anims.glb"),
   ]);
   if (disposed) throw new Error("disposed");
-  // Each piece by its key, as ALL its parts (a tree is trunk + leaves, two
-  // meshes). The old garden kept only single-mesh pieces, so every tree, the
-  // paddock fence, the fountain basin and the potted plants never appeared.
-  const pieces = new Map<string, { geometry: any; material: any }[]>();
-  propsG.scene.updateMatrixWorld(true);
-  for (const top of propsG.scene.children) {
-    const inv = top.matrixWorld.clone().invert();
-    const parts: { geometry: any; material: any }[] = [];
-    top.traverse((o: any) => {
-      if (!o.isMesh) return;
-      const g = o.geometry.clone();
-      g.applyMatrix4(inv.clone().multiply(o.matrixWorld));
-      parts.push({ geometry: g, material: o.material });
-    });
-    if (parts.length) pieces.set(top.name, parts);
-  }
-  const leafFix = new Map<any, any>();
-  pieces.forEach((parts, key) => {
-    if (!key.startsWith("tree_")) return;
-    for (const part of parts) {
-      const n = String(part.material?.name ?? "");
-      if (!/^leafs/i.test(n)) continue;
-      if (!leafFix.has(part.material)) {
-        const m2 = part.material.clone();
-        m2.color.set(/dark/i.test(n) ? "#3d6a2a" : key.includes("pine") ? "#45703a" : "#5d8d36");
-        m2.roughness = 0.9;
-        m2.envMapIntensity = 0.4;
-        leafFix.set(part.material, m2);
-      }
-      part.material = leafFix.get(part.material);
-    }
-  });
-  /** Many copies of one piece, one draw call per part: [x, z, scale, rotY, sx?, sy?, sz?, y?]. */
+  const pieces = new Map<string, any>();
+  propsG.scene.traverse((o: any) => { if (o.isMesh) pieces.set(o.name, o); });
+  /** Many copies of one piece in one draw call: [x, z, scale, rotY, sx?, sy?, sz?]. */
   const many = (key: string, at: number[][], cast = true) => {
-    const parts = pieces.get(key);
-    if (!parts || !at.length) return null;
+    const src = pieces.get(key);
+    if (!src || !at.length) return null;
+    const im = new THREE.InstancedMesh(src.geometry, src.material, at.length);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
-    const holder = new THREE.Group();
-    for (const part of parts) {
-      const im = new THREE.InstancedMesh(part.geometry, part.material, at.length);
-      at.forEach((a, i) => {
-        const [x, z, s, ry = 0, sx = 1, sy = 1, sz = 1, y = 0] = a;
-        q.setFromEuler(e.set(0, ry, 0));
-        m4.compose(v.set(x, y, z), q, sc.set(s * sx, s * sy, s * sz));
-        im.setMatrixAt(i, m4);
-      });
-      im.computeBoundingSphere();
-      im.castShadow = cast;
-      im.receiveShadow = true;
-      holder.add(im);
-    }
-    scene.add(holder);
-    if (cast) occluders.push(holder);
-    return holder;
+    at.forEach((a, i) => {
+      const [x, z, s, ry = 0, sx = 1, sy = 1, sz = 1, y = 0] = a;
+      q.setFromEuler(e.set(0, ry, 0));
+      m4.compose(v.set(x, y, z), q, sc.set(s * sx, s * sy, s * sz));
+      im.setMatrixAt(i, m4);
+    });
+    im.castShadow = cast;
+    im.receiveShadow = true;
+    scene.add(im);
+    if (cast) occluders.push(im);
+    return im;
   };
   const one = (key: string, x: number, z: number, s: number, ry = 0, y = 0) => {
-    const parts = pieces.get(key);
-    if (!parts) return null;
-    const m = new THREE.Group();
-    for (const part of parts) {
-      const me = new THREE.Mesh(part.geometry, part.material);
-      me.castShadow = true;
-      me.receiveShadow = true;
-      m.add(me);
-    }
+    const src = pieces.get(key);
+    if (!src) return null;
+    const m = new THREE.Mesh(src.geometry, src.material);
     m.position.set(x, y, z);
     m.rotation.y = ry;
     m.scale.setScalar(s);
+    m.castShadow = true;
+    m.receiveShadow = true;
     scene.add(m);
     return m;
   };
 
-  // ── The boundary: it grows with your home (fence → hedge → brick wall) ──
-  // Long single runs, not a row of little pieces: a close-boarded fence, a
-  // tall clipped hedge, or a brick wall with stone coping and piers.
-  const B = 19;
-  const GATE = 1.8;
-  const bound = batch(scene);
-  // each side as [x0, z0, x1, z1]; the south side has the gate in it
-  const sides: [number, number, number, number][] = [[-B, -B, B, -B], [-B, -B, -B, B], [B, -B, B, B], [-B, B, -GATE, B], [GATE, B, B, B]];
-  const runOf = (s4: [number, number, number, number], h: number, t: number, m: any, y0 = 0, grow = 0) => {
-    const [x0, z0, x1, z1] = s4;
-    const len = Math.hypot(x1 - x0, z1 - z0) + grow;
-    const alongX = Math.abs(x1 - x0) > Math.abs(z1 - z0);
-    const tex = m.map;
-    if (tex) { const t = tex.clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(len / (tex.userData.tile ?? 2), h / (tex.userData.tileH ?? tex.userData.tile ?? 2)); t.needsUpdate = true; m = m.clone(); m.map = t; }
-    const me = new THREE.Mesh(new THREE.BoxGeometry(alongX ? len : t, h, alongX ? t : len), m);
-    me.position.set((x0 + x1) / 2, y0 + h / 2, (z0 + z1) / 2);
-    me.castShadow = true; me.receiveShadow = true;
-    scene.add(me);
-    return me;
+  // ── The boundary: it grows with your home (fence → hedge → stone wall) ──
+  const edge: number[][] = [];
+  const step = data.tier >= 3 ? 1.0 : data.tier >= 1 ? 1.0 : 2.0;
+  const run = (x0: number, z0: number, x1: number, z1: number, gap?: [number, number]) => {
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    const n = Math.round(len / step);
+    const ry = Math.atan2(x1 - x0, z1 - z0);
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n;
+      const x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
+      if (gap && x > gap[0] && x < gap[1]) continue;
+      edge.push([x, z, ry]);
+    }
   };
+  const B = 19;
+  run(-B, -B, -B, B);
+  run(B, -B, B, B);
+  run(-B, -B, B, -B);
+  run(-B, B, B, B, [-1.8, 1.8]); // the gate
   if (data.tier >= 3) {
-    const brickT = canvasTex(brickCanvas());
-    brickT.userData.tile = 0.45; brickT.userData.tileH = 0.6;
-    const brickM = mat("#ffffff", { map: brickT, roughness: 0.9 });
-    const copeM = mat("#d8d0c0", { roughness: 0.8 });
-    for (const sd of sides) { runOf(sd, 1.75, 0.35, brickM); runOf(sd, 0.1, 0.48, copeM, 1.75, 0.2); }
-    for (const [x, z, h] of [[-GATE - 0.3, B, 2.3], [GATE + 0.3, B, 2.3], [-B, -B, 2.1], [B, -B, 2.1], [-B, B, 2.1], [B, B, 2.1]]) {
-      bound.box(0.7, h, 0.7, brickM, x, h / 2, z);
-      bound.box(0.86, 0.14, 0.86, copeM, x, h + 0.07, z);
-      bound.put(new THREE.SphereGeometry(0.2, 14, 10), copeM, x, h + 0.34, z);
-    }
+    many("wall_stone", edge.map(([x, z, ry]) => [x, z, 1, ry, 0.45, 1.25, 1.0]));
+    many("pillar_stone", [[-2.1, B, 1, 0, 2.2, 1.9, 2.2], [2.1, B, 1, 0, 2.2, 1.9, 2.2], [-B, -B, 1, 0, 2.2, 1.6, 2.2], [B, -B, 1, 0, 2.2, 1.6, 2.2], [-B, B, 1, 0, 2.2, 1.6, 2.2], [B, B, 1, 0, 2.2, 1.6, 2.2]]);
   } else if (data.tier >= 1) {
-    const hedgeT = canvasTex(hedgeCanvas());
-    hedgeT.userData.tile = 1.6;
-    const hedgeM = mat("#ffffff", { map: hedgeT, roughness: 0.95 });
-    for (const sd of sides) runOf(sd, 1.9, 0.9, hedgeM);
-    for (const x of [-GATE - 0.25, GATE + 0.25]) bound.box(0.35, 2.2, 0.35, mat("#7a5a3c", { roughness: 0.8 }), x, 1.1, B);
+    many("hedge_large", edge.map(([x, z, ry]) => [x, z, 1, ry + Math.PI / 2, 2.4, 2.4, 1.0]));
   } else {
-    const fenceT = canvasTex(boardsCanvas("#8d6440"));
-    fenceT.userData.tile = 1.0; fenceT.userData.tileH = 1.6;
-    const fenceM = mat("#ffffff", { map: fenceT, roughness: 0.85 });
-    const postM = mat("#5e4029", { roughness: 0.85 });
-    for (const sd of sides) {
-      runOf(sd, 1.6, 0.06, fenceM);
-      const [x0, z0, x1, z1] = sd;
-      const n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / 2.4));
-      for (let k = 0; k <= n; k++) bound.box(0.14, 1.75, 0.14, postM, x0 + ((x1 - x0) * k) / n, 0.875, z0 + ((z1 - z0) * k) / n);
-    }
+    many("fence_planks", edge.map(([x, z, ry]) => [x, z, 1, ry + Math.PI / 2, 2.0, 3.2, 2.0]));
   }
-  bound.done();
 
   // ── Trees: a ring beyond the boundary, a few inside ──
   const treeKeys = ["tree_oak", "tree_default", "tree_detailed", "tree_fat", "tree_tall", "tree_pine", "tree_pine2"];
@@ -514,26 +354,12 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   for (let i = 0; i < 46; i++) {
     const a = (i / 46) * Math.PI * 2;
     const d = 23 + r() * 9;
-    plant(treeKeys[i % treeKeys.length], Math.cos(a) * d, Math.sin(a) * d, 4.6 + r() * 2.4, r() * 6);
-  }
-  // a tall tree line just behind the back boundary: the backdrop above the
-  // shop's roof as you walk in from the gate
-  for (let k = 0; k < 15; k++) {
-    const x = -19 + k * 2.7 + (r() - 0.5) * 1.2;
-    plant(["tree_default", "tree_tall", "tree_detailed", "tree_pine2", "tree_oak"][k % 5], x, -21.2 - r() * 2.4, 5.6 + r() * 2.2, r() * 6);
-  }
-  // and along both sides, thinner
-  for (let k = 0; k < 8; k++) {
-    for (const sx of [-1, 1]) plant(["tree_default", "tree_detailed", "tree_pine", "tree_fat"][(k + (sx > 0 ? 1 : 0)) % 4], sx * (21.5 + r() * 2.5), -16 + k * 4.4, 4.0 + r() * 1.6, r() * 6);
+    plant(treeKeys[i % treeKeys.length], Math.cos(a) * d, Math.sin(a) * d, 4.2 + r() * 2.2, r() * 6);
   }
   plant("tree_oak", -17, -15.5, 4.6, 1); plant("tree_detailed", 16.8, -15.8, 4.8, 2);
   plant("tree_fat", 17, -2, 4.2, 0.4); plant("tree_default", -17.2, -5.5, 4.4, 2.2);
   plant("tree_oak", 17.2, -9.5, 4.4, 1.3); plant("tree_tall", -3.6, 16.2, 3.6); plant("tree_tall", 3.6, 16.2, 3.6);
-  // the far ring casts no shadow (it is outside the shadow's reach anyway)
-  for (const [k, list] of Object.entries(treeAt)) {
-    many(k, list.filter(([x, z]) => Math.hypot(x, z) <= 26));
-    many(k, list.filter(([x, z]) => Math.hypot(x, z) > 26), false);
-  }
+  for (const [k, list] of Object.entries(treeAt)) many(k, list);
   for (const [x, z] of [[-17, -15.5], [16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
 
   // flower beds down the path, bushes, grass tufts
@@ -565,8 +391,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   sphereMany(leafM, leafAt, 0.1);
   bloomAt.forEach((at, i) => sphereMany(mat(bloomCols[i], { roughness: 0.6, emissive: bloomCols[i], emissiveIntensity: night ? 0.05 : 0.12 }), at, 0.24));
   // round leafy bushes (Kenney's read as dark spikes at this size)
-  const bushM = mat("#33652b", { roughness: 0.9 });
-  const bushLightM = mat("#46803a", { roughness: 0.9 });
+  const bushM = mat("#3c7a33", { roughness: 0.85, flatShading: true });
+  const bushLightM = mat("#4f9440", { roughness: 0.85, flatShading: true });
   const bushAt: number[][] = [], bushLightAt: number[][] = [];
   const bush = (x: number, z: number, sz: number) => {
     for (let k = 0; k < 5; k++) {
@@ -575,28 +401,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     }
     CIRCLES.push([x, z, sz * 0.55]);
   };
-  // shrubs in the corners and either side of the gate, planted in groups
-  for (const [x, z, sz] of [[-2.6, 17.4, 1.3], [2.6, 17.4, 1.3], [17.2, -12.5, 1.6], [16.4, -14.0, 1.2], [-17.2, 15, 1.6], [-16.2, 16.6, 1.1], [12.6, -12, 1.3], [-12.4, -12.6, 1.4], [17.0, 6.0, 1.4], [-17.2, -1.0, 1.3]]) bush(x, z, sz);
-  const smoothBall = new THREE.IcosahedronGeometry(1, 2);
-  occluders.push(sphereMany(bushM, bushAt, -0.05, smoothBall), sphereMany(bushLightM, bushLightAt, 0.05, smoothBall));
-  // clipped box hedges framing the shop's forecourt, and two topiary balls
-  // in square planters either side of the trophy cabinet
-  const boxHedgeT = canvasTex(hedgeCanvas("#2c5a25"), [1, 1]);
-  const boxHedgeM = mat("#ffffff", { map: boxHedgeT, roughness: 0.95 });
-  const clipped = batch(scene);
-  // (the left one stops short of the path to the trophy cabinet)
-  for (const [x, z0, z1] of [[-5.0, -8.9, -7.0], [5.0, -8.9, -4.6]]) {
-    clipped.box(0.7, 0.75, z1 - z0, boxHedgeM, x, 0.375, (z0 + z1) / 2);
-    solid(x - 0.35, x + 0.35, z0, z1);
-  }
-  const planterM = mat("#e9e1d2", { roughness: 0.7 });
-  for (const dz of [-2.4, 2.4]) {
-    clipped.box(0.7, 0.6, 0.7, planterM, CABINET.x + 1.0, 0.3, CABINET.z + dz);
-    clipped.put(new THREE.IcosahedronGeometry(0.48, 3), boxHedgeM, CABINET.x + 1.0, 1.05, CABINET.z + dz);
-    clipped.box(0.07, 0.3, 0.07, mat("#5a3b25"), CABINET.x + 1.0, 0.7, CABINET.z + dz);
-    CIRCLES.push([CABINET.x + 1.0, CABINET.z + dz, 0.45]);
-  }
-  occluders.push(...clipped.done());
+  for (const [x, z] of [[-6.6, -10.2], [6.6, -10.2], [-1.9, 17.6], [1.9, 17.6], [17.6, -12.5], [-17.6, 15], [12.6, -12], [-12.4, -12.6], [CABINET.x - 0.2, CABINET.z - 2.3], [CABINET.x - 0.2, CABINET.z + 2.3]]) bush(x, z, 1.2 + r() * 0.5);
+  occluders.push(sphereMany(bushM, bushAt, -0.05), sphereMany(bushLightM, bushLightAt, 0.05));
   const tufts: number[][] = [];
   for (let i = 0; i < 220; i++) {
     const x = -18 + r() * 36, z = -8 + r() * 26;
@@ -605,153 +411,61 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   }
   void tufts; // Kenney's grass reads as dark spikes at this size; the mown lawn is enough
 
-  // ── The shop, where the house was: a real small shop front ──
-  // Brick, a slate roof with a chimney, and a painted green shopfront: fascia
-  // with the name in gold, pilasters, two lit display windows (your kit on
-  // stands, a ball, a cup), striped awnings, double doors standing open onto
-  // the warm inside. Merged by material: a dozen draws for the whole shop.
+  // ── The shop, where the house was ──
   const shopG = new THREE.Group();
   occluders.push(shopG);
   shopG.position.set((SHOP.x0 + SHOP.x1) / 2, 0, (SHOP.z0 + SHOP.z1) / 2);
   scene.add(shopG);
-  const W = SHOP.x1 - SHOP.x0, D = SHOP.z1 - SHOP.z0;
-  const FF = D / 2; // the front, in the shop's own frame
-  const TOP = 6.6, RH = 2.0; // the eaves, and the roof's height above them
-  const sb = batch(shopG);
-  const shopBrickT = canvasTex(brickCanvas("#a0563a"), [W / 0.45, TOP / 0.6]);
-  const shopBrickM = mat("#ffffff", { map: shopBrickT, roughness: 0.9 });
-  const sideBrickT = canvasTex(brickCanvas("#a0563a"), [D / 0.45, TOP / 0.6]);
-  const sideBrickM = mat("#ffffff", { map: sideBrickT, roughness: 0.9 });
-  const greenM = mat("#1f4a35", { roughness: 0.45 });
-  const goldM = mat("#c9a14f", { roughness: 0.3, metalness: 0.85 });
-  const creamM = mat("#efe6d4", { roughness: 0.6 });
-  const stoneTrimM = mat("#ddd4c3", { roughness: 0.8 });
-  const shopGlassM = new THREE.MeshStandardMaterial({ color: "#a9c4cf", transparent: true, opacity: 0.22, roughness: 0.04, metalness: 0.9, depthWrite: false, envMapIntensity: 1.6 });
-  const insideM = new THREE.MeshStandardMaterial({ color: "#f3e4c8", emissive: "#ffcf8a", emissiveIntensity: night ? 1.1 : 0.45, roughness: 0.8 });
-  // the brick body (front face 1 m behind the shopfront) and its two sides
-  const bodyM = [sideBrickM, sideBrickM, creamM, creamM, shopBrickM, shopBrickM];
-  const body = new THREE.Mesh(new THREE.BoxGeometry(W, TOP, D - 1.0), bodyM);
-  body.position.set(0, TOP / 2, -0.5);
-  body.castShadow = true; body.receiveShadow = true;
-  shopG.add(body);
-  const slabBrickM = mat("#ffffff", { map: canvasTex(brickCanvas("#a0563a"), [2.2, TOP / 0.6]), roughness: 0.9 });
-  for (const sx of [-1, 1]) sb.box(0.3, TOP, 1.0, slabBrickM, sx * (W / 2 - 0.15), TOP / 2, FF - 0.5);
-  // upper storey: brick over the shopfront, two sash windows, a stone cornice
-  sb.box(W, TOP - 3.9, 0.3, shopBrickM, 0, 3.9 + (TOP - 3.9) / 2, FF - 0.15);
-  // the flat upstairs: grey-blue glass by day, a warm lamp on after dark
-  const upWinM = mat("#4d6470", { roughness: 0.15, metalness: 0.3, emissive: "#ffc77a", emissiveIntensity: night ? 0.9 : data.sky === "sunset" ? 0.25 : 0 });
-  for (const sx of [-1, 1]) {
-    const wx = sx * 3.3;
-    sb.box(1.4, 1.6, 0.06, upWinM, wx, 5.15, FF + 0.02);
-    sb.box(1.56, 0.12, 0.14, creamM, wx, 5.15 + 0.86, FF + 0.04);
-    sb.box(1.7, 0.12, 0.22, stoneTrimM, wx, 5.15 - 0.86, FF + 0.08);
-    for (const dx of [-0.74, 0, 0.74]) sb.box(0.08, 1.6, 0.1, creamM, wx + dx, 5.15, FF + 0.04);
-    sb.box(1.4, 0.07, 0.1, creamM, wx, 5.15, FF + 0.05);
-  }
-  sb.box(W + 0.3, 0.26, 0.55, stoneTrimM, 0, TOP + 0.13, FF - 0.1);
-  // the slate roof, its brick gables and a chimney
-  const hd = D / 2 + 0.25, slant = Math.hypot(hd, RH), pitch = Math.atan2(RH, hd);
-  const slateM = mat("#ffffff", { map: canvasTex(slateCanvas(), [W / 2, slant / 2]), roughness: 0.75 });
-  sb.box(W + 0.5, 0.14, slant, slateM, 0, TOP + 0.26 + RH / 2, hd / 2, 0, pitch);
-  sb.box(W + 0.5, 0.14, slant, slateM, 0, TOP + 0.26 + RH / 2, -hd / 2, 0, -pitch);
-  sb.box(W + 0.55, 0.16, 0.2, mat("#2c2f35", { roughness: 0.6 }), 0, TOP + 0.3 + RH, 0);
-  const gable = new THREE.Shape();
-  gable.moveTo(-hd + 0.2, 0); gable.lineTo(hd - 0.2, 0); gable.lineTo(0, RH - 0.1); gable.closePath();
-  for (const sx of [-1, 1]) sb.put(new THREE.ExtrudeGeometry(gable, { depth: 0.3, bevelEnabled: false }), mat("#ffffff", { map: canvasTex(brickCanvas("#a0563a"), [1 / 0.45, 1 / 0.6]), roughness: 0.9 }), sx * (W / 2 - 0.15) - 0.15, TOP + 0.26, 0, 0, Math.PI / 2, 0);
-  sb.box(0.9, 2.4, 0.9, mat("#ffffff", { map: canvasTex(brickCanvas("#a0563a"), [2, 4]), roughness: 0.9 }), -3.6, TOP + RH + 0.2, -1.0);
-  sb.box(1.05, 0.16, 1.05, stoneTrimM, -3.6, TOP + RH + 1.45, -1.0);
-  for (const dx of [-0.2, 0.2]) sb.put(new THREE.CylinderGeometry(0.11, 0.13, 0.4, 10), mat("#a8603f", { roughness: 0.8 }), -3.6 + dx, TOP + RH + 1.73, -1.0);
-  // the shopfront: cornice, fascia (the name), pilasters with gold capitals
-  sb.box(W + 0.1, 0.2, 0.55, greenM, 0, 3.9, FF + 0.12);
-  sb.box(W - 0.2, 0.78, 0.3, greenM, 0, 3.4, FF + 0.1);
-  for (const y of [3.02, 3.78]) sb.box(W - 0.3, 0.04, 0.05, goldM, 0, y, FF + 0.27);
-  for (const px of [-(W / 2 - 0.3), -(DOOR.half + 0.22), DOOR.half + 0.22, W / 2 - 0.3]) {
-    sb.box(0.44, 3.0, 0.36, greenM, px, 1.5, FF + 0.06);
-    sb.box(0.56, 0.22, 0.48, goldM, px, 3.0, FF + 0.1);
-    sb.box(0.56, 0.18, 0.46, greenM, px, 0.09, FF + 0.08);
-  }
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4 * 192 / 1024),
-    new THREE.MeshBasicMaterial({ map: canvasTex(neonCanvas("KNOWITBALL", "#ffd77a")), transparent: true, depthWrite: false, toneMapped: false }));
-  sign.position.set(0, 3.4, FF + 0.26);
-  shopG.add(sign);
-  // the two display windows: a stallriser, glass with glazing bars, and
-  // inside, a lit back wall, a platform, your kit on stands, a ball and a cup
-  const bayX = (DOOR.half + 0.44 + (W / 2 - 0.52)) / 2, bayW = W / 2 - 0.52 - (DOOR.half + 0.44);
-  const shirtShape = new THREE.Shape();
-  shirtShape.moveTo(-0.16, 0); shirtShape.lineTo(0.16, 0); shirtShape.lineTo(0.17, 0.42); shirtShape.lineTo(0.3, 0.33); shirtShape.lineTo(0.36, 0.42);
-  shirtShape.lineTo(0.2, 0.56); shirtShape.lineTo(0.07, 0.56); shirtShape.quadraticCurveTo(0, 0.5, -0.07, 0.56); shirtShape.lineTo(-0.2, 0.56);
-  shirtShape.lineTo(-0.36, 0.42); shirtShape.lineTo(-0.3, 0.33); shirtShape.lineTo(-0.17, 0.42); shirtShape.closePath();
-  const shirtM = mat(data.kit.shirt, { roughness: 0.7, side: THREE.DoubleSide });
-  const trimM = mat(data.kit.trim, { roughness: 0.7 });
-  const ballM2 = mat("#f4f4f4", { roughness: 0.45 });
-  const cupGeo2 = new THREE.LatheGeometry([new THREE.Vector2(0.0, 0), new THREE.Vector2(0.11, 0), new THREE.Vector2(0.11, 0.04), new THREE.Vector2(0.04, 0.07), new THREE.Vector2(0.03, 0.18), new THREE.Vector2(0.14, 0.26), new THREE.Vector2(0.16, 0.42), new THREE.Vector2(0.15, 0.43)], 16);
-  for (const sx of [-1, 1]) {
-    const bx = sx * bayX;
-    sb.box(bayW, 0.6, 0.26, greenM, bx, 0.3, FF + 0.02);
-    sb.box(bayW - 0.3, 0.36, 0.04, mat("#183a2a", { roughness: 0.5 }), bx, 0.3, FF + 0.16);
-    sb.box(bayW, 0.1, 0.32, goldM, bx, 0.62, FF + 0.04);
-    sb.box(bayW, 0.12, 0.3, greenM, bx, 2.94, FF + 0.04);
-    sb.box(bayW, 0.07, 0.12, greenM, bx, 2.45, FF + 0.06);
-    for (const k of [-1, 1]) sb.box(0.07, 2.3, 0.12, greenM, bx + (k * bayW) / 6, 1.75, FF + 0.06);
-    sb.box(bayW, 2.3, 0.02, shopGlassM, bx, 1.75, FF + 0.02);
-    // inside the window
-    sb.box(bayW, 3.0, 0.04, insideM, bx, 1.5, FF - 0.97);
-    sb.box(bayW, 0.62, 0.9, mat("#5b3a26", { roughness: 0.6 }), bx, 0.31, FF - 0.5);
-    sb.box(bayW, 0.08, 1.0, creamM, bx, 3.0, FF - 0.5);
-    // two shirts on stands, a ball on a plinth, a cup on a plinth
-    for (const k of [-0.32, 0.12]) {
-      const sxp = bx + k * bayW;
-      sb.put(new THREE.ShapeGeometry(shirtShape), shirtM, sxp, 1.25, FF - 0.55, 0, 0, 0, 1.25, 1.25, 1);
-      sb.box(0.5, 0.06, 0.05, trimM, sxp, 1.25 + 0.02, FF - 0.545);
-      sb.box(0.04, 0.62, 0.04, goldM, sxp, 0.93, FF - 0.6);
-    }
-    sb.box(0.34, 0.5, 0.34, creamM, bx + 0.38 * bayW * (sx > 0 ? 1 : 0.9), 0.87, FF - 0.45);
-    if (sx < 0) sb.put(new THREE.IcosahedronGeometry(0.15, 2), ballM2, bx + 0.34 * bayW, 1.27, FF - 0.45);
-    else sb.put(cupGeo2, goldM, bx + 0.38 * bayW, 1.12, FF - 0.45);
-  }
-  // the doorway: a floor, a lit inside beyond, a fanlight, both doors open
-  sb.box(W - 0.6, 0.03, 1.0, mat("#8a5a36", { roughness: 0.6 }), 0, 0.015, FF - 0.5);
-  sb.box(DOOR.half * 2 + 0.6, 0.06, 0.55, stoneTrimM, 0, 0.03, FF + 0.27);
-  sb.box(DOOR.half * 2, 0.16, 0.12, greenM, 0, DOOR.h + 0.08, FF + 0.02);
-  sb.box(DOOR.half * 2, 0.2, 0.02, shopGlassM, 0, DOOR.h + 0.06, FF + 0.08);
-  const inside = new THREE.Mesh(new THREE.PlaneGeometry(DOOR.half * 2, DOOR.h), new THREE.MeshBasicMaterial({ color: "#ffdcaa", fog: false, toneMapped: false }));
-  inside.position.set(0, DOOR.h / 2, FF - 0.95);
+  const W = SHOP.x1 - SHOP.x0, D = SHOP.z1 - SHOP.z0, H = SHOP.h;
+  const stoneM = mat("#efe6d6", { roughness: 0.85 });
+  const darkM = mat("#2e2620", { roughness: 0.6 });
+  const goldM = mat("#c79a4b", { roughness: 0.35, metalness: 0.8 });
+  const front = D / 2;
+  box(W, H, D - 0.4, stoneM, 0, H / 2, -0.2, true, shopG);
+  const fz = front - 0.05;
+  box(W + 0.4, 0.35, D + 0.4, mat("#3a2f28", { roughness: 0.7 }), 0, H + 0.17, 0, true, shopG); // roof cornice
+  box(W + 0.5, 0.08, 0.5, goldM, 0, H - 0.02, front + 0.05, false, shopG);
+  // the front wall in cream stone, with a dark plinth
+  box((W - DOOR.half * 2) / 2, H, 0.3, stoneM, -(W / 2 + DOOR.half) / 2, H / 2, fz, true, shopG);
+  box((W - DOOR.half * 2) / 2, H, 0.3, stoneM, (W / 2 + DOOR.half) / 2, H / 2, fz, true, shopG);
+  box(DOOR.half * 2, H - DOOR.h, 0.3, stoneM, 0, DOOR.h + (H - DOOR.h) / 2, fz, true, shopG);
+  box(W + 0.02, 0.35, 0.34, mat("#5a4c40", { roughness: 0.8 }), 0, 0.17, fz + 0.02, true, shopG);
+  // a walnut frame round the doorway
+  for (const sx of [-1, 1]) box(0.22, DOOR.h + 0.2, 0.42, darkM, sx * (DOOR.half + 0.11), (DOOR.h + 0.2) / 2, fz + 0.06, true, shopG);
+  box(DOOR.half * 2 + 0.44, 0.24, 0.42, darkM, 0, DOOR.h + 0.12, fz + 0.06, true, shopG);
+  // a dark awning over the door and windows
+  const awn = new THREE.Mesh(new THREE.BoxGeometry(W - 0.6, 0.08, 1.3), mat("#2b211b", { roughness: 0.6 }));
+  awn.position.set(0, 3.25, fz + 0.75);
+  awn.rotation.x = 0.16;
+  awn.castShadow = true;
+  shopG.add(awn);
+  box(W - 0.6, 0.06, 0.06, goldM, 0, 3.15, fz + 1.4, false, shopG);
+  const inside = new THREE.Mesh(new THREE.PlaneGeometry(DOOR.half * 2, DOOR.h), new THREE.MeshBasicMaterial({ color: "#ffd9a0", fog: false, toneMapped: false }));
+  inside.position.set(0, DOOR.h / 2, fz - 0.6);
   shopG.add(inside);
-  const leafW = DOOR.half - 0.04, open = 1.25;
+  // floor-to-ceiling shop windows either side, lit from inside
+  const winM = new THREE.MeshStandardMaterial({ color: "#3a2a1c", emissive: "#ffcf8a", emissiveIntensity: night ? 1.6 : 0.85, roughness: 0.1, metalness: 0.3 });
   for (const sx of [-1, 1]) {
-    const hx = sx * DOOR.half, ry = sx > 0 ? Math.PI - open : open;
-    const cx = hx - sx * Math.cos(open) * leafW / 2, cz = FF - 0.05 - Math.sin(open) * leafW / 2;
-    sb.box(leafW, DOOR.h - 0.05, 0.06, greenM, cx, (DOOR.h - 0.05) / 2, cz, ry);
-    sb.box(leafW - 0.3, DOOR.h - 0.9, 0.08, shopGlassM, cx, DOOR.h / 2 + 0.15, cz, ry);
+    box(2.6, 2.7, 0.05, winM, sx * 3.4, 1.65, fz + 0.18, false, shopG);
+    box(2.8, 0.08, 0.12, goldM, sx * 3.4, 3.05, fz + 0.2, false, shopG);
+    box(2.8, 0.08, 0.12, goldM, sx * 3.4, 0.27, fz + 0.2, false, shopG);
   }
-  // lamps either side of the door, and the striped awnings
-  for (const sx of [-1, 1]) {
-    sb.box(0.16, 0.3, 0.16, glow("#ffd59a", night ? 3 : 1.2), sx * 1.85, 2.25, FF + 0.34);
-    sb.box(0.22, 0.05, 0.22, goldM, sx * 1.85, 2.42, FF + 0.34);
-  }
-  const awnT = canvasTex(stripeCanvas("#f2ead8", "#1f4a35"));
-  const awnM = mat("#ffffff", { map: awnT, roughness: 0.85, side: THREE.DoubleSide });
-  for (const sx of [-1, 1]) {
-    const bx = sx * bayX, drop = 0.5, reach = 1.15, tilt = Math.atan2(drop, reach);
-    sb.box(bayW + 0.1, 0.04, Math.hypot(drop, reach), awnM, bx, 2.97 - drop / 2, FF + 0.18 + reach / 2, 0, tilt);
-    sb.box(bayW + 0.1, 0.22, 0.03, awnM, bx, 2.97 - drop - 0.1, FF + 0.2 + reach);
-  }
-  // bay trees in square planters either side of the step
-  for (const sx of [-1, 1]) {
-    const px = sx * 1.9, pz = FF + 0.6;
-    sb.box(0.56, 0.56, 0.56, greenM, px, 0.28, pz);
-    sb.box(0.62, 0.05, 0.62, goldM, px, 0.58, pz);
-    sb.box(0.05, 0.7, 0.05, mat("#5a3b25"), px, 0.95, pz);
-    sb.put(new THREE.IcosahedronGeometry(0.42, 3), boxHedgeM, px, 1.55, pz);
-  }
-  sb.done();
+  box(DOOR.half * 2 + 0.3, 0.1, 0.14, goldM, 0, DOOR.h + 0.02, fz + 0.2, false, shopG);
+  // the name in lights over the door
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 6 * 192 / 1024),
+    new THREE.MeshBasicMaterial({ map: canvasTex(neonCanvas("KNOWITBALL", "#ffcf6a")), transparent: true, depthWrite: false, toneMapped: false }));
+  sign.position.set(0, 4.25, fz + 0.2);
+  shopG.add(sign);
   // a glow on the forecourt from the door
-  const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ map: canvasTex(glowCanvas()), transparent: true, depthWrite: false, opacity: night ? 0.75 : 0.25 }));
+  const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ map: canvasTex(glowCanvas()), transparent: true, depthWrite: false, opacity: night ? 0.75 : 0.35 }));
   doorGlow.rotation.x = -Math.PI / 2;
   doorGlow.position.set(0, 0.025, SHOP.z1 + 1.1);
   scene.add(doorGlow);
+  // pots by the door
+  one("potted_plant", -1.9, SHOP.z1 + 0.55, 3.0);
+  one("potted_plant", 1.9, SHOP.z1 + 0.55, 3.0);
   solid(SHOP.x0 - 0.2, SHOP.x1 + 0.2, SHOP.z0 - 0.2, SHOP.z1 + 0.1);
-  CIRCLES.push([-1.9, SHOP.z1 + 0.6, 0.4], [1.9, SHOP.z1 + 0.6, 0.4]);
+  CIRCLES.push([-1.9, SHOP.z1 + 0.55, 0.4], [1.9, SHOP.z1 + 0.55, 0.4]);
 
   // lanterns down the path (lit at night)
   const lampAt = [[-1.65, -7.2], [1.65, -7.2], [-1.65, 6], [1.65, 6], [-1.65, 13], [1.65, 13]];
@@ -779,19 +493,20 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   }
 
   // ── The fountain, and a bird that drops in for a drink ──
-  one("fountain", FOUNTAIN.x, FOUNTAIN.z, 1.9);
+  const fountainMesh = one("fountain", FOUNTAIN.x, FOUNTAIN.z, 1.9);
+  if (fountainMesh) occluders.push(fountainMesh);
   const waterM = new THREE.MeshStandardMaterial({ color: "#5aa8d6", roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.85, emissive: "#0c3550", emissiveIntensity: 0.4 });
   const water = new THREE.Mesh(new THREE.CircleGeometry(1.62, 40), waterM);
   water.rotation.x = -Math.PI / 2;
   water.position.set(FOUNTAIN.x, 0.36, FOUNTAIN.z);
   scene.add(water);
   const stoneLightM = mat("#d9d2c4", { roughness: 0.7 });
-  const fountainMats = [stoneLightM];
-  let fountainFade = 1;
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.26, 1.3, 16), stoneLightM);
   add(column, FOUNTAIN.x, 0.65, FOUNTAIN.z);
+  occluders.push(column);
   const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.35, 0.28, 24), stoneLightM);
   add(bowl, FOUNTAIN.x, 1.35, FOUNTAIN.z);
+  occluders.push(bowl);
   const bowlWater = new THREE.Mesh(new THREE.CircleGeometry(0.66, 24), waterM);
   bowlWater.rotation.x = -Math.PI / 2;
   bowlWater.position.set(FOUNTAIN.x, 1.48, FOUNTAIN.z);
@@ -975,8 +690,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   const st = STABLE;
   const stableLv = Math.max(1, data.stable);
   const stallN = data.stable >= 4 ? 3 : data.stable >= 2 ? 2 : 1;
-  const stableM = mat("#ffffff", { map: canvasTex(boardsCanvas("#a7764b"), [3, 1]), roughness: 0.8 });
-  const stallDoorM = mat("#1f4a35", { roughness: 0.5 });
+  const stableM = mat("#ffffff", { map: canvasTex(boardsCanvas("#7a4b2c"), [3, 1]), roughness: 0.8 });
   const sg = new THREE.Group();
   sg.position.set(st.x, 0, st.z);
   scene.add(sg);
@@ -990,12 +704,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   for (let k = 0; k < stallN; k++) {
     const zc = -st.d / 2 + stallW * (k + 0.5);
     box(0.15, sh - 1.4, stallW - 1.3, stableM, st.w / 2, 1.4 + (sh - 1.4) / 2, zc, true, sg);
-    box(0.15, 1.2, stallW - 1.3, stallDoorM, st.w / 2, 0.6, zc, true, sg);
-    box(0.17, 0.08, stallW - 1.3, mat("#e9e2d2"), st.w / 2 + 0.01, 0.6, zc, false, sg);
-    box(0.02, 1.0, stallW - 1.4, mat("#2a1c12"), st.w / 2 - 0.05, 1.9, zc, false, sg);
-    box(0.17, 1.15, 0.08, mat("#e9e2d2"), st.w / 2 + 0.01, 1.95, zc - (stallW - 1.3) / 2, false, sg);
-    box(0.17, 1.15, 0.08, mat("#e9e2d2"), st.w / 2 + 0.01, 1.95, zc + (stallW - 1.3) / 2, false, sg);
-    box(0.17, 0.08, stallW - 1.2, mat("#e9e2d2"), st.w / 2 + 0.01, 2.52, zc, false, sg);
+    box(0.15, 1.2, stallW - 1.3, stableM, st.w / 2, 0.6, zc, true, sg);
+    box(0.02, 1.0, stallW - 1.4, mat("#1a120c"), st.w / 2 - 0.05, 1.9, zc, false, sg);
     box(0.15, sh, 0.65, stableM, st.w / 2, sh / 2, zc - stallW / 2 + 0.32, true, sg);
     box(0.15, sh, 0.65, stableM, st.w / 2, sh / 2, zc + stallW / 2 - 0.32, true, sg);
     box(0.18, 0.12, stallW - 1.25, mat("#e9e2d2"), st.w / 2 + 0.02, 1.25, zc, false, sg);
@@ -1083,148 +793,81 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
 
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
-  let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
+  const dress = (root: any, number: number, key: string) => {
+    const U = {
+      uShirt: { value: new THREE.Color(data.kit.shirt) },
+      uTrim: { value: new THREE.Color(data.kit.trim) },
+      uBoot: { value: new THREE.Color("#141416") },
+      uNum: { value: canvasTex(numberCanvas(number, "#ffffff")) },
+      uPelvis: { value: new THREE.Vector3() },
+      uUp: { value: new THREE.Vector3(0, 1, 0) },
+      uRight: { value: new THREE.Vector3(1, 0, 0) },
+      uFwd: { value: new THREE.Vector3(0, 0, 1) },
+    };
+    root.traverse((o: any) => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      o.frustumCulled = false;
+      if (o.isSkinnedMesh && o.material?.name === "Skin") {
+        o.material = o.material.clone();
+        o.material.name = "Skin";
+        dressInKit(THREE, o, U, key);
+      }
+      if (o.material?.name === "Hair") { o.material = o.material.clone(); o.material.name = "Hair"; }
+    });
+    return U;
+  };
+  const player = SkeletonUtils.clone(charG.scene);
+  dress(player, data.number, "garden-kit-you");
+  player.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set("#4a2e1c"); });
   const st0 = data.arrive === "shop" ? START_SHOP : START_GATE;
+  player.position.set(st0.x, 0, st0.z);
+  player.rotation.y = st0.yaw;
+  scene.add(player);
+  const playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
+  const mixer = new THREE.AnimationMixer(player);
+  const act = (n: string) => { const a = mixer.clipAction(clip(animG, n)); a.play(); a.setEffectiveWeight(0); return a; };
+  const idleA = act("Idle_Loop"), walkA = act("Walk_Loop"), jogA = act("Jog_Fwd_Loop");
+  idleA.setEffectiveWeight(1);
+
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
-  const mates: { root: any; mixer: any; drink?: { a: any; sit: any; next: number; t: number }; upright?: { a: any; phase: number } }[] = [];
-  let playerBlob: any;
-  if (newPerson) {
-    // exactly as the 3D shop builds him (shop3d/scene.ts): the same body,
-    // the same outline, his own skin, hair and the club kit with his number
-    const SK = SkeletonUtils.default ?? SkeletonUtils;
-    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
-    dressPerson3d(THREE, person, {
-      skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12",
-      kit: data.kit, number: canvasTex(numberCanvas(data.number, "#ffffff")),
-    });
-    player = person.root;
-    mixer = person.mixer;
-    idleA = person.actions.idle;
-    walkA = person.actions.jog;
-    jogA = mixer.clipAction(person.actions.jog.getClip().clone());
-    jogA.play(); jogA.setEffectiveWeight(0);
-    for (const a of [idleA, walkA]) a.setEffectiveWeight(0);
-    idleA.setEffectiveWeight(1);
-    player.position.set(st0.x, 0, st0.z);
-    player.rotation.y = st0.yaw;
-    scene.add(player);
-    playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
-    // the team-mates: the same body, sat on the bench with the clips' "sitidle"
-    const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
-    data.mates.slice(0, 3).forEach((num, i) => {
-      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
-      dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
-      const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
-      m.root.rotation.y = -Math.PI / 2; // facing out of the gazebo (west)
-      m.root.position.set(BENCH_X, 0, z);
-      scene.add(m.root);
-      // the upright part of the seated clip, swayed gently (as the signing
-      // scene does: later in the clip he slumps forward like a thinker)
-      const sit = m.actions.sitidle ?? m.actions.idle;
-      sit.setEffectiveWeight(1);
-      sit.timeScale = 0;
-      sit.time = 0.45;
-      m.mixer.update(0);
-      // put his seat on the bench: the hips just above the slats, over the seat
-      m.root.updateMatrixWorld(true);
-      const hp = new THREE.Vector3();
-      m.bones.Hips.getWorldPosition(hp);
-      m.root.position.x += BENCH_X + 0.04 - hp.x;
-      m.root.position.y += seatH + 0.1 - hp.y;
-      m.root.position.z += z - hp.z;
-      if (i === 0 && m.bones.RightHand) {
+  const mates: { root: any; mixer: any; drink?: { a: any; sit: any; next: number; t: number } }[] = [];
+  data.mates.slice(0, 3).forEach((num, i) => {
+    const m = SkeletonUtils.clone(charG.scene);
+    dress(m, num, `garden-kit-mate${i}`);
+    m.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set(HAIR[i % 3]); });
+    const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
+    m.position.set(BENCH_X - 0.08, 0, z);
+    m.rotation.y = -Math.PI / 2; // facing out of the gazebo (west)
+    scene.add(m);
+    const mx = new THREE.AnimationMixer(m);
+    const name = i === 1 ? "Sitting_Talking_Loop" : "Sitting_Idle_Loop";
+    const sit = mx.clipAction(clip(gardenAnimG, name));
+    sit.time = i * 1.7;
+    sit.play();
+    const entry: (typeof mates)[number] = { root: m, mixer: mx };
+    if (i === 0) {
+      // a can in his right hand
+      let hand: any = null;
+      m.traverse((o: any) => { if (o.isBone && /hand_r$/i.test(o.name)) hand = o; });
+      if (hand) {
         const can = new THREE.Mesh(canG, mat("#2563eb", { roughness: 0.3, metalness: 0.7 }));
-        can.scale.setScalar(1 / m.unit);
-        can.position.set(0, 0.07 / m.unit, 0.02 / m.unit);
-        m.bones.RightHand.add(can);
+        can.scale.setScalar(1);
+        can.position.set(0.0, 0.08, 0.04);
+        hand.add(can);
       }
-      // cheap on a phone: no cast shadow (a soft blob instead), and not drawn
-      // when the bench is off screen
-      m.body.castShadow = false;
-      m.root.updateMatrixWorld(true);
-      for (const sk of [m.body, m.outline]) {
-        sk.frustumCulled = true;
-        sk.computeBoundingSphere();
-        sk.boundingSphere.radius *= 1.4;
+      const drinkClip = clip(gardenAnimG, "Consume");
+      if (drinkClip) {
+        const a = mx.clipAction(drinkClip);
+        a.setLoop(THREE.LoopOnce, 1);
+        a.clampWhenFinished = false;
+        entry.drink = { a, sit, next: 4, t: 0 };
       }
-      blob(0.9, 0.9, BENCH_X - 0.15, z, 0.55);
-      mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
-    });
-  } else {
-    const dress = (root: any, number: number, key: string) => {
-      const U = {
-        uShirt: { value: new THREE.Color(data.kit.shirt) },
-        uTrim: { value: new THREE.Color(data.kit.trim) },
-        uBoot: { value: new THREE.Color("#141416") },
-        uNum: { value: canvasTex(numberCanvas(number, "#ffffff")) },
-        uPelvis: { value: new THREE.Vector3() },
-        uUp: { value: new THREE.Vector3(0, 1, 0) },
-        uRight: { value: new THREE.Vector3(1, 0, 0) },
-        uFwd: { value: new THREE.Vector3(0, 0, 1) },
-      };
-      root.traverse((o: any) => {
-        if (!o.isMesh) return;
-        o.castShadow = true;
-        o.frustumCulled = false;
-        if (o.isSkinnedMesh && o.material?.name === "Skin") {
-          o.material = o.material.clone();
-          o.material.name = "Skin";
-          dressInKit(THREE, o, U, key);
-        }
-        if (o.material?.name === "Hair") { o.material = o.material.clone(); o.material.name = "Hair"; }
-      });
-      return U;
-    };
-    player = SkeletonUtils.clone(charG.scene);
-    dress(player, data.number, "garden-kit-you");
-    player.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set("#4a2e1c"); });
-    player.position.set(st0.x, 0, st0.z);
-    player.rotation.y = st0.yaw;
-    scene.add(player);
-    playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
-    mixer = new THREE.AnimationMixer(player);
-    const act = (n: string) => { const a = mixer.clipAction(clip(animG, n)); a.play(); a.setEffectiveWeight(0); return a; };
-    idleA = act("Idle_Loop"); walkA = act("Walk_Loop"); jogA = act("Jog_Fwd_Loop");
-    idleA.setEffectiveWeight(1);
+    }
+    mates.push(entry);
+  });
 
-    data.mates.slice(0, 3).forEach((num, i) => {
-      const m = SkeletonUtils.clone(charG.scene);
-      dress(m, num, `garden-kit-mate${i}`);
-      m.traverse((o: any) => { if (o.material?.name === "Hair") o.material.color.set(HAIR[i % 3]); });
-      const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
-      m.position.set(BENCH_X - 0.08, 0, z);
-      m.rotation.y = -Math.PI / 2; // facing out of the gazebo (west)
-      scene.add(m);
-      const mx = new THREE.AnimationMixer(m);
-      const name = i === 1 ? "Sitting_Talking_Loop" : "Sitting_Idle_Loop";
-      const sit = mx.clipAction(clip(gardenAnimG, name));
-      sit.time = i * 1.7;
-      sit.play();
-      const entry: (typeof mates)[number] = { root: m, mixer: mx };
-      if (i === 0) {
-        // a can in his right hand
-        let hand: any = null;
-        m.traverse((o: any) => { if (o.isBone && /hand_r$/i.test(o.name)) hand = o; });
-        if (hand) {
-          const can = new THREE.Mesh(canG, mat("#2563eb", { roughness: 0.3, metalness: 0.7 }));
-          can.scale.setScalar(1);
-          can.position.set(0.0, 0.08, 0.04);
-          hand.add(can);
-        }
-        const drinkClip = clip(gardenAnimG, "Consume");
-        if (drinkClip) {
-          const a = mx.clipAction(drinkClip);
-          a.setLoop(THREE.LoopOnce, 1);
-          a.clampWhenFinished = false;
-          entry.drink = { a, sit, next: 4, t: 0 };
-        }
-      }
-      mates.push(entry);
-    });
-
-
-  }
   // ── Your horse, grazing and wandering the paddock ──
   let horse: { root: any; mixer: any; idle: any; walk: any; target: [number, number]; wait: number } | null = null;
   if (data.horse) {
@@ -1354,13 +997,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
     walkA.setEffectiveWeight(wWalk);
     jogA.setEffectiveWeight(wJog);
-    if (newPerson) { // the shop's own timing for this body (its jog, slowed, is the walk)
-      walkA.timeScale = Math.max(0.45, speed / 2.6);
-      jogA.timeScale = Math.max(0.8, speed / 3.0);
-    } else {
-      walkA.timeScale = Math.max(0.6, speed / 1.45);
-      jogA.timeScale = Math.max(0.8, speed / 3.2);
-    }
+    walkA.timeScale = Math.max(0.6, speed / 1.45);
+    jogA.timeScale = Math.max(0.8, speed / 3.2);
     mixer.update(dt);
 
     // team-mates: sit, chat; the one with the can takes a drink now and then
@@ -1378,7 +1016,6 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
           d.sit.setEffectiveWeight(1 - Math.max(0, w) * 0.5);
         } else { d.a.setEffectiveWeight(0); d.sit.setEffectiveWeight(1); }
       }
-      if (m.upright) m.upright.a.time = 0.45 + 0.3 * Math.sin(gameT * 0.45 + m.upright.phase);
       m.mixer.update(dt);
     }
 
@@ -1456,25 +1093,11 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
-    // lower and further back than before: more garden and sky in the frame
-    want.set(player.position.x - cfx * CAM_BACK, CAM_UP, player.position.z - cfz * CAM_BACK);
-    wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
-    // over the fountain: rise a little, and fade its column and bowl so you
-    // see him through it instead of a wall of stone
+    want.set(player.position.x - cfx * 5.6, 3.3, player.position.z - cfz * 5.6);
+    wantLook.set(player.position.x + cfx * 2.6, 1.0, player.position.z + cfz * 2.6);
+    // over the fountain: rise above it rather than look through the bowl
     const fd = Math.hypot(want.x - FOUNTAIN.x, want.z - FOUNTAIN.z);
-    if (fd < FOUNTAIN.r + 1.4) want.y = CAM_UP + 0.9 * Math.min(1, (FOUNTAIN.r + 1.4 - fd) / 1.4);
-    const segX = player.position.x - camPos.x, segZ = player.position.z - camPos.z;
-    const segT = Math.max(0, Math.min(1, ((FOUNTAIN.x - camPos.x) * segX + (FOUNTAIN.z - camPos.z) * segZ) / Math.max(1e-6, segX * segX + segZ * segZ)));
-    const inTheWay = Math.hypot(camPos.x + segX * segT - FOUNTAIN.x, camPos.z + segZ * segT - FOUNTAIN.z) < 1.1 && segT < 0.98;
-    const fadeTo = inTheWay && !first ? 0.25 : 1;
-    fountainFade += (fadeTo - fountainFade) * Math.min(1, dt * 6);
-    for (const fm of fountainMats) {
-      const see = fountainFade < 0.99;
-      if (fm.transparent !== see) { fm.transparent = see; fm.depthWrite = !see; fm.needsUpdate = true; }
-      fm.opacity = fountainFade;
-    }
-    // over the gazebo: stay under its rafters, not up among them
-    if (want.x > GAZEBO.x - GAZEBO.w / 2 - 0.9 && want.x < GAZEBO.x + GAZEBO.w / 2 + 0.9 && Math.abs(want.z - GAZEBO.z) < GAZEBO.d / 2 + 0.9) want.y = Math.min(want.y, 2.3);
+    if (fd < FOUNTAIN.r + 1.4) want.y = 3.3 + 1.6 * Math.min(1, (FOUNTAIN.r + 1.4 - fd) / 1.4);
     // don't let the camera go into the shop's wall
     if (want.z < SHOP.z1 + 0.6 && Math.abs(want.x) < SHOP.x1 + 0.5) want.z = SHOP.z1 + 0.6;
     // something in the way between him and the camera: come in front of it
