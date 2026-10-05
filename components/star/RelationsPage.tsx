@@ -23,6 +23,7 @@ import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft } from "@/lib/star/week";
+import { getTuning } from "@/lib/star/tuningStore";
 import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { fameOf } from "@/lib/star/fame";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
@@ -68,7 +69,10 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
   onOpen: (ph: Open) => void;
 }) {
   const left = actionsLeft(career);
-  const canPlay = left > 0;
+  // A game costs the same energy as a training session (Mikey, 5 Oct 2026).
+  const cost = getTuning("energy.trainingCost");
+  const tired = career.energy < cost;
+  const canPlay = left > 0 && !tired;
   const r = career.relationships;
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
@@ -84,7 +88,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
   // Each game once a week (relationships.ts): a played one shows a tick.
   const game = (k: RelationshipKind) => {
     const done = gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, k);
-    return <ActBtn tone={CARD_TONE[k]} disabled={!canPlay || done} label={done ? `${GAME_LABEL[k]} · done this week` : `${GAME_LABEL[k]} · 1 day`} onClick={() => onPlayRelationshipGame(k)}>{done ? "✓" : "▶"}</ActBtn>;
+    return <ActBtn tone={CARD_TONE[k]} disabled={!canPlay || done} label={done ? `${GAME_LABEL[k]} · done this week` : tired ? `${GAME_LABEL[k]} · not enough energy` : `${GAME_LABEL[k]} · 1 day, ${cost} energy`} onClick={() => onPlayRelationshipGame(k)}>{done ? "✓" : "▶"}</ActBtn>;
   };
 
   return (
@@ -119,14 +123,9 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
         {/* Sponsors: no bar any more — each brand has its own happiness on
             the Sponsors screen (Mikey, 4 Oct 2026). Just the way in. */}
         <PlainRow icon="🤝" name={activeDeals.length ? `Sponsors · ${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}` : "Sponsors"} tone={CARD_TONE.sponsors} help={HELP.sponsors} onClick={() => onOpen("sponsors")} dot={offers > 0} />
-        {/* You, and a partner slot (blacked out when single) */}
-        <Row
-          kind="happiness"
-          face={<Face src={career.player.portrait ?? DEFAULT_FAKE_FACE} tone={CARD_TONE.happiness} />}
-          value={career.happiness}
-          seenKey={`${scope}:rel:happiness`}
-          action={game("happiness")}
-        />
+        {/* Your own happiness has no row and no game (Mikey, 5 Oct 2026): it
+            is the average of boss, team and fans, shown in the top bar. */}
+        {/* A partner slot (blacked out when single) */}
         <PartnerRow gf={gf} />
         {/* Standing: reputation + fame, the same row */}
         <PlainRow icon="🌐" name="Reputation" value={career.reputation} tone="#38bdf8" help={HELP.reputation} onClick={() => onOpen("reputation")} />

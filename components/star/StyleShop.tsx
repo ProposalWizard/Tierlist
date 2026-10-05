@@ -295,10 +295,11 @@ function ItemSheet({ career, levels, level, setLevel, onClose, onBuy }: {
         })}
       </div>}
 
-      <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+      {/* No "+N happiness" any more: happiness is the average of boss, team
+          and fans (Mikey, 5 Oct 2026), so buying things does not lift it. */}
+      <div className="mt-2 grid grid-cols-2 gap-1.5 text-center">
         <Stat big={`${fameText(gain)}`} small={mine && !worn ? `fame (now ${fameText(nowFame)})` : "fame"} color="#fcd34d" />
         <Stat big={life === null ? "Forever" : `${life} season${life === 1 ? "" : "s"}`} small="lasts" color="#ffffff" />
-        <Stat big={`+${happy}`} small="happiness" color="#86efac" />
       </div>
 
       {/* Level 5 unlock — the slot is real, what it unlocks isn't decided. */}

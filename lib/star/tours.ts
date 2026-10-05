@@ -31,7 +31,7 @@ const BAR = {
   rating: { target: "rating", text: "Your star rating. Training, matches and fame make it go up" },
   energy: { target: "energy", text: "Your energy. Drills and matches use it. Rest days give it back, and a can tops it up" },
   money: { target: "money", text: "Your money. Matches pay you" },
-  happiness: { target: "happiness", text: "Your happiness. Happier players get more energy back when they rest. A day off lifts it" },
+  happiness: { target: "happiness", text: "Your happiness: how your boss, team and fans feel about you. Happier players get more energy back when they rest" },
   reputation: { target: "reputation", text: "Your reputation. It is how people in football see you" },
   help: { target: "css:[data-help-button]", text: "Tap ? on any screen to see this again" },
 } satisfies Record<string, TourStep>;

@@ -22,6 +22,9 @@ export default function PhoneFrame({
   wallpaper,
   rim,
   ownHomeBar = false,
+  onBack,
+  backLabel = "Back",
+  onHome,
 }: {
   children: React.ReactNode;
   /** The screen's background (the phone home screen's club wallpaper).
@@ -36,6 +39,15 @@ export default function PhoneFrame({
   /** The content draws a working home bar (ui/Nav.tsx's HomeBar): skip the
    *  decorative one so there are not two. */
   ownHomeBar?: boolean;
+  /** Draws the phone's navigation bar with a Back button on the right, like
+   *  an Android phone's (Mikey, 5 Oct 2026: the old home pill in the middle
+   *  "is not very noticeable"). Replaces the home indicator. */
+  onBack?: () => void;
+  /** What the Back button says to a screen reader (e.g. "Close phone"). */
+  backLabel?: string;
+  /** The nav bar's Home button: back to the phone's home screen. Absent =
+   *  already there (drawn dimmed). */
+  onHome?: () => void;
 }) {
   return (
     <div
@@ -91,8 +103,44 @@ export default function PhoneFrame({
         {/* App content — MediaFeed supplies everything from here down. */}
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 
+        {/* Navigation bar (Mikey, 5 Oct 2026): Home on the left, Back on
+            the right, like an Android phone's. No box round either ("maybe
+            it's not contained… just nicely placed") — a bold icon and word
+            on the bar itself, sat in from the screen's curved corners. Home
+            dims on the home screen, where it has nowhere to go. */}
+        {onBack && (
+          <div
+            className="relative z-20 flex h-[52px] shrink-0 items-center justify-between border-t border-white/10 px-7 pb-1.5"
+            style={{ background: "linear-gradient(180deg, rgba(17,24,39,.85), rgba(3,7,18,.95))" }}
+          >
+            <button
+              onClick={onHome}
+              disabled={!onHome}
+              aria-label="Home screen"
+              data-phone-home
+              className="kib-press flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide text-white disabled:opacity-35"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 9.5V20h13V9.5" />
+              </svg>
+              Home
+            </button>
+            <button
+              onClick={onBack}
+              aria-label={backLabel}
+              data-phone-back
+              className="kib-press flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide text-white"
+            >
+              Back
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Home indicator */}
-        {!ownHomeBar && (
+        {!ownHomeBar && !onBack && (
           <div className="pointer-events-none relative z-20 flex shrink-0 justify-center pb-1.5 pt-1">
             <div className="h-[4px] w-[108px] rounded-full bg-white/60" />
           </div>

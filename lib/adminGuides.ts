@@ -149,14 +149,14 @@ export const ADMIN_GUIDES = {
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
     buttons: [
       { items: [
-        ["▶ Talk to your manager / Woodwork challenge / Signing session / Day off / Shoot an advert", "Opens that game. Back or Continue returns here."],
+        ["▶ Talk to your manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
         ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
-        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Change what the manager talks about and which replies land."],
+        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Change what the manager talks about and which moods he is likely to be in. Which reply lands also depends on his hidden mood, so the same settings can go differently each time."],
         ["Last game", "What the last game returned: won or lost, and the change."],
       ] },
     ],
     saving: ["Nothing is saved. It is a test player that resets when you leave."],
-    inGame: ["Relations (boss, team, fans, you) and the Sponsors screen (the advert, on each deal)."],
+    inGame: ["Relations (boss, team, fans) and the Sponsors screen (the advert, on each deal)."],
     dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts and lib/star/bossChat.ts.",
   },
   "/admin/star-xp": {

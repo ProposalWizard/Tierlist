@@ -1,4 +1,5 @@
 "use client";
+import { happinessOf } from "@/lib/star/relationships";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
@@ -62,7 +63,7 @@ export default function LifeScreen({
         <RelationshipRow label="Team" value={career.relationships.team} icon="👕" seenKey={`${scope}:rel:team`} onIconClick={canPlay ? () => onPlayRelationshipGame("team") : undefined} />
         <RelationshipRow label="Fans" value={career.relationships.fans} icon="🧣" seenKey={`${scope}:rel:fans`} onIconClick={canPlay ? () => onPlayRelationshipGame("fans") : undefined} />
         <RelationshipRow label="Sponsors" value={career.relationships.sponsors} icon="🤝" seenKey={`${scope}:rel:sponsors`} onIconClick={canPlay ? () => onPlayRelationshipGame("sponsors") : undefined} />
-        <RelationshipRow label="Happiness" value={career.happiness} icon="😊" seenKey={`${scope}:rel:happiness`} onIconClick={canPlay ? () => onPlayRelationshipGame("happiness") : undefined} />
+        <RelationshipRow label="Happiness" value={happinessOf(career)} icon="😊" seenKey={`${scope}:rel:happiness`} onIconClick={canPlay ? () => onPlayRelationshipGame("happiness") : undefined} />
         <div className="mt-1 text-center text-[9px] font-bold text-emerald-300">
           Tap an emoji to play a minigame and raise it (costs a day)
         </div>

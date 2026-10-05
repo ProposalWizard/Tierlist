@@ -170,7 +170,7 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "energy.restHappiness", category: "Energy", label: "Rest — happiness gained",
-    description: "Happiness restored by choosing Rest.",
+    description: "NOT USED since 5 Oct 2026: happiness is now the average of boss, team and fans, and Rest no longer lifts it. Kept so old saved tunings still load.",
     default: 6, min: 0, max: 30, step: 1,
   },
   {

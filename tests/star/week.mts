@@ -66,18 +66,18 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(actionsLeft(legacy) === WEEK_ACTIONS, "a career saved before weeks existed opens with a full one");
 }
 
-// ── Rest costs a day and buys some happiness and energy ─────────────────────
+// ── Rest costs a day and buys energy (happiness comes from boss/team/fans) ──
 {
   const c: CareerState = { ...base(), happiness: 50, energy: 50 };
   const rested = rest(c);
-  check(rested.happiness > c.happiness, "resting does you good");
+  check(rested.happiness === c.happiness, "resting no longer lifts happiness on its own (Mikey, 5 Oct 2026)");
   check(rested.energy === 50 + REST_ENERGY, `and gives some energy back too (${rested.energy})`);
   check(actionsLeft(rested) === WEEK_ACTIONS - 1, "and costs a day");
   check(rest({ ...c, energy: 99 }).energy === 100, "energy still caps at 100");
 
   let none = base();
   for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
-  check(rest(none).happiness === none.happiness, "you cannot rest on a day you do not have");
+  check(rest(none).energy === none.energy, "you cannot rest on a day you do not have");
   check(rest(none).energy === none.energy, "…or gain energy from trying to");
 }
 
