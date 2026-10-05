@@ -1373,7 +1373,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         sk.computeBoundingSphere();
         sk.boundingSphere.radius *= 1.4;
       }
-      blob(0.9, 0.9, BENCH_X - 0.15, z, 0.55);
+      blob(1.0, 0.75, BENCH_X - 0.3, z, 0.6); // under his seat and his feet
       // drawn on their own layer, so they can be pictured on their own (below)
       m.root.traverse((o: any) => o.layers.set(MATE_LAYER));
       mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
