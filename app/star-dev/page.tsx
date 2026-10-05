@@ -3066,6 +3066,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           else { setCareer(agreed); setPhase("scout-offers"); }
         }}
         onSeeOthers={() => setPhase("scout-offers")}
+        onSettings={() => setPhase("settings")}
       />
     );
   }
@@ -3122,6 +3123,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             : { club: talk.club, wage: weekly } });
           setPhase("scout-offers");
         }}
+        onSettings={() => setPhase("settings")}
       />
     );
   }
@@ -3144,6 +3146,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         youthClub={youthTaker?.club ?? null}
         onNoOffers={() => setPhase(youthOrFreeAgent())}
         onAccept={offer => signTrialOffer(offer)}
+        onSettings={() => setPhase("settings")}
       />
     );
   }
@@ -3398,6 +3401,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             skills={career.skills}
             glow={clubTheme(career.player.club, career).glow}
             onComplete={handleTrainingComplete}
+            onExit={() => setTrainingLevel(null)}
           />
         </DrillIntroOff>
         {drillAuto || drillHelp

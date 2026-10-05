@@ -12,6 +12,7 @@ import {
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
   curveDirFromSwipe, applyCurveSwipe,
+  makeKnuckleball, stepWindUp, powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner,
 } from "@/lib/star/canvasEngineTest";
@@ -51,6 +52,7 @@ import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
+import PowerShotContact from "./PowerShotContact";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import {
@@ -76,6 +78,14 @@ interface Props {
    *  has no shop/boot purchase of its own — see canvasEngine.ts's Boot.curve
    *  for the real game's version of this toggle. */
   canCurve?: boolean;
+  /**
+   * SANDBOX PROTOTYPE (Leo, 5 Oct 2026): every shot at goal is struck as a
+   * knuckleball, for testing with a mouse (the real gesture is a two-finger
+   * swipe up/forward in flight, with curve boots on).
+   */
+  autoKnuckle?: boolean;
+  /** SANDBOX PROTOTYPE: show the ⚡ POWER SHOT button while aiming. */
+  powerShots?: boolean;
   /**
    * The minute you come on. 0 when you start. Anything else means the match has
    * already been going on without you, and the score you inherit is one your
@@ -146,6 +156,8 @@ const CAPTAIN_DRAG_MIN = 3.0;
 /** Same as canvasEngine.ts's CURVE_SWIPE_MIN_PX — the shortest swipe, in
  *  screen pixels, that counts as a curve-boot correction. */
 const CURVE_SWIPE_MIN_PX = 16;
+/** SANDBOX PROTOTYPE: how far two fingers must travel up the screen for a knuckleball. */
+const KNUCKLE_SWIPE_MIN_PX = 30;
 
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
@@ -237,7 +249,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatchTest({ skills = { power: 55, technique: 55 }, canCurve = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, forcedKind = null }: Props) {
+export default function CanvasMatchTest({ skills = { power: 55, technique: 55 }, canCurve = false, autoKnuckle = false, powerShots = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, forcedKind = null }: Props) {
 
   // ── Who else is actually out there ──
   //
@@ -400,6 +412,19 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   // this is screen-space and why there's a separate "current" ref for the
   // live guide line.
   const curveSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  // ── SANDBOX PROTOTYPE: knuckleball gesture and power shot ──
+  // Every finger on the glass during flight, from where it went down to where it is now.
+  const flightTouchesRef = useRef<Map<number, { x0: number; y0: number; x: number; y: number }>>(new Map());
+  const twoFingerRef = useRef(false);
+  const [powerArmed, setPowerArmed] = useState(false);
+  const powerArmedRef = useRef(false);
+  powerArmedRef.current = powerArmed;
+  /** Seconds of wind-up left; null when not winding up. */
+  const windUpRef = useRef<number | null>(null);
+  const [windingUp, setWindingUp] = useState(false);
+  /** The power shot currently on the contact screen (armed at release). */
+  const [powerStrike, setPowerStrike] = useState(false);
+  const howlerShownRef = useRef(false);
   const curveSwipeCurrentRef = useRef<{ x: number; y: number } | null>(null);
 
   /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
@@ -1872,7 +1897,19 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       // The keeper is no exception either: he stands on his line, and where he
       // is standing is the thing you are reading. He only breathes.
       if (phaseRef.current === "aim") {
-        stepKeeper(scenarioRef.current, dt);
+        // SANDBOX PROTOTYPE: a power shot's wind-up. The one time the pitch
+        // moves before you strike — that is the price of the extra pace.
+        if (windUpRef.current !== null) {
+          stepWindUp(scenarioRef.current, dt);
+          windUpRef.current -= dt;
+          if (windUpRef.current <= 0) {
+            windUpRef.current = null;
+            setWindingUp(false);
+            setPhase("contact");
+          }
+        } else {
+          stepKeeper(scenarioRef.current, dt);
+        }
       }
 
       // ── The cut, on a cross ──
@@ -1939,6 +1976,14 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
           }
         }
         if (ballRef.current) ballRef.current.event = null;
+        // SANDBOX PROTOTYPE: the keeper got to it and still made a mess of it.
+        if (ballRef.current?.keeperError && !howlerShownRef.current) {
+          howlerShownRef.current = true;
+          showAction("HOWLER!");
+          pushLine(ballRef.current.keeperError === "through"
+            ? "He's got there… and it's squirmed straight through him!"
+            : "He can't hold it — spilled, and it's loose in the six-yard box!");
+        }
       }
 
       // A scored ball keeps travelling into the netting after the outcome has
@@ -2590,12 +2635,24 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     }
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
+      // SANDBOX PROTOTYPE: a second finger turns the gesture into a knuckleball
+      // swipe and cancels the one-finger curve swipe.
+      flightTouchesRef.current.set(e.pointerId, { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY });
+      if (flightTouchesRef.current.size >= 2) {
+        twoFingerRef.current = true;
+        curveSwipeStartRef.current = null;
+        curveSwipeCurrentRef.current = null;
+        try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        return;
+      }
+      if (twoFingerRef.current) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
       curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
     if (phaseRef.current !== "aim") return;
+    if (windUpRef.current !== null) return; // winding up — the shot is already chosen
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
     // Grab radius scales with the camera so the ball is equally easy to pick up
@@ -2618,6 +2675,8 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (phaseRef.current === "dribble") return;
+    const ft = flightTouchesRef.current.get(e.pointerId);
+    if (ft) { ft.x = e.clientX; ft.y = e.clientY; }
     if (curveSwipeStartRef.current) {
       curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
       return;
@@ -2644,6 +2703,22 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       flick(d, dx, dy);
       return;
     }
+    if (phaseRef.current === "flight" && twoFingerRef.current) {
+      // Judged on the first finger to lift: both fingers, on average, moved
+      // up the screen (towards goal) far enough and more up than sideways.
+      const touches = Array.from(flightTouchesRef.current.values());
+      flightTouchesRef.current.delete(e.pointerId);
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (touches.length >= 2) {
+        const dx = touches.reduce((a, t) => a + (t.x - t.x0), 0) / touches.length;
+        const dy = touches.reduce((a, t) => a + (t.y - t.y0), 0) / touches.length;
+        if (dy < -KNUCKLE_SWIPE_MIN_PX && -dy > Math.abs(dx) * 0.8) triggerKnuckle();
+        flightTouchesRef.current.clear();
+      }
+      if (flightTouchesRef.current.size === 0) twoFingerRef.current = false;
+      return;
+    }
+    flightTouchesRef.current.delete(e.pointerId);
     if (phaseRef.current === "flight") {
       const from = curveSwipeStartRef.current;
       curveSwipeStartRef.current = null;
@@ -2702,11 +2777,30 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
     setAim({ dir, power });
+    // SANDBOX PROTOTYPE: an armed power shot winds up first — the pitch keeps
+    // moving for POWER_SHOT_WINDUP_S, then the green-circle screen opens.
+    if (powerArmedRef.current) {
+      setPowerStrike(true);
+      setPowerArmed(false);
+      windUpRef.current = POWER_SHOT_WINDUP_S;
+      setWindingUp(true);
+      pushLine("He pulls the leg right back…");
+      return;
+    }
+    setPowerStrike(false);
     setPhase("contact");
   };
 
+  // SANDBOX PROTOTYPE: turn the shot in the air into a knuckleball, if it is one.
+  const triggerKnuckle = () => {
+    const ball = ballRef.current;
+    if (!ball || !makeKnuckleball(ball, scenarioRef.current, rngRef.current)) return;
+    showAction("KNUCKLEBALL");
+    pushLine("No spin on it at all — it's moving all over the place!");
+  };
+
   // --- Contact chosen -> launch ---
-  const handleContact = (contact: { cx: number; cy: number }) => {
+  const handleContact = (contact: { cx: number; cy: number }, opts?: { powerMult: number; driftDeg: number }) => {
     if (!aim) return;
     // A dead ball is struck with your free-kick rating, not your general
     // technique — the one strike in football that is purely placement and curl.
@@ -2715,12 +2809,23 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       careerRef.current?.skills.freeKick ?? skills.technique,
       scenarioRef.current.kind,
     );
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current, opts);
+    howlerShownRef.current = false;
+    flightTouchesRef.current.clear();
+    twoFingerRef.current = false;
     setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playKick();
     kickPoseRef.current = KICK_POSE_S;
+    if (autoKnuckle && !opts) triggerKnuckle();
+  };
+
+  // SANDBOX PROTOTYPE: the green circle has been hit (or not).
+  const handlePowerStrike = (quality: number) => {
+    const opts = powerShotStrike(quality, rngRef.current);
+    handleContact(POWER_SHOT_CONTACT, opts);
+    showAction(`⚡ x${opts.powerMult.toFixed(2)}`);
   };
 
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
@@ -2817,8 +2922,27 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
 
 
         {/* Contact overlay */}
-        {phase === "contact" && aim && (
-          <ContactBall power={aim.power} onContact={handleContact} />
+        {phase === "contact" && aim && (powerStrike
+          ? <PowerShotContact power={aim.power} onStrike={handlePowerStrike} />
+          : <ContactBall power={aim.power} onContact={(c) => handleContact(c)} />
+        )}
+
+        {/* SANDBOX PROTOTYPE: the power-shot button, and the wind-up. */}
+        {powerShots && phase === "aim" && !windingUp && (
+          <button
+            onClick={() => setPowerArmed((v) => !v)}
+            className={`absolute left-2 bottom-2 z-30 rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 ${
+              powerArmed ? "bg-amber-400 text-gray-950 border-amber-200" : "bg-black/60 text-amber-300 border-amber-400/60"}`}
+          >
+            ⚡ Power shot{powerArmed ? " — on" : ""}
+          </button>
+        )}
+        {windingUp && (
+          <div className="absolute inset-x-0 bottom-[12%] z-30 flex justify-center pointer-events-none">
+            <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-2xl font-black italic tracking-wider text-amber-300">
+              WINDING UP…
+            </div>
+          </div>
         )}
 
         {/* Action banner — the moment an action actually completes. "PASS" when

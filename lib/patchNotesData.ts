@@ -27,6 +27,164 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.28",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-05T03:30:00Z",
+      "updatedAt": "2026-10-05T03:30:00Z",
+      "artifactUrl": "https://claude.ai/artifact/PQCcbHkmPEQ3NrzA88nVZS",
+      "summary": "Keepers made human (top corners, weaker keepers worse, goalie vision, easier trial free kicks and penalties), dribble runs with team-mates to pass to, knuckleball / power shot / keeper howlers in the test match only, five-a-side keepers that dive, and a way back from the trial, training and scout screens. Every gameplay change has a New / Old switch in Settings.",
+      "stats": [
+        {
+          "value": "26 → 43%",
+          "label": "top-corner shots that beat a 90-rated keeper"
+        },
+        {
+          "value": "36 → 48%",
+          "label": "trial free kicks that go in"
+        },
+        {
+          "value": "0.8 · 2.8 · 8.2%",
+          "label": "keeper howlers on a perfect power shot (top · average · worst), test match"
+        },
+        {
+          "value": "243",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Gameplay switches: Keepers and Dribble runs, New / Old",
+              "detail": "Settings → Look → Gameplay · new vs old."
+            },
+            {
+              "title": "New dials with the shipped values",
+              "detail": "/star-tuning-dev → Keepers (new) · Dribble (new)."
+            },
+            {
+              "title": "Keepers beatable in the top corner; slower with bodies in front",
+              "detail": "Any match."
+            },
+            {
+              "title": "Trial free kicks and penalties easier",
+              "detail": "New career → trial."
+            },
+            {
+              "title": "Five-a-side keepers crouch and dive",
+              "detail": "Trial → Five-a-side, or /star-3d-dev → Five-a-side."
+            },
+            {
+              "title": "✕ Exit on trial stages and training drills; Settings on scout, wage and offers screens",
+              "detail": "Trial / Training / after the trial."
+            },
+            {
+              "title": "Goalie Mode no longer scrolls",
+              "detail": "Casino → Goalie Mode."
+            },
+            {
+              "title": "Dribble: tap a team-mate to pass",
+              "detail": "Any match → a dribble run."
+            },
+            {
+              "title": "Knuckleball and power shot (test match only)",
+              "detail": "/star-match-dev → New shots."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Keepers were too good",
+              "detail": "Top corners vs a 90 keeper: 26% → 43%. Weak-vs-strong keeper gap 20 → 25 goals in 100. Vision: 3 bodies in front 44% → 47%. Average keeper concedes 24% → 28% of well-struck shots."
+            },
+            {
+              "title": "Trial free kicks and penalties were too hard",
+              "detail": "Free kicks 36% → 48%; penalty kick 1 62% → 65%, kick 3 41% → 45%. Match free kicks unchanged."
+            },
+            {
+              "title": "Five-a-side keepers ran like outfielders",
+              "detail": "Now use the real keeper pose: set, and diving on saves. Seen in a browser."
+            },
+            {
+              "title": "No way back from trial stages, training drills, scout/wage/offers screens",
+              "detail": "Exit and Settings buttons added. Seen in a browser."
+            },
+            {
+              "title": "Goalie Mode was taller than the screen",
+              "detail": "Now fits: page height 664 of 664. The match itself still scrolls a little on short phones (decision for Harry/Leo)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Dribble runs: pass to a team-mate",
+              "detail": "Three team-mates with green/amber/red rings (78 / 56 / 11 in 100 arrive). More waves beaten = a better chance (36 m long range → 11 m one-on-one). Runs harder: 33% → 25% cleared. Old version on the switch."
+            },
+            {
+              "title": "Knuckleball (test match)",
+              "detail": "Long range 9.5% → 17%. Keeper ends up the wrong way 65% of the time."
+            },
+            {
+              "title": "Power shot with a green timing circle (test match)",
+              "detail": "Up to 1.5× pace; long range 9.5% → 20% perfect. Always a laced drive, so it hits the wall on free kicks."
+            },
+            {
+              "title": "Keeper howlers that grow with power (test match)",
+              "detail": "Perfect power shot: 0.8% (90 keeper), 2.8% (70), 8.2% (40) — inside the asked-for bands. Backed by Opta errors-leading-to-goals data."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Measured, not played",
+              "detail": "Keepers, new shots and dribble passes are measured with scripts; nobody has played them with a finger yet."
+            },
+            {
+              "title": "The match still scrolls a little on short phones",
+              "detail": "Locking it cut off the bottom of the pitch. Fix needs a slightly shorter pitch on short phones — a look decision."
+            },
+            {
+              "title": "Dribble team-mates are plain blue shirts; the pass is instant",
+              "detail": "No real names/faces, no ball flight to the team-mate."
+            },
+            {
+              "title": "Dribble reward skips the even highlight mix",
+              "detail": "Needs Harry's OK."
+            },
+            {
+              "title": "Six database security holes still open",
+              "detail": "Fix files written, not run."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Move knuckleball / power shot / howlers into the real game",
+              "detail": "Needs Mikey's go-ahead (core engine file, sensitive)."
+            },
+            {
+              "title": "Show the 'always fits' pitch side by side at phone size",
+              "detail": "Decision 1 on the page."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.27",
       "title": "Mikey's patch notes — Relationships",
       "publishedAt": "2026-10-04T12:00:00Z",

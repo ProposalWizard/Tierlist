@@ -33,7 +33,10 @@ import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
 import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
-import FirstPersonDribble from "./FirstPersonDribble";
+import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
+import { dribbleReward } from "@/lib/star/dribbleReward";
+import { oldDribble } from "@/lib/star/gameplayVersion";
+import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
   PITCH_W, HALF_LEN, CX,
@@ -1030,7 +1033,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // `touchTouches` (optional) is Touch Mode's own separate re-touch count —
   // see TOUCH_CHAIN_MAX's own doc for why it can't share `depth` with an
   // ordinary pass chain.
-  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number } | null>(null);
+  /** `kind` (optional): the next chance's kind is decided already — the
+   *  first-person dribble's reward ladder (lib/star/dribbleReward.ts). Absent
+   *  for every other chain, which is dealt exactly as before. */
+  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number; kind?: ScenarioKind } | null>(null);
 
   interface SimEvent {
     minute: number; text: string; isGoal?: boolean; isOpponent?: boolean;
@@ -4966,21 +4972,50 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * lands well short of the box on purpose, at roughly the same depth
    * `lib/star/dribble.ts`'s own old run used to end a normal win at.
    */
-  const finishFpDribble = (result: { cleared: boolean; beaten: number }) => {
+  const finishFpDribble = (result: FpDribbleResult) => {
     fpDribbleRef.current = null;
     attemptsRef.current += 1;
     const rng = rngRef.current;
 
-    if (result.cleared) {
-      tallyRef.current.dribbles += 1;
-      setStats({ ...tallyRef.current });
+    // Leo, 5 Oct 2026: a pass to a team-mate in the background ends the run
+    // too — and what it earns climbs with the waves you beat first. Clearing
+    // the run is on the same ladder (lib/star/dribbleReward.ts), and the ladder
+    // picks the KIND, because a chained chance's position alone no longer
+    // decides its kind while the even mix is on (lib/star/kindMix.ts).
+    const passed = result.passedAfterWaves !== undefined;
+    if (result.cleared || passed) {
+      const t = tallyRef.current;
+      if (passed) { t.passes += 1; t.passesCompleted += 1; }
+      if (result.beaten > 0 || result.cleared) t.dribbles += 1;
+      setStats({ ...t });
       logChance("dribble", "dribble");
-      const bonus = result.beaten >= 7;
-      pushLine(bonus ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
-      showAction("BEAT HIM");
-      chainRef.current = bonus
-        ? { pos: { x: CX + (rng() - 0.5) * 8, y: PEN_SPOT_Y - 2 + rng() * 4 }, depth: 0, ambition: 1 }
-        : { pos: { x: CX + (rng() - 0.5) * 12, y: 28 + rng() * 3 }, depth: 0, ambition: 1 };
+      if (!passed && oldDribble()) {
+        // Settings → Gameplay → Dribble runs: Old — the reward from before
+        // 5 Oct 2026, exactly (a position only; the even mix picks the kind).
+        const bonus = result.beaten >= 7;
+        pushLine(bonus ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
+        showAction("BEAT HIM");
+        chainRef.current = bonus
+          ? { pos: { x: CX + (rng() - 0.5) * 8, y: PEN_SPOT_Y - 2 + rng() * 4 }, depth: 0, ambition: 1 }
+          : { pos: { x: CX + (rng() - 0.5) * 12, y: 28 + rng() * 3 }, depth: 0, ambition: 1 };
+      } else {
+      const reward = dribbleReward({
+        cleared: result.cleared, menBeaten: result.beaten,
+        wavesBeaten: result.wavesBeaten ?? (result.cleared ? 1 : 0),
+        totalWaves: result.totalWaves ?? 1,
+        mateX: result.passTo?.x,
+      }, rng);
+      if (passed) {
+        pushLine(reward.tier >= 3 ? "Picks out the free man — and he's in."
+          : reward.tier >= 2 ? "Draws them in and slips it wide."
+          : "Lays it off early.");
+        showAction("PASS");
+      } else {
+        pushLine(reward.tier >= 4 ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
+        showAction("BEAT HIM");
+      }
+      chainRef.current = { pos: reward.pos, depth: 0, ambition: reward.ambition, kind: reward.kind };
+      }
       if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
       {
         const gen = sceneGenRef.current;
@@ -4989,13 +5024,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
 
-    pushLine("Taken off you.");
+    pushLine(result.passFailed ? "The pass is cut out." : "Taken off you.");
     setOutcome("tackled");
     setPhase("result");
     if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
     const t = tallyRef.current;
     t.chances += 1;
     t.lost += 1;
+    if (result.passFailed) t.passes += 1;
     setStats({ ...t });
     logChance("dribble", "tackled");
     if (matchModeRef.current) {
@@ -5789,8 +5825,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // read off the career or tuned per scenario the way the old system's
         // `chasers` count was — requested directly, specific numbers: pace
         // 100, opponent strength 100, two to four waves of one to four men
-        // each, never more than ten men across the whole run.
-        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng), seed: Math.floor(rng() * 1e9) };
+        // each, never more than ten men across the whole run. Three to four
+        // waves since 5 Oct 2026 (Leo: "harder, better rewards for more
+        // waves") — with team-mates to pass to, a run is a ladder to climb,
+        // and two waves left it only two rungs.
+        // Settings → Gameplay → Dribble runs: Old = 2-4 waves, as before.
+        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) };
         setAim(null);
         runupRef.current = null;
         setContactTimerS(null);
@@ -5856,7 +5896,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       resetForTouchOn(scenarioRef.current, chain.pos);
     } else {
       const made = makeChance({
-        source: chain ? { from: "chain", pos: chain.pos, ambition: chain.ambition, position: positionRef.current }
+        source: chain?.kind ? { from: "kind", kind: chain.kind }
+          : chain ? { from: "chain", pos: chain.pos, ambition: chain.ambition, position: positionRef.current }
           : setPiece ? { from: "kind", kind: setPiece }
           : attacking ? { from: "attacking" }
           : request ? { from: "request", request, position: positionRef.current }
@@ -6753,6 +6794,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             chasePitchDeg={5}
             chaseOffset={4}
             cameraFollowRate={10}
+            passOptions={oldDribble() ? 0 : Math.round(getTuning("dribble.mates"))}
+            vision={visionRef.current}
             onComplete={finishFpDribble}
           />
         )}

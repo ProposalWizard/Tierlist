@@ -28,7 +28,7 @@ import {
 } from "@/lib/star/fiveASide/match";
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import {
-  cameraFor, projectionFor, drawPitch, drawGoal, drawFigure, drawBall, drawAim,
+  cameraFor, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper, drawBall, drawAim,
   ROLE_KIT, MATCH_SCALE, poseFor, runPhase, bodyPoseFor,
 } from "@/lib/star/fiveASide/render";
 import ContactBall from "./ContactBall";
@@ -891,6 +891,19 @@ export default function FiveASide({
     const keeperLook = (theirs_: boolean) => theirs_
       ? { shirt: "#7c3aed", shorts: "#4c1d95", trim: "#4c1d95" }
       : { shirt: ROLE_KIT.gk, shorts: ROLE_KIT.gkRim, trim: ROLE_KIT.gkRim };
+    // Keepers in their own set/dive pose, read off the engine keeper the same
+    // way the real match reads it — they used to run like outfielders and
+    // never dived. A keeper with no engine state this frame stands set.
+    const keeperFig = (
+      at: Vec2, look: Parameters<typeof drawFigure>[3],
+      kk?: { dive: number; saveLunge: number; saveDir?: number },
+    ) => {
+      const lunge = kk && kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
+      const sign = !kk ? 0 : kk.saveLunge > 0 ? (kk.saveDir || 1) : Math.sign(kk.dive);
+      const across = kk ? Math.min(1, Math.abs(kk.dive) / 1.6) * 0.45 + lunge * 0.55 : 0;
+      drawKeeper(ctx, p, at, look, { dive: sign * across, lunge },
+        faceStyle.current, fakeFaceStyle.current, { scale: MATCH_SCALE });
+    };
 
     if (!sc) {
       // Between touches: no engine picture at all, just the world as the
@@ -903,10 +916,10 @@ export default function FiveASide({
       w.opps.forEach((o, i) => fig(`opp-${i}`, o, {
         ...theirs, label: cast?.opps?.[i]?.shortName, face: face(`opp-${i}`, cast?.opps?.[i]?.face),
       }));
-      fig("their-keeper", w.theirKeeper, {
+      keeperFig(w.theirKeeper, {
         ...keeperLook(true), label: cast?.theirKeeper?.shortName, face: face("their-keeper", cast?.theirKeeper?.face),
       });
-      fig("your-keeper", w.yourKeeper, {
+      keeperFig(w.yourKeeper, {
         ...keeperLook(false), label: cast?.yourKeeper?.shortName, face: face("your-keeper", cast?.yourKeeper?.face),
       });
       w.mates.forEach((m, i) => fig(`mate-${i}`, m, {
@@ -929,8 +942,8 @@ export default function FiveASide({
         fig("follower", un({ x: sc.follower.x, y: sc.follower.y }), { ...theirs, face: face("follower") });
       }
       fig("player", un(sc.player), { ...theirs, face: face("player") });
-      fig("your-keeper", un({ x: sc.keeper.x, y: sc.keeper.y }), { ...keeperLook(false), face: face("your-keeper") });
-      fig("their-keeper", shownRef.current.theirKeeper, { ...keeperLook(true), face: face("their-keeper") });
+      keeperFig(un({ x: sc.keeper.x, y: sc.keeper.y }), { ...keeperLook(false), face: face("your-keeper") }, sc.keeper);
+      keeperFig(shownRef.current.theirKeeper, { ...keeperLook(true), face: face("their-keeper") });
       sc.defenders.forEach((d, i) => fig(`defender-${i}`, un({ x: d.x, y: d.y }), { ...mine, face: face(`defender-${i}`) }));
     } else {
       sc.defenders.forEach((d, i) => {
@@ -938,10 +951,10 @@ export default function FiveASide({
           ...theirs, label: d.who?.shortName, face: face(`defender-${i}`, d.who?.face),
         });
       });
-      fig("their-keeper", { x: sc.keeper.x, y: sc.keeper.y }, {
+      keeperFig({ x: sc.keeper.x, y: sc.keeper.y }, {
         ...keeperLook(true), label: sc.keeper.who?.shortName, face: face("their-keeper", sc.keeper.who?.face),
-      });
-      fig("your-keeper", matchRef.current.world.yourKeeper, { ...keeperLook(false), face: face("your-keeper") });
+      }, sc.keeper);
+      keeperFig(matchRef.current.world.yourKeeper, { ...keeperLook(false), face: face("your-keeper") });
       sc.secondaryRunners.forEach((r, i) => {
         fig(`runner-${i}`, r.pos, { ...mine, label: r.who?.shortName, face: face(`runner-${i}`, r.who?.face) });
       });

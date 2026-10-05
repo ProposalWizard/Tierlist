@@ -76,6 +76,8 @@
  * can apply the exact same decision again (see GoalReplay.penaltyRead).
  */
 import type { Ball, Scenario } from "./canvasEngine";
+import { oldKeepers } from "./gameplayVersion";
+import { getTuning } from "./tuningStore";
 
 export interface PenaltyReadSettings {
   /** Chance he moves at all before the ball reaches him. */
@@ -128,6 +130,24 @@ export const PENALTY_READ_TRIAL: PenaltyReadSettings = {
 };
 
 /**
+ * A trial keeper's save radius while committed to a dive, as a share of the
+ * engine's own (Leo, 5 Oct 2026: "a bit too good in penalties"). Was 1 — full
+ * reach — at every rating. Now it falls with his rating, from
+ * PENALTY_TRIAL_REACH at 45 to PENALTY_TRIAL_REACH_TOP at 88: the ramp's
+ * first kick stays harder than a real match (Harry's pin), and the last
+ * kick — where he went 95 % of the time with full reach — gives the most
+ * back. The real match's keeper keeps 0.3 (PENALTY_READ_DEFAULT.reach).
+ */
+export const PENALTY_TRIAL_REACH = getTuning("keepers.trialPenReachLow");
+export const PENALTY_TRIAL_REACH_TOP = getTuning("keepers.trialPenReachHigh");
+/** The trial keeper's reach while diving, for his rating. */
+export function penaltyTrialReach(keeperStrength: number): number {
+  if (oldKeepers()) return 1; // Settings → Gameplay → Keepers: Old
+  const p = Math.max(0, Math.min(1, ((Number.isFinite(keeperStrength) ? keeperStrength : 62) - 45) / (88 - 45)));
+  return PENALTY_TRIAL_REACH + (PENALTY_TRIAL_REACH_TOP - PENALTY_TRIAL_REACH) * p;
+}
+
+/**
  * The keeper for this rating.
  *
  * Real match (no override): a better keeper reads you a little better (0.50 at
@@ -162,7 +182,12 @@ export function penaltyReadFor(keeperStrength: number, override?: Partial<Penalt
     metres: Math.max(0, Math.min(3.2, override.metres ?? base.metres)),
   };
   if (override.shortest !== undefined) s.shortest = Math.max(0, Math.min(s.metres, override.shortest));
-  if (override.reach !== undefined) s.reach = Math.max(0.1, Math.min(1, override.reach));
+  // Leo, 5 Oct 2026: the trial keeper is "a bit too good in penalties". A
+  // committed trial keeper used to keep his FULL reach (1) — more than the
+  // real match's keeper ever has while diving — so a dive the right way saved
+  // nearly everything near him. He now keeps penaltyTrialReach(k) of it unless
+  // the override says otherwise. Measured in tests/star/penaltyRunup.mts.
+  s.reach = Math.max(0.1, Math.min(1, override.reach ?? penaltyTrialReach(k)));
   // The trial keeper reads a kick down the middle as well as he reads a side
   // (Harry's option (b), v0.15) unless the override says otherwise.
   s.middleRead = clamp01(override.middleRead ?? s.readChance);

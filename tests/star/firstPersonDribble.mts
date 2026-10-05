@@ -1,9 +1,11 @@
 import {
   newRun, applySteer, applyBurst, stepRun, runProgress, runSpeed, pickWaveSizes,
+  applyPass, passDifficulty, passSuccessChance, passBand,
   BASE_SPEED, PACE_SPEED, LUNGE_REACH, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
   type FpRunState, type FpDefender, type RunPhase, type FpIdentity,
 } from "../../lib/star/firstPersonDribble";
 import { CAM_C1 } from "../../lib/star/dribbleCamera";
+import { dribbleReward, dribbleRewardTier } from "../../lib/star/dribbleReward";
 import { mulberry32 } from "../../lib/star/season";
 
 /**
@@ -156,7 +158,9 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
 // — measured at the time as 0.9% clearable for the worst case (both of the
 // first two waves rolling four men), now 12.9%. Genuinely hard, not
 // "basically impossible" — several men at once is still supposed to be
-// harder than one (see the solo-wave subset below, still ~95%+). ─────────
+// harder than one (see the solo-wave subset below, still ~95%+). Made a
+// little harder again 5 Oct 2026 (outer men press harder, last wave ramps to
+// 1.08): 28.7% → 25.8% over 2,000 seeds. ─────────────────────────────────
 {
   const seeds = 1000;
   let correctCleared = 0, wrongCleared = 0, wrongLost = 0;
@@ -610,6 +614,120 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
   let lean: { dir: 1 | -1; side: number } = { dir: 1, side: 0 };
   for (let i = 0; i < 120; i++) lean = stepCameraLean(lean, -0.3, CAM_C1.side, CALM_CAMERA, 1 / 60);
   check(lean.dir === 1, "a small touch across does not swap the calm camera's shoulder");
+}
+
+// ── Passing options (Leo, 5 Oct 2026) ─────────────────────────────────────
+//
+// "passing options in background that will be difficult (varying
+// difficulty) to pass to at any moment during dribbling, obvs better chance
+// reward for dribbling more waves then passing compared to like passing
+// after 1/3 waves." Team-mates run with you; each carries a difficulty that
+// moves with distance, a man in the lane, a man on him, and how straight
+// through the ball is. A pass is rolled against it.
+{
+  // Off by default, and turning them on never changes the defenders a seed gives.
+  const plain = newRun({ pace: 100, oppStrength: 100, waveSizes: [3, 2, 3], rng: mulberry32(77) });
+  check(plain.mates.length === 0 && plain.pass === null, "no team-mates unless asked for — the trial and training are unchanged");
+  const withMates = newRun({ pace: 100, oppStrength: 100, waveSizes: [3, 2, 3], rng: mulberry32(77), mates: 3 });
+  check(withMates.mates.length === 3, `three team-mates when asked for three (${withMates.mates.length})`);
+  check(withMates.defenders.every((d, i) => d.x === plain.defenders[i].x && d.y === plain.defenders[i].y && d.tellT === plain.defenders[i].tellT && d.bias === plain.defenders[i].bias),
+    "the defenders are identical with or without team-mates (mates are built after them)");
+
+  // They run with you: always ahead, never in the net, near the corridor.
+  const s = newRun({ pace: 100, oppStrength: 100, waveSizes: [3, 3, 3], rng: mulberry32(5), mates: 3 });
+  let behind = 0, outside = 0, ticks = 0;
+  const diffs: number[][] = [[], [], []];
+  runToEnd(s, DT, st => {
+    ticks++;
+    st.mates.forEach((m, i) => {
+      if (m.y > st.y + 1e-6) behind++;
+      if (m.x < st.minX - 1 - 1e-6 || m.x > st.maxX + 1 + 1e-6 || m.y < 4 - 1e-6) outside++;
+      diffs[i].push(m.difficulty);
+    });
+  });
+  check(behind === 0, `a team-mate is never behind you (${behind} of ${ticks * 3})`);
+  check(outside === 0, `a team-mate never leaves the corridor (±1 m) or stands in the net (${outside})`);
+  const spread = diffs.map(d => Math.max(...d) - Math.min(...d));
+  check(spread.every(x => x > 0.2), `each man's difficulty genuinely moves during a run, not a fixed label (ranges ${spread.map(x => x.toFixed(2)).join(", ")})`);
+}
+
+{
+  // A man standing in the line of the pass makes it harder; beating him clears it.
+  const s = newRun({ pace: 60, oppStrength: 60, waveSizes: [1], rng: mulberry32(9) });
+  const mate = { x: s.x + 8, y: s.y - 12 };
+  const d = s.defenders[0];
+  d.x = s.x + 4; d.y = s.y - 6; d.phase = "closing";
+  const blocked = passDifficulty(s, mate);
+  d.phase = "beaten";
+  const open = passDifficulty(s, mate);
+  check(blocked > open + 0.4, `a defender in the lane makes the pass much harder (${blocked.toFixed(2)} vs ${open.toFixed(2)} once he is beaten)`);
+  check(passDifficulty(s, { x: s.x + 6, y: s.y - 2 }) < passDifficulty(s, { x: s.x + 6, y: s.y - 24 }), "a longer ball is harder than a short one");
+  check(passBand(0.1) === "easy" && passBand(0.45) === "medium" && passBand(0.8) === "hard", "the three rings: green / amber / red");
+  let prev = 2;
+  for (let x = 0; x <= 1.0001; x += 0.05) { const p = passSuccessChance(x); check(p <= prev + 1e-12, `success never rises with difficulty (${x.toFixed(2)})`); prev = p; }
+  check(passSuccessChance(0.5, 90) > passSuccessChance(0.5, 30), "better vision, more passes arrive");
+}
+
+{
+  // Pass success by ring, rolled for real: a random moment in a real run, a
+  // random team-mate. Measured 5 Oct 2026 (vision 55): green 77.3%, amber
+  // 56.0%, red 11.3%.
+  const byBand: Record<string, [number, number]> = { easy: [0, 0], medium: [0, 0], hard: [0, 0] };
+  for (let seed = 1; seed <= 3000; seed++) {
+    const r = mulberry32(seed * 977 + 3);
+    const s = newRun({ pace: 100, oppStrength: 100, waveSizes: pickWaveSizes(r, { minRounds: 3 }), rng: r, mates: 3 });
+    const passAt = 0.5 + r() * 5;
+    let wall = 0;
+    runToEnd(s, DT, st => {
+      wall += DT;
+      if (wall < passAt || st.phase !== "running") return;
+      const idx = Math.floor(r() * 3);
+      const band = passBand(st.mates[idx].difficulty);
+      const res = applyPass(st, idx, 55);
+      if (!res) return;
+      byBand[band][0]++;
+      if (res.success) byBand[band][1]++;
+      check(st.phase === (res.success ? "passed" : "lost"), "a pass ends the run: passed if it arrives, lost if not");
+      if (!res.success) check(st.lostTo === null, "a pass cut out credits no defender");
+    });
+  }
+  const rate = (b: string) => byBand[b][1] / Math.max(1, byBand[b][0]);
+  console.log(`  pass arrives: green ${(rate("easy") * 100).toFixed(1)}% (${byBand.easy[0]}), amber ${(rate("medium") * 100).toFixed(1)}% (${byBand.medium[0]}), red ${(rate("hard") * 100).toFixed(1)}% (${byBand.hard[0]})`);
+  check(byBand.easy[0] > 100 && byBand.medium[0] > 100 && byBand.hard[0] > 100, "every ring turns up often enough to measure");
+  check(rate("easy") >= 0.75, `a green pass usually arrives (${(rate("easy") * 100).toFixed(1)}%)`);
+  check(rate("medium") >= 0.35 && rate("medium") <= 0.7, `an amber pass is a real risk (${(rate("medium") * 100).toFixed(1)}%)`);
+  check(rate("hard") <= 0.3, `a red pass is usually cut out (${(rate("hard") * 100).toFixed(1)}%)`);
+
+  // Once the run is over, nothing more happens.
+  const done = newRun({ pace: 60, oppStrength: 60, rng: mulberry32(3), mates: 2 });
+  applyPass(done, 0);
+  check(applyPass(done, 1) === null, "a second pass after the run has ended does nothing");
+  check(applyPass(newRun({ pace: 60, oppStrength: 60, rng: mulberry32(3) }), 0) === null, "no team-mates, no pass");
+}
+
+// ── The reward ladder — more waves beaten before the pass, a better chance ──
+{
+  const rng = mulberry32(123);
+  const avg = (o: Parameters<typeof dribbleReward>[0]) => {
+    let y = 0, best = 0;
+    for (let i = 0; i < 2000; i++) { const r = dribbleReward(o, rng); y += r.pos.y; if (r.kind === "one_on_one" || r.kind === "cutback") best++; }
+    return { y: y / 2000, best: best / 2000 };
+  };
+  const p0 = avg({ cleared: false, menBeaten: 0, wavesBeaten: 0, totalWaves: 3 });
+  const p1 = avg({ cleared: false, menBeaten: 2, wavesBeaten: 1, totalWaves: 3 });
+  const p2 = avg({ cleared: false, menBeaten: 4, wavesBeaten: 2, totalWaves: 3 });
+  const p3 = avg({ cleared: false, menBeaten: 6, wavesBeaten: 3, totalWaves: 3 });
+  const c6 = avg({ cleared: true, menBeaten: 6, wavesBeaten: 3, totalWaves: 3 });
+  const c7 = avg({ cleared: true, menBeaten: 8, wavesBeaten: 3, totalWaves: 3 });
+  console.log(`  chance after the pass: 0/3 waves ${p0.y.toFixed(1)} m, 1/3 ${p1.y.toFixed(1)} m, 2/3 ${p2.y.toFixed(1)} m, 3/3 ${p3.y.toFixed(1)} m; clear ${c6.y.toFixed(1)} m, clear 7+ ${c7.y.toFixed(1)} m`);
+  check(p0.y > p1.y && p1.y > p2.y && p2.y > p3.y && p3.y > c7.y, "each wave beaten before passing moves the chance closer to goal");
+  check(p0.best === 0 && p1.best < 0.1, `passing early never earns a one-on-one or cutback (${(p0.best * 100).toFixed(0)}%, ${(p1.best * 100).toFixed(0)}%)`);
+  check(p3.best > 0.7 && c7.best > 0.95, `passing after every wave, or clearing past 7+ men, nearly always does (${(p3.best * 100).toFixed(0)}%, ${(c7.best * 100).toFixed(0)}%)`);
+  check(c6.y >= p3.y - 1 && c6.y <= p3.y + 1, "getting clear is worth at least what passing after the last wave is");
+  check(dribbleRewardTier({ cleared: false, menBeaten: 2, wavesBeaten: 1, totalWaves: 4 }) === 1
+    && dribbleRewardTier({ cleared: false, menBeaten: 5, wavesBeaten: 2, totalWaves: 4 }) === 2
+    && dribbleRewardTier({ cleared: false, menBeaten: 0, wavesBeaten: 0, totalWaves: 4 }) === 0,
+    "the ladder reads a share of the waves, so four-wave runs climb it the same way");
 }
 
 if (problems.length) {

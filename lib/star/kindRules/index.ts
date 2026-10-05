@@ -27,6 +27,9 @@
  */
 import type { Ball, Scenario } from "../canvasEngine";
 import { freeKickRules } from "./freeKick";
+// Re-exported so a caller asks the same module instance the rules ran in
+// (a test that imports ./freeKick directly can get a second copy under tsx).
+export { isMatchFreeKick, freeKickReaction } from "./freeKick";
 import { penaltyRules } from "./penalty";
 
 export interface SetupContext {

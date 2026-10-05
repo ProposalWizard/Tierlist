@@ -1,4 +1,6 @@
 import { CX } from "./pitch";
+import { oldDribble } from "./gameplayVersion";
+import { getTuning } from "./tuningStore";
 
 /**
  * FIRST-PERSON DRIBBLING — THREE WAVES, ONE TO THREE MEN EACH, THROUGH HIS
@@ -137,7 +139,9 @@ export interface FpIdentity {
   overall?: number;
 }
 
-export type RunPhase = "running" | "clear" | "lost";
+/** "passed": you played it to a team-mate and it arrived (see `applyPass`).
+ *  A pass that does not arrive ends the run as "lost", like a tackle. */
+export type RunPhase = "running" | "clear" | "lost" | "passed";
 
 export type DefenderPhase =
   | "waiting"     // standing off, not yet worth engaging
@@ -214,6 +218,50 @@ export interface FpBurst {
   power: number;
 }
 
+/**
+ * A team-mate in the background, offering himself for a pass (Leo, 5 Oct
+ * 2026: "passing options in background that will be difficult (varying
+ * difficulty) to pass to at any moment during dribbling"). He runs with you,
+ * ahead and out wide (or through the middle), drifting, so the ball to him is
+ * easy one moment and cut out the next. Only built when `newRun` is given
+ * `mates`; without it a run has none and plays exactly as before.
+ */
+export interface FpMate {
+  x: number;
+  y: number;
+  /** -1 left flank, 1 right flank, 0 the man through the middle. */
+  lane: -1 | 0 | 1;
+  /** His lateral spot, metres from the centre line, and how far he sways off it. */
+  baseOff: number;
+  swayAmp: number;
+  /** Metres ahead of you he holds, and how far that breathes in and out. */
+  baseLead: number;
+  leadAmp: number;
+  /** Sway speed (rad/s) and phase, so no two men move in step. */
+  w: number;
+  phi: number;
+  /** 0 (a simple ball) → 1 (near impossible), re-read every tick from
+   *  distance, defenders in the lane, a man marking him, and how straight
+   *  through the ball is. See `passDifficulty`. */
+  difficulty: number;
+  who?: FpIdentity;
+}
+
+/** What `applyPass` decided. */
+export interface FpPassResult {
+  /** Index into `mates`. */
+  to: number;
+  success: boolean;
+  difficulty: number;
+  /** The chance of it arriving, as rolled against. */
+  chance: number;
+  /** Waves fully beaten before the ball was played. */
+  afterWaves: number;
+  totalWaves: number;
+  /** Where he was when he received it (pitch metres). */
+  at: Vec2;
+}
+
 export interface FpRunState {
   /** Your lane, pitch x. */
   x: number;
@@ -255,6 +303,10 @@ export interface FpRunState {
    *  every in-flight decision (the lazy spawn jitter) stays reproducible
    *  under `stepRun`, which otherwise takes no source of randomness at all. */
   rng: () => number;
+  /** Team-mates offering a pass — empty unless `newRun` was given `mates`. */
+  mates: FpMate[];
+  /** Set once a pass is played (arrived or not). */
+  pass: FpPassResult | null;
 }
 
 // ── Tuned constants ─────────────────────────────────────────────────────────
@@ -290,7 +342,11 @@ const LUNGE_T = 0.22;
  *  fairness math and tests were built against. Ranks beyond this list
  *  (a fifth-plus man, not currently reachable — waves cap at four) fall
  *  back to the last entry rather than a hole. */
-const PRESS_STEPS = [1.0, 0.62, 0.4, 0.25];
+/** Was [1.0, 0.62, 0.4, 0.25] until 5 Oct 2026; a wave's outer men now
+ *  close the gap a little more ("harder"), still nothing like a scrum. */
+const PRESS_STEPS = [1.0, 0.72, 0.5, 0.32];
+/** Settings → Gameplay → Dribble runs: Old — the press and last-wave ramp from before 5 Oct 2026. */
+const PRESS_STEPS_BEFORE = [1.0, 0.62, 0.4, 0.25];
 /**
  * How far he lurches once committed. Deliberately LESS than CLEAR_SEP — if
  * you never move at all, `lungeFrom` sits essentially on top of you (he
@@ -458,9 +514,21 @@ export function newRun(opts: {
    * `oppStrength` alone as before — unchanged.
    */
   roster?: FpIdentity[];
+  /**
+   * Team-mates offering a pass during the run (0 = none, the default — the
+   * trial, training and every existing test). 2 = one on each flank, 3 adds
+   * a man through the middle. Built AFTER the defenders, so the defenders a
+   * seed gives are identical with or without them.
+   */
+  mates?: number;
+  /** Real team-mates to put in those shirts (names/faces only). */
+  mateRoster?: FpIdentity[];
+  /** true = the defenders from before 5 Oct 2026. Absent = Settings → Gameplay → Dribble runs. */
+  classic?: boolean;
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
+  const classic = opts.classic ?? oldDribble();
   const roundCount = opts.waveSizes?.length ?? opts.rounds ?? 3;
   const roster = opts.roster && opts.roster.length > 0 ? shuffle(opts.roster, rng) : null;
   let rosterIdx = 0;
@@ -470,7 +538,9 @@ export function newRun(opts: {
   for (let r = 0; r < roundCount; r++) {
     const size = opts.waveSizes ? opts.waveSizes[r] : waveSize(rng);
     roundSizes.push(size);
-    const factor = roundCount > 1 ? 0.85 + 0.15 * (r / (roundCount - 1)) : 1.0;
+    // The ramp from first wave to last: 0.85 → 1.08 (was 0.85 → 1.0 until
+    // 5 Oct 2026), so the last wave is a real step up, not more of the same.
+    const factor = roundCount > 1 ? 0.85 + (classic ? 0.15 : 0.23) * (r / (roundCount - 1)) : 1.0;
     const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
     const xs = placeWave(size, rng);
     // Rank this wave's men by distance from your fixed starting lane —
@@ -479,7 +549,8 @@ export function newRun(opts: {
     // a wave's whole shape decided upfront rather than shifting mid-run.
     const order = xs.map((_, i) => i).sort((a, b) => Math.abs(xs[a] - CX) - Math.abs(xs[b] - CX));
     const press = new Array<number>(size);
-    order.forEach((i, rank) => { press[i] = PRESS_STEPS[Math.min(rank, PRESS_STEPS.length - 1)]; });
+    const steps = classic ? PRESS_STEPS_BEFORE : PRESS_STEPS;
+    order.forEach((i, rank) => { press[i] = steps[Math.min(rank, steps.length - 1)]; });
     xs.forEach((x, i) => {
       const who = roster ? roster[rosterIdx++ % roster.length] : undefined;
       const manQuality = who
@@ -497,7 +568,11 @@ export function newRun(opts: {
         lagT: 0.32 - (str / 100) * 0.14,
         closeSpeed: 2.6 + (str / 100) * 1.4,
         commitD: COMMIT_D_BASE * (0.85 + rng() * 0.30),
-        tellT: TELL_BASE * (1.25 - (str / 100) * 0.5),
+        // The telegraph never shortens past strength 100, even on the last
+        // wave's 1.08 ramp: 0.45 s wall-clock from tell to contact is the
+        // phone floor (tests/star/firstPersonDribble.mts). "Harder" (5 Oct
+        // 2026) comes from how hard they close, never from an unreadable tell.
+        tellT: TELL_BASE * (1.25 - (Math.min(100, str) / 100) * 0.5),
         tell: 0,
         commitSide: 1,
         bias: rng() < 0.5 ? -1 : 1,
@@ -510,7 +585,25 @@ export function newRun(opts: {
     });
   }
 
-  return {
+  const mates: FpMate[] = [];
+  const mateCount = Math.max(0, Math.min(3, Math.floor(opts.mates ?? 0)));
+  for (let i = 0; i < mateCount; i++) {
+    const lane: -1 | 0 | 1 = i === 0 ? -1 : i === 1 ? 1 : 0;
+    const central = lane === 0;
+    mates.push({
+      x: 0, y: 0, lane,
+      baseOff: central ? (rng() - 0.5) * 3 : lane * (5 + rng() * 2.5),
+      swayAmp: central ? 1.5 + rng() * 1.5 : 1.2 + rng() * 2,
+      baseLead: central ? 16 + rng() * 6 : 7 + rng() * 5,
+      leadAmp: 2 + rng() * 3,
+      w: 0.9 + rng() * 0.9,
+      phi: rng() * Math.PI * 2,
+      difficulty: 0,
+      who: opts.mateRoster && opts.mateRoster.length ? opts.mateRoster[i % opts.mateRoster.length] : undefined,
+    });
+  }
+
+  const run: FpRunState = {
     x: CX,
     y: START_Y,
     laneTarget: CX,
@@ -530,7 +623,11 @@ export function newRun(opts: {
     lostTo: null,
     stride: 0,
     rng,
+    mates,
+    pass: null,
   };
+  for (const m of run.mates) placeMate(run, m, 0, true);
+  return run;
 }
 
 /** Continuous lane request, in pitch metres. Call on every pointer move. */
@@ -687,6 +784,8 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
   s.y -= forward * sdt;
   s.stride += forward * sdt;
 
+  for (const m of s.mates) placeMate(s, m, sdt, false);
+
   // Only the frontmost unresolved WAVE is ever live — but every man inside
   // it steps independently this tick, not just one at a time (see the file
   // header). `defenders` is built wave-by-wave in `newRun`, so the first
@@ -725,6 +824,111 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
   }
 
   return "running";
+}
+
+// ── Passing options ─────────────────────────────────────────────────────────
+//
+// Leo, 5 Oct 2026: "passing options in background that will be difficult
+// (varying difficulty) to pass to at any moment during dribbling, obvs better
+// chance reward for dribbling more waves then passing compared to like
+// passing after 1/3 waves." The reward lives in lib/star/dribbleReward.ts;
+// here is who is free, how hard the ball to him is, and whether it arrives.
+
+/** Never nearer the goal line than this — he is in front of you, not in the net. */
+const MATE_MIN_Y = 4;
+/** m/s a team-mate can shift sideways — they drift, they do not teleport. */
+const MATE_SHIFT = 4.5;
+/** Difficulty bands, for the ring drawn under each man. */
+export const PASS_EASY_BELOW = 0.33;
+export const PASS_HARD_FROM = 0.6;
+
+export type PassBand = "easy" | "medium" | "hard";
+export function passBand(difficulty: number): PassBand {
+  return difficulty < PASS_EASY_BELOW ? "easy" : difficulty < PASS_HARD_FROM ? "medium" : "hard";
+}
+
+/** Move a team-mate one tick (or put him in place at the start). */
+function placeMate(s: FpRunState, m: FpMate, sdt: number, snap: boolean): void {
+  const t = s.elapsed;
+  // Half tied to the corridor, half to you, so he stays a real option on
+  // screen without copying your every step.
+  const targetX = clamp(0.5 * CX + 0.5 * s.x + m.baseOff + m.swayAmp * Math.sin(m.w * t + m.phi), s.minX - 1, s.maxX + 1);
+  const lead = m.baseLead + m.leadAmp * Math.sin(0.7 * m.w * t + 2 * m.phi);
+  if (snap) m.x = targetX;
+  else m.x += clamp(targetX - m.x, -MATE_SHIFT * sdt, MATE_SHIFT * sdt);
+  m.y = Math.max(MATE_MIN_Y, s.y - lead);
+  m.difficulty = passDifficulty(s, m);
+}
+
+/**
+ * How hard the ball to him is right now, 0-1. Four things, all visible on
+ * screen: how far he is; a defender standing in the line of the pass (the
+ * biggest one — a man in the lane cuts it out); a defender right on him; and
+ * how straight through the ball has to be (a ball across is easier to weight
+ * than one threaded forward). Beaten men no longer count — which is why the
+ * same man is often easy once you have got past the wave in front of him.
+ */
+export function passDifficulty(s: FpRunState, m: { x: number; y: number }): number {
+  const vx = m.x - s.x, vy = m.y - s.y;
+  const d2 = vx * vx + vy * vy;
+  const d = Math.sqrt(d2) || 1e-6;
+  const distTerm = clamp((d - 7) / 18, 0, 1);
+  let block = 0, mark = 0;
+  for (const def of s.defenders) {
+    if (def.phase === "beaten" || def.phase === "won") continue;
+    const px = def.x - s.x, py = def.y - s.y;
+    const t = (px * vx + py * vy) / d2;
+    if (t > 0.08 && t < 0.95) {
+      const perp = Math.hypot(px - t * vx, py - t * vy);
+      block = Math.max(block, clamp(1 - perp / 2.4, 0, 1));
+    }
+    const toMate = Math.hypot(def.x - m.x, def.y - m.y);
+    mark = Math.max(mark, clamp(1 - toMate / 3, 0, 1));
+  }
+  const forward = clamp(-vy / d, 0, 1);
+  return clamp(0.08 + 0.35 * distTerm + 0.6 * block + 0.3 * mark + 0.12 * forward, 0, 1);
+}
+
+/** The chance a pass of this difficulty arrives: about 4 in 5 on a green ring,
+ *  a coin flip on amber, 1 in 8 on red (measured, tests/star/firstPersonDribble.mts). `vision` 0-100 (55 = average) is
+ *  worth about ±9 points either way at the extremes. */
+export function passSuccessChance(difficulty: number, vision = 55): number {
+  const d = clamp(difficulty, 0, 1);
+  return clamp(getTuning("dribble.passBest") - 0.5 * d - 0.9 * d * d + ((clamp(vision, 0, 100) - 55) / 100) * getTuning("dribble.passVision"), 0.05, 0.95);
+}
+
+/** Waves whose every man is beaten. */
+export function wavesBeaten(s: FpRunState): number {
+  let n = 0;
+  for (let r = 0; r < s.roundSizes.length; r++) {
+    if (s.defenders.filter(d => d.round === r).every(d => d.phase === "beaten")) n++;
+  }
+  return n;
+}
+
+/**
+ * Play it to team-mate `idx`. Rolled against his difficulty this instant. If
+ * it arrives the run ends "passed"; if not it is lost, like a tackle (no
+ * defender is credited, `lostTo` stays null). Returns null — nothing happens —
+ * if the run is already over or there is no such man.
+ */
+export function applyPass(s: FpRunState, idx: number, vision = 55): FpPassResult | null {
+  if (s.phase !== "running") return null;
+  const m = s.mates[idx];
+  if (!m) return null;
+  const difficulty = passDifficulty(s, m);
+  const chance = passSuccessChance(difficulty, vision);
+  const success = s.rng() < chance;
+  const result: FpPassResult = {
+    to: idx, success, difficulty, chance,
+    afterWaves: wavesBeaten(s), totalWaves: s.roundSizes.length,
+    at: { x: m.x, y: m.y },
+  };
+  s.pass = result;
+  s.phase = success ? "passed" : "lost";
+  if (!success) s.lostTo = null;
+  s.timeScale = 1;
+  return result;
 }
 
 /** How far through the run you are, 0-1. For a progress bar / HUD. */

@@ -37,7 +37,7 @@ import { mulberry32 } from "../../lib/star/season";
 import { enforceHardRules } from "../../lib/star/kindRules";
 import { brainSetup, brainAim, brainStrike, brainStep } from "../../lib/star/keeperBrain";
 import {
-  penaltyReadFor, decidePenaltyRead, applyPenaltyRead, PENALTY_READ_DEFAULT, PENALTY_READ_TRIAL,
+  penaltyReadFor, decidePenaltyRead, applyPenaltyRead, PENALTY_READ_DEFAULT, PENALTY_READ_TRIAL, penaltyTrialReach,
   type PenaltyReadSettings,
 } from "../../lib/star/penaltyKeeper";
 
@@ -179,12 +179,16 @@ console.log("\nTHE TRIAL — harder on purpose, and ramping (easiest vs hardest 
   // keeper turned back and saved kicks behind his dive — and his option (b),
   // the keeper reads a kick down the middle at his read chance. Measured on
   // these seeds: easiest 55.9 %, hardest 38.6 % (was 48.6 % and 25.1 %).
-  ok(easy.s <= 0.585, `the easiest trial rep: ${pct(easy.s)} (pinned 55.9 %; was 48.6 % before one dive)`);
+  // Re-pinned 5 Oct 2026 (Leo: the trial keeper is "a bit too good in
+  // penalties"): his reach while diving (penaltyTrialReach) and the weaker
+  // low-rated keeper (keeperBrain.ts abilities) — measured 58.3 % → 61.3 %.
+  ok(easy.s <= 0.64, `the easiest trial rep: ${pct(easy.s)} (pinned 61.3 %; 58.3 % before 5 Oct 2026, 48.6 % before one dive)`);
   // Re-pinned again in v0.15 A2: item 17 (on a loose ball the nearest
   // team-mate goes for it) means a parried trial penalty is now followed in
   // more often — measured 38.6 % → 41.4 % on these seeds (the prototype's
   // own measurement: chipped penalties 7 % → 20 %).
-  ok(hard.s <= 0.43, `the hardest trial rep: ${pct(hard.s)} (pinned 41.4 %; 38.6 % before item 17, 25.1 % before one dive)`);
+  // Re-pinned 5 Oct 2026 (as above): 41.4 % → 48.6 %.
+  ok(hard.s <= 0.52, `the hardest trial rep: ${pct(hard.s)} (pinned 48.6 %; 41.4 % before 5 Oct 2026, 38.6 % before item 17, 25.1 % before one dive)`);
   ok(hard.s < easy.s - 0.1, "it still ramps");
   ok(easy.s < overall.s - 0.15, `the trial is harder than a real match (${pct(easy.s)} vs ${pct(overall.s)})`);
 }
@@ -201,8 +205,11 @@ console.log("\nTHE DIALS");
   // A trial override is built on the OLD keeper, field for field.
   const t = penaltyReadFor(62, { readChance: 0.9 });
   ok(t.readChance === 0.9, "an override (a harder trial rep) replaces a dial");
-  ok(t.metres === PENALTY_READ_TRIAL.metres && t.shortest === undefined && t.reach === undefined && t.commitChance === PENALTY_READ_TRIAL.commitChance,
-    "…on top of the old keeper: a fixed 1.4 m dive at full reach");
+  // Leo, 5 Oct 2026 ("a bit too good in penalties"): a diving trial keeper no
+  // longer keeps his FULL reach — 0.90 of it at 45, falling to 0.78 at 88
+  // (penaltyTrialReach). Was `t.reach === undefined` (full reach).
+  ok(t.metres === PENALTY_READ_TRIAL.metres && t.shortest === undefined && t.reach === penaltyTrialReach(62) && t.reach < 1 && t.commitChance === PENALTY_READ_TRIAL.commitChance,
+    `…on top of the old keeper: a fixed 1.4 m dive, at ${((t.reach ?? 1) * 100).toFixed(0)}% of his reach while diving`);
   ok(penaltyReadFor(62, { metres: 99 }).metres <= 3.2, "…within the engine's own reach along the line");
 }
 
