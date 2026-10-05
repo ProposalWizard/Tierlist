@@ -338,9 +338,33 @@ function patchBody(mat: THREE.MeshStandardMaterial, u: Record<string, { value: u
   mat.customProgramCacheKey = () => "people3d-body-v2";
 }
 
-/** The outline: the body pushed out along its normals, back faces only. */
-function outlineMaterial(T: Three, width: number): THREE.MeshBasicMaterial {
+/** The outline: the body pushed out along its normals, back faces only.
+ *  With `near` (metres), it is pushed out after the bones have posed the body,
+ *  and nearer the camera than `near` it thins in step with the distance: the
+ *  same few pixels in a close-up as in a medium shot (a fixed 3.5 mm was a
+ *  thick black band round every finger in the hand close-ups, and poked out
+ *  between them as shards). Further than `near`, exactly as without it. */
+function outlineMaterial(T: Three, width: number, near?: number): THREE.MeshBasicMaterial {
   const m = new T.MeshBasicMaterial({ color: 0x15171c, side: T.BackSide });
+  if (near) {
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace(
+        "#include <project_vertex>",
+        `vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
+float p3d = -mvPosition.z;
+float p3k = min(1.0, p3d / ${near.toFixed(3)});
+vec3 p3n = normalize(transformedNormal);
+#ifdef FLIP_SIDED
+p3n = -p3n;
+#endif
+mvPosition.xyz += p3n * ${width.toFixed(4)} * p3k;
+mvPosition.z -= 0.015 * p3k;
+gl_Position = projectionMatrix * mvPosition;`,
+      );
+    };
+    m.customProgramCacheKey = () => `people3d-outline-near-${width.toFixed(4)}-${near.toFixed(3)}`;
+    return m;
+  }
   m.onBeforeCompile = (sh) => {
     // Pushed out along the (seam-welded) normals, and 1.5 cm back from the
     // camera, so it shows round the edge and never pokes through a fold.
@@ -358,6 +382,8 @@ export interface MakePersonOptions {
   /** Outline thickness, metres (0 for none). */
   outline?: number;
   castShadow?: boolean;
+  /** Thin the outline nearer the camera than this (metres): see outlineMaterial. Unset: a fixed width, as before. */
+  outlineNear?: number;
 }
 
 /**
@@ -387,7 +413,7 @@ export function makePerson3d(
   body.material = mat;
   body.frustumCulled = false;
   body.castShadow = !!opts.castShadow;
-  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, opts.outline ?? 0.0045));
+  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, opts.outline ?? 0.0045, opts.outlineNear));
   outline.name = "Outline";
   outline.frustumCulled = false;
   outline.visible = (opts.outline ?? 0.0045) > 0;
