@@ -19,6 +19,8 @@ import { RECORDS } from "@/lib/star/records";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import DashboardStats from "./DashboardStats";
+import AllSeasonsNew from "./AllSeasonsNew";
+import { useAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import ClubBadge from "./ClubBadge";
 import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
@@ -52,6 +54,7 @@ export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerS
   const [view, setViewState] = useState<View>(lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
+  const allLook = useAllSeasonsLook();
   const i = VIEWS.findIndex((v) => v.id === view);
   const step = (d: number) => setView(VIEWS[(i + d + VIEWS.length) % VIEWS.length].id);
   const here = VIEWS[i];
@@ -66,7 +69,7 @@ export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerS
       </div>
       <RiseIn key={view}>
         {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}
-        {view === "all" && <AllSeasons career={career} glow={glow} />}
+        {view === "all" && (allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />)}
         {view === "records" && <Records career={career} glow={glow} />}
         {view === "records" && onOpen && (
           <div className="mt-2 grid grid-cols-2 gap-2">

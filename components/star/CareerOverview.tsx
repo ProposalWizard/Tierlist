@@ -137,7 +137,7 @@ export default function CareerOverview({ career, actions, startPage = "career" }
 
 // ── Shared pieces ────────────────────────────────────────────────────────────
 
-function Heading({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+export function Heading({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="mb-1.5 mt-4 flex items-center justify-between gap-2">
       <div className="text-[10.5px] font-black uppercase tracking-[0.22em] text-amber-300">{children}</div>
@@ -146,7 +146,7 @@ function Heading({ children, right }: { children: React.ReactNode; right?: React
   );
 }
 
-function BigNumber({ value, label, gold = false }: { value: number | string; label: string; gold?: boolean }) {
+export function BigNumber({ value, label, gold = false }: { value: number | string; label: string; gold?: boolean }) {
   return (
     <div className="px-1 py-2 text-center" style={{ background: gold ? "linear-gradient(180deg, rgba(251,191,36,.22), rgba(251,191,36,.05))" : "rgba(255,255,255,.05)", boxShadow: `inset 0 0 0 1px ${gold ? "rgba(251,191,36,.45)" : "rgba(255,255,255,.08)"}` }}>
       <div className={`sk-num text-[26px] leading-none tabular-nums ${gold ? "text-amber-200" : "text-white"}`}>
@@ -258,19 +258,25 @@ function CareerPage({ o, onOpen }: { o: CareerOverviewData; onOpen: (p: Overview
       {o.honours.length === 0 ? (
         <div className="py-3 text-center text-[12px] font-bold text-white/60">No trophies</div>
       ) : (
-        <button onClick={() => onOpen("trophies")} className="kib-press grid w-full grid-cols-4 gap-1.5 text-left">
-          {o.honours.slice(0, 8).map(h => (
-            <div key={h.competition} className="relative flex flex-col items-center px-1 pb-1.5 pt-2" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.3))", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.85), inset 0 0 0 1px rgba(255,255,255,.07)" }}>
-              <TrophyImage name={h.competition} height={40} />
-              <span className="absolute right-1 top-1 px-1 text-[11px] font-black leading-[15px] text-gray-950" style={{ background: GOLD, borderRadius: 2 }}>×{h.count}</span>
-              <span className="mt-1 w-full truncate text-center text-[9px] font-black uppercase tracking-wide text-white/80">{tileName(h.competition)}</span>
-            </div>
-          ))}
-        </button>
+        <CabinetGrid items={o.honours.slice(0, 8)} onOpen={() => onOpen("trophies")} />
       )}
       <div className="h-3" />
     </>
   );
+}
+
+/** The cabinet: one tile per trophy, the count on it. Four to a row. */
+export function CabinetGrid({ items, onOpen }: { items: { competition: string; count: number }[]; onOpen?: () => void }) {
+  const tiles = items.map(h => (
+    <div key={h.competition} className="relative flex flex-col items-center px-1 pb-1.5 pt-2" style={{ background: "linear-gradient(180deg, rgba(255,255,255,.07), rgba(0,0,0,.3))", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.85), inset 0 0 0 1px rgba(255,255,255,.07)" }}>
+      <TrophyImage name={h.competition} height={40} />
+      <span className="absolute right-1 top-1 px-1 text-[11px] font-black leading-[15px] text-gray-950" style={{ background: GOLD, borderRadius: 2 }}>×{h.count}</span>
+      <span className="mt-1 w-full truncate text-center text-[9px] font-black uppercase tracking-wide text-white/80">{tileName(h.competition)}</span>
+    </div>
+  ));
+  return onOpen
+    ? <button onClick={onOpen} className="kib-press grid w-full grid-cols-4 gap-1.5 text-left">{tiles}</button>
+    : <div className="grid w-full grid-cols-4 gap-1.5">{tiles}</div>;
 }
 
 function Journey({ o }: { o: CareerOverviewData }) {
@@ -300,7 +306,7 @@ function Journey({ o }: { o: CareerOverviewData }) {
 }
 
 /** Goals each season as bars in the club's colour; the star rating as a line. */
-function ArcChart({ o }: { o: CareerOverviewData }) {
+export function ArcChart({ o }: { o: CareerOverviewData }) {
   const W = 340, H = 118, top = 16, bottom = 18;
   const n = Math.max(1, o.arc.length);
   const max = Math.max(1, ...o.arc.map(a => a.goals ?? 0));
@@ -313,7 +319,9 @@ function ArcChart({ o }: { o: CareerOverviewData }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Goals by season">
       {[0.5, 1].map(f => <line key={f} x1={0} x2={W} y1={y(max * f)} y2={y(max * f)} stroke="rgba(255,255,255,.08)" strokeDasharray="3 4" />)}
-      <text x={W} y={y(max) - 3} textAnchor="end" fontSize="9" fontWeight="800" fill="rgba(255,255,255,.55)">{max}</text>
+      {/* The scale on the left: the best season (the crown) is often the
+          last bar, and a number on the right sat on top of it. */}
+      <text x={1} y={y(max) - 3} textAnchor="start" fontSize="9" fontWeight="800" fill="rgba(255,255,255,.55)">{max}</text>
       {o.arc.map((a, k) => {
         const x = k * bw + bw * 0.14;
         const w = bw * 0.72;
@@ -362,7 +370,6 @@ function PositionTag({ s }: { s: OverviewSeason }) {
 const AWARD_ICON: Record<string, string> = { "Golden Boot": "👟", "Player of the Season": "⭐", "Player of the Month": "📅" };
 
 function SeasonsPage({ o }: { o: CareerOverviewData }) {
-  const [open, setOpen] = useState<number | null>(null);
   const titles = o.totals.leagueTitles;
   const ups = o.seasons.filter(s => s.world?.move === "promoted").length;
   const downs = o.seasons.filter(s => s.world?.move === "relegated").length;
@@ -374,11 +381,25 @@ function SeasonsPage({ o }: { o: CareerOverviewData }) {
         <BigNumber value={ups} label="Up ↑" />
         <BigNumber value={downs} label="Down ↓" />
       </div>
+      <SeasonList o={o} />
+      <div className="h-3" />
+    </>
+  );
+}
+
+/** Every season, one row each: club, finish, trophies, goals, assists,
+ *  rating. Tap a row for who won what that season. `newestFirst` for a
+ *  career still being played (the in-game All seasons page). */
+export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; newestFirst?: boolean }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const rows = newestFirst ? [...o.seasons].reverse() : o.seasons;
+  return (
+    <>
       <div className="mt-3 grid grid-cols-[50px_1fr_26px_26px_34px] items-end gap-1 px-2 text-[9.5px] font-black uppercase tracking-wider text-white/55">
         <span>Season</span><span>Club</span><span className="text-center">G</span><span className="text-center">A</span><span className="text-center">Avg</span>
       </div>
       <div className="mt-1 space-y-1">
-        {o.seasons.map(s => {
+        {rows.map(s => {
           const isOpen = open === s.season;
           const glow = clubTheme(s.club).glow;
           return (
@@ -406,17 +427,16 @@ function SeasonsPage({ o }: { o: CareerOverviewData }) {
                     <span className="sk-num text-center text-[16px] tabular-nums text-white">{s.stats.goals}</span>
                     <span className="sk-num text-center text-[16px] tabular-nums text-white/85">{s.stats.assists}</span>
                     <span className="text-center text-[11.5px] font-black tabular-nums text-amber-200">{s.stats.avgRating ? s.stats.avgRating.toFixed(1) : "—"}</span>
-                  </>
-                ) : (
-                  <><Blank w={22} /><Blank w={22} /><Blank w={28} /></>
-                )}
-              </button>
-              {isOpen && <SeasonDetail s={s} o={o} />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="h-3" />
+              </>
+              ) : (
+                <><Blank w={22} /><Blank w={22} /><Blank w={28} /></>
+              )}
+            </button>
+            {isOpen && <SeasonDetail s={s} o={o} />}
+          </div>
+        );
+      })}
+    </div>
     </>
   );
 }

@@ -11,6 +11,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { catchUpAwards, compactPotmHistory } from "./potm";
 import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 import { setActiveFoot } from "./kickFoot";
+import { addToHall, accountOfScope } from "./hallOfFame";
 import {
   type SaveStamp, type SyncRecord, type SyncedVersion, type DeviceKind, type OtherDeviceWarning,
   type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
@@ -160,7 +161,7 @@ function claimAnonSave(scope: string): void {
  * handled separately, by the flag on the career itself.
  */
 const RESUMABLE: StarPhase[] = [
-  "ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer",
+  "ballon-dor", "contract-renewal", "dilemma", "retirement", "final-season", "season-transfer",
   // Relegated out of the Championship: the club you were at has dropped into
   // a pool with no fixtures and no table, so a new one has to be chosen
   // before the season can roll over at all — `advanceSeason` needs to know
@@ -306,6 +307,10 @@ export function saveCareer(state: CareerState, scope: string): boolean {
     localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(withStars(state))));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
     if (saveFailure) setSaveFailure(null);
+    // A retired career goes in the Hall of Fame the first time it is saved
+    // retired (hallOfFame.ts). Both UIs save through here, so both feed it,
+    // and a career retired before the Hall existed goes in when next opened.
+    if (state.retired) { try { addToHall(accountOfScope(scope), state); } catch { /* never block a save */ } }
     return true;
   } catch (e) {
     const reason = isQuotaError(e) ? "quota" : "other";
@@ -575,6 +580,26 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
     out.push(career ? summariseSave(slot, career) : { slot, empty: true });
   }
   return out;
+}
+
+/** One slot's career, read only: nothing claimed, moved or written. */
+export function peekSlotCareer(accountScope: string, slot: number): CareerState | null {
+  return loadCareerRaw(slotScope(accountScope, slot));
+}
+
+/**
+ * Every retired career in this account's save slots, put in the Hall of Fame
+ * (hallOfFame.ts) if it is not there yet. A career that retired before the
+ * Hall existed sits in a slot, not the Hall: this is how it gets in. Read
+ * only for the slots. Returns how many went in.
+ */
+export function collectRetiredIntoHall(accountScope: string): number {
+  let added = 0;
+  for (let slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+    const career = loadCareerRaw(slotScope(accountScope, slot));
+    if (career?.retired && addToHall(accountScope, career).added) added++;
+  }
+  return added;
 }
 
 /** One save's card line — shared by the Saves list and "Move my saves". */

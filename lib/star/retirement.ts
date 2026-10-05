@@ -11,50 +11,58 @@ import { closeFinalSeason } from "./careerFlow";
  * with 30 pace still being picked every week because nothing in the game knew
  * how to stop.
  *
- * It ends now, and how it ends is mostly yours to choose. From thirty-three you
- * may hang them up whenever you like; at forty the decision is made for you.
- * Either way the last thing you see is what the whole career added up to, which
- * is the part that makes the numbers you have been collecting for fifteen
- * seasons mean something.
+ * Now every career is the same length (CAREER_SEASONS). The season before the
+ * last ends with a warning (FinalSeasonNotice, components/star/CareerEnd.tsx)
+ * so the last club is chosen on purpose, and the last season ends with the
+ * final whistle and the career overview. Either way the last thing you see is
+ * what the whole career added up to, which is the part that makes the numbers
+ * you have been collecting for twenty seasons mean something.
  */
 
-export const RETIRE_FROM = 33;
 /**
- * The career ends after this many seasons, whatever your age.
+ * HOW LONG A CAREER LASTS, in seasons. Change this one number to change it;
+ * `null` means no limit.
  *
- * Owners, 21 Sep 2026: "change it so that you can play fifty seasons of the
- * game before it ends and you retire." It used to be a forced retirement at
- * age 40, which capped an 18-year-old at about 22 seasons. Choosing to retire
- * from 33 is unchanged; your skills still decline with age, so the late
- * seasons are genuinely hard — they are just no longer taken away.
+ * Leo, 5 Oct 2026: "limit the amount of seasons you can play at 20. So once
+ * you hit 20 seasons, that is your limit, and then you are forced to retire
+ * … that figure could change in the future. We could bring that to 15 or up
+ * it to 30 or even unlimited." Before that: retire by choice from 33, forced
+ * after 50 seasons (owners, 21 Sep 2026). Leo also removed the choice: "that
+ * would mean removing the system of, from age 33, do you go again at the end
+ * of every season".
+ *
+ * A career starts at 16, so season 20 is played at 35.
  */
-export const MAX_SEASONS = 50;
-/** Kept for anything that still reads it; nothing forces retirement by age now. */
-export const RETIRE_AT = Infinity;
+export const CAREER_SEASONS: number | null = 20;
 
 export interface RetirementCheck {
-  /** Old enough to choose. */
+  /** The career ends now. Same as `mustRetire` since 5 Oct 2026 — there is
+   *  no early retirement — kept because the Old UI page still reads it. */
   canRetire: boolean;
-  /** Too old not to. */
+  /** The season just finished was the last one. */
   mustRetire: boolean;
+  /** The season just finished was the one before the last: warn now. */
+  finalSeasonNext: boolean;
   reason: string;
 }
 
-export function retirementCheck(career: CareerState): RetirementCheck {
-  const age = career.player.age;
-  if (career.season >= MAX_SEASONS) {
-    return { canRetire: true, mustRetire: true, reason: `${MAX_SEASONS} seasons. That is the end of it.` };
+/**
+ * Asked when a season ends (after the Ballon d'Or night).
+ *
+ *   season 1 … CAREER_SEASONS-2   nothing
+ *   season CAREER_SEASONS-1       finalSeasonNext: "your next season is the last"
+ *   season CAREER_SEASONS (or later, an older save)   mustRetire
+ */
+export function retirementCheck(career: Pick<CareerState, "season">, cap: number | null = CAREER_SEASONS): RetirementCheck {
+  if (cap !== null && career.season >= cap) {
+    return { canRetire: true, mustRetire: true, finalSeasonNext: false, reason: `${cap} seasons. Time to hang them up.` };
   }
-  if (age >= RETIRE_FROM) {
-    return {
-      canRetire: true,
-      mustRetire: false,
-      reason: career.matchFitness < 55
-        ? `You are ${age} and the body is telling you something.`
-        : `You are ${age}. You could go again, or you could go out on your terms.`,
-    };
-  }
-  return { canRetire: false, mustRetire: false, reason: "" };
+  return { canRetire: false, mustRetire: false, finalSeasonNext: cap !== null && career.season === cap - 1, reason: "" };
+}
+
+/** The season being played is the last one (for a "Final season" tag). */
+export function isFinalSeason(career: Pick<CareerState, "season">, cap: number | null = CAREER_SEASONS): boolean {
+  return cap !== null && career.season >= cap;
 }
 
 export interface CareerVerdict {

@@ -146,23 +146,28 @@ export const ADMIN_GUIDES = {
   },
   "/star-retirement-dev": {
     title: "Retirement preview",
-    what: "The end of a career without playing one: the \"Do you go again?\" screen, the new career overview, and today's end screen beside it.",
+    what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser.",
     buttons: [
       { group: "Pick a career", items: [
-        ["Legend / One club / Journeyman / Lower leagues / Stops at 33", "A made-up finished career of that shape: every season's numbers, who won what, trophies, transfers, money and things bought."],
+        ["Legend / One club / Journeyman / Lower leagues / Quiet one", "A made-up 20-season career of that shape: every season's numbers, who won what, trophies, transfers, money and things bought."],
         ["Version ◀ ▶", "The same shape with different numbers."],
         ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
       ] },
-      { group: "See it", items: [
-        ["▶ Retire screen, then the overview", "The real \"Do you go again?\" screen. Hang them up opens the new overview; One more season comes back here."],
-        ["▶ Straight to the new overview", "The new career overview. Flip its seven pages with the arrows at the top, or swipe."],
-        ["▶ The old end screen (today's)", "What a retired career shows today, to compare."],
-        ["Back / Old screen / Retire again", "The bar under the overview: back here, today's screen, or the retire screen again."],
+      { group: "The screens, in order", items: [
+        ["▶ 1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
+        ["▶ 2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
+        ["▶ 3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
+        ["Hall of Fame / New career / Menu", "The bar under the overview, as in the game. Here: Hall of Fame opens the made-up Hall; the other two come back here."],
+        ["▶ 4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
+        ["▶ In the game: All seasons page", "The Stats page's All seasons view (New look) on a career 12 seasons in."],
       ] },
     ],
-    saving: ["Nothing is saved. A real save is read, never written."],
-    inGame: ["Not in the game yet: the new overview is waiting for a yes before it replaces the end screen."],
-    dev: "app/star-retirement-dev/page.tsx; the screen is components/star/CareerOverview.tsx, its numbers lib/star/careerOverview.ts, the made-up careers lib/star/retirementPreview.ts.",
+    saving: ["Nothing is saved. A real save is read, never written, and the Hall here is made up."],
+    inGame: [
+      "Every screen here is in the game. The warning shows after season 19, the final whistle after season 20 (a career is 20 seasons).",
+      "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
+    ],
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
   },
   "/star-relgames-dev": {
     title: "Relationship games",

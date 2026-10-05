@@ -14,7 +14,11 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
+  peekSlotCareer, collectRetiredIntoHall,
 } from "@/lib/star/storage";
+import { addToHall, loadHall, syncHall } from "@/lib/star/hallOfFame";
+import HallOfFame from "@/components/star/HallOfFame";
+import CareerOverview from "@/components/star/CareerOverview";
 import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
@@ -72,7 +76,7 @@ import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
 import TransferSigning from "@/components/star/TransferSigning";
-import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
+import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { earnedBetween, type EarnPop } from "@/lib/star/earnPops";
@@ -515,7 +519,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** The title screen's own Settings page (v0.25 points 1-2): this device's
    *  settings only, no save, no top bar — Back returns to the title. */
   const [globalSettings, setGlobalSettings] = useState(false);
+  /** The Hall of Fame (HallOfFame.tsx): over whatever is underneath, the
+   *  title or the end of a career. Back closes it. */
+  const [hallOpen, setHallOpen] = useState(false);
+  /** How many careers are in it, for the title's button. */
+  const [hallCount, setHallCount] = useState(0);
   useEffect(() => { if (titleScreenSkipped()) setTitleOpen(false); }, []);
+  useEffect(() => {
+    if (!titleOpen || hallOpen) return;
+    // A career that retired before the Hall existed is still in its slot.
+    try { collectRetiredIntoHall(scopeRef.current); } catch { /* the count still shows */ }
+    setHallCount(loadHall(scopeRef.current).entries.length);
+    // signedIn and activeSlot: the account is only known once sign-in has
+    // finished, which can be after the title first shows.
+  }, [titleOpen, hallOpen, signedIn, activeSlot]);
   // Left Settings some other way (switched save, a face editor's own exit):
   // its back button goes home again, not to the title.
   useEffect(() => {
@@ -1691,10 +1708,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleBallonDorContinue = useCallback((userWon: boolean) => {
     if (!career) return;
     setWonBallonDor(userWon);
-    // Old enough to stop? That decision comes before anything about next season,
-    // because there might not be one.
-    if (retirementCheck(career).canRetire) {
+    // The last season is over: the career ends here, before anything about a
+    // next season. One season before that, a warning comes first, before the
+    // transfer window (Leo, 5 Oct 2026: "this is your final season before
+    // retirement. End your career in the right way").
+    const check = retirementCheck(career);
+    if (check.mustRetire) {
       setPhase("retirement");
+      return;
+    }
+    if (check.finalSeasonNext) {
+      setPhase("final-season");
       return;
     }
     openTransferWindowOrRoll(career, userWon);
@@ -1710,6 +1734,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       apps: done.careerStats.appearances, trophies: done.trophies.length,
     }, "retire");
     setCareer(done);
+    // Straight into the Hall of Fame, not only when the save next runs: the
+    // career is kept even if "New career" is pressed at once.
+    addToHall(scopeRef.current, done);
+    void syncHall(scopeRef.current);
     setPhase("legacy");
   }, [career, wonBallonDor]);
 
@@ -2109,9 +2137,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("contract-renewal");
       return;
     }
-    if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
+    if (pending?.phase === "retirement" && retirementCheck(saved).mustRetire && seasonOver) {
       setWonBallonDor(!!pending.wonBallonDor);
       setPhase("retirement");
+      return;
+    }
+    if (pending?.phase === "final-season" && retirementCheck(saved).finalSeasonNext && seasonOver) {
+      setWonBallonDor(!!pending.wonBallonDor);
+      setPhase("final-season");
       return;
     }
     // A save from before the five-stage trial existed, caught mid-penalty.
@@ -2166,6 +2199,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career]);
 
   /** Switch which save is on screen — see SaveSlotsPanel in Settings. */
+  /**
+   * A retired career goes in the Hall of Fame before anything deletes or
+   * replaces its slot. Usually it is there already (saveCareer puts it in);
+   * this is the one place that checks. If this device will not store it,
+   * the player is asked before the career is lost.
+   */
+  const keepRetiredThen = useCallback((slot: number, go: () => void) => {
+    const c = slot === activeSlotRef.current && career ? career : peekSlotCareer(scopeRef.current, slot);
+    if (!c?.retired || addToHall(scopeRef.current, c).ok) {
+      if (c?.retired) void syncHall(scopeRef.current);
+      go();
+      return;
+    }
+    void askConfirm("This device is full, so this career could not go in the Hall of Fame. Delete it anyway?", "Delete").then(ok => { if (ok) go(); });
+  }, [career]);
+
   const handleSwitchSave = useCallback((slot: number) => {
     if (slot === activeSlotRef.current) return;
     flushCloudSave();
@@ -2180,13 +2229,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * handleFullReset, just below.
    */
   const handleStartNewInSlot = useCallback((slot: number) => {
-    flushCloudSave();
-    setActiveSlot(slot);
-    resetTransientState();
-    setCareer(null);
-    setCloudLoading(false);
-    setPhase("profile-setup");
-  }, [flushCloudSave, setActiveSlot, resetTransientState]);
+    // A retired career in this slot is kept in the Hall of Fame first.
+    keepRetiredThen(slot, () => {
+      flushCloudSave();
+      setActiveSlot(slot);
+      resetTransientState();
+      setCareer(null);
+      setCloudLoading(false);
+      setPhase("profile-setup");
+    });
+  }, [flushCloudSave, setActiveSlot, resetTransientState, keepRetiredThen]);
 
   /**
    * Delete one save outright. Deleting the active slot leaves it empty and
@@ -2198,20 +2250,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // (Mikey, 28 Sep 2026). The Delete buttons ask "Sure?" on the screen
   // themselves before calling this.
   const handleDeleteSave = useCallback((slot: number) => {
-    clearCareer(slotScope(scopeRef.current, slot));
-    clearCareerFromCloud(slot);
-    if (slot === activeSlotRef.current) {
-      resetTransientState();
-      setCareer(null);
-      setPhase("profile-setup");
-    } else {
-      // Nothing about the screen actually on show just changed — bump a
-      // counter that IS state purely so the Saves list (which reads
-      // listSaveSlots fresh on every render, not from a cache) re-renders
-      // to show this slot empty.
-      bumpSaves(v => v + 1);
-    }
-  }, [resetTransientState]);
+    // A retired career is kept in the Hall of Fame before its slot goes.
+    keepRetiredThen(slot, () => {
+      clearCareer(slotScope(scopeRef.current, slot));
+      clearCareerFromCloud(slot);
+      if (slot === activeSlotRef.current) {
+        resetTransientState();
+        setCareer(null);
+        setPhase("profile-setup");
+      } else {
+        // Nothing about the screen actually on show just changed — bump a
+        // counter that IS state purely so the Saves list (which reads
+        // listSaveSlots fresh on every render, not from a cache) re-renders
+        // to show this slot empty.
+        bumpSaves(v => v + 1);
+      }
+    });
+  }, [resetTransientState, keepRetiredThen]);
 
   /**
    * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
@@ -2269,9 +2324,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("profile-setup");
     };
     // In-app, not confirm(): a browser box throws the player out of full screen.
-    if (career?.retired) reset();
+    // A retired career is kept in the Hall of Fame, so nothing is lost.
+    if (career?.retired) keepRetiredThen(activeSlotRef.current, reset);
     else void askConfirm("Delete this career and start over?", "Delete").then(ok => { if (ok) reset(); });
-  }, [career, resetTransientState]);
+  }, [career, resetTransientState, keepRetiredThen]);
 
   // Shop buys
   const handleBuyKib = useCallback((can: KibCan) => {
@@ -2875,7 +2931,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       || (phase === "season-transfer" && transferOffers.length === 0)
       || (phase === "transfer-signing" && !pendingSignOffer)
       || (phase === "relationship-game" && !relationshipGameKind)
-      || (phase === "retirement" && !retirementCheck(career).canRetire);
+      || (phase === "retirement" && !retirementCheck(career).mustRetire)
+      || (phase === "final-season" && !retirementCheck(career).finalSeasonNext);
     if (missing) {
       setActiveNav(null);
       setPhase("dashboard");
@@ -2936,6 +2993,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (hallOpen) {
+    return <HallOfFame account={scopeRef.current} onBack={() => setHallOpen(false)} />;
+  }
+
   if (titleOpen && globalSettings) {
     return (
       <GlobalSettingsScreen
@@ -2957,6 +3018,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onDeleteSlot={handleDeleteSave}
         onSettings={() => setGlobalSettings(true)}
         onTutorial={handleTitleTutorial}
+        onHallOfFame={() => setHallOpen(true)}
+        hallCount={hallCount}
         showPlayArea={offlineDevPlayEnabled()}
       />
     );
@@ -3569,11 +3632,26 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "legacy") {
-    return <LegacyScreen career={career} onNewCareer={handleFullReset} />;
+    // The career overview replaces the old end screen (Leo, 5 Oct 2026:
+    // "You don't have to keep the old screen. Just replace it with this one").
+    return (
+      <CareerOverview
+        career={career}
+        actions={[
+          { icon: "🏛️", label: "Hall of Fame", onClick: () => { setHallOpen(true); window.scrollTo({ top: 0 }); } },
+          { icon: "＋", label: "New career", onClick: handleFullReset, primary: true },
+          { icon: "☰", label: "Menu", onClick: () => setTitleOpen(true) },
+        ]}
+      />
+    );
   }
 
   if (phase === "retirement") {
-    return <RetirementChoice career={career} onRetire={handleRetire} onPlayOn={handlePlayOn} />;
+    return <FinalWhistle career={career} onRetire={handleRetire} />;
+  }
+
+  if (phase === "final-season") {
+    return <FinalSeasonNotice career={career} onContinue={handlePlayOn} />;
   }
 
   if (phase === "transfer-signing" && pendingSignOffer) {

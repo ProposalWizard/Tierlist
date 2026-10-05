@@ -2,6 +2,7 @@ import { previewCareer, PREVIEW_SHAPES } from "../../lib/star/retirementPreview"
 import { careerOverview } from "../../lib/star/careerOverview";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { CAREER_SEASONS } from "../../lib/star/retirement";
 import type { StarPlayer } from "../../lib/star/types";
 
 /**
@@ -22,6 +23,7 @@ for (const { id } of PREVIEW_SHAPES) {
     const o = careerOverview(c);
     const rows = c.seasonArchive ?? [];
     check(c.retired === true, `${tag}: retired`);
+    check(c.season === CAREER_SEASONS, `${tag}: a whole career is ${CAREER_SEASONS} seasons (${c.season})`);
     check(o.seasons.length === c.season, `${tag}: one overview row per season (${o.seasons.length} v ${c.season})`);
     check(rows.reduce((n, r) => n + r.goals, 0) === c.careerStats.goals, `${tag}: career goals = the seasons added up`);
     check(rows.reduce((n, r) => n + r.apps, 0) === c.careerStats.appearances, `${tag}: career apps = the seasons added up`);
@@ -49,15 +51,26 @@ for (const { id } of PREVIEW_SHAPES) {
   const oneClub = careerOverview(previewCareer("oneClub", 1));
   const journey = careerOverview(previewCareer("journeyman", 1));
   const grafter = careerOverview(previewCareer("grafter", 1));
-  const short = careerOverview(previewCareer("short", 1));
+  const quiet = careerOverview(previewCareer("quiet", 1));
   check(legend.totals.ballonDors >= 1, `the legend wins a Ballon d'Or (${legend.totals.ballonDors})`);
   check(legend.clubs.length === 3 && legend.clubs[0].years.includes("·"), `the legend goes home: Brighton twice in one card (${legend.clubs.map(c => c.years).join(" / ")})`);
   check(legend.spells.length === 4 && legend.spells[0].club === legend.spells[3].club, `and four spells on the journey (${legend.spells.map(s => s.club).join(" → ")})`);
   check(oneClub.clubs.length === 1 && !!oneClub.life.testimonial, "the one-club man gets his testimonial");
   check(journey.clubs.length === 7, `the journeyman has seven clubs (${journey.clubs.length})`);
   check(grafter.seasons.some(s => s.world?.move === "promoted"), "the grafter goes up at least once");
-  check(short.ageAtEnd === 33, `the short career stops at 33 (${short.ageAtEnd})`);
-  check(legend.totals.goals > short.totals.goals && short.totals.goals > 0, "a legend scores more than a short career");
+  check(legend.ageAtEnd === 35, `twenty seasons from 16: the last is played at 35 (${legend.ageAtEnd})`);
+  check(legend.totals.goals > quiet.totals.goals && quiet.totals.goals > 0, "a legend scores more than the quiet one");
+  check(quiet.clubs.length === 2 && quiet.totals.ballonDors === 0, "the quiet one: two clubs, no Ballon d'Or");
+}
+
+// The career so far (upTo): not retired, no testimonial, the seasons cut.
+for (const { id } of PREVIEW_SHAPES) {
+  const c = previewCareer(id, 3, { upTo: 19 });
+  check(c.retired === false && c.season === 19, `${id}: upTo 19 is season 19, not retired (${c.season}, ${c.retired})`);
+  check(!c.testimonial, `${id}: no testimonial before retiring`);
+  check((c.seasonArchive ?? []).length === 19 && c.player.age === 34, `${id}: 19 seasons, age 34 (${c.player.age})`);
+  const whole = previewCareer(id, 3);
+  check(JSON.stringify(whole.seasonArchive!.slice(0, 19)) === JSON.stringify(c.seasonArchive), `${id}: the first 19 seasons match the whole career's`);
 }
 
 // A career still going: the season in progress is live, with no winners yet.

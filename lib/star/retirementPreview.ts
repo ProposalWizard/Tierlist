@@ -27,14 +27,14 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS,
 } from "./clubs";
 
-export type PreviewShape = "legend" | "journeyman" | "oneClub" | "grafter" | "short";
+export type PreviewShape = "legend" | "journeyman" | "oneClub" | "grafter" | "quiet";
 
 export const PREVIEW_SHAPES: { id: PreviewShape; label: string; line: string }[] = [
-  { id: "legend", label: "Legend", line: "Ballon d'Ors and a big club · 23 seasons" },
-  { id: "oneClub", label: "One club", line: "One shirt, a testimonial · 18 seasons" },
-  { id: "journeyman", label: "Journeyman", line: "Seven clubs, up and down · 19 seasons" },
-  { id: "grafter", label: "Lower leagues", line: "League Two to the Championship · 20 seasons" },
-  { id: "short", label: "Stops at 33", line: "The first season you can retire · 18 seasons" },
+  { id: "legend", label: "Legend", line: "Ballon d'Ors and a big club" },
+  { id: "oneClub", label: "One club", line: "One shirt, a testimonial" },
+  { id: "journeyman", label: "Journeyman", line: "Seven clubs, up and down" },
+  { id: "grafter", label: "Lower leagues", line: "League Two to the Championship" },
+  { id: "quiet", label: "Quiet one", line: "Two clubs, little to show for it" },
 ];
 
 interface Spell {
@@ -70,9 +70,9 @@ const SHAPES: Record<PreviewShape, ShapeSpec> = {
     first: "Jamie", last: "Calloway", position: "ST", ceiling: 1, capsFrom: 19,
     spells: [
       { club: "Brighton & Hove Albion", divisions: rep("premier", 4), strength: 0.55 },
-      { club: "Manchester City", divisions: rep("premier", 10), strength: 0.95 },
-      { club: "Arsenal", divisions: rep("premier", 6), strength: 0.88 },
-      { club: "Brighton & Hove Albion", divisions: rep("premier", 3), strength: 0.5 },
+      { club: "Manchester City", divisions: rep("premier", 9), strength: 0.95 },
+      { club: "Arsenal", divisions: rep("premier", 5), strength: 0.88 },
+      { club: "Brighton & Hove Albion", divisions: rep("premier", 2), strength: 0.5 },
     ],
     items: [["jet", 5], ["estate", 5], ["car-4", 5], ["rolex", 5], ["villa", 4], ["stable", 3], ["suv", 4]],
     horse: true, girlfriend: "Sophie",
@@ -81,7 +81,7 @@ const SHAPES: Record<PreviewShape, ShapeSpec> = {
   },
   oneClub: {
     first: "Danny", last: "Mercer", position: "CAM", ceiling: 0.78, capsFrom: 22,
-    spells: [{ club: "Newcastle United", divisions: rep("premier", 18), strength: 0.72 }],
+    spells: [{ club: "Newcastle United", divisions: rep("premier", 20), strength: 0.72 }],
     items: [["house-2", 3], ["suv", 4], ["gold", 3], ["tv", 4]],
     girlfriend: "Hannah",
     sponsors: [["Strikeforce", "Boots", "#f97316"], ["Tyneside Motors", "Car", "#64748b"]],
@@ -95,7 +95,7 @@ const SHAPES: Record<PreviewShape, ShapeSpec> = {
       { club: "Norwich City", divisions: rep("championship", 2), strength: 0.65 },
       { club: "Crystal Palace", divisions: rep("premier", 3), strength: 0.45 },
       { club: "Middlesbrough", divisions: rep("championship", 3), strength: 0.6 },
-      { club: "Barnsley", divisions: rep("league_one", 3), strength: 0.55 },
+      { club: "Barnsley", divisions: rep("league_one", 4), strength: 0.55 },
     ],
     items: [["car-2", 3], ["flat-2", 2], ["console", 2]],
     sponsors: [["Pace", "Boots", "#ef4444"]],
@@ -109,16 +109,14 @@ const SHAPES: Record<PreviewShape, ShapeSpec> = {
     items: [["car-1", 2], ["flat-1", 1], ["phone", 3]],
     sponsors: [],
   },
-  short: {
-    first: "Kai", last: "Brennan", position: "RW", ceiling: 0.7,
+  quiet: {
+    first: "Kai", last: "Brennan", position: "RW", ceiling: 0.5,
     spells: [
-      { club: "Aston Villa", divisions: rep("premier", 7), strength: 0.75 },
-      { club: "Tottenham Hotspur", divisions: rep("premier", 7), strength: 0.78 },
-      { club: "Everton", divisions: rep("premier", 4), strength: 0.45 },
+      { club: "Port Vale", divisions: rep("league_one", 12), strength: 0.3 },
+      { club: "Cheltenham Town", divisions: rep("league_one", 8), strength: 0.28 },
     ],
-    items: [["car-3", 3], ["penthouse", 3], ["headphones", 3]],
-    girlfriend: "Mia",
-    sponsors: [["Nova", "Electronics", "#3b82f6"], ["Arc", "Casual Clothing", "#a855f7"]],
+    items: [["car-1", 1]],
+    sponsors: [],
   },
 };
 
@@ -149,15 +147,22 @@ function curve(age: number): number {
   return Math.max(0.42, 1 - (age - 31) * 0.085);
 }
 
-export function previewCareer(shape: PreviewShape, seed = 1): CareerState {
+/**
+ * `upTo`: stop after this many seasons, NOT retired — the career as it stood
+ * then (the test page's "final season" warning and "final whistle" views).
+ * Without it: the whole career, retired.
+ */
+export function previewCareer(shape: PreviewShape, seed = 1, opts: { upTo?: number } = {}): CareerState {
   const spec = SHAPES[shape];
   const rng = mulberry32(seed * 7919 + shape.length * 131);
   const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(rng() * xs.length) % xs.length];
   const between = (a: number, b: number) => a + rng() * (b - a);
   const startYear = 2026;
 
-  const seasons: { club: string; division: CareerDivision; strength: number }[] = [];
-  for (const sp of spec.spells) for (const d of sp.divisions) seasons.push({ club: sp.club, division: d, strength: sp.strength });
+  const allSeasons: { club: string; division: CareerDivision; strength: number }[] = [];
+  for (const sp of spec.spells) for (const d of sp.divisions) allSeasons.push({ club: sp.club, division: d, strength: sp.strength });
+  const finished = !opts.upTo || opts.upTo >= allSeasons.length;
+  const seasons = finished ? allSeasons : allSeasons.slice(0, Math.max(1, opts.upTo!));
   const total = seasons.length;
   const ageAtEnd = 16 + total - 1;
 
@@ -312,7 +317,7 @@ export function previewCareer(shape: PreviewShape, seed = 1): CareerState {
     player,
     season: total,
     division: seasons[total - 1].division,
-    retired: true,
+    retired: finished,
     seasonStats: { appearances: last.apps, goals: last.goals, assists: last.assists, hatTricks: 0, passes: last.apps * 20, starMan: last.motm, totalRating: last.avgRating * last.apps, ratingCount: last.apps },
     careerStats: { appearances: sum("apps"), goals: sum("goals"), assists: sum("assists"), hatTricks, passes, starMan: sum("motm"), totalRating, ratingCount },
     careerLeagueStats: { goals: Math.round(plGoals * 0.75), assists: 0, appearances: plApps },
@@ -358,7 +363,8 @@ export function previewCareer(shape: PreviewShape, seed = 1): CareerState {
     captain: shape === "oneClub" || shape === "legend",
   } as CareerState;
   state.achievements = ACHIEVEMENTS.filter(a => { try { return a.check(state); } catch { return false; } }).map(a => a.id);
-  state.testimonial = testimonialFor(state);
+  // A testimonial is paid on retiring (retire, retirement.ts): not before.
+  state.testimonial = finished ? testimonialFor(state) : null;
   if (state.testimonial) state.money += state.testimonial.payout;
   return state;
 }

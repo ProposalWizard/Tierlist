@@ -1521,6 +1521,9 @@ export type StarPhase =
   | "advert-shoot"
   | "season-transfer"
   | "retirement"
+  /** After the Ballon d'Or night of the second-last season: "this is your
+   *  final season before retirement" (CareerEnd.tsx, Leo 5 Oct 2026). */
+  | "final-season"
   | "legacy"
   | "press"
   | "draw"
