@@ -23,6 +23,7 @@ import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft } from "@/lib/star/week";
+import { getTuning } from "@/lib/star/tuningStore";
 import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { fameOf } from "@/lib/star/fame";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
@@ -68,7 +69,10 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
   onOpen: (ph: Open) => void;
 }) {
   const left = actionsLeft(career);
-  const canPlay = left > 0;
+  // A game costs the same energy as a training session (Mikey, 5 Oct 2026).
+  const cost = getTuning("energy.trainingCost");
+  const tired = career.energy < cost;
+  const canPlay = left > 0 && !tired;
   const r = career.relationships;
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
@@ -84,7 +88,7 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
   // Each game once a week (relationships.ts): a played one shows a tick.
   const game = (k: RelationshipKind) => {
     const done = gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, k);
-    return <ActBtn tone={CARD_TONE[k]} disabled={!canPlay || done} label={done ? `${GAME_LABEL[k]} · done this week` : `${GAME_LABEL[k]} · 1 day`} onClick={() => onPlayRelationshipGame(k)}>{done ? "✓" : "▶"}</ActBtn>;
+    return <ActBtn tone={CARD_TONE[k]} disabled={!canPlay || done} label={done ? `${GAME_LABEL[k]} · done this week` : tired ? `${GAME_LABEL[k]} · not enough energy` : `${GAME_LABEL[k]} · 1 day, ${cost} energy`} onClick={() => onPlayRelationshipGame(k)}>{done ? "✓" : "▶"}</ActBtn>;
   };
 
   return (
