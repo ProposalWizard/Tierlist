@@ -223,7 +223,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "The security database fix is still waiting",
-              "detail": "Two SQL files (security_rls_hardening_jul2026.sql, security_user_profiles_columns_aug2026.sql) are not run in Supabase. Locking the menus hides the buttons; it does not stop someone who talks to the database directly.",
+              "detail": "Two SQL files (security_rls_hardening_jul2026.sql, security_user_profiles_columns_aug2026.sql) are not run in Supabase. Until they run, anyone with the public database key can still write straight into community votes, the Draft leaderboards, multiplayer draft rooms and XP. (This is separate from the cheat menus: Star Career money and stats are still trusted from the saved career, which needs its own server fix.)",
               "pill": {
                 "text": "blocked on running them",
                 "tone": "red"
