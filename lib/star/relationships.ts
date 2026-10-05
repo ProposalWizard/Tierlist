@@ -29,6 +29,11 @@ export type RelKey = "boss" | "team" | "fans";
 export const REL_KEYS: RelKey[] = ["boss", "team", "fans"];
 
 /** Every match gain is this share of the table's number. */
+/** The most one match can move a relationship bar, up or down (before the
+ *  bar's own scaling in relationships.ts). Mikey, 5 Oct 2026. */
+export const MATCH_REL_CAP = 6;
+export const capRel = (n: number) => Math.max(-MATCH_REL_CAP, Math.min(MATCH_REL_CAP, n));
+
 export const REL_GAIN_SCALE = 0.65;
 /** Above this a bar drifts down; below DRIFT_LOW it drifts up. */
 export const DRIFT_HIGH = 60;

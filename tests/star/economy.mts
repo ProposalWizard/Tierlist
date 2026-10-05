@@ -320,7 +320,7 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   for (const wage of [25, 256, 6_336, 100_000]) {
     const prices = KIB_CANS_DEFAULT.map(c => kibCanPrice(c, wage));
     check(prices[0] < prices[1] && prices[1] < prices[2], `cans ascend at wage ★${wage}`);
-    check(Math.abs(prices[0] / wage - 0.5) < 0.05, `a Basic can is half a week's wage at ★${wage} (★${prices[0]})`);
+    check(prices[0] === Math.round(wage * 0.95), `a Basic can is 95% of a week's wage at ★${wage} (★${prices[0]})`);
   }
 
   // Nothing in the shop is a hand-typed figure any more: no price survives

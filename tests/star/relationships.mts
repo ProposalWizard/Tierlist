@@ -124,5 +124,12 @@ const check = (ok: boolean, msg: string) => { if (!ok) { fail++; console.log("  
   check(bossGain(0) === -2 && bossGain(1) === 2 && bossGain(3) === 6, "+2 a hit, −2 for none");
 }
 
+// Mikey, 5 Oct 2026: one match moves a bar at most ±6 (before scaling), and a bad game costs the mirror of a good one.
+{
+  const { capRel, MATCH_REL_CAP } = await import("../../lib/star/relationships.ts");
+  check(MATCH_REL_CAP === 6 && capRel(18) === 6 && capRel(-9) === -6 && capRel(3) === 3, "capRel holds a match to ±6");
+}
+
 console.log(fail ? `FAIL (${fail})` : "PASS — relationships move slowly and drift to the middle, happiness decides recovery, one game each that pays more when the bar is low");
 if (fail) process.exit(1);
+
