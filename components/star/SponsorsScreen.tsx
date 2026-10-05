@@ -11,6 +11,7 @@ import type { CareerState } from "@/lib/star/types";
 import {
   brandsOf, slotsFor, weeklySponsorTotal, targetLabel, moodOf, categoryStatus, BRAND_CATEGORIES, fameNeeded,
   BOOT_DEAL_DISCOUNT, OFFER_WEEKS, type BrandDeal, type BrandOffer, type BrandTarget,
+  SPONSOR_NEGOTIATION,
 } from "@/lib/star/sponsorDeals";
 import { fameOf, fameLevel, FAME_LEVELS } from "@/lib/star/fame";
 import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
@@ -170,9 +171,10 @@ function OfferCard({ o, career, act }: { o: BrandOffer; career: CareerState; act
 
       <div className="relative mt-2.5 grid grid-cols-2 gap-2">
         <PressButton variant="primary" size="none" disabled={noSlot} onClick={() => act.onSign(o.id)} className="rounded-xl py-2.5 text-[12px] font-black">{o.kind === "milestone" ? "Do the advert" : "Sign"}</PressButton>
-        <PressButton variant="secondary" size="none" onClick={() => act.onDecline(o.id)} className="rounded-xl py-2.5 text-[12px] font-black">Decline</PressButton>
+        <PressButton variant="secondary" size="none" onClick={() => act.onDecline(o.id)} className="rounded-xl py-2.5 text-[12px] font-black">{SPONSOR_NEGOTIATION ? "Decline" : "Leave it"}</PressButton>
       </div>
-      {o.kind !== "milestone" && (
+      {/* Take it or leave it (Mikey, 5 Oct 2026) — see SPONSOR_NEGOTIATION. */}
+      {SPONSOR_NEGOTIATION && o.kind !== "milestone" && (
         <div className="relative mt-2 grid grid-cols-3 gap-1.5">
           <PressButton variant="accent" accent="#fbbf24" size="none" disabled={!!o.negotiated} onClick={() => act.onNegotiate(o.id)} className="rounded-lg py-2 text-[10.5px] font-black">{o.negotiated ? "Fee agreed" : "More money"}</PressButton>
           <PressButton variant="accent" accent="#60a5fa" size="none" disabled={!!o.askedLonger || o.seasons >= 3} onClick={() => act.onAskLonger(o.id)} className="rounded-lg py-2 text-[10.5px] font-black">{o.askedLonger ? "Asked" : "Longer deal"}</PressButton>

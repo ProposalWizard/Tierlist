@@ -175,30 +175,41 @@ const MV = 10_000_000;
 }
 
 // Leo, 5 Oct 2026: a sponsor opened at ★9 a week, he asked ★1,000, and they
-// came back at ★300. A silly ask must insult them, never be met halfway.
+// came back at ★300. Mikey, same day: and no fixed rule a player can learn
+// either — every counter is a roll, worse the further past their limit.
 {
   const sponsor: NegotiationState = { marketValue: 11, mode: "selling", round: 0, yourPosition: 11, theirPosition: 9, moodScore: 60, status: "negotiating", log: [] };
   const limit = limitOf(sponsor);
-  let walked = 0, finals = 0, overLimit = 0;
-  for (let i = 0; i < 500; i++) {
-    const r = makeOffer(sponsor, 1000, seededRng(100 + i));
-    if (r.status === "walked_away") walked++;
-    else if (r.finalOffer && r.theirPosition < sponsor.theirPosition) finals++;
-    if (r.theirPosition > limit) overLimit++;
-  }
-  check(walked + finals === 500, `an insulting ask always ends in a walkout or a WORSE final offer (${walked} walked, ${finals} final of 500)`);
-  check(walked > 0 && finals > 0, "both a walkout and a final offer happen");
-  check(overLimit === 0, "they never go past their limit");
-  const fin = makeOffer(sponsor, 1000, () => 0.99);
+  const tally = (ask: number) => {
+    let bad = 0, overLimit = 0, wentUp = 0;
+    for (let i = 0; i < 2000; i++) {
+      const r = makeOffer(sponsor, ask, seededRng(100 + i));
+      if (r.status === "walked_away" || r.finalOffer) bad++;
+      if (r.theirPosition > limit) overLimit++;
+      if (r.status === "negotiating" && !r.finalOffer && r.theirPosition > sponsor.theirPosition) wentUp++;
+    }
+    return { bad: bad / 2000, overLimit, wentUp: wentUp / 2000 };
+  };
+  const fair = tally(11), cheeky = tally(18), insult = tally(1000);
+  check(fair.bad > 0.02 && fair.bad < 0.2, `a fair ask is never a sure thing, but rarely goes wrong (${(fair.bad * 100).toFixed(1)}%)`);
+  check(cheeky.bad > 0.3 && cheeky.bad < 0.65, `a cheeky ask often goes wrong (${(cheeky.bad * 100).toFixed(1)}%)`);
+  check(insult.bad > 0.85, `an insulting ask almost always goes wrong (${(insult.bad * 100).toFixed(1)}%)`);
+  check(cheeky.wentUp > 0.25, `a cheeky ask still often gets a raise (${(cheeky.wentUp * 100).toFixed(1)}%)`);
+  check(fair.overLimit + cheeky.overLimit + insult.overLimit === 0, "they never go past their limit");
+  // The ★300 bug itself: no reply to ★1,000 is ever above their limit.
+  // A final offer: take it or leave it.
+  let fin = sponsor;
+  for (let i = 0; i < 200 && !fin.finalOffer; i++) fin = makeOffer(sponsor, 1000, seededRng(900 + i));
+  check(!!fin.finalOffer && fin.theirPosition <= sponsor.theirPosition, "an insult can bring a final offer no better than their last");
   check(makeOffer(fin, fin.theirPosition + 1, () => 0.5).status === "walked_away", "countering a final offer ends the talks");
   check(makeOffer(fin, fin.theirPosition, () => 0.5).status === "accepted", "accepting a final offer closes the deal");
-  // A cheeky-but-not-insulting ask: they stand at or below their limit.
-  let s = sponsor;
-  for (let i = 0; i < 5 && s.status === "negotiating"; i++) {
-    s = makeOffer(s, 20, () => 0.99);
-    check(s.theirPosition <= limit, `asking ★20 never drags them past their ★${limit.toFixed(1)} limit (round ${i + 1}: ★${s.theirPosition})`);
+  // Asking past their limit never closes, however many rounds.
+  for (let t = 0; t < 50; t++) {
+    let s = sponsor;
+    const rng = seededRng(5000 + t);
+    for (let i = 0; i < 10 && s.status === "negotiating" && !s.finalOffer; i++) s = makeOffer(s, 18, rng);
+    if (s.status === "accepted") { check(false, "an ask past their limit closed a deal"); break; }
   }
-  check(s.status !== "accepted", "an ask past their limit never closes");
 }
 
 if (problems.length) {

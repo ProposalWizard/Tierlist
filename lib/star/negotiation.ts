@@ -41,6 +41,8 @@ export interface NegotiationState {
   /** They were insulted and made one last take-it-or-leave-it offer. Anything
    *  but accepting `theirPosition` now ends the talks. */
   finalOffer?: boolean;
+  /** Their very first position — their worst offer is measured from it. */
+  opening?: number;
 }
 
 function moodBucket(score: number): CounterpartMood {
@@ -170,26 +172,20 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   }
 
   // Leo, 5 Oct 2026: a sponsor opened at ★9 a week, he asked ★1,000, and they
-  // came back at ★300 — meeting in the middle of a silly number. A real
-  // counterpart has a limit. An ask far past it insults them: they walk out,
-  // or make one final offer WORSE than their last, take it or leave it.
+  // came back at ★300 — meeting in the middle of a silly number. Then Mikey,
+  // same day: a fixed rule ("ask a bit over and they always come up to their
+  // limit") is just as easy to abuse. So a counterpart has a hidden limit, and
+  // every counter you make is a ROLL: usually they come up a random amount
+  // (never past the limit), but sometimes they stand firm at their price as a
+  // final offer, sometimes they drop to their worst price as a final offer,
+  // and sometimes they just leave. The further past their limit you ask, the
+  // likelier the bad outcomes — but even a fair ask is never a sure thing.
   const limit = limitOf(state);
-  if (insulting(mode, yourNewPosition, limit)) {
-    if (rng() < getTuning("negotiation.insultWalkChance")) {
-      log.push(mode === "buying"
-        ? `You offer ★${yourNewPosition.toLocaleString()} — insulted, the agent walks away.`
-        : `You ask ★${yourNewPosition.toLocaleString()} — insulted, they walk away.`);
-      return { ...state, yourPosition: yourNewPosition, moodScore: 0, status: "walked_away", log };
-    }
-    const cut = getTuning("negotiation.finalOfferCut");
-    const worse = cleanRound(mode === "buying"
-      ? state.theirPosition * (1 + cut)
-      : Math.max(1, state.theirPosition * (1 - cut)));
-    log.push(mode === "buying"
-      ? `You offer ★${yourNewPosition.toLocaleString()} — insulted. Final price: ★${worse.toLocaleString()}, take it or leave it.`
-      : `You ask ★${yourNewPosition.toLocaleString()} — insulted. Final offer: ★${worse.toLocaleString()}, take it or leave it.`);
-    return { ...state, yourPosition: yourNewPosition, theirPosition: worse, moodScore: 0, finalOffer: true, round: state.round + 1, log };
-  }
+  const opening = state.opening ?? state.theirPosition;
+  const cut = getTuning("negotiation.finalOfferCut");
+  // The worst they will offer you: below their opener (selling) / above it (buying).
+  const worst = cleanRound(mode === "buying" ? opening * (1 + cut) : Math.max(1, opening * (1 - cut)));
+  const insult = insulting(mode, yourNewPosition, limit);
   const pastLimit = beyondLimit(mode, yourNewPosition, limit);
 
   const gap = Math.abs(state.theirPosition - yourNewPosition);
@@ -207,30 +203,54 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   const movedToward = gap < priorGap - 1e-6;
 
   // Asking past their limit annoys them even when you came down a bit.
-  let moodScore = state.moodScore + (pastLimit ? (movedToward ? -4 : -15) : (movedToward ? 6 : -12));
+  let moodScore = state.moodScore + (insult ? -40 : pastLimit ? (movedToward ? -4 : -15) : (movedToward ? 6 : -12));
   moodScore = Math.max(0, Math.min(100, moodScore));
+  const round = state.round + 1;
+  const you = `${mode === "buying" ? "You offer" : "You ask"} ★${yourNewPosition.toLocaleString()}`;
 
-  // Below the walk-away floor, a bad round carries a real chance they just leave.
-  if (moodScore < getTuning("negotiation.walkAwayMoodFloor") && rng() < getTuning("negotiation.walkAwayChance")) {
-    log.push(mode === "buying" ? "They've had enough — the agent walks away." : "The buyer walks away, unhappy with your demands.");
-    return { ...state, yourPosition: yourNewPosition, moodScore, status: "walked_away", log };
+  // ── The roll ──
+  const baseRisk = insult ? 1 - getTuning("negotiation.insultCounterChance")
+    : pastLimit ? getTuning("negotiation.cheekyRisk")
+    : getTuning("negotiation.fairRisk");
+  // A sour mood makes every bad outcome likelier; a good one, rarer.
+  const moodFactor = Math.max(0.6, Math.min(2, 1 + (55 - moodScore) / 55));
+  const risk = Math.min(0.97, baseRisk * moodFactor);
+  if (rng() < risk) {
+    // Which bad outcome. An insult mostly ends in a walkout or their worst
+    // price; a fair ask going wrong is mostly them just holding their number.
+    const walkShare = insult ? getTuning("negotiation.insultWalkChance") : pastLimit ? 0.3 : 0.2;
+    const worstShare = insult ? 0.45 : pastLimit ? 0.35 : 0.3;
+    const r = rng();
+    if (r < walkShare) {
+      log.push(insult
+        ? `${you} — insulted, ${mode === "buying" ? "the agent walks" : "they walk"} away.`
+        : `${you} — ${mode === "buying" ? "the agent has" : "they've"} had enough and ${mode === "buying" ? "walks" : "walk"} away.`);
+      return { ...state, yourPosition: yourNewPosition, moodScore: 0, round, opening, status: "walked_away", log };
+    }
+    const dropToWorst = r < walkShare + worstShare && worst !== state.theirPosition;
+    const final = dropToWorst ? worst : state.theirPosition;
+    log.push(dropToWorst
+      ? `${you} — ${insult ? "insulted. " : "annoyed. "}${mode === "buying" ? "Final price" : "Final offer"}: ★${final.toLocaleString()}, take it or leave it.`
+      : `${you} — they won't budge. ★${final.toLocaleString()} is final, take it or leave it.`);
+    return { ...state, yourPosition: yourNewPosition, theirPosition: final, moodScore: Math.min(moodScore, 30), round, opening, finalOffer: true, log };
   }
 
+  // They counter: a random share of the way toward the nearer of your number
+  // and their own limit — never past the limit, never the same move twice.
+  const target = pastLimit ? limit : yourNewPosition;
+  const towardGap = Math.abs(state.theirPosition - target);
   const moodMultiplier = Math.max(0.4, Math.min(1.6, moodScore / 60));
-  // Asking past their limit doesn't drag them further: they only ever move
-  // toward the nearer of your number and their own limit.
-  const towardGap = pastLimit ? Math.abs(state.theirPosition - limit) : gap;
-  const concession = towardGap * getTuning("negotiation.concessionRate") * moodMultiplier;
-  // They concede toward you, but never past their own limit.
+  // concessionRate is the AVERAGE share; each counter lands anywhere from
+  // under half of it to over double (0.35 gives 14%-84% of the gap).
+  const share = Math.min(1, getTuning("negotiation.concessionRate") * randBetween(rng, 0.4, 2.4) * moodMultiplier);
   const moved = mode === "buying"
-    ? Math.max(limit, state.theirPosition - concession)
-    : Math.min(limit, state.theirPosition + concession);
+    ? Math.max(limit, state.theirPosition - towardGap * share)
+    : Math.min(limit, state.theirPosition + towardGap * share);
   const rounded = cleanRound(moved);
   const theirPosition = mode === "buying"
     ? Math.max(rounded, Math.min(state.theirPosition, Math.ceil(limit)))
     : Math.min(rounded, Math.max(state.theirPosition, Math.floor(limit)));
 
-  const round = state.round + 1;
   // Reported directly: repeating the same offer twice in a row both times
   // logged "they come down to ★95,000,000" — the SAME number they were
   // already at. A stalled round still computes a real (if tiny, mood-
@@ -262,11 +282,11 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
     if (!pastLimit && finalRelativeGap <= getTuning("negotiation.acceptTolerance")) {
       const finalPrice = yourNewPosition;
       log.push(`Final round — close enough, they accept ★${finalPrice.toLocaleString()}.`);
-      return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, status: "accepted", finalPrice, log };
+      return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, opening, status: "accepted", finalPrice, log };
     }
     log.push("Talks run out of time with no deal.");
-    return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, status: "rejected", log };
+    return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, opening, status: "rejected", log };
   }
 
-  return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, status: "negotiating", log };
+  return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, opening, status: "negotiating", log };
 }
