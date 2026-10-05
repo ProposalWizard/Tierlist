@@ -168,7 +168,8 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
       {size && (
         <div style={{ width: size.w, height: size.h }}>
           <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar
-            onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}>
+            onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}
+            onHome={app !== null ? goHome : undefined}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
               {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} />}
               {app !== null && (

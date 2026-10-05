@@ -51,6 +51,13 @@ Newest first. Each is something that was actually said.
   game's bottom bar (DashboardShell's NavBtn), in the right third of the bar,
   padded clear of the curve. "It should be the same style as the rest of the
   things."
+  ~~Then, same day: "maybe you don't have it contained in a box… just nicely
+  placed on the right." Superseded:~~ **No box: a bold icon + word on the bar,
+  Home on the left (to the phone's home screen, dimmed when already there),
+  Back on the right.**
+- **The phone's league table is zoomed in**: "it doesn't need to show all of
+  the clubs… show the top 10, then scroll down." Rows about twice the height
+  (14.5px type, 22px badges); about ten clubs fill the screen.
 
 ### 1 Oct 2026 — football screens, the title, the league page (v0.23 W7)
 - **"When it's in the training or drills or match, we definitely use the pitch

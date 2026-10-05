@@ -24,6 +24,7 @@ export default function PhoneFrame({
   ownHomeBar = false,
   onBack,
   backLabel = "Back",
+  onHome,
 }: {
   children: React.ReactNode;
   /** The screen's background (the phone home screen's club wallpaper).
@@ -44,6 +45,9 @@ export default function PhoneFrame({
   onBack?: () => void;
   /** What the Back button says to a screen reader (e.g. "Close phone"). */
   backLabel?: string;
+  /** The nav bar's Home button: back to the phone's home screen. Absent =
+   *  already there (drawn dimmed). */
+  onHome?: () => void;
 }) {
   return (
     <div
@@ -99,30 +103,38 @@ export default function PhoneFrame({
         {/* App content — MediaFeed supplies everything from here down. */}
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
 
-        {/* Navigation bar: Back on the right, on every page of the phone
-            (Mikey, 5 Oct 2026). Three equal slots like an Android bar, Back in
-            the right one, drawn as the same tile as the game's bottom bar
-            (DashboardShell's NavBtn). The bar's side and bottom padding keep
-            the tile clear of the screen's curved corner, so it sits in the
-            corner rather than squashed against it. */}
+        {/* Navigation bar (Mikey, 5 Oct 2026): Home on the left, Back on
+            the right, like an Android phone's. No box round either ("maybe
+            it's not contained… just nicely placed") — a bold icon and word
+            on the bar itself, sat in from the screen's curved corners. Home
+            dims on the home screen, where it has nowhere to go. */}
         {onBack && (
           <div
-            className="relative z-20 grid shrink-0 grid-cols-3 gap-2 border-t border-white/10 px-5 pb-3 pt-2"
+            className="relative z-20 flex h-[52px] shrink-0 items-center justify-between border-t border-white/10 px-7 pb-1.5"
             style={{ background: "linear-gradient(180deg, rgba(17,24,39,.85), rgba(3,7,18,.95))" }}
           >
-            <span />
-            <span />
+            <button
+              onClick={onHome}
+              disabled={!onHome}
+              aria-label="Home screen"
+              data-phone-home
+              className="kib-press flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide text-white disabled:opacity-35"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 9.5V20h13V9.5" />
+              </svg>
+              Home
+            </button>
             <button
               onClick={onBack}
               aria-label={backLabel}
               data-phone-back
-              className="kib-press flex h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[4px] bg-gradient-to-b from-gray-600 to-gray-700 text-[11px] font-black leading-tight text-gray-100"
-              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.10), 0 2px 4px rgba(0,0,0,.35)" }}
+              className="kib-press flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide text-white"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M19 12H5" /><path d="M11 5l-7 7 7 7" />
+              Back
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M15 5l-7 7 7 7" />
               </svg>
-              <span>Back</span>
             </button>
           </div>
         )}
