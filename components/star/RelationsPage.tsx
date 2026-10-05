@@ -39,7 +39,7 @@ type Open = "reputation" | "sponsors";
 const toneColors = (v: number): [string, string] => (v >= 70 ? ["#10b981", "#6ee7b7"] : v >= 40 ? ["#eab308", "#fde047"] : ["#ef4444", "#fda4af"]);
 
 const GAME_LABEL: Record<RelationshipKind, string> = {
-  boss: "Talk to your manager", team: "Woodwork challenge", fans: "Signing session", sponsors: "Shoot an advert", happiness: "Day off",
+  boss: "The manager's penalties", team: "Woodwork challenge", fans: "Signing session", sponsors: "Shoot an advert", happiness: "Day off",
 };
 /** Each card's own light. */
 const CARD_TONE: Record<RelationshipKind, string> = {
@@ -51,7 +51,7 @@ const GAME_ICON: Record<RelationshipKind, string> = { boss: "🗣️", team: "�
  *  relationship with the team means you'll get more chances during a match").
  *  Read off what the game really does with each number. */
 const HELP: Record<RelationshipKind | "reputation" | "fame", string> = {
-  boss: "A good relationship with your boss means you get picked more often.",
+  boss: "A good relationship with your boss means you get picked more often. His game: three penalties, each where he tells you.",
   team: "A good relationship with the team means you'll get more chances during a match.",
   fans: "Happy fans lift you in home matches, open up some sponsor deals and set the tone online.",
   sponsors: "Each brand has its own happiness, on the Sponsors screen. It decides whether they renew.",

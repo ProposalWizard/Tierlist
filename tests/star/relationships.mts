@@ -104,5 +104,25 @@ const check = (ok: boolean, msg: string) => { if (!ok) { fail++; console.log("  
   check(!bold.lands && bold.answer === "Deserve it? Prove it first.", "a reply that misses gets a missing answer");
 }
 
+// ── The manager's penalties (Mikey, 5 Oct 2026) ──
+{
+  const { spotOf, pickSpots, bossGain, spotCentre, SPOTS } = await import("../../lib/star/bossPenalties.ts");
+  const { POST_L, POST_R, GOAL_H } = await import("../../lib/star/pitch.ts");
+  check(spotOf(POST_L + 0.3, 2.2) === "top-left" && spotOf(POST_R - 0.3, 0.2) === "bottom-right", "a corner shot lands in its corner spot");
+  check(spotOf((POST_L + POST_R) / 2, GOAL_H * 0.6) === "top-middle" && spotOf((POST_L + POST_R) / 2, 0.3) === "bottom-middle", "the middle splits top and bottom");
+  check(spotOf(POST_L - 0.5, 1) === null && spotOf(POST_R - 1, GOAL_H + 0.2) === null, "wide or over is no spot");
+  check(SPOTS.every((sp) => spotOf(spotCentre(sp).x, spotCentre(sp).z) === sp), "each target's centre is inside its own spot");
+  let seed = 3;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const seen = new Set<string>();
+  for (let i = 0; i < 300; i++) {
+    const p = pickSpots(rng);
+    check(p.length === 3 && p[0] !== p[1] && p[1] !== p[2], "three asks, never the same spot twice running");
+    p.forEach((x) => seen.add(x));
+  }
+  check(seen.size === 6, "every spot gets asked for");
+  check(bossGain(0) === -2 && bossGain(1) === 2 && bossGain(3) === 6, "+2 a hit, −2 for none");
+}
+
 console.log(fail ? `FAIL (${fail})` : "PASS — relationships move slowly and drift to the middle, happiness decides recovery, one game each that pays more when the bar is low");
 if (fail) process.exit(1);
