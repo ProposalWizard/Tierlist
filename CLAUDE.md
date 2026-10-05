@@ -497,8 +497,15 @@ useful reference if I run out my own ideas."* In Harry's sessions, Harry sets
 the order; don't push back on his priorities because the roadmap ranks
 something differently.
 
-**Two hard rules on the match engine, from Mikey:** only ever ADD to gameplay,
-never change it; and never modify `lib/star/canvasEngine.ts`.
+**The match engine may change, with a warning (Harry, 5 Oct 2026).** *"remove
+Mikeys never change the match engine rule and make it a general guard - instead
+of a rule that warns when it's happening."* Mikey's old rule (never modify
+`lib/star/canvasEngine.ts`) is gone. Any session may change the engine, but
+`scripts/hooks/engine-warn.mjs` (a PreToolUse hook in `.claude/settings.json`)
+flags every edit as it happens. When it fires: say so plainly in the reply and
+the patch notes (what changed, why, before/after numbers), run the match tests
+(`node scripts/run-star-tests.mjs finishing keeper aiming outcomes`) and
+playtest before pushing.
 
 ### Which model for what (Harry, 29 Sep 2026 — standing)
 
