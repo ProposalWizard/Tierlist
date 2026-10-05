@@ -1,5 +1,5 @@
 import { project, horizonPx, type FpCamera } from "./firstPersonView";
-import { OWN_GAIT_M, type FpDefender, type DefenderPhase } from "./firstPersonDribble";
+import { OWN_GAIT_M, passBand, type FpDefender, type DefenderPhase, type PassBand } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
 import { DEFAULT_FACE_STYLE, type FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
@@ -1114,6 +1114,66 @@ function drawDefender(
   });
 }
 
+/** The ring under a team-mate: how hard the ball to him is right now. */
+export const PASS_RING: Record<PassBand, string> = {
+  easy: "#34d399",
+  medium: "#fbbf24",
+  hard: "#ef4444",
+};
+
+/** What the renderer needs of a team-mate (FpMate satisfies it). */
+export interface FpMateDraw { x: number; y: number; difficulty: number; who?: { id: string; face?: string } }
+
+/** A team-mate offering a pass — his own kit, and a ring on the grass
+ *  coloured by how hard the ball to him is this instant (green / amber /
+ *  red). The ring is drawn on the turf, where the eye reads the telegraph
+ *  chevron too, and is big enough to be the thing you tap. */
+function drawMate(
+  ctx: CanvasRenderingContext2D, cam: FpCamera,
+  mate: FpMateDraw, index: number, kit: { shirt: string; rim: string },
+  getFace?: (url: string | undefined) => HTMLImageElement | undefined, faceStyle?: FaceStyle, fakeFaceStyle?: FakeFaceStyle,
+) {
+  const feet = project(cam, mate.x, mate.y, 0);
+  if (feet) {
+    const sc = feet.scale;
+    const col = PASS_RING[passBand(mate.difficulty)];
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(feet.px, feet.py, 1.0 * sc, 0.36 * sc, 0, 0, Math.PI * 2);
+    ctx.fillStyle = col + "55";
+    ctx.fill();
+    ctx.lineWidth = Math.max(3, 0.12 * sc);
+    ctx.strokeStyle = col;
+    ctx.stroke();
+    ctx.restore();
+  }
+  // The same colour as a dot over his head, never smaller than a fingertip
+  // can read: at the back of the picture the ring alone is a sliver.
+  const top = project(cam, mate.x, mate.y, 2.25);
+  const colTop = PASS_RING[passBand(mate.difficulty)];
+  const after = () => {
+    if (!top) return;
+    const r = Math.max(cam.W * 0.016, 0.16 * top.scale);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(top.px, top.py, r, 0, Math.PI * 2);
+    ctx.fillStyle = colTop;
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.5, r * 0.28);
+    ctx.strokeStyle = "rgba(255,255,255,0.95)";
+    ctx.stroke();
+    ctx.restore();
+  };
+  const runPhase = (-mate.y / 1.5) * Math.PI * 2;
+  drawFigure(ctx, cam, mate, 0, kit, {
+    runPhase,
+    face: getFace?.(mate.who?.face),
+    faceStyle, fakeFaceStyle,
+    headKey: mate.who?.id ?? `mate-${index}`,
+  });
+  after();
+}
+
 /** A roam-mode chaser — no telegraph, no lean, just a man either standing
  *  off (dimmed, not yet a threat) or fully awake and coming for the ball. */
 function drawChaser(ctx: CanvasRenderingContext2D, cam: FpCamera, chaser: { x: number; y: number; awake: boolean }, index = 0) {
@@ -1273,10 +1333,13 @@ export interface RenderFirstPersonOptions {
   /** Shirt and shorts for you and for them. Omit for the game's role
    *  colours (you green, them red — lib/star/fiveASide/render.ts ROLE_KIT). */
   kits?: FpKits;
+  /** Team-mates offering a pass (firstPersonDribble.ts FpMate), each with a
+   *  difficulty ring. Omit and none are drawn. */
+  mates?: FpMateDraw[];
 }
 
 export interface FpKit { shirt: string; shorts: string }
-export interface FpKits { you?: FpKit; opp?: FpKit }
+export interface FpKits { you?: FpKit; opp?: FpKit; mate?: FpKit }
 
 /** The one-on-one duel mode.
  *
@@ -1299,6 +1362,10 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
 
   const oppKit = opts.kits?.opp ? { shirt: opts.kits.opp.shirt, rim: opts.kits.opp.shorts } : { shirt: C.opp, rim: C.oppRim };
   const youKit = opts.kits?.you ? { shirt: opts.kits.you.shirt, rim: opts.kits.you.shorts } : { shirt: C.you, rim: C.youRim };
+  // A team-mate wears your shirt when your kit is known; otherwise the
+  // game's team-mate blue (ROLE_KIT.mate), so he never reads as you.
+  const mateKit = opts.kits?.mate ? { shirt: opts.kits.mate.shirt, rim: opts.kits.mate.shorts }
+    : opts.kits?.you ? youKit : { shirt: "#3b82f6", rim: "#1e3a8a" };
 
   const items: { s: number; draw: () => void }[] = [];
   for (const def of opts.defenders) {
@@ -1306,6 +1373,12 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
     if (!p) continue;
     items.push({ s: p.scale, draw: () => drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle, oppKit) });
   }
+
+  (opts.mates ?? []).forEach((mate, i) => {
+    const p = project(cam, mate.x, mate.y, 0);
+    if (!p) return;
+    items.push({ s: p.scale, draw: () => drawMate(ctx, cam, mate, i, mateKit, opts.getFace, opts.faceStyle, opts.fakeFaceStyle) });
+  });
 
   if (opts.own && opts.hideYou) {
     // Just the ball, on the grass in front of the camera.

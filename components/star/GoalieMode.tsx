@@ -517,7 +517,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
   const nextPayout = Math.round(stakedRef.current * streakMultiplier(streak + 1));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-950 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
+    <div className="h-[100dvh] overflow-hidden bg-gradient-to-b from-sky-950 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-1 mb-2">
           <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← Menu</button>

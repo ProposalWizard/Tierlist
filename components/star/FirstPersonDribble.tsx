@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
-  CARRY, carryLead,
+  CARRY, carryLead, applyPass, wavesBeaten,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
-import { cameraFor } from "@/lib/star/firstPersonView";
+import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
 import { poseFor, closeness, type DribbleCamera } from "@/lib/star/dribbleCamera";
 import { renderFirstPerson, type DuelPip, type FpKits } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
@@ -206,6 +206,22 @@ const TAP_MAX_MOVE_FRAC = 0.035; // of canvas width — below this, it's a tap
 const TAP_MAX_MS = 280;
 const TAP_NUDGE = 1.8; // metres your lane target jumps per tap
 
+/** How the run ended. `cleared`/`beaten` are as they always were; the rest
+ *  is new and optional, so a caller that ignores it (training) is unchanged. */
+export interface FpDribbleResult {
+  cleared: boolean;
+  beaten: number;
+  /** Waves fully beaten, and how many there were. */
+  wavesBeaten?: number;
+  totalWaves?: number;
+  /** Set when a pass ARRIVED: waves beaten before it was played, and where
+   *  the team-mate received it (pitch metres). */
+  passedAfterWaves?: number;
+  passTo?: { x: number; y: number };
+  /** True when a pass was played and cut out (the run is lost). */
+  passFailed?: boolean;
+}
+
 export interface FirstPersonDribbleProps {
   pace?: number;
   oppStrength?: number;
@@ -250,7 +266,19 @@ export interface FirstPersonDribbleProps {
    *  run earned a routine follow-up chance or, having beaten enough men to
    *  have genuinely broken forward, a real attacking scenario near the
    *  box — see CanvasMatch.tsx's own handler for the exact threshold. */
-  onComplete?: (result: { cleared: boolean; beaten: number }) => void;
+  onComplete?: (result: FpDribbleResult) => void;
+  /**
+   * Team-mates in the background you can pass to at any moment (0 = none,
+   * the default — the trial and training never set it). Each carries a ring
+   * on the grass: green an easy ball, amber a risk, red likely cut out. Tap
+   * him to play it. Leo, 5 Oct 2026: "passing options in background that
+   * will be difficult (varying difficulty) to pass to at any moment".
+   */
+  passOptions?: number;
+  /** Your vision (0-100), which nudges whether a pass arrives. */
+  vision?: number;
+  /** Real team-mates to put in those shirts (names/faces only). */
+  mateRoster?: FpIdentity[];
   /** Drop the full-page wrapper (heading, page background, `min-h-screen`)
    *  and just fill whatever box the caller already sized — for mounting
    *  this inside a real match's own overlay rather than as its own page.
@@ -316,6 +344,7 @@ const PIP_FILL: Record<DuelPip, string> = {
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
   hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false, kits,
+  passOptions = 0, vision = 55, mateRoster,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -366,6 +395,11 @@ export default function FirstPersonDribble({
   /** A fresh run starts with the camera already over its shoulder, rather
    *  than easing across from dead behind during the first second. */
   const snapCamRef = useRef(true);
+  /** The camera this frame was drawn with — a tap on a team-mate is tested
+   *  against where he actually is on screen. */
+  const lastCamRef = useRef<FpCamera | null>(null);
+  const visionRef = useRef(vision);
+  visionRef.current = vision;
 
   // The wave counter, drawn as a page element now (not painted into the
   // canvas), updated only when it changes.
@@ -410,7 +444,7 @@ export default function FirstPersonDribble({
   const reset = useCallback((startNow = false) => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
@@ -422,7 +456,7 @@ export default function FirstPersonDribble({
     // A fresh run waits for its tap; "Go Again" IS a tap, so it goes straight in.
     setPhase(startNow ? "run" : "ready");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes)]);
+  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -519,8 +553,35 @@ export default function FirstPersonDribble({
     const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     const heldMs = performance.now() - start.t;
     if (moved > TAP_MAX_MOVE_FRAC * r.width || heldMs > TAP_MAX_MS) return;
+    // A tap on a team-mate plays the pass instead of touching the ball.
+    const mate = mateAt(start.x - r.left, start.y - r.top, r.width / Math.max(1, c.width));
+    if (mate >= 0) {
+      applyPass(run, mate, visionRef.current);
+      return;
+    }
     const dir = (start.x - r.left) < r.width / 2 ? -1 : 1;
     applySteer(run, run.laneTarget + TAP_NUDGE * dir);
+  };
+
+  /** Which team-mate (index) a tap at css (x, y) lands on, or -1. Tested
+   *  against his body from boots to head, with a generous finger margin. */
+  const mateAt = (cssX: number, cssY: number, cssPerPx: number): number => {
+    const run = runRef.current, cam = lastCamRef.current;
+    if (!run || !cam || run.mates.length === 0) return -1;
+    let best = -1, bestD = Infinity;
+    run.mates.forEach((m, i) => {
+      const feet = project(cam, m.x, m.y, 0);
+      const head = project(cam, m.x, m.y, 1.8);
+      if (!feet || !head) return;
+      const fx = feet.px * cssPerPx, fy = feet.py * cssPerPx, hy = head.py * cssPerPx;
+      const halfW = Math.max(30, 0.9 * feet.scale * cssPerPx);
+      const dx = Math.abs(cssX - fx);
+      const dy = cssY < hy ? hy - cssY : cssY > fy + 16 ? cssY - (fy + 16) : 0;
+      if (dx > halfW || dy > 18) return;
+      const d = dx + dy;
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    return best;
   };
 
   // ── Keyboard fallback ────────────────────────────────────────────────────
@@ -565,7 +626,13 @@ export default function FirstPersonDribble({
 
     const finishRun = (finalPhase: RunPhase) => {
       const run = runRef.current;
-      if (finalPhase === "clear") {
+      const pass = run?.pass ?? null;
+      const passName = pass ? (run?.mates[pass.to]?.who?.shortName ?? run?.mates[pass.to]?.who?.name) : undefined;
+      if (pass && pass.success) {
+        setResultText(passName ? `Played in ${passName}!` : "Pass on!");
+      } else if (pass) {
+        setResultText("Pass cut out");
+      } else if (finalPhase === "clear") {
         setResultText(`Clear! Beat everyone across all ${run?.roundSizes.length ?? 3} waves.`);
       } else {
         const lost = run?.lostTo != null ? run.defenders[run.lostTo] : undefined;
@@ -578,7 +645,13 @@ export default function FirstPersonDribble({
       // (only the waves you'd actually got past), unlike summing
       // `roundSizes` which would count men in a wave you never reached.
       const beaten = run?.defenders.filter(d => d.phase === "beaten").length ?? 0;
-      onComplete?.({ cleared: finalPhase === "clear", beaten });
+      onComplete?.({
+        cleared: finalPhase === "clear", beaten,
+        wavesBeaten: run ? wavesBeaten(run) : 0,
+        totalWaves: run?.roundSizes.length ?? 0,
+        ...(pass && pass.success ? { passedAfterWaves: pass.afterWaves, passTo: pass.at } : {}),
+        ...(pass && !pass.success ? { passFailed: true } : {}),
+      });
     };
 
     const frame = (now: number) => {
@@ -680,6 +753,7 @@ export default function FirstPersonDribble({
           })() : undefined,
         },
       );
+      lastCamRef.current = cam;
       // One pip per WAVE, not per man — a wave is "beaten" only once every
       // man in it is, "won" if it beat you, "active" if it's the one
       // currently engaging (which can mean several men at once now).
@@ -719,6 +793,7 @@ export default function FirstPersonDribble({
         getFace: faceImageCacheRef.current.get,
         faceStyle: faceStyleRef.current,
         fakeFaceStyle: fakeFaceStyleRef.current,
+        mates: run.mates,
       });
     };
 
@@ -768,7 +843,9 @@ export default function FirstPersonDribble({
       {phase === "run" && !hideHint && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
           <p className="px-3 py-2 text-center text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
-            Tap left or right to touch the ball that way. Flick to burst past him.
+            {passOptions > 0
+              ? "Tap left or right to touch it. Flick to burst. Tap a team-mate to pass."
+              : "Tap left or right to touch the ball that way. Flick to burst past him."}
           </p>
         </div>
       )}
@@ -789,7 +866,9 @@ export default function FirstPersonDribble({
               Tap to start
             </span>
             <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
-              Tap left or right to touch the ball. Flick to burst past him.
+              {passOptions > 0
+                ? "Flick to burst past him. Tap a team-mate to pass: green is on, red is risky."
+                : "Tap left or right to touch the ball. Flick to burst past him."}
             </span>
           </span>
         </button>

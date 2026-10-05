@@ -65,6 +65,8 @@ import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
 import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
+import { oldKeepers } from "./gameplayVersion";
+import { getTuning } from "./tuningStore";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -187,6 +189,54 @@ export const KEEPER_BRAIN = {
 };
 
 /**
+ * THE KEEPER IS ONLY HUMAN (Leo, 5 Oct 2026): "Goalies being overpowered and
+ * far too good in general … more emphasis on top corner shots going in that
+ * goalies cant reach, worse goalies dont move as good or predict as good."
+ * And a behind-the-scenes VISION rule: "if there are players between the ball
+ * and the goalie blocking the goalies view then that should at least slightly
+ * make them act worse … the more blocked they are the worse it is (although
+ * again; this should only affect them a little at most)."
+ *
+ * Nothing here is in canvasEngine.ts. The top corner works through the one
+ * public dial the engine already reads for "how far can he reach right now"
+ * (`Scenario.keeperReach`, the same field a committed dive already shrinks);
+ * vision works on the brain's own reaction, timing and read. Measured in
+ * tests/star/keeperHuman.mts.
+ */
+export const KEEPER_HUMAN = {
+  /**
+   * THE TOP CORNER. The engine's save test is an ellipse (height scaled into
+   * distance), so a ball high AND wide of him is judged as if he reached it
+   * as well as one the same distance away along the ground. He can't: the
+   * diagonal stretch up into the corner is the shortest reach a keeper has.
+   * While a shot that will cross his line high and wide of him is coming,
+   * his reach is cut — ramping in from `topZ[0]` to `topZ[1]` metres high at
+   * his line, and from `topWide[0]` to `topWide[1]` metres to his side.
+   * Penalties keep their own calibrated rule set (penaltyKeeper.ts).
+   */
+  topZ: [1.3, 1.9] as [number, number],
+  topWide: [0.7, 1.9] as [number, number],
+  /** The cut at full height and width: a 40-rated keeper → a 95. */
+  topCut: [getTuning("keepers.topCutWeak"), getTuning("keepers.topCutStrong")] as [number, number],
+  /**
+   * VISION. A body counts when it stands within `bodyR` metres of the line
+   * from the ball to him, between them. One closer to HIM hides more of the
+   * strike (it fills more of his view), so it weighs up to 1; one by the ball
+   * from 0.6. Blockage = the weights' sum / `fullAt`, capped at 1.
+   */
+  bodyR: 0.8,
+  fullAt: 2,
+  /** At full blockage: seconds added to his reaction… */
+  visionLate: getTuning("keepers.visionLate"),
+  /** …seconds later he leaves his feet… */
+  visionDiveLate: getTuning("keepers.visionDiveLate"),
+  /** …how much bigger his first two reads' error is (×1+)… */
+  visionReadErr: getTuning("keepers.visionReadErr"),
+  /** …and the chance his first read is the wrong way. */
+  visionWrongWay: getTuning("keepers.visionWrongWay"),
+};
+
+/**
  * The three measured settings of `KEEPER_BRAIN.openPlay`. The game plays the
  * Middle; the Play Area's "Keeper: long shots & through balls" row picks
  * another on the test screens only.
@@ -210,6 +260,10 @@ export interface BrainOptions {
   penalty?: PenaltyReadSettings;
   /** 0..1, see KEEPER_BRAIN.openPlay. */
   openPlay?: number;
+  /** false = he sees through bodies (the keeper before 5 Oct 2026; for measuring). Absent = on. */
+  vision?: boolean;
+  /** false = no top-corner reach cut (the keeper before 5 Oct 2026; for measuring). Absent = on. */
+  topCorner?: boolean;
 }
 
 /** The options the match sets a chance up with, on this screen. */
@@ -254,8 +308,41 @@ export interface Abilities {
   anticipStep: number;
 }
 
+/**
+ * Leo, 5 Oct 2026: "worse goalies dont move as good or predict as good." The
+ * elite end (95) is where it was; the bottom end (40 and below) is pushed
+ * further down, so the gap between a poor keeper and a good one is wider on
+ * every one of these: he sets worse, reacts later, reads worse, steps and
+ * dives slower and less far. Before (40 → 95): correction 0.35 → 0.95, rt
+ * 0.30 → 0.20 s, readErr 1.3 → 0.4 m, dive 4.8 → 6.2 m/s. Measured in
+ * tests/star/keeperHuman.mts.
+ */
 export function abilities(rating: number): Abilities {
   const r = clamp(Number.isFinite(rating) ? rating : 62, 20, 99);
+  if (oldKeepers()) return abilitiesBefore(r);
+  return {
+    rating: r,
+    correction: 0.27 + 0.68 * grow(r, 40, 95, 1.2),
+    posErr: 1.3 - 1.10 * grow(r, 40, 95, 1.3),
+    badSet: 0.32 - 0.28 * grow(r, 40, 95, 1.0),
+    setSpeed: 1.3 + 1.3 * grow(r, 40, 95, 1.0),
+    rt: 0.33 - 0.13 * grow(r, 40, 95, 1.2),
+    rtSd: 0.035,
+    lateChance: 0.25 - 0.22 * grow(r, 40, 95, 1.0),
+    lateExtra: 0.15,
+    readErr: 1.65 - 1.25 * grow(r, 40, 95, 1.4),
+    timingErr: 0.14 - 0.09 * grow(r, 40, 95, 1.2),
+    stepSpeed: 1.65 + 0.95 * grow(r, 40, 95, 1.0),
+    diveSpeed: 4.5 + 1.7 * grow(r, 40, 95, 1.2),
+    maxTravel: 2.2 + 1.0 * grow(r, 40, 95, 1.5),
+    diveWindow: 0.33 + 0.10 * grow(r, 40, 95, 1.0),
+    anticipStep: 0.9 * grow(r, 65, 95, 1.6),
+  };
+}
+
+/** Settings → Gameplay → Keepers: Old. The keeper's skills exactly as they
+ *  were before 5 Oct 2026, so the change can be compared and undone. */
+function abilitiesBefore(r: number): Abilities {
   return {
     rating: r,
     correction: 0.35 + 0.60 * grow(r, 40, 95, 1.2),
@@ -375,6 +462,14 @@ interface State {
   leaned: boolean;
   /** 0..1: how much harder this shot is to read, from the open-play dial and its distance. */
   farRead: number;
+  /** 0..1: how much of his view of this strike was hidden (KEEPER_HUMAN vision). */
+  blocked: number;
+  /** Vision: his first read of this shot goes the wrong way. */
+  wrongRead: boolean;
+  /** The top-corner cut is on his reach right now. */
+  cutOn: boolean;
+  /** Where he stood when this shot was struck. */
+  shotX: number;
   lastShot: boolean;
   ownShot: boolean;
   lastRecv: unknown;
@@ -443,7 +538,7 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     ab, opts, kind: sc.kind, start: { x: k.x, y: k.y }, setTarget: { x: k.x, y: k.y }, moving: false,
     baseReach: sc.keeperReach, rng, strikeSeed: 0,
     phase: "set", t: 0, rt: 0, dir: 0, target: k.x, stepTravelled: 0, diveTravelled: 0,
-    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, leanAt: null, leanSide: 0, leaned: false, farRead: 0,
+    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, leanAt: null, leanSide: 0, leaned: false, farRead: 0, blocked: 0, wrongRead: false, cutOn: false, shotX: k.x,
     lastShot: false, ownShot: false, lastRecv: null, planted: false, reason: "",
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
   };
@@ -587,6 +682,63 @@ function farness(ball: Ball): number {
   return clamp((Math.hypot(ball.pos.x - CX, ball.pos.y) - 16) / 10, 0, 1);
 }
 
+/**
+ * VISION: how much of his view of the strike is hidden, 0..1 (KEEPER_HUMAN).
+ * Everybody on the pitch but him and the striker counts — defenders and
+ * attackers alike block a keeper's sight.
+ */
+export function sightlineBlockage(sc: Scenario, from: { x: number; y: number }): number {
+  const H = KEEPER_HUMAN;
+  const k = sc.keeper;
+  const bodies: { x: number; y: number }[] = [];
+  for (const d of sc.defenders) bodies.push(d);
+  for (const t of sc.teammates ?? []) bodies.push(t);
+  if (sc.runner) bodies.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) bodies.push(r.pos);
+  // A follower parked off the picture (the drawing had no spot for him) is not there.
+  const f = sc.follower;
+  if (f && f.x > -100 && f.y < 200) bodies.push(f);
+  const vx = k.x - from.x, vy = k.y - from.y, L2 = vx * vx + vy * vy;
+  if (L2 < 1) return 0;
+  const L = Math.sqrt(L2);
+  let sum = 0;
+  for (const p of bodies) {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+    const t = ((p.x - from.x) * vx + (p.y - from.y) * vy) / L2;
+    // Between them: not the striker's own shadow, not stood on the keeper.
+    if (t < 0.08 || t > 0.95) continue;
+    const lat = Math.abs((p.x - from.x) * vy - (p.y - from.y) * vx) / L;
+    if (lat >= H.bodyR) continue;
+    sum += (1 - lat / H.bodyR) * (0.6 + 0.4 * t);
+  }
+  return clamp(sum / H.fullAt, 0, 1);
+}
+
+/**
+ * THE TOP CORNER: the share of his reach he keeps against this ball, 1 = all
+ * of it (KEEPER_HUMAN.topZ/topWide/topCut). Read off where the ball will
+ * cross his line (straight line across, gravity for height), so it follows
+ * the ball as it bends and dips. "Wide" is measured from `fromX`, where he
+ * stood when it was struck: getting across first does not make the corner
+ * any lower — he still has to go up and across for it in one movement.
+ * Pure: reads the scenario and the ball only.
+ */
+export function topCornerReach(sc: Scenario, ball: Ball, fromX: number = sc.keeper.x): number {
+  const H = KEEPER_HUMAN;
+  const k = sc.keeper;
+  if (!(ball.vel.y < -0.5) || ball.pos.y <= k.y) return 1;
+  const t = (ball.pos.y - k.y) / -ball.vel.y;
+  const x = ball.pos.x + ball.vel.x * t;
+  const z = ball.z + ball.vz * t - 4.9 * t * t;
+  const high = clamp((z - H.topZ[0]) / (H.topZ[1] - H.topZ[0]), 0, 1);
+  if (high <= 0) return 1;
+  const wide = clamp((Math.abs(x - fromX) - H.topWide[0]) / (H.topWide[1] - H.topWide[0]), 0, 1);
+  if (wide <= 0) return 1;
+  const g = grow(clamp(Number.isFinite(sc.keeperStrength) ? sc.keeperStrength : 62, 20, 99), 40, 95, 1.0);
+  const cut = H.topCut[0] + (H.topCut[1] - H.topCut[0]) * g;
+  return 1 - cut * high * wide;
+}
+
 /** The instant a shot at goal is struck (yours, or a team-mate's). */
 function onShot(sc: Scenario, st: State, ball: Ball) {
   const { ab, rng } = st;
@@ -595,6 +747,7 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   st.moveAtT = null; st.stepAtT = null; st.diveAtT = null; st.wrongFooted = false;
   k.startX = k.x; k.targetX = k.x; k.adjusting = false; k.committedDir = undefined;
   sc.keeperReach = st.baseReach;
+  st.shotX = k.x; st.cutOn = false;
   let rt = ab.rt + gauss(rng) * ab.rtSd;
   if (rng() < ab.lateChance) rt += ab.lateExtra;
   if (st.moving) rt += KEEPER_BRAIN.caughtMoving;
@@ -604,10 +757,26 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   const dial = st.opts.openPlay ?? KEEPER_BRAIN.openPlay;
   st.farRead = sc.kind !== "penalty" ? (1 - dial) * farness(ball) : 0;
   rt += KEEPER_BRAIN.farReadLate * st.farRead;
-  st.rt = Math.max(0.10, rt);
   st.timingErr = gauss(rng) * ab.timingErr * KEEPER_BRAIN.timingScale;
+  // ── VISION (KEEPER_HUMAN) ── bodies between the strike and him: a beat
+  // later to react, a touch later to go, a worse first read, and now and
+  // then a first read the wrong way. Small, and capped at full blockage. Its
+  // one random draw is taken only when somebody is in the way, so a clear
+  // view leaves his stream exactly as it was.
+  st.blocked = 0; st.wrongRead = false;
+  if (sc.kind !== "penalty" && st.opts.vision !== false && !oldKeepers()) {
+    const b = sightlineBlockage(sc, ball.pos);
+    if (b > 0) {
+      const H = KEEPER_HUMAN;
+      st.blocked = b;
+      rt += H.visionLate * b;
+      st.timingErr -= H.visionDiveLate * b;
+      st.wrongRead = rng() < H.visionWrongWay * b;
+    }
+  }
+  st.rt = Math.max(0.10, rt);
   st.phase = "wait";
-  st.reason = st.moving ? "caught moving" : "";
+  st.reason = st.moving ? "caught moving" : st.blocked > 0.5 ? "unsighted" : "";
   if (sc.kind === "penalty") {
     // THE PENALTY RULE SET (penaltyKeeper.ts) decides: whether he goes, which
     // way, how far, with what reach — and whether he reads one down the middle.
@@ -658,9 +827,13 @@ function read(sc: Scenario, st: State, ball: Ball, errScale: number): boolean {
   const xTrue = crossXAt(ball, k.y);
   if (xTrue === null) return false;
   const far = st.farRead;
-  const scale = Math.max(errScale, KEEPER_BRAIN.farReadFloor * far) * (1 + KEEPER_BRAIN.farReadErr * far);
+  // Vision: his first two reads were made round the bodies in the way.
+  const unsighted = st.reads < 2 ? 1 + KEEPER_HUMAN.visionReadErr * st.blocked : 1;
+  const scale = Math.max(errScale, KEEPER_BRAIN.farReadFloor * far) * (1 + KEEPER_BRAIN.farReadErr * far) * unsighted;
   const xEst = xTrue + gauss(st.rng) * st.ab.readErr * scale;
-  const off = xEst - k.x;
+  let off = xEst - k.x;
+  // …and once in a while the first one is the wrong way entirely.
+  if (st.reads === 0 && st.wrongRead) off = -off;
   const newDir = Math.abs(off) < 0.3 ? 0 : Math.sign(off);
   const short = newDir === 0 ? 0 : newDir * Math.min(0.25, Math.abs(off) * 0.3);
   if (st.locked && newDir !== 0 && newDir !== st.dir) {
@@ -722,6 +895,39 @@ function windowReach(sc: Scenario, st: State) {
  * dive that is still in the air lands and a beaten keeper stays committed.
  */
 export function brainStep(sc: Scenario, ball: Ball | null, dt: number): void {
+  brainStepInner(sc, ball, dt);
+  const st = states.get(sc);
+  if (st) applyTopCorner(sc, st, ball);
+}
+
+/**
+ * THE TOP CORNER (KEEPER_HUMAN): every substep, after he has moved and
+ * before the engine judges the ball, his reach against a shot that will
+ * cross his line high and wide of him. Computed fresh each step from the
+ * reach he would otherwise have (his dive's window, or his standing reach),
+ * so it never compounds, and handed back the moment the shot is over.
+ */
+function applyTopCorner(sc: Scenario, st: State, ball: Ball | null): void {
+  const k = sc.keeper;
+  const live = !!ball && sc.kind !== "penalty" && st.opts.topCorner !== false && !oldKeepers() && !k.done
+    && (st.phase === "wait" || st.phase === "step" || st.phase === "dive")
+    && st.lastShot && k.saves === 0 && !k.scrambling
+    && ball.lastTouch === "attack" && !ball.loose && ball.pos.y > k.y;
+  if (!live) {
+    // Hand his reach back: his dive's window in the air, his own otherwise.
+    if (st.cutOn) { if (st.phase === "dive") windowReach(sc, st); else sc.keeperReach = st.baseReach; }
+    st.cutOn = false;
+    return;
+  }
+  const f = topCornerReach(sc, ball!, st.shotX);
+  // In the air his reach is his dive's window (recomputed, never last step's cut).
+  if (st.phase === "dive") windowReach(sc, st);
+  const base = st.phase === "dive" ? sc.keeperReach : st.baseReach;
+  if (f < 1) { sc.keeperReach = (base ?? 1) * f; st.cutOn = true; }
+  else { if (st.cutOn && st.phase !== "dive") sc.keeperReach = st.baseReach; st.cutOn = false; }
+}
+
+function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
   const st = states.get(sc);
   const k = sc.keeper;
   if (!st || k.done) return;

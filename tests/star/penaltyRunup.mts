@@ -294,7 +294,10 @@ console.log("\nITEM 7b — THE TRIAL KEEPER, KICK BY KICK (through the run-up, 1
   // 38.6 % (tests/star/penaltyKeeper.mts). The ramp starts at or a little
   // above the easiest day and ends at or a little below the hardest.
   ok(rates[0] >= 0.52 && rates[0] <= 0.66, `kick 1 is a fair keeper: ${pct(rates[0])} (easiest day 55.9 %)`);
-  ok(rates[rates.length - 1] >= 0.28 && rates[rates.length - 1] <= 0.42, `the last kick is his best: ${pct(rates[rates.length - 1])} (hardest day 38.6 %)`);
+  // Re-pinned 5 Oct 2026 (Leo: the trial keeper is "a bit too good in
+  // penalties"; penaltyKeeper.ts penaltyTrialReach): the ramp measured
+  // 61.8 / 53.9 / 41.3 % before, 64.5 / 58.7 / 44.8 % after. Ceiling 0.42 → 0.48.
+  ok(rates[rates.length - 1] >= 0.28 && rates[rates.length - 1] <= 0.48, `the last kick is his best: ${pct(rates[rates.length - 1])} (pinned 44.8 %; 41.3 % before 5 Oct 2026)`);
   ok(rates.every((v, i) => i === 0 || v < rates[i - 1]), "every kick is harder than the one before");
   ok(rates[0] < ignores - 0.1, `even kick 1 is harder than a real match (${pct(rates[0])} vs ${pct(ignores)})`);
 }

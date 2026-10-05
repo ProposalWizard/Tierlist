@@ -1,5 +1,6 @@
 "use client";
 import { ScoutBackdrop, ScoutFigure } from "./ScoutArt";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
@@ -298,6 +299,20 @@ export default function TrialSequence({
   // is gone outright.
   const progress = (
     <div className="mb-2 flex items-center gap-2 px-3 pt-2">
+      {/* No in-app "home" exists yet this early — there is no career to show
+       *  a dashboard for. Reported directly: "not always easy to go to home
+       *  screen or back from any specific page." Nothing held here matters
+       *  (see this file's own top doc comment — closing mid-stage only costs
+       *  that one stage's attempts, by design, no confirm dialog anywhere in
+       *  this flow), so a real route away is safe: reopening /star-dev later
+       *  resumes exactly here via the phase-derivation at the top of
+       *  page.tsx, same as a refresh already does today. */}
+      <Link
+        href="/"
+        className="shrink-0 rounded-full bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/70 hover:bg-black/45 hover:text-white"
+      >
+        ✕ Exit
+      </Link>
       <div className="flex flex-1 items-center gap-1">
         {stages.map(s => {
           const r = trial.results[s];

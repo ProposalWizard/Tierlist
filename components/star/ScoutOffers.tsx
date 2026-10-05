@@ -52,11 +52,22 @@ export interface ScoutOffersProps {
    *  a player nobody signed, and an optional handler behind an unconditional
    *  button is a dead end waiting to happen. */
   onNoOffers: () => void;
+  /** Absent means no button. Reported directly: "not always easy to go to
+   *  home screen or back" — this screen had no chrome at all. */
+  onSettings?: () => void;
 }
 
 export default function ScoutOffers({
-  trial, offers, playerName, youthClub, onAccept, onNoOffers,
+  trial, offers, playerName, youthClub, onAccept, onNoOffers, onSettings,
 }: ScoutOffersProps) {
+  const settingsButton = onSettings && (
+    <button
+      onClick={onSettings}
+      className="absolute right-4 top-4 z-10 rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest hover:bg-white/20"
+    >
+      Settings
+    </button>
+  );
   // v0.23 (Harry, 1 Oct 2026): "you don't get a trial rating, you just get
   // scouted" and "this whole no contract thing, don't put this in the game".
   // So the trial's score and its per-stage bars are not shown any more (the
@@ -67,6 +78,7 @@ export default function ScoutOffers({
   if (!offers.length) {
     return (
       <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-8">
+        {settingsButton}
         <div className="kit-card mt-6 p-5">
           <div className="text-sm font-black uppercase tracking-widest text-amber-300">
             Not this time
@@ -101,6 +113,7 @@ export default function ScoutOffers({
   // ── Somebody did ───────────────────────────────────────────────────────
   return (
     <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-6">
+      {settingsButton}
       <div className="text-center">
         <Kicker color="#fcd34d">A scout has spotted you</Kicker>
       </div>

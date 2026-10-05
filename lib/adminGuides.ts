@@ -1174,6 +1174,9 @@ export const ADMIN_GUIDES = {
         items: [
           ["Scenario — Random / a type", "Forces every chance to be that type."],
           ["Curve boots", "Tick to pretend you own curving boots."],
+          ["Knuckleball (two fingers up, in flight)", "With curve boots on, swipe two fingers up the screen while your shot flies. It wobbles late and the keeper guesses wrong more often than right."],
+          ["Knuckle every shot (for mouse)", "Makes every shot at goal a knuckleball, so it can be tried without a touch screen."],
+          ["⚡ Power shot / Power shot button", "Tap ⚡ before aiming. After the drag the pitch keeps moving for a short wind-up, then tap the green circle fast: up to 1.5x pace; slow or missed taps drift off your aim."],
           ["Power / Technique / Keeper Strength", "Your skills and their keeper."],
           ["Position / Team Relationship", "Start from your career's own values if one is saved in this browser."],
           ["Height at 0% power / Extra height from full power / Overall lift", "How high shots fly — this copy only."],

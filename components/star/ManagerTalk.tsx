@@ -58,7 +58,7 @@ import { ScoutBackdrop, ScoutFigure } from "./ScoutArt";
  * skips the conversation and lands on the negotiation.
  */
 export default function ManagerTalk({
-  talk, managerName, onNegotiate, onAccept, onSeeOthers,
+  talk, managerName, onNegotiate, onAccept, onSeeOthers, onSettings,
 }: {
   talk: Talk;
   /** The real manager's name when the club has one; a plain "The manager"
@@ -68,6 +68,9 @@ export default function ManagerTalk({
   onAccept: () => void;
   /** Go to the list of every club that came in for you. */
   onSeeOthers?: () => void;
+  /** Absent means no button. Reported directly: "not always easy to go to
+   *  home screen or back" — this screen had no chrome at all. */
+  onSettings?: () => void;
 }) {
   const [shown, setShown] = useState(1);
   const done = shown >= talk.lines.length;
@@ -82,6 +85,16 @@ export default function ManagerTalk({
     <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#05070d] text-white">
       <ScoutBackdrop glow={glow} />
       <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-4 pb-4 pt-5">
+        {onSettings && (
+          <button
+            onClick={onSettings}
+            aria-label="Settings"
+            title="Settings"
+            className="absolute right-2 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[16px] leading-none hover:bg-white/20"
+          >
+            ⚙
+          </button>
+        )}
         <div className="text-center">
           <div className="scout-kick inline-block rounded-full bg-amber-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-amber-300 ring-1 ring-amber-300/40">
             A scout has spotted you
