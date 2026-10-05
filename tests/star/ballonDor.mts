@@ -224,7 +224,15 @@ function baseCareer(): CareerState {
     "Championship + World Cup but not top scorer: cannot");
 
   const pl = inDivision(PREMIER_LEAGUE_CLUBS, "premier");
-  check(ballonDorReach(pl, [{ isPlayer: true, goals: 1 }]) === "win", "Premier League: can win");
+  check(ballonDorReach(pl, [{ isPlayer: true, goals: 60 }]) === "shortlist", "Premier League, no major trophy: cannot win");
+  const plr = computeBallonDorShortlist(pl);
+  check(plr.playerRank !== 1, `Premier League, 60 goals, no trophy: does not win (rank ${plr.playerRank})`);
+  for (const competition of ["Premier League", "Champions League", "World Cup", "European Championship"]) {
+    const won = inDivision(PREMIER_LEAGUE_CLUBS, "premier", [{ season: pl.season, competition, club: PREMIER_LEAGUE_CLUBS[0] } as Trophy]);
+    check(ballonDorReach(won, [{ isPlayer: true, goals: 1 }]) === "win", `Premier League + ${competition}: can win`);
+  }
+  const fa = inDivision(PREMIER_LEAGUE_CLUBS, "premier", [{ season: pl.season, competition: "FA Cup", club: PREMIER_LEAGUE_CLUBS[0] } as Trophy]);
+  check(ballonDorReach(fa, [{ isPlayer: true, goals: 1 }]) === "shortlist", "Premier League + only the FA Cup: cannot");
 }
 
 if (problems.length) {

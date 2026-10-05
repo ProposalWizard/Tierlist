@@ -347,6 +347,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The achievements the last match unlocked — the post-match shows them one at a time.
   const [lastMatchAch, setLastMatchAch] = useState<string[]>([]);
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
+  // True when the match just played was the boots' last (Harry, 5 Oct 2026:
+  // "fix the boots warning" — they wore out with no warning seen).
+  const [bootsJustWoreOut, setBootsJustWoreOut] = useState(false);
   const [lastMatchStar, setLastMatchStar] = useState<{ sp: number; base: number; mult: number; toNext: number; gate?: string; total?: number; extra?: { label: string; sp: number; n?: number }[]; held?: number; carried?: number; fromNext?: number } | null>(null);
   /** A whole new star: the full-screen moment. */
   const [newStar, setNewStar] = useState<number | null>(null);
@@ -1193,6 +1196,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setLastMatchStats(stats);
     setPlayedFixture(nextFixture);
     const credited = creditMatchResult(career, nextFixture, stats);
+    setBootsJustWoreOut(career.currentBoot.matches > 0 && credited.career.currentBoot.matches === 0);
     const { newlyUnlocked, potmAwarded } = credited;
     // The first game opens the Shop (Harry, P70: "play a game first and then come back").
     // v0.25 (game first): it opens Training and Achievements; Sponsors open with your first offer (unlocks.ts).
@@ -3498,6 +3502,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         knockout={career.knockoutMessage}
         starBefore={lastStarChange?.from}
         starAfter={lastStarChange?.to ?? starsNow(career)}
+        bootsWornOut={bootsJustWoreOut}
         star={lastMatchStar ?? undefined}
         // v0.24 (P2-84): the achievements pop up by themselves, no Next
         // button — AchievementToasts below, not PostMatch's own card.

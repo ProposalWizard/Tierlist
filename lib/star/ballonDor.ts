@@ -154,6 +154,12 @@ const ATTACK_WEIGHT: Record<SquadPlayer["position"], number> = {
   GK: 0.02,
 };
 
+/** Overall from which a rival's season gets the superstar boost, and what
+ *  each point above it adds (goals: this to twice this; assists: likewise). */
+const ELITE_FROM = 85;
+const ELITE_GOALS = 2;
+const ELITE_ASSISTS = 1;
+
 /** A plausible, DETERMINISTIC season for a player this career never
  *  actually simulates a match for — see the file header. Seeded off his
  *  own id and the season number, never Math.random(): the same save
@@ -162,8 +168,15 @@ function simulatedSeasonFor(p: { id: string; overall: number; position: SquadPla
   const rng = mulberry32(clubNameHash(p.id) + season * 7919);
   const quality = clamp((p.overall - 58) / 37, 0, 1);
   const weight = ATTACK_WEIGHT[p.position] ?? 0.3;
-  const goals = Math.round(quality * weight * (16 + rng() * 16));
-  const assists = Math.round(quality * (weight * 0.7 + 0.15) * (8 + rng() * 12));
+  // The world's best have world-class seasons (Harry, 5 Oct 2026: "make
+  // ballon dor way harder"). Before, a 93-rated striker topped out near 30
+  // goals while your Premier League seasons ran to ~25 goals and ~30
+  // assists, so you outscored the world almost every year. From 86 overall
+  // up, each point adds a superstar's extra goals and assists: a 90 striker
+  // now has 29-55 goals, a 93 striker 37-70.
+  const elite = Math.max(0, p.overall - ELITE_FROM);
+  const goals = Math.round(quality * weight * (16 + rng() * 16) + elite * weight * (ELITE_GOALS + rng() * ELITE_GOALS));
+  const assists = Math.round(quality * (weight * 0.7 + 0.15) * (8 + rng() * 12) + elite * (weight * 0.7 + 0.15) * ELITE_ASSISTS * (1 + rng()));
   return { goals, assists };
 }
 
@@ -263,13 +276,29 @@ const SHORTLIST_SIZE = 10;
  * the Championship, you should not be winning the Ballon d'Or." The pacing
  * audit (3 Oct) had players winning it from League Two in seasons 1-2.
  *
- *   Premier League                       → can win
+ *   Premier League                       → can win, with a major trophy
+ *                                          that season (BALLON_DOR_MAJORS)
  *   Championship                         → shortlisted; wins only as the top
  *                                          scorer on the list AND a World Cup
  *                                          winner this season
  *   League One and below                 → not on the shortlist
  */
 export type BallonDorReach = "win" | "shortlist" | "none";
+
+/**
+ * The trophies a Ballon d'Or winner needs one of, that season. Harry, 5 Oct
+ * 2026: "we defo need to make ballon dor way harder". Real winners almost
+ * always won the league, the Champions League or an international tournament
+ * that year; a 30-goal season for a mid-table side does not win it. The
+ * 5 Oct re-measure had a Championship start winning it in season 3 in 19 of
+ * 20 careers, the same season they reached the Premier League.
+ */
+export const BALLON_DOR_MAJORS = ["Premier League", "Champions League", "World Cup", "European Championship"] as const;
+
+export function wonMajorThisSeason(career: CareerState): boolean {
+  return (career.trophies ?? []).some(t =>
+    t.season === career.season && (BALLON_DOR_MAJORS as readonly string[]).includes(t.competition));
+}
 
 export function ballonDorReach(career: CareerState, pool: { isPlayer: boolean; goals: number }[]): BallonDorReach {
   const division = divisionOf(career);
@@ -279,7 +308,7 @@ export function ballonDorReach(career: CareerState, pool: { isPlayer: boolean; g
     const wonWorldCup = (career.trophies ?? []).some(t => t.season === career.season && t.competition === "World Cup");
     return topScorer && wonWorldCup ? "win" : "shortlist";
   }
-  if (division === "premier") return "win";
+  if (division === "premier") return wonMajorThisSeason(career) ? "win" : "shortlist";
   return "none";
 }
 
@@ -305,11 +334,11 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
     });
   scored.sort((a, b) => b.score - a.score);
   // Nominated but not allowed to win: the best rival takes it, you are second.
-  // With nobody to give it to, you are left off rather than handed it.
-  if (reach === "shortlist" && scored[0]?.c.isPlayer) {
-    if (scored.length > 1) [scored[0], scored[1]] = [scored[1], scored[0]];
-    else scored.shift();
+  // (With nobody else on the list at all, see `cannotWin` below.)
+  if (reach === "shortlist" && scored[0]?.c.isPlayer && scored.length > 1) {
+    [scored[0], scored[1]] = [scored[1], scored[0]];
   }
+  const cannotWin = reach === "shortlist" && scored.length === 1 && scored[0]?.c.isPlayer;
 
   const top = scored.slice(0, SHORTLIST_SIZE);
   const entries: BallonDorEntry[] = top.map((t, i) => ({
@@ -329,6 +358,8 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
   }));
 
   const playerIdx = entries.findIndex(e => e.isPlayer);
+  // Alone on the list but not allowed to win: no award, not first.
+  if (cannotWin) return { entries, playerRank: 0, playerNominated: false };
   return {
     entries,
     playerRank: playerIdx + 1,

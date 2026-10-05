@@ -486,6 +486,12 @@ survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
 named explicitly.
 
+**Mikey's `STAR_ROADMAP.md` is his own list (Harry, 5 Oct 2026).** *"mikeys
+list is for his own brain, we work seperately to that although it is a
+useful reference if I run out my own ideas."* In Harry's sessions, Harry sets
+the order; don't push back on his priorities because the roadmap ranks
+something differently.
+
 **Two hard rules on the match engine, from Mikey:** only ever ADD to gameplay,
 never change it; and never modify `lib/star/canvasEngine.ts`.
 
