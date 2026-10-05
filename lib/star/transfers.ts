@@ -66,6 +66,10 @@ export interface TransferRecord {
   from: string;
   to: string;
   fee: number;
+  /** The wage at the club he left. The season's history row (careerFlow.ts)
+   *  needs it: by the time a season-end move is rolled over, the contract
+   *  is already the new club's. Absent on moves from before 5 Oct 2026. */
+  fromWage?: number;
 }
 
 /**
@@ -227,6 +231,7 @@ export function acceptOffer(
     from: career.player.club,
     to: offer.club,
     fee: offer.signingFee,
+    fromWage: career.contract.wage,
   };
 
   const manager = makeManager(career, offer.club, career.season + 1);

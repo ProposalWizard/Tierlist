@@ -1152,7 +1152,7 @@ export interface CareerState {
    */
   playAs?: SquadPlayer["position"] | null;
   /** Every move you made, for the legacy screen. */
-  transfers?: { season: number; from: string; to: string; fee: number }[];
+  transfers?: { season: number; from: string; to: string; fee: number; /** The wage at the club left (see TransferRecord, transfers.ts). */ fromWage?: number }[];
   /** Hung up. The career is over and only the legacy screen remains. */
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */

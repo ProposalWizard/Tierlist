@@ -82,6 +82,10 @@ export function historyRowFor(
     move?: SeasonHistoryRow["move"];
     winners: NonNullable<CareerState["lastSeasonWinners"]>;
     ballonDor?: SeasonHistoryRow["ballonDor"];
+    /** Your wage and money as the season ended (default: the career's now).
+     *  Differs only after a move made at this rollover — see careerFlow.ts. */
+    wage?: number;
+    money?: number;
   },
 ): SeasonHistoryRow {
   const w = facts.winners;
@@ -107,8 +111,8 @@ export function historyRowFor(
     ...(typeof career.stars === "number" ? { stars: career.stars } : {}),
     overall: career.starRating,
     fame: career.fame,
-    money: career.money,
-    wage: career.contract.wage,
+    money: facts.money ?? career.money,
+    wage: facts.wage ?? career.contract.wage,
     caps: career.caps ?? 0,
     intlGoals: career.internationalGoals ?? 0,
   };

@@ -8,7 +8,7 @@ import { bestsAfterMatch, archiveRowFor, historyRowFor } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
-import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
+import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy, SeasonHistoryRow } from "./types";
 import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
@@ -51,11 +51,11 @@ import { INJURIES_ON } from "./injurySwitch";
 import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { dayFor, transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
+import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
-import { resolveLadder, membershipOf } from "./promotion";
+import { resolveLadder, membershipOf, type LadderOutcome } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
 import { advanceIncumbencyWeek } from "./incumbency";
@@ -1466,6 +1466,38 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
 }
 
 /**
+ * Up and down for a season. One seed, shared by the rollover and by retiring
+ * (closeFinalSeason), so both read the same play-offs for the same season.
+ */
+function ladderFor(career: CareerState): LadderOutcome {
+  return resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+}
+
+/**
+ * Where the club a season was played for went next: up, down, or neither.
+ *
+ * Not the ladder's own `yourMove`: that follows `player.club`, which after a
+ * season-end move is already the NEW club (playtest, 5 Oct 2026: Scarborough
+ * won the play-off final, the player signed for Peterborough that summer,
+ * and the season's row said neither up nor down). A club that dropped into
+ * Step 3 is in no division, and is down.
+ */
+function seasonClubMove(club: string, division: CareerDivision, ladder: LadderOutcome): SeasonHistoryRow["move"] {
+  const d = ladder.divisions;
+  const next: [CareerDivision, string[]][] = [
+    ["premier", d.premier], ["championship", d.championship], ["league_one", d.leagueOne],
+    ["league_two", d.leagueTwo], ["national_league", d.nationalLeague],
+    ["national_league_north", d.nationalLeagueNorth], ["national_league_south", d.nationalLeagueSouth],
+  ];
+  const to = next.find(([, clubs]) => clubs.includes(club))?.[0];
+  if (to) {
+    const a = divisionRank(to), b = divisionRank(division);
+    return a === b ? null : a < b ? "promoted" : "relegated";
+  }
+  return d.step3North.includes(club) || d.step3South.includes(club) ? "relegated" : null;
+}
+
+/**
  * The season about to end, appended to `seasonHistory` (see SeasonHistoryRow).
  * Extra, never essential: if anything in it throws, the season still ends and
  * this one row is simply missing.
@@ -1474,24 +1506,29 @@ function seasonHistoryAfter(
   career: CareerState,
   winners: SeasonWinners,
   shortlist: ReturnType<typeof computeBallonDorShortlist>,
-  move: "promoted" | "relegated" | null | undefined,
+  /** The season's up-and-down, or null when it can't be worked out. */
+  ladder: LadderOutcome | null,
   justTransferred: boolean,
 ): CareerState["seasonHistory"] {
   try {
     const top = shortlist.entries[0];
-    // The club you played the season for. A transfer accepted at this very
-    // rollover has already put the NEW club in player.club.
-    const seasonClub = career.thisSeasonClub
-      ?? (justTransferred ? (career.transfers ?? []).at(-1)?.from : undefined)
-      ?? career.player.club;
+    // A transfer accepted at this very rollover has already put the NEW
+    // club in player.club, its deal in contract, and its signing fee in
+    // money. The row is about the season just played, so it undoes all three.
+    const moved = justTransferred ? (career.transfers ?? []).at(-1) : undefined;
+    const movedNow = moved && moved.season === career.season ? moved : undefined;
+    const seasonClub = career.thisSeasonClub ?? movedNow?.from ?? career.player.club;
+    const division = divisionOf(career);
     const row = historyRowFor(career, {
       club: seasonClub,
-      division: divisionOf(career),
+      division,
       position: sortLeague(career.league).findIndex(t => t.name === seasonClub) + 1,
       teams: career.league.length,
-      move,
+      move: ladder ? seasonClubMove(seasonClub, division, ladder) : null,
       winners,
       ballonDor: top ? { winner: top.name, club: top.club, yourRank: shortlist.playerRank } : undefined,
+      ...(movedNow ? { money: career.money - movedNow.fee } : {}),
+      ...(movedNow?.fromWage !== undefined ? { wage: movedNow.fromWage } : {}),
     });
     return [...(career.seasonHistory ?? []).filter(r => r.season !== career.season), row];
   } catch {
@@ -1515,6 +1552,10 @@ export function closeFinalSeason(career: CareerState, userWonBallonDor: boolean)
   const honours = seasonAwards(career);
   const shortlist = computeBallonDorShortlist(career);
   const winners = resolveSeasonWinners(career);
+  // The ladder is only read here, for the last season's up or down; nothing
+  // moves, because there is no next season.
+  let ladder: LadderOutcome | null = null;
+  try { ladder = ladderFor(career); } catch { ladder = null; }
   return {
     ...career,
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
@@ -1524,7 +1565,7 @@ export function closeFinalSeason(career: CareerState, userWonBallonDor: boolean)
     seasonArchive: career.seasonStats.appearances > 0
       ? [...(career.seasonArchive ?? []).filter(r => r.season !== career.season), archiveRowFor(career)]
       : career.seasonArchive,
-    seasonHistory: seasonHistoryAfter(career, winners, shortlist, null, false),
+    seasonHistory: seasonHistoryAfter(career, winners, shortlist, ladder, false),
     lastSeasonWinners: winners,
   };
 }
@@ -1563,7 +1604,7 @@ export function advanceSeason(
   // its real table (and, in the Championship, by real play-offs); the other
   // division's are drawn weighted by strength, because nobody played it. See
   // lib/star/promotion.
-  const ladder = resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+  const ladder = ladderFor(career);
   const clubs = ladder.clubs;
   const nextDivision = ladder.division;
   const newAge = career.player.age + 1;
@@ -1642,7 +1683,7 @@ export function advanceSeason(
   // The season as the world saw it, for the retirement overview (see
   // SeasonHistoryRow). Extra, never essential: if anything in it throws, the
   // season still rolls over and this one row is simply missing.
-  const seasonHistory = seasonHistoryAfter(career, lastSeasonWinners, shortlist, ladder.yourMove, justTransferred);
+  const seasonHistory = seasonHistoryAfter(career, lastSeasonWinners, shortlist, ladder, justTransferred);
 
   // The casino's book, settled against the exact same result the trophy
   // cabinet just agreed on above — never re-decided here. Only THIS

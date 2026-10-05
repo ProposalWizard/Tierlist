@@ -1,5 +1,6 @@
-import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow";
-import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { makeInitialCareer, creditMatchResult, advanceSeason, closeFinalSeason } from "../../lib/star/careerFlow";
+import { acceptOffer, type TransferOffer } from "../../lib/star/transfers";
+import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, STEP3_NORTH_CLUBS } from "../../lib/star/clubs";
 import { perClubTotals, allSeasons, historyRowFor } from "../../lib/star/careerRecords";
 import { sortLeague } from "../../lib/star/season";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
@@ -114,6 +115,58 @@ const nextLeague = (c: CareerState): Fixture => c.fixtures.find((f) => (f.kind ?
   });
   check(!row.winners.championsLeague && !row.winners.europaLeague, `a Championship season keeps no Champions/Europa League winner (${JSON.stringify(row.winners)})`);
   check(row.winners.league === "Leeds United" && row.winners.faCup === "Arsenal", "but keeps its own league and the cups");
+}
+
+// ── A move made at the season's end: the row is about the club you LEFT ──
+// Playtest, 5 Oct 2026: Scarborough won the play-off final, the player signed
+// for Peterborough that summer, and the season's row said neither up nor
+// down, with Peterborough's wage and signing fee in it.
+{
+  // Puts `last` bottom of the table and everyone else above it, in order.
+  const bottom = (c: CareerState, last: string): CareerState => {
+    const others = c.league.map(t => t.name).filter(n => n !== last);
+    return {
+      ...c,
+      league: c.league.map((t) => {
+        const at = t.name === last ? c.league.length - 1 : others.indexOf(t.name);
+        const points = (c.league.length - at) * 3;
+        return { ...t, played: 38, won: points / 3, drawn: 0, lost: 0, goalsFor: points, goalsAgainst: 0, points };
+      }),
+    };
+  };
+  const offerFrom = (club: string, wage: number, division: TransferOffer["division"]): TransferOffer => ({
+    club, strength: 70, wage, goalBonus: 0, assistBonus: 0, seasons: 3,
+    signingFee: 777, clauses: {}, position: 1, pitch: "", division,
+  });
+
+  // Arsenal go down; you sign for Chelsea that summer.
+  const c0 = bottom(base(), "Arsenal");
+  const moved = acceptOffer(c0, offerFrom("Chelsea", c0.contract.wage + 90, "premier"));
+  check(moved.transfers?.at(-1)?.fromWage === c0.contract.wage, "a move remembers the wage at the club left");
+  const r = (advanceSeason(moved, false, true).career.seasonHistory ?? []).find(x => x.season === c0.season);
+  check(r?.club === "Arsenal", `the row names the club the season was played for (${r?.club})`);
+  check(r?.move === "relegated", `and that club's own result: Arsenal went down (${r?.move})`);
+  check(r?.wage === c0.contract.wage, `with Arsenal's wage, not the new one (${r?.wage} vs ${c0.contract.wage})`);
+  check(r?.money === c0.money, `and the money before the signing fee (${r?.money} vs ${c0.money})`);
+
+  // Bottom of National League North: the club drops to Step 3 (no division
+  // at all), and you are made to move. Still "down".
+  const north = [...NATIONAL_LEAGUE_NORTH_CLUBS];
+  const you = north[10];
+  const n0 = bottom(makeInitialCareer({ ...player(), age: 16, club: you } as StarPlayer, north, "national_league_north"), you);
+  const forced = acceptOffer(n0, offerFrom(north[3], n0.contract.wage, "national_league_north"));
+  const nextN = advanceSeason(forced, false, true).career;
+  const rn = (nextN.seasonHistory ?? []).find(x => x.season === n0.season);
+  check(rn?.club === you && rn.move === "relegated", `a club sent down to Step 3 reads as down (${rn?.club}, ${rn?.move})`);
+  check(STEP3_NORTH_CLUBS.length === 4, "Step 3 North still has its four waiting clubs");
+
+  // Retiring after the last season keeps that season's up or down too.
+  const last = closeFinalSeason(bottom(base(), "Arsenal"), false);
+  const rl = (last.seasonHistory ?? []).find(x => x.season === c0.season);
+  check(rl?.move === "relegated", `retiring keeps the last season's own result (${rl?.move})`);
+  const stay = closeFinalSeason(base(), false);
+  const rs = (stay.seasonHistory ?? []).find(x => x.season === c0.season);
+  check(rs?.club === "Arsenal" && rs.move !== undefined, `and a mid-table last season still gets its row (${rs?.club}, ${rs?.move})`);
 }
 
 if (problems.length) { console.error("careerRecords FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }
