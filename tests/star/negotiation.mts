@@ -1,4 +1,4 @@
-import { startNegotiation, makeOffer, moodToFace } from "../../lib/star/negotiation";
+import { startNegotiation, makeOffer, moodToFace, limitOf, type NegotiationState } from "../../lib/star/negotiation";
 
 /**
  * NEGOTIATION — A REAL BACK-AND-FORTH, NOT A FIXED FEE.
@@ -172,6 +172,33 @@ const MV = 10_000_000;
   state = makeOffer(state, overshoot, rng);
   check(state.status === "accepted", "a big overshoot still closes the deal");
   check(state.finalPrice === overshoot, "…at the REAL number you actually offered, not a discounted lower price");
+}
+
+// Leo, 5 Oct 2026: a sponsor opened at ★9 a week, he asked ★1,000, and they
+// came back at ★300. A silly ask must insult them, never be met halfway.
+{
+  const sponsor: NegotiationState = { marketValue: 11, mode: "selling", round: 0, yourPosition: 11, theirPosition: 9, moodScore: 60, status: "negotiating", log: [] };
+  const limit = limitOf(sponsor);
+  let walked = 0, finals = 0, overLimit = 0;
+  for (let i = 0; i < 500; i++) {
+    const r = makeOffer(sponsor, 1000, seededRng(100 + i));
+    if (r.status === "walked_away") walked++;
+    else if (r.finalOffer && r.theirPosition < sponsor.theirPosition) finals++;
+    if (r.theirPosition > limit) overLimit++;
+  }
+  check(walked + finals === 500, `an insulting ask always ends in a walkout or a WORSE final offer (${walked} walked, ${finals} final of 500)`);
+  check(walked > 0 && finals > 0, "both a walkout and a final offer happen");
+  check(overLimit === 0, "they never go past their limit");
+  const fin = makeOffer(sponsor, 1000, () => 0.99);
+  check(makeOffer(fin, fin.theirPosition + 1, () => 0.5).status === "walked_away", "countering a final offer ends the talks");
+  check(makeOffer(fin, fin.theirPosition, () => 0.5).status === "accepted", "accepting a final offer closes the deal");
+  // A cheeky-but-not-insulting ask: they stand at or below their limit.
+  let s = sponsor;
+  for (let i = 0; i < 5 && s.status === "negotiating"; i++) {
+    s = makeOffer(s, 20, () => 0.99);
+    check(s.theirPosition <= limit, `asking ★20 never drags them past their ★${limit.toFixed(1)} limit (round ${i + 1}: ★${s.theirPosition})`);
+  }
+  check(s.status !== "accepted", "an ask past their limit never closes");
 }
 
 if (problems.length) {

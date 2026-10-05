@@ -305,7 +305,31 @@ export default function NegotiationScreen({
           ))}
         </div>
 
-        {!finished && (
+        {!finished && state.finalOffer && (
+          <>
+            {/* Insulted: one last offer, no haggling (Leo, 5 Oct 2026). */}
+            <div className="kit-shake-x mb-2.5 rounded-xl border border-red-500/40 bg-gradient-to-b from-red-800/40 to-red-950/50 p-3 text-center">
+              <div className="text-[10px] font-black uppercase tracking-widest text-red-300">Final offer</div>
+              <div className="text-sm font-black text-white">Take ★{money(state.theirPosition)} or leave it</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button
+                onClick={() => propose(state.theirPosition)}
+                className="kit-btn kit-btn-amber flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm"
+              >
+                <span>📄</span>Accept
+              </button>
+              <button
+                onClick={() => onDone(null)}
+                className="kit-btn flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm text-red-200 bg-red-950/50 ring-1 ring-red-500/30"
+              >
+                <span>🚪</span>Walk Away
+              </button>
+            </div>
+          </>
+        )}
+
+        {!finished && !state.finalOffer && (
           <>
             <div className="mb-1.5 text-[9px] font-black uppercase tracking-widest text-white/50">Your Offer</div>
             <div className="flex items-center gap-1.5 mb-2">

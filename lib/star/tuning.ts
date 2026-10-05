@@ -911,4 +911,24 @@ export const TUNABLES: TunableDef[] = [
     description: "Once mood is below the floor above, the chance they walk away entirely on any round that doesn't improve it.",
     default: 0.3, min: 0, max: 1, step: 0.05,
   },
+  {
+    key: "negotiation.limitMargin", category: "Negotiation", label: "Their hidden limit — how far past value they'll go",
+    description: "Every counterpart has a hidden limit they never cross: a buyer pays at most this much over value, a seller takes at least this much under it (0.1 = 10%). Asks past the limit get them standing firm, not meeting you halfway.",
+    default: 0.1, min: 0, max: 0.5, step: 0.05,
+  },
+  {
+    key: "negotiation.outrageousMultiple", category: "Negotiation", label: "How far past their limit counts as an insult",
+    description: "Asking this many times their limit (or offering their limit divided by this when buying) insults them: they walk out, or give one final take-it-or-leave-it offer.",
+    default: 2, min: 1.2, max: 5, step: 0.1,
+  },
+  {
+    key: "negotiation.insultWalkChance", category: "Negotiation", label: "Chance an insulted counterpart walks out",
+    description: "After an insulting demand, the chance they leave at once. Otherwise they make one final offer that can't be haggled.",
+    default: 0.4, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "negotiation.finalOfferCut", category: "Negotiation", label: "How much worse the insulted final offer is",
+    description: "An insulted counterpart's final offer is this much worse for you than what they last offered (0.25 = a quarter worse).",
+    default: 0.25, min: 0, max: 0.6, step: 0.05,
+  },
 ];
