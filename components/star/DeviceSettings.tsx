@@ -11,6 +11,7 @@ import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
 import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
+import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import {
   useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
@@ -143,6 +144,7 @@ export function LookSwitches() {
   const shopPlayer = useShop3dPlayerLook();
   const people3d = usePeople3dLook();
   const bossRoom = useBossRoomLook();
+  const gardenLook = useGarden3dLook();
   const chancesNow = useChanceSet();
   return (
     <>
@@ -180,6 +182,14 @@ export function LookSwitches() {
         <span className="text-[14px] font-bold text-white">Talk to your manager</span>
         <SegTabs className="w-[150px] shrink-0" value={bossRoom} onChange={setBossRoomLook} tabs={[["3d", "3D office"], ["old", "Old"]] as const} />
       </div>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D garden</span>
+        <SegTabs className="w-[150px] shrink-0" value={gardenLook} onChange={setGarden3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: golden-hour light, a real shop front, the shop&apos;s own player. Old: the garden as it was.
+      </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Chances</span>

@@ -25,11 +25,15 @@ import { nextFixtureFor } from "@/lib/star/competitions";
 import { baseIdOf } from "@/lib/star/shopData";
 import { shuffle } from "@/lib/star/cups";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
+import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
+import { garden3dLook } from "@/lib/star/garden3d/look";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
 
 const INK = "#f7f1e8";
+/** A query parameter, on the client only. */
+const q0 = (k: string) => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(k));
 const GOLD = "#facc15";
 /** The car families the shop has a 3D model of (lib/star/shop3d/catalogue.ts). */
 const CAR_MODELS = ["car-1", "car-2", "suv", "car-3", "classic", "car-4"];
@@ -77,7 +81,14 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
       sky: sky ?? homeSkyFor(career, nextFixtureFor(career)),
       mates: numbers,
       arrive,
-      you: { skin: skinToneHex(career.player.skinTone), hair: hairColourHex(career.player.hairColour), hairStyle: resolveHairStyle(career.player.hairStyle) },
+      // the 3D shop's own player (Settings → "3D shop player"), so you are
+      // the same person in the garden as in the shop (?player=old|new here too)
+      player: {
+        look: q0("player") === "old" || q0("player") === "new" ? (q0("player") as "old" | "new") : shop3dPlayerLook(),
+        skin: skinToneHex(career.player.skinTone),
+        hair: hairColourHex(career.player.hairColour),
+        hairStyle: resolveHairStyle(career.player.hairStyle),
+      },
     };
     // the garden is built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,8 +105,11 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
     if (!el) return;
     (async () => {
       try {
-        const { startGarden } = await import("@/lib/star/garden3d/scene");
         const q = new URLSearchParams(window.location.search);
+        // Settings → Look → "3D garden": New (the 5 Oct look) or Old, the
+        // garden exactly as it was (?look=old|new on the test page)
+        const look = q.get("look") === "old" || q.get("look") === "new" ? q.get("look") : garden3dLook();
+        const { startGarden } = look === "old" ? await import("@/lib/star/garden3d/sceneOld") : await import("@/lib/star/garden3d/scene");
         const c = await startGarden(el, {
           onNear: (s) => setNear(s),
           onFps: (f) => { (window as unknown as { __garden3dFps?: number }).__garden3dFps = f; },
