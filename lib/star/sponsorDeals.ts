@@ -589,6 +589,19 @@ const patchOffer = (career: CareerState, offerId: string, f: (o: BrandOffer) => 
   return withBrands(career, { ...s, offers: s.offers.map(o => (o.id === offerId ? f(o) : o)) });
 };
 
+/**
+ * SPONSOR OFFERS ARE TAKE IT OR LEAVE IT (Mikey, 5 Oct 2026).
+ *
+ * "I don't want any negotiations for sponsors." A brand makes an offer; you
+ * Sign it, or Decline and it is gone for good (declineOffer). The haggling
+ * buttons on the offer card — More money (the shared negotiation table,
+ * negotiation.ts, with the limit / volatile counter / take-it-or-leave-it
+ * rules every other negotiation uses), Longer deal (askLonger) and Easier
+ * target (askEasier) — are hidden while this is false. Everything they call
+ * is kept below, untouched, so flipping this back to true restores them.
+ */
+export const SPONSOR_NEGOTIATION = false;
+
 /** The weekly fee agreed at the negotiating table (or the offer gone, on null). */
 export function settleNegotiation(career: CareerState, offerId: string, weekly: number | null): CareerState {
   if (weekly === null) {

@@ -954,7 +954,7 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "negotiation.concessionRate", category: "Negotiation", label: "How much the counterpart concedes per round",
-    description: "Of the gap between their current position and your last offer, how much they give up each round — scaled by mood, so this is their concession at neutral mood.",
+    description: "On average, how much of the gap they give up when they counter. Each counter is random around this (from under half to over double), scaled by mood, and never past their hidden limit.",
     default: 0.35, min: 0.05, max: 0.9, step: 0.05,
   },
   {
@@ -963,13 +963,38 @@ export const TUNABLES: TunableDef[] = [
     default: 0.04, min: 0, max: 0.2, step: 0.01,
   },
   {
-    key: "negotiation.walkAwayMoodFloor", category: "Negotiation", label: "Mood floor before they might walk",
-    description: "Below this mood score (0-100), the counterpart has a real chance of ending the negotiation angrily rather than countering again.",
-    default: 30, min: 0, max: 60, step: 5,
+    key: "negotiation.limitMargin", category: "Negotiation", label: "Their hidden limit — how far past value they'll go",
+    description: "Every counterpart has a hidden limit they never cross: a buyer pays at most this much over value, a seller takes at least this much under it (0.1 = 10%). Asks past the limit get them standing firm, not meeting you halfway.",
+    default: 0.1, min: 0, max: 0.5, step: 0.05,
   },
   {
-    key: "negotiation.walkAwayChance", category: "Negotiation", label: "Chance of walking away per bad round",
-    description: "Once mood is below the floor above, the chance they walk away entirely on any round that doesn't improve it.",
-    default: 0.3, min: 0, max: 1, step: 0.05,
+    key: "negotiation.outrageousMultiple", category: "Negotiation", label: "How far past their limit counts as an insult",
+    description: "Asking this many times their limit (or offering their limit divided by this when buying) insults them: they walk out, or give one final take-it-or-leave-it offer.",
+    default: 2, min: 1.2, max: 5, step: 0.1,
+  },
+  {
+    key: "negotiation.fairRisk", category: "Negotiation", label: "Chance a fair counter goes wrong",
+    description: "Countering within their limit is never a sure thing: this is the chance they hold their price as a final offer, drop to their worst price, or leave (more often when they're annoyed).",
+    default: 0.08, min: 0, max: 0.5, step: 0.01,
+  },
+  {
+    key: "negotiation.cheekyRisk", category: "Negotiation", label: "Chance a cheeky counter goes wrong",
+    description: "Asking past their hidden limit (but short of an insult): the chance they hold firm, drop to their worst price as a final offer, or walk. Otherwise they come up a random amount, never past the limit.",
+    default: 0.4, min: 0, max: 0.9, step: 0.05,
+  },
+  {
+    key: "negotiation.insultCounterChance", category: "Negotiation", label: "Chance an insult still gets a counter",
+    description: "Even after an insulting demand they sometimes just counter as normal (up to their limit). The rest of the time it goes wrong.",
+    default: 0.1, min: 0, max: 0.5, step: 0.05,
+  },
+  {
+    key: "negotiation.insultWalkChance", category: "Negotiation", label: "When an insult goes wrong: chance they walk out",
+    description: "Of the insults that go wrong, the share where they leave at once. Most of the rest drop to their worst price, take it or leave it.",
+    default: 0.45, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "negotiation.finalOfferCut", category: "Negotiation", label: "How much worse their worst offer is",
+    description: "When talks go wrong they can drop to their worst price as a final offer: this much worse for you than their opening offer (0.25 = a quarter worse).",
+    default: 0.25, min: 0, max: 0.6, step: 0.05,
   },
 ];

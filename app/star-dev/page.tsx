@@ -3787,7 +3787,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         counterpartLabel={o.brand}
         initialState={{
           marketValue: Math.round(o.weekly * 1.2), mode: "selling", round: 0,
-          yourPosition: Math.round(o.weekly * 1.35), theirPosition: o.weekly,
+          yourPosition: Math.max(o.weekly + 1, Math.round(o.weekly * 1.25)), theirPosition: o.weekly,
           moodScore: 60, status: "negotiating",
           log: [`${o.brand} open at ★${o.weekly.toLocaleString()} a week.`],
         }}
