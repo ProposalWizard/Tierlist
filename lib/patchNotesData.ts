@@ -30,7 +30,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.29",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-05T14:45:00Z",
-      "summary": "Cheat menus and 18 test pages locked to admins, a much harder Ballon d'Or, a play-off bug fixed, a trial shootout that is always 2-2 before your kick, a tour Later button, commentary up to 8× and boots warnings. This is Harry's own v0.28; the site's 0.28 is Leo's v0.6, so it is listed here as 0.29.",
+      "summary": "Cheat menus and 18 test pages locked to admins, a much harder Ballon d'Or, a play-off bug fixed, a trial shootout that is always 2-2 before your kick, a tour Later button, commentary up to 8× and boots warnings. Harry's v0.29.",
       "stats": [
         {
           "value": "19 → 3 of 20",
