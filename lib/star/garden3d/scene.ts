@@ -105,8 +105,8 @@ export interface GardenController {
   walking?: () => { to: [number, number] | null; active: boolean };
   /** For checking: stand him at (x, z), facing yaw (radians). */
   place: (x: number, z: number, yaw?: number) => void;
-  where: () => { x: number; z: number; yaw: number; t: number };
-  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; impostor?: boolean; shadowRenders?: number; frames?: number; quality?: string; merged?: { before: number; after: number } };
+  where: () => { x: number; z: number; yaw: number; t: number; cam?: number[]; dodge?: number; block?: { d: number; what: string } | null };
+  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; impostor?: boolean; shadowRenders?: number; frames?: number; quality?: string; merged?: { before: number; after: number }; carImpostor?: boolean; shadowCalls?: number; shadowTris?: number };
   /** For checking: a fixed test camera (null: back to the follow camera). */
   debugCamera?: (pos: [number, number, number] | null, look?: [number, number, number]) => void;
   /** For checking: where the horse and the bird are, and how big they draw. */
@@ -123,6 +123,8 @@ export interface GardenOptions {
 const LIMIT = 18.3;
 /** The bench team-mates' own drawing layer (see makeImpostor). */
 const MATE_LAYER = 3;
+/** The parked cars' own drawing layers, one each (they get a picture too, far off). */
+const CAR_LAYER = 4;
 const SHOP = { x0: -6, x1: 6, z0: -17.5, z1: -9, h: 5.2 };
 const DOOR = { half: 1.2, h: 2.8 };
 const FOUNTAIN = { x: 0, z: -2.2, r: 1.95 };
@@ -157,6 +159,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
   const look = SKY[data.sky];
+  // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
+  const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
 
   // ── Renderer ──
@@ -202,6 +206,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.environmentIntensity = look.env;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   camera.layers.enable(MATE_LAYER);
+  for (let k = 0; k < 3; k++) camera.layers.enable(CAR_LAYER + k);
   let disposed = false;
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
@@ -1203,10 +1208,13 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const c = g.scene;
       c.rotation.y = Math.PI / 2;
       c.position.set(bays[i], 0, PARK.z0 + 3.6);
-      c.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      // (no cast shadow: a soft one under it instead, because far off the car
+      // is drawn as a picture and would drop out of the sun's shadow)
+      c.traverse((o: any) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } o.layers.set(CAR_LAYER + i); });
       scene.add(c);
+      blob(2.4, 4.6, bays[i], PARK.z0 + 3.6, 0.85);
       carGroups.push(c);
-      shadowDirty = true;
+      if (!dbg.has("noimp")) carImpostors.push(makeImpostor([c], CAR_LAYER + i, 9, 10.5));
     }).catch((e: any) => console.error("garden car", e));
     solid(bays[i] - 1.0, bays[i] + 1.0, PARK.z0 + 1.2, PARK.z0 + 6.0);
   });
@@ -1220,11 +1228,22 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
    * gone round them by a few degrees. Close up, the real people come back.
    * The picture is taken with the garden's own lights, so it matches.
    */
-  type Impostor = { update: (camPos: any, dt: number) => void; on: () => boolean; dispose: () => void; bakes: () => number };
+  type Impostor = { update: (camPos: any, dt: number) => void; on: () => boolean; dispose: () => void; bakes: () => number; size: () => number };
   let impostor: Impostor | null = null;
-  function makeImpostor(): Impostor {
-    const box3 = new THREE.Box3();
-    for (const m of mates) { m.root.updateMatrixWorld(true); box3.expandByObject(m.root, true); }
+  const carImpostors: Impostor[] = [];
+  function makeImpostor(roots: any[], layer: number, nearD: number, farD: number): Impostor {
+    // the size of what is actually drawn (visible meshes only: a model can
+    // carry hidden helpers far bigger than itself)
+    const box3 = new THREE.Box3(), mb = new THREE.Box3();
+    for (const r0 of roots) {
+      r0.updateMatrixWorld(true);
+      r0.traverse((o: any) => {
+        if (!o.isMesh) return;
+        for (let p = o; p; p = p.parent) if (!p.visible) return;
+        mb.setFromObject(o, true);
+        box3.union(mb);
+      });
+    }
     const C = new THREE.Vector3(), size = new THREE.Vector3();
     box3.getCenter(C); box3.getSize(size);
     const R = size.length() / 2 + 0.05;
@@ -1232,7 +1251,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const RES = quality === "high" ? 512 : 256;
     const rt = new THREE.WebGLRenderTarget(RES, RES, { type: half ? THREE.HalfFloatType : THREE.UnsignedByteType, depthBuffer: true });
     const cam = new THREE.OrthographicCamera(-R, R, R, -R, 0.1, 60);
-    cam.layers.set(MATE_LAYER);
+    cam.layers.set(layer);
     const card = new THREE.Mesh(new THREE.PlaneGeometry(2 * R, 2 * R), new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.5, transparent: false }));
     card.visible = false;
     scene.add(card);
@@ -1259,17 +1278,18 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       bakes++;
     };
     const lit = [hemiLight, sun, fillLight, ...nightLights];
-    for (const l of lit) l.layers.enable(MATE_LAYER);
+    for (const l of lit) l.layers.enable(layer);
     return {
       on: () => on,
       bakes: () => bakes,
+      size: () => +R.toFixed(2),
       update: (camPos, dt) => {
         void dt;
         const d = camPos.distanceTo(C);
-        const want = on ? d > 7.0 : d > 8.0;
+        const want = on ? d > nearD : d > farD;
         if (want !== on) {
           on = want;
-          if (on) camera.layers.disable(MATE_LAYER); else camera.layers.enable(MATE_LAYER);
+          if (on) camera.layers.disable(layer); else camera.layers.enable(layer);
           card.visible = on;
           if (on) bake(camPos);
         }
@@ -1277,9 +1297,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         // round them by more than ~3 degrees, or much nearer/further: picture again
         dir.subVectors(camPos, C).normalize();
         if (dir.dot(baked) < 0.9986 || Math.abs(d - distBaked) / distBaked > 0.25) bake(camPos);
-        // the picture stands a little in front of them, facing the camera,
-        // sized so it covers exactly what the 3D people would
-        const s = Math.min(R * 0.6, d * 0.5);
+        // the picture stands a little in front of them (never further forward
+        // than half their size, so nothing in front of them is hidden by it),
+        // facing the camera, sized so it covers exactly what they would
+        const s = Math.min(R * 0.5, 1.0, d * 0.25);
         card.position.copy(C).addScaledVector(baked, s);
         card.quaternion.copy(cam.quaternion);
         card.scale.setScalar((d - s) / d);
@@ -1378,7 +1399,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       m.root.traverse((o: any) => o.layers.set(MATE_LAYER));
       mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
     });
-    if (mates.length) impostor = makeImpostor();
+    if (!dbg.has("noimp") && mates.length) impostor = makeImpostor(mates.map((m) => m.root), MATE_LAYER, 7, 8);
   } else {
     const dress = (root: any, number: number, key: string) => {
       const U = {
@@ -1497,7 +1518,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // draw: here every still piece is joined with the others of the same
   // material in the same group, so the garden draws in far fewer calls. The
   // picture is exactly the same.
-  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
+  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
 
   // ── Input, camera, the loop ──
   let stick = { x: 0, y: 0 };
@@ -1630,6 +1651,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return t0;
   };
   let dodge = 0; // the camera's swing round the gazebo (radians)
+  let lastBlock: { d: number; what: string } | null = null;
   let testCam: [[number, number, number], [number, number, number]] | null = null;
   const GZ_BOX: [number, number, number, number] = [GAZEBO.x - GAZEBO.w / 2 - 0.35, GAZEBO.x + GAZEBO.w / 2 + 0.35, GAZEBO.z - GAZEBO.d / 2 - 0.35, GAZEBO.z + GAZEBO.d / 2 + 0.35];
 
@@ -1820,14 +1842,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     {
       const hx = player.position.x, hz = player.position.z;
       const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
-      const clear = (off: number) => enterBox(hx, hz, Math.sin(camYaw + off), Math.cos(camYaw + off), ...GZ_BOX) >= CAM_BACK;
+      // (with room to spare round it, so no post stands right beside the camera)
+      const clear = (off: number) => enterBox(hx, hz, Math.sin(camYaw + off), Math.cos(camYaw + off), GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CAM_BACK;
       let target = 0;
       if (!inGz && !clear(dodge)) {
         if (!clear(0)) {
           const pref = dodge < 0 ? -1 : 1;
           target = 0;
-          for (let k = 1; k <= 8; k++) {
-            const a = k * 0.14;
+          for (let k = 1; k <= 10; k++) {
+            const a = k * 0.15;
             if (clear(pref * a)) { target = pref * a; break; }
             if (clear(-pref * a)) { target = -pref * a; break; }
           }
@@ -1883,6 +1906,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     camRay.far = headPos.distanceTo(want);
     camRay.camera = camera;
     const block = camRay.intersectObjects(occluders.filter(Boolean), true)[0];
+    lastBlock = block ? { d: +block.distance.toFixed(2), what: String(block.object?.parent?.name || block.object?.name || block.object?.type) } : null;
     if (block) want.copy(headPos).addScaledVector(rayDir, Math.max(1.2, block.distance - 0.35));
     const camWas = camPos.clone();
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; shadowDirty = true; }
@@ -1894,6 +1918,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     camera.updateMatrixWorld();
     frustum.setFromProjectionMatrix(projM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     impostor?.update(camera.position, dt);
+    for (const ci of carImpostors) ci.update(camera.position, dt);
 
     let now: GardenSpot | null = null;
     for (const zn of ZONES) if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
@@ -1981,8 +2006,18 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
-    where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT }),
-    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, impostor: !!impostor?.on(), shadowRenders, frames: drawn, quality, merged: frozen }),
+    where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), dodge: +dodge.toFixed(2), block: lastBlock }),
+    stats: () => {
+      // the sun's shadow pass: one draw per visible caster (renderer.info doesn't count it)
+      let shadowCalls = 0, shadowTris = 0;
+      scene.traverse((o: any) => {
+        if (!o.isMesh || !o.castShadow || !o.visible || !o.layers.test(camera.layers)) return;
+        for (let p = o.parent; p; p = p.parent) if (!p.visible) return;
+        const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3;
+        shadowCalls++; shadowTris += n * (o.isInstancedMesh ? o.count : 1);
+      });
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, impostor: !!impostor?.on(), carImpostor: carImpostors.some((c) => c.on()), shadowRenders, frames: drawn, quality, merged: frozen, shadowCalls, shadowTris: Math.round(shadowTris) };
+    },
     debug: () => {
       const sz = (o: any) => { const b = new THREE.Box3().setFromObject(o); const v = new THREE.Vector3(); b.getSize(v); return { min: b.min.toArray().map((n: number) => +n.toFixed(2)), size: v.toArray().map((n: number) => +n.toFixed(2)) }; };
       const precise = (o: any) => { o.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(o, true); const v = new THREE.Vector3(); b.getSize(v); return { pmin: b.min.toArray().map((n: number) => +n.toFixed(3)), psize: v.toArray().map((n: number) => +n.toFixed(2)) }; };
@@ -2010,7 +2045,24 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
           sit = { hipsY: +hp.y.toFixed(3), seatUnderside: +seat.toFixed(3), feet: +feet.toFixed(3), benchTop: +(0.46 + 0.02).toFixed(3), deck: 0.03 };
         }
       }
-      return { sit, tris, cars: carGroups.length, carsWanted: data.cars, horseP: horse ? precise(horse.root) : null, birdP: bird ? precise(bird.root) : null, horse: horse ? { pos: horse.root.position.toArray(), ...sz(horse.root) } : null, mates: mates.map((m) => precise(m.root)), player: precise(player), bakes: impostor?.bakes() ?? 0 };
+      const pv: any[] = [];
+      player.traverse((o: any) => {
+        if (!o.isMesh) return;
+        let nan = false;
+        if (o.isSkinnedMesh) for (const b of o.skeleton.bones) if (b.matrixWorld.elements.some((e: number) => !isFinite(e))) nan = true;
+        let hidden = false;
+        for (let p = o; p; p = p.parent) if (!p.visible) hidden = true;
+        pv.push({ n: o.name, hidden, nan, layers: o.layers.mask, camLayers: camera.layers.mask, op: o.material?.opacity, tr: o.material?.transparent, inScene: (() => { let p = o; while (p.parent) p = p.parent; return p === scene; })() });
+      });
+      // what lies on the line from the camera to his chest
+      const rc = new THREE.Raycaster();
+      rc.layers.mask = camera.layers.mask;
+      rc.camera = camera;
+      const chest = new THREE.Vector3(player.position.x, 1.2, player.position.z);
+      rc.set(camera.position, chest.clone().sub(camera.position).normalize());
+      rc.far = camera.position.distanceTo(chest) + 0.5;
+      const los = rc.intersectObjects(scene.children, true).filter((h: any) => h.object.visible).slice(0, 4).map((h: any) => ({ d: +h.distance.toFixed(2), type: h.object.type, name: h.object.name, mat: h.object.material?.type, matName: h.object.material?.name, tr: h.object.material?.transparent, parent: h.object.parent?.type, ro: h.object.renderOrder }));
+      return { carSizes: carImpostors.map((c) => c.size()), mateSize: impostor?.size(), los, pv, sit, tris, cars: carGroups.length, carsWanted: data.cars, horseP: horse ? precise(horse.root) : null, birdP: bird ? precise(bird.root) : null, horse: horse ? { pos: horse.root.position.toArray(), ...sz(horse.root) } : null, mates: mates.map((m) => precise(m.root)), player: precise(player), bakes: impostor?.bakes() ?? 0 };
     },
     dispose: () => {
       disposed = true;
@@ -2020,6 +2072,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       window.removeEventListener("keyup", ku);
       renderer.domElement.removeEventListener("webglcontextlost", onLost);
       impostor?.dispose();
+      for (const ci of carImpostors) ci.dispose();
       marker.dispose();
       scene.traverse((o: any) => {
         o.geometry?.dispose?.();
