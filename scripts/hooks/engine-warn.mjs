@@ -26,7 +26,8 @@ let hit = false;
 if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(tool)) {
   hit = ENGINE.test(ti.file_path ?? ti.notebook_path ?? "");
 } else if (tool === "Bash") {
-  const cmd = ti.command ?? "";
+  // Quoted text (a commit message, an echo) only mentions the file; ignore it.
+  const cmd = (ti.command ?? "").replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, "\"\"");
   const writes = /(sed\s+-i|perl\s+-i|>\s*[^&]|\btee\b|\brm\b|\bmv\b|\bcp\b|python|git\s+(checkout|restore|rm|apply|am)|truncate|patch\b)/;
   hit = ENGINE.test(cmd) && writes.test(cmd);
 }
