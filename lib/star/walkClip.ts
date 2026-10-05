@@ -14,8 +14,8 @@
 
 /** How much of the jog each joint keeps (the rest is the standing pose). */
 const KEEP: [RegExp, number][] = [
-  [/UpLeg/, 0.55],
-  [/(Left|Right)Leg\b/, 0.42],
+  [/UpLeg/, 0.6],
+  [/(Left|Right)Leg\b/, 0.5],
   [/Foot|ToeBase/, 0.5],
   [/ForeArm/, 0.22],
   [/(Left|Right)Arm\b/, 0.42],
@@ -33,7 +33,7 @@ const keepFor = (bone: string) => KEEP.find(([re]) => re.test(bone))?.[1] ?? 0.4
  */
 export function makeWalkClip(THREE: any, jog: any, idle: any): any {
   const idleTrack = (name: string) => idle.tracks.find((t: any) => t.name === name);
-  const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
+  const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(), q2 = new THREE.Quaternion();
   const tracks = jog.tracks.map((t: any) => {
     const bone = t.name.split(".")[0];
     const it = idleTrack(t.name);
@@ -45,7 +45,7 @@ export function makeWalkClip(THREE: any, jog: any, idle: any): any {
         q1.fromArray(t.values, i);
         // the short way round
         if (q0.dot(q1) < 0) q1.set(-q1.x, -q1.y, -q1.z, -q1.w);
-        q1.slerpQuaternions(q0, q1, k).toArray(v, i);
+        q2.slerpQuaternions(q0, q1, k).toArray(v, i);
       }
       return new THREE.QuaternionKeyframeTrack(t.name, t.times.slice(), v);
     }
