@@ -19,7 +19,6 @@ import {
 } from "@/lib/star/newLook";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
-import Quality3dRow from "./Quality3dRow";
 import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
 
 /**
@@ -191,8 +190,6 @@ export function LookSwitches() {
       <SetNote dim className="mt-1 text-[10px]">
         New: golden-hour light, a real shop front, the shop&apos;s own player. Old: the garden as it was.
       </SetNote>
-      <SetDivider />
-      <Quality3dRow />
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Chances</span>
