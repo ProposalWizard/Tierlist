@@ -38,6 +38,8 @@
 import type { KindRule, StrikeDecision } from "./index";
 import type { Ball, Scenario } from "../canvasEngine";
 import { CX, GOAL_W, POST_L, POST_R, ARC_R } from "../pitch";
+import { topCornerReach } from "../keeperBrain";
+import { oldKeepers } from "../gameplayVersion";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -63,7 +65,36 @@ export const FREE_KICK = {
   readLagS: 0.08,                              // he reads where it WAS, a beat ago
   sightedPast: 0.4,                            // metres beyond the wall line before he sees it
   dive: true,                                  // across at the engine's dive speed, not a shuffle
+  /** Rule 6 — the top-corner reach cut (keeperBrain.ts topCornerReach). Off
+   *  for the match's own free kicks: measured, it doubled an ordinary taker's
+   *  rate (9 % → 19 %, real PL 3.9 %). On for a drill's own (FREE_KICK_DRILL). */
+  topCorner: false,
 };
+
+/**
+ * A FREE KICK THE MATCH'S RULES DID NOT SET UP — the trial's and training's
+ * own free-kick pictures (TrialFreeKicks.tsx builds its own wall and keeper,
+ * and never goes through setupFreeKick). Leo, 5 Oct 2026: in the trial the
+ * "goalies [are] far too good in free kicks". The match's own free kicks
+ * are pinned to real Premier League numbers (tests/star/freeKickRules.mts)
+ * and stay exactly as they are; a drill's keeper, rated up to 95+ by the
+ * trial's ladder, reacted in 0.08 s once he saw it and read it near perfectly.
+ * Here he is a beat slower to see it, to move and to read it, his rating buys
+ * less of that, and the top corner is beyond him (Rule 6).
+ * Measured in tests/star/keeperHuman.mts.
+ */
+export const FREE_KICK_DRILL = {
+  reactS: [0.26, 0.40] as [number, number],
+  reactPerPoint: 0.0012,
+  readLagS: 0.15,
+  sightedPast: 1.5,
+  topCorner: true,
+};
+
+/** Every free kick setupFreeKick has set up (the match's own). Anything else is a drill's. */
+const ruled = new WeakSet<Scenario>();
+/** Was this free kick set up by the match's own rules (rather than a drill's own picture)? */
+export function isMatchFreeKick(sc: Scenario): boolean { return ruled.has(sc); }
 
 /** Wall size for how far off centre the kick is (degrees off the goal's axis). */
 export function wallSizeFor(angleDeg: number, draw: number): number {
@@ -161,6 +192,7 @@ export function setupFreeKick(sc: Scenario, rng: () => number, appliedAuthored =
   k.targetX = k.x;
   k.adjusting = false;
   k.scrambling = false;
+  ruled.add(sc);
 
   return { side, wall: n, moved };
 }
@@ -177,12 +209,16 @@ interface FlightState {
   seenAt: number | null;
   trail: { t: number; x: number; y: number; vx: number; vy: number }[];
   wallDist: number;
+  /** His reach before this kick (Scenario.keeperReach), handed back after it. */
+  baseReach: number | undefined;
+  /** Where he stood when it was struck. */
+  fromX: number;
 }
 const flights = new WeakMap<Ball, FlightState>();
 
 /** Seconds from seeing it to moving, from a uniform draw and his rating. */
-export function freeKickReaction(draw: number, keeperStrength: number): number {
-  const F = FREE_KICK;
+export function freeKickReaction(draw: number, keeperStrength: number, drill = false): number {
+  const F = drill ? FREE_KICK_DRILL : FREE_KICK;
   const base = F.reactS[0] + draw * (F.reactS[1] - F.reactS[0]);
   return clamp(base - (keeperStrength - 62) * F.reactPerPoint, 0.08, 0.4);
 }
@@ -195,11 +231,16 @@ export const freeKickRules: KindRule = {
   draws: 2,
   decide(sc, ball, draws, ctx): StrikeDecision | null {
     if (sc.kind !== "free_kick") return null;
+    // Decided here and saved with the decision, so a replay (which plays a
+    // copy of the picture) keeps the same keeper.
+    // Settings → Gameplay → Keepers: Old = the drill keeper is the match keeper again.
+    const drill = !isMatchFreeKick(sc) && !oldKeepers();
     return {
       kind: "free_kick",
       data: {
         jump: draws[0] >= FREE_KICK.wallStaysDown,
-        react: freeKickReaction(draws[1], ctx.keeperStrength),
+        react: freeKickReaction(draws[1], ctx.keeperStrength, drill),
+        drill,
       },
     };
   },
@@ -210,7 +251,7 @@ export const freeKickRules: KindRule = {
     const wallDist = wall.length
       ? Math.min(...wall.map((d) => Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y)))
       : 0;
-    flights.set(ball, { t: 0, seenAt: null, trail: [], wallDist });
+    flights.set(ball, { t: 0, seenAt: null, trail: [], wallDist, baseReach: sc.keeperReach, fromX: sc.keeper.x });
   },
   step(sc, ball, dt, d) {
     const st = flights.get(ball);
@@ -227,19 +268,32 @@ export const freeKickRules: KindRule = {
     // Once the engine has had its say (a save, a spill) he is its business again.
     if (k.done || k.saves > 0 || ball.lastTouch !== "attack" || ball.loose || ball.pos.y <= k.y) {
       if (k.adjusting && !k.scrambling) k.adjusting = false;
+      // The engine has judged it (or it is gone): his reach is his own again.
+      sc.keeperReach = st.baseReach;
       flights.delete(ball);
       return;
+    }
+    // Rule 6 (Leo, 5 Oct 2026, "more emphasis on top corner shots going in
+    // that goalies cant reach"): the keeper brain's top-corner reach
+    // (keeperBrain.ts, KEEPER_HUMAN) — a ball bent over or round the wall into
+    // the top corner is the shortest stretch a keeper has. Every substep,
+    // from his own reach, so it never compounds.
+    const drill = d.data.drill === true;
+    const P = drill ? FREE_KICK_DRILL : FREE_KICK;
+    {
+      const f = P.topCorner ? topCornerReach(sc, ball, st.fromX) : 1;
+      sc.keeperReach = f < 1 ? (st.baseReach ?? 1) * f : st.baseReach;
     }
     st.trail.push({ t: st.t, x: ball.pos.x, y: ball.pos.y, vx: ball.vel.x, vy: ball.vel.y });
     // Rule 5: unsighted until it is past his wall.
     if (st.seenAt === null) {
       const from = sc.ball;
-      if (Math.hypot(ball.pos.x - from.x, ball.pos.y - from.y) < st.wallDist + FREE_KICK.sightedPast) return;
+      if (Math.hypot(ball.pos.x - from.x, ball.pos.y - from.y) < st.wallDist + P.sightedPast) return;
       st.seenAt = st.t;
     }
     const react = Number(d.data.react ?? 0.2);
     if (st.t < st.seenAt + react) return;
-    const seen = st.t - FREE_KICK.readLagS;
+    const seen = st.t - P.readLagS;
     let s = st.trail[0];
     for (const p of st.trail) { if (p.t <= seen) s = p; else break; }
     while (st.trail.length > 2 && st.trail[1].t <= seen) st.trail.shift();

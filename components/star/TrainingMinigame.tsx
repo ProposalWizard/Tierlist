@@ -95,6 +95,12 @@ interface Props {
   /** Stars won on this level: 3 on the first try, 2 on the second, 1 on
    *  the third, 0 if all three missed. */
   onComplete: (stars: number) => void;
+  /** Leave the drill with nothing scored. Reported directly: "not always
+   *  easy to go to home screen or back" — this mounts with no exit of its
+   *  own at all once a level is chosen (TrainingLevelSelect, the screen
+   *  before it, already has one). Safe at any point: a level only ever
+   *  awards stars through onComplete, which this never calls. */
+  onExit?: () => void;
 }
 
 const SKILL_TITLES: Record<keyof Skills, string> = {
@@ -152,10 +158,10 @@ const SKILL_LOOK: Record<keyof Skills, { icon: string; label: string; accent: st
 const DrillLook = createContext<{ skill: keyof Skills; glow: string }>({ skill: "pace", glow: "#2F6F4E" });
 
 function Shell({
-  title, instruction, results, trainingLevel, children,
+  title, instruction, results, trainingLevel, children, onExit,
 }: {
   title: string; instruction: string; results: boolean[];
-  trainingLevel: number; children: React.ReactNode;
+  trainingLevel: number; children: React.ReactNode; onExit?: () => void;
 }) {
   // Open a drill with its pitch on screen. The intro card is taller than the
   // screen, so "Let's go" is reached by scrolling — and the drill then opened
@@ -172,7 +178,7 @@ function Shell({
   const look = SKILL_LOOK[skill];
   const onTry = Math.max(0, TRIES - results.length);
   return (
-    <div className="min-h-screen text-white flex flex-col items-center py-3 px-3"
+    <div className="h-[100dvh] overflow-y-auto text-white flex flex-col items-center py-3 px-3"
       style={{ background: `radial-gradient(90% 50% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <div className="w-full max-w-sm">
         <div className="relative overflow-hidden rounded-2xl p-2.5"
@@ -181,6 +187,11 @@ function Shell({
             boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(glow, 0.35)}, 0 0 26px -6px ${rgba(glow, 0.55)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
           }}>
           <Shine loop every={6} />
+          {onExit && (
+            <button onClick={onExit} className="relative mb-1.5 rounded-full bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/70 hover:bg-black/45 hover:text-white">
+              ✕ Exit
+            </button>
+          )}
           <div className="relative flex items-center justify-between mb-2">
             {/* The three tries, as glowing pips. */}
             <div className="flex items-center gap-1.5">
@@ -433,8 +444,8 @@ export function buildStrike(
 }
 
 function StrikeDrill({
-  kind, trainingLevel, skills, onFinish,
-}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void }) {
+  kind, trainingLevel, skills, onFinish, onExit,
+}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void }) {
   // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
   // contact, flight, keeper and wall a match has. This file only builds the
   // picture for each rep and scores the result. See .claude/skills/one-engine.
@@ -535,7 +546,7 @@ function StrikeDrill({
       : "Drag back to aim and set power, then pick your spot on the ball.";
 
   return (
-    <Shell title={SKILL_TITLES[kind]} instruction={instruction} results={results} trainingLevel={trainingLevel}>
+    <Shell title={SKILL_TITLES[kind]} instruction={instruction} results={results} trainingLevel={trainingLevel} onExit={onExit}>
       <div className="relative">
         {!done && <EngineFeature
           openOn={openOn}
@@ -563,7 +574,7 @@ function StrikeDrill({
 // PACE — the gauntlet, on the real match's own first-person dribble
 // ═══════════════════════════════════════════════════════════════════════════
 
-function GauntletDrill({ trainingLevel, onFinish }: { trainingLevel: number; onFinish: (stars: number) => void }) {
+function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
   // The same run a real match serves (FirstPersonDribble, same camera
   // settings as CanvasMatch's own mount). Your pace stat is the run speed.
   const level = levelDifficulty(trainingLevel);
@@ -593,7 +604,7 @@ function GauntletDrill({ trainingLevel, onFinish }: { trainingLevel: number; onF
     <Shell
       title={SKILL_TITLES.pace}
       instruction="Read each man as he commits, then burst the other way. Get to the line with the ball."
-      results={results} trainingLevel={trainingLevel}
+      results={results} trainingLevel={trainingLevel} onExit={onExit}
     >
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
         {!done && (
@@ -703,7 +714,7 @@ function buildVisionRound(level: number, rep: number, rng: () => number): Vision
   };
 }
 
-function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; onFinish: (stars: number) => void }) {
+function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
   const level = levelDifficulty(trainingLevel);
   const rep = 0;
   const { results, attempt } = useTries(onFinish);
@@ -843,7 +854,7 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
     <Shell
       title={SKILL_TITLES.vision}
       instruction="Pick the best ball on: the man in the most space who is still ONSIDE — behind the yellow line."
-      results={results} trainingLevel={trainingLevel}
+      results={results} trainingLevel={trainingLevel} onExit={onExit}
     >
       <div
         ref={wrapRef}
@@ -878,7 +889,7 @@ function CompleteScreen({ title, trainingLevel, stars }: { title: string; traini
   const look = SKILL_LOOK[skill];
   const verdict = stars === 3 ? "First time!" : stars === 2 ? "Second try" : stars === 1 ? "Just made it" : "Not this time";
   return (
-    <div className="min-h-screen text-white flex flex-col items-center justify-center py-3 px-3"
+    <div className="h-[100dvh] overflow-y-auto text-white flex flex-col items-center justify-center py-3 px-3"
       style={{ background: `radial-gradient(80% 50% at 50% 30%, ${rgba(glow, 0.4)}, transparent 70%), var(--sk-page, linear-gradient(180deg, #0b1220, #05070d))` }}>
       <div className="relative w-full max-w-sm overflow-hidden rounded-2xl p-6 text-center"
         style={{
@@ -920,7 +931,7 @@ export default function TrainingMinigame(props: Props) {
   );
 }
 
-function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete }: Props) {
+function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit }: Props) {
   const [result, setResult] = useState<number | null>(null);
   // Level 1 of every game opens on a short how-it-works card.
   const [introDone, setIntroDone] = useState(trainingLevel !== 1);
@@ -939,14 +950,14 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete }: Pro
 
   switch (skill) {
     case "pace":
-      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
     case "vision":
-      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} />;
+      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
     case "power":
     case "technique":
     case "freeKick":
-      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} />;
+      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} />;
     default:
-      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
   }
 }

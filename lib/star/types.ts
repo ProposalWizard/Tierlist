@@ -1408,6 +1408,12 @@ export interface CareerState {
    * from the next match onwards.
    */
   media?: import("./media/types").MediaState;
+  /**
+   * A tester save: someone used a Settings → Developer tools cheat (money,
+   * skills, skip ahead, switch club…) on this career. Set once, never
+   * cleared (lib/star/godMode.ts). Optional: absent means a clean save.
+   */
+  usedGodMode?: boolean;
 }
 
 export type StarPhase =

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useIsTester } from "@/lib/useIsAdmin";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
@@ -99,6 +100,9 @@ export default function SettingsScreen({
   // Live scores moved to the League page's bell (v0.23.1, P61).
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devOpen, setDevOpen] = useState(false);
+  // Testers and admins (tester access, 5 Oct 2026). Goal Replays inside
+  // stays admin-only: it checks for itself.
+  const isTester = useIsTester();
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
@@ -216,6 +220,16 @@ export default function SettingsScreen({
       {/* ── DEVELOPER TOOLS ── hidden behind one button (Mikey, 28 Sep 2026:
           "the developer tools should be almost hidden… click on it and it
           shows you all of this stuff, click again to hide it"). */}
+      {/* A save a cheat has touched (lib/star/godMode.ts). Shown to everyone. */}
+      {career.usedGodMode && (
+        <RiseIn index={next()} className="mt-6">
+          <p data-tester-save className="rounded-lg border px-3 py-2 text-[11px] font-bold text-white" style={{ borderColor: DEV, background: "rgba(245,158,11,.12)" }}>
+            🧪 Tester save — developer tools have been used on this career.
+          </p>
+        </RiseIn>
+      )}
+      {/* Admins and testers (Harry, 5 Oct 2026: "lock the doors", then tester access). */}
+      {isTester && (
       <RiseIn index={next()} className="mt-6">
         <button
           onClick={() => setDevOpen(o => !o)}
@@ -227,7 +241,8 @@ export default function SettingsScreen({
           <span className="text-[11px] font-black text-white">{devOpen ? "Hide ▴" : "Show ▾"}</span>
         </button>
       </RiseIn>
-      {devOpen && (<>
+      )}
+      {isTester && devOpen && (<>
       <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play.</p>
 
       <RiseIn index={next()} className="mt-2">

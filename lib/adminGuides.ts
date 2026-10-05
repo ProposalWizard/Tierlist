@@ -435,6 +435,40 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
   },
 
+  "/admin/testers": {
+    title: "Tester Access",
+    what: "Make links that turn a signed-in person into a tester, switch links off, and remove testers. A tester gets the Star Career developer tools and the test pages that only play the game.",
+    buttons: [
+      { group: "Links", items: [
+        ["Who it's for (optional)", "A short note so you remember who the link went to. Only admins see it."],
+        ["New tester link", "Makes a new link like knowitball.co.uk/tester/K7Q2XM. Send it to your tester."],
+        ["Copy link", "Copies that link, ready to paste into a message."],
+        ["Switch off / Switch on", "A switched-off link stops working. People who already used it stay testers — use Remove for that."],
+        ["On / Off (tag)", "Whether the link works right now. \"Used N times\" is how many people became testers with it."],
+      ] },
+      { group: "Testers", items: [
+        ["Remove", "Takes tester access away from that person. It asks first. An admin who is also a tester stays an admin."],
+      ] },
+      { group: "What the tester sees", items: [
+        ["The link", "Signed out: \"Sign in with Google\", then they come back to the link. Signed in: one button, \"Become a tester\". Opening the link alone changes nothing."],
+      ] },
+    ],
+    saving: [
+      "Shared, at once. Links are kept in the Supabase table tester_links; who is a tester is the is_tester mark in user_roles. There is no Save button.",
+      "Only admins can make or change links, through the site's server. Nobody can write either table from their own browser.",
+    ],
+    inGame: [
+      "A tester sees Road to Ballon d'Or → Settings → Developer tools (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
+      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
+      "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
+      "Testers never get admin pages or anything that changes what other players see.",
+    ],
+    needs: [
+      "supabase/migrations/tester_access.sql must be run in the Supabase SQL Editor. Until then this page shows a red line, \"New tester link\" is off, nobody is a tester, tester links say they aren't switched on yet, and everything else works as before.",
+    ],
+    dev: "app/admin/testers/ · app/api/admin/testers/route.ts · app/tester/[code]/ · app/api/tester/claim/route.ts · lib/testerLinks.ts · lib/roles.ts · lib/admin.ts (roleOf, isTester) · lib/useIsAdmin.ts (useIsTester) · components/TesterOnly.tsx · lib/star/godMode.ts",
+  },
+
   "/admin/app-plan": {
     title: "App Plan",
     what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",
@@ -882,6 +916,28 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
 
+  "/star-3d-area-dev/office": {
+    title: "Manager's office (3D stage)",
+    what: "The signing's office, rebuilt as a stage for \"Talk to your manager\": the manager behind his desk, you across it, a rug, a bookcase, a trophy cabinet, a plant, a laptop and a mug. The camera goes to whoever is talking. Sample lines here; the real ones come from the boss game.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the 3D Test Area."],
+          ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["Next line", "Steps through four sample lines, switching who talks."],
+          ["👁 (bottom left)", "This guide."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "Talk to your manager (Life tab) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat screen exactly as before. The lines, replies and results are the boss game's own, unchanged.",
+      "If the phone cannot run the 3D, the chat carries on without the office.",
+      "The people are the one body (Settings → Look → \"3D people\").",
+    ],
+    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
+  },
+
   "/star-garden3d-dev": {
     title: "3D Garden",
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
@@ -1174,6 +1230,9 @@ export const ADMIN_GUIDES = {
         items: [
           ["Scenario — Random / a type", "Forces every chance to be that type."],
           ["Curve boots", "Tick to pretend you own curving boots."],
+          ["Knuckleball (two fingers up, in flight)", "With curve boots on, swipe two fingers up the screen while your shot flies. It wobbles late and the keeper guesses wrong more often than right."],
+          ["Knuckle every shot (for mouse)", "Makes every shot at goal a knuckleball, so it can be tried without a touch screen."],
+          ["⚡ Power shot / Power shot button", "Tap ⚡ before aiming. After the drag the pitch keeps moving for a short wind-up, then tap the green circle fast: up to 1.5x pace; slow or missed taps drift off your aim."],
           ["Power / Technique / Keeper Strength", "Your skills and their keeper."],
           ["Position / Team Relationship", "Start from your career's own values if one is saved in this browser."],
           ["Height at 0% power / Extra height from full power / Overall lift", "How high shots fly — this copy only."],

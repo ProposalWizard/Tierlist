@@ -1065,6 +1065,31 @@ export const ASSETS_3D: Asset3dFolder[] = [
     ]
   },
   {
+    "id": "onebody",
+    "title": "The one body: player and manager with fingers",
+    "kind": "model",
+    "made": "scripts/people3d/build_onebody.py (from star/people3d)",
+    "note": "The same people with an ordinary waist and 15 finger bones a hand, for every 3D scene (Settings → Look → 3D people: New). 16-bit positions, ~1 MB each. Clips: star/people3d/anims.glb.",
+    "files": [
+      {
+        "path": "/star/onebody/manager.glb",
+        "bytes": 1040456
+      },
+      {
+        "path": "/star/onebody/player-buzz.glb",
+        "bytes": 953528
+      },
+      {
+        "path": "/star/onebody/player-long.glb",
+        "bytes": 942236
+      },
+      {
+        "path": "/star/onebody/player.glb",
+        "bytes": 957684
+      }
+    ]
+  },
+  {
     "id": "people3d",
     "title": "3D people: player and manager (live in the browser)",
     "kind": "model",

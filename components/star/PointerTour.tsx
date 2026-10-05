@@ -77,6 +77,10 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
   // leave you stuck behind the dim: it becomes a tap-to-go-on step instead.
   const [dead, setDead] = useState(false);
   const doneRef = useRef(false);
+  // "Later" on a press step (Harry, 5 Oct 2026: the tour "trapped" the home
+  // screen — after every match it blocked every tap but one). It hides the
+  // tour until this screen opens again; nothing is marked done.
+  const [later, setLater] = useState(false);
   // The bubble's real height, so it can always be kept on screen (v0.25
   // point 14: the social-media tutorial sat off the screen).
   const bubbleRef = useRef<HTMLDivElement>(null);
@@ -151,7 +155,7 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
     if (h && Math.abs(h - bubbleH) > 1) setBubbleH(h);
   });
 
-  if (!mounted || !step || !box) return null;
+  if (later || !mounted || !step || !box) return null;
   const press = !!step.press && !dead;
 
   const wholeScreen = step.target === "screen";
@@ -222,6 +226,11 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         onClick={press ? undefined : next}
       >
         <div className="text-[16px] font-black leading-snug">{step.text}</div>
+        {press && (
+          <div className="mt-1 flex justify-end">
+            <button onClick={(e) => { e.stopPropagation(); setLater(true); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/70">Later</button>
+          </div>
+        )}
         {!press && (
           <div className="mt-1 flex items-center justify-between">
             {skippable

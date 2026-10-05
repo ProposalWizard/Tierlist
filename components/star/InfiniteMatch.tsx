@@ -39,6 +39,7 @@ import EnginePlay from "./EnginePlay";
 import { buildTestCareer } from "@/lib/star/engineProfile";
 import LiveChanceEditor from "./LiveChanceEditor";
 import { liveMatchScenario, liveSaveRefusal } from "@/lib/star/liveEdit";
+import { useIsAdmin } from "@/lib/useIsAdmin";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
@@ -65,6 +66,7 @@ export default function InfiniteMatch({ settings, onBack }: {
   settings: PlaySettings;
   onBack: () => void;
 }) {
+  const isAdmin = useIsAdmin();
   /** Bumped to start a fresh match. Also the component key, because
    *  CanvasMatch takes its career, fixture and match length once at mount. */
   const [run, setRun] = useState(0);
@@ -166,13 +168,14 @@ export default function InfiniteMatch({ settings, onBack }: {
         <button style={{ ...btn, flex: "none" }} onClick={restart}>New match</button>
       </div>
 
-      {/* THE CHANCE ON SCREEN — Edit, Save, Commit. Reported directly: "there is
+      {/* Admins only: testers play the Play Area but don't save or commit
+          scenarios (Harry, 5 Oct 2026). THE CHANCE ON SCREEN — Edit, Save, Commit. Reported directly: "there is
           no save and commit buttons inside a match highlight". It was one Edit
           button that scrolled away above the scoreboard; now all three stay
           pinned to the top of the screen for as long as the match runs. */}
       <div style={{
         position: "sticky", top: PINNED_TOP, zIndex: 30, width: "100%", maxWidth: 460,
-        padding: "6px 0", background: "#05070d", display: "grid", gap: 4,
+        padding: "6px 0", background: "#05070d", display: isAdmin ? "grid" : "none", gap: 4,
       }}>
         <div style={{ fontSize: 11.5, fontWeight: 800, color: MUTED, textAlign: "center", textTransform: "capitalize" }}>
           {current ? `This chance: ${kindLabel(current.scenario.kind)} · ${current.minute}'` : "Waiting for a chance…"}

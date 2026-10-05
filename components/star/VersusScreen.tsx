@@ -66,6 +66,8 @@ interface Props {
    *  the top of the pitch by the keeper. Outside the pitch's clipping box, so
    *  the list it opens can hang down over the pitch. */
   pitchCorner?: React.ReactNode;
+  /** The same, in the top-LEFT corner (the boots warning, 5 Oct 2026). */
+  pitchCornerLeft?: React.ReactNode;
 }
 
 /**
@@ -146,7 +148,7 @@ function scouted(s: TeamSheet): boolean {
   return s.xi.length >= 9;
 }
 
-export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner }: Props) {
+export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner, pitchCornerLeft }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club, clubKits?.[home.club], clubKits?.[away.club]);
   const [showSubs, setShowSubs] = useState(false);
@@ -295,6 +297,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
         {/* Pinned to the full-width row, not the (maybe narrowed) pitch, so it
             never lands on the keeper's name when the pitch shrinks. */}
         {pitchCorner && <div data-pitch-corner className={`absolute z-20 ${fitted ? "-top-1 right-0" : "right-1.5 top-1.5"}`}>{pitchCorner}</div>}
+        {pitchCornerLeft && <div data-pitch-corner-left className={`pointer-events-none absolute z-20 ${fitted ? "-top-1 left-0" : "left-1.5 top-1.5"}`}>{pitchCornerLeft}</div>}
         <div ref={pitchWrapRef} className="relative mx-auto" style={pitchW ? { width: pitchW } : undefined}>
           <div className="sk-versus-pitch relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
             {/* Mown stripes as real alternating bands (not a near-invisible

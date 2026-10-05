@@ -132,6 +132,47 @@ export interface Ball {
   /** Ported from canvasEngine.ts's curve boots — see applyCurveSwipe there. */
   curveSpinAdj?: number;
   curveVzAdj?: number;
+  /**
+   * SANDBOX PROTOTYPE (Leo, 5 Oct 2026) — a knuckleball. Struck with almost no
+   * spin, so it wobbles late in its flight. Set by makeKnuckleball; read only
+   * by stepBallRaw's wobble block. Absent on every ordinary ball.
+   */
+  knuckle?: KnuckleState;
+  /**
+   * SANDBOX PROTOTYPE — a power shot's power multiplier (1-1.5). Present only on
+   * a ball struck through launch's `opts.powerMult`. The keeper's reach shrinks
+   * for a power shot that is genuinely faster than an ordinary one — see
+   * powerShotReachScale.
+   */
+  powerShot?: number;
+  /** SANDBOX PROTOTYPE — the keeper got to it and made a mistake (let it
+   *  through, or spilled it loose). Read by the UI for the "HOWLER" banner. */
+  keeperError?: "through" | "spill";
+}
+
+/** A knuckleball's wobble. All drawn once at the strike, so it is seeded. */
+export interface KnuckleState {
+  /** Seconds since the strike. */
+  t: number;
+  /** Seconds before the wobble starts — a knuckleball flies true, then moves. */
+  onset: number;
+  /** Biggest sideways swerve off the struck line, metres. */
+  amp: number;
+  /** Wobble rate, rad/s. */
+  freq: number;
+  phase: number;
+  phase2: number;
+}
+
+/**
+ * SANDBOX PROTOTYPE — the keeper trying to read a knuckleball. He commits to a
+ * guess, then changes his mind (once or twice) as it moves. `guesses[i]` is the
+ * x he heads for after `switchAt[i - 1]` seconds have passed.
+ */
+export interface KeeperRead {
+  t: number;
+  guesses: number[];
+  switchAt: number[];
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -202,6 +243,8 @@ export interface Keeper {
    * only in canvasEngine.ts until it is deliberately ported here.
    */
   pendingDone: boolean;
+  /** SANDBOX PROTOTYPE — reading a knuckleball. See KeeperRead. */
+  read?: KeeperRead;
 }
 
 // A poacher lurking for the rebound.
@@ -3112,6 +3155,12 @@ export function launch(
   contact: Contact,
   skills: KickSkills,
   rng: () => number,
+  /**
+   * SANDBOX PROTOTYPE — a power shot. `powerMult` (1-1.5) multiplies the ball's
+   * pace off the boot; `driftDeg` turns it off the aimed line (a slow tap on the
+   * green circle). Absent: an ordinary strike, byte-for-byte as before.
+   */
+  opts?: { powerMult?: number; driftDeg?: number },
 ): Ball {
   const tech = skills.technique;
   // How much of the ball this player can actually use. Struck at the very
@@ -3165,12 +3214,12 @@ export function launch(
   // primarily an accuracy stat. See curlRange/loftRange above and §13.7.
   const sigmaDeg = (1 - tech / 100) * 2.2 + power * (1 - tech / 100) * 1.6;
   const noise = gaussian(rng) * sigmaDeg;
-  const d = rotateDeg(normalize(dir), noise);
+  const d = rotateDeg(normalize(dir), noise + (opts?.driftDeg ?? 0));
 
   // Horizontal launch speed, in m/s. A full-power strike from a 55-power player
   // leaves the boot around 28 m/s; a 100-power player nudges 36. Lofting bleeds
   // a little ground speed into the air.
-  const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25);
+  const Sh = power * (18 + skills.power * 0.18) * (1 - loft * 0.25) * (opts?.powerMult ?? 1);
   // Vertical launch speed from how low on the ball it was struck. Deliberately
   // NOT `loft * power * ...` — see shotTuning above. How hard you struck it
   // only nudges the height; where you struck it decides the height.
@@ -3216,8 +3265,308 @@ export function launch(
   // Ball.youStruckAtGoal.
   ball.youStruckAtGoal = ball.shot;
   ball.owner = ball.loose ? "none" : "you";
+  if (opts?.powerMult && opts.powerMult > 1) ball.powerShot = opts.powerMult;
   markLanding(ball, scenario);
   return ball;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SANDBOX PROTOTYPES (Leo, 5 Oct 2026): KNUCKLEBALL and POWER SHOT.
+//
+// Built only in this fork (/star-match-dev). Nothing here reaches the real
+// match until a later, approved port. Every piece is off unless a ball or a
+// keeper carries the new field, so an ordinary strike plays exactly as before.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── KNUCKLEBALL ──
+//
+// Leo: "goalie prediction more likely to be wrong than right, movement changes
+// like they're changing their mind so further away from ball".
+//
+// Real physics (Hong & Asai; Darbois-Texier & Clanet): a ball struck with
+// almost no spin zig-zags late in its flight by about a ball's width, and the
+// direction is unpredictable. Here the wobble is exaggerated a few times so it
+// can be SEEN on a phone; the real figure is ~0.2 m.
+
+/** Biggest sideways swerve off the struck line, metres. Drawn per strike
+ *  between these. Real knuckleballs move ~0.2 m; this is exaggerated so it
+ *  reads on a phone. */
+const KNUCKLE_AMP_MIN = 0.35;
+const KNUCKLE_AMP_MAX = 0.6;
+/** Wobble rate, rad/s (one full side-to-side every ~0.5-0.7 s). */
+const KNUCKLE_FREQ_MIN = 9;
+const KNUCKLE_FREQ_MAX = 13;
+/** It flies true for this long before it starts to move. */
+const KNUCKLE_ONSET_MIN = 0.16;
+const KNUCKLE_ONSET_MAX = 0.3;
+/** How much of the strike's curl survives. A knuckleball is struck dead. */
+const KNUCKLE_SPIN_KEEP = 0.06;
+/** Where he finally heads is WRONG (further from it than standing still) this often. */
+export const KNUCKLE_WRONG_FINAL = 0.65;
+/** His first lean is the opposite way from where he finishes up this often —
+ *  the visible change of mind. */
+const KNUCKLE_FAKE_FIRST = 0.7;
+/** Chance he changes his mind a second time, late. */
+const KNUCKLE_THIRD_LOOK = 0.5;
+/** m/s across his line on his first, committed guess — near a dive. */
+const KEEPER_READ_SPEED = 5;
+/** …and once he has changed his mind: he has to stop and turn, so it is slower. */
+const KEEPER_REREAD_SPEED = 3;
+
+/**
+ * The wobble's sideways and up/down OFFSET from a true flight at time t, in
+ * metres. An offset, not a push: a push integrates into a steady drift (a first
+ * version sent lofted free kicks three metres wide), an offset zig-zags round
+ * the line it was struck on, which is what a knuckleball does.
+ */
+export function knuckleOffset(kn: KnuckleState, t: number): { lat: number; vert: number } {
+  if (t < kn.onset) return { lat: 0, vert: 0 };
+  const env = Math.min(1, (t - kn.onset) / 0.25);
+  const lat = kn.amp * env * (Math.sin(kn.freq * t + kn.phase) + 0.55 * Math.sin(2.37 * kn.freq * t + kn.phase2)) / 1.55;
+  const vert = kn.amp * 0.4 * env * Math.sin(1.6 * kn.freq * t + kn.phase2 + 1);
+  return { lat, vert };
+}
+
+/** Move a ball one tick along its wobble. Shared by the engine and the predictor.
+ *  Returns the height change. Only while it is in the air and really travelling. */
+function applyKnuckle(kn: KnuckleState, pos: Vec2, vel: Vec2, z: number, dt: number): number {
+  const t0 = kn.t;
+  kn.t += dt;
+  const sp = Math.hypot(vel.x, vel.y);
+  if (z <= 0.02 || sp <= 8) return 0;
+  const a = knuckleOffset(kn, t0), b = knuckleOffset(kn, kn.t);
+  const px = -vel.y / sp, py = vel.x / sp;
+  pos.x += px * (b.lat - a.lat);
+  pos.y += py * (b.lat - a.lat);
+  return b.vert - a.vert;
+}
+
+/**
+ * Where a ball will pass the keeper's line, and when — wobble, curl, drag and
+ * wind included. The engine knows; the keeper is never told (see makeKnuckleball).
+ */
+export function predictKeeperCross(ball: Ball, scenario: Scenario): { x: number; t: number } {
+  const ky = scenario.keeper.y;
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z;
+  const vel = { x: ball.vel.x, y: ball.vel.y };
+  let vz = ball.vz;
+  const kn = ball.knuckle ? { ...ball.knuckle } : null;
+  const cond = scenario.conditions;
+  const dt = 1 / 180;
+  let t = 0;
+  for (; t < 4 && y > ky; t += dt) {
+    if (Math.abs(ball.spin) > 0.0001) {
+      const ax = ball.spin * CURL_K * vel.y, ay = ball.spin * CURL_K * -vel.x;
+      vel.x += ax * dt; vel.y += ay * dt;
+    }
+    if (kn) {
+      const pos = { x, y };
+      z += applyKnuckle(kn, pos, vel, z, dt);
+      x = pos.x; y = pos.y;
+    }
+    if (z > 0.02) {
+      const k = Math.max(0, 1 - AIR_DRAG * (cond?.drag ?? 1) * dt);
+      vel.x *= k; vel.y *= k;
+      if (cond?.wind) vel.x += cond.wind * dt;
+    }
+    vz -= G * dt; z += vz * dt;
+    x += vel.x * dt; y += vel.y * dt;
+    if (z <= 0) {
+      z = 0;
+      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vel.x *= BOUNCE_H; vel.y *= BOUNCE_H; } else vz = 0;
+    }
+  }
+  return { x, t };
+}
+
+/**
+ * Turn a just-struck shot into a knuckleball, and give the keeper his (bad) read.
+ *
+ * Returns false — and changes nothing — for a ball that is not your shot at
+ * goal, or has already been touched by someone else.
+ *
+ * His read: a first lean (usually the other way), a visible change of mind
+ * part-way through the flight, and sometimes a late twitch. Where he finally
+ * heads is wrong KNUCKLE_WRONG_FINAL of the time. He moves at a real speed, so
+ * he does not always get there. The save itself is still the ordinary test, at
+ * wherever he ended up.
+ */
+export function makeKnuckleball(ball: Ball, scenario: Scenario, rng: () => number): boolean {
+  if (!ball.youStruckAtGoal || ball.loose || ball.lastTouch !== "attack" || ball.knuckle) return false;
+  const k = scenario.keeper;
+  if (k.done) return false;
+  const lerp = (a: number, b: number) => a + (b - a) * rng();
+  ball.spin *= KNUCKLE_SPIN_KEEP;
+  ball.topspin = 0;
+  ball.knuckle = {
+    t: 0,
+    onset: lerp(KNUCKLE_ONSET_MIN, KNUCKLE_ONSET_MAX),
+    amp: lerp(KNUCKLE_AMP_MIN, KNUCKLE_AMP_MAX),
+    freq: lerp(KNUCKLE_FREQ_MIN, KNUCKLE_FREQ_MAX),
+    phase: rng() * Math.PI * 2,
+    phase2: rng() * Math.PI * 2,
+  };
+  const { x: trueX, t: T } = predictKeeperCross(ball, scenario);
+  const gap = trueX - k.x;
+  const toBall = Math.sign(gap) || (rng() < 0.5 ? -1 : 1);
+  // Where he ENDS UP heading is decided first, so "wrong more often than right"
+  // is a real number rather than a hope:
+  //   wrong (KNUCKLE_WRONG_FINAL) — further from it than if he had stood still:
+  //     either past it, or back the other way beyond where he started;
+  //   right — towards it, but only part of the way: he guessed the side, he
+  //     does not know where it is going.
+  let final: number;
+  if (rng() < KNUCKLE_WRONG_FINAL) {
+    const s = rng() < 0.5 ? -1 : 1;
+    const m = 1.3 + rng() * 1.2;
+    final = s === toBall && m > Math.abs(gap)
+      ? trueX + s * m                               // over-commits, past the ball
+      : k.x - toBall * m;                           // the wrong way entirely
+  } else {
+    final = k.x + gap * (0.25 + rng() * 0.3);
+  }
+  // The change of mind you SEE: most of the time his first lean is the other
+  // way from where he finishes up, then he checks and goes back.
+  const away = Math.sign(final - k.x) || toBall;
+  const g1 = rng() < KNUCKLE_FAKE_FIRST ? k.x - away * (0.8 + rng() * 0.9) : k.x + (final - k.x) * 0.6;
+  const guesses = [g1, final];
+  const switchAt = [T * lerp(0.28, 0.42)];
+  // Sometimes one more twitch right at the end, too late to matter much.
+  if (rng() < KNUCKLE_THIRD_LOOK) {
+    guesses.push(final + (rng() < 0.5 ? -1 : 1) * (0.3 + rng() * 0.4));
+    switchAt.push(T * lerp(0.82, 0.9));
+  }
+  k.read = { t: 0, guesses, switchAt };
+  k.adjusting = false;
+  return true;
+}
+
+// ── POWER SHOT ──
+//
+// Leo: "prepare more for shot, takes more time in game getting rushed, have to
+// pull back leg and smash it ... a little green circle popping up on a random
+// part of the ball that you have to click quickly and the longer you take the
+// worse the accuracy ... maybe up to x1.5 power".
+
+/** Seconds of wind-up before the contact screen opens. The pitch keeps moving. */
+export const POWER_SHOT_WINDUP_S = 0.45;
+/** Tap the green circle within this long of it appearing: perfect. */
+export const POWER_SHOT_PERFECT_S = 0.22;
+/** …and by this long it is no better than an ordinary strike. */
+export const POWER_SHOT_SLOW_S = 0.85;
+/** The most extra pace a perfect strike adds. */
+export const POWER_SHOT_MAX_MULT = 1.5;
+/** Degrees off the aimed line for the slowest tap (a perfect one is ~0.5°). */
+export const POWER_SHOT_MAX_DRIFT_DEG = 8.5;
+/** The contact a power shot is struck with: laces, just above centre. */
+export const POWER_SHOT_CONTACT: Contact = { cx: 0, cy: -0.25 };
+
+/** 0..1 — how well the green circle was hit. Missing it is 0. */
+export function powerShotQuality(reactionS: number, hitCircle: boolean): number {
+  if (!hitCircle || !(reactionS >= 0)) return 0;
+  if (reactionS <= POWER_SHOT_PERFECT_S) return 1;
+  return clamp(1 - (reactionS - POWER_SHOT_PERFECT_S) / (POWER_SHOT_SLOW_S - POWER_SHOT_PERFECT_S), 0, 1);
+}
+
+/** What the strike quality turns into: extra pace, and how far off line. */
+export function powerShotStrike(quality: number, rng: () => number): { powerMult: number; driftDeg: number } {
+  const q = clamp(quality, 0, 1);
+  const side = rng() < 0.5 ? -1 : 1;
+  return {
+    powerMult: 1 + (POWER_SHOT_MAX_MULT - 1) * q,
+    driftDeg: side * (0.5 + (POWER_SHOT_MAX_DRIFT_DEG - 0.5) * (1 - q)),
+  };
+}
+
+/**
+ * The wind-up: you have pulled your leg back and the pitch has not waited.
+ * The nearest defender closes you down, the others slide into the line between
+ * ball and goal, and the keeper shuffles across to cover the angle.
+ *
+ * Only ever called by the power shot — an ordinary strike is still the frozen
+ * "nothing moves until you kick it" picture.
+ */
+export function stepWindUp(scenario: Scenario, dt: number) {
+  const b = scenario.ball;
+  const gcx = (POST_L + POST_R) / 2;
+  for (const d of scenario.defenders) {
+    if (d.baseRole === "hold") continue;
+    let tx: number, ty: number, sp: number;
+    if (d.role === "press") {
+      const dx = d.x - b.x, dy = d.y - b.y, dist = Math.hypot(dx, dy) || 1;
+      if (dist <= DEF_CONTAIN_R) continue;
+      tx = b.x + (dx / dist) * DEF_CONTAIN_R; ty = b.y + (dy / dist) * DEF_CONTAIN_R;
+      sp = DEF_PRESS_SPEED;
+    } else {
+      // Slide toward the nearest point on the ball→goal line, goal-side of the ball.
+      const ax = gcx - b.x, ay = 0 - b.y, len2 = ax * ax + ay * ay || 1;
+      const f = clamp(((d.x - b.x) * ax + (d.y - b.y) * ay) / len2, 0.15, 0.95);
+      tx = b.x + ax * f; ty = b.y + ay * f;
+      // A cover man is reading the play, not sprinting at the ball.
+      sp = DEF_COVER_SPEED * 0.6;
+    }
+    const mx = tx - d.x, my = ty - d.y, m = Math.hypot(mx, my);
+    if (m < 0.01) continue;
+    const step = Math.min(m, sp * (d.speed ?? 1) * dt);
+    d.x += (mx / m) * step; d.y += (my / m) * step;
+  }
+  const k = scenario.keeper;
+  if (!k.done) {
+    k.targetX = clamp(gcx + (b.x - gcx) * KEEPER_SHADE, POST_L - 0.6, POST_R + 0.6);
+    k.adjusting = true;
+  }
+  stepKeeper(scenario, dt);
+}
+
+/**
+ * Quicker shot, less time for the keeper. Only a power shot pays this — an
+ * ordinary strike keeps its full save radius, so nothing else in the sandbox
+ * moves. Above 26 m/s at his line his reach shrinks, to 75% by ~37 m/s.
+ */
+export function powerShotReachScale(speed: number): number {
+  return clamp(1 - 0.023 * (speed - 26), 0.75, 1);
+}
+
+// ── THE KEEPER'S MISTAKE ──
+//
+// Leo: spilling it / letting it through "should scale with power ... extremely
+// rare (for a perfect max power power shot maybe like 0.5-1% of the time for top
+// goalies and like 5-10% of the time for the worst goalies (with an average
+// goalie being somewhere like 2-3%)".
+//
+// Real data (Opta, Premier League): the worst keeper seasons are about five
+// errors leading to goals (Leno 2018/19, Foderingham 2023/24); the most over a
+// decade is 18 (Begovic, since 2013/14) — under two a season. Against roughly
+// 100-150 shots on target a season, that is ~0.5% (best) to ~3-4% (worst) of
+// ALL shots — and most shots are nowhere near max power, which is why the
+// numbers below are higher for a perfect power shot and fall away for slower ones.
+
+/** Pace (m/s, at his line) at which the mistake chance reaches its full value —
+ *  a perfect power shot from a power-70 player arrives at about this (measured). */
+export const KEEPER_ERROR_REF_SPEED = 36;
+/** Below this, a keeper does not fumble a ball he has got to. */
+const KEEPER_ERROR_MIN_SPEED = 14;
+/** How much more often a knuckleball is spilled — it moves as he gathers it. */
+const KEEPER_ERROR_KNUCKLE = 1.8;
+/** Base mistake chance at full pace, by keeper strength (linear between). */
+const KEEPER_ERROR_BY_STRENGTH: [number, number][] = [
+  [20, 0.1], [40, 0.075], [70, 0.025], [90, 0.008], [100, 0.005],
+];
+
+/** Chance a keeper who has GOT to the ball still makes a mistake with it. */
+export function keeperErrorChance(speed: number, keeperStrength: number, knuckle = false): number {
+  const s = clamp(keeperStrength, 20, 100);
+  const pts = KEEPER_ERROR_BY_STRENGTH;
+  let base = pts[pts.length - 1][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (s <= pts[i][0]) {
+      const [s0, p0] = pts[i - 1], [s1, p1] = pts[i];
+      base = p0 + (p1 - p0) * ((s - s0) / (s1 - s0));
+      break;
+    }
+  }
+  const f = clamp((speed - KEEPER_ERROR_MIN_SPEED) / (KEEPER_ERROR_REF_SPEED - KEEPER_ERROR_MIN_SPEED), 0, 1.1);
+  return base * f * f * (knuckle ? KEEPER_ERROR_KNUCKLE : 1);
 }
 
 /**
@@ -3238,6 +3587,24 @@ export function stepKeeper(scenario: Scenario, dt: number) {
   // still breathing rather than frozen mid-frame.
   k.idleT += k.done ? dt : 0;
   if (k.done) return;
+
+  // ── SANDBOX PROTOTYPE: reading a knuckleball ──
+  // He heads for his current guess and switches when he changes his mind. The
+  // lean follows the way he is moving, so the change of mind is SEEN.
+  if (k.read && !k.scrambling) {
+    const r = k.read;
+    r.t += dt;
+    let idx = 0;
+    while (idx < r.switchAt.length && r.t >= r.switchAt[idx]) idx++;
+    const target = clamp(r.guesses[idx], k.startX - KEEPER_LATERAL_MAX, k.startX + KEEPER_LATERAL_MAX);
+    const dx = target - k.x;
+    k.x += Math.sign(dx) * Math.min(Math.abs(dx), (idx === 0 ? KEEPER_READ_SPEED : KEEPER_REREAD_SPEED) * dt);
+    k.idleT += dt;
+    k.patrolT += dt;
+    const lean = clamp(dx * 0.6, -0.9, 0.9);
+    k.dive += (lean - k.dive) * Math.min(1, dt * 10);
+    return;
+  }
 
   // ── Covering the angle to where the ball actually is ──
   if (k.adjusting && !k.scrambling) {
@@ -3892,9 +4259,9 @@ function classifySave(
  * and shallow upward. That is what makes the top corners the safest target
  * without giving them any explicit bonus.
  */
-function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { saved: boolean; margin: number } {
+function keeperCovers(scenario: Scenario, xCross: number, zCross: number, reachScale = 1): { saved: boolean; margin: number } {
   const k = scenario.keeper;
-  const r = keeperSaveRadius(scenario);
+  const r = keeperSaveRadius(scenario) * reachScale;
   const dx = xCross - k.x;
   const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
   const d = Math.hypot(dx, dz);
@@ -3902,10 +4269,60 @@ function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { sav
   return { saved: d < r, margin: clamp((r - d) / r, 0, 1) };
 }
 
+
+/**
+ * SANDBOX PROTOTYPE — roll for the keeper's mistake on a ball he has got to.
+ * True when he made one: the ball is already on its way (through him, or
+ * spilled loose) and the caller should carry on simulating. See
+ * keeperErrorChance for the odds.
+ */
+function keeperFumbles(ball: Ball, scenario: Scenario, xAt: number, zAt: number, speed: number, rng: () => number): boolean {
+  if (rng() >= keeperErrorChance(speed, scenario.keeperStrength, !!ball.knuckle)) return false;
+  const k = scenario.keeper;
+  k.read = undefined;
+  k.saveDir = Math.sign(xAt - k.x) || 0;
+  k.saveLunge = 0.001;
+  k.saveKind = "fingertip";
+  k.scrambling = false;
+  k.flash = 0.35;
+  k.saves += 1;
+  k.x = clamp(xAt, POST_L - 2.5, POST_R + 2.5);
+  ball.lastTouch = "keeper";
+  ball.knuckle = undefined;
+  if (rng() < 0.65) {
+    // Through his hands / under his body. Slowed, still goalbound.
+    ball.keeperError = "through";
+    k.done = true;
+    ball.vel.x *= 0.6; ball.vel.y *= 0.6;
+    ball.vz = Math.min(ball.vz, 0.4);
+    ball.pos.y = Math.min(ball.pos.y, k.y - 0.05);
+  } else {
+    // Spilled loose in front of him, and it is live.
+    ball.keeperError = "spill";
+    ball.deflected = "keeper";
+    const sp = 3 + rng() * 3;
+    const dir = normalize({ x: (rng() - 0.5) * 1.2, y: 1 });
+    ball.pos.x = xAt; ball.pos.y = Math.max(k.y, 0.3);
+    ball.z = Math.max(0, zAt);
+    ball.vel = { x: dir.x * sp, y: dir.y * sp };
+    ball.vz = 0.8 + rng();
+    ball.spin = 0;
+    ball.loose = true;
+    ball.shot = false;
+    ball.owner = "none";
+    ball.contactCd = 0.28;
+    markLanding(ball, scenario);
+    k.targetX = ball.pos.x;
+    k.scrambling = true;
+  }
+  return true;
+}
+
 // Resolve a keeper contact into catch / parry / tip. Returns a terminal Outcome
 // for catch/tip, or null when the ball is parried and stays live.
 function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: number, speed: number, rng: () => number): Outcome | null {
   const k = scenario.keeper;
+  k.read = undefined;
   k.saves += 1;
   k.flash = 0.35;
   // Whatever he does with it from here, he got to it — so if the move dies
@@ -4204,6 +4621,17 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     ball.vel.y += ay * dt;
   }
 
+  // --- SANDBOX PROTOTYPE: the knuckleball's late wobble ---
+  // Gone the moment anybody else touches it; the keeper's read goes with it.
+  if (ball.knuckle) {
+    if (ball.loose || ball.lastTouch !== "attack") {
+      ball.knuckle = undefined;
+      scenario.keeper.read = undefined;
+    } else {
+      ball.z += applyKnuckle(ball.knuckle, ball.pos, ball.vel, ball.z, dt);
+    }
+  }
+
   // --- Air drag while airborne, and the wind ---
   const cond = scenario.conditions;
   if (ball.z > 0.02) {
@@ -4352,6 +4780,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < KEEPER_BODY_R) {
+      // SANDBOX PROTOTYPE: a shot straight at him can squirm through him too.
+      if (ball.shot && !ball.loose && keeperFumbles(ball, scenario, ball.pos.x, ball.z, speed, rng)) return null;
       const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
       if (res) return res; // caught or tipped
       // parried — ball is loose, keep simulating this tick
@@ -4540,8 +4970,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const f = (prevY - k.y) / (prevY - ball.pos.y || 1);
     const xAt = prevX + (ball.pos.x - prevX) * f;
     const zAt = prevZ + (ball.z - prevZ) * f;
-    const cover = keeperCovers(scenario, xAt, zAt);
+    const cover = keeperCovers(scenario, xAt, zAt, ball.powerShot ? powerShotReachScale(speed) : 1);
+    // ── SANDBOX PROTOTYPE: he gets there and still makes a mistake ──
+    // Rare, and rarer the slower the shot and the better the keeper — see
+    // keeperErrorChance. Most of the time it squirms through him into the net;
+    // otherwise he spills it loose in front of goal.
+    if (cover.saved && keeperFumbles(ball, scenario, xAt, zAt, speed, rng)) return null;
     if (cover.saved) {
+      k.read = undefined;
       k.saveDir = Math.sign(xAt - k.x) || 0;
       k.saveLunge = 0.001;
       k.scrambling = false;

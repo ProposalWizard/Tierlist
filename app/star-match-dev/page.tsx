@@ -54,6 +54,11 @@ export default function StarMatchDevPage() {
   // this sandbox, so a toggle stands in for actually owning the boot. See
   // canvasEngineTest.ts's ported applyCurveSwipe/curveDirFromSwipe.
   const [canCurve, setCanCurve] = useState(false);
+  // Leo's prototypes (5 Oct 2026). Knuckleball: two fingers swiped up the
+  // screen while the shot is in the air, curve boots on. "Every shot" is the
+  // mouse stand-in. Power shot: the ⚡ button while aiming.
+  const [autoKnuckle, setAutoKnuckle] = useState(false);
+  const [powerShots, setPowerShots] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
@@ -119,6 +124,8 @@ export default function StarMatchDevPage() {
           seed={2024}
           forcedKind={forcedKind}
           canCurve={canCurve}
+          autoKnuckle={autoKnuckle}
+          powerShots={powerShots}
         />
 
         {/* Scenario picker — every chance becomes exactly this kind, bypassing
@@ -168,6 +175,25 @@ export default function StarMatchDevPage() {
               onChange={(e) => setCanCurve(e.target.checked)}
               className="w-5 h-5 accent-sky-500"
             />
+          </label>
+        </div>
+
+        {/* Leo's prototypes: knuckleball and power shot (sandbox only). */}
+        <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">New shots (prototype)</div>
+          <div className="text-[11px] text-white">
+            <b>Knuckleball:</b> curve boots on, strike the shot, then swipe <b>two fingers up</b> the screen while it flies.
+          </div>
+          <label className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-white">Knuckle every shot (for mouse)</div>
+            <input type="checkbox" checked={autoKnuckle} onChange={(e) => setAutoKnuckle(e.target.checked)} className="w-5 h-5 accent-sky-500" />
+          </label>
+          <label className="flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-bold text-white">Power shot button</div>
+              <div className="text-[10px] text-white">Tap ⚡ before you aim. Wind-up, then tap the green circle fast.</div>
+            </div>
+            <input type="checkbox" checked={powerShots} onChange={(e) => setPowerShots(e.target.checked)} className="w-5 h-5 accent-amber-500" />
           </label>
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
+import { GAMEPLAY_SWITCHES, gameplayVersion, setGameplayVersion, type GameplaySwitch, type GameplayVersion } from "@/lib/star/gameplayVersion";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
@@ -9,6 +10,8 @@ import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/st
 import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
+import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
+import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import {
   useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
@@ -139,6 +142,9 @@ export function LookSwitches() {
   const viewNow = useStoredMatchView();
   const signing3d = useSigning3d();
   const shopPlayer = useShop3dPlayerLook();
+  const people3d = usePeople3dLook();
+  const bossRoom = useBossRoomLook();
+  const gardenLook = useGarden3dLook();
   const chancesNow = useChanceSet();
   return (
     <>
@@ -165,6 +171,27 @@ export function LookSwitches() {
       </div>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D people</span>
+        <SegTabs className="w-[150px] shrink-0" value={people3d} onChange={setPeople3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: one body in the signing, the shop and the garden — a normal waist, fingers that hold the pen and grip the handshake. Old: as before.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Talk to your manager</span>
+        <SegTabs className="w-[150px] shrink-0" value={bossRoom} onChange={setBossRoomLook} tabs={[["3d", "3D office"], ["old", "Old"]] as const} />
+      </div>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">3D garden</span>
+        <SegTabs className="w-[150px] shrink-0" value={gardenLook} onChange={setGarden3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: golden-hour light, a real shop front, the shop&apos;s own player. Old: the garden as it was.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Chances</span>
         <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
       </div>
@@ -179,6 +206,8 @@ export function LookSwitches() {
       <SetNote dim className="mt-1 text-[10px]">
         For drawn players only: &quot;Drawn&quot; above, the Classic view, five-a-side and the dribble. The 3D players ignore it.
       </SetNote>
+      <SetDivider />
+      <GameplaySwitches />
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">UI</span>
@@ -224,6 +253,36 @@ function NewViewLook() {
       <SetNote dim className="mt-1.5 text-[10px]">
         New match view only. Camera angle: the pitch tipped back (20° default; corners and byline crosses stay flat); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
       </SetNote>
+    </div>
+  );
+}
+
+/**
+ * Gameplay changes that might not be better (Leo, 5 Oct 2026: "not risking
+ * losing anything if its not better than before"). New is the default; Old
+ * plays the game from before the change. lib/star/gameplayVersion.ts.
+ */
+function GameplaySwitches() {
+  const keys = Object.keys(GAMEPLAY_SWITCHES) as GameplaySwitch[];
+  const [v, setV] = useState<Record<GameplaySwitch, GameplayVersion>>(
+    () => Object.fromEntries(keys.map((k) => [k, gameplayVersion(k)])) as Record<GameplaySwitch, GameplayVersion>,
+  );
+  const pick = (k: GameplaySwitch, x: GameplayVersion) => { setGameplayVersion(k, x); setV((o) => ({ ...o, [k]: x })); };
+  return (
+    <div className="rounded-lg bg-white/[0.04] px-2.5 py-2">
+      <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Gameplay · new vs old</div>
+      {keys.map((k) => (
+        <div key={k} className="mt-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[13px] font-bold text-white">{GAMEPLAY_SWITCHES[k].label}</span>
+            <SegTabs className="w-[130px] shrink-0" value={v[k]} onChange={(x) => pick(k, x)} tabs={[["new", "New"], ["old", "Old"]] as const} />
+          </div>
+          <SetNote dim className="mt-1 text-[10px]">
+            {v[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText}
+          </SetNote>
+        </div>
+      ))}
+      <SetNote dim className="mt-1.5 text-[10px]">This phone only. Takes effect from the next chance.</SetNote>
     </div>
   );
 }

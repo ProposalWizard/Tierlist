@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball Patch Notes — Leo v0.6</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:300px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.6</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">Keepers made human · knuckleball and power shot (test match) · dribble passes · ways back from every screen · every gameplay change has a New / Old switch</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>26 → 43%</b><span>top-corner shots that beat a top keeper (rated 90)</span></div>
+  <div class="s"><b>36 → 48%</b><span>trial free kicks that go in</span></div>
+  <div class="s"><b>0.8 · 2.8 · 8.2%</b><span>keeper howlers on a perfect power shot: top · average · worst keeper</span></div>
+  <div class="s"><b>243 / 243</b><span>tests pass with every change combined (was 156)</span></div>
+</div>
+
+<section class="safe">
+  <div class="hl-tag" style="color:var(--blue)">Safe to try</div>
+  <h3>Every gameplay change can be switched back to the old game</h3>
+  <p>Leo asked for nothing to be lost if a change isn't better. So:</p>
+  <ul>
+    <li><b>Settings → Look → Gameplay · new vs old.</b> Two switches, <b>Keepers</b> and <b>Dribble runs</b>. New is on by default. Old plays exactly the game from before this update. This phone only, from the next chance.</li>
+    <li><b>Dials with the shipped values already filled in</b> on the tuning page (/star-tuning-dev), under "Keepers (new)" and "Dribble (new)". That covers the top-corner reach, the four vision values, the trial penalty reach, how many team-mates run with you, and how easy passes are. Change one, reload, play; "Reset" puts it back.</li>
+    <li><b>Knuckleball, power shot and keeper howlers</b> exist only in the test match (/star-match-dev). The real game does not have them yet.</li>
+    <li>Exits, Settings buttons and five-a-side keepers are plain fixes, so they have no switch.</li>
+  </ul>
+</section>
+
+<!-- ── HEADLINE ─────────────────────────────────────────── -->
+<section class="headline">
+  <div class="hl-tag">Headline</div>
+  <h3>Keepers are beatable now, and they can't see through people</h3>
+  <div class="row"><div class="lbl">Problem</div><p>Keepers were too good everywhere. A well-struck shot into the top corner beat a top keeper only 1 time in 4. Weak and strong keepers felt almost the same.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>Every keeper reached the top corner as easily as the bottom corner. A low-rated keeper only lost a little speed, and nothing about players standing in front of him made any difference.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Three changes, all in the keeper's decision-making, none in the core engine file (sensitive):</p>
+    <ul>
+      <li><b>Top corners:</b> a shot high and wide of where he stood shrinks his reach. Worse keepers lose more.</li>
+      <li><b>Worse keepers are worse:</b> slower to react, slower to move and worse at reading the shot. A 95-rated keeper is exactly as before.</li>
+      <li><b>Goalie vision:</b> bodies between the ball and the keeper make him react a little later, dive a little later and sometimes lean the wrong way first. It is capped small on purpose.</li>
+    </ul>
+  </div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Top corner, keeper 90</span><div class="track"><div class="fill was" style="width:25.7%"></div><div class="fill now" style="width:43.3%"></div></div><span class="vv">43% <s>26%</s></span></div>
+    <div class="bar"><span class="lb">Top corner, keeper 62</span><div class="track"><div class="fill was" style="width:50.9%"></div><div class="fill now" style="width:60.2%"></div></div><span class="vv">60% <s>51%</s></span></div>
+    <div class="bar"><span class="lb">All shots, keeper 40</span><div class="track"><div class="fill was" style="width:30.8%"></div><div class="fill now" style="width:35.8%"></div></div><span class="vv">36% <s>31%</s></span></div>
+    <div class="bar"><span class="lb">All shots, keeper 62</span><div class="track"><div class="fill was" style="width:24.3%"></div><div class="fill now" style="width:27.7%"></div></div><span class="vv">28% <s>24%</s></span></div>
+    <div class="bar"><span class="lb">All shots, keeper 90</span><div class="track"><div class="fill was" style="width:16.1%"></div><div class="fill now" style="width:17.1%"></div></div><span class="vv">17% <s>16%</s></span></div>
+    <div class="bar"><span class="lb">3 bodies blocking view</span><div class="track"><div class="fill was" style="width:44.3%"></div><div class="fill now" style="width:47%"></div></div><span class="vv">47% <s>44%</s></span></div>
+  </div>
+  <p class="cap">Goal rate of well-struck shots. Grey = before, green = now. Same shots both times, run through the real match engine thousands of times. <b>Measured, not seen on a screen.</b></p>
+  <div class="mean"><b>What this means for you:</b> aim for the top corners. A weak keeper now loses noticeably more than a strong one: the gap between a 40 and a 90 keeper grew from about 20 to 25 goals in 100.</div>
+  <details><summary>The detail</summary>
+    <ul>
+      <li>Bottom-corner shots did not change on purpose. The test showed 56% → 49% on the average keeper; that row is sampling noise, because the change never touches a low shot.</li>
+      <li>Long shots rose most: 27% → 34% against an average keeper. Harry's long-shot setting may want a look.</li>
+      <li>Penalties are left out of the top-corner change, which has its own rules (see trial penalties below).</li>
+      <li>Match free kicks are unchanged (9% for an ordinary taker, 19% for a specialist). Applying the top-corner cut to them doubled an ordinary taker to 19%, so it is off there.</li>
+      <li>Files: <code>lib/star/keeperBrain.ts</code>, <code>lib/star/kindRules/freeKick.ts</code>, <code>lib/star/penaltyKeeper.ts</code>. New test: <code>tests/star/keeperHuman.mts</code>.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ── CHECK THESE ──────────────────────────────────────── -->
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="sw"> Gameplay switches: Keepers and Dribble runs, New / Old<span class="where">Settings → Look → Gameplay · new vs old</span></label></li>
+  <li><label><input type="checkbox" data-k="dial"> New dials with the shipped values<span class="where">/star-tuning-dev → Keepers (new) · Dribble (new)</span></label></li>
+  <li><label><input type="checkbox" data-k="kp"> Keepers are beatable in the top corner<span class="where">Any match → shoot high and wide</span></label></li>
+  <li><label><input type="checkbox" data-k="kv"> Keeper reacts late with bodies in front of him<span class="where">Any match → a crowded box or a long shot through traffic</span></label></li>
+  <li><label><input type="checkbox" data-k="tfk"> Trial free kicks go in more<span class="where">New career → trial → Free kicks</span></label></li>
+  <li><label><input type="checkbox" data-k="tpen"> Trial penalties go in a little more<span class="where">New career → trial → Penalties / Shootout</span></label></li>
+  <li><label><input type="checkbox" data-k="5gk"> Five-a-side keepers crouch and dive<span class="where">Trial → Five-a-side (or /star-3d-dev → Five-a-side)</span></label></li>
+  <li><label><input type="checkbox" data-k="exit"> ✕ Exit on every trial stage<span class="where">Trial → any stage → top left</span></label></li>
+  <li><label><input type="checkbox" data-k="texit"> ✕ Exit inside a training drill<span class="where">Home → Training → any drill → top of the drill card</span></label></li>
+  <li><label><input type="checkbox" data-k="set"> Settings on the scout, contract and offers screens<span class="where">After the trial: scout talk (⚙ top right) → Negotiate → offers list</span></label></li>
+  <li><label><input type="checkbox" data-k="gm"> Goalie Mode no longer scrolls<span class="where">Casino → Goalie Mode</span></label></li>
+  <li><label><input type="checkbox" data-k="drib"> Dribble: tap a team-mate to pass<span class="where">Any match → a dribble run → tap a blue team-mate with a green ring</span></label></li>
+  <li><label><input type="checkbox" data-k="dribh"> Dribble is harder, and beating more defenders gives a better chance<span class="where">Any match → a dribble run</span></label></li>
+  <li><label><input type="checkbox" data-k="knk"> Knuckleball (test match only)<span class="where">/star-match-dev → New shots → Curve boots on → shoot → two fingers up</span></label></li>
+  <li><label><input type="checkbox" data-k="pow"> Power shot with the green circle (test match only)<span class="where">/star-match-dev → New shots → ⚡ → drag → tap the green circle</span></label></li>
+</ul>
+
+<!-- ── FIXED ────────────────────────────────────────────── -->
+<h2 class="fix"><i></i>Fixed</h2>
+
+<div class="card">
+  <div class="hd">Trial free kicks and penalties were too hard</div>
+  <div class="row"><div class="lbl">Problem</div><p>"Goalies far too good in free kicks and a bit too good in penalties."</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The trial's keeper read free kicks as quickly as a real match keeper. In penalties, a keeper who dived the right way always had his full reach.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Free kicks in the trial and in training get a slower keeper who sees, reacts and reads later. In trial penalties, a keeper who guesses right keeps 90% of his reach at a low rating, down to 78% at a high one. It was 100%.</p></div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Trial free kicks</span><div class="track"><div class="fill was" style="width:35.8%"></div><div class="fill now" style="width:47.8%"></div></div><span class="vv">48% <s>36%</s></span></div>
+    <div class="bar"><span class="lb">… easy rung</span><div class="track"><div class="fill was" style="width:61%"></div><div class="fill now" style="width:78%"></div></div><span class="vv">78% <s>61%</s></span></div>
+    <div class="bar"><span class="lb">… hard rung</span><div class="track"><div class="fill was" style="width:1%"></div><div class="fill now warn" style="width:3%"></div></div><span class="vv">3% <s>1%</s></span></div>
+    <div class="bar"><span class="lb">Trial penalty, kick 1</span><div class="track"><div class="fill was" style="width:61.8%"></div><div class="fill now" style="width:64.5%"></div></div><span class="vv">65% <s>62%</s></span></div>
+    <div class="bar"><span class="lb">Trial penalty, kick 3</span><div class="track"><div class="fill was" style="width:41.3%"></div><div class="fill now" style="width:44.8%"></div></div><span class="vv">45% <s>41%</s></span></div>
+  </div>
+  <p class="cap">Measured over thousands of simulated kicks by an average trial taker. Not seen on a screen.</p>
+  <figure class="one"><img src="img/trial-s1-freekick.jpg" alt="Trial free kick screen"><figcaption>The trial free kick: 27 m out, 4 in the wall. Note the new ✕ Exit at the top left too.</figcaption></figure>
+  <details><summary>Why the hard free kick is still only 3%</summary>
+    <p>It is not the keeper. On the hardest free kicks, about 1 in 4 end "offside" because a team-mate standing offside touches the ball, and about 1 in 3 hit the wall. That comes from how the trial builds the picture. Fixing it is a separate job.</p>
+  </details>
+</div>
+
+<div class="card">
+  <div class="hd">Five-a-side keepers ran like outfielders and never dived</div>
+  <div class="row"><div class="lbl">Problem</div><p>Both keepers in five-a-side used the same running figure as everyone else. They never crouched, spread their hands or dived.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>That screen drew keepers with the outfield figure. The real match has a separate keeper pose; five-a-side never used it.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Both keepers now use the real match's keeper pose: set with hands out while waiting, thrown across when diving.</p></div>
+  <div class="pair">
+    <figure><img src="img/five-a-side-keeper-set.jpg" alt="Five-a-side keeper set"><figcaption>Set, hands out.</figcaption></figure>
+    <figure><img src="img/five-a-side-keeper-dive.jpg" alt="Five-a-side keeper diving"><figcaption>Purple keeper at full stretch.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b>: 40 match minutes, no freeze, no floating heads.</p>
+  <details><summary>"Floating heads" in five-a-side</summary>
+    <p>That bug was already fixed on the main game on 1 October. If you still see it, send a screenshot. It may be an older copy of the game, or a new case.</p>
+  </details>
+</div>
+
+<div class="card">
+  <div class="hd">No way back from several screens</div>
+  <div class="row"><div class="lbl">Problem</div><p>"Not always easy to go to home screen or back." The trial stages, the training drills and the scout, contract and offers screens had no exit at all.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>Those screens were built as one-way steps with no button out.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li><b>Trial:</b> ✕ Exit at the top left of every stage. It goes to the site home page. Opening the game again brings you back to the same stage.</li>
+      <li><b>Training:</b> ✕ Exit in the drill card goes back to the level list. Nothing is scored.</li>
+      <li><b>Scout talk, wage talk, offers:</b> a Settings button, the same as the other early-career screens.</li>
+    </ul>
+  </div>
+  <div class="pair">
+    <figure><img src="img/training-drill-playing.jpg" alt="Training drill with exit"><figcaption>Training drill: ✕ Exit in the card.</figcaption></figure>
+    <figure><img src="img/wage-negotiation.jpg" alt="Wage negotiation with settings"><figcaption>Wage talk: Settings at the top right.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b> on all three kinds of screen. Each button opened the right place. The trial Exit's destination was read from the code, not clicked.</p>
+  <details><summary>A clash the playtest caught (fixed and seen)</summary>
+    <p>On the scout talk screen, the first Settings button sat on top of the "A SCOUT HAS SPOTTED YOU" banner. It is now a small ⚙ in the corner, clear of the banner. The picture below is the before.</p>
+    <div class="pair">
+      <figure><img src="img/scout-talk-late.jpg" alt="Before: Settings overlapping the banner"><figcaption>Before: "SETTINGS" runs into "YOU".</figcaption></figure>
+      <figure><img src="img/scout-gear.jpg" alt="After: gear button clear of the banner"><figcaption>After: a ⚙ in the corner, clear of the banner. Seen.</figcaption></figure>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <div class="hd">The game scrolled during play <span class="pill p-amb">half fixed</span></div>
+  <div class="row"><div class="lbl">Problem</div><p>"Sometimes scrolling in game. The match screen should always fit the screen."</p></div>
+  <div class="row"><div class="lbl">Why</div><p>Goalie Mode was a little taller than the screen. In a match, the pitch keeps at least its normal shape, so on a short phone (an iPhone 13 with the browser bars showing) it ends about 25–40 px below the bottom of the screen. The match then scrolls on purpose to bring the ball into view.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p><b>Goalie Mode</b> now fits the screen and never scrolls (seen: page height 664 of 664). <b>The match</b> is left as it was. Locking it cut off the bottom of the pitch, and the ball can be there, which is worse than a small scroll. The real fix is a choice for you, below.</p></div>
+  <div class="pair">
+    <figure><img src="img/goalie-mode-casino.jpg" alt="Goalie Mode fits"><figcaption>Goalie Mode: all on one screen.</figcaption></figure>
+    <figure><img src="img/match-1.jpg" alt="Match pitch past bottom"><figcaption>The match: the pitch runs off the bottom.</figcaption></figure>
+  </div>
+</div>
+
+<!-- ── ADDED ────────────────────────────────────────────── -->
+<h2 class="add"><i></i>Added</h2>
+
+<div class="card">
+  <div class="hd">Dribble runs: pass to a team-mate, and a bigger reward for going further</div>
+  <div class="row"><div class="lbl">Problem</div><p>"Too simple, easy, repetitive." Also, beating 7 or more men was meant to give a chance near the penalty spot, but it never did.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>There was nothing to do but dodge. The reward was ignored because the even highlight mix (which deals out kinds of chance evenly) picked a random chance instead.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>Three blue team-mates run ahead: one on each wing and one through the middle. Each has a ring on the grass: <b class="g">green</b> easy, <b class="a">amber</b> risky, <b class="r">red</b> likely cut out. Tap one to pass at any moment.</li>
+      <li>The difficulty changes as you run, with distance, defenders in the lane and how square the ball is. Your vision nudges the odds. A pass that is cut out loses the ball.</li>
+      <li>The chance you get depends on how far you got. Passing early gives a long shot; beating every wave gives a one-on-one or cutback.</li>
+      <li>Defenders on the outside close you down harder, the last wave is tougher, and a match run is now 3–4 waves (was 2–4).</li>
+    </ul>
+  </div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Green ring pass works</span><div class="track"><div class="fill now" style="width:78%"></div></div><span class="vv">78 in 100</span></div>
+    <div class="bar"><span class="lb">Amber ring pass works</span><div class="track"><div class="fill now warn" style="width:56%"></div></div><span class="vv">56 in 100</span></div>
+    <div class="bar"><span class="lb">Red ring pass works</span><div class="track"><div class="fill now bad" style="width:11%"></div></div><span class="vv">11 in 100</span></div>
+    <div class="bar"><span class="lb">Runs cleared (match)</span><div class="track"><div class="fill was" style="width:32.6%"></div><div class="fill now" style="width:25.1%"></div></div><span class="vv">25% <s>33%</s></span></div>
+    <div class="bar"><span class="lb">… with a 0.3 s reaction</span><div class="track"><div class="fill was" style="width:23.5%"></div><div class="fill now" style="width:14.4%"></div></div><span class="vv">14% <s>24%</s></span></div>
+  </div>
+  <table class="tbl">
+    <tr><th>How the run ended</th><th>Chance from goal</th></tr>
+    <tr><td>Pass before beating anyone</td><td>36 m · long range</td></tr>
+    <tr><td>Pass, under half the waves beaten</td><td>31 m · through ball / cross</td></tr>
+    <tr><td>Pass, half or more beaten</td><td>25 m · cutback / through ball</td></tr>
+    <tr><td>Pass after every wave, or clear</td><td>19–22 m · cutback / one-on-one</td></tr>
+    <tr><td>Clear past 7+ men</td><td>11 m · one-on-one 7 in 10</td></tr>
+  </table>
+  <p class="cap">Measured with a test bot over 2,000 runs. Seen once in a browser on a temporary test page; <b>not yet seen in a real career match</b>.</p>
+  <div class="pair">
+    <figure><img src="img/dribble-passes.jpg" alt="Dribble run with team-mates"><figcaption>Team-mates ahead with green and amber rings, and a dot over each head.</figcaption></figure>
+    <figure><img src="img/dribble-pass-after.jpg" alt="The chance after a pass"><figcaption>After tapping the green man: a close-range chance and the PASS banner.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b>, with a test-only boost so a dribble came up sooner (normally about 1 chance in 10). Not confirmed: in the second picture the keeper already holds the ball, so the chance after a pass may play out too fast to read. Worth a look.</p>
+</div>
+
+<div class="card">
+  <div class="hd">Knuckleball <span class="pill p-blu">test match only</span></div>
+  <div class="row"><div class="lbl">Asked for</div><p>The keeper guesses wrong more often than right and changes his mind as it flies. Two fingers with curve boots.</p></div>
+  <div class="row"><div class="lbl">How</div><p>In /star-match-dev, open New shots and turn Curve boots on. Shoot, then swipe two fingers up the screen while the ball flies. A KNUCKLEBALL banner shows. The ball zig-zags late, up to about half a metre. The keeper leans one way, changes his mind, sometimes twitches again, and ends up heading the wrong way 65% of the time.</p></div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Long range</span><div class="track"><div class="fill was" style="width:9.5%"></div><div class="fill now" style="width:17.2%"></div></div><span class="vv">17% <s>9.5%</s></span></div>
+    <div class="bar"><span class="lb">One-on-one</span><div class="track"><div class="fill was" style="width:34.9%"></div><div class="fill now" style="width:39.2%"></div></div><span class="vv">39% <s>35%</s></span></div>
+    <div class="bar"><span class="lb">Free kick</span><div class="track"><div class="fill was" style="width:21.5%"></div><div class="fill now" style="width:23.7%"></div></div><span class="vv">24% <s>22%</s></span></div>
+  </div>
+  <p class="cap">Goal rate, normal shot (grey) vs knuckleball (green), same aim and same situations, average keeper. Measured, <b>not seen on a screen</b>: the test match needs an admin sign-in.</p>
+  <details><summary>Why the wobble is bigger than real life</summary><p>A real knuckleball moves about 20 cm. Here it moves 35–60 cm so it is visible on a phone. The physics papers behind this: APS 2012 and ScienceDaily 2012 (links at the bottom).</p></details>
+</div>
+
+<div class="card">
+  <div class="hd">Power shot, with a green timing circle <span class="pill p-blu">test match only</span></div>
+  <div class="row"><div class="lbl">Asked for</div><p>Wind up, then smash it, like a green-timed FIFA finish, up to 1.5× power. A slow tap means a less accurate shot.</p></div>
+  <div class="row"><div class="lbl">How</div><p>In /star-match-dev, tap ⚡ before aiming, then drag as normal. A 0.45 s wind-up follows, and defenders and the keeper keep moving. Then a green circle pops up on a random part of the ball. Tap it within 0.22 s for 1.5× pace and a dead-straight shot. A slower tap loses the bonus and drifts up to 8.5° off your aim.</p></div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Long range, perfect</span><div class="track"><div class="fill was" style="width:9.5%"></div><div class="fill now" style="width:20.3%"></div></div><span class="vv">20% <s>9.5%</s></span></div>
+    <div class="bar"><span class="lb">One-on-one, perfect</span><div class="track"><div class="fill was" style="width:34.9%"></div><div class="fill now" style="width:35.5%"></div></div><span class="vv">36% <s>35%</s></span></div>
+    <div class="bar"><span class="lb">Free kick, perfect</span><div class="track"><div class="fill was" style="width:21.5%"></div><div class="fill now bad" style="width:0.5%"></div></div><span class="vv">0% <s>22%</s></span></div>
+  </div>
+  <p class="cap">The wind-up costs something. Blocks rise from 42% to 59% at long range, so in a one-on-one it comes out about even. On a free kick it is always a low drive and hits the wall (a decision below).</p>
+  <div id="pow-stills"></div>
+</div>
+
+<div class="card">
+  <div class="hd">Keeper howlers that grow with shot power <span class="pill p-blu">test match only</span></div>
+  <div class="row"><div class="lbl">Asked for</div><p>Spills and shots squirming through the keeper should rise with power. A perfect max-power shot: 0.5–1% for top keepers, 2–3% for average, 5–10% for the worst.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Any shot the keeper gets to can now go wrong, with a HOWLER! banner. About 2 in 3 squirm through into the net and the rest spill loose in front of goal. A knuckleball almost doubles the chance (× 1.8).</p></div>
+  <table class="tbl">
+    <tr><th>Keeper rating</th><th>Perfect power shot</th><th>Ordinary full power</th></tr>
+    <tr><td>90 (top)</td><td class="ok">0.8% ✓</td><td>0.2%</td></tr>
+    <tr><td>70 (average)</td><td class="ok">2.8% ✓</td><td>0.5%</td></tr>
+    <tr><td>40 (worst)</td><td class="ok">8.2% ✓</td><td>1.6%</td></tr>
+  </table>
+  <p class="cap">All three land inside the asked-for bands. Measured over thousands of shots.</p>
+  <details><summary>Real football data behind it</summary>
+    <ul>
+      <li>Opta, Premier League "errors leading to goals" since 2013/14: most are Begovic 18, Lloris 17 and Mignolet 14. That is under 2 a season.</li>
+      <li>Worst single seasons: 5 (Leno, 2018/19; Foderingham, 2023/24).</li>
+      <li>No source was found for shots on target faced per season. With an estimate of 100–150, that is about 0.5% (best keepers) to 3–4% (worst) of all shots. Rates for the hardest shots should sit higher, which matches the table.</li>
+      <li>Sources: <a href="https://www.90min.com/posts/6564399-the-11-players-with-the-most-errors-leading-to-goals-in-the-last-5-premier-league-seasons">90min</a> · <a href="https://www.planetfootball.com/quick-reads/the-pl-goalkeepers-with-the-most-errors-leading-to-goals-since-2016">PlanetFootball</a> · <a href="https://english.stadiumastro.com/node/248600">Stadium Astro on Opta's definition</a> · knuckleball physics: <a href="https://meetings-archive.aps.org/dfd/2012/g24/1/">APS</a>, <a href="https://sciencedaily.com/releases/2012/11/121116085201.htm">ScienceDaily</a>. Read from search summaries; the pages themselves were blocked.</li>
+    </ul>
+  </details>
+</div>
+
+<!-- ── SEEN ─────────────────────────────────────────────── -->
+<h2 class="seen"><i></i>Seen in a browser</h2>
+<ul class="n">
+  <li><div class="hd">Seen: exits, Settings buttons, five-a-side keepers, Goalie Mode fit</div><div class="dt">Phone size (390 wide). No errors from the game itself. Every club showed made-up players, because the test machine cannot reach the database.</div></li>
+  <li><div class="hd">Measured only: keepers, trial kicks, knuckleball, power shot, howlers, dribble numbers</div><div class="dt">Driven through the real engine (or the test copy for the new shots) thousands of times. Nobody has played these with a finger yet.</div></li>
+</ul>
+
+<!-- ── DECISIONS ────────────────────────────────────────── -->
+<h2 class="dec"><i></i>Decisions for you</h2>
+<ul class="n">
+  <li><div class="hd">1. Let the match pitch get a little shorter on short phones so it always fits?</div><div class="dt">Then the match never scrolls. The pitch would be slightly wider than its normal shape on those phones only. This changes how it looks, so it gets shown side by side first.</div></li>
+  <li><div class="hd">2. Move the knuckleball, power shot and howlers into the real game?</div><div class="dt">They only exist in the test match (/star-match-dev) for now, as agreed. The move needs Mikey's go-ahead, because it means the core engine file (sensitive).</div></li>
+  <li><div class="hd">3. Power shot: always a laced drive?</div><div class="dt">Right now you can't curl or chip it, which is why it always hits the wall on free kicks. Keep it, or let it curl?</div></li>
+  <li><div class="hd">4. Should a hard ordinary shot also cut the keeper's reach?</div><div class="dt">Only power shots do now, so nothing else in the test match changes.</div></li>
+  <li><div class="hd">5. Dribble passes skip the even highlight mix</div><div class="dt">The chance after a dribble now depends on how far you got, not on the even mix. Harry should say if that's OK.</div></li>
+  <li><div class="hd">6. Long shots went up the most (27% → 34% against an average keeper)</div><div class="dt">Is that too much? Harry's long-shot setting can pull it back.</div></li>
+</ul>
+
+<!-- ── KNOWN ISSUES ─────────────────────────────────────── -->
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="alert">
+  <div class="t">Carried forward, still open</div>
+  <p>Six database security holes anyone with the public key can still reach (XP, rewards, votes). The fix files are written but have not been run.</p>
+</div>
+<ul class="n">
+  <li><div class="hd">The power-shot wind-up has no leg pull-back <span class="pill p-amb">half done</span></div><div class="dt">It shows "WINDING UP…" text instead of an animation.</div></li>
+  <li><div class="hd">The chance after a dribble pass may resolve too fast <span class="pill p-amb">to check</span></div><div class="dt">In one test the keeper already held the ball in the first picture after the pass. Not yet reproduced.</div></li>
+  <li><div class="hd">Dribble team-mates are plain blue shirts</div><div class="dt">No real names or faces yet, and the pass is instant: no ball flight to the team-mate.</div></li>
+  <li><div class="hd">Some test screens get the easier free-kick keeper</div><div class="dt">Gallery Play and Infinite Highlights copy a free kick before playing it, so they count as a drill.</div></li>
+  <li><div class="hd">Other screens can still be taller than the phone</div><div class="dt">The shared screen frame many menus use is not fixed to the phone's height. Not touched: these are menus, not the game.</div></li>
+  <li><div class="hd">5 of 11 dev pages have no login check</div><div class="dt">Carried from v0.5. Not touched.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Show decision 1 side by side at phone size</div><div class="dt">The current pitch and the "always fits" pitch.</div></li>
+  <li><div class="hd">After-clips of the new shots and dribble passes</div><div class="dt">Once they are played for real.</div></li>
+</ul>
+
+<!-- ── HISTORY ──────────────────────────────────────────── -->
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> Five-a-side could freeze solid mid-match.</p>
+  <p><b>Added:</b> Dev cheats for testing without the grind · Real extra power for owning the club you play for (captain, Talisman tactic, sell yourself).</p>
+  <p><b>Numbers:</b> 2,300 fuzzed trials, 0 failures · 156 tests · 3 new powers · 6 dev cheats.</p>
+  <p>Still open from this version: the six security holes · 5 ungated dev pages · "the ball feels different across modes" had no new cause found.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> Other players on the pitch · Penalty · Free kick with a real wall.</p>
+  <p>Still open: the six security holes · Goalie Mode's wall and extra players are decorative, not physical.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> The aim sat about 0.42 m away from the cursor. <b>Added:</b> First-time strike · near/far post · shot names. <b>Changed:</b> The camera stopped zooming.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal. <b>Fixed:</b> The camera showed a giant head · touching the screen dived straight away.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> Scoring was halved, now isn't · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+<footer>Branch <code>claude/recover-tierlist-website-3BajA</code> · 243 tests pass on the combined copy. Anything unverified says so.</footer>
+
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.6';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -43,6 +43,67 @@ export interface TunableDef {
 }
 
 export const TUNABLES: TunableDef[] = [
+  // ── Keepers (Leo, 5 Oct 2026) ────────────────────────────────────────
+  // lib/star/keeperBrain.ts KEEPER_HUMAN and lib/star/penaltyKeeper.ts. Only
+  // used while Settings → Gameplay → Keepers is New.
+  {
+    key: "keepers.topCutWeak", category: "Keepers (new)", label: "Top-corner reach lost — weak keeper (40)",
+    description: "Share of his reach a 40-rated keeper loses on a shot high and wide of him. 0 = none.",
+    default: 0.32, min: 0, max: 0.7, step: 0.01,
+  },
+  {
+    key: "keepers.topCutStrong", category: "Keepers (new)", label: "Top-corner reach lost — top keeper (95)",
+    description: "Share of his reach a 95-rated keeper loses on a shot high and wide of him.",
+    default: 0.22, min: 0, max: 0.7, step: 0.01,
+  },
+  {
+    key: "keepers.visionLate", category: "Keepers (new)", label: "Vision — later reaction (s)",
+    description: "Seconds added to his reaction when his view is fully blocked by bodies.",
+    default: 0.10, min: 0, max: 0.4, step: 0.01,
+  },
+  {
+    key: "keepers.visionDiveLate", category: "Keepers (new)", label: "Vision — later dive (s)",
+    description: "Seconds later he leaves his feet when fully blocked.",
+    default: 0.06, min: 0, max: 0.3, step: 0.01,
+  },
+  {
+    key: "keepers.visionReadErr", category: "Keepers (new)", label: "Vision — worse first read (×)",
+    description: "How much bigger his first reads' error is when fully blocked (0.8 = 80% bigger).",
+    default: 0.8, min: 0, max: 3, step: 0.05,
+  },
+  {
+    key: "keepers.visionWrongWay", category: "Keepers (new)", label: "Vision — wrong-way chance",
+    description: "Chance his first read is the wrong way when fully blocked.",
+    default: 0.2, min: 0, max: 0.8, step: 0.01,
+  },
+  {
+    key: "keepers.trialPenReachLow", category: "Keepers (new)", label: "Trial penalty — reach, weak keeper",
+    description: "Share of his reach a weak (45) trial keeper keeps when he dives the right way. 1 = the old keeper.",
+    default: 0.9, min: 0.5, max: 1, step: 0.01,
+  },
+  {
+    key: "keepers.trialPenReachHigh", category: "Keepers (new)", label: "Trial penalty — reach, strong keeper",
+    description: "Share of his reach a strong (88) trial keeper keeps when he dives the right way.",
+    default: 0.78, min: 0.5, max: 1, step: 0.01,
+  },
+  // ── Dribble passes (Leo, 5 Oct 2026) ─────────────────────────────────
+  // lib/star/firstPersonDribble.ts. Only used while Settings → Gameplay →
+  // Dribble runs is New.
+  {
+    key: "dribble.mates", category: "Dribble (new)", label: "Team-mates to pass to",
+    description: "How many team-mates run ahead in a match dribble (0-3). 0 = no passing.",
+    default: 3, min: 0, max: 3, step: 1,
+  },
+  {
+    key: "dribble.passBest", category: "Dribble (new)", label: "Pass success — easiest ball",
+    description: "Chance the easiest possible pass arrives. Harder passes fall from here.",
+    default: 0.97, min: 0.5, max: 1, step: 0.01,
+  },
+  {
+    key: "dribble.passVision", category: "Dribble (new)", label: "Pass success — vision effect",
+    description: "How much your vision stat moves the odds (0.2 = ±10 points between 5 and 100 vision).",
+    default: 0.2, min: 0, max: 0.6, step: 0.01,
+  },
   // ── Starting skills ──────────────────────────────────────────────────
   // What a brand-new career's five attributes start at (makeInitialCareer,
   // careerFlow.ts) — every one 0-100, the same range training caps them at

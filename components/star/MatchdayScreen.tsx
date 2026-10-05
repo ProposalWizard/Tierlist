@@ -396,6 +396,7 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
   if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_SUB) pills.push({ text: "⚠ Too tired for squad", tone: "bad" });
   else if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_START) pills.push({ text: "⚠ Too tired to start", tone: "warn" });
   if (boot.matches <= 0) pills.push({ text: "🥾 Boots worn out", tone: "bad" });
+  else if (boot.matches === 1) pills.push({ text: "🥾 Last match in these boots", tone: "warn" });
   else pills.push({ text: `🥾 ${boot.matches} left`, tone: boot.matches <= 2 ? "warn" : "info" });
   if (career.kibAbility?.curve) pills.push({ text: "🌀 Curve ready", tone: "ok" });
   if (career.kibAbility?.extraTouch) pills.push({ text: "👟 Touch ready", tone: "ok" });

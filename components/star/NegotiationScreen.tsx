@@ -174,7 +174,7 @@ const MOOD_LABEL: Record<CounterpartMood, string> = {
 };
 
 export default function NegotiationScreen({
-  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone,
+  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, onSettings,
 }: {
   mode: NegotiationMode;
   playerName: string;
@@ -200,6 +200,14 @@ export default function NegotiationScreen({
   onStepAway?: (state: NegotiationState) => void;
   /** `null` on the caller's side means "no deal" (rejected or walked away). */
   onDone: (finalPrice: number | null) => void;
+  /** Absent means no button — Investments' own negotiation calls (a career
+   *  always has Settings a tap away via the dashboard) don't pass this. The
+   *  trial's wage-talk screen does: reported directly, "not always easy to
+   *  go to home screen or back" — it had no chrome at all, and a career
+   *  mid-negotiation can't sensibly go "back" (there's no prior screen to
+   *  undo into), so this gets the exact same Settings button its sibling
+   *  phases (free-agent, youth) already have, not a false "back". */
+  onSettings?: () => void;
 }) {
   const [state, setState] = useState<NegotiationState>(() => initialState ?? startNegotiation(marketValue, mode, Math.random));
   const [amount, setAmount] = useState(() => state.yourPosition);
@@ -239,6 +247,14 @@ export default function NegotiationScreen({
   return (
     <Screen glow={theme.glow} tone={moodColor} center className="max-w-sm px-4 py-6">
       <div className="relative w-full">
+        {onSettings && (
+          <button
+            onClick={onSettings}
+            className="absolute right-0 top-0 rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest hover:bg-white/20"
+          >
+            Settings
+          </button>
+        )}
         <div className="text-center mb-4">
           <div className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-300/90">
             {mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale"}
