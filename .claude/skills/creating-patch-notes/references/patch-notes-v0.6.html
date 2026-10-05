@@ -134,6 +134,13 @@
   .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
   .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
   a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -142,7 +149,7 @@
 <header>
   <span class="ver">v0.6</span>
   <h1>Knowitball Patch Notes — Leo</h1>
-  <p class="sub">Keepers made human · knuckleball and power shot (test match) · dribble passes · ways back from every screen · not committed yet: waiting on Leo's go-ahead</p>
+  <p class="sub">Keepers made human · knuckleball and power shot (test match) · dribble passes · ways back from every screen · every gameplay change has a New / Old switch</p>
 </header>
 
 <div class="strip">
@@ -151,6 +158,18 @@
   <div class="s"><b>0.8 · 2.8 · 8.2%</b><span>keeper howlers on a perfect power shot: top · average · worst keeper</span></div>
   <div class="s"><b>243 / 243</b><span>tests pass with every change combined (was 156)</span></div>
 </div>
+
+<section class="safe">
+  <div class="hl-tag" style="color:var(--blue)">Safe to try</div>
+  <h3>Every gameplay change can be switched back to the old game</h3>
+  <p>Leo asked for nothing to be lost if a change isn't better. So:</p>
+  <ul>
+    <li><b>Settings → Look → Gameplay · new vs old.</b> Two switches, <b>Keepers</b> and <b>Dribble runs</b>. New is on by default. Old plays exactly the game from before this update. This phone only, from the next chance.</li>
+    <li><b>Dials with the shipped values already filled in</b> on the tuning page (/star-tuning-dev), under "Keepers (new)" and "Dribble (new)". That covers the top-corner reach, the four vision values, the trial penalty reach, how many team-mates run with you, and how easy passes are. Change one, reload, play; "Reset" puts it back.</li>
+    <li><b>Knuckleball, power shot and keeper howlers</b> exist only in the test match (/star-match-dev). The real game does not have them yet.</li>
+    <li>Exits, Settings buttons and five-a-side keepers are plain fixes, so they have no switch.</li>
+  </ul>
+</section>
 
 <!-- ── HEADLINE ─────────────────────────────────────────── -->
 <section class="headline">
@@ -189,6 +208,8 @@
 <!-- ── CHECK THESE ──────────────────────────────────────── -->
 <h2 class="chk"><i></i>Check these</h2>
 <ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="sw"> Gameplay switches: Keepers and Dribble runs, New / Old<span class="where">Settings → Look → Gameplay · new vs old</span></label></li>
+  <li><label><input type="checkbox" data-k="dial"> New dials with the shipped values<span class="where">/star-tuning-dev → Keepers (new) · Dribble (new)</span></label></li>
   <li><label><input type="checkbox" data-k="kp"> Keepers are beatable in the top corner<span class="where">Any match → shoot high and wide</span></label></li>
   <li><label><input type="checkbox" data-k="kv"> Keeper reacts late with bodies in front of him<span class="where">Any match → a crowded box or a long shot through traffic</span></label></li>
   <li><label><input type="checkbox" data-k="tfk"> Trial free kicks go in more<span class="where">New career → trial → Free kicks</span></label></li>
@@ -257,9 +278,12 @@
     <figure><img src="img/wage-negotiation.jpg" alt="Wage negotiation with settings"><figcaption>Wage talk: Settings at the top right.</figcaption></figure>
   </div>
   <p class="cap"><b>Seen in a browser</b> on all three kinds of screen. Each button opened the right place. The trial Exit's destination was read from the code, not clicked.</p>
-  <details><summary>A clash the playtest caught (fixed, not re-checked yet)</summary>
+  <details><summary>A clash the playtest caught (fixed and seen)</summary>
     <p>On the scout talk screen, the first Settings button sat on top of the "A SCOUT HAS SPOTTED YOU" banner. It is now a small ⚙ in the corner, clear of the banner. The picture below is the before.</p>
-    <figure class="one"><img src="img/scout-talk-late.jpg" alt="Before: Settings overlapping the banner"><figcaption>Before: "SETTINGS" runs into "YOU".</figcaption></figure>
+    <div class="pair">
+      <figure><img src="img/scout-talk-late.jpg" alt="Before: Settings overlapping the banner"><figcaption>Before: "SETTINGS" runs into "YOU".</figcaption></figure>
+      <figure><img src="img/scout-gear.jpg" alt="After: gear button clear of the banner"><figcaption>After: a ⚙ in the corner, clear of the banner. Seen.</figcaption></figure>
+    </div>
   </details>
 </div>
 
@@ -305,7 +329,11 @@
     <tr><td>Clear past 7+ men</td><td>11 m · one-on-one 7 in 10</td></tr>
   </table>
   <p class="cap">Measured with a test bot over 2,000 runs. Seen once in a browser on a temporary test page; <b>not yet seen in a real career match</b>.</p>
-  <div id="drib-stills"></div>
+  <div class="pair">
+    <figure><img src="img/dribble-passes.jpg" alt="Dribble run with team-mates"><figcaption>Team-mates ahead with green and amber rings, and a dot over each head.</figcaption></figure>
+    <figure><img src="img/dribble-pass-after.jpg" alt="The chance after a pass"><figcaption>After tapping the green man: a close-range chance and the PASS banner.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b>, with a test-only boost so a dribble came up sooner (normally about 1 chance in 10). Not confirmed: in the second picture the keeper already holds the ball, so the chance after a pass may play out too fast to read. Worth a look.</p>
 </div>
 
 <div class="card">
@@ -380,8 +408,8 @@
   <p>Six database security holes anyone with the public key can still reach (XP, rewards, votes). The fix files are written but have not been run.</p>
 </div>
 <ul class="n">
-  <li><div class="hd">Not committed yet <span class="pill p-amb">waiting on Leo</span></div><div class="dt">Everything above lives in the working copy only. It goes to the branch once Leo reads this and says go ahead.</div></li>
   <li><div class="hd">The power-shot wind-up has no leg pull-back <span class="pill p-amb">half done</span></div><div class="dt">It shows "WINDING UP…" text instead of an animation.</div></li>
+  <li><div class="hd">The chance after a dribble pass may resolve too fast <span class="pill p-amb">to check</span></div><div class="dt">In one test the keeper already held the ball in the first picture after the pass. Not yet reproduced.</div></li>
   <li><div class="hd">Dribble team-mates are plain blue shirts</div><div class="dt">No real names or faces yet, and the pass is instant: no ball flight to the team-mate.</div></li>
   <li><div class="hd">Some test screens get the easier free-kick keeper</div><div class="dt">Gallery Play and Infinite Highlights copy a free kick before playing it, so they count as a drill.</div></li>
   <li><div class="hd">Other screens can still be taller than the phone</div><div class="dt">The shared screen frame many menus use is not fixed to the phone's height. Not touched: these are menus, not the game.</div></li>
@@ -390,7 +418,6 @@
 
 <h2 class="nxt"><i></i>Next</h2>
 <ul class="n">
-  <li><div class="hd">Your go-ahead, then commit and push</div><div class="dt">Plus the matching entry on the site's patch notes page.</div></li>
   <li><div class="hd">Show decision 1 side by side at phone size</div><div class="dt">The current pitch and the "always fits" pitch.</div></li>
   <li><div class="hd">After-clips of the new shots and dribble passes</div><div class="dt">Once they are played for real.</div></li>
 </ul>
@@ -422,7 +449,7 @@
   <p><b>Fixed:</b> Scoring was halved, now isn't · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
 </details>
 
-<footer>Branch <code>claude/recover-tierlist-website-3BajA</code> · not committed · 243 tests pass on the combined copy. Anything unverified says so.</footer>
+<footer>Branch <code>claude/recover-tierlist-website-3BajA</code> · 243 tests pass on the combined copy. Anything unverified says so.</footer>
 
 </div>
 <script>
