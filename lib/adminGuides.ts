@@ -144,6 +144,26 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/star-retirement-dev": {
+    title: "Retirement preview",
+    what: "The end of a career without playing one: the \"Do you go again?\" screen, the new career overview, and today's end screen beside it.",
+    buttons: [
+      { group: "Pick a career", items: [
+        ["Legend / One club / Journeyman / Lower leagues / Stops at 33", "A made-up finished career of that shape: every season's numbers, who won what, trophies, transfers, money and things bought."],
+        ["Version ◀ ▶", "The same shape with different numbers."],
+        ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
+      ] },
+      { group: "See it", items: [
+        ["▶ Retire screen, then the overview", "The real \"Do you go again?\" screen. Hang them up opens the new overview; One more season comes back here."],
+        ["▶ Straight to the new overview", "The new career overview. Flip its seven pages with the arrows at the top, or swipe."],
+        ["▶ The old end screen (today's)", "What a retired career shows today, to compare."],
+        ["Back / Old screen / Retire again", "The bar under the overview: back here, today's screen, or the retire screen again."],
+      ] },
+    ],
+    saving: ["Nothing is saved. A real save is read, never written."],
+    inGame: ["Not in the game yet: the new overview is waiting for a yes before it replaces the end screen."],
+    dev: "app/star-retirement-dev/page.tsx; the screen is components/star/CareerOverview.tsx, its numbers lib/star/careerOverview.ts, the made-up careers lib/star/retirementPreview.ts.",
+  },
   "/star-relgames-dev": {
     title: "Relationship games",
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",

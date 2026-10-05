@@ -659,6 +659,30 @@ export function loadCareerFromStoredForm(raw: unknown): CareerState | null {
   }
 }
 
+/**
+ * Every career saved in this browser, READ ONLY: nothing is claimed, moved or
+ * written, unlike loadCareer (which claims a legacy save into slot 1). For a
+ * test page that only SHOWS a real save — the retirement preview
+ * (/star-retirement-dev) — and must never change it.
+ */
+export function peekDeviceSaves(): { key: string; career: CareerState }[] {
+  const out: { key: string; career: CareerState }[] = [];
+  try {
+    if (typeof localStorage === "undefined") return out;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !(k === KEY || k.startsWith(`${KEY}::`))) continue;
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      let parsed: unknown;
+      try { parsed = JSON.parse(raw); } catch { continue; }
+      const career = loadCareerFromStoredForm(parsed);
+      if (career) out.push({ key: k, career });
+    }
+  } catch { /* private window: nothing to show */ }
+  return out;
+}
+
 /** A saved phase from somewhere else, or null if it is not a real one. */
 export function sanitizeSavedPhase(x: unknown): SavedPhase | null {
   if (!x || typeof x !== "object") return null;

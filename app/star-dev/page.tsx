@@ -1702,14 +1702,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleRetire = useCallback(() => {
     if (!career) return;
-    const done = retire(career);
+    // The Ballon d'Or screen's verdict on this, the last season: retiring
+    // skips the rollover that would otherwise count it (closeFinalSeason).
+    const done = retire(career, wonBallonDor);
     done.media = generateForCareer(done, {
       kind: "retirement", goals: done.careerStats.goals,
       apps: done.careerStats.appearances, trophies: done.trophies.length,
     }, "retire");
     setCareer(done);
     setPhase("legacy");
-  }, [career]);
+  }, [career, wonBallonDor]);
 
   const handlePlayOn = useCallback(() => {
     if (!career) return;

@@ -163,6 +163,22 @@ const offerRate = (c: CareerState) =>
   check(retired.retired === true, "hanging them up is recorded on the career itself");
   check(retirementCheck(retired).canRetire, "the check itself is unaffected — the flag on the career is what routes you");
 
+  // The last season is closed properly: retiring skips advanceSeason, which is
+  // where a Ballon d'Or win is counted (until 5 Oct 2026 a final-season win
+  // vanished from the overview).
+  const lastSeason: CareerState = {
+    ...veteran,
+    seasonStats: { appearances: 30, goals: 25, assists: 9, hatTricks: 1, passes: 300, starMan: 6, totalRating: 30 * 7.6, ratingCount: 30 },
+  };
+  const wonIt = retire(lastSeason, true);
+  check(wonIt.ballonDorWins === lastSeason.ballonDorWins + 1, `a Ballon d'Or won in the final season counts (${lastSeason.ballonDorWins} → ${wonIt.ballonDorWins})`);
+  check(retire(lastSeason).ballonDorWins === lastSeason.ballonDorWins, "and one not won does not");
+  const finalRow = (wonIt.seasonArchive ?? []).find(r => r.season === lastSeason.season);
+  check(finalRow?.goals === 25 && finalRow.apps === 30, `the final season gets its archive row (${JSON.stringify(finalRow)})`);
+  check((wonIt.seasonHistory ?? []).some(r => r.season === lastSeason.season), "and its history row: who won what that last season");
+  const again = retire(wonIt, true);
+  check(again.ballonDorWins === wonIt.ballonDorWins, `closing the same season twice never counts it twice (${again.ballonDorWins})`);
+
   // A body that has gone reads differently from one that has not.
   const worn = { ...veteran, matchFitness: 40 };
   check(retirementCheck(worn).reason !== vc.reason, "and the reason reflects the state you are in");

@@ -14,7 +14,7 @@
  * goals) — already counted in `careerStats.starMan`, so it is read, not
  * re-invented.
  */
-import type { CareerBests, CareerState, Fixture, MatchStats, SeasonArchiveRow } from "./types";
+import type { CareerBests, CareerState, Fixture, MatchStats, SeasonArchiveRow, SeasonHistoryRow } from "./types";
 
 const fullName = (c: CareerState) => `${c.player.firstName} ${c.player.lastName}`;
 
@@ -60,10 +60,68 @@ export function archiveRowFor(career: CareerState): SeasonArchiveRow {
   };
 }
 
+/**
+ * The season about to end, as the world saw it (see SeasonHistoryRow).
+ *
+ * Pure: advanceSeason works out the table, the winners and the Ballon d'Or
+ * (it already has all three) and this only decides what is kept. Europe's
+ * winners are kept only when they are real for this save: in the Premier
+ * League, or in that competition yourself. Outside the top flight,
+ * resolveSeasonWinners builds England's European entrants off YOUR
+ * division's table, so a Championship club can be named a Champions League
+ * winner — not something to print on a career overview.
+ */
+export function historyRowFor(
+  career: CareerState,
+  facts: {
+    /** The club the season was played for (default: this season's club). */
+    club?: string;
+    division: SeasonHistoryRow["division"];
+    position: number;
+    teams: number;
+    move?: SeasonHistoryRow["move"];
+    winners: NonNullable<CareerState["lastSeasonWinners"]>;
+    ballonDor?: SeasonHistoryRow["ballonDor"];
+  },
+): SeasonHistoryRow {
+  const w = facts.winners;
+  const inEurope = career.euroState?.competition;
+  const realCL = facts.division === "premier" || inEurope === "Champions League";
+  const realEL = facts.division === "premier" || inEurope === "Europa League";
+  return {
+    season: career.season,
+    age: career.player.age,
+    club: facts.club ?? career.thisSeasonClub ?? career.player.club,
+    division: facts.division,
+    position: facts.position,
+    teams: facts.teams,
+    move: facts.move ?? null,
+    winners: {
+      ...(w.league ? { league: w.league } : {}),
+      ...(w.faCup ? { faCup: w.faCup } : {}),
+      ...(w.leagueCup ? { leagueCup: w.leagueCup } : {}),
+      ...(realCL && w.championsLeague ? { championsLeague: w.championsLeague } : {}),
+      ...(realEL && w.europaLeague ? { europaLeague: w.europaLeague } : {}),
+    },
+    ...(facts.ballonDor ? { ballonDor: facts.ballonDor } : {}),
+    ...(typeof career.stars === "number" ? { stars: career.stars } : {}),
+    overall: career.starRating,
+    fame: career.fame,
+    money: career.money,
+    wage: career.contract.wage,
+    caps: career.caps ?? 0,
+    intlGoals: career.internationalGoals ?? 0,
+  };
+}
+
 /** Finished seasons, then the one in progress (if you've played in it). */
 export function allSeasons(career: CareerState): (SeasonArchiveRow & { live?: boolean })[] {
   const rows: (SeasonArchiveRow & { live?: boolean })[] = [...(career.seasonArchive ?? [])];
-  if (career.seasonStats.appearances > 0) rows.push({ ...archiveRowFor(career), live: true });
+  // A retired career's last season is archived AND still in seasonStats
+  // (closeFinalSeason, careerFlow.ts): list it once.
+  if (career.seasonStats.appearances > 0 && !rows.some(r => r.season === career.season)) {
+    rows.push({ ...archiveRowFor(career), live: true });
+  }
   return rows;
 }
 

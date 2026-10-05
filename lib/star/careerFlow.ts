@@ -4,7 +4,7 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
-import { bestsAfterMatch, archiveRowFor } from "./careerRecords";
+import { bestsAfterMatch, archiveRowFor, historyRowFor } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
@@ -1465,6 +1465,70 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   };
 }
 
+/**
+ * The season about to end, appended to `seasonHistory` (see SeasonHistoryRow).
+ * Extra, never essential: if anything in it throws, the season still ends and
+ * this one row is simply missing.
+ */
+function seasonHistoryAfter(
+  career: CareerState,
+  winners: SeasonWinners,
+  shortlist: ReturnType<typeof computeBallonDorShortlist>,
+  move: "promoted" | "relegated" | null | undefined,
+  justTransferred: boolean,
+): CareerState["seasonHistory"] {
+  try {
+    const top = shortlist.entries[0];
+    // The club you played the season for. A transfer accepted at this very
+    // rollover has already put the NEW club in player.club.
+    const seasonClub = career.thisSeasonClub
+      ?? (justTransferred ? (career.transfers ?? []).at(-1)?.from : undefined)
+      ?? career.player.club;
+    const row = historyRowFor(career, {
+      club: seasonClub,
+      division: divisionOf(career),
+      position: sortLeague(career.league).findIndex(t => t.name === seasonClub) + 1,
+      teams: career.league.length,
+      move,
+      winners,
+      ballonDor: top ? { winner: top.name, club: top.club, yourRank: shortlist.playerRank } : undefined,
+    });
+    return [...(career.seasonHistory ?? []).filter(r => r.season !== career.season), row];
+  } catch {
+    return career.seasonHistory;
+  }
+}
+
+/**
+ * THE LAST SEASON, CLOSED PROPERLY — called by `retire` (retirement.ts).
+ *
+ * Retiring skips advanceSeason, and advanceSeason is where a season's
+ * Ballon d'Or win is counted, its Golden Boot and Player of the Season are
+ * handed out, and its archive row is written. So until 5 Oct 2026 a Ballon
+ * d'Or won in your final season simply vanished: the screen said you won it,
+ * the career overview said you never had. This does those three things, plus
+ * the season's history row, and nothing else (no ageing, no new fixtures, no
+ * wages): the career is over. Safe to call twice.
+ */
+export function closeFinalSeason(career: CareerState, userWonBallonDor: boolean): CareerState {
+  if ((career.seasonHistory ?? []).some(r => r.season === career.season)) return career;
+  const honours = seasonAwards(career);
+  const shortlist = computeBallonDorShortlist(career);
+  const winners = resolveSeasonWinners(career);
+  return {
+    ...career,
+    ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
+    awards: honours.length > 0
+      ? [...(career.awards ?? []), ...honours.map(h => ({ ...h, division: divisionOf(career) }))]
+      : career.awards,
+    seasonArchive: career.seasonStats.appearances > 0
+      ? [...(career.seasonArchive ?? []).filter(r => r.season !== career.season), archiveRowFor(career)]
+      : career.seasonArchive,
+    seasonHistory: seasonHistoryAfter(career, winners, shortlist, null, false),
+    lastSeasonWinners: winners,
+  };
+}
+
 // Roll the career into the next season: fresh fixtures/league, a year older (with
 // aging decline), reset season stats/energy/form, tick the contract down, bank a
 // Ballon d'Or if won. Whether the contract now needs renewing is the caller's call
@@ -1575,6 +1639,11 @@ export function advanceSeason(
 
   const lastSeasonWinners = resolveSeasonWinners(career);
 
+  // The season as the world saw it, for the retirement overview (see
+  // SeasonHistoryRow). Extra, never essential: if anything in it throws, the
+  // season still rolls over and this one row is simply missing.
+  const seasonHistory = seasonHistoryAfter(career, lastSeasonWinners, shortlist, ladder.yourMove, justTransferred);
+
   // The casino's book, settled against the exact same result the trophy
   // cabinet just agreed on above — never re-decided here. Only THIS
   // season's bets settle (see settleBets' own comment); anything else is
@@ -1632,6 +1701,7 @@ export function advanceSeason(
     seasonArchive: career.seasonStats.appearances > 0
       ? [...(career.seasonArchive ?? []).filter(r => r.season !== career.season), archiveRowFor(career)]
       : career.seasonArchive,
+    seasonHistory,
     thisSeasonClub: undefined,
     // Last season's play-off belongs to last season. Carried over, it made
     // resolveLadder promote last year's winner again from wherever they

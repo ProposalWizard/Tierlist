@@ -143,6 +143,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Star Pass Rewards", href: "/admin/star-pass" },
       { name: "XP Book", href: "/admin/star-xp" },
       { name: "Relationship games", href: "/star-relgames-dev" },
+      { name: "Retirement preview", href: "/star-retirement-dev" },
       { name: "Scenario Gallery", href: "/star-gallery-dev" },
       { name: "New Chances", href: "/star-chances-dev" },
       { name: "Play Area", href: "/star-play-dev" },

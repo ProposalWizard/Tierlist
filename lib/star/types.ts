@@ -640,6 +640,46 @@ export interface SeasonArchiveRow {
   motm: number;
 }
 
+/**
+ * ONE FINISHED SEASON AS THE WORLD SAW IT — the retirement overview's "the
+ * winners of every competition, every season you played" (Leo, 5 Oct 2026).
+ *
+ * `SeasonArchiveRow` above is YOUR numbers, and only for a season you played
+ * in. This is everything around them, written for every season whether you
+ * played or not: where your club finished, who won what, the Ballon d'Or,
+ * and where you stood when it ended (the career arc). Pushed once at the
+ * rollover (careerRecords.ts `historyRowFor`, called from advanceSeason).
+ * A save from before it has none, and starts recording from then — nothing
+ * here can be rebuilt afterwards, which is why it is written every season.
+ */
+export interface SeasonHistoryRow {
+  season: number;
+  age: number;
+  club: string;
+  division: import("./calendar").CareerDivision;
+  /** Your club's final place, out of `teams`. */
+  position: number;
+  teams: number;
+  /** Up or down at the end of it (null: stayed). */
+  move?: "promoted" | "relegated" | null;
+  /** Who won what. `league` is the division you played in. Europe only when
+   *  you were in the Premier League or in that competition yourself. */
+  winners: {
+    league?: string; faCup?: string; leagueCup?: string;
+    championsLeague?: string; europaLeague?: string;
+  };
+  /** The Ballon d'Or: the winner, and your place on the shortlist (0 = not on it). */
+  ballonDor?: { winner: string; club: string; yourRank: number };
+  /** Where you stood when it ended. */
+  stars?: number;
+  overall: number;
+  fame: number;
+  money: number;
+  wage: number;
+  caps: number;
+  intlGoals: number;
+}
+
 export interface CareerBests {
   /** Metres, and when. */
   furthestGoal?: { metres: number; season: number; opponent: string };
@@ -1166,6 +1206,9 @@ export interface CareerState {
    * Absent on a save from before it: history starts counting from then.
    */
   seasonArchive?: SeasonArchiveRow[];
+  /** Every finished season around you: table, winners, Ballon d'Or, your
+   *  standing (see SeasonHistoryRow). Absent on a save from before 5 Oct 2026. */
+  seasonHistory?: SeasonHistoryRow[];
   /** Your own personal bests across every match, updated by creditMatchResult. */
   careerBests?: CareerBests;
   /** The club this season's club appearances were made for — so a summer

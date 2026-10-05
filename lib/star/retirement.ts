@@ -1,6 +1,7 @@
 import { fameOf } from "./fame";
 import type { CareerState } from "./types";
 import { tierWeeklyIncome } from "./economy";
+import { closeFinalSeason } from "./careerFlow";
 
 /**
  * RETIREMENT
@@ -152,13 +153,25 @@ export function testimonialFor(career: CareerState): { club: string; season: num
   return { club: career.player.club, season: career.season, payout };
 }
 
-/** Hang them up. */
-export function retire(career: CareerState): CareerState {
-  const testimonial = testimonialFor(career);
+/**
+ * Hang them up. `wonBallonDor`: the Ballon d'Or screen you came from said you
+ * won this season's — counted here, because retiring skips the rollover that
+ * normally counts it (see closeFinalSeason).
+ */
+export function retire(career: CareerState, wonBallonDor = false): CareerState {
+  if (career.retired) return career;
+  // Closing the season is extra; it must never stop "Hang them up" working.
+  let closed: CareerState;
+  try {
+    closed = closeFinalSeason(career, wonBallonDor);
+  } catch {
+    closed = { ...career, ballonDorWins: career.ballonDorWins + (wonBallonDor ? 1 : 0) };
+  }
+  const testimonial = testimonialFor(closed);
   return {
-    ...career,
+    ...closed,
     retired: true,
     testimonial,
-    money: career.money + (testimonial?.payout ?? 0),
+    money: closed.money + (testimonial?.payout ?? 0),
   };
 }

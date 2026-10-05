@@ -674,6 +674,14 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
+**5 October 2026 (Leo, cont.) — Retirement revamp, part 1: a 7-page career overview on a test page (not in the real game yet), every season's winners now saved, a lost last-season Ballon d'Or fixed. Proposal with 4 open questions: https://claude.ai/artifact/7po13VAQhL18KyDHphFf35**
+
+- **Today (unchanged):** "Do you go again?" from age 33 (end of season 18), forced at season 50 (age 65); then `LegacyScreen` (`Retirement.tsx`), whose "Start a new career" (`handleFullReset`) deletes the slot.
+- **Fixed:** retiring skipped `advanceSeason`, so a final-season Ballon d'Or, Golden Boot and Player of the Season were never counted. `retire()` now calls `closeFinalSeason` (careerFlow.ts); page.tsx passes `wonBallonDor`. Test: `legacy.mts`.
+- **New `CareerState.seasonHistory`** (`SeasonHistoryRow`, types.ts), written at every rollover (`seasonHistoryAfter`/`historyRowFor`): division, place, up/down, winners (Europe only in the PL or when you played in it), Ballon d'Or winner and your place, stars/fame/money/caps. Counts from merge only; cannot be backfilled.
+- **Built:** `lib/star/careerOverview.ts` (pure numbers), `components/star/CareerOverview.tsx` (Career, Seasons, Who won, Clubs, Trophies, Records, Life; edge arrows + swipe), `lib/star/retirementPreview.ts` (5 made-up careers by shape + seed), `/star-retirement-dev` (made-up careers or this device's saves, read only via `peekDeviceSaves`). Test: `retirementPreview.mts`. 245/245 tests.
+- **Open:** Leo's answers (after-retirement path, overview into the real game with New/Old, forced age, stop deleting retired careers → Hall of Fame). Found, not fixed: outside the PL, `resolveSeasonWinners` picks England's Champions League clubs from your own division (~1 season in 20 a Championship club "wins" it; reasoned, not measured).
+
 **5 October 2026 (Leo) — Keepers made human, dribble passes, knuckleball/power shot in the test match, ways back from every screen. Every gameplay change has a New / Old switch. Patch notes Leo v0.6 (site 0.28): https://claude.ai/artifact/PQCcbHkmPEQ3NrzA88nVZS**
 
 - **Safety first (Leo: "not risking losing anything if its not better").** `lib/star/gameplayVersion.ts`: per-device switches, Settings → Look → "Gameplay · new vs old" (`DeviceSettings.tsx`). **Keepers** and **Dribble runs**, default New; Old plays the game exactly as before this round (old keeper abilities, no vision/top-corner cut, drill free kicks use the match keeper, trial penalty reach 1; old dribble press/ramp, 2-4 waves, no team-mates, old reward). New dials with shipped defaults in `tuning.ts` ("Keepers (new)", "Dribble (new)") on /star-tuning-dev.

@@ -1,6 +1,7 @@
 import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
-import { perClubTotals, allSeasons } from "../../lib/star/careerRecords";
+import { perClubTotals, allSeasons, historyRowFor } from "../../lib/star/careerRecords";
+import { sortLeague } from "../../lib/star/season";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -73,6 +74,46 @@ const nextLeague = (c: CareerState): Fixture => c.fixtures.find((f) => (f.kind ?
   const clubs = perClubTotals(next);
   check(clubs.length === 1 && clubs[0].apps === 3 && clubs[0].seasons === 1, "per-club totals read the archive");
   check(allSeasons(next).length === 1, "an unplayed new season is not listed yet");
+}
+
+// ── advanceSeason writes one history row, every season, played or not ──
+{
+  let c = base();
+  // Season 1: three games. Season 2: none at all.
+  for (let i = 0; i < 3; i++) c = creditMatchResult(c, nextLeague(c), stats({ goals: 1, rating: 8 })).career;
+  const s1 = c;
+  c = advanceSeason(c, false).career;
+  const s2 = c;
+  c = advanceSeason(c, false).career;
+  const rows = c.seasonHistory ?? [];
+  check(rows.length === 2, `two rollovers write two history rows, even with no games in one (${rows.length})`);
+  const [r1, r2] = rows;
+  check(r1?.season === 1 && r2?.season === 2, `one per season, in order (${rows.map(r => r.season)})`);
+  check(r1?.club === "Arsenal" && r1.division === "premier", `with the club and division (${r1?.club}, ${r1?.division})`);
+  const pos = sortLeague(s1.league).findIndex(t => t.name === "Arsenal") + 1;
+  check(r1?.position === pos && r1.teams === s1.league.length, `and where the club finished (${r1?.position}/${r1?.teams}, table says ${pos})`);
+  check(r1?.winners.league === sortLeague(s1.league)[0].name, `the league winner is the top of that table (${r1?.winners.league})`);
+  check(!!r1?.winners.faCup && !!r1.winners.leagueCup, `both cups have a winner (${r1?.winners.faCup}, ${r1?.winners.leagueCup})`);
+  check(!!r1?.winners.championsLeague && !!r1.winners.europaLeague, "in the Premier League, Europe's winners are kept");
+  check(!!r1?.ballonDor?.winner && typeof r1.ballonDor.yourRank === "number", `the Ballon d'Or winner and your place (${JSON.stringify(r1?.ballonDor)})`);
+  check(r1?.age === s1.player.age && r2?.age === s2.player.age, `your age that season (${r1?.age}, ${r2?.age})`);
+  check(r1?.fame === s1.fame && r1.money === s1.money && r1.overall === s1.starRating, "and where you stood when it ended");
+  // The archive (your own numbers) still only lists the season you played in.
+  check((c.seasonArchive ?? []).length === 1, `the stats archive is unchanged: played seasons only (${c.seasonArchive?.length})`);
+  // Rolling the same season twice keeps one row (a replayed rollover).
+  const again = advanceSeason({ ...s2, seasonHistory: c.seasonHistory }, false).career;
+  check((again.seasonHistory ?? []).filter(r => r.season === 2).length === 1, "a season rolled twice still has one row");
+}
+
+// ── Outside the top flight, Europe's winners are not recorded ──
+{
+  const c = base();
+  const row = historyRowFor({ ...c, division: "championship", euroState: undefined }, {
+    division: "championship", position: 5, teams: 24, move: null,
+    winners: { league: "Leeds United", faCup: "Arsenal", leagueCup: "Chelsea", championsLeague: "Leeds United", europaLeague: "Hull City" },
+  });
+  check(!row.winners.championsLeague && !row.winners.europaLeague, `a Championship season keeps no Champions/Europa League winner (${JSON.stringify(row.winners)})`);
+  check(row.winners.league === "Leeds United" && row.winners.faCup === "Arsenal", "but keeps its own league and the cups");
 }
 
 if (problems.length) { console.error("careerRecords FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }
