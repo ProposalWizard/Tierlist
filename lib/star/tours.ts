@@ -135,7 +135,7 @@ export function relationsTour(trainingNext: boolean): TourStep[] {
 
 /** On Relations, while the boss meeting is the next first step. */
 export const BOSS_MEETING_TOUR: TourStep[] = [
-  { target: "css:button[aria-label^='Talk to your manager']", text: "Tap here to talk to your manager", press: true },
+  { target: `css:button[aria-label^="The manager's penalties"]`, text: "Your manager wants to see your penalties. Tap here", press: true },
 ];
 
 /** The phone step: the Shop, and the phone in it. v0.25: when you cannot pay

@@ -149,9 +149,9 @@ export const ADMIN_GUIDES = {
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
     buttons: [
       { items: [
-        ["▶ Talk to your manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["▶ The manager's penalties / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
         ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
-        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Change what the manager talks about and which moods he is likely to be in. Which reply lands also depends on his hidden mood, so the same settings can go differently each time."],
+        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game (the boss game is now three penalties at spots he names)."],
         ["Last game", "What the last game returned: won or lost, and the change."],
       ] },
     ],
