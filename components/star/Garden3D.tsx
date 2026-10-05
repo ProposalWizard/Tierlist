@@ -25,6 +25,7 @@ import { nextFixtureFor } from "@/lib/star/competitions";
 import { baseIdOf } from "@/lib/star/shopData";
 import { shuffle } from "@/lib/star/cups";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
+import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
 
@@ -76,6 +77,7 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
       sky: sky ?? homeSkyFor(career, nextFixtureFor(career)),
       mates: numbers,
       arrive,
+      you: { skin: skinToneHex(career.player.skinTone), hair: hairColourHex(career.player.hairColour), hairStyle: resolveHairStyle(career.player.hairStyle) },
     };
     // the garden is built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps

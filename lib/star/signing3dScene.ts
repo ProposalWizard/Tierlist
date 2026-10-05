@@ -38,8 +38,10 @@ import {
 } from "./signing3dTextures";
 import {
   loadPeople3d, makePerson3d, dressPerson3d, poseClips, poseRest, setHipsXZ, playerModelFor,
+  poseFingers, fingerTip, fingersDeg, mixFingers, hasFingers, type FingerPose, type PeopleBody,
   type Person3D, type PersonModel,
 } from "./people3d";
+import { people3dLook } from "./look3d";
 
 type Three = typeof import("three");
 
@@ -93,6 +95,11 @@ export interface SigningSceneOptions {
   signaturePath: string;
   /** Things the page shows on top: the SIGNED stamp, the end. */
   onEvent?: (e: "stamp" | "shake" | "done") => void;
+  /** "new" = the one body with fingers; "old" = as before. Default: Settings → Look. */
+  body?: PeopleBody;
+  /** "office": the same room as a stage for the manager's talks — no
+   *  contract or pen, a dressed office, only the talk/reply shots. */
+  stage?: "signing" | "office";
 }
 
 export interface SigningSceneHandle {
@@ -106,6 +113,8 @@ export interface SigningSceneHandle {
   debugSeek(what: SigningShot | "sign", t: number): void;
   debugCamera(pos: [number, number, number] | null, look: [number, number, number] | null, fov?: number): void;
   debugInfo(): Record<string, unknown>;
+  /** Tuning only: hold your (or his) right hand's fingers at these angles (degrees), or null. */
+  debugFingers(who: "you" | "boss", deg: Parameters<typeof fingersDeg>[0] | null): void;
   /** Hold the current beat at `t` seconds into it. */
   debugHold(t: number): void;
   /** Run `n` frames of `dt` seconds each, exactly as the live loop does
@@ -145,6 +154,30 @@ const PEN_GRIP = { padAlong: 0.82, padPalm: 0.02, padThumb: 0.03, webAlong: 0.3,
 /** The handshake: where the hands meet (height), how far each wrist sits
  *  back from the middle, and each palm's distance off the middle plane. */
 const SHAKE = { y: 1.1, back: 0.085, gap: 0.024 };
+/** The one body's handshake. Measured: at 1.1 m, 8.5 cm back, your wrist
+ *  could only reach 7 cm short of its mark (arm 0.49 m, shoulder 0.53 m from
+ *  the desk's middle), so the hands never met — the same was true of the old
+ *  bodies. Higher, the wrists nearer the middle, a deeper lean, and each man
+ *  takes a short step (6 cm) in. */
+const SHAKE1 = { y: 1.2, back: 0.09, gap: 0.022, lean: 0.24, step: 0.08, tilt: -0.45 };
+
+/** THE ONE BODY'S HANDS (fingers, degrees per joint, root first). Worked out
+ *  from close-up stills of the scene, not guessed. */
+const HANDS = {
+  /** Resting on the desk / in the lap: a loose, natural curl. */
+  relax: fingersDeg({ thumb: [5, 10, 8], index: [8, 14, 8], middle: [10, 16, 10], ring: [12, 18, 10], little: [14, 20, 12], thumbSwing: 8 }),
+  /** Reaching for the pen: opened a little, thumb out. */
+  open: fingersDeg({ thumb: [0, 0, 0], index: [4, 6, 4], middle: [6, 8, 5], ring: [8, 10, 6], little: [10, 12, 8], thumbSwing: -10 }),
+  /** Holding the pen (tripod): index and thumb pinch, the others tuck under. */
+  pen: fingersDeg({ thumb: [10, 5, 5], index: [35, 45, 20], middle: [45, 58, 30], ring: [65, 80, 45], little: [72, 85, 50], thumbSwing: 20 }),
+  /** The handshake: fingers wrapped round the other man's hand, thumb over his. */
+  shake: fingersDeg({ thumb: [0, 10, 12], index: [38, 42, 25], middle: [40, 45, 28], ring: [42, 48, 30], little: [45, 50, 32], thumbSwing: 12 }),
+  /** Holding the paper flat. */
+  flat: fingersDeg({ thumb: [0, 5, 5], index: [3, 5, 3], middle: [3, 5, 3], ring: [4, 6, 4], little: [5, 7, 5], thumbSwing: 0 }),
+};
+/** The pen in the one body's fingers: pads a touch in from the fingertips'
+ *  centre lines, the shaft over the web, the nib this far past the pads. */
+const GRIP = { padIn: 0.004, webOut: 0.012, tipOut: 0.032 };
 
 const ease = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const seg = (t: number, a: number, b: number) => ease((t - a) / (b - a));
@@ -188,11 +221,16 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const camera = new T.PerspectiveCamera(46, 1, 0.03, 40);
 
   // ── Load ──
+  // Which people: the one body (fingers that grip; Settings → Look → "3D
+  // people: New") or the bodies exactly as they were ("Old").
+  const BODY: PeopleBody = opts.body ?? people3dLook();
+  const ONE = BODY === "new";
+  const STAGE = opts.stage ?? "signing";
   const loader = new GLTFLoader();
   const texLoader = new T.TextureLoader();
   const youModel0 = playerModelFor(opts.you.hairStyle);
   const [anims, bossGltf, youGltf0] = await Promise.all([
-    loadPeople3d(loader, "anims"), loadPeople3d(loader, "manager"), loadPeople3d(loader, youModel0),
+    loadPeople3d(loader, "anims"), loadPeople3d(loader, "manager", BODY), loadPeople3d(loader, youModel0, BODY),
   ]);
   let aviatorsGltf: GLTF | null = null;
   const loadAviators = async () => {
@@ -237,7 +275,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const id = ++youBuildId;
     const model = playerModelFor(y.hairStyle);
     if (model !== you.model) {
-      const g = await loadPeople3d(loader, model);
+      const g = await loadPeople3d(loader, model, BODY);
       if (id !== youBuildId) return;
       const old = you;
       you = makePerson(g, model, -1);
@@ -439,7 +477,74 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const penRestQ = new T.Quaternion().setFromUnitVectors(new T.Vector3(0, 1, 0), new T.Vector3(-0.15, 0, 1).normalize());
   const placePen = (tip: THREE.Vector3, q: THREE.Quaternion) => { pen.position.copy(tip); pen.quaternion.copy(q); };
   placePen(penRestPos.clone().add(new T.Vector3(0, 0, -0.0)), penRestQ);
-  blob(0.06, 0.16, PEN_REST.x, DESK.top + 0.0045, PEN_REST.z + 0.06, 0.5);
+  const penBlob = blob(0.06, 0.16, PEN_REST.x, DESK.top + 0.0045, PEN_REST.z + 0.06, 0.5);
+
+  // ── The office stage (the manager talks: lib/star/office3d.ts) ──
+  // The same room with no contract on the desk, and dressed as a working
+  // office: a rug, a bookcase, a trophy cabinet, a plant, a laptop and a mug,
+  // a ceiling light.
+  if (STAGE === "office") {
+    paper.visible = false; pen.visible = false; penBlob.visible = false;
+    const rugM = new T.Mesh(new T.PlaneGeometry(3.0, 2.3), std(0x5b2330, 0.95));
+    rugM.rotation.x = -Math.PI / 2; rugM.position.set(0, 0.002, 0); room.add(rugM);
+    const rugB = new T.Mesh(new T.PlaneGeometry(2.8, 2.1), std(0x7a3141, 0.95));
+    rugB.rotation.x = -Math.PI / 2; rugB.position.set(0, 0.0025, 0); room.add(rugB);
+    // Bookcase on the left wall: carcass, shelves, rows of books.
+    const caseX = -SIDE + 0.2, caseZ = 0.9;
+    box(0.36, 2.0, 1.3, darkWood, caseX, 1.0, caseZ);
+    const bookCols = [0x7f1d1d, 0x1e3a8a, 0x14532d, 0xa16207, 0x334155, 0x6b21a8, 0x9a3412, 0x0f766e];
+    let k = 0;
+    for (let s = 0; s < 4; s++) {
+      const y = 0.25 + s * 0.45;
+      box(0.33, 0.025, 1.24, wood, caseX + 0.02, y, caseZ);
+      let z = caseZ - 0.58;
+      while (z < caseZ + 0.56) {
+        const w = 0.03 + ((k * 37) % 5) * 0.008, h = 0.24 + ((k * 13) % 4) * 0.03;
+        if ((k * 7) % 11 === 3) { z += 0.07; k++; continue; }
+        box(0.22, h, w, std(bookCols[k % bookCols.length], 0.7), caseX + 0.06, y + 0.0125 + h / 2, z + w / 2);
+        z += w + 0.004; k++;
+      }
+    }
+    // Trophy cabinet on the right wall, with three cups.
+    const cabX = SIDE - 0.25;
+    box(0.4, 0.9, 1.0, darkWood, cabX, 0.45, 0.6);
+    box(0.36, 1.0, 0.96, new T.MeshStandardMaterial({ color: 0xbfd7e6, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.18 }), cabX, 1.42, 0.6);
+    box(0.4, 0.03, 1.0, darkWood, cabX, 1.93, 0.6);
+    const gold = std(0xd4a017, 0.25, 0.9), silver = std(0xd1d5db, 0.25, 0.9);
+    [[0.3, gold, 0.36], [0.6, silver, 0.3], [0.9, gold, 0.26]].forEach(([z, m, h]) => {
+      const cup = new T.Group();
+      const bowl = new T.Mesh(new T.CylinderGeometry(0.075, 0.04, (h as number) * 0.5, 20), m as THREE.Material); bowl.position.y = (h as number) * 0.62; cup.add(bowl);
+      const stem = new T.Mesh(new T.CylinderGeometry(0.015, 0.02, (h as number) * 0.3, 10), m as THREE.Material); stem.position.y = (h as number) * 0.25; cup.add(stem);
+      const foot = new T.Mesh(new T.BoxGeometry(0.1, 0.06, 0.1), darkWood); foot.position.y = 0.03; cup.add(foot);
+      cup.position.set(cabX - 0.02, 0.92, z as number); room.add(cup);
+    });
+    // A plant in the corner by the window.
+    const potM = new T.Mesh(new T.CylinderGeometry(0.17, 0.13, 0.36, 20), std(0xe5e0d8, 0.6)); potM.position.set(1.95, 0.18, -1.8); room.add(potM);
+    const leafM = std(0x2f6b34, 0.75);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      const leaf = new T.Mesh(new T.SphereGeometry(0.16, 10, 8), leafM);
+      leaf.scale.set(0.55, 1.4, 0.3);
+      leaf.position.set(1.95 + Math.sin(a) * 0.12, 0.62 + (i % 3) * 0.14, -1.8 + Math.cos(a) * 0.12);
+      leaf.rotation.set(Math.cos(a) * 0.5, a, Math.sin(a) * 0.5);
+      room.add(leaf);
+    }
+    // On the desk: a laptop (lid half closed, facing him), a mug, a phone.
+    const lapBase = box(0.32, 0.015, 0.22, std(0x9ca3af, 0.35, 0.7), 0.36, DESK.top + 0.0075, -0.12);
+    lapBase.rotation.y = 0.25;
+    const lid = new T.Mesh(new T.BoxGeometry(0.32, 0.21, 0.01), std(0x6b7280, 0.35, 0.7));
+    lid.position.set(0.36 + Math.sin(0.25) * 0.11, DESK.top + 0.1, -0.12 - Math.cos(0.25) * 0.11 * -1 - 0.08);
+    lid.rotation.set(-0.35, 0.25, 0); room.add(lid);
+    const mugM = new T.Mesh(new T.CylinderGeometry(0.04, 0.036, 0.1, 18), std(0xf5f5f4, 0.4)); mugM.position.set(-0.3, DESK.top + 0.05, 0.05); room.add(mugM);
+    const handleM = new T.Mesh(new T.TorusGeometry(0.025, 0.007, 8, 16), std(0xf5f5f4, 0.4)); handleM.position.set(-0.345, DESK.top + 0.055, 0.05); handleM.rotation.y = Math.PI / 2; room.add(handleM);
+    box(0.08, 0.008, 0.16, std(0x111111, 0.3, 0.4), 0.1, DESK.top + 0.004, 0.2).rotation.y = 0.3;
+    // A pendant light over the desk.
+    const cord = new T.Mesh(new T.CylinderGeometry(0.006, 0.006, 0.9, 6), std(0x111111)); cord.position.set(0, 2.85, 0); room.add(cord);
+    const shadeP = new T.Mesh(new T.ConeGeometry(0.26, 0.2, 24, 1, true), new T.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5, metalness: 0.4, side: T.DoubleSide }));
+    shadeP.position.set(0, 2.35, 0); room.add(shadeP);
+    const glow = new T.Mesh(new T.SphereGeometry(0.06, 12, 8), new T.MeshBasicMaterial({ color: 0xfff1c9 })); glow.position.set(0, 2.3, 0); room.add(glow);
+    const pend = new T.PointLight(0xffe6b8, 1.4, 4, 1.5); pend.position.set(0, 2.2, 0); scene.add(pend);
+  }
 
   // ── Light: low gold sun through the window, warm lamps inside ──
   scene.add(new T.HemisphereLight(0xffe3c2, 0x2b211a, 1.0));
@@ -493,6 +598,18 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   /** The pen held in the hand: under the ends of the fingers, resting back
    *  over the web of the thumb (the models have no finger bones). */
   const penInHandOf = (p: Person, s: Side) => {
+    if (hasFingers(p)) {
+      // The one body: pinched between the thumb and index pads, resting back
+      // over the web between them (a tripod grip, the middle finger under).
+      const q = handQ(p, s);
+      const palm = p.hand[s].palm.clone().applyQuaternion(q);
+      const ti = fingerTip(T, p, s, "index")!, tt = fingerTip(T, p, s, "thumb")!;
+      const G = ti.clone().add(tt).multiplyScalar(0.5).addScaledVector(palm, GRIP.padIn);
+      const mcpI = wpos(p.fingers![s].index.bones[0]), mcpT = wpos(p.fingers![s].thumb.bones[1]);
+      const web = mcpI.add(mcpT).multiplyScalar(0.5).addScaledVector(palm, -GRIP.webOut);
+      const axis = web.sub(G).normalize();
+      return { tip: G.clone().addScaledVector(axis, -GRIP.tipOut), axis };
+    }
     const h = p.hand[s];
     const q = handQ(p, s);
     const along = h.along.clone().applyQuaternion(q), palm = h.palm.clone().applyQuaternion(q), thumb = h.thumb.clone().applyQuaternion(q);
@@ -562,8 +679,17 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const writeAlong = () => dirOf(you, 0.2, -0.7, 0.68);
   const writePalm = () => dirOf(you, 0.85, -0.5, -0.1);
 
+  /** The one body: your right hand's fingers this frame (set in frame()). */
+  let fingersR: FingerPose = HANDS.relax;
+  const fingerOverride: { you?: FingerPose; boss?: FingerPose } = {};
+  const handsRelaxed = (p: Person) => {
+    if (!hasFingers(p)) return;
+    poseFingers(T, p, "R", HANDS.relax);
+    poseFingers(T, p, "L", HANDS.relax);
+  };
+
   /** Pose the writing hand so the pen tip is on `tip`. */
-  const handToTip = (tip: THREE.Vector3, along: THREE.Vector3, palm: THREE.Vector3) => {
+  const handToTip =(tip: THREE.Vector3, along: THREE.Vector3, palm: THREE.Vector3) => {
     const p = you;
     const pole = dirOf(p, -0.7, -0.6, -0.2);
     const saved = snapshot(p, ARM_R);
@@ -572,6 +698,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     for (let i = 0; i < 4; i++) {
       restore(p, saved);
       placeHand(p, "R", wrist, along, palm, pole, 1);
+      if (hasFingers(p)) poseFingers(T, p, "R", fingersR);
       wrist = wrist.add(tip.clone().sub(penInHandOf(p, "R").tip));
     }
   };
@@ -627,6 +754,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       restHands(you, 1, youTalk * 0.6, t + 1);
       lookAt(boss, mode === "contract" ? paperPoint(CW / 2, CH / 2) : headTop(you), 0.8);
       lookAt(you, mode === "contract" ? paperPoint(CW / 2, CH * 0.45) : headTop(boss), 0.75);
+      handsRelaxed(boss); handsRelaxed(you);
       placePen(penRestPos, penRestQ);
       setCam(t);
       return;
@@ -637,6 +765,15 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const standK = seg(e, S.standA, S.standB);
     const riseK = Math.min(1, Math.max(0, (e - S.standA) / (S.standB - S.standA)));
     const preK = seg(e, S.standA - 0.25, S.standA + 0.1);
+    // The one body's fingers: open on the way to the pen, close round it,
+    // let it go, then wrap round his hand in the handshake.
+    const shakeW = seg(e, S.shakeA - 0.3, S.shakeB);
+    {
+      let f = mixFingers(HANDS.relax, HANDS.open, seg(e, S.reachA, S.reachB));
+      f = mixFingers(f, HANDS.pen, seg(e, S.reachB, S.grip));
+      f = mixFingers(f, HANDS.relax, seg(e, S.lift + 0.02, S.putDown));
+      fingersR = fingerOverride.you ?? mixFingers(f, HANDS.shake, shakeW);
+    }
     const idleW = seg(e, S.standB - 0.2, S.standB + 0.3);
     for (const p of [you, boss]) {
       const chair = p === you ? youChair : bossChair;
@@ -647,7 +784,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         const idleT = Math.max(0, e - S.standB + 0.2);
         poseClips(p, [[sitClip(p), sitTime(p, t), 1 - preK], ["sitdown", tc, preK * (1 - idleW)], [idleClip(p), 1.2 + idleT, idleW]]);
       }
-      setHipsXZ(p, 0, p.riseTravel * ease(riseK));
+      setHipsXZ(p, 0, p.riseTravel * ease(riseK) + (ONE ? SHAKE1.step * shakeW : 0));
       // Getting up, the clip folds him far forward: both men at one desk
       // would meet head to head. Keep each back nearer upright.
       if (e > S.standA - 0.3) {
@@ -663,7 +800,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     }
     // Leans: you over the paper; both a touch forward into the handshake.
     const writeLean = 0.3 * seg(e, 0, S.reachB) * (1 - seg(e, S.putDown - 0.1, S.standA + 0.3));
-    const shakeLean = 0.12 * seg(e, S.shakeA - 0.2, S.shakeB);
+    const shakeLean = (ONE ? SHAKE1.lean : 0.12) * seg(e, S.shakeA - 0.2, S.shakeB);
     lean(you, 0.12 * (1 - standK) + writeLean + shakeLean);
     lean(boss, 0.12 * (1 - standK) + shakeLean);
 
@@ -754,6 +891,16 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     if (!wantStamp && stamped) stamped = false;
     drawPaperThrottled();
 
+    // The one body's fingers, for this frame.
+    if (hasFingers(you)) {
+      poseFingers(T, you, "R", fingersR);
+      poseFingers(T, you, "L", mixFingers(HANDS.relax, HANDS.flat, lW));
+    }
+    if (hasFingers(boss)) {
+      poseFingers(T, boss, "R", fingerOverride.boss ?? mixFingers(HANDS.relax, HANDS.shake, shakeW));
+      poseFingers(T, boss, "L", HANDS.relax);
+    }
+
     // The pen: on the desk, in the fingers, or on its way between.
     if (penInHand) {
       const held = penInHandOf(you, "R");
@@ -769,14 +916,15 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     if (e >= S.shakeA - 0.3) {
       const w = seg(e, S.shakeA - 0.3, S.shakeB);
       const pump = e > S.shakeB ? Math.sin((e - S.shakeB) * Math.PI * 2 * 2.4) * 0.024 * (1 - seg(e, S.pumpEnd - 0.2, S.pumpEnd)) : 0;
-      const M = v3(0, SHAKE.y + pump, 0);
+      const SH = ONE ? SHAKE1 : SHAKE;
+      const M = v3(0, SH.y + pump, 0);
       for (const p of [you, boss]) {
         // The shoulder comes forward into the reach.
         rotateBoneWorld(T, p.bones.RightShoulder, new T.Quaternion().setFromAxisAngle(v3(0, 1, 0), 0.2 * w));
         const palm = dirOf(p, 1, 0, 0);
-        const wrist = M.clone().add(palm.clone().multiplyScalar(-SHAKE.gap));
-        wrist.z = M.z - p.facing * SHAKE.back;
-        placeHand(p, "R", wrist, dirOf(p, 0, -0.05, 1), palm, dirOf(p, -0.7, -0.7, -0.15), w);
+        const wrist = M.clone().add(palm.clone().multiplyScalar(-SH.gap));
+        wrist.z = M.z - p.facing * SH.back;
+        placeHand(p, "R", wrist, dirOf(p, 0, ONE ? SHAKE1.tilt : -0.05, 1), palm, dirOf(p, -0.7, -0.7, -0.15), w);
       }
       if (e >= S.shakeB) fire("shake");
     }
@@ -849,6 +997,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     },
     setTalking(who) { talking = who; },
     sign() {
+      if (STAGE === "office") return;
       if (mode === "sign") return;
       mode = "sign"; modeStart = clock; fired.clear(); inkUpTo = 0; stamped = false;
     },
@@ -879,7 +1028,26 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         palmR: r(you.hand.R.palm.clone().applyQuaternion(handQ(you, "R"))), alongR: r(you.hand.R.along.clone().applyQuaternion(handQ(you, "R"))),
         bossPalmR: r(boss.hand.R.palm.clone().applyQuaternion(handQ(boss, "R"))),
         extras: you.extras.map((x) => [x.name || x.type, x.parent?.name, r(wpos(x))]),
+        body: BODY,
+        // The one body's hands, for checking a grip by numbers.
+        fingers: hasFingers(you) ? Object.fromEntries((["you", "boss"] as const).map((who) => {
+          const p = who === "you" ? you : boss;
+          const q = handQ(p, "R");
+          const W = wpos(p.bones.RightHand);
+          const al = p.hand.R.along.clone().applyQuaternion(q), pa = p.hand.R.palm.clone().applyQuaternion(q), th = p.hand.R.thumb.clone().applyQuaternion(q);
+          return [who, {
+            wrist: r(W), along: r(al), palm: r(pa), thumbAx: r(th),
+            palmC: r(W.clone().addScaledVector(al, 0.07)),
+            tips: Object.fromEntries((["thumb", "index", "middle", "ring", "little"] as const).map((f) => [f, r(fingerTip(T, p, "R", f)!)])),
+            mcp: r(wpos(p.fingers!.R.middle.bones[0])),
+          }];
+        })) : null,
       };
+    },
+    debugFingers(who, deg) {
+      if (deg) fingerOverride[who] = fingersDeg(deg); else delete fingerOverride[who];
+      frame(clock);
+      renderer.render(scene, camera);
     },
     debugHold(t) {
       frozen = true;

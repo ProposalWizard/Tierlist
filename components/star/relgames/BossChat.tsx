@@ -10,6 +10,13 @@ import type { CareerState } from "@/lib/star/types";
 import { chatFor, type Reply } from "@/lib/star/bossChat";
 import { gameReward } from "@/lib/star/relationships";
 import { GameShell, ResultPanel, type GameResult } from "./Shell";
+import dynamic from "next/dynamic";
+import { useBossRoomLook } from "@/lib/star/look3d";
+
+// The manager's office in 3D above the chat (Settings → Look → "Talk to your
+// manager: 3D office", the default). Only a stage: the words and rules below
+// are untouched. "Old" is this screen exactly as before.
+const Office3DCareer = dynamic(() => import("../Office3D").then((m) => m.Office3DCareer), { ssr: false });
 
 export default function BossChat({ career, onFinish, onCancel }: { career: CareerState; onFinish: (r: GameResult) => void; onCancel: () => void }) {
   const chat = useMemo(() => chatFor(career), [career]);
@@ -17,6 +24,8 @@ export default function BossChat({ career, onFinish, onCancel }: { career: Caree
   const [picked, setPicked] = useState<Reply | null>(null);
   const [result, setResult] = useState<GameResult | null>(null);
   const boss = career.manager?.name ?? "The manager";
+  const room = useBossRoomLook();
+  const [room3dFailed, setRoom3dFailed] = useState(false);
 
   const pick = (r: Reply) => {
     if (picked) return;
@@ -26,6 +35,10 @@ export default function BossChat({ career, onFinish, onCancel }: { career: Caree
 
   return (
     <GameShell title="Talk to your manager" who="Boss" current={current} tone="#60a5fa" onBack={picked ? undefined : onCancel}>
+      {room === "3d" && !room3dFailed && (
+        <Office3DCareer career={career} speaker={!picked || result ? "boss" : "you"} onFail={() => setRoom3dFailed(true)}
+          className="mb-3 w-full" style={{ height: "40vh", borderRadius: 4 }} />
+      )}
       <div className="space-y-2">
         <Bubble who={boss} text={chat.opener} />
         {!picked && chat.replies.map((r) => (
