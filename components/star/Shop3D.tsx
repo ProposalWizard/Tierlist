@@ -27,6 +27,7 @@ import { SHOP_TIERS } from "@/lib/star/economy";
 import { divisionOf } from "@/lib/star/calendar";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
+import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -55,6 +56,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<ShopController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // What went wrong, shown small on the failure screen so a screenshot says why.
+  const [errText, setErrText] = useState("");
   const [fps, setFps] = useState(0);
   const [near, setNear] = useState<DisplayId | null>(null);
   const [dismissed, setDismissed] = useState<DisplayId | null>(null);
@@ -105,7 +108,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       try {
         const { startShop } = await import("@/lib/star/shop3d/scene");
         const q = new URLSearchParams(window.location.search);
-        const c = await startShop(el, {
+        const start = () => startShop(el, {
           onNear: (id) => setNear(id),
           onFps: (f) => {
             setFps(f);
@@ -126,13 +129,28 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             hairStyle: career ? resolveHairStyle(career.player.hairStyle) : undefined,
           },
         });
+        let c: ShopController;
+        try {
+          c = await start();
+        } catch (e1) {
+          // The one body failed on this phone: try once more with the old
+          // bodies before giving up (the saved setting is left alone).
+          if (dead || people3dLook() !== "new") throw e1;
+          console.error("3D shop: one body failed, retrying with the old body", e1);
+          fallBackToOldPeople();
+          el.replaceChildren();
+          c = await start();
+        }
         if (dead) { c.dispose(); return; }
         ctrlRef.current = c;
         (window as unknown as { __shop3d?: ShopController }).__shop3d = c;
         setStatus("ready");
       } catch (e) {
         console.error("3D shop failed to load", e);
-        if (!dead) setStatus("error");
+        if (!dead) {
+          setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+          setStatus("error");
+        }
       }
     })();
     return () => {
@@ -257,6 +275,11 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
               <div style={{ fontWeight: 600, color: MUTED, fontSize: 14, lineHeight: 1.5 }}>
                 This phone or browser may not run 3D. The normal shop still works.
               </div>
+              {errText && (
+                <div style={{ fontWeight: 600, color: MUTED, fontSize: 10.5, lineHeight: 1.4, marginTop: 10, opacity: 0.7, wordBreak: "break-word" }}>
+                  {errText.slice(0, 200)}
+                </div>
+              )}
               <button onClick={onBack} style={{ ...cta, marginTop: 14 }}>Back to the {backLabel}</button>
             </div>
           )}

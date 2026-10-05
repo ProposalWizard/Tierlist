@@ -45,6 +45,10 @@ const subscribe = (f: () => void) => { listeners.add(f); return () => { listener
 export const people3dLook = (): People3dLook => read(PEOPLE);
 export const setPeople3dLook = (v: People3dLook) => write(PEOPLE, v);
 export const usePeople3dLook = () => useSyncExternalStore(subscribe, people3dLook, () => PEOPLE.fallback);
+/** A 3D scene failed with the one body (Harry's iPhone, 5 Oct 2026: "The 3D
+ *  shop didn't load"): use the old bodies for the rest of this visit, without
+ *  changing the saved setting, so the scene can try again. */
+export const fallBackToOldPeople = () => { cache.set(PEOPLE.key, "old"); };
 
 export const bossRoomLook = (): BossRoomLook => read(ROOM);
 export const setBossRoomLook = (v: BossRoomLook) => write(ROOM, v);
