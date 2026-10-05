@@ -5,8 +5,9 @@
  * (Mikey, 2 Oct 2026).
  *
  * Every reward card in one place, by category (lib/star/rewardCatalogue.ts),
- * and the 20 Star Pass levels (5 … 100). Tap a level, tap a card: it goes
- * there. ↑ / ↓ move a level's card, ✕ empties it. Tap a card's status to
+ * and the Star Pass's 100 levels. A reward can sit at ANY level (5 Oct
+ * 2026: "2, 4, 6 … or 5, 10, 15 … or 1 to 9"). Tap a level in the grid, tap
+ * a card: it goes there. ↑ / ↓ move a card one level, ✕ empties it. Tap a card's status to
  * move it along (idea → designed → in game). + Idea adds a card for
  * something not built yet. 👁 opens a big preview (spin the 3D ones).
  *
@@ -17,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import RewardArt from "@/components/star/RewardArt";
 import { CATEGORIES, fullCatalogue, findCard, type CatalogueItem, type RewardCategory, type RewardStatus } from "@/lib/star/rewardCatalogue";
-import { REWARD_LEVELS } from "@/lib/star/starPassRewards";
+import { ALL_PASS_LEVELS, PASS_TOP } from "@/lib/star/starPassRewards";
 import { defaultLayout, fetchPassLayout, loadPassLayout, savePassLayout, type StarPassLayout } from "@/lib/star/starPassStore";
 
 const STATUS_NEXT: Record<RewardStatus, RewardStatus> = { idea: "designed", designed: "in-game", "in-game": "idea" };
@@ -58,13 +59,10 @@ export default function StarPassAdmin() {
     for (const [lv, id] of Object.entries(levels)) if (id === card.id) delete levels[Number(lv)]; // a card sits at one level
     levels[level] = card.id;
     change({ ...layout, levels });
-    const i = REWARD_LEVELS.indexOf(level);
-    if (i >= 0 && i < REWARD_LEVELS.length - 1) setLevel(REWARD_LEVELS[i + 1]);
   };
   const move = (lv: number, dir: -1 | 1) => {
-    const i = REWARD_LEVELS.indexOf(lv), j = i + dir;
-    if (j < 0 || j >= REWARD_LEVELS.length) return;
-    const other = REWARD_LEVELS[j];
+    const other = lv + dir;
+    if (other < 1 || other > PASS_TOP) return;
     const levels = { ...layout.levels };
     const a = levels[lv], b = levels[other];
     if (b) levels[lv] = b; else delete levels[lv];
@@ -95,7 +93,10 @@ export default function StarPassAdmin() {
   };
 
   const cards = catalogue.filter((c) => c.category === cat);
-  const filled = REWARD_LEVELS.filter((n) => layout.levels[n]).length;
+  const filledLevels = ALL_PASS_LEVELS.filter((n) => layout.levels[n]);
+  const filled = filledLevels.length;
+  // The rows: every level with a card, plus the one you've picked.
+  const rowLevels = Array.from(new Set([...filledLevels, level])).sort((a, b) => a - b);
 
   return (
     <div className="min-h-screen bg-[#0b0f1a] pb-28 text-white">
@@ -106,7 +107,7 @@ export default function StarPassAdmin() {
         <button onClick={save} disabled={!dirty} className="rounded px-4 py-2 text-[13px] font-black uppercase text-gray-950 disabled:opacity-40" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)" }}>Save</button>
        </div>
        <div className="mt-1 text-[12px] font-bold text-white">
-        {filled} of {REWARD_LEVELS.length} levels filled
+        {filled} {filled === 1 ? "reward" : "rewards"} on the road
         {shared === "missing" && <span className="text-red-400"> · shared save not set up</span>}
         {msg && <span className={`font-black ${msg.ok ? "text-green-400" : "text-amber-300"}`}> · {msg.text}</span>}
        </div>
@@ -115,9 +116,25 @@ export default function StarPassAdmin() {
       <div className="mx-auto grid max-w-6xl gap-4 px-4 pt-4 md:grid-cols-[360px_1fr]">
         {/* The levels. */}
         <div>
-          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Levels</div>
+          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Levels · tap one to pick it</div>
+          {/* All 100 levels. Gold: has a reward. Ringed: picked. */}
+          <div className="mb-3 grid grid-cols-10 gap-1" data-level-grid>
+            {ALL_PASS_LEVELS.map((n) => {
+              const has = !!layout.levels[n], on = n === level;
+              return (
+                <button key={n} onClick={() => setLevel(n)} data-pick-level={n} aria-label={`Level ${n}`}
+                  className="h-8 rounded text-[12px] font-black tabular-nums"
+                  style={{
+                    background: has ? "linear-gradient(180deg, #fde047, #f59e0b)" : "rgba(255,255,255,.06)",
+                    color: has ? "#111827" : "#ffffff",
+                    boxShadow: on ? "0 0 0 2px #ffffff, 0 0 0 4px #f59e0b" : undefined,
+                  }}>{n}</button>
+              );
+            })}
+          </div>
+          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">On the road</div>
           <div className="space-y-1.5">
-            {REWARD_LEVELS.map((n) => {
+            {rowLevels.map((n) => {
               const card = findCard(layout.levels[n], catalogue);
               const on = n === level;
               return (
