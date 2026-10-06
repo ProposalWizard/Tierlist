@@ -4,7 +4,7 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
-import { bestsAfterMatch, archiveRowFor, historyRowFor } from "./careerRecords";
+import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
@@ -1529,6 +1529,9 @@ function seasonHistoryAfter(
       ballonDor: top ? { winner: top.name, club: top.club, yourRank: shortlist.playerRank } : undefined,
       ...(movedNow ? { money: career.money - movedNow.fee } : {}),
       ...(movedNow?.fromWage !== undefined ? { wage: movedNow.fromWage } : {}),
+      // The season's team-mates: after a move made at this rollover the
+      // squad is already the new club's, so acceptOffer kept the old ones.
+      mates: movedNow ? (career.outgoingMates ?? []) : bestMatesOf(career.squad),
     });
     return [...(career.seasonHistory ?? []).filter(r => r.season !== career.season), row];
   } catch {
@@ -1744,6 +1747,8 @@ export function advanceSeason(
       : career.seasonArchive,
     seasonHistory,
     thisSeasonClub: undefined,
+    // Read by this season's history row (above); last season's now.
+    outgoingMates: undefined,
     // Last season's play-off belongs to last season. Carried over, it made
     // resolveLadder promote last year's winner again from wherever they
     // finished (15th in League Two was seen) and seedPlayOffs refuse to run

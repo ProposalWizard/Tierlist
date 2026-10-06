@@ -33,6 +33,7 @@ import {
   ScreenShell, FlatPanel, StatBar, CountUp, RiseIn, EdgeArrows, BottomBar, BarButton, HelpDot, clubTheme, rgba,
 } from "./ui";
 import { Rays } from "./ui/Screen";
+import { ShareCardSheet } from "./ShareCard";
 
 export interface OverviewAction { icon?: React.ReactNode; label: string; onClick: () => void; primary?: boolean }
 
@@ -68,14 +69,21 @@ const surname = (name: string) => {
 };
 const Badge = ({ club, size }: { club: string; size: number }) => <ClubBadge club={club} kit={kitsOf(club).home} size={size} />;
 
-export default function CareerOverview({ career, actions, startPage = "career" }: {
+export default function CareerOverview({ career, actions, startPage = "career", share }: {
   career: CareerState;
   /** The bottom bar: what you can do from here (the parent decides). */
   actions: OverviewAction[];
   startPage?: OverviewPage;
+  /**
+   * Share buttons on the first page (Leo, 6 Oct 2026): the picture (the share
+   * card, ShareCard.tsx) always; a link (an online share code) when the
+   * parent can make one.
+   */
+  share?: { onLink?: () => void };
 }) {
   const o = useMemo(() => careerOverview(career), [career]);
   const [page, setPage] = useState<OverviewPage>(startPage);
+  const [picture, setPicture] = useState(false);
   const i = OVERVIEW_PAGES.findIndex(p => p.id === page);
   const go = (d: number) => {
     setPage(OVERVIEW_PAGES[(i + d + OVERVIEW_PAGES.length) % OVERVIEW_PAGES.length].id);
@@ -122,7 +130,7 @@ export default function CareerOverview({ career, actions, startPage = "career" }
           </div>
         </div>
         <RiseIn key={page}>
-          {page === "career" && <CareerPage o={o} onOpen={setPage} />}
+          {page === "career" && <CareerPage o={o} onOpen={setPage} share={share ? { onPicture: () => setPicture(true), onLink: share.onLink } : undefined} />}
           {page === "seasons" && <SeasonsPage o={o} />}
           {page === "winners" && <WinnersPage o={o} />}
           {page === "clubs" && <ClubsPage o={o} />}
@@ -131,6 +139,7 @@ export default function CareerOverview({ career, actions, startPage = "career" }
           {page === "life" && <LifePage o={o} />}
         </RiseIn>
       </div>
+      {picture && <ShareCardSheet career={career} onClose={() => setPicture(false)} />}
     </ScreenShell>
   );
 }
@@ -193,8 +202,12 @@ function LegacyRing({ score }: { score: number }) {
   );
 }
 
-function CareerPage({ o, onOpen }: { o: CareerOverviewData; onOpen: (p: OverviewPage) => void }) {
+function CareerPage({ o, onOpen, share }: {
+  o: CareerOverviewData; onOpen: (p: OverviewPage) => void;
+  share?: { onPicture: () => void; onLink?: () => void };
+}) {
   const t = o.totals;
+  const fw = o.farewell;
   return (
     <>
       {/* The name, the years, the verdict. */}
@@ -219,6 +232,35 @@ function CareerPage({ o, onOpen }: { o: CareerOverviewData; onOpen: (p: Overview
           <p className="mx-auto mt-1.5 max-w-[300px] text-[12px] font-semibold leading-snug text-white/85">{o.verdict.summary}</p>
         </div>
       </div>
+
+      {/* Share it: a picture for WhatsApp or Instagram, or a link. */}
+      {share && (
+        <div className={`mt-3 grid gap-1.5 ${share.onLink ? "grid-cols-2" : "grid-cols-1"}`}>
+          <button onClick={share.onPicture} data-share-picture className="kib-press flex items-center justify-center gap-1.5 py-2.5 text-[12.5px] font-black uppercase tracking-wide text-gray-950" style={{ background: GOLD, borderRadius: 2 }}>
+            <span aria-hidden>📸</span> Share picture
+          </button>
+          {share.onLink && (
+            <button onClick={share.onLink} data-share-link className="kib-press flex items-center justify-center gap-1.5 py-2.5 text-[12.5px] font-black uppercase tracking-wide text-white" style={{ background: "rgba(255,255,255,.08)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55)", borderRadius: 2 }}>
+              <span aria-hidden>🔗</span> Share link
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* The farewell match, its own line: it counts in nothing else. */}
+      {fw && fw.yourScore !== undefined && fw.theirScore !== undefined && (
+        <div data-overview-farewell className="mt-3 flex items-center gap-2.5 px-2.5 py-2" style={{ background: "linear-gradient(90deg, rgba(251,191,36,.2), rgba(255,255,255,.03))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.4)" }}>
+          <span className="text-[22px]" aria-hidden>👏</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Farewell match</div>
+            <div className="truncate text-[13px] font-bold text-white">{fw.team ?? short(fw.club)} v {fw.opponent}</div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="sk-num text-[22px] leading-none text-white">{fw.yourScore}–{fw.theirScore}</div>
+            <div className="text-[10px] font-black uppercase tracking-wider text-white/70">{fw.goals ?? 0} goal{fw.goals === 1 ? "" : "s"}</div>
+          </div>
+        </div>
+      )}
 
       {/* Six numbers that tell it. */}
       <div className="mt-4 grid grid-cols-3 gap-1.5">

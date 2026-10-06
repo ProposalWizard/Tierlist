@@ -417,6 +417,20 @@ interface Props {
    * real match): never called, nothing is ever held.
    */
   holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
+  /**
+   * THE FAREWELL MATCH (Leo, 6 Oct 2026) — one last game after the final
+   * whistle of a career, played on a stand-in career (lib/star/farewell.ts)
+   * and credited to nothing. With it:
+   *   - nearly every chance your side works is yours (the hidden match's
+   *     `farewell`), and every set piece (the caller's `duties`);
+   *   - energy never drains, and the energy panel is not shown;
+   *   - nobody takes you off for form or legs; at `offAt` you come off to a
+   *     standing ovation (a banner over the match) and it plays out to full
+   *     time without you;
+   *   - no other scores, and the plate reads "Farewell".
+   * Absent — every real match — nothing here changes.
+   */
+  farewell?: { offAt: number };
 }
 
 
@@ -657,7 +671,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -978,7 +992,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   if (liveWeekRef.current === null) {
     let week: { fixtures: { home: string; away: string }[]; goals: LiveGoal[] } = { fixtures: [], goals: [] };
     try {
-      if (fixture && onComplete && career) week = liveWeekFor(career, fixture);
+      // The farewell is the only game being played: no other scores.
+      if (fixture && onComplete && career && !farewell) week = liveWeekFor(career, fixture);
     } catch { /* no other games to show */ }
     liveWeekRef.current = week;
   }
@@ -1263,6 +1278,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onBallStepRef.current = onBallStep;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
+  /** See the `farewell` prop. */
+  const farewellRef = useRef(farewell);
+  farewellRef.current = farewell;
+  /** The farewell: the minute you came off to the standing ovation. */
+  const [ovation, setOvation] = useState<number | null>(null);
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -1275,8 +1295,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * desynchronise. Loses up to ENERGY_MATCH_DECAY points by full time.
    */
   const liveEnergyAt = (minute: number) => {
-    // A player who has been taken off stops spending energy.
-    if (hookedRef.current) return energyRef.current;
+    // A player who has been taken off stops spending energy — and in the
+    // farewell match nobody spends any.
+    if (hookedRef.current || farewellRef.current) return energyRef.current;
     const extra = Math.max(0, minute - energyClockRef.current)
       * energyPerMinute(energyModeRef.current, energyFactorRef.current);
     return clampEnergy(energyRef.current - extra);
@@ -1398,6 +1419,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // The farewell match: nearly every chance is yours.
+      ...(farewellRef.current ? { farewell: true } : {}),
       // v0.26: playstyle, team-mates, fans and your stats shape the chances.
       context: {
         playstyle: playstyleRef.current,
@@ -5109,7 +5132,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Item 25: a substitute comes off the minute his energy reaches
     // SUB_OFF_ENERGY — so the stretch stops there instead of at full time.
     let offAt = Infinity;
-    if (subOnRef.current && !hookedRef.current && !neverHookedRef.current) {
+    // The farewell: off at the ovation minute, whatever happens before it.
+    const fw = farewellRef.current;
+    if (fw && !hookedRef.current) offAt = Math.max(st.minute, fw.offAt);
+    else if (subOnRef.current && !hookedRef.current && !neverHookedRef.current) {
       const perMin = energyPerMinute(energyModeRef.current, energyFactorRef.current);
       const e = liveEnergyAt(st.minute);
       if (perMin > 0) offAt = e <= SUB_OFF_ENERGY ? st.minute : st.minute + Math.ceil((e - SUB_OFF_ENERGY) / perMin);
@@ -5206,7 +5232,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // flattering version of it.
     if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
-      const decision = legsGone
+      const decision = fw
+        // The farewell: nobody takes you off — until the ovation minute.
+        ? (legsGone
+          ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — you come off. The whole ground is on its feet for you.` }
+          : { hooked: false, reason: null, message: "" })
+        : legsGone
         ? { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(liveEnergyAt(st.minute))}% energy — you are taken off.` }
         : hookCheck({
           minute: st.minute,
@@ -5226,6 +5257,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         hookedRef.current = decision.reason;
         hookedAtRef.current = st.minute;
         events.push({ minute: st.minute, text: decision.message });
+        if (fw) { setOvation(st.minute); playCrowdSwell("cheer"); }
         // The rest of the match is played without you, exactly as the hour
         // before kick-off is when you come off the bench.
         //
@@ -6665,12 +6697,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         </div>
       )}
 
+      {/* The farewell: you have come off, and the whole ground stands. */}
+      {farewell && ovation !== null && (
+        <div
+          data-farewell-ovation
+          className="kib-pop mb-2 px-3 py-2 text-center"
+          style={{ background: "linear-gradient(90deg, rgba(251,191,36,.28), rgba(251,191,36,.10))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6)", borderRadius: 4 }}
+        >
+          <div className="text-[19px] font-black uppercase leading-none tracking-wide text-amber-200">👏 Standing ovation 👏</div>
+          <div className="mt-1 text-[12.5px] font-bold leading-snug text-white">{ovation}&apos; — you come off. The whole ground is on its feet.</div>
+        </div>
+      )}
+
       {/* Scoreboard plate. Hidden in `bare` — see the prop. */}
       {!bare && (
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
           <div className="px-2.5 flex items-center border-r border-white/5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-300/90">
-            {matchMode && career ? competitionAbbrev(fixture!, divisionOf(career)) : "Match Lab"}
+            {matchMode && career ? (farewell ? "Farewell" : competitionAbbrev(fixture!, divisionOf(career))) : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
@@ -6900,11 +6944,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             pause={pause}
             energy={liveEnergy}
             energyMode={energyMode}
-            onEnergyMode={setEnergyMode}
+            // The farewell match has no energy: no energy panel, no cans.
+            onEnergyMode={farewell ? undefined : setEnergyMode}
             playstyle={playstyle}
             onPlaystyle={setPlaystyle}
-            kibCans={Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
-            onUseKib={drinkHalfTimeKib}
+            kibCans={farewell ? 0 : Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
+            onUseKib={farewell ? undefined : drinkHalfTimeKib}
             // Tapping the commentary empties the queue in one go. Nobody wants
             // to sit through four minutes of build-up twice, and the alternative
             // to letting them skip it is that they turn the speed up and leave

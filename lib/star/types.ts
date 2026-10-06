@@ -652,6 +652,50 @@ export interface SeasonArchiveRow {
  * A save from before it has none, and starts recording from then — nothing
  * here can be rebuilt afterwards, which is why it is written every season.
  */
+/**
+ * ONE OF A SEASON'S BEST TEAM-MATES — kept on that season's history row, so a
+ * farewell match years later still has real names (Leo, 6 Oct 2026: the
+ * farewell match's "Your XI"). Three to five a season, picked by
+ * careerRecords.ts `bestMatesOf`: the top scorer, the top creator, and the
+ * best keeper, defender and midfielder, so a whole side can be drawn from them.
+ */
+export interface SeasonMate {
+  /** The squad id ("sf_…" for a real footballer). */
+  id: string;
+  name: string;
+  position: SquadPlayer["position"];
+  overall?: number;
+  /** His photo, when the squad had one. */
+  face?: string;
+  /** That season, for your club. */
+  goals: number;
+  assists: number;
+}
+
+/**
+ * THE FAREWELL MATCH (Leo, 6 Oct 2026) — one last match after the final
+ * whistle of a career: your best team-mates against your rivals. It counts in
+ * nothing (no stats, no records); this is its own line on the career overview.
+ */
+export interface FarewellRecord {
+  /** False when it was turned down ("Skip"). */
+  played: boolean;
+  /** The club that put it on (the testimonial club). */
+  club: string;
+  /** Your side's name, e.g. "Calloway XI". */
+  team?: string;
+  /** The other side's name, e.g. "Rivals XI". */
+  opponent: string;
+  /** The score, your side first. */
+  yourScore?: number;
+  theirScore?: number;
+  goals?: number;
+  assists?: number;
+  rating?: number;
+  /** The minute you came off to the ovation. */
+  offAt?: number;
+}
+
 export interface SeasonHistoryRow {
   season: number;
   age: number;
@@ -678,6 +722,8 @@ export interface SeasonHistoryRow {
   wage: number;
   caps: number;
   intlGoals: number;
+  /** That season's best team-mates (see SeasonMate). Absent before 6 Oct 2026. */
+  mates?: SeasonMate[];
 }
 
 export interface CareerBests {
@@ -1445,6 +1491,22 @@ export interface CareerState {
   /** A farewell match, earned by a long spell at one club. */
   testimonial?: { club: string; season: number; payout: number } | null;
   /**
+   * The farewell match after the final whistle (lib/star/farewell.ts):
+   * played or skipped, and the score. Once a career; absent until then.
+   */
+  farewell?: FarewellRecord;
+  /**
+   * The best team-mates of the club you have just left. A summer move swaps
+   * the squad BEFORE the season's history row is written (acceptOffer, then
+   * advanceSeason), so the row reads them from here. Cleared at the rollover.
+   */
+  outgoingMates?: SeasonMate[];
+  /**
+   * Hall of Fame records already celebrated in this career (lib/star/
+   * hallRecords.ts): each id once, so a record broken is a moment once.
+   */
+  hallRecordsBroken?: string[];
+  /**
    * The football world's reaction to your career. See lib/star/media.
    *
    * Optional so every existing save loads with an empty feed that fills itself
@@ -1524,6 +1586,15 @@ export type StarPhase =
   /** After the Ballon d'Or night of the second-last season: "this is your
    *  final season before retirement" (CareerEnd.tsx, Leo 5 Oct 2026). */
   | "final-season"
+  /** THE FAREWELL MATCH (Leo, 6 Oct 2026), after the final whistle and
+   *  before the career overview: the invite (Play or Skip), the team
+   *  sheets, the guard of honour, the match, full time. A refresh goes
+   *  back to the final whistle (see the phase save in page.tsx). */
+  | "farewell-invite"
+  | "farewell-sheets"
+  | "farewell-walkout"
+  | "farewell-match"
+  | "farewell-result"
   | "legacy"
   | "press"
   | "draw"

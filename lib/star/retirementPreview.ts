@@ -14,7 +14,7 @@
  * Only used by the test page (/star-retirement-dev). Nothing here ever runs in
  * a real career.
  */
-import type { CareerState, SeasonArchiveRow, SeasonHistoryRow, StarPlayer, Trophy, OwnedItem } from "./types";
+import type { CareerState, LeaguePlayer, LeagueSquad, SeasonArchiveRow, SeasonHistoryRow, SquadPlayer, StarPlayer, Trophy, OwnedItem } from "./types";
 import type { CareerDivision } from "./calendar";
 import type { BrandDeal } from "./sponsorDeals";
 import type { Award } from "./recognition";
@@ -23,6 +23,8 @@ import { mulberry32 } from "./season";
 import { ACHIEVEMENTS } from "./achievements";
 import { LIFESTYLE_ALL_LEVELS } from "./shopData";
 import { testimonialFor } from "./retirement";
+import { generateSquad, clubNameSeed } from "./squadData";
+import { bestMatesOf } from "./careerRecords";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS,
 } from "./clubs";
@@ -145,6 +147,65 @@ function curve(age: number): number {
   if (age <= 27) return 0.28 + (age - 16) * (0.72 / 11);
   if (age <= 31) return 1;
   return Math.max(0.42, 1 - (age - 31) * 0.085);
+}
+
+/**
+ * A club's made-up squad: the farewell match needs real-looking team-mates
+ * and rivals (Leo, 6 Oct 2026). Seeded off the club alone, on its own
+ * stream, so nothing else in the made-up career changes.
+ */
+function previewSquad(club: string, strength: number): LeaguePlayer[] {
+  const seed = clubNameSeed(club);
+  const r = mulberry32((seed ^ 0x5bd1e995) >>> 0);
+  const tag = seed % 100000;
+  return generateSquad(seed).map((p, i) => ({
+    id: `${tag}${String(i).padStart(2, "0")}`,
+    name: p.name,
+    position: p.position,
+    positions: [p.position],
+    overall: Math.max(45, Math.min(90, Math.round(56 + strength * 30 + (r() - 0.5) * 12))),
+    goals: 0,
+    assists: 0,
+    ...(p.imageUrl ? { image: p.imageUrl } : {}),
+  }));
+}
+
+/** Where each Ballon d'Or rival plays. */
+const RIVAL_POSITION: Record<string, LeaguePlayer["position"]> = {
+  "Kylian Mbappé": "ST", "Erling Haaland": "ST", "Lamine Yamal": "RW", "Jude Bellingham": "CAM",
+  "Florian Wirtz": "CAM", "Pedri": "CM", "Bukayo Saka": "RW", "Cole Palmer": "CAM",
+};
+
+/** That season's best team-mates at the club (SeasonMate), off their own stream. */
+function previewMates(club: string, strength: number, seed: number, season: number) {
+  const r = mulberry32((seed * 131 + season * 977 + clubNameSeed(club)) >>> 0);
+  const squad: SquadPlayer[] = previewSquad(club, strength).map(lp => {
+    const attack = lp.position === "ST" || lp.position === "LW" || lp.position === "RW" || lp.position === "CAM";
+    const mid = lp.position === "CM" || lp.position === "CDM";
+    return {
+      id: `sf_${lp.id}`, name: lp.name, shortName: lp.name.split(" ").slice(-1)[0], position: lp.position,
+      seasonGoals: Math.round(r() * (attack ? 14 : mid ? 5 : 2)),
+      seasonAssists: Math.round(r() * (attack ? 8 : mid ? 7 : 2)),
+      careerGoals: 0, careerAssists: 0, overall: lp.overall, imageUrl: lp.image,
+    };
+  });
+  return bestMatesOf(squad);
+}
+
+/** Every club the made-up world needs a squad for, with the Ballon d'Or rivals in theirs. */
+function previewWorld(clubs: Iterable<string>, strengthOf: (club: string) => number): LeagueSquad[] {
+  const out: LeagueSquad[] = [];
+  for (const club of Array.from(new Set(clubs))) {
+    const players = previewSquad(club, strengthOf(club));
+    BALLON_RIVALS.filter(([, c]) => c === club).forEach(([name], i) => {
+      const position = RIVAL_POSITION[name] ?? "ST";
+      const at = players.findIndex(p => p.position === position);
+      const star: LeaguePlayer = { id: `${clubNameSeed(name) % 100000}9${i}`, name, position, positions: [position], overall: 91, goals: 0, assists: 0 };
+      if (at >= 0) players[at] = star; else players.push(star);
+    });
+    out.push({ club, players });
+  }
+  return out;
 }
 
 /**
@@ -284,6 +345,7 @@ export function previewCareer(shape: PreviewShape, seed = 1, opts: { upTo?: numb
     }
     history.push({
       season: s, age, club, division, position, teams, move, winners, ballonDor,
+      mates: previewMates(club, strength, seed, s),
       stars: Math.round(18 + q * 80), overall: Math.round((1 + q * 4) * 2) / 2,
       fame: Math.round(fame), money: Math.round(money), wage, caps, intlGoals,
     });
@@ -324,6 +386,15 @@ export function previewCareer(shape: PreviewShape, seed = 1, opts: { upTo?: numb
     personalBests: { "pl-goals-season": bestPlGoalsSeason, "pl-assists-season": bestPlAssistsSeason, "pl-goals-match": shape === "legend" ? 5 : 3 },
     seasonArchive: archive,
     seasonHistory: history,
+    // A world to draw the farewell's sides from: every club that won
+    // something, the giants, and your own clubs (their own squads).
+    leagueSquads: previewWorld(
+      [
+        ...seasons.map(x => x.club), ...PL_GIANTS, ...CL_GIANTS, ...EL_SIDES, ...BALLON_RIVALS.map(([, c]) => c),
+        ...history.flatMap(r => Object.values(r.winners).filter((w): w is string => !!w)),
+      ],
+      club => seasons.find(x => x.club === club)?.strength ?? (PL_GIANTS.includes(club) || CL_GIANTS.includes(club) ? 0.88 : 0.6),
+    ),
     trophies,
     awards,
     ballonDorWins: ballonDors,

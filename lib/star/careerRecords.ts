@@ -14,7 +14,7 @@
  * goals) — already counted in `careerStats.starMan`, so it is read, not
  * re-invented.
  */
-import type { CareerBests, CareerState, Fixture, MatchStats, SeasonArchiveRow, SeasonHistoryRow } from "./types";
+import type { CareerBests, CareerState, Fixture, MatchStats, SeasonArchiveRow, SeasonHistoryRow, SeasonMate, SquadPlayer } from "./types";
 
 const fullName = (c: CareerState) => `${c.player.firstName} ${c.player.lastName}`;
 
@@ -60,6 +60,44 @@ export function archiveRowFor(career: CareerState): SeasonArchiveRow {
   };
 }
 
+const DEFENCE = new Set<SquadPlayer["position"]>(["CB", "LB", "RB"]);
+const MIDFIELD = new Set<SquadPlayer["position"]>(["CDM", "CM", "CAM"]);
+
+/**
+ * A season's best team-mates, for its history row (see SeasonMate). Leo,
+ * 6 Oct 2026, the farewell match: "your best team-mates from every club".
+ *
+ * Five at most: the top scorer and the top creator (when they did anything),
+ * then the best keeper, defender and midfielder, so a whole side can be drawn
+ * from the rows years later; then whoever is best. About 150 bytes each.
+ */
+export function bestMatesOf(squad: SquadPlayer[] | undefined, max = 5): SeasonMate[] {
+  const pool = (squad ?? []).filter(p => p && typeof p.name === "string" && p.name.length > 0);
+  if (pool.length === 0) return [];
+  const ov = (p: SquadPlayer) => p.overall ?? 60;
+  const worth = (p: SquadPlayer) => ov(p) + ((p.seasonGoals ?? 0) + (p.seasonAssists ?? 0)) * 0.6;
+  const by = (f: (p: SquadPlayer) => number) => [...pool].sort((a, b) => f(b) - f(a) || ov(b) - ov(a));
+  const picked: SquadPlayer[] = [];
+  const take = (p: SquadPlayer | undefined) => { if (p && !picked.includes(p) && picked.length < max) picked.push(p); };
+  const scorer = by(p => p.seasonGoals ?? 0)[0];
+  if (scorer && (scorer.seasonGoals ?? 0) > 0) take(scorer);
+  const creator = by(p => p.seasonAssists ?? 0).find(p => !picked.includes(p));
+  if (creator && (creator.seasonAssists ?? 0) > 0) take(creator);
+  take(by(ov).find(p => p.position === "GK" && !picked.includes(p)));
+  take(by(ov).find(p => DEFENCE.has(p.position) && !picked.includes(p)));
+  take(by(worth).find(p => MIDFIELD.has(p.position) && !picked.includes(p)));
+  for (const p of by(worth)) take(p);
+  return picked.map(p => ({
+    id: p.id,
+    name: p.name,
+    position: p.position,
+    ...(typeof p.overall === "number" ? { overall: p.overall } : {}),
+    ...(p.imageUrl ? { face: p.imageUrl } : {}),
+    goals: p.seasonGoals ?? 0,
+    assists: p.seasonAssists ?? 0,
+  }));
+}
+
 /**
  * The season about to end, as the world saw it (see SeasonHistoryRow).
  *
@@ -86,6 +124,8 @@ export function historyRowFor(
      *  Differs only after a move made at this rollover — see careerFlow.ts. */
     wage?: number;
     money?: number;
+    /** The season's best team-mates (bestMatesOf). */
+    mates?: SeasonMate[];
   },
 ): SeasonHistoryRow {
   const w = facts.winners;
@@ -115,6 +155,7 @@ export function historyRowFor(
     wage: facts.wage ?? career.contract.wage,
     caps: career.caps ?? 0,
     intlGoals: career.internationalGoals ?? 0,
+    ...(facts.mates && facts.mates.length > 0 ? { mates: facts.mates } : {}),
   };
 }
 

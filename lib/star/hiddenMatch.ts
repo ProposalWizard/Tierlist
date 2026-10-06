@@ -19,6 +19,8 @@ const HIGH_MODE_EXTRA = getTuning("energy.highModeExtraChances");
  * involvement, exactly like everyone else's Low.
  */
 const TALISMAN_CHANCES = 2.2;
+/** The farewell match: how often a chance your side works comes to you. */
+export const FAREWELL_INVOLVEMENT = 0.97;
 
 // ── LATE SUBS (item 24, v0.15) ──────────────────────────────────────────────
 //
@@ -207,6 +209,13 @@ export interface HiddenMatchInputs {
    * doesn't own its own club) is exactly today's game.
    */
   talisman?: boolean;
+  /**
+   * THE FAREWELL MATCH (Leo, 6 Oct 2026: "every chance is yours"). Nearly
+   * every chance your side works comes to you — FAREWELL_INVOLVEMENT, not
+   * every one, so a team-mate still scores now and then and it reads as a
+   * match. Only the farewell match passes it; absent is exactly today's game.
+   */
+  farewell?: boolean;
   /**
    * PENALTIES WON IN ANY MOVE (v0.15 plan, item 6).
    *
@@ -1009,7 +1018,8 @@ export function tick(
             : 1);
         // Item 24: once a sub is actually on, the later he came on, the likelier
         // the ball finds him (his chances squeezed into the minutes left).
-        const involvement = inputs.lateSub ? Math.min(0.95, pulled * lateSubInvolvement(inputs.lateSub))
+        const involvement = inputs.farewell ? FAREWELL_INVOLVEMENT
+          : inputs.lateSub ? Math.min(0.95, pulled * lateSubInvolvement(inputs.lateSub))
           : inputs.impactSub ? Math.min(0.92, pulled * 1.5) : Math.min(0.95, pulled);
 
         if (rng() < involvement) {

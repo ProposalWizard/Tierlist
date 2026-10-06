@@ -17,7 +17,7 @@
  * transfers go back to the start. Anything a save never recorded comes back
  * as `undefined`, never as a guess, and the screen shows it blacked out.
  */
-import type { CareerState, SeasonHistoryRow, Trophy } from "./types";
+import type { CareerState, FarewellRecord, SeasonHistoryRow, Trophy } from "./types";
 import type { CareerDivision } from "./calendar";
 import { careerVerdict, type CareerVerdict } from "./retirement";
 import { allSeasons } from "./careerRecords";
@@ -206,6 +206,8 @@ export interface CareerOverviewData {
   peak?: { season: number; label: string; club: string; goals: number; assists: number };
   /** The first season whose winners were recorded; undefined when none were. */
   historyFrom?: number;
+  /** The farewell match, when it was played (lib/star/farewell.ts). */
+  farewell?: FarewellRecord;
 }
 
 // ── Building it ──────────────────────────────────────────────────────────────
@@ -495,5 +497,6 @@ export function careerOverview(career: CareerState): CareerOverviewData {
     arc,
     ...(peak ? { peak } : {}),
     ...(firstHistory !== undefined ? { historyFrom: firstHistory } : {}),
+    ...(career.farewell?.played ? { farewell: career.farewell } : {}),
   };
 }
