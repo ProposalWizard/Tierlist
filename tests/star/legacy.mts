@@ -1,5 +1,5 @@
 import { generateOffers, acceptOffer, reputation, MOVE_RESET } from "../../lib/star/transfers";
-import { retirementCheck, careerVerdict, retire, RETIRE_FROM, MAX_SEASONS } from "../../lib/star/retirement";
+import { retirementCheck, careerVerdict, retire, isFinalSeason, CAREER_SEASONS } from "../../lib/star/retirement";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { selectionFor } from "../../lib/star/selection";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
@@ -144,28 +144,56 @@ const offerRate = (c: CareerState) =>
 }
 
 // ── The end of a career ─────────────────────────────────────────────────────
+// Leo, 5 Oct 2026: every career lasts CAREER_SEASONS (20) seasons. No early
+// retirement; the season before the last ends with a warning.
 {
+  const CAP = CAREER_SEASONS ?? 20;
+  check(CAREER_SEASONS === 20, `a career lasts 20 seasons (${CAREER_SEASONS})`);
   const young = { ...base(), player: { ...PLAYER, age: 24 } };
   check(!retirementCheck(young).canRetire, "a twenty-four-year-old is not retiring");
 
-  const veteran = { ...base(), player: { ...PLAYER, age: RETIRE_FROM } };
+  // Age no longer opens a choice: 33, 38, 45 all play on until the last season.
+  for (const age of [33, 38, 45]) {
+    const r = retirementCheck({ ...base(), season: 5, player: { ...PLAYER, age } } as CareerState);
+    check(!r.canRetire && !r.mustRetire, `age ${age} in season 5 plays on: there is no "Do you go again?" any more`);
+  }
+  // Seasons 1 … CAP-2: nothing. CAP-1: the warning. CAP and later: the end.
+  for (let season = 1; season <= CAP - 2; season++) {
+    const r = retirementCheck({ season });
+    if (r.mustRetire || r.finalSeasonNext) check(false, `season ${season} says nothing`);
+  }
+  const warn = retirementCheck({ season: CAP - 1 });
+  check(warn.finalSeasonNext && !warn.mustRetire, `the end of season ${CAP - 1} warns that the next one is the last`);
+  const veteran = { ...base(), season: CAP, player: { ...PLAYER, age: 35 } };
   const vc = retirementCheck(veteran);
-  check(vc.canRetire && !vc.mustRetire, `from ${RETIRE_FROM} it is your call`);
-  check(vc.reason.length > 0, "and you are told why it is being asked");
-
-  const old = { ...base(), player: { ...PLAYER, age: 45 } };
-  check(!retirementCheck(old).mustRetire, "age alone never forces retirement any more");
-  const done = { ...base(), season: MAX_SEASONS };
-  check(retirementCheck(done).mustRetire, `after ${MAX_SEASONS} seasons it is not your call`);
-  check(!retirementCheck({ ...base(), season: MAX_SEASONS - 1 }).mustRetire, "season 49 still plays on");
+  check(vc.canRetire && vc.mustRetire && !vc.finalSeasonNext, `the end of season ${CAP} ends the career`);
+  check(vc.reason.length > 0, "and says why");
+  check(retirementCheck({ season: CAP + 7 }).mustRetire, "an older save already past the limit ends at its next season's end");
+  check(!isFinalSeason({ season: CAP - 1 }) && isFinalSeason({ season: CAP }), "the final season is the one numbered CAP");
+  // The limit is one number: another value (or none) works the same way.
+  check(retirementCheck({ season: 14 }, 15).finalSeasonNext && retirementCheck({ season: 15 }, 15).mustRetire, "a 15-season limit warns at 14 and ends at 15");
+  check(!retirementCheck({ season: 500 }, null).mustRetire && !retirementCheck({ season: 500 }, null).finalSeasonNext, "no limit never ends a career");
 
   const retired = retire(veteran);
   check(retired.retired === true, "hanging them up is recorded on the career itself");
   check(retirementCheck(retired).canRetire, "the check itself is unaffected — the flag on the career is what routes you");
 
-  // A body that has gone reads differently from one that has not.
-  const worn = { ...veteran, matchFitness: 40 };
-  check(retirementCheck(worn).reason !== vc.reason, "and the reason reflects the state you are in");
+  // The last season is closed properly: retiring skips advanceSeason, which is
+  // where a Ballon d'Or win is counted (until 5 Oct 2026 a final-season win
+  // vanished from the overview).
+  const lastSeason: CareerState = {
+    ...veteran,
+    seasonStats: { appearances: 30, goals: 25, assists: 9, hatTricks: 1, passes: 300, starMan: 6, totalRating: 30 * 7.6, ratingCount: 30 },
+  };
+  const wonIt = retire(lastSeason, true);
+  check(wonIt.ballonDorWins === lastSeason.ballonDorWins + 1, `a Ballon d'Or won in the final season counts (${lastSeason.ballonDorWins} → ${wonIt.ballonDorWins})`);
+  check(retire(lastSeason).ballonDorWins === lastSeason.ballonDorWins, "and one not won does not");
+  const finalRow = (wonIt.seasonArchive ?? []).find(r => r.season === lastSeason.season);
+  check(finalRow?.goals === 25 && finalRow.apps === 30, `the final season gets its archive row (${JSON.stringify(finalRow)})`);
+  check((wonIt.seasonHistory ?? []).some(r => r.season === lastSeason.season), "and its history row: who won what that last season");
+  const again = retire(wonIt, true);
+  check(again.ballonDorWins === wonIt.ballonDorWins, `closing the same season twice never counts it twice (${again.ballonDorWins})`);
+
 }
 
 // ── What it added up to ─────────────────────────────────────────────────────

@@ -43,6 +43,11 @@ export const PRESS_TEMPLATES: Template[] = [
     weight: 2,
   },
   {
+    id: "bs-hall-record", archetype: "broadsheet", events: ["hall-record"], subject: "you", requires: ["holder", "was", "now"],
+    body: "{holder} set the mark for {recordLower} at {was}. It stood for a whole career. {player} has now gone past it, and {now} is the number the next one will have to chase.",
+    weight: 3,
+  },
+  {
     id: "bs-screamer", archetype: "broadsheet", events: ["screamer"], requires: ["distance"],
     body: "The goal, when it came, arrived from {distance} yards: {greatGoal}, struck with the certainty of a player who is not thinking about it any more.",
   },
@@ -98,6 +103,11 @@ export const PRESS_TEMPLATES: Template[] = [
   },
 
   // ── Tabloid ───────────────────────────────────────────────────────────────
+  {
+    id: "tb-hall-record", archetype: "tabloid", events: ["hall-record"], subject: "you", requires: ["short", "holderShort"],
+    body: "HISTORY! {short} SMASHES {holderShort}'S RECORD",
+    weight: 3,
+  },
   {
     id: "tb-hattrick", archetype: "tabloid", events: ["hat-trick", "four-goals", "five-goals"],
     requires: ["goals", "short"],

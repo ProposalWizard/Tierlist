@@ -77,7 +77,7 @@ export function scoreCareerEvents(events: FootballEvent[], m: StoryMemory, fame:
 const NEVER_STALE = new Set([
   "goal-milestone", "assist-milestone", "appearance-milestone", "club-appearance-milestone",
   "trophy", "champions", "relegated", "ballon-dor", "retirement", "transfer-done",
-  "into-the-final", "lost-the-final", "award-won",
+  "into-the-final", "lost-the-final", "award-won", "hall-record",
 ]);
 
 function rarity(e: FootballEvent, m: StoryMemory): number {

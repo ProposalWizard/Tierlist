@@ -38,6 +38,9 @@ export interface MatchSpriteHint {
   kit: SpriteKit;
   /** 0..1: centre the frame on him rather than standing it on his boots (a dive). */
   centre?: number;
+  /** Radians the whole figure leans about his boots — code-only motion the
+   *  baked clips do not have (a block's lean; Animations: New). */
+  tilt?: number;
 }
 
 export interface MatchFigureSpec {
@@ -96,7 +99,11 @@ export function drawMatchFigure(
   if (spec.sprite && matchPlayersLook() === "3d") {
     const lift = spec.keeper ? 0 : Math.max(0, spec.opts.liftPx ?? 0);
     const height = r * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
-    if (drawSprite(ctx, x, groundY - lift, { ...spec.sprite, facingRad: spec.sprite.facing, height })) {
+    const tilt = spec.sprite.tilt ?? 0;
+    if (tilt) { ctx.save(); ctx.translate(x, groundY - lift); ctx.rotate(tilt); ctx.translate(-x, -(groundY - lift)); }
+    const drawn = drawSprite(ctx, x, groundY - lift, { ...spec.sprite, facingRad: spec.sprite.facing, height });
+    if (tilt) ctx.restore();
+    if (drawn) {
       drawMarkers(ctx, x, groundY - lift - height, r, spec.opts);
       return;
     }

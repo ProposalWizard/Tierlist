@@ -102,7 +102,7 @@ import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceS
 import { DEFAULT_FAKE_FACE, FAKE_FACES, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
   figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
-  MAX_KEEPER_LEAN, ROLE_KIT,
+  ROLE_KIT,
   runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose, FIGURE_HEIGHT_R,
 } from "@/lib/star/fiveASide/render";
 import {
@@ -149,6 +149,14 @@ import {
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, MATCH_VIEW_DEFAULT,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
+import { animationsLook } from "@/lib/star/animLook";
+import {
+  animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim,
+  type ActorAnim, type OutfieldAnimFrame,
+} from "@/lib/star/actionAnim";
+import { animSettings, animFamilyOn, type AnimFamily } from "@/lib/star/animDials";
+import { drawContactFlash } from "@/lib/star/actionAnimDraw";
+import { keeperBasePose, KEEPER_SAVE_KIND } from "@/lib/star/keeperSaveKinds";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -418,6 +426,20 @@ interface Props {
    * real match): never called, nothing is ever held.
    */
   holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
+  /**
+   * THE FAREWELL MATCH (Leo, 6 Oct 2026) — one last game after the final
+   * whistle of a career, played on a stand-in career (lib/star/farewell.ts)
+   * and credited to nothing. With it:
+   *   - nearly every chance your side works is yours (the hidden match's
+   *     `farewell`), and every set piece (the caller's `duties`);
+   *   - energy never drains, and the energy panel is not shown;
+   *   - nobody takes you off for form or legs; at `offAt` you come off to a
+   *     standing ovation (a banner over the match) and it plays out to full
+   *     time without you;
+   *   - no other scores, and the plate reads "Farewell".
+   * Absent — every real match — nothing here changes.
+   */
+  farewell?: { offAt: number };
 }
 
 
@@ -658,7 +680,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -980,7 +1002,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   if (liveWeekRef.current === null) {
     let week: { fixtures: { home: string; away: string }[]; goals: LiveGoal[] } = { fixtures: [], goals: [] };
     try {
-      if (fixture && onComplete && career) week = liveWeekFor(career, fixture);
+      // The farewell is the only game being played: no other scores.
+      if (fixture && onComplete && career && !farewell) week = liveWeekFor(career, fixture);
     } catch { /* no other games to show */ }
     liveWeekRef.current = week;
   }
@@ -1265,6 +1288,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onBallStepRef.current = onBallStep;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
+  /** See the `farewell` prop. */
+  const farewellRef = useRef(farewell);
+  farewellRef.current = farewell;
+  /** The farewell: the minute you came off to the standing ovation. */
+  const [ovation, setOvation] = useState<number | null>(null);
+  // The ovation waits for the commentary to reach that minute: the match
+  // decides it a stretch ahead, and a playtest saw the banner at 85' while
+  // the clock still read 75' (6 Oct 2026). The cheer plays when it shows.
+  const ovationShown = !!farewell && ovation !== null && matchMinute >= ovation;
+  const ovationHeardRef = useRef(false);
+  useEffect(() => {
+    if (ovationShown && !ovationHeardRef.current) { ovationHeardRef.current = true; playCrowdSwell("cheer"); }
+  }, [ovationShown]);
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -1277,8 +1313,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * desynchronise. Loses up to ENERGY_MATCH_DECAY points by full time.
    */
   const liveEnergyAt = (minute: number) => {
-    // A player who has been taken off stops spending energy.
-    if (hookedRef.current) return energyRef.current;
+    // A player who has been taken off stops spending energy — and in the
+    // farewell match nobody spends any.
+    if (hookedRef.current || farewellRef.current) return energyRef.current;
     const extra = Math.max(0, minute - energyClockRef.current)
       * energyPerMinute(energyModeRef.current, energyFactorRef.current);
     return clampEnergy(energyRef.current - extra);
@@ -1401,6 +1438,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // The farewell match: nearly every chance is yours.
+      ...(farewellRef.current ? { farewell: true } : {}),
       // v0.26: playstyle, team-mates, fans and your stats shape the chances.
       context: {
         playstyle: playstyleRef.current,
@@ -2023,6 +2062,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Seconds remaining on the player's kicking pose. A strike takes one frame,
   // so without a hold the swing would never actually be seen.
   const kickPoseRef = useRef(0);
+  // Animations: New (lib/star/actionAnim.ts) — each man's latest touch of the
+  // ball and when it started, keyed by the id he is drawn under, plus how far
+  // through the current ball's action log the screen has read.
+  const actorAnimRef = useRef<Map<string, ActorAnim>>(new Map());
+  const seenActionRef = useRef<{ ball: Ball | null; seq: number }>({ ball: null, seq: 0 });
   const playersLook = useMatchPlayersLook();
   // New view, 3D figures (lib/star/sprites.ts): each man's smoothed speed,
   // heading and distance run, so the baked clip matches what he is doing and
@@ -3019,6 +3063,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kickFoot?: number;
       /** Who this is, for the 3D figure's own motion (new view). Looks only. */
       sid?: string;
+      /** Animations: New — what he is doing with the ball right now
+       *  (lib/star/actionAnim.ts). Replaces `pose`. Looks only. */
+      anim?: OutfieldAnimFrame | null;
     };
 
     // ── Nearer men in front of further ones ──
@@ -3076,6 +3123,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (opts.pose === "kick" && id === "you") {
         clip = "kick";
         t = Math.max(0, spriteKickStrikeT() - 0.12 + (KICK_POSE_S - kickPoseRef.current));
+      } else if (opts.anim && opts.anim.kickClipU !== null) {
+        // Animations: New — the kick clip on whoever actually struck it.
+        clip = "kick";
+        t = Math.max(0, spriteKickStrikeT() * opts.anim.kickClipU);
       } else if (phaseRef.current === "result" && goalSideRef.current === (them ? "them" : "us")) {
         clip = "celebrate"; t = now + spriteSeed(id);
       } else if (speed > 4.8) {
@@ -3085,7 +3136,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else {
         clip = "idle"; t = now + spriteSeed(id);
       }
-      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt } };
+      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(opts.anim?.lean ? { tilt: opts.anim.lean } : {}) };
     };
     const footballer = (
       x: number, y: number, rBase: number,
@@ -3132,9 +3183,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // legs and counter-swings the arms; a kick throws one leg through and
       // the arms wide for balance; a man waiting for the ball opens his arms.
       const body = opts.body;
+      const anim = body ? null : opts.anim ?? null;
       const limbs = body
         ? { legSwing: body.legSwing, kick: 0, armSpread: body.armSpread, armLift: body.armLift, crouch: body.crouch }
-        : bodyPoseFor(pose, phase, opts.kickFoot);
+        : anim
+          ? { legSwing: 0, kick: 0, armSpread: 0, armLift: -0.55, ...anim.pose }
+          : bodyPoseFor(pose, phase, opts.kickFoot);
 
       // ── Anchored at the FEET ──
       //
@@ -3150,8 +3204,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         look: { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
         faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
         opts: {
-          facing: opts.facing ?? (body?.lean || undefined),
-          liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : undefined,
+          facing: anim ? ((opts.facing ?? 0) + anim.lean) || undefined : opts.facing ?? (body?.lean || undefined),
+          liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : anim && anim.liftR > 0 ? anim.liftR * r : undefined,
           shadowR: r * 0.42,
           pose: limbs,
           label: opts.label,
@@ -3188,6 +3242,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // and it works for the ones that only expose a position.
     const motion = motionRef.current;
     const poseFor = (id: string, x: number, y: number): Pose => sharedPoseFor(motion, id, x, y);
+
+    // Animations: New | Old (Settings → Look; lib/star/animLook.ts). New: the
+    // man who touched the ball is drawn doing it (lib/star/actionAnim.ts).
+    // Old: nothing below changes a single figure.
+    const animNew = animationsLook() === "new";
+    // How big each animation is, and which families are on (animDials.ts,
+    // edited on /star-animations-dev). A family switched off is drawn Old.
+    const animSet = animSettings();
+    const familyOf = (a: ActorAnim): AnimFamily =>
+      a.kind === "touch" ? "touch"
+        : a.mode === "header" ? "headers"
+          : a.kind === "block" || a.kind === "clearance" ? "blocks"
+            : a.kind === "pass" ? "passes" : "shots";
+    // Contact flashes at the boot, drawn over the men once they are all down.
+    const bootFlashes: { x: number; y: number; z: number; f: OutfieldAnimFrame }[] = [];
+    const animOf = (sid: string, x: number, y: number): OutfieldAnimFrame | null => {
+      if (!animNew) return null;
+      const a = actorAnimRef.current.get(sid);
+      if (!a || a.scene !== sc) return null;
+      if (!animSet.on[familyOf(a)]) return null;
+      // Which foot: the side of him the ball is on, on screen.
+      const me = toPx(x, y);
+      const bp = ballRef.current?.pos ?? a.at ?? { x, y };
+      const ref = a.kind === "block" && a.at ? a.at : bp;
+      const dx = toPx(ref.x, ref.y).px - me.px;
+      const fr = outfieldAnimFrame(a, now - a.start, Math.abs(dx) < 1 ? 1 : Math.sign(dx), animSet.dials);
+      if (fr && fr.flash > 0 && animSet.on.flashes && a.at) bootFlashes.push({ x: a.at.x, y: a.at.y, z: a.at.z, f: fr });
+      return fr;
+    };
 
     // Highlight the runner while they control a pass they've just won
     const rb = ballRef.current;
@@ -3304,6 +3387,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         sid: "follower",
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
+        anim: animOf("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
         face: getFaceImage(sc.follower.who?.face ?? fakeFaceFor("follower")),
         label: faceStyleRef.current.namesEnabled ? sc.follower.who?.shortName : undefined,
@@ -3423,8 +3507,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Arms out the moment they take the ball down, so a completed pass reads
       // on the pitch and not only in the commentary.
       const receiving = i === 0 && !!rb && rb.receiverControlT > 0;
+      // Animations: New — he takes a touch and sets himself (actionAnim.ts)
+      // instead of standing still with his arms open.
+      const anim = animOf(`run${i}`, r.pos.x, r.pos.y);
       footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
         sid: `run${i}`,
+        anim,
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
         face: getFaceImage(r.who?.face ?? fakeFaceFor(`run${i}`)),
@@ -3465,6 +3553,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
         sid: `def${i}`,
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
+        anim: animOf(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
         face: getFaceImage(d.who?.face ?? fakeFaceFor(`def${i}`)),
         label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
@@ -3574,13 +3663,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // spread : how wide the arms go
       // reachK : how far the leading glove extends
       // crouch : vertical drop of the whole body
-      const KIND = {
-        catch:     { lean: 0.15, armUp:  0.25, spread: 0.45, reachK: 0.55, crouch: 0.10 },
-        central:   { lean: 0.05, armUp: -0.10, spread: 1.05, reachK: 0.80, crouch: 0.22 },
-        low:       { lean: 1.15, armUp: -0.85, spread: 0.95, reachK: 1.35, crouch: 0.30 },
-        high:      { lean: 0.55, armUp:  1.00, spread: 0.80, reachK: 1.30, crouch: -0.35 },
-        fingertip: { lean: 1.30, armUp:  0.35, spread: 0.70, reachK: 1.70, crouch: 0.05 },
-      } as const;
+      // (The table itself: KEEPER_SAVE_KIND, lib/star/keeperSaveKinds.ts.)
+      const KIND = KEEPER_SAVE_KIND;
       const kind = kk.saveKind ?? null;
       const K = kind ? KIND[kind] : null;
 
@@ -3597,7 +3681,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const KR = R * MATCH_KEEPER_R_SHARE * kScale;   // smaller than an outfielder, smaller again far away
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
-      const lean = clamp(sign * diveN * (K ? K.lean : 0.9), -MAX_KEEPER_LEAN, MAX_KEEPER_LEAN);
+      // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
+      // held it, palmed it, one glove at full stretch, spilled it, got up.
+      // Each half can be switched off on its own (animDials.ts): the catch
+      // and the fumble, or every other save.
+      const ka = animNew ? actorAnimRef.current.get("keeper") : undefined;
+      const kFamilyOn = !!ka && (ka.save === "catch" || ka.save === "fumble" ? animSet.on.keeperCatch : animSet.on.keeperSaves);
+      const kAnim0 = ka && ka.scene === sc && ka.kind === "save" && kFamilyOn
+        ? keeperAnimFrame(ka, now - ka.start, kind === "high" || kind === "fingertip", animSet.dials)
+        : null;
+      const kAnim = kAnim0 && !animSet.on.flashes ? { ...kAnim0, flash: 0 } : kAnim0;
+      const kBase = keeperBasePose(kind, lunge, diveN, sign);
+      // A one-handed stretch is a diagonal body reaching up, not a man flat
+      // on his side (New only; the "Keeper one-hand lean" dial).
+      const lean = keeperLeanWithAnim(kBase.leanRaw, kAnim, animSet.dials.oneHandLean);
       // He is already standing at the ball by the time a save is drawn (the
       // engine puts him there), so the lunge is a pose rather than a journey —
       // a big horizontal offset here would throw the figure straight past the
@@ -3611,8 +3708,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // His old drawn height was 2.482 KR against an outfielder's 2.509 r —
       // inside 1%, so one conversion does for both.
       const kr = figureRForHeight(KR * MATCH_FIGURE_HEIGHT_R);
-      const spread = K ? K.spread : 1;
-      const armUp = K ? K.armUp : 0;
 
       ctx.save();
       ctx.globalAlpha = 0.92;
@@ -3650,7 +3745,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const a = toPx(kk.x, kk.y), b = toPx(kk.x + sign, kk.y);
           // The dive plays no faster than 0.75× the clip's own speed, however
           // quickly the save itself happens.
-          if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = now;
+          // Animations: New — the clip starts at the save itself, not at
+          // the first frame the lunge happened to be seen.
+          if (keeperDiveStartRef.current === null) keeperDiveStartRef.current = ka && kAnim ? Math.min(now, ka.start) : now;
           const t = Math.min(lunge * 0.6, (now - keeperDiveStartRef.current) * 0.75);
           // Once he has landed he stays where he landed: the engine still
           // walks him on toward the save point, and a man lying flat slid
@@ -3704,14 +3801,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // save drives the arms up, a low save down, a catch brings them
             // together in front; the leading glove goes furthest and the
             // trailing one stays tucked.
-            armSpread: clamp(0.45 + spread * 0.35 + diveN * 0.4, 0, 1),
-            armLift: 0.15 + armUp * diveN * 0.85 + lunge * 0.5,
+            armSpread: clamp(kBase.armSpread + (kAnim?.armSpreadAdd ?? 0), 0, 1),
+            armLift: kBase.armLift + (kAnim?.armLiftAdd ?? 0),
             armLead: sign,
+            ...(kAnim && (kAnim.trailDrop > 0 || kAnim.handsIn > 0) ? { trailDrop: kAnim.trailDrop, handsIn: kAnim.handsIn } : {}),
           },
           // A kick you are watching names both men: who is taking it, who is in goal.
           label: faceStyleRef.current.namesEnabled || autoKickOf(sc) ? kk.who?.shortName : undefined,
         },
       });
+
+      // The contact flash at the ball the moment he touches it (the glow
+      // Keeper.flash has always marked and nothing ever drew). New only.
+      if (kAnim && kAnim.flash > 0 && ka?.at) {
+        const f = toPx(ka.at.x, ka.at.y);
+        const fy = f.py - Math.max(0, ka.at.z) * heightScale * f.scale;
+        drawContactFlash(ctx, f.px, fy, KR * kAnim.flashSize, kAnim.flash);
+      }
 
       ctx.restore();
     };
@@ -3863,6 +3969,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // He's been beaten — draw him now, after the ball, so his body is what
     // occludes it rather than the other way round.
     if (ballBehindKeeper) drawKeeper();
+
+    // Animations: New — the flash where a team-mate's or defender's boot (or
+    // head) met the ball, over everything so it reads at phone size.
+    for (const b of bootFlashes) {
+      const f = toPx(b.x, b.y);
+      drawContactFlash(ctx, f.px, f.py - Math.max(0, b.z) * heightScale * f.scale, R * 0.55 * f.scale * b.f.flashSize, b.f.flash, b.f.dust);
+    }
 
     // --- Curve boots: a live guide line while the swipe is in progress ---
     //
@@ -4288,6 +4401,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         }
         // Surface mid-flight moments (pass reception / the teammate's own shot /
         // the woodwork) once.
+        // Animations (New, lib/star/actionAnim.ts): every touch the engine
+        // wrote down this frame goes to the man who made it, started at the
+        // moment it happened (Ball.clock), not at the end of the frame.
+        {
+          const bl = ballRef.current;
+          const seen = seenActionRef.current;
+          if (bl && bl !== seen.ball) { seen.ball = bl; seen.seq = 0; }
+          if (bl?.actionLog) {
+            const nowS = performance.now() / 1000;
+            for (const a of bl.actionLog) {
+              if (a.seq <= seen.seq) continue;
+              seen.seq = a.seq;
+              // Your own swing stays on kickPoseRef, as it always was.
+              if (a.actor === "you") continue;
+              actorAnimRef.current.set(a.actor, animFromAction(a, nowS - Math.max(0, (bl.clock ?? 0) - a.t), scenarioRef.current));
+            }
+          }
+        }
         const ev = ballRef.current?.event;
         const receiver = scenarioRef.current.receiver;
         // The frame no longer ends the move — the ball cannons back out and is
@@ -4304,7 +4435,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // taken off whoever the ball actually reached. See lib/star/lineup.ts.
           const label = receiver.who?.shortName ?? receiver.roleLabel;
           if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction(passBanner()); }
-          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
+          // Old animations: the team-mate's shot swung YOUR leg (the one
+          // kick pose there was). New: he swings his own (actorAnimRef).
+          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); if (animationsLook() === "old" || !animFamilyOn("shots")) kickPoseRef.current = KICK_POSE_S; }
           // He was told to leave it, and he has left it. Named, because the
           // whole point of the order is that the move went through somebody
           // rather than ending at the first man who could see the goal.
@@ -4312,7 +4445,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             pushLine(`${label} leaves it — the captain wanted it moved on.`);
             showAction("PASS");
             playKick();
-            kickPoseRef.current = KICK_POSE_S;
+            if (animationsLook() === "old" || !animFamilyOn("passes")) kickPoseRef.current = KICK_POSE_S;
           }
         }
         if (ballRef.current) ballRef.current.event = null;
@@ -5131,7 +5264,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Item 25: a substitute comes off the minute his energy reaches
     // SUB_OFF_ENERGY — so the stretch stops there instead of at full time.
     let offAt = Infinity;
-    if (subOnRef.current && !hookedRef.current && !neverHookedRef.current) {
+    // The farewell: off at the ovation minute, whatever happens before it.
+    const fw = farewellRef.current;
+    if (fw && !hookedRef.current) offAt = Math.max(st.minute, fw.offAt);
+    else if (subOnRef.current && !hookedRef.current && !neverHookedRef.current) {
       const perMin = energyPerMinute(energyModeRef.current, energyFactorRef.current);
       const e = liveEnergyAt(st.minute);
       if (perMin > 0) offAt = e <= SUB_OFF_ENERGY ? st.minute : st.minute + Math.ceil((e - SUB_OFF_ENERGY) / perMin);
@@ -5228,7 +5364,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // flattering version of it.
     if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
-      const decision = legsGone
+      const decision = fw
+        // The farewell: nobody takes you off — until the ovation minute.
+        ? (legsGone
+          ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — you come off. The whole ground is on its feet for you.` }
+          : { hooked: false, reason: null, message: "" })
+        : legsGone
         ? { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(liveEnergyAt(st.minute))}% energy — you are taken off.` }
         : hookCheck({
           minute: st.minute,
@@ -5248,6 +5389,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         hookedRef.current = decision.reason;
         hookedAtRef.current = st.minute;
         events.push({ minute: st.minute, text: decision.message });
+        if (fw) setOvation(st.minute);
         // The rest of the match is played without you, exactly as the hour
         // before kick-off is when you come off the bench.
         //
@@ -6689,12 +6831,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         </div>
       )}
 
+      {/* The farewell: you have come off, and the whole ground stands. */}
+      {ovationShown && (
+        <div
+          data-farewell-ovation
+          className="kib-pop mb-2 px-3 py-2 text-center"
+          style={{ background: "linear-gradient(90deg, rgba(251,191,36,.28), rgba(251,191,36,.10))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6)", borderRadius: 4 }}
+        >
+          <div className="text-[19px] font-black uppercase leading-none tracking-wide text-amber-200">👏 Standing ovation 👏</div>
+          <div className="mt-1 text-[12.5px] font-bold leading-snug text-white">{ovation}&apos; — you come off. The whole ground is on its feet for you.</div>
+        </div>
+      )}
+
       {/* Scoreboard plate. Hidden in `bare` — see the prop. */}
       {!bare && (
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
           <div className="px-2.5 flex items-center border-r border-white/5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-300/90">
-            {matchMode && career ? competitionAbbrev(fixture!, divisionOf(career)) : "Match Lab"}
+            {matchMode && career ? (farewell ? "Farewell" : competitionAbbrev(fixture!, divisionOf(career))) : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
@@ -6924,11 +7078,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             pause={pause}
             energy={liveEnergy}
             energyMode={energyMode}
-            onEnergyMode={setEnergyMode}
+            // The farewell match has no energy: no energy panel, no cans.
+            onEnergyMode={farewell ? undefined : setEnergyMode}
             playstyle={playstyle}
             onPlaystyle={setPlaystyle}
-            kibCans={Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
-            onUseKib={drinkHalfTimeKib}
+            kibCans={farewell ? 0 : Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
+            onUseKib={farewell ? undefined : drinkHalfTimeKib}
             // Tapping the commentary empties the queue in one go. Nobody wants
             // to sit through four minutes of build-up twice, and the alternative
             // to letting them skip it is that they turn the speed up and leave

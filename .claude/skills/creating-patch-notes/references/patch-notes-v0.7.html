@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball Patch Notes — Leo v0.7</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:var(--bg);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:300px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.7</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">Retirement, part 2: careers are 20 seasons · a final-season warning · the career overview is the end screen · a Hall of Fame · a new All seasons page. Plans for after retiring are on <a href="https://claude.ai/artifact/DPNpkyaPoyHWj6xuLpGvGG">their own page</a>.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>20</b><span>seasons in every career (was a yes/no every summer from age 33)</span></div>
+  <div class="s"><b>0</b><span>retired careers lost by starting again (the old end screen deleted them)</span></div>
+  <div class="s"><b>108 → 15 KB</b><span>one 20-season career, as kept in the Hall of Fame</span></div>
+  <div class="s"><b>246 / 246</b><span>tests pass (was 245)</span></div>
+</div>
+
+<!-- ── HEADLINE ─────────────────────────────────────────── -->
+<section class="headline">
+  <div class="hl-tag">Headline</div>
+  <h3>Retiring never deletes a career any more: the Hall of Fame</h3>
+  <div class="row"><div class="lbl">Problem</div><p>The end screen's only button was "Start a new career". It deleted the retired career, on the phone and in the cloud. Twenty seasons, gone.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>A career lived only in its save slot. Starting again in that slot had to clear it.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Every retired career is copied into a <b>Hall of Fame</b> the moment it is saved. It is a slim copy: everything the career overview shows, without the other clubs' squads or the phone's feed.</p>
+    <ul>
+      <li>The title screen has a gold <b>Hall of Fame</b> button with a count.</li>
+      <li>Tap a career: its whole overview, all seven pages. <b>Remove</b> asks first.</li>
+      <li>A career that retired before today goes in the next time the title screen opens.</li>
+      <li>Before New career, New game or Delete can replace a retired career, the game checks it is in the Hall. If the phone is full, it asks first.</li>
+    </ul>
+  </div>
+  <div class="pair">
+    <figure><img src="img/title-hall.jpg" alt="Title screen with the Hall of Fame button"><figcaption>The title screen: Hall of Fame, 3 careers.</figcaption></figure>
+    <figure><img src="img/hall.jpg" alt="The Hall of Fame list"><figcaption>The Hall. Calloway was picked up from a retired save by itself.</figcaption></figure>
+  </div>
+  <p class="cap"><b>Seen in a browser</b>, in the real game, signed out: after New career, New game and Delete, the Hall entry was byte-for-byte the same. The overview drawn from a Hall copy matched the full career for 11 test careers (measured).</p>
+  <details><summary>Remove asks first</summary>
+    <figure class="one"><img src="img/hall-remove.jpg" alt="Remove asks first"><figcaption>"Take Leo Vance out of the Hall of Fame? This can't be undone."</figcaption></figure>
+  </details>
+  <div class="mean"><b>What this means for you:</b> finish a career and start another; the old one is one tap away on the title screen. On this phone for now: it reaches your account on every device once one database file is run (Known issues).</div>
+</section>
+
+<!-- ── CHECK THESE ──────────────────────────────────────── -->
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="fs"> "Final season" after season 19<span class="where">Settings → Developer tools → Dev Skip to the end of season 19 → the Ballon d'Or night → Continue</span></label></li>
+  <li><label><input type="checkbox" data-k="fw"> "The final whistle" after season 20<span class="where">Dev Skip to the end of season 20 → the Ballon d'Or night</span></label></li>
+  <li><label><input type="checkbox" data-k="ov"> The career overview is the end screen<span class="where">The final whistle → Hang them up → bar: Hall of Fame · New career · Menu</span></label></li>
+  <li><label><input type="checkbox" data-k="hof"> Hall of Fame on the title screen<span class="where">Menu (or open the game) → Hall of Fame → tap a career</span></label></li>
+  <li><label><input type="checkbox" data-k="keep"> New career keeps the old one<span class="where">End screen → New career → back to the title → Hall of Fame</span></label></li>
+  <li><label><input type="checkbox" data-k="all"> The new All seasons page<span class="where">Stats → flip to All seasons</span></label></li>
+  <li><label><input type="checkbox" data-k="old"> All seasons: New | Old switch<span class="where">Settings → Look → All seasons page</span></label></li>
+  <li><label><input type="checkbox" data-k="test"> Every screen on made-up careers<span class="where">/star-retirement-dev → The screens, in order</span></label></li>
+</ul>
+
+<!-- ── CHANGED ──────────────────────────────────────────── -->
+<h2 class="chg"><i></i>Changed</h2>
+
+<div class="card">
+  <div class="hd">Every career is 20 seasons</div>
+  <div class="row"><div class="lbl">Problem</div><p>From age 33 the game asked "Do you go again?" every summer, and forced the end only after 50 seasons (age 65).</p></div>
+  <div class="row"><div class="lbl">Why</div><p>That was the old design. Your answer: 20 seasons, then you are made to retire; the number may change later (15, 30 or no limit).</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>The question from 33 is gone. A career starts at 16, so the last season is played at 35. The limit is one number in the code, and "no limit" works too.</p></div>
+  <table class="tbl">
+    <tr><th>After season…</th><th>Before</th><th>Now</th></tr>
+    <tr><td>1 to 17</td><td>carry on</td><td>carry on</td></tr>
+    <tr><td>18 to 49 (age 33+)</td><td>"Do you go again?"</td><td>carry on</td></tr>
+    <tr><td>19</td><td>"Do you go again?"</td><td class="ok">"Final season" warning</td></tr>
+    <tr><td>20</td><td>"Do you go again?"</td><td class="ok">"The final whistle"</td></tr>
+    <tr><td>50</td><td>forced to retire</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="hd">The career overview is the end screen</div>
+  <div class="row"><div class="lbl">Problem</div><p>The old end screen was a page of grey text.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Your answer to question 2: "just replace it". After Hang them up you get the seven-page career overview from the proposal, with three buttons: <b>Hall of Fame</b>, <b>New career</b> and <b>Menu</b>. No New | Old switch, as you said.</p></div>
+  <figure class="one"><img src="img/end-screen.jpg" alt="The end screen: the career overview"><figcaption>The end screen in the real game: a 20-season career, three clubs. Its bar: Hall of Fame · New career · Menu.</figcaption></figure>
+</div>
+
+<!-- ── ADDED ────────────────────────────────────────────── -->
+<h2 class="add"><i></i>Added</h2>
+
+<div class="card">
+  <div class="hd">"Final season" warning, after season 19</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"Before you choose whether to transfer or to stay at your club, a pop-up saying this is your final season before retirement. End your career in the right way."</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>After the season-19 Ballon d'Or night and before the transfer window: FINAL SEASON, "Season 20 is your last before retirement. End your career the right way." A strip of 20 squares shows every season in your club's colours, with the last one gold. Continue opens the transfer window as normal. Refreshing on it brings it back (seen with the test-mode bug below held off; signed-in players do not hit that bug, read in the code).</p></div>
+  <div class="pair">
+    <figure><img src="img/final-season.jpg" alt="Final season warning"><figcaption>After season 19.</figcaption></figure>
+    <figure><img src="img/final-whistle.jpg" alt="The final whistle"><figcaption>After season 20: Hang them up.</figcaption></figure>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">All seasons page: the chart, the cabinet and every season</div>
+  <div class="row"><div class="lbl">Asked for</div><p>Put the overview's seasons list, the goals-by-season chart and the cabinet into the in-game All seasons page.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Stats → All seasons now shows: six big numbers, Goals by season (bars in each club's colour, the best season crowned), the best season, the cabinet with your awards under it, every season (newest first; tap one for who won what), and one row per club. The same drawing as the end screen, so the two always match.</p></div>
+  <figure class="one"><img src="img/all-seasons-game.jpg" alt="All seasons page"><figcaption>In the real game, 7 seasons into a career (the sandbox has no real players, so the clubs are made up).</figcaption></figure>
+  <p class="cap">Switch back: Settings → Look → <b>All seasons page: New | Old</b>. Old is the three tables, as before.</p>
+</div>
+
+<div class="card">
+  <div class="hd">The test page shows every new screen</div>
+  <div class="row"><div class="lbl">Fix</div><p>/star-retirement-dev: five made-up 20-season careers ("Quiet one" replaced "Stops at 33") and four buttons, in the order a player meets them: the final-season warning, the final whistle, the overview, the Hall of Fame. A fifth shows the All seasons page. Nothing is saved.</p></div>
+</div>
+
+<!-- ── FIXED DURING THE PLAYTEST ────────────────────────── -->
+<h2 class="fix"><i></i>Fixed (found by the playtest)</h2>
+<ul class="n">
+  <li><div class="hd">The Ballon d'Or button said "Continue to next season" after season 20</div><div class="dt">There is no next season then: the final whistle is next. It now says "Continue".</div></li>
+  <li><div class="hd">A Hall card could name the wrong club</div><div class="dt">It counted only seasons with games in them; the overview counts every season. A player with 9 seasons at one club and 10 at the next was shown under the first. It now counts the same way as the overview. New test.</div></li>
+  <li><div class="hd">The final-season warning and the final whistle sat in the top half of the screen</div><div class="dt">They are now in the middle on a tall phone, and still fit a short one (390 × 664) without scrolling.</div></li>
+</ul>
+
+<!-- ── FIXED (part 1, earlier today) ────────────────────── -->
+<h2 class="fix"><i></i>Fixed (part 1, earlier today)</h2>
+<ul class="n">
+  <li><div class="hd">The last season's Ballon d'Or, Golden Boot and Player of the Season were never counted</div><div class="dt">Retiring skipped the end-of-season step that counts them. It now runs it. Seen: a test career that won the Ballon d'Or in its last season showed "1× Ballon d'Or".</div></li>
+  <li><div class="hd">A season's row named the wrong club after a summer move</div><div class="dt">Moving at the end of a season made that season's history describe the new club (finish, wage, money). It now records the club you played for. Five new checks fail on the old code.</div></li>
+  <li><div class="hd">Who won what is recorded every season</div><div class="dt">Every winner, the Ballon d'Or top three and your own place, from now on. It fills the overview's "Who won" page. Older seasons stay blank: they were never recorded.</div></li>
+</ul>
+
+<!-- ── SEEN ─────────────────────────────────────────────── -->
+<h2 class="seen"><i></i>Seen in a browser</h2>
+<ul class="n" id="seen">
+  <li><div class="hd">Seen: the title screen's Hall of Fame button, the Hall, a Hall career's overview, the end screen with its three buttons</div><div class="dt">The real game, signed out, phone size. A retired save went into the Hall by itself (3 careers listed). No errors from the game itself.</div></li>
+  <li><div class="hd">Seen on the test page: the final-season warning, the final whistle, the All seasons page</div><div class="dt">The same components the game uses.</div></li>
+  <li><div class="hd">Played through in the real game: two 20-season careers, end to end</div><div class="dt">Dev Skip to season 19 → Ballon d'Or night → Final season → transfer window (one stayed, one moved for the last season) → season 20 → the final whistle → Hang them up → the overview (all 7 pages) → Hall of Fame → Menu → title ("2 careers") → New career. Then Stats → All seasons, New and Old. No errors from the game itself. Every squad was made up: the test machine cannot reach the database.</div></li>
+  <li><div class="hd">Not seen</div><div class="dt">The cloud half of the Hall (needs the database file and a signed-in player), the Old UI's ending, and winning the Ballon d'Or in season 20. Matches were simulated, not played.</div></li>
+</ul>
+
+<!-- ── QUESTIONS ANSWERED ───────────────────────────────── -->
+<h2 class="dec"><i></i>Your answers, and question 4 explained</h2>
+<ul class="n">
+  <li><div class="hd">1. What happens after retiring</div><div class="dt">You asked for full plans before choosing. They are on their own page: A, B, C and D, the farewell match, records, chairman or manager, the share card and the online Hall. <a href="https://claude.ai/artifact/DPNpkyaPoyHWj6xuLpGvGG">Open the plans</a>. C (the Hall of Fame) is built.</div></li>
+  <li><div class="hd">2. Put the overview in the game</div><div class="dt">Done: it replaced the old end screen, with no switch.</div></li>
+  <li><div class="hd">3. When you are made to retire</div><div class="dt">After season 20, at 35.</div></li>
+  <li><div class="hd">4. "Stop deleting retired careers?" (you weren't sure what it meant)</div><div class="dt">It asked whether "Start a new career" should stop wiping the career you just finished. Your "it should not delete your career" answered it: that is the Hall of Fame.</div></li>
+</ul>
+
+<!-- ── KNOWN ISSUES ─────────────────────────────────────── -->
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="alert">
+  <div class="t">One database file to run</div>
+  <p><code>supabase/migrations/star_hall_of_fame.sql</code>, in the Supabase SQL Editor. Until then the Hall stays on the phone it was made on (it says "Kept on this device for now"). Nothing breaks without it.</p>
+</div>
+<ul class="n">
+  <li><div class="hd">The world does not age <span class="pill p-amb">found, not fixed</span></div><div class="dt">Other clubs' players never get older or retire: only your own age goes up. After 20 seasons the squads are the same people at the same ages, apart from transfers. Read in the code, not seen in a long game. It is question 2 on the plans page.</div></li>
+  <li><div class="hd">A save already past season 20 retires at the end of the season it is in</div><div class="dt">Only saves from before this change (the old rules let you play on). It gets the final whistle, but no warning first.</div></li>
+  <li><div class="hd">The Old UI has no warning screen and no Hall button</div><div class="dt">The Old UI is frozen. It follows the 20-season rule (at season 20 its old screen says "That is the end of it") and its retired careers still go in the Hall; you see them from the New UI's title screen.</div></li>
+  <li><div class="hd">Signed out on a test machine, a refresh on the Ballon d'Or night can land on Home</div><div class="dt">Carried from part 1. Test mode only; signed-in saves are not affected (read in the code).</div></li>
+  <li><div class="hd">Outside the Premier League, the Champions League winner can come from your own division</div><div class="dt">Carried from part 1: about 1 season in 20 a Championship club "wins" it (worked out, not measured).</div></li>
+</ul>
+<details><summary>Small things the playtest noticed (not changed)</summary>
+  <ul>
+    <li>Offers in the last summer still say 2 years or more. The career ends after one.</li>
+    <li>No Season Awards screen after season 20. The awards still count; the final whistle comes straight after the Ballon d'Or night.</li>
+    <li>Home in season 20 has no "final season" mark.</li>
+    <li>All seasons counts the season being played as a season at the club; the old tables did not (7 against 6, mid-season).</li>
+  </ul>
+</details>
+<details><summary>Still open from v0.6 (not touched this round)</summary>
+  <ul>
+    <li>The power-shot wind-up has no leg pull-back (test match).</li>
+    <li>The chance after a dribble pass may play out too fast to read.</li>
+    <li>Dribble team-mates are plain blue shirts, and the pass is instant.</li>
+    <li>Some test screens get the easier free-kick keeper.</li>
+    <li>Some menu screens can be taller than the phone.</li>
+  </ul>
+  <p>Closed since v0.6 by the others: the six database security holes (the file was run) and the test pages without a login check (locked in Harry's v0.29).</p>
+</details>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Your choices on the plans page</div><div class="dt">My suggested order starts with "your records live on" and the share card, both small.</div></li>
+</ul>
+
+<!-- ── HISTORY ──────────────────────────────────────────── -->
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.6 — 5 Oct 2026 — keepers made human, dribble passes, new shots in the test match</summary>
+  <p><b>Fixed:</b> trial free kicks and penalties too hard · five-a-side keepers never dived · no way back from several screens · Goalie Mode scrolled.</p>
+  <p><b>Added:</b> dribble passes with green/amber/red rings · knuckleball, power shot and keeper howlers (test match only) · New / Old switches for keepers and dribble runs.</p>
+  <p><b>Numbers:</b> top corners v a 90 keeper 26% → 43% · trial free kicks 36% → 48% · 243 tests.</p>
+  <p>Still open from this version: listed under Known issues above.</p>
+</details>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> five-a-side could freeze solid mid-match. <b>Added:</b> dev cheats for testing · real extra power for owning your own club.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> other players on the pitch · penalty · free kick with a real wall.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> the aim sat about 0.42 m from the cursor. <b>Added:</b> first-time strike · near/far post · shot names.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> scoring was halved · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+<footer>Branch <code>claude/recover-tierlist-website-3BajA</code> · 246 tests pass · site version 0.31. Anything unverified says so.</footer>
+
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.7';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+</script>
+
+</body>
+</html>
