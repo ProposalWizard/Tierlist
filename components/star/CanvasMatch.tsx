@@ -56,6 +56,7 @@ import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
+import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
 import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
@@ -968,7 +969,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const sceneGenRef = useRef(0);
   const attemptsRef = useRef(0);
-  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+  const strikeAtRef = useRef<{ x: number; y: number } | null>(null);
+  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
@@ -1398,12 +1400,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * (only real misses cost you).
    */
   const ratingSoFar = (t: typeof tallyRef.current, us: number, them: number): number =>
-    fairRating({ goals: t.goals, assists: t.assists, passes: t.passesCompleted, dribbles: t.dribbles, misses: t.misses, lost: t.lost }, us, them).rating;
+    fairRating({ ...t, passes: t.passesCompleted }, us, them).rating;
   /** What finaliseMatch needs beyond the old tally, and the extras for the post-match screen. */
   const matchExtras = () => {
     const t = tallyRef.current;
     return {
-      tally: { misses: t.misses, lost: t.lost, dribbles: t.dribbles },
+      tally: { misses: t.misses, lost: t.lost, dribbles: t.dribbles, goalsPen: t.goalsPen, goalsTap: t.goalsTap, goalsOut: t.goalsOut,
+        passesSafe: t.passesSafe, passesAmb: t.passesAmb, missesOn: t.missesOn, missesPen: t.missesPen, misses1v1: t.misses1v1 },
       extra: {
         ...(subOnRef.current ? { cameo: true, enteredAt: enteredAtRef.current } : {}),
         chanceLog: chanceLogRef.current.slice(),
@@ -1809,7 +1812,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   touchModeOnRef.current = touchModeOn;
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
   const [feed, setFeed] = useState<string[]>([]);
   const feedRef = useRef<string[]>([]);
   feedRef.current = feed;
@@ -4648,8 +4651,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // did not go in, or the ball lost. A pass that found its man (even if
       // he then missed) and a Touch Mode touch are not misses.
       if (kind !== "goal" && res !== "delivered" && res !== "touchOn" && !receiverShot) {
-        if (youShot) t.misses += 1; else t.lost += 1;
+        if (youShot) {
+          t.misses += 1;
+          const mk = missKind(sc.kind, res);
+          if (mk === "penalty") t.missesPen += 1;
+          else if (mk === "oneOnOne") t.misses1v1 += 1;
+          else if (mk === "on") t.missesOn += 1;
+        } else t.lost += 1;
       }
+      // Ratings revamp (Mikey, 6 Oct 2026): what kind of goal, how brave a pass.
+      if (d.goals > 0) {
+        const z = goalZone(sc.kind, strikeAtRef.current);
+        if (z === "penalty") t.goalsPen += d.goals;
+        else if (z === "tapIn") t.goalsTap += d.goals;
+        else if (z === "outside") t.goalsOut += d.goals;
+      }
+      if (d.passesCompleted > 0) {
+        const pg = passGrade(sc.passDifficulty, sc.passAmbition);
+        if (pg === "safe") t.passesSafe += d.passesCompleted;
+        else if (pg === "ambitious") t.passesAmb += d.passesCompleted;
+      }
+      strikeAtRef.current = null;
       setStats({ ...t });
       // …and one line in the list the post-match rating opens (chanceLog.ts).
       // A Touch Mode touch is the same chance carrying on, not a new one.
@@ -6188,7 +6210,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const restartSession = () => {
     sceneGenRef.current += 1;
     attemptsRef.current = 0;
-    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 };
+    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 };
     chanceLogRef.current = [];
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
@@ -6216,7 +6238,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
-    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
     setFinalStats(null);
     setFeed([]);
     setLog([]);
@@ -6587,6 +6609,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     flightDtLogRef.current = [];
     deflectionsRef.current = 0;
     matePlaysRef.current = [];
+    // Where you struck it, for the kind of goal it was (ratings revamp, lib/star/chanceRating.ts).
+    strikeAtRef.current = { x: scenarioRef.current.ball.x, y: scenarioRef.current.ball.y };
     ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so

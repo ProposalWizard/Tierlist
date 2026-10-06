@@ -88,7 +88,7 @@ import {
 } from "@/lib/star/farewell";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
-import { earnedBetween, type EarnPop } from "@/lib/star/earnPops";
+import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPops";
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -379,7 +379,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const prev = prevCareerRef.current;
     prevCareerRef.current = career;
     if (!prev || !career || prev === career) return;
-    const fresh = earnedBetween(prev, career).filter(e => !(e.kind === "achievement" && lastMatchAchRef.current.includes(e.id.slice(4))));
+    const earned = earnedBetween(prev, career);
+    // Records no longer pop up: they are kept for the season round-up
+    // (Mikey, 6 Oct 2026). Only achievements pop up here.
+    const records = earned.filter(e => e.kind === "record");
+    if (records.length) setCareer(c => (c ? { ...c, seasonRecords: addSeasonRecords(c.seasonRecords, records) } : c));
+    const fresh = earned.filter(e => e.kind === "achievement" && !lastMatchAchRef.current.includes(e.id.slice(4)));
     // Your legend lives on (lib/star/hallRecords.ts): a record from one of
     // your own retired careers, broken — checked when something that can
     // break one has just happened (a match, a trophy, an award), so a record
@@ -1685,6 +1690,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // still a youth-team player in August — and only rewrites the contract
     // for somebody who is genuinely still at the club he was loaned to.
     const next = endLoan(rolled);
+    // This season's records go to the round-up; the new season starts a fresh list.
+    next.lastSeasonRecords = from.seasonRecords ?? [];
+    next.seasonRecords = [];
     toastAchievements(newlyUnlocked);
     toastRatingChange(starsNow(from), starsNow(next));
     // ── A club you just SIGNED for is not "promoted" ──
