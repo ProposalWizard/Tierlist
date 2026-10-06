@@ -206,8 +206,20 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.30",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-05T17:30:00Z",
-      "summary": "3D people are one body with fingers, a 3D manager's office, a rebuilt garden, tester access links, the security database fix, a new match-engine rule and 244 of 244 tests passing. Harry's v0.30.",
+      "summary": "Second update: the strike-screen ball takes a tap on its whole face (live), signing scene and office about 2x faster, a lighter garden, tap to move, a real walk. First publish: 3D people are one body with fingers, a 3D manager's office, a rebuilt garden, tester access links, the security database fix, a new match-engine rule and 244 of 244 tests passing. Harry's v0.30.",
       "stats": [
+        {
+          "value": "69 of 69",
+          "label": "test taps on the strike-screen ball now land (plus 28 of 28 in the ring margin)"
+        },
+        {
+          "value": "~2x faster",
+          "label": "signing scene and manager's office (1478 to 741 ms a frame, measured on slow software drawing)"
+        },
+        {
+          "value": "177 → 127",
+          "label": "things drawn per frame at the garden gate"
+        },
         {
           "value": "3 bodies → 1",
           "label": "different 3D people in the signing scene, shop and garden"
@@ -230,6 +242,38 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "changed",
           "title": "Check these",
           "items": [
+            {
+              "title": "Strike screen: tap anywhere on the ball",
+              "detail": "A match chance, then Where do you strike it?. Tap the top, the sides and just outside the ball. No see-through halo"
+            },
+            {
+              "title": "Signing scene opens faster and the pen and laptop look right",
+              "detail": "Join a club, then the signing scene"
+            },
+            {
+              "title": "Manager's office: no black window, laptop has a screen",
+              "detail": "Talk to your manager. Tap He talks and You talk"
+            },
+            {
+              "title": "Garden is smoother and he walks, not jogs",
+              "detail": "Home, then Garden. Use the stick, then stand still"
+            },
+            {
+              "title": "Tap to move",
+              "detail": "Garden: tap the path, then the shop door. 3D shop: tap a car. Touch the stick to cancel"
+            },
+            {
+              "title": "Bench team-mates sit on the bench; the fountain is solid",
+              "detail": "Garden, the gazebo and the shop front"
+            },
+            {
+              "title": "Car park: is your player always drawn?",
+              "detail": "Garden, the car park. We lost him once in 4 test runs"
+            },
+            {
+              "title": "Does the 3D shop still lag?",
+              "detail": "3D shop, walk round the cars. Its 6 spotlights are the likely cause"
+            },
             {
               "title": "3D people are one body, with fingers",
               "detail": "Settings → Look → 3D people: New | Old. Then open the signing scene, the 3D shop and the garden"
@@ -376,6 +420,46 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Fixed",
           "items": [
             {
+              "title": "Strike screen: the whole ball takes a tap (live)",
+              "detail": "On an iPhone only the bottom 25% of the ball took a tap, with a see-through halo. Cause (reasoned, not seen): the pitch picture behind is tipped 20 degrees and Safari can let it catch taps. Now the whole screen hears the tap and checks it against the ball; a tap just outside, up to the ring, hits the nearest edge; the tipped pitch is hidden; the shadow is plain. Measured in WebKit: 69 of 69 points on the ball and 28 of 28 in the ring margin take a tap.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Not seen on a real iPhone after the fix. Harry to check.",
+                  "Still: strike-ball.jpg (green dots take a tap, red do not)."
+                ]
+              }
+            },
+            {
+              "title": "Signing scene and manager's office: about 2x faster, plus fixes",
+              "detail": "Draws per frame in talk shots 54 to 5. Pixels 1.32M to 0.74M (-44%). Signing talk shot 1478 to 741 ms a frame; office 1562 to 779 ms. First picture 640-980 ms to 77-125 ms; the loading cover stays 0.7-2.5 s longer. The room is drawn once per camera and held shots run at 30 fps. Fixed: black office window, jagged fingers and bent left thumbs (one small frill left), laptop lid, pen. Handshake is better but still rough close up. Not bugs: the You talk highlight; long hair does not clip.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Measured on slow software drawing (no graphics chip). Compare before with after only. Not seen on a phone."
+                ]
+              }
+            },
+            {
+              "title": "Garden and 3D shop: less lag, tap to move, a real walk, garden fixes",
+              "detail": "Draws per frame at the gate 177 to 127, gazebo 117 to 70, car park 108 to 85, paddock 107 to 73, shop front 111 to 81, by the shop 179 to 117. Triangles at the gazebo 263k to 114k. 3D shop 48-80 to 39-71 draws. Tap the ground to walk round obstacles (gold ring); tap a thing and its card opens; a drag does not walk; touching the stick cancels. Real upright walk (was the standing pose). Bench mates no longer 16 cm through the deck. Fountain solid. Trees rounder. Car-park camera improved, not fully fixed. iPhone safety: retry with the old body, and one restart at low quality.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Measured on the scene; seen in the pictures. Not seen on a phone.",
+                  "Open: player sometimes not drawn at the car park (once in 4 runs); the shop's 6 spotlights are likely its biggest remaining phone cost."
+                ]
+              }
+            },
+            {
+              "title": "3D speed layer: measured, not switched on yet",
+              "detail": "Fewer pixels -48%; flat bench mates -34%; office room drawn once -16% to -36%; garden shadows once -18%; smaller model files, download about halved; a background thread cuts a 3.4-5.3 s page freeze to 0.25 s. Next: smaller model files and a 3D quality setting."
+            },
+            {
+              "title": "How we build now",
+              "detail": "Builders do one quick check per change, and Harry judges 3D on his phone. Measured reason: the garden builder spent about 3 of 4.5 hours waiting on its own screenshots, because this machine has no graphics chip."
+            },
+            {
               "title": "The security database fix is done",
               "detail": "Both SQL files are run. July: votes, XP, objectives, rewards, draft rooms. August: cosmetics, streak trophies, username cooldown. A live check tried to write to four tables with no sign-in (community votes, XP, objectives, rewards). All four refused.",
               "more": {
@@ -397,32 +481,16 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "In progress",
           "items": [
             {
-              "title": "The strike-screen ball",
-              "detail": "On Where do you strike it?, only about the bottom 25% of the ball takes a tap, and a see-through ring sits round it. Being reproduced and fixed.",
-              "pill": {
-                "text": "building now",
-                "tone": "amber"
-              }
-            },
-            {
-              "title": "Two match bugs, now fixed in the engine itself",
+              "title": "Two match bugs, to be fixed in the engine itself",
               "detail": "The wall chases the loose ball after a deflected free kick. A cutback along the byline sits for 1.6 s before it is called intercepted. Each engine change will be named with before and after numbers, with the match tests run."
             },
             {
-              "title": "3D fixes, signing and office",
-              "detail": "The black office window in the close-up, jagged finger edges and bent left thumbs, fingers poking through in the handshake, the pen sitting low, the laptop lid, the You talk button highlight."
+              "title": "Smaller model files and a 3D quality setting",
+              "detail": "The speed layer is measured but not switched on."
             },
             {
-              "title": "3D fixes, garden and other",
-              "detail": "The car-park camera, the see-through fountain over your player, team-mates floating above the bench, blocky trees, the shop walk (a slowed jog), the long-hair model."
-            },
-            {
-              "title": "Less lag in the 3D scenes",
-              "detail": "Measured numbers, before and after, when it lands."
-            },
-            {
-              "title": "Tap to move",
-              "detail": "In the garden and the 3D shop, next to the joystick."
+              "title": "The player missing at the car park, and the 3D shop's spotlights",
+              "detail": "Seen once in 4 runs; the cause is not found."
             }
           ]
         },
@@ -431,8 +499,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Known issues",
           "items": [
             {
-              "title": "The new garden is heavier than the old one",
-              "detail": "Up to 263 thousand triangles at the bench, against 142 thousand. Slow phones may lag.",
+              "title": "The new garden was heavier than the old one",
+              "detail": "263 thousand triangles at the gazebo against 142 thousand. Now 114 thousand at the gazebo. Not tried on a phone.",
               "pill": {
                 "text": "being cut",
                 "tone": "amber"

@@ -486,6 +486,14 @@ always be the same."* Cut effort where it doesn't change the outcome (fewer
 re-takes, lighter checks on small items); never cut the page layout — the
 same cards, clips, speed buttons and toggles every time.
 
+**Builders check light; Harry judges 3D on his phone (Harry, 5 Oct 2026).**
+*"im more concerned about getting the time down."* Measured: the garden builder
+spent about 3 of 4½ hours waiting on its own browser checks, because this
+machine has no graphics chip (1–5 s per 3D frame). So a builder does ONE quick
+check per change (it loads, no console errors, one still), measures lag only
+when lag is the job, and stops there. Harry judges look and feel on his phone,
+with the Old toggle as the safety net. Keep each builder's job small.
+
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
