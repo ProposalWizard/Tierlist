@@ -50,6 +50,9 @@ import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
+import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { withMeshopt } from "../three3d/meshopt";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -115,7 +118,8 @@ export interface GardenController {
 }
 
 export interface GardenOptions {
-  quality?: "high" | "low";
+  /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
+  quality?: Quality3d;
   fixedStep?: number;
 }
 
@@ -153,7 +157,11 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
 };
 
 async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { renderer?: any }): Promise<GardenController> {
-  let quality = opts.quality ?? "high";
+  // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
+  // renderer (antialias is fixed when the context is made). High is the New
+  // look exactly as it was on 5 Oct 2026. ──
+  let tier: Quality3d = opts.quality ?? quality3dTier();
+  let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
@@ -166,21 +174,31 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
   own.renderer = renderer;
+  rememberGpu(renderer);
   // ── LAG (Harry, 5 Oct 2026: "find ways to minimise lag") ──
-  // Pixels: up to 1.5x a CSS pixel standing still, 1x while walking (the
-  // picture is moving, so the softer frame isn't seen; a phone's screen has
-  // 2-3x, so this is 2.25x fewer pixels to colour while you walk). "low": 1x.
+  // Pixels: the tier's still cap standing still (High 1.5x a CSS pixel), its
+  // moving cap while walking (High 1x: the picture is moving, so the softer
+  // frame isn't seen; a phone's screen has 2-3x, so this is 2.25x fewer
+  // pixels to colour while you walk). While walking, dynamic resolution may
+  // take the moving picture a little lower still if frames are slow.
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, quality === "high" ? 1.5 : 1);
-  const movePR = () => Math.min(dpr, 1);
+  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  let dynPR = Math.min(dpr, prof.movePixelRatio);
+  const makeDyn = () => new DynamicResolution(
+    { setPixelRatio: (v: number) => { dynPR = v; } },
+    { maxPixelRatio: prof.movePixelRatio, minPixelRatio: prof.minPixelRatio, fpsCap: prof.fpsCap },
+    { step: 0.125, devicePixelRatio: dpr },
+  );
+  let dyn = makeDyn();
+  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = look.exp;
-  renderer.shadowMap.enabled = quality === "high";
+  renderer.shadowMap.enabled = prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // The sun's shadow is drawn again only when something that casts one has
   // moved (you, or a car arriving): standing still costs no shadow pass.
@@ -330,8 +348,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const nightLights: any[] = [];
   const sun = new THREE.DirectionalLight(look.sun, look.sunI);
   sun.position.copy(sunDir).multiplyScalar(40);
-  sun.castShadow = quality === "high";
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.castShadow = prof.shadows;
+  const SUN_MAP = 2048; // High: the full map; Medium: half (shadowSizeFor)
+  sun.shadow.mapSize.set(shadowSizeFor(prof, SUN_MAP) || SUN_MAP, shadowSizeFor(prof, SUN_MAP) || SUN_MAP);
   // one fixed shadow over the whole garden (it used to follow him, so it had
   // to be redrawn every frame); redrawn only when a caster moves
   Object.assign(sun.shadow.camera, { left: -21, right: 21, top: 21, bottom: -21, near: 1, far: 100 });
@@ -406,7 +425,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   draco.setDecoderPath("/star/shop3d/draco/");
   draco.setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(draco);
+  loader.setDRACOLoader(draco); // props.glb
+  await withMeshopt(loader); // people, clips, horse, bird (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
   const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
   // You are the 3D shop's own player: the approved people3d body when the
@@ -1248,7 +1268,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     box3.getCenter(C); box3.getSize(size);
     const R = size.length() / 2 + 0.05;
     const half = renderer.capabilities.isWebGL2 && (renderer.extensions.has("EXT_color_buffer_half_float") || renderer.extensions.has("EXT_color_buffer_float"));
-    const RES = quality === "high" ? 512 : 256;
+    const RES = tier === "low" ? 256 : 512;
     const rt = new THREE.WebGLRenderTarget(RES, RES, { type: half ? THREE.HalfFloatType : THREE.UnsignedByteType, depthBuffer: true });
     const cam = new THREE.OrthographicCamera(-R, R, R, -R, 0.1, 60);
     cam.layers.set(layer);
@@ -1315,13 +1335,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const st0 = data.arrive === "shop" ? START_SHOP : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
+  /** The people's outlines (hidden if the scene steps down to Low). */
+  const outlines: any[] = [];
   const mates: { root: any; mixer: any; drink?: { a: any; sit: any; next: number; t: number }; upright?: { a: any; phase: number } }[] = [];
   let playerBlob: any;
   if (newPerson) {
     // exactly as the 3D shop builds him (shop3d/scene.ts): the same body,
     // the same outline, his own skin, hair and the club kit with his number
     const SK = SkeletonUtils.default ?? SkeletonUtils;
-    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
+    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    outlines.push(person.outline);
     dressPerson3d(THREE, person, {
       skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12",
       kit: data.kit, number: canvasTex(numberCanvas(data.number, "#ffffff")),
@@ -1343,7 +1366,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
     data.mates.slice(0, 3).forEach((num, i) => {
-      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
+      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+      outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
       relaxHands(THREE, m);
       const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
@@ -1657,7 +1681,24 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
   // the frame limiter and the pixels: see the renderer above
   let acc = 0, busy = true, busyT = 0, stillT = 0, shadowRenders = 0, drawn = 0, lastShadowX = NaN, lastShadowZ = NaN, lastShadowYaw = NaN;
-  let capAlways = false; // a phone still too slow after "low": 30 a second all the time
+  let capAlways = false; // a phone still too slow at Low: 30 a second all the time
+  /** Too slow for three seconds: one tier down (High → Medium → Low), never
+   *  straight to the bottom. Antialias stays (it is fixed with the context). */
+  const stepDown = (): boolean => {
+    const next = stepDownTier(tier);
+    if (!next) return false;
+    tier = next; prof = TIER_PROFILES[tier];
+    dyn = makeDyn(); dynPR = Math.min(dpr, prof.movePixelRatio);
+    pr = stillPR(); renderer.setPixelRatio(pr);
+    if (!prof.shadows) { sun.castShadow = false; renderer.shadowMap.enabled = false; }
+    else {
+      const n = shadowSizeFor(prof, SUN_MAP);
+      if (n !== sun.shadow.mapSize.x) { sun.shadow.map?.dispose(); sun.shadow.map = null; sun.shadow.mapSize.set(n, n); shadowDirty = true; }
+    }
+    if (!prof.outlines) for (const o of outlines) o.visible = false;
+    resize();
+    return true;
+  };
 
   // Warm up: build every shader before the first frame, so the first steps
   // don't stutter while the phone compiles them.
@@ -1673,9 +1714,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     if (opts.fixedStep) dt = opts.fixedStep;
     else {
       // standing still: 30 pictures a second is plenty (the fountain, the
-      // bench and the horse still move); walking or turning: every frame
+      // bench and the horse still move); walking or turning: the tier's cap
+      // (High and Medium every frame, Low 30)
       acc += raw;
-      if ((!busy || capAlways) && acc < 1 / 31) return;
+      const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
       acc = 0;
     }
@@ -1942,7 +1985,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // pixels; still: 30 a second at full pixels
     busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
-    if (!opts.fixedStep && quality === "high") {
+    if (!opts.fixedStep) {
+      // dynamic resolution: judged only while moving at the full cap (the
+      // still picture rests at 30 a second on purpose)
+      if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
       const wantPR = busyT > 0.25 ? movePR() : stillT > 0.5 ? stillPR() : pr;
       if (wantPR !== pr) { pr = wantPR; renderer.setPixelRatio(pr); }
     }
@@ -1954,14 +2000,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       cb.onFps(fps);
       frames = 0; fpsT0 = nowMs;
       if (!opts.fixedStep) {
-        // too slow for three seconds: fewer pixels and no shadows; still too
-        // slow after that: 30 frames a second all the time
-        const slow = fps < (busy && !capAlways ? 28 : 22);
+        // too slow for three seconds: one tier down; still too slow at Low:
+        // 30 frames a second all the time
+        const slow = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22);
         slowSeconds = slow ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3 && quality === "high") {
-          quality = "low"; slowSeconds = 0;
-          pr = stillPR(); renderer.setPixelRatio(pr); sun.castShadow = false; renderer.shadowMap.enabled = false; resize();
-        } else if (slowSeconds >= 3 && quality === "low") capAlways = true;
+        if (slowSeconds >= 3) {
+          slowSeconds = 0;
+          if (!stepDown()) capAlways = true;
+        }
       }
     }
   });
@@ -2016,7 +2062,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3;
         shadowCalls++; shadowTris += n * (o.isInstancedMesh ? o.count : 1);
       });
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, impostor: !!impostor?.on(), carImpostor: carImpostors.some((c) => c.on()), shadowRenders, frames: drawn, quality, merged: frozen, shadowCalls, shadowTris: Math.round(shadowTris) };
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, impostor: !!impostor?.on(), carImpostor: carImpostors.some((c) => c.on()), shadowRenders, frames: drawn, quality: tier, merged: frozen, shadowCalls, shadowTris: Math.round(shadowTris) };
     },
     debug: () => {
       const sz = (o: any) => { const b = new THREE.Box3().setFromObject(o); const v = new THREE.Vector3(); b.getSize(v); return { min: b.min.toArray().map((n: number) => +n.toFixed(2)), size: v.toArray().map((n: number) => +n.toFixed(2)) }; };

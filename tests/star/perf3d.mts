@@ -4,6 +4,7 @@ import {
   DynamicResolution, FrameGate, cameraMoved, tierFromBenchMs, tierHintFromGpu, TIER_PROFILES,
   mergeStaticByMaterial, instanceRepeats, disposeObject3D,
 } from "../../lib/star/three3d/perf";
+import { autoTierFromDevice, deviceKind, stepDownTier, shadowSizeFor, parseQuality3d, quality3dTier, type DeviceInfo } from "../../lib/star/three3d/quality";
 
 /**
  * THE SHARED 3D PERFORMANCE LAYER (lib/star/three3d/perf.ts) — the parts
@@ -19,17 +20,17 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   const fake = { setPixelRatio: (v: number) => { pr = v; } } as unknown as T.WebGLRenderer;
   const prof = TIER_PROFILES.medium;
   const dyn = new DynamicResolution(fake, prof, { devicePixelRatio: 3 });
-  check(pr === 1.5, `starts at the tier ceiling (1.5), got ${pr}`);
+  check(pr === 1.25, `starts at the tier ceiling (1.25), got ${pr}`);
   let t = 1000;
   for (let i = 0; i < 40; i++) { t += 60; dyn.frame(t); } // 16 fps for 2.4 s
-  check(pr < 1.5 && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
+  check(pr < 1.25 && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
   for (let i = 0; i < 400; i++) { t += 60; dyn.frame(t); }
   check(pr === prof.minPixelRatio, `never below the floor ${prof.minPixelRatio} (got ${pr})`);
   const low = pr;
   for (let i = 0; i < 150; i++) { t += 16.7; dyn.frame(t); } // 2.5 s of fast frames
   check(pr === low, `does not climb back within 4 s (got ${pr})`);
   for (let i = 0; i < 2000; i++) { t += 16.7; dyn.frame(t); }
-  check(pr === 1.5, `fast frames climb back to the ceiling (got ${pr})`);
+  check(pr === 1.25, `fast frames climb back to the ceiling (got ${pr})`);
 }
 
 // ── an up-step that has to come straight back down is not retried for 15 s ──
@@ -71,6 +72,61 @@ check(tierHintFromGpu("Mali-T880") === "low", "old Mali is low");
 check(tierHintFromGpu("Adreno (TM) 740") === "high", "Adreno 740 is high");
 check(tierHintFromGpu("Apple GPU") === null, "iPhones are left to the benchmark");
 check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 30 fps, no shadows");
+
+// ── pause(): resting at 30 a second on purpose is not read as slow ──
+{
+  const run = (usePause: boolean) => {
+    let pr = 0;
+    const dyn = new DynamicResolution({ setPixelRatio: (v: number) => { pr = v; } }, { maxPixelRatio: 1, minPixelRatio: 0.6, fpsCap: 60 }, { step: 0.125, devicePixelRatio: 3 });
+    let t = 1000;
+    for (let round = 0; round < 4; round++) {
+      for (let i = 0; i < 60; i++) { t += 16.7; dyn.frame(t); } // walking, holding 60
+      for (let i = 0; i < 90; i++) { t += 33.3; if (usePause) dyn.pause(); else dyn.frame(t); } // standing still, 30 a second
+    }
+    return pr;
+  };
+  check(run(false) < 1, "control: judging the resting 30 a second as slow would lower the picture");
+  check(run(true) === 1, `pause(): resting at 30 doesn't lower the moving picture (got ${run(true)})`);
+}
+
+// ── each tier's caps (High must stay exactly the 5 Oct New look) ──
+{
+  const H = TIER_PROFILES.high, M = TIER_PROFILES.medium, L = TIER_PROFILES.low;
+  check(H.maxPixelRatio === 1.5 && H.movePixelRatio === 1 && H.antialias && H.shadows && H.fpsCap === 60 && H.stillFps === 30 && H.outlines,
+    "High = today's New look: 1.5 still / 1 moving, antialias, shadows, 60 moving / 30 still, outlines");
+  check(shadowSizeFor(H, 2048) === 2048 && shadowSizeFor(H, 1024) === 1024, "High keeps each scene's own shadow map (garden 2048, shop 1024)");
+  check(M.maxPixelRatio === 1.25 && !M.antialias && M.shadows && shadowSizeFor(M, 2048) === 1024 && shadowSizeFor(M, 1024) === 512 && M.fpsCap === 60 && M.outlines,
+    "Medium: 1.25 still, no antialias, half-size shadows, 60 moving, outlines");
+  check(L.maxPixelRatio === 1 && !L.antialias && !L.shadows && shadowSizeFor(L, 2048) === 0 && L.fpsCap === 30 && L.stillFps === 30 && !L.outlines,
+    "Low: 1 still, no antialias, no shadows, 30 always, no outlines");
+  for (const p of [H, M, L]) check(p.minPixelRatio <= p.movePixelRatio && p.movePixelRatio <= p.maxPixelRatio, `${p.tier}: floor <= moving <= still`);
+  check(H.maxPixelRatio > M.maxPixelRatio && M.maxPixelRatio > L.maxPixelRatio, "each tier down draws fewer pixels standing still");
+  check(stepDownTier("high") === "medium" && stepDownTier("medium") === "low" && stepDownTier("low") === null, "a slow scene steps down one tier at a time");
+  check(parseQuality3d("med") === "medium" && parseQuality3d("low") === "low" && parseQuality3d("x") === null && parseQuality3d(null) === null, "?q= on a test page");
+  check(quality3dTier() === "high", "no browser (node): Auto reads as a desktop, High");
+}
+
+// ── Auto from fake device info ──
+{
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const IPAD = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
+  const ANDROID = "Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36";
+  const DESKTOP = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36";
+  const pick = (d: DeviceInfo) => autoTierFromDevice(d);
+  check(deviceKind({ ua: IPHONE }) === "iphone" && deviceKind({ ua: IPAD, platform: "MacIntel", touchPoints: 5 }) === "ipad"
+    && deviceKind({ ua: IPAD, platform: "MacIntel", touchPoints: 0 }) === "desktop" && deviceKind({ ua: ANDROID }) === "android" && deviceKind({ ua: DESKTOP }) === "desktop",
+    "device kind: iPhone, iPad (says Mac but has touch), a real Mac, Android, desktop");
+  check(pick({ dpr: 3, ua: IPHONE, cores: 6 }) === "medium", "iPhone: Medium");
+  check(pick({ dpr: 2, ua: IPAD, platform: "MacIntel", touchPoints: 5 }) === "high", "iPad: High");
+  check(pick({ dpr: 2.625, ua: ANDROID, memoryGb: 8, cores: 8 }) === "medium", "mid-range Android (8 GB, 8 cores): Medium");
+  check(pick({ dpr: 2, ua: ANDROID, memoryGb: 2, cores: 8 }) === "low" && pick({ dpr: 2, ua: ANDROID, memoryGb: 4, cores: 4 }) === "low", "a 2 GB or 4-core Android: Low");
+  check(pick({ dpr: 3, ua: ANDROID, memoryGb: 8, cores: 8, gpuHint: "high" }) === "high", "Android with a known flagship GPU: High");
+  check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 8, cores: 8 }) === "high" && pick({ dpr: 2, ua: DESKTOP }) === "high", "desktop: High");
+  check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 4, cores: 4 }) === "medium", "a 4 GB desktop: Medium");
+  check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 8, cores: 8, gpuHint: "low" }) === "low", "software-drawn / weak GPU caps it at Low");
+  check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 8, cores: 8, gpuHint: "medium" }) === "medium", "a mid GPU caps it at Medium");
+  check(pick({ dpr: 3, ua: IPHONE, gpuHint: null }) === "medium", "iPhone's GPU says only 'Apple GPU' (no hint): still Medium");
+}
 
 // ── mergeStaticByMaterial: one draw per material, same picture ──
 {
@@ -115,4 +171,4 @@ if (problems.length) {
   for (const p of problems) console.error("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS — the shared 3D layer: render scale holds the budget without flicker, the frame gate caps and skips, merges and instances keep the picture");
+console.log("PASS — the shared 3D layer: render scale holds the budget without flicker, the frame gate caps and skips, merges and instances keep the picture; each 3D quality tier gives its caps (High = today's New look) and Auto picks a sensible tier from fake device info");
