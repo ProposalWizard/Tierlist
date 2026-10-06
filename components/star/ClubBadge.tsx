@@ -35,6 +35,22 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
     return () => { alive = false; };
   }, [club]);
 
+  // New (default): every club gets the drawn badge from Mikey's club data —
+  // shape, colours, pattern, emblem, no letters (lib/star/clubBadge.ts) —
+  // even one with a real crest saved, so they all match (Harry, 6 Oct 2026).
+  // Old: the real crest when there is one, else the initials.
+  if (look === "new") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={drawnBadgeUrl(club)}
+        alt=""
+        className="shrink-0"
+        style={{ height: size, width: size }}
+      />
+    );
+  }
+
   if (logoUrl && !failed) {
     // Reported four times now, from three different screens, as a stray
     // white/oval shape around the crest. Three earlier attempts each
@@ -59,20 +75,6 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
         className="shrink-0 object-contain p-0.5"
         style={{ height: size, width: size }}
         onError={() => setFailed(true)}
-      />
-    );
-  }
-
-  // New (default): the drawn badge from Mikey's club data — shape, colours,
-  // pattern, emblem, no letters (lib/star/clubBadge.ts). Old: the initials.
-  if (look === "new") {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={drawnBadgeUrl(club)}
-        alt=""
-        className="shrink-0"
-        style={{ height: size, width: size }}
       />
     );
   }

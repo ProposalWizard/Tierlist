@@ -16,9 +16,8 @@ Hexagon/Cross/Pentagon/Star/Heart) in lib/star/data/clubProfileData.ts.
 | 3 | /admin/badges: all 248 in a grid, ✓/✗ and redo per club, PageGuide eye | NOT STARTED |
 | 5 | Higgsfield: each draft as the reference for one consistent-style image | LATER |
 
-Open question for Harry: a club with a real crest in `club_logos` still
-shows that crest first (unchanged). Should every club use the drawn badge
-instead, so they all match? Recommended: yes.
+Decided (Harry, 6 Oct): every club uses the drawn badge under New, even one
+with a real crest in `club_logos`. Old keeps the real crest, else initials.
 
 Known: the football emblem reads a bit like a wheel at small sizes; step 2's
 symbols replace it.
