@@ -41,6 +41,79 @@ export type Facing = "up" | "left" | "right";
 // A moment worth narrating, surfaced from the physics tick to the UI once and consumed.
 export type BallEvent = "received" | "receiverShot" | "post" | "relay";
 
+/**
+ * WHO DID WHAT TO THE BALL — for the animations only (Leo, 6 Oct 2026:
+ * "i dont wanna see something happen in game thats not how it looks").
+ *
+ * Every touch the engine already makes (a shot, a pass, a clearance, a block,
+ * a team-mate taking it down, a save) is written down here as it happens, with
+ * who made it, so the picture can show THAT man doing THAT thing. Nothing in
+ * the engine reads it back: it is set beside the physics, never instead of
+ * it, and draws no random numbers. Same seeds, same match.
+ *
+ * `actor` is the same id the match screen draws each man under: "you",
+ * "follower" (the man in the box), `run${i}` (the runners, in
+ * [runner, ...secondaryRunners] order), `def${i}` (scenario.defenders order)
+ * and "keeper".
+ */
+export type BallActionKind = "shot" | "pass" | "clearance" | "block" | "touch" | "save";
+export type BallActionMode = "ground" | "volley" | "header" | "chip" | "curl";
+/** What the keeper did with it. "beaten": he went and it was past him. */
+export type SaveResult = "catch" | "parry" | "fumble" | "push" | "beaten";
+export interface BallAction {
+  kind: BallActionKind;
+  actor: string;
+  mode?: BallActionMode;
+  save?: SaveResult;
+  /** Where the ball was when it happened (metres; z is height). */
+  at?: { x: number; y: number; z: number };
+  /** A first-time strike: the touch and the shot are one contact. */
+  firstTime?: boolean;
+  /** 1, 2, 3… on this ball. */
+  seq: number;
+  /** Seconds of this ball's flight (Ball.clock) when it happened. */
+  t: number;
+}
+/** How many recent actions a ball keeps. A frame never has more than this. */
+export const BALL_ACTION_LOG = 8;
+
+/** Write one action down. Assignments only — no physics, no random numbers. */
+export function logBallAction(ball: Ball, a: Omit<BallAction, "seq" | "t">): void {
+  const seq = (ball.actionSeq ?? 0) + 1;
+  ball.actionSeq = seq;
+  const rec: BallAction = { ...a, seq, t: ball.clock ?? 0 };
+  ball.lastAction = rec;
+  const log = ball.actionLog ?? (ball.actionLog = []);
+  log.push(rec);
+  if (log.length > BALL_ACTION_LOG) log.shift();
+}
+
+/** The screen id of a runner (or the man in the box, who is not on the list). */
+function runnerActor(scenario: Scenario, r: Runner | null | undefined): string {
+  if (!r) return "follower";
+  const list = scenario.runner ? [scenario.runner, ...scenario.secondaryRunners] : scenario.secondaryRunners;
+  const i = list.indexOf(r);
+  return i >= 0 ? `run${i}` : "follower";
+}
+
+/** The defender nearest a point, as a screen id. Reads positions only. */
+function nearestDefenderActor(scenario: Scenario, p: Vec2): string | null {
+  let best = -1, bd = Infinity;
+  scenario.defenders.forEach((d, i) => {
+    const dd = Math.hypot(d.x - p.x, d.y - p.y);
+    if (dd < bd) { bd = dd; best = i; }
+  });
+  return best >= 0 ? `def${best}` : null;
+}
+
+/** A struck ball's shape, for the swing that goes with it. */
+function strikeShape(ball: Ball, header: boolean, volley: boolean, chip: boolean): BallActionMode {
+  if (header) return "header";
+  if (volley) return "volley";
+  if (chip) return "chip";
+  return Math.abs(ball.spin) > 0.6 ? "curl" : "ground";
+}
+
 export interface Ball {
   pos: Vec2;
   vel: Vec2;   // m/s, horizontal plane
@@ -134,6 +207,12 @@ export interface Ball {
    */
   curveSpinAdj?: number;
   curveVzAdj?: number;
+  /** Animation record (see BallAction). Never read by the physics. */
+  lastAction?: BallAction;
+  actionLog?: BallAction[];
+  actionSeq?: number;
+  /** Seconds this ball has been stepped. Only stamps BallAction.t. */
+  clock?: number;
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -3468,6 +3547,7 @@ function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng:
   ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
   ball.lastTouch = "attack";
   ball.event = "relay";
+  logBallAction(ball, { kind: "pass", actor: runnerActor(scenario, scenario.receivedBy), mode: "ground", at: { x: from.x, y: from.y, z: ball.z } });
   // It is a PASS. Setting `shot` here would make every other team-mate step out
   // of its way — including the man it is being played to.
   ball.shot = false;
@@ -3531,6 +3611,7 @@ function launchReceiverFollowerPass(ball: Ball, scenario: Scenario, rng: () => n
   ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
   ball.lastTouch = "attack";
   ball.event = "relay";
+  logBallAction(ball, { kind: "pass", actor: runnerActor(scenario, scenario.receivedBy), mode: "ground", at: { x: from.x, y: from.y, z: ball.z } });
   ball.shot = false;
   markLanding(ball, scenario);
 
@@ -4240,6 +4321,11 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   ball.lastTouch = "attack";
   markLanding(ball, scenario);
   ball.event = "receiverShot";
+  logBallAction(ball, {
+    kind: "shot", actor: runnerActor(scenario, scenario.receivedBy),
+    mode: strikeShape(ball, isHeader, isVolley, isChip),
+    at: { x: ball.pos.x, y: ball.pos.y, z: ball.z }, firstTime: rushed || !composed || isHeader || isVolley || undefined,
+  });
   scenario.keeper.adjusting = false;
   // It is a shot at goal, so it gets the same protection yours does: a support
   // player steps out of the way of it rather than controlling it. Without this,
@@ -4736,6 +4822,16 @@ export function launch(
   ball.youStruckAtGoal = ball.shot;
   ball.owner = ball.loose ? "none" : "you";
   markLanding(ball, scenario);
+  // Animation record only (see BallAction).
+  const at = { x: scenario.ball.x, y: scenario.ball.y, z: 0.08 };
+  logBallAction(ball, {
+    kind: ball.youStruckAtGoal ? "shot" : "pass", actor: "you", at,
+    mode: scenario.kind === "header" ? "header" : scenario.kind === "volley" ? "volley" : Math.abs(spin) > 0.6 ? "curl" : "ground",
+  });
+  if (ball.lastTouch === "defence") {
+    const by = nearestDefenderActor(scenario, scenario.ball);
+    if (by) logBallAction(ball, { kind: "clearance", actor: by, mode: "header", at });
+  }
   return ball;
 }
 
@@ -5705,7 +5801,11 @@ export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number, speed
  * A defender has it. He does not knock it back into play for you to have
  * another go at — he puts it as far from his own goal as he can.
  */
-export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario) {
+export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario,
+  /** Animation record only (see BallAction): who cleared it, and how. */
+  act?: { kind: "clearance" | "block"; actor: string; mode?: BallActionMode },
+) {
+  const at = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
   // A deliberate clearance is a deliberate play, and it puts every attacker
   // onside again. It also ends the move, so this matters only for tidiness —
   // but the law is the law.
@@ -5719,6 +5819,7 @@ export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario) {
   ball.owner = "opponent";
   ball.lastTouch = "defence";
   if (scenario) scenario.keeper.adjusting = false;
+  if (act) logBallAction(ball, { ...act, at });
 }
 
 /**
@@ -5872,6 +5973,9 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   const k = scenario.keeper;
   k.saves += 1;
   k.flash = 0.35;
+  // Animation record only (see BallAction): what he did with it.
+  const at = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
+  const logSave = (save: SaveResult) => logBallAction(ball, { kind: "save", actor: "keeper", save, at });
   // Whatever he does with it from here, he got to it — so if the move dies
   // afterwards it died because of the save, and says so.
   ball.lastTouch = "keeper";
@@ -5893,7 +5997,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // just with `lastTouch`/`deflected` already honestly set to "keeper" for
   // the commentary to read off.
   const mistakeChance = KEEPER_MISTAKE_BASE + (1 - marginNorm) * KEEPER_MISTAKE_STRETCH_BONUS;
-  if (rng() < mistakeChance) return null;
+  if (rng() < mistakeChance) { logSave("fumble"); return null; }
 
   // ── What a keeper can hold ──
   //
@@ -5930,6 +6034,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.pendingDone = true;
+    logSave("catch");
     return "caught";
   }
 
@@ -5959,6 +6064,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.pendingDone = true;
+    logSave("catch");
     return "caught";
   }
 
@@ -5996,6 +6102,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     if (rng() < 0.22) {
       k.pendingDone = true;
+      logSave("push");
       return "saved";
     }
     const side = ball.pos.x < CX ? -1 : 1;
@@ -6014,6 +6121,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.contactCd = 0.28;
     k.targetX = ball.pos.x;
     k.scrambling = true;
+    logSave("push");
     return null;
   }
 
@@ -6025,6 +6133,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.pendingDone = true;
+    logSave("catch");
     return "caught";
   }
   const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
@@ -6056,6 +6165,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // the only time he stops patrolling.
   k.targetX = ball.pos.x;
   k.scrambling = true;
+  logSave("parry");
   return null;
 }
 
@@ -6194,6 +6304,8 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
 }
 
 function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
+  // Animation clock only (BallAction.t). Read by nothing else.
+  ball.clock = (ball.clock ?? 0) + dt;
   // An offside offence was committed on a previous tick (the poacher playing a
   // ball he was flagged for). The move is dead.
   if (scenario.offsideAgainst) return "offside";
@@ -6336,7 +6448,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // the same three words. It is the same distinction the commentary has
         // always drawn and never been given the outcome to draw it with.
         const wasGoingIn = headedForGoal(ball, scenario);
-        clearBall(ball, rng, scenario);
+        clearBall(ball, rng, scenario, {
+          kind: wasGoingIn ? "block" : "clearance",
+          actor: `def${scenario.defenders.indexOf(d)}`,
+          mode: ball.z > 1.4 ? "header" : "ground",
+        });
         ball.contactCd = 0.4;
         return wasGoingIn ? "blocked" : "tackled";
       }
@@ -6371,6 +6487,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       if (dDef < dAtk) {
         ball.owner = "opponent";
         ball.lastTouch = "defence";
+        const by = nearestDefenderActor(scenario, ball.pos);
+        if (by) logBallAction(ball, { kind: "clearance", actor: by, mode: ball.z > 1.4 ? "header" : "ground", at: { x: ball.pos.x, y: ball.pos.y, z: ball.z } });
         ball.settling = true;   // let the last metre of it be seen
         // Losing a 50-50 on a ball that is already loose is not a tackle and
         // never was one — nobody took anything off you. It is the scramble
@@ -6397,6 +6515,9 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       const diveTo = k.targetX;
       const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
       if (oneDive) k.targetX = res === "caught" ? k.x : diveTo;
+      // A ball he holds stays in his hands: he does not then slide off
+      // toward wherever he had been scrambling (see the note below).
+      else if (res === "caught") k.targetX = k.x;
       if (res) return res; // a genuine catch — a push-away, tipped or parried, returns null and stays live
       // parried — ball is loose, keep simulating this tick
     }
@@ -6524,6 +6645,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // Which of them it actually reached — a man cannot be told to lay it
         // off to himself, and this is the only way to know that.
         scenario.receivedBy = r;
+        // Animation record only (see BallAction): he takes it.
+        logBallAction(ball, {
+          kind: "touch", actor: runnerActor(scenario, r),
+          mode: ball.z > 1.3 ? "header" : ball.z > 0.4 ? "volley" : "ground",
+          at: { x: tgt.x, y: tgt.y, z: ball.z },
+        });
         // He has the ball; he is no longer running to orders.
         r.commandedTo = undefined;
         // The ball is somewhere else now, and the keeper has the beat before it
@@ -6746,10 +6873,20 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // came. Committed, he finishes the dive he chose instead; and a ball he
       // holds, he lands with where he caught it.
       if (oneDive) k.targetX = outcome === "caught" ? k.x : diveTo;
+      // ── The ball goes where he catches it (Leo, 6 Oct 2026) ──
+      //
+      // resolveKeeper puts a held ball at his CURRENT x, but he has just been
+      // sent to xAt and travels there after the whistle — measured, over 234
+      // catches the ball ended up a median 0.87 m from the man holding it
+      // (168 of them more than half a metre). The catch is decided; only
+      // where the ball lies changes, so it lies where he is going. Outcome-
+      // terminal, so nothing downstream of the save can read it.
+      else if (outcome === "caught") ball.pos.x = k.targetX;
       if (outcome) return outcome;
     } else if (oneDive) {
       // Beaten while committed: nothing changes. He finishes the dive he
       // chose, or, if it is already finished, stays down.
+      logBallAction(ball, { kind: "save", actor: "keeper", save: "beaten", at: { x: xAt, y: k.y, z: Math.max(0, zAt) } });
     } else {
       // ── Beaten, but not stood there watching it happen ──
       //
@@ -6766,6 +6903,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       const dir = Math.sign(xAt - k.x) || 1;
       k.targetX = k.x + dir * Math.min(Math.abs(xAt - k.x), attempt.reach);
       k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, null);
+      logBallAction(ball, { kind: "save", actor: "keeper", save: "beaten", at: { x: xAt, y: k.y, z: Math.max(0, zAt) } });
     }
   }
 

@@ -58,6 +58,31 @@ export interface Pose3d {
   armLead?: number;
   /** Which foot a kick is struck with: +1 right, −1 left (lib/star/kickFoot.ts). */
   kickFoot?: number;
+  /** See BodyPose.trailDrop (fiveASide/render.ts). */
+  trailDrop?: number;
+  /** See BodyPose.handsIn. */
+  handsIn?: number;
+  /** See BodyPose.swingAmp / swingCross / plantBend. */
+  swingAmp?: number;
+  swingCross?: number;
+  plantBend?: number;
+}
+
+/** The two hand-shaping extras (trailDrop, handsIn), applied to where a hand
+ *  would otherwise be. Shared by both skins so they move one way. With both
+ *  at 0 it returns the hand exactly where it was. */
+export function shapeHand(
+  r: number, s: number, x: number, y: number, armFromY: number,
+  lead: number, trailDrop: number, handsIn: number,
+): [number, number] {
+  const isLead = lead !== 0 && Math.sign(s) === Math.sign(lead);
+  const trail = lead !== 0 && !isLead ? trailDrop : 0;
+  // The reaching arm goes up over his head, so at full stretch it carries on
+  // past his head toward the ball rather than out sideways off his shoulder.
+  const reach = isLead ? trailDrop * 0.85 : 0;
+  const x1 = x + (s * r * 0.3 - x) * trail + (s * r * 0.16 - x) * reach;
+  const y1 = y + (armFromY + r * 0.5 - y) * trail + (armFromY - r * 0.92 - y) * reach;
+  return [x1 + (s * r * 0.13 - x1) * handsIn, y1 + (armFromY + r * 0.3 - y1) * handsIn];
 }
 
 /**
@@ -73,11 +98,16 @@ export interface Pose3d {
  * Harry, testing v0.25: the first cut swung the foot 1 px out and 3 px up on
  * a phone, so both feet read the same; this is the swing he can see.
  */
-export function oneFootKickFeet(r: number, feetY: number, kick: number, kickFoot: number): { lx: number; ly: number; rx: number; ry: number } {
+export function oneFootKickFeet(
+  r: number, feetY: number, kick: number, kickFoot: number,
+  amp = 1, cross = 0, plant = 0,
+): { lx: number; ly: number; rx: number; ry: number } {
   const kf = Math.sign(kickFoot) || 1;
-  const strikeX = kf * r * (0.19 + kick * 0.24);
-  const strikeY = feetY * r - kick * r * 0.3;
-  const plantX = -kf * r * 0.12;
+  // amp/cross/plant are the Animations dials (BodyPose.swingAmp etc.); at
+  // 1/0/0 these are exactly the old numbers.
+  const strikeX = kf * r * (0.19 + kick * 0.24 * amp) - kf * r * cross * 0.5 * kick;
+  const strikeY = feetY * r - kick * r * 0.3 * amp;
+  const plantX = -kf * r * (0.12 + 0.07 * plant);
   const plantY = feetY * r;
   return kf > 0
     ? { lx: plantX, ly: plantY, rx: strikeX, ry: strikeY }
@@ -411,6 +441,9 @@ export function paintBody3d(
     armLead: Math.sign(pose?.armLead ?? ((pose?.kick ?? 0) > 0 && pose?.kickFoot ? -pose.kickFoot : 0)),
     gloves: !!pose?.gloves,
     kickFoot: (pose?.kick ?? 0) > 0 ? Math.sign(pose?.kickFoot ?? 0) : 0,
+    // The animation extras (lib/star/actionAnim.ts); 0 for every other figure.
+    trailDrop: q(pose?.trailDrop, 0, 0.125), handsIn: q(pose?.handsIn, 0, 0.125),
+    swingAmp: q(pose?.swingAmp, 1, 0.0625), swingCross: q(pose?.swingCross, 0, 0.0625), plantBend: q(pose?.plantBend, 0, 0.125),
   };
   const t = ctx.getTransform();
   const k = Math.hypot(t.a, t.b) || 1; // device pixels per local unit
@@ -419,7 +452,9 @@ export function paintBody3d(
     // Size in 2-device-pixel steps, then stamp the cached picture scaled to r.
     const rq = Math.max(2, Math.round(rDev / 2) * 2) / k;
     const key = [look.shirt, look.shorts, look.trim, skin, mode, mode === "drawn" ? hk : "",
-      qp.armSpread, qp.armLift, qp.crouch, qp.legSwing, qp.kick, qp.armLead, qp.kickFoot, qp.gloves ? 1 : 0, Math.round(rq * k)].join("|");
+      qp.armSpread, qp.armLift, qp.crouch, qp.legSwing, qp.kick, qp.armLead, qp.kickFoot, qp.gloves ? 1 : 0, Math.round(rq * k),
+      ...(qp.trailDrop || qp.handsIn ? [qp.trailDrop, qp.handsIn] : []),
+      ...(qp.swingAmp !== 1 || qp.swingCross || qp.plantBend ? ["s", qp.swingAmp, qp.swingCross, qp.plantBend] : [])].join("|");
     let sp = sprites.get(key);
     if (sp) { sprites.delete(key); sprites.set(key, sp); }
     else {
@@ -491,7 +526,9 @@ function drawBody3d(
   const footRise = Math.abs(stride) * 0.15;
   // A kick with a named foot swings that one leg (oneFootKickFeet); without
   // one, both legs open as they always have.
-  const one = kick > 0 && pose?.kickFoot ? oneFootKickFeet(r, A.FEET_Y, kick, pose.kickFoot) : null;
+  const one = kick > 0 && pose?.kickFoot ? oneFootKickFeet(r, A.FEET_Y, kick, pose.kickFoot, pose.swingAmp, pose.swingCross, pose.plantBend) : null;
+  const plant3d = one ? (pose?.plantBend ?? 0) : 0;
+  const plantSide3d = -Math.sign(pose?.kickFoot ?? 0);
   const footL = one ? one.lx : -r * 0.19 - stride * 0.35;
   const footR = one ? one.rx : r * 0.19 + stride * 0.35;
   const footYL = one ? one.ly : A.FEET_Y * r - footRise;
@@ -503,7 +540,7 @@ function drawBody3d(
     const hip: P = [hx, hipY];
     const ankle: P = [fx, footY - r * 0.07];
     // A little outward bend at the knee, so a leg is two pieces, not a pole.
-    const knee: P = [(hx + fx) / 2 + Math.sign(hx) * r * 0.025, (hipY + ankle[1]) / 2];
+    const knee: P = [(hx + fx) / 2 + Math.sign(hx) * r * (0.025 + (Math.sign(hx) === plantSide3d ? 0.09 * plant3d : 0)), (hipY + ankle[1]) / 2];
     limb(ctx, hip, knee, r * 0.2, r * 0.155, skin);
     limb(ctx, knee, ankle, r * 0.155, r * 0.11, skin);
     const sockTop = along(knee, ankle, 0.22);
@@ -559,9 +596,12 @@ function drawBody3d(
   const handYFor = (s: number) => handY - s * swing * r * 0.22;
   const lead = pose?.armLead ?? 0;
   const handXFor = (s: number) => s * outX * (lead === 0 || Math.sign(s) === Math.sign(lead) ? 1 : 0.62);
+  const tDrop = pose?.trailDrop ?? 0, hIn = pose?.handsIn ?? 0;
   const arm = (s: number) => {
     const sh: P = [s * shW * 0.82, armFromY];
-    const hand: P = [handXFor(s), handYFor(s)];
+    const hand: P = tDrop > 0 || hIn > 0
+      ? shapeHand(r, s, handXFor(s), handYFor(s), armFromY, lead, tDrop, hIn)
+      : [handXFor(s), handYFor(s)];
     const elbow: P = [(sh[0] + hand[0]) / 2 + s * r * 0.035, (sh[1] + hand[1]) / 2];
     return { sh, elbow, hand };
   };
