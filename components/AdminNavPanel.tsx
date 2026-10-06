@@ -147,6 +147,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Scenario Gallery", href: "/star-gallery-dev" },
       { name: "New Chances", href: "/star-chances-dev" },
       { name: "Play Area", href: "/star-play-dev" },
+      { name: "Animations", href: "/star-animations-dev" },
       { name: "Match Radar", href: "/star-radar-dev" },
       { name: "Store (test)", href: "/star-store-dev" },
       { name: "Blender 3D", href: "/star-blender-dev" },

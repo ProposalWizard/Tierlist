@@ -27,11 +27,250 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.32",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T04:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6",
+      "summary": "New animations: what you see in a match now matches what happens. One-hand keeper saves, catches, parries and fumbles; team-mates take touches and shoot, pass, head, block and clear with their own legs. A look-only layer with a New | Old switch and a test page. Stills only; short gameplay clips come after.",
+      "stats": [
+        {
+          "value": "5,200 chances: same results",
+          "label": "13 kinds x 400 seeds, every ball, keeper and defender identical"
+        },
+        {
+          "value": "250 / 250",
+          "label": "tests pass"
+        },
+        {
+          "value": "16 dials, 8 switches",
+          "label": "on the new Animations test page"
+        },
+        {
+          "value": "0 physics changes",
+          "label": "1 position fix, flagged"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Keeper top-corner save, one hand",
+              "detail": "Infinite Highlights or a match: shoot at the top corner."
+            },
+            {
+              "title": "Keeper catch held, parry then get-up, fumble",
+              "detail": "A match, or Animations test page → Keeper."
+            },
+            {
+              "title": "Team-mate touch (foot, thigh, chest)",
+              "detail": "A match: a pass to a team-mate."
+            },
+            {
+              "title": "Team-mate shot (5 shapes) and pass swing",
+              "detail": "Infinite Highlights, or Animations → Shots / Passes."
+            },
+            {
+              "title": "Header jump, block, clearance",
+              "detail": "A corner or cross; Animations → Defenders."
+            },
+            {
+              "title": "Contact flashes",
+              "detail": "Where the ball meets a boot or a glove."
+            },
+            {
+              "title": "Settings → Look → Animations: New | Old",
+              "detail": "Old plays the game exactly as before."
+            },
+            {
+              "title": "Play Area → Animations test page, dials and switches",
+              "detail": "Testers and admins."
+            },
+            {
+              "title": "A caught ball ends where the keeper is",
+              "detail": "A match: any caught shot."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: what you see matches what happens",
+          "items": [
+            {
+              "title": "Saves, touches, shots, headers and blocks looked the same, or like nothing",
+              "detail": "A team-mate's shot made YOUR figure kick; a defender cleared with no leg moving; every save was the same dive. The match had four outfield poses and one shared kick timer, and the engine never recorded who did what. Now the engine writes down who touched the ball and how (record only, no physics change), each player has his own animation clock, and each situation has its own pose. It is a look-only layer: Settings → Look → Animations: New | Old."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Keeper saves",
+              "detail": "Top corner: one glove over his head, other arm tucked, diagonal body (before: both arms flung, body flat). Catch: ball held to his chest. Parry: palms it, gets up after about 0.75 s. Fumble: gathers it, hands fly apart, ball spills, he starts to rise. A 0.2 s white flash where ball meets hands."
+            },
+            {
+              "title": "Team-mate touch",
+              "detail": "He cushions the ball with foot, thigh or chest by its height, then sets himself, inside the same 0.45 s. Before: an arms-open pose, first runner only."
+            },
+            {
+              "title": "Team-mate shot and pass with his own leg",
+              "detail": "Five shapes: driven, curl, volley, chip, side-foot pass. Bent standing leg, balancing arm, 0.16 s contact flash, ground dust. No backswing: the animation starts at contact. Before: your figure kicked (a bug)."
+            },
+            {
+              "title": "The Animations test page",
+              "detail": "Every animation looping, Old v New or v First version; Flat or Shaded; right or left foot; 1x, 1/2x, 1/4x, Pause and a frame slider. 16 dials and 8 switches (one off = only that family draws the Old way). Reset, First version sizes, Copy settings. Play Area → Animations; Admin menu → Star Career → Animations; a Settings link for testers."
+            },
+            {
+              "title": "Master switch",
+              "detail": "Settings → Look → Animations: New | Old, default New."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Strikes are bigger than the first version (asked for by Leo)",
+              "detail": "The first version was faint at match size. Boot rise / boot travel / body lean on a 40 px figure: driven 12→22 px / 15→37 px / 0°→14°; curl 11→21 / 15→32 / 11°→29°; volley 12→22 / 15→40 / 24°→38°; chip 7→9 / 8→15 / 0°→5°; side-foot pass 7→11 / 10→18 / 0°→6°; clearance 12→19 / 15→32 / 0°→17°. Driven-shot kicking leg widest angle 42°→82°."
+            },
+            {
+              "title": "Headers, blocks, clearances",
+              "detail": "Header: a real 0.55 s jump, height 0.62→0.74 of the figure's radius. Block: leg and body across the ball's path for 0.6 s, reach 1.25x. Clearance: big hoof, swing 1.6x; a headed clearance jumps. Touch 1.25x."
+            },
+            {
+              "title": "3D sprite players",
+              "detail": "A team-mate or defender who shoots, passes or clears plays the existing kick clip; a header lifts the sprite; a block tilts it; the keeper's dive clip is timed to the save. No new clips baked. Type-checked only."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "A caught ball stayed where the keeper stood while he slid away",
+              "detail": "Over 234 catches the gap fell from a median 0.87 m (168 over half a metre) to a median 0.03 m (1 over half a metre). Outcome counts identical. This changes where the keeper and a caught ball end up, the only non-visual change; needs Leo's OK (question 4).",
+              "bars": [
+                {
+                  "label": "Median gap (m)",
+                  "was": 0.87,
+                  "now": 0.03,
+                  "state": "good"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Seen / not seen",
+          "items": [
+            {
+              "title": "Measured: no physics change",
+              "detail": "5,200 seeded chances (13 kinds x 400 seeds) hash ball, outcome, keeper, defenders and the next random number: identical to before the animation record was added (fingerprint 5c8b2374…). Outcome counts identical: goal 849, saved 794, blocked 540, wide 695, caught 234, over 294, out 531, tackled 391, rebound 416, post 70, offside 30, short 25, delivered 331."
+            },
+            {
+              "title": "Measured: tests",
+              "detail": "Match tests 7/7 with the same output except two figures that read where the ball lies after a catch (keeperDive 38.4→38.5%; keeperOneDive old-keeper saves behind his dive 40→51 and 38→54 of 200). Full star suite 250/250. tsc clean; build passes; the one-engine guard untouched."
+            },
+            {
+              "title": "Seen",
+              "detail": "Pose sheets and the test page at phone size; a real highlights page loading with no page errors."
+            },
+            {
+              "title": "NOT seen",
+              "detail": "Any strike in a real match (only pose sheets and the gallery); 3D sprite players (type-checked only, no graphics chip here); real squads (no database in the sandbox). Gallery keeper rows use a stand-in dive. \"Switch off draws Old\" checked by eye on the test page only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Questions for Leo",
+          "items": [
+            {
+              "title": "1. Strike size: right now, bigger, or smaller?",
+              "detail": "Dials: strike swing size, strike lean."
+            },
+            {
+              "title": "2. de Gea lean 1.15 rad: too much, too little, or fine?",
+              "detail": "Dial: keeper one-hand lean."
+            },
+            {
+              "title": "3. Pin the caught ball to his hands in the classic view?",
+              "detail": "Today it may sit a little off the gloves."
+            },
+            {
+              "title": "4. Keep the catch-position fix?",
+              "detail": "The only non-visual change."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The 3D keeper has no catch-hold or get-up, and 3D has no new clips",
+              "detail": "The source models the sprite baker needs (player-idle, jog, sprint, kick, celebrate, keeper-dive) were never committed to the repo. Blocked on Harry (whoever baked them on 3 Oct 2026).",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "A caught ball may sit slightly off the gloves in the classic view",
+              "detail": "The figure is drawn a little offset from the engine's position."
+            },
+            {
+              "title": "Strikes may still be subtle on a phone",
+              "detail": "Dials exist."
+            },
+            {
+              "title": "The earlier-noted dev-page gaps are untouched",
+              "detail": "Nothing new found."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Short \"after\" clips of gameplay",
+              "detail": "Filmed after this page is up, then added to the same page."
+            },
+            {
+              "title": "3D clips",
+              "detail": "Once the source models exist."
+            },
+            {
+              "title": "Tune the dials from Leo's phone feedback"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.7 (site 0.31) — 6 Oct 2026 — retirement, part 2: 20 seasons and a Hall of Fame",
+              "detail": "Every career is 20 seasons; a Final season warning after season 19 and a final whistle after 20; the career overview is the end screen; every retired career is kept in a Hall of Fame; a new All seasons page; the last season's awards are counted. 108 → 15 KB per Hall copy; 246 tests. Still open: the Hall's database file (star_hall_of_fame.sql), the world does not age, the Old UI has no warning screen. Artifact: https://claude.ai/artifact/MmprHgEH6epYpooT4Cze7r"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.31",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-06T00:30:00Z",
       "updatedAt": null,
-      "artifactUrl": "https://claude.ai/artifact/MmprHgEH6epYpooT4Cze7r",
+      "artifactUrl": null,
       "summary": "Retirement, part 2: every career is 20 seasons with a final-season warning after season 19, the career overview is the end screen, every retired career is kept in a Hall of Fame on the title screen, and the All seasons page gets the goals chart, the cabinet and every season. Plans for everything after retiring: https://claude.ai/artifact/DPNpkyaPoyHWj6xuLpGvGG",
       "stats": [
         {

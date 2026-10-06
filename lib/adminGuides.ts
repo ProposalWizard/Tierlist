@@ -484,7 +484,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "A tester sees Road to Ballon d'Or → Settings → Developer tools (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
-      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
+      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Animations, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
       "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
       "Testers never get admin pages or anything that changes what other players see.",
     ],
@@ -690,6 +690,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Animations →", "Every player animation looping next to the Old look, with the dials and on/off switches the real match reads."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
           ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
@@ -963,6 +964,46 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
   },
 
+  "/star-animations-dev": {
+    title: "Animations",
+    what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ Play Area", "Back to the Play Area."],
+        ["New / Old", "The real Animations switch for this phone, the same one as Settings → Look. Old is the game exactly as it was before any of this."],
+      ] },
+      { group: "The gallery", items: [
+        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
+        ["Flat / Shaded", "The two drawn player looks. (The 3D players only use the kick clip and the lean.)"],
+        ["Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
+        ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
+        ["1× / ½× / ¼×", "Playback speed."],
+        ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+      ] },
+      { group: "Which animations are on", items: [
+        ["The switches", "Turn one family off and it is drawn the Old way, here and in the real match, while the rest stay New. Contact flashes turns off every flash."],
+      ] },
+      { group: "Dials", items: [
+        ["The sliders", "How big each movement is. Exaggeration scales all of them at once. Each slider shows its default and the first version's value."],
+        ["Reset to defaults", "Every dial and switch back to the shipped look."],
+        ["First version sizes", "The sizes from before \"make the strikes bigger\" (strikes smaller, no lean, no flash)."],
+        ["Copy settings", "Copies the dials and switches as text (and shows it) so you can send them to someone."],
+        ["Paste settings here + Apply", "Takes that text and applies it on this phone."],
+      ] },
+      { group: "See it in a real chance", items: [
+        ["Infinite Highlights → / Play Area (Infinite Match) →", "Opens the real match, which reads these same dials and switches."],
+      ] },
+    ],
+    saving: [
+      "This phone only, instantly. Dials and switches are kept in this browser; nobody else sees them.",
+      "Nothing changes the ball, the saves, the results or any timing. These are looks only.",
+    ],
+    inGame: [
+      "Every real match on this phone (and every test screen that plays the real match) draws team-mates, defenders and the keeper with these sizes when Settings → Look → Animations is New.",
+      "To take the whole feature out of a phone: set Animations to Old.",
+    ],
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts. Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+  },
   "/star-garden3d-dev": {
     title: "3D Garden",
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",

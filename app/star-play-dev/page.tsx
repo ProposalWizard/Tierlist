@@ -146,6 +146,14 @@ export default function PlayAreaPage() {
           </div>
         </button>
 
+        <Link href="/star-animations-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>Animations &#8594;</div>
+          <div style={tileSub}>
+            Every player animation (saves, touches, shots, headers, blocks) looping next to the
+            Old look, with the dials and on/off switches the real match reads.
+          </div>
+        </Link>
+
         <Link href="/star-radar-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
           <div style={tileTitle}>Match Radar &#8594;</div>
           <div style={tileSub}>
