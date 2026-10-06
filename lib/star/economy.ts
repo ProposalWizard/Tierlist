@@ -1098,5 +1098,8 @@ export function weeksOfWallet(price: number, weeklyWage: number): number {
  * not six"), leaving these three. Priced as a share of YOUR current weekly
  * wage rather than a fixed tier price, so they never become pocket change:
  * the richer you get, the more a can costs.
+ *
+ * Mikey, 5 Oct 2026: a Basic can is 95% of a week's wage (rounded to the
+ * nearest star) — it was half.
  */
-export const KIB_CAN_WAGE_WEEKS = { basic: 0.5, premium: 1, elite: 2 } as const;
+export const KIB_CAN_WAGE_WEEKS = { basic: 0.95, premium: 1, elite: 2 } as const;

@@ -25,7 +25,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { starStatus, STAR_GATES, ledgerOf, starTitle, MAX_LEVEL } from "@/lib/star/starPoints";
-import { REWARD_LEVELS, STAR_PASS_STEP, STAR_PASS_THEMES, rewardTier, themeFor } from "@/lib/star/starPassRewards";
+import { STAR_PASS_THEMES, rewardLevelsOf, rewardTier, themeFor } from "@/lib/star/starPassRewards";
 import { findCard, type CatalogueItem } from "@/lib/star/rewardCatalogue";
 import { usePassLayout } from "@/lib/star/starPassStore";
 import { claimableLevels, claimLevel, equipCard, isClaimed } from "@/lib/star/starPassClaim";
@@ -60,16 +60,21 @@ function stopHeight(level: number, card: CatalogueItem | undefined): number {
   return great ? plinthW * (322 / 556) : plinthW * (217 / 468);
 }
 
-/** Height from the bottom of the road to every level. The five levels before
- *  a reward share out enough room for it and the one below it not to touch
- *  (a tall reward, like a footballer on his podium, gets more road). */
-function buildY(cardAt: (n: number) => CatalogueItem | undefined): number[] {
+/** Height from the bottom of the road to every level. The levels between two
+ *  rewards share out enough room for both podiums not to touch (a tall
+ *  reward, like a footballer on his podium, gets more road). Rewards can sit
+ *  at any level (5 Oct 2026), so the room is shared over however many levels
+ *  lie between them. */
+function buildY(stops: number[], cardAt: (n: number) => CatalogueItem | undefined): number[] {
   const y = [0, ROAD_BOTTOM];
+  if (stops[0] === 1) y[1] = Math.max(ROAD_BOTTOM, stopHeight(1, cardAt(1)) / 2 + 14);
   for (let i = 2; i <= MAX_LEVEL; i++) {
-    const r = Math.ceil(i / 5) * 5;
+    const r = stops.find((n) => n >= i) ?? MAX_LEVEL;
+    const prev = [...stops].reverse().find((n) => n < i);
+    const span = r - (prev ?? 1);
     const base = r % 10 === 0 ? GAP_GREAT : GAP;
-    const below = r - 5 >= STAR_PASS_STEP ? stopHeight(r - 5, cardAt(r - 5)) / 2 : 40;
-    const need = (below + stopHeight(r, cardAt(r)) / 2 + 22) / 5;
+    const below = prev != null ? stopHeight(prev, cardAt(prev)) / 2 : 40;
+    const need = (below + stopHeight(r, cardAt(r)) / 2 + 22) / Math.max(1, span);
     y[i] = y[i - 1] + Math.max(base, need);
   }
   return y;
@@ -83,7 +88,8 @@ export default function StarRatingSheet({ career, onClose, onCareer }: {
 }) {
   const { layout, catalogue } = usePassLayout();
   const cardAt = (n: number) => findCard(layout.levels[n], catalogue);
-  const Y = useMemo(() => buildY((n) => findCard(layout.levels[n], catalogue)), [layout, catalogue]);
+  const stops = useMemo(() => rewardLevelsOf(layout.levels), [layout]);
+  const Y = useMemo(() => buildY(stops, (n) => findCard(layout.levels[n], catalogue)), [stops, layout, catalogue]);
   const yOf = (n: number) => Y[Math.max(1, Math.min(MAX_LEVEL, n))];
   const [reveal, setReveal] = useState<number | null>(null);
   const [locker, setLocker] = useState(false);
@@ -115,7 +121,7 @@ export default function StarRatingSheet({ career, onClose, onCareer }: {
     ["Milestones", st.points.milestones], ["Fame", st.points.status],
     ...(st.carry > 0 ? [["Carried", st.carry] as [string, number]] : []),
   ];
-  const nextReward = REWARD_LEVELS.find(n => n > st.stars);
+  const nextReward = stops.find(n => n > st.stars);
   const digits = String(st.stars).length;
 
   return createPortal(
@@ -151,7 +157,7 @@ export default function StarRatingSheet({ career, onClose, onCareer }: {
 
           {/* A mark at every level; the number at 1 and every 5th, right beside the rail. */}
           {Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map((n) => {
-            const labelled = n === 1 || n % 5 === 0;
+            const labelled = n === 1 || n % 5 === 0 || stops.includes(n);
             const reached = n <= st.stars;
             return (
               <div key={n} className="absolute inset-x-0" style={{ bottom: yOf(n), height: 0 }}>
@@ -182,8 +188,8 @@ export default function StarRatingSheet({ career, onClose, onCareer }: {
             </div>
           ))}
 
-          {/* A podium and a reward at every 5th level, centred on its level; level 100's stand. */}
-          {REWARD_LEVELS.map((n) => (
+          {/* A podium and a reward at every level that has one, centred on its level; level 100's stand. */}
+          {stops.map((n) => (
             <RewardStop key={n} level={n} y={yOf(n)} card={cardAt(n)} reached={n <= st.stars} next={n === nextReward}
               claimable={claimable.has(n) && !!onCareer} claimed={isClaimed(career, n)} onClaim={() => setReveal(n)} />
           ))}

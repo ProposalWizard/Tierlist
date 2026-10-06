@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import { DEFAULT_PASS_LEVELS, fullCatalogue, type CatalogueItem, type RewardStatus } from "./rewardCatalogue";
+import { isPassLevel } from "./starPassRewards";
 
 export interface StarPassLayout {
   /** Level → catalogue card id. */
@@ -36,7 +37,7 @@ function clean(raw: unknown): StarPassLayout | null {
   const r = raw as Partial<StarPassLayout>;
   if (!r.levels || typeof r.levels !== "object") return null;
   const levels: Record<number, string> = {};
-  for (const [k, v] of Object.entries(r.levels)) if (typeof v === "string" && v) levels[Number(k)] = v;
+  for (const [k, v] of Object.entries(r.levels)) if (typeof v === "string" && v && isPassLevel(Number(k))) levels[Number(k)] = v;
   return {
     levels,
     ideas: Array.isArray(r.ideas) ? r.ideas.filter((i) => i && typeof i.id === "string" && typeof i.name === "string") : [],

@@ -19,7 +19,7 @@ import type { CatalogueItem } from "./rewardCatalogue";
 import { careerStoreEquip, careerStoreUnequip } from "./store/career";
 import { ACCESSORIES } from "./store/catalogue";
 import { DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "./runupStyles";
-import { STAR_PASS_STEP } from "./starPassRewards";
+import { isPassLevel } from "./starPassRewards";
 
 const add = (list: string[] | undefined, id: string) => (list?.includes(id) ? list : [...(list ?? []), id]);
 
@@ -27,7 +27,7 @@ const add = (list: string[] | undefined, id: string) => (list?.includes(id) ? li
 export function claimableLevels(c: CareerState, levels: Record<number, string>, stars = c.stars ?? 1): number[] {
   const claimed = new Set(c.starPassClaimed ?? []);
   return Object.keys(levels).map(Number)
-    .filter((n) => n % STAR_PASS_STEP === 0 && n <= stars && !claimed.has(n) && !!levels[n])
+    .filter((n) => isPassLevel(n) && n <= stars && !claimed.has(n) && !!levels[n])
     .sort((a, b) => a - b);
 }
 

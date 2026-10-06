@@ -10,7 +10,7 @@ import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, baseIdOf, type KibCan } from "@/lib/star/shopData";
 import { divisionOf } from "@/lib/star/calendar";
-import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
+import { SHOP_TIERS } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { formatMoney } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
@@ -34,33 +34,6 @@ interface ActionResult { ok: boolean; reason?: string; }
 
 /** Each can's own colour — the same accents as the Home cans card. */
 const CAN_ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5fa", elite: "#c084fc" };
-
-/**
- * HOW MANY WEEKS OF YOUR OWN MONEY THIS IS.
- *
- * Every price in this game is a number of weeks multiplied out into stars
- * (economy.ts), and until now the shop was the one place that number could
- * not be read back. "★14,500" tells a player nothing on its own; "4 weeks"
- * or "414 weeks" tells them everything, and it is the same sentence the
- * design is actually written in. Against the wage on their real contract,
- * grossed up the same way every band is — not against a tier's notional
- * first-teamer, who is not them.
- */
-function formatWeeks(weeks: number): string {
-  if (!Number.isFinite(weeks)) return "";
-  if (weeks >= 100) return `${Math.round(weeks)} wks`;
-  if (weeks >= 10) return `${weeks.toFixed(0)} wks`;
-  if (weeks >= 1) return `${weeks.toFixed(1)} wks`;
-  return `${weeks.toFixed(2)} wks`;
-}
-
-function Weeks({ price, wage }: { price: number; wage: number }) {
-  return (
-    <div className="text-[9px] font-bold leading-none text-white/60">
-      {formatWeeks(weeksOfWallet(price, wage))} of your income
-    </div>
-  );
-}
 
 interface Props {
   career: CareerState;
@@ -285,7 +258,6 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="flex items-center justify-end gap-1 text-[14px] font-black text-yellow-300">★ {formatMoney(price)}</div>
-                    <Weeks price={price} wage={career.contract.wage} />
                     <PressButton
                       variant="accent"
                       accent={accent}

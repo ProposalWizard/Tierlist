@@ -52,7 +52,11 @@ interface Props {
   /** Achievements this match unlocked, shown one at a time at the end; you
    *  cannot press Continue until you have seen them all (Harry, P27). */
   achievements?: { label: string; description: string }[];
+  /** Boss, team and fans bars before and after this match (the real bar
+   *  values, after scaling and drift). Without it the row is not shown. */
+  rel?: { before: RelValues; after: RelValues };
 }
+type RelValues = { boss: number; team: number; fans: number };
 
 // The same black outline the live scoreboard puts on its club-name text —
 // white over a light kit (Fulham/Leeds white, a bright yellow away strip)
@@ -77,7 +81,7 @@ const RESULT_LOOK: Record<Result, { word: string; color: string }> = {
  * counts up big, then the money and the relationship changes float up off
  * their rows. For a phone set to reduce motion every beat lands at once.
  */
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star, achievements = [], bootsWornOut = false }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter, star, achievements = [], bootsWornOut = false, rel }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
   const kits = kitsFor(homeTeam, awayTeam);
@@ -207,11 +211,16 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
           <StatTile label="Passes" value={stats.passes} on={ratingIn} />
         </div>
 
-        <div className={`mt-2 grid grid-cols-3 gap-1.5 ${relIn ? "kit-rise" : "opacity-0"}`}>
-          <RelChip label="Boss" delta={stats.bossChange} on={relIn} />
-          <RelChip label="Team" delta={stats.teamChange} on={relIn} />
-          <RelChip label="Fans" delta={stats.fansChange} on={relIn} />
-        </div>
+        {/* Mikey, 5 Oct 2026: no numbers — each bar shows where it really
+            is, then slides to its new place when this beat comes (green up,
+            red down). */}
+        {rel && (
+          <div className="mt-2 grid grid-cols-3 gap-1.5" data-rel-bars>
+            <RelBar label="Boss" from={rel.before.boss} to={rel.after.boss} on={relIn} delay={0} />
+            <RelBar label="Team" from={rel.before.team} to={rel.after.team} on={relIn} delay={350} />
+            <RelBar label="Fans" from={rel.before.fans} to={rel.after.fans} on={relIn} delay={700} />
+          </div>
+        )}
 
         <div className={moneyIn ? "kit-rise" : "opacity-0"}>
         <ClubCard glow="#fbbf24" strength={0.18} className="mt-2 overflow-hidden">
@@ -461,13 +470,30 @@ function RowStar({ label, value, on }: { label: string; value: number; on: boole
     </div>
   );
 }
-function RelChip({ label, delta, on }: { label: string; delta: number; on: boolean }) {
-  const c = delta > 0 ? "#34d399" : delta < 0 ? "#f87171" : "#9ca3af";
-  const sign = delta > 0 ? "+" : "";
+function RelBar({ label, from, to, on, delay }: { label: string; from: number; to: number; on: boolean; delay: number }) {
+  const [moved, setMoved] = useState(false);
+  useEffect(() => {
+    if (!on) return;
+    const t = setTimeout(() => setMoved(true), delay);
+    return () => clearTimeout(t);
+  }, [on, delay]);
+  const up = to > from, down = to < from;
+  const tint = moved && up ? "#34d399" : moved && down ? "#f87171" : "#e5e7eb";
+  const pct = Math.max(0, Math.min(100, moved ? to : from));
   return (
-    <div className="relative rounded-xl py-1.5 text-center" style={{ background: `linear-gradient(180deg, ${rgba(c, 0.32)}, ${rgba(c, 0.12)})`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px ${rgba(c, 0.45)}` }}>
-      <div className="text-xs font-black text-white">{label} {sign}{delta}</div>
-      {delta !== 0 && <FloatText trigger={on ? 1 : 0} text={`${sign}${delta}`} color={c} className="left-1/2 -top-1" size={12} />}
+    <div className="rounded-xl px-2 py-1.5" data-rel={label.toLowerCase()} style={{
+      background: moved && (up || down) ? `linear-gradient(180deg, ${rgba(tint, 0.22)}, ${rgba(tint, 0.08)})` : "rgba(255,255,255,.06)",
+      boxShadow: `inset 0 0 0 1px ${moved && (up || down) ? rgba(tint, 0.5) : "rgba(255,255,255,.12)"}`,
+      transition: "background 600ms, box-shadow 600ms",
+    }}>
+      <div className="mb-1 text-center text-xs font-black text-white">{label}</div>
+      <div className="h-[8px] overflow-hidden bg-black/50" style={{ borderRadius: 2 }}>
+        <div className="h-full" style={{
+          width: `${pct}%`, background: tint, borderRadius: 2,
+          boxShadow: moved && (up || down) ? `0 0 8px ${rgba(tint, 0.8)}` : undefined,
+          transition: "width 1400ms cubic-bezier(.25,.8,.3,1), background 500ms",
+        }} />
+      </div>
     </div>
   );
 }
