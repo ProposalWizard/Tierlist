@@ -32,6 +32,9 @@ import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas } from "
 import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
+import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { makeWalkClip } from "../walkClip";
+import { freezeStatic } from "../freezeStatic";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -42,6 +45,8 @@ export interface ShopCallbacks {
    *  front). Given only in a career: it leads out into the 3D garden (Mikey,
    *  3 Oct 2026). Without it the doorway stays a wall you can't pass. */
   onDoor?: () => void;
+  /** The phone took the 3D away (iPhone Safari, short of memory). */
+  onContextLost?: () => void;
 }
 
 export interface Picked { display: DisplayId; index: number }
@@ -66,6 +71,13 @@ export interface ShopController {
   orbit: (dxPixels: number) => void;
   /** What is under a tap at (x, y) in page pixels, if anything. */
   pick: (clientX: number, clientY: number) => Picked | null;
+  /** Tap to move: a tap on a display walks you up to it (its card opens as
+   *  you arrive); on the floor, walks you there. `item`: what was tapped. */
+  tap?: (clientX: number, clientY: number) => { item: Picked | null } | null;
+  /** Walk up to this display item (its card opens as you arrive). */
+  walkToItem?: (p: Picked) => boolean;
+  /** For checking: is a tap-walk going on, and where to. */
+  walking?: () => { to: [number, number] | null; active: boolean };
   /** For checking: stand him at (x, z), facing yaw (radians). */
   place: (x: number, z: number, yaw?: number) => void;
   /** For checking: where he is. */
@@ -73,7 +85,7 @@ export interface ShopController {
   /** Filming only: [wall-clock ms, game seconds] for every frame drawn. */
   filmLog: () => [number, number][];
   /** What one frame costs to draw: draw calls and triangles. */
-  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number };
+  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; shadowRenders?: number; frames?: number; merged?: { before: number; after: number } };
   dispose: () => void;
 }
 
@@ -145,19 +157,46 @@ export interface ShopPlayer {
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
 const DOOR_HALF = 1.1;
 
+/**
+ * Opens the shop. If anything fails part-way, the half-built 3D is thrown away
+ * properly before the error goes up, so the retry with the old body (and the
+ * garden after it) doesn't leave a dead WebGL context behind on an iPhone.
+ */
 export async function startShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
   displays: Record<DisplayId, Display>, opts: ShopOptions = {},
+): Promise<ShopController> {
+  const own: { renderer?: any } = {};
+  try {
+    return await buildShop(container, cb, kit0, displays, opts, own);
+  } catch (e) {
+    const r = own.renderer;
+    if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ } }
+    throw e;
+  }
+}
+
+async function buildShop(
+  container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
+  displays: Record<DisplayId, Display>, opts: ShopOptions, own: { renderer?: any },
 ): Promise<ShopController> {
   let quality = opts.quality ?? "high";
   const THREE: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
+  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1));
+  own.renderer = renderer;
+  // LAG (Harry, 5 Oct 2026): up to 1.5x a CSS pixel standing still, 1x while
+  // walking (2.25x fewer pixels while the picture moves); "low": 1x.
+  const dpr = window.devicePixelRatio || 1;
+  const stillPR = () => Math.min(dpr, quality === "high" ? 1.5 : 1);
+  const movePR = () => Math.min(dpr, 1);
+  let pr = stillPR();
+  renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
@@ -168,6 +207,8 @@ export async function startShop(
   renderer.domElement.style.height = "100%";
   renderer.domElement.style.touchAction = "none";
   container.appendChild(renderer.domElement);
+  const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
+  renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
   const BG = "#120e0b";
@@ -195,6 +236,9 @@ export async function startShop(
   };
   const carSpot = spot("#fff3e4", 150, CAR.x + 0.3, ROOM.h - 0.08, CAR.z + 0.6, CAR.x, 0, CAR.z, 0.72, 0.5, 12);
   carSpot.castShadow = quality === "high";
+  // its shadow is drawn again only while something under it moves (the
+  // turntable, a few times a second; you walking near it)
+  carSpot.shadow.autoUpdate = false;
   carSpot.shadow.mapSize.set(1024, 1024);
   carSpot.shadow.bias = -0.0004;
   carSpot.shadow.normalBias = 0.03;
@@ -591,9 +635,10 @@ export async function startShop(
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
-    walkA = person.actions.jog;
-    jogA = mixer.clipAction(person.actions.jog.getClip().clone());
-    jogA.play(); jogA.setEffectiveWeight(0);
+    // a real walk (the jog pulled back towards standing: lib/star/walkClip.ts)
+    walkA = mixer.clipAction(makeWalkClip(THREE, person.actions.jog.getClip(), person.actions.idle.getClip()));
+    walkA.play(); walkA.setEffectiveWeight(0);
+    jogA = person.actions.jog;
     buyA = person.actions.celebrate;
     dressNew(kit0);
     relaxHands(THREE, person);
@@ -650,11 +695,17 @@ export async function startShop(
   let sel: { display: DisplayId; index: number } = { display: "car", index: 0 };
   const filmLog: [number, number][] = [];
   let lastOff = -1; // the camera's view offset, in pixels
+  // tap to move (lib/star/tapWalk.ts)
+  const walker = new TapWalker();
+  const marker = makeTapMarker(THREE, scene);
+  let grid: WalkGrid | null = null;
+  let faceTo: XZ | null = null;
+  const stopWalk = () => { if (walker.active) { walker.cancel(); marker.fade(); } faceTo = null; };
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase();
     if (!["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) return;
-    if (down) keys.add(k); else keys.delete(k);
+    if (down) { keys.add(k); stopWalk(); } else keys.delete(k);
     if (k.startsWith("arrow")) e.preventDefault();
   };
   const kd = (e: KeyboardEvent) => onKey(e, true);
@@ -736,9 +787,56 @@ export async function startShop(
   const wantLook = new THREE.Vector3();
   let first = true;
 
+  /** Somewhere he can stand (for the tap-walk's path), with a little room. */
+  const isFree = (x: number, z: number) => {
+    const r = 0.4;
+    if (Math.abs(x) > ROOM.x - r || z < -ROOM.z + r || z > ROOM.z - 0.45) return false;
+    for (const [x0, x1, z0, z1] of BOXES) if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) return false;
+    for (const [cx, cz, cr] of CIRCLES) if (Math.hypot(x - cx, z - cz) < cr + r) return false;
+    return true;
+  };
+  /** Where to stand for each display item (inside its zone, so its card opens), and what to look at. */
+  const standFor = (p: Picked): { at: XZ; face: XZ } => {
+    if (p.display === "boots") { const z = PLINTH_Z[p.index] ?? 0; return { at: [-3.35, z], face: [PLINTH_X, z] }; }
+    if (p.display === "counter") { const x = BOX_X[p.index] ?? 0; return { at: [Math.max(-3.2, Math.min(3.2, x)), -5.15], face: [x, -ROOM.z] }; }
+    if (p.display === "cans") return { at: [FRIDGE.x - 1.35, FRIDGE.z], face: [FRIDGE.x, FRIDGE.z] };
+    // the car: the nearest side of the turntable to where he is
+    let a = Math.atan2(player.position.x - CAR.x, player.position.z - CAR.z);
+    if (!isFinite(a)) a = 0;
+    const d = CAR.r + 0.55;
+    return { at: [CAR.x + Math.sin(a) * d, CAR.z + Math.cos(a) * d], face: [CAR.x, CAR.z] };
+  };
+  const walkTo = (to: XZ, face: XZ | null) => {
+    grid ??= buildGrid(-ROOM.x, ROOM.x, -ROOM.z, ROOM.z, 0.25, isFree);
+    const path = findPath(grid, [player.position.x, player.position.z], to);
+    if (!path) return false;
+    faceTo = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    const g = path[path.length - 1];
+    marker.show(g[0], g[1], 0.02);
+    orbitHold = 0;
+    return true;
+  };
+
+  // LAG: still is 30 frames a second at full pixels; walking, every frame at
+  // fewer pixels. The car's shadow is redrawn only as the turntable turns
+  // (ten times a second) or when you move near it.
+  let acc = 0, busy = true, busyT = 0, stillT = 0, drawn = 0, shadowRenders = 0, shadowT = 0, capAlways = false;
+  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...pickables]));
+  // warm up: every shader built before the first frame, so the first steps don't stutter
+  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
+  if (disposed) throw new Error("disposed");
+
   renderer.setAnimationLoop(() => {
     if (disposed) return;
-    const dt = opts.fixedStep ?? Math.min(0.05, clock.getDelta());
+    let dt: number;
+    if (opts.fixedStep) dt = opts.fixedStep;
+    else {
+      acc += Math.min(0.25, clock.getDelta());
+      if ((!busy || capAlways) && acc < 1 / 31) return;
+      dt = Math.min(0.05, acc);
+      acc = 0;
+    }
     gameT += dt;
     if (opts.fixedStep) filmLog.push([Date.now(), gameT]);
 
@@ -751,17 +849,32 @@ export async function startShop(
       const run = keys.has("shift") ? 1 : 0.6;
       ix = (ix / m) * run; iy = (iy / m) * run;
     }
-    const mag = Math.min(1, Math.hypot(ix, iy));
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
-    if (buying > 0) speed *= 0.8;
+    let mag = Math.min(1, Math.hypot(ix, iy));
+    let wantYaw: number | null = null;
     if (mag >= 0.08) {
       // stick is relative to the camera
       const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
       const rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
       const dx = fx * iy + rx * ix, dz = fz * iy + rz * ix;
-      yaw += angDiff(yaw, Math.atan2(dx, dz)) * Math.min(1, dt * 10);
+      wantYaw = Math.atan2(dx, dz);
+    } else if (walker.active) {
+      const st = walker.step(player.position.x, player.position.z, dt);
+      if (st) {
+        wantYaw = st.yaw;
+        // turning round first: don't stride off the wrong way meanwhile
+        mag = st.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, st.yaw)))));
+      } else if (!walker.active && marker.visible) marker.fade();
     }
+    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+    speed += (target - speed) * Math.min(1, dt * 8);
+    if (buying > 0) speed *= 0.8;
+    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    else if (faceTo && speed < 0.4) {
+      const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
+      yaw += d * Math.min(1, dt * 5);
+      if (Math.abs(d) < 0.03) faceTo = null;
+    }
+    marker.update(dt);
     const [nx, nz] = collide(player.position.x + Math.sin(yaw) * speed * dt, player.position.z + Math.cos(yaw) * speed * dt);
     player.position.x = nx; player.position.z = nz;
     player.rotation.y = yaw;
@@ -772,15 +885,16 @@ export async function startShop(
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));
     const wIdle = Math.max(0, 1 - speed / WALK);
     const dur = buyA.getClip().duration;
-    const busy = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
-    idleA.setEffectiveWeight(wIdle * (1 - busy));
-    walkA.setEffectiveWeight(wWalk * (1 - busy));
-    jogA.setEffectiveWeight(wJog * (1 - busy));
-    buyA.setEffectiveWeight(busy);
+    const gesture = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
+    idleA.setEffectiveWeight(wIdle * (1 - gesture));
+    walkA.setEffectiveWeight(wWalk * (1 - gesture));
+    jogA.setEffectiveWeight(wJog * (1 - gesture));
+    buyA.setEffectiveWeight(gesture);
     if (newLook) {
-      // the jog clip covers about 3 m/s; slowed right down, it is the walk
-      walkA.timeScale = Math.max(0.45, speed / 2.6);
-      jogA.timeScale = Math.max(0.8, speed / 3.0);
+      // the walk and the jog share one stride timing, so they share one pace
+      // and the feet stay together while one blends into the other
+      const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
+      walkA.timeScale = ts; jogA.timeScale = ts;
     } else {
       walkA.timeScale = Math.max(0.6, speed / 1.45);
       jogA.timeScale = Math.max(0.8, speed / 3.2);
@@ -853,7 +967,24 @@ export async function startShop(
     }
     if (now !== near) { near = now; cb.onNear(near); }
 
+    if (carSpot.castShadow) {
+      shadowT -= dt;
+      const nearCar = Math.hypot(player.position.x - CAR.x, player.position.z - CAR.z) < CAR.r + 3.5;
+      if (shadowT <= 0 || (nearCar && speed > 0.05)) {
+        carSpot.shadow.needsUpdate = true;
+        shadowT = 0.1;
+        shadowRenders++;
+      }
+    }
     renderer.render(scene, camera);
+    drawn++;
+    // busy (walking, turning, the camera moving): every frame, fewer pixels
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
+    if (!opts.fixedStep && quality === "high") {
+      const wantPR = busyT > 0.25 ? movePR() : stillT > 0.5 ? stillPR() : pr;
+      if (wantPR !== pr) { pr = wantPR; renderer.setPixelRatio(pr); lastOff = -1; }
+    }
     // frames per real second; a phone that can't keep up drops to fewer pixels
     frames++;
     const nowMs = performance.now();
@@ -861,22 +992,25 @@ export async function startShop(
       const fps = Math.round((frames * 1000) / (nowMs - fpsT0));
       cb.onFps(fps);
       frames = 0; fpsT0 = nowMs;
-      if (!opts.fixedStep && quality === "high") {
-        slowSeconds = fps < 28 ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) {
-          quality = "low";
+      if (!opts.fixedStep) {
+        // still runs at 30 on purpose: only count a slow second against what
+        // was asked for
+        slowSeconds = fps < (busy && !capAlways ? 28 : 22) ? slowSeconds + 1 : 0;
+        if (slowSeconds >= 3 && quality === "high") {
+          quality = "low"; slowSeconds = 0;
+          pr = 1;
           renderer.setPixelRatio(1);
           carSpot.castShadow = false;
           renderer.shadowMap.enabled = false;
           resize();
-        }
+        } else if (slowSeconds >= 3 && quality === "low") capAlways = true;
       }
     }
   });
 
   const ray = new THREE.Raycaster();
   const ctrl: ShopController = {
-    setStick: (x, y) => { stick = { x, y }; },
+    setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
     setCardOpen: (open) => { framed = open; if (open) orbitHold = 0; },
     setKit: (k) => { kitU.uShirt.value.set(k.shirt); kitU.uTrim.value.set(k.trim); dressNew(k); },
     select: (display, index) => {
@@ -915,18 +1049,32 @@ export async function startShop(
       if (!p) return null;
       return p.display === "car" ? { display: "car", index: Math.max(0, carIndex) } : p;
     },
+    tap: (px, py) => {
+      const p = ctrl.pick(px, py);
+      if (p) { const s0 = standFor(p); walkTo(s0.at, s0.face); return { item: p }; }
+      const r = renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);
+      const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+      if (!hit || Math.abs(hit.x) > ROOM.x + 1 || Math.abs(hit.z) > ROOM.z + 1) return null;
+      return walkTo([hit.x, hit.z], null) ? { item: null } : null;
+    },
+    walkToItem: (p) => { const s0 = standFor(p); return walkTo(s0.at, s0.face); },
+    walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
+      stopWalk();
       player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true;
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
-    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded }),
+    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen }),
     dispose: () => {
       disposed = true;
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
+      renderer.domElement.removeEventListener("webglcontextlost", onLost);
+      marker.dispose();
       scene.traverse((o: any) => {
         o.geometry?.dispose?.();
         const m = o.material;
@@ -936,6 +1084,9 @@ export async function startShop(
       envTex.dispose();
       pmrem.dispose();
       renderer.dispose();
+      // give the phone its 3D back now (iPhone Safari allows only a few at
+      // once, and the shop and the garden swap often)
+      renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };

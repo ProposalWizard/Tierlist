@@ -99,11 +99,13 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
-  // Start the 3D once.
+  // Start the 3D once (again if the phone takes the 3D away: once, at "low").
+  const [restarts, setRestarts] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
     if (!el) return;
+    if (restarts > 1) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
     (async () => {
       try {
         const { startShop } = await import("@/lib/star/shop3d/scene");
@@ -115,10 +117,18 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             (window as unknown as { __shop3dFps?: number }).__shop3dFps = f;
           },
           ...(onDoor ? { onDoor: () => doorRef.current?.() } : {}),
+          onContextLost: () => {
+            if (dead) return;
+            console.error("3D shop: the phone took the 3D away");
+            ctrlRef.current?.dispose();
+            ctrlRef.current = null;
+            setStatus("loading");
+            setRestarts((n) => n + 1);
+          },
         }, kit, displays, {
           atDoor,
           number: career?.squadNumber ?? 10,
-          quality: q.get("q") === "low" ? "low" : "high",
+          quality: q.get("q") === "low" || restarts > 0 ? "low" : "high",
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           // Settings → "3D shop player": the new character in your skin, hair
           // and kit, or the old one exactly as it was. (?player=old on the test page.)
@@ -160,7 +170,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       delete (window as unknown as { __shop3d?: ShopController }).__shop3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [restarts]);
 
   useEffect(() => { ctrlRef.current?.setKit(kit); }, [kit.shirt, kit.trim, status]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { ctrlRef.current?.setOwned(owned); }, [owned, status]);
@@ -211,7 +221,12 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
   // Drag on the view swings the camera; a tap on something opens its card.
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const onTap = (x: number, y: number) => {
-    const p = ctrlRef.current?.pick(x, y);
+    const c = ctrlRef.current;
+    const p = c?.pick(x, y);
+    // Tap to move: a display you are not at yet, he walks up to it (its card
+    // opens as he arrives); the floor, he walks there.
+    if (c && p && near !== p.display && c.walkToItem) { c.walkToItem(p); return; }
+    if (c && !p) { c.tap?.(x, y); return; }
     if (!p) return;
     setTapped(p);
     setItemIx(p.index);
@@ -235,7 +250,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           ctrlRef.current?.orbit(e.clientX - d.x);
           d.x = e.clientX; d.y = e.clientY;
         }}
-        onPointerUp={(e) => { const d = drag.current; drag.current = null; if (d && d.moved < 8) onTap(e.clientX, e.clientY); }}
+        onPointerUp={(e) => { const d = drag.current; drag.current = null; if (d && d.id === e.pointerId && d.moved < 10) onTap(e.clientX, e.clientY); }}
         onPointerCancel={() => { drag.current = null; }}
       />
 
@@ -289,7 +304,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && !open && !near && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 176, textAlign: "right", fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
-          Walk up to anything, or tap it. Drag the view to look round.
+          Walk up to anything, or tap it to walk there. Drag the view to look round.
         </div>
       )}
 
