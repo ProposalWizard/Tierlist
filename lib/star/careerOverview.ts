@@ -248,6 +248,13 @@ function yearsSpan(startYear: number, seasons: number[]): string {
   }).join(" · ");
 }
 
+/** A history row without its best team-mates (careerRecords.ts bestMatesOf). */
+function withoutMates(row: SeasonHistoryRow): SeasonHistoryRow {
+  if (!row.mates) return row;
+  const { mates: _mates, ...rest } = row;
+  return rest;
+}
+
 export function careerOverview(career: CareerState): CareerOverviewData {
   const startYear = career.player.startYear;
   const lastSeason = Math.max(1, career.season);
@@ -281,7 +288,9 @@ export function careerOverview(career: CareerState): CareerOverviewData {
       club,
       ...(st ? { stats: { apps: st.apps, goals: st.goals, assists: st.assists, avgRating: st.avgRating, motm: st.motm } } : {}),
       live,
-      ...(world ? { world } : {}),
+      // The season's best team-mates are for the farewell match; the
+      // overview never draws them, and the Hall's slim copy drops them.
+      ...(world ? { world: withoutMates(world) } : {}),
       trophies: won,
       awards: awardList,
       ...(world?.ballonDor ? { ballonDorRank: world.ballonDor.yourRank } : {}),

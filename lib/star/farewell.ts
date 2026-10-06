@@ -284,17 +284,25 @@ export function ballonDorRivals(career: CareerState): { name: string; club: stri
 }
 
 /** The Rivals XI's pool: Ballon d'Or winners, then the title clubs' best, then the strongest clubs. */
-export function rivalsPool(career: CareerState, notThese: Set<string>): FarewellRival[] {
+export function rivalsPool(career: CareerState, notThese: Set<string>, surnamesTaken: Set<string> = new Set()): FarewellRival[] {
   const squads = squadsByClub(career);
   const startYear = career.player.startYear ?? 2025;
   const out: FarewellRival[] = [];
   const used = new Set<string>(notThese);
+  // One surname once across both sides, so the sheets never seem to pick a man
+  // twice ("Taylor" for you and "Taylor" for them). A Ballon d'Or rival is
+  // always picked; anyone else with a surname already used is passed over.
+  const surnames = new Set<string>(surnamesTaken);
+  let strictSurnames = true;
   const take = (p: LeaguePlayer | null, club: string, why: string, ballonDor = false, fallbackName?: string) => {
     const name = p?.name ?? fallbackName;
     if (!name) return;
     const k = norm(name);
     if (used.has(k)) return;
+    const surname = norm(shortNameOf(name));
+    if (!ballonDor && strictSurnames && surnames.has(surname)) return;
     used.add(k);
+    surnames.add(surname);
     out.push({
       id: `rv_${out.length}`,
       name,
@@ -366,9 +374,13 @@ export function rivalsPool(career: CareerState, notThese: Set<string>): Farewell
       }
     }
   }
-  // 5. Still too few: made-up rivals, so there is a match to play.
-  if (out.length < 11) {
-    for (const p of generateSquad(clubNameSeed(`${career.player.club}-rivals`))) {
+  // 5. Still too few: made-up rivals, so there is a match to play — a shared
+  //    surname is allowed here if that is the only way to make up eleven.
+  const madeUp = generateSquad(clubNameSeed(`${career.player.club}-rivals`));
+  for (const strict of [true, false]) {
+    if (out.length >= 11) break;
+    strictSurnames = strict;
+    for (const p of madeUp) {
       take({ id: p.id, name: p.name, position: p.position, overall: 74, goals: 0, assists: 0, image: p.imageUrl }, RIVALS_XI, "A rival");
     }
   }
@@ -490,7 +502,8 @@ export function farewellSides(career: CareerState): FarewellSides {
   // Rivals XI: nobody already on your side.
   const ours = new Set(mates.map(m => norm(m.name)));
   ours.add(norm(`${career.player.firstName} ${career.player.lastName}`));
-  const who = rivalsPool(career, ours);
+  const ourSurnames = new Set([...ourSquad.map(p => norm(shortNameOf(p.name))), norm(career.player.lastName)]);
+  const who = rivalsPool(career, ours, ourSurnames);
   const rivalPlayers: LeaguePlayer[] = who.map(r => ({
     id: r.id, name: r.name, position: r.position, overall: r.overall, goals: 0, assists: 0,
     ...(r.positions ? { positions: r.positions } : {}),

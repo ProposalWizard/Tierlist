@@ -6,6 +6,7 @@ import {
 } from "../../lib/star/farewell";
 import { matchdayFor, opponentStartingXI, startingTeammateRoles } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
+import { shortNameOf } from "../../lib/star/realSquad";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { newMatch, advanceUntilInvolved, resolveScenario, FAREWELL_INVOLVEMENT, type HiddenMatchInputs } from "../../lib/star/hiddenMatch";
@@ -47,6 +48,13 @@ for (const { id } of PREVIEW_SHAPES) {
     const ourNames = new Set(s.ours.players.map(p => norm(p.name)));
     check(s.rivals.players.every(p => !ourNames.has(norm(p.name))), `${tag}: nobody plays for both sides`);
     check(!s.rivals.players.some(p => norm(p.name) === norm(`${c.player.firstName} ${c.player.lastName}`)), `${tag}: you are not a rival of yourself`);
+    // One surname once across both sheets (a Ballon d'Or rival is the only exception).
+    const surname = (n: string) => norm(shortNameOf(n));
+    const ourSurnames = new Set([...s.ours.players.map(p => surname(p.name)), surname(c.player.lastName)]);
+    const clash = s.rivals.who.filter(r => !r.ballonDor && ourSurnames.has(surname(r.name)));
+    check(clash.length === 0, `${tag}: no surname on both sides (${clash.map(r => r.name).join(", ")})`);
+    const rivalSurnames = s.rivals.who.filter(r => !r.ballonDor).map(r => surname(r.name));
+    check(new Set(rivalSurnames).size === rivalSurnames.length, `${tag}: no surname twice in the Rivals XI squad`);
     // Every man who beat you to a Ballon d'Or starts for the rivals (up to eleven).
     const bdo = ballonDorRivals(c);
     const starters = new Set(theirs.map(x => norm(s.rivals.who.find(r => r.id === x)?.name ?? "")));
