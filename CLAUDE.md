@@ -197,6 +197,15 @@ same person in the garden as you are in the store."*
   `tools/garden3d/export_models.py` (Blender) and `build_anims.py`. Credits:
   `public/star/garden3d/LICENSE.txt`. Test page: `/star-garden3d-dev`.
 
+## The 3D files are packed small (6 Oct 2026)
+
+`scripts/perf3d/shrink-models.mjs` packs the GLBs in place: meshopt geometry
+and clips, WebP textures (Draco kept for props, boots, cars, where it is
+smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
+(`lib/star/three3d/meshopt.ts`) or it fails on them. The 3D builders re-pack
+at their end; a new file needs a POLICY line in the script. Details:
+`scripts/perf3d/README.md`.
+
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
 Mikey, 2 Oct 2026: "make sure that you never lose this information again."

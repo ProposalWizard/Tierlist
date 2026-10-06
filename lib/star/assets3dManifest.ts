@@ -57,7 +57,7 @@ export const ASSETS_3D: Asset3dFolder[] = [
       },
       {
         "path": "/star/signing3d/aviators.glb",
-        "bytes": 57844
+        "bytes": 16624
       },
       {
         "path": "/star/signing3d/people.glb",
@@ -1069,23 +1069,23 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "title": "The one body: player and manager with fingers",
     "kind": "model",
     "made": "scripts/people3d/build_onebody.py (from star/people3d)",
-    "note": "The same people with an ordinary waist and 15 finger bones a hand, for every 3D scene (Settings → Look → 3D people: New). 16-bit positions, ~1 MB each. Clips: star/people3d/anims.glb.",
+    "note": "The same people with an ordinary waist and 15 finger bones a hand, for every 3D scene (Settings → Look → 3D people: New). 16-bit positions, ~0.5 MB each (packed by scripts/perf3d/shrink-models.mjs). Clips: star/people3d/anims.glb.",
     "files": [
       {
         "path": "/star/onebody/manager.glb",
-        "bytes": 1040456
+        "bytes": 597756
       },
       {
         "path": "/star/onebody/player-buzz.glb",
-        "bytes": 953528
+        "bytes": 512488
       },
       {
         "path": "/star/onebody/player-long.glb",
-        "bytes": 942236
+        "bytes": 514756
       },
       {
         "path": "/star/onebody/player.glb",
-        "bytes": 957684
+        "bytes": 517828
       }
     ]
   },
@@ -1094,27 +1094,27 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "title": "3D people: player and manager (live in the browser)",
     "kind": "model",
     "made": "scripts/people3d/build_people3d.py (from the approved Higgsfield characters)",
-    "note": "The new 3D signing's and the 3D shop's people: the player (short / buzz / long hair, plain white kit recoloured live) and the manager, plus every clip. ~1.3 MB each.",
+    "note": "The new 3D signing's and the 3D shop's people: the player (short / buzz / long hair, plain white kit recoloured live) and the manager, plus every clip. ~0.5 MB each (packed by scripts/perf3d/shrink-models.mjs).",
     "files": [
       {
         "path": "/star/people3d/anims.glb",
-        "bytes": 1089284
+        "bytes": 256512
       },
       {
         "path": "/star/people3d/manager.glb",
-        "bytes": 1376168
+        "bytes": 579080
       },
       {
         "path": "/star/people3d/player-buzz.glb",
-        "bytes": 1268372
+        "bytes": 493668
       },
       {
         "path": "/star/people3d/player-long.glb",
-        "bytes": 1247564
+        "bytes": 495232
       },
       {
         "path": "/star/people3d/player.glb",
-        "bytes": 1271092
+        "bytes": 500472
       }
     ]
   },
@@ -1127,11 +1127,11 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "files": [
       {
         "path": "/star/shop3d/anims.glb",
-        "bytes": 292124
+        "bytes": 93424
       },
       {
         "path": "/star/shop3d/character.glb",
-        "bytes": 997248
+        "bytes": 370400
       }
     ]
   },

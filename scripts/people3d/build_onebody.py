@@ -28,6 +28,15 @@ The textures, the clips (people3d/anims.glb) and every measurement the game
 reads (face heights, kit lines, hands) are kept, so lib/star/people3d.ts dresses
 and animates it exactly as before. The old files stay where they are for
 Settings → Look → "3D people: Old".
+
+PACKED FILES (6 Oct 2026): the shipped people3d/ and onebody/ files are packed
+small by scripts/perf3d/shrink-models.mjs (meshopt + WebP), which this
+script cannot read. Before a rebuild, put the plain people3d bodies back:
+
+    git checkout 9bb668a -- public/star/people3d/player.glb public/star/people3d/player-buzz.glb public/star/people3d/player-long.glb public/star/people3d/manager.glb
+
+At the end this script packs onebody/ and those people3d/ bodies small again
+(scripts/perf3d/shrink_after_build.py).
 """
 import json, os, sys
 import numpy as np
@@ -81,6 +90,9 @@ def kmeans1d(x, k, it=40):
 
 def build(name):
     j, b = glb.read(os.path.join(SRC, name + ".glb"))
+    if "EXT_meshopt_compression" in j.get("extensionsUsed", []):
+        sys.exit(f"public/star/people3d/{name}.glb is packed (scripts/perf3d/shrink-models.mjs) and cannot be read here.\n"
+                 f"Put the plain one back first:  git checkout 9bb668a -- public/star/people3d/{name}.glb")
     prim = j["meshes"][0]["primitives"][0]
     A = prim["attributes"]
     P = glb.accessor(j, b, A["POSITION"]).astype(np.float64)
@@ -428,6 +440,13 @@ def build(name):
 
 
 if __name__ == "__main__":
-    for m in sys.argv[1:] or ["player", "player-buzz", "player-long", "manager"]:
+    names = sys.argv[1:] or ["player", "player-buzz", "player-long", "manager"]
+    for m in names:
         build(m)
+    if not os.environ.get("ONEBODY_OUT"):
+        # A rebuild writes them big: pack them small again (and the plain
+        # people3d bodies this read).
+        sys.path.insert(0, os.path.join(HERE, "..", "perf3d"))
+        from shrink_after_build import shrink
+        shrink([os.path.join(OUT, m + ".glb") for m in names] + [os.path.join(SRC, m + ".glb") for m in names])
 

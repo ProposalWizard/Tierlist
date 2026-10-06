@@ -279,3 +279,9 @@ if __name__ == "__main__":
     for m in ["player", "player-buzz", "player-long", "manager"]:
         build_model(m)
     build_anims()
+    # Pack the clips small (scripts/perf3d/shrink-models.mjs). The bodies stay
+    # plain: build_onebody.py reads them, and packs them at its own end.
+    sys.path.insert(0, os.path.join(HERE, "..", "perf3d"))
+    from shrink_after_build import shrink
+    shrink([os.path.join(OUT, "anims.glb")])
+    print("Next: python3 scripts/people3d/build_onebody.py (reads these bodies, then packs them and onebody/ small).")
