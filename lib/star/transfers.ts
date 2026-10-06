@@ -9,6 +9,7 @@ import { offerClauses, canTriggerClause, rescaleClauses } from "./contracts";
 import { isDerby, strongestTier } from "./rivalries";
 import { divisionOf } from "./calendar";
 import { offerWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
+import { bestMatesOf } from "./careerRecords";
 
 /**
  * TRANSFERS
@@ -260,6 +261,9 @@ export function acceptOffer(
     // A new club is a new set of team-mates. Keeping the old squad sheet would
     // have you setting up players who are still at your previous club.
     squad: generateSquad(clubNameSeed(offer.club)),
+    // …but the season just played was with the old ones: its history row is
+    // written after this (advanceSeason), so they are kept for it.
+    outgoingMates: bestMatesOf(career.squad),
     transfers: [...(career.transfers ?? []), record],
     // A new club is a new number and no armband. Both have to be earned again,
     // which is a large part of what a move actually costs.

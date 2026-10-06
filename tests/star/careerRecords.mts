@@ -1,7 +1,8 @@
 import { makeInitialCareer, creditMatchResult, advanceSeason, closeFinalSeason } from "../../lib/star/careerFlow";
 import { acceptOffer, type TransferOffer } from "../../lib/star/transfers";
 import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, STEP3_NORTH_CLUBS } from "../../lib/star/clubs";
-import { perClubTotals, allSeasons, historyRowFor } from "../../lib/star/careerRecords";
+import { perClubTotals, allSeasons, historyRowFor, bestMatesOf } from "../../lib/star/careerRecords";
+import { slimCareer } from "../../lib/star/hallOfFame";
 import { sortLeague } from "../../lib/star/season";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
 
@@ -167,6 +168,45 @@ const nextLeague = (c: CareerState): Fixture => c.fixtures.find((f) => (f.kind ?
   const stay = closeFinalSeason(base(), false);
   const rs = (stay.seasonHistory ?? []).find(x => x.season === c0.season);
   check(rs?.club === "Arsenal" && rs.move !== undefined, `and a mid-table last season still gets its row (${rs?.club}, ${rs?.move})`);
+}
+
+// ── Step 0 of the farewell match: each season keeps its best team-mates ──
+// Leo, 6 Oct 2026: "Start one tiny thing now (step 0) so it has real
+// team-mates when it is built."
+{
+  const c0 = base();
+  // Give the squad a season: a top scorer and a top creator.
+  const squad = c0.squad.map((p, i) => ({ ...p, seasonGoals: i === 9 ? 21 : i % 3, seasonAssists: i === 6 ? 14 : i % 2 }));
+  const c = { ...c0, squad };
+  const top = squad[9], creator = squad[6];
+  const mates = bestMatesOf(squad);
+  check(mates.length === 5, `five team-mates kept a season (${mates.length})`);
+  check(mates[0].name === top.name && mates[0].goals === 21, `the top scorer first (${mates[0].name})`);
+  check(mates.some(m => m.name === creator.name && m.assists === 14), "the top creator too");
+  check(mates.some(m => m.position === "GK"), "and a keeper, so a whole side can be drawn later");
+  check(new Set(mates.map(m => m.name)).size === mates.length, "nobody twice");
+  check(bestMatesOf([]).length === 0 && bestMatesOf(undefined).length === 0, "no squad, no team-mates (and no crash)");
+
+  const row = (advanceSeason(c, false).career.seasonHistory ?? []).find(x => x.season === c.season);
+  check((row?.mates?.length ?? 0) === 5 && row!.mates![0].name === top.name, `the season's row keeps them (${row?.mates?.length})`);
+
+  // A move made at the rollover: the row's team-mates are the club LEFT.
+  const offer: TransferOffer = { club: "Chelsea", strength: 70, wage: c.contract.wage + 50, goalBonus: 0, assistBonus: 0, seasons: 3, signingFee: 1, clauses: {}, position: 1, pitch: "", division: "premier" };
+  const moved = acceptOffer(c, offer);
+  check(moved.squad[0]?.name !== squad[0]?.name || moved.squad.length !== squad.length || moved.player.club === "Chelsea", "the move swaps the squad before the rollover");
+  const movedRow = (advanceSeason(moved, false, true).career.seasonHistory ?? []).find(x => x.season === c.season);
+  const oldNames = new Set(squad.map(p => p.name));
+  check(!!movedRow?.mates?.length && movedRow.mates.every(m => oldNames.has(m.name)), `after a summer move the row still holds the old club's team-mates (${movedRow?.mates?.map(m => m.name).join(", ")})`);
+  check(movedRow?.mates?.[0]?.name === top.name, "with the old club's top scorer first");
+  check(advanceSeason(moved, false, true).career.outgoingMates === undefined, "the stash is cleared once the row is written");
+
+  // Retiring after the last season writes them too.
+  const last = closeFinalSeason(c, false);
+  const lastRow = (last.seasonHistory ?? []).find(x => x.season === c.season);
+  check((lastRow?.mates?.length ?? 0) === 5, `the last season's row has its team-mates (${lastRow?.mates?.length})`);
+  // The Hall's slim copy drops them (about 15 KB over 20 seasons).
+  const slim = slimCareer(last);
+  check((slim.seasonHistory ?? []).every(r => !r.mates), "the Hall of Fame copy leaves the team-mates out");
 }
 
 if (problems.length) { console.error("careerRecords FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }

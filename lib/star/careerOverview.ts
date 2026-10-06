@@ -17,7 +17,7 @@
  * transfers go back to the start. Anything a save never recorded comes back
  * as `undefined`, never as a guess, and the screen shows it blacked out.
  */
-import type { CareerState, SeasonHistoryRow, Trophy } from "./types";
+import type { CareerState, FarewellRecord, SeasonHistoryRow, Trophy } from "./types";
 import type { CareerDivision } from "./calendar";
 import { careerVerdict, type CareerVerdict } from "./retirement";
 import { allSeasons } from "./careerRecords";
@@ -206,6 +206,8 @@ export interface CareerOverviewData {
   peak?: { season: number; label: string; club: string; goals: number; assists: number };
   /** The first season whose winners were recorded; undefined when none were. */
   historyFrom?: number;
+  /** The farewell match, when it was played (lib/star/farewell.ts). */
+  farewell?: FarewellRecord;
 }
 
 // ── Building it ──────────────────────────────────────────────────────────────
@@ -246,6 +248,13 @@ function yearsSpan(startYear: number, seasons: number[]): string {
   }).join(" · ");
 }
 
+/** A history row without its best team-mates (careerRecords.ts bestMatesOf). */
+function withoutMates(row: SeasonHistoryRow): SeasonHistoryRow {
+  if (!row.mates) return row;
+  const { mates: _mates, ...rest } = row;
+  return rest;
+}
+
 export function careerOverview(career: CareerState): CareerOverviewData {
   const startYear = career.player.startYear;
   const lastSeason = Math.max(1, career.season);
@@ -279,7 +288,9 @@ export function careerOverview(career: CareerState): CareerOverviewData {
       club,
       ...(st ? { stats: { apps: st.apps, goals: st.goals, assists: st.assists, avgRating: st.avgRating, motm: st.motm } } : {}),
       live,
-      ...(world ? { world } : {}),
+      // The season's best team-mates are for the farewell match; the
+      // overview never draws them, and the Hall's slim copy drops them.
+      ...(world ? { world: withoutMates(world) } : {}),
       trophies: won,
       awards: awardList,
       ...(world?.ballonDor ? { ballonDorRank: world.ballonDor.yourRank } : {}),
@@ -495,5 +506,6 @@ export function careerOverview(career: CareerState): CareerOverviewData {
     arc,
     ...(peak ? { peak } : {}),
     ...(firstHistory !== undefined ? { historyFrom: firstHistory } : {}),
+    ...(career.farewell?.played ? { farewell: career.farewell } : {}),
   };
 }

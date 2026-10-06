@@ -18,6 +18,7 @@ import { askConfirm } from "@/lib/star/askConfirm";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import CareerOverview from "./CareerOverview";
+import { ShareLinkSheet, CompareFlow } from "./LegendShare";
 import ClubBadge from "./ClubBadge";
 import TrophyImage from "./TrophyImage";
 import { ScreenShell, RiseIn, BottomBar, BarButton, clubTheme, rgba } from "./ui";
@@ -45,6 +46,9 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
   const [entries, setEntries] = useState<HallEntry[] | null>(null);
   const [cloud, setCloud] = useState<HallCloud | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  /** Share link open for the career being looked at; the compare screen. */
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [comparing, setComparing] = useState<{ start?: string } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -59,14 +63,21 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
     return () => { alive = false; };
   }, [account]);
 
+  if (comparing) {
+    return <CompareFlow mine={entries ?? []} start={comparing.start} onClose={() => { setComparing(null); window.scrollTo({ top: 0 }); }} />;
+  }
   const opened = open ? entries?.find(e => e.id === open) : undefined;
   if (opened) {
     return (
+      <>
       <CareerOverview
         key={opened.id}
         career={opened.career}
+        // A link to this career (signed in), for a friend to open and compare.
+        share={{ onLink: () => setLinkOpen(true) }}
         actions={[
           { icon: "‹", label: "Hall of Fame", onClick: () => { setOpen(null); window.scrollTo({ top: 0 }); } },
+          { icon: "⚖️", label: "Compare", onClick: () => { setComparing({ start: opened.id }); window.scrollTo({ top: 0 }); } },
           {
             icon: "🗑", label: "Remove", onClick: () => {
               void askConfirm(`Take ${opened.card.name} out of the Hall of Fame? This can't be undone.`, "Remove").then(ok => {
@@ -80,6 +91,8 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
           },
         ]}
       />
+      {linkOpen && <ShareLinkSheet entry={opened} onClose={() => setLinkOpen(false)} />}
+      </>
     );
   }
   return (
@@ -90,12 +103,13 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
       onOpen={(id) => { setOpen(id); window.scrollTo({ top: 0 }); }}
       onBack={onBack}
       backLabel={backLabel}
+      onCompare={() => { setComparing({}); window.scrollTo({ top: 0 }); }}
     />
   );
 }
 
 /** The list itself: no storage, no network. */
-export function HallOfFameList({ entries, loading = false, note, onOpen, onBack, backLabel = "Back" }: {
+export function HallOfFameList({ entries, loading = false, note, onOpen, onBack, backLabel = "Back", onCompare }: {
   entries: HallEntry[];
   loading?: boolean;
   /** One line under the title when the Hall is not in the account yet. */
@@ -103,6 +117,8 @@ export function HallOfFameList({ entries, loading = false, note, onOpen, onBack,
   onOpen: (id: string) => void;
   onBack: () => void;
   backLabel?: string;
+  /** Compare with a friend (their code). */
+  onCompare?: () => void;
 }) {
   const goals = entries.reduce((n, e) => n + e.card.goals, 0);
   const trophies = entries.reduce((n, e) => n + e.card.trophies, 0);
@@ -115,6 +131,7 @@ export function HallOfFameList({ entries, loading = false, note, onOpen, onBack,
       bottomBar={(
         <BottomBar>
           <BarButton icon="‹" label={backLabel} onClick={onBack} />
+          {onCompare && <BarButton icon="⚖️" label="Compare" onClick={onCompare} />}
         </BottomBar>
       )}
     >

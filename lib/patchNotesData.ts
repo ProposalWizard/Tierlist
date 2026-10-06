@@ -27,6 +27,222 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.33",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T13:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr",
+      "summary": "Retirement, part 3: your retired careers' bests become 9 records your later careers chase, a share picture of a whole career (1080 x 1350, for WhatsApp or Instagram), a farewell match after the final whistle (Your XI against the Rivals XI, every chance and every set piece yours, off at 85' to a standing ovation), and sharing a career by code to compare it with a friend. Legacy points and playing on as your son are left for later; retiring still ends the save.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "records your next careers chase, set by your retired ones"
+        },
+        {
+          "value": "8.9",
+          "label": "chances that come to a striker in the farewell before 85' (6.3 in a normal match)"
+        },
+        {
+          "value": "1080 × 1350",
+          "label": "the share picture: Instagram's portrait size"
+        },
+        {
+          "value": "253",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The farewell invite",
+              "detail": "Settings → Developer tools → Dev Skip to the end of season 20 → the Ballon d'Or night → The final whistle → Hang them up."
+            },
+            {
+              "title": "Team sheets, guard of honour, the match",
+              "detail": "The invite → Play it → KICK OFF."
+            },
+            {
+              "title": "Off at 85', then full time",
+              "detail": "Play the farewell to 85'."
+            },
+            {
+              "title": "The Farewell strip on the end screen",
+              "detail": "Full time → Hang them up."
+            },
+            {
+              "title": "Share picture",
+              "detail": "End screen → Share picture, or Hall of Fame → a career."
+            },
+            {
+              "title": "Hall of Fame records",
+              "detail": "A new career → Stats → flip to Records."
+            },
+            {
+              "title": "\"3 goals off Calloway's record\" on Home",
+              "detail": "A new career, close to one of your old records."
+            },
+            {
+              "title": "Share link and Compare",
+              "detail": "Hall of Fame → a career → Share link (signed in; needs the database file). Hall of Fame → Compare, or a friend's link → Compare."
+            },
+            {
+              "title": "Every new screen on made-up careers",
+              "detail": "/star-retirement-dev → The farewell match · Online."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: the farewell match",
+          "items": [
+            {
+              "title": "One last game after the final whistle",
+              "detail": "After Hang them up, your last club invites you to one last game on the real match: Your XI (your best team-mates from every club, you in your own position) against the Rivals XI (every man who beat you to a Ballon d'Or starts, then the best players at the clubs that beat you to titles; the sides within 6 rating points). Invite (Play it or Skip) → team sheets → guard of honour (3D, or drawn without 3D) → the match: every chance and every set piece comes to you, your side makes extra chances, no energy, off at 85' to a standing ovation → full time → the career overview with a Farewell strip. Measured over 300 simulated matches for a striker with the real game's settings: chances to you by 85' 6.3 → 8.9; set pieces 0.4 → 1.7; team-mate goals a game 0.25 → 0.04. Nothing counts in your stats or trophies. Played in the real game: five farewells and a Skip, by the playtest."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Your records live on",
+              "detail": "Nine records from your retired careers: goals and assists in a season, goals in a game, career goals, assists and appearances, trophies, Ballons d'Or, the furthest goal. Stats → Records: a Hall of Fame records card with who holds each and a bar for how close you are. Home: \"3 goals off Calloway's record\" when you get close. Breaking one makes news posts once, naming the old holder. Equalling never takes a record. Seen in the real game on a seeded save."
+            },
+            {
+              "title": "Share picture",
+              "detail": "One 1080 × 1350 picture of a whole career: name, legacy score, five big numbers, clubs, goals by season, the cabinet. Share (phone) or Save picture (computer), from the end screen and every Hall of Fame career."
+            },
+            {
+              "title": "Share a career by code",
+              "detail": "A Hall of Fame career can get a link like knowitball.co.uk/legend/K7Q2XM: read only, no sign-in to look, sign in to make one, Stop sharing turns it off. Codes are 6 letters and numbers with no look-alikes; nothing lists them (no public board)."
+            },
+            {
+              "title": "Compare with a friend",
+              "detail": "Head to head: 11 numbers, two bars each, and numbers won (Clubs is not counted). From a friend's link, or Hall of Fame → Compare → paste their code → pick one of yours."
+            },
+            {
+              "title": "The test page shows all of it",
+              "detail": "/star-retirement-dev: The farewell match (invite, team sheets, guard of honour 3D and drawn, full time, the overview) and Online (share link, head to head, the compare screen)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Each season keeps your 5 best team-mates",
+              "detail": "It fills Your XI in the farewell. The Hall of Fame copy leaves them out."
+            },
+            {
+              "title": "The guard of honour follows Settings → Look → 3D quality",
+              "detail": "Low 4 men a side, Medium 6, High 8."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest)",
+          "items": [
+            {
+              "title": "Free kicks and corners in the farewell went to team-mates",
+              "detail": "The match picks a set-piece taker by position; the farewell never told it otherwise (a striker took 3 free kicks in 8, 1 corner in 4) and the playtest got 2 or 3 chances a match. Every set piece is yours now and your side makes extra chances: a striker's chances by 85' 6.3 → 8.9 (measured). The first check left position out and measured 7.3."
+            },
+            {
+              "title": "Every farewell was the same match",
+              "detail": "One fixed match script for every career ending at season 20 (same chances at 18' and 19', same rival goal at 84', all 0–1). Each career gets its own now."
+            },
+            {
+              "title": "A Ballon d'Or rival's surname on both sides",
+              "detail": "He is always picked, so the surname rule skipped him. Your team-mate with that surname sits out now: 3 clashes over 15 test careers → 0."
+            },
+            {
+              "title": "The ovation came before the commentary reached 85'",
+              "detail": "The banner and cheer now wait for the clock, and the banner says the same words as the commentary."
+            },
+            {
+              "title": "The Back button covered the team-sheet label; the walk-out took 40-80 s on a slow device; '1 trophies'",
+              "detail": "The label is 'Farewell match'; the walk-out runs in real time down to 4 frames a second; '1 trophy'."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found while checking)",
+          "items": [
+            {
+              "title": "The same surname on both team sheets",
+              "detail": "One surname once across both sides now (a Ballon d'Or rival is always picked). Rule off: 24 clashes over 15 test careers; on: 0."
+            },
+            {
+              "title": "The Hall copy of a career drew a different overview",
+              "detail": "The overview left the saved team-mates in; 12 Hall checks failed. Fixed."
+            },
+            {
+              "title": "The guard of honour could not read Harry's smaller 3D files",
+              "detail": "It now reads the packed files and picks its quality like every other 3D scene. Seen loading in 5 to 15 seconds on a test machine with no graphics chip."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run supabase/migrations/star_legend_shares.sql",
+              "detail": "Until then Share link says \"Sharing isn't switched on yet.\" Also still waiting: star_hall_of_fame.sql."
+            },
+            {
+              "title": "Retiring still ends the save",
+              "detail": "Legacy points and the son are Leo's to build later."
+            },
+            {
+              "title": "Sharing and comparing not seen end to end",
+              "detail": "The test machine cannot reach the database; screens, codes and the compare maths are tested."
+            },
+            {
+              "title": "A farewell after this round's fixes is not seen played",
+              "detail": "The chance numbers are measured; the banner timing is worked out from the code."
+            },
+            {
+              "title": "Signed out on a test machine, a refresh during the farewell goes back to the Ballon d'Or night",
+              "detail": "The older test-mode bug; signed-in players go back to the final whistle (worked out from the code)."
+            },
+            {
+              "title": "The farewell is one go",
+              "detail": "Skip it and it is gone; a refresh during it goes back to the final whistle."
+            },
+            {
+              "title": "The Old UI has no farewell, share picture or compare",
+              "detail": "It is frozen; its careers still go in the Hall and set records."
+            },
+            {
+              "title": "The world does not age",
+              "detail": "Carried from v0.7."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "A short clip of the 85' ovation",
+              "detail": "Added to the page after the push. The guard of honour clip is on the page already."
+            },
+            {
+              "title": "Legacy points and the son",
+              "detail": "Leo's, after the base game."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.32",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-06T04:00:00Z",
