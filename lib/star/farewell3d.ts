@@ -394,7 +394,10 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
     raf = requestAnimationFrame(tick);
     if (frozen) return;
     if (now - last < minFrame) return;
-    const dt = Math.min(0.05, (now - last) / 1000);
+    // Real time, up to 4 frames a second: a playtest at 5-10 frames a second
+    // saw the 10-second walk-out take 40 to 80 seconds with a 0.05 s cap.
+    // The cap still stops a jump after the phone wakes from a locked screen.
+    const dt = Math.min(0.25, (now - last) / 1000);
     last = now;
     t += dt;
     pose(t, dt);

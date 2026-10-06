@@ -114,10 +114,11 @@ export function careerVerdict(career: CareerState): CareerVerdict {
           : score >= 12 ? "A Solid Professional"
             : "A Career in the Game";
 
+  const won = trophies === 1 ? "1 trophy" : `${trophies} trophies`;
   const summary = career.ballonDorWins > 0
-    ? `${career.ballonDorWins} Ballon d'Or${career.ballonDorWins > 1 ? "s" : ""}, ${s.goals} goals and ${trophies} trophies across ${seasons} seasons.`
+    ? `${career.ballonDorWins} Ballon d'Or${career.ballonDorWins > 1 ? "s" : ""}, ${s.goals} goals and ${won} across ${seasons} seasons.`
     : trophies > 0
-      ? `${s.goals} goals and ${trophies} trophies across ${seasons} seasons.`
+      ? `${s.goals} goals and ${won} across ${seasons} seasons.`
       : `${s.goals} goals in ${s.appearances} appearances across ${seasons} seasons.`;
 
   return { title, summary, score, seasons, clubs };

@@ -81,9 +81,8 @@ import TransferSigning from "@/components/star/TransferSigning";
 import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
 import { FarewellInvite, FarewellResult, GuardOfHonour } from "@/components/star/Farewell";
 import VersusScreen from "@/components/star/VersusScreen";
-import { shortClub } from "@/lib/star/media/grammar";
 import {
-  farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped,
+  farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped, farewellSeed,
   FAREWELL_OFF_AT, type FarewellSides,
 } from "@/lib/star/farewell";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
@@ -3776,7 +3775,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <VersusScreen
           matchday={md}
           date="One last game"
-          competition={`Farewell match · ${shortClub(sides.host)}`}
+          // Short, so the Back button never covers it (playtest, 6 Oct 2026); the
+          // invite already names the club putting it on.
+          competition="Farewell match"
           clubKits={fc.clubKits}
           onKickOff={() => setPhase("farewell-walkout")}
           onBack={() => setPhase("farewell-invite")}
@@ -3809,7 +3810,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                 startMinute={0}
                 duties={farewellDuties()}
                 conditions={conditionsFor(career.season, 40, career.homeCity)}
-                seed={career.season * 1000 + 777}
+                seed={farewellSeed(career)}
                 pressure={0.3}
                 penaltyRunup={careerPenaltyRunup(career)}
                 freeKickRunup={careerFreeKickRunup(career)}

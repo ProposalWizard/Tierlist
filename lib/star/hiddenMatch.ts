@@ -213,7 +213,9 @@ export interface HiddenMatchInputs {
    * THE FAREWELL MATCH (Leo, 6 Oct 2026: "every chance is yours"). Nearly
    * every chance your side works comes to you — FAREWELL_INVOLVEMENT, not
    * every one, so a team-mate still scores now and then and it reads as a
-   * match. Only the farewell match passes it; absent is exactly today's game.
+   * match. Every set piece is yours, and your side makes High mode's extra
+   * chances (all yours). Only the farewell match passes it; absent is exactly
+   * today's game.
    */
   farewell?: boolean;
   /**
@@ -959,7 +961,10 @@ export function tick(
     // One roll decides both, so Medium and Low use the random stream exactly
     // as before; only High has the extra slice above the normal rate.
     const chanceRoll = rng();
-    const highExtra = userHasIt && modeAt(inputs, state.minute) === "high"
+    // The farewell match makes High's extra chances too: it is your day, and
+    // the side plays for you (Leo, 6 Oct 2026; a playtest saw 2 or 3 chances
+    // by 85' without them).
+    const highExtra = userHasIt && (modeAt(inputs, state.minute) === "high" || inputs.farewell)
       ? rate * (HIGH_MODE_EXTRA - 1) : 0;
     // A late sub's fresh legs make extra chances of their own (item 24).
     const subExtra = userHasIt && inputs.lateSub ? rate * lateSubExtra(inputs.lateSub) : 0;
@@ -1220,6 +1225,9 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   const DEFAULT_DUTY = { penalty: 3, free_kick: 5, corner: 6 };
   const takesIt = (kind: "penalty" | "free_kick" | "corner"): boolean => {
     if (!inputs.position) return true;   // an old caller is byte-identical
+    // The farewell match: every set piece is yours (farewellDuties). Without
+    // this a striker took 3 free kicks in 8 and 1 corner in 4.
+    if (inputs.farewell) return true;
     const w = (SET_PIECE_DUTY[inputs.position] ?? DEFAULT_DUTY)[kind];
     // The better your free-kick rating, the more often the free kicks and
     // corners are yours (Mikey, 25 Sep 2026). 40, where a career starts, is

@@ -33,7 +33,6 @@ import { CompareCareers, CompareFlow, ShareLinkSheet } from "@/components/star/L
 import { farewellSides, farewellCareer, farewellFixture, farewellRecordFrom } from "@/lib/star/farewell";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { formationOf } from "@/lib/star/formations";
-import { shortClub } from "@/lib/star/media/grammar";
 import type { MatchStats } from "@/lib/star/types";
 import { ScreenShell, BottomBar, BarButton } from "@/components/star/ui";
 import { previewCareer, PREVIEW_SHAPES, type PreviewShape } from "@/lib/star/retirementPreview";
@@ -127,7 +126,7 @@ export default function RetirementPreviewPage() {
       <VersusScreen
         matchday={md}
         date="One last game"
-        competition={`Farewell match · ${shortClub(farewell.sides.host)}`}
+        competition="Farewell match"
         clubKits={farewell.career.clubKits}
         onKickOff={() => go("fw-walkout")}
         onBack={() => go("fw-invite")}

@@ -474,8 +474,15 @@ export function farewellSides(career: CareerState): FarewellSides {
   const youPos = ((career.player.position as Role) || "ST");
   const youOverall = displayOverall(career.starRating ?? 2.5);
 
-  // Your XI: you, then the team-mates who deserve it most.
-  const mates = yourMatesPool(career).sort((a, b) => mateWorth(b) - mateWorth(a));
+  // Your XI: you, then the team-mates who deserve it most. A man who beat you
+  // to a Ballon d'Or always plays for the rivals, so a different team-mate of
+  // yours with his surname sits this one out: a playtest saw "Williams" and
+  // "Modric" on both team sheets, every time (6 Oct 2026).
+  const bdo = ballonDorRivals(career);
+  const bdoNames = new Set(bdo.map(b => norm(b.name)));
+  const bdoSurnames = new Set(bdo.map(b => norm(shortNameOf(b.name))));
+  const allMates = yourMatesPool(career).sort((a, b) => mateWorth(b) - mateWorth(a));
+  const mates = allMates.filter(m => bdoNames.has(norm(m.name)) || !bdoSurnames.has(norm(shortNameOf(m.name))));
   const ourPlayers: SquadPlayer[] = mates.map((m, i) => ({
     id: `fw_${i}`,
     name: m.name,
@@ -500,7 +507,7 @@ export function farewellSides(career: CareerState): FarewellSides {
   const ourSquad = ourPlayers.filter(p => ourIds.has(p.id));
 
   // Rivals XI: nobody already on your side.
-  const ours = new Set(mates.map(m => norm(m.name)));
+  const ours = new Set(allMates.map(m => norm(m.name)));
   ours.add(norm(`${career.player.firstName} ${career.player.lastName}`));
   const ourSurnames = new Set([...ourSquad.map(p => norm(shortNameOf(p.name))), norm(career.player.lastName)]);
   const who = rivalsPool(career, ours, ourSurnames);
@@ -594,6 +601,17 @@ export function farewellCareer(career: CareerState, sides: FarewellSides): Caree
 /** Every set piece is yours. */
 export function farewellDuties(): SetPieceDuties {
   return { freeKicks: true, penalties: true, freeKickNeeded: 0, penaltyNeeded: 0, penaltyStanding: 0, penaltyStarWeight: 0 };
+}
+
+/**
+ * The farewell's own match script. It was season × 1000 + 777, the same for
+ * every career that ends at season 20: a playtest played five farewells and
+ * all five were the same match (team-mate chances at 18' and 19', a rival
+ * goal at 84', 0–1). Now each career gets its own, the same on every replay.
+ */
+export function farewellSeed(career: CareerState): number {
+  const p = career.player;
+  return clubNameSeed(`farewell|${p.firstName} ${p.lastName}|${p.startYear ?? 0}|${career.season}|${p.position}`);
 }
 
 /** What the career keeps of it: one line on the overview and the card. */

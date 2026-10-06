@@ -2,7 +2,7 @@ import { previewCareer, PREVIEW_SHAPES } from "../../lib/star/retirementPreview"
 import {
   farewellSides, farewellCareer, farewellFixture, farewellRecordFrom, farewellSkipped, farewellDuties,
   yourMatesPool, rivalsPool, titleRivals, ballonDorRivals, farewellTeamName, farewellFormationFor,
-  YOU_ID, RIVALS_XI, FAREWELL_OFF_AT,
+  YOU_ID, RIVALS_XI, FAREWELL_OFF_AT, farewellSeed,
 } from "../../lib/star/farewell";
 import { matchdayFor, opponentStartingXI, startingTeammateRoles } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
@@ -48,10 +48,11 @@ for (const { id } of PREVIEW_SHAPES) {
     const ourNames = new Set(s.ours.players.map(p => norm(p.name)));
     check(s.rivals.players.every(p => !ourNames.has(norm(p.name))), `${tag}: nobody plays for both sides`);
     check(!s.rivals.players.some(p => norm(p.name) === norm(`${c.player.firstName} ${c.player.lastName}`)), `${tag}: you are not a rival of yourself`);
-    // One surname once across both sheets (a Ballon d'Or rival is the only exception).
+    // One surname once across both sheets, Ballon d'Or rivals included (the
+    // team-mate sits out instead). Only your own surname may match a rival's.
     const surname = (n: string) => norm(shortNameOf(n));
-    const ourSurnames = new Set([...s.ours.players.map(p => surname(p.name)), surname(c.player.lastName)]);
-    const clash = s.rivals.who.filter(r => !r.ballonDor && ourSurnames.has(surname(r.name)));
+    const ourSurnames = new Set(s.ours.players.map(p => surname(p.name)));
+    const clash = s.rivals.who.filter(r => ourSurnames.has(surname(r.name)));
     check(clash.length === 0, `${tag}: no surname on both sides (${clash.map(r => r.name).join(", ")})`);
     const rivalSurnames = s.rivals.who.filter(r => !r.ballonDor).map(r => surname(r.name));
     check(new Set(rivalSurnames).size === rivalSurnames.length, `${tag}: no surname twice in the Rivals XI squad`);
@@ -139,31 +140,52 @@ for (const { id } of PREVIEW_SHAPES) {
 }
 
 // ── 6. The hidden match: every chance is yours ──────────────────────────────
+// With the inputs the real match passes (position, free-kick rating, live
+// penalties). The first version of this check left position out, which skips
+// the set-piece rule entirely: it measured 7.3 chances while the real game
+// gave a striker 2 or 3 (playtest, 6 Oct 2026).
 {
   const play = (inputs: HiddenMatchInputs, seed: number) => {
     const rng = mulberry32(seed);
     const st = newMatch(rng);
-    let mine = 0, mates = 0;
+    let mine = 0, mates = 0, setPieces = 0;
     while (st.minute < FAREWELL_OFF_AT) {
       const step = advanceUntilInvolved(st, inputs, rng, FAREWELL_OFF_AT);
       mates += step.events.filter(e => e.teammateGoal).length;
       if (!step.request) break;
       mine++;
+      if (step.request.pattern === "set_piece") setPieces++;
       resolveScenario(st, "saved");
     }
-    return { mine, mates };
+    return { mine, mates, setPieces };
   };
-  const base: HiddenMatchInputs = { teamStrength: 78, oppStrength: 82, playerSkill: 70 };
-  let nm = 0, nt = 0, fm = 0, ft = 0;
-  const N = 300;
-  for (let i = 0; i < N; i++) {
-    const a = play(base, 11 + i * 7919);
-    const b = play({ ...base, farewell: true }, 11 + i * 7919);
-    nm += a.mine; nt += a.mates; fm += b.mine; ft += b.mates;
+  for (const position of ["ST", "CAM", "CB"] as const) {
+    const base: HiddenMatchInputs = {
+      teamStrength: 80, oppStrength: 82, playerSkill: 75, home: true, pace: 75, freeKick: 60,
+      position, energy: 100, livePenalties: true,
+      context: { teamRelationship: 100, fanRelationship: 100, skills: { pace: 75, power: 75, technique: 75, vision: 75 } },
+    };
+    let nm = 0, nt = 0, ns = 0, fm = 0, ft = 0, fs = 0;
+    const N = 300;
+    for (let i = 0; i < N; i++) {
+      const a = play(base, 101 + i * 7919);
+      const b = play({ ...base, farewell: true }, 101 + i * 7919);
+      nm += a.mine; nt += a.mates; ns += a.setPieces; fm += b.mine; ft += b.mates; fs += b.setPieces;
+    }
+    check(fm / N > (nm / N) * 1.25, `${position}: more chances come to you in the farewell (${(nm / N).toFixed(1)} → ${(fm / N).toFixed(1)} by ${FAREWELL_OFF_AT}')`);
+    check(fm / N >= 8, `${position}: a farewell is a showcase, 8 or more chances on average (${(fm / N).toFixed(1)})`);
+    check(fs / N > (ns / N) * 1.4, `${position}: the set pieces are yours (${(ns / N).toFixed(1)} → ${(fs / N).toFixed(1)} a match)`);
+    check(ft / N < (nt / N) * 0.3, `${position}: team-mates hardly score without you (${(nt / N).toFixed(2)} → ${(ft / N).toFixed(2)} goals)`);
   }
-  check(fm / N > (nm / N) * 1.15, `more chances come to you in the farewell (${(nm / N).toFixed(1)} → ${(fm / N).toFixed(1)} by ${FAREWELL_OFF_AT}')`);
-  check(ft / N < (nt / N) * 0.3, `team-mates hardly score without you (${(nt / N).toFixed(2)} → ${(ft / N).toFixed(2)} goals)`);
   check(FAREWELL_INVOLVEMENT > 0.9 && FAREWELL_INVOLVEMENT < 1, "nearly every chance, not every one");
+}
+
+// ── 6b. Every career gets its own farewell ──────────────────────────────────
+{
+  const a = previewCareer("legend", 1, { upTo: 20 });
+  const b = previewCareer("journeyman", 2, { upTo: 20 });
+  check(farewellSeed(a) === farewellSeed(a), "the same career gets the same farewell every time");
+  check(farewellSeed(a) !== farewellSeed(b), "two careers ending at season 20 get different farewells (was season × 1000 + 777 for both)");
 }
 
 // ── 7. The guard of honour's timeline ───────────────────────────────────────

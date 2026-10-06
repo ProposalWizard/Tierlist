@@ -1291,6 +1291,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   farewellRef.current = farewell;
   /** The farewell: the minute you came off to the standing ovation. */
   const [ovation, setOvation] = useState<number | null>(null);
+  // The ovation waits for the commentary to reach that minute: the match
+  // decides it a stretch ahead, and a playtest saw the banner at 85' while
+  // the clock still read 75' (6 Oct 2026). The cheer plays when it shows.
+  const ovationShown = !!farewell && ovation !== null && matchMinute >= ovation;
+  const ovationHeardRef = useRef(false);
+  useEffect(() => {
+    if (ovationShown && !ovationHeardRef.current) { ovationHeardRef.current = true; playCrowdSwell("cheer"); }
+  }, [ovationShown]);
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -5359,7 +5367,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         hookedRef.current = decision.reason;
         hookedAtRef.current = st.minute;
         events.push({ minute: st.minute, text: decision.message });
-        if (fw) { setOvation(st.minute); playCrowdSwell("cheer"); }
+        if (fw) setOvation(st.minute);
         // The rest of the match is played without you, exactly as the hour
         // before kick-off is when you come off the bench.
         //
@@ -6800,14 +6808,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       )}
 
       {/* The farewell: you have come off, and the whole ground stands. */}
-      {farewell && ovation !== null && (
+      {ovationShown && (
         <div
           data-farewell-ovation
           className="kib-pop mb-2 px-3 py-2 text-center"
           style={{ background: "linear-gradient(90deg, rgba(251,191,36,.28), rgba(251,191,36,.10))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6)", borderRadius: 4 }}
         >
           <div className="text-[19px] font-black uppercase leading-none tracking-wide text-amber-200">👏 Standing ovation 👏</div>
-          <div className="mt-1 text-[12.5px] font-bold leading-snug text-white">{ovation}&apos; — you come off. The whole ground is on its feet.</div>
+          <div className="mt-1 text-[12.5px] font-bold leading-snug text-white">{ovation}&apos; — you come off. The whole ground is on its feet for you.</div>
         </div>
       )}
 
