@@ -25,8 +25,9 @@ import {
 } from "./people3d";
 import { people3dLook } from "./look3d";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
-import { resolveQuality3d, TIER_PROFILES } from "./three3d/perf";
-import type { Quality3d } from "./three3d/quality";
+import { rememberGpu } from "./three3d/perf";
+import { withMeshopt } from "./three3d/meshopt";
+import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
 import { makeWalkClip } from "./walkClip";
 import { SKIN_TONES, HAIR_COLOURS } from "./playerIdentity";
 import { GUARD, OUTLINED, lineLength, clappers, lineZ, startZ, youZAt, youSpeedAt, clapGap, waveWeight, guardRand } from "./guardOfHonour";
@@ -73,10 +74,14 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
 
   const BODY: PeopleBody = people3dLook();
 
-  // ── Renderer ──
-  const renderer = new T.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-  const tier: Quality3d = opts.tier ?? resolveQuality3d(T, renderer);
+  // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before
+  // the renderer, the same as every other 3D scene.
+  const tier: Quality3d = opts.tier ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
+
+  // ── Renderer ──
+  const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
+  rememberGpu(renderer);
   renderer.setPixelRatio(Math.min(prof.maxPixelRatio, window.devicePixelRatio || 1));
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping;
@@ -217,7 +222,7 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
   mouth.position.set(0, 1.45, tunnelZ - 0.25);
 
   // ── People ──
-  const loader = new GLTFLoader();
+  const loader = await withMeshopt(new GLTFLoader()); // the files are meshopt-packed (scripts/perf3d/shrink-models.mjs)
   const youModel: PlayerModel = playerModelFor(opts.you.hairStyle);
   const models: PlayerModel[] = ["player", "player-buzz", "player-long"];
   const [anims, ...bodies] = await Promise.all([
@@ -238,7 +243,7 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
       const model = models[Math.floor(guardRand(opts.seed, k, 1) * models.length)];
       const live = i < LIVE;
       const p = makePerson3d(T, SkeletonUtils, bodyOf(model), anims, {
-        outline: i < OUTLINED ? 0.0035 : 0, castShadow: prof.shadows && i < OUTLINED, outlineNear: BODY === "new" ? 1.6 : undefined,
+        outline: prof.outlines && i < OUTLINED ? 0.0035 : 0, castShadow: prof.shadows && i < OUTLINED, outlineNear: BODY === "new" ? 1.6 : undefined,
       });
       // Your XI on your left as you walk out (the camera's right), the Rivals XI opposite.
       const ours = side === 1;
@@ -276,7 +281,7 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
   };
 
   // You.
-  const you = makePerson3d(T, SkeletonUtils, bodyOf(youModel), anims, { outline: 0.0035, castShadow: prof.shadows, outlineNear: BODY === "new" ? 1.6 : undefined });
+  const you = makePerson3d(T, SkeletonUtils, bodyOf(youModel), anims, { outline: prof.outlines ? 0.0035 : 0, castShadow: prof.shadows, outlineNear: BODY === "new" ? 1.6 : undefined });
   dressPerson3d(T, you, {
     skin: opts.you.skin, hair: opts.you.hair, kit: opts.you.kit, number: null,
     face: opts.you.face ?? null, faceSkin: opts.you.face?.skin, accessories: opts.you.accessories,
