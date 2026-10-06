@@ -65,7 +65,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
       trophies: [{ name: "Premier League", count: 2, art: null }, { name: "FA Cup", count: 1, art: null }],
       cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-suv.glb"],
       sky: "day", mates: [4, 7, 9], arrive: "gate",
-      player: { look: "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
+      player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
     }, { quality: opts.quality ?? "high", fixedStep: 1 / 30 });
     M.ready = performance.now();
     M.ctrl = c;
@@ -74,7 +74,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
   async shop(opts: any = {}) {
     M.t0 = performance.now();
     const c = await startShop(stage(), { onNear() {}, onFps() {} } as any, KIT, shopDisplays(), {
-      quality: opts.quality ?? "high", fixedStep: 1 / 30, number: 10, player: { look: "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
+      quality: opts.quality ?? "high", fixedStep: 1 / 30, number: 10, player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
     });
     M.ready = performance.now();
     M.ctrl = c;

@@ -1,4 +1,4 @@
-// SIZE TEST ONLY (writes to ./out, never to public/): what a GLB would weigh
+// SIZE TEST ONLY — superseded by shrink-models.mjs (6 Oct 2026), which packs the real files. (writes to ./out, never to public/): what a GLB would weigh
 // with meshopt geometry compression + resampled animation keys. Needs, outside
 // package.json:  npm i --no-save @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 meshoptimizer draco3dgltf
 // Usage: node scripts/perf3d/squeeze.mjs star/onebody/player.glb star/people3d/anims.glb

@@ -35,6 +35,7 @@ import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
+import { withMeshopt } from "../three3d/meshopt";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -411,7 +412,8 @@ async function buildShop(
   draco.setDecoderPath("/star/shop3d/draco/");
   draco.setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(draco);
+  loader.setDRACOLoader(draco); // boots and cars
+  await withMeshopt(loader); // people, clips, the old player (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
   const models = new Map<string, Promise<any>>();
   const loadModel = (url: string) => {

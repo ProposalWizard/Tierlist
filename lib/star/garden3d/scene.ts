@@ -50,6 +50,7 @@ import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
+import { withMeshopt } from "../three3d/meshopt";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -406,7 +407,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   draco.setDecoderPath("/star/shop3d/draco/");
   draco.setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(draco);
+  loader.setDRACOLoader(draco); // props.glb
+  await withMeshopt(loader); // people, clips, horse, bird (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
   const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
   // You are the 3D shop's own player: the approved people3d body when the

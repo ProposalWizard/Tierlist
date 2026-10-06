@@ -42,6 +42,7 @@ import {
   type Person3D, type PersonModel,
 } from "./people3d";
 import { people3dLook } from "./look3d";
+import { withMeshopt } from "./three3d/meshopt";
 
 type Three = typeof import("three");
 
@@ -246,7 +247,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
   // ── Load ──
   const STAGE = opts.stage ?? "signing";
-  const loader = new GLTFLoader();
+  const loader = await withMeshopt(new GLTFLoader()); // the files are meshopt-packed (scripts/perf3d/shrink-models.mjs)
   const texLoader = new T.TextureLoader();
   const youModel0 = playerModelFor(opts.you.hairStyle);
   // The window view loads with the people (it was fetched afterwards, so a

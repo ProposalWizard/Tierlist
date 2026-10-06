@@ -13,6 +13,9 @@ Writes:
   bird.glb    Quaternius' eagle with its animations (shrunk to a garden bird
               in the scene).
 Nothing here runs at build time; the outputs are committed.
+Afterwards horse.glb and bird.glb are packed small (meshopt) by
+scripts/perf3d/shrink-models.mjs, run at the end here; props.glb stays Draco
+(smaller than meshopt for it).
 """
 import bpy, sys, os
 
@@ -101,3 +104,8 @@ for key, blend, obj in (("horse", "farm/Farm Animals by @Quaternius/FBX/Horse.fb
     for a in bpy.data.actions:
         print(key, "action", a.name, a.frame_range[:])
     export(os.path.join(OUT, key + ".glb"), animations=True)
+
+# A rebuild writes them big: pack them small (scripts/perf3d/shrink-models.mjs).
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "perf3d"))
+from shrink_after_build import shrink  # noqa: E402
+shrink([os.path.join(OUT, "horse.glb"), os.path.join(OUT, "bird.glb")])

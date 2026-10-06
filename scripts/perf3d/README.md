@@ -30,3 +30,29 @@ Other pages: `mini.mjs main|worker` (the same garden-sized scene on the
 page vs in a Web Worker, and how much the page froze), `hop.mjs fresh|shared`
 (entering a scene 4 times with a new renderer each time vs one kept).
 `squeeze.mjs` measures GLB sizes with meshopt (see its header).
+
+## Shrinking the model files (`shrink-models.mjs`, 6 Oct 2026)
+
+The GLBs the 3D scenes load are packed small **in place**: meshopt geometry
+and clips (`EXT_meshopt_compression`), clip keys resampled (1e-4 tolerance),
+JPEG/PNG textures as WebP (iOS 14+). Draco files stay Draco where Draco is
+smaller over the wire (props, boots, cars). Each file has a policy in the
+script saying which vertex data may become 8/16-bit, because some game code
+reads raw vertex data (`people3d.ts` dequantize, `dressInKit`, the garden's
+pieces).
+
+```bash
+npm i --no-save @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 meshoptimizer draco3dgltf sharp
+node scripts/perf3d/shrink-models.mjs                 # every file, in place (already-packed files are skipped)
+node scripts/perf3d/shrink-models.mjs --out=/tmp/x star/onebody/player.glb   # a try, written elsewhere
+```
+
+- **Every GLTFLoader must call `withMeshopt(loader)`** (`lib/star/three3d/meshopt.ts`,
+  three's own decoder). A loader without it fails on these files.
+- **Rebuilds:** `build_onebody.py`, `build_people3d.py`, `tools/shop3d/build_assets.py`,
+  `tools/garden3d/build_anims.py` and `tools/garden3d/export_models.py` run it at
+  their end (`shrink_after_build.py`); without the tools they print the command.
+  `build_onebody.py` reads the plain people3d bodies: its header says how to get them back.
+- **A new 3D file** needs a POLICY line in the script before it can be packed.
+- `exp/old_people.js` switches a harness run to Settings → Look → "3D people: Old";
+  `drive.mjs garden '{"look":"old"}'` / `shop '{"look":"old"}'` use the old player.
