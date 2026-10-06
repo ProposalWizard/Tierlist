@@ -24,6 +24,7 @@ import type * as THREE from "three";
 
 import type { Live3D } from "@/lib/star/starPassRewards";
 import { TIER_PROFILES, quality3dTier } from "@/lib/star/three3d/quality";
+import { withMeshopt } from "@/lib/star/three3d/meshopt";
 
 const LENS_FOV = 28.7; // a 70 mm lens on a 36 mm sensor, as the Blender pictures use
 
@@ -96,7 +97,7 @@ export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: bool
       const turntable = new THREE.Group();
       turntable.rotation.y = -0.6;
       scene.add(turntable);
-      const loader = new GLTFLoader();
+      const loader = await withMeshopt(new GLTFLoader()); // meshopt-packed (scripts/perf3d/shrink-models.mjs)
       const [pod, item] = await Promise.all([loader.loadAsync(cfg.podium), loader.loadAsync(cfg.item)]);
       if (disposed) { renderer.dispose(); return; }
 

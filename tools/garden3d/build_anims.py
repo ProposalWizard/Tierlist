@@ -70,3 +70,7 @@ def main(ual1, ual2, body, out):
 
 if __name__ == "__main__":
     main(*sys.argv[1:5])
+    # A rebuild writes it big: pack it small (scripts/perf3d/shrink-models.mjs).
+    sys.path.insert(0, "scripts/perf3d")
+    from shrink_after_build import shrink
+    shrink([sys.argv[4]])

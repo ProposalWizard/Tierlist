@@ -43,6 +43,14 @@ def read_gltf(path):
         imgdir = d
     views = []
     for v in j["bufferViews"]:
+        # A file packed by scripts/perf3d/shrink-models.mjs (EXT_meshopt_compression)
+        # keeps its data compressed and points the plain views at an empty
+        # fallback buffer: those views read as None here. Only the JSON
+        # (node names, rest translations) can be read from such a file, which
+        # is all tools/garden3d/build_anims.py takes from character.glb.
+        if v.get("buffer", 0) >= len(bins):
+            views.append(None)
+            continue
         src = bins[v.get("buffer", 0)]
         o = v.get("byteOffset", 0)
         views.append(src[o:o + v["byteLength"]])
@@ -248,3 +256,8 @@ if __name__ == "__main__":
     body_dir, hair_dir, ual, out = sys.argv[1:5]
     print("character.glb", build_character(body_dir, hair_dir, out + "/character.glb"))
     print("anims.glb", build_anims(ual, body_dir, out + "/anims.glb"))
+    # A rebuild writes them big: pack them small (scripts/perf3d/shrink-models.mjs).
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "perf3d"))
+    from shrink_after_build import shrink
+    shrink([out + "/character.glb", out + "/anims.glb"])
