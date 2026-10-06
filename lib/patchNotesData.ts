@@ -126,7 +126,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Master switch",
-              "detail": "Settings → Look → Animations: New | Old, default New."
+              "detail": "Settings → Look → Animations: New | Old, default Old (switch to New to try it)."
             }
           ]
         },
