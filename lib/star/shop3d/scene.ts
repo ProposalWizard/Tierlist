@@ -35,6 +35,8 @@ import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
+import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { DynamicResolution, rememberGpu } from "../three3d/perf";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -85,7 +87,7 @@ export interface ShopController {
   /** Filming only: [wall-clock ms, game seconds] for every frame drawn. */
   filmLog: () => [number, number][];
   /** What one frame costs to draw: draw calls and triangles. */
-  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; shadowRenders?: number; frames?: number; merged?: { before: number; after: number } };
+  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; shadowRenders?: number; frames?: number; merged?: { before: number; after: number }; quality?: string };
   dispose: () => void;
 }
 
@@ -128,8 +130,8 @@ const CIRCLES: [number, number, number][] = [[CAR.x, CAR.z, CAR.r - 0.05]];
 const WALK = 1.55; // m/s
 const JOG = 3.3;
 
-/** "high": shadows, 1.5x pixels. "low": no shadows, 1x pixels — for a slow phone. */
-export type ShopQuality = "high" | "low";
+/** Settings → Look → "3D quality" (lib/star/three3d/quality.ts): Low, Medium or High. */
+export type ShopQuality = Quality3d;
 
 export interface ShopOptions {
   quality?: ShopQuality;
@@ -180,7 +182,10 @@ async function buildShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
   displays: Record<DisplayId, Display>, opts: ShopOptions, own: { renderer?: any },
 ): Promise<ShopController> {
-  let quality = opts.quality ?? "high";
+  // 3D quality: one tier, chosen before the renderer (Settings, else Auto).
+  // High is the New look exactly as it was on 5 Oct 2026.
+  let tier: Quality3d = opts.quality ?? quality3dTier();
+  let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
@@ -188,19 +193,29 @@ async function buildShop(
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
   own.renderer = renderer;
-  // LAG (Harry, 5 Oct 2026): up to 1.5x a CSS pixel standing still, 1x while
-  // walking (2.25x fewer pixels while the picture moves); "low": 1x.
+  rememberGpu(renderer);
+  // LAG (Harry, 5 Oct 2026): the tier's still cap standing still (High 1.5x
+  // a CSS pixel), its moving cap while walking (High 1x: 2.25x fewer pixels
+  // while the picture moves), and dynamic resolution a little below that
+  // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, quality === "high" ? 1.5 : 1);
-  const movePR = () => Math.min(dpr, 1);
+  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  let dynPR = Math.min(dpr, prof.movePixelRatio);
+  const makeDyn = () => new DynamicResolution(
+    { setPixelRatio: (v: number) => { dynPR = v; } },
+    { maxPixelRatio: prof.movePixelRatio, minPixelRatio: prof.minPixelRatio, fpsCap: prof.fpsCap },
+    { step: 0.125, devicePixelRatio: dpr },
+  );
+  let dyn = makeDyn();
+  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
-  renderer.shadowMap.enabled = quality === "high";
+  renderer.shadowMap.enabled = prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.display = "block";
   renderer.domElement.style.width = "100%";
@@ -235,11 +250,12 @@ async function buildShop(
     return s;
   };
   const carSpot = spot("#fff3e4", 150, CAR.x + 0.3, ROOM.h - 0.08, CAR.z + 0.6, CAR.x, 0, CAR.z, 0.72, 0.5, 12);
-  carSpot.castShadow = quality === "high";
+  carSpot.castShadow = prof.shadows;
   // its shadow is drawn again only while something under it moves (the
   // turntable, a few times a second; you walking near it)
   carSpot.shadow.autoUpdate = false;
-  carSpot.shadow.mapSize.set(1024, 1024);
+  const CAR_MAP = 1024; // High: the full map; Medium: half (shadowSizeFor)
+  carSpot.shadow.mapSize.set(shadowSizeFor(prof, CAR_MAP) || CAR_MAP, shadowSizeFor(prof, CAR_MAP) || CAR_MAP);
   carSpot.shadow.bias = -0.0004;
   carSpot.shadow.normalBias = 0.03;
   carSpot.shadow.camera.near = 0.5;
@@ -631,7 +647,7 @@ async function buildShop(
     const model = playerModelFor(opts.player?.hairStyle);
     // The body: the one body (Settings → Look → "3D people: New") or the old one.
     const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: 0.006, castShadow: true });
+    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
@@ -822,6 +838,23 @@ async function buildShop(
   // fewer pixels. The car's shadow is redrawn only as the turntable turns
   // (ten times a second) or when you move near it.
   let acc = 0, busy = true, busyT = 0, stillT = 0, drawn = 0, shadowRenders = 0, shadowT = 0, capAlways = false;
+  /** Too slow for three seconds: one tier down (High → Medium → Low), never
+   *  straight to the bottom. Antialias stays (it is fixed with the context). */
+  const stepDown = (): boolean => {
+    const next = stepDownTier(tier);
+    if (!next) return false;
+    tier = next; prof = TIER_PROFILES[tier];
+    dyn = makeDyn(); dynPR = Math.min(dpr, prof.movePixelRatio);
+    pr = stillPR(); renderer.setPixelRatio(pr);
+    if (!prof.shadows) { carSpot.castShadow = false; renderer.shadowMap.enabled = false; }
+    else {
+      const n = shadowSizeFor(prof, CAR_MAP);
+      if (n !== carSpot.shadow.mapSize.x) { carSpot.shadow.map?.dispose(); carSpot.shadow.map = null; carSpot.shadow.mapSize.set(n, n); carSpot.shadow.needsUpdate = true; renderer.shadowMap.needsUpdate = true; }
+    }
+    if (!prof.outlines && person) person.outline.visible = false;
+    resize();
+    return true;
+  };
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...pickables]));
   // warm up: every shader built before the first frame, so the first steps don't stutter
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
@@ -833,7 +866,9 @@ async function buildShop(
     if (opts.fixedStep) dt = opts.fixedStep;
     else {
       acc += Math.min(0.25, clock.getDelta());
-      if ((!busy || capAlways) && acc < 1 / 31) return;
+      // still: 30 a second; moving: the tier's cap (High and Medium every frame, Low 30)
+      const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
       acc = 0;
     }
@@ -981,7 +1016,9 @@ async function buildShop(
     // busy (walking, turning, the camera moving): every frame, fewer pixels
     busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
-    if (!opts.fixedStep && quality === "high") {
+    if (!opts.fixedStep) {
+      // dynamic resolution: judged only while moving at the full cap
+      if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
       const wantPR = busyT > 0.25 ? movePR() : stillT > 0.5 ? stillPR() : pr;
       if (wantPR !== pr) { pr = wantPR; renderer.setPixelRatio(pr); lastOff = -1; }
     }
@@ -995,15 +1032,12 @@ async function buildShop(
       if (!opts.fixedStep) {
         // still runs at 30 on purpose: only count a slow second against what
         // was asked for
-        slowSeconds = fps < (busy && !capAlways ? 28 : 22) ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3 && quality === "high") {
-          quality = "low"; slowSeconds = 0;
-          pr = 1;
-          renderer.setPixelRatio(1);
-          carSpot.castShadow = false;
-          renderer.shadowMap.enabled = false;
-          resize();
-        } else if (slowSeconds >= 3 && quality === "low") capAlways = true;
+        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
+        // three slow seconds: one tier down; still too slow at Low: 30 a second always
+        if (slowSeconds >= 3) {
+          slowSeconds = 0;
+          if (!stepDown()) capAlways = true;
+        }
       }
     }
   });
@@ -1066,7 +1100,7 @@ async function buildShop(
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
-    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen }),
+    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
       renderer.setAnimationLoop(null);

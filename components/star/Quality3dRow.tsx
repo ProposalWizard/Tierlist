@@ -2,11 +2,11 @@
 /**
  * Settings → Look → "3D quality: Auto | Low | Med | High" (Harry, 5 Oct
  * 2026: "the less lag is BIG"). One row, its own file, so DeviceSettings.tsx
- * only gains a line. The value lives in lib/star/three3d/quality.ts; the 3D
- * scenes read it through lib/star/three3d/perf.ts → resolveQuality3d.
+ * only gains a line. The value lives in lib/star/three3d/quality.ts; every
+ * 3D scene (garden, shop, signing, office) reads it when it opens.
  */
 import { useEffect, useState } from "react";
-import { useQuality3dSetting, setQuality3dSetting, autoQuality3d } from "@/lib/star/three3d/quality";
+import { useQuality3dSetting, setQuality3dSetting, autoQuality3d, type Quality3d } from "@/lib/star/three3d/quality";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
 
@@ -14,8 +14,8 @@ const NAME = { low: "Low", medium: "Medium", high: "High" } as const;
 
 export default function Quality3dRow() {
   const q = useQuality3dSetting();
-  // read after mount: the phone's own saved benchmark (not there on the server)
-  const [auto, setAuto] = useState<ReturnType<typeof autoQuality3d>>(null);
+  // read after mount: what Auto picks on this phone (not known on the server)
+  const [auto, setAuto] = useState<Quality3d | null>(null);
   useEffect(() => { setAuto(autoQuality3d()); }, [q]);
   return (
     <>
@@ -24,7 +24,7 @@ export default function Quality3dRow() {
         <SegTabs className="w-[200px] shrink-0" value={q} onChange={setQuality3dSetting} tabs={[["auto", "Auto"], ["low", "Low"], ["medium", "Med"], ["high", "High"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        For the garden, the shop and the office. Auto: this phone picks{auto ? ` (it picked ${NAME[auto.tier]})` : " the first time you open one"}. Low: fewer pixels, no shadows, smoother on older phones.
+        Every 3D scene. Lower = smoother on older phones. Auto{auto ? ` picks ${NAME[auto]} here` : " picks for this phone"}. Applies next time one opens.
       </SetNote>
     </>
   );

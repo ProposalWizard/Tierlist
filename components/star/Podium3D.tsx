@@ -23,6 +23,7 @@ import { useEffect, useRef } from "react";
 import type * as THREE from "three";
 
 import type { Live3D } from "@/lib/star/starPassRewards";
+import { TIER_PROFILES, quality3dTier } from "@/lib/star/three3d/quality";
 
 const LENS_FOV = 28.7; // a 70 mm lens on a 36 mm sensor, as the Blender pictures use
 
@@ -44,13 +45,16 @@ export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: bool
       if (disposed) return;
 
       const { w, h } = cfg;
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      // Settings → Look → "3D quality": High exactly as before (2x, antialias, shadow)
+      const tier = quality3dTier();
+      const prof = TIER_PROFILES[tier];
+      const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, alpha: true });
+      renderer.setPixelRatio(Math.min(tier === "high" ? 2 : prof.maxPixelRatio, window.devicePixelRatio || 1));
       renderer.setSize(w, h);
       renderer.toneMapping = THREE.AgXToneMapping;
       renderer.toneMappingExposure = 1.05;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.enabled = prof.shadows;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       const canvas = renderer.domElement;
       canvas.style.touchAction = "pan-y";
@@ -66,7 +70,7 @@ export default function Podium3D({ cfg, dim = false }: { cfg: Live3D; dim?: bool
       const B = (x: number, y: number, z: number) => new THREE.Vector3(x, z, -y);
       const key = new THREE.DirectionalLight(0xffffff, 2.6);
       key.position.copy(B(-4, -4, 7));
-      key.castShadow = true;
+      key.castShadow = prof.shadows;
       key.shadow.mapSize.set(1024, 1024);
       Object.assign(key.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 20 });
       key.shadow.bias = -0.0005;
