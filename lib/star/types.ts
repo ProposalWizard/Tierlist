@@ -1125,6 +1125,13 @@ export interface CareerState {
    * themselves are deliberately NOT part of this snapshot.
    */
   lastSeasonAwardStats?: import("./seasonAwards").SeasonAwardStats;
+  /** Records broken so far this season, one per record (the latest mark).
+   *  Mikey, 6 Oct 2026: records no longer pop up after every match ("in your
+   *  first season every goal or assist is a new record"); they are listed
+   *  once, on the season round-up. See lib/star/earnPops.ts. */
+  seasonRecords?: { label: string; unlocked: string }[];
+  /** Last season's `seasonRecords`, shown on the Season Awards screen. */
+  lastSeasonRecords?: { label: string; unlocked: string }[];
   /**
    * Where the club finished last season, 1-based.
    *

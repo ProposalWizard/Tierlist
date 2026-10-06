@@ -242,6 +242,25 @@ export default function SeasonAwardsScreen({ career, onContinue }: Props) {
           <TeamOfSeasonPitch career={career} />
         </div>
 
+        {/* Records you broke this season, listed once here instead of a
+            pop-up after every match (Mikey, 6 Oct 2026). */}
+        {(career.lastSeasonRecords?.length ?? 0) > 0 && (
+          <div className="mt-4" data-season-records>
+            <SectionLabel className="mb-1.5 text-amber-300/90">Your records broken</SectionLabel>
+            <div className="space-y-1.5">
+              {career.lastSeasonRecords!.map((r) => (
+                <div key={r.label + r.unlocked} className="flex items-center gap-2.5 rounded-lg bg-white/[0.06] px-3 py-2 ring-1 ring-amber-300/30">
+                  <span className="text-[18px]">🏆</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-black text-white">{r.label}</div>
+                    <div className="text-[12px] font-bold text-amber-200">{r.unlocked}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <PressButton variant="primary" size="lg" pulse onClick={onContinue} className="relative mt-4 w-full overflow-hidden">
           <Shine loop every={5} />
           Continue
