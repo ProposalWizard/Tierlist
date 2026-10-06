@@ -27,6 +27,182 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.31",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T00:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/MmprHgEH6epYpooT4Cze7r",
+      "summary": "Retirement, part 2: every career is 20 seasons with a final-season warning after season 19, the career overview is the end screen, every retired career is kept in a Hall of Fame on the title screen, and the All seasons page gets the goals chart, the cabinet and every season. Plans for everything after retiring: https://claude.ai/artifact/DPNpkyaPoyHWj6xuLpGvGG",
+      "stats": [
+        {
+          "value": "20",
+          "label": "seasons in every career (was a yes/no every summer from age 33)"
+        },
+        {
+          "value": "0",
+          "label": "retired careers lost by starting again (the old end screen deleted them)"
+        },
+        {
+          "value": "108 → 15 KB",
+          "label": "one 20-season career, as kept in the Hall of Fame"
+        },
+        {
+          "value": "246",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "\"Final season\" after season 19",
+              "detail": "Settings → Developer tools → Dev Skip to the end of season 19 → the Ballon d'Or night → Continue."
+            },
+            {
+              "title": "\"The final whistle\" after season 20",
+              "detail": "Dev Skip to the end of season 20 → the Ballon d'Or night."
+            },
+            {
+              "title": "The career overview is the end screen",
+              "detail": "The final whistle → Hang them up → Hall of Fame · New career · Menu."
+            },
+            {
+              "title": "Hall of Fame on the title screen",
+              "detail": "Menu (or open the game) → Hall of Fame → tap a career."
+            },
+            {
+              "title": "New career keeps the old one",
+              "detail": "End screen → New career → title → Hall of Fame."
+            },
+            {
+              "title": "The new All seasons page, and its New | Old switch",
+              "detail": "Stats → All seasons. Settings → Look → All seasons page."
+            },
+            {
+              "title": "Every screen on made-up careers",
+              "detail": "/star-retirement-dev → The screens, in order."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: the Hall of Fame",
+          "items": [
+            {
+              "title": "Retiring never deletes a career any more",
+              "detail": "The end screen's \"Start a new career\" used to delete the retired career, on the phone and in the cloud. Now every retired career is copied into a Hall of Fame the moment it is saved (a slim copy: everything the overview shows). The title screen has a gold Hall of Fame button; tap a career for its whole overview; Remove asks first. A career retired before today goes in the next time the title screen opens. Before New career, New game or Delete can replace a retired career, the game checks it is in the Hall. Seen in the real game; the overview from a Hall copy matched the full career for 11 test careers."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Every career is 20 seasons",
+              "detail": "No \"Do you go again?\" from age 33 (it was every summer, forced only at 50 seasons). A career starts at 16, so the last season is at 35. The limit is one number; \"no limit\" also works."
+            },
+            {
+              "title": "The career overview replaced the old end screen",
+              "detail": "Leo: \"just replace it\". Seven pages, then Hall of Fame · New career · Menu. No New | Old switch, as asked."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "\"Final season\" warning after season 19",
+              "detail": "After the Ballon d'Or night, before the transfer window: \"Season 20 is your last before retirement. End your career the right way.\" A strip of 20 squares in your clubs' colours, the last one gold."
+            },
+            {
+              "title": "\"The final whistle\" after season 20",
+              "detail": "The verdict, apps, goals, trophies and the 20-season strip; Hang them up opens the overview."
+            },
+            {
+              "title": "All seasons page: the goals chart, the cabinet and every season",
+              "detail": "Stats → All seasons, drawn by the same pieces as the end screen. Settings → Look → All seasons page: New | Old."
+            },
+            {
+              "title": "The test page shows every new screen",
+              "detail": "/star-retirement-dev: five made-up 20-season careers and the screens in the order a player meets them."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest)",
+          "items": [
+            {
+              "title": "The Ballon d'Or button said \"Continue to next season\" after season 20",
+              "detail": "There is no next season then; it now says \"Continue\"."
+            },
+            {
+              "title": "A Hall card could name the wrong club",
+              "detail": "It counted only seasons with games; it now counts every season, the same as the overview. New test."
+            },
+            {
+              "title": "The final-season warning and the final whistle sat in the top half of the screen",
+              "detail": "Now centred on a tall phone; still fits 390 x 664 without scrolling."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (part 1, earlier today)",
+          "items": [
+            {
+              "title": "The last season's Ballon d'Or, Golden Boot and Player of the Season were never counted",
+              "detail": "Retiring skipped the end-of-season step that counts them; it now runs it."
+            },
+            {
+              "title": "A season's row named the wrong club after a summer move",
+              "detail": "It now records the club you played that season for (finish, wage, money)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run supabase/migrations/star_hall_of_fame.sql",
+              "detail": "Until then the Hall stays on the phone it was made on (it says so). Nothing breaks without it."
+            },
+            {
+              "title": "The world does not age",
+              "detail": "Other clubs' players never get older or retire; after 20 seasons the squads are the same people at the same ages. Read in the code. Question 2 on the plans page."
+            },
+            {
+              "title": "A save already past season 20 retires at the end of the season it is in",
+              "detail": "Only saves from before this change; it gets the final whistle but no warning first."
+            },
+            {
+              "title": "The Old UI has no warning screen and no Hall button",
+              "detail": "It is frozen. It follows the 20-season rule, and its retired careers still go in the Hall."
+            },
+            {
+              "title": "Signed out on a test machine, a refresh on the Ballon d'Or night can land on Home",
+              "detail": "Carried from part 1. Test mode only."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Leo's choices on the plans page",
+              "detail": "Suggested order: your records live on, the share card, the farewell match, Next generation, online, chairman."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.30",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-05T17:30:00Z",

@@ -124,6 +124,19 @@ for (const [tag, full] of careers) {
   check(H.loadHall(ACC).entries.length === 0, "saving the removed career again does not bring it back");
 }
 
+// ── 3b. The card's club is the longest stay, as the overview counts it ─────
+{
+  // A season with no appearances has no archive row. The overview still
+  // counts it for the club (from the season history), so the card must too:
+  // the playtest saw a Hall card name the wrong club this way.
+  const c = previewCareer("journeyman", 1);
+  const playedOnce = { ...c, seasonArchive: (c.seasonArchive ?? []).filter(r => r.club !== "Barnsley" || r.season === c.season) };
+  const o = careerOverview(playedOnce);
+  const longest = [...o.clubs].sort((a, b) => b.seasons - a.seasons)[0];
+  check(longest.club === "Barnsley" && longest.seasons === 4, `the overview still counts 4 Barnsley seasons (${longest.club} ${longest.seasons})`);
+  check(H.hallCardFor(playedOnce).mainClub === "Barnsley", `the card names the same club (${H.hallCardFor(playedOnce).mainClub})`);
+}
+
 // ── 4. A career retired before the Hall existed goes in from its slot ──────
 {
   store.clear();

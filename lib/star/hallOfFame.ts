@@ -29,6 +29,7 @@
  */
 import type { CareerState } from "./types";
 import { careerVerdict } from "./retirement";
+import { careerOverview } from "./careerOverview";
 
 export const HALL_KEY = "star-hall-of-fame-v1";
 
@@ -128,11 +129,14 @@ export function hallIdFor(career: CareerState): string {
 export function hallCardFor(career: CareerState): HallCard {
   const p = career.player;
   const s = career.careerStats;
-  const perClub = new Map<string, number>();
-  for (const row of career.seasonArchive ?? []) perClub.set(row.club, (perClub.get(row.club) ?? 0) + 1);
+  // The longest stay, counted the way the overview's Clubs page counts it:
+  // every season, including one with no appearances (the season archive
+  // only has rows for seasons he played in, so it could name another club).
   let mainClub = p.club;
-  let most = 0;
-  perClub.forEach((n, club) => { if (n > most) { most = n; mainClub = club; } });
+  try {
+    let most = 0;
+    for (const cl of careerOverview(career).clubs) if (cl.seasons > most) { most = cl.seasons; mainClub = cl.club; }
+  } catch { /* a very odd save: the club he retired at */ }
   let title = "";
   try { title = careerVerdict(career).title; } catch { /* a very odd save: no title */ }
   return {

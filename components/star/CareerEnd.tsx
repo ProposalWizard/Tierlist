@@ -87,7 +87,8 @@ export function FinalSeasonNotice({ career, onContinue }: { career: CareerState;
         </BottomBar>
       )}
     >
-      <div className="px-1 pt-8 text-center" data-final-season-notice>
+      {/* Centred on a tall phone; on a short one it simply starts at the top. */}
+      <div className="flex min-h-[calc(100dvh-120px)] flex-col justify-center px-1 py-6 text-center" data-final-season-notice>
         <RiseIn>
           <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-amber-200" style={{ background: "rgba(251,191,36,.14)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.4)", borderRadius: 2 }}>
             Season {career.season} is over
@@ -143,7 +144,8 @@ export function FinalWhistle({ career, onRetire }: { career: CareerState; onReti
         </BottomBar>
       )}
     >
-      <div className="px-1 pt-8 text-center" data-final-whistle>
+      {/* Centred on a tall phone; on a short one it simply starts at the top. */}
+      <div className="flex min-h-[calc(100dvh-120px)] flex-col justify-center px-1 py-6 text-center" data-final-whistle>
         <RiseIn>
           <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-amber-200" style={{ background: "rgba(251,191,36,.14)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.4)", borderRadius: 2 }}>
             {CAREER_SEASONS ?? career.season} seasons
