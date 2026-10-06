@@ -319,8 +319,8 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   // so it costs a real slice of the week at every level.
   for (const wage of [25, 256, 6_336, 100_000]) {
     const prices = KIB_CANS_DEFAULT.map(c => kibCanPrice(c, wage));
-    check(prices[0] < prices[1] && prices[1] < prices[2], `cans ascend at wage ★${wage}`);
-    check(prices[0] === Math.round(wage * 0.95), `a Basic can is 95% of a week's wage at ★${wage} (★${prices[0]})`);
+    check(prices[1] < prices[2], `Premium is cheaper than Elite at wage ★${wage}`);
+    check(prices[0] === Math.round(Math.max(20, wage) * 2), `a Basic can is 2 weeks' wage at ★${wage} (★${prices[0]})`);
   }
 
   // Nothing in the shop is a hand-typed figure any more: no price survives
