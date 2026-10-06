@@ -28,6 +28,7 @@ import { divisionOf } from "@/lib/star/calendar";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
+import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -128,7 +129,9 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         }, kit, displays, {
           atDoor,
           number: career?.squadNumber ?? 10,
-          quality: q.get("q") === "low" || restarts > 0 ? "low" : "high",
+          // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
+          // on the test page). After the phone took the 3D away: Low.
+          quality: restarts > 0 ? "low" : parseQuality3d(q.get("q")) ?? quality3dTier(),
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           // Settings → "3D shop player": the new character in your skin, hair
           // and kit, or the old one exactly as it was. (?player=old on the test page.)

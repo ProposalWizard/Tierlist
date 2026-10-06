@@ -13,13 +13,15 @@
  *
  * ── HOW A SCENE ADOPTS IT (in this order; each step stands on its own) ──
  *
- *  1. QUALITY. Replace the scene's own "high" | "low" guess with
- *        const tier = await resolveQuality3d(T, renderer);   // Auto | Low | Medium | High
+ *  1. QUALITY (done in the garden, the shop, the signing and the office,
+ *     6 Oct 2026). BEFORE making the renderer:
+ *        const tier = opts.quality ?? quality3dTier();   // Settings, else Auto from the device
  *        const prof = TIER_PROFILES[tier];
- *     and read prof.shadows / prof.shadowMapSize / prof.antialias /
- *     prof.anisotropy / prof.maxLiveCharacters instead of hard-coding them.
- *     The scenes' own "3 slow seconds → low" fallback can go: step 3 does it
- *     smoothly, without the one big jump.
+ *     and read prof.maxPixelRatio / movePixelRatio / antialias / shadows
+ *     (shadowSizeFor(prof, base)) / fpsCap / stillFps / outlines instead of
+ *     hard-coding them. A scene too slow for three seconds takes ONE step
+ *     down (stepDownTier), never a private "low". After the renderer:
+ *     rememberGpu(renderer), so Auto knows the GPU from the next visit.
  *
  *  2. ONE RENDERER. Replace
  *        const renderer = new THREE.WebGLRenderer({...}); container.appendChild(...)
@@ -35,7 +37,10 @@
  *
  *  3. DYNAMIC RESOLUTION. After the renderer:
  *        const dyn = new DynamicResolution(renderer, prof);
- *     and once per drawn frame, `dyn.frame(now)`. It lowers or raises the
+ *     and once per drawn frame, `dyn.frame(now)`. (The garden and the shop
+ *     run it only while you move, on the moving pixel ratio, with
+ *     { maxPixelRatio: prof.movePixelRatio } and a setter of their own, and
+ *     call dyn.pause() when they rest at 30 a second on purpose.) It lowers or raises the
  *     render scale (pixel ratio) in steps to hold the frame budget, so a
  *     phone that can't keep up gets fewer pixels, not a stutter.
  *
@@ -92,34 +97,15 @@
  *                                                    to be shorter on phones that have KHR_parallel_shader_compile)
  */
 import type * as THREE from "three";
-import { quality3dSetting, QUALITY3D_AUTO_KEY, type Quality3d } from "./quality";
+import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
-export type { Quality3d } from "./quality";
+export type { Quality3d, TierProfile } from "./quality";
+export { TIER_PROFILES, tierHintFromGpu, stepDownTier, shadowSizeFor, autoTierFromDevice } from "./quality";
 type Three = typeof import("three");
 
 // ─────────────────────────────── tiers ───────────────────────────────
-
-export interface TierProfile {
-  tier: Quality3d;
-  /** Render scale ceiling and floor (× CSS pixels). DynamicResolution moves between them. */
-  maxPixelRatio: number;
-  minPixelRatio: number;
-  /** MSAA. Fixed when the WebGL context is made, so acquireRenderer remakes the context if it changes. */
-  antialias: boolean;
-  shadows: boolean;
-  shadowMapSize: number;
-  /** 30 on low: half the GPU work and heat; the scenes' motion is slow enough to read fine. */
-  fpsCap: 30 | 60;
-  anisotropy: number;
-  /** Skinned characters drawn live; the rest become impostor cards. */
-  maxLiveCharacters: number;
-}
-
-export const TIER_PROFILES: Record<Quality3d, TierProfile> = {
-  low: { tier: "low", maxPixelRatio: 1, minPixelRatio: 0.6, antialias: false, shadows: false, shadowMapSize: 512, fpsCap: 30, anisotropy: 1, maxLiveCharacters: 2 },
-  medium: { tier: "medium", maxPixelRatio: 1.5, minPixelRatio: 0.75, antialias: false, shadows: true, shadowMapSize: 1024, fpsCap: 60, anisotropy: 2, maxLiveCharacters: 4 },
-  high: { tier: "high", maxPixelRatio: 2, minPixelRatio: 1, antialias: true, shadows: true, shadowMapSize: 2048, fpsCap: 60, anisotropy: 4, maxLiveCharacters: 8 },
-};
+// The profiles, the Auto pick and the GPU-name hint live in ./quality.ts
+// (no three.js), so the Settings screen and the scenes read the same table.
 
 /** The GPU's own name, where the browser gives it (Chrome, Safari, Firefox all do in 2026). */
 export function gpuName(gl: WebGLRenderingContext | WebGL2RenderingContext): string {
@@ -130,20 +116,9 @@ export function gpuName(gl: WebGLRenderingContext | WebGL2RenderingContext): str
   } catch { return ""; }
 }
 
-/**
- * What the GPU's name alone says (reasoned from the public GPU tables, not
- * measured here): old Mali/Adreno/PowerVR and software renderers are low;
- * desktop GPUs and recent flagship mobile ones are high; Apple reports only
- * "Apple GPU", so iPhones are left to the benchmark (null).
- */
-export function tierHintFromGpu(name: string): Quality3d | null {
-  const n = name.toLowerCase();
-  if (!n) return null;
-  if (/swiftshader|llvmpipe|softpipe|software|microsoft basic/.test(n)) return "low";
-  if (/mali-(4|t)|adreno \(tm\) [2-5]\d\d\b|adreno [2-5]\d\d\b|powervr|sgx|videocore|intel\(r\) hd graphics [2-5]/.test(n)) return "low";
-  if (/mali-g(5[0-9]|7[0-6])\b|adreno \(tm\) 6[0-3]\d|adreno 6[0-3]\d/.test(n)) return "medium";
-  if (/nvidia|geforce|radeon|rtx|adreno \(tm\) (6[4-9]\d|7\d\d|8\d\d)|adreno (6[4-9]\d|7\d\d|8\d\d)|mali-g(7[7-9]|[89]\d\d?|6[1-9]\d)|immortalis|apple m\d/.test(n)) return "high";
-  return null;
+/** After a scene makes its renderer: save the GPU's name, so Auto knows it from the next visit. */
+export function rememberGpu(renderer: THREE.WebGLRenderer) {
+  try { noteGpu3d(gpuName(renderer.getContext())); } catch { /* fine */ }
 }
 
 /** Map a benchmark frame (ms for BENCH workload) to a tier. Thresholds reasoned, see benchmarkGpu. */
@@ -154,11 +129,10 @@ export function tierFromBenchMs(ms: number): Quality3d {
 }
 
 /**
- * A short, fixed GPU workload: 48 lit, textured-free standard-material
- * spheres filling a 512×512 target, drawn 6 times, timed with a pixel read
- * so the GPU has to finish. Typical cost: under 150 ms on a phone (reasoned:
- * ~6 frames × ≤20 ms + setup). Uses the caller's renderer — never a second
- * WebGL context.
+ * A short, fixed GPU workload: 48 lit standard-material spheres filling a
+ * 512x512 target, drawn 6 times, timed with a pixel read so the GPU has to
+ * finish. Not used to pick the tier (that has to happen before the renderer
+ * exists, see ./quality.ts); kept for the Test Area and measuring.
  */
 export function benchmarkGpu(T: Three, renderer: THREE.WebGLRenderer): number {
   const rt = new T.WebGLRenderTarget(512, 512, { depthBuffer: true });
@@ -192,33 +166,10 @@ export function benchmarkGpu(T: Three, renderer: THREE.WebGLRenderer): number {
   return times[Math.floor(times.length / 2)];
 }
 
-const AUTO_VERSION = 1;
+/** The tier to open a scene at (Settings -> Look -> "3D quality", else Auto from the device). */
+export function resolveQuality3d(): Quality3d { return quality3dTier(); }
 
-/**
- * The tier to use: Settings → Look → "3D quality" if the player picked one;
- * else what this phone's benchmark said last time (saved); else run the
- * benchmark now (once per phone) and save it. The GPU's name breaks ties:
- * a known-weak GPU never gets High, a known-strong one never gets Low.
- */
-export function resolveQuality3d(T: Three, renderer: THREE.WebGLRenderer): Quality3d {
-  const set = quality3dSetting();
-  if (set !== "auto") return set;
-  try {
-    const raw = localStorage.getItem(QUALITY3D_AUTO_KEY);
-    if (raw) { const o = JSON.parse(raw); if (o?.v === AUTO_VERSION && o.tier) return o.tier as Quality3d; }
-  } catch { /* run it */ }
-  const gpu = gpuName(renderer.getContext());
-  const hint = tierHintFromGpu(gpu);
-  let ms = -1;
-  let tier: Quality3d;
-  try { ms = benchmarkGpu(T, renderer); tier = tierFromBenchMs(ms); } catch { tier = hint ?? "medium"; }
-  if (hint === "low" && tier === "high") tier = "medium";
-  if (hint === "high" && tier === "low") tier = "medium";
-  try { localStorage.setItem(QUALITY3D_AUTO_KEY, JSON.stringify({ v: AUTO_VERSION, tier, ms: Math.round(ms * 10) / 10, gpu })); } catch { /* fine */ }
-  return tier;
-}
-
-/** Forget the saved Auto answer (e.g. after a big game update changes the scenes' cost). */
+/** Forget the saved GPU name (Auto then reads from the device alone until a scene reads it again). */
 export function resetAutoQuality3d() { try { localStorage.removeItem(QUALITY3D_AUTO_KEY); } catch { /* fine */ } }
 
 // ──────────────────────── dynamic resolution ────────────────────────
@@ -246,7 +197,8 @@ export class DynamicResolution {
   private backoffMs = 15000;
   private readonly budgetMs: number;
   constructor(
-    private renderer: THREE.WebGLRenderer,
+    /** The renderer, or anything that takes the scale (the garden and the shop pass their own setter). */
+    private renderer: Pick<THREE.WebGLRenderer, "setPixelRatio">,
     private prof: Pick<TierProfile, "maxPixelRatio" | "minPixelRatio" | "fpsCap">,
     private opts: { step?: number; onChange?: (pixelRatio: number) => void; devicePixelRatio?: number } = {},
   ) {
@@ -255,6 +207,8 @@ export class DynamicResolution {
     this.scale = Math.min(prof.maxPixelRatio, opts.devicePixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1));
     renderer.setPixelRatio(this.scale);
   }
+  /** Stop judging (the scene is resting at a lower frame rate on purpose); the next frame() starts afresh. */
+  pause() { this.last = 0; this.slowMs = 0; this.fastMs = 0; this.emaMs = this.budgetMs; }
   /** Call once per drawn frame with performance.now() (or the rAF time). */
   frame(now: number) {
     if (this.last === 0) { this.last = now; return; }
@@ -473,6 +427,8 @@ export function prefetch3d(urls: string[]) {
     if (bufCache.has(url)) continue;
     const p = fetch(url, { priority: "low" } as RequestInit).then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
     p.catch(() => bufCache.delete(url)); // a failed prefetch just falls back to a normal load
+    // Only models are read back from memory; the decoder files just warm the browser cache.
+    if (!url.endsWith(".glb")) p.then(() => bufCache.delete(url), () => {});
     bufCache.set(url, p);
   }
 }

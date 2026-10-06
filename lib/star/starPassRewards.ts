@@ -1,24 +1,30 @@
 /**
  * THE STAR PASS'S REWARDS (Mikey, 2 Oct 2026).
  *
- * A reward every 5 levels from 5 to 100: the 5s are medium rewards, the 10s
- * great ones. What each one IS is Mikey's call and is not decided yet, so
- * every slot shows a placeholder until a line is added to STAR_PASS_REWARDS.
- *
- * Adding a reward later: one line here, e.g.
- *   15: { name: "Knee-slide celebration", image: "/star/rewards/kneeslide.webp" },
- * The Star Pass screen (components/star/StarRatingSheet.tsx) shows it on its
- * platform. Giving the reward to the player (claiming) is built when the
- * first real reward is.
+ * At first a reward sat every 5 levels (5, 10 … 100). Since 5 Oct 2026 a
+ * reward can sit at ANY level from 1 to 100 (Mikey: "2, 4, 6 … or 5, 10, 15
+ * … or 10, 20, 30 … or 1 to 9 — choose in the Star Pass rewards area"). The
+ * levels with a card on them are the stops on the road; level 100's stand is
+ * always there. Which card sits where is the shared layout
+ * (lib/star/starPassStore.ts, set on /admin/star-pass).
  */
-export const STAR_PASS_STEP = 5;
+export const PASS_TOP = 100;
 
 export type RewardTier = "medium" | "great";
 
-/** 5, 10, 15 … 100. */
-export const REWARD_LEVELS: number[] = Array.from({ length: 100 / STAR_PASS_STEP }, (_, i) => (i + 1) * STAR_PASS_STEP);
+/** Every level a reward can sit at: 1 to 100. */
+export const ALL_PASS_LEVELS: number[] = Array.from({ length: PASS_TOP }, (_, i) => i + 1);
 
-/** Every 10th level is a great reward; the 5s in between are medium. */
+export const isPassLevel = (n: number) => Number.isInteger(n) && n >= 1 && n <= PASS_TOP;
+
+/** The stops on the road: every level with a card, plus level 100's stand. */
+export function rewardLevelsOf(levels: Record<number, string>): number[] {
+  const out = new Set<number>([PASS_TOP]);
+  for (const [k, v] of Object.entries(levels)) if (v && isPassLevel(Number(k))) out.add(Number(k));
+  return Array.from(out).sort((a, b) => a - b);
+}
+
+/** Every 10th level is a great reward (the big podium); every other level a medium one. */
 export function rewardTier(level: number): RewardTier {
   return level % 10 === 0 ? "great" : "medium";
 }

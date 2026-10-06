@@ -1,4 +1,5 @@
 "use client";
+import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import LegacyStarDevPage from "@/components/star/legacy/LegacyStarDevPage";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -352,6 +353,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The achievements the last match unlocked — the post-match shows them one at a time.
   const [lastMatchAch, setLastMatchAch] = useState<string[]>([]);
   const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
+  // The boss/team/fans bars before and after the last match, for the post-match bars.
+  const [lastRelChange, setLastRelChange] = useState<{ before: { boss: number; team: number; fans: number }; after: { boss: number; team: number; fans: number } } | null>(null);
   // True when the match just played was the boots' last (Harry, 5 Oct 2026:
   // "fix the boots warning" — they wore out with no warning seen).
   const [bootsJustWoreOut, setBootsJustWoreOut] = useState(false);
@@ -1224,6 +1227,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const starNext = starStatus(next);
     const earned = matchStarPoints(career, nextFixture, stats);
     setLastStarChange({ from: starsNow(career), to: starNext.stars });
+    {
+      const pick = (c: CareerState) => ({ boss: c.relationships.boss, team: c.relationships.team, fans: c.relationships.fans });
+      setLastRelChange({ before: pick(career), after: pick(next) });
+    }
     // Everything that moved the rating, not just the match (starGain).
     const gain = starGain(career, next);
     setLastMatchStar({ sp: earned.total, base: earned.base, mult: earned.mult, toNext: starNext.toNext, fromNext: starStatus(career).toNext, gate: starNext.gate?.need,
@@ -2297,6 +2304,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [handleSwitchSave]);
   // The title's Tutorial button (P64): a save on Home replays the pointer tour
   // there; no save starts a new career, whose first Home runs the tutorial.
+  // Early download (Harry, 6 Oct 2026: "let's try early download for 3d
+  // stuff"): while Home is open, fetch the garden and shop files when the
+  // page is idle, so their loading cover is short. Skipped on Save-Data / 2G.
+  useEffect(() => {
+    if (phase !== "dashboard") return;
+    preloadScene("garden");
+    preloadScene("shop");
+  }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
     setTitleOpen(false);
@@ -3571,6 +3586,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         knockout={career.knockoutMessage}
         starBefore={lastStarChange?.from}
         starAfter={lastStarChange?.to ?? starsNow(career)}
+        rel={lastRelChange ?? undefined}
         bootsWornOut={bootsJustWoreOut}
         star={lastMatchStar ?? undefined}
         // v0.24 (P2-84): the achievements pop up by themselves, no Next

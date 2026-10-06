@@ -216,17 +216,18 @@ export const ADMIN_GUIDES = {
   },
   "/admin/star-pass": {
     title: "Star Pass Rewards",
-    what: "Every reward in one catalogue, by type, and which reward sits at each Star Pass level (5 to 100).",
+    what: "Every reward in one catalogue, by type, and which reward sits at which Star Pass level. A reward can go on any level from 1 to 100.",
     buttons: [
       { group: "Levels (left)", items: [
-        ["A level row", "Selects that level. The next card you tap goes there."],
-        ["↑", "Swaps this level's reward with the level above."],
-        ["↓", "Swaps this level's reward with the level below."],
+        ["1 to 100 grid", "Picks a level. Gold squares already have a reward. The next card you tap goes on the picked level."],
+        ["On the road", "Every level that has a reward, plus the one you picked. Tap a row to pick it."],
+        ["↑", "Moves this reward up one level (swaps if that level has one)."],
+        ["↓", "Moves this reward down one level (swaps if that level has one)."],
         ["✕", "Empties the level."],
       ] },
       { group: "Catalogue (right)", items: [
         ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card. The number is how many cards it has."],
-        ["Tap a card's picture", "Puts it at the selected level (taking it off any level it was on), then moves to the next level."],
+        ["Tap a card's picture", "Puts it at the picked level (taking it off any level it was on). Tapping another card replaces it."],
         ["👁", "A big preview. 3D ones can be dragged to spin and tapped to zoom."],
         ["Idea / Designed / In game", "The card's status. Tap to move it on: idea, then designed, then in game."],
         ["Lv 10", "Shows which level the card is on."],
@@ -244,7 +245,7 @@ export const ADMIN_GUIDES = {
       "The cards themselves (pictures, 3D, what you get) are in the code. Making a new design is a build job; this page only chooses and orders them.",
     ],
     inGame: [
-      "The Star Pass (tap the star rating in the top bar): each level shows its reward. Reach the level and a Claim button appears, with a red dot on the star.",
+      "The Star Pass (tap the star rating in the top bar): a podium stands at every level that has a reward, and at level 100. Levels with nothing show no podium. Reach the level and a Claim button appears, with a red dot on the star.",
       "Claim plays the reveal, then the reward goes into the Locker (the Locker button on the Star Pass). Run-ups and accessories are used in matches; cars, balls and sunglasses are kept for when the avatar is ready.",
     ],
     needs: [

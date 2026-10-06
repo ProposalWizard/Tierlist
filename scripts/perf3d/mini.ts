@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -32,7 +33,7 @@ export async function buildMini(canvas: any, w: number, h: number, pr: number, b
   camera.position.set(0, 6, 16); camera.lookAt(0, 1, 0);
 
   const draco = new DRACOLoader(); draco.setDecoderPath(base + "/star/shop3d/draco/"); draco.setDecoderConfig({ type: "wasm" });
-  const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+  const loader = new GLTFLoader(); loader.setDRACOLoader(draco); loader.setMeshoptDecoder(MeshoptDecoder);
   const [props, player, manager, anims] = await Promise.all([
     loader.loadAsync(base + "/star/garden3d/props.glb"), loader.loadAsync(base + "/star/onebody/player.glb"),
     loader.loadAsync(base + "/star/onebody/manager.glb"), loader.loadAsync(base + "/star/people3d/anims.glb"),

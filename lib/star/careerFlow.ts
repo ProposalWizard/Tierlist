@@ -48,7 +48,7 @@ import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./fa
 import { ruleBookFor } from "./ruleBook";
 import { otherGamesRng } from "./liveScores";
 import { INJURIES_ON } from "./injurySwitch";
-import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS } from "./relationships";
+import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS, capRel } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
@@ -1156,7 +1156,8 @@ export function creditMatchResult(
     // honestly.
     // Scaled, kept as fractions and drifting to the middle (relationships.ts).
     ...(alreadyPlayed ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
-      const raw = { boss: stats.bossChange * derbyScale.boss, team: stats.teamChange * derbyScale.team, fans: stats.fansChange * derbyScale.fans };
+      // Capped again after the derby scaling: one match never moves a bar more than MATCH_REL_CAP.
+      const raw = { boss: capRel(stats.bossChange * derbyScale.boss), team: capRel(stats.teamChange * derbyScale.team), fans: capRel(stats.fansChange * derbyScale.fans) };
       const rel = { ...career.relationships, sponsors: newSponsorRel };
       const relCarry = { ...(career.relCarry ?? {}) };
       for (const k of REL_KEYS) {

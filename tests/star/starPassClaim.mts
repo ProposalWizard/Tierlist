@@ -1,4 +1,5 @@
 // The Star Pass: claiming rewards and the Locker (Mikey, 2 Oct 2026).
+import { rewardLevelsOf } from "../../lib/star/starPassRewards.ts";
 import { claimableLevels, claimLevel, ownsCard, isUsing, equipCard, stopUsing, isClaimed } from "../../lib/star/starPassClaim.ts";
 import { BUILT_IN_CATALOGUE, DEFAULT_PASS_LEVELS, CATEGORIES, findCard, fullCatalogue } from "../../lib/star/rewardCatalogue.ts";
 import type { CareerState } from "../../lib/star/types.ts";
@@ -18,6 +19,11 @@ check(BUILT_IN_CATALOGUE.length >= 25, `the catalogue starts with everything alr
 check(claimableLevels(career(4), DEFAULT_PASS_LEVELS).length === 0, "nothing to claim before level 5");
 check(JSON.stringify(claimableLevels(career(17), DEFAULT_PASS_LEVELS)) === "[5,10,15]", "levels 5, 10, 15 claimable at 17");
 check(claimableLevels(career(30), { 5: "pass-hop-penalty" }).length === 1, "an empty level has nothing to claim");
+// Any level can hold a reward (5 Oct 2026): 2, 4, 6 … or 1 to 9.
+check(JSON.stringify(claimableLevels(career(7), { 1: "pass-hop-penalty", 2: "a", 4: "b", 6: "c", 8: "d" })) === "[1,2,4,6]", "odd levels claimable once reached");
+check(claimableLevels(career(100), { 0: "x", 101: "y", 2.5: "z" } as Record<number, string>).length === 0, "levels outside 1-100 never count");
+check(JSON.stringify(rewardLevelsOf({ 2: "a", 30: "b", 7: "c" })) === "[2,7,30,100]", "road stops: every filled level plus 100");
+check(JSON.stringify(rewardLevelsOf({})) === "[100]", "empty layout: only the level 100 stand");
 
 // Claiming each kind puts it where the rest of the game looks.
 const cat = fullCatalogue();

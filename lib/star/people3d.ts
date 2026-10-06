@@ -28,6 +28,7 @@
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { loadGltfCached } from "./three3d/perf";
 
 type Three = typeof import("three");
 
@@ -165,11 +166,11 @@ export interface PersonLook {
 const cache = new Map<string, Promise<GLTF>>();
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
-export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
+export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
   const url = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES)[which];
   let p = cache.get(url);
   if (!p) {
-    p = loader.loadAsync(url) as Promise<GLTF>;
+    p = loadGltfCached<GLTF>(loader, url); // from the early download when it got there first
     p.catch(() => cache.delete(url));
     cache.set(url, p);
   }

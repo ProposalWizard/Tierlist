@@ -17,7 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import type { GardenController, GardenData, GardenSpot } from "@/lib/star/garden3d/scene";
+import type { GardenCallbacks, GardenController, GardenData, GardenSpot } from "@/lib/star/garden3d/scene";
 import { kitsOf } from "@/lib/star/kits";
 import { gardenData } from "@/lib/star/gardenLevel";
 import { homeSkyFor } from "@/lib/star/kickoff";
@@ -28,6 +28,7 @@ import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { garden3dLook } from "@/lib/star/garden3d/look";
+import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
@@ -113,8 +114,12 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
         // Settings → Look → "3D garden": New (the 5 Oct look) or Old, the
         // garden exactly as it was (?look=old|new on the test page)
         const look = q.get("look") === "old" || q.get("look") === "new" ? q.get("look") : garden3dLook();
-        const { startGarden } = look === "old" ? await import("@/lib/star/garden3d/sceneOld") : await import("@/lib/star/garden3d/scene");
-        const start = () => startGarden(el, {
+        const oldMod = look === "old" ? await import("@/lib/star/garden3d/sceneOld") : null;
+        const newMod = look === "old" ? null : await import("@/lib/star/garden3d/scene");
+        // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
+        // on the test page). After the phone took the 3D away: Low.
+        const tier = restarts > 0 ? "low" : parseQuality3d(q.get("q")) ?? quality3dTier();
+        const cbs: GardenCallbacks = {
           onNear: (s) => setNear(s),
           onFps: (f) => { (window as unknown as { __garden3dFps?: number }).__garden3dFps = f; },
           onShopDoor: () => {
@@ -130,10 +135,12 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
-        }, data, {
-          quality: q.get("q") === "low" || restarts > 0 ? "low" : "high",
-          fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
-        });
+        };
+        const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
+        // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
+        const start = (): Promise<GardenController> => newMod
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep })
+          : oldMod!.startGarden(el, cbs, data, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;
         try {
           c = await start();

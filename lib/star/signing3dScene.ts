@@ -42,6 +42,9 @@ import {
   type Person3D, type PersonModel,
 } from "./people3d";
 import { people3dLook } from "./look3d";
+import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
+import { rememberGpu } from "./three3d/perf";
+import { withMeshopt } from "./three3d/meshopt";
 
 type Three = typeof import("three");
 
@@ -100,6 +103,8 @@ export interface SigningSceneOptions {
   /** "office": the same room as a stage for the manager's talks — no
    *  contract or pen, a dressed office, only the talk/reply shots. */
   stage?: "signing" | "office";
+  /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
+  quality?: Quality3d;
 }
 
 export interface SigningSceneHandle {
@@ -224,9 +229,19 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
    *  draws exactly as it always did. */
   const FAST = ONE && !(typeof window !== "undefined" && (window as unknown as { __star3dSlow?: boolean }).__star3dSlow);
 
+  // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before
+  // the renderer. High is exactly as before: 1.5 pixels per point (the Old
+  // bodies 2), antialias, outlines, 30 a second while a shot is held.
+  // Medium: 1.25, no antialias. Low: 1, no antialias, no outlines, 30 a
+  // second always. (No shadow maps here at any tier.)
+  const tier: Quality3d = opts.quality ?? quality3dTier();
+  const prof = TIER_PROFILES[tier];
+  const pixelCap = tier === "high" && !FAST ? 2 : prof.maxPixelRatio;
+
   // ── Renderer ──
-  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(FAST ? 1.5 : 2, window.devicePixelRatio || 1));
+  const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
+  rememberGpu(renderer);
+  renderer.setPixelRatio(Math.min(pixelCap, window.devicePixelRatio || 1));
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -246,7 +261,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
   // ── Load ──
   const STAGE = opts.stage ?? "signing";
-  const loader = new GLTFLoader();
+  const loader = await withMeshopt(new GLTFLoader()); // the files are meshopt-packed (scripts/perf3d/shrink-models.mjs)
   const texLoader = new T.TextureLoader();
   const youModel0 = playerModelFor(opts.you.hairStyle);
   // The window view loads with the people (it was fetched afterwards, so a
@@ -266,7 +281,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
   // ── People ──
   const makePerson = (gltf: GLTF, model: PersonModel, facing: 1 | -1): Person => {
-    const p3 = makePerson3d(T, SkeletonUtils, gltf, anims, { outline: 0.0035, outlineNear: ONE ? 1.6 : undefined });
+    const p3 = makePerson3d(T, SkeletonUtils, gltf, anims, { outline: prof.outlines ? 0.0035 : 0, outlineNear: ONE ? 1.6 : undefined });
     const seatZ = facing === 1 ? -SEAT_Z : SEAT_Z;
     p3.root.position.set(0, 0, seatZ);
     p3.root.rotation.y = facing === 1 ? 0 : Math.PI;
@@ -1094,8 +1109,10 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     stepClock(dt);
     if (!visible || document.hidden) return;
     // New look: a held shot only sways and talks, 30 frames a second is
-    // plenty (the clock above still runs at the screen's rate).
-    if (FAST && held && now - lastDraw < 1000 / 30 - 4) return;
+    // plenty (the clock above still runs at the screen's rate). Low: 30
+    // a second always.
+    const cap = FAST && held ? prof.stillFps : prof.fpsCap;
+    if (cap < 60 && now - lastDraw < 1000 / cap - 4) return;
     lastDraw = now;
     frame(clock);
     { const d0 = performance.now(); draw(); if (!loadT.first) loadT.first = Math.round(performance.now() - d0); }
@@ -1233,7 +1250,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       return {
         poseMs: +(pose / n).toFixed(2), drawMs: +(drawT / n).toFixed(2), held,
         calls: inf.render.calls, triangles: inf.render.triangles, textures: inf.memory.textures, geometries: inf.memory.geometries,
-        programs: inf.programs?.length ?? 0, pixelRatio: renderer.getPixelRatio(), size: [renderer.domElement.width, renderer.domElement.height],
+        programs: inf.programs?.length ?? 0, pixelRatio: renderer.getPixelRatio(), size: [renderer.domElement.width, renderer.domElement.height], quality: tier,
       };
     },
     debugStep(dt, n = 1) {

@@ -2,6 +2,7 @@ import type { CareerState, MatchStats, GoalEvent, OppGoalEvent, Fixture } from "
 import { wageForFixture } from "./wages";
 import { sponsorPayFor } from "./sponsorDeals";
 import { getTuning } from "./tuningStore";
+import { capRel } from "./relationships";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
 // (chances/goals/assists/passes + the final scoreline) into the MatchStats the
@@ -171,17 +172,22 @@ export function finaliseMatch(
   const sponsorPay = sponsorPayFor(career, fixture);
   const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
 
+  // Mikey, 5 Oct 2026: losses match gains — a bad game costs the mirror of
+  // what the same distance above an ordinary game earns — and no bar moves
+  // more than MATCH_REL_CAP from one match (goals, assists and star man used
+  // to stack a great game to +18).
   let boss = 0, team = 0, fans = 0;
   if (rating >= 8) { boss += 6; fans += 8; team += 3; }
   else if (rating >= 7) { boss += 3; fans += 4; team += 2; }
   // Mikey, 4 Oct 2026: an ordinary game is about 6.5, so 6.0-6.6 moves nothing.
   else if (rating >= 6.7) { boss += 1; fans += 1; team += 1; }
   else if (rating >= 6) { /* an ordinary game */ }
-  else if (rating >= 5) { boss -= 2; fans -= 2; team -= 1; }
-  else { boss -= 5; fans -= 4; team -= 3; }
+  else if (rating >= 5) { boss -= 3; fans -= 4; team -= 2; }
+  else { boss -= 6; fans -= 8; team -= 3; }
   if (goals > 0) fans += goals * 3;
   if (assists > 0) { team += assists * 3; fans += assists; }
   if (starMan) { boss += 4; fans += 5; team += 2; }
+  boss = capRel(boss); team = capRel(team); fans = capRel(fans);
 
   return {
     chances,
