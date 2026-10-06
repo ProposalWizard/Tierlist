@@ -1,4 +1,5 @@
 "use client";
+import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import LegacyStarDevPage from "@/components/star/legacy/LegacyStarDevPage";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -2246,6 +2247,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [handleSwitchSave]);
   // The title's Tutorial button (P64): a save on Home replays the pointer tour
   // there; no save starts a new career, whose first Home runs the tutorial.
+  // Early download (Harry, 6 Oct 2026: "let's try early download for 3d
+  // stuff"): while Home is open, fetch the garden and shop files when the
+  // page is idle, so their loading cover is short. Skipped on Save-Data / 2G.
+  useEffect(() => {
+    if (phase !== "dashboard") return;
+    preloadScene("garden");
+    preloadScene("shop");
+  }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
     setTitleOpen(false);

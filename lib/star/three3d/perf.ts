@@ -427,6 +427,8 @@ export function prefetch3d(urls: string[]) {
     if (bufCache.has(url)) continue;
     const p = fetch(url, { priority: "low" } as RequestInit).then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
     p.catch(() => bufCache.delete(url)); // a failed prefetch just falls back to a normal load
+    // Only models are read back from memory; the decoder files just warm the browser cache.
+    if (!url.endsWith(".glb")) p.then(() => bufCache.delete(url), () => {});
     bufCache.set(url, p);
   }
 }

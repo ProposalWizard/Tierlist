@@ -51,7 +51,7 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
-import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -428,7 +428,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   loader.setDRACOLoader(draco); // props.glb
   await withMeshopt(loader); // people, clips, horse, bird (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
-  const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
+  const load = (url: string) => loadGltfCached(loader, url).then((g: any) => { loaded++; return g; });
   // You are the 3D shop's own player: the approved people3d body when the
   // shop's player is New (its default), else the old character.glb.
   const newPerson = (data.player?.look ?? "new") === "new";
