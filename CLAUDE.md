@@ -197,6 +197,15 @@ same person in the garden as you are in the store."*
   `tools/garden3d/export_models.py` (Blender) and `build_anims.py`. Credits:
   `public/star/garden3d/LICENSE.txt`. Test page: `/star-garden3d-dev`.
 
+## The 3D files are packed small (6 Oct 2026)
+
+`scripts/perf3d/shrink-models.mjs` packs the GLBs in place: meshopt geometry
+and clips, WebP textures (Draco kept for props, boots, cars, where it is
+smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
+(`lib/star/three3d/meshopt.ts`) or it fails on them. The 3D builders re-pack
+at their end; a new file needs a POLICY line in the script. Details:
+`scripts/perf3d/README.md`.
+
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
 Mikey, 2 Oct 2026: "make sure that you never lose this information again."
@@ -485,6 +494,14 @@ outcome at some points you can use a bit less effort but the layout should
 always be the same."* Cut effort where it doesn't change the outcome (fewer
 re-takes, lighter checks on small items); never cut the page layout — the
 same cards, clips, speed buttons and toggles every time.
+
+**Builders check light; Harry judges 3D on his phone (Harry, 5 Oct 2026).**
+*"im more concerned about getting the time down."* Measured: the garden builder
+spent about 3 of 4½ hours waiting on its own browser checks, because this
+machine has no graphics chip (1–5 s per 3D frame). So a builder does ONE quick
+check per change (it loads, no console errors, one still), measures lag only
+when lag is the job, and stops there. Harry judges look and feel on his phone,
+with the Old toggle as the safety net. Keep each builder's job small.
 
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared

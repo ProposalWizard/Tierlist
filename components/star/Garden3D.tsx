@@ -7,7 +7,7 @@
  * in the store").
  *
  * The 3D is lib/star/garden3d/scene.ts; this is the screen around it: the
- * stick, Back, and a small card when you walk up to something (no
+ * stick (or tap where to go: tap to move), Back, and a small card when you walk up to something (no
  * sentences: pictures, faces and numbers, the garden's standing rule).
  * The shop stands where the house was: walk through its doors and the 3D
  * shop opens (`onShop`); the shop's own doors bring you back here.
@@ -17,7 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import type { GardenController, GardenData, GardenSpot } from "@/lib/star/garden3d/scene";
+import type { GardenCallbacks, GardenController, GardenData, GardenSpot } from "@/lib/star/garden3d/scene";
 import { kitsOf } from "@/lib/star/kits";
 import { gardenData } from "@/lib/star/gardenLevel";
 import { homeSkyFor } from "@/lib/star/kickoff";
@@ -28,6 +28,8 @@ import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { garden3dLook } from "@/lib/star/garden3d/look";
+import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
+import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
 
@@ -99,18 +101,25 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
+  // The phone took the 3D away (iPhone Safari, short of memory): start the
+  // garden again once; a second time, the drawn garden instead.
+  const [restarts, setRestarts] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el) return;
+    if (!el || restarts > 1) return;
     (async () => {
       try {
         const q = new URLSearchParams(window.location.search);
         // Settings → Look → "3D garden": New (the 5 Oct look) or Old, the
         // garden exactly as it was (?look=old|new on the test page)
         const look = q.get("look") === "old" || q.get("look") === "new" ? q.get("look") : garden3dLook();
-        const { startGarden } = look === "old" ? await import("@/lib/star/garden3d/sceneOld") : await import("@/lib/star/garden3d/scene");
-        const c = await startGarden(el, {
+        const oldMod = look === "old" ? await import("@/lib/star/garden3d/sceneOld") : null;
+        const newMod = look === "old" ? null : await import("@/lib/star/garden3d/scene");
+        // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
+        // on the test page). After the phone took the 3D away: Low.
+        const tier = restarts > 0 ? "low" : parseQuality3d(q.get("q")) ?? quality3dTier();
+        const cbs: GardenCallbacks = {
           onNear: (s) => setNear(s),
           onFps: (f) => { (window as unknown as { __garden3dFps?: number }).__garden3dFps = f; },
           onShopDoor: () => {
@@ -118,10 +127,32 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
             setLeaving(true);
             setTimeout(() => shopRef.current(), 350);
           },
-        }, data, {
-          quality: q.get("q") === "low" ? "low" : "high",
-          fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
-        });
+          onContextLost: () => {
+            if (dead) return;
+            console.error("3D garden: the phone took the 3D away");
+            ctrlRef.current?.dispose();
+            ctrlRef.current = null;
+            setStatus("loading");
+            setRestarts((n) => n + 1);
+          },
+        };
+        const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
+        // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
+        const start = (): Promise<GardenController> => newMod
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep })
+          : oldMod!.startGarden(el, cbs, data, { quality: tier === "low" ? "low" : "high", fixedStep });
+        let c: GardenController;
+        try {
+          c = await start();
+        } catch (e1) {
+          // The one body failed on this phone (as in the 3D shop on Harry's
+          // iPhone): try once more with the old bodies before the drawn garden.
+          if (dead || people3dLook() !== "new") throw e1;
+          console.error("3D garden: one body failed, retrying with the old body", e1);
+          fallBackToOldPeople();
+          el.replaceChildren();
+          c = await start();
+        }
         if (dead) { c.dispose(); return; }
         ctrlRef.current = c;
         (window as unknown as { __garden3d?: GardenController }).__garden3d = c;
@@ -137,10 +168,19 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
       ctrlRef.current = null;
       delete (window as unknown as { __garden3d?: GardenController }).__garden3d;
     };
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, restarts]);
+  useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const spot = tapped ?? near;
+  /** A tap (not a drag) on the garden: tap to move, where the garden has it. */
+  const onTap = (x: number, y: number) => {
+    const c = ctrlRef.current;
+    if (!c) return;
+    if (c.tap) { c.tap(x, y); setTapped(null); return; }
+    setTapped(c.pick(x, y)); // the old garden: tap opens the card
+  };
 
   if (status === "error") return <GardenScreen career={career} onBack={onBack} />;
 
@@ -160,7 +200,8 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
         onPointerUp={(e) => {
           const d = drag.current;
           drag.current = null;
-          if (d && d.moved < 8) setTapped(ctrlRef.current?.pick(e.clientX, e.clientY) ?? null);
+          // a tap, not a drag of the view
+          if (d && d.id === e.pointerId && d.moved < 10) onTap(e.clientX, e.clientY);
         }}
         onPointerCancel={() => { drag.current = null; }}
       />

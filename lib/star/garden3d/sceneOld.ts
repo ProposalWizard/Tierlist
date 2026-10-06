@@ -28,6 +28,7 @@
  * public/star/garden3d/LICENSE.txt. three.js loads only when this opens.
  */
 import { dressInKit, type KitColours } from "../shop3d/scene";
+import { withMeshopt } from "../three3d/meshopt";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
 import {
   lawnCanvas, gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -274,6 +275,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   draco.setDecoderPath("/star/shop3d/draco/");
   draco.setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader();
+  await withMeshopt(loader); // the files are meshopt-packed now (scripts/perf3d/shrink-models.mjs); the look is unchanged
   loader.setDRACOLoader(draco);
   let loaded = 0;
   const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });

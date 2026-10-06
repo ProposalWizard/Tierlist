@@ -47,6 +47,12 @@ import { dressInKit, type KitColours } from "../shop3d/scene";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
+import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { makeWalkClip } from "../walkClip";
+import { freezeStatic } from "../freezeStatic";
+import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { withMeshopt } from "../three3d/meshopt";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -85,28 +91,44 @@ export interface GardenCallbacks {
   onFps: (fps: number) => void;
   /** He walked through the shop's doors. */
   onShopDoor: () => void;
+  /** The phone took the 3D away (iPhone Safari does this when memory runs
+   *  short): the screen should restart the garden or fall back. */
+  onContextLost?: () => void;
 }
 
 export interface GardenController {
   setStick: (x: number, y: number) => void;
   orbit: (dxPixels: number) => void;
   pick: (clientX: number, clientY: number) => GardenSpot | null;
+  /** Tap to move: a tap on something you can use walks you up to it (its
+   *  card then appears as you arrive); a tap on the ground walks you there.
+   *  What the tap was, or null if it hit nothing (the sky). */
+  tap?: (clientX: number, clientY: number) => { spot: GardenSpot | null } | null;
+  /** For checking: is a tap-walk going on, and where to. */
+  walking?: () => { to: [number, number] | null; active: boolean };
   /** For checking: stand him at (x, z), facing yaw (radians). */
   place: (x: number, z: number, yaw?: number) => void;
-  where: () => { x: number; z: number; yaw: number; t: number };
-  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number };
+  where: () => { x: number; z: number; yaw: number; t: number; cam?: number[]; dodge?: number; block?: { d: number; what: string } | null };
+  stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; impostor?: boolean; shadowRenders?: number; frames?: number; quality?: string; merged?: { before: number; after: number }; carImpostor?: boolean; shadowCalls?: number; shadowTris?: number };
+  /** For checking: a fixed test camera (null: back to the follow camera). */
+  debugCamera?: (pos: [number, number, number] | null, look?: [number, number, number]) => void;
   /** For checking: where the horse and the bird are, and how big they draw. */
   debug: () => Record<string, unknown>;
   dispose: () => void;
 }
 
 export interface GardenOptions {
-  quality?: "high" | "low";
+  /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
+  quality?: Quality3d;
   fixedStep?: number;
 }
 
 // ── The plan of the garden (metres; north is -z, the gate is south) ──
 const LIMIT = 18.3;
+/** The bench team-mates' own drawing layer (see makeImpostor). */
+const MATE_LAYER = 3;
+/** The parked cars' own drawing layers, one each (they get a picture too, far off). */
+const CAR_LAYER = 4;
 const SHOP = { x0: -6, x1: 6, z0: -17.5, z1: -9, h: 5.2 };
 const DOOR = { half: 1.2, h: 2.8 };
 const FOUNTAIN = { x: 0, z: -2.2, r: 1.95 };
@@ -134,30 +156,61 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
   night: { top: "#04070f", mid: "#0c1730", low: "#1b2747", fog: "#111a30", sun: "#9db8ff", sunI: 0.45, hemi: ["#5a6f9c", "#1a2216", 0.42], exp: 1.15, dir: [0.45, 0.9, -0.5], env: 0.1, hill: "#1d2c22" },
 };
 
-export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
-  let quality = opts.quality ?? "high";
+async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { renderer?: any }): Promise<GardenController> {
+  // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
+  // renderer (antialias is fixed when the context is made). High is the New
+  // look exactly as it was on 5 Oct 2026. ──
+  let tier: Quality3d = opts.quality ?? quality3dTier();
+  let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
   const look = SKY[data.sky];
+  // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
+  const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
 
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1));
+  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
+  own.renderer = renderer;
+  rememberGpu(renderer);
+  // ── LAG (Harry, 5 Oct 2026: "find ways to minimise lag") ──
+  // Pixels: the tier's still cap standing still (High 1.5x a CSS pixel), its
+  // moving cap while walking (High 1x: the picture is moving, so the softer
+  // frame isn't seen; a phone's screen has 2-3x, so this is 2.25x fewer
+  // pixels to colour while you walk). While walking, dynamic resolution may
+  // take the moving picture a little lower still if frames are slow.
+  const dpr = window.devicePixelRatio || 1;
+  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  let dynPR = Math.min(dpr, prof.movePixelRatio);
+  const makeDyn = () => new DynamicResolution(
+    { setPixelRatio: (v: number) => { dynPR = v; } },
+    { maxPixelRatio: prof.movePixelRatio, minPixelRatio: prof.minPixelRatio, fpsCap: prof.fpsCap },
+    { step: 0.125, devicePixelRatio: dpr },
+  );
+  let dyn = makeDyn();
+  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  let pr = stillPR();
+  renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = look.exp;
-  renderer.shadowMap.enabled = quality === "high";
+  renderer.shadowMap.enabled = prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // The sun's shadow is drawn again only when something that casts one has
+  // moved (you, or a car arriving): standing still costs no shadow pass.
+  renderer.shadowMap.autoUpdate = false;
   renderer.domElement.style.display = "block";
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   renderer.domElement.style.touchAction = "none";
   container.appendChild(renderer.domElement);
+  // iPhone Safari takes the 3D away when memory runs short: say so, cleanly.
+  const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
+  renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(look.fog, 30, 110);
@@ -170,6 +223,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   scene.environment = envTex;
   scene.environmentIntensity = look.env;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
+  camera.layers.enable(MATE_LAYER);
+  for (let k = 0; k < 3; k++) camera.layers.enable(CAR_LAYER + k);
   let disposed = false;
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
@@ -288,12 +343,18 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   }
 
   // ── Light ──
-  scene.add(new THREE.HemisphereLight(look.hemi[0], look.hemi[1], look.hemi[2]));
+  const hemiLight = new THREE.HemisphereLight(look.hemi[0], look.hemi[1], look.hemi[2]);
+  scene.add(hemiLight);
+  const nightLights: any[] = [];
   const sun = new THREE.DirectionalLight(look.sun, look.sunI);
   sun.position.copy(sunDir).multiplyScalar(40);
-  sun.castShadow = quality === "high";
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 100 });
+  sun.castShadow = prof.shadows;
+  const SUN_MAP = 2048; // High: the full map; Medium: half (shadowSizeFor)
+  sun.shadow.mapSize.set(shadowSizeFor(prof, SUN_MAP) || SUN_MAP, shadowSizeFor(prof, SUN_MAP) || SUN_MAP);
+  // one fixed shadow over the whole garden (it used to follow him, so it had
+  // to be redrawn every frame); redrawn only when a caster moves
+  Object.assign(sun.shadow.camera, { left: -21, right: 21, top: 21, bottom: -21, near: 1, far: 100 });
+  sun.shadow.autoUpdate = false;
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
@@ -364,7 +425,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   draco.setDecoderPath("/star/shop3d/draco/");
   draco.setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(draco);
+  loader.setDRACOLoader(draco); // props.glb
+  await withMeshopt(loader); // people, clips, horse, bird (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
   const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
   // You are the 3D shop's own player: the approved people3d body when the
@@ -413,8 +475,95 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
         leafFix.set(part.material, m2);
       }
       part.material = leafFix.get(part.material);
+      if (!key.includes("pine")) puffLeaves(part);
+      softenLeaves(part);
     }
   });
+  /**
+   * Rounder crowns (the broadleaf trees; the pines keep their layered cones).
+   * Kenney's crowns are a few hard-edged blocks; each block is swapped for a
+   * smooth, slightly fuller ball the same size and in the same place, so the
+   * tree keeps its outline and size but reads soft, like the people. 80
+   * triangles a ball, shared by every copy of that tree (they are instanced).
+   */
+  function puffLeaves(part: { geometry: any; material: any }) {
+    if (part.geometry.userData.puffed) return;
+    const g = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry;
+    const pos = g.attributes.position;
+    const n = pos.count;
+    // which block each corner belongs to: corners at the same spot are joined
+    const parent = new Int32Array(n).map((_, i) => i);
+    const find = (x: number): number => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    const join = (a: number, b: number) => { a = find(a); b = find(b); if (a !== b) parent[a] = b; };
+    const seen = new Map<string, number>();
+    for (let i = 0; i < n; i++) {
+      const k = `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
+      const j = seen.get(k);
+      if (j === undefined) seen.set(k, i); else join(i, j);
+    }
+    for (let t = 0; t < n; t += 3) { join(t, t + 1); join(t, t + 2); }
+    const boxes = new Map<number, any>();
+    const v = new THREE.Vector3();
+    for (let i = 0; i < n; i++) {
+      const r0 = find(i);
+      if (!boxes.has(r0)) boxes.set(r0, new THREE.Box3());
+      boxes.get(r0).expandByPoint(v.set(pos.getX(i), pos.getY(i), pos.getZ(i)));
+    }
+    const ball = new THREE.IcosahedronGeometry(1, 1);
+    const balls: any[] = [];
+    const c = new THREE.Vector3(), h = new THREE.Vector3();
+    boxes.forEach((bb) => {
+      bb.getCenter(c); bb.getSize(h).multiplyScalar(0.5 * 1.12);
+      h.x = Math.max(h.x, 1e-3); h.y = Math.max(h.y, 1e-3); h.z = Math.max(h.z, 1e-3);
+      const b = ball.clone();
+      const bp = b.attributes.position, bn = b.attributes.normal;
+      for (let i = 0; i < bp.count; i++) {
+        const ux = bp.getX(i), uy = bp.getY(i), uz = bp.getZ(i);
+        bp.setXYZ(i, c.x + ux * h.x, c.y + uy * h.y, c.z + uz * h.z);
+        v.set(ux / h.x, uy / h.y, uz / h.z).normalize();
+        bn.setXYZ(i, v.x, v.y, v.z);
+      }
+      b.deleteAttribute("uv");
+      balls.push(b);
+    });
+    const out = mergeGeometries(balls);
+    if (!out) return;
+    out.userData.puffed = true;
+    part.geometry = out;
+  }
+  /**
+   * Softer trees, for nothing extra to draw (Harry: the trees "look very
+   * blocky next to the smooth people"). Kenney's leaves are faceted blocks: each
+   * face its own flat shade. Here every leaf point is lit as if it sat on a
+   * round canopy (its normal points out from the canopy's middle, mixed with a
+   * little of its own), so the light rolls smoothly over the whole crown like
+   * a painted tree; and the underside is a touch darker, as under real leaves.
+   * Same triangles, same draw calls.
+   */
+  function softenLeaves(part: { geometry: any; material: any }) {
+    if (part.geometry.userData.soft) return;
+    const g = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry;
+    g.computeBoundingBox();
+    const bb = g.boundingBox, c = new THREE.Vector3();
+    bb.getCenter(c);
+    const half = new THREE.Vector3().subVectors(bb.max, bb.min).multiplyScalar(0.5);
+    const pos = g.attributes.position, nor = g.attributes.normal;
+    const col = new Float32Array(pos.count * 3);
+    const v = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+      // out from the middle, the crown squashed to a ball first
+      n.set((v.x - c.x) / Math.max(1e-3, half.x), (v.y - c.y) / Math.max(1e-3, half.y) + 0.25, (v.z - c.z) / Math.max(1e-3, half.z)).normalize();
+      if (nor) { n.multiplyScalar(0.8).addScaledVector(v.set(nor.getX(i), nor.getY(i), nor.getZ(i)), 0.2).normalize(); nor.setXYZ(i, n.x, n.y, n.z); }
+      const up = (pos.getY(i) - bb.min.y) / Math.max(1e-3, bb.max.y - bb.min.y);
+      const k = 0.72 + 0.36 * up;
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k;
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    g.userData.soft = true;
+    part.geometry = g;
+    if (!part.material.vertexColors) { part.material.vertexColors = true; part.material.flatShading = false; part.material.needsUpdate = true; }
+  }
   /** Many copies of one piece, one draw call per part: [x, z, scale, rotY, sx?, sy?, sz?, y?]. */
   const many = (key: string, at: number[][], cast = true) => {
     const parts = pieces.get(key);
@@ -776,6 +925,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
       const pl = new THREE.PointLight("#ffcf8a", 9, 9, 2);
       pl.position.set(x, y, z);
       scene.add(pl);
+      nightLights.push(pl);
     }
   }
 
@@ -898,7 +1048,9 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   occluders.push(sphereMany(leafM, vineAt, 2.66));
   // the bench: slats on dark iron legs, against the back
   const ironM = mat("#24262a", { roughness: 0.45, metalness: 0.6 });
-  const seatH = 0.46, benchLen = 2.7;
+  // (seat 0.52: the one body's sitting pose wants a seat this high, or his
+  // feet go through the deck and his seat into the slats)
+  const seatH = data.player?.look === "old" ? 0.46 : 0.52, benchLen = 2.7;
   for (let k = 0; k < 4; k++) box(0.1, 0.04, benchLen, woodM, BENCH_X - 0.2 + k * 0.12, seatH, gz.z);
   for (let k = 0; k < 3; k++) box(0.04, 0.1, benchLen, woodM, BENCH_X + 0.27, seatH + 0.18 + k * 0.14, gz.z);
   for (const dz of [-benchLen / 2 + 0.1, 0, benchLen / 2 - 0.1]) {
@@ -1069,18 +1221,113 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   const lineM = mat("#f4f1ea", { roughness: 0.6 });
   for (let k = 0; k <= bays.length; k++) flat(0.08, 5.4, lineM, bays[0] - 1.5 + k * 3, PARK.z0 + 3.6, 0.02);
   const carGroups: any[] = [];
+  let shadowDirty = true;
   data.cars.slice(0, 3).forEach((url, i) => {
     load(url).then((g: any) => {
       if (disposed) return;
       const c = g.scene;
       c.rotation.y = Math.PI / 2;
       c.position.set(bays[i], 0, PARK.z0 + 3.6);
-      c.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      // (no cast shadow: a soft one under it instead, because far off the car
+      // is drawn as a picture and would drop out of the sun's shadow)
+      c.traverse((o: any) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } o.layers.set(CAR_LAYER + i); });
       scene.add(c);
+      blob(2.4, 4.6, bays[i], PARK.z0 + 3.6, 0.85);
       carGroups.push(c);
+      if (!dbg.has("noimp")) carImpostors.push(makeImpostor([c], CAR_LAYER + i, 9, 10.5));
     }).catch((e: any) => console.error("garden car", e));
     solid(bays[i] - 1.0, bays[i] + 1.0, PARK.z0 + 1.2, PARK.z0 + 6.0);
   });
+
+  /**
+   * THE BENCH, AS A PICTURE (lag: the three team-mates are 21k triangles
+   * each, twice over with their outline, and they hardly move). Seen from
+   * further than ~8 m they are not drawn as 3D people at all: a picture of the
+   * three of them, taken from exactly where the camera is, stands in their
+   * place, facing the camera, and is taken again only when the camera has
+   * gone round them by a few degrees. Close up, the real people come back.
+   * The picture is taken with the garden's own lights, so it matches.
+   */
+  type Impostor = { update: (camPos: any, dt: number) => void; on: () => boolean; dispose: () => void; bakes: () => number; size: () => number };
+  let impostor: Impostor | null = null;
+  const carImpostors: Impostor[] = [];
+  function makeImpostor(roots: any[], layer: number, nearD: number, farD: number): Impostor {
+    // the size of what is actually drawn (visible meshes only: a model can
+    // carry hidden helpers far bigger than itself)
+    const box3 = new THREE.Box3(), mb = new THREE.Box3();
+    for (const r0 of roots) {
+      r0.updateMatrixWorld(true);
+      r0.traverse((o: any) => {
+        if (!o.isMesh) return;
+        for (let p = o; p; p = p.parent) if (!p.visible) return;
+        mb.setFromObject(o, true);
+        box3.union(mb);
+      });
+    }
+    const C = new THREE.Vector3(), size = new THREE.Vector3();
+    box3.getCenter(C); box3.getSize(size);
+    const R = size.length() / 2 + 0.05;
+    const half = renderer.capabilities.isWebGL2 && (renderer.extensions.has("EXT_color_buffer_half_float") || renderer.extensions.has("EXT_color_buffer_float"));
+    const RES = tier === "low" ? 256 : 512;
+    const rt = new THREE.WebGLRenderTarget(RES, RES, { type: half ? THREE.HalfFloatType : THREE.UnsignedByteType, depthBuffer: true });
+    const cam = new THREE.OrthographicCamera(-R, R, R, -R, 0.1, 60);
+    cam.layers.set(layer);
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(2 * R, 2 * R), new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.5, transparent: false }));
+    card.visible = false;
+    scene.add(card);
+    const baked = new THREE.Vector3(9, 9, 9), dir = new THREE.Vector3(), clear = new THREE.Color();
+    let on = false, bakes = 0, distBaked = 0;
+    const bake = (camPos: any) => {
+      dir.subVectors(camPos, C).normalize();
+      cam.position.copy(C).addScaledVector(dir, 30);
+      cam.lookAt(C);
+      cam.near = 30 - R - 0.5; cam.far = 30 + R + 0.5;
+      cam.updateProjectionMatrix();
+      const bg = scene.background, fog = scene.fog, alpha = renderer.getClearAlpha();
+      renderer.getClearColor(clear);
+      scene.background = null; scene.fog = null;
+      renderer.setClearColor(0x000000, 0);
+      renderer.setRenderTarget(rt);
+      renderer.clear();
+      renderer.render(scene, cam);
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(clear, alpha);
+      scene.background = bg; scene.fog = fog;
+      baked.copy(dir);
+      distBaked = camPos.distanceTo(C);
+      bakes++;
+    };
+    const lit = [hemiLight, sun, fillLight, ...nightLights];
+    for (const l of lit) l.layers.enable(layer);
+    return {
+      on: () => on,
+      bakes: () => bakes,
+      size: () => +R.toFixed(2),
+      update: (camPos, dt) => {
+        void dt;
+        const d = camPos.distanceTo(C);
+        const want = on ? d > nearD : d > farD;
+        if (want !== on) {
+          on = want;
+          if (on) camera.layers.disable(layer); else camera.layers.enable(layer);
+          card.visible = on;
+          if (on) bake(camPos);
+        }
+        if (!on) return;
+        // round them by more than ~3 degrees, or much nearer/further: picture again
+        dir.subVectors(camPos, C).normalize();
+        if (dir.dot(baked) < 0.9986 || Math.abs(d - distBaked) / distBaked > 0.25) bake(camPos);
+        // the picture stands a little in front of them (never further forward
+        // than half their size, so nothing in front of them is hidden by it),
+        // facing the camera, sized so it covers exactly what they would
+        const s = Math.min(R * 0.5, 1.0, d * 0.25);
+        card.position.copy(C).addScaledVector(baked, s);
+        card.quaternion.copy(cam.quaternion);
+        card.scale.setScalar((d - s) / d);
+      },
+      dispose: () => { rt.dispose(); card.geometry.dispose(); card.material.dispose(); },
+    };
+  }
 
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
@@ -1088,13 +1335,16 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   const st0 = data.arrive === "shop" ? START_SHOP : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
+  /** The people's outlines (hidden if the scene steps down to Low). */
+  const outlines: any[] = [];
   const mates: { root: any; mixer: any; drink?: { a: any; sit: any; next: number; t: number }; upright?: { a: any; phase: number } }[] = [];
   let playerBlob: any;
   if (newPerson) {
     // exactly as the 3D shop builds him (shop3d/scene.ts): the same body,
     // the same outline, his own skin, hair and the club kit with his number
     const SK = SkeletonUtils.default ?? SkeletonUtils;
-    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
+    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    outlines.push(person.outline);
     dressPerson3d(THREE, person, {
       skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12",
       kit: data.kit, number: canvasTex(numberCanvas(data.number, "#ffffff")),
@@ -1103,10 +1353,11 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
-    walkA = person.actions.jog;
-    jogA = mixer.clipAction(person.actions.jog.getClip().clone());
-    jogA.play(); jogA.setEffectiveWeight(0);
-    for (const a of [idleA, walkA]) a.setEffectiveWeight(0);
+    // a real walk (made from the jog, pulled back towards standing), and the jog
+    walkA = mixer.clipAction(makeWalkClip(THREE, person.actions.jog.getClip(), person.actions.idle.getClip()));
+    walkA.play();
+    jogA = person.actions.jog;
+    for (const a of [idleA, walkA, jogA]) a.setEffectiveWeight(0);
     idleA.setEffectiveWeight(1);
     player.position.set(st0.x, 0, st0.z);
     player.rotation.y = st0.yaw;
@@ -1115,7 +1366,8 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
     data.mates.slice(0, 3).forEach((num, i) => {
-      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: 0.006, castShadow: true });
+      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+      outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
       relaxHands(THREE, m);
       const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
@@ -1136,6 +1388,21 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
       m.root.position.x += BENCH_X + 0.04 - hp.x;
       m.root.position.y += seatH + 0.1 - hp.y;
       m.root.position.z += z - hp.z;
+      // then sit him ON the slats: the underside of his seat (the body's lowest
+      // point near the hips, measured on the posed body) exactly on the top
+      m.root.updateMatrixWorld(true);
+      {
+        m.bones.Hips.getWorldPosition(hp);
+        const pv = new THREE.Vector3();
+        const cnt = m.body.geometry.attributes.position.count;
+        let under = Infinity;
+        for (let k = 0; k < cnt; k += 3) {
+          (m.body as any).getVertexPosition(k, pv);
+          pv.applyMatrix4(m.body.matrixWorld);
+          if (Math.hypot(pv.x - hp.x, pv.z - hp.z) < 0.16) under = Math.min(under, pv.y);
+        }
+        if (isFinite(under)) m.root.position.y += seatH + 0.02 - under;
+      }
       if (i === 0 && m.bones.RightHand) {
         const can = new THREE.Mesh(canG, mat("#2563eb", { roughness: 0.3, metalness: 0.7 }));
         can.scale.setScalar(1 / m.unit);
@@ -1151,9 +1418,12 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
         sk.computeBoundingSphere();
         sk.boundingSphere.radius *= 1.4;
       }
-      blob(0.9, 0.9, BENCH_X - 0.15, z, 0.55);
+      blob(1.0, 0.75, BENCH_X - 0.3, z, 0.6); // under his seat and his feet
+      // drawn on their own layer, so they can be pictured on their own (below)
+      m.root.traverse((o: any) => o.layers.set(MATE_LAYER));
       mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
     });
+    if (!dbg.has("noimp") && mates.length) impostor = makeImpostor(mates.map((m) => m.root), MATE_LAYER, 7, 8);
   } else {
     const dress = (root: any, number: number, key: string) => {
       const U = {
@@ -1230,6 +1500,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   }
   // ── Your horse, grazing and wandering the paddock ──
   let horse: { root: any; mixer: any; idle: any; walk: any; target: [number, number]; wait: number } | null = null;
+  let horseBlob: any = null;
   if (data.horse) {
     load("/star/garden3d/horse.glb").then((g: any) => {
       if (disposed) return;
@@ -1237,8 +1508,11 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
       root.scale.setScalar(0.24);
       root.position.set(-9.5, 0, 7.5);
       // the pack's materials came through with opacity 0: make them solid
-      root.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; o.material.opacity = 1; o.material.transparent = false; } });
+      // no cast shadow (the sun's shadow is only redrawn when you move): a
+      // soft blob under him instead, like the team-mates
+      root.traverse((o: any) => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; o.material.opacity = 1; o.material.transparent = false; } });
       scene.add(root);
+      horseBlob = blob(1.1, 2.2, -9.5, 7.5, 0.6);
       const mx = new THREE.AnimationMixer(root);
       const find = (n: string) => g.animations.find((a: any) => a.name.endsWith(n));
       const idle = mx.clipAction(find("Idle")); idle.play();
@@ -1253,7 +1527,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     if (disposed) return;
     const root = g.scene;
     root.scale.setScalar(0.04);
-    root.traverse((o: any) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = true; o.material.opacity = 1; o.material.transparent = false; } });
+    root.traverse((o: any) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; o.material.opacity = 1; o.material.transparent = false; } });
     scene.add(root);
     const mx = new THREE.AnimationMixer(root);
     const find = (n: string) => g.animations.find((a: any) => a.name.endsWith(n));
@@ -1263,6 +1537,13 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   }).catch((e: any) => console.error("garden bird", e));
   const RIM = { x: FOUNTAIN.x + 1.66, y: 0.5, z: FOUNTAIN.z };
 
+  // ── Lag: everything that never moves, merged ──
+  // Each little box of the gazebo, bench, stable, cabinet and beds was its own
+  // draw: here every still piece is joined with the others of the same
+  // material in the same group, so the garden draws in far fewer calls. The
+  // picture is exactly the same.
+  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
+
   // ── Input, camera, the loop ──
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
@@ -1270,10 +1551,16 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
+  // tap to move (lib/star/tapWalk.ts)
+  const walker = new TapWalker();
+  const marker = makeTapMarker(THREE, scene);
+  let grid: WalkGrid | null = null;
+  let faceTo: XZ | null = null;
+  const stopWalk = () => { if (walker.active) { walker.cancel(); marker.fade(); } faceTo = null; };
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase();
     if (!["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) return;
-    if (down) keys.add(k); else keys.delete(k);
+    if (down) { keys.add(k); stopWalk(); } else keys.delete(k);
     if (k.startsWith("arrow")) e.preventDefault();
   };
   const kd = (e: KeyboardEvent) => onKey(e, true);
@@ -1291,8 +1578,9 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
   ro.observe(container);
   resize();
   const angDiff = (a: number, b: number) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
+  const RR = 0.32;
   const collide = (x: number, z: number) => {
-    const rr = 0.32;
+    const rr = RR;
     // the shop's doorway: walk in and you are inside
     if (Math.abs(x) < DOOR.half - 0.2 && z < SHOP.z1 + 0.7 && z > SHOP.z1 - 1.2) {
       if (!doorFired && z < SHOP.z1 - 0.1) { doorFired = true; cb.onShopDoor(); }
@@ -1313,6 +1601,14 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     }
     return [x, z];
   };
+  /** Somewhere he can stand (for the tap-walk's path), with a little room. */
+  const isFree = (x: number, z: number) => {
+    const rr = RR + 0.08;
+    if (Math.abs(x) > LIMIT - 0.1 || Math.abs(z) > LIMIT - 0.1) return false;
+    for (const [x0, x1, z0, z1] of BOXES) if (x > x0 - rr && x < x1 + rr && z > z0 - rr && z < z1 + rr) return false;
+    for (const [cx, cz, cr] of CIRCLES) if (Math.hypot(x - cx, z - cz) < cr + rr) return false;
+    return true;
+  };
   const ZONES: { id: GardenSpot; inside: (x: number, z: number) => boolean }[] = [
     { id: "shop", inside: (x, z) => Math.abs(x) < 3 && z < SHOP.z1 + 2.6 },
     { id: "trophies", inside: (x, z) => Math.hypot(x - CABINET.x, z - CABINET.z) < 3.4 },
@@ -1322,16 +1618,110 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     { id: "cars", inside: (x, z) => x > PARK.x0 - 0.5 && z > PARK.z0 - 0.8 },
     { id: "fountain", inside: (x, z) => Math.hypot(x - FOUNTAIN.x, z - FOUNTAIN.z) < 3.4 },
   ];
+  /** Where to stand to use each thing (inside its zone, so its card shows), and what to look at. */
+  const STAND: Record<GardenSpot, { at: XZ; face: XZ }> = {
+    shop: { at: [0, SHOP.z1 + 1.7], face: [0, SHOP.z1] },
+    trophies: { at: [CABINET.x + 2.55, CABINET.z], face: [CABINET.x, CABINET.z] },
+    teqball: { at: [TEQ.x - 1.75, TEQ.z + 0.3], face: [TEQ.x, TEQ.z] },
+    mates: { at: [gz.x - 0.9, gz.z], face: [BENCH_X, gz.z] },
+    horse: { at: [PADDOCK.x1 + 0.9, (PADDOCK.gate[0] + PADDOCK.gate[1]) / 2], face: [(PADDOCK.x0 + PADDOCK.x1) / 2, 7] },
+    cars: { at: [9.5, PARK.z0 + 0.3], face: [11, PARK.z0 + 3.6] },
+    fountain: { at: [FOUNTAIN.x, FOUNTAIN.z + FOUNTAIN.r + 0.9], face: [FOUNTAIN.x, FOUNTAIN.z] },
+  };
+  const walkTo = (to: XZ, face: XZ | null) => {
+    grid ??= buildGrid(-LIMIT, LIMIT, -LIMIT, LIMIT, 0.3, isFree);
+    const path = findPath(grid, [player.position.x, player.position.z], to);
+    if (!path) return false;
+    faceTo = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    const g = path[path.length - 1];
+    marker.show(g[0], g[1]);
+    orbitHold = 0;
+    return true;
+  };
+
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), want = new THREE.Vector3(), wantLook = new THREE.Vector3();
   let first = true;
   const v3 = new THREE.Vector3();
   const camRay = new THREE.Raycaster();
   const headPos = new THREE.Vector3(), rayDir = new THREE.Vector3();
+  const frustum = new THREE.Frustum(), projM = new THREE.Matrix4(), sph = new THREE.Sphere();
+  const inView = (x: number, y: number, z: number, r: number) => frustum.intersectsSphere(sph.set(v3.set(x, y, z), r));
+  // the fountain's top (column, bowl, its water and spray) clears out of the
+  // way when the camera can only see him through it
+  const fountainTop = [column, bowl, bowlWater, topper, spray];
+  let fountainHide = 0;
+  /** Where a line from (x,z) along (dx,dz) first enters a circle, or Infinity. */
+  const enterCircle = (x: number, z: number, dx: number, dz: number, cx: number, cz: number, r: number) => {
+    const fx = x - cx, fz = z - cz;
+    const b = fx * dx + fz * dz, c = fx * fx + fz * fz - r * r;
+    if (c < 0) return 0;
+    const disc = b * b - c;
+    if (disc < 0) return Infinity;
+    const t = -b - Math.sqrt(disc);
+    return t >= 0 ? t : Infinity;
+  };
+  /** Where a line from (x,z) along (dx,dz) first enters a box, or Infinity. */
+  const enterBox = (x: number, z: number, dx: number, dz: number, x0: number, x1: number, z0: number, z1: number) => {
+    let t0 = 0, t1 = Infinity;
+    for (const [p, d, lo, hi] of [[x, dx, x0, x1], [z, dz, z0, z1]] as [number, number, number, number][]) {
+      if (Math.abs(d) < 1e-9) { if (p < lo || p > hi) return Infinity; continue; }
+      let a = (lo - p) / d, b = (hi - p) / d;
+      if (a > b) [a, b] = [b, a];
+      t0 = Math.max(t0, a); t1 = Math.min(t1, b);
+      if (t0 > t1) return Infinity;
+    }
+    return t0;
+  };
+  let dodge = 0; // the camera's swing round the gazebo (radians)
+  let lastBlock: { d: number; what: string } | null = null;
+  let testCam: [[number, number, number], [number, number, number]] | null = null;
+  const GZ_BOX: [number, number, number, number] = [GAZEBO.x - GAZEBO.w / 2 - 0.35, GAZEBO.x + GAZEBO.w / 2 + 0.35, GAZEBO.z - GAZEBO.d / 2 - 0.35, GAZEBO.z + GAZEBO.d / 2 + 0.35];
+
+  // the frame limiter and the pixels: see the renderer above
+  let acc = 0, busy = true, busyT = 0, stillT = 0, shadowRenders = 0, drawn = 0, lastShadowX = NaN, lastShadowZ = NaN, lastShadowYaw = NaN;
+  let capAlways = false; // a phone still too slow at Low: 30 a second all the time
+  /** Too slow for three seconds: one tier down (High → Medium → Low), never
+   *  straight to the bottom. Antialias stays (it is fixed with the context). */
+  const stepDown = (): boolean => {
+    const next = stepDownTier(tier);
+    if (!next) return false;
+    tier = next; prof = TIER_PROFILES[tier];
+    dyn = makeDyn(); dynPR = Math.min(dpr, prof.movePixelRatio);
+    pr = stillPR(); renderer.setPixelRatio(pr);
+    if (!prof.shadows) { sun.castShadow = false; renderer.shadowMap.enabled = false; }
+    else {
+      const n = shadowSizeFor(prof, SUN_MAP);
+      if (n !== sun.shadow.mapSize.x) { sun.shadow.map?.dispose(); sun.shadow.map = null; sun.shadow.mapSize.set(n, n); shadowDirty = true; }
+    }
+    if (!prof.outlines) for (const o of outlines) o.visible = false;
+    resize();
+    return true;
+  };
+
+  // Warm up: build every shader before the first frame, so the first steps
+  // don't stutter while the phone compiles them.
+  camera.position.set(player.position.x, CAM_UP, player.position.z + CAM_BACK);
+  camera.lookAt(player.position.x, 1.3, player.position.z);
+  try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
+  if (disposed) throw new Error("disposed");
 
   renderer.setAnimationLoop(() => {
     if (disposed) return;
-    const dt = opts.fixedStep ?? Math.min(0.05, clock.getDelta());
+    const raw = Math.min(0.25, clock.getDelta());
+    let dt: number;
+    if (opts.fixedStep) dt = opts.fixedStep;
+    else {
+      // standing still: 30 pictures a second is plenty (the fountain, the
+      // bench and the horse still move); walking or turning: the tier's cap
+      // (High and Medium every frame, Low 30)
+      acc += raw;
+      const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      if (cap < 60 && acc < 1 / (cap + 1)) return;
+      dt = Math.min(0.05, acc);
+      acc = 0;
+    }
     gameT += dt;
     let ix = stick.x, iy = stick.y;
     if (keys.size) {
@@ -1341,33 +1731,56 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
       const runK = keys.has("shift") ? 1 : 0.6;
       ix = (ix / m) * runK; iy = (iy / m) * runK;
     }
-    const mag = Math.min(1, Math.hypot(ix, iy));
+    let mag = Math.min(1, Math.hypot(ix, iy));
+    let wantYaw: number | null = null;
+    if (mag >= 0.08) {
+      // the stick is relative to where the camera actually looks
+      const cy = camYaw + dodge;
+      const fx = -Math.sin(cy), fz = -Math.cos(cy), rx = Math.cos(cy), rz = -Math.sin(cy);
+      wantYaw = Math.atan2(fx * iy + rx * ix, fz * iy + rz * ix);
+    } else if (walker.active) {
+      const s = walker.step(player.position.x, player.position.z, dt);
+      if (s) {
+        wantYaw = s.yaw;
+        // turning round first: don't stride off the wrong way meanwhile
+        mag = s.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, s.yaw)))));
+      } else if (!walker.active && marker.visible) marker.fade();
+    }
     const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
     speed += (target - speed) * Math.min(1, dt * 8);
-    if (mag >= 0.08) {
-      const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
-      yaw += angDiff(yaw, Math.atan2(fx * iy + rx * ix, fz * iy + rz * ix)) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    else if (faceTo && speed < 0.4) {
+      // arrived at something: turn to it
+      const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
+      yaw += d * Math.min(1, dt * 5);
+      if (Math.abs(d) < 0.03) faceTo = null;
     }
     const [nx, nz] = collide(player.position.x + Math.sin(yaw) * speed * dt, player.position.z + Math.cos(yaw) * speed * dt);
     player.position.x = nx; player.position.z = nz;
     player.rotation.y = yaw;
     playerBlob.position.set(nx, 0.02, nz);
+    marker.update(dt);
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
     walkA.setEffectiveWeight(wWalk);
     jogA.setEffectiveWeight(wJog);
-    if (newPerson) { // the shop's own timing for this body (its jog, slowed, is the walk)
-      walkA.timeScale = Math.max(0.45, speed / 2.6);
-      jogA.timeScale = Math.max(0.8, speed / 3.0);
+    if (newPerson) {
+      // the walk and the jog are the same stride timing, so they share one
+      // pace and the feet stay together while one blends into the other
+      const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
+      walkA.timeScale = ts; jogA.timeScale = ts;
     } else {
       walkA.timeScale = Math.max(0.6, speed / 1.45);
       jogA.timeScale = Math.max(0.8, speed / 3.2);
     }
     mixer.update(dt);
 
-    // team-mates: sit, chat; the one with the can takes a drink now and then
+    // team-mates: sit, chat; the one with the can takes a drink now and then.
+    // As a picture (far off) they hold still and cost nothing.
+    const matesReal = !impostor || !impostor.on();
     for (const m of mates) {
+      if (!matesReal) break;
       if (m.drink) {
         const d = m.drink;
         d.next -= dt;
@@ -1381,7 +1794,7 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
           d.sit.setEffectiveWeight(1 - Math.max(0, w) * 0.5);
         } else { d.a.setEffectiveWeight(0); d.sit.setEffectiveWeight(1); }
       }
-      if (m.upright) m.upright.a.time = 0.45 + 0.3 * Math.sin(gameT * 0.45 + m.upright.phase);
+      if (m.upright) m.upright.a.time = 0.45 + 0.12 * Math.sin(gameT * 0.45 + m.upright.phase);
       m.mixer.update(dt);
     }
 
@@ -1406,7 +1819,11 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
         h.walk.setEffectiveWeight(Math.min(1, h.walk.getEffectiveWeight() + dt * 2));
         h.idle.setEffectiveWeight(1 - h.walk.getEffectiveWeight());
       }
-      h.mixer.update(dt);
+      if (horseBlob) { horseBlob.position.set(h.root.position.x, 0.02, h.root.position.z); horseBlob.rotation.z = h.root.rotation.y; }
+      // off screen: skip working out his legs (and don't draw him)
+      const seen = inView(h.root.position.x, 0.9, h.root.position.z, 1.6);
+      h.root.visible = seen;
+      if (seen) h.mixer.update(dt);
     }
 
     // the bird
@@ -1440,41 +1857,87 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
         b.root.lookAt(RIM.x + 9, RIM.y + p * 7, RIM.z - 7);
         if (p >= 1) { b.phase = "circle"; b.t = 0; b.next = 14 + Math.random() * 10; }
       }
-      b.mixer.update(dt);
+      const seen = inView(b.root.position.x, b.root.position.y, b.root.position.z, 0.8);
+      b.root.visible = seen;
+      if (seen) b.mixer.update(dt);
     }
 
-    // the fountain spray and gentle water
-    for (let i = 0; i < DROPS; i++) {
-      dropVel[i * 3 + 1] -= 9.8 * dt * 0.55;
-      dropPos[i * 3] += dropVel[i * 3] * dt;
-      dropPos[i * 3 + 1] += dropVel[i * 3 + 1] * dt;
-      dropPos[i * 3 + 2] += dropVel[i * 3 + 2] * dt;
-      if (dropPos[i * 3 + 1] < 1.45) resetDrop(i);
+    // the fountain spray and gentle water (only worked out when it's in view)
+    if (inView(FOUNTAIN.x, 1.2, FOUNTAIN.z, 2.4)) {
+      for (let i = 0; i < DROPS; i++) {
+        dropVel[i * 3 + 1] -= 9.8 * dt * 0.55;
+        dropPos[i * 3] += dropVel[i * 3] * dt;
+        dropPos[i * 3 + 1] += dropVel[i * 3 + 1] * dt;
+        dropPos[i * 3 + 2] += dropVel[i * 3 + 2] * dt;
+        if (dropPos[i * 3 + 1] < 1.45) resetDrop(i);
+      }
+      dropG.attributes.position.needsUpdate = true;
     }
-    dropG.attributes.position.needsUpdate = true;
     waterM.emissiveIntensity = 0.35 + 0.08 * Math.sin(gameT * 2.2);
     clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.25; });
 
     // the camera follows behind him
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
-    const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
+    // The gazebo between him and the camera (standing south of it, looking at
+    // the cars, put the camera among its posts with the team-mates filling
+    // the picture): swing the camera round to the nearest side that's clear.
+    {
+      const hx = player.position.x, hz = player.position.z;
+      const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
+      // (with room to spare round it, so no post stands right beside the camera)
+      const clear = (off: number) => enterBox(hx, hz, Math.sin(camYaw + off), Math.cos(camYaw + off), GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CAM_BACK;
+      let target = 0;
+      if (!inGz && !clear(dodge)) {
+        if (!clear(0)) {
+          const pref = dodge < 0 ? -1 : 1;
+          target = 0;
+          for (let k = 1; k <= 10; k++) {
+            const a = k * 0.15;
+            if (clear(pref * a)) { target = pref * a; break; }
+            if (clear(-pref * a)) { target = -pref * a; break; }
+          }
+        }
+      } else if (!inGz && dodge !== 0 && !clear(0)) target = dodge; // still needed: hold it
+      dodge += (target - dodge) * Math.min(1, dt * 3);
+      if (Math.abs(dodge) < 1e-3) dodge = 0;
+    }
+    const cfx = -Math.sin(camYaw + dodge), cfz = -Math.cos(camYaw + dodge);
     // lower and further back than before: more garden and sky in the frame
     want.set(player.position.x - cfx * CAM_BACK, CAM_UP, player.position.z - cfz * CAM_BACK);
     wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
-    // over the fountain: rise a little, and fade its column and bowl so you
-    // see him through it instead of a wall of stone
-    const fd = Math.hypot(want.x - FOUNTAIN.x, want.z - FOUNTAIN.z);
-    if (fd < FOUNTAIN.r + 1.4) want.y = CAM_UP + 0.9 * Math.min(1, (FOUNTAIN.r + 1.4 - fd) / 1.4);
-    const segX = player.position.x - camPos.x, segZ = player.position.z - camPos.z;
-    const segT = Math.max(0, Math.min(1, ((FOUNTAIN.x - camPos.x) * segX + (FOUNTAIN.z - camPos.z) * segZ) / Math.max(1e-6, segX * segX + segZ * segZ)));
-    const inTheWay = Math.hypot(camPos.x + segX * segT - FOUNTAIN.x, camPos.z + segZ * segT - FOUNTAIN.z) < 1.1 && segT < 0.98;
-    const fadeTo = inTheWay && !first ? 0.25 : 1;
-    fountainFade += (fadeTo - fountainFade) * Math.min(1, dt * 6);
-    for (const fm of fountainMats) {
-      const see = fountainFade < 0.99;
-      if (fm.transparent !== see) { fm.transparent = see; fm.depthWrite = !see; fm.needsUpdate = true; }
-      fm.opacity = fountainFade;
+    {
+      // Things the camera must not end up inside or behind, in plan:
+      const hx = player.position.x, hz = player.position.z;
+      const sx = want.x - hx, sz = want.z - hz, L = Math.hypot(sx, sz) || 1, ux = sx / L, uz = sz / L;
+      let boom = L;
+      // the gazebo, from outside it: stop short of it, rather than standing
+      // among its posts with the team-mates filling the picture
+      const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
+      if (!inGz) {
+        const t = enterBox(hx, hz, ux, uz, ...GZ_BOX);
+        if (t < boom) boom = Math.max(2.2, t - 0.2);
+      }
+      // the fountain's column and bowl: come in front of them if that leaves
+      // room; if he is right up against it, they clear out of the way instead
+      let hideTop = false;
+      const tf = enterCircle(hx, hz, ux, uz, FOUNTAIN.x, FOUNTAIN.z, 1.05);
+      if (tf < boom) {
+        if (tf > 2.6) boom = tf - 0.25; else hideTop = true;
+      }
+      if (boom < L) {
+        want.x = hx + ux * boom; want.z = hz + uz * boom;
+        // closer in, a little lower, so it still looks over his shoulder
+        want.y = CAM_UP - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4));
+      }
+      fountainHide += ((hideTop ? 1 : 0) - fountainHide) * Math.min(1, dt * 9);
+      const op = 1 - fountainHide;
+      for (const fm of fountainMats) {
+        const see = op < 0.99;
+        if (fm.transparent !== see) { fm.transparent = see; fm.depthWrite = !see; fm.needsUpdate = true; }
+        fm.opacity = op;
+      }
+      for (const o of fountainTop) o.visible = o === spray || o === bowlWater ? op > 0.6 : op > 0.04;
     }
     // over the gazebo: stay under its rafters, not up among them
     if (want.x > GAZEBO.x - GAZEBO.w / 2 - 0.9 && want.x < GAZEBO.x + GAZEBO.w / 2 + 0.9 && Math.abs(want.z - GAZEBO.z) < GAZEBO.d / 2 + 0.9) want.y = Math.min(want.y, 2.3);
@@ -1486,66 +1949,166 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
     camRay.far = headPos.distanceTo(want);
     camRay.camera = camera;
     const block = camRay.intersectObjects(occluders.filter(Boolean), true)[0];
+    lastBlock = block ? { d: +block.distance.toFixed(2), what: String(block.object?.parent?.name || block.object?.name || block.object?.type) } : null;
     if (block) want.copy(headPos).addScaledVector(rayDir, Math.max(1.2, block.distance - 0.35));
-    if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
+    const camWas = camPos.clone();
+    if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; shadowDirty = true; }
     else { camPos.lerp(want, Math.min(1, dt * (block ? 12 : 5))); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
     camera.position.copy(camPos);
     camera.lookAt(camLook);
+    if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
     fillLight.position.set(camPos.x * 0.6 + player.position.x * 0.4, 2.6, camPos.z * 0.6 + player.position.z * 0.4);
-    sun.target.position.set(player.position.x, 0, player.position.z);
-    sun.position.copy(sunDir).multiplyScalar(40).add(sun.target.position);
+    camera.updateMatrixWorld();
+    frustum.setFromProjectionMatrix(projM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    impostor?.update(camera.position, dt);
+    for (const ci of carImpostors) ci.update(camera.position, dt);
 
     let now: GardenSpot | null = null;
     for (const zn of ZONES) if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
     if (now !== near) { near = now; cb.onNear(near); }
 
+    // the sun's shadow: drawn again only when he has moved or turned
+    if (sun.castShadow) {
+      const moved = Math.abs(nx - lastShadowX) + Math.abs(nz - lastShadowZ) > 0.004 || Math.abs(angDiff(lastShadowYaw, yaw)) > 0.004 || speed > 0.05;
+      if (shadowDirty || moved || !(lastShadowX === lastShadowX)) {
+        sun.shadow.needsUpdate = true;
+        renderer.shadowMap.needsUpdate = true;
+        shadowDirty = false;
+        lastShadowX = nx; lastShadowZ = nz; lastShadowYaw = yaw;
+        shadowRenders++;
+      }
+    }
     renderer.render(scene, camera);
+    drawn++;
+
+    // busy (walking, turning, the camera swinging): full frame rate at fewer
+    // pixels; still: 30 a second at full pixels
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
+    if (!opts.fixedStep) {
+      // dynamic resolution: judged only while moving at the full cap (the
+      // still picture rests at 30 a second on purpose)
+      if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
+      const wantPR = busyT > 0.25 ? movePR() : stillT > 0.5 ? stillPR() : pr;
+      if (wantPR !== pr) { pr = wantPR; renderer.setPixelRatio(pr); }
+    }
+
     frames++;
     const nowMs = performance.now();
     if (nowMs - fpsT0 >= 1000) {
       const fps = Math.round((frames * 1000) / (nowMs - fpsT0));
       cb.onFps(fps);
       frames = 0; fpsT0 = nowMs;
-      if (!opts.fixedStep && quality === "high") {
-        slowSeconds = fps < 28 ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) { quality = "low"; renderer.setPixelRatio(1); sun.castShadow = false; renderer.shadowMap.enabled = false; resize(); }
+      if (!opts.fixedStep) {
+        // too slow for three seconds: one tier down; still too slow at Low:
+        // 30 frames a second all the time
+        const slow = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22);
+        slowSeconds = slow ? slowSeconds + 1 : 0;
+        if (slowSeconds >= 3) {
+          slowSeconds = 0;
+          if (!stepDown()) capAlways = true;
+        }
       }
     }
   });
 
   const ray = new THREE.Raycaster();
+  ray.layers.enableAll();
+  const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const targets: { obj: any; spot: GardenSpot }[] = [
-    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" },
+    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" }, { obj: gzG, spot: "mates" },
   ];
-  return {
-    setStick: (x, y) => { stick = { x, y }; },
+  const aim = (px: number, py: number) => {
+    const rct = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((px - rct.left) / rct.width) * 2 - 1, -((py - rct.top) / rct.height) * 2 + 1), camera);
+  };
+  const pickSpot = (): GardenSpot | null => {
+    const objs = [...targets.map((t) => t.obj), ...mates.map((m) => m.root), ...(horse ? [horse.root] : []), ...carGroups];
+    const hit = ray.intersectObjects(objs, true)[0];
+    if (!hit) return null;
+    let o = hit.object;
+    while (o) {
+      const t = targets.find((x) => x.obj === o);
+      if (t) return t.spot;
+      if (mates.some((m) => m.root === o)) return "mates";
+      if (horse && horse.root === o) return "horse";
+      if (carGroups.includes(o)) return "cars";
+      o = o.parent;
+    }
+    return null;
+  };
+  const ctrl: GardenController = {
+    setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
     orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
-    pick: (px, py) => {
-      const rct = renderer.domElement.getBoundingClientRect();
-      ray.setFromCamera(new THREE.Vector2(((px - rct.left) / rct.width) * 2 - 1, -((py - rct.top) / rct.height) * 2 + 1), camera);
-      const objs = [...targets.map((t) => t.obj), ...mates.map((m) => m.root), ...(horse ? [horse.root] : []), ...carGroups];
-      const hit = ray.intersectObjects(objs, true)[0];
-      if (!hit) return null;
-      let o = hit.object;
-      while (o) {
-        const t = targets.find((x) => x.obj === o);
-        if (t) return t.spot;
-        if (mates.some((m) => m.root === o)) return "mates";
-        if (horse && horse.root === o) return "horse";
-        if (carGroups.includes(o)) return "cars";
-        o = o.parent;
-      }
-      return null;
+    pick: (px, py) => { aim(px, py); return pickSpot(); },
+    tap: (px, py) => {
+      aim(px, py);
+      const spot = pickSpot();
+      if (spot) { const s = STAND[spot]; walkTo(s.at, s.face); return { spot }; }
+      const hit = ray.ray.intersectPlane(ground, new THREE.Vector3());
+      if (!hit || Math.hypot(hit.x - player.position.x, hit.z - player.position.z) > 40) return null;
+      return walkTo([hit.x, hit.z], null) ? { spot: null } : null;
     },
-    place: (x, z, y = yaw) => { player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
-    where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT }),
-    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded }),
+    debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
+    walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
+    place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
+    where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), dodge: +dodge.toFixed(2), block: lastBlock }),
+    stats: () => {
+      // the sun's shadow pass: one draw per visible caster (renderer.info doesn't count it)
+      let shadowCalls = 0, shadowTris = 0;
+      scene.traverse((o: any) => {
+        if (!o.isMesh || !o.castShadow || !o.visible || !o.layers.test(camera.layers)) return;
+        for (let p = o.parent; p; p = p.parent) if (!p.visible) return;
+        const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3;
+        shadowCalls++; shadowTris += n * (o.isInstancedMesh ? o.count : 1);
+      });
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, impostor: !!impostor?.on(), carImpostor: carImpostors.some((c) => c.on()), shadowRenders, frames: drawn, quality: tier, merged: frozen, shadowCalls, shadowTris: Math.round(shadowTris) };
+    },
     debug: () => {
       const sz = (o: any) => { const b = new THREE.Box3().setFromObject(o); const v = new THREE.Vector3(); b.getSize(v); return { min: b.min.toArray().map((n: number) => +n.toFixed(2)), size: v.toArray().map((n: number) => +n.toFixed(2)) }; };
-      const precise = (o: any) => { o.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(o, true); const v = new THREE.Vector3(); b.getSize(v); return { pmin: b.min.toArray().map((n: number) => +n.toFixed(2)), psize: v.toArray().map((n: number) => +n.toFixed(2)) }; };
-      const mats: any[] = [];
-      horse?.root.traverse((o: any) => { if (o.isMesh) mats.push({ n: o.name, vis: o.visible, skin: !!o.isSkinnedMesh, m: o.material?.name, op: o.material?.opacity, tr: o.material?.transparent, side: o.material?.side, col: o.material?.color?.getHexString?.(), mw: o.matrixWorld.elements.slice(0, 3).map((n: number) => +n.toFixed(3)) }); });
-      return { horseMats: mats, cars: carGroups.length, carsWanted: data.cars, horseP: horse ? precise(horse.root) : null, birdP: bird ? precise(bird.root) : null, horse: horse ? { pos: horse.root.position.toArray(), ...sz(horse.root) } : null, bird: bird ? { pos: bird.root.position.toArray(), phase: bird.phase, ...sz(bird.root) } : null, mate0: mates[0] ? sz(mates[0].root) : null, player: sz(player) };
+      const precise = (o: any) => { o.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(o, true); const v = new THREE.Vector3(); b.getSize(v); return { pmin: b.min.toArray().map((n: number) => +n.toFixed(3)), psize: v.toArray().map((n: number) => +n.toFixed(2)) }; };
+      const triOf = (o: any) => { let t = 0; o.traverse((m: any) => { if (!m.isMesh) return; const g = m.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; t += n * (m.isInstancedMesh ? m.count : 1); }); return Math.round(t); };
+      const tris = { cars: carGroups.reduce((s, c) => s + triOf(c), 0), horse: horse ? triOf(horse.root) : 0, bird: bird ? triOf(bird.root) : 0, player: triOf(player), mates: mates.reduce((s, m) => s + triOf(m.root), 0), all: triOf(scene) };
+      // where the first team-mate actually touches: the underside of his seat
+      // (lowest point near the hips) and his feet (lowest point of all)
+      let sit: any = null;
+      const m0 = mates[0];
+      if (m0) {
+        let body: any = null;
+        m0.root.traverse((o: any) => { if (o.isSkinnedMesh && o.name !== "Outline") body ??= o; });
+        if (body?.getVertexPosition) {
+          const hp = new THREE.Vector3(); let hips: any = null;
+          m0.root.traverse((o: any) => { if (o.isBone && o.name === "Hips") hips = o; });
+          hips?.getWorldPosition(hp);
+          const p = new THREE.Vector3();
+          let seat = Infinity, feet = Infinity;
+          const n = body.geometry.attributes.position.count;
+          for (let i = 0; i < n; i += 2) {
+            body.getVertexPosition(i, p); p.applyMatrix4(body.matrixWorld);
+            feet = Math.min(feet, p.y);
+            if (Math.hypot(p.x - hp.x, p.z - hp.z) < 0.16) seat = Math.min(seat, p.y);
+          }
+          sit = { hipsY: +hp.y.toFixed(3), seatUnderside: +seat.toFixed(3), feet: +feet.toFixed(3), benchTop: +(0.46 + 0.02).toFixed(3), deck: 0.03 };
+        }
+      }
+      const pv: any[] = [];
+      player.traverse((o: any) => {
+        if (!o.isMesh) return;
+        let nan = false;
+        if (o.isSkinnedMesh) for (const b of o.skeleton.bones) if (b.matrixWorld.elements.some((e: number) => !isFinite(e))) nan = true;
+        let hidden = false;
+        for (let p = o; p; p = p.parent) if (!p.visible) hidden = true;
+        pv.push({ n: o.name, hidden, nan, layers: o.layers.mask, camLayers: camera.layers.mask, op: o.material?.opacity, tr: o.material?.transparent, inScene: (() => { let p = o; while (p.parent) p = p.parent; return p === scene; })() });
+      });
+      // what lies on the line from the camera to his chest
+      const rc = new THREE.Raycaster();
+      rc.layers.mask = camera.layers.mask;
+      rc.camera = camera;
+      const chest = new THREE.Vector3(player.position.x, 1.2, player.position.z);
+      rc.set(camera.position, chest.clone().sub(camera.position).normalize());
+      rc.far = camera.position.distanceTo(chest) + 0.5;
+      const los = rc.intersectObjects(scene.children, true).filter((h: any) => h.object.visible).slice(0, 4).map((h: any) => ({ d: +h.distance.toFixed(2), type: h.object.type, name: h.object.name, mat: h.object.material?.type, matName: h.object.material?.name, tr: h.object.material?.transparent, parent: h.object.parent?.type, ro: h.object.renderOrder }));
+      return { carSizes: carImpostors.map((c) => c.size()), mateSize: impostor?.size(), los, pv, sit, tris, cars: carGroups.length, carsWanted: data.cars, horseP: horse ? precise(horse.root) : null, birdP: bird ? precise(bird.root) : null, horse: horse ? { pos: horse.root.position.toArray(), ...sz(horse.root) } : null, mates: mates.map((m) => precise(m.root)), player: precise(player), bakes: impostor?.bakes() ?? 0 };
     },
     dispose: () => {
       disposed = true;
@@ -1553,14 +2116,41 @@ export async function startGarden(container: HTMLElement, cb: GardenCallbacks, d
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
+      renderer.domElement.removeEventListener("webglcontextlost", onLost);
+      impostor?.dispose();
+      for (const ci of carImpostors) ci.dispose();
+      marker.dispose();
       scene.traverse((o: any) => {
         o.geometry?.dispose?.();
         const m = o.material;
         (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
       });
+      envTex.dispose();
       draco.dispose();
       renderer.dispose();
+      // give the phone its 3D back now, not whenever the page is collected
+      // (iPhone Safari allows only a few at once: the shop and garden swap often)
+      renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };
+  return ctrl;
+}
+
+/**
+ * Opens the garden. If anything fails part-way, the half-built 3D is thrown
+ * away properly before the error goes up (so a retry, or the drawn garden,
+ * doesn't leave a dead WebGL context behind on an iPhone).
+ */
+export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
+  const own: { renderer?: any } = {};
+  try {
+    return await buildGarden(container, cb, data, opts, own);
+  } catch (e) {
+    const r = own.renderer;
+    if (r) {
+      try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ }
+    }
+    throw e;
+  }
 }
