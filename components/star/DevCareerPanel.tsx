@@ -1,4 +1,5 @@
 "use client";
+import { happinessOf } from "@/lib/star/relationships";
 import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import { PressButton, Pop } from "./ui";
@@ -91,7 +92,7 @@ export default function DevCareerPanel({
             <PressButton variant="accent" accent="#d946ef" size="none" onClick={() => onSetFame(100)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">Max</PressButton>
           </div>
         </Tile>
-        <Tile label="Happiness" value={<Pop value={career.happiness}>{career.happiness}</Pop>}>
+        <Tile label="Happiness" value={<Pop value={happinessOf(career)}>{happinessOf(career)}</Pop>}>
           <div className="mt-1 flex gap-1">
             <PressButton variant="accent" accent="#f43f5e" size="none" onClick={() => onSetHappiness(25)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">+25</PressButton>
             <PressButton variant="accent" accent="#f43f5e" size="none" onClick={() => onSetHappiness(100)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">Max</PressButton>

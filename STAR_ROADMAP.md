@@ -21,6 +21,14 @@ rating and XP (v0.7, v0.9), sponsors (v0.8), club data, the 3D garden.
    Talk to your manager, Woodwork challenge, Signing session, Day off, and
    Shoot an advert on the Sponsors screen. Plan:
    patch-notes/mikey/plans/relationships.html.
+   5 Oct 2026, after Mikey's review: happiness is now the average of boss,
+   team and fans (no Day off game, no row on Relations, Rest and shop items
+   no longer lift it); the boss talk has a hidden mood read from his opener
+   (85% / 45% / 10%), and the signing session is much harder.
+   Later 5 Oct: the boss game is now The manager's penalties (3 kicks, he
+   names one of 6 spots, +2 a hit, −2 for none); the signing session is
+   always 10 fans, up to 3 things each, scored at the end (right − 5); each
+   Relations game costs a training session's energy.
 2. **Transfers, for your own player.** Today you get three offers at the end of
    a season, or you stay. You can't choose a league or a club you want. Also
    the contract negotiation card game (higher or lower) can be worked on.

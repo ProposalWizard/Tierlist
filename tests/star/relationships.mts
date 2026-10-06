@@ -1,7 +1,7 @@
 // The relationships revamp (Mikey, 4 Oct 2026): bars that move slowly and
 // drift to the middle, happiness that decides how well you recover, one
 // game per relationship that pays more when the bar is low.
-import { scaledChange, stepBar, drift, happinessEnergyFactor, gameReward, gamePlayedThisWeek, touchingFrame, REL_GAIN_SCALE } from "../../lib/star/relationships.ts";
+import { happinessOf, scaledChange, stepBar, drift, happinessEnergyFactor, gameReward, gamePlayedThisWeek, touchingFrame, REL_GAIN_SCALE } from "../../lib/star/relationships.ts";
 import { chatFor, topicFor } from "../../lib/star/bossChat.ts";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow.ts";
 import { rest } from "../../lib/star/week.ts";
@@ -45,7 +45,11 @@ const check = (ok: boolean, msg: string) => { if (!ok) { fail++; console.log("  
   check(happinessEnergyFactor(50) === 1 && happinessEnergyFactor(0) < 1 && happinessEnergyFactor(100) > 1, "happiness 0 / 50 / 100 → less / normal / more energy back");
   const P = { firstName: "T", lastName: "P", age: 16, skinTone: "light", club: NATIONAL_LEAGUE_CLUBS[3], clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
   const base: CareerState = { ...makeInitialCareer(P, [...NATIONAL_LEAGUE_CLUBS], "national_league"), energy: 40 };
-  const sad = rest({ ...base, happiness: 0 }).energy - 40, happy = rest({ ...base, happiness: 100 }).energy - 40;
+  // Happiness is the average of boss, team and fans (happinessOf), not its own number.
+  const at = (v: number) => ({ ...base, relationships: { ...base.relationships, boss: v, team: v, fans: v } });
+  const sad = rest(at(0)).energy - 40, happy = rest(at(100)).energy - 40;
+  check(happinessOf(at(30)) === 30 && happinessOf({ relationships: { boss: 90, team: 60, fans: 30 } }) === 60, "happiness is the average of boss, team and fans");
+  check(rest({ ...base, happiness: 10 }).happiness === 10, "Rest no longer lifts happiness on its own");
   check(happy > sad, `Rest gives a happy player more energy (${sad} vs ${happy})`);
 }
 
@@ -66,15 +70,58 @@ const check = (ok: boolean, msg: string) => { if (!ok) { fail++; console.log("  
   check(topicFor({ ...base, status: "Substitute" }) === "benched", "on the bench: he talks about the bench");
   check(topicFor({ ...base, form: [8, 8, 8] }) === "flying", "in form: he talks about your spell");
   check(topicFor({ ...base, form: [5, 5, 5] }) === "slump", "out of form: he talks about your form");
+  let seed = 7;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const moods = new Set<string>();
+  const firstText = new Set<string>();
+  let bestLanded = 0, bestTotal = 0, wrongLanded = 0, wrongTotal = 0;
   for (const style of ["trusting", "demanding", "rotational"] as const) {
     for (const form of [[5, 5, 5], [6.5, 6.5, 6.5], [8.5, 8.5, 8.5]]) {
       for (const status of ["1st Team", "Substitute"] as const) {
-        const chat = chatFor({ ...base, form, status, manager: { name: "X", style } } as unknown as CareerState);
-        check(chat.replies.length === 3, "always three replies");
-        check(chat.replies.some((r) => r.lands), `there is always a reply that lands (${style}, form ${form[0]}, ${status}, ${chat.topic})`);
+        for (let t = 0; t < 200; t++) {
+          const chat = chatFor({ ...base, form, status, manager: { name: "X", style } } as unknown as CareerState, rng);
+          check(chat.replies.length === 3, "always three replies");
+          check(new Set(chat.replies.map((r) => r.trait)).size === 3, "one hungry, one humble, one bold reply");
+          check(chat.replies.some((r) => r.chance >= 0.8), "there is always a right read");
+          check(chat.replies.every((r) => r.chance < 1), "nothing is certain");
+          moods.add(`${style}:${chat.mood}`);
+          firstText.add(chat.replies[0].text);
+          for (const r of chat.replies) {
+            if (r.chance >= 0.8) { bestTotal++; if (r.lands) bestLanded++; }
+            if (r.chance <= 0.1) { wrongTotal++; if (r.lands) wrongLanded++; }
+          }
+        }
       }
     }
   }
+  check(moods.size === 9, `every style shows every mood (${moods.size}/9)`);
+  check(firstText.size >= 9, "the replies come in different orders");
+  check(bestLanded / bestTotal > 0.78 && bestLanded / bestTotal < 0.92, `the right read usually lands (${(100 * bestLanded / bestTotal).toFixed(1)}%)`);
+  check(wrongLanded / wrongTotal > 0.04 && wrongLanded / wrongTotal < 0.17, `the wrong read rarely lands (${(100 * wrongLanded / wrongTotal).toFixed(1)}%)`);
+  // The bug Mikey saw: an agreeing answer with the bar going down.
+  const c = chatFor({ ...base, form: [8, 8, 8], status: "Substitute" } as unknown as CareerState, () => 0.99);
+  const bold = c.replies.find((r) => r.trait === "bold")!;
+  check(!bold.lands && bold.answer === "Deserve it? Prove it first.", "a reply that misses gets a missing answer");
+}
+
+// ── The manager's penalties (Mikey, 5 Oct 2026) ──
+{
+  const { spotOf, pickSpots, bossGain, spotCentre, SPOTS } = await import("../../lib/star/bossPenalties.ts");
+  const { POST_L, POST_R, GOAL_H } = await import("../../lib/star/pitch.ts");
+  check(spotOf(POST_L + 0.3, 2.2) === "top-left" && spotOf(POST_R - 0.3, 0.2) === "bottom-right", "a corner shot lands in its corner spot");
+  check(spotOf((POST_L + POST_R) / 2, GOAL_H * 0.6) === "top-middle" && spotOf((POST_L + POST_R) / 2, 0.3) === "bottom-middle", "the middle splits top and bottom");
+  check(spotOf(POST_L - 0.5, 1) === null && spotOf(POST_R - 1, GOAL_H + 0.2) === null, "wide or over is no spot");
+  check(SPOTS.every((sp) => spotOf(spotCentre(sp).x, spotCentre(sp).z) === sp), "each target's centre is inside its own spot");
+  let seed = 3;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const seen = new Set<string>();
+  for (let i = 0; i < 300; i++) {
+    const p = pickSpots(rng);
+    check(p.length === 3 && p[0] !== p[1] && p[1] !== p[2], "three asks, never the same spot twice running");
+    p.forEach((x) => seen.add(x));
+  }
+  check(seen.size === 6, "every spot gets asked for");
+  check(bossGain(0) === -2 && bossGain(1) === 2 && bossGain(3) === 6, "+2 a hit, −2 for none");
 }
 
 console.log(fail ? `FAIL (${fail})` : "PASS — relationships move slowly and drift to the middle, happiness decides recovery, one game each that pays more when the bar is low");

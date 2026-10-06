@@ -1,4 +1,5 @@
 "use client";
+import { happinessOf } from "@/lib/star/relationships";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
@@ -77,7 +78,7 @@ export default function FreeAgentShell({
       <div className="mt-3 flex gap-2 text-center">
         <Stat label="In the bank" value={formatMoney(career.money)} />
         <Stat label="This week" value={`${left} left`} />
-        <Stat label="Happiness" value={`${Math.round(career.happiness)}`} />
+        <Stat label="Happiness" value={`${happinessOf(career)}`} />
       </div>
 
       <div className="mt-4 flex-1">

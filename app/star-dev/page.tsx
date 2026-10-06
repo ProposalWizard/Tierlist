@@ -2789,7 +2789,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleRelationshipGameComplete = useCallback((res: GameResult) => {
     if (!career || !relationshipGameKind) return;
     const gain = res.gain;
-    let updated: CareerState = markGamePlayed({ ...career, money: Math.max(0, career.money - (res.cost ?? 0)) }, relationshipGameKind);
+    // Costs the same energy as a training session (Mikey, 5 Oct 2026).
+    let updated: CareerState = markGamePlayed({ ...career, money: Math.max(0, career.money - (res.cost ?? 0)), energy: Math.max(0, career.energy - TRAINING_ENERGY_COST) }, relationshipGameKind);
     if (relationshipGameKind === "happiness") {
       updated.happiness = applyGameGain(career.happiness, gain);
     } else {
@@ -2807,7 +2808,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // at Training. The tour is the announcement, so none waits on Home.
       if (gameFirst(career)) updated = markAnnounced(updated, ["relations"]);
       setChainPop(gameFirst(career)
-        ? { label: "Talk to your manager", unlocked: "Relations unlocked", stay: true }
+        ? { label: "The manager's penalties", unlocked: "Relations unlocked", stay: true }
         : { label: "Have a meeting with your boss", unlocked: "Next: buy your first phone" });
     }
     checkAndSetAchievements(updated);

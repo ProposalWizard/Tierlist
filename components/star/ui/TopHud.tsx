@@ -1,4 +1,5 @@
 "use client";
+import { happinessOf } from "@/lib/star/relationships";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { KIB_CANS } from "@/lib/star/shopData";
@@ -156,7 +157,7 @@ export function useLevelFill(level: number, pct: number): { shownPct: number; sh
 
 /** Relations: how happy you are, in place of the star rating (P13). */
 function HappinessCell({ career }: { career: CareerState }) {
-  const h = Math.max(0, Math.min(100, Math.round(career.happiness)));
+  const h = happinessOf(career);
   return (
     <TopMeter tour="happiness" label={`Happiness ${h}`} className={CELL_H} icon={<HudIcon name="happiness" />} value={Math.max(3, h)} colors={levelColors(h)} />
   );

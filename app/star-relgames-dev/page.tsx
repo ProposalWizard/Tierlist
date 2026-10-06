@@ -20,8 +20,8 @@ import type { BrandDeal } from "@/lib/star/sponsorDeals";
 
 type Pick = RelationshipKind | "advert";
 const GAMES: { id: Pick; name: string }[] = [
-  { id: "boss", name: "Talk to your manager" }, { id: "team", name: "Woodwork challenge" },
-  { id: "fans", name: "Signing session" }, { id: "happiness", name: "Day off" }, { id: "advert", name: "Shoot an advert" },
+  { id: "boss", name: "The manager's penalties" }, { id: "team", name: "Woodwork challenge" },
+  { id: "fans", name: "Signing session" }, { id: "advert", name: "Shoot an advert" },
 ];
 const FORMS: Record<string, number[]> = { "In form": [8, 8.2, 7.9], Ordinary: [6.5, 6.6, 6.4], "Out of form": [5.2, 5.5, 5.4] };
 

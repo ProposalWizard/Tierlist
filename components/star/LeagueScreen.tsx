@@ -179,12 +179,18 @@ function ovrStyle(o?: number): string {
 export default function LeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
   const { glow } = useClubTheme(career);
   // The league tables' columns and club names (see `compact`).
+  // Inside the phone the table is zoomed in (Mikey, 5 Oct 2026: "it doesn't
+  // need to show all of the clubs… show the top 10, then scroll down for the
+  // rest"): rows about twice the height, bigger type and badges, so about ten
+  // clubs fill the screen and the rest scroll.
   const tableCols = compact
-    ? "grid-cols-[14px_1fr_16px_16px_16px_16px_22px] px-1 gap-0.5"
+    ? "grid-cols-[22px_1fr_22px_22px_22px_22px_30px] px-2 gap-1"
     : "grid-cols-[24px_1fr_28px_28px_28px_28px_32px] px-2 gap-1";
   const tableName = (club: string) => (compact ? shortClub(club) : club);
-  const tableBadge = compact ? 14 : 16;
-  const tableNameGap = compact ? "gap-1" : "gap-1.5";
+  const tableBadge = compact ? 22 : 16;
+  const tableNameGap = compact ? "gap-2" : "gap-1.5";
+  const tableRow = compact ? "py-[13px] text-[14.5px]" : "py-1.5 text-[10px]";
+  const tableHead = compact ? "py-2 text-[10.5px]" : "py-1.5 text-[9px]";
   /** Whose fixture this is — your club, or your country. */
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
@@ -240,7 +246,7 @@ export default function LeagueScreen({ career, compact = false, view: forcedView
   const canGo = (d: number) => weeksPlayed.includes(shownWeek + d);
 
   const header = (
-    <div className={`grid ${tableCols} border-b border-white/10 bg-black/30 py-1.5 text-[9px] font-black uppercase tracking-wider text-white/55`}>
+    <div className={`grid ${tableCols} border-b border-white/10 bg-black/30 ${tableHead} font-black uppercase tracking-wider text-white/55`}>
       <div className="text-center">#</div>
       <div>{compact ? "Club" : "Name"}</div>
       <div className="text-center">P</div>
@@ -389,7 +395,7 @@ export default function LeagueScreen({ career, compact = false, view: forcedView
                     return (
                       <div
                         key={t.name}
-                        className={`relative grid ${tableCols} items-center py-1.5 text-[10px] font-bold text-white ${isPlayer ? "z-10 rounded-md" : i % 2 === 0 ? "bg-white/[0.035]" : ""} ${zoneBreak ? "border-t border-white/15" : ""}`}
+                        className={`relative grid ${tableCols} items-center ${tableRow} font-bold text-white ${isPlayer ? "z-10 rounded-md" : i % 2 === 0 ? "bg-white/[0.035]" : ""} ${zoneBreak ? "border-t border-white/15" : ""}`}
                         style={{ ...leagueMoves.rowStyle(t.name), ...(isPlayer ? youRow(glow) : {}) }}
                       >
                         <Band zone={zone} />
@@ -563,7 +569,7 @@ export default function LeagueScreen({ career, compact = false, view: forcedView
                         return (
                           <div
                             key={t.name}
-                            className={`relative grid ${tableCols} items-center py-1.5 text-[10px] font-bold text-white ${t.isYou ? "z-10 rounded-md" : i % 2 === 0 ? "bg-white/[0.035]" : ""} ${zoneBreak ? "border-t border-white/15" : ""}`}
+                            className={`relative grid ${tableCols} items-center ${tableRow} font-bold text-white ${t.isYou ? "z-10 rounded-md" : i % 2 === 0 ? "bg-white/[0.035]" : ""} ${zoneBreak ? "border-t border-white/15" : ""}`}
                             style={t.isYou ? youRow(glow) : undefined}
                           >
                             <Band zone={zone} />

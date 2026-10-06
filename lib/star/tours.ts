@@ -31,7 +31,7 @@ const BAR = {
   rating: { target: "rating", text: "Your star rating. Training, matches and fame make it go up" },
   energy: { target: "energy", text: "Your energy. Drills and matches use it. Rest days give it back, and a can tops it up" },
   money: { target: "money", text: "Your money. Matches pay you" },
-  happiness: { target: "happiness", text: "Your happiness. Happier players get more energy back when they rest. A day off lifts it" },
+  happiness: { target: "happiness", text: "Your happiness: how your boss, team and fans feel about you. Happier players get more energy back when they rest" },
   reputation: { target: "reputation", text: "Your reputation. It is how people in football see you" },
   help: { target: "css:[data-help-button]", text: "Tap ? on any screen to see this again" },
 } satisfies Record<string, TourStep>;
@@ -135,7 +135,7 @@ export function relationsTour(trainingNext: boolean): TourStep[] {
 
 /** On Relations, while the boss meeting is the next first step. */
 export const BOSS_MEETING_TOUR: TourStep[] = [
-  { target: "css:button[aria-label^='Talk to your manager']", text: "Tap here to talk to your manager", press: true },
+  { target: `css:button[aria-label^="The manager's penalties"]`, text: "Your manager wants to see your penalties. Tap here", press: true },
 ];
 
 /** The phone step: the Shop, and the phone in it. v0.25: when you cannot pay
