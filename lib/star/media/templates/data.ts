@@ -35,6 +35,11 @@ export const DATA_TEMPLATES: Template[] = [
     graphic: "statLine", weight: 4,
   },
   {
+    id: "st-hall-record", archetype: "stats", events: ["hall-record"], subject: "you", requires: ["holder", "was", "now", "unit"],
+    body: "{record}: {now} {unit} — {player}. The old record: {was}, {holder}.",
+    weight: 3,
+  },
+  {
     id: "st-milestone", archetype: "stats", tags: ["milestone", "record"], requires: ["milestone"],
     body: "{milestone} — {player} reaches the mark in {apps} appearances.",
     graphic: "statLine", weight: 3,

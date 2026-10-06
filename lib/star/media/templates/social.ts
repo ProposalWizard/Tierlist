@@ -30,6 +30,11 @@ export const SOCIAL_TEMPLATES: Template[] = [
     weight: 2,
   },
   {
+    id: "fan-hall-record", archetype: "fan", events: ["hall-record"], subject: "you", requires: ["short", "holderShort"],
+    body: "{short} breaking {holderShort}'s record. we are watching a legend",
+    weight: 3,
+  },
+  {
     id: "fan-hattrick", archetype: "fan", events: ["hat-trick", "four-goals", "five-goals"],
     requires: ["short"],
     body: "{short|caps}!!!! get in!!! best in the league and its not close",

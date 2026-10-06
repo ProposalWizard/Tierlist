@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { retirementCheck } from "./retirement";
 import { nextFixtureFor } from "./competitions";
 import {
   simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, runDueTransferWindow,
@@ -74,6 +75,10 @@ export function skipTo(career: CareerState, target: SkipTarget): SkipResult {
 
     const fx = nextFixtureFor(cur);
     if (!fx) {
+      // The last season of the career (retirement.ts, CAREER_SEASONS) is as
+      // far as anything goes: stop with it played out, so the real season
+      // end — the Ballon d'Or, then the final whistle — happens on screen.
+      if (retirementCheck(cur).mustRetire) return { career: cur, weeksSimulated, reachedEnd: true };
       // The season is fully played out but the target is a later one —
       // roll over and carry on.
       cur = rollOverSilently(cur);
@@ -96,10 +101,9 @@ export function skipTo(career: CareerState, target: SkipTarget): SkipResult {
  * clicked through without incident would have landed on:
  *
  *  - Ballon d'Or: never won by a career that was not actually played.
- *  - Retirement: never taken, even past the age it becomes forced in the
- *    real flow — a save that has aged that far is already well outside what
- *    this tool exists to reach, and stopping the skip there silently would
- *    be a stranger surprise than a player who plays on.
+ *  - Retirement: never taken here. A skip stops at the end of the last
+ *    season instead (skipTo), so the real screens end the career. The
+ *    season-before-last warning (FinalSeasonNotice) is not shown on a skip.
  *  - Relegated out of the whole pyramid (Championship, bottom three): the
  *    real screen shows offers and lets you choose; this takes the first
  *    one, same as `generateRelegationOffers` already sorts best-fit first.

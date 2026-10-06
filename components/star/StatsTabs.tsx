@@ -16,9 +16,12 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { allSeasons, perClubTotals, trophiesByCompetition } from "@/lib/star/careerRecords";
 import { RECORDS } from "@/lib/star/records";
+import { hallChases, amount, surnameOf, type HallRecord } from "@/lib/star/hallRecords";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import DashboardStats from "./DashboardStats";
+import AllSeasonsNew from "./AllSeasonsNew";
+import { useAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import ClubBadge from "./ClubBadge";
 import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
@@ -48,10 +51,15 @@ let lastView: View = "season";
  * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
  * has it, and the League screen has the full table.
  */
-export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void }) {
+export default function StatsTabs({ career, onRenew, onOpen, hallRecords }: {
+  career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void;
+  /** Your own retired careers' records (lib/star/hallRecords.ts). */
+  hallRecords?: HallRecord[];
+}) {
   const [view, setViewState] = useState<View>(lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
+  const allLook = useAllSeasonsLook();
   const i = VIEWS.findIndex((v) => v.id === view);
   const step = (d: number) => setView(VIEWS[(i + d + VIEWS.length) % VIEWS.length].id);
   const here = VIEWS[i];
@@ -66,8 +74,8 @@ export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerS
       </div>
       <RiseIn key={view}>
         {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}
-        {view === "all" && <AllSeasons career={career} glow={glow} />}
-        {view === "records" && <Records career={career} glow={glow} />}
+        {view === "all" && (allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />)}
+        {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
         {view === "records" && onOpen && (
           <div className="mt-2 grid grid-cols-2 gap-2">
             <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
@@ -186,7 +194,54 @@ function Row({ icon, label, value, sub }: { icon: string; label: string; value: 
   );
 }
 
-function Records({ career, glow }: { career: CareerState; glow: string }) {
+/**
+ * YOUR LEGEND LIVES ON (Leo, 6 Oct 2026): your retired careers' bests, the
+ * records this career chases. Its own group, above the real Premier League
+ * records, so the two never read as one list.
+ */
+function HallRecordsCard({ career, glow, book }: { career: CareerState; glow: string; book: HallRecord[] }) {
+  if (book.length === 0) {
+    return (
+      <Card glow={glow} title="Hall of Fame records">
+        <div className="text-[11px] font-bold text-white/70">Retire a career: its bests become records for every career after it.</div>
+      </Card>
+    );
+  }
+  return (
+    <Card glow={glow} title="Hall of Fame records">
+      {hallChases(career, book).map(({ record, you, beaten, now }) => {
+        const { def, holder, history } = record;
+        const chase = def.scope === "season" ? now : you;
+        const pct = Math.min(100, Math.round((chase / Math.max(1, holder.value)) * 100));
+        const before = history[history.length - 1];
+        return (
+          <div key={def.id} data-hall-record={def.id} className="border-t border-white/5 py-1.5 first:border-t-0">
+            <div className="flex items-center gap-2">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.04] text-[15px] ring-1 ring-white/10">{def.icon}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12px] font-black text-white">{def.label}</div>
+                <div className="truncate text-[10px] font-bold text-white/55">
+                  {beaten
+                    ? <span className="text-emerald-300">You · was {surnameOf(holder.name)}, {holder.value}</span>
+                    : <>{holder.name}{holder.seasonLabel ? ` · ${holder.seasonLabel}` : ""}{before ? ` · was ${surnameOf(before.name)}, ${before.value}` : ""}</>}
+                </div>
+              </div>
+              <div className={`shrink-0 text-[15px] font-black tabular-nums ${beaten ? "text-emerald-300" : "text-yellow-200"}`}>{beaten ? you : holder.value}{def.unit === "m" ? " m" : ""}</div>
+            </div>
+            {!beaten && (
+              <div className="mt-1 flex items-center gap-2 pl-9">
+                <StatBar value={Math.max(3, pct)} colors={["#f59e0b", "#fde047"]} className="h-1.5 flex-1" sheen={false} />
+                <span className="shrink-0 text-[10px] font-black tabular-nums text-white/70">{def.scope === "season" ? "this season " : "you "}{amount(def, chase)}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
+function Records({ career, glow, hallRecords }: { career: CareerState; glow: string; hallRecords?: HallRecord[] }) {
   const b = career.careerBests ?? {};
   const s = (n: number) => `Season ${seasonLabel(career, n)}`;
   const potmWon = (career.potm ?? []).filter((m) => m.isYou);
@@ -201,6 +256,7 @@ function Records({ career, glow }: { career: CareerState; glow: string }) {
         <Row icon="📈" label="Most goals in a season" value={b.mostGoalsSeason ? String(b.mostGoalsSeason.goals) : "—"} sub={b.mostGoalsSeason ? s(b.mostGoalsSeason.season) : undefined} />
         <Row icon="🅰️" label="Most assists in a season" value={b.mostAssistsSeason ? String(b.mostAssistsSeason.assists) : "—"} sub={b.mostAssistsSeason ? s(b.mostAssistsSeason.season) : undefined} />
       </Card>
+      {hallRecords && <HallRecordsCard career={career} glow={glow} book={hallRecords} />}
       <Card glow={glow} title="Awards">
         <Row icon="⭐" label="Man of the match" value={String(career.careerStats.starMan)} sub="Star Man — rating 8.5+ or two goals" />
         <Row icon="📅" label="Player of the Month" value={String(potmWon.length)} sub={potmWon.slice(-2).map((m) => `${m.monthName} ${seasonLabel(career, m.season)}`).join(" · ") || undefined} />

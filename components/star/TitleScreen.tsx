@@ -73,6 +73,10 @@ export interface TitleScreenProps {
   onSettings?: () => void;
   /** The Tutorial button (P64): replays the pointer tour on a save, or starts a new career, whose first Home runs it. */
   onTutorial?: () => void;
+  /** The Hall of Fame: every retired career (HallOfFame.tsx). */
+  onHallOfFame?: () => void;
+  /** How many careers are in it. */
+  hallCount?: number;
   /** Development only: the Play Area link. */
   showPlayArea?: boolean;
 }
@@ -190,7 +194,7 @@ export default function TitleScreen(p: TitleScreenProps) {
                 hint={club ? (
                   <span className="flex flex-col gap-0.5">
                     <span className="flex min-w-0 items-center gap-1"><span className="shrink-0"><ClubBadge club={career.player.club} kit={{ shirt: theme.shirt, trim: theme.trim }} size={13} /></span><span className="truncate">{club}</span></span>
-                    <span className="whitespace-nowrap">Season {career.season}</span>
+                    <span className="whitespace-nowrap">{career.retired ? "Retired" : `Season ${career.season}`}</span>
                   </span>
                 ) : (career.retired ? "Retired" : "No club yet")}
                 badge={<span className="bg-gradient-to-b from-yellow-200 to-amber-400 px-1.5 py-0.5 text-[13px] font-black leading-none tabular-nums text-gray-950">★{starLevel(career)}</span>} />
@@ -202,17 +206,22 @@ export default function TitleScreen(p: TitleScreenProps) {
           <RiseIn index={career ? 2 : 1} delay={760}>
             <MenuButton icon="▤" label="Load game" hint={`${saves.filter((s) => !s.empty).length}/${saves.length}`} onClick={() => setSheet("load")} />
           </RiseIn>
-          {p.onTutorial && (
+          {p.onHallOfFame && (
             <RiseIn index={career ? 3 : 2} delay={760}>
+              <MenuButton icon="🏛" label="Hall of Fame" gold hint={p.hallCount ? `${p.hallCount} career${p.hallCount === 1 ? "" : "s"}` : "Empty"} onClick={p.onHallOfFame} />
+            </RiseIn>
+          )}
+          {p.onTutorial && (
+            <RiseIn index={career ? 4 : 3} delay={760}>
               <MenuButton icon="?" label="Tutorial" onClick={p.onTutorial} />
             </RiseIn>
           )}
           {p.onSettings && (
-            <RiseIn index={career ? 4 : 3} delay={760}>
+            <RiseIn index={career ? 5 : 4} delay={760}>
               <MenuButton icon="⚙" label="Settings" onClick={p.onSettings} />
             </RiseIn>
           )}
-          <RiseIn index={career ? 5 : 4} delay={760}>
+          <RiseIn index={career ? 6 : 5} delay={760}>
             <div className="flex items-center justify-end gap-3 pr-3 pt-0.5 text-[12px] font-black uppercase tracking-[0.16em] text-white/75" style={{ textShadow: "0 1px 4px rgba(0,0,0,.9)" }}>
               {p.showPlayArea && <a href="/star-play-dev" className="kib-press whitespace-nowrap">Play Area</a>}
               {p.showPlayArea && <span className="text-white/30">·</span>}
@@ -309,14 +318,17 @@ function Floodlights() {
 }
 
 /** One menu row: flat, flush to the right edge, a slanted left edge. */
-function MenuButton({ icon, label, hint, badge, primary = false, onClick }: { icon: string; label: string; hint?: React.ReactNode; badge?: React.ReactNode; primary?: boolean; onClick: () => void }) {
+function MenuButton({ icon, label, hint, badge, primary = false, gold = false, onClick }: { icon: string; label: string; hint?: React.ReactNode; badge?: React.ReactNode; primary?: boolean; gold?: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={`kib-press relative flex w-full items-center gap-2 overflow-hidden pl-5 pr-2 text-left ${primary ? "min-h-[54px] py-1.5 text-white" : "h-[42px] text-white"}`}
       style={{
         clipPath: "polygon(14px 0, 100% 0, 100% 100%, 0 100%)",
-        background: primary ? "linear-gradient(180deg, #34d399, #059669)" : "linear-gradient(180deg, rgba(10,50,28,.92), rgba(5,32,17,.96))",
+        background: primary ? "linear-gradient(180deg, #34d399, #059669)"
+          // The Hall of Fame: the one gold door on the menu.
+          : gold ? "linear-gradient(180deg, rgba(120,80,10,.94), rgba(70,44,4,.97))"
+          : "linear-gradient(180deg, rgba(10,50,28,.92), rgba(5,32,17,.96))",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), inset -1px 0 0 rgba(255,255,255,.2)",
       }}
     >

@@ -66,6 +66,9 @@ interface Props {
   onOpen: (phase: HubPhase) => void;
   /** The League screen (the mini table opens it). */
   onLeague?: () => void;
+  /** "3 goals off Calloway's record": the closest Hall of Fame record within
+   *  reach (lib/star/hallRecords.ts), or null. */
+  hallChase?: string | null;
 }
 
 export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -328,7 +331,7 @@ export function goalBoxFor(figW: number, figH: number, rowW: number) {
   return { left, bottom, width, height, hoardings: bottom + Math.round(height * HOARDING_IN_GOAL) };
 }
 
-function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan, hallChase }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -398,6 +401,13 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan }: Pro
             <SeasonStat label="Assists" value={ps.assists} />
           </div>
           <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
+          {/* Your legend lives on: a record from one of your own retired
+              careers, within reach (Leo, 6 Oct 2026). */}
+          {hallChase && (
+            <div data-hall-chase className="mt-0.5 flex items-start justify-center gap-1 px-1 py-1 text-center text-[10px] font-black leading-tight text-amber-200" style={{ background: "rgba(5,8,15,.55)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)", borderRadius: 2, textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>
+              <span aria-hidden>🏛️</span><span>{hallChase}</span>
+            </div>
+          )}
         </div>
       </div>
       {/* The energy cans, under him (Harry, 2 Oct 2026, P1-14/P1-19: "the

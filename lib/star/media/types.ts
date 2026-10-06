@@ -217,6 +217,8 @@ export interface CareerRecord {
     | { kind: "captain"; club: string }
     | { kind: "testimonial"; club: string; season: number }
     | { kind: "retirement"; goals: number; apps: number; trophies: number }
+    /** A Hall of Fame record (your own retired careers' best) broken — lib/star/hallRecords.ts. */
+    | { kind: "hall-record"; record: string; holder: string; was: number; now: number; unit: string }
     | { kind: "season-end"; position: number; headline: string; detail: string };
 }
 

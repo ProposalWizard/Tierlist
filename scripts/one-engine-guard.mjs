@@ -114,6 +114,7 @@ export const CAREER_ONLY = {
   duties: "Which set pieces are yours — from the career's team sheet.",
   onGoalScored: "Saves a goal replay into the career.",
   replayOf: "Watching a saved goal again — a career screen.",
+  farewell: "The farewell match after a career's final whistle (Leo, 6 Oct 2026): every chance yours, no energy, off at 85' to an ovation. A career moment, played on the real engine; never a test dial.",
 };
 /** Dials a test screen passes that the real match never does. */
 export const TEST_ONLY = {

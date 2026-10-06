@@ -7,7 +7,7 @@ import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
@@ -15,7 +15,13 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
+  peekSlotCareer, collectRetiredIntoHall,
 } from "@/lib/star/storage";
+import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
+import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
+import HallOfFame from "@/components/star/HallOfFame";
+import { ShareLinkSheet } from "@/components/star/LegendShare";
+import CareerOverview from "@/components/star/CareerOverview";
 import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
@@ -54,7 +60,7 @@ import { fixtureDateLabel, divisionOf, isRegionalDivision, type CareerDivision }
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { refreshXpConfig } from "@/lib/star/xpStore";
-import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
+import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -73,7 +79,13 @@ import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
 import TransferSigning from "@/components/star/TransferSigning";
-import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
+import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
+import { FarewellInvite, FarewellResult, GuardOfHonour } from "@/components/star/Farewell";
+import VersusScreen from "@/components/star/VersusScreen";
+import {
+  farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped, farewellSeed,
+  FAREWELL_OFF_AT, type FarewellSides,
+} from "@/lib/star/farewell";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { earnedBetween, type EarnPop } from "@/lib/star/earnPops";
@@ -99,7 +111,7 @@ import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
 import { starsNow, starStatus, matchStarPoints, withStars, starGain, starTitle } from "@/lib/star/starPoints";
 import { clubTheme } from "@/components/star/ui";
-import { POSITION_NAMES } from "@/lib/star/teamsheet";
+import { POSITION_NAMES, matchdayFor } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
@@ -368,6 +380,36 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     prevCareerRef.current = career;
     if (!prev || !career || prev === career) return;
     const fresh = earnedBetween(prev, career).filter(e => !(e.kind === "achievement" && lastMatchAchRef.current.includes(e.id.slice(4))));
+    // Your legend lives on (lib/star/hallRecords.ts): a record from one of
+    // your own retired careers, broken — checked when something that can
+    // break one has just happened (a match, a trophy, an award), so a record
+    // never pops up out of nowhere. Each one once a career.
+    const moved = career.careerStats.appearances !== prev.careerStats.appearances
+      || career.trophies.length !== prev.trophies.length
+      || career.ballonDorWins !== prev.ballonDorWins;
+    const broken = moved && !career.retired && career.player.firstName === prev.player.firstName
+      ? freshHallRecords(career, hallRecordsRef.current) : [];
+    if (broken.length) {
+      fresh.push(...broken.map(b => ({
+        id: `hall:${b.record.def.id}`,
+        kind: "record" as const,
+        label: "Hall of Fame record broken",
+        unlocked: `${b.record.def.label}: ${hallAmount(b.record.def, b.you)} — beating ${b.record.holder.name} (${b.record.holder.value})`,
+      })));
+      setCareer(c => {
+        if (!c) return c;
+        let next: CareerState = { ...c, hallRecordsBroken: Array.from(new Set([...(c.hallRecordsBroken ?? []), ...broken.map(b => b.record.def.id)])) };
+        for (const b of broken) {
+          try {
+            next = { ...next, media: generateForCareer(next, {
+              kind: "hall-record", record: b.record.def.label, holder: b.record.holder.name,
+              was: b.record.holder.value, now: b.you, unit: b.record.def.unit,
+            }, `hall-${b.record.def.id}`) };
+          } catch { /* the posts are extra: the record still counts */ }
+        }
+        return next;
+      });
+    }
     if (fresh.length) setEarnPops(q => [...q, ...fresh.filter(f => !q.some(x => x.id === f.id))]);
   }, [career]);
   // Unlock chain: the achievement pop-up waiting to show (UnlockChain.tsx).
@@ -518,7 +560,42 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** The title screen's own Settings page (v0.25 points 1-2): this device's
    *  settings only, no save, no top bar — Back returns to the title. */
   const [globalSettings, setGlobalSettings] = useState(false);
+  /** The Hall of Fame (HallOfFame.tsx): over whatever is underneath, the
+   *  title or the end of a career. Back closes it. */
+  const [hallOpen, setHallOpen] = useState(false);
+  /** How many careers are in it, for the title's button. */
+  const [hallCount, setHallCount] = useState(0);
+  /** The Hall's careers on this device: their bests are records every later
+   *  career chases (lib/star/hallRecords.ts, Leo 6 Oct 2026). */
+  const [hallEntries, setHallEntries] = useState<HallEntry[]>([]);
+  /**
+   * THE FAREWELL MATCH (Leo, 6 Oct 2026): the two sides and the stand-in
+   * career the real match is played on (lib/star/farewell.ts), made once when
+   * the invite opens and kept until the career retires; then the result.
+   */
+  const [farewell, setFarewell] = useState<{ sides: FarewellSides; career: CareerState; fixture: Fixture } | null>(null);
+  const [farewellStats, setFarewellStats] = useState<MatchStats | null>(null);
+  /** The end screen's Share link (a code for this career, Leo 6 Oct 2026):
+   *  the same entry the Hall keeps (same id), made once when it opens. */
+  const [linkEntry, setLinkEntry] = useState<HallEntry | null>(null);
+  const hallRecords = useMemo(() => hallRecordBook(hallEntries), [hallEntries]);
+  const hallRecordsRef = useRef(hallRecords);
+  hallRecordsRef.current = hallRecords;
   useEffect(() => { if (titleScreenSkipped()) setTitleOpen(false); }, []);
+  useEffect(() => {
+    if (!titleOpen || hallOpen) return;
+    // A career that retired before the Hall existed is still in its slot.
+    try { collectRetiredIntoHall(scopeRef.current); } catch { /* the count still shows */ }
+    setHallCount(loadHall(scopeRef.current).entries.length);
+    // signedIn and activeSlot: the account is only known once sign-in has
+    // finished, which can be after the title first shows.
+  }, [titleOpen, hallOpen, signedIn, activeSlot]);
+  // The Hall's records: read again whenever a different career is on screen
+  // (a new career, another save slot) or the Hall itself changed.
+  const careerKey = career ? `${career.player.firstName}|${career.player.lastName}|${career.player.startYear}|${career.retired ? 1 : 0}` : "";
+  useEffect(() => {
+    try { setHallEntries(loadHall(scopeRef.current).entries); } catch { setHallEntries([]); }
+  }, [careerKey, hallCount, hallOpen, signedIn, activeSlot]);
   // Left Settings some other way (switched save, a face editor's own exit):
   // its back button goes home again, not to the title.
   useEffect(() => {
@@ -689,7 +766,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // clears the record — see RESUMABLE in storage.ts.
   useEffect(() => {
     if (hydrated) {
-      saveStarPhase(phase, slotScope(scopeRef.current, activeSlotRef.current), contractOfferReason ?? undefined, wonBallonDor);
+      // A refresh during the farewell goes back to the final whistle: the
+      // farewell is played again from the start (nothing of it is saved until
+      // the career retires).
+      const resumable = phase.startsWith("farewell-") ? "retirement" : phase;
+      saveStarPhase(resumable, slotScope(scopeRef.current, activeSlotRef.current), contractOfferReason ?? undefined, wonBallonDor);
     }
   }, [hydrated, phase, contractOfferReason, wonBallonDor]);
 
@@ -1698,25 +1779,62 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleBallonDorContinue = useCallback((userWon: boolean) => {
     if (!career) return;
     setWonBallonDor(userWon);
-    // Old enough to stop? That decision comes before anything about next season,
-    // because there might not be one.
-    if (retirementCheck(career).canRetire) {
+    // The last season is over: the career ends here, before anything about a
+    // next season. One season before that, a warning comes first, before the
+    // transfer window (Leo, 5 Oct 2026: "this is your final season before
+    // retirement. End your career in the right way").
+    const check = retirementCheck(career);
+    if (check.mustRetire) {
       setPhase("retirement");
+      return;
+    }
+    if (check.finalSeasonNext) {
+      setPhase("final-season");
       return;
     }
     openTransferWindowOrRoll(career, userWon);
   }, [career, openTransferWindowOrRoll]);
 
-  const handleRetire = useCallback(() => {
+  const handleRetire = useCallback((farewellRecord?: FarewellRecord) => {
     if (!career) return;
-    const done = retire(career);
+    // The farewell match (played or turned down) goes with the career into
+    // the Hall: its own line on the overview, counted in nothing else.
+    const leaving = farewellRecord ? { ...career, farewell: farewellRecord } : career;
+    // The Ballon d'Or screen's verdict on this, the last season: retiring
+    // skips the rollover that would otherwise count it (closeFinalSeason).
+    const done = retire(leaving, wonBallonDor);
     done.media = generateForCareer(done, {
       kind: "retirement", goals: done.careerStats.goals,
       apps: done.careerStats.appearances, trophies: done.trophies.length,
     }, "retire");
     setCareer(done);
+    // Straight into the Hall of Fame, not only when the save next runs: the
+    // career is kept even if "New career" is pressed at once.
+    addToHall(scopeRef.current, done);
+    void syncHall(scopeRef.current);
+    setFarewell(null);
+    setFarewellStats(null);
     setPhase("legacy");
-  }, [career]);
+  }, [career, wonBallonDor]);
+
+  /**
+   * "Hang them up" on the final whistle: the farewell match first (Leo, 6 Oct
+   * 2026: "Your farewell match. [Club] want to say goodbye."). Once per
+   * career; if the sides can't be made, the career simply retires.
+   */
+  const handleHangThemUp = useCallback(() => {
+    if (!career) return;
+    if (career.farewell) { handleRetire(); return; }
+    try {
+      const sides = farewellSides(career);
+      setFarewell({ sides, career: farewellCareer(career, sides), fixture: farewellFixture(career, sides) });
+      setFarewellStats(null);
+      setPhase("farewell-invite");
+    } catch (err) {
+      console.error("The farewell match could not be set up:", err);
+      handleRetire();
+    }
+  }, [career, handleRetire]);
 
   const handlePlayOn = useCallback(() => {
     if (!career) return;
@@ -2114,9 +2232,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("contract-renewal");
       return;
     }
-    if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
+    if (pending?.phase === "retirement" && retirementCheck(saved).mustRetire && seasonOver) {
       setWonBallonDor(!!pending.wonBallonDor);
       setPhase("retirement");
+      return;
+    }
+    if (pending?.phase === "final-season" && retirementCheck(saved).finalSeasonNext && seasonOver) {
+      setWonBallonDor(!!pending.wonBallonDor);
+      setPhase("final-season");
       return;
     }
     // A save from before the five-stage trial existed, caught mid-penalty.
@@ -2171,6 +2294,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career]);
 
   /** Switch which save is on screen — see SaveSlotsPanel in Settings. */
+  /**
+   * A retired career goes in the Hall of Fame before anything deletes or
+   * replaces its slot. Usually it is there already (saveCareer puts it in);
+   * this is the one place that checks. If this device will not store it,
+   * the player is asked before the career is lost.
+   */
+  const keepRetiredThen = useCallback((slot: number, go: () => void) => {
+    const c = slot === activeSlotRef.current && career ? career : peekSlotCareer(scopeRef.current, slot);
+    if (!c?.retired || addToHall(scopeRef.current, c).ok) {
+      if (c?.retired) void syncHall(scopeRef.current);
+      go();
+      return;
+    }
+    void askConfirm("This device is full, so this career could not go in the Hall of Fame. Delete it anyway?", "Delete").then(ok => { if (ok) go(); });
+  }, [career]);
+
   const handleSwitchSave = useCallback((slot: number) => {
     if (slot === activeSlotRef.current) return;
     flushCloudSave();
@@ -2185,13 +2324,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * handleFullReset, just below.
    */
   const handleStartNewInSlot = useCallback((slot: number) => {
-    flushCloudSave();
-    setActiveSlot(slot);
-    resetTransientState();
-    setCareer(null);
-    setCloudLoading(false);
-    setPhase("profile-setup");
-  }, [flushCloudSave, setActiveSlot, resetTransientState]);
+    // A retired career in this slot is kept in the Hall of Fame first.
+    keepRetiredThen(slot, () => {
+      flushCloudSave();
+      setActiveSlot(slot);
+      resetTransientState();
+      setCareer(null);
+      setCloudLoading(false);
+      setPhase("profile-setup");
+    });
+  }, [flushCloudSave, setActiveSlot, resetTransientState, keepRetiredThen]);
 
   /**
    * Delete one save outright. Deleting the active slot leaves it empty and
@@ -2203,20 +2345,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // (Mikey, 28 Sep 2026). The Delete buttons ask "Sure?" on the screen
   // themselves before calling this.
   const handleDeleteSave = useCallback((slot: number) => {
-    clearCareer(slotScope(scopeRef.current, slot));
-    clearCareerFromCloud(slot);
-    if (slot === activeSlotRef.current) {
-      resetTransientState();
-      setCareer(null);
-      setPhase("profile-setup");
-    } else {
-      // Nothing about the screen actually on show just changed — bump a
-      // counter that IS state purely so the Saves list (which reads
-      // listSaveSlots fresh on every render, not from a cache) re-renders
-      // to show this slot empty.
-      bumpSaves(v => v + 1);
-    }
-  }, [resetTransientState]);
+    // A retired career is kept in the Hall of Fame before its slot goes.
+    keepRetiredThen(slot, () => {
+      clearCareer(slotScope(scopeRef.current, slot));
+      clearCareerFromCloud(slot);
+      if (slot === activeSlotRef.current) {
+        resetTransientState();
+        setCareer(null);
+        setPhase("profile-setup");
+      } else {
+        // Nothing about the screen actually on show just changed — bump a
+        // counter that IS state purely so the Saves list (which reads
+        // listSaveSlots fresh on every render, not from a cache) re-renders
+        // to show this slot empty.
+        bumpSaves(v => v + 1);
+      }
+    });
+  }, [resetTransientState, keepRetiredThen]);
 
   /**
    * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
@@ -2282,9 +2427,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("profile-setup");
     };
     // In-app, not confirm(): a browser box throws the player out of full screen.
-    if (career?.retired) reset();
+    // A retired career is kept in the Hall of Fame, so nothing is lost.
+    if (career?.retired) keepRetiredThen(activeSlotRef.current, reset);
     else void askConfirm("Delete this career and start over?", "Delete").then(ok => { if (ok) reset(); });
-  }, [career, resetTransientState]);
+  }, [career, resetTransientState, keepRetiredThen]);
 
   // Shop buys
   const handleBuyKib = useCallback((can: KibCan) => {
@@ -2888,13 +3034,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       || (phase === "season-transfer" && transferOffers.length === 0)
       || (phase === "transfer-signing" && !pendingSignOffer)
       || (phase === "relationship-game" && !relationshipGameKind)
-      || (phase === "retirement" && !retirementCheck(career).canRetire);
+      || (phase === "retirement" && !retirementCheck(career).mustRetire)
+      || (phase === "final-season" && !retirementCheck(career).finalSeasonNext);
     if (missing) {
       setActiveNav(null);
       setPhase("dashboard");
     }
   }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
       pressQuestion, currentDilemma, transferOffers, pendingSignOffer, relationshipGameKind, pendingDraw]);
+
+  // The farewell lives only in this page's memory: a farewell phase without
+  // it (or full time without a result) goes back to the final whistle.
+  useEffect(() => {
+    if (!career || !phase.startsWith("farewell-")) return;
+    if (!farewell || (phase === "farewell-result" && !farewellStats)) {
+      setPhase(!career.retired && retirementCheck(career).mustRetire ? "retirement" : "dashboard");
+    }
+  }, [career, phase, farewell, farewellStats]);
 
   // ---------- RENDER ----------
   if (cloudLoading) {
@@ -2949,6 +3105,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (hallOpen) {
+    return <HallOfFame account={scopeRef.current} onBack={() => setHallOpen(false)} />;
+  }
+
   if (titleOpen && globalSettings) {
     return (
       <GlobalSettingsScreen
@@ -2970,6 +3130,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onDeleteSlot={handleDeleteSave}
         onSettings={() => setGlobalSettings(true)}
         onTutorial={handleTitleTutorial}
+        onHallOfFame={() => setHallOpen(true)}
+        hallCount={hallCount}
         showPlayArea={offlineDevPlayEnabled()}
       />
     );
@@ -3583,11 +3745,112 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "legacy") {
-    return <LegacyScreen career={career} onNewCareer={handleFullReset} />;
+    // The career overview replaces the old end screen (Leo, 5 Oct 2026:
+    // "You don't have to keep the old screen. Just replace it with this one").
+    return (
+      <>
+      <CareerOverview
+        career={career}
+        share={{ onLink: () => setLinkEntry(hallEntryFor(career)) }}
+        actions={[
+          { icon: "🏛️", label: "Hall of Fame", onClick: () => { setHallOpen(true); window.scrollTo({ top: 0 }); } },
+          { icon: "＋", label: "New career", onClick: handleFullReset, primary: true },
+          { icon: "☰", label: "Menu", onClick: () => setTitleOpen(true) },
+        ]}
+      />
+      {linkEntry && <ShareLinkSheet entry={linkEntry} onClose={() => setLinkEntry(null)} />}
+      </>
+    );
   }
 
   if (phase === "retirement") {
-    return <RetirementChoice career={career} onRetire={handleRetire} onPlayOn={handlePlayOn} />;
+    return <FinalWhistle career={career} onRetire={handleHangThemUp} />;
+  }
+
+  // ── The farewell match (Leo, 6 Oct 2026) ──
+  // Invite → team sheets → guard of honour → the real match → full time →
+  // retire. Played on a stand-in career (lib/star/farewell.ts) and credited
+  // to nothing; the career keeps one line of it (career.farewell).
+  if (phase.startsWith("farewell-") && farewell) {
+    const fc = farewell.career;
+    const sides = farewell.sides;
+    if (phase === "farewell-invite") {
+      return (
+        <FarewellInvite
+          career={career}
+          sides={sides}
+          onPlay={() => setPhase("farewell-sheets")}
+          onSkip={() => handleRetire(farewellSkipped(career))}
+        />
+      );
+    }
+    if (phase === "farewell-sheets") {
+      const md = matchdayFor(fc, farewell.fixture, true, undefined, sides.ours.lineup.bench,
+        { formation: formationOf(sides.ours.lineup.formation), xi: sides.ours.lineup.xi });
+      return (
+        <VersusScreen
+          matchday={md}
+          date="One last game"
+          // Short, so the Back button never covers it (playtest, 6 Oct 2026); the
+          // invite already names the club putting it on.
+          competition="Farewell match"
+          clubKits={fc.clubKits}
+          onKickOff={() => setPhase("farewell-walkout")}
+          onBack={() => setPhase("farewell-invite")}
+        />
+      );
+    }
+    if (phase === "farewell-walkout") {
+      return <GuardOfHonour career={career} sides={sides} onDone={() => setPhase("farewell-match")} />;
+    }
+    if (phase === "farewell-match") {
+      // Your boots and your can count, as in any match.
+      const bootLeft = career.currentBoot.matches > 0;
+      const power = Math.min(100, career.skills.power + (bootLeft ? career.currentBoot.power : 0));
+      const technique = Math.min(100, career.skills.technique + (bootLeft ? career.currentBoot.technique : 0));
+      return (
+        <PitchScope>
+          <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
+            <div className="max-w-sm mx-auto">
+              <CanvasMatch
+                skills={{ power, technique }}
+                canCurve={(bootLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve}
+                canExtraTouch={(bootLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch}
+                keeperStrength={sides.rivals.strength}
+                position={career.player.position}
+                teamRelationship={100}
+                career={fc}
+                fixture={farewell.fixture}
+                oppStrength={sides.rivals.strength}
+                onComplete={(stats) => { setFarewellStats(stats); setPhase("farewell-result"); }}
+                startMinute={0}
+                duties={farewellDuties()}
+                conditions={conditionsFor(career.season, 40, career.homeCity)}
+                seed={farewellSeed(career)}
+                pressure={0.3}
+                penaltyRunup={careerPenaltyRunup(career)}
+                freeKickRunup={careerFreeKickRunup(career)}
+                farewell={{ offAt: FAREWELL_OFF_AT }}
+              />
+            </div>
+          </div>
+        </PitchScope>
+      );
+    }
+    if (phase === "farewell-result" && farewellStats) {
+      return (
+        <FarewellResult
+          career={career}
+          sides={sides}
+          stats={farewellStats}
+          onDone={() => handleRetire(farewellRecordFrom(farewellStats, sides))}
+        />
+      );
+    }
+  }
+
+  if (phase === "final-season") {
+    return <FinalSeasonNotice career={career} onContinue={handlePlayOn} />;
   }
 
   if (phase === "transfer-signing" && pendingSignOffer) {
@@ -4333,7 +4596,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} />
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} hallRecords={hallRecords} />
               : <LockedPage key="stats" title="Stats" feature="stats" />,
             <HomeHub
               key="home"
@@ -4341,6 +4604,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               nextFixture={nextFixture}
               nextMatchDate={nextMatchDate ?? undefined}
               myTeam={nextFixture ? myTeam(nextFixture) : career.player.club}
+              hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
               onUseCan={handleUseCan}
               onBuyCan={handleBuyKib}
               onOpen={openHub}

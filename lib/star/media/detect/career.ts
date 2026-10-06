@@ -131,6 +131,23 @@ const RETIREMENT: CareerDetector = (r) => {
   }, "instant");
 };
 
+/** One of your own retired careers' records, broken by this one (hallRecords.ts). */
+const HALL_RECORD: CareerDetector = (r) => {
+  if (r.moment.kind !== "hall-record") return null;
+  const m = r.moment;
+  const parts = m.holder.trim().split(/\s+/);
+  return make("hall-record", { kind: "you", name: r.you.name }, 90, ["record", "milestone"], {
+    ...base(r),
+    record: m.record,
+    recordLower: m.record.charAt(0).toLowerCase() + m.record.slice(1),
+    holder: m.holder,
+    holderShort: parts.length > 1 ? parts.slice(1).join(" ") : m.holder,
+    was: m.was,
+    now: m.now,
+    unit: m.unit,
+  }, "instant");
+};
+
 const SEASON_REVIEW: CareerDetector = (r) => {
   if (r.moment.kind !== "season-end") return null;
   const m = r.moment;
@@ -141,5 +158,5 @@ const SEASON_REVIEW: CareerDetector = (r) => {
 
 export const CAREER_DETECTORS: CareerDetector[] = [
   TRANSFER, CONTRACT, AWARD, BALLON_DOR, MANAGER, CALL_UP,
-  CAPTAIN, TESTIMONIAL, RETIREMENT, SEASON_REVIEW,
+  CAPTAIN, TESTIMONIAL, RETIREMENT, HALL_RECORD, SEASON_REVIEW,
 ];

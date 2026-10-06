@@ -175,6 +175,11 @@ export const CLUB_TEMPLATES: Template[] = [
     graphic: "playerCard", hashtag: true,
   },
   {
+    id: "club-hall-record", archetype: "club", events: ["hall-record"], subject: "you", requires: ["holder", "now"],
+    body: "📈 RECORD BROKEN. {player} passes {holder} — {recordLower}: {now}. 👏",
+    graphic: "breaking", hashtag: true,
+  },
+  {
     id: "club-award", archetype: "club", events: ["award-won", "ballon-dor"], requires: ["award"],
     body: "{award|caps}. {player}. One of our own. 🏅",
     graphic: "breaking", hashtag: true,
