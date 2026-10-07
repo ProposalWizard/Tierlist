@@ -17,11 +17,14 @@ import { generateSquad } from "@/lib/star/squadData";
 import { NATIONAL_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
 import type { BrandDeal } from "@/lib/star/sponsorDeals";
+import { CaptainInOffice, ManagerSays } from "@/components/star/ManagerMoments";
+import { benchMomentFor } from "@/lib/star/managerMoments";
 
-type Pick = RelationshipKind | "advert";
+type Pick = RelationshipKind | "advert" | "captain" | "bench";
 const GAMES: { id: Pick; name: string }[] = [
   { id: "boss", name: "The manager (pick 1 of 3)" }, { id: "team", name: "Woodwork challenge" },
   { id: "fans", name: "Signing session" }, { id: "advert", name: "Shoot an advert" },
+  { id: "captain", name: "Moment: made captain" }, { id: "bench", name: "Moment: dropped to the bench" },
 ];
 const FORMS: Record<string, number[]> = { "In form": [8, 8.2, 7.9], Ordinary: [6.5, 6.6, 6.4], "Out of form": [5.2, 5.5, 5.4] };
 
@@ -52,6 +55,14 @@ export default function RelGamesTest() {
   // The game's own look (bars, font) comes from the career screen's wrapper.
   const wrap = (el: React.ReactNode) => <div className={`star-root ${pitchFont.variable}`}>{el}</div>;
   if (game === "advert") return wrap(<AdvertShoot key={key} deal={deal} onFinish={done} onCancel={() => setGame(null)} />);
+  // The two manager moments (lib/star/managerMoments.ts): office, or the plain
+  // card with the boss-room look on Old. "Out of form" gives the form reason.
+  if (game === "captain") return wrap(<CaptainInOffice key={key} career={{ ...career, captain: true, captainMomentPending: true }} onDone={() => setGame(null)} />);
+  if (game === "bench") {
+    const fx = career.fixtures.find((f) => !f.played) ?? { week: 1, opponent: "Test FC" };
+    const m = benchMomentFor({ ...career, lastPick: { status: "1st Team" } }, { status: "Substitute" }, fx);
+    return wrap(<ManagerSays key={key} career={career} title="Team news" text={m?.text ?? ""} onContinue={() => setGame(null)} />);
+  }
   if (game) return wrap(<RelationshipGame key={key} kind={game} career={career} onFinish={done} onCancel={() => setGame(null)} />);
 
   const chip = (on: boolean): React.CSSProperties => ({ padding: "6px 10px", borderRadius: 4, fontWeight: 900, fontSize: 13, background: on ? "#facc15" : "rgba(255,255,255,.1)", color: on ? "#111" : "#fff" });

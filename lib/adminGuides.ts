@@ -190,6 +190,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["▶ The manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. The manager opens a picker of 3: Penalties, Office talk, Extra session. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["▶ Moment: made captain / Moment: dropped to the bench", "Shows what the manager says when he gives you the armband, or drops you to the bench (in his office; the same words on a plain card if Settings → Look → Talk to your manager is Old). Continue returns here. The bench reason follows the bar level and form: 20 = he is not happy with you, Out of form = your form."],
         ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
         ["In form / Ordinary / Out of form", "Your last match rating. Office talk uses it: out of form, one question tests how you take a bad game; in form, whether it went to your head."],
         ["Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game. Office talk reads the manager's playing style off his name instead."],

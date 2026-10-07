@@ -64,6 +64,7 @@ import {
 } from "./potm";
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
+import { pickAfterMatch, pickAfterMissed } from "./managerMoments";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -1216,6 +1217,8 @@ export function creditMatchResult(
   if (!next.captain && !alreadyPlayed && captaincyEarned(next)) {
     next.captain = true;
     next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + 3) };
+    // No longer silent: the manager tells you on Home, once (managerMoments.ts).
+    next.captainMomentPending = true;
   }
   if (next.captain && !alreadyPlayed) {
     next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + CAPTAIN_TEAM_BONUS) };
@@ -1261,6 +1264,9 @@ export function creditMatchResult(
   // Not guarded — this is a read of the CURRENT state, not an accrual, so
   // recomputing it on a replay is harmless and correct either way.
   next.status = selectionFor(next).status;
+  // What he picked you as this match — started, or off the bench — for the
+  // "dropped to the bench" moment (managerMoments.ts). Club matches only.
+  if (!alreadyPlayed && !isInternational) next.lastPick = pickAfterMatch(stats);
 
   // ── The play-offs ──
   //
@@ -2138,6 +2144,9 @@ export function simulateMissedFixture(
       : career.horse,
   };
   next.status = selectionFor(next).status;
+  // Missed it: out of the squad, or injured (then what you were is kept, and
+  // the next drop to the bench says you're just back). managerMoments.ts.
+  if (kind !== "international") next.lastPick = pickAfterMissed(career.lastPick, !!career.injury);
 
   // ── The play-offs ──
   //
