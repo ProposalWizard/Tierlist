@@ -15,7 +15,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
-  peekSlotCareer, collectRetiredIntoHall,
+  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
@@ -195,7 +195,9 @@ import { createCompetition, playCompetitionToWinner, type NewCompetitionState } 
 import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
-import { AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/components/star/SecondaryScreens";
+import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
+import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
 import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
@@ -705,6 +707,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
+
+  // The server put an edited save back (lib/star/saveGuard.ts, enforce
+  // mode): play on from its copy.
+  useEffect(() => onSaveCorrected((slot, fixed) => {
+    if (slot === activeSlotRef.current) setCareer(fixed);
+  }), []);
 
   // ── Leaving the page must not lose the last few seconds ──
   //
@@ -3915,7 +3923,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "contract-renewal") {
-    return <ContractRenewal career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
+    // A club offer is said in the manager's office first when the 3D office
+    // look is on (MANAGER_PLAN.md §2); then the talks exactly as before.
+    return <ContractInOffice career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
   }
 
   // The Store (Shop page's big tile, the phone's Store app) — the test area's
@@ -4281,6 +4291,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onWatchFromStands={handleWatchFromStands}
         onSimMatch={handleSimMatch}
         onUseCan={handleUseCan}
+        onBenchMomentSeen={(key) => setCareer(c => (c ? { ...c, benchMomentSeen: key } : c))}
       />
     );
   }
@@ -4534,6 +4545,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         </div>
       )}
       {phase === "dashboard" && career.managerNews && (
+        // Said in the manager's office when the 3D office look is on
+        // (MANAGER_PLAN.md §2); Continue there is this banner's own dismiss.
+        <ManagerNewsInOffice career={career} onDismiss={() => setCareer(c => (c && c.managerNews ? { ...c, managerNews: null } : c))}>
         <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/15 p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
@@ -4553,6 +4567,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </div>
           <p className="mt-1 text-xs text-white">{career.managerNews}</p>
         </div>
+        </ManagerNewsInOffice>
+      )}
+      {phase === "dashboard" && !career.managerNews && captainMomentDue(career) && (
+        // Made captain: the manager tells you, once (lib/star/managerMoments.ts).
+        <CaptainInOffice career={career} onDone={() => setCareer(c => (c ? { ...c, captainMomentPending: false } : c))} />
       )}
       {phase === "dashboard" && seasonOver && (
         <div className="mb-3 rounded-xl border border-amber-400/50 bg-gradient-to-b from-amber-500/20 to-amber-600/10 p-4 text-center">

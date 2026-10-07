@@ -36,11 +36,20 @@ import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar
 import VersusScreen from "./VersusScreen";
 import KibCanIcon from "./KibCanIcon";
 import { PressButton, SquareBar, KitStyles, levelColors, useClubTheme } from "./ui";
+import dynamic from "next/dynamic";
+import { useBossRoomLook } from "@/lib/star/look3d";
+import { benchMomentFor } from "@/lib/star/managerMoments";
+import { ManagerSays } from "./ManagerMoments";
+
+// Left out of the squad: told in the manager's office when Settings → Look →
+// "Talk to your manager" is "3D office" (MANAGER_PLAN.md §2). The card's own
+// buttons carry on exactly as before; "Old" is the card alone.
+const Office3DCareer = dynamic(() => import("./Office3D").then((m) => m.Office3DCareer), { ssr: false });
 
 /** How long the line-up draws in before it kicks off by itself. */
 const LINEUP_MS = 3800;
 
-export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMatchSelection, playAs, onPlayAs, onBack, onPlayMatch, onWatchFromStands, onSimMatch, onUseCan }: {
+export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMatchSelection, playAs, onPlayAs, onBack, onPlayMatch, onWatchFromStands, onSimMatch, onUseCan, onBenchMomentSeen }: {
   career: CareerState;
   nextFixture: Fixture;
   preMatchEnergy: number;
@@ -53,6 +62,9 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   onWatchFromStands: () => void;
   onSimMatch: () => void;
   onUseCan: (id: KibCan["id"]) => void;
+  /** The "dropped to the bench" moment was seen for this fixture (saved, so
+   *  Back and Play again doesn't say it twice). */
+  onBenchMomentSeen?: (key: string) => void;
 }) {
   const status = preMatchSelection?.status;
   const watching = status === "Squad" || status === "Injured";
@@ -61,6 +73,19 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   // The prompt shows once per press of Play; answering it moves on.
   const [asked, setAsked] = useState(false);
   const { glow } = useClubTheme(career);
+  const room = useBossRoomLook();
+  const [room3dFailed, setRoom3dFailed] = useState(false);
+
+  // Dropped to the bench (started last time, on the bench now): the manager
+  // says why before the line-up — in his office, or the same words on a plain
+  // card (lib/star/managerMoments.ts). Nothing kicks off until Continue.
+  const [benchHeard, setBenchHeard] = useState(false);
+  const benchMoment = useMemo(
+    () => benchMomentFor(career, preMatchSelection, nextFixture, preMatchEnergy),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nextFixture, preMatchSelection?.status],
+  );
+  const benchHold = !!benchMoment && !benchHeard;
 
   const saved = loadLineup(career.player.club);
   const savedXI = saved && saved.xi.some(Boolean) ? { formation: formationOf(saved.formation), xi: saved.xi } : undefined;
@@ -74,16 +99,16 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
   // "Skip the line-up" in Settings (v0.23.1, P30/P75): straight into the match.
   const skipIt = useRef(typeof window !== "undefined" && getSkipLineup());
-  const showLineup = !watching && (!tired || asked) && teamsReady && !skipIt.current;
+  const showLineup = !benchHold && !watching && (!tired || asked) && teamsReady && !skipIt.current;
 
   // Nothing to draw (an international, or a squad too thin): straight in.
   const went = useRef(false);
   const go = () => { if (went.current) return; went.current = true; onPlayMatch(); };
   useEffect(() => {
-    if (watching || (tired && !asked) || (teamsReady && !skipIt.current)) return;
+    if (benchHold || watching || (tired && !asked) || (teamsReady && !skipIt.current)) return;
     go();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watching, tired, asked, teamsReady]);
+  }, [benchHold, watching, tired, asked, teamsReady]);
 
   // "Play as ▾" — the position picker the match-day page used to hold
   // (v0.23 W7, P90 brought back what the line-up animation dropped). It sits
@@ -159,6 +184,15 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     </div>
   ) : null;
 
+  if (benchHold && benchMoment) {
+    return (
+      <div data-bench-moment={benchMoment.reason}>
+        <ManagerSays career={career} title="Team news" text={benchMoment.text}
+          onContinue={() => { setBenchHeard(true); onBenchMomentSeen?.(benchMoment.key); }} />
+      </div>
+    );
+  }
+
   if (showLineup && matchday) {
     return (
       // A tap anywhere that is not a button kicks off (P75: "you can just tap
@@ -219,6 +253,10 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
         <div data-prematch-prompt={watching ? "squad" : "energy"} className="bg-black/55 p-4" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.2)" }}>
           {watching ? (
             <>
+              {status === "Squad" && room === "3d" && !room3dFailed && (
+                <Office3DCareer career={career} speaker="boss" onFail={() => setRoom3dFailed(true)}
+                  className="mb-3 w-full" style={{ height: "34vh", borderRadius: 4 }} />
+              )}
               <div className="text-center text-[34px] leading-none">{status === "Injured" ? "🩹" : "📋"}</div>
               <div className="mt-2 text-center text-[20px] font-black uppercase tracking-wide">{status === "Injured" ? "You're injured" : "Not in the squad"}</div>
               <PressButton variant="secondary" size="none" onClick={onWatchFromStands} className="mt-4 w-full py-3 text-[15px] font-black uppercase tracking-wide">🏟️ Watch from the stands</PressButton>

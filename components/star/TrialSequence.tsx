@@ -12,6 +12,7 @@ import {
 } from "@/lib/star/trialStages";
 import { simRemaining, TRIAL_SIM_QUALITY, type TrialSimLevel } from "@/lib/star/trialDev";
 import DevTrialPanel from "./DevTrialPanel";
+import { useIsTester } from "@/lib/useIsAdmin";
 import FirstPersonDribble from "./FirstPersonDribble";
 import TrialFreeKicks from "./stages/TrialFreeKicks";
 import TrialTechnique from "./stages/TrialTechnique";
@@ -110,6 +111,9 @@ export default function TrialSequence({
   /** The stage just finished, while the 3-2-1 into the next one runs. */
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
   const [count, setCount] = useState(COUNTDOWN_FROM);
+  // The skip/sim panel is god mode: testers and admins only, like Settings →
+  // Developer tools (Mikey v0.11 known issue: it was open to every player).
+  const canCheat = useIsTester();
 
   /**
    * ── SAY WHICH STAGE IS ACTUALLY OPEN ──
@@ -211,7 +215,7 @@ export default function TrialSequence({
 
   /** The dev tool, on every stage screen and on the between-stages card, so it
    *  is never more than one tap away from wherever the trial has stalled. */
-  const devPanel = (
+  const devPanel = canCheat && (
     <DevTrialPanel
       trial={trial}
       stage={stage}

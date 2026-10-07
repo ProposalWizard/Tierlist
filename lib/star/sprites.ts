@@ -181,12 +181,21 @@ function dirIndex(facing: number, dirs: number): number {
  * straight across the screen leans and strides flat and reads as lying down;
  * the up-diagonal frame (running across and a touch away from the camera)
  * stands him up. So pure sideways running uses that frame instead.
+ *
+ * The down-diagonals (running across and toward the camera) sprawl the same
+ * way. With only the sideways frames swapped, a man running across the
+ * screen with a little downward drift flipped between a standing frame (7)
+ * and a sprawled one (1) every few frames — "two players overlap and flip
+ * between lying and standing" on byline crosses (v0.27 known issue). So they
+ * use the up-diagonal too: every run to the right stands as 7, to the left as
+ * 5, and the only change of frame left is to the straight-down frame (2),
+ * which also stands.
  */
-function cellDir(clip: string, facing: number, dirs: number): number {
+export function cellDir(clip: string, facing: number, dirs: number): number {
   const k = dirIndex(facing, dirs);
   if (dirs === 8 && (clip === "jog" || clip === "sprint")) {
-    if (k === 0) return 7;
-    if (k === 4) return 5;
+    if (k === 0 || k === 1) return 7;
+    if (k === 4 || k === 3) return 5;
   }
   return k;
 }
@@ -244,6 +253,15 @@ export interface DrawSpriteOpts {
    *  the boots, the stretched-out body landed a body-length past the ball he
    *  was saving (Harry, 3 Oct 2026: "the goalie isn't in his goal"). */
   centre?: number;
+  /** Draw him mirrored left-right, still facing `facingRad`: a left-footer's
+   *  kick. The baked kick is struck with the right foot, so a left-footer
+   *  is that frame for the mirrored heading, flipped about his boots. */
+  mirror?: boolean;
+}
+
+/** The heading whose frame, flipped left-right, faces `facing`. */
+export function mirroredFacing(facing: number): number {
+  return Math.PI - facing;
 }
 
 /**
@@ -257,11 +275,13 @@ export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   if (!clip) return false;
   const atlas = atlasFor(o.kit);
   if (!atlas) return false;
-  const cell = clip.cells[cellDir(o.clip, o.facingRad, clip.dirs) * clip.frames + spriteFrame(clip, o.t)];
+  const facing = o.mirror ? mirroredFacing(o.facingRad) : o.facingRad;
+  const cell = clip.cells[cellDir(o.clip, facing, clip.dirs) * clip.frames + spriteFrame(clip, o.t)];
   if (!cell) return false;
   const [cx, cy, cw, ch, ax, ay] = cell;
   const s = (o.height ?? 22) / index.standH;
   if (o.shadow) drawSpriteShadow(ctx, x, y, o.height ?? 22);
+  if (o.mirror) { ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0); }
   const prevA = ctx.globalAlpha;
   if (o.alpha != null) ctx.globalAlpha = prevA * o.alpha;
   const prevS = ctx.imageSmoothingEnabled;
@@ -272,6 +292,7 @@ export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   ctx.drawImage(atlas, cx, cy, cw, ch, dx, dy, cw * s, ch * s);
   ctx.imageSmoothingEnabled = prevS;
   ctx.globalAlpha = prevA;
+  if (o.mirror) ctx.restore();
   return true;
 }
 

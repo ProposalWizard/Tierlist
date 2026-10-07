@@ -144,6 +144,37 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/admin/badges": {
+    title: "Club Badges",
+    what: "Every club's drawn badge in one grid, with the symbol its own data gave it (a fox for the Foxes) and why. Redo any badge that looks wrong.",
+    buttons: [
+      { items: [
+        ["All divisions", "Shows one division (or the European lists) instead of every club."],
+        ["Every badge / With a symbol / Ball or star / Changed here", "Shows only badges that got a symbol, only the plain ones, or only the ones you changed on this device."],
+        ["Search a club", "Narrows the grid to clubs whose name contains what you type."],
+        ["New | Old", "New shows the drawn badges. Old shows what the Old look shows in the game: the real crest if one is saved, else the club's initials. This only changes this page, not your Settings."],
+        ["Copy changes (N)", "Copies your changes as text, to paste in chat so a good one can be put into the game for everyone."],
+        ["Undo all", "Takes every change on this device away (asks first)."],
+      ] },
+      { group: "Each badge", items: [
+        ["The blue word", "The symbol it shows (or ball, star, nothing)."],
+        ["The grey line", "Why: the nickname or club name the symbol came from, \"no symbol in the data\", or \"changed here\"."],
+        ["↻ Pattern", "Moves to the next pattern (stripes, halves, band, chevron, sash, quarters, hoops, plain)."],
+        ["Data: … (the drop-down)", "Picks the emblem: what the data says (shown after \"Data:\"), a ball, a star, nothing, or any of the symbols."],
+        ["Undo", "Puts that one badge back to what the data gives it."],
+        ["Amber border", "This badge has been changed on this device."],
+      ] },
+    ],
+    saving: [
+      "Changes save instantly, in this browser only. Nobody else sees them, and they are lost if this browser's data is cleared.",
+      "The game on this same device shows your changes too, so you can judge a badge in place. Use Copy changes to send them in chat.",
+      "The symbols themselves come from the club data automatically — nobody has to tick them off. A club only gets one when its data clearly names something.",
+    ],
+    inGame: [
+      "Every club badge in the game under Settings → Look → \"Club badges: New\" (team sheets, tables, cup draws, the phone).",
+    ],
+    dev: "lib/star/badgeSymbols.ts (drawings + the word table + SYMBOL_OVERRIDES), lib/star/clubBadge.ts (the badge), lib/star/badgeOverrides.ts (device changes, key star-badge-overrides), components/star/ClubBadge.tsx.",
+  },
   "/star-retirement-dev": {
     title: "Retirement preview",
     what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser.",
@@ -189,15 +220,17 @@ export const ADMIN_GUIDES = {
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
     buttons: [
       { items: [
-        ["▶ The manager's penalties / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["▶ The manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. The manager opens a picker of 3: Penalties, Office talk, Extra session. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["▶ Moment: made captain / Moment: dropped to the bench", "Shows what the manager says when he gives you the armband, or drops you to the bench (in his office; the same words on a plain card if Settings → Look → Talk to your manager is Old). Continue returns here. The bench reason follows the bar level and form: 20 = he is not happy with you, Out of form = your form."],
         ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
-        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game (the boss game is now three penalties at spots he names)."],
+        ["In form / Ordinary / Out of form", "Your last match rating. Office talk uses it: out of form, one question tests how you take a bad game; in form, whether it went to your head."],
+        ["Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game. Office talk reads the manager's playing style off his name instead."],
         ["Last game", "What the last game returned: won or lost, and the change."],
       ] },
     ],
     saving: ["Nothing is saved. It is a test player that resets when you leave."],
     inGame: ["Relations (boss, team, fans) and the Sponsors screen (the advert, on each deal)."],
-    dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts and lib/star/bossChat.ts.",
+    dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts, lib/star/bossPenalties.ts, lib/star/bossTalk.ts and lib/star/bossSession.ts.",
   },
   "/admin/star-xp": {
     title: "XP Book",
@@ -758,6 +791,41 @@ export const ADMIN_GUIDES = {
     dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
+  "/star-wallet-dev": {
+    title: "Gems (test)",
+    what: "Proves that paid things can't be faked: gems and paid items live on the server, not in the career save. One example paid item (Golden boots) goes through the whole path.",
+    buttons: [
+      { group: "Your gems", items: [
+        ["💎 (the number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\"."],
+        ["Refresh", "Asks the server again."],
+        ["+100 gems (admin test)", "Admins only. Gives your own account 100 gems. Each press is one line in the gem history. This is the only way to get gems until real payments exist."],
+      ] },
+      { group: "The example paid item", items: [
+        ["Golden boots (picture)", "Gold when the server says this account owns them; grey with a lock otherwise."],
+      ] },
+      { group: "Paid items", items: [
+        ["Buy", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
+        ["Owned", "You own it. Nothing to press."],
+      ] },
+      { group: "Try to cheat", items: [
+        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. The line under it shows nothing changed."],
+        ["Clear it", "Takes those fake values back out of this browser."],
+      ] },
+    ],
+    saving: [
+      "Shared, at once, on the server: gems in the Supabase table star_wallet, every gem change in star_wallet_ledger (never edited), and what each account owns in star_entitlements. The items for sale and their prices are in star_paid_items.",
+      "Nothing is kept in this browser or in the career save. Nobody can change these tables from a browser — only the server can.",
+    ],
+    inGame: [
+      "Nowhere yet: there are no paid items in the game. This is the base they will be built on.",
+      "When there are, the game asks the server whether you own one, never the save. Match money (★) can never buy a paid item.",
+    ],
+    needs: [
+      "supabase/migrations/star_wallet.sql must be run in the Supabase SQL Editor. Until then the page says \"Gems aren't switched on yet\" and nothing can be bought or given.",
+      "No payment provider yet (Apple, Google or Stripe). The payments address refuses everything, so the only source of gems is the admin button.",
+    ],
+    dev: "app/star-wallet-dev/ · lib/star/wallet.ts, lib/star/useWallet.ts · app/api/star/wallet (GET), /buy, /webhook (refuses all) · app/api/admin/wallet/grant · supabase/migrations/star_wallet.sql (spend_gems, grant_gems, grant_item) · tests/star/wallet.mts · PAID_ITEMS.md",
+  },
   "/star-store-dev": {
     title: "Store (test)",
     what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",
@@ -973,11 +1041,12 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved."],
     inGame: [
-      "Talk to your manager (Life tab) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat screen exactly as before. The lines, replies and results are the boss game's own, unchanged.",
+      "The manager's Office talk (Relations → Boss → Office talk) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat alone.",
+      "The same switch puts three manager moments in the office: a club's contract offer (before the talks), manager news on Home (Continue dismisses it), and being left out of the squad (above the card on the match screen).",
       "If the phone cannot run the 3D, the chat carries on without the office.",
       "The people are the one body (Settings → Look → \"3D people\").",
     ],
-    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
+    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
 
   "/star-animations-dev": {

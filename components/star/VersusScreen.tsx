@@ -227,11 +227,18 @@ export default function VersusScreen({ matchday, date, competition, results, clu
           >
             ← Back
           </PressButton>
-          <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
-            <BallIcon />
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
-              {compHead}
-              {compTail && <> <span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></>}
+          {/* Never under Back. "National League South · Matchday 12" ran
+              about 60 px under the button on a 390 px phone. The chip sits in
+              the room to the right of Back and, when it is too long for one
+              line, breaks between the competition and the round (two lines
+              at most, never mid-name). */}
+          <div className="pl-[68px]">
+            <div className="relative mx-auto flex w-fit max-w-full items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+              <BallIcon />
+              <div className="min-w-0 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
+                <span className="whitespace-nowrap">{compHead}</span>
+                {compTail && <> <span className="whitespace-nowrap"><span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></span></>}
+              </div>
             </div>
           </div>
 
