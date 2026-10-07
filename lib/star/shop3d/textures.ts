@@ -130,6 +130,27 @@ export function blobCanvas(): HTMLCanvasElement {
   return c;
 }
 
+/**
+ * A spotlight's pool of light, drawn once (white, soft edge; the material
+ * tints it and adds it on top). Stands in for a real light: see the shop's
+ * "baked pools". `stretch` > 1 makes a tall cone (a wash up a wall).
+ */
+export function poolCanvas(stretch = 1): HTMLCanvasElement {
+  const s = 128;
+  const c = document.createElement("canvas");
+  c.width = s; c.height = Math.round(s * stretch);
+  const g = c.getContext("2d")!;
+  g.scale(1, stretch);
+  const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  gr.addColorStop(0, "rgba(255,255,255,1)");
+  gr.addColorStop(0.35, "rgba(255,255,255,0.7)");
+  gr.addColorStop(0.7, "rgba(255,255,255,0.22)");
+  gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr;
+  g.fillRect(0, 0, s, s);
+  return c;
+}
+
 /** A neon word on a see-through background: the glow is drawn in. */
 export function neonCanvas(text: string, ink: string, w = 1024, h = 192): HTMLCanvasElement {
   const c = document.createElement("canvas");

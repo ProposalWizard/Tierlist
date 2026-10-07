@@ -143,10 +143,20 @@ export function findPath(g: WalkGrid, from: XZ, to: XZ): XZ[] | null {
   return out;
 }
 
+/** A trip longer than this (metres) jogs a little faster than the stick's top speed. */
+export const TAP_LONG = 5;
+/** A trip shorter than this is a walk; anything longer is a jog. */
+export const TAP_SHORT = 1.5;
+/** The push on a long trip. Over 1 = past the stick at full tilt (the scenes
+ *  turn push into speed with the same line as the stick, so 1.05 is about
+ *  0.4 m/s quicker than the stick's jog). */
+export const TAP_PUSH_LONG = 1.05;
+
 /**
- * Follows a path: each frame, which way to face and how hard to push (0..1,
- * like the stick). It gives up if he stops getting anywhere (something moved
- * into the way), and calls `onArrive` at the end.
+ * Follows a path: each frame, which way to face and how hard to push (0..1
+ * like the stick, a little over 1 on a long trip). It gives up if he stops
+ * getting anywhere (something moved into the way), and calls `onArrive` at
+ * the end.
  */
 export class TapWalker {
   path: XZ[] = [];
@@ -187,9 +197,11 @@ export class TapWalker {
     const left = d + this.restLength();
     if (left < this.best - 0.05) { this.best = left; this.stuck = 0; } else if ((this.stuck += dt) > 1.5) { this.cancel(); return null; }
     const rest = this.restLength() + d;
-    // a walk for a short trip, a jog for a long one, easing off at the end
-    const cruise = this.run || rest > 6 ? 1 : 0.7;
-    const push = last ? Math.min(cruise, 0.25 + d * 0.5) : cruise;
+    // Harry, 7 Oct 2026 (iPhone): "tap to walk is too slow". A jog for any
+    // real trip, a touch quicker than the stick at full tilt on a long one;
+    // a walk only for a step or two. Eases off over the last metre or so.
+    const cruise = this.run || rest > TAP_LONG ? TAP_PUSH_LONG : rest > TAP_SHORT ? 1 : 0.7;
+    const push = last ? Math.min(cruise, 0.3 + d * 0.6) : cruise;
     return { yaw: Math.atan2(tx - x, tz - z), push };
   }
   private restLength() {

@@ -811,12 +811,38 @@ export async function saveCareerToCloud(
       // phone that is merely backgrounded (the common case) still finishes.
       keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null) as { ok?: boolean; corrected?: unknown; career?: unknown } | null;
     // Only a real "ok" moves the base: signed out, the route answers `null`.
-    if (sent && opts.scope && res.ok) {
-      const data = await res.json().catch(() => null) as { ok?: boolean } | null;
-      if (data?.ok === true) saveSyncRecord(opts.scope, recordAfterConfirm(loadSyncRecord(opts.scope), sent));
+    if (sent && opts.scope && data?.ok === true) saveSyncRecord(opts.scope, recordAfterConfirm(loadSyncRecord(opts.scope), sent));
+    // The server's save guard (lib/star/saveGuard.ts, enforce mode) put back
+    // fields that no honest play could have reached. Its copy is the save
+    // now: this device keeps it and the game reloads it.
+    if (data?.ok === true && Array.isArray(data.corrected) && data.corrected.length > 0
+      && data.career && typeof data.career === "object" && (data.career as CareerState).version === 2) {
+      const { sync: _s, ...raw } = data.career as CareerState & { sync?: unknown };
+      void _s;
+      const fixed = backfill(fromSavedForm(raw as CareerState));
+      if (opts.scope) saveCareer(fixed, opts.scope);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(SAVE_CORRECTED_EVENT, { detail: { slot, career: fixed } }));
+      }
     }
   } catch {}
+}
+
+/** Fired when the server corrected a save (see saveCareerToCloud). */
+export const SAVE_CORRECTED_EVENT = "star-save-corrected";
+
+/** Listen for a corrected save. Returns the unsubscribe. */
+export function onSaveCorrected(fn: (slot: number, career: CareerState) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = (e: Event) => {
+    const d = (e as CustomEvent<{ slot: number; career: CareerState }>).detail;
+    if (d && d.career) fn(d.slot, d.career);
+  };
+  window.addEventListener(SAVE_CORRECTED_EVENT, handler);
+  return () => window.removeEventListener(SAVE_CORRECTED_EVENT, handler);
 }
 
 /**

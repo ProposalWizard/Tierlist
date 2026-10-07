@@ -405,7 +405,7 @@ export const ASSETS_3D: Asset3dFolder[] = [
       },
       {
         "path": "/shop/flat-1-L1.webp",
-        "bytes": 20260
+        "bytes": 19912
       },
       {
         "path": "/shop/flat-1-L2.webp",
@@ -425,7 +425,7 @@ export const ASSETS_3D: Asset3dFolder[] = [
       },
       {
         "path": "/shop/flat-2-L1.webp",
-        "bytes": 20842
+        "bytes": 19134
       },
       {
         "path": "/shop/flat-2-L2.webp",
