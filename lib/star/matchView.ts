@@ -392,11 +392,19 @@ function fracOf(v: Viewport, facing: Facing, p: Vec2): { sx: number; sy: number 
  * Tipping the picture back crops its near corners. When something that must
  * be seen would fall off, the camera pulls back a step at a time about the
  * top-centre of the screen (the far end, where the goal hangs) until it is
- * in view. Flat, or nothing at risk: the camera comes back unchanged.
+ * in view. Nothing at risk: the camera comes back unchanged.
+ *
+ * Flat gets the same check, with nothing cropped: a man in the chance
+ * standing past the kind's zoom is pulled into view the same way. It used to
+ * skip flat entirely, so on the Flat camera a drawn cutback left a man off
+ * screen in 92 of 150 chances, and the New chances' extra players sat off
+ * screen in almost all of them (v0.27 known issue).
  */
 export function fitCameraToTilt(cam: Viewport, facing: Facing, hw: number, tiltDeg: number, pts: Vec2[]): Viewport {
   const t = tiltFor(tiltDeg, 1, Math.max(NEW_VIEW_MIN_HW, hw));
-  if (!t) return cam;
+  const inView = (sx: number, sy: number): boolean => t
+    ? visibleOnScreen(t, sx, sy, TILT_FIT_MARGIN)
+    : sx >= TILT_FIT_MARGIN && sx <= 1 - TILT_FIT_MARGIN && sy >= TILT_FIT_MARGIN && sy <= 1 - TILT_FIT_MARGIN;
   // The pitch point at the top-centre of the screen.
   const ax = facing === "right" ? cam.x1 : facing === "left" ? cam.x2 : (cam.x1 + cam.x2) / 2;
   const ay = facing === "up" ? cam.y1 : (cam.y1 + cam.y2) / 2;
@@ -406,7 +414,7 @@ export function fitCameraToTilt(cam: Viewport, facing: Facing, hw: number, tiltD
   });
   for (let k = 1; k <= TILT_FIT_MAX + 1e-9; k += 0.025) {
     const v = grow(k);
-    if (pts.every((p) => { const c = fracOf(v, facing, p); return visibleOnScreen(t, c.sx, c.sy, TILT_FIT_MARGIN); })) return v;
+    if (pts.every((p) => { const c = fracOf(v, facing, p); return inView(c.sx, c.sy); })) return v;
   }
   return grow(TILT_FIT_MAX);
 }

@@ -2464,6 +2464,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     facingRef.current = sc.facing ?? "up";
     // A feature that asks for its own close camera keeps it (scene.ownFrame).
     if (!newViewRef.current || sceneRef.current?.ownFrame) {
+      // The new view's canvas is taller than a feature's 5:8 frame. Drawn
+      // as it was, the frame was stretched down the screen (a 5:8 frame on a
+      // 38 × 83 box: everything 36% too tall). Give the frame the canvas's
+      // shape instead: more grass below, the goal end where it was.
+      if (newViewRef.current && (sc.facing ?? "up") === "up") {
+        const v = sc.viewport, hw = canvasHW(), w = v.x2 - v.x1, h = v.y2 - v.y1;
+        if (w > 0 && h > 0 && Math.abs(h / w - hw) > 0.01) {
+          if (h / w < hw) sc.viewport = { ...v, y2: v.y1 + w * hw };
+          else { const cx = (v.x1 + v.x2) / 2, w2 = h / hw; sc.viewport = { ...v, x1: cx - w2 / 2, x2: cx + w2 / 2 }; }
+        }
+      }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
       return;
@@ -3136,7 +3147,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else {
         clip = "idle"; t = now + spriteSeed(id);
       }
-      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(opts.anim?.lean ? { tilt: opts.anim.lean } : {}) };
+      // A left-footer strikes with his left: the baked kick is right-footed,
+      // so his kick is drawn mirrored (v0.26 known issue, "left-footers kick
+      // with the wrong foot in 3D"). The drawn figure already swings the
+      // left leg (bodyPoseFor reads kickFoot).
+      const mirror = clip === "kick" && (opts.kickFoot ?? 1) < 0;
+      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(opts.anim?.lean ? { tilt: opts.anim.lean } : {}), ...(mirror ? { mirror } : {}) };
     };
     const footballer = (
       x: number, y: number, rBase: number,
