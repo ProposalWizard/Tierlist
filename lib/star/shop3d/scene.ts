@@ -28,7 +28,7 @@
 import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
-import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas } from "./textures";
+import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas, poolCanvas } from "./textures";
 import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -261,9 +261,44 @@ async function buildShop(
   carSpot.shadow.normalBias = 0.03;
   carSpot.shadow.camera.near = 0.5;
   carSpot.shadow.camera.far = 8;
-  spot("#d9e8ff", 45, CAR.x + 3.2, ROOM.h - 0.1, CAR.z + 3.0, CAR.x, 0.6, CAR.z, 0.55, 0.7, 10); // a cool kicker on the paint
-  for (const z of [-2.2, 0, 2.2]) spot("#ffdcae", 70, -2.7, ROOM.h - 0.08, z, PLINTH_X, PLINTH_H, z, 0.62, 0.55, 8);
-  spot("#ffe6c2", 70, 0, ROOM.h - 0.08, -4.4, 0, 1.2, COUNTER_Z - 0.6, 1.0, 0.6, 9);
+  // LAG (7 Oct 2026): six spotlights meant every lit pixel in the room worked
+  // out six lights. The New shop keeps two real ones (the car's, with its
+  // shadow, and ONE wide light along the boot plinths; Low keeps only the
+  // car's) and paints the other pools on as soft glows that cost almost
+  // nothing. The Old shop player (Settings → "3D shop player: Old") keeps the
+  // six, exactly as before.
+  const fewLights = (opts.player?.look ?? "new") === "new";
+  const pools: any[] = [];
+  const canvasTexOf = (cv: HTMLCanvasElement) => { const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  if (!fewLights) {
+    spot("#d9e8ff", 45, CAR.x + 3.2, ROOM.h - 0.1, CAR.z + 3.0, CAR.x, 0.6, CAR.z, 0.55, 0.7, 10); // a cool kicker on the paint
+    for (const z of [-2.2, 0, 2.2]) spot("#ffdcae", 70, -2.7, ROOM.h - 0.08, z, PLINTH_X, PLINTH_H, z, 0.62, 0.55, 8);
+    spot("#ffe6c2", 70, 0, ROOM.h - 0.08, -4.4, 0, 1.2, COUNTER_Z - 0.6, 1.0, 0.6, 9);
+  } else {
+    // one wide warm light down the plinth row in place of three (not on Low)
+    if (tier !== "low") spot("#ffdcae", 125, -2.6, ROOM.h - 0.08, 0, PLINTH_X, PLINTH_H, 0, 0.98, 0.7, 10);
+    const poolT = canvasTexOf(poolCanvas(1.25));
+    const roundT = canvasTexOf(poolCanvas(1));
+    const pool = (t: any, colour: string, strength: number, w: number, h: number, x: number, y: number, z: number, rx: number, ry: number) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({
+        map: t, color: new THREE.Color(colour).multiplyScalar(strength), transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending, fog: false,
+      }));
+      m.position.set(x, y, z);
+      m.rotation.set(rx, ry, 0);
+      m.renderOrder = 1;
+      scene.add(m);
+      pools.push(m);
+      return m;
+    };
+    // the three scallops of light up the wall behind the boots
+    for (const z of [-2.2, 0, 2.2]) pool(poolT, "#ffcf98", tier === "low" ? 0.42 : 0.3, 2.3, 2.9, -ROOM.x + 0.13, 1.75, z, 0, Math.PI / 2);
+    // the wash on the back wall over the counter, and its spill on the floor
+    pool(poolT, "#ffd9a8", 0.3, 6.4, 3.2, 0, 1.75, -ROOM.z + 0.13, 0, 0);
+    pool(roundT, "#ffd9a8", 0.12, 4.6, 3.0, 0, 0.012, COUNTER_Z + 1.4, -Math.PI / 2, 0);
+    // on Low, the plinth row's floor glow too (its light is gone)
+    if (tier === "low") pool(roundT, "#ffcf98", 0.14, 2.6, 7.6, PLINTH_X + 1.6, 0.012, 0, -Math.PI / 2, 0);
+  }
 
   // ── Materials and helpers ──
   const mat = (c: string, o: any = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, metalness: 0, ...o });

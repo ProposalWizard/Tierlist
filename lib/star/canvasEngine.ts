@@ -129,6 +129,8 @@ export interface Ball {
   resting: boolean;
   /** Seconds this ball has been lying still, waiting for somebody to reach it. */
   restT?: number;
+  /** Seconds it has been all but stopped on the grass (under THEIRS_CREEP_SPEED). */
+  creepT?: number;
   /** How many times it has come back off the frame. Two is pinball; stop at one. */
   postHits?: number;
   /**
@@ -5361,6 +5363,10 @@ const WALK_SPEED = 4.6;    // …and the jog he breaks into for one that has sto
 const FETCH_SPEED = 7;     // …which becomes a run once it is a long way off
 const FETCH_FAR = 12;      // metres — beyond this, fetching it is worth running for
 const DEAD_BALL_SPEED = 4; // m/s — below this the ball is going nowhere
+// A ball that has died where only a defender can have it (see stepBallRaw):
+const THEIRS_CREEP_SPEED = 1.0; // m/s on the grass — all but stopped
+const THEIRS_AFTER = 0.3;       // seconds it sits like that before it is called
+const THEIRS_MARGIN = 1.0;      // metres a defender must be nearer than any of ours
 const CONTROL_R = 1.15;    // metres — close enough to take it
 
 // ── v0.15 item 13: stepping out of a real shot ──
@@ -5442,6 +5448,18 @@ function shapeMatePos(sc: Scenario, m: ShapeMate): { x: number; y: number } {
   return m === "follower" ? sc.follower : m.pos;
 }
 
+/**
+ * One of the men in a free kick's wall: holding, and stood within 12.5 m of
+ * where the kick was taken (the same test kindRules/freeKick.ts uses to pick
+ * its wall). A marker on the edge of the box also "holds" at a dead ball, so
+ * the distance is what tells them apart.
+ */
+const FREE_KICK_WALL_R = 12.5;
+function inFreeKickWall(sc: Scenario, d: Defender): boolean {
+  return sc.kind === "free_kick" && d.baseRole === "hold"
+    && Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) < FREE_KICK_WALL_R;
+}
+
 function stepShape(sc: Scenario, ball: Ball, dt: number, dead: boolean, fetch: (d: number) => number) {
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   const anchor = dead || speed < 0.5 ? { x: ball.pos.x, y: ball.pos.y } : predictBall(ball, SHAPE_READ_AHEAD).pos;
@@ -5495,7 +5513,11 @@ function stepShape(sc: Scenario, ball: Ball, dt: number, dead: boolean, fetch: (
   // Every man's spot is where he stood when the ball came loose, moved by the
   // SAME amount: across toward the ball's side, and back to stay goal-side of
   // it. A man who stops chasing goes back to his spot in that line.
-  const line = defs.filter(d => d !== chaserDef);
+  // A free-kick wall does not slide across after a deflection as one block.
+  // Its men keep their spots; at most the one nearest a stopped ball goes for
+  // it (he is the chaser above). Moving the whole wall with the ball is what
+  // read as "the wall chases the loose ball" (v0.27 known issue).
+  const line = defs.filter(d => d !== chaserDef && !inFreeKickWall(sc, d));
   for (const d of sc.defenders) d.chasing = d === chaserDef;
   if (line.length) {
     let sx = 0, sy = 0;
@@ -6953,6 +6975,34 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   if (vp && (ball.pos.x < vp.x1 - 1 || ball.pos.x > vp.x2 + 1
              || ball.pos.y > vp.y2 + 1 || ball.pos.y < vp.y1 - 1)) return "out";
   if (ball.pos.x < -2 || ball.pos.x > PITCH_W + 2 || ball.pos.y > HALF_LEN + 8) return "out";
+
+  // ── A ball that has died where only they can have it ──
+  //
+  // v0.27 known issue: a soft ball along the byline stopped short, none of ours
+  // was near it, and the nearest defender jogged ten-plus metres to it before
+  // it was called INTERCEPTED — the ball sat for up to 1.9 s with nothing
+  // happening. When the ball has all but stopped on the grass, none of ours can
+  // reach it, and a defender is clearly nearer than any of ours, the result is
+  // already settled: call it after a short beat ("short": under-hit, it never
+  // reached anyone) instead of waiting for him to walk over.
+  const creeping = !ball.inNet && ball.z < 0.05 && Math.hypot(ball.vel.x, ball.vel.y) < THEIRS_CREEP_SPEED;
+  ball.creepT = creeping ? (ball.creepT ?? 0) + dt : 0;
+  if ((ball.creepT ?? 0) > THEIRS_AFTER) {
+    let dDef = Infinity;
+    for (const d of scenario.defenders) dDef = Math.min(dDef, Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y));
+    let dOurs = Math.hypot(scenario.player.x - ball.pos.x, scenario.player.y - ball.pos.y);
+    for (const r of orderableRunners(scenario)) dOurs = Math.min(dOurs, Math.hypot(r.pos.x - ball.pos.x, r.pos.y - ball.pos.y));
+    if (!scenario.follower.shot) dOurs = Math.min(dOurs, Math.hypot(scenario.follower.x - ball.pos.x, scenario.follower.y - ball.pos.y));
+    if (dOurs >= PASS_CONTROL_R && dDef + THEIRS_MARGIN < dOurs) {
+      if (ball.lastTouch === "keeper") return "saved";
+      // Nobody has touched it yet, so it is not an interception ("tackled"
+      // means a defender played it, and the action record says so) and no
+      // clearance is logged (that would play a kick for a man still metres
+      // away). It is the under-hit ball that never reached anyone: "short".
+      ball.owner = "opponent";
+      return "short";
+    }
+  }
 
   // Once there is genuinely nobody left whose turn it is, the move is over and
   // sitting on the ball is dead air. While somebody can still collect it, the

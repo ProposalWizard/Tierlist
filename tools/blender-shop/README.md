@@ -61,6 +61,18 @@ The `compare/` and `mockups/` folders and `renders/300/` are from the first test
 - **Store pictures** (`store.py`, `public/shop/store/`): 6 coin packs, 2 boosts (Training Boost, Stat Can), 10 accessories and 3 accessory boots (`acc-<id>.webp`). The Store page (components/star/store/StoreView.tsx) uses them where a picture exists today and falls back to the old drawing if one won't load; the Boots tab now shows the same boot renders as the shop shelf. Celebrations and the run-up animation cards stay as they are (a pose and an animated sketch, not objects). Same studio, same 400x300 WebP.
 - `drip.py` gem material fixed; `run.py` can frame on the jewellery only (`frame_parts`).
 
+## 7 Oct 2026: Box Room and Shared Flat no longer look the same
+Both level-1 flats were "a block of three" (Harry, still open since v0.23.1). Now
+(`homes_a.py`, `f1`/`f2` level 1): **Box Room** = one low, flat-roofed corner
+shop (green fascia, striped awning, lit shop window) with a single lit window
+above it, a news board, a bin and a bike. **Shared Flat** = one tall cream
+Victorian house on its own (no neighbours), gable roof and two chimneys, white
+bays, three doorbells, three bins, two bikes, a front wall and hedge, on grass.
+Rendered with `run.py` at 32 samples and saved as in `convert.py`
+(400x300, WebP q82). bpy can also be installed with
+`python3 -m pip install --target /dev/shm/blender-shop/lib bpy==4.5.14 pillow numpy`
+and run with that folder put on `sys.path` first.
+
 ## Not seen / known soft spots
 - Horses are stylised (no rider, one pose per level); the three celebrations in the Store have no render.
 - Level pictures inside one family were checked on contact sheets; the in-game crop was checked on the Style grid, item sheet and boots shelf only.

@@ -1211,6 +1211,13 @@ export interface CareerState {
    * themselves are deliberately NOT part of this snapshot.
    */
   lastSeasonAwardStats?: import("./seasonAwards").SeasonAwardStats;
+  /** Records broken so far this season, one per record (the latest mark).
+   *  Mikey, 6 Oct 2026: records no longer pop up after every match ("in your
+   *  first season every goal or assist is a new record"); they are listed
+   *  once, on the season round-up. See lib/star/earnPops.ts. */
+  seasonRecords?: { label: string; unlocked: string }[];
+  /** Last season's `seasonRecords`, shown on the Season Awards screen. */
+  lastSeasonRecords?: { label: string; unlocked: string }[];
   /**
    * Where the club finished last season, 1-based.
    *
@@ -1278,6 +1285,18 @@ export interface CareerState {
   starBest?: import("./starPoints").StarBest;
   /** Wearing the armband at your current club. */
   captain?: boolean;
+  /** The armband was just earned (careerFlow) and the manager hasn't told you
+   *  yet: his "you're my captain" moment on Home (lib/star/managerMoments.ts).
+   *  Cleared when seen. Never set by the owner path (appointSelfCaptain). */
+  captainMomentPending?: boolean;
+  /** What the manager picked you as for your last club match ("1st Team" =
+   *  you started it), and whether you have missed matches injured since.
+   *  Drives the "dropped to the bench" moment (lib/star/managerMoments.ts).
+   *  Absent on old saves: no moment until a match has been recorded. */
+  lastPick?: { status: "1st Team" | "Substitute" | "Squad"; injuredSince?: boolean };
+  /** The fixture key (managerMoments.ts fixtureMomentKey) whose bench moment
+   *  has been seen, so it shows once even if you go Back and Play again. */
+  benchMomentSeen?: string;
   /** The number on your back. Reassigned when you sign for someone. */
   squadNumber?: number;
   /** Appearances at the CURRENT club, reset on a transfer. */

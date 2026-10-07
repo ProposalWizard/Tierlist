@@ -892,6 +892,76 @@ export const TUNABLES: TunableDef[] = [
     description: "A cap on how far wasted chances alone can drag a rating down — genuinely terrible finishing should read as a genuinely bad mark, not an impossible one.",
     default: 4, min: 1, max: 8, step: 0.5,
   },
+  {
+    key: "rating.goalPenalty", category: "Match Rating", label: "Goal from a penalty",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating for scoring a penalty.",
+    default: 0.72, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.goalTapIn", category: "Match Rating", label: "Goal from inside the six-yard box",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). A tap-in: struck from inside the six-yard box. Easier than a goal elsewhere in the box.",
+    default: 0.85, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.goalBox", category: "Match Rating", label: "Goal from the rest of the box",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Struck from inside the penalty area but outside the six-yard box.",
+    default: 1.0, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.goalOutside", category: "Match Rating", label: "Goal from outside the box",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Struck from outside the penalty area.",
+    default: 1.25, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.passSafe", category: "Match Rating", label: "Completed pass: safe",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). A pass that reached its man and was not forward or brave (how brave reads the match's own pass ambition, 0-1).",
+    default: 0.1, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "rating.passMedium", category: "Match Rating", label: "Completed pass: medium",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). A completed pass between safe and ambitious. Also any pass the match can't grade.",
+    default: 0.15, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "rating.passAmbitious", category: "Match Rating", label: "Completed pass: ambitious",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). A completed pass to the furthest-forward man on offer, or a long ball forward.",
+    default: 0.25, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "rating.passSafeBelow", category: "Match Rating", label: "Pass counts as safe below this ambition",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Pass ambition is 0-1. Below this the pass is safe.",
+    default: 0.34, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "rating.passAmbitiousFrom", category: "Match Rating", label: "Pass counts as ambitious from this ambition",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Pass ambition is 0-1. At or above this the pass is ambitious.",
+    default: 0.67, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "rating.missOnTarget", category: "Match Rating", label: "Shot saved, blocked or off the frame",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating lost when your shot is saved, caught, tipped over, blocked or hits the post or bar.",
+    default: 0.2, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.missOffTarget", category: "Match Rating", label: "Shot off target",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating lost when your shot goes wide, over or out.",
+    default: 0.35, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.miss1v1", category: "Match Rating", label: "One-on-one not scored",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating lost when you don't score a one-on-one, however it misses.",
+    default: 0.75, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.missPenalty", category: "Match Rating", label: "Penalty missed",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating lost when you miss or have a penalty saved.",
+    default: 0.72, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "rating.lostBall", category: "Match Rating", label: "Ball lost",
+    description: "Ratings revamp (Mikey, 6 Oct 2026). Rating lost when you are tackled, a pass is cut out, the ball goes out or you are offside.",
+    default: 0.3, min: 0, max: 2, step: 0.01,
+  },
 
   {
     key: "transfers.reachUp", category: "Transfers", label: "How far above a signing's own level a buyer can reach",

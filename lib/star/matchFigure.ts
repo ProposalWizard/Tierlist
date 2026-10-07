@@ -41,6 +41,8 @@ export interface MatchSpriteHint {
   /** Radians the whole figure leans about his boots — code-only motion the
    *  baked clips do not have (a block's lean; Animations: New). */
   tilt?: number;
+  /** Mirrored left-right: a left-footer's kick (the baked kick is right-footed). */
+  mirror?: boolean;
 }
 
 export interface MatchFigureSpec {
