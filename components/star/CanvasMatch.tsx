@@ -6,13 +6,13 @@ import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildScenario,
-  launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
+  launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
   stepKeeper, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
   chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
   curveDirFromSwipe, applyCurveSwipe,
-  setOffsideRuleEnabled,
+  setOffsideRuleEnabled, setClearanceRules, getClearanceRules,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
@@ -35,7 +35,7 @@ import {
 import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldClearances } from "@/lib/star/gameplayVersion";
 import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
@@ -696,6 +696,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setOffsideRuleEnabled(!(career ? ruleBookFor(career, "FA").offsideAbolished : false));
   }, [career]);
 
+  // ── Clearances (Mikey, 7 Oct 2026) ──
+  // The boot's size from the tuning dials, and miscues / body hits / the live
+  // second ball only when Settings → Look → Gameplay → Clearances is New.
+  // Read again at every chance (loadScenario), so flipping it takes effect on
+  // the next one. See canvasEngine.ts's ClearanceRules.
+  const applyClearanceRules = () => {
+    setClearanceRules({
+      speedMin: getTuning("clearance.speedMin"),
+      speedMax: getTuning("clearance.speedMax"),
+      maxAngleDeg: getTuning("clearance.maxAngle"),
+      miscues: !oldClearances(),
+      miscueWeak: getTuning("clearance.miscueWeak"),
+      miscueStrong: getTuning("clearance.miscueStrong"),
+      bodyLen: getTuning("clearance.bodyLen"),
+      bodyWidth: getTuning("clearance.bodyWidth"),
+      secondBalls: Math.round(getTuning("clearance.secondBalls")),
+    });
+  };
+  useEffect(() => { applyClearanceRules(); }, []);
+
   // ── Who else is actually out there ──
   //
   // A goal your side scores while you are not on the ball has always needed a
@@ -1269,6 +1289,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** v0.15 item 16: blocks deflected this strike (one per strike; the next
    *  defender to get to it wins it, as today). */
   const deflectionsRef = useRef(0);
+  /**
+   * SHOW THE BOOT (clearances, 7 Oct 2026). Set when a chance ends on a
+   * defender's clean clearance: the ball keeps flying (stepBallCleared) and the
+   * hand-back to the commentary waits until the WHOLE drawn ball, and its
+   * shadow, is past an edge of the match picture — or it stops on screen
+   * (clearance.handOverAfterStop), or clearance.handOverMax runs out.
+   */
+  const bootRef = useRef<{ t: number; stopT: number | null; then: (() => void) | null } | null>(null);
   /** Every team-mate lay-off and shot since your strike, in order — who the
    *  assist belongs to (lib/star/credit.ts assistFor). Reset at each strike. */
   const matePlaysRef = useRef<MatePlay[]>([]);
@@ -2514,6 +2542,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // distance any more, so it is always 1.
     return { px: fx * W, py: fy * H, scale: 1 };
   }, []);
+
+  /**
+   * Is the ball, as DRAWN, wholly outside the match picture? Uses the same
+   * numbers the ball is drawn with (drawBall): its spot, lifted by its height,
+   * its size growing with height, and its shadow on the grass. True only when
+   * the ball AND its shadow are completely past an edge — top, bottom, left or
+   * right — in any camera facing. (Clearances, 7 Oct 2026: the hand-back to
+   * the commentary happens "when it crosses completely off the screen".)
+   */
+  const ballOffPicture = (b: Ball): boolean => {
+    const c = canvasRef.current;
+    if (!c || c.width <= 0 || c.height <= 0) return true;
+    const W = c.width, H = c.height;
+    const vp = viewportRef.current;
+    const turned = facingRef.current !== "up";
+    const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
+    const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
+    const ballPx = newViewRef.current ? Math.max(3, unit * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
+    const { px, py, scale } = toPx(b.pos.x, b.pos.y);
+    const h = Math.max(0, b.z);
+    const by = py - h * uy * scale;
+    const br = ballPx * scale * (1 + Math.min(h, 8) * 0.055);
+    // The shadow, with room for the new ball's own offset shadow.
+    const sr = ballPx * scale * 2;
+    const off = (x: number, y: number, r: number) => x + r < 0 || x - r > W || y + r < 0 || y - r > H;
+    return off(px, by, br) && off(px, py, sr);
+  };
 
   /** The canvas's own box on the page, as laid out (a tilted canvas's
    *  getBoundingClientRect is the tipped picture's box, not this). */
@@ -4387,8 +4442,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // who gets it. Once per strike — the next defender to get there
           // wins it, exactly as today. Its own seeded stream (off the chance's
           // seed and how far through it we are), so a replay deflects the same.
-          if (res === "blocked" && deflectionsRef.current < 1) {
+          // New clearances: this counts as the chance's one live second ball,
+          // so after it every defender touch is a clean boot.
+          const clr = getClearanceRules();
+          const secondLeft = !clr.miscues || (scenarioRef.current.secondBalls ?? 0) < clr.secondBalls;
+          if (res === "blocked" && deflectionsRef.current < 1 && secondLeft) {
             deflectionsRef.current += 1;
+            if (clr.miscues) scenarioRef.current.secondBalls = (scenarioRef.current.secondBalls ?? 0) + 1;
             const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) ^ 0xdef1) >>> 0);
             deflectBlock(ballRef.current, scenarioRef.current, incoming, r);
             // v0.25 item 20: on a rebound (the keeper or the post has had it)
@@ -4439,6 +4499,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const receiver = scenarioRef.current.receiver;
         // The frame no longer ends the move — the ball cannons back out and is
         // live — so it is narrated here rather than in resolveOutcome.
+        if (ev === "miscue") {
+          pushLine("He's miscued it — it's loose!");
+          showAction("MISCUED");
+          nudge(0.08, 0.08);
+        }
+        if (ev === "clearHit") {
+          pushLine("Cleared — but it cannons off a body and it's loose!");
+          showAction("DEFLECTED");
+          nudge(0.12, 0.1);
+          playSave();
+        }
         if (ev === "post") {
           pushLine("Off the woodwork — and it's still live!");
           showAction("POST");
@@ -4481,6 +4552,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // frame instead of stopping dead exactly where "over" was decided.
       if (phaseRef.current === "result" && ballRef.current?.overBar) {
         stepBallPastBar(ballRef.current, dt);
+      }
+      // …and a ball a defender has booted clear keeps flying, so you see the
+      // boot (Mikey, 7 Oct 2026: "I never saw this happen"). It used to freeze
+      // where he kicked it. The hand-back to the commentary waits for it to be
+      // fully off the picture — see bootRef.
+      if (phaseRef.current === "result" && ballRef.current?.cleared) {
+        const bc = ballRef.current;
+        stepBallCleared(bc, dt, scenarioRef.current);
+        const boot = bootRef.current;
+        if (boot) {
+          const now = performance.now();
+          if (bc.resting && boot.stopT == null) boot.stopT = now;
+          const done = ballOffPicture(bc)
+            || (boot.stopT != null && now - boot.stopT >= getTuning("clearance.handOverAfterStop") * 1000)
+            || now - boot.t >= getTuning("clearance.handOverMax") * 1000;
+          if (done) {
+            bootRef.current = null;
+            boot.then?.();
+          }
+        }
       }
       // …and a keeper mid-dive keeps travelling toward the ball, for exactly
       // the same reason the ball itself keeps moving in the three blocks
@@ -4567,9 +4658,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ?? sc.secondaryRunners.find(r => r.role === "target")?.who?.shortName;
   };
 
+  /**
+   * Go on to what comes after a chance. Ordinarily after `ms`, as it always
+   * was; after a clean clearance, the moment the boot has left the picture
+   * (bootRef, checked every frame in the result phase).
+   */
+  const handOver = (fn: () => void, ms: number) => {
+    const gen = sceneGenRef.current;
+    const run = () => { if (sceneGenRef.current === gen) fn(); };
+    if (bootRef.current) bootRef.current.then = run;
+    else window.setTimeout(run, ms);
+  };
+
   const resolveOutcome = (res: Outcome) => {
     setOutcome(res);
     setPhase("result");
+    // A clean clearance ended it: hold the hand-back until the boot is off
+    // the picture (see bootRef and handOver).
+    {
+      const b = ballRef.current;
+      bootRef.current = b?.cleared && !b.inNet ? { t: performance.now(), stopT: null, then: null } : null;
+    }
     const sc = scenarioRef.current;
     goalSideRef.current = res === "goal" ? (autoKickOf(sc)?.side === "them" ? "them" : "us") : null;
     // Read off the ball and off what the team-mate actually did, never off the
@@ -5052,8 +5161,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
-      const gen = sceneGenRef.current;
-      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
+      handOver(() => startSimulation(), 1800);
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -5070,11 +5178,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           playstyle: playstyleRef.current,
           ...cheekyStats(),
         };
-        const gen = sceneGenRef.current;
-        window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
+        handOver(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
       } else {
-        const gen = sceneGenRef.current;
-        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1800);
+        handOver(() => loadScenario(false), 1800);
       }
     }
   };
@@ -5904,6 +6010,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
     sceneGenRef.current += 1;
+    bootRef.current = null;
+    applyClearanceRules();
     seedRef.current += 1;
     rngRef.current = countedRng(seedRef.current, rngCallCountRef);
     const rng = rngRef.current;

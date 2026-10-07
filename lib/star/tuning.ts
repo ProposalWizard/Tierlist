@@ -881,6 +881,58 @@ export const TUNABLES: TunableDef[] = [
     default: 6, min: 2, max: 12, step: 1,
   },
 
+  // ── Clearances (Mikey, 7 Oct 2026) ───────────────────────────────────
+  {
+    key: "clearance.speedMin", category: "Clearances", label: "Clean boot — slowest (m/s)",
+    description: "How hard a defender boots a clean clearance, slowest. Was 18 before 7 Oct 2026.",
+    default: 24, min: 10, max: 40, step: 1,
+  },
+  {
+    key: "clearance.speedMax", category: "Clearances", label: "Clean boot — fastest (m/s)",
+    description: "How hard a defender boots a clean clearance, fastest. Was 26.",
+    default: 34, min: 10, max: 45, step: 1,
+  },
+  {
+    key: "clearance.maxAngle", category: "Clearances", label: "Widest clearance angle (degrees)",
+    description: "How far either side of straight away from his goal a clearance can go. Was about 22. Wider sends some off the sides of the screen.",
+    default: 60, min: 10, max: 85, step: 5,
+  },
+  {
+    key: "clearance.miscueWeak", category: "Clearances", label: "Miscue chance — weak defender (50 or below)",
+    description: "New clearances only. Out of 1: how often a defender rated 50 or below gets his clearance wrong (short, skied or sliced).",
+    default: 0.30, min: 0, max: 0.8, step: 0.01,
+  },
+  {
+    key: "clearance.miscueStrong", category: "Clearances", label: "Miscue chance — strong defender (90 or above)",
+    description: "New clearances only. Out of 1: the same for a defender rated 90 or above. In between is a straight line.",
+    default: 0.10, min: 0, max: 0.8, step: 0.01,
+  },
+  {
+    key: "clearance.bodyLen", category: "Clearances", label: "Body-hit check length (m)",
+    description: "New clearances only. A clean boot hits any player standing in its first this-many metres.",
+    default: 6, min: 0, max: 15, step: 0.5,
+  },
+  {
+    key: "clearance.bodyWidth", category: "Clearances", label: "Body-hit check width (m)",
+    description: "New clearances only. How close to the boot's path a player has to be to get hit.",
+    default: 0.5, min: 0, max: 2, step: 0.1,
+  },
+  {
+    key: "clearance.secondBalls", category: "Clearances", label: "Live second balls per chance",
+    description: "New clearances only. How many miscues or body hits one chance can have. After that every clearance is clean.",
+    default: 1, min: 0, max: 3, step: 1,
+  },
+  {
+    key: "clearance.handOverAfterStop", category: "Clearances", label: "Hand over after the ball stops (s)",
+    description: "A cleared ball that stops on the screen instead of leaving it: go back to the commentary this long after it stops.",
+    default: 1.5, min: 0.3, max: 4, step: 0.1,
+  },
+  {
+    key: "clearance.handOverMax", category: "Clearances", label: "Longest wait for the boot (s)",
+    description: "Never watch a cleared ball for longer than this before going back to the commentary.",
+    default: 4, min: 1, max: 8, step: 0.5,
+  },
+
   // ── Match Rating ─────────────────────────────────────────────────────
   {
     key: "rating.wastePenaltyPerChance", category: "Match Rating", label: "Rating penalty per wasted chance",
