@@ -13,9 +13,8 @@
  */
 import { ArrayBufferTarget as Mp4Target, Muxer as Mp4Muxer } from "mp4-muxer";
 import { ArrayBufferTarget as WebmTarget, Muxer as WebmMuxer } from "webm-muxer";
-import { loadSprites } from "../sprites";
 import { editFrameCount, editDuration, type Edit } from "./edit";
-import { drawEditFrame, type ClipCredit } from "./render";
+import { drawEditFrame, prepareClipSprites, type ClipCredit } from "./render";
 
 export interface EncodedClip {
   blob: Blob;
@@ -74,7 +73,7 @@ export async function encodeEdit(
   opts: { credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal } = {},
 ): Promise<EncodedClip | null> {
   if (!canMakeVideo() || edit.shots.length === 0) return null;
-  await loadSprites();
+  await prepareClipSprites();
   const { w, h, fps } = edit;
   const choice = await pickCodec(w, h, fps);
   if (!choice) return null;

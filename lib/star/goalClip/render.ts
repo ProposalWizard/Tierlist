@@ -19,8 +19,11 @@ import { CX, POST_L, POST_R, GOAL_H } from "../pitch";
 import { kitsOf } from "../kits";
 import { shortClub } from "../media/grammar";
 import {
-  drawSprite, spritesReady, keeperDiveClip, spriteKickStrikeT, spriteClipLength, type SpriteClip,
+  drawSprite, spritesReady, keeperDiveClip, spriteKickStrikeT, spriteClipLength, spriteClipReady, spriteClipFps,
+  loadSprites, type SpriteClip,
 } from "../sprites";
+import { outfieldSpriteClip, keeperDiveClipNew, sideOfDive } from "../sprite3dAnim";
+import type { SaveResult, BallActionKind, BallActionMode } from "../canvasEngine";
 import { drawFigureAt, figureRForHeight } from "../fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "../faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "../fakeFaceStyle";
@@ -45,11 +48,13 @@ interface Prep {
   ran: Float32Array;
   nb: number;
   keeperIdx: number;
-  /** Clip time his save dive starts, and where he lands. */
-  diveStart: number | null;
-  landAt: { x: number; y: number } | null;
+  /** Each dive he made: when it started and ended (clip seconds), where he
+   *  landed, and what came of it. A scramble can have three. */
+  dives: { start: number; end: number; landAt: { x: number; y: number } | null; result?: SaveResult; z: number; high: boolean }[];
   /** Strikes per man: clip time and how. */
   kicks: Map<string, { t: number; mode?: string }[]>;
+  /** Every touch per man (a shot, a pass, a header, a block…): the new 3D moves. */
+  acts: Map<string, { t: number; kind: BallActionKind; mode?: BallActionMode }[]>;
   look: SceneLook;
 }
 
@@ -59,6 +64,11 @@ function idHash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
   return h;
+}
+
+/** The keeper's dives in a recording (see Prep.dives). Exported for the tests. */
+export function keeperDives(track: GoalTrack): Prep["dives"] {
+  return prepOf(track).dives;
 }
 
 function prepOf(track: GoalTrack): Prep {
@@ -76,24 +86,54 @@ function prepOf(track: GoalTrack): Prep {
     prev = cur;
   }
   const keeperIdx = track.bodies.findIndex(b => b.role === "keeper");
-  let diveStart: number | null = null;
-  let landAt: { x: number; y: number } | null = null;
+  // His dives: a new one starts when the lunge begins, turns the other way,
+  // or drops back and goes again (he got up and went for the rebound).
+  const dives: Prep["dives"] = [];
+  let prevOn = false, prevDir = 0, prevL = 0;
   for (let f = 0; f < track.n; f++) {
-    const fr = frameAt(track, f / track.fps);
-    if (fr.keeper.lunge > 0.04 && fr.keeper.dir !== 0) { diveStart = f / track.fps; break; }
+    const t = f / track.fps;
+    const k = frameAt(track, t).keeper;
+    const on = k.lunge > 0.04 && k.dir !== 0;
+    if (on && (!prevOn || k.dir !== prevDir || k.lunge < prevL - 0.2)) {
+      if (dives.length && dives[dives.length - 1].end === Infinity) dives[dives.length - 1].end = t;
+      dives.push({ start: t, end: Infinity, landAt: null, z: 0, high: false });
+    } else if (!on && prevOn && dives.length) {
+      dives[dives.length - 1].end = t;
+    }
+    prevOn = on; prevDir = k.dir; prevL = k.lunge;
   }
-  if (diveStart !== null && keeperIdx >= 0) {
+  for (const d of dives) {
     // The match stops him where the dive lands (he does not slide on after
     // the ball), about two-thirds of a second into it.
-    const k = frameAt(track, Math.min(trackDuration(track), diveStart + 0.67)).bodies[keeperIdx];
-    landAt = { x: k.x, y: k.y };
+    if (keeperIdx >= 0) {
+      const k = frameAt(track, Math.min(trackDuration(track), d.start + 0.67, d.end)).bodies[keeperIdx];
+      d.landAt = { x: k.x, y: k.y };
+    }
   }
   const kicks = new Map<string, { t: number; mode?: string }[]>();
+  const acts = new Map<string, { t: number; kind: BallActionKind; mode?: BallActionMode }[]>();
   for (const e of track.events) {
-    if (!e.who || (e.kind !== "shot" && e.kind !== "pass" && e.kind !== "clearance")) continue;
-    const l = kicks.get(e.who) ?? [];
-    l.push({ t: e.t, mode: e.mode });
-    kicks.set(e.who, l);
+    if (!e.who) continue;
+    if (e.kind === "shot" || e.kind === "pass" || e.kind === "clearance") {
+      const l = kicks.get(e.who) ?? [];
+      l.push({ t: e.t, mode: e.mode });
+      kicks.set(e.who, l);
+    }
+    if (e.kind === "shot" || e.kind === "pass" || e.kind === "clearance" || e.kind === "block" || e.kind === "touch") {
+      const l = acts.get(e.who) ?? [];
+      l.push({ t: e.t, kind: e.kind, mode: e.mode as BallActionMode | undefined });
+      acts.set(e.who, l);
+    }
+    if (e.kind === "save" && e.who === "keeper") {
+      // The save belongs to the dive it happened in.
+      const d = [...dives].reverse().find(x => e.t >= x.start - 0.25);
+      if (d) {
+        const at = frameAt(track, e.t);
+        d.result = e.save as SaveResult | undefined;
+        d.z = at.ball.z;
+        d.high = at.keeper.kind === "high" || at.keeper.kind === "fingertip";
+      }
+    }
   }
   const home = kitsOf(track.meta.home), away = kitsOf(track.meta.away);
   const look: SceneLook = {
@@ -103,7 +143,7 @@ function prepOf(track: GoalTrack): Prep {
     homeColours: [home.home.shirt, home.home.shirt, home.home.trim],
     awayColours: [away.home.shirt, away.home.trim],
   };
-  const p: Prep = { ran, nb, keeperIdx, diveStart, landAt, kicks, look };
+  const p: Prep = { ran, nb, keeperIdx, dives, kicks, acts, look };
   preps.set(track, p);
   return p;
 }
@@ -121,6 +161,20 @@ function screenFacing(cam: FpCamera, dx: number, dy: number): number {
   const u = dx * -fwd.y + dy * fwd.x;
   const w = dx * fwd.x + dy * fwd.y;
   return Math.atan2(-w, u);
+}
+
+/**
+ * Load every figure a replay draws BEFORE it is filmed, so frame one and
+ * frame two hundred use the same drawings (a move that loaded half way
+ * through would change the film between two plays). Waits at most `ms`.
+ */
+export async function prepareClipSprites(ms = 5000): Promise<void> {
+  await loadSprites();
+  const t0 = Date.now();
+  // One ask starts the second set of moves loading; then wait for it.
+  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR")) && Date.now() - t0 < ms) {
+    await new Promise<void>(r => setTimeout(r, 60));
+  }
 }
 
 // ── Drawing ─────────────────────────────────────────────────────────────────
@@ -155,10 +209,12 @@ function drawMan(
   const body = track.bodies[i];
   let pos = fr.bodies[i];
   const keeper = body.role === "keeper";
-  // A keeper who has landed stays where he landed.
-  const diving = keeper && p.diveStart !== null && t >= p.diveStart;
-  const diveT = diving ? Math.min(0.66, (t - (p.diveStart ?? 0)) * 0.75 + 0.05) : 0;
-  if (diving && diveT >= 0.55 && p.landAt) pos = { x: p.landAt.x, y: p.landAt.y, z: 0 };
+  // The dive he is in, if any. A keeper who has landed stays where he
+  // landed until he goes again.
+  const dive = keeper ? p.dives.find(d => t >= d.start && t < d.end) ?? null : null;
+  const diving = !!dive;
+  const diveT = dive ? Math.min(0.66, (t - dive.start) * 0.75 + 0.05) : 0;
+  if (dive && diveT >= 0.55 && dive.landAt) pos = { x: dive.landAt.x, y: dive.landAt.y, z: 0 };
   const feet = project(cam, pos.x, pos.y, 0);
   if (!feet) return null;
   const { W, H } = cam;
@@ -184,6 +240,10 @@ function drawMan(
     if (diving) {
       const a = project(cam, pos.x, pos.y, 0), b = project(cam, pos.x + (fr.keeper.dir || 1), pos.y, 0);
       clip = a && b ? keeperDiveClip(facing, b.px - a.px, b.py - a.py) : "diveR";
+      // The match's newer dives (Animations: New): a one-handed stretch for a
+      // ball in the top corner, a low dive for one along the grass.
+      const fresh = keeperDiveClipNew(dive?.result ?? "beaten", dive?.result ? dive.z : fr.ball.z, dive?.high ?? false, sideOfDive(clip));
+      if (fresh && spriteClipReady("keeper", fresh)) clip = fresh;
       clipT = diveT;
       centre = Math.min(1, diveT / 0.4);
     } else {
@@ -211,6 +271,17 @@ function drawMan(
       if (s >= 0 && s <= kickLen) {
         clip = "kick";
         clipT = s;
+        facing = screenFacing(cam, toBall.x || 0.01, toBall.y);
+      }
+    }
+    // The newer moves (Animations: New): his own shot, pass, header, block or
+    // first touch, timed to the moment the ball's log says he made it.
+    for (const a of p.acts.get(body.id) ?? []) {
+      const sc = outfieldSpriteClip({ kind: a.kind, mode: a.mode }, t - a.t, (c) => spriteClipFps("player", c));
+      if (sc && spriteClipReady("player", sc.clip)) {
+        clip = sc.clip;
+        clipT = sc.t;
+        lift = 0;
         facing = screenFacing(cam, toBall.x || 0.01, toBall.y);
       }
     }

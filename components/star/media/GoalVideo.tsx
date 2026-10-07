@@ -3,9 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { getClips } from "@/lib/star/goalClip/store";
 import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
-import { drawEditFrame, type ClipCredit } from "@/lib/star/goalClip/render";
+import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
 import { encodeEdit, saveVideo, canMakeVideo, type EncodedClip } from "@/lib/star/goalClip/encode";
-import { loadSprites } from "@/lib/star/sprites";
 
 /**
  * A REAL GOAL VIDEO IN A POST (Leo, 7 Oct 2026: "it makes it look like theres
@@ -80,7 +79,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   useEffect(() => {
     if (!edit || status === "ready") return;
     let live = true;
-    loadSprites().finally(() => {
+    prepareClipSprites().finally(() => {
       const c = canvasRef.current;
       if (!live || !c) return;
       const ctx = c.getContext("2d");

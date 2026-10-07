@@ -3,6 +3,8 @@ import {
   type ClipBody, type FrameState, type GoalTrack,
 } from "../../lib/star/goalClip/track";
 import { GoalRecorder, LEAD_IN_S, POST_GOAL_S, MAX_CLIP_S, type GoalFacts } from "../../lib/star/goalClip/recorder";
+import { keeperDives } from "../../lib/star/goalClip/render";
+import { readFileSync } from "node:fs";
 
 /**
  * GOAL RECORDINGS (Leo, 7 Oct 2026: "the goal replays should always be the
@@ -171,6 +173,24 @@ if (recorded) {
   play(rec, 4, () => {});
   rec.begin(BODIES);
   check(rec.take().length === 0, "no goal, no clip");
+}
+
+// ── 6. Real recorded goals (fixtures, recorded in the real match) ──────────
+{
+  const load = (f: string) => trackFromStored(JSON.parse(readFileSync(new URL(`./fixtures/goalClips/${f}`, import.meta.url), "utf8")));
+  const scramble = load("scramble.json"), layoff = load("lay-off.json");
+  check(!!scramble && !!layoff, "the recorded goals read back");
+  if (scramble && layoff) {
+    check(scramble.meta.scorerBody === "run1" && layoff.meta.scorerBody === "run0", `the scorer is the man who struck it (${scramble.meta.scorerBody}, ${layoff.meta.scorerBody})`);
+    const dives = keeperDives(scramble);
+    check(dives.length === 3, `a three-save scramble has three dives (${dives.length})`);
+    check(dives.every((d, i) => i === 0 || d.start >= dives[i - 1].end - 1e-9), "dives come one after another");
+    check(dives[dives.length - 1].end === Infinity && scramble.goalT >= dives[dives.length - 1].start, "the last dive is the one the goal went past");
+    check(keeperDives(layoff).length === 1, `a simple finish has one dive (${keeperDives(layoff).length})`);
+    // The cut runs from the first kick to after the goal.
+    check(scramble.firstKickT < scramble.strikeT && scramble.strikeT < scramble.goalT, "first kick, then the scoring strike, then the goal");
+    check(trackDuration(layoff) > layoff.goalT && trackDuration(layoff) - layoff.goalT <= POST_GOAL_S + 0.05, "the clip ends just after the goal");
+  }
 }
 
 if (problems.length) { console.error("goalClip FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }
