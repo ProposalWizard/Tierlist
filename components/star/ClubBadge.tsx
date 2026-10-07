@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { kitsOf, labelInk, type Kit } from "@/lib/star/kits";
 import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
-import { badgeSvg } from "@/lib/star/clubBadge";
-import { useBadgeLook } from "@/lib/star/badgeLook";
+import { badgeSvg, type BadgeOverride } from "@/lib/star/clubBadge";
+import { useBadgeLook, type BadgeLook } from "@/lib/star/badgeLook";
+import { useBadgeOverrides } from "@/lib/star/badgeOverrides";
 
 /**
  * THE CIRCLE ITSELF — REAL BADGE WHEN ONE EXISTS, THE OLD KIT-COLOUR-PLUS-
@@ -21,10 +22,17 @@ import { useBadgeLook } from "@/lib/star/badgeLook";
  * broken image URL still can't ever show something wrong, only fall back
  * to something plain.
  */
-export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?: Kit; size?: number }) {
+export default function ClubBadge({ club, kit, size = 28, look: forced }: {
+  club: string; kit?: Kit; size?: number;
+  /** Force New or Old (the /admin/badges preview); otherwise the device setting. */
+  look?: BadgeLook;
+}) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const look = useBadgeLook();
+  const deviceLook = useBadgeLook();
+  const look = forced ?? deviceLook;
+  // A redo made on /admin/badges on this device (lib/star/badgeOverrides.ts).
+  const override = useBadgeOverrides()[club];
 
   useEffect(() => {
     setFailed(false);
@@ -43,7 +51,7 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={drawnBadgeUrl(club)}
+        src={drawnBadgeUrl(club, override)}
         alt=""
         className="shrink-0"
         style={{ height: size, width: size }}
@@ -101,12 +109,13 @@ export function initials(club: string): string {
 }
 
 const drawnCache = new Map<string, string>();
-/** The drawn badge as a data URL, built once per club per page. */
-export function drawnBadgeUrl(club: string): string {
-  let u = drawnCache.get(club);
+/** The drawn badge as a data URL, built once per club (and redo) per page. */
+export function drawnBadgeUrl(club: string, override?: BadgeOverride): string {
+  const key = override ? `${club}|${JSON.stringify(override)}` : club;
+  let u = drawnCache.get(key);
   if (!u) {
-    u = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(badgeSvg(club))}`;
-    drawnCache.set(club, u);
+    u = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(badgeSvg(club, "b", override))}`;
+    drawnCache.set(key, u);
   }
   return u;
 }

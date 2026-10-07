@@ -144,6 +144,37 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/admin/badges": {
+    title: "Club Badges",
+    what: "Every club's drawn badge in one grid, with the symbol its own data gave it (a fox for the Foxes) and why. Redo any badge that looks wrong.",
+    buttons: [
+      { items: [
+        ["All divisions", "Shows one division (or the European lists) instead of every club."],
+        ["Every badge / With a symbol / Ball or star / Changed here", "Shows only badges that got a symbol, only the plain ones, or only the ones you changed on this device."],
+        ["Search a club", "Narrows the grid to clubs whose name contains what you type."],
+        ["New | Old", "New shows the drawn badges. Old shows what the Old look shows in the game: the real crest if one is saved, else the club's initials. This only changes this page, not your Settings."],
+        ["Copy changes (N)", "Copies your changes as text, to paste in chat so a good one can be put into the game for everyone."],
+        ["Undo all", "Takes every change on this device away (asks first)."],
+      ] },
+      { group: "Each badge", items: [
+        ["The blue word", "The symbol it shows (or ball, star, nothing)."],
+        ["The grey line", "Why: the nickname or club name the symbol came from, \"no symbol in the data\", or \"changed here\"."],
+        ["↻ Pattern", "Moves to the next pattern (stripes, halves, band, chevron, sash, quarters, hoops, plain)."],
+        ["Data: … (the drop-down)", "Picks the emblem: what the data says (shown after \"Data:\"), a ball, a star, nothing, or any of the symbols."],
+        ["Undo", "Puts that one badge back to what the data gives it."],
+        ["Amber border", "This badge has been changed on this device."],
+      ] },
+    ],
+    saving: [
+      "Changes save instantly, in this browser only. Nobody else sees them, and they are lost if this browser's data is cleared.",
+      "The game on this same device shows your changes too, so you can judge a badge in place. Use Copy changes to send them in chat.",
+      "The symbols themselves come from the club data automatically — nobody has to tick them off. A club only gets one when its data clearly names something.",
+    ],
+    inGame: [
+      "Every club badge in the game under Settings → Look → \"Club badges: New\" (team sheets, tables, cup draws, the phone).",
+    ],
+    dev: "lib/star/badgeSymbols.ts (drawings + the word table + SYMBOL_OVERRIDES), lib/star/clubBadge.ts (the badge), lib/star/badgeOverrides.ts (device changes, key star-badge-overrides), components/star/ClubBadge.tsx.",
+  },
   "/star-retirement-dev": {
     title: "Retirement preview",
     what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser.",
