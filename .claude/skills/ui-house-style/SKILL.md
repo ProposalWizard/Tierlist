@@ -39,6 +39,12 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 5 Oct 2026 — post-match relationships are bars, not numbers (Mikey)
+- **No "+10" chips after a match.** The boss/team/fans row shows three bars at
+  their real values; when that beat arrives each slides to its new value,
+  going green if it rose and red if it fell. No number beside it. The old chip
+  showed the raw table number, which was about three times what the bar moved.
+
 ### 5 Oct 2026 — the phone's Back button (Mikey)
 - **The phone gets a Back button on the right, like an Android phone's** —
   "that white thing at the bottom… it's not very noticeable." On every phone

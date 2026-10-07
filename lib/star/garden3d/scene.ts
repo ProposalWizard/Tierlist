@@ -51,7 +51,7 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
-import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -132,6 +132,9 @@ const CAR_LAYER = 4;
 const SHOP = { x0: -6, x1: 6, z0: -17.5, z1: -9, h: 5.2 };
 const DOOR = { half: 1.2, h: 2.8 };
 const FOUNTAIN = { x: 0, z: -2.2, r: 1.95 };
+/** How far the horse's neck and head drop to graze (radians, on top of his
+ *  Idle clip; checked on a still, 7 Oct 2026: nose down at knee height). */
+const HORSE_GRAZE = { neck: 1.5, head: -0.35 };
 const CABINET = { x: -7.4, z: -5.8, w: 3.0, d: 2.6 };
 const GAZEBO = { x: 9.4, z: 2.2, w: 3.6, d: 5.0 };
 const BENCH_X = 10.75;
@@ -428,7 +431,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   loader.setDRACOLoader(draco); // props.glb
   await withMeshopt(loader); // people, clips, horse, bird (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
-  const load = (url: string) => loader.loadAsync(url).then((g: any) => { loaded++; return g; });
+  const load = (url: string) => loadGltfCached(loader, url).then((g: any) => { loaded++; return g; });
   // You are the 3D shop's own player: the approved people3d body when the
   // shop's player is New (its default), else the old character.glb.
   const newPerson = (data.player?.look ?? "new") === "new";
@@ -1499,7 +1502,17 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
   }
   // ── Your horse, grazing and wandering the paddock ──
-  let horse: { root: any; mixer: any; idle: any; walk: any; target: [number, number]; wait: number } | null = null;
+  // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
+  // either grazes (head down, nose at knee height, chewing) or stands and looks
+  // about, switching now and then, and his tail flicks on its own clock. The
+  // pack has no grazing clip, so the head and tail are turned on top of the
+  // Idle clip; his clocks start at random so no two visits look alike.
+  type HorseMode = "walk" | "graze" | "stand";
+  let horse: {
+    root: any; mixer: any; idle: any; walk: any; target: [number, number]; wait: number;
+    mode: HorseMode; graze: number; swap: number; flick: number; flickT: number; t: number;
+    neck: any; head: any; tail: any[];
+  } | null = null;
   let horseBlob: any = null;
   if (data.horse) {
     load("/star/garden3d/horse.glb").then((g: any) => {
@@ -1516,10 +1529,44 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const mx = new THREE.AnimationMixer(root);
       const find = (n: string) => g.animations.find((a: any) => a.name.endsWith(n));
       const idle = mx.clipAction(find("Idle")); idle.play();
+      idle.time = Math.random() * idle.getClip().duration;
+      idle.timeScale = 0.85 + Math.random() * 0.3;
       const walk = mx.clipAction(find("WalkSlow") ?? find("Walk")); walk.play(); walk.setEffectiveWeight(0);
-      horse = { root, mixer: mx, idle, walk, target: [-9.5, 7.5], wait: 3 };
+      walk.time = Math.random() * walk.getClip().duration;
+      const bone = (n: string) => root.getObjectByName(n);
+      horse = {
+        root, mixer: mx, idle, walk, target: [-9.5, 7.5], wait: 2 + Math.random() * 4,
+        // (?horsegraze on a test page: start with his head already down)
+        mode: dbg.has("horsegraze") || Math.random() < 0.6 ? "graze" : "stand", graze: dbg.has("horsegraze") ? 1 : 0, swap: 3 + Math.random() * 4,
+        flick: 1 + Math.random() * 3, flickT: 0, t: Math.random() * 100,
+        neck: bone("Neck"), head: bone("Head"), tail: ["Tail1", "Tail2", "Tail3"].map(bone).filter(Boolean),
+      };
     }).catch((e: any) => console.error("garden horse", e));
   }
+  // turn a bone about an axis given in the world (after the clip has set it)
+  const hq = new THREE.Quaternion(), hqp = new THREE.Quaternion(), hqi = new THREE.Quaternion();
+  const hAxis = new THREE.Vector3(), hUp = new THREE.Vector3(0, 1, 0);
+  const turnBone = (b: any, axis: any, ang: number) => {
+    if (!b || !b.parent || Math.abs(ang) < 1e-4) return;
+    b.parent.getWorldQuaternion(hqp);
+    hqi.copy(hqp).invert();
+    hq.setFromAxisAngle(axis, ang);
+    b.quaternion.premultiply(hqp).premultiply(hq).premultiply(hqi);
+    b.updateMatrixWorld(true);
+  };
+  const poseHorse = (h: NonNullable<typeof horse>) => {
+    h.root.updateMatrixWorld(true);
+    // his own side-to-side axis: head down = a turn about it
+    hAxis.set(1, 0, 0).applyQuaternion(h.root.quaternion);
+    const g = h.graze * (1 - h.walk.getEffectiveWeight());
+    const chew = g > 0.5 ? 0.04 * Math.sin(h.t * 7) : 0;
+    turnBone(h.neck, hAxis, g * HORSE_GRAZE.neck);
+    turnBone(h.head, hAxis, g * HORSE_GRAZE.head + chew);
+    // the tail: a slow sway always, a quick flick now and then
+    const flick = h.flickT > 0 ? Math.sin((0.9 - h.flickT) / 0.9 * Math.PI * 3) * Math.sin(h.flickT / 0.9 * Math.PI) * 0.55 : 0;
+    const sway = 0.08 * Math.sin(h.t * 1.3) + flick;
+    h.tail.forEach((b: any, i: number) => turnBone(b, hUp, sway * (0.6 + 0.3 * i)));
+  };
 
   // ── A bird: circles high, drops onto the fountain's rim, drinks, flies off ──
   let bird: { root: any; mixer: any; fly: any; idle: any; phase: "circle" | "land" | "drink" | "leave"; t: number; next: number } | null = null;
@@ -1674,7 +1721,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
     return t0;
   };
-  let dodge = 0; // the camera's swing round the gazebo (radians)
+  /** How far a line from (x,z) along (dx,dz) runs before it leaves the
+   *  garden (the inner face of the boundary, with room for the hedge). */
+  const CAM_IN = 18.35;
+  const exitGarden = (x: number, z: number, dx: number, dz: number) => {
+    let t = Infinity;
+    if (dx > 1e-9) t = Math.min(t, (CAM_IN - x) / dx); else if (dx < -1e-9) t = Math.min(t, (-CAM_IN - x) / dx);
+    if (dz > 1e-9) t = Math.min(t, (CAM_IN - z) / dz); else if (dz < -1e-9) t = Math.min(t, (-CAM_IN - z) / dz);
+    return Math.max(0, t);
+  };
+  let dodge = 0; // the camera's swing round the gazebo and off the boundary (radians)
   let lastBlock: { d: number; what: string } | null = null;
   let testCam: [[number, number, number], [number, number, number]] | null = null;
   const GZ_BOX: [number, number, number, number] = [GAZEBO.x - GAZEBO.w / 2 - 0.35, GAZEBO.x + GAZEBO.w / 2 + 0.35, GAZEBO.z - GAZEBO.d / 2 - 0.35, GAZEBO.z + GAZEBO.d / 2 + 0.35];
@@ -1802,13 +1858,18 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     if (horse) {
       const h = horse;
       const dx = h.target[0] - h.root.position.x, dz = h.target[1] - h.root.position.z, d = Math.hypot(dx, dz);
+      h.t += dt;
       if (d < 0.25) {
         h.wait -= dt;
         h.walk.setEffectiveWeight(Math.max(0, h.walk.getEffectiveWeight() - dt * 2));
         h.idle.setEffectiveWeight(1 - h.walk.getEffectiveWeight());
+        if (h.mode === "walk") h.mode = Math.random() < 0.65 ? "graze" : "stand";
+        // now and then: head up for a look round, or back down to the grass
+        if ((h.swap -= dt) <= 0) { h.mode = h.mode === "graze" ? "stand" : "graze"; h.swap = h.mode === "graze" ? 5 + Math.random() * 6 : 2.5 + Math.random() * 3; }
         if (h.wait <= 0) {
           h.target = [PADDOCK.x0 + 1.6 + Math.random() * (PADDOCK.x1 - PADDOCK.x0 - 3.2), PADDOCK.z0 + 2.4 + Math.random() * (PADDOCK.z1 - PADDOCK.z0 - 4.4)];
-          h.wait = 4 + Math.random() * 6;
+          h.wait = 6 + Math.random() * 9;
+          h.mode = "walk";
         }
       } else {
         const want2 = Math.atan2(dx, dz);
@@ -1823,7 +1884,13 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // off screen: skip working out his legs (and don't draw him)
       const seen = inView(h.root.position.x, 0.9, h.root.position.z, 1.6);
       h.root.visible = seen;
-      if (seen) h.mixer.update(dt);
+      h.graze += ((h.mode === "graze" ? 1 : 0) - h.graze) * Math.min(1, dt * 1.4);
+      if ((h.flick -= dt) <= 0) { h.flickT = 0.9; h.flick = 2 + Math.random() * 5; }
+      if (h.flickT > 0) h.flickT -= dt;
+      if (seen) {
+        h.mixer.update(dt);
+        poseHorse(h);
+      }
     }
 
     // the bird
@@ -1886,19 +1953,37 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const hx = player.position.x, hz = player.position.z;
       const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
       // (with room to spare round it, so no post stands right beside the camera)
-      const clear = (off: number) => enterBox(hx, hz, Math.sin(camYaw + off), Math.cos(camYaw + off), GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CAM_BACK;
+      const gzClear = (dx: number, dz: number) => inGz || enterBox(hx, hz, dx, dz, GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CAM_BACK;
+      // THE CAR PARK BUG (7 Oct 2026, "player not drawn at the car park, once
+      // in 4 runs"): with his back to the boundary (behind the cars, walking
+      // back to the garden) the camera stood 6.3 m behind him, outside the
+      // wall among the trees, and the wall hid him (seen in the harness). The
+      // wall was never a camera blocker. Now the camera swings round to keep
+      // most of its distance inside the garden, and the boom below stops at
+      // the wall when even that can't.
+      const wallRoom = (dx: number, dz: number) => exitGarden(hx, hz, dx, dz);
+      const clear = (off: number) => {
+        const dx = Math.sin(camYaw + off), dz = Math.cos(camYaw + off);
+        return gzClear(dx, dz) && wallRoom(dx, dz) >= CAM_BACK * 0.7;
+      };
       let target = 0;
-      if (!inGz && !clear(dodge)) {
+      if (!clear(dodge)) {
         if (!clear(0)) {
           const pref = dodge < 0 ? -1 : 1;
           target = 0;
-          for (let k = 1; k <= 10; k++) {
+          let found = false, best = -1;
+          for (let k = 1; k <= 11 && !found; k++) {
             const a = k * 0.15;
-            if (clear(pref * a)) { target = pref * a; break; }
-            if (clear(-pref * a)) { target = -pref * a; break; }
+            for (const o of [pref * a, -pref * a]) {
+              if (clear(o)) { target = o; found = true; break; }
+              // nothing fully clear (a corner): the swing with the most room
+              const dx = Math.sin(camYaw + o), dz = Math.cos(camYaw + o);
+              if (gzClear(dx, dz)) { const room = wallRoom(dx, dz); if (room > best + 0.3) { best = room; target = o; } }
+            }
           }
+          if (!found && best <= wallRoom(Math.sin(camYaw), Math.cos(camYaw)) + 0.3) target = 0;
         }
-      } else if (!inGz && dodge !== 0 && !clear(0)) target = dodge; // still needed: hold it
+      } else if (dodge !== 0 && !clear(0)) target = dodge; // still needed: hold it
       dodge += (target - dodge) * Math.min(1, dt * 3);
       if (Math.abs(dodge) < 1e-3) dodge = 0;
     }
@@ -1918,6 +2003,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         const t = enterBox(hx, hz, ux, uz, ...GZ_BOX);
         if (t < boom) boom = Math.max(2.2, t - 0.2);
       }
+      // the boundary: never out past it (the wall would hide him)
+      const tw = exitGarden(hx, hz, ux, uz);
+      if (tw < boom) boom = Math.max(0.9, tw);
       // the fountain's column and bowl: come in front of them if that leaves
       // room; if he is right up against it, they clear out of the way instead
       let hideTop = false;

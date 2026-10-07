@@ -56,6 +56,7 @@ import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
+import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
 import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
@@ -171,7 +172,8 @@ import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
-import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, type SpriteClip } from "@/lib/star/sprites";
+import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
@@ -985,7 +987,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const sceneGenRef = useRef(0);
   const attemptsRef = useRef(0);
-  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+  const strikeAtRef = useRef<{ x: number; y: number } | null>(null);
+  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
@@ -1415,12 +1418,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * (only real misses cost you).
    */
   const ratingSoFar = (t: typeof tallyRef.current, us: number, them: number): number =>
-    fairRating({ goals: t.goals, assists: t.assists, passes: t.passesCompleted, dribbles: t.dribbles, misses: t.misses, lost: t.lost }, us, them).rating;
+    fairRating({ ...t, passes: t.passesCompleted }, us, them).rating;
   /** What finaliseMatch needs beyond the old tally, and the extras for the post-match screen. */
   const matchExtras = () => {
     const t = tallyRef.current;
     return {
-      tally: { misses: t.misses, lost: t.lost, dribbles: t.dribbles },
+      tally: { misses: t.misses, lost: t.lost, dribbles: t.dribbles, goalsPen: t.goalsPen, goalsTap: t.goalsTap, goalsOut: t.goalsOut,
+        passesSafe: t.passesSafe, passesAmb: t.passesAmb, missesOn: t.missesOn, missesPen: t.missesPen, misses1v1: t.misses1v1 },
       extra: {
         ...(subOnRef.current ? { cameo: true, enteredAt: enteredAtRef.current } : {}),
         chanceLog: chanceLogRef.current.slice(),
@@ -1826,7 +1830,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   touchModeOnRef.current = touchModeOn;
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
   const [feed, setFeed] = useState<string[]>([]);
   const feedRef = useRef<string[]>([]);
   feedRef.current = feed;
@@ -2109,7 +2113,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
-  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: "diveL" | "diveR" } | null>(null);
+  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: SpriteClip } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -2478,6 +2482,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     facingRef.current = sc.facing ?? "up";
     // A feature that asks for its own close camera keeps it (scene.ownFrame).
     if (!newViewRef.current || sceneRef.current?.ownFrame) {
+      // The new view's canvas is taller than a feature's 5:8 frame. Drawn
+      // as it was, the frame was stretched down the screen (a 5:8 frame on a
+      // 38 × 83 box: everything 36% too tall). Give the frame the canvas's
+      // shape instead: more grass below, the goal end where it was.
+      if (newViewRef.current && (sc.facing ?? "up") === "up") {
+        const v = sc.viewport, hw = canvasHW(), w = v.x2 - v.x1, h = v.y2 - v.y1;
+        if (w > 0 && h > 0 && Math.abs(h / w - hw) > 0.01) {
+          if (h / w < hw) sc.viewport = { ...v, y2: v.y1 + w * hw };
+          else { const cx = (v.x1 + v.x2) / 2, w2 = h / hw; sc.viewport = { ...v, x1: cx - w2 / 2, x2: cx + w2 / 2 }; }
+        }
+      }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
       return;
@@ -3100,6 +3115,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // timed by the ground he covers, so the feet keep pace with the grass.
     // Facing: where he is heading, or the ball when he is standing.
     const spriteMotion = spriteMotionRef.current;
+    // Animations: New — each man's current action animation and how far into
+    // it he is (filled by animOf below), for the 3D twin of the drawn move
+    // (lib/star/sprite3dAnim.ts). Empty with Animations: Old.
+    const animNow = new Map<string, { a: ActorAnim; e: number }>();
     const spriteBall = ballRef.current ? ballRef.current.pos : sc.ball;
     const spriteSeed = (id: string) => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return (Math.abs(h) % 997) / 97; };
     const screenAngle = (x: number, y: number, wx: number, wy: number) => {
@@ -3134,7 +3153,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       m.facing = facing;
       const them = id.startsWith("def") || id.startsWith("chase") || (id === "you" && autoKickOf(sc)?.side === "them");
       let clip: SpriteClip, t: number;
-      if (opts.pose === "kick" && id === "you") {
+      // Animations: New — the 3D twin of his move (touch, pass, shot, volley,
+      // chip, header, block, clearance), once its atlas is in. Until then, and
+      // always with Animations: Old, the old clips below.
+      const na = opts.anim ? animNow.get(id) : undefined;
+      const nc = na ? outfieldSpriteClip(na.a, na.e, (c) => spriteClipFps("player", c)) : null;
+      const newClip = !!nc && !(opts.pose === "kick" && id === "you") && spriteClipReady("player", nc.clip);
+      if (newClip && nc) {
+        clip = nc.clip; t = nc.t;
+      } else if (opts.pose === "kick" && id === "you") {
         clip = "kick";
         t = Math.max(0, spriteKickStrikeT() - 0.12 + (KICK_POSE_S - kickPoseRef.current));
       } else if (opts.anim && opts.anim.kickClipU !== null) {
@@ -3150,7 +3177,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else {
         clip = "idle"; t = now + spriteSeed(id);
       }
-      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(opts.anim?.lean ? { tilt: opts.anim.lean } : {}) };
+      // A left-footer strikes with his left: the baked kick is right-footed,
+      // so his kick is drawn mirrored (v0.26 known issue, "left-footers kick
+      // with the wrong foot in 3D"). The drawn figure already swings the
+      // left leg (bodyPoseFor reads kickFoot).
+      const mirror = clip === "kick" && (opts.kickFoot ?? 1) < 0;
+      // A new clip has its own lean baked in; the code lean is for the old ones.
+      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(!newClip && opts.anim?.lean ? { tilt: opts.anim.lean } : {}), ...(mirror ? { mirror } : {}) };
     };
     const footballer = (
       x: number, y: number, rBase: number,
@@ -3264,6 +3297,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // How big each animation is, and which families are on (animDials.ts,
     // edited on /star-animations-dev). A family switched off is drawn Old.
     const animSet = animSettings();
+    // Animations: New with the 3D players: start fetching the New clips' atlas
+    // now, so the first touch already has its 3D twin. Never with Old.
+    if (animNew && nv) spriteClipReady("player", "touch");
     const familyOf = (a: ActorAnim): AnimFamily =>
       a.kind === "touch" ? "touch"
         : a.mode === "header" ? "headers"
@@ -3282,6 +3318,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const ref = a.kind === "block" && a.at ? a.at : bp;
       const dx = toPx(ref.x, ref.y).px - me.px;
       const fr = outfieldAnimFrame(a, now - a.start, Math.abs(dx) < 1 ? 1 : Math.sign(dx), animSet.dials);
+      if (fr) animNow.set(sid, { a, e: now - a.start });
       if (fr && fr.flash > 0 && animSet.on.flashes && a.at) bootFlashes.push({ x: a.at.x, y: a.at.y, z: a.at.z, f: fr });
       return fr;
     };
@@ -3766,7 +3803,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // Once he has landed he stays where he landed: the engine still
           // walks him on toward the save point, and a man lying flat slid
           // along the grass after the ball (playtest film, 3 Oct 2026).
-          const clip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          let clip: SpriteClip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          // Animations: New — a one-handed stretch into the top corner, a low
+          // dive along the grass, a palm away (lib/star/sprite3dAnim.ts).
+          if (kAnim && ka) {
+            const nc = keeperDiveClipNew(ka.save, ka.at?.z ?? 0, kind === "high" || kind === "fingertip", sideOfDive(clip));
+            if (nc && spriteClipReady("keeper", nc)) clip = nc;
+          }
           if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
           if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
           keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
@@ -3777,11 +3820,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const land = keeperLandRef.current;
           keeperDrawAt = land;
           keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
+          // Animations: New — he pushes himself back up off the grass.
+          const upClip: SpriteClip = sideOfDive(land.clip) === "R" ? "getUpR" : "getUpL";
+          if (kAnim && kAnim.getUp > 0 && spriteClipReady("keeper", upClip)) {
+            keeperSprite = { ...keeperSprite, clip: upClip, t: keeperGetUpT(kAnim.getUp, spriteClipFrames("keeper", upClip), spriteClipFps("keeper", upClip)), centre: 1 - kAnim.getUp };
+          }
         } else {
           keeperDiveStartRef.current = null;
           keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
           keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          // Animations: New — a ball taken standing: held to his chest, or spilled.
+          const sc3 = kAnim && ka ? keeperStandingClip(ka.save) : null;
+          if (sc3 && ka && spriteClipReady("keeper", sc3)) keeperSprite = { ...keeperSprite, clip: sc3, t: now - ka.start };
         }
       }
       drawMatchFigure(ctx, nv ? "new" : "classic",
@@ -4771,8 +4822,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // did not go in, or the ball lost. A pass that found its man (even if
       // he then missed) and a Touch Mode touch are not misses.
       if (kind !== "goal" && res !== "delivered" && res !== "touchOn" && !receiverShot) {
-        if (youShot) t.misses += 1; else t.lost += 1;
+        if (youShot) {
+          t.misses += 1;
+          const mk = missKind(sc.kind, res);
+          if (mk === "penalty") t.missesPen += 1;
+          else if (mk === "oneOnOne") t.misses1v1 += 1;
+          else if (mk === "on") t.missesOn += 1;
+        } else t.lost += 1;
       }
+      // Ratings revamp (Mikey, 6 Oct 2026): what kind of goal, how brave a pass.
+      if (d.goals > 0) {
+        const z = goalZone(sc.kind, strikeAtRef.current);
+        if (z === "penalty") t.goalsPen += d.goals;
+        else if (z === "tapIn") t.goalsTap += d.goals;
+        else if (z === "outside") t.goalsOut += d.goals;
+      }
+      if (d.passesCompleted > 0) {
+        const pg = passGrade(sc.passDifficulty, sc.passAmbition);
+        if (pg === "safe") t.passesSafe += d.passesCompleted;
+        else if (pg === "ambitious") t.passesAmb += d.passesCompleted;
+      }
+      strikeAtRef.current = null;
       setStats({ ...t });
       // …and one line in the list the post-match rating opens (chanceLog.ts).
       // A Touch Mode touch is the same chance carrying on, not a new one.
@@ -6325,7 +6395,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const restartSession = () => {
     sceneGenRef.current += 1;
     attemptsRef.current = 0;
-    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 };
+    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 };
     chanceLogRef.current = [];
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
@@ -6353,7 +6423,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
-    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
+    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 });
     setFinalStats(null);
     setFeed([]);
     setLog([]);
@@ -6724,6 +6794,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     flightDtLogRef.current = [];
     deflectionsRef.current = 0;
     matePlaysRef.current = [];
+    // Where you struck it, for the kind of goal it was (ratings revamp, lib/star/chanceRating.ts).
+    strikeAtRef.current = { x: scenarioRef.current.ball.x, y: scenarioRef.current.ball.y };
     ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so

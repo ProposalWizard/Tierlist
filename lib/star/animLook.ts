@@ -17,7 +17,7 @@ import { useSyncExternalStore } from "react";
 export type AnimationsLook = "new" | "old";
 
 const KEY = "star-look-animations";
-const FALLBACK: AnimationsLook = "new";
+const FALLBACK: AnimationsLook = "old";
 
 let cached: AnimationsLook | null | undefined;
 let override: AnimationsLook | null = null;

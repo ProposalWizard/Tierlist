@@ -269,6 +269,9 @@ export function acceptOffer(
     // which is a large part of what a move actually costs.
     squadNumber: assignSquadNumber(career, offer.club),
     captain: false,
+    captainMomentPending: false,
+    // A new manager: "dropped to the bench" starts again from your first match there.
+    lastPick: undefined,
     clubAppearances: 0,
     // Star milestones are club-specific offers; a new contract resets the run.
     contractStarMilestones: [],

@@ -97,7 +97,7 @@ export { SHOP_LEVEL_COUNT, baseIdOf };
  * WHAT A CAN COSTS YOU — a slice of your OWN weekly wage (owners, 21 Sep
  * 2026: "the more your wage increases, the more the cans are priced at, so
  * they're always worth something"). A National League player on ★25 a week
- * pays about ★12 for a Basic; a Premier League star pays thousands. The
+ * pays about ★24 for a Basic; a Premier League star pays thousands. The
  * catalogue's own `price` is only the fallback before a contract exists.
  */
 export function kibCanPrice(can: KibCan, weeklyWage: number): number {

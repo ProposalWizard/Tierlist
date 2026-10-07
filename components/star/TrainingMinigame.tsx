@@ -316,7 +316,10 @@ export type StrikeKind = "power" | "technique" | "freeKick";
  */
 export const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
   technique: { keeper: false, goal: false, teammates: false, banners: false },
-  power: { teammates: false, banners: false },
+  // Its own close camera (scene.ownFrame, strikeViewport): in the new view's
+  // zoomed-out camera the goal it is aimed at looked tiny (Mikey's v0.10
+  // known issue). The same choice his woodwork challenge made.
+  power: { teammates: false, banners: false, ownFrame: true },
   freeKick: { teammates: false, banners: false },
 };
 
