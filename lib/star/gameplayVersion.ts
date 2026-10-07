@@ -21,6 +21,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Team-mates to pass to, 3–4 waves, tighter defenders, and a better chance the further you get.",
     oldText: "The dribble run from before 5 Oct 2026: no passes, 2–4 waves.",
   },
+  clearances: {
+    label: "Clearances",
+    newText: "Defenders sometimes miscue, a boot can hit a body and come off loose, and anyone can win that second ball.",
+    oldText: "Every clearance is clean (you still see the boot fly off the screen).",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -45,3 +50,4 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
+export const oldClearances = () => gameplayVersion("clearances") === "old";

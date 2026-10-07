@@ -39,7 +39,7 @@ export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
 export type Facing = "up" | "left" | "right";
 
 // A moment worth narrating, surfaced from the physics tick to the UI once and consumed.
-export type BallEvent = "received" | "receiverShot" | "post" | "relay";
+export type BallEvent = "received" | "receiverShot" | "post" | "relay" | "miscue" | "clearHit";
 
 /**
  * WHO DID WHAT TO THE BALL — for the animations only (Leo, 6 Oct 2026:
@@ -202,6 +202,15 @@ export interface Ball {
    */
   lastTouch?: "attack" | "defence" | "keeper" | "frame";
   deflected?: "keeper" | "frame";
+  /**
+   * CLEARANCES (Mikey, 7 Oct 2026): a defender has booted it clear. Set by
+   * clearBall, cleared again the moment the ball is put back into play
+   * (a body hit, a block deflection). CanvasMatch keeps a cleared ball
+   * flying after the chance is over, until it is fully off the picture.
+   */
+  cleared?: boolean;
+  /** A clean clearance that will hit this body on its way out (New clearances). */
+  clearHitAt?: Vec2;
   /**
    * Curve boots' mid-flight swipe correction (see applyCurveSwipe), tracked
    * separately from the strike's own natural `spin`/`vz` so the cap on how
@@ -683,6 +692,8 @@ export interface Scenario {
    * ordinary pass-chain budget was the actual bug.
    */
   touchTouches?: number;
+  /** Live second balls this chance has had (New clearances; see ClearanceRules.secondBalls). */
+  secondBalls?: number;
 }
 
 export type Outcome =
@@ -5820,8 +5831,62 @@ export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number, speed
 }
 
 /**
+ * CLEARANCES (Mikey, 7 Oct 2026): "show the boot", "not every clearance is
+ * clean", "anyone can win the second ball".
+ *
+ * A module-level setting, like the offside switch above: one set of rules for
+ * the match being played, set by CanvasMatch at every chance from the tuning
+ * dials and Settings → Look → Gameplay → Clearances. The defaults are the
+ * harder, wider boot with NO miscues, so every test and every caller that
+ * never sets this sees the old outcomes exactly (the boot only changes the
+ * picture: the chance is already over when it happens).
+ *
+ * Before: 18-26 m/s, about ±22°, always clean, nobody ever saw it.
+ */
+export interface ClearanceRules {
+  /** Clean boot speed range, m/s. */
+  speedMin: number;
+  speedMax: number;
+  /** Widest angle either side of straight away from his goal, degrees. */
+  maxAngleDeg: number;
+  /** New clearances: miscues, body hits and the live second ball. */
+  miscues: boolean;
+  /** Miscue chance for a defender rated 50 or below / 90 or above (0-1). */
+  miscueWeak: number;
+  miscueStrong: number;
+  /** A body this close to the first `bodyLen` metres of a clean boot gets hit. */
+  bodyLen: number;
+  bodyWidth: number;
+  /** Live second balls per chance. After that every clearance is clean. */
+  secondBalls: number;
+}
+
+export const CLEARANCE_DEFAULTS: ClearanceRules = {
+  speedMin: 24, speedMax: 34, maxAngleDeg: 60,
+  miscues: false, miscueWeak: 0.30, miscueStrong: 0.10,
+  bodyLen: 6, bodyWidth: 0.5, secondBalls: 1,
+};
+
+let clearanceRules: ClearanceRules = CLEARANCE_DEFAULTS;
+
+export function setClearanceRules(r?: Partial<ClearanceRules>): void {
+  clearanceRules = { ...CLEARANCE_DEFAULTS, ...(r ?? {}) };
+}
+export function getClearanceRules(): ClearanceRules { return clearanceRules; }
+
+/** Miscue chance for a defender of this quality: a straight line from 50 to 90. */
+export function miscueChance(quality: number | undefined, r: ClearanceRules = clearanceRules): number {
+  const q = quality ?? 70;
+  const t = clamp((q - 50) / 40, 0, 1);
+  return r.miscueWeak + (r.miscueStrong - r.miscueWeak) * t;
+}
+
+/**
  * A defender has it. He does not knock it back into play for you to have
  * another go at — he puts it as far from his own goal as he can.
+ *
+ * Three random numbers, as it always drew, so the rest of the match's stream
+ * is what it was. Only the size of the boot changed (see ClearanceRules).
  */
 export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario,
   /** Animation record only (see BallAction): who cleared it, and how. */
@@ -5832,16 +5897,112 @@ export function clearBall(ball: Ball, rng: () => number, scenario?: Scenario,
   // onside again. It also ends the move, so this matters only for tidiness —
   // but the law is the law.
   if (scenario) clearOffside(scenario);
-  const away = normalize({ x: (rng() - 0.5) * 0.8, y: 1 });
-  const sp = 18 + rng() * 8;
-  ball.vel = { x: away.x * sp, y: away.y * sp };
+  const R = clearanceRules;
+  // +y is away from his goal (down your screen); never back toward it.
+  const ang = (rng() * 2 - 1) * Math.min(R.maxAngleDeg, 85) * Math.PI / 180;
+  const sp = R.speedMin + rng() * Math.max(0, R.speedMax - R.speedMin);
+  ball.vel = { x: Math.sin(ang) * sp, y: Math.cos(ang) * sp };
   ball.vz = 4 + rng() * 3;
   ball.spin = 0;
+  ball.topspin = 0;
+  ball.resting = false;
+  ball.settling = false;
   ball.loose = false;
   ball.owner = "opponent";
   ball.lastTouch = "defence";
+  ball.cleared = true;
+  ball.clearHitAt = undefined;
   if (scenario) scenario.keeper.adjusting = false;
   if (act) logBallAction(ball, { ...act, at });
+}
+
+/**
+ * A MISCUE: he gets it wrong. Short, skied or sliced off sideways — never at
+ * his own goal — and it stays in play, loose, belonging to nobody.
+ */
+function miscueBall(ball: Ball, rng: () => number, scenario: Scenario,
+  act: { kind: "clearance" | "block"; actor: string; mode?: BallActionMode },
+) {
+  const at = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
+  clearOffside(scenario);
+  const DEG = Math.PI / 180;
+  const u = rng();
+  const side = rng() < 0.5 ? -1 : 1;
+  let a: number, s: number, vz: number;
+  if (u < 0.4) {            // short: rolls 5-12 m
+    a = side * rng() * 60 * DEG; s = 4.5 + rng() * 2.3; vz = rng() * 1.5;
+  } else if (u < 0.7) {     // skied: straight up, lands a few metres away
+    a = side * rng() * 45 * DEG; s = 2 + rng() * 3; vz = 10 + rng() * 4;
+  } else {                  // sliced: off the side of his boot
+    a = side * (60 + rng() * 30) * DEG; s = 9 + rng() * 6; vz = 1 + rng() * 3;
+  }
+  ball.vel = { x: Math.sin(a) * s, y: Math.cos(a) * s };
+  ball.vz = vz;
+  ball.spin = (rng() - 0.5) * 0.4;
+  ball.topspin = 0;
+  ball.resting = false;
+  ball.settling = false;
+  ball.loose = true;
+  ball.shot = false;
+  ball.owner = "none";
+  ball.lastTouch = "defence";
+  ball.cleared = false;
+  ball.event = "miscue";
+  scenario.keeper.adjusting = false;
+  logBallAction(ball, { ...act, at });
+  markLanding(ball, scenario);
+}
+
+/**
+ * The first body in the way of a clean boot, if any: anybody but the man who
+ * kicked it and the keeper, within `bodyWidth` of its first `bodyLen` metres.
+ * Pure geometry at the moment of the kick; draws no random numbers.
+ */
+function clearanceBodyHit(ball: Ball, scenario: Scenario, kicker: Defender): Vec2 | null {
+  const R = clearanceRules;
+  const sp = Math.hypot(ball.vel.x, ball.vel.y);
+  if (sp < 0.01) return null;
+  const ux = ball.vel.x / sp, uy = ball.vel.y / sp;
+  const bodies: Vec2[] = [];
+  for (const d of scenario.defenders) if (d !== kicker) bodies.push({ x: d.x, y: d.y });
+  bodies.push({ x: scenario.player.x, y: scenario.player.y });
+  if (scenario.follower.active) bodies.push({ x: scenario.follower.x, y: scenario.follower.y });
+  if (scenario.runner) bodies.push(scenario.runner.pos);
+  for (const r of scenario.secondaryRunners) bodies.push(r.pos);
+  let best: Vec2 | null = null, bestAlong = Infinity;
+  for (const b of bodies) {
+    const dx = b.x - ball.pos.x, dy = b.y - ball.pos.y;
+    const along = dx * ux + dy * uy;
+    if (along < 0.8 || along > R.bodyLen) continue;   // not his own feet, not past the check
+    const off = Math.abs(dx * uy - dy * ux);
+    if (off <= R.bodyWidth && along < bestAlong) { best = { x: b.x, y: b.y }; bestAlong = along; }
+  }
+  return best;
+}
+
+/** The boot reaches the body in its way and comes off it, loose. */
+function deflectClearance(ball: Ball, rng: () => number, scenario: Scenario) {
+  const DEG = Math.PI / 180;
+  const s0 = Math.hypot(ball.vel.x, ball.vel.y);
+  const a0 = Math.atan2(ball.vel.y, ball.vel.x);
+  const side = rng() < 0.5 ? -1 : 1;
+  const a = a0 + Math.PI + side * rng() * 75 * DEG;
+  const s = s0 * (0.2 + rng() * 0.2);
+  ball.vel = { x: Math.cos(a) * s, y: Math.sin(a) * s };
+  // Never back at his own goal.
+  if (ball.vel.y < 0) ball.vel.y = -ball.vel.y;
+  ball.vz = rng() * 2.4;
+  ball.z = Math.min(ball.z, 1.2);
+  ball.spin = 0;
+  ball.loose = true;
+  ball.shot = false;
+  ball.owner = "none";
+  ball.lastTouch = "defence";
+  ball.cleared = false;
+  ball.clearHitAt = undefined;
+  ball.event = "clearHit";
+  ball.contactCd = 0.22;
+  markLanding(ball, scenario);
 }
 
 /**
@@ -6437,6 +6598,18 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
 
+  // --- A clean boot reaches the body that was in its way (New clearances) ---
+  if (ball.clearHitAt) {
+    const h = ball.clearHitAt;
+    const dx = h.x - ball.pos.x, dy = h.y - ball.pos.y;
+    // Reached it, or gone past it this tick.
+    if (Math.hypot(dx, dy) < 0.6 || dx * ball.vel.x + dy * ball.vel.y <= 0) {
+      ball.pos = { x: h.x, y: h.y };
+      deflectClearance(ball, rng, scenario);
+    }
+    return null;
+  }
+
   // --- A defender gets to it ---
   //
   // Blocking a shot, cutting out a pass, or simply arriving at a loose ball
@@ -6470,12 +6643,33 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // the same three words. It is the same distinction the commentary has
         // always drawn and never been given the outcome to draw it with.
         const wasGoingIn = headedForGoal(ball, scenario);
-        clearBall(ball, rng, scenario, {
-          kind: wasGoingIn ? "block" : "clearance",
+        const act = {
+          kind: (wasGoingIn ? "block" : "clearance") as "block" | "clearance",
           actor: `def${scenario.defenders.indexOf(d)}`,
-          mode: ball.z > 1.4 ? "header" : "ground",
-        });
+          mode: (ball.z > 1.4 ? "header" : "ground") as BallActionMode,
+        };
+        // New clearances: not every one is clean. A miscue or a boot off a
+        // body leaves the ball live and loose — the chance goes on — but only
+        // once a chance (ClearanceRules.secondBalls); after that he gets it
+        // away cleanly. Off (Old, every test): exactly as before.
+        const R = clearanceRules;
+        const live = R.miscues && (scenario.secondBalls ?? 0) < R.secondBalls;
+        if (live && rng() < miscueChance(d.who?.defending ?? d.who?.overall)) {
+          miscueBall(ball, rng, scenario, act);
+          scenario.secondBalls = (scenario.secondBalls ?? 0) + 1;
+          ball.contactCd = 0.35;
+          return null;
+        }
+        clearBall(ball, rng, scenario, act);
         ball.contactCd = 0.4;
+        if (live) {
+          const hit = clearanceBodyHit(ball, scenario, d);
+          if (hit) {
+            ball.clearHitAt = hit;
+            scenario.secondBalls = (scenario.secondBalls ?? 0) + 1;
+            return null;
+          }
+        }
         return wasGoingIn ? "blocked" : "tackled";
       }
     }
@@ -6510,6 +6704,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         ball.owner = "opponent";
         ball.lastTouch = "defence";
         const by = nearestDefenderActor(scenario, ball.pos);
+        // New clearances: he wins the second ball and gets rid of it — a clean
+        // boot, flown off the picture like any other (no random numbers drawn
+        // beyond clearBall's own, and only in New).
+        if (clearanceRules.miscues) {
+          clearBall(ball, rng, scenario, by ? { kind: "clearance", actor: by, mode: ball.z > 1.4 ? "header" : "ground" } : undefined);
+          ball.contactCd = 0.4;
+          return "short";
+        }
         if (by) logBallAction(ball, { kind: "clearance", actor: by, mode: ball.z > 1.4 ? "header" : "ground", at: { x: ball.pos.x, y: ball.pos.y, z: ball.z } });
         ball.settling = true;   // let the last metre of it be seen
         // Losing a 50-50 on a ball that is already loose is not a tackle and
@@ -7103,6 +7305,39 @@ export function stepBallPastBar(ball: Ball, dt: number) {
   ball.pos.y += ball.vel.y * dt;
   ball.vz -= G * dt;
   ball.z += ball.vz * dt;
+}
+
+/**
+ * SHOW THE BOOT (Mikey, 7 Oct 2026: "I never saw this happen"). A ball a
+ * defender has cleared keeps flying after the chance is over — air drag,
+ * bounces and roll, no contacts and no outcome — until CanvasMatch sees it is
+ * fully off the picture. Before this the cleared ball froze where he kicked it.
+ * Purely cosmetic, like stepBallInNet and stepBallPastBar.
+ */
+export function stepBallCleared(ball: Ball, dt: number, scenario?: Scenario) {
+  if (!ball.cleared || ball.resting) return;
+  const cond = scenario?.conditions;
+  if (ball.z > 0.02) {
+    const k = Math.max(0, 1 - AIR_DRAG * (cond?.drag ?? 1) * dt);
+    ball.vel.x *= k; ball.vel.y *= k;
+  }
+  ball.vz -= G * dt;
+  ball.z += ball.vz * dt;
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  if (ball.z <= 0) {
+    ball.z = 0;
+    if (ball.vz < -MIN_BOUNCE_VZ) {
+      ball.vz = -ball.vz * BOUNCE_VZ * (cond?.bounce ?? 1);
+      ball.vel.x *= BOUNCE_H; ball.vel.y *= BOUNCE_H;
+    } else ball.vz = 0;
+  }
+  if (ball.z <= 0.03 && ball.vz <= 0.01) {
+    const s = Math.hypot(ball.vel.x, ball.vel.y);
+    const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
+    if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
+    else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
+  }
 }
 
 export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass" | "miss" | "neutral" }> = {

@@ -387,6 +387,30 @@ export function achievementToastDelay(before?: number, after?: number): number {
   const barDone = STAR_IN_MS + STAR_RISE_MS + (levelUp ? STAR_HOLD_MS + 90 + STAR_REFILL_MS : 0);
   return Math.max(4200, barDone + 400);
 }
+/** A quadratic ease-out (fast start, slow end), as a CSS curve. */
+const EASE_OUT = "cubic-bezier(.333, .667, .667, 1)";
+/**
+ * The timing for the post-match star bar as ONE ease-out run.
+ * No level-up: the whole rise is the curve, over STAR_RISE_MS.
+ * Level-up: the curve covers both parts over STAR_RISE_MS + STAR_REFILL_MS
+ * (the same total as before). The share of time for the first part is
+ * x = 1 − √(1 − d1/D); the first part is the curve's start (its own bezier),
+ * the refill is its end, which is an exact quadratic ease-out again.
+ */
+export function riseTiming(begin: number, endPct: number, up: boolean): { first: number; second: number; firstEase: string; secondEase: string } {
+  if (!up) return { first: STAR_RISE_MS, second: 0, firstEase: EASE_OUT, secondEase: EASE_OUT };
+  const total = STAR_RISE_MS + STAR_REFILL_MS;
+  const d1 = Math.max(0, 100 - begin), d2 = Math.max(0, endPct);
+  const D = d1 + d2;
+  if (D <= 0) return { first: STAR_RISE_MS, second: STAR_REFILL_MS, firstEase: EASE_OUT, secondEase: EASE_OUT };
+  const x = Math.min(0.97, Math.max(0.03, 1 - Math.sqrt(Math.max(0, 1 - d1 / D))));
+  // The first stretch of y = 1 − (1 − u)² for u in [0, x], rescaled to 0-1:
+  // y = a·τ − (a − 1)·τ², a = 2/(2 − x) — a quadratic bezier with its middle
+  // point at (½, a/2), written as the cubic CSS wants.
+  const a = 2 / (2 - x);
+  const firstEase = `cubic-bezier(.333, ${(a / 3).toFixed(3)}, .667, ${(1 / 3 + a / 3).toFixed(3)})`;
+  return { first: Math.round(total * x), second: Math.round(total * (1 - x)), firstEase, secondEase: EASE_OUT };
+}
 function StarBar({ before, after, on, star }: { before?: number; after?: number; on: boolean; star?: Props["star"] }) {
   const from = Math.floor(before ?? after ?? 0);
   const to = Math.floor(after ?? from);
@@ -397,6 +421,13 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
   // above where it ends, so it can only rise.
   const startRaw = star?.fromNext !== undefined ? Math.max(0, Math.min(100, star.fromNext * 100)) : 0;
   const begin = up ? startRaw : Math.min(startRaw, endPct);
+  // Mikey, 6 Oct 2026: fast at the start, slowing into the end — across the
+  // WHOLE fill, a level-up included. It used to crawl through the last bit of
+  // the old level (e.g. 4.9 → 5 took three seconds) and then race through the
+  // new one. Now the whole run is one ease-out curve (distance = 1-(1-t)²):
+  // the part to the top of the old level is the curve's fast start, and the
+  // refill in the new level is its slow end.
+  const plan = riseTiming(begin, endPct, up);
   const [stage, setStage] = useState(0);
   useEffect(() => {
     if (!on || after === undefined) return;
@@ -404,14 +435,15 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
     setStage(1);
     sfx("star-tick");
     if (!up) return;
-    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, STAR_RISE_MS + STAR_HOLD_MS);
+    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, plan.first + STAR_HOLD_MS);
     // One frame at 0 with no glide, then fill again.
-    const t2 = setTimeout(() => setStage(3), STAR_RISE_MS + STAR_HOLD_MS + 90);
+    const t2 = setTimeout(() => setStage(3), plan.first + STAR_HOLD_MS + 90);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [on, up, after === undefined]);
   if (after === undefined) return null;
   const value = stage === 0 ? begin : stage === 1 ? (up ? 100 : endPct) : stage === 2 ? 0 : endPct;
-  const duration = stage === 2 ? 0 : stage === 3 ? STAR_REFILL_MS : STAR_RISE_MS;
+  const duration = stage === 2 ? 0 : stage === 3 ? plan.second : plan.first;
+  const easing = stage === 3 ? plan.secondEase : plan.firstEase;
   // The level the bar is filling: the old one until it empties on a level-up.
   const left = Math.max(1, up && stage < 2 ? from : to);
   return (
@@ -419,7 +451,7 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
       {/* P35: words and the bar; the only numbers are the two levels at its ends. */}
       <div className="mb-1.5 flex items-center gap-1.5">
         <Pop value={up && stage >= 2 ? 1 : 0}>
-          <span className="block h-[20px] w-[20px]"><FillStar fraction={value / 100} duration={duration} /></span>
+          <span className="block h-[20px] w-[20px]"><FillStar fraction={value / 100} duration={duration} easing={easing} /></span>
         </Pop>
         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Star rating</span>
       </div>
@@ -429,7 +461,7 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
       <div className="flex items-center gap-2">
         <LevelEnd n={left} />
         <div role="meter" aria-label={`Star rating, level ${left} to ${left + 1}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)} className="min-w-0 flex-1">
-          <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} square duration={duration} />
+          <SquareBar value={value} colors={["#f59e0b", "#fde047"]} className="h-[18px]" animate={stage > 0} square duration={duration} easing={easing} />
         </div>
         <LevelEnd n={left + 1} />
       </div>
