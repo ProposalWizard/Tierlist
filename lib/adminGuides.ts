@@ -990,11 +990,14 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "The gallery", items: [
         ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
-        ["Flat / Shaded", "The two drawn player looks. (The 3D players only use the kick clip and the lean.)"],
+        ["Flat / Shaded", "The two drawn player looks. The 3D players have their own New clips: see the 3D figures card below."],
         ["Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
         ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
         ["1× / ½× / ¼×", "Playback speed."],
         ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+      ] },
+      { group: "3D figures", items: [
+        ["→ ↘ ↓ ↙ ← ↖ ↑ ↗", "Which way the men face. Every frame of each New 3D clip (touch, pass, shot, volley, chip, header, block, clearance; the keeper's one-hand stretch, low dive, parry, catch, fumble, getting up) next to the old clip the match showed for that moment. Keepers have 4 facings and use the nearest."],
       ] },
       { group: "Which animations are on", items: [
         ["The switches", "Turn one family off and it is drawn the Old way, here and in the real match, while the rest stay New. Contact flashes turns off every flash."],
@@ -1016,9 +1019,10 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "Every real match on this phone (and every test screen that plays the real match) draws team-mates, defenders and the keeper with these sizes when Settings → Look → Animations is New.",
+      "With Settings → Look → Players: 3D, the same moments play the New 3D clips (a second picture file, fetched only when Animations is New). Old plays the old 3D clips exactly as before.",
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
-    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts. Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
   "/star-garden3d-dev": {
     title: "3D Garden",
