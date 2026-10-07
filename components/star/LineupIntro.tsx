@@ -36,6 +36,13 @@ import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar
 import VersusScreen from "./VersusScreen";
 import KibCanIcon from "./KibCanIcon";
 import { PressButton, SquareBar, KitStyles, levelColors, useClubTheme } from "./ui";
+import dynamic from "next/dynamic";
+import { useBossRoomLook } from "@/lib/star/look3d";
+
+// Left out of the squad: told in the manager's office when Settings → Look →
+// "Talk to your manager" is "3D office" (MANAGER_PLAN.md §2). The card's own
+// buttons carry on exactly as before; "Old" is the card alone.
+const Office3DCareer = dynamic(() => import("./Office3D").then((m) => m.Office3DCareer), { ssr: false });
 
 /** How long the line-up draws in before it kicks off by itself. */
 const LINEUP_MS = 3800;
@@ -61,6 +68,8 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   // The prompt shows once per press of Play; answering it moves on.
   const [asked, setAsked] = useState(false);
   const { glow } = useClubTheme(career);
+  const room = useBossRoomLook();
+  const [room3dFailed, setRoom3dFailed] = useState(false);
 
   const saved = loadLineup(career.player.club);
   const savedXI = saved && saved.xi.some(Boolean) ? { formation: formationOf(saved.formation), xi: saved.xi } : undefined;
@@ -219,6 +228,10 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
         <div data-prematch-prompt={watching ? "squad" : "energy"} className="bg-black/55 p-4" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.2)" }}>
           {watching ? (
             <>
+              {status === "Squad" && room === "3d" && !room3dFailed && (
+                <Office3DCareer career={career} speaker="boss" onFail={() => setRoom3dFailed(true)}
+                  className="mb-3 w-full" style={{ height: "34vh", borderRadius: 4 }} />
+              )}
               <div className="text-center text-[34px] leading-none">{status === "Injured" ? "🩹" : "📋"}</div>
               <div className="mt-2 text-center text-[20px] font-black uppercase tracking-wide">{status === "Injured" ? "You're injured" : "Not in the squad"}</div>
               <PressButton variant="secondary" size="none" onClick={onWatchFromStands} className="mt-4 w-full py-3 text-[15px] font-black uppercase tracking-wide">🏟️ Watch from the stands</PressButton>
