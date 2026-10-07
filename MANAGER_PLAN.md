@@ -56,7 +56,31 @@ manager": 3D office; Old = as before; a phone that can't run 3D falls back).
   own dismiss (`ManagerNewsInOffice`).
 - Left out of the squad: the office sits above the "Not in the squad" card
   (`LineupIntro.tsx`); the card's buttons work as before.
-- **Not done:** being made captain (the armband is given silently in
-  `careerFlow.ts`; no screen says it) and being dropped to the bench (the
-  team sheet just shows you on the bench; no screen says it). Each needs a
-  new screen first, which is a design call.
+- ~~Not done: being made captain, being dropped to the bench~~ — built
+  7 Oct 2026, below.
+
+**3. Made captain and dropped to the bench (7 Oct 2026).** Rules and words in
+`lib/star/managerMoments.ts`; screens in `ManagerMoments.tsx`. Office when
+"Talk to your manager" is 3D; the same words on a plain card when it is Old
+or the phone can't run 3D.
+- **Made captain:** `careerFlow.ts` sets `captainMomentPending` the match the
+  armband is earned. Next time you reach Home, the manager tells you, full
+  screen, with Continue (`CaptainInOffice`); Continue clears it. Shown after
+  any "In the dugout" news. Once only; a replay or later match never brings
+  it back. The owner path (`appointSelfCaptain`) sets nothing: no speech.
+  2 lines per manager style (press / possession / low / mid, `bossTalk.ts`).
+  A transfer clears the flag (a new club earns it again, and says it again).
+- **Dropped to the bench:** `CareerState.lastPick` records each club match:
+  started, off the bench (a cameo), or out of the squad; a match missed
+  injured keeps what you were and marks `injuredSince`. On the pre-match
+  screen (`LineupIntro.tsx`), last match started + this one "Substitute" →
+  the manager says why before the line-up; Continue → the line-up as
+  before. The reason, in selectionFor's order: back from injury, energy,
+  a rival who has the shirt (named), the boss bar under 40, form (with the
+  average). 2 lines each + one closing line in his style. Not sub → sub,
+  not injured, not out of the squad, not internationals, and once per
+  fixture (`benchMomentSeen`). A transfer clears `lastPick`.
+- Known edge: an early-cup rotation start counts as a start, so the next
+  league match on the bench says "dropped" (reasoned, not seen).
+- Test page: `/star-relgames-dev` → "Moment: made captain" / "Moment:
+  dropped to the bench". Test: `tests/star/managerMoments.mts`.
