@@ -15,7 +15,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
-  peekSlotCareer, collectRetiredIntoHall,
+  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
@@ -707,6 +707,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
+
+  // The server put an edited save back (lib/star/saveGuard.ts, enforce
+  // mode): play on from its copy.
+  useEffect(() => onSaveCorrected((slot, fixed) => {
+    if (slot === activeSlotRef.current) setCareer(fixed);
+  }), []);
 
   // ── Leaving the page must not lose the last few seconds ──
   //
