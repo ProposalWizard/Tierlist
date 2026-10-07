@@ -222,7 +222,7 @@ function Figure(p: {
   x: number; y: number; height: number; shadow?: boolean; pixelated?: boolean;
 }) {
   const cell = spriteCell(p.char, p.clip, p.t, p.facing, p.height);
-  const url = spriteAtlasUrl(p.kit);
+  const url = cell ? spriteAtlasUrl(p.kit, cell.atlas) : null;
   if (!cell || !url) return null;
   const s = cell.scale;
   return (
@@ -246,6 +246,7 @@ function Figure(p: {
           backgroundPosition: `${-cell.sx * s}px ${-cell.sy * s}px`,
           backgroundSize: `${cell.atlasW * s}px ${cell.atlasH * s}px`,
           imageRendering: p.pixelated ? "pixelated" : "auto",
+          transform: cell.mirror ? "scaleX(-1)" : undefined,
         }}
       />
     </>

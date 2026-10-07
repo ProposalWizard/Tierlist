@@ -170,7 +170,8 @@ import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
-import { spriteKickStrikeT, keeperDiveClip, type SpriteClip } from "@/lib/star/sprites";
+import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, type SpriteClip } from "@/lib/star/sprites";
+import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
@@ -2123,7 +2124,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** When the 3D keeper's dive clip started (seconds), or null. */
   const keeperDiveStartRef = useRef<number | null>(null);
   /** Where the 3D keeper landed (canvas px), held while he lies there. */
-  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: "diveL" | "diveR" } | null>(null);
+  const keeperLandRef = useRef<{ x: number; y: number; sc: Scenario; clip: SpriteClip } | null>(null);
   const spriteMotionRef = useRef<Map<string, { x: number; y: number; t: number; vx: number; vy: number; dist: number; facing: number }>>(new Map());
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
@@ -3152,6 +3153,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // timed by the ground he covers, so the feet keep pace with the grass.
     // Facing: where he is heading, or the ball when he is standing.
     const spriteMotion = spriteMotionRef.current;
+    // Animations: New — each man's current action animation and how far into
+    // it he is (filled by animOf below), for the 3D twin of the drawn move
+    // (lib/star/sprite3dAnim.ts). Empty with Animations: Old.
+    const animNow = new Map<string, { a: ActorAnim; e: number }>();
     const spriteBall = ballRef.current ? ballRef.current.pos : sc.ball;
     const spriteSeed = (id: string) => { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return (Math.abs(h) % 997) / 97; };
     const screenAngle = (x: number, y: number, wx: number, wy: number) => {
@@ -3186,7 +3191,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       m.facing = facing;
       const them = id.startsWith("def") || id.startsWith("chase") || (id === "you" && autoKickOf(sc)?.side === "them");
       let clip: SpriteClip, t: number;
-      if (opts.pose === "kick" && id === "you") {
+      // Animations: New — the 3D twin of his move (touch, pass, shot, volley,
+      // chip, header, block, clearance), once its atlas is in. Until then, and
+      // always with Animations: Old, the old clips below.
+      const na = opts.anim ? animNow.get(id) : undefined;
+      const nc = na ? outfieldSpriteClip(na.a, na.e, (c) => spriteClipFps("player", c)) : null;
+      const newClip = !!nc && !(opts.pose === "kick" && id === "you") && spriteClipReady("player", nc.clip);
+      if (newClip && nc) {
+        clip = nc.clip; t = nc.t;
+      } else if (opts.pose === "kick" && id === "you") {
         clip = "kick";
         t = Math.max(0, spriteKickStrikeT() - 0.12 + (KICK_POSE_S - kickPoseRef.current));
       } else if (opts.anim && opts.anim.kickClipU !== null) {
@@ -3207,7 +3220,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // with the wrong foot in 3D"). The drawn figure already swings the
       // left leg (bodyPoseFor reads kickFoot).
       const mirror = clip === "kick" && (opts.kickFoot ?? 1) < 0;
-      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(opts.anim?.lean ? { tilt: opts.anim.lean } : {}), ...(mirror ? { mirror } : {}) };
+      // A new clip has its own lean baked in; the code lean is for the old ones.
+      return { char: "player", clip, t, facing, kit: { shirt, shorts, socks: shirt }, ...(!newClip && opts.anim?.lean ? { tilt: opts.anim.lean } : {}), ...(mirror ? { mirror } : {}) };
     };
     const footballer = (
       x: number, y: number, rBase: number,
@@ -3321,6 +3335,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // How big each animation is, and which families are on (animDials.ts,
     // edited on /star-animations-dev). A family switched off is drawn Old.
     const animSet = animSettings();
+    // Animations: New with the 3D players: start fetching the New clips' atlas
+    // now, so the first touch already has its 3D twin. Never with Old.
+    if (animNew && nv) spriteClipReady("player", "touch");
     const familyOf = (a: ActorAnim): AnimFamily =>
       a.kind === "touch" ? "touch"
         : a.mode === "header" ? "headers"
@@ -3339,6 +3356,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const ref = a.kind === "block" && a.at ? a.at : bp;
       const dx = toPx(ref.x, ref.y).px - me.px;
       const fr = outfieldAnimFrame(a, now - a.start, Math.abs(dx) < 1 ? 1 : Math.sign(dx), animSet.dials);
+      if (fr) animNow.set(sid, { a, e: now - a.start });
       if (fr && fr.flash > 0 && animSet.on.flashes && a.at) bootFlashes.push({ x: a.at.x, y: a.at.y, z: a.at.z, f: fr });
       return fr;
     };
@@ -3823,7 +3841,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // Once he has landed he stays where he landed: the engine still
           // walks him on toward the save point, and a man lying flat slid
           // along the grass after the ball (playtest film, 3 Oct 2026).
-          const clip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          let clip: SpriteClip = keeperDiveClip(kFacing, b.px - a.px, b.py - a.py);
+          // Animations: New — a one-handed stretch into the top corner, a low
+          // dive along the grass, a palm away (lib/star/sprite3dAnim.ts).
+          if (kAnim && ka) {
+            const nc = keeperDiveClipNew(ka.save, ka.at?.z ?? 0, kind === "high" || kind === "fingertip", sideOfDive(clip));
+            if (nc && spriteClipReady("keeper", nc)) clip = nc;
+          }
           if (t >= 0.55 && keeperLandRef.current?.sc !== sc) keeperLandRef.current = { x: cx + KR * weight * (1 - lunge), y: py, sc, clip };
           if (keeperLandRef.current?.sc === sc) keeperDrawAt = keeperLandRef.current;
           keeperSprite = { char: "keeper", clip, t, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: Math.min(1, t / 0.4) };
@@ -3834,11 +3858,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const land = keeperLandRef.current;
           keeperDrawAt = land;
           keeperSprite = { char: "keeper", clip: land.clip, t: 1, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt }, centre: 1 };
+          // Animations: New — he pushes himself back up off the grass.
+          const upClip: SpriteClip = sideOfDive(land.clip) === "R" ? "getUpR" : "getUpL";
+          if (kAnim && kAnim.getUp > 0 && spriteClipReady("keeper", upClip)) {
+            keeperSprite = { ...keeperSprite, clip: upClip, t: keeperGetUpT(kAnim.getUp, spriteClipFrames("keeper", upClip), spriteClipFps("keeper", upClip)), centre: 1 - kAnim.getUp };
+          }
         } else {
           keeperDiveStartRef.current = null;
           keeperLandRef.current = null;
           // The ready bounce at 60% speed (about 2 frames a second).
           keeperSprite = { char: "keeper", clip: "ready", t: kk.idleT * 0.6, facing: kFacing, kit: { shirt: gkKit.shirt, shorts: gkKit.trim, socks: gkKit.shirt } };
+          // Animations: New — a ball taken standing: held to his chest, or spilled.
+          const sc3 = kAnim && ka ? keeperStandingClip(ka.save) : null;
+          if (sc3 && ka && spriteClipReady("keeper", sc3)) keeperSprite = { ...keeperSprite, clip: sc3, t: now - ka.start };
         }
       }
       drawMatchFigure(ctx, nv ? "new" : "classic",

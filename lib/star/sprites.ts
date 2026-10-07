@@ -11,6 +11,15 @@
  *                   colours go on at runtime and skin and hair stay as they are;
  *   - index.json    every frame's rectangle and the point under his boots.
  *
+ * A SECOND atlas (atlas-1.webp + mask-1.png, Leo, 7 Oct 2026) holds the
+ * Animations: New clips — the touch, pass, shot, volley, chip, header, block
+ * and clearance, and the keeper's one-hand stretch, low dive, parry, catch,
+ * fumble and getting up. Baked on the same body (people3d player.glb) by
+ * tools/sprites/new/. Its clips say `atlas: 1` in index.json and it loads
+ * only when one of them is first asked for (spriteClipReady), so with
+ * Animations: Old it is never fetched. A clip with `mirrorOf` (the keeper's
+ * left-side saves) is its right-side twin drawn flipped.
+ *
  * This module only draws pictures. No physics, no loop, no timing of its own:
  * the caller says which clip, how far into it, which way he faces.
  *
@@ -20,7 +29,15 @@
 export type SpriteChar = "player" | "keeper";
 export type SpriteClip =
   | "idle" | "jog" | "sprint" | "kick" | "celebrate" // player
-  | "ready" | "diveL" | "diveR";                     // keeper (and "jog")
+  | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
+  | NewSpriteClip;
+
+/** Animations: New only (atlas 1). */
+export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"] as const;
+export const NEW_KEEPER_CLIPS = [
+  "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
+] as const;
+export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEPER_CLIPS)[number];
 
 export interface SpriteKit {
   shirt: string;
@@ -34,9 +51,14 @@ interface ClipIndex {
   dirs: number;
   frames: number;
   strikeFrame?: number;
+  /** Which atlas its cells are in (absent = 0). */
+  atlas?: number;
+  /** Drawn as this clip of the same man, flipped left to right (no cells of its own). */
+  mirrorOf?: string;
   /** [x, y, w, h, anchorX, anchorY] per cell; cell = dir * frames + frame. */
-  cells: [number, number, number, number, number, number][];
+  cells?: [number, number, number, number, number, number][];
 }
+interface AtlasInfo { color: string; mask: string; w: number; h: number }
 interface SpriteIndex {
   version: number;
   tilt: number;
@@ -44,15 +66,19 @@ interface SpriteIndex {
   outlinePx: number;
   /** Boots to top of head of a standing man, in baked pixels. */
   standH: number;
-  atlas: { color: string; mask: string; w: number; h: number };
+  atlas: AtlasInfo;
+  /** Further atlases by number (1 = the Animations: New clips). */
+  atlases?: Record<string, AtlasInfo>;
   chars: Record<SpriteChar, { clips: Partial<Record<SpriteClip, ClipIndex>> }>;
 }
 
 export const SPRITE_BASE = "/star/sprites/";
 
 let index: SpriteIndex | null = null;
-let colorData: ImageData | null = null;
-let maskData: ImageData | null = null;
+let indexBase = SPRITE_BASE;
+/** Each loaded atlas's pixels, by atlas number. */
+const atlasData = new Map<number, { color: ImageData; mask: ImageData }>();
+const atlasLoading = new Map<number, Promise<boolean>>();
 let loading: Promise<boolean> | null = null;
 /** Brightness of a lit white kit in the bake — what "full colour" means. */
 let kitWhite = 220;
@@ -88,6 +114,7 @@ export function loadSprites(base: string = SPRITE_BASE): Promise<boolean> {
       const [ci, mi] = await Promise.all([loadImage(base + idx.atlas.color), loadImage(base + idx.atlas.mask)]);
       const c = pixels(ci), m = pixels(mi);
       if (!c || !m) return false;
+      indexBase = base;
       // The lit-white reference: a high percentile of the kit pixels' brightness.
       const hist = new Uint32Array(256);
       let n = 0;
@@ -99,7 +126,8 @@ export function loadSprites(base: string = SPRITE_BASE): Promise<boolean> {
       }
       let acc = 0;
       for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc > n * 0.1) { kitWhite = Math.max(120, v); break; } }
-      index = idx; colorData = c; maskData = m;
+      atlasData.set(0, { color: c, mask: m });
+      index = idx;
       return true;
     } catch {
       loading = null; // let a later frame try again
@@ -115,6 +143,58 @@ export function spritesReady(): boolean {
   return !!index;
 }
 
+/** Load atlas `n` (n ≥ 1) once the index is in. Resolves true when ready. */
+function loadAtlas(n: number): Promise<boolean> {
+  const have = atlasLoading.get(n);
+  if (have) return have;
+  const p = (async () => {
+    try {
+      const info = index?.atlases?.[String(n)];
+      if (!info) return false;
+      const [ci, mi] = await Promise.all([loadImage(indexBase + info.color), loadImage(indexBase + info.mask)]);
+      const c = pixels(ci), m = pixels(mi);
+      if (!c || !m) { atlasLoading.delete(n); return false; }
+      atlasData.set(n, { color: c, mask: m });
+      return true;
+    } catch {
+      atlasLoading.delete(n); // let a later frame try again
+      return false;
+    }
+  })();
+  atlasLoading.set(n, p);
+  return p;
+}
+
+/** A clip's own entry and where its cells come from (itself, or the clip it mirrors). */
+function resolveClip(char: SpriteChar, clip: SpriteClip): { c: ClipIndex; src: ClipIndex; mirror: boolean } | null {
+  const c = index?.chars[char]?.clips[clip];
+  if (!c) return null;
+  if (!c.mirrorOf) return c.cells ? { c, src: c, mirror: false } : null;
+  const src = index?.chars[char]?.clips[c.mirrorOf as SpriteClip];
+  return src && src.cells ? { c, src, mirror: true } : null;
+}
+
+/**
+ * True once this clip can be drawn (its atlas is in). For a clip in a later
+ * atlas, the first ask starts loading it — so the Animations: New atlas is
+ * only ever fetched by a match that wants a New clip. False for a clip the
+ * index does not have at all.
+ */
+export function spriteClipReady(char: SpriteChar, clip: SpriteClip): boolean {
+  if (!spritesReady()) return false;
+  const r = resolveClip(char, clip);
+  if (!r) return false;
+  const n = r.src.atlas ?? 0;
+  if (atlasData.has(n)) return true;
+  void loadAtlas(n);
+  return false;
+}
+
+/** The facing frame of a mirrored clip: his facing reflected left to right. */
+function mirrorDir(k: number, dirs: number): number {
+  return (((dirs / 2 - k) % dirs) + dirs) % dirs;
+}
+
 function lum(r: number, g: number, b: number): number { return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
 function hexRgb(hex: string): [number, number, number] {
   let h = hex.trim().replace(/^#/, "");
@@ -125,9 +205,11 @@ function hexRgb(hex: string): [number, number, number] {
 }
 
 /** The atlas in one club's colours (made once per kit, then reused). */
-function atlasFor(kit: SpriteKit): HTMLCanvasElement | null {
-  if (!index || !colorData || !maskData) return null;
-  const key = `${kit.shirt}|${kit.shorts}|${kit.socks}`;
+function atlasFor(kit: SpriteKit, n = 0): HTMLCanvasElement | null {
+  const data = atlasData.get(n);
+  if (!index || !data) return null;
+  const { color: colorData, mask: maskData } = data;
+  const key = `${n}|${kit.shirt}|${kit.shorts}|${kit.socks}`;
   const hit = tinted.get(key);
   if (hit) return hit;
   const { width: w, height: h } = colorData;
@@ -214,6 +296,13 @@ export function spriteFrame(clip: { fps: number; loop: string; frames: number },
   return f % n;
 }
 
+/** The frame (dir, frame) cell of a resolved clip, and whether to flip it. */
+function cellOf(r: { c: ClipIndex; src: ClipIndex; mirror: boolean }, clip: SpriteClip, facing: number, t: number) {
+  const k = cellDir(clip, facing, r.c.dirs);
+  const dir = r.mirror ? mirrorDir(k, r.c.dirs) : k;
+  return r.src.cells?.[dir * r.src.frames + spriteFrame(r.src, t)] ?? null;
+}
+
 /** How long a "once" clip lasts, in seconds (0 if unknown). */
 export function spriteClipLength(char: SpriteChar, clip: SpriteClip): number {
   const c = index?.chars[char]?.clips[clip];
@@ -271,12 +360,12 @@ export function mirroredFacing(facing: number): number {
 export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, o: DrawSpriteOpts): boolean {
   if (!spritesReady() || !index) return false;
   const char = o.char ?? "player";
-  const clip = index.chars[char]?.clips[o.clip] ?? (char === "keeper" ? index.chars.keeper.clips.ready : index.chars.player.clips.idle);
-  if (!clip) return false;
-  const atlas = atlasFor(o.kit);
+  const r = resolveClip(char, o.clip) ?? resolveClip(char, char === "keeper" ? "ready" : "idle");
+  if (!r) return false;
+  const atlas = atlasFor(o.kit, r.src.atlas ?? 0);
   if (!atlas) return false;
   const facing = o.mirror ? mirroredFacing(o.facingRad) : o.facingRad;
-  const cell = clip.cells[cellDir(o.clip, facing, clip.dirs) * clip.frames + spriteFrame(clip, o.t)];
+  const cell = cellOf(r, o.clip, facing, o.t);
   if (!cell) return false;
   const [cx, cy, cw, ch, ax, ay] = cell;
   const s = (o.height ?? 22) / index.standH;
@@ -287,9 +376,19 @@ export function drawSprite(ctx: CanvasRenderingContext2D, x: number, y: number, 
   const prevS = ctx.imageSmoothingEnabled;
   ctx.imageSmoothingEnabled = true;
   const k = Math.max(0, Math.min(1, o.centre ?? 0));
-  const dx = (x - ax * s) * (1 - k) + (x - (cw * s) / 2) * k;
+  // Flipped, his boots sit as far from the frame's right edge as they were from its left.
+  const axS = r.mirror ? cw - ax : ax;
+  const dx = (x - axS * s) * (1 - k) + (x - (cw * s) / 2) * k;
   const dy = (y - ay * s) * (1 - k) + (y - (o.height ?? 22) * 0.25 - (ch * s) / 2) * k;
-  ctx.drawImage(atlas, cx, cy, cw, ch, dx, dy, cw * s, ch * s);
+  if (r.mirror) {
+    ctx.save();
+    ctx.translate(dx + cw * s, dy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(atlas, cx, cy, cw, ch, 0, 0, cw * s, ch * s);
+    ctx.restore();
+  } else {
+    ctx.drawImage(atlas, cx, cy, cw, ch, dx, dy, cw * s, ch * s);
+  }
   ctx.imageSmoothingEnabled = prevS;
   ctx.globalAlpha = prevA;
   if (o.mirror) ctx.restore();
@@ -327,26 +426,42 @@ export interface SpriteCellInfo {
   /** Baked px → screen px. */
   scale: number;
   atlasW: number; atlasH: number;
+  /** Which atlas (for spriteAtlasUrl), and whether to draw it flipped. */
+  atlas: number;
+  mirror: boolean;
 }
 export function spriteCell(char: SpriteChar, clip: SpriteClip, t: number, facingRad: number, height = 22): SpriteCellInfo | null {
-  if (!spritesReady() || !index) return null;
-  const c = index.chars[char]?.clips[clip];
-  if (!c) return null;
-  const cell = c.cells[cellDir(clip, facingRad, c.dirs) * c.frames + spriteFrame(c, t)];
+  if (!spriteClipReady(char, clip) || !index) return null;
+  const r = resolveClip(char, clip);
+  if (!r) return null;
+  const cell = cellOf(r, clip, facingRad, t);
   if (!cell) return null;
-  const [sx, sy, sw, sh, ax, ay] = cell;
-  return { sx, sy, sw, sh, ax, ay, scale: height / index.standH, atlasW: index.atlas.w, atlasH: index.atlas.h };
+  const [sx, sy, sw, sh, ax0, ay] = cell;
+  const n = r.src.atlas ?? 0;
+  const info = n === 0 ? index.atlas : index.atlases?.[String(n)];
+  if (!info) return null;
+  const ax = r.mirror ? sw - ax0 : ax0;
+  return { sx, sy, sw, sh, ax, ay, scale: height / index.standH, atlasW: info.w, atlasH: info.h, atlas: n, mirror: r.mirror };
 }
 
 const atlasUrls = new Map<string, string | null>();
 /** The tinted atlas as an image URL (for DOM previews). Null for the first
  *  few frames while the picture is being encoded. */
-export function spriteAtlasUrl(kit: SpriteKit): string | null {
-  const key = `${kit.shirt}|${kit.shorts}|${kit.socks}`;
+export function spriteAtlasUrl(kit: SpriteKit, atlas = 0): string | null {
+  const key = `${atlas}|${kit.shirt}|${kit.shorts}|${kit.socks}`;
   if (atlasUrls.has(key)) return atlasUrls.get(key) ?? null;
-  const cv = atlasFor(kit);
+  const cv = atlasFor(kit, atlas);
   if (!cv) return null;
   atlasUrls.set(key, null);
   cv.toBlob((b) => { if (b) atlasUrls.set(key, URL.createObjectURL(b)); else atlasUrls.delete(key); }, "image/png");
   return null;
+}
+
+/** A clip's frames a second as baked (0 if the index does not have it). */
+export function spriteClipFps(char: SpriteChar, clip: SpriteClip): number {
+  return index?.chars[char]?.clips[clip]?.fps ?? 0;
+}
+/** A clip's frame count as baked (0 if the index does not have it). */
+export function spriteClipFrames(char: SpriteChar, clip: SpriteClip): number {
+  return index?.chars[char]?.clips[clip]?.frames ?? 0;
 }
