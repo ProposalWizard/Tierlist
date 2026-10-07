@@ -82,13 +82,15 @@ export const CLUB_TEMPLATES: Template[] = [
     // future one can't reopen the same hole silently.
     id: "club-goal-tag", archetype: "club", tags: ["goal"], subject: "you", requires: ["minute"],
     body: "{minute}' — {player|caps}!!",
-    hashtag: true, weight: 2,
+    // The goal itself, on the TV pictures, when it was recorded (Leo, 7 Oct 2026).
+    graphic: "goalVideo", hashtag: true, weight: 2,
     threadBody: "{minute}' — {player|caps}! {thread.goals} in {thread.matches} now.",
   },
   {
     id: "club-goal-plain", archetype: "club", tags: ["goal"], subject: "you", requires: ["goals"], excludes: ["matches"],
     body: "{player} — {goals}. Take a bow, number {number}.",
-    hashtag: true,
+    // Your goal (or every one of them, after a brace) on the TV pictures.
+    graphic: "goalVideo", hashtag: true,
   },
   {
     id: "club-goal-assist", archetype: "club", tags: ["assist"], subject: "you", requires: ["assists"], excludes: ["matches"],

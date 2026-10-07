@@ -22,8 +22,21 @@ import { useAnimationsLook } from "@/lib/star/animLook";
  * device shows `fallback` instead: a picture, never a fake play button.
  */
 
-/** Videos made this session, so scrolling back does not make one twice. */
-const made = new Map<string, EncodedClip>();
+/** Videos made this session, with their playable link, so scrolling back (or
+ *  a second post of the same goals) never makes one twice. */
+const made = new Map<string, { clip: EncodedClip; url: string }>();
+/** Videos being made right now: a second post of the same goals waits for it. */
+const making = new Map<string, Promise<EncodedClip | null>>();
+/** Every goal video on screen. One plays at a time, like a feed. */
+const onScreen = new Set<HTMLVideoElement>();
+
+function keep(key: string, clip: EncodedClip): { clip: EncodedClip; url: string } {
+  const hit = made.get(key);
+  if (hit) return hit;
+  const entry = { clip, url: URL.createObjectURL(clip.blob) };
+  made.set(key, entry);
+  return entry;
+}
 
 function mmss(s: number): string {
   const t = Math.max(0, Math.round(s));
@@ -78,14 +91,13 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     return () => { live = false; };
   }, [edit]);
 
-  // A video made earlier this session is ready straight away.
+  // A video made earlier this session is ready straight away. Its link lives
+  // as long as the cache does (the session), so it is never revoked here.
   useEffect(() => {
     const hit = made.get(key);
     if (!hit) return;
-    const u = URL.createObjectURL(hit.blob);
-    setUrl(u);
+    setUrl(hit.url);
     setStatus("ready");
-    return () => URL.revokeObjectURL(u);
   }, [key]);
 
   // The still: one frame, drawn once the figures have loaded.
@@ -104,13 +116,21 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   const start = async () => {
     if (!edit || status === "making" || status === "ready") return;
     if (canPlay === false) { setStatus("unsupported"); return; }
+    // Made already for another post of the same goals: no second wait.
+    const hit = made.get(key);
+    if (hit) { setUrl(hit.url); setStatus("ready"); return; }
     setStatus("making");
     setProgress(0);
     try {
-      const out = await encodeEdit(edit, { credit, onProgress: setProgress });
+      let job = making.get(key);
+      if (!job) {
+        job = encodeEdit(edit, { credit, onProgress: setProgress });
+        making.set(key, job);
+        job.then(() => making.delete(key), () => making.delete(key));
+      }
+      const out = await job;
       if (!out) { setStatus("unsupported"); return; }
-      made.set(key, out);
-      setUrl(URL.createObjectURL(out.blob));
+      setUrl(keep(key, out).url);
       setStatus("ready");
       // Saving needs a fresh tap once the file exists (a phone's share menu
       // only opens straight from a tap).
@@ -129,6 +149,14 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     if (status === "ready") videoRef.current?.play().catch(() => { /* a muted video normally plays; if not, the tap does */ });
   }, [status, url]);
 
+  // Known to the feed while it is on screen, so starting this one pauses the rest.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    onScreen.add(v);
+    return () => { onScreen.delete(v); };
+  }, [status, url]);
+
   if (tracks === null) {
     return <div className="aspect-video w-full animate-pulse rounded-xl border border-white/10 bg-white/5" />;
   }
@@ -137,9 +165,9 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   const tall = style === "fan";
   const dur = editDuration(edit);
   const save = async () => {
-    const clip = made.get(key);
-    if (!clip) { saveAsked.current = true; setNote("Making the video first…"); void start(); return; }
-    const r = await saveVideo(clip, clipFileName(edit.tracks[0], clip.ext), title);
+    const hit = made.get(key);
+    if (!hit) { saveAsked.current = true; setNote("Making the video first…"); void start(); return; }
+    const r = await saveVideo(hit.clip, clipFileName(edit.tracks, hit.clip.ext), title);
     setNote(r === "shared" ? "Sent to your share menu." : r === "downloaded" ? "Saved to your downloads." : null);
   };
 
@@ -159,6 +187,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
             loop
             autoPlay
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) void v.play(); else v.pause(); } }}
+            onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
             data-goal-video-playing
           />
         ) : (
@@ -199,8 +228,8 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
           {mmss(dur)}
         </div>
       </div>
-      <div className="mt-1.5 flex items-center gap-3 text-[12px] font-bold text-white/80">
-        <button onClick={save} className="flex items-center gap-1 hover:text-white" data-goal-video-save>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
+        <button onClick={save} className="flex items-center gap-1 whitespace-nowrap hover:text-white" data-goal-video-save>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
           </svg>

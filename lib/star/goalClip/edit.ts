@@ -122,7 +122,16 @@ export function posterMoment(e: Edit): EditMoment {
 }
 
 /** A file name a phone will keep: "Goal-Saka-63-ARS-v-CHE.mp4". */
-export function clipFileName(tr: GoalTrack, ext: string): string {
+export function clipFileName(tracks: GoalTrack | GoalTrack[], ext: string): string {
   const clean = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return `Goal-${clean(tr.meta.scorerShort || tr.meta.scorer)}-${clean(tr.meta.minuteLabel)}-${clean(tr.meta.home)}-v-${clean(tr.meta.away)}.${ext}`;
+  const list = Array.isArray(tracks) ? tracks : [tracks];
+  const tr = list[0];
+  if (list.length === 1) {
+    return `Goal-${clean(tr.meta.scorerShort || tr.meta.scorer)}-${clean(tr.meta.minuteLabel)}-${clean(tr.meta.home)}-v-${clean(tr.meta.away)}.${ext}`;
+  }
+  // A reel of several goals is named after the match, not its first goal.
+  const oneMatch = list.every(t => t.meta.home === tr.meta.home && t.meta.away === tr.meta.away);
+  return oneMatch
+    ? `Highlights-${clean(tr.meta.home)}-v-${clean(tr.meta.away)}.${ext}`
+    : `Highlights-${list.length}-goals.${ext}`;
 }

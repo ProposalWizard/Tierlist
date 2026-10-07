@@ -438,6 +438,12 @@ export type GraphicSpec =
   | { type: "trophy"; competition: string; club: string; season: number }
   | { type: "poll"; question: string; options: string[]; votes: number[] }
   | {
+      /** A goal video and nothing else (Leo, 7 Oct 2026). Built only when the
+       *  goal was recorded; with no recording the post has no graphic at all,
+       *  exactly as before — never a picture pretending to be a video. */
+      type: "goalVideo"; title: string; clips: string[];
+    }
+  | {
       type: "thumbnail"; title: string; badge: string;
       /** Goal videos (Leo, 7 Oct 2026): the recordings this post plays, in
        *  order (lib/star/goalClip/). Absent: no goal was seen, and the post

@@ -262,6 +262,15 @@ export function buildGraphic(
       };
     }
 
+    case "goalVideo": {
+      // The club's own goal post (TV pictures) and a fan's phone video: only
+      // when the goal was recorded. No recording, no graphic: the post stays
+      // the plain words it always was.
+      const clips = clipsFor(e, r);
+      if (!clips.length) return undefined;
+      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips };
+    }
+
     case "teamOfTheWeek": {
       const squad = career.squad ?? [];
       if (squad.length < 6) return undefined;

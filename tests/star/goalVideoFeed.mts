@@ -74,6 +74,8 @@ function newCareer(seed = 1): CareerState {
 {
   let c = newCareer(7);
   let thumbs = 0, withClips = 0, bad = 0, stillsWhenNothingSeen = 0, clipsWhenNothingSeen = 0;
+  // The club's own goal post (TV pictures) and a fan's phone video.
+  let videos = 0, clubVideos = 0, fanVideos = 0, videoBad = 0, videoWhenNothingSeen = 0, videoNotOneGoal = 0;
   for (let m = 0; m < 30; m++) {
     const fixture = c.fixtures.find(f => !f.played && f.week === c.week) ?? c.fixtures.find(f => !f.played);
     if (!fixture) break;
@@ -82,9 +84,11 @@ function newCareer(seed = 1): CareerState {
     const n = 1 + Math.floor(rng() * 3);
     const events: GoalEvent[] = [];
     const ids: string[] = [];
+    const mineIds: string[] = [];
     for (let i = 0; i < n; i++) {
       const id = `m${m}-g${i}`;
       const mine = rng() < 0.6;
+      if (mine && seenThisMatch) mineIds.push(id);
       events.push({
         minute: 5 + i * 25 + Math.floor(rng() * 20), scorer: mine ? "Michael Sancho" : "Danny Reeves",
         isUserGoal: mine, how: "one_on_one", distance: 10,
@@ -103,6 +107,16 @@ function newCareer(seed = 1): CareerState {
     after.media = generateForMatch(before, after, fixture, stats);
     const fresh: StoredPost[] = mediaOf(after).posts.filter(p => !mediaOf(before).posts.some(q => q.id === p.id));
     for (const p of fresh) {
+      if (p.graphic?.type === "goalVideo") {
+        videos++;
+        if (p.author.archetype === "club") clubVideos++;
+        if (p.author.archetype === "fan") fanVideos++;
+        if (!p.graphic.clips.length || p.graphic.clips.some(id => !ids.includes(id))) videoBad++;
+        if (!seenThisMatch) videoWhenNothingSeen++;
+        // The club's goal post is about YOUR goals: only yours, never a team-mate's.
+        if (p.author.archetype === "club" && p.graphic.clips.some(id => !mineIds.includes(id))) videoNotOneGoal++;
+        continue;
+      }
       if (p.graphic?.type !== "thumbnail") continue;
       thumbs++;
       const cl = p.graphic.clips ?? [];
@@ -116,7 +130,12 @@ function newCareer(seed = 1): CareerState {
   check(withClips > 0, `some of them play a real goal (${withClips} of ${thumbs})`);
   check(bad === 0, `a post never plays a goal from another match (${bad})`);
   check(clipsWhenNothingSeen === 0, `a match nobody watched never gets a video (${clipsWhenNothingSeen})`);
-  console.log(`  feed: ${thumbs} video-style posts, ${withClips} play a real goal, ${stillsWhenNothingSeen} are pictures (nothing seen)`);
+  check(clubVideos > 0, `the club posts its goal on the TV pictures (${clubVideos})`);
+  check(fanVideos > 0, `fans post their phone video (${fanVideos})`);
+  check(videoBad === 0, `a goal video only ever plays this match's seen goals (${videoBad} wrong)`);
+  check(videoWhenNothingSeen === 0, `no goal video from a match nobody watched (${videoWhenNothingSeen})`);
+  check(videoNotOneGoal === 0, `the club's goal post plays only your goals (${videoNotOneGoal} wrong)`);
+  console.log(`  feed: ${thumbs} video-style posts, ${withClips} play a real goal, ${stillsWhenNothingSeen} are pictures (nothing seen); goal videos: ${videos} (club ${clubVideos}, fans ${fanVideos})`);
 }
 
 // ── 3. The cuts ─────────────────────────────────────────────────────────────
@@ -171,6 +190,7 @@ function track(id: string, goalAt = 2.2): GoalTrack {
   const reel = makeEdit([a, b], "broadcast");
   check(reel.shots.length === 3 && reel.shots[0].track === 0 && reel.shots[1].track === 1 && reel.shots[2].track === 1 && reel.shots[2].replay, "a reel: every goal live, then the last one again");
   check(clipFileName(a, "mp4") === "Goal-Carter-63-Arsenal-v-Chelsea.mp4", `a file name a phone keeps (${clipFileName(a, "mp4")})`);
+  check(clipFileName([a, b], "webm") === "Highlights-Arsenal-v-Chelsea.webm", `a reel is named after the match, not its first goal (${clipFileName([a, b], "webm")})`);
 }
 
 if (problems.length) { console.error("goalVideoFeed FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }

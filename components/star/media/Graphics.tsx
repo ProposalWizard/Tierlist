@@ -41,6 +41,18 @@ export function clipStyleFor(author?: PostAuthor): ClipStyle {
 
 export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: PostAuthor }) {
   if (spec.type === "thumbnail") return <Thumbnail s={spec} author={author} />;
+  if (spec.type === "goalVideo") {
+    return (
+      <GoalVideo
+        clipIds={spec.clips}
+        style={clipStyleFor(author)}
+        credit={author ? { handle: author.handle, name: author.name } : undefined}
+        title={spec.title}
+        badge={spec.clips.length > 1 ? "HIGHLIGHTS" : "GOAL"}
+        fallback={null}
+      />
+    );
+  }
   switch (spec.type) {
     case "scoreline": return <Scoreline s={spec} />;
     case "breaking": return <Breaking s={spec} />;
