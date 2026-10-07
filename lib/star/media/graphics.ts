@@ -21,6 +21,43 @@ import { FAKE_FACES } from "../fakeFaces";
  * bug.
  */
 
+/**
+ * WHICH GOALS A VIDEO POST PLAYS (Leo, 7 Oct 2026: actual videos in the feed,
+ * showing the match's goals). Only goals that were seen have a recording
+ * (GoalRecord.clipId). A post about one goal plays that goal; a post about
+ * your goals plays yours; a post about the match (highlights, drama, a derby)
+ * plays every goal seen, in order. A post about anything else — a manager, a
+ * missed penalty, another club's match — plays nothing, and its picture has
+ * no play button.
+ */
+export function clipsFor(e: FootballEvent, r: MatchRecord | null): string[] {
+  if (!r) return [];
+  const f = e.facts;
+  if (typeof f.club === "string" && f.club !== r.club) return [];
+  if (e.tags.includes("manager") || e.id === "cheeky-miss" || e.subject.kind === "manager") return [];
+  const seen = r.goals.filter(g => g.clipId);
+  if (seen.length === 0) return [];
+  const ids = (gs: typeof seen) => gs.map(g => g.clipId as string);
+  const minute = typeof f.minute === "number" ? f.minute : undefined;
+  if (minute !== undefined) {
+    const g = seen.find(x => x.minute === minute && (e.subject.kind !== "you" || x.isUser));
+    if (g) return ids([g]);
+  }
+  if (typeof f.scorer === "string") {
+    const mine = seen.filter(x => x.scorer === f.scorer);
+    if (mine.length) return ids(mine);
+  }
+  if (e.subject.kind === "you" && e.tags.includes("goal")) {
+    const mine = seen.filter(x => x.isUser);
+    if (mine.length) return ids(mine);
+  }
+  if (e.subject.kind === "teammate") {
+    const his = seen.filter(x => !x.isUser && x.scorer === e.subject.name);
+    if (his.length) return ids(his);
+  }
+  return ids(seen);
+}
+
 export function buildGraphic(
   kind: GraphicKind,
   e: FootballEvent,
@@ -219,12 +256,15 @@ export function buildGraphic(
       return { type: "poll", question: pollQuestion(e), options, votes };
     }
 
-    case "thumbnail":
+    case "thumbnail": {
+      const clips = clipsFor(e, r);
       return {
         type: "thumbnail",
         title: headlineFor(e, you).toUpperCase(),
         badge: e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        ...(clips.length ? { clips } : {}),
       };
+    }
 
     case "teamOfTheWeek": {
       const squad = career.squad ?? [];

@@ -10,6 +10,9 @@ import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, Owne
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
+import { putClip, pruneClips } from "@/lib/star/goalClip/store";
+import type { GoalTrack } from "@/lib/star/goalClip/track";
+import GoalClipViewer from "@/components/star/GoalClipViewer";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
@@ -1020,6 +1023,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [watchingReplay, setWatchingReplay] = useState<GoalReplay | null>(null);
   const handleGoalScored = useCallback((replay: GoalReplay) => {
     setCareer(c => (c ? addRecentGoal(c, replay) : c));
+  }, []);
+  // Goal videos (Leo, 7 Oct 2026): each goal's frame-by-frame recording,
+  // kept on this device (lib/star/goalClip/store.ts). The match has already
+  // put its id on the goal, so the feed finds it. Old recordings are trimmed,
+  // never one a saved replay points at.
+  const careerForClipsRef = useRef<CareerState | null>(null);
+  careerForClipsRef.current = career;
+  const handleGoalClip = useCallback((track: GoalTrack) => {
+    void putClip(track).then(() => {
+      const c = careerForClipsRef.current;
+      const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
+      return pruneClips(keep);
+    });
   }, []);
   const handleWatchReplay = useCallback((replay: GoalReplay) => {
     setWatchingReplay(replay);
@@ -3623,6 +3639,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
             onGoalScored={handleGoalScored}
+            onGoalClip={handleGoalClip}
             pressure={pressureForDivision(career.division)}
             penaltyRunup={careerPenaltyRunup(career)}
             freeKickRunup={careerFreeKickRunup(career)}
@@ -3646,11 +3663,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           >
             ← Back to Settings
           </button>
-          <CanvasMatch
-            key={watchingReplay.id}
-            career={career}
-            replayOf={watchingReplay}
-          />
+          {watchingReplay.clipId ? (
+            // The recording itself: the exact goal, from three cameras.
+            <GoalClipViewer
+              clipId={watchingReplay.clipId}
+              title={watchingReplay.label}
+              fallback={<CanvasMatch key={watchingReplay.id} career={career} replayOf={watchingReplay} />}
+            />
+          ) : (
+            <CanvasMatch
+              key={watchingReplay.id}
+              career={career}
+              replayOf={watchingReplay}
+            />
+          )}
         </div>
       </div>
     );

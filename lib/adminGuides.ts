@@ -184,6 +184,38 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
   },
+  "/star-goal-clips-dev": {
+    title: "Goal videos",
+    what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",
+    buttons: [
+      { group: "1 · Score one", items: [
+        ["Penalty / One-on-one / Free kick / Cut-back", "Which chance you get. The keeper is weak (25) and the weather clear, so a goal comes quickly."],
+        ["New chance", "A fresh chance of the same kind."],
+        ["Drag back from the ball, then tap the ball", "The real match's own kick. Every goal is recorded frame by frame, exactly as a career match records it."],
+      ] },
+      { group: "2 · Recordings on this device", items: [
+        ["A goal in the list", "Picks that recording. The newest goal is picked by itself."],
+      ] },
+      { group: "3 · Watch it", items: [
+        ["TV / Behind the goal / Fan in the stand", "The three cameras. TV is what the club's account posts (with a slow replay from behind the goal); Behind the goal is what pages and papers post; Fan in the stand is a fan's phone video."],
+        ["▶ (on the picture)", "Makes the video on this phone (a few seconds, with a ring showing how far) and plays it. It starts by itself here."],
+        ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
+      ] },
+    ],
+    saving: [
+      "Recordings are kept in this browser only (the browser's own database), never in the career save and never online. The newest 80 are kept, plus any saved as a goal replay.",
+      "Saved videos go wherever you save them: Photos, a message, your downloads.",
+    ],
+    inGame: [
+      "After a match, a post that looks like a video now plays the real goal: the club's post with the TV camera, pages with the camera behind the goal, fans with a phone in the stand.",
+      "A post with no goal recorded (a meme, a missed penalty, a match you skipped) shows a picture with no play button.",
+      "Settings → Goal Replays (admin) plays the recording too, so a replay is always the same goal.",
+    ],
+    needs: [
+      "A browser that can make video (iPhone iOS 16.4 or later, Chrome, Edge, Firefox on a computer). Others show the picture and say the video can't be made.",
+    ],
+    dev: "app/star-goal-clips-dev/page.tsx; recorder lib/star/goalClip/recorder.ts (fed by CanvasMatch's onGoalClip); format track.ts; cameras cameras.ts; drawing scene.ts, render.ts; cuts edit.ts; the file encode.ts (WebCodecs + mp4-muxer / webm-muxer); storage store.ts (IndexedDB); the post components/star/media/GoalVideo.tsx.",
+  },
   "/star-relgames-dev": {
     title: "Relationship games",
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",

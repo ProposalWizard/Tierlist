@@ -132,6 +132,8 @@ import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
+import { GoalRecorder } from "@/lib/star/goalClip/recorder";
+import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
 import { switchOn } from "@/lib/star/compareSwitches";
 import { strikingPower } from "@/lib/star/strikePower";
 import {
@@ -294,6 +296,15 @@ interface Props {
    * itself a new goal to capture.
    */
   onGoalScored?: (replay: GoalReplay) => void;
+  /**
+   * GOAL VIDEOS (Leo, 7 Oct 2026): every goal your side scores in a chance
+   * you watch — yours or a team-mate's — recorded frame by frame as it is
+   * drawn, and handed out once its last moments (the ball in the net) are in.
+   * A replay draws these positions back; nothing is simulated again, so the
+   * same goal is the same video every time (lib/star/goalClip/). Absent: the
+   * recorder never runs and nothing about the match changes.
+   */
+  onGoalClip?: (track: GoalTrack) => void;
   /**
    * Fired once per chance the match hands you, the instant the picture is
    * settled and before you are asked to aim at it.
@@ -679,7 +690,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -888,6 +899,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   replayOfRef.current = replayOf;
   const onGoalScoredRef = useRef(onGoalScored);
   onGoalScoredRef.current = onGoalScored;
+  const onGoalClipRef = useRef(onGoalClip);
+  onGoalClipRef.current = onGoalClip;
+  // The goal recorder (lib/star/goalClip/recorder.ts) and the chance it is
+  // recording. Made on the first frame a real match asks for clips.
+  const goalRecRef = useRef<GoalRecorder | null>(null);
+  const recSceneRef = useRef<Scenario | null>(null);
   // Everything needed to watch the goal that is about to be attempted again,
   // captured right before the strike — see the GoalReplay prop doc and
   // rngCallCountRef below. Only ever surfaced (via onGoalScored) if this
@@ -4182,6 +4199,99 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
 
+  // ── GOAL VIDEOS: what the recorder is told each frame ──
+  //
+  // The men in the order the screen draws them under (sid): you (or the
+  // set-piece taker), the man in the box, the decorative team-mates, the
+  // runners, the defenders, the keeper. Kits are the ones this match is
+  // drawn in. Photos only when they are a link: your own picture can be a
+  // 50 KB data URL, and the replay is handed it at draw time instead.
+  const clipBodiesFor = (sc: Scenario): ClipBody[] => {
+    const kitOf = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, shorts: k.trim });
+    const link = (f?: string) => (f && !f.startsWith("data:") ? f : undefined);
+    const us = kitOf(ourKit()), them = kitOf(theirKit());
+    const auto = autoKickOf(sc);
+    const out: ClipBody[] = [auto
+      ? { id: "you", role: auto.side === "them" ? "opp" : "mate", side: auto.side === "them" ? "them" : "us", name: auto.taker.shortName, face: link(auto.taker.face), kit: auto.side === "them" ? them : us }
+      : { id: "you", role: "you", side: "us", name: playerLabel(), kit: us }];
+    out.push({ id: "follower", role: "mate", side: "us", name: sc.follower.who?.shortName, face: link(sc.follower.who?.face), kit: us });
+    sc.teammates.forEach((t, i) => out.push({ id: `mate${i}`, role: "mate", side: "us", name: t.who?.shortName, face: link(t.who?.face), kit: us }));
+    [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) =>
+      out.push({ id: `run${i}`, role: "mate", side: "us", name: r.who?.shortName, face: link(r.who?.face), kit: us }));
+    sc.defenders.forEach((d, i) => out.push({ id: `def${i}`, role: "opp", side: "them", name: d.who?.shortName, face: link(d.who?.face), kit: them }));
+    const gk = auto?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+    out.push({ id: "keeper", role: "keeper", side: auto?.side === "them" ? "us" : "them", name: sc.keeper.who?.shortName, face: link(sc.keeper.who?.face), kit: kitOf(gk) });
+    return out;
+  };
+  // Where everything is this frame — the same positions render() draws.
+  const clipFrameFor = (sc: Scenario): ClipFrame => {
+    const b = ballRef.current;
+    const auto = autoKickOf(sc);
+    const foot = auto
+      ? takerFootSign(auto.taker.id || auto.taker.name)
+      : footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
+    const you = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, foot).at : sc.player;
+    const runners = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+    return {
+      ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
+      bodies: [
+        { x: you.x, y: you.y, z: 0 },
+        { x: sc.follower.x, y: sc.follower.y, z: 0 },
+        ...sc.teammates.map(t => ({ x: t.x, y: t.y, z: 0 })),
+        ...runners.map(r => ({ x: r.pos.x, y: r.pos.y, z: 0 })),
+        ...sc.defenders.map(d => ({ x: d.x, y: d.y, z: d.z ?? 0 })),
+        { x: sc.keeper.x, y: sc.keeper.y, z: 0 },
+      ],
+      keeper: { dive: sc.keeper.dive, lunge: sc.keeper.saveLunge, dir: sc.keeper.saveDir, kind: sc.keeper.saveKind },
+    };
+  };
+  // One frame into the recorder, and any finished clip out to the career.
+  // Only on a real match that asked for clips (onGoalClip), and only while a
+  // chance with a goal in it is on the pitch.
+  const recordGoalFrame = (dt: number) => {
+    if (!onGoalClipRef.current || replayOfRef.current) return;
+    const rec = goalRecRef.current ?? (goalRecRef.current = new GoalRecorder());
+    const ph = phaseRef.current;
+    const sc = scenarioRef.current;
+    const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !dribbleRef.current))
+      && goalInView(sc.kind);
+    if (live) {
+      const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
+      if (recSceneRef.current !== sc || rec.bodyIds().length !== bodies) {
+        recSceneRef.current = sc;
+        rec.begin(clipBodiesFor(sc));
+      }
+      rec.frame(dt, clipFrameFor(sc));
+    } else if (rec.recordingGoal) {
+      rec.finishNow();
+    }
+    for (const tr of rec.take()) {
+      try { onGoalClipRef.current?.(tr); } catch { /* a clip never breaks the match */ }
+    }
+  };
+  // The ball has just gone in: the recorder keeps going a moment longer for
+  // the net, then cuts the clip. Returns the clip's id for the GoalEvent, or
+  // undefined when nothing is being recorded.
+  const markGoalClip = (scorer: string, scorerShort: string, isYou: boolean, assist: string | undefined, how: string | undefined, scorerBody?: string): string | undefined => {
+    const rec = goalRecRef.current;
+    if (!onGoalClipRef.current || replayOfRef.current || !rec?.active) return undefined;
+    const id = `clip-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const home = fixtureHomeRef.current;
+    const club = careerRef.current?.player.club ?? "Home";
+    const opp = fixture?.opponent ?? "Away";
+    rec.markGoal({
+      id, minute: matchMinuteRef.current, minuteLabel: minuteLabel(matchMinuteRef.current, ADDED, MATCH_DURATION),
+      scorer, scorerShort, isYou, assist, how,
+      ...(scorerBody ? { scorerBody } : {}),
+      home: home ? club : opp, away: home ? opp : club, youAreHome: home,
+      scoreAfter: home ? [userScoreRef.current, oppScoreRef.current] : [oppScoreRef.current, userScoreRef.current],
+      competition: fixture?.competition,
+      weather: conditionsRef.current.weather !== "clear" ? conditionsRef.current.weather : undefined,
+      season: careerRef.current?.season, week: careerRef.current?.week,
+    });
+    return id;
+  };
+
   // --- Main animation loop ---
   useEffect(() => {
     const loop = (ts: number) => {
@@ -4410,6 +4520,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             for (const a of bl.actionLog) {
               if (a.seq <= seen.seq) continue;
               seen.seq = a.seq;
+              // Goal videos: who touched it, when (it happened a moment ago,
+              // in the ball's own clock).
+              if (onGoalClipRef.current) goalRecRef.current?.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
               // Your own swing stays on kickPoseRef, as it always was.
               if (a.actor === "you") continue;
               actorAnimRef.current.set(a.actor, animFromAction(a, nowS - Math.max(0, (bl.clock ?? 0) - a.t), scenarioRef.current));
@@ -4421,6 +4534,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // The frame no longer ends the move — the ball cannons back out and is
         // live — so it is narrated here rather than in resolveOutcome.
         if (ev === "post") {
+          if (onGoalClipRef.current) goalRecRef.current?.event("post");
           pushLine("Off the woodwork — and it's still live!");
           showAction("POST");
           nudge(0.28, 0.25);
@@ -4524,11 +4638,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         trailRef.current.shift(); // let it dissolve after the play resolves
       }
 
+      recordGoalFrame(dt);
       render();
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      // A goal still being recorded when the match closes keeps what it has.
+      const rec = goalRecRef.current;
+      if (rec && onGoalClipRef.current) {
+        rec.finishNow();
+        for (const tr of rec.take()) { try { onGoalClipRef.current?.(tr); } catch { /* never breaks the match */ } }
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -4763,6 +4886,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       // A team-mate's goal: either you assisted it, or another team-mate did.
       const mateGoal = d.assists === 1 || (receiverShot && !assist.yours);
+      // This goal's recording (goal videos), linked to a saved replay below.
+      let goalClipId: string | undefined;
       if (mateGoal && sc.receiver) {
         // ── The man who scored it is the man who scored it ──
         //
@@ -4789,11 +4914,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // The assist: you, or the team-mate who played it last before him
         // (his lay-off, or his shot that came back) — named when we know him.
         const mateAssist = assist.yours ? undefined : assist.by?.who;
+        const mateScorer = scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate";
+        const mateClip = markGoalClip(mateScorer, scorerLabel, false, assist.yours ? playerName : mateAssist?.name, how);
         goalEventsRef.current.push({
           minute: matchMinuteRef.current,
-          scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
+          scorer: mateScorer,
           assist: assist.yours ? playerName : mateAssist?.name,
           isUserGoal: false, how, distance: Math.round(distance),
+          ...(mateClip ? { clipId: mateClip } : {}),
           // PROTOTYPE (home-screen proto): how far YOUR pass went — from where
           // you played it to where he took it. Feeds "furthest assist".
           ...(assist.yours && sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
@@ -4813,9 +4941,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // A rebound you followed in was created by whoever's shot came back,
         // which was yours.
         const assister = res === "rebound" ? undefined : creatorOf(sc, squad, rng);
+        const yourClip = markGoalClip(playerName, playerLabel(), true, assister?.name, how, "you");
+        goalClipId = yourClip;
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(yourClip ? { clipId: yourClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
         if (assister) logMoment(`🎯 ${assister.shortName} assists!`, "assist");
@@ -4824,9 +4955,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // goal, and a goal with nobody's name on it is a goal missing from the
         // match report, the scoresheet and the squad stats. Yours: nobody else
         // was involved, or one of the branches above would have fired.
+        const soloClip = markGoalClip(playerName, playerLabel(), true, undefined, how, "you");
+        goalClipId = soloClip;
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(soloClip ? { clipId: soloClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
       }
@@ -4845,6 +4979,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           label: `${verb} · ${minuteLabel(matchMinuteRef.current, ADDED, MATCH_DURATION)}'`,
           ...pendingReplayRef.current,
           flightDtLog: flightDtLogRef.current.slice(),
+          ...(goalClipId ? { clipId: goalClipId } : {}),
         });
       }
     }
@@ -4896,8 +5031,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const saved = res === "saved" || res === "caught" || res === "tipped";
       if (kind === "goal") {
         userScoreRef.current += 1;
+        const penClip = markGoalClip(auto.taker.name, auto.taker.shortName, false, undefined, "penalty", "you");
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: auto.taker.name, isUserGoal: false, how: "penalty", distance: 11,
+          ...(penClip ? { clipId: penClip } : {}),
         });
         logMoment(`⚽ ${auto.taker.shortName} scores the penalty!`, "goal");
       } else {

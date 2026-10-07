@@ -61,6 +61,10 @@ export interface GoalReplay {
    *  (lib/star/keeperBrain.ts), so the replay throws the same dive. Absent on
    *  a goal saved before the brain, which replays exactly as it always did. */
   keeperBrain?: import("./keeperBrain").KeeperBrainSnapshot;
+  /** The goal's frame-by-frame recording (lib/star/goalClip/), when it was
+   *  made on this device. Watching it plays the recording itself — the exact
+   *  goal — rather than running the physics again from the seed above. */
+  clipId?: string;
 }
 
 export interface StarPlayer {
@@ -452,6 +456,10 @@ export interface GoalEvent {
   /** Your assist only: how far YOUR pass travelled, from where you played it
    *  to where the scorer took it (metres). Absent on older saves. */
   passLength?: number;
+  /** Goal videos (Leo, 7 Oct 2026): the recording of this goal, frame by
+   *  frame, kept on this device (lib/star/goalClip/store.ts). Absent for a
+   *  goal nobody saw — simulated, or scored while you were off the pitch. */
+  clipId?: string;
 }
 
 /**
