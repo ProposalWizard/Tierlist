@@ -791,6 +791,41 @@ export const ADMIN_GUIDES = {
     dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
+  "/star-wallet-dev": {
+    title: "Gems (test)",
+    what: "Proves that paid things can't be faked: gems and paid items live on the server, not in the career save. One example paid item (Golden boots) goes through the whole path.",
+    buttons: [
+      { group: "Your gems", items: [
+        ["💎 (the number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\"."],
+        ["Refresh", "Asks the server again."],
+        ["+100 gems (admin test)", "Admins only. Gives your own account 100 gems. Each press is one line in the gem history. This is the only way to get gems until real payments exist."],
+      ] },
+      { group: "The example paid item", items: [
+        ["Golden boots (picture)", "Gold when the server says this account owns them; grey with a lock otherwise."],
+      ] },
+      { group: "Paid items", items: [
+        ["Buy", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
+        ["Owned", "You own it. Nothing to press."],
+      ] },
+      { group: "Try to cheat", items: [
+        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. The line under it shows nothing changed."],
+        ["Clear it", "Takes those fake values back out of this browser."],
+      ] },
+    ],
+    saving: [
+      "Shared, at once, on the server: gems in the Supabase table star_wallet, every gem change in star_wallet_ledger (never edited), and what each account owns in star_entitlements. The items for sale and their prices are in star_paid_items.",
+      "Nothing is kept in this browser or in the career save. Nobody can change these tables from a browser — only the server can.",
+    ],
+    inGame: [
+      "Nowhere yet: there are no paid items in the game. This is the base they will be built on.",
+      "When there are, the game asks the server whether you own one, never the save. Match money (★) can never buy a paid item.",
+    ],
+    needs: [
+      "supabase/migrations/star_wallet.sql must be run in the Supabase SQL Editor. Until then the page says \"Gems aren't switched on yet\" and nothing can be bought or given.",
+      "No payment provider yet (Apple, Google or Stripe). The payments address refuses everything, so the only source of gems is the admin button.",
+    ],
+    dev: "app/star-wallet-dev/ · lib/star/wallet.ts, lib/star/useWallet.ts · app/api/star/wallet (GET), /buy, /webhook (refuses all) · app/api/admin/wallet/grant · supabase/migrations/star_wallet.sql (spend_gems, grant_gems, grant_item) · tests/star/wallet.mts · PAID_ITEMS.md",
+  },
   "/star-store-dev": {
     title: "Store (test)",
     what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",
