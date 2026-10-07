@@ -54,6 +54,7 @@ NEXT_PUBLIC_SENTRY_DSN=            # set once a Sentry project exists — see Pe
 SENTRY_ORG=                        # optional, enables source-map upload at build time
 SENTRY_PROJECT=                    # optional, enables source-map upload at build time
 SENTRY_AUTH_TOKEN=                 # optional, enables source-map upload at build time
+STAR_SAVE_GUARD=observe            # observe (default) | enforce | off — Star Career save checks, lib/star/saveGuard.ts
 ```
 
 Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset — missing `NEXT_PUBLIC_POSTHOG_KEY` disables analytics entirely, missing `NEXT_PUBLIC_SENTRY_DSN` disables error reporting entirely, neither throws or blocks the build. `NEXT_PUBLIC_POSTHOG_KEY` is safe to commit/expose client-side by design (same class of value as a GA measurement ID) but kept in env vars here for consistency with everything else in this table.
@@ -614,6 +615,7 @@ Three people are building this. To avoid two sessions editing the same files:
 | `star_hall_of_fame.sql` | **PENDING** (new, 5 Oct 2026) | The Hall of Fame in the cloud: one row per retired career per account (`lib/star/hallOfFame.ts`, `/api/star/hall-of-fame`). Until it runs the Hall works on the device it was made on and the Hall screen says "Kept on this device for now"; nothing breaks. Idempotent, RLS own-rows only, a size and id-shape check. |
 | `star_legend_shares.sql` | **PENDING** (new, 6 Oct 2026) | Share a retired career by code: `knowitball.co.uk/legend/CODE` (`lib/star/legendShare.ts`, `/api/star/legend`). One row per (account, Hall career); read only through the `get_legend_share` SECURITY DEFINER function, so nobody can list the shares (no public board, by Leo's "friends first"). Until it runs, Share link says "Sharing isn't switched on yet" and codes can't be read; nothing else breaks. Idempotent. |
 | `star_scenario_corrections.sql` | **RUN** (Sep 2026, by Mikey) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Confirmed live 23 Sep 2026: the table answers the anon key and held 3 corrections. Browser-only corrections upload on the next sync. |
+| `star_save_guard.sql` | **PENDING** (new, 7 Oct 2026) | Star Career saves are now checked against the last trusted one (`lib/star/saveGuard.ts`, `/api/star/career`): edited money, skills, trophies, wage, fame and so on. This file adds `star_save_flags` (every odd save, service key only) and takes WRITE access to `star_careers` away from the browser (it allowed direct writes that skipped the route). Deploy the code first, then run it. Until then: saves are checked and stored as before, findings go to the server log only, and the direct-write hole stays open. Mode: env `STAR_SAVE_GUARD` (observe by default — log only; `enforce` puts bad fields back). Idempotent; verify queries at the bottom. |
 
 ---
 
