@@ -471,11 +471,18 @@ function drawCaption(ctx: CanvasRenderingContext2D, W: number, H: number, track:
   const [hs, as] = track.meta.scoreAfter ?? [0, 0];
   ctx.fillText(`${track.meta.minuteLabel}' · ${shortClub(track.meta.home)} ${hs}-${as} ${shortClub(track.meta.away)}`, 18 * s, H - 9 * s, W * 0.8);
   if (credit?.handle) {
-    // Top left: the replay's tag has the top right.
-    ctx.textAlign = "left";
+    // Top left (the replay's tag has the top right), on a dark pill so it
+    // reads over a busy crowd.
+    const label = `@${credit.handle.replace(/^@/, "")}`;
     ctx.font = `800 ${12 * s}px ${FONT}`;
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.fillText(`@${credit.handle.replace(/^@/, "")}`, 14 * s, 26 * s);
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    roundRect(ctx, 10 * s, 11 * s, tw + 12 * s, 21 * s, 4 * s);
+    ctx.fill();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(label, 16 * s, 21.5 * s);
   }
 }
 

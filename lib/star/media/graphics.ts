@@ -38,23 +38,18 @@ export function clipsFor(e: FootballEvent, r: MatchRecord | null): string[] {
   const seen = r.goals.filter(g => g.clipId);
   if (seen.length === 0) return [];
   const ids = (gs: typeof seen) => gs.map(g => g.clipId as string);
+  // A post about one goal, one man's goals or your goals plays exactly those
+  // — and nothing when they were not seen. Never somebody else's goal in
+  // their place.
   const minute = typeof f.minute === "number" ? f.minute : undefined;
   if (minute !== undefined) {
     const g = seen.find(x => x.minute === minute && (e.subject.kind !== "you" || x.isUser));
-    if (g) return ids([g]);
+    return g ? ids([g]) : [];
   }
-  if (typeof f.scorer === "string") {
-    const mine = seen.filter(x => x.scorer === f.scorer);
-    if (mine.length) return ids(mine);
-  }
-  if (e.subject.kind === "you" && e.tags.includes("goal")) {
-    const mine = seen.filter(x => x.isUser);
-    if (mine.length) return ids(mine);
-  }
-  if (e.subject.kind === "teammate") {
-    const his = seen.filter(x => !x.isUser && x.scorer === e.subject.name);
-    if (his.length) return ids(his);
-  }
+  if (typeof f.scorer === "string") return ids(seen.filter(x => x.scorer === f.scorer));
+  if (e.subject.kind === "teammate") return ids(seen.filter(x => !x.isUser && x.scorer === e.subject.name));
+  if (e.subject.kind === "you" && e.tags.includes("goal")) return ids(seen.filter(x => x.isUser));
+  // A post about the match as a whole: every goal that was seen.
   return ids(seen);
 }
 
