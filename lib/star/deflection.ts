@@ -74,6 +74,9 @@ export function deflectBlock(ball: Ball, sc: Scenario, pre: IncomingBall, r: () 
   ball.shot = false;
   ball.owner = "none";
   ball.lastTouch = "defence";
+  // Back in play: no longer a boot to fly off the picture (clearances, 7 Oct 2026).
+  ball.cleared = false;
+  ball.clearHitAt = undefined;
   // Long enough to leave the man it came off, short enough that anyone else
   // near it can have it straight away.
   ball.contactCd = 0.22;

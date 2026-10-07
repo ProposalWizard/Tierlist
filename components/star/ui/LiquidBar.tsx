@@ -22,7 +22,7 @@ import { prefersReducedMotion } from "./motion";
  *
  *   <LiquidBar value={energy} colors={["#34d399", "#a3e635"]} className="h-4">85</LiquidBar>
  */
-export default function LiquidBar({ value, colors, className = "h-3", sheen = true, square = false, duration, children }: {
+export default function LiquidBar({ value, colors, className = "h-3", sheen = true, square = false, duration, easing, children }: {
   /** 0-100. */
   value: number;
   /** [deep, light] — the fill runs deep → light. */
@@ -34,6 +34,8 @@ export default function LiquidBar({ value, colors, className = "h-3", sheen = tr
   square?: boolean;
   /** How long the fill takes to glide to a new value, in ms (900 by default). 0 jumps. */
   duration?: number;
+  /** The glide's CSS timing function (a gentle ease in and out by default). */
+  easing?: string;
   /** Over the bar, centred (a number). */
   children?: React.ReactNode;
 }) {
@@ -46,7 +48,7 @@ export default function LiquidBar({ value, colors, className = "h-3", sheen = tr
   }, [v]);
   const still = typeof window !== "undefined" && prefersReducedMotion();
   const w = `${v}%`;
-  const glide = still || duration === 0 ? "none" : duration ? `width ${duration}ms cubic-bezier(.45, .05, .35, 1)` : undefined;
+  const glide = still || duration === 0 ? "none" : duration ? `width ${duration}ms ${easing ?? "cubic-bezier(.45, .05, .35, 1)"}` : undefined;
   return (
     <div
       role="progressbar"

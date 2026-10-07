@@ -48,7 +48,7 @@ export function FlatPanel({ glow, fade = "both", edge = false, bleed = false, cl
  * at the top of a screen, or use TopMeter (ui/TopMeter.tsx), which adds the
  * icon sitting on top of the bar.
  */
-export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, square = false, duration, children }: {
+export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = "h-3", animate = false, square = false, duration, easing, children }: {
   /** 0-100. */
   value: number;
   colors?: [string, string];
@@ -61,8 +61,10 @@ export function SquareBar({ value, colors = ["#fbbf24", "#fde68a"], className = 
   square?: boolean;
   /** Glide time in ms (900 by default); 0 jumps. */
   duration?: number;
+  /** The glide's CSS timing function. */
+  easing?: string;
   /** Over the bar, centred (a number). */
   children?: React.ReactNode;
 }) {
-  return <LiquidBar value={value} colors={colors} className={className} sheen={animate} square={square} duration={duration}>{children}</LiquidBar>;
+  return <LiquidBar value={value} colors={colors} className={className} sheen={animate} square={square} duration={duration} easing={easing}>{children}</LiquidBar>;
 }

@@ -139,11 +139,13 @@ function DrawnIcon({ name }: { name: HudIconName }) {
  * glows and breathes, with a light that sweeps across it. The level number
  * sits on it (children). Stills (reduced motion) keep the fill and the glow.
  */
-export function FillStar({ fraction, children, className = "h-full w-full", duration }: {
+export function FillStar({ fraction, children, className = "h-full w-full", duration, easing }: {
   /** 0-1 of the way through the level. */
   fraction: number;
   /** How long the gold takes to rise to a new fraction, in ms (1100 by default); 0 jumps. */
   duration?: number;
+  /** The rise's CSS timing function. */
+  easing?: string;
   children?: React.ReactNode;
   className?: string;
 }) {
@@ -156,7 +158,7 @@ export function FillStar({ fraction, children, className = "h-full w-full", dura
   // the picture's height (measured from its alpha), so 0 and 1 land exactly
   // on its bottom and top points.
   const cut = 6.6 + 86.8 * (1 - f);
-  const glide = duration === undefined ? undefined : duration === 0 ? "none" : `clip-path ${duration}ms cubic-bezier(.45, .05, .35, 1)`;
+  const glide = duration === undefined ? undefined : duration === 0 ? "none" : `clip-path ${duration}ms ${easing ?? "cubic-bezier(.45, .05, .35, 1)"}`;
   const shown = ok >= 2 && !failed;
   const mask = `url(${STAR_FULL})`;
   return (
