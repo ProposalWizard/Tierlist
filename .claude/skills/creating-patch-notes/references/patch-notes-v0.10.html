@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leo Patch Notes v0.10</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:var(--bg);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:340px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+
+  .clipbox{margin:12px 0 0}
+  .look{margin:0 0 8px;font-size:14.5px;background:var(--card2);border-radius:10px;padding:9px 12px;color:var(--ink2)}
+  .look b{color:var(--green);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .pane .lab{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px;background:var(--green);color:var(--bg)}
+  .pane video{display:block;width:100%;max-width:390px;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+  .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .spd button.on{background:var(--ink);color:var(--bg)}
+
+  .clips{display:grid;gap:14px;margin:12px 0 0}
+  .pane{margin:0}
+  .pane .cap{margin-top:6px}
+  .tallwrap video{max-width:260px}
+  .tbl td b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.10</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">Goal videos. The match records every goal as you play. After the match, posts play your goal as a real video, from three cameras, and you can save it. Goal replays play the recording, so a replay is always the same goal.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>3</b><span>cameras: TV, behind the goal, a fan in the stand</span></div>
+  <div class="s"><b>9–15 KB</b><span>one recorded goal, kept on your phone</span></div>
+  <div class="s"><b>1.3–3.1 s</b><span>to make a video on a slow test machine</span></div>
+  <div class="s"><b>266 / 266</b><span>tests pass</span></div>
+</div>
+
+<!-- ── HEADLINE ─────────────────────────────────────────── -->
+<section class="headline">
+  <div class="hl-tag">Headline</div>
+  <h3>Goals in the feed are real videos now</h3>
+  <div class="row"><div class="lbl">Problem</div><p>After a match, some posts looked like videos: a picture with a play button. Nothing played. A goal replay played the chance again with new luck, so it could end differently from your real goal.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The game kept who scored and when, but not how the goal happened. A replay could only set the chance up again and play it again.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>The match records every goal while you play: the ball, every player and the keeper's dive, 30 times a second.</li>
+      <li>After the match, a post about a goal plays that recording as a real video. Tap ▶. The phone makes the video in a few seconds (a ring shows how far), then plays it on a loop, like a real feed.</li>
+      <li><b>Save video</b>: on a phone, the share menu opens (Save Video puts it in Photos, or send it in a message). On a computer, it downloads.</li>
+      <li>Every play and every save is the same goal, frame for frame. Nothing is played again with dice.</li>
+    </ul>
+  </div>
+  <table class="tbl">
+    <tr><th>Who posts it</th><th>The video</th></tr>
+    <tr><td><b>The club, the league, the competition</b></td><td>The TV camera, then a slow-motion replay from behind the goal. Wide.</td></tr>
+    <tr><td><b>Pages and papers</b></td><td>Behind the goal, then the TV camera in slow motion. Wide.</td></tr>
+    <tr><td><b>Fans, meme pages, team-mates</b></td><td>A fan's phone in the stand: tall, a bit shaky, heads in front.</td></tr>
+    <tr><td><b>A post about 2 or more goals</b></td><td>All of them, one after the other: a highlights reel.</td></tr>
+  </table>
+  <figure class="one"><img src="img/feed-making.jpg" alt="A highlights post making its video"><figcaption><b>Seen in the real game.</b> Tap ▶: the ring shows the video being made.</figcaption></figure>
+  <figure class="one"><img src="img/feed-playing.jpg" alt="The highlights video playing"><figcaption>Then it plays: three goals in 13 seconds. This frame is the wipe from the 2nd goal to the 3rd.</figcaption></figure>
+  <div class="clipbox">
+    <p class="look"><b>Look for</b>The same goal from each camera. The TV video ends with a slow-motion replay from behind the goal.</p>
+    <div class="clips">
+    <figure class=""><img src="img/lay-off-broadcast.jpg" alt="TV"><figcaption><b>TV.</b> A lay-off, then a first-time finish. Scored on the test page, which plays the real match. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    <figure class=""><img src="img/lay-off-reverse.jpg" alt="Behind the goal"><figcaption><b>Behind the goal.</b> The same goal. The replay at the end is the TV camera. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    <figure class="one"><img src="img/lay-off-fan.jpg" alt="A fan in the stand"><figcaption><b>A fan in the stand.</b> The same goal, filmed by a fan's phone. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    </div>
+    <p class="cap">Made on the test machine, then turned into MP4 for this page. The minute says 0' because the test page has no match clock; a career shows the real minute (seen: 44' and 76' in the real-game pictures above).</p>
+  </div>
+  <details><summary>More clips: a scramble, three saves and then the goal (3)</summary>
+    <div class="clips">
+    <figure class=""><img src="img/scramble-broadcast.jpg" alt="TV"><figcaption><b>TV.</b> Every dive in the scramble is drawn, one after the other. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    <figure class=""><img src="img/scramble-reverse.jpg" alt="Behind the goal"><figcaption><b>Behind the goal.</b> The same scramble from behind the net. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    <figure class="one"><img src="img/scramble-fan.jpg" alt="A fan in the stand"><figcaption><b>A fan in the stand.</b> The same scramble from the stand. The clip is on <a href="https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X">the artifact page</a>.</figcaption></figure>
+    </div>
+  </details>
+  <div class="mean"><b>What this means for you:</b> score, then watch your goal in the feed and save it. It is always your real goal.</div>
+</section>
+
+<!-- ── CHECK THESE ──────────────────────────────────────── -->
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="feed"> A goal video in the feed<span class="where">Score in a match → after the match, Post Match Reactions → a post with a picture of the goal → tap ▶</span></label></li>
+  <li><label><input type="checkbox" data-k="save"> Save video<span class="where">The same post → Save video (on an iPhone: the share menu → Save Video)</span></label></li>
+  <li><label><input type="checkbox" data-k="cams"> Three cameras<span class="where">The club's post (TV) · a page's post (behind the goal) · a fan's post (a phone in the stand)</span></label></li>
+  <li><label><input type="checkbox" data-k="reel"> A highlights reel<span class="where">Score 2 or more in a match, then find the HIGHLIGHTS post</span></label></li>
+  <li><label><input type="checkbox" data-k="pic"> No play button without a video<span class="where">A meme, a missed penalty or a match you skipped: a picture only</span></label></li>
+  <li><label><input type="checkbox" data-k="rep"> Goal Replays play the recording<span class="where">Settings → Goal Replays (admins) → a goal scored after this update → TV · Behind the goal · Fan in the stand</span></label></li>
+  <li><label><input type="checkbox" data-k="moves"> The players' moves follow Animations<span class="where">Settings → Look → Animations: New or Old, then watch a video again</span></label></li>
+  <li><label><input type="checkbox" data-k="test"> The test page<span class="where">/star-goal-clips-dev → score → watch it from each camera → Save video</span></label></li>
+</ul>
+
+<!-- ── ADDED ────────────────────────────────────────────── -->
+<h2 class="add"><i></i>Added</h2>
+
+<div class="card">
+  <div class="hd">Every goal is recorded as you play</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"The goal replays should always be the same, not just remaking the situation."</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li><b>What</b>: the ball, every player on the screen, the keeper's dives and saves, and who touched the ball when. 30 times a second, from the first kick of the move to just after the goal (12 seconds at most).</li>
+      <li><b>Size</b>: one goal is 9 to 15 KB.</li>
+      <li><b>Where</b>: on this phone only, in the browser's own storage. Not in the career save, so the save that goes to the cloud stays the same size.</li>
+      <li><b>How many</b>: the newest 80 goals, plus every goal kept in Goal Replays.</li>
+    </ul>
+  </div>
+  <p class="cap"><b>Measured:</b> in the video, every player and the ball are within 5 cm of where they really were (test). Goals by you and by team-mates are both recorded.</p>
+</div>
+
+<div class="card">
+  <div class="hd">Three cameras, like real posts</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"Maybe even different angles to make them look like real social media posts."</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li><b>TV</b>: high in the stand at the side, following the ball. A score bar at the top, a GOAL banner, the scorer and the minute.</li>
+      <li><b>Behind the goal</b>: low behind the net. You see the keeper's back and the net bulge.</li>
+      <li><b>A fan in the stand</b>: a tall phone video, a bit shaky, heads in front, the account's @name in the corner.</li>
+      <li>The crowd wears the two clubs' colours. Some matches are at night.</li>
+    </ul>
+  </div>
+  <p class="cap">All three are in the clips at the top.</p>
+</div>
+
+<div class="card">
+  <div class="hd">Save video</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"The user should be able to download the goal replays."</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>Under every goal video. Most phones make an MP4 (worked out from the code). A browser that cannot, like this test machine's, makes a WebM, which also plays and saves.</li>
+      <li>The file is named after the goal, for example <b>Goal-Vance-44-Horsham-v-Farnborough.mp4</b>.</li>
+      <li>A browser that cannot make videos at all shows the post's picture, with no play button.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">Goal Replays play the recording</div>
+  <div class="row"><div class="lbl">Fix</div><p>Settings → Goal Replays (admins only, as before). A goal recorded on this phone plays its video, with the three camera buttons and Save video. A goal from before this update, or from another phone, plays the old way.</p></div>
+</div>
+
+<div class="card">
+  <div class="hd">The test page</div>
+  <div class="row"><div class="lbl">Fix</div><p>/star-goal-clips-dev: score a penalty, a one-on-one, a free kick or a cut-back on the real match (the keeper is weak, so it is quick). Then watch it from each camera and save it. <b>Moves: Old / New</b> forces the players' moves while the page is open.</p></div>
+</div>
+
+<!-- ── CHANGED ──────────────────────────────────────────── -->
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li><div class="hd">A post with no recorded goal is a picture</div><div class="dt">A meme, a missed penalty, a match you skipped, or a goal from before this update: the headline on a card, with no play button.</div></li>
+  <li><div class="hd">The players' moves follow Settings → Look → Animations</div><div class="dt">New: the newer 3D moves (a shot, a header, a one-handed save). Old: the older moves. The same as your match.</div></li>
+  <li><div class="hd">A post about 2 or more goals says HIGHLIGHTS</div><div class="dt">It said GOAL. The label sits on the right of the picture now.</div></li>
+</ul>
+
+<!-- ── FIXED ────────────────────────────────────────────── -->
+<h2 class="fix"><i></i>Fixed (found while checking)</h2>
+<div class="card">
+  <div class="hd">The keeper stood on his head in the fan's video</div>
+  <div class="row"><div class="lbl">Problem</div><p>From the fan's camera, a keeper's dive could look upside down.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The players' drawings are made for the match's own camera, which looks down from above. A dive that runs down the screen reads as a man on his head.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>A dive is drawn at most 35° from flat, towards the ball. Tested over 2,701 ways he can face and dive: none steeper than 35°, every one to the right side.</p></div>
+  <div class="pair">
+    <figure><img src="img/dive-before.jpg" alt="Before: upside down"><figcaption>Before.</figcaption></figure>
+    <figure><img src="img/dive-after.jpg" alt="After: a real dive"><figcaption>After. Seen in stills from all three cameras.</figcaption></figure>
+  </div>
+</div>
+<ul class="n">
+  <li><div class="hd">The red GOAL label covered the account's name</div><div class="dt">Found by the playtest in the real game. The label is on the right of the picture now.</div></li>
+  <li><div class="hd">A post about one goal could play the match's other goals</div><div class="dt">When that goal was not recorded. Now it plays that goal, or shows a picture. Over 30 simulated matches, no post plays a wrong goal (test).</div></li>
+</ul>
+
+<!-- ── SEEN ─────────────────────────────────────────────── -->
+<h2 class="seen"><i></i>Seen in a browser</h2>
+<ul class="n" id="seen">
+  <li><div class="hd">Played in the real game: a match with 3 goals, then the feed</div><div class="dt">Signed out, phone size, made-up squads. The HIGHLIGHTS post showed the first goal's picture, made the video with the ring, and played all three goals in 13 seconds.</div></li>
+  <li><div class="hd">Seen: the test page end to end</div><div class="dt">A penalty, recorded on the 2nd try. The video was 7.2 seconds, it played, and Save video downloaded the file.</div></li>
+  <li><div class="hd">Seen: two goals scored on the test page, from all three cameras</div><div class="dt">The clips on this page. Each made in 1.3 to 3.1 seconds here, 0.6 to 1.9 MB.</div></li>
+  <li><div class="hd">Not seen</div><div class="dt">An iPhone: this test machine's browser can only make WebM, so the MP4 file and the iPhone share menu are worked out from the code. Real club colours and faces (no database here). How fast a real phone makes a video.</div></li>
+</ul>
+
+<!-- ── KNOWN ISSUES ─────────────────────────────────────── -->
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">Recordings stay on the phone that played the match</div><div class="dt">Another phone shows the post's picture. On purpose: it keeps the cloud save small.</div></li>
+  <li><div class="hd">Goals from before this update have no recording</div><div class="dt">Their posts are pictures, and their replays play the old way.</div></li>
+  <li><div class="hd">The first play takes a few seconds</div><div class="dt">The phone makes the video then: 1.3 to 3.1 seconds on this slow test machine. After that it plays at once, until you leave the game.</div></li>
+  <li><div class="hd">No sound yet</div><div class="dt">The videos are silent.</div></li>
+  <li><div class="hd">Only goals in the real match are recorded</div><div class="dt">Simulated matches, five-a-side and training drills record nothing.</div></li>
+  <li><div class="hd">Not seen on an iPhone</div><div class="dt">An iPhone needs iOS 16.4 or later to make the video (worked out, not seen). Older phones show the picture.</div></li>
+  <li><div class="hd">Still waiting from v0.9 <span class="pill p-amb">carried</span></div><div class="dt">Run <code>star_legend_shares.sql</code> and <code>star_hall_of_fame.sql</code>. The world does not age.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">A short clip of a video playing in the feed, in the real game</div><div class="dt">Added to this page after the push.</div></li>
+  <li><div class="hd">Sound?</div><div class="dt">Crowd noise and a commentator line on the videos. Say if you want it.</div></li>
+</ul>
+
+<!-- ── HISTORY ──────────────────────────────────────────── -->
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.9 — 6 Oct 2026 — retirement part 3: records, share picture, farewell match, sharing</summary>
+  <p><b>Added:</b> your retired careers' records live on · a share picture of a whole career · the farewell match after the final whistle · share a career by code and compare it with a friend.</p>
+  <p><b>Fixed:</b> set pieces in the farewell went to team-mates · every farewell was the same match · the same surname on both sides · the ovation came before 85' · four smaller playtest finds.</p>
+  <p><b>Numbers:</b> 9 records · 8.9 chances to you before 85' (6.3 normally) · a 1080 × 1350 picture · 253 tests.</p>
+  <p>Still open from this version: two database files to run · sharing not seen end to end · the world does not age.</p>
+</details>
+<details>
+  <summary>v0.8 — 6 Oct 2026 — new animations: what you see matches what happens</summary>
+  <p><b>Added:</b> one-hand keeper saves, catches, parries and fumbles · team-mates take touches and shoot, pass, head, block and clear with their own legs · the Animations test page and its dials · Settings → Look → Animations: New | Old.</p>
+  <p><b>Fixed:</b> a caught ball stayed where the keeper stood while he slid away.</p>
+  <p><b>Numbers:</b> outcome counts identical over 5,200 seeded chances (a look-only change).</p>
+  <p>Still open from this version: the 3D keeper has no catch-hold or get-up · a caught ball can sit slightly off the gloves in the classic view · strikes may still be subtle on a phone · four questions for you on <a href="https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6">that page</a>.</p>
+</details>
+<details>
+  <summary>v0.7 — 6 Oct 2026 — 20-season careers, the Hall of Fame</summary>
+  <p><b>Changed:</b> every career is 20 seasons (no "Do you go again?" from 33) · the career overview is the end screen.</p>
+  <p><b>Added:</b> "Final season" warning after season 19 · "The final whistle" after season 20 · the Hall of Fame on the title screen · the new All seasons page, with a New | Old switch.</p>
+  <p><b>Fixed:</b> the last season's Ballon d'Or and awards were never counted · a season's row named the wrong club after a summer move · three playtest finds.</p>
+  <p><b>Numbers:</b> 20 seasons · 0 careers lost by starting again · 108 → 15 KB per Hall career · 246 tests.</p>
+  <p>Still open from this version: <code>star_hall_of_fame.sql</code> to run · the world does not age.</p>
+</details>
+
+<details>
+  <summary>v0.6 — 5 Oct 2026 — keepers made human, dribble passes, new shots in the test match</summary>
+  <p><b>Fixed:</b> trial free kicks and penalties too hard · five-a-side keepers never dived · no way back from several screens · Goalie Mode scrolled.</p>
+  <p><b>Added:</b> dribble passes with green/amber/red rings · knuckleball, power shot and keeper howlers (test match only) · New / Old switches for keepers and dribble runs.</p>
+  <p><b>Numbers:</b> top corners v a 90 keeper 26% → 43% · trial free kicks 36% → 48% · 243 tests.</p>
+  <p>Still open from this version: listed under Known issues above.</p>
+</details>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> five-a-side could freeze solid mid-match. <b>Added:</b> dev cheats for testing · real extra power for owning your own club.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> other players on the pitch · penalty · free kick with a real wall.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> the aim sat about 0.42 m from the cursor. <b>Added:</b> first-time strike · near/far post · shot names.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> scoring was halved · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+<footer>Branch <code>Leo</code> · 266 / 266 tests pass · site version 0.35. Anything unverified says so.</footer>
+
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.10';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+document.addEventListener('click',function(e){
+  var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+  var pane=r.closest('.pane'), v=pane&&pane.querySelector('video'); if(!v) return;
+  pane.querySelectorAll('.spd button').forEach(function(x){x.classList.toggle('on',x===r);});
+  var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate;
+  if(v.paused){var p=v.play(); if(p&&p.catch)p.catch(function(){});}
+});
+</script>
+
+</body>
+</html>
