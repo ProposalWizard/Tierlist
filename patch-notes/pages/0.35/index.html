@@ -171,7 +171,7 @@
 
 <div class="strip">
   <div class="s"><b>3</b><span>cameras: TV, behind the goal, a fan in the stand</span></div>
-  <div class="s"><b>9–15 KB</b><span>one recorded goal, kept on your phone</span></div>
+  <div class="s"><b>7–15 KB</b><span>one recorded goal, kept on your phone</span></div>
   <div class="s"><b>1.3–3.1 s</b><span>to make a video on a slow test machine</span></div>
   <div class="s"><b>266 / 266</b><span>tests pass</span></div>
 </div>
@@ -192,12 +192,14 @@
   </div>
   <table class="tbl">
     <tr><th>Who posts it</th><th>The video</th></tr>
-    <tr><td><b>The club, the league, the competition</b></td><td>The TV camera, then a slow-motion replay from behind the goal. Wide.</td></tr>
-    <tr><td><b>Pages and papers</b></td><td>Behind the goal, then the TV camera in slow motion. Wide.</td></tr>
-    <tr><td><b>Fans, meme pages, team-mates</b></td><td>A fan's phone in the stand: tall, a bit shaky, heads in front.</td></tr>
+    <tr><td><b>Your club</b></td><td>The TV camera, then a slow-motion replay from behind the goal. Wide. Its goal post plays your goal; its full-time post plays every goal.</td></tr>
+    <tr><td><b>Highlights pages</b></td><td>Behind the goal, then the TV camera in slow motion. Wide.</td></tr>
+    <tr><td><b>Fans and meme pages</b></td><td>A fan's phone in the stand: tall, a bit shaky, heads in front.</td></tr>
     <tr><td><b>A post about 2 or more goals</b></td><td>All of them, one after the other: a highlights reel.</td></tr>
   </table>
-  <figure class="one"><img src="img/feed-making.jpg" alt="A highlights post making its video"><figcaption><b>Seen in the real game.</b> Tap ▶: the ring shows the video being made.</figcaption></figure>
+  <figure class="one"><img src="img/feed-club-tv.jpg" alt="Your club's post playing the TV video, and a highlights page from behind the goal"><figcaption><b>Seen in the real game.</b> Your club's goal post plays the TV pictures; Football Daily, below, has the camera behind the goal.</figcaption></figure>
+  <figure class="one"><img src="img/feed-fan.jpg" alt="A fan's post playing the phone video"><figcaption>A fan's post: their phone video from the stand.</figcaption></figure>
+  <figure class="one"><img src="img/feed-making.jpg" alt="A highlights post making its video"><figcaption>Tap ▶: the ring shows the video being made.</figcaption></figure>
   <figure class="one"><img src="img/feed-playing.jpg" alt="The highlights video playing"><figcaption>Then it plays: three goals in 13 seconds. This frame is the wipe from the 2nd goal to the 3rd.</figcaption></figure>
   <div class="clipbox">
     <p class="look"><b>Look for</b>The same goal from each camera. The TV video ends with a slow-motion replay from behind the goal.</p>
@@ -223,7 +225,7 @@
 <ul class="checks" id="checks">
   <li><label><input type="checkbox" data-k="feed"> A goal video in the feed<span class="where">Score in a match → after the match, Post Match Reactions → a post with a picture of the goal → tap ▶</span></label></li>
   <li><label><input type="checkbox" data-k="save"> Save video<span class="where">The same post → Save video (on an iPhone: the share menu → Save Video)</span></label></li>
-  <li><label><input type="checkbox" data-k="cams"> Three cameras<span class="where">The club's post (TV) · a page's post (behind the goal) · a fan's post (a phone in the stand)</span></label></li>
+  <li><label><input type="checkbox" data-k="cams"> Three cameras<span class="where">Your club's post (TV) · a highlights page (behind the goal) · a fan's post (a phone in the stand)</span></label></li>
   <li><label><input type="checkbox" data-k="reel"> A highlights reel<span class="where">Score 2 or more in a match, then find the HIGHLIGHTS post</span></label></li>
   <li><label><input type="checkbox" data-k="pic"> No play button without a video<span class="where">A meme, a missed penalty or a match you skipped: a picture only</span></label></li>
   <li><label><input type="checkbox" data-k="rep"> Goal Replays play the recording<span class="where">Settings → Goal Replays (admins) → a goal scored after this update → TV · Behind the goal · Fan in the stand</span></label></li>
@@ -253,9 +255,9 @@
   <div class="row"><div class="lbl">Asked for</div><p>"Maybe even different angles to make them look like real social media posts."</p></div>
   <div class="row"><div class="lbl">Fix</div>
     <ul>
-      <li><b>TV</b>: high in the stand at the side, following the ball. A score bar at the top, a GOAL banner, the scorer and the minute.</li>
-      <li><b>Behind the goal</b>: low behind the net. You see the keeper's back and the net bulge.</li>
-      <li><b>A fan in the stand</b>: a tall phone video, a bit shaky, heads in front, the account's @name in the corner.</li>
+      <li><b>TV</b> (your club): high in the stand at the side, following the ball. A score bar at the top, a GOAL banner, the scorer and the minute.</li>
+      <li><b>Behind the goal</b> (highlights pages): low behind the net. You see the keeper's back and the net bulge.</li>
+      <li><b>A fan in the stand</b> (fans and meme pages): a tall phone video, a bit shaky, heads in front, the account's @name in the corner.</li>
       <li>The crowd wears the two clubs' colours. Some matches are at night.</li>
     </ul>
   </div>
@@ -268,7 +270,7 @@
   <div class="row"><div class="lbl">Fix</div>
     <ul>
       <li>Under every goal video. Most phones make an MP4 (worked out from the code). A browser that cannot, like this test machine's, makes a WebM, which also plays and saves.</li>
-      <li>The file is named after the goal, for example <b>Goal-Vance-44-Horsham-v-Farnborough.mp4</b>.</li>
+      <li>The file is named after the goal and the camera, for example <b>Goal-Vance-44-Horsham-v-Farnborough-TV.mp4</b>. A video of several goals is named after the match: <b>Highlights-Horsham-v-Farnborough-TV.mp4</b>.</li>
       <li>A browser that cannot make videos at all shows the post's picture, with no play button.</li>
     </ul>
   </div>
@@ -290,9 +292,32 @@
   <li><div class="hd">A post with no recorded goal is a picture</div><div class="dt">A meme, a missed penalty, a match you skipped, or a goal from before this update: the headline on a card, with no play button.</div></li>
   <li><div class="hd">The players' moves follow Settings → Look → Animations</div><div class="dt">New: the newer 3D moves (a shot, a header, a one-handed save). Old: the older moves. The same as your match.</div></li>
   <li><div class="hd">A post about 2 or more goals says HIGHLIGHTS</div><div class="dt">It said GOAL. The label sits on the right of the picture now.</div></li>
+  <li><div class="hd">Your club's goal posts and its full-time post carry the goals on video</div><div class="dt">TV pictures. Only when the goal was recorded; otherwise the post is the same words as before.</div></li>
+  <li><div class="hd">A fan's goal post carries their phone video</div><div class="dt">"Vance you absolute beauty", filmed from the stand.</div></li>
 </ul>
 
 <!-- ── FIXED ────────────────────────────────────────────── -->
+<h2 class="fix"><i></i>Fixed (found by the playtest in the real game)</h2>
+<div class="card">
+  <div class="hd">Only highlights pages posted videos</div>
+  <div class="row"><div class="lbl">Problem</div><p>In the real feed, only pages like Football Daily posted a goal video. You only ever saw the camera behind the goal.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>Only those pages' posts had room for a video. Your club's posts and fans' posts were words only.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Your club's goal posts and its full-time post now play the goals on the TV pictures. A fan's goal post plays their phone video. With no recording, they stay words only, as before.</p></div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Club videos</span><div class="track"><div class="fill was" style="width:0%"></div><div class="fill now" style="width:41%"></div></div><span class="vv"><s>0</s> 7</span></div>
+    <div class="bar"><span class="lb">Fan videos</span><div class="track"><div class="fill was" style="width:0%"></div><div class="fill now" style="width:59%"></div></div><span class="vv"><s>0</s> 10</span></div>
+  </div>
+  <p class="cap"><b>Measured</b> over 30 test matches (a feed test, not played by hand): goal videos from your club and from fans, before and after.</p>
+</div>
+<ul class="n">
+  <li><div class="hd">A second post of the same goals made the video again</div><div class="dt">It took 5.9 seconds more. Now it plays at once: the video is made once and shared.</div></li>
+  <li><div class="hd">Two videos played at the same time</div><div class="dt">Now one plays at a time, like a real feed: starting one pauses the others.</div></li>
+  <li><div class="hd">A highlights video was saved under its first goal's name</div><div class="dt">"Goal-Vance-44-…" for three goals. Now "Highlights-Horsham-v-Farnborough".</div></li>
+  <li><div class="hd">The TV and the fan's video of one goal saved under one name</div><div class="dt">Found by the second check. The camera is in the name now (…-TV, …-Fan-cam, …-Behind-the-goal), so both keep.</div></li>
+  <li><div class="hd">"Save video" wrapped onto two lines</div><div class="dt">Next to "Saved to your downloads", at phone width. It stays on one line now.</div></li>
+  <li><div class="hd">The red GOAL label covered the account's name</div><div class="dt">On the still. The label is on the right now.</div></li>
+</ul>
+
 <h2 class="fix"><i></i>Fixed (found while checking)</h2>
 <div class="card">
   <div class="hd">The keeper stood on his head in the fan's video</div>
@@ -305,15 +330,17 @@
   </div>
 </div>
 <ul class="n">
-  <li><div class="hd">The red GOAL label covered the account's name</div><div class="dt">Found by the playtest in the real game. The label is on the right of the picture now.</div></li>
   <li><div class="hd">A post about one goal could play the match's other goals</div><div class="dt">When that goal was not recorded. Now it plays that goal, or shows a picture. Over 30 simulated matches, no post plays a wrong goal (test).</div></li>
 </ul>
 
 <!-- ── SEEN ─────────────────────────────────────────────── -->
 <h2 class="seen"><i></i>Seen in a browser</h2>
 <ul class="n" id="seen">
-  <li><div class="hd">Played in the real game: a match with 3 goals, then the feed</div><div class="dt">Signed out, phone size, made-up squads. The HIGHLIGHTS post showed the first goal's picture, made the video with the ring, and played all three goals in 13 seconds.</div></li>
-  <li><div class="hd">Seen: the test page end to end</div><div class="dt">A penalty, recorded on the 2nd try. The video was 7.2 seconds, it played, and Save video downloaded the file.</div></li>
+  <li><div class="hd">Played in the real game: a match with 3 goals, then the feed</div><div class="dt">Signed out, phone size, made-up squads. Each goal was saved as it went in: 6.8, 12.6 and 8.7 KB. The HIGHLIGHTS post made its video in about 5 seconds (the ring), then played all three goals: 640 × 360, 12.7 seconds, in real time, on a loop. A tap paused it and a second tap went on.</div></li>
+  <li><div class="hd">Seen: Save video in the real game</div><div class="dt">It downloaded a 2.7 MB file that plays, and said "Saved to your downloads."</div></li>
+  <li><div class="hd">Seen: all three cameras in the real feed (a second match, after the fixes)</div><div class="dt">Your club's post played the TV video (made in 2.8 seconds), a fan's post played the phone video (1.3 seconds), and Football Daily played the one from behind the goal. The label sat top right on all three, starting one paused the others, and the Save row stayed tidy at phone width. No page errors.</div></li>
+  <li><div class="hd">Not seen in the real feed: a HIGHLIGHTS reel after the fixes</div><div class="dt">The second match had only one goal of yours, and the club's full-time post did not come up. The reel and its file name are tested in the feed test instead.</div></li>
+  <li><div class="hd">Seen: the test page end to end</div><div class="dt">A penalty, recorded on the 2nd try: the video played and Save video downloaded it. The same three real-game goals from each camera: TV made in 3.8 s, fan in 1.6 s.</div></li>
   <li><div class="hd">Seen: two goals scored on the test page, from all three cameras</div><div class="dt">The clips on this page. Each made in 1.3 to 3.1 seconds here, 0.6 to 1.9 MB.</div></li>
   <li><div class="hd">Not seen</div><div class="dt">An iPhone: this test machine's browser can only make WebM, so the MP4 file and the iPhone share menu are worked out from the code. Real club colours and faces (no database here). How fast a real phone makes a video.</div></li>
 </ul>
@@ -327,6 +354,9 @@
   <li><div class="hd">No sound yet</div><div class="dt">The videos are silent.</div></li>
   <li><div class="hd">Only goals in the real match are recorded</div><div class="dt">Simulated matches, five-a-side and training drills record nothing.</div></li>
   <li><div class="hd">Not seen on an iPhone</div><div class="dt">An iPhone needs iOS 16.4 or later to make the video (worked out, not seen). Older phones show the picture.</div></li>
+  <li><div class="hd">Goal Replays is for admins only</div><div class="dt">As before. Players see their goals in the feed.</div></li>
+  <li><div class="hd">The celebration in a video is short</div><div class="dt">A recording stops when the match moves on, about 1.3 to 1.8 seconds after the goal (seen in the real game).</div></li>
+  <li><div class="hd">"The League" posts lower-league matches as Premier League <span class="pill p-amb">older</span></div><div class="dt">Found by the playtest: @PremierLeague posted about Horsham (National League South) with Premier League labels. Older than this update; not fixed here.</div></li>
   <li><div class="hd">Still waiting from v0.9 <span class="pill p-amb">carried</span></div><div class="dt">Run <code>star_legend_shares.sql</code> and <code>star_hall_of_fame.sql</code>. The world does not age.</div></li>
 </ul>
 

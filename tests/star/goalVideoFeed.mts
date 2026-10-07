@@ -195,6 +195,8 @@ function track(id: string, goalAt = 2.2): GoalTrack {
   check(reel.shots.length === 3 && reel.shots[0].track === 0 && reel.shots[1].track === 1 && reel.shots[2].track === 1 && reel.shots[2].replay, "a reel: every goal live, then the last one again");
   check(clipFileName(a, "mp4") === "Goal-Carter-63-Arsenal-v-Chelsea.mp4", `a file name a phone keeps (${clipFileName(a, "mp4")})`);
   check(clipFileName([a, b], "webm") === "Highlights-Arsenal-v-Chelsea.webm", `a reel is named after the match, not its first goal (${clipFileName([a, b], "webm")})`);
+  check(clipFileName(a, "mp4", "broadcast") === "Goal-Carter-63-Arsenal-v-Chelsea-TV.mp4" && clipFileName(a, "mp4", "fan") === "Goal-Carter-63-Arsenal-v-Chelsea-Fan-cam.mp4",
+    `the TV and the fan's video of one goal save as two files (${clipFileName(a, "mp4", "broadcast")}, ${clipFileName(a, "mp4", "fan")})`);
 }
 
 if (problems.length) { console.error("goalVideoFeed FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }

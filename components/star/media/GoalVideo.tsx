@@ -167,7 +167,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   const save = async () => {
     const hit = made.get(key);
     if (!hit) { saveAsked.current = true; setNote("Making the video first…"); void start(); return; }
-    const r = await saveVideo(hit.clip, clipFileName(edit.tracks, hit.clip.ext), title);
+    const r = await saveVideo(hit.clip, clipFileName(edit.tracks, hit.clip.ext, edit.style), title);
     setNote(r === "shared" ? "Sent to your share menu." : r === "downloaded" ? "Saved to your downloads." : null);
   };
 

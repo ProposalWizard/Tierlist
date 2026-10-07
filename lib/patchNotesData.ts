@@ -32,14 +32,14 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-07T22:45:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X",
-      "summary": "Goal videos: the match records every goal as you play (the ball, every player and the keeper's dive, 30 times a second, 9 to 15 KB a goal, kept on your phone). After the match, posts about a goal play it as a real video from three cameras (TV, behind the goal, a fan in the stand), a post about two or more goals plays a highlights reel, and Save video puts it in your share menu or downloads it. Goal Replays play the recording, so a replay is always the same goal.",
+      "summary": "Goal videos: the match records every goal as you play (the ball, every player and the keeper's dive, 30 times a second, 7 to 15 KB a goal, kept on your phone). After the match, posts play it as a real video: your club on the TV pictures (its goal posts and its full-time highlights), highlights pages from behind the goal, fans on a phone in the stand. Two or more goals play as a highlights reel, and Save video puts it in your share menu or downloads it. Goal Replays play the recording, so a replay is always the same goal.",
       "stats": [
         {
           "value": "3",
           "label": "cameras: TV, behind the goal, a fan in the stand"
         },
         {
-          "value": "9–15 KB",
+          "value": "7–15 KB",
           "label": "one recorded goal, kept on your phone"
         },
         {
@@ -66,7 +66,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Three cameras",
-              "detail": "The club's post (TV) · a page's post (behind the goal) · a fan's post (a phone in the stand)."
+              "detail": "Your club's post (TV) · a highlights page (behind the goal) · a fan's post (a phone in the stand)."
             },
             {
               "title": "A highlights reel",
@@ -96,7 +96,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Every goal is recorded, and the feed plays it",
-              "detail": "Problem: after a match, some posts looked like videos but nothing played, and a goal replay played the chance again with new luck, so it could end differently. Why: the game kept who scored and when, but not how. Fix: the match records every goal while you play (the ball, every player, the keeper's dive, 30 times a second). A post about a goal plays that recording as a real video: tap ▶, the phone makes it in a few seconds (a ring shows how far), then it loops. The club's post is the TV camera with a slow-motion replay from behind the goal; pages and papers post from behind the goal; fans post a tall, shaky phone video from the stand; a post about 2 or more goals plays them all. Seen in the real game: three goals played as one 13-second highlights video."
+              "detail": "Problem: after a match, some posts looked like videos but nothing played, and a goal replay played the chance again with new luck, so it could end differently. Why: the game kept who scored and when, but not how. Fix: the match records every goal while you play (the ball, every player, the keeper's dive, 30 times a second). A post about a goal plays that recording as a real video: tap ▶, the phone makes it in a few seconds (a ring shows how far), then it loops. Your club posts the TV camera with a slow-motion replay from behind the goal (its goal posts and its full-time post); highlights pages post from behind the goal; fans post a tall, shaky phone video from the stand; a post about 2 or more goals plays them all. Seen in the real game: three goals played as one 12.7-second highlights video; after the fixes, a second match showed all three cameras in the feed (club TV made in 2.8 s, fan in 1.3 s, behind the goal), one playing at a time, no page errors."
             }
           ]
         },
@@ -114,7 +114,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Save video",
-              "detail": "Under every goal video: the share menu on a phone (Save Video puts it in Photos), a download on a computer. Most phones make an MP4 (worked out from the code); a browser that cannot makes a WebM. Named after the goal, e.g. Goal-Vance-44-Horsham-v-Farnborough.mp4. A browser that cannot make videos shows the picture with no play button."
+              "detail": "Under every goal video: the share menu on a phone (Save Video puts it in Photos), a download on a computer. Most phones make an MP4 (worked out from the code); a browser that cannot makes a WebM. Named after the goal and the camera, e.g. Goal-Vance-44-Horsham-v-Farnborough-TV.mp4; several goals: Highlights-Horsham-v-Farnborough-TV.mp4. A browser that cannot make videos shows the picture with no play button."
             },
             {
               "title": "Goal Replays play the recording",
@@ -141,6 +141,44 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "A post about 2 or more goals says HIGHLIGHTS",
               "detail": "It said GOAL. The label sits on the right of the picture now."
+            },
+            {
+              "title": "Your club's goal posts and full-time post carry the goals on video",
+              "detail": "TV pictures, only when the goal was recorded; otherwise the same words as before."
+            },
+            {
+              "title": "A fan's goal post carries their phone video",
+              "detail": "Filmed from the stand."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest in the real game)",
+          "items": [
+            {
+              "title": "Only highlights pages posted videos",
+              "detail": "In the real feed only pages like Football Daily had a video, so you only saw the camera behind the goal. Your club's goal posts and full-time post (TV) and a fan's goal post (phone) carry it now. Over 30 test matches: club videos 0 → 7, fan videos 0 → 10."
+            },
+            {
+              "title": "A second post of the same goals made the video again",
+              "detail": "5.9 seconds more. Now the video is made once and shared, and plays at once."
+            },
+            {
+              "title": "Two videos played at the same time",
+              "detail": "Now one at a time: starting one pauses the others."
+            },
+            {
+              "title": "A highlights video was saved under its first goal's name",
+              "detail": "Now Highlights-Horsham-v-Farnborough."
+            },
+            {
+              "title": "The TV and the fan's video of one goal saved under one name",
+              "detail": "Found by the second check. The camera is in the name now (-TV, -Fan-cam, -Behind-the-goal)."
+            },
+            {
+              "title": "Save video wrapped onto two lines; the GOAL label covered the account's name",
+              "detail": "Both fixed: Save stays on one line, the label sits top right."
             }
           ]
         },
@@ -151,10 +189,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "The keeper stood on his head in the fan's video",
               "detail": "The players' drawings are made for the match's camera, which looks down from above, so a dive that runs down the screen read as a man on his head. A dive is drawn at most 35° from flat now, towards the ball. Tested over 2,701 ways he can face and dive; seen in stills from all three cameras."
-            },
-            {
-              "title": "The red GOAL label covered the account's name",
-              "detail": "Found by the playtest in the real game. The label is on the right now."
             },
             {
               "title": "A post about one goal could play the match's other goals",
@@ -189,6 +223,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "Not seen on an iPhone",
               "detail": "An iPhone needs iOS 16.4 or later to make the video (worked out, not seen). Older phones show the picture."
+            },
+            {
+              "title": "Goal Replays is for admins only",
+              "detail": "As before. Players see their goals in the feed."
+            },
+            {
+              "title": "The celebration in a video is short",
+              "detail": "A recording stops when the match moves on, about 1.3 to 1.8 seconds after the goal (seen in the real game)."
+            },
+            {
+              "title": "\"The League\" posts lower-league matches as Premier League",
+              "detail": "Found by the playtest (@PremierLeague posting about Horsham, National League South). Older than this update; not fixed here."
             },
             {
               "title": "Still waiting from v0.9",
