@@ -27,6 +27,319 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.34",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-07T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/73PxQFZCHbaKbkDd8MG96R",
+      "summary": "Paid items cannot be faked any more: a Gems wallet only the server can write, and a Save guard that checks every cloud save (15 of 15 cheat edits caught, 0 false alarms in 7,696 saves). Plus 9 bug fixes, drawn club badges with symbols (118 of 248 clubs), 3D polish and a manager picker with two new office moments.",
+      "stats": [
+        {
+          "value": "15 of 15",
+          "label": "cheat edits to a saved career caught by the new Save guard"
+        },
+        {
+          "value": "0 in 7,696",
+          "label": "false alarms across saves from 15 simulated careers, big casino wins included"
+        },
+        {
+          "value": "118 of 248",
+          "label": "clubs now get a badge symbol picked from their nickname or name"
+        },
+        {
+          "value": "9",
+          "label": "bugs fixed, including Mikey's open list"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Gems wallet test page",
+              "detail": "Admin → Gems (test). Mikey runs star_wallet.sql first"
+            },
+            {
+              "title": "Save guard watching",
+              "detail": "Nothing to tap. Mikey: check SUPABASE_SERVICE_ROLE_KEY in Vercel, then run star_save_guard.sql"
+            },
+            {
+              "title": "Wall stays put after a deflected free kick",
+              "detail": "A match free kick that the wall deflects"
+            },
+            {
+              "title": "Byline dead ball no longer sits for seconds",
+              "detail": "A cross or cutback along the byline that runs out"
+            },
+            {
+              "title": "Players stay on their feet on byline crosses",
+              "detail": "A byline cross with runners in the box"
+            },
+            {
+              "title": "Left-footers kick with the left foot in 3D",
+              "detail": "Any left-footed striker in a 3D match chance"
+            },
+            {
+              "title": "Flat camera keeps players on screen",
+              "detail": "Set the match camera to Flat, start a new chance"
+            },
+            {
+              "title": "Back button clear of the header",
+              "detail": "Line-up screen, any competition"
+            },
+            {
+              "title": "Training Power drill: the goal is bigger",
+              "detail": "Training, then Power"
+            },
+            {
+              "title": "Woodwork and boss games look right when close",
+              "detail": "Any close-camera feature"
+            },
+            {
+              "title": "Trial skip/sim panel hidden from players",
+              "detail": "The trial screen as a normal player"
+            },
+            {
+              "title": "Drawn badges with symbols",
+              "detail": "Settings → Look → Club badges: New | Old"
+            },
+            {
+              "title": "Badges admin page",
+              "detail": "/admin/badges"
+            },
+            {
+              "title": "Tap to walk jogs",
+              "detail": "Garden: tap the path, then the shop door. 3D shop: tap a car"
+            },
+            {
+              "title": "Car park keeps your player in view",
+              "detail": "Garden, the car park"
+            },
+            {
+              "title": "3D shop is lit and lighter to draw",
+              "detail": "3D shop, walk round the cars"
+            },
+            {
+              "title": "Box Room and Shared Flat look different",
+              "detail": "Store, Homes"
+            },
+            {
+              "title": "Horse grazes and swishes its tail",
+              "detail": "Garden, the stable"
+            },
+            {
+              "title": "Relations → Boss picks 1 of 3",
+              "detail": "Relations, Boss: Penalties, Office talk, Extra session"
+            },
+            {
+              "title": "Made captain: office moment",
+              "detail": "Get made captain, then go to Home"
+            },
+            {
+              "title": "Dropped to the bench: office moment",
+              "detail": "Before the line-up, after a run of low ratings"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Headline: paid items cannot be faked any more",
+          "items": [
+            {
+              "title": "The save safety work: a Gems wallet the phone cannot write to, and a guard on every cloud save",
+              "detail": "Problem: the career is worked out on the phone and the server stored whatever it was sent, so anyone with browser tools (F12) could change ★5,000 to ★50,000,000, or write a save straight into the database with the public key every page carries. Why: the game was built to trust the phone. Fix 1, Gems wallet: gems and paid items live only on the server (4 tables), the phone reads but never writes, the server sets prices, a tap is never charged twice, only the server adds gems (an admin test button today) and the payment address refuses everything until Apple, Google or Stripe is connected. Test page: Admin → Gems (test). Fix 2, Save guard: every cloud save is checked against the last trusted one. 15 of 15 cheat edits caught (money ×10,000, skills to 99, fake trophies and Ballon d'Ors, season rewound, items without paying). 0 false alarms in 7,696 saves from 15 simulated careers, big casino wins included. It starts in watch-only mode for a week (logs, blocks nothing), then can be switched to correct faked numbers. Admins and testers are exempt.",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Mikey runs star_wallet.sql and star_save_guard.sql. First check SUPABASE_SERVICE_ROLE_KEY is set in Vercel. star_save_guard.sql closes the direct-database write hole.",
+                  "Known gaps: the casino runs on the phone (luck up to ×2,000 a week is only logged). Coins (the shop's current premium money) are in the save: do not sell Coins for real money. Other phone-trusted places: Hall of Fame and legend shares, Draft history and records, objectives, stats, XP.",
+                  "How we know: measured (15 of 15 caught, 0 false alarms). Not seen: a real payment, or the guard on live saves."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: 9 bugs",
+          "items": [
+            {
+              "title": "The wall chased the loose ball after a deflected free kick",
+              "detail": "Problem: 2 or more wall men ran after the loose ball. Why: the wall men moved with the back line's shift. Fix: they stay out of it, and at most the nearest goes for a stopped ball. Kicks where 2+ wall men moved: 160 of 344 → 1 of 171 (core engine file).",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Measured in the real engine. Goals unchanged over 10 chance kinds, 400 each. Not seen in a played match."
+                ]
+              }
+            },
+            {
+              "title": "A dead ball on the byline sat up to 1.88 seconds before the game called it",
+              "detail": "Problem: a lost byline cross lay still for nearly 2 seconds. Why: the game waited for a defender to walk over. Fix: a ball that dies where only a defender can have it is called short after 0.3 s. Balls waiting 1 s or more: 17 of 460 → 0. Longest wait: 1.88 s → 0.85 s (core engine file).",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Measured over 460 byline chances. Not seen in a played match."
+                ]
+              }
+            },
+            {
+              "title": "Players flipped between lying and standing on byline crosses",
+              "detail": "Problem: runners flickered between a sprawled and a standing picture. Fix: 3D runners never use the sprawled picture. Sprawled frames while running: 90 of 360 → 0."
+            },
+            {
+              "title": "Left-footers kicked with the right foot in 3D",
+              "detail": "Fix: the kick picture is mirrored for left-footers. Seen in the before and after strike frames."
+            },
+            {
+              "title": "The flat camera put extra players off screen on new chances",
+              "detail": "Fix: Flat now frames everyone in the chance, as the 20° camera does. Players off screen: 1,597 of 1,650 → 838 (the rest hit the zoom-out limit)."
+            },
+            {
+              "title": "\"‹ Back\" overlapped the competition header on the line-up screen",
+              "detail": "Fix: the chip no longer runs under Back and takes two lines at most. Overlap on 4 competitions: 63 / 42 / 27 / 7 px → 0."
+            },
+            {
+              "title": "The Training Power drill goal looked tiny",
+              "detail": "Fix: the drill uses its own close camera. Goal width: 19% → 28% of the screen. Harry should check the Power drill on a phone."
+            },
+            {
+              "title": "Close-camera features were drawn up to 36% stretched",
+              "detail": "Fix: a feature's close camera now takes the new view's canvas shape. Harry should check woodwork and the boss games on a phone."
+            },
+            {
+              "title": "The trial skip and simulate panel was open to every player",
+              "detail": "Fix: testers and admins only."
+            },
+            {
+              "title": "Already fixed or left alone",
+              "detail": "Already fixed, dropped from the list: the dribble how-to card, 3 old failing tests, the old Sponsors bar. Not changed (Harry's call): the tight-angle defender at 1.9 to 2 m comes from the drawings (6 to 7% of chances)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Every club uses a drawn badge, and 118 of 248 get a symbol from their nickname",
+              "detail": "43 simple drawings: Gunners get a cannon, Magpies a magpie, Foxes a fox, Irons crossed hammers, Wolves a wolf. The other clubs keep a ball or a star. New page /admin/badges: all 248, a filter, a search box, and buttons to change a symbol or a pattern (saved on that device only). Settings → Look → Club badges: New (drawn badge for every club) | Old (real crest, or letters).",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Weakest drawings: the tiger reads a bit like a bear, the lion head a bit like a sun.",
+                  "Seen in the real game page and the admin page. Not seen in a match on a phone."
+                ]
+              }
+            },
+            {
+              "title": "Tap to walk now jogs",
+              "detail": "Gate to shop door: 8.8 s → 6.3 s. A 4 m trip: 2.9 s → 1.6 s. Harry said it was too slow."
+            },
+            {
+              "title": "Car park: your player was hidden",
+              "detail": "The camera went outside the garden wall. It now keeps its distance inside the garden and stops at the wall."
+            },
+            {
+              "title": "The 3D shop uses 2 real lights, not 6",
+              "detail": "8 to 12% less time per frame on this machine. Not measured on a phone. The Old shop player keeps 6."
+            },
+            {
+              "title": "Box Room and Shared Flat look different",
+              "detail": "The two pictures are re-drawn: a corner shop and a tall cream Victorian house."
+            },
+            {
+              "title": "The horse grazes and swishes its tail",
+              "detail": "Grazes, stands, and its tail sways and flicks, at random times. Seen as a still only."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Relations → Boss: pick 1 of 3. The office also opens for captain and the bench.",
+              "detail": "Penalties (unchanged), Office talk (3 questions, the best reply depends on his style: a random clicker averages −0.16 against +6 for the best replies, 2,800 talks) and Extra session (4 shots on the real match). The office opens for a club contract offer, manager news and being left out of the squad. New: made captain (once, on your next visit to Home) and dropped to the bench (before the line-up, with the real reason).",
+              "more": {
+                "summary": "The detail",
+                "points": [
+                  "Seen: the picker and the plain-card versions of both new moments. Not seen: the 3D office versions."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Save guard is watch-only for a week",
+              "detail": "It logs and blocks nothing until it is switched on."
+            },
+            {
+              "title": "The casino and Coins still trust the phone",
+              "detail": "Casino luck up to ×2,000 a week is only logged. Do not sell Coins for real money."
+            },
+            {
+              "title": "Other places that trust the phone",
+              "detail": "Hall of Fame and legend shares, Draft history and records, objectives, stats, XP."
+            },
+            {
+              "title": "Two SQL files to run (Mikey)",
+              "detail": "star_wallet.sql and star_save_guard.sql. Until the second runs, the direct-database write hole is open."
+            },
+            {
+              "title": "Not seen or not measured",
+              "detail": "3D office versions of the captain and bench moments; 3D shop lights on a phone. Tiger and lion drawings are weak."
+            },
+            {
+              "title": "Still open from v0.30 and earlier",
+              "detail": "The tight-angle defender at 1.9 to 2 m (Harry's call). The tour flow (half fixed). The Ballon d'Or may be too hard. Boots warnings in the New UI only. Tester access untried. SQL files still to run (Mikey): fix_two_digit_fifa_years, draft_records_full_fix, perf_indexes_jul2026, sofifa_search_indexes, fc27_clone_lower_leagues, star_hall_of_fame, star_legend_shares."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Mikey runs star_wallet.sql and star_save_guard.sql"
+            },
+            {
+              "title": "Lock the other phone-trusted places"
+            },
+            {
+              "title": "Move the casino to the server later"
+            },
+            {
+              "title": "The look and style plan",
+              "detail": "A plan only, nothing built: https://claude.ai/artifact/4hthbjbsdTx88UJfzCmV35"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.30 — 5 to 6 Oct 2026 — 3D people with fingers, a 3D office, a rebuilt garden",
+              "detail": "3D people are one body (3 bodies → 1, 15 finger joints a hand); a 3D manager's office; a rebuilt garden; the whole strike-screen ball takes a tap (69 of 69); faster 3D scenes; tap to move; 3D files about half the size and a 3D quality setting; drawn badges step 1; Boss picks 1 of 3; tester access links; the database security fix.",
+              "more": {
+                "summary": "Open from v0.30",
+                "points": [
+                  "Open on the artifact: https://claude.ai/artifact/AN3EiQVU8kb1cBWCFjn39A",
+                  "Still open from v0.30: money and stats trusted from the saved career (the Save guard now watches this); the 3D office captain and bench moments (built, not seen); shop lights on a phone (not measured)."
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.33",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-06T13:30:00Z",
