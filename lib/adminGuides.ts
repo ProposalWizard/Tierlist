@@ -189,15 +189,16 @@ export const ADMIN_GUIDES = {
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
     buttons: [
       { items: [
-        ["▶ The manager's penalties / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["▶ The manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. The manager opens a picker of 3: Penalties, Office talk, Extra session. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
         ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
-        ["In form / Ordinary / Out of form, Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game (the boss game is now three penalties at spots he names)."],
+        ["In form / Ordinary / Out of form", "Your last match rating. Office talk uses it: out of form, one question tests how you take a bad game; in form, whether it went to your head."],
+        ["Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game. Office talk reads the manager's playing style off his name instead."],
         ["Last game", "What the last game returned: won or lost, and the change."],
       ] },
     ],
     saving: ["Nothing is saved. It is a test player that resets when you leave."],
     inGame: ["Relations (boss, team, fans) and the Sponsors screen (the advert, on each deal)."],
-    dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts and lib/star/bossChat.ts.",
+    dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts, lib/star/bossPenalties.ts, lib/star/bossTalk.ts and lib/star/bossSession.ts.",
   },
   "/admin/star-xp": {
     title: "XP Book",
@@ -973,11 +974,12 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved."],
     inGame: [
-      "Talk to your manager (Life tab) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat screen exactly as before. The lines, replies and results are the boss game's own, unchanged.",
+      "The manager's Office talk (Relations → Boss → Office talk) shows this office above the chat when Settings → Look → \"Talk to your manager\" is \"3D office\" (the default, per phone). \"Old\" is the chat alone.",
+      "The same switch puts three manager moments in the office: a club's contract offer (before the talks), manager news on Home (Continue dismisses it), and being left out of the squad (above the card on the match screen).",
       "If the phone cannot run the 3D, the chat carries on without the office.",
       "The people are the one body (Settings → Look → \"3D people\").",
     ],
-    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
+    dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
 
   "/star-animations-dev": {
