@@ -217,7 +217,9 @@ export const CLUB_TEMPLATES: Template[] = [
   {
     id: "club-generic", archetype: "club",
     body: "{homeClub} {hs}-{as} {awayClub}. Thank you for the support today.",
-    hashtag: true, weight: 0.5,
+    // Full-time highlights on the TV pictures: every goal of ours that was
+    // recorded. None recorded (a 0-0, a skipped match): just the words.
+    graphic: "goalVideo", hashtag: true, weight: 0.5,
   },
 
   // ── The league ────────────────────────────────────────────────────────────

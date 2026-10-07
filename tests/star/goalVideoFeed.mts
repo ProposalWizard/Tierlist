@@ -113,8 +113,12 @@ function newCareer(seed = 1): CareerState {
         if (p.author.archetype === "fan") fanVideos++;
         if (!p.graphic.clips.length || p.graphic.clips.some(id => !ids.includes(id))) videoBad++;
         if (!seenThisMatch) videoWhenNothingSeen++;
-        // The club's goal post is about YOUR goals: only yours, never a team-mate's.
-        if (p.author.archetype === "club" && p.graphic.clips.some(id => !mineIds.includes(id))) videoNotOneGoal++;
+        // The club's full-time post plays every goal of ours that was seen, in
+        // order; its goal posts are about YOUR goals: only yours.
+        if (p.author.archetype === "club") {
+          const fullTime = /Thank you for the support/.test(p.text);
+          if (fullTime ? p.graphic.clips.join(",") !== ids.join(",") : p.graphic.clips.some(id => !mineIds.includes(id))) videoNotOneGoal++;
+        }
         continue;
       }
       if (p.graphic?.type !== "thumbnail") continue;
@@ -134,7 +138,7 @@ function newCareer(seed = 1): CareerState {
   check(fanVideos > 0, `fans post their phone video (${fanVideos})`);
   check(videoBad === 0, `a goal video only ever plays this match's seen goals (${videoBad} wrong)`);
   check(videoWhenNothingSeen === 0, `no goal video from a match nobody watched (${videoWhenNothingSeen})`);
-  check(videoNotOneGoal === 0, `the club's goal post plays only your goals (${videoNotOneGoal} wrong)`);
+  check(videoNotOneGoal === 0, `the club's full-time post plays the match's goals, its goal posts only yours (${videoNotOneGoal} wrong)`);
   console.log(`  feed: ${thumbs} video-style posts, ${withClips} play a real goal, ${stillsWhenNothingSeen} are pictures (nothing seen); goal videos: ${videos} (club ${clubVideos}, fans ${fanVideos})`);
 }
 
