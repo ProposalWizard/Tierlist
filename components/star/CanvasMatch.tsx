@@ -134,6 +134,7 @@ import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSe
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/goalClip/track";
 import { switchOn } from "@/lib/star/compareSwitches";
 import { strikingPower } from "@/lib/star/strikePower";
@@ -4342,6 +4343,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     });
     return id;
   };
+
+  // Development only — compiled out of the live site (devMode.ts): where the
+  // ball and the goal are on the glass, so a playtest bot can aim a real
+  // kick instead of guessing (in a real chance the ball can be anywhere in
+  // the frame). Read-only: it changes nothing in the match.
+  useEffect(() => {
+    if (!offlineDevPlayEnabled() || typeof window === "undefined") return;
+    const w = window as unknown as { __starMatch?: unknown };
+    w.__starMatch = {
+      phase: () => phaseRef.current,
+      kind: () => scenarioRef.current.kind,
+      ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
+      goal: () => pitchToClient({ x: CX, y: 0 }),
+    };
+    return () => { delete w.__starMatch; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Main animation loop ---
   useEffect(() => {
