@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { kitsOf, labelInk, type Kit } from "@/lib/star/kits";
 import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
+import { badgeSvg } from "@/lib/star/clubBadge";
+import { useBadgeLook } from "@/lib/star/badgeLook";
 
 /**
  * THE CIRCLE ITSELF — REAL BADGE WHEN ONE EXISTS, THE OLD KIT-COLOUR-PLUS-
@@ -22,6 +24,7 @@ import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
 export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?: Kit; size?: number }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const look = useBadgeLook();
 
   useEffect(() => {
     setFailed(false);
@@ -31,6 +34,22 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
     });
     return () => { alive = false; };
   }, [club]);
+
+  // New (default): every club gets the drawn badge from Mikey's club data —
+  // shape, colours, pattern, emblem, no letters (lib/star/clubBadge.ts) —
+  // even one with a real crest saved, so they all match (Harry, 6 Oct 2026).
+  // Old: the real crest when there is one, else the initials.
+  if (look === "new") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={drawnBadgeUrl(club)}
+        alt=""
+        className="shrink-0"
+        style={{ height: size, width: size }}
+      />
+    );
+  }
 
   if (logoUrl && !failed) {
     // Reported four times now, from three different screens, as a stray
@@ -79,4 +98,15 @@ export function initials(club: string): string {
   const words = club.split(/\s+/).filter(w => !skip.has(w.toLowerCase()));
   if (words.length >= 2) return words.slice(0, 3).map(w => w[0]).join("").toUpperCase();
   return club.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
+}
+
+const drawnCache = new Map<string, string>();
+/** The drawn badge as a data URL, built once per club per page. */
+export function drawnBadgeUrl(club: string): string {
+  let u = drawnCache.get(club);
+  if (!u) {
+    u = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(badgeSvg(club))}`;
+    drawnCache.set(club, u);
+  }
+  return u;
 }
