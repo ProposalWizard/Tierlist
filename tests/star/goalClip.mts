@@ -3,7 +3,8 @@ import {
   type ClipBody, type FrameState, type GoalTrack,
 } from "../../lib/star/goalClip/track";
 import { GoalRecorder, LEAD_IN_S, POST_GOAL_S, MAX_CLIP_S, type GoalFacts } from "../../lib/star/goalClip/recorder";
-import { keeperDives } from "../../lib/star/goalClip/render";
+import { keeperDives, readableDive, MAX_DIVE_TILT } from "../../lib/star/goalClip/render";
+import { keeperDiveClip } from "../../lib/star/sprites";
 import { readFileSync } from "node:fs";
 
 /**
@@ -191,6 +192,46 @@ if (recorded) {
     check(scramble.firstKickT < scramble.strikeT && scramble.strikeT < scramble.goalT, "first kick, then the scoring strike, then the goal");
     check(trackDuration(layoff) > layoff.goalT && trackDuration(layoff) - layoff.goalT <= POST_GOAL_S + 0.05, "the clip ends just after the goal");
   }
+}
+
+// ── 7. A dive is drawn across the screen, never standing on his head ───────
+{
+  // His right is his facing + 90° (sprites.ts's keeperDiveClip), so the body of
+  // a dive lies along facing ± 90°. Sweep every true facing and dive direction.
+  let steepest = 0, wrongSide = 0, flatChanged = 0, n = 0;
+  for (let f = -Math.PI; f < Math.PI; f += Math.PI / 18) {
+    for (let a = -Math.PI; a < Math.PI; a += Math.PI / 36) {
+      const dx = Math.cos(a), dy = Math.sin(a);
+      const pick = readableDive(f, dx, dy);
+      const along = pick.clip === "diveR" ? pick.facing + Math.PI / 2 : pick.facing - Math.PI / 2;
+      // How far the drawn body is from flat (0 = flat across the screen).
+      const tilt = Math.abs(Math.asin(Math.max(-1, Math.min(1, Math.sin(along)))));
+      steepest = Math.max(steepest, tilt);
+      // It dives to the same side of the screen as the real dive.
+      if (Math.sign(Math.cos(along)) !== Math.sign(dx) && Math.abs(dx) > 1e-9) wrongSide++;
+      // The match's own rule agrees which dive this is.
+      if (keeperDiveClip(pick.facing, Math.cos(along), Math.sin(along)) !== pick.clip) wrongSide++;
+      // A dive already flat enough, drawn the way he really faces, is left alone.
+      const flatEnough = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx))) <= MAX_DIVE_TILT - 1e-9;
+      if (flatEnough && keeperDiveClip(f, dx, dy) === pick.clip) {
+        const back = Math.abs(Math.atan2(Math.sin(pick.facing - f), Math.cos(pick.facing - f)));
+        if (back > 1e-6 && Math.abs(Math.atan2(Math.sin(along - a), Math.cos(along - a))) > 1e-6) flatChanged++;
+      }
+      n++;
+    }
+  }
+  check(steepest <= MAX_DIVE_TILT + 1e-9, `no dive drawn steeper than ${(MAX_DIVE_TILT * 180 / Math.PI).toFixed(0)}° (steepest ${(steepest * 180 / Math.PI).toFixed(1)}° over ${n})`);
+  check(wrongSide === 0, `every dive goes to the real side, by the match's own rule (${wrongSide} wrong)`);
+  check(flatChanged === 0, `a dive already across the screen is drawn as it was (${flatChanged} changed)`);
+  // A dive straight at the camera goes to the ball's side, not a coin flip.
+  const atCamL = readableDive(Math.PI / 2, 0.02, 1, -40), atCamR = readableDive(Math.PI / 2, -0.02, 1, 40);
+  const sideOf = (p: { facing: number; clip: string }) => Math.sign(Math.cos(p.clip === "diveR" ? p.facing + Math.PI / 2 : p.facing - Math.PI / 2));
+  check(sideOf(atCamL) === -1 && sideOf(atCamR) === 1, `a dive at the camera leads to the ball's side (${sideOf(atCamL)}, ${sideOf(atCamR)})`);
+  // …but a dive already across the screen ignores the hint (it is already right).
+  check(sideOf(readableDive(Math.PI / 2, 1, 0.2, -40)) === 1, "a flat dive keeps its own side");
+  // The camera behind the goal sees his back: facing up the screen, diving right.
+  const net = readableDive(-Math.PI / 2, 1, 0.05);
+  check(net.clip === "diveR" && Math.abs(net.facing - (Math.atan2(0.05, 1) - Math.PI / 2)) < 1e-9, `behind the goal: his back, diving right (${net.clip}, ${(net.facing * 180 / Math.PI).toFixed(0)}°)`);
 }
 
 if (problems.length) { console.error("goalClip FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }

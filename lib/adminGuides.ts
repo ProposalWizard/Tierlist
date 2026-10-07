@@ -231,6 +231,7 @@ export const ADMIN_GUIDES = {
         ["TV / Behind the goal / Fan in the stand", "The three cameras. TV is what the club's account posts (with a slow replay from behind the goal); Behind the goal is what pages and papers post; Fan in the stand is a fan's phone video."],
         ["▶ (on the picture)", "Makes the video on this phone (a few seconds, with a ring showing how far) and plays it. It starts by itself here."],
         ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
+        ["Moves: Old / New", "Which moves the players use in the video: the older ones, or the newer 3D moves (a shot, a header, a one-handed dive). The video follows Settings → Look → Animations, like the match; these force one while this page is open (the match above follows it too)."],
       ] },
     ],
     saving: [
@@ -243,7 +244,7 @@ export const ADMIN_GUIDES = {
       "Settings → Goal Replays (admin) plays the recording too, so a replay is always the same goal.",
     ],
     needs: [
-      "A browser that can make video (iPhone iOS 16.4 or later, Chrome, Edge, Firefox on a computer). Others show the picture and say the video can't be made.",
+      "A browser that can make video (iPhone iOS 16.4 or later, Chrome, Edge, Firefox on a computer). Others show the plain picture with no play button.",
     ],
     dev: "app/star-goal-clips-dev/page.tsx; recorder lib/star/goalClip/recorder.ts (fed by CanvasMatch's onGoalClip); format track.ts; cameras cameras.ts; drawing scene.ts, render.ts; cuts edit.ts; the file encode.ts (WebCodecs + mp4-muxer / webm-muxer); storage store.ts (IndexedDB); the post components/star/media/GoalVideo.tsx.",
   },

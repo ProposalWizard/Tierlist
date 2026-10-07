@@ -30,8 +30,16 @@ export interface Shot {
   replay: boolean;
 }
 
+/**
+ * Which moves the men use: the newer 3D moves (a shot, a header, a one-handed
+ * dive) or the older ones. Follows Settings → Look → Animations, so a video
+ * looks like the match you played.
+ */
+export type ClipMoves = "new" | "old";
+
 export interface Edit {
   style: ClipStyle;
+  moves: ClipMoves;
   w: number;
   h: number;
   fps: number;
@@ -53,10 +61,10 @@ function replayWindow(t: GoalTrack): { from: number; to: number } {
   return { from, to: Math.min(dur, t.goalT + 0.85) };
 }
 
-export function makeEdit(tracks: GoalTrack[], style: ClipStyle): Edit {
+export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old"): Edit {
   const size = style === "fan" ? TALL : WIDE;
   const shots: Shot[] = [];
-  if (tracks.length === 0) return { style, ...size, fps: EDIT_FPS, tracks, shots };
+  if (tracks.length === 0) return { style, moves, ...size, fps: EDIT_FPS, tracks, shots };
   const live: ClipAngle = style === "broadcast" ? "tv" : style === "reverse" ? "net" : "fan";
   tracks.forEach((t, i) => shots.push({ track: i, angle: live, from: 0, to: trackDuration(t), rate: 1, replay: false }));
   if (style !== "fan") {
@@ -64,7 +72,7 @@ export function makeEdit(tracks: GoalTrack[], style: ClipStyle): Edit {
     const w = replayWindow(tracks[last]);
     shots.push({ track: last, angle: style === "broadcast" ? "net" : "tv", from: w.from, to: w.to, rate: REPLAY_RATE, replay: true });
   }
-  return { style, ...size, fps: EDIT_FPS, tracks, shots };
+  return { style, moves, ...size, fps: EDIT_FPS, tracks, shots };
 }
 
 export function shotLength(s: Shot): number {

@@ -256,7 +256,8 @@ export function buildGraphic(
       return {
         type: "thumbnail",
         title: headlineFor(e, you).toUpperCase(),
-        badge: e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        // A video of more than one goal is a highlights reel, whatever the post is about.
+        badge: clips.length > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
         ...(clips.length ? { clips } : {}),
       };
     }

@@ -62,6 +62,24 @@ async function pickCodec(w: number, h: number, fps: number): Promise<Choice | nu
   return null;
 }
 
+const supportCache = new Map<string, Promise<boolean>>();
+
+/**
+ * Can this browser make a video of this size? Asked once per size and kept.
+ * A post shows its play button only when the answer is yes; otherwise it is
+ * the plain picture, never a play button that cannot play.
+ */
+export function videoSupported(w: number, h: number, fps: number): Promise<boolean> {
+  if (!canMakeVideo()) return Promise.resolve(false);
+  const key = `${w}x${h}@${fps}`;
+  let hit = supportCache.get(key);
+  if (!hit) {
+    hit = pickCodec(w, h, fps).then(c => !!c).catch(() => false);
+    supportCache.set(key, hit);
+  }
+  return hit;
+}
+
 const nextTick = () => new Promise<void>(r => setTimeout(r, 0));
 
 /**
@@ -73,7 +91,7 @@ export async function encodeEdit(
   opts: { credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal } = {},
 ): Promise<EncodedClip | null> {
   if (!canMakeVideo() || edit.shots.length === 0) return null;
-  await prepareClipSprites();
+  await prepareClipSprites(edit.moves);
   const { w, h, fps } = edit;
   const choice = await pickCodec(w, h, fps);
   if (!choice) return null;

@@ -19,7 +19,7 @@ import { CX, POST_L, POST_R, GOAL_H } from "../pitch";
 import { kitsOf } from "../kits";
 import { shortClub } from "../media/grammar";
 import {
-  drawSprite, spritesReady, keeperDiveClip, spriteKickStrikeT, spriteClipLength, spriteClipReady, spriteClipFps,
+  drawSprite, spritesReady, spriteKickStrikeT, spriteClipLength, spriteClipReady, spriteClipFps,
   loadSprites, type SpriteClip,
 } from "../sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, sideOfDive } from "../sprite3dAnim";
@@ -33,7 +33,7 @@ import {
   drawSky, drawPitch, drawStadium, drawFloodlights, drawGoalPart, drawCornerFlags, goalPartAnchor, toCam,
   type GoalPart, type NetBulge, type SceneLook,
 } from "./scene";
-import { momentAt, type Edit, type EditMoment } from "./edit";
+import { momentAt, type ClipMoves, type Edit, type EditMoment } from "./edit";
 
 /** Who posted the video, for the watermark. */
 export interface ClipCredit {
@@ -163,13 +163,50 @@ function screenFacing(cam: FpCamera, dx: number, dy: number): number {
   return Math.atan2(-w, u);
 }
 
+/** The steepest a dive is drawn on screen, from flat. The baked dives are
+ *  seen from above (they were made for the match's own camera); one drawn
+ *  steeper than this reads as a man standing on his head. */
+export const MAX_DIVE_TILT = (35 * Math.PI) / 180;
+
+function angleGap(a: number, b: number): number {
+  const d = Math.abs(a - b) % (Math.PI * 2);
+  return d > Math.PI ? Math.PI * 2 - d : d;
+}
+
+/**
+ * Which dive to draw, and which way he faces, so the dive runs ACROSS the
+ * screen. `dx, dy` is the way he really dives, on screen. A dive that runs
+ * down the screen (the fan's camera, side on, sees the goal line steeply) is
+ * drawn tilted at most MAX_DIVE_TILT, towards `ballSide` (the ball's screen
+ * x minus his) when given, so his gloves lead towards the ball. Of the two
+ * ways to draw that (to his right, or to his left), the one nearer the way
+ * he really faces is kept, so the camera behind the goal still sees his back.
+ */
+export function readableDive(
+  trueFacing: number, dx: number, dy: number, ballSide = 0,
+): { facing: number; clip: "diveL" | "diveR" } {
+  const len = Math.hypot(dx, dy) || 1;
+  const tilt = Math.asin(Math.min(1, Math.abs(dy) / len));      // 0 flat … 90° straight down
+  const steep = tilt > MAX_DIVE_TILT;
+  const toRight = steep && ballSide !== 0 ? ballSide > 0 : dx >= 0;
+  const t = Math.min(tilt, MAX_DIVE_TILT) * (dy >= 0 ? 1 : -1);  // + is down the screen
+  const d = toRight ? t : Math.PI - t;
+  // keeperDiveClip's rule: his right is his facing + 90°. So a dive to his
+  // right along d means facing d − 90°; to his left, d + 90°.
+  const fR = d - Math.PI / 2, fL = d + Math.PI / 2;
+  return angleGap(fR, trueFacing) <= angleGap(fL, trueFacing)
+    ? { facing: fR, clip: "diveR" }
+    : { facing: fL, clip: "diveL" };
+}
+
 /**
  * Load every figure a replay draws BEFORE it is filmed, so frame one and
  * frame two hundred use the same drawings (a move that loaded half way
  * through would change the film between two plays). Waits at most `ms`.
  */
-export async function prepareClipSprites(ms = 5000): Promise<void> {
+export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000): Promise<void> {
   await loadSprites();
+  if (moves === "old") return;
   const t0 = Date.now();
   // One ask starts the second set of moves loading; then wait for it.
   while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR")) && Date.now() - t0 < ms) {
@@ -205,6 +242,7 @@ function shadow(ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: numb
 
 function drawMan(
   ctx: CanvasRenderingContext2D, cam: FpCamera, track: GoalTrack, p: Prep, fr: FrameState, i: number, t: number,
+  moves: ClipMoves,
 ): Drawable | null {
   const body = track.bodies[i];
   let pos = fr.bodies[i];
@@ -239,10 +277,22 @@ function drawMan(
     facing = screenFacing(cam, 0, 1);
     if (diving) {
       const a = project(cam, pos.x, pos.y, 0), b = project(cam, pos.x + (fr.keeper.dir || 1), pos.y, 0);
-      clip = a && b ? keeperDiveClip(facing, b.px - a.px, b.py - a.py) : "diveR";
+      // Which side of him the ball is, on screen, part way into the dive: the
+      // side his gloves lead to when the dive runs straight at the camera.
+      // Too close to call (under a third of his height) keeps his own side.
+      let ballSide = 0;
+      if (dive) {
+        const tb = Math.min(dive.end, dive.start + 0.3, trackDuration(track));
+        const at = frameAt(track, tb);
+        const k = project(cam, at.bodies[i].x, at.bodies[i].y, 0), kb = project(cam, at.ball.x, at.ball.y, at.ball.z);
+        if (k && kb && Math.abs(kb.px - k.px) > FIG_H * k.scale * FIG_K / 3) ballSide = kb.px - k.px;
+      }
+      const pick = a && b ? readableDive(facing, b.px - a.px, b.py - a.py, ballSide) : { facing, clip: "diveR" as const };
+      facing = pick.facing;
+      clip = pick.clip;
       // The match's newer dives (Animations: New): a one-handed stretch for a
       // ball in the top corner, a low dive for one along the grass.
-      const fresh = keeperDiveClipNew(dive?.result ?? "beaten", dive?.result ? dive.z : fr.ball.z, dive?.high ?? false, sideOfDive(clip));
+      const fresh = moves === "new" ? keeperDiveClipNew(dive?.result ?? "beaten", dive?.result ? dive.z : fr.ball.z, dive?.high ?? false, sideOfDive(clip)) : null;
       if (fresh && spriteClipReady("keeper", fresh)) clip = fresh;
       clipT = diveT;
       centre = Math.min(1, diveT / 0.4);
@@ -276,7 +326,7 @@ function drawMan(
     }
     // The newer moves (Animations: New): his own shot, pass, header, block or
     // first touch, timed to the moment the ball's log says he made it.
-    for (const a of p.acts.get(body.id) ?? []) {
+    for (const a of moves === "new" ? p.acts.get(body.id) ?? [] : []) {
       const sc = outfieldSpriteClip({ kind: a.kind, mode: a.mode }, t - a.t, (c) => spriteClipFps("player", c));
       if (sc && spriteClipReady("player", sc.clip)) {
         clip = sc.clip;
@@ -355,7 +405,9 @@ function drawBall(ctx: CanvasRenderingContext2D, cam: FpCamera, track: GoalTrack
 }
 
 /** The scene at clip time `t` from `angle`. */
-export function drawScene(ctx: CanvasRenderingContext2D, W: number, H: number, track: GoalTrack, angle: ClipAngle, t: number): FpCamera {
+export function drawScene(
+  ctx: CanvasRenderingContext2D, W: number, H: number, track: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves = "old",
+): FpCamera {
   const p = prepOf(track);
   const rig = rigFor(track, angle, t, W, H);
   const cam = rig.cam;
@@ -376,7 +428,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, W: number, H: number, t
   const fr = frameAt(track, t);
   const items: Drawable[] = [];
   for (let i = 0; i < track.bodies.length; i++) {
-    const m = drawMan(ctx, cam, track, p, fr, i, t);
+    const m = drawMan(ctx, cam, track, p, fr, i, t, moves);
     if (m) items.push(m);
   }
   const b = drawBall(ctx, cam, track, t, fr.ball);
@@ -603,7 +655,7 @@ export function drawEditFrame(ctx: CanvasRenderingContext2D, edit: Edit, outT: n
     ctx.fillRect(0, 0, W, H);
     return;
   }
-  drawScene(ctx, W, H, track, shot.angle, m.t);
+  drawScene(ctx, W, H, track, shot.angle, m.t, edit.moves);
   const kit = kitsOf(track.meta.youAreHome ? track.meta.home : track.meta.away).home;
   if (edit.style === "broadcast") {
     if (!shot.replay) {

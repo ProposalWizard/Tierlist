@@ -4,7 +4,8 @@ import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { getClips } from "@/lib/star/goalClip/store";
 import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
-import { encodeEdit, saveVideo, canMakeVideo, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { useAnimationsLook } from "@/lib/star/animLook";
 
 /**
  * A REAL GOAL VIDEO IN A POST (Leo, 7 Oct 2026: "it makes it look like theres
@@ -54,7 +55,9 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const saveAsked = useRef(false);
-  const key = `${style}|${clipIds.join(",")}|${credit?.handle ?? ""}`;
+  // The men's moves follow Settings → Look → Animations, like the match.
+  const moves = useAnimationsLook();
+  const key = `${style}|${moves}|${clipIds.join(",")}|${credit?.handle ?? ""}`;
 
   useEffect(() => {
     let live = true;
@@ -63,7 +66,17 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(",")]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style) : null), [tracks, style]);
+  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style, moves) : null), [tracks, style, moves]);
+
+  // Can this browser make the video at all? If not, the post is its plain
+  // picture (`fallback`): no play button that cannot play.
+  const [canPlay, setCanPlay] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!edit) return;
+    let live = true;
+    videoSupported(edit.w, edit.h, edit.fps).then(ok => { if (live) setCanPlay(ok); });
+    return () => { live = false; };
+  }, [edit]);
 
   // A video made earlier this session is ready straight away.
   useEffect(() => {
@@ -79,7 +92,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   useEffect(() => {
     if (!edit || status === "ready") return;
     let live = true;
-    prepareClipSprites().finally(() => {
+    prepareClipSprites(edit.moves).finally(() => {
       const c = canvasRef.current;
       if (!live || !c) return;
       const ctx = c.getContext("2d");
@@ -90,7 +103,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
 
   const start = async () => {
     if (!edit || status === "making" || status === "ready") return;
-    if (!canMakeVideo()) { setStatus("unsupported"); return; }
+    if (canPlay === false) { setStatus("unsupported"); return; }
     setStatus("making");
     setProgress(0);
     try {
@@ -108,9 +121,9 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   };
 
   useEffect(() => {
-    if (autoStart && edit && status === "idle") void start();
+    if (autoStart && edit && canPlay && status === "idle") void start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, edit]);
+  }, [autoStart, edit, canPlay]);
 
   useEffect(() => {
     if (status === "ready") videoRef.current?.play().catch(() => { /* a muted video normally plays; if not, the tap does */ });
@@ -119,7 +132,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   if (tracks === null) {
     return <div className="aspect-video w-full animate-pulse rounded-xl border border-white/10 bg-white/5" />;
   }
-  if (!edit) return <>{fallback}</>;
+  if (!edit || canPlay === false) return <>{fallback}</>;
 
   const tall = style === "fan";
   const dur = editDuration(edit);
@@ -152,7 +165,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
           <>
             <canvas ref={canvasRef} width={edit.w} height={edit.h} className="block h-full w-full" />
             {badge && (
-              <div className="absolute left-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+              <div className="absolute right-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
                 {badge}
               </div>
             )}
