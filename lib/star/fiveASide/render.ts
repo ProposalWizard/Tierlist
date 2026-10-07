@@ -9,7 +9,7 @@ import type { FakeFaceStyle } from "../fakeFaceStyle";
 import type { MatchRules } from "./rules";
 import { FIVE_HALFWAY_Y } from "./geometry";
 import { figureSkin, type FigureSkin } from "../figureSkin";
-import { paintBody3d, drawSoftShadow, oneFootKickFeet } from "../figure3d";
+import { paintBody3d, drawSoftShadow, oneFootKickFeet, shapeHand } from "../figure3d";
 
 /**
  * DRAWING A SMALL-SIDED MATCH.
@@ -613,6 +613,28 @@ export interface BodyPose {
    * always has, so no other figure changes.
    */
   kickFoot?: number;
+  /**
+   * 0-1: the TRAILING arm (the one away from `armLead`) drops to his side
+   * while the leading one stays at full stretch — a one-handed save into the
+   * top corner (lib/star/actionAnim.ts). 0, the default, changes nothing.
+   */
+  trailDrop?: number;
+  /**
+   * 0-1: both hands brought in to the chest — a keeper holding a ball he has
+   * caught, a player cushioning a ball on his chest. 0, the default, changes
+   * nothing.
+   */
+  handsIn?: number;
+  /**
+   * Animations (lib/star/actionAnim.ts, dials in lib/star/animDials.ts). Only
+   * read with `kick` and `kickFoot`. 1 / 0 / 0 — the defaults — change nothing.
+   * swingAmp: how far out and up the striking boot goes (× the old reach).
+   * swingCross: 0-1, the follow-through carrying the boot across his body.
+   * plantBend: 0-1, the standing leg set wider with its knee bent.
+   */
+  swingAmp?: number;
+  swingCross?: number;
+  plantBend?: number;
 }
 
 /**
@@ -704,7 +726,7 @@ export function feetFor(r: number, pose?: BodyPose): { lx: number; ly: number; r
   if (kick > 0 && kf !== 0) {
     // One leg out to the ball and up; the other is the standing foot
     // (figure3d.ts's oneFootKickFeet — both skins swing the same leg).
-    return oneFootKickFeet(r, FEET_Y, kick, kf);
+    return oneFootKickFeet(r, FEET_Y, kick, kf, pose?.swingAmp, pose?.swingCross, pose?.plantBend);
   }
   // The legs scissor apart and back; an old-style kick opens both. Both feet
   // lift a little as they open, which is what stops a stride reading as a man
@@ -736,8 +758,17 @@ function paintBody(
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.4, r * 0.15);
   ctx.beginPath();
-  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(feet.lx, feet.ly);
-  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(feet.rx, feet.ry);
+  // The standing leg of a strike bends at the knee (Animations: plantBend);
+  // 0, the default, is the straight leg every figure has always had.
+  const plant = (pose?.kick ?? 0) > 0 && pose?.kickFoot ? (pose?.plantBend ?? 0) : 0;
+  const plantSide = -Math.sign(pose?.kickFoot ?? 0);
+  for (const [hx, fx, fy] of [[-r * 0.16, feet.lx, feet.ly], [r * 0.16, feet.rx, feet.ry]] as const) {
+    ctx.moveTo(hx, HIP_Y * r + sink);
+    if (plant > 0 && Math.sign(hx) === plantSide) {
+      ctx.lineTo((hx + fx) / 2 + plantSide * r * 0.1 * plant, (HIP_Y * r + sink + fy) / 2);
+    }
+    ctx.lineTo(fx, fy);
+  }
   ctx.stroke();
   // Boots, so the legs end in something rather than fading out.
   ctx.fillStyle = TC.boot;
@@ -788,13 +819,18 @@ function paintBody(
   // one side reaches equally far the other way and reads as a starfish.
   // A one-footed kick throws the OTHER arm out for balance.
   const lead = pose?.armLead ?? ((pose?.kick ?? 0) > 0 && pose?.kickFoot ? -Math.sign(pose.kickFoot) : 0);
-  const handXFor = (s: number) => s * outX * (lead === 0 || Math.sign(s) === Math.sign(lead) ? 1 : 0.62);
+  const handX0 = (s: number) => s * outX * (lead === 0 || Math.sign(s) === Math.sign(lead) ? 1 : 0.62);
+  const handY0 = handYFor;
+  const tDrop = pose?.trailDrop ?? 0, hIn = pose?.handsIn ?? 0;
+  const shaped = tDrop > 0 || hIn > 0;
+  const handXFor = shaped ? (s: number) => shapeHand(r, s, handX0(s), handY0(s), armFromY, lead, tDrop, hIn)[0] : handX0;
+  const handYForS = shaped ? (s: number) => shapeHand(r, s, handX0(s), handY0(s), armFromY, lead, tDrop, hIn)[1] : handY0;
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.2, r * 0.115);
   ctx.beginPath();
   for (const s of [-1, 1]) {
     ctx.moveTo(s * shW * 0.82, armFromY);
-    ctx.lineTo(handXFor(s), handYFor(s));
+    ctx.lineTo(handXFor(s), handYForS(s));
   }
   ctx.stroke();
   // A sleeve, in the shirt colour, over the top half of each arm — otherwise a
@@ -804,7 +840,7 @@ function paintBody(
   ctx.beginPath();
   for (const s of [-1, 1]) {
     ctx.moveTo(s * shW * 0.82, armFromY);
-    ctx.lineTo(s * shW * 0.82 + (handXFor(s) - s * shW * 0.82) * 0.42, armFromY + (handYFor(s) - armFromY) * 0.42);
+    ctx.lineTo(s * shW * 0.82 + (handXFor(s) - s * shW * 0.82) * 0.42, armFromY + (handYForS(s) - armFromY) * 0.42);
   }
   ctx.stroke();
 
@@ -814,7 +850,7 @@ function paintBody(
     ctx.lineWidth = Math.max(1, r * 0.05);
     for (const s of [-1, 1]) {
       ctx.beginPath();
-      ctx.arc(handXFor(s), handYFor(s), r * 0.14, 0, Math.PI * 2);
+      ctx.arc(handXFor(s), handYForS(s), r * 0.14, 0, Math.PI * 2);
       ctx.fill(); ctx.stroke();
     }
   }

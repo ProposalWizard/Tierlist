@@ -144,6 +144,46 @@ export const ADMIN_GUIDES = {
     ],
     dev: "lib/star/data/clubAudit.ts (the checks), lib/star/data/clubProfiles.ts (the club sheets, built by scripts/club-data/build_club_profile_data.py from lib/star/data/sources/).",
   },
+  "/star-retirement-dev": {
+    title: "Retirement preview",
+    what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser.",
+    buttons: [
+      { group: "Pick a career", items: [
+        ["Legend / One club / Journeyman / Lower leagues / Quiet one", "A made-up 20-season career of that shape: every season's numbers, who won what, trophies, transfers, money and things bought."],
+        ["Version ◀ ▶", "The same shape with different numbers."],
+        ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
+      ] },
+      { group: "The screens, in order", items: [
+        ["▶ 1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
+        ["▶ 2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
+        ["▶ 3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
+        ["Hall of Fame / New career / Menu", "The bar under the overview, as in the game. Here: Hall of Fame opens the made-up Hall; the other two come back here."],
+        ["▶ 4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
+        ["▶ The share card (the picture)", "The picture Share picture makes, at the size it is shared. Make the picture opens the real share sheet."],
+        ["▶ In the game: All seasons page", "The Stats page's All seasons view (New look) on a career 12 seasons in."],
+      ] },
+      { group: "The farewell match", items: [
+        ["▶ Invite (Play or Skip)", "The farewell after the final whistle: your XI, the Rivals XI and why they are there. Play it opens the team sheets; Skip goes to the overview."],
+        ["▶ Team sheets", "The two elevens, as before any match. Kick Off opens the guard of honour."],
+        ["▶ Guard of honour · 3D / · drawn", "The walk-out: both teams in two lines clapping. 3D as the game shows it; drawn is what a phone that can't run 3D sees. Kick off › skips it."],
+        ["▶ Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
+        ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
+      ] },
+      { group: "Online", items: [
+        ["▶ Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
+        ["▶ Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
+        ["▶ Share link sheet", "The Share link sheet over the overview. Signed out it says to sign in; signed in it makes the code."],
+      ] },
+    ],
+    saving: ["Nothing is saved. A real save is read, never written, and the Hall here is made up. Share link (signed in) does make a real code in the database."],
+    inGame: [
+      "Every screen here is in the game. The warning shows after season 19, the final whistle after season 20 (a career is 20 seasons).",
+      "Hang them up on the final whistle opens the farewell invite (once per career), then the overview.",
+      "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
+      "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
+    ],
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
+  },
   "/star-relgames-dev": {
     title: "Relationship games",
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
@@ -460,7 +500,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "A tester sees Road to Ballon d'Or → Settings → Developer tools (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
-      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
+      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Animations, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
       "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
       "Testers never get admin pages or anything that changes what other players see.",
     ],
@@ -666,6 +706,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Animations →", "Every player animation looping next to the Old look, with the dials and on/off switches the real match reads."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
           ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
@@ -939,6 +980,46 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx (mounts it) · lib/star/look3d.ts (the Settings switches)",
   },
 
+  "/star-animations-dev": {
+    title: "Animations",
+    what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ Play Area", "Back to the Play Area."],
+        ["New / Old", "The real Animations switch for this phone, the same one as Settings → Look. Old is the game exactly as it was before any of this."],
+      ] },
+      { group: "The gallery", items: [
+        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
+        ["Flat / Shaded", "The two drawn player looks. (The 3D players only use the kick clip and the lean.)"],
+        ["Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
+        ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
+        ["1× / ½× / ¼×", "Playback speed."],
+        ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+      ] },
+      { group: "Which animations are on", items: [
+        ["The switches", "Turn one family off and it is drawn the Old way, here and in the real match, while the rest stay New. Contact flashes turns off every flash."],
+      ] },
+      { group: "Dials", items: [
+        ["The sliders", "How big each movement is. Exaggeration scales all of them at once. Each slider shows its default and the first version's value."],
+        ["Reset to defaults", "Every dial and switch back to the shipped look."],
+        ["First version sizes", "The sizes from before \"make the strikes bigger\" (strikes smaller, no lean, no flash)."],
+        ["Copy settings", "Copies the dials and switches as text (and shows it) so you can send them to someone."],
+        ["Paste settings here + Apply", "Takes that text and applies it on this phone."],
+      ] },
+      { group: "See it in a real chance", items: [
+        ["Infinite Highlights → / Play Area (Infinite Match) →", "Opens the real match, which reads these same dials and switches."],
+      ] },
+    ],
+    saving: [
+      "This phone only, instantly. Dials and switches are kept in this browser; nobody else sees them.",
+      "Nothing changes the ball, the saves, the results or any timing. These are looks only.",
+    ],
+    inGame: [
+      "Every real match on this phone (and every test screen that plays the real match) draws team-mates, defenders and the keeper with these sizes when Settings → Look → Animations is New.",
+      "To take the whole feature out of a phone: set Animations to Old.",
+    ],
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts. Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+  },
   "/star-garden3d-dev": {
     title: "3D Garden",
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",

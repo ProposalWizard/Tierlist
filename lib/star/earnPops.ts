@@ -20,6 +20,21 @@ export interface EarnPop { id: string; kind: "achievement" | "record"; label: st
 const m = (n: number) => `${Math.round(n)}m`;
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
+/** Add newly broken records to this season's list: one entry per record,
+ *  the latest mark replacing the earlier one (Mikey, 6 Oct 2026). */
+export function addSeasonRecords(list: { label: string; unlocked: string }[] | undefined, fresh: EarnPop[]): { label: string; unlocked: string }[] {
+  const out = [...(list ?? [])];
+  for (const r of fresh) {
+    if (r.kind !== "record") continue;
+    // Premier League records each have their own line; own bests replace by label.
+    const key = r.label === "Premier League record broken" ? r.unlocked : r.label;
+    const i = out.findIndex((x) => (x.label === "Premier League record broken" ? x.unlocked : x.label) === key);
+    if (i >= 0) out[i] = { label: r.label, unlocked: r.unlocked };
+    else out.push({ label: r.label, unlocked: r.unlocked });
+  }
+  return out;
+}
+
 export function earnedBetween(prev: CareerState, next: CareerState): EarnPop[] {
   const out: EarnPop[] = [];
   // The same player, only moving forward — a different save loading is not a moment.

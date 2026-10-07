@@ -4,6 +4,7 @@ import { nextFixtureFor } from "../../lib/star/competitions";
 import { matchweeksFor } from "../../lib/star/calendar";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { CAREER_SEASONS } from "../../lib/star/retirement";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -79,6 +80,17 @@ function freshCareer(): CareerState {
 
   const next = nextFixtureFor(after);
   check(!!next && next.week === 5, `landed with week 5 of season 2 still unplayed (got week ${next?.week})`);
+}
+
+// ── The last season is as far as a skip goes (Leo, 5 Oct 2026: 20 seasons) ─
+{
+  // A career in its final season, asked to skip five seasons on.
+  const last = { ...freshCareer(), season: CAREER_SEASONS ?? 20 };
+  const { career: after, reachedEnd } = skipTo(last, { season: last.season + 5, week: 1 });
+  check(reachedEnd, "stops: there is no season after the last one");
+  check(after.season === last.season, `still in the last season (${after.season})`);
+  check(!nextFixtureFor(after), "with every fixture of it played, so the real season end runs next");
+  check(!after.retired, "and not retired by the skip itself: the final whistle is on screen");
 }
 
 // ── Transfer windows actually open along the way ────────────────────────────

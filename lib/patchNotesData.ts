@@ -27,6 +27,637 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.33",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T13:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr",
+      "summary": "Retirement, part 3: your retired careers' bests become 9 records your later careers chase, a share picture of a whole career (1080 x 1350, for WhatsApp or Instagram), a farewell match after the final whistle (Your XI against the Rivals XI, every chance and every set piece yours, off at 85' to a standing ovation), and sharing a career by code to compare it with a friend. Legacy points and playing on as your son are left for later; retiring still ends the save.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "records your next careers chase, set by your retired ones"
+        },
+        {
+          "value": "8.9",
+          "label": "chances that come to a striker in the farewell before 85' (6.3 in a normal match)"
+        },
+        {
+          "value": "1080 × 1350",
+          "label": "the share picture: Instagram's portrait size"
+        },
+        {
+          "value": "253",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The farewell invite",
+              "detail": "Settings → Developer tools → Dev Skip to the end of season 20 → the Ballon d'Or night → The final whistle → Hang them up."
+            },
+            {
+              "title": "Team sheets, guard of honour, the match",
+              "detail": "The invite → Play it → KICK OFF."
+            },
+            {
+              "title": "Off at 85', then full time",
+              "detail": "Play the farewell to 85'."
+            },
+            {
+              "title": "The Farewell strip on the end screen",
+              "detail": "Full time → Hang them up."
+            },
+            {
+              "title": "Share picture",
+              "detail": "End screen → Share picture, or Hall of Fame → a career."
+            },
+            {
+              "title": "Hall of Fame records",
+              "detail": "A new career → Stats → flip to Records."
+            },
+            {
+              "title": "\"3 goals off Calloway's record\" on Home",
+              "detail": "A new career, close to one of your old records."
+            },
+            {
+              "title": "Share link and Compare",
+              "detail": "Hall of Fame → a career → Share link (signed in; needs the database file). Hall of Fame → Compare, or a friend's link → Compare."
+            },
+            {
+              "title": "Every new screen on made-up careers",
+              "detail": "/star-retirement-dev → The farewell match · Online."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: the farewell match",
+          "items": [
+            {
+              "title": "One last game after the final whistle",
+              "detail": "After Hang them up, your last club invites you to one last game on the real match: Your XI (your best team-mates from every club, you in your own position) against the Rivals XI (every man who beat you to a Ballon d'Or starts, then the best players at the clubs that beat you to titles; the sides within 6 rating points). Invite (Play it or Skip) → team sheets → guard of honour (3D, or drawn without 3D) → the match: every chance and every set piece comes to you, your side makes extra chances, no energy, off at 85' to a standing ovation → full time → the career overview with a Farewell strip. Measured over 300 simulated matches for a striker with the real game's settings: chances to you by 85' 6.3 → 8.9; set pieces 0.4 → 1.7; team-mate goals a game 0.25 → 0.04. Nothing counts in your stats or trophies. Played in the real game: five farewells and a Skip, by the playtest."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Your records live on",
+              "detail": "Nine records from your retired careers: goals and assists in a season, goals in a game, career goals, assists and appearances, trophies, Ballons d'Or, the furthest goal. Stats → Records: a Hall of Fame records card with who holds each and a bar for how close you are. Home: \"3 goals off Calloway's record\" when you get close. Breaking one makes news posts once, naming the old holder. Equalling never takes a record. Seen in the real game on a seeded save."
+            },
+            {
+              "title": "Share picture",
+              "detail": "One 1080 × 1350 picture of a whole career: name, legacy score, five big numbers, clubs, goals by season, the cabinet. Share (phone) or Save picture (computer), from the end screen and every Hall of Fame career."
+            },
+            {
+              "title": "Share a career by code",
+              "detail": "A Hall of Fame career can get a link like knowitball.co.uk/legend/K7Q2XM: read only, no sign-in to look, sign in to make one, Stop sharing turns it off. Codes are 6 letters and numbers with no look-alikes; nothing lists them (no public board)."
+            },
+            {
+              "title": "Compare with a friend",
+              "detail": "Head to head: 11 numbers, two bars each, and numbers won (Clubs is not counted). From a friend's link, or Hall of Fame → Compare → paste their code → pick one of yours."
+            },
+            {
+              "title": "The test page shows all of it",
+              "detail": "/star-retirement-dev: The farewell match (invite, team sheets, guard of honour 3D and drawn, full time, the overview) and Online (share link, head to head, the compare screen)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Each season keeps your 5 best team-mates",
+              "detail": "It fills Your XI in the farewell. The Hall of Fame copy leaves them out."
+            },
+            {
+              "title": "The guard of honour follows Settings → Look → 3D quality",
+              "detail": "Low 4 men a side, Medium 6, High 8."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest)",
+          "items": [
+            {
+              "title": "Free kicks and corners in the farewell went to team-mates",
+              "detail": "The match picks a set-piece taker by position; the farewell never told it otherwise (a striker took 3 free kicks in 8, 1 corner in 4) and the playtest got 2 or 3 chances a match. Every set piece is yours now and your side makes extra chances: a striker's chances by 85' 6.3 → 8.9 (measured). The first check left position out and measured 7.3."
+            },
+            {
+              "title": "Every farewell was the same match",
+              "detail": "One fixed match script for every career ending at season 20 (same chances at 18' and 19', same rival goal at 84', all 0–1). Each career gets its own now."
+            },
+            {
+              "title": "A Ballon d'Or rival's surname on both sides",
+              "detail": "He is always picked, so the surname rule skipped him. Your team-mate with that surname sits out now: 3 clashes over 15 test careers → 0."
+            },
+            {
+              "title": "The ovation came before the commentary reached 85'",
+              "detail": "The banner and cheer now wait for the clock, and the banner says the same words as the commentary."
+            },
+            {
+              "title": "The Back button covered the team-sheet label; the walk-out took 40-80 s on a slow device; '1 trophies'",
+              "detail": "The label is 'Farewell match'; the walk-out runs in real time down to 4 frames a second; '1 trophy'."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found while checking)",
+          "items": [
+            {
+              "title": "The same surname on both team sheets",
+              "detail": "One surname once across both sides now (a Ballon d'Or rival is always picked). Rule off: 24 clashes over 15 test careers; on: 0."
+            },
+            {
+              "title": "The Hall copy of a career drew a different overview",
+              "detail": "The overview left the saved team-mates in; 12 Hall checks failed. Fixed."
+            },
+            {
+              "title": "The guard of honour could not read Harry's smaller 3D files",
+              "detail": "It now reads the packed files and picks its quality like every other 3D scene. Seen loading in 5 to 15 seconds on a test machine with no graphics chip."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run supabase/migrations/star_legend_shares.sql",
+              "detail": "Until then Share link says \"Sharing isn't switched on yet.\" Also still waiting: star_hall_of_fame.sql."
+            },
+            {
+              "title": "Retiring still ends the save",
+              "detail": "Legacy points and the son are Leo's to build later."
+            },
+            {
+              "title": "Sharing and comparing not seen end to end",
+              "detail": "The test machine cannot reach the database; screens, codes and the compare maths are tested."
+            },
+            {
+              "title": "A farewell after this round's fixes is not seen played",
+              "detail": "The chance numbers are measured; the banner timing is worked out from the code."
+            },
+            {
+              "title": "Signed out on a test machine, a refresh during the farewell goes back to the Ballon d'Or night",
+              "detail": "The older test-mode bug; signed-in players go back to the final whistle (worked out from the code)."
+            },
+            {
+              "title": "The farewell is one go",
+              "detail": "Skip it and it is gone; a refresh during it goes back to the final whistle."
+            },
+            {
+              "title": "The Old UI has no farewell, share picture or compare",
+              "detail": "It is frozen; its careers still go in the Hall and set records."
+            },
+            {
+              "title": "The world does not age",
+              "detail": "Carried from v0.7."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "A short clip of the 85' ovation",
+              "detail": "Added to the page after the push. The guard of honour clip is on the page already."
+            },
+            {
+              "title": "Legacy points and the son",
+              "detail": "Leo's, after the base game."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.32",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T04:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6",
+      "summary": "New animations: what you see in a match now matches what happens. One-hand keeper saves, catches, parries and fumbles; team-mates take touches and shoot, pass, head, block and clear with their own legs. A look-only layer with a New | Old switch and a test page. Stills only; short gameplay clips come after.",
+      "stats": [
+        {
+          "value": "5,200 chances: same results",
+          "label": "13 kinds x 400 seeds, every ball, keeper and defender identical"
+        },
+        {
+          "value": "250 / 250",
+          "label": "tests pass"
+        },
+        {
+          "value": "16 dials, 8 switches",
+          "label": "on the new Animations test page"
+        },
+        {
+          "value": "0 physics changes",
+          "label": "1 position fix, flagged"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Keeper top-corner save, one hand",
+              "detail": "Infinite Highlights or a match: shoot at the top corner."
+            },
+            {
+              "title": "Keeper catch held, parry then get-up, fumble",
+              "detail": "A match, or Animations test page → Keeper."
+            },
+            {
+              "title": "Team-mate touch (foot, thigh, chest)",
+              "detail": "A match: a pass to a team-mate."
+            },
+            {
+              "title": "Team-mate shot (5 shapes) and pass swing",
+              "detail": "Infinite Highlights, or Animations → Shots / Passes."
+            },
+            {
+              "title": "Header jump, block, clearance",
+              "detail": "A corner or cross; Animations → Defenders."
+            },
+            {
+              "title": "Contact flashes",
+              "detail": "Where the ball meets a boot or a glove."
+            },
+            {
+              "title": "Settings → Look → Animations: New | Old",
+              "detail": "Old plays the game exactly as before."
+            },
+            {
+              "title": "Play Area → Animations test page, dials and switches",
+              "detail": "Testers and admins."
+            },
+            {
+              "title": "A caught ball ends where the keeper is",
+              "detail": "A match: any caught shot."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: what you see matches what happens",
+          "items": [
+            {
+              "title": "Saves, touches, shots, headers and blocks looked the same, or like nothing",
+              "detail": "A team-mate's shot made YOUR figure kick; a defender cleared with no leg moving; every save was the same dive. The match had four outfield poses and one shared kick timer, and the engine never recorded who did what. Now the engine writes down who touched the ball and how (record only, no physics change), each player has his own animation clock, and each situation has its own pose. It is a look-only layer: Settings → Look → Animations: New | Old."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Keeper saves",
+              "detail": "Top corner: one glove over his head, other arm tucked, diagonal body (before: both arms flung, body flat). Catch: ball held to his chest. Parry: palms it, gets up after about 0.75 s. Fumble: gathers it, hands fly apart, ball spills, he starts to rise. A 0.2 s white flash where ball meets hands."
+            },
+            {
+              "title": "Team-mate touch",
+              "detail": "He cushions the ball with foot, thigh or chest by its height, then sets himself, inside the same 0.45 s. Before: an arms-open pose, first runner only."
+            },
+            {
+              "title": "Team-mate shot and pass with his own leg",
+              "detail": "Five shapes: driven, curl, volley, chip, side-foot pass. Bent standing leg, balancing arm, 0.16 s contact flash, ground dust. No backswing: the animation starts at contact. Before: your figure kicked (a bug)."
+            },
+            {
+              "title": "The Animations test page",
+              "detail": "Every animation looping, Old v New or v First version; Flat or Shaded; right or left foot; 1x, 1/2x, 1/4x, Pause and a frame slider. 16 dials and 8 switches (one off = only that family draws the Old way). Reset, First version sizes, Copy settings. Play Area → Animations; Admin menu → Star Career → Animations; a Settings link for testers."
+            },
+            {
+              "title": "Master switch",
+              "detail": "Settings → Look → Animations: New | Old, default Old (switch to New to try it)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Strikes are bigger than the first version (asked for by Leo)",
+              "detail": "The first version was faint at match size. Boot rise / boot travel / body lean on a 40 px figure: driven 12→22 px / 15→37 px / 0°→14°; curl 11→21 / 15→32 / 11°→29°; volley 12→22 / 15→40 / 24°→38°; chip 7→9 / 8→15 / 0°→5°; side-foot pass 7→11 / 10→18 / 0°→6°; clearance 12→19 / 15→32 / 0°→17°. Driven-shot kicking leg widest angle 42°→82°."
+            },
+            {
+              "title": "Headers, blocks, clearances",
+              "detail": "Header: a real 0.55 s jump, height 0.62→0.74 of the figure's radius. Block: leg and body across the ball's path for 0.6 s, reach 1.25x. Clearance: big hoof, swing 1.6x; a headed clearance jumps. Touch 1.25x."
+            },
+            {
+              "title": "3D sprite players",
+              "detail": "A team-mate or defender who shoots, passes or clears plays the existing kick clip; a header lifts the sprite; a block tilts it; the keeper's dive clip is timed to the save. No new clips baked. Type-checked only."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "A caught ball stayed where the keeper stood while he slid away",
+              "detail": "Over 234 catches the gap fell from a median 0.87 m (168 over half a metre) to a median 0.03 m (1 over half a metre). Outcome counts identical. This changes where the keeper and a caught ball end up, the only non-visual change; needs Leo's OK (question 4).",
+              "bars": [
+                {
+                  "label": "Median gap (m)",
+                  "was": 0.87,
+                  "now": 0.03,
+                  "state": "good"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Seen / not seen",
+          "items": [
+            {
+              "title": "Measured: no physics change",
+              "detail": "5,200 seeded chances (13 kinds x 400 seeds) hash ball, outcome, keeper, defenders and the next random number: identical to before the animation record was added (fingerprint 5c8b2374…). Outcome counts identical: goal 849, saved 794, blocked 540, wide 695, caught 234, over 294, out 531, tackled 391, rebound 416, post 70, offside 30, short 25, delivered 331."
+            },
+            {
+              "title": "Measured: tests",
+              "detail": "Match tests 7/7 with the same output except two figures that read where the ball lies after a catch (keeperDive 38.4→38.5%; keeperOneDive old-keeper saves behind his dive 40→51 and 38→54 of 200). Full star suite 250/250. tsc clean; build passes; the one-engine guard untouched."
+            },
+            {
+              "title": "Seen",
+              "detail": "Pose sheets and the test page at phone size; a real highlights page loading with no page errors."
+            },
+            {
+              "title": "NOT seen",
+              "detail": "Any strike in a real match (only pose sheets and the gallery); 3D sprite players (type-checked only, no graphics chip here); real squads (no database in the sandbox). Gallery keeper rows use a stand-in dive. \"Switch off draws Old\" checked by eye on the test page only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Questions for Leo",
+          "items": [
+            {
+              "title": "1. Strike size: right now, bigger, or smaller?",
+              "detail": "Dials: strike swing size, strike lean."
+            },
+            {
+              "title": "2. de Gea lean 1.15 rad: too much, too little, or fine?",
+              "detail": "Dial: keeper one-hand lean."
+            },
+            {
+              "title": "3. Pin the caught ball to his hands in the classic view?",
+              "detail": "Today it may sit a little off the gloves."
+            },
+            {
+              "title": "4. Keep the catch-position fix?",
+              "detail": "The only non-visual change."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The 3D keeper has no catch-hold or get-up, and 3D has no new clips",
+              "detail": "The source models the sprite baker needs (player-idle, jog, sprint, kick, celebrate, keeper-dive) were never committed to the repo. Blocked on Harry (whoever baked them on 3 Oct 2026).",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "A caught ball may sit slightly off the gloves in the classic view",
+              "detail": "The figure is drawn a little offset from the engine's position."
+            },
+            {
+              "title": "Strikes may still be subtle on a phone",
+              "detail": "Dials exist."
+            },
+            {
+              "title": "The earlier-noted dev-page gaps are untouched",
+              "detail": "Nothing new found."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Short \"after\" clips of gameplay",
+              "detail": "Filmed after this page is up, then added to the same page."
+            },
+            {
+              "title": "3D clips",
+              "detail": "Once the source models exist."
+            },
+            {
+              "title": "Tune the dials from Leo's phone feedback"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.7 (site 0.31) — 6 Oct 2026 — retirement, part 2: 20 seasons and a Hall of Fame",
+              "detail": "Every career is 20 seasons; a Final season warning after season 19 and a final whistle after 20; the career overview is the end screen; every retired career is kept in a Hall of Fame; a new All seasons page; the last season's awards are counted. 108 → 15 KB per Hall copy; 246 tests. Still open: the Hall's database file (star_hall_of_fame.sql), the world does not age, the Old UI has no warning screen. Artifact: https://claude.ai/artifact/MmprHgEH6epYpooT4Cze7r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.31",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-06T00:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Retirement, part 2: every career is 20 seasons with a final-season warning after season 19, the career overview is the end screen, every retired career is kept in a Hall of Fame on the title screen, and the All seasons page gets the goals chart, the cabinet and every season. Plans for everything after retiring: https://claude.ai/artifact/DPNpkyaPoyHWj6xuLpGvGG",
+      "stats": [
+        {
+          "value": "20",
+          "label": "seasons in every career (was a yes/no every summer from age 33)"
+        },
+        {
+          "value": "0",
+          "label": "retired careers lost by starting again (the old end screen deleted them)"
+        },
+        {
+          "value": "108 → 15 KB",
+          "label": "one 20-season career, as kept in the Hall of Fame"
+        },
+        {
+          "value": "246",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "\"Final season\" after season 19",
+              "detail": "Settings → Developer tools → Dev Skip to the end of season 19 → the Ballon d'Or night → Continue."
+            },
+            {
+              "title": "\"The final whistle\" after season 20",
+              "detail": "Dev Skip to the end of season 20 → the Ballon d'Or night."
+            },
+            {
+              "title": "The career overview is the end screen",
+              "detail": "The final whistle → Hang them up → Hall of Fame · New career · Menu."
+            },
+            {
+              "title": "Hall of Fame on the title screen",
+              "detail": "Menu (or open the game) → Hall of Fame → tap a career."
+            },
+            {
+              "title": "New career keeps the old one",
+              "detail": "End screen → New career → title → Hall of Fame."
+            },
+            {
+              "title": "The new All seasons page, and its New | Old switch",
+              "detail": "Stats → All seasons. Settings → Look → All seasons page."
+            },
+            {
+              "title": "Every screen on made-up careers",
+              "detail": "/star-retirement-dev → The screens, in order."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: the Hall of Fame",
+          "items": [
+            {
+              "title": "Retiring never deletes a career any more",
+              "detail": "The end screen's \"Start a new career\" used to delete the retired career, on the phone and in the cloud. Now every retired career is copied into a Hall of Fame the moment it is saved (a slim copy: everything the overview shows). The title screen has a gold Hall of Fame button; tap a career for its whole overview; Remove asks first. A career retired before today goes in the next time the title screen opens. Before New career, New game or Delete can replace a retired career, the game checks it is in the Hall. Seen in the real game; the overview from a Hall copy matched the full career for 11 test careers."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Every career is 20 seasons",
+              "detail": "No \"Do you go again?\" from age 33 (it was every summer, forced only at 50 seasons). A career starts at 16, so the last season is at 35. The limit is one number; \"no limit\" also works."
+            },
+            {
+              "title": "The career overview replaced the old end screen",
+              "detail": "Leo: \"just replace it\". Seven pages, then Hall of Fame · New career · Menu. No New | Old switch, as asked."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "\"Final season\" warning after season 19",
+              "detail": "After the Ballon d'Or night, before the transfer window: \"Season 20 is your last before retirement. End your career the right way.\" A strip of 20 squares in your clubs' colours, the last one gold."
+            },
+            {
+              "title": "\"The final whistle\" after season 20",
+              "detail": "The verdict, apps, goals, trophies and the 20-season strip; Hang them up opens the overview."
+            },
+            {
+              "title": "All seasons page: the goals chart, the cabinet and every season",
+              "detail": "Stats → All seasons, drawn by the same pieces as the end screen. Settings → Look → All seasons page: New | Old."
+            },
+            {
+              "title": "The test page shows every new screen",
+              "detail": "/star-retirement-dev: five made-up 20-season careers and the screens in the order a player meets them."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest)",
+          "items": [
+            {
+              "title": "The Ballon d'Or button said \"Continue to next season\" after season 20",
+              "detail": "There is no next season then; it now says \"Continue\"."
+            },
+            {
+              "title": "A Hall card could name the wrong club",
+              "detail": "It counted only seasons with games; it now counts every season, the same as the overview. New test."
+            },
+            {
+              "title": "The final-season warning and the final whistle sat in the top half of the screen",
+              "detail": "Now centred on a tall phone; still fits 390 x 664 without scrolling."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (part 1, earlier today)",
+          "items": [
+            {
+              "title": "The last season's Ballon d'Or, Golden Boot and Player of the Season were never counted",
+              "detail": "Retiring skipped the end-of-season step that counts them; it now runs it."
+            },
+            {
+              "title": "A season's row named the wrong club after a summer move",
+              "detail": "It now records the club you played that season for (finish, wage, money)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run supabase/migrations/star_hall_of_fame.sql",
+              "detail": "Until then the Hall stays on the phone it was made on (it says so). Nothing breaks without it."
+            },
+            {
+              "title": "The world does not age",
+              "detail": "Other clubs' players never get older or retire; after 20 seasons the squads are the same people at the same ages. Read in the code. Question 2 on the plans page."
+            },
+            {
+              "title": "A save already past season 20 retires at the end of the season it is in",
+              "detail": "Only saves from before this change; it gets the final whistle but no warning first."
+            },
+            {
+              "title": "The Old UI has no warning screen and no Hall button",
+              "detail": "It is frozen. It follows the 20-season rule, and its retired careers still go in the Hall."
+            },
+            {
+              "title": "Signed out on a test machine, a refresh on the Ballon d'Or night can land on Home",
+              "detail": "Carried from part 1. Test mode only."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Leo's choices on the plans page",
+              "detail": "Suggested order: your records live on, the share card, the farewell match, Next generation, online, chairman."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.30",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-05T17:30:00Z",

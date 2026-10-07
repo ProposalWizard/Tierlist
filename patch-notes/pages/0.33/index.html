@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball Patch Notes — Leo v0.9</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:var(--bg);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:300px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+
+  .clipbox{margin:12px 0 0}
+  .look{margin:0 0 8px;font-size:14.5px;background:var(--card2);border-radius:10px;padding:9px 12px;color:var(--ink2)}
+  .look b{color:var(--green);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .pane .lab{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px;background:var(--green);color:var(--bg)}
+  .pane video{display:block;width:100%;max-width:390px;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+  .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .spd button.on{background:var(--ink);color:var(--bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.9</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">Retirement, part 3: your records live on · a share picture · a farewell match · share a career by code and compare it with a friend. Legacy points and playing on as your son wait for later, as you asked: retiring still ends the save.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>9</b><span>records your next careers chase, set by your retired ones</span></div>
+  <div class="s"><b>8.9</b><span>chances that come to a striker in the farewell before 85' (6.3 in a normal match)</span></div>
+  <div class="s"><b>1080 × 1350</b><span>the share picture: Instagram's portrait size</span></div>
+  <div class="s"><b>253 / 253</b><span>tests pass, with the animations round merged in</span></div>
+</div>
+
+<!-- ── HEADLINE ─────────────────────────────────────────── -->
+<section class="headline">
+  <div class="hl-tag">Headline</div>
+  <h3>One last game: the farewell match</h3>
+  <div class="row"><div class="lbl">Problem</div><p>A 20-season career ended on a screen. There was no last game and no goodbye.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>Nothing sat between "The final whistle" and the end screen. The game also kept no record of who you played with.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>After <b>Hang them up</b>, your last club invites you to one last game on the real match:</p>
+    <ul>
+      <li><b>Your XI</b>, named after you ("Calloway XI"): your best team-mates from every club. You play your own position.</li>
+      <li><b>Rivals XI</b>: every man who beat you to a Ballon d'Or starts. The rest are the best players at the clubs that beat you to titles.</li>
+      <li>The sides stay within 6 rating points of each other, so it is a real game.</li>
+    </ul>
+  </div>
+  <div class="row"><div class="lbl">The order</div>
+    <ul>
+      <li>The invite: <b>Play it</b> or <b>Skip</b>.</li>
+      <li>The team sheets.</li>
+      <li>A guard of honour: both teams clap you out of the tunnel (3D, or a drawn version on phones without 3D).</li>
+      <li>The match. At 85' you come off, and the whole ground stands for you. The match plays on to full time.</li>
+      <li>Full time: the score, who scored, your goals, assists and rating.</li>
+      <li><b>Hang them up</b>: the career overview, now with a gold Farewell strip.</li>
+    </ul>
+  </div>
+  <table class="tbl">
+    <tr><th></th><th>Farewell</th><th>Normal match</th></tr>
+    <tr><td>Every chance comes to you</td><td class="ok">✓</td><td>✗</td></tr>
+    <tr><td>Every free kick, corner and penalty is yours</td><td class="ok">✓</td><td>by position</td></tr>
+    <tr><td>Your side makes extra chances, all yours</td><td class="ok">✓</td><td>only on High</td></tr>
+    <tr><td>Energy drains</td><td class="ok">✗</td><td>✓</td></tr>
+    <tr><td>You come off</td><td class="ok">at 85', to an ovation</td><td>when the manager decides</td></tr>
+    <tr><td>Counts in your stats and trophies</td><td>✗ (only the Farewell strip)</td><td>✓</td></tr>
+  </table>
+  <div class="bars">
+    <div class="bar"><span class="lb">Chances to you by 85'</span><div class="track"><div class="fill was" style="width:63%"></div><div class="fill now" style="width:89%"></div></div><span class="vv"><s>6.3</s> 8.9</span></div>
+    <div class="bar"><span class="lb">Set pieces you take</span><div class="track"><div class="fill was" style="width:20%"></div><div class="fill now" style="width:85%"></div></div><span class="vv"><s>0.4</s> 1.7</span></div>
+    <div class="bar"><span class="lb">Team-mate goals</span><div class="track"><div class="fill was" style="width:25%"></div><div class="fill now" style="width:4%"></div></div><span class="vv"><s>0.25</s> 0.04</span></div>
+  </div>
+  <p class="cap"><b>Measured</b> over 300 simulated matches for a striker, with the settings the real game uses: a normal match (grey) against the farewell (green). Other positions get 9.5 to 9.7. The goals are yours to score.</p>
+  <div class="pair">
+    <figure><img src="img/invite.jpg" alt="The farewell invite"><figcaption>The invite. 🏅 marks a man who beat you to a Ballon d'Or.</figcaption></figure>
+    <figure><img src="img/sheets.jpg" alt="The farewell team sheets"><figcaption>The team sheets. No surname appears on both sides.</figcaption></figure>
+  </div>
+  <figure><img src="img/walkout-3d.jpg" alt="Guard of honour, three moments"><figcaption>The guard of honour: out of the tunnel, through the two lines, a wave at the end.</figcaption></figure>
+  <div class="clipbox">
+    <p class="look"><b>Look for</b>Both lines clap as you pass, then the wave at the end.</p>
+    <figure class="one"><img src="img/guard-poster.jpg" alt="Guard of honour, the wave"><figcaption>A still from the clip. The 10-second clip is on <a href="https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr">the artifact page</a>.</figcaption></figure>
+    <p class="cap">Filmed frame by frame on the test machine, 15 frames a second. A phone plays it smoother.</p>
+  </div>
+  <div class="pair">
+    <figure><img src="img/result.jpg" alt="Full time in the farewell"><figcaption>Full time. Your goals say "You".</figcaption></figure>
+    <figure><img src="img/overview-fw.jpg" alt="The career overview with the Farewell strip"><figcaption>The end screen keeps the farewell: team, score, your goals.</figcaption></figure>
+  </div>
+  <details><summary>The drawn guard of honour (phones without 3D)</summary>
+    <figure class="one"><img src="img/walkout-drawn.jpg" alt="The drawn guard of honour"><figcaption>The same two lines as faces, clapping. It moves on by itself after 6.5 seconds.</figcaption></figure>
+  </details>
+  <details><summary>Where Your XI comes from</summary>
+    <ul>
+      <li>From today, every season keeps your 5 best team-mates (step 0 on the plans page).</li>
+      <li>They are ranked by rating, plus seasons together, plus goals and assists. The team-mate you played with longest always makes the squad.</li>
+      <li>A career from before today has none saved for its early seasons. The XI then uses the squads still kept for your old clubs, then your last club's dressing room.</li>
+      <li>Every side gets keepers, defenders, midfielders and forwards, so nobody plays in goal by accident.</li>
+    </ul>
+  </details>
+  <div class="mean"><b>What this means for you:</b> retire, then play one last game with your favourite team-mates against the men who beat you. Skip it if you want; the career goes into the Hall of Fame either way.</div>
+</section>
+
+<!-- ── CHECK THESE ──────────────────────────────────────── -->
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="inv"> The farewell invite<span class="where">Settings → Developer tools → Dev Skip to the end of season 20 → the Ballon d'Or night → The final whistle → Hang them up</span></label></li>
+  <li><label><input type="checkbox" data-k="play"> Team sheets, guard of honour, the match<span class="where">The invite → Play it → KICK OFF</span></label></li>
+  <li><label><input type="checkbox" data-k="off"> Off at 85', then full time<span class="where">Play the farewell to 85'</span></label></li>
+  <li><label><input type="checkbox" data-k="strip"> The Farewell strip on the end screen<span class="where">Full time → Hang them up</span></label></li>
+  <li><label><input type="checkbox" data-k="card"> Share picture<span class="where">End screen → Share picture · or Hall of Fame → a career</span></label></li>
+  <li><label><input type="checkbox" data-k="rec"> Hall of Fame records<span class="where">A new career → Stats → flip to Records</span></label></li>
+  <li><label><input type="checkbox" data-k="chase"> "3 goals off Calloway's record" on Home<span class="where">A new career, close to one of your old records</span></label></li>
+  <li><label><input type="checkbox" data-k="link"> Share link<span class="where">Hall of Fame → a career → Share link (signed in; needs the database file)</span></label></li>
+  <li><label><input type="checkbox" data-k="cmp"> Compare with a friend<span class="where">Hall of Fame → Compare · or a friend's link → Compare</span></label></li>
+  <li><label><input type="checkbox" data-k="test"> Every new screen on made-up careers<span class="where">/star-retirement-dev → The farewell match · Online</span></label></li>
+</ul>
+
+<!-- ── ADDED ────────────────────────────────────────────── -->
+<h2 class="add"><i></i>Added</h2>
+
+<div class="card">
+  <div class="hd">Your records live on</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"Every new career gets your old bests to chase."</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>The bests of your retired careers become records in your later careers. There are nine: most goals in a season, most assists in a season, most goals in a game, most career goals, most career assists, most appearances, most trophies, most Ballons d'Or and the furthest goal.</p>
+    <ul>
+      <li>Stats → Records has a new card, <b>Hall of Fame records</b>: who holds each one, the number, the season, and a bar for how close you are.</li>
+      <li>Home shows one line when you get close: "3 goals off Calloway's record". When level: "one more beats it".</li>
+      <li>Breaking one puts news posts on your phone, once, naming the old holder.</li>
+      <li>Equalling a record never takes it. The first to set it keeps it.</li>
+    </ul>
+  </div>
+  <figure><img src="img/rec-home.jpg" alt="The chase line on Home"><figcaption>Home, 48 goals into a season: 3 off the record.</figcaption></figure>
+  <figure><img src="img/rec-records.jpg" alt="Hall of Fame records card"><figcaption>Stats → Records. Each bar is you against the record.</figcaption></figure>
+  <p class="cap"><b>Seen in the real game</b> on a save made for it: two retired careers in the Hall, a third at 48 goals.</p>
+</div>
+
+<div class="card">
+  <div class="hd">Share picture: a whole career in one image</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"One picture of a whole career for WhatsApp or Instagram."</p></div>
+  <div class="row"><div class="lbl">Fix</div><p><b>Share picture</b> on the end screen and on every Hall of Fame career. One picture, 1080 × 1350: your name, the legacy score, five big numbers, your clubs, goals by season and the cabinet. On a phone, <b>Share</b> opens WhatsApp, Instagram and the rest. On a computer, <b>Save picture</b>.</p></div>
+  <figure class="one"><img src="img/share-card.jpg" alt="The share picture"><figcaption>A made-up 20-season career. Crests show as initials here: the test machine cannot reach the real ones.</figcaption></figure>
+</div>
+
+<div class="card">
+  <div class="hd">Share a career by code</div>
+  <div class="row"><div class="lbl">Asked for</div><p>"Online: share a career, compare with a friend. Friends first."</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Any Hall of Fame career can get a link like <b>knowitball.co.uk/legend/K7Q2XM</b>.</p>
+    <ul>
+      <li>Anyone with the link sees the whole career overview. No sign-in to look; you sign in to make a link.</li>
+      <li>The same career always gets the same code. <b>Stop sharing</b> turns the link off.</li>
+      <li>A code is 6 letters and numbers with no look-alikes (no I, O, 0 or 1): about a billion codes.</li>
+      <li>No public board. Nothing lists the shared careers; you see one only if you have its link.</li>
+    </ul>
+  </div>
+  <div class="pair">
+    <figure><img src="img/share-link.jpg" alt="Share link, signed out"><figcaption>Share link, signed out: it asks you to sign in.</figcaption></figure>
+    <figure><img src="img/legend-page.jpg" alt="A shared career page"><figcaption>A friend's link: their career, with Compare and Play.</figcaption></figure>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">Compare with a friend</div>
+  <div class="row"><div class="lbl">Fix</div><p>Head to head: two careers, 11 numbers, two bars each, and a count of numbers won. Clubs is shown but not counted: more clubs is not better or worse.</p>
+    <ul>
+      <li>From a friend's link: <b>Compare</b>, then pick one of your careers.</li>
+      <li>From the Hall of Fame: <b>Compare</b>, paste their code or link, then pick one of yours.</li>
+    </ul>
+  </div>
+  <div class="pair">
+    <figure><img src="img/compare.jpg" alt="Head to head"><figcaption>Calloway against Brennan: 10 numbers to 0.</figcaption></figure>
+    <figure><img src="img/compare-flow.jpg" alt="Compare from the Hall"><figcaption>Paste their code, then pick one of yours. "Couldn't reach the game": the test machine has no database.</figcaption></figure>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">The test page shows all of it</div>
+  <div class="row"><div class="lbl">Fix</div><p>/star-retirement-dev has two new groups. <b>The farewell match</b>: the invite, the team sheets, the guard of honour (3D and drawn), full time and the overview after it. <b>Online</b>: the share-link sheet, head to head and the compare screen. Made-up careers; nothing is saved.</p></div>
+</div>
+
+<!-- ── CHANGED ──────────────────────────────────────────── -->
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li><div class="hd">Each season keeps your 5 best team-mates</div><div class="dt">It fills Your XI in the farewell. The Hall of Fame copy leaves them out, so it stays small.</div></li>
+  <li><div class="hd">The guard of honour follows Settings → Look → 3D quality</div><div class="dt">Harry's new setting: Low has 4 men a side, Medium 6, High 8.</div></li>
+</ul>
+
+<!-- ── FIXED ────────────────────────────────────────────── -->
+<h2 class="fix"><i></i>Fixed (found by the playtest)</h2>
+<ul class="n">
+  <li><div class="hd">Free kicks and corners in the farewell went to team-mates</div><div class="dt">The match picks a set-piece taker by position, and the farewell never told it otherwise: a striker took 3 free kicks in 8 and 1 corner in 4. The playtest got only 2 or 3 chances a match. My first check left position out, so it measured 7.3 chances that the game never gave. Now every set piece is yours and your side makes extra chances: a striker's chances by 85' went from 6.3 (normal) to 8.9 (measured).</div></li>
+  <li><div class="hd">Every farewell was the same match</div><div class="dt">Five played farewells had the same team-mate chances at 18' and 19', the same rival goal at 84', and all ended 0–1. Every career that ended in season 20 got one fixed match script. Now each career gets its own.</div></li>
+  <li><div class="hd">A Ballon d'Or rival's surname on both sides</div><div class="dt">"Williams" and "Modric" were on both team sheets in every run. A Ballon d'Or rival is always picked, so the surname rule skipped him. Now your team-mate with that surname sits out. Over 15 test careers: 3 clashes before, 0 now.</div></li>
+  <li><div class="hd">The ovation came before the commentary reached 85'</div><div class="dt">The banner showed while the clock still read 75'. The banner and the cheer now wait for the clock, and the banner says the same words as the commentary.</div></li>
+  <li><div class="hd">The Back button covered the team-sheet label</div><div class="dt">"Farewell match · Aldershot" ran under it. The label is now "Farewell match".</div></li>
+  <li><div class="hd">The guard of honour took 40 to 80 seconds on a slow device</div><div class="dt">Its clock moved at most 0.05 seconds a frame. It now runs in real time down to 4 frames a second, so it lasts about 10 seconds.</div></li>
+  <li><div class="hd">"1 trophies"</div><div class="dt">Now "1 trophy" on the end screen and in the share text.</div></li>
+</ul>
+
+<h2 class="fix"><i></i>Fixed (found while checking)</h2>
+<ul class="n">
+  <li><div class="hd">The same surname on both team sheets</div><div class="dt">A Taylor, a Firmino and a Werner played for both sides in the made-up careers. Now a surname appears once across both sides (a Ballon d'Or rival is always picked). With the rule off: 24 clashes over 15 test careers. With it on: 0.</div></li>
+  <li><div class="hd">The Hall copy of a career drew a different overview</div><div class="dt">After step 0, 12 Hall checks failed: the overview carried the saved team-mates. The overview leaves them out now. All pass.</div></li>
+  <li><div class="hd">The guard of honour could not read Harry's smaller 3D files</div><div class="dt">His update packs the 3D files smaller and changes how scenes pick their quality. The walk-out now uses both. Seen: it loads in 5 to 15 seconds on this test machine, which has no graphics chip.</div></li>
+</ul>
+
+<!-- ── SEEN ─────────────────────────────────────────────── -->
+<h2 class="seen"><i></i>Seen in a browser</h2>
+<ul class="n" id="seen">
+  <li><div class="hd">Played in the real game: six careers to the end of season 20, five farewells, one Skip</div><div class="dt">Signed out, phone size. Every squad was made up: the test machine cannot reach the database.</div></li>
+  <li><div class="hd">Seen: every farewell screen in order</div><div class="dt">The invite, the team sheets, the 3D guard of honour (and the drawn one with 3D off, which moves on by itself after 6.7 seconds), "FAREWELL" on the scoreboard, no energy panel or cans, the 85' banner, full time, and the Farewell strip on the end screen. Skip goes straight to the end screen with no strip.</div></li>
+  <li><div class="hd">Seen: the share picture, Share link and the Hall</div><div class="dt">The picture is 1080 × 1350 and includes the farewell score. Share link asks you to sign in. The Hall entry kept the strip and stayed byte-identical through New career. Compare opens; finding a code says "Couldn't reach the game" (no database here).</div></li>
+  <li><div class="hd">Seen: records in the next career</div><div class="dt">One 4-goal match broke three records, one pop-up each. Home showed "2 assists off Vandenbroucke's record". Stats → Records showed the Hall of Fame card.</div></li>
+  <li><div class="hd">No page errors and no real console errors</div><div class="dt">Only the expected ones: the database is unreachable, and sharing returns "signed out" (401).</div></li>
+  <li><div class="hd">Not seen</div><div class="dt">A farewell played after this round's fixes: the chance numbers are measured, and the banner timing is worked out from the code. A goal of yours in a played farewell (the playtest scored 0 from 11 chances; "You" in gold is seen on the test page). Sharing and comparing through the real database.</div></li>
+</ul>
+
+<!-- ── KNOWN ISSUES ─────────────────────────────────────── -->
+<h2 class="bug"><i></i>Known issues</h2>
+<div class="alert">
+  <div class="t">One database file to run</div>
+  <p><code>supabase/migrations/star_legend_shares.sql</code>, in the Supabase SQL Editor. Until then Share link says "Sharing isn't switched on yet." Nothing else breaks. Still waiting too: <code>star_hall_of_fame.sql</code> (the Hall in the cloud).</p>
+</div>
+<ul class="n">
+  <li><div class="hd">Retiring still ends the save</div><div class="dt">Legacy points and playing on as your son are yours to build later, as you said.</div></li>
+  <li><div class="hd">Sharing and comparing are not seen working end to end</div><div class="dt">The test machine cannot reach the database. The screens, the codes and the compare maths are tested; the save and fetch are not.</div></li>
+  <li><div class="hd">The farewell is one go</div><div class="dt">Skip it and it is gone. Play it and the score stays on the career. A refresh during it goes back to the final whistle, so you can start it again.</div></li>
+  <li><div class="hd">The Old UI has no farewell, share picture or compare</div><div class="dt">It is frozen. Its retired careers still go in the Hall and still set records.</div></li>
+  <li><div class="hd">Signed out on a test machine, a refresh during the farewell goes back to the Ballon d'Or night</div><div class="dt">The older test-mode bug from v0.7. Signed-in players go back to the final whistle (worked out from the code).</div></li>
+  <li><div class="hd">The world does not age <span class="pill p-amb">carried from v0.7</span></div><div class="dt">Other clubs' players never get older or retire. It matters for long careers and for the son idea later.</div></li>
+</ul>
+<details><summary>Still open from v0.7 (not touched this round)</summary>
+  <ul>
+    <li>Signed out on a test machine, a refresh on the Ballon d'Or night can land on Home.</li>
+    <li>Outside the Premier League, the Champions League winner can come from your own division (about 1 season in 20; worked out, not measured).</li>
+    <li>A save already past season 20 retires at the end of the season it is in, with no warning first.</li>
+    <li>Offers in the last summer still say 2 years or more.</li>
+  </ul>
+</details>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">A short clip of the 85' ovation</div><div class="dt">Added to this page after the push (gameplay gets a clip; everything else is a still).</div></li>
+  <li><div class="hd">Legacy points and the son</div><div class="dt">Yours, after the base game.</div></li>
+</ul>
+
+<!-- ── HISTORY ──────────────────────────────────────────── -->
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.8 — 6 Oct 2026 — new animations: what you see matches what happens</summary>
+  <p><b>Added:</b> one-hand keeper saves, catches, parries and fumbles · team-mates take touches and shoot, pass, head, block and clear with their own legs · the Animations test page and its dials · Settings → Look → Animations: New | Old.</p>
+  <p><b>Fixed:</b> a caught ball stayed where the keeper stood while he slid away.</p>
+  <p><b>Numbers:</b> outcome counts identical over 5,200 seeded chances (a look-only change).</p>
+  <p>Still open from this version: the 3D keeper has no catch-hold or get-up · a caught ball can sit slightly off the gloves in the classic view · strikes may still be subtle on a phone · four questions for you on <a href="https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6">that page</a>.</p>
+</details>
+<details>
+  <summary>v0.7 — 6 Oct 2026 — 20-season careers, the Hall of Fame</summary>
+  <p><b>Changed:</b> every career is 20 seasons (no "Do you go again?" from 33) · the career overview is the end screen.</p>
+  <p><b>Added:</b> "Final season" warning after season 19 · "The final whistle" after season 20 · the Hall of Fame on the title screen · the new All seasons page, with a New | Old switch.</p>
+  <p><b>Fixed:</b> the last season's Ballon d'Or and awards were never counted · a season's row named the wrong club after a summer move · three playtest finds.</p>
+  <p><b>Numbers:</b> 20 seasons · 0 careers lost by starting again · 108 → 15 KB per Hall career · 246 tests.</p>
+  <p>Still open from this version: <code>star_hall_of_fame.sql</code> to run · the world does not age.</p>
+</details>
+
+<details>
+  <summary>v0.6 — 5 Oct 2026 — keepers made human, dribble passes, new shots in the test match</summary>
+  <p><b>Fixed:</b> trial free kicks and penalties too hard · five-a-side keepers never dived · no way back from several screens · Goalie Mode scrolled.</p>
+  <p><b>Added:</b> dribble passes with green/amber/red rings · knuckleball, power shot and keeper howlers (test match only) · New / Old switches for keepers and dribble runs.</p>
+  <p><b>Numbers:</b> top corners v a 90 keeper 26% → 43% · trial free kicks 36% → 48% · 243 tests.</p>
+  <p>Still open from this version: listed under Known issues above.</p>
+</details>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> five-a-side could freeze solid mid-match. <b>Added:</b> dev cheats for testing · real extra power for owning your own club.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> other players on the pitch · penalty · free kick with a real wall.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> the aim sat about 0.42 m from the cursor. <b>Added:</b> first-time strike · near/far post · shot names.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> scoring was halved · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+
+<footer>Branch <code>Leo</code> · 253 tests pass · site version 0.33. Anything unverified says so.</footer>
+
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.9';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+document.addEventListener('click',function(e){
+  var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+  var pane=r.closest('.pane'), v=pane&&pane.querySelector('video'); if(!v) return;
+  pane.querySelectorAll('.spd button').forEach(function(x){x.classList.toggle('on',x===r);});
+  var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate;
+  if(v.paused){var p=v.play(); if(p&&p.catch)p.catch(function(){});}
+});
+</script>
+
+</body>
+</html>

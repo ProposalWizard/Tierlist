@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { computeBallonDorShortlist, type BallonDorEntry } from "@/lib/star/ballonDor";
+import { retirementCheck } from "@/lib/star/retirement";
 import { shortClub } from "@/lib/star/media/grammar";
 import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
@@ -382,7 +383,8 @@ export default function BallonDor({ career, onContinue }: Props) {
           className="relative w-full overflow-hidden text-[14px]"
         >
           <Shine loop every={5} />
-          Continue to Next Season →
+          {/* After the last season there is no next one: the final whistle is next. */}
+          {retirementCheck(career).mustRetire ? "Continue →" : "Continue to Next Season →"}
         </PressButton>
       </div>
 

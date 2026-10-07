@@ -13,7 +13,10 @@ import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } 
 import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
 import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
 import { useBadgeLook, setBadgeLook } from "@/lib/star/badgeLook";
+import { useAllSeasonsLook, setAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
+import { useAnimationsLook, setAnimationsLook } from "@/lib/star/animLook";
+import { useIsTester } from "@/lib/useIsAdmin";
 import {
   useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
   useYouInOpenPlay, setYouInOpenPlay,
@@ -148,7 +151,10 @@ export function LookSwitches() {
   const bossRoom = useBossRoomLook();
   const gardenLook = useGarden3dLook();
   const badgeLookNow = useBadgeLook();
+  const allSeasons = useAllSeasonsLook();
   const chancesNow = useChanceSet();
+  const animNow = useAnimationsLook();
+  const tester = useIsTester();
   return (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -205,6 +211,14 @@ export function LookSwitches() {
       <Quality3dRow />
       <SetDivider />
       <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">All seasons page</span>
+        <SegTabs className="w-[150px] shrink-0" value={allSeasons} onChange={setAllSeasonsLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: goals by season, the cabinet and every season, as on the end-of-career screen. Old: the three tables.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-white">Chances</span>
         <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
       </div>
@@ -219,6 +233,19 @@ export function LookSwitches() {
       <SetNote dim className="mt-1 text-[10px]">
         For drawn players only: &quot;Drawn&quot; above, the Classic view, five-a-side and the dribble. The 3D players ignore it.
       </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Animations</span>
+        <SegTabs className="w-[150px] shrink-0" value={animNow} onChange={setAnimationsLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: whoever touches the ball is seen doing it — team-mates&apos; touches, shots, passes and headers, defenders&apos; blocks and clearances, the keeper&apos;s catch, palm, one-handed stretch and fumble. Old: as before.
+      </SetNote>
+      {tester && (
+        <a href="/star-animations-dev" className="mt-1 inline-block text-[12px] font-bold text-amber-300 underline">
+          Animation test area →
+        </a>
+      )}
       <SetDivider />
       <GameplaySwitches />
       <SetDivider />

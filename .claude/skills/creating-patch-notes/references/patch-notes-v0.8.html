@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball Patch Notes — Leo v0.8</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:var(--bg);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:300px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.8</span>
+  <h1>Knowitball Patch Notes — Leo v0.8</h1>
+  <p class="sub">New animations: keepers, touches, shots, headers, blocks · site version 0.32 · 6 Oct 2026 · a look-only layer with a New | Old switch and its own test page.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>5,200 chances: same results</b><span>13 kinds × 400 seeds, every ball, keeper and defender identical</span></div>
+  <div class="s"><b>250 / 250</b><span>tests pass</span></div>
+  <div class="s"><b>16 dials, 8 switches</b><span>on the new test page</span></div>
+  <div class="s"><b>0 physics changes</b><span>1 position fix, flagged below</span></div>
+</div>
+
+<!-- HEADLINE -->
+<section class="headline">
+  <div class="hl-tag">Headline</div>
+  <h3>What you see in a match now matches what happens</h3>
+  <div class="row"><div class="lbl">Problem</div><p>Saves, touches, shots, headers and blocks all looked the same, or like nothing.</p>
+    <ul>
+      <li>A team-mate's shot made <b>your</b> figure kick.</li>
+      <li>A defender cleared the ball with no leg moving.</li>
+      <li>Every keeper save was the same dive.</li>
+    </ul></div>
+  <div class="row"><div class="lbl">Why</div><p>The match had four outfield poses: idle, run, kick, receive. One shared kick timer was read only by your own figure. The engine never wrote down who touched the ball or how.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>The engine now writes down who touched the ball and how. It only records. It changes no physics.</li>
+      <li>Each player has his own animation clock.</li>
+      <li>There is a new pose for each situation: one-hand save, catch, parry, fumble, touch, five kinds of strike, header, block, clearance.</li>
+    </ul></div>
+  <figure><img src="img/poses-now-flat.jpg" alt="Every new pose, old against new"><figcaption>Every new pose. Left column = Old (the game as it was). Then four frames of the New move. Look at the keeper rows and the header row: they were one pose before.</figcaption></figure>
+  <details><summary>More pictures (3)</summary>
+    <figure><img src="img/poses-now-shaded.jpg" alt="Same sheet, shaded figures"><figcaption>The same sheet with shaded figures (the in-game look).</figcaption></figure>
+    <figure><img src="img/poses-first.jpg" alt="First version of the pose sheet"><figcaption>The first version of the sheet. Use it for the keeper, touch, header and block rows. Its strikes were faint, so the strikes were made bigger (see Changed).</figcaption></figure>
+    <figure><img src="img/keepers.jpg" alt="Keeper rows at 2x"><figcaption>The keeper rows at 2×: catch held, top corner (de Gea), beaten top corner, low dive parried, fumble.</figcaption></figure>
+  </details>
+  <div class="mean"><b>What this means for you:</b> it is a look-only layer, and you can switch it off. Settings → Look → Animations: <b>New | Old</b> (default Old, so nothing changes until you switch it to New). Old plays the game exactly as before.</div>
+</section>
+
+<!-- CHECK THESE -->
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks">
+  <li><label><input type="checkbox" data-k="k1"> Keeper top-corner save, one hand<span class="where">Infinite Highlights or a match: shoot at the top corner</span></label></li>
+  <li><label><input type="checkbox" data-k="k2"> Keeper catch, ball held to his chest<span class="where">Match: a soft central shot</span></label></li>
+  <li><label><input type="checkbox" data-k="k3"> Parry, then he gets up<span class="where">Match: a firm shot at his body</span></label></li>
+  <li><label><input type="checkbox" data-k="k4"> Fumble: ball spills, he starts to rise<span class="where">Animations test page → Keeper</span></label></li>
+  <li><label><input type="checkbox" data-k="t1"> Team-mate takes a touch (foot, thigh, chest)<span class="where">Match: a pass to a team-mate</span></label></li>
+  <li><label><input type="checkbox" data-k="s1"> Team-mate shot, five shapes<span class="where">Infinite Highlights / Animations → Shots</span></label></li>
+  <li><label><input type="checkbox" data-k="p1"> Pass swing<span class="where">Animations → Passes &amp; headers</span></label></li>
+  <li><label><input type="checkbox" data-k="h1"> Header jump<span class="where">A corner or a cross</span></label></li>
+  <li><label><input type="checkbox" data-k="b1"> Block<span class="where">Animations → Defenders</span></label></li>
+  <li><label><input type="checkbox" data-k="c1"> Clearance<span class="where">Animations → Defenders</span></label></li>
+  <li><label><input type="checkbox" data-k="f1"> Contact flashes<span class="where">Where the ball meets a boot or a glove</span></label></li>
+  <li><label><input type="checkbox" data-k="sw"> New | Old switch<span class="where">Settings → Look → Animations</span></label></li>
+  <li><label><input type="checkbox" data-k="tp"> The test page<span class="where">Play Area → Animations →</span></label></li>
+  <li><label><input type="checkbox" data-k="dl"> Dials and switches<span class="where">Animations test page → Dials</span></label></li>
+  <li><label><input type="checkbox" data-k="bug"> A caught ball ends where the keeper is<span class="where">Match: any caught shot; the ball stays with him</span></label></li>
+</ul>
+
+<!-- ADDED -->
+<h2 class="add"><i></i>Added</h2>
+
+<div class="card">
+  <div class="hd">Keeper saves look like different saves</div>
+  <div class="row"><div class="lbl">Problem</div><p>Every save was the same two-arm flat dive. A catch, a parry and a fumble looked alike.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The keeper had one dive pose. The engine did not say which kind of save it was. A contact flash existed in the code but was never drawn.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li><b>Top corner (de Gea):</b> one glove over his head, the other arm tucked, body on a diagonal. Before: both arms flung, body flat.</li>
+      <li><b>Catch:</b> the ball is held to his chest.</li>
+      <li><b>Parry or push:</b> he palms it away and gets up after about 0.75 s.</li>
+      <li><b>Fumble:</b> he gathers it, his hands fly apart, the ball spills and he starts to rise.</li>
+      <li>A white flash shows for about 0.2 s where the ball meets his hands.</li>
+      <li>On the 3D sprite, the dive clip now starts at the save moment.</li>
+    </ul></div>
+  <figure><img src="img/keepers.jpg" alt="Keeper rows"><figcaption>Look at the top-corner row: Old is flat with both arms out; New 4 is one glove up on a diagonal. The gallery uses a stand-in dive: same shapes, not the engine's timing.</figcaption></figure>
+</div>
+
+<div class="card">
+  <div class="hd">A team-mate takes a touch before he plays on</div>
+  <div class="row"><div class="lbl">Problem</div><p>A team-mate receiving the ball stood in an arms-open pose. Only the first runner did it. First-time and scrambled receptions showed nothing.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>One "receive" pose, tied to one runner. The engine did not record who got the ball.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>He cushions the ball with his foot, thigh or chest, chosen by the ball's height. Then he sets himself. All of it fits inside the same 0.45 s as before.</p></div>
+</div>
+
+<div class="card">
+  <div class="hd">A team-mate shoots or passes with his own leg</div>
+  <div class="row"><div class="lbl">Problem</div><p>When a team-mate shot, <b>your</b> figure kicked. That was a bug.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The kick timer was shared. Only your figure read it.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>Each player swings his own leg, on his own clock.</li>
+      <li>Five shapes: driven, curl, volley, chip, side-foot pass.</li>
+      <li>All five get a bent standing leg, a balancing arm, a contact flash (0.16 s) and a puff of dust on the ground.</li>
+      <li>There is no backswing. The animation starts at contact. A wind-up would play after the ball has left.</li>
+    </ul></div>
+  <figure><img src="img/strikes-flat.jpg" alt="Strikes, first version against now"><figcaption>Left = first version. Right = now. Look at the kicking leg and the lean in each row.</figcaption></figure>
+  <details><summary>More pictures (1)</summary>
+    <figure><img src="img/strikes-shaded.jpg" alt="Strikes, shaded"><figcaption>The same strikes with shaded figures.</figcaption></figure>
+  </details>
+</div>
+
+<div class="card">
+  <div class="hd">The Animations test page</div>
+  <div class="row"><div class="lbl">Problem</div><p>No way to judge one animation without playing to it.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li>Every animation loops, Old against New, or against the First version.</li>
+      <li>Flat or Shaded. Right foot or left foot. Speed 1×, ½×, ¼×, Pause, and a frame slider.</li>
+      <li><b>16 dials</b> as sliders: Exaggeration (master, 0 to 2), strike swing, strike lean, plant-leg bend, balancing arm, contact flash size, pass swing, touch cushion, header jump, block reach, clearance swing, keeper one-hand lean, catch-hold, parry, fumble spill, keeper flash size.</li>
+      <li><b>8 switches:</b> keeper saves, keeper catch/fumble, touch/trap, shots, passes, headers, blocks/clearances, contact flashes. Turn one off and only that family draws the Old way.</li>
+      <li>Reset to defaults, "First version sizes", and Copy settings / paste to apply. Links to Infinite Highlights and Infinite Match to judge a real chance. Saved per phone. The eye guide is added.</li>
+      <li>Where: Play Area → "Animations →" tile; Admin menu → Star Career → Animations; a Settings link for testers. Testers and admins only.</li>
+    </ul></div>
+  <div class="pair">
+    <figure><img src="img/test-page.jpg" alt="Test page, shots"><figcaption>Shots. Old stands still; New kicks.</figcaption></figure>
+    <figure><img src="img/test-page-keeper.jpg" alt="Test page, keeper"><figcaption>Keeper rows, Old against New.</figcaption></figure>
+  </div>
+  <details><summary>The dials</summary>
+    <figure class="one"><img src="img/dials.jpg" alt="The dials panel"><figcaption>Each dial shows its value, its default and the first-version value.</figcaption></figure>
+  </details>
+</div>
+
+<div class="card">
+  <div class="hd">One master switch: New | Old</div>
+  <div class="row"><div class="lbl">Fix</div><p>Settings → Look → Animations: New | Old (default Old: switch to New to try it). Old is the game exactly as before. Same rule as every other new look.</p></div>
+</div>
+
+<!-- CHANGED -->
+<h2 class="chg"><i></i>Changed</h2>
+
+<div class="card">
+  <div class="hd">Strikes are bigger than the first version <span class="pill p-blu">asked for by Leo</span></div>
+  <div class="row"><div class="lbl">Problem</div><p>The first strikes were faint at match size.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The figure is about 40 px tall in a match. Small angles do not show.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>Bigger swing and lean, measured on a figure with radius 40 px. The kicking leg's widest angle on a driven shot went from 42° to 82°.</p>
+  <table class="tbl">
+    <tr><th>Move</th><th>Boot rise (px)</th><th>Boot travel (px)</th><th>Body lean</th></tr>
+    <tr><td>Driven shot</td><td>12 → 22</td><td>15 → 37</td><td>0° → 14°</td></tr>
+    <tr><td>Curl</td><td>11 → 21</td><td>15 → 32</td><td>11° → 29°</td></tr>
+    <tr><td>Volley</td><td>12 → 22</td><td>15 → 40</td><td>24° → 38°</td></tr>
+    <tr><td>Chip</td><td>7 → 9</td><td>8 → 15</td><td>0° → 5°</td></tr>
+    <tr><td>Side-foot pass</td><td>7 → 11</td><td>10 → 18</td><td>0° → 6°</td></tr>
+    <tr><td>Clearance</td><td>12 → 19</td><td>15 → 32</td><td>0° → 17°</td></tr>
+  </table></div>
+  <p class="cap">All sizes are dials on the test page. "First version sizes" sets them back.</p>
+</div>
+
+<div class="card">
+  <div class="hd">Headers, blocks and clearances move more</div>
+  <div class="row"><div class="lbl">Problem</div><p>A header was a stand-still. A block and a clearance had no leg or body across the ball.</p></div>
+  <div class="row"><div class="lbl">Fix</div>
+    <ul>
+      <li><b>Header:</b> a real jump (squat, up, down) over 0.55 s. Jump height 0.62 → 0.74 of the figure's radius, with a bigger arm throw.</li>
+      <li><b>Block:</b> leg and body across the ball's path for 0.6 s. Reach 1.25×.</li>
+      <li><b>Clearance or tackle:</b> a big hoof, swing 1.6×. A headed clearance jumps.</li>
+      <li><b>Touch:</b> 1.25×.</li>
+    </ul></div>
+</div>
+
+<div class="card">
+  <div class="hd">3D sprite players use the existing clips better</div>
+  <div class="row"><div class="lbl">Problem</div><p>In the 3D view only you played the kick clip.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>A team-mate or defender who shoots, passes or clears plays the existing kick clip. A header lifts the sprite in code. A block tilts it. The keeper's dive clip is timed to the save. No new clips were baked.</p></div>
+  <p class="cap"><b>Not seen:</b> this has only been type-checked. See Seen / not seen.</p>
+</div>
+
+<!-- FIXED -->
+<h2 class="fix"><i></i>Fixed</h2>
+<div class="card">
+  <div class="hd">A caught ball stayed where the keeper stood while he slid away <span class="pill p-amb">needs your OK</span></div>
+  <div class="row"><div class="lbl">Problem</div><p>When the keeper caught a shot, the ball stayed where he caught it. He then slid away after the whistle.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>The keeper's move-to target was not set to the ball on a catch.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>On a catch the engine now sets the keeper's target to his own position, so ball and keeper end together. Over 234 catches the gap fell from a median of 0.87 m (168 over half a metre) to a median of 0.03 m (1 over half a metre). Outcome counts are identical.</p></div>
+  <div class="bars">
+    <div class="bar"><span class="lb">Median gap (m)</span><span class="track"><span class="fill was" style="width:100%"></span><span class="fill now" style="width:3.5%"></span></span><span class="vv"><s>0.87</s> 0.03</span></div>
+    <div class="bar"><span class="lb">Over 0.5 m (of 234)</span><span class="track"><span class="fill was" style="width:100%"></span><span class="fill now" style="width:0.6%"></span></span><span class="vv"><s>168</s> 1</span></div>
+  </div>
+  <div class="mean"><b>Flag:</b> this is the only non-visual change. It changes where the keeper and a caught ball end up, even though no outcome changed. You said "no gameplay changes", so it needs your OK (question 4). It is in the core engine file (sensitive); the engine-edit warning fired.</div>
+</div>
+
+<!-- SEEN -->
+<h2 class="seen"><i></i>Seen / not seen</h2>
+<ul class="n" id="seen">
+  <li><div class="hd">Measured: no physics change</div><div class="dt">A seeded run of 5,200 chances (13 kinds × 400 seeds) hashes ball, outcome, keeper, defenders and the next random number. It is identical to before the animation record was added (fingerprint 5c8b2374…, same as HEAD with the catch fix filtered out).</div>
+    <details><summary>Outcome counts, identical</summary><p>goal 849 · saved 794 · blocked 540 · wide 695 · caught 234 · over 294 · out 531 · tackled 391 · rebound 416 · post 70 · offside 30 · short 25 · delivered 331.</p></details></li>
+  <li><div class="hd">Measured: match tests and the full suite</div><div class="dt">Match tests (finishing, keeper, aiming, outcomes): 7/7, same output except two printed figures that read where the ball lies after a catch. Full star suite 250/250. New tests: actionLog (1,950 chances, every actor exists; 86/86 caught balls end with the keeper) and animDials. tsc clean. Build passes; the one-engine guard is untouched.</div>
+    <details><summary>The two figures that moved</summary><p>keeperDive "old rule predicted": 38.4% → 38.5%. The engine concede rate stayed 37.6%.</p><p>keeperOneDive "old trial keeper saved behind his dive": 40 → 51 and 38 → 54 of 200. The new keeper stayed at 0. Scoring 49.0% and 50.5%.</p></details></li>
+  <li><div class="hd">Seen: pose sheets and the test page at phone size</div><div class="dt">A real highlights page also loaded with no page errors.</div></li>
+  <li><div class="hd">Not seen: any strike in a real match <span class="pill p-red">not seen</span></div><div class="dt">Only the pose sheets and the gallery.</div></li>
+  <li><div class="hd">Not seen: 3D sprite players <span class="pill p-red">not seen</span></div><div class="dt">Type-checked only. This machine has no graphics chip.</div></li>
+  <li><div class="hd">Not seen: real squads <span class="pill p-red">not seen</span></div><div class="dt">No database in the sandbox.</div></li>
+  <li><div class="hd">Gallery keeper rows use a stand-in dive <span class="pill p-amb">limit</span></div><div class="dt">Same shapes, not the engine's timing.</div></li>
+  <li><div class="hd">"Switch off draws Old" checked by eye on the test page only <span class="pill p-amb">limit</span></div><div class="dt">Not measured.</div></li>
+</ul>
+
+<!-- QUESTIONS -->
+<h2 class="dec"><i></i>Questions for you</h2>
+<ul class="n">
+  <li><div class="hd">1. Strike size: right now, bigger, or smaller?</div><div class="dt">Dials: strike swing size, strike lean. Judge on your phone.</div></li>
+  <li><div class="hd">2. de Gea lean 1.15 rad: too much, too little, or fine?</div><div class="dt">Dial: "keeper one-hand lean".</div></li>
+  <li><div class="hd">3. Pin the caught ball to his hands in the classic view?</div><div class="dt">Today it may sit a little off the gloves (see Known issues b).</div></li>
+  <li><div class="hd">4. Keep the catch-position fix? Yes or no.</div><div class="dt">It is the only non-visual change. See Fixed.</div></li>
+</ul>
+
+<!-- KNOWN -->
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">(a) The 3D keeper has no catch-hold or get-up, and 3D has no new clips <span class="pill p-red">blocked on Harry</span></div><div class="dt">The source models the sprite baker needs (player-idle, jog, sprint, kick, celebrate, keeper-dive) were never committed to the repo. Whoever baked them on 3 Oct 2026 has them. With them we can bake the real 3D touch, one-hand dive, header and more.</div></li>
+  <li><div class="hd">(b) A caught ball may sit slightly off the gloves in the classic view</div><div class="dt">The figure is drawn a little offset from the engine's position. Question 3.</div></li>
+  <li><div class="hd">(c) Strikes may still be subtle on a phone <span class="pill p-amb">dials exist</span></div><div class="dt">Not judged on a phone yet. Question 1.</div></li>
+  <li><div class="hd">(d) The dev-page gaps noted earlier are untouched</div><div class="dt">Nothing new was found this round.</div></li>
+</ul>
+<details><summary>How to remove it all</summary>
+  <p>Easiest: Settings → Look → Animations → Old. The game plays exactly as before.</p>
+  <p>To delete the code, remove these files and their calls:</p>
+  <ul>
+    <li>New: <code>app/star-animations-dev/</code>, <code>lib/star/actionAnim.ts</code>, <code>actionAnimDraw.ts</code>, <code>animDials.ts</code>, <code>animGallery.ts</code>, <code>animLook.ts</code>, <code>keeperSaveKinds.ts</code></li>
+    <li>New tests: <code>tests/star/actionLog.mts</code>, <code>animDials.mts</code>, <code>tests/star/fixtures/actionAnimFirstVersion.ts</code></li>
+    <li>Edited: <code>lib/star/canvasEngine.ts</code> (core engine, sensitive), <code>components/star/CanvasMatch.tsx</code> (match file, sensitive), <code>lib/star/matchFigure.ts</code>, <code>lib/star/figure3d.ts</code>, <code>lib/star/fiveASide/render.ts</code>, <code>components/star/DeviceSettings.tsx</code>, <code>app/star-play-dev/page.tsx</code>, <code>components/AdminNavPanel.tsx</code>, <code>lib/adminGuides.ts</code></li>
+  </ul>
+</details>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Short "after" clips of gameplay</div><div class="dt">Filmed after this page is up, then added to this same page. This page has stills only.</div></li>
+  <li><div class="hd">3D clips</div><div class="dt">Once the source models exist (Known issue a).</div></li>
+  <li><div class="hd">Tune the dials from your phone feedback</div><div class="dt">Questions 1 and 2.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.7 — 6 Oct 2026 — retirement, part 2: 20 seasons and a Hall of Fame</summary>
+  <p><b>Changed:</b> every career is 20 seasons · the career overview is the end screen. <b>Added:</b> Final season warning · the final whistle · Hall of Fame · new All seasons page. <b>Fixed:</b> last-season awards never counted · a season row named the wrong club.</p>
+  <p><b>Numbers:</b> 20 seasons per career · 108 → 15 KB per Hall copy · 246 tests.</p>
+  <p>Still open from this version: the Hall's database file, the world does not age, the Old UI has no warning screen.</p>
+</details>
+<details>
+  <summary>v0.6 — 5 Oct 2026 — keepers made human, dribble passes, new shots in the test match</summary>
+  <p><b>Fixed:</b> trial free kicks and penalties too hard · five-a-side keepers never dived · no way back from several screens · Goalie Mode scrolled.</p>
+  <p><b>Added:</b> dribble passes with green/amber/red rings · knuckleball, power shot and keeper howlers (test match only) · New / Old switches for keepers and dribble runs.</p>
+  <p><b>Numbers:</b> top corners v a 90 keeper 26% → 43% · trial free kicks 36% → 48% · 243 tests.</p>
+</details>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> five-a-side could freeze solid mid-match. <b>Added:</b> dev cheats for testing · real extra power for owning your own club.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> other players on the pitch · penalty · free kick with a real wall.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> the aim sat about 0.42 m from the cursor. <b>Added:</b> first-time strike · near/far post · shot names.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> scoring was halved · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+<footer>250 tests pass · site version 0.32. Anything unverified says so.</footer>
+
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.8';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+</script>
+
+</body>
+</html>
