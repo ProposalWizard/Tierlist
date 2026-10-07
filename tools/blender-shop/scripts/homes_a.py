@@ -1,4 +1,5 @@
 """Flats and penthouses (flat-1, flat-2, penthouse) as little city-block dioramas."""
+import math
 from homes_common import *
 
 
@@ -49,16 +50,36 @@ LOFT_BR = ('#8d4f38', '#7b4230', '#c9c0b2', 6)
 def f1(M, lv):
     P = []
     if lv == 1:
-        P += ground(M, 17, 13, grass='path')
-        P += road(M, 0, -4.8, 16.4, 3.0)
-        # ours is the narrow middle one of three
-        P += tower(M, 0, 0, 5.0, 5.6, 2, 3.0, dict(base='#9b5a3f', brick=BR_OLD, cw=2.5, wa=(0.2, 0.8), wz=(0.22, 0.8), lit=0.2), roof='gable', hi=(1, 1), name='Mid')
-        P += tower(M, -5.3, 0.3, 5.0, 5.4, 2, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.5, lit=0.25), roof='gable', name='L')
-        P += tower(M, 5.3, 0.3, 5.0, 5.4, 2, 3.0, dict(base='#9b5a3f', brick=BR, cw=2.5, lit=0.25), roof='gable', name='R')
-        P += H.door(-1.0, -2.85, M, w=0.9)
-        P.append(box('Dorm', (0.8, -2.2, 6.9), (1.2, 1.2, 1.4), M['white'], bevel=0.03))
-        P.append(box('DormGl', (0.8, -2.82, 6.9), (0.8, 0.05, 0.8), M['glass']))
-        P += small_car(M, 3, -4.8, 0, '#9a8a6a')
+        # Box Room (7 Oct 2026: it read the same as the Shared Flat, a block of
+        # three): one small flat-roofed corner shop, and the box room is the
+        # single lit window over it. Low, wide, a striped awning, one building.
+        P += ground(M, 15, 12, grass='path')
+        P += road(M, 0, -4.4, 14.4, 3.0)
+        P += tower(M, 0, 0, 6.0, 5.0, 2, 2.8, dict(base='#7d5a4a', brick=BR_OLD, cw=2.0, wa=(0.3, 0.7), wz=(0.3, 0.78), lit=0.0), roof='flat', hi=(1, 1), name='Shop')
+        # the shop front over the ground floor: green fascia, a lit window, a door
+        fas = S.principled('Fascia', '#1f5a3a', rough=0.45, coat=0.3)
+        P.append(box('Fascia', (0, -2.58, 2.35), (6.2, 0.18, 0.55), fas, bevel=0.02))
+        P.append(text('Sign', 'NEWS', (-0.6, -2.69, 2.35), 0.38, M['white'], rot=(math.radians(90), 0, 0)))
+        shopgl = S.principled('ShopGl', '#ffe7b8', rough=0.1, emission='#ffcf7a', emission_strength=1.4)
+        P.append(box('ShopWin', (-0.9, -2.53, 1.05), (3.4, 0.08, 1.6), shopgl))
+        P.append(box('ShopSill', (-0.9, -2.6, 0.2), (3.6, 0.2, 0.3), fas, bevel=0.02))
+        P += H.door(1.9, -2.52, M, w=0.9, h=1.95)
+        # a red and white striped awning over the window
+        stripe = [S.principled('AwnR', '#c8302c', rough=0.6), M['white']]
+        for k in range(8):
+            P.append(box('Awn', (-2.4 + k * 0.43, -3.0, 1.95), (0.43, 1.0, 0.06), stripe[k % 2], rot=(math.radians(22), 0, 0)))
+        # your box room: one small window upstairs, lit; a flower box under it
+        P.append(box('YourWin', (0.0, -2.53, 4.3), (0.8, 0.04, 1.32), S.principled('YourWin', '#ffd27a', rough=0.1, emission='#ffc462', emission_strength=2.2)))
+        P.append(box('Pot', (0.0, -2.66, 3.5), (1.0, 0.25, 0.22), M['wood'], bevel=0.02))
+        for k in range(4):
+            P.append(sph('Bloom', (-0.36 + k * 0.24, -2.68, 3.68), 0.12, S.principled('Bloom', ['#e8483a', '#f5c518', '#e8483a', '#f4f2ec'][k], rough=0.7)))
+        # out front: a news board, a bin, a bike against the wall
+        P.append(box('Board', (-3.4, -3.2, 0.5), (0.7, 0.1, 1.0), M['white'], bevel=0.02, rot=(math.radians(10), 0, 0)))
+        P.append(cyl('Bin', (-3.5, -1.6, 0.5), 0.35, 1.0, 'Z', mat=M['bin'], bevel=0.03))
+        for dy in (-0.45, 0.45):
+            P.append(torus('Wheel', (3.3, -1.65 + dy, 0.36), 0.33, 0.035, 'X', mat=M['dark']))
+        P.append(tube('Frame', [(3.3, -2.1, 0.36), (3.3, -1.65, 0.75), (3.3, -1.2, 0.36)], 0.035, M['red'], smooth=False))
+        P += small_car(M, 4.0, -4.4, 0, '#9a8a6a')
     elif lv == 2:
         P += ground(M, 19, 14, grass='path')
         P += road(M, 0, -5.4, 18.4, 3.0)
@@ -110,17 +131,38 @@ def f1(M, lv):
 def f2(M, lv):
     P = []
     if lv == 1:
-        # shared flat: a tall Victorian house cut into flats, between two painted neighbours
-        P += ground(M, 20, 14, grass='path')
-        P += road(M, 0, -5.4, 19.4, 3.0)
-        P += tower(M, 0, 0, 6.4, 7, 3, 3.0, dict(base='#9b5a3f', brick=BR_RED, cw=3.2, lit=0.4), roof='gable', hi=(0, 1), name='Mid')
-        P += tower(M, -6.6, 0.2, 6.4, 6.6, 3, 3.0, dict(base='#e5d6a8', cw=3.2, lit=0.3), roof='gable', name='L')
-        P += tower(M, 6.6, 0.2, 6.4, 6.6, 3, 3.0, dict(base='#a9c6c9', cw=3.2, lit=0.3), roof='gable', name='R')
-        P += H.door(1.2, -3.5, M, w=1.0)
+        # Shared Flat (7 Oct 2026: it read the same as the Box Room): ONE tall
+        # cream Victorian house on its own, cut into flats: three floors of
+        # lit windows, white bays, a doorbell for each flat, three bins, bikes,
+        # a front wall and hedge. Tall and narrow where the Box Room is low.
+        P += ground(M, 17, 14, grass='grass')
+        P += road(M, 0, -5.4, 16.4, 3.0)
+        P += [box('Path', (1.3, -3.9, 0.02), (1.3, 2.2, 0.06), M['path'])]
+        P += tower(M, 0, 0, 6.0, 6.0, 3, 3.0, dict(base='#ece3c8', cw=2.0, wa=(0.25, 0.75), lit=0.55, rough=0.85), roof='gable', name='House')
+        P += H.door(1.3, -3.0, M, w=1.0)
+        # one bell per flat by the door
+        for k in range(3):
+            P.append(box('Bell', (2.05, -3.05, 1.25 + k * 0.22), (0.14, 0.05, 0.12), M['gold']))
+        # white bay windows up two floors
         for fl in range(2):
-            P.append(box('Bay', (-1.0, -3.9, 1.5 + fl * 3.0), (2.0, 1.0, 2.0), M['white'], bevel=0.05))
-        P += tree_(M, -3.2, -4.0, 0.5, 2)
-        P += small_car(M, 4.5, -5.4, 0, '#6b7280')
+            P.append(box('Bay', (-1.4, -3.45, 1.5 + fl * 3.0), (2.2, 0.9, 2.1), M['white'], bevel=0.05))
+            P.append(box('BayGl', (-1.4, -3.92, 1.55 + fl * 3.0), (1.7, 0.04, 1.3), M['glass']))
+        P.append(box('BayTop', (-1.4, -3.45, 7.15), (2.4, 1.0, 0.2), M['slate'], bevel=0.04))
+        # a chimney at each end of the ridge
+        for sx in (-1, 1):
+            P.append(box('Chim', (sx * 2.4, 0, 10.6), (0.7, 0.9, 1.6), M['brick'], bevel=0.03))
+        # three bins and two bikes: a few people live here
+        for k, col in enumerate(('#2a4a2a', '#1f3a6b', '#5a5a5a')):
+            P.append(box('Wbin', (3.7 + k * 0.72, -2.4, 0.55), (0.6, 0.65, 1.1), S.principled(f'Wbin{k}', col, rough=0.6), bevel=0.06))
+        for bx in (-3.5, -4.2):
+            for dy in (-0.42, 0.42):
+                P.append(torus('Wheel', (bx, -2.3 + dy, 0.34), 0.31, 0.035, 'X', mat=M['dark']))
+            P.append(tube('Frame', [(bx, -2.72, 0.34), (bx, -2.3, 0.72), (bx, -1.88, 0.34)], 0.035, S.principled('Bike', '#1d6fb8' if bx > -4 else '#e8a33a', rough=0.4), smooth=False))
+        # a low front wall and hedge, a tree at the side
+        P.append(box('Wall', (-1.6, -4.35, 0.3), (4.8, 0.3, 0.6), M['brick'], bevel=0.02))
+        P.append(box('Hedge', (-1.6, -4.15, 0.75), (4.6, 0.5, 0.5), M['hedge'], bevel=0.12))
+        P += tree_(M, 5.2, 0.5, 0.75, 3)
+        P += small_car(M, -4.5, -5.4, 0, '#6b7280')
     elif lv == 2:
         P += ground(M, 20, 14, grass='path')
         P += road(M, 0, -5.4, 19.4, 3.0)
