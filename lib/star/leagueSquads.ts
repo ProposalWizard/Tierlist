@@ -83,8 +83,11 @@ function fit(slot: Pos, positions: string): number {
   if (ps.includes(slot)) return 82;
   const near = NEIGHBOURS[slot] ?? [];
   for (let i = 0; i < near.length; i++) if (ps.includes(near[i])) return 64 - i * 6;
-  return 12;
+  return OUT_OF_POSITION_FIT;
 }
+
+/** `fit` for a man playing nowhere near his own position: a body, not a fit. */
+export const OUT_OF_POSITION_FIT = 12;
 
 /** What the endpoint gives back, of the parts we use. */
 export interface RosterRow {
@@ -143,17 +146,23 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
   for (const slot of POSITION_ORDER) {
     let best: RosterRow | null = null;
     let bestScore = -1;
+    let bestFit = 0;
     for (const p of roster) {
       if (taken.has(p.id)) continue;
       const f = fit(slot, p.positions);
       if (f <= 0) continue;
       const score = f * 100 + p.overall;
-      if (score > bestScore) { bestScore = score; best = p; }
+      if (score > bestScore) { bestScore = score; best = p; bestFit = f; }
     }
     if (!best) continue;
     taken.add(best.id);
     players.push({
-      id: best.id, name: best.name, position: slot,
+      // A man who only fills this slot as a spare body (fit 12: nothing in
+      // his positions is this slot or next to it) keeps his own position.
+      // Labelled with the slot, Man City's centre-back Khusanov became their
+      // second striker on day one (no second real striker to fill it) and
+      // scored like one: Golden Boot, 24 goals (Mikey's playtest, 8 Oct 2026).
+      id: best.id, name: best.name, position: bestFit > OUT_OF_POSITION_FIT ? slot : naturalPosition(best.positions),
       overall: best.overall || 65, goals: 0, assists: 0,
       // Left genuinely absent, not backfilled with a fake face here —
       // `shouldUpgradeLeagueSquads` below reads exactly this field's real
@@ -206,6 +215,84 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     }
   }
   return { club, players };
+}
+
+/**
+ * Saves made before the out-of-position fix (8 Oct 2026) still carry the old
+ * slot labels: Man City's Khusanov stored as a striker. Once a load has filled
+ * each player's real positions back in (hydrateSquads), anybody labelled with
+ * a position that is nowhere near his own goes back to his own. Returns the
+ * same array when nothing needed changing.
+ */
+export function relabelOutOfPosition(squads: LeagueSquad[]): LeagueSquad[] {
+  let changed = false;
+  const out = squads.map(s => {
+    let clubChanged = false;
+    const players = s.players.map(p => {
+      if (!p.positions?.length || p.positions.includes(p.position)) return p;
+      const raw = p.positions.join(",");
+      if (fit(p.position, raw) > OUT_OF_POSITION_FIT) return p;
+      clubChanged = true;
+      return { ...p, position: naturalPosition(raw) };
+    });
+    if (!clubChanged) return s;
+    changed = true;
+    return { ...s, players };
+  });
+  return changed ? out : squads;
+}
+
+/**
+ * Squads follow their clubs up and down the ladder. `clubs` is next season's
+ * division. A club in `league` but not in `clubs` moves to `external`; a club
+ * in `clubs` with no league squad takes its own from `external` if it has
+ * one there. Anything still missing is fetched by the page, as before.
+ */
+export function moveSquadsWithLadder(
+  league: LeagueSquad[], external: LeagueSquad[], clubs: string[],
+): { leagueSquads: LeagueSquad[]; externalSquads: LeagueSquad[] } {
+  const inDivision = new Set(clubs);
+  const staying = league.filter(s => inDivision.has(s.club));
+  const leaving = league.filter(s => !inDivision.has(s.club));
+  const have = new Set(staying.map(s => s.club));
+  const arriving = external.filter(s => inDivision.has(s.club) && !have.has(s.club));
+  const leavingClubs = new Set(leaving.map(s => s.club));
+  return {
+    leagueSquads: [...staying, ...arriving],
+    externalSquads: [
+      ...external.filter(s => !inDivision.has(s.club) && !leavingClubs.has(s.club)),
+      ...leaving,
+    ],
+  };
+}
+
+/**
+ * A fetched squad with nobody in it who already plays for another club in
+ * this career. The database still lists a player at his day-one club after
+ * the game has sold him; without this he would turn up twice.
+ */
+export function withoutPlayersElsewhere(fresh: LeagueSquad[], world: LeagueSquad[]): LeagueSquad[] {
+  const placed = new Map<string, string>();
+  for (const s of world) for (const p of s.players) placed.set(p.id, s.club);
+  return fresh.map(s => {
+    const players = s.players.filter(p => { const at = placed.get(p.id); return !at || at === s.club; });
+    return players.length === s.players.length ? s : { ...s, players };
+  });
+}
+
+/**
+ * Your own club's full register, added to the squad the career already has
+ * rather than replacing it: only men the career has no record of at all are
+ * added. Replacing it (mergeLeagueSquadStats) undid every transfer the club
+ * had made, the moment you signed for it.
+ */
+export function addFullRoster(full: LeagueSquad, current: LeagueSquad | undefined, world: LeagueSquad[]): LeagueSquad {
+  if (!current) return withoutPlayersElsewhere([full], world)[0];
+  const known = new Set<string>();
+  for (const s of world) for (const p of s.players) known.add(p.id);
+  for (const p of current.players) known.add(p.id);
+  const extra = full.players.filter(p => !known.has(p.id));
+  return extra.length ? { ...current, players: [...current.players, ...extra] } : current;
 }
 
 /** A row as a `LeaguePlayer`, in his own natural position — no formation slot
@@ -523,14 +610,13 @@ function weightedPick(
   weights: Record<Pos, number>,
   rng: () => number,
   exclude?: string,
+  quality: (p: LeaguePlayer) => number = scorerQuality,
 ): LeaguePlayer | null {
   let total = 0;
   const w: number[] = [];
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
-    // Rating tilts it, but never to the point where only the best man scores:
-    // a 70 is worth about half a 90, not a twentieth.
-    const q = 0.55 + (Math.max(40, Math.min(99, p.overall)) - 40) / 59 * 0.9;
+    const q = quality(p);
     const bench = i >= 11 ? BENCH_WEIGHT : 1;
     const x = p.id === exclude ? 0 : (weights[p.position] ?? 1) * q * bench;
     w.push(x); total += x;
@@ -543,6 +629,29 @@ function weightedPick(
   }
   return players[players.length - 1] ?? null;
 }
+
+/** Rating tilts who scores, but never to the point where only the best man
+ *  scores: a 70 is worth about half a 90, not a twentieth. */
+function scorerQuality(p: LeaguePlayer): number {
+  return 0.55 + (Math.max(40, Math.min(99, p.overall)) - 40) / 59 * 0.9;
+}
+
+/**
+ * Who makes them leans much harder on quality than who scores them: a real
+ * season has a few creators far ahead of everyone (13-20 assists), and plenty
+ * of them make more goals than they score. With the scorer's own gentle tilt,
+ * the assist king finished on 10-14 and only 1 in 7 regular contributors had
+ * more assists than goals (measured, 4 real-data seasons; Mikey's playtest, 8
+ * Oct 2026). His passing, where the database has it, counts too.
+ */
+function creatorQuality(p: LeaguePlayer): number {
+  const r = (Math.max(40, Math.min(99, p.overall)) - 40) / 59;
+  const passing = p.passing ? Math.pow(Math.max(40, p.passing) / 75, 2) : 1;
+  return (0.25 + Math.pow(r, 3) * 2.4) * passing;
+}
+
+/** Share of goals with an assist: about three in four in a real league. */
+const ASSIST_SHARE = 0.74;
 
 export interface SimGoal {
   m: number;
@@ -575,8 +684,8 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
     scorer.goals += 1;
     // Most goals are made by somebody. The rest are solo, deflected, or the sort
     // nobody claims.
-    const assister = rng() < 0.62
-      ? weightedPick(squad.players, ASSIST_WEIGHT, rng, scorer.id)
+    const assister = rng() < ASSIST_SHARE
+      ? weightedPick(squad.players, ASSIST_WEIGHT, rng, scorer.id, creatorQuality)
       : null;
     if (assister) assister.assists += 1;
     out.push({

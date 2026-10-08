@@ -197,6 +197,7 @@ export const ADMIN_GUIDES = {
         ["▶ Invite (Play or Skip)", "The farewell after the final whistle: your XI, the Rivals XI and why they are there. Play it opens the team sheets; Skip goes to the overview."],
         ["▶ Team sheets", "The two elevens, as before any match. Kick Off opens the guard of honour."],
         ["▶ Guard of honour · 3D / · drawn", "The walk-out: both teams in two lines clapping. 3D as the game shows it; drawn is what a phone that can't run 3D sees. Kick off › skips it."],
+        ["▶ Standing ovation · 3D / · drawn", "Off at 85': the camera circles you, the ground stands, two team-mates and two rivals stop you for a hug, a dap-up or a pat, the substitute hugs you on the line. 3D as the game shows it (Settings → Look → Standing ovation: New); drawn is what a phone that can't run 3D sees. Skip › ends it."],
         ["▶ Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
         ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
       ] },
@@ -213,7 +214,7 @@ export const ADMIN_GUIDES = {
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",

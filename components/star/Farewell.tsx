@@ -30,6 +30,8 @@ import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
 import { wornAccessories } from "@/lib/star/signing3d";
 import type { SigningYou } from "@/lib/star/signing3dScene";
 import type { GuardSceneHandle } from "@/lib/star/farewell3d";
+import type { OvationSceneHandle } from "@/lib/star/ovation3d";
+import { ovationPlan, greetingCaption, type OvationPlan, type OvationPerson, type OvationStop } from "@/lib/star/ovation";
 import { GUARD } from "@/lib/star/guardOfHonour";
 import { playCrowdSwell } from "@/lib/star/matchSound";
 import ClubBadge from "./ClubBadge";
@@ -441,6 +443,169 @@ function GuardDrawn({ career, sides, kit, onDone }: { career: CareerState; sides
       </div>
       <div className="kib-walkout absolute left-1/2 top-1/2 w-[64px]">
         <FaceChip chip={me} kit={kit} size={56} />
+      </div>
+    </div>
+  );
+}
+
+// ── The standing ovation (Mikey, 8 Oct 2026) ────────────────────────────────
+
+/** Who stops you on the way off: two team-mates, two rivals, the substitute. */
+export function ovationPlanFor(career: CareerState, sides: FarewellSides): OvationPlan {
+  const name = (n: string) => shortNameOf(n);
+  const xi = new Set(sides.ours.lineup.xi.filter((id): id is string => !!id && id !== YOU_ID));
+  const mates: OvationPerson[] = sides.ours.players
+    .filter(p => xi.has(p.id))
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+    .slice(0, 2)
+    .map(p => ({ id: p.id, name: p.shortName || name(p.name), team: "ours" }));
+  const rivalXI = new Set(sides.rivals.lineup.xi.filter((id): id is string => !!id));
+  const rivals: OvationPerson[] = sides.rivals.who
+    .filter(r => rivalXI.has(r.id))
+    .sort((a, b) => Number(!!b.ballonDor) - Number(!!a.ballonDor) || (b.overall ?? 0) - (a.overall ?? 0))
+    .slice(0, 2)
+    .map(r => ({ id: r.id, name: name(r.name), team: "rivals" }));
+  const subId = (sides.ours.lineup.bench ?? []).find(id => id && id !== YOU_ID && !mates.some(m => m.id === id));
+  const subP = subId ? sides.ours.players.find(p => p.id === subId) : undefined;
+  const sub: OvationPerson | null = subP ? { id: subP.id, name: subP.shortName || name(subP.name), team: "ours" } : null;
+  return ovationPlan(mates, rivals, sub);
+}
+
+/**
+ * Off at 85': the camera circles you, the ground stands, team-mates and
+ * rivals stop you for a hug or a dap-up, the substitute hugs you on the line.
+ * 3D when the phone can run it, a drawn version when it can't. Skip any time.
+ */
+export function StandingOvation({ career, sides, minute, onDone, drawn = false }: {
+  career: CareerState; sides: FarewellSides; minute: number; onDone: () => void;
+  /** The test page: the drawn version whatever the phone can do. */
+  drawn?: boolean;
+}) {
+  const [mode, setMode] = useState<"3d" | "drawn">(() => (drawn || (typeof window !== "undefined" && signing3dBlocker()) ? "drawn" : "3d"));
+  const plan = useMemo(() => ovationPlanFor(career, sides), [career, sides]);
+  const [caption, setCaption] = useState<string | null>(null);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+  const finished = useRef(false);
+  const finish = () => { if (!finished.current) { finished.current = true; doneRef.current(); } };
+  useEffect(() => { playCrowdSwell("cheer"); }, []);
+  const kit = hostKit(career, sides.host);
+  const onStop = (s: OvationStop | null) => setCaption(s ? greetingCaption(s) : null);
+  return (
+    <div className="fixed inset-0 z-[60] overflow-hidden bg-[#0a1426] text-white" data-standing-ovation={mode}>
+      {mode === "3d"
+        ? <Ovation3D career={career} kit={kit} plan={plan} onStop={onStop} onDone={finish} onFail={() => setMode("drawn")} />
+        : <OvationDrawn career={career} sides={sides} kit={kit} plan={plan} onStop={onStop} onDone={finish} />}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.55), transparent)" }}>
+        <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200">{minute}&apos; · You come off</div>
+        <h1 className="text-[30px] uppercase leading-none text-white" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.8))" }}>Standing ovation</h1>
+        <div className="mt-1 text-[12px] font-bold text-white/90">{career.player.firstName} {career.player.lastName}</div>
+      </div>
+      {caption && (
+        <div className="pointer-events-none absolute inset-x-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 text-center" data-ovation-caption>
+          <span className="inline-block px-3 py-1.5 text-[13px] font-black text-white" style={{ background: "rgba(10,20,38,.82)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55)", borderRadius: 2 }}>{caption}</span>
+        </div>
+      )}
+      <button
+        onClick={finish}
+        className="kib-press absolute bottom-[calc(18px+env(safe-area-inset-bottom))] right-4 z-20 px-4 py-2.5 text-[13px] font-black uppercase tracking-wide text-gray-950"
+        style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 2 }}
+        data-ovation-skip
+      >
+        Skip ›
+      </button>
+    </div>
+  );
+}
+
+function Ovation3D({ career, kit, plan, onStop, onDone, onFail }: {
+  career: CareerState; kit: Kit; plan: OvationPlan; onStop: (s: OvationStop | null) => void; onDone: () => void; onFail: () => void;
+}) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const you = useYouLook(career, kit);
+  const [ready, setReady] = useState(false);
+  const cb = useRef({ onDone, onFail, onStop });
+  cb.current = { onDone, onFail, onStop };
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el || !you) return;
+    let disposed = false;
+    let handle: OvationSceneHandle | null = null;
+    const limit = window.setTimeout(() => { if (!handle && !disposed) { console.warn("[ovation] 3D took too long; drawn instead"); cb.current.onFail(); } }, LOAD_LIMIT_MS);
+    (async () => {
+      try {
+        const { createOvationScene } = await import("@/lib/star/ovation3d");
+        const h = await createOvationScene(el, {
+          you, ours: kit, rivals: RIVALS_KITS.home, plan,
+          seed: (career.player.startYear ?? 0) * 37 + career.season,
+          onDone: () => cb.current.onDone(),
+          onStop: (s) => cb.current.onStop(s),
+        });
+        if (disposed) { h.dispose(); return; }
+        handle = h;
+        window.clearTimeout(limit);
+        (window as unknown as { __ovation3d?: OvationSceneHandle; __ovation3dReady?: boolean }).__ovation3d = h;
+        (window as unknown as { __ovation3dReady?: boolean }).__ovation3dReady = true;
+        setReady(true);
+      } catch (e) {
+        console.warn("[ovation] 3D failed; drawn instead:", e);
+        if (!disposed) cb.current.onFail();
+      }
+    })();
+    return () => {
+      disposed = true;
+      window.clearTimeout(limit);
+      handle?.dispose();
+      (window as unknown as { __ovation3dReady?: boolean }).__ovation3dReady = false;
+    };
+    // built once, when your look is known
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [you]);
+  return (
+    <>
+      <div ref={wrap} className="absolute inset-0" />
+      {!ready && <div className="absolute inset-0 grid place-items-center text-[12px] font-black uppercase tracking-wider text-white/70">The ground rises…</div>}
+    </>
+  );
+}
+
+/** The drawn ovation: you in the middle, each well-wisher in turn, the stands clapping. No canvas. */
+function OvationDrawn({ career, sides, kit, plan, onStop, onDone }: {
+  career: CareerState; sides: FarewellSides; kit: Kit; plan: OvationPlan; onStop: (s: OvationStop | null) => void; onDone: () => void;
+}) {
+  const [i, setI] = useState(-1);
+  const stops = plan.stops;
+  const cb = useRef({ onStop, onDone });
+  cb.current = { onStop, onDone };
+  useEffect(() => {
+    // Each greeting about 1.5 s, then off.
+    const timers = stops.map((_, k) => window.setTimeout(() => { setI(k); cb.current.onStop(stops[k]); }, 900 + k * 1500));
+    timers.push(window.setTimeout(() => cb.current.onDone(), 900 + stops.length * 1500 + 1300));
+    return () => timers.forEach(t => window.clearTimeout(t));
+  }, [stops]);
+  const me: Chip = { id: YOU_ID, name: career.player.lastName, face: career.player.portrait ?? DEFAULT_FAKE_FACE, you: true };
+  const s = i >= 0 ? stops[i] : null;
+  const other: Chip | null = s ? {
+    id: s.who.id, name: s.who.name,
+    face: s.who.team === "rivals" ? sides.rivals.who.find(r => r.id === s.who.id)?.face : sides.ours.players.find(p => p.id === s.who.id)?.imageUrl,
+  } : null;
+  const icon = s ? (s.kind === "hug" ? "🫂" : s.kind === "dap" ? "🤜🤛" : "🤝") : "👏";
+  return (
+    <div className="absolute inset-0" style={{ background: "radial-gradient(70% 50% at 50% 30%, rgba(255,250,230,.16), transparent 70%), linear-gradient(180deg, #0a1426 0%, #12391f 55%, #1d5c2f 100%)" }} data-ovation-drawn>
+      <style>{`
+        @keyframes kibCrowd { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        .kib-crowd span { display: inline-block; animation: kibCrowd .4s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .kib-crowd span { animation: none; } }
+      `}</style>
+      <div className="kib-crowd absolute inset-x-0 top-[118px] text-center text-[18px] leading-tight" aria-hidden>
+        {Array.from({ length: 3 }).map((_, r) => (
+          <div key={r}>{Array.from({ length: 9 }).map((__, c) => <span key={c} style={{ animationDelay: `${((r * 9 + c) * 0.07) % 0.4}s` }}>👏</span>)}</div>
+        ))}
+      </div>
+      <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center gap-4">
+        <div className="w-[72px]"><FaceChip chip={me} kit={kit} size={64} /></div>
+        <div className="text-[34px]" aria-hidden>{icon}</div>
+        <div className="w-[72px]">{other && <FaceChip key={other.id} chip={other} kit={s?.who.team === "rivals" ? RIVALS_KITS.home : kit} size={64} />}</div>
       </div>
     </div>
   );
