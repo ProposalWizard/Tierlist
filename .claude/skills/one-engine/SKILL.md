@@ -13,6 +13,17 @@ engine."* And: *"yes never drifting — but if an area is specific for tuning
 gameplay, but adapting that gameplay should only happen inside the test area
 and not uniformly."*
 
+**3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
+got to be changed for 3D — surely it would be a completely different set of
+rulesets almost? And that's okay as long as it doesn't infringe on the base
+game."* Fully 3D games (move around, touch, keep-ups, headers, volleys, free
+roam) get their OWN physics and rules, in their own folder (`lib/star/play3d/`).
+Limits: they never import from or change `lib/star/canvasEngine.ts` or the 2D
+match; the 2D base game is untouched by them; shared basics (ball size, gravity,
+how a player's skills scale a kick) come from one shared file so the 3D ball
+still feels like the same sport. Screens built on the 2D engine (trial, drills,
+Crossbar Challenge's aim) keep the one-engine rule as before.
+
 ## Why
 
 An audit found the trial, the training, five-a-side and two prototypes each

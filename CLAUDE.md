@@ -313,6 +313,17 @@ used the base engine … extra stuff built on top of the base engine."*
 - **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
   and 2 dev prototypes. The live list is in the guard.
 
+**3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
+got to be changed for 3D — surely it would be a completely different set of
+rulesets almost? And that's okay as long as it doesn't infringe on the base
+game."* Fully 3D games (move around, touch, keep-ups, headers, volleys, free
+roam) get their OWN physics and rules, in their own folder (`lib/star/play3d/`).
+Limits: they never import from or change `lib/star/canvasEngine.ts` or the 2D
+match; the 2D base game is untouched by them; shared basics (ball size, gravity,
+how a player's skills scale a kick) come from one shared file so the 3D ball
+still feels like the same sport. Screens built on the 2D engine (trial, drills,
+Crossbar Challenge's aim) keep the one-engine rule as before.
+
 ## OLD UI / NEW UI — Settings → UI: Old | New (Harry, 1 Oct 2026)
 
 *"keep the old ui exactly how it is as a backup … old ui is current and new ui
