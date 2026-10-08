@@ -405,11 +405,13 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
 const bufCache = new Map<string, Promise<ArrayBuffer>>();
 
 /** The files each scene loads first (its loading-cover wait). Keep in step with the scenes. */
-export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing", string[]> = {
+export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing" | "casino", string[]> = {
   garden: ["/star/garden3d/props.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
   shop: ["/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
   office: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
   signing: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
+  // the casino room is all primitives and canvas paint: only you to load
+  casino: ["/star/onebody/player.glb", "/star/people3d/anims.glb"],
 };
 
 /** Should we spend the player's data on files they may not open? Not on Save-Data or 2G. */

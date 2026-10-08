@@ -45,13 +45,19 @@ export interface Garden3DProps {
   onBack: () => void;
   /** Walked through the shop's doors. */
   onShop: () => void;
-  /** Where you appear: at the shop's doors (coming out of it) or the gate. */
-  arrive?: "shop" | "gate";
+  /** Walked through the casino's doors (8 Oct 2026). Absent: the casino's
+   *  doors stay shut. */
+  onCasino?: () => void;
+  /** Walked through the training pitch's gate (8 Oct 2026). */
+  onTraining?: () => void;
+  /** Where you appear: at the shop's doors (coming out of it), the casino's,
+   *  the training pitch's gate, or the garden gate. */
+  arrive?: GardenData["arrive"];
   /** Test page only: force the time of day. */
   sky?: GardenData["sky"];
 }
 
-export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, arrive = "gate", sky }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -60,6 +66,10 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
   const [leaving, setLeaving] = useState(false);
   const shopRef = useRef(onShop);
   shopRef.current = onShop;
+  const casinoRef = useRef(onCasino);
+  casinoRef.current = onCasino;
+  const trainingRef = useRef(onTraining);
+  trainingRef.current = onTraining;
 
   // Three real team-mates, picked at random each visit (as before).
   const [visitors] = useState(() => {
@@ -127,6 +137,17 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
             setLeaving(true);
             setTimeout(() => shopRef.current(), 350);
           },
+          // the casino's doors and the pitch's gate: a fade, then through
+          onCasinoDoor: onCasino ? () => {
+            if (dead) return;
+            setLeaving(true);
+            setTimeout(() => casinoRef.current?.(), 350);
+          } : undefined,
+          onTrainingGate: onTraining ? () => {
+            if (dead) return;
+            setLeaving(true);
+            setTimeout(() => trainingRef.current?.(), 350);
+          } : undefined,
           onContextLost: () => {
             if (dead) return;
             console.error("3D garden: the phone took the 3D away");
@@ -140,7 +161,8 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
         // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
         const start = (): Promise<GardenController> => newMod
           ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep })
-          : oldMod!.startGarden(el, cbs, data, { quality: tier === "low" ? "low" : "high", fixedStep });
+          // (the Old garden has no casino or pitch: it starts at the gate)
+          : oldMod!.startGarden(el, cbs, { ...data, arrive: data.arrive === "shop" ? "shop" : "gate" }, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;
         try {
           c = await start();
@@ -234,7 +256,7 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (
-        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} />
+        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} />
       )}
 
       {/* a quick fade as you step into the shop */}
@@ -244,13 +266,15 @@ export default function Garden3D({ career, onBack, onShop, arrive = "gate", sky 
 }
 
 /** The small card for wherever you are standing. */
-function SpotCard({ spot, career, info, visitors, onClose, onShop }: {
+function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining }: {
   spot: GardenSpot;
   career: CareerState;
   info: ReturnType<typeof gardenData>;
   visitors: CareerState["squad"];
   onClose?: () => void;
   onShop: () => void;
+  onCasino?: () => void;
+  onTraining?: () => void;
 }) {
   const card: React.CSSProperties = {
     position: "absolute", right: 12, bottom: "max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxWidth: "min(62vw, 300px)",
@@ -265,6 +289,17 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop }: {
       <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
         <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
         <button onClick={onShop} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Shop &#8250;</button>
+        {close}
+      </div>
+    );
+  }
+  if (spot === "casino" || spot === "training") {
+    const go = spot === "casino" ? onCasino : onTraining;
+    if (!go) return null;
+    return (
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
+        <span aria-hidden style={{ fontSize: 24 }}>{spot === "casino" ? "🎰" : "⚽"}</span>
+        <button onClick={go} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>{spot === "casino" ? "Casino" : "Training"} &#8250;</button>
         {close}
       </div>
     );

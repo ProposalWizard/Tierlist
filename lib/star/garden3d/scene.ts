@@ -58,7 +58,7 @@ import {
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
 } from "./textures";
 
-export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball";
+export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training";
 export type GardenSky = "day" | "sunset" | "night";
 
 export interface GardenTrophy { name: string; count: number; art: string | null }
@@ -78,8 +78,9 @@ export interface GardenData {
   sky: GardenSky;
   /** The team-mates on the bench: their shirt numbers. */
   mates: number[];
-  /** Where you appear: at the shop's doors (coming out of it) or the gate. */
-  arrive: "shop" | "gate";
+  /** Where you appear: at the shop's doors (coming out of it), the casino's
+   *  doors, the training pitch's gate, or the garden gate. */
+  arrive: "shop" | "gate" | "casino" | "training";
   /** Who you are: the 3D shop's own player (its Settings → "3D shop player"
    *  switch and your saved skin, hair and hair style). Absent → the shop's
    *  default, the new player. */
@@ -91,6 +92,10 @@ export interface GardenCallbacks {
   onFps: (fps: number) => void;
   /** He walked through the shop's doors. */
   onShopDoor: () => void;
+  /** He walked through the casino's doors (8 Oct 2026). */
+  onCasinoDoor?: () => void;
+  /** He walked through the training pitch's gate (8 Oct 2026). */
+  onTrainingGate?: () => void;
   /** The phone took the 3D away (iPhone Safari does this when memory runs
    *  short): the screen should restart the garden or fall back. */
   onContextLost?: () => void;
@@ -142,7 +147,19 @@ const TEQ = { x: 6.6, z: -3.6 };
 const STABLE = { x: -15.2, z: 6.5, w: 4.2, d: 7.4 };
 const PADDOCK = { x0: -13.0, x1: -6.4, z0: 0.8, z1: 12.6, gate: [5.6, 7.4] as [number, number] };
 const PARK = { x0: 5.5, x1: 16.5, z0: 9.2, z1: 17.2 };
+/** The casino (8 Oct 2026, Harry: "making the casino 3D and adding it to the
+ *  garden/shop walkable area"): back right, beside the shop, its front
+ *  facing the gate. Its doors are at x = CASINO.door. */
+const CASINO = { x0: 7.6, x1: 15.4, z0: -17.6, z1: -11.8, h: 4.6, door: 11.5 };
+const CAS_DOOR = { half: 1.0, h: 2.7 };
+/** The training pitch (8 Oct 2026): back left, fenced, a goal at the far end;
+ *  its gate is in the near (south) fence at x = PITCH.gate. */
+const PITCH = { x0: -16.9, x1: -7.6, z0: -17.4, z1: -10.2, gate: -10.1, gateHalf: 0.8 };
+/** The side paths to them: from the fountain court along z = SIDE_Z. */
+const SIDE_Z = -1.8;
 const START_SHOP = { x: 0, z: -5.3, yaw: 0 };
+const START_CASINO = { x: CASINO.door, z: CASINO.z1 + 2.2, yaw: 0 };
+const START_TRAINING = { x: PITCH.gate, z: PITCH.z1 + 2.0, yaw: 0 };
 const START_GATE = { x: 0, z: 15.5, yaw: Math.PI };
 /** The follow camera: how far behind him, and how high. */
 const CAM_BACK = 6.3;
@@ -679,7 +696,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   for (let k = 0; k < 8; k++) {
     for (const sx of [-1, 1]) plant(["tree_default", "tree_detailed", "tree_pine", "tree_fat"][(k + (sx > 0 ? 1 : 0)) % 4], sx * (21.5 + r() * 2.5), -16 + k * 4.4, 4.0 + r() * 1.6, r() * 6);
   }
-  plant("tree_oak", -17, -15.5, 4.6, 1); plant("tree_detailed", 16.8, -15.8, 4.8, 2);
+  // (the oak that stood at -17, -15.5 made way for the training pitch, 8 Oct 2026)
+  plant("tree_detailed", 16.8, -15.8, 4.8, 2);
   plant("tree_fat", 17, -2, 4.2, 0.4); plant("tree_default", -17.2, -5.5, 4.4, 2.2);
   plant("tree_oak", 17.2, -9.5, 4.4, 1.3); plant("tree_tall", -3.6, 16.2, 3.6); plant("tree_tall", 3.6, 16.2, 3.6);
   // the far ring casts no shadow (it is outside the shadow's reach anyway)
@@ -687,7 +705,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     many(k, list.filter(([x, z]) => Math.hypot(x, z) <= 26));
     many(k, list.filter(([x, z]) => Math.hypot(x, z) > 26), false);
   }
-  for (const [x, z] of [[-17, -15.5], [16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
+  for (const [x, z] of [[16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
 
   // flower beds down the path, bushes, grass tufts
   // flower beds either side of the path: dark soil, low green, bright blooms
@@ -722,11 +740,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const bushLightM = mat("#46803a", { roughness: 0.9 });
   const bushAt: number[][] = [], bushLightAt: number[][] = [];
   const bush = (x: number, z: number, sz: number) => {
+    // inside the casino or the training pitch (8 Oct 2026): not planted, but
+    // its random numbers are still drawn, so every other bush stays put
+    const gone = (x > CASINO.x0 - 0.5 && x < CASINO.x1 + 0.5 && z < CASINO.z1 + 0.5) || (x > PITCH.x0 - 0.5 && x < PITCH.x1 + 0.5 && z < PITCH.z1 + 0.5);
     for (let k = 0; k < 5; k++) {
       const a = r() * Math.PI * 2, d = r() * sz * 0.45;
-      (k % 2 ? bushLightAt : bushAt).push([x + Math.cos(a) * d, z + Math.sin(a) * d, sz * (0.42 + r() * 0.2)]);
+      const sc = sz * (0.42 + r() * 0.2);
+      if (!gone) (k % 2 ? bushLightAt : bushAt).push([x + Math.cos(a) * d, z + Math.sin(a) * d, sc]);
     }
-    CIRCLES.push([x, z, sz * 0.55]);
+    if (!gone) CIRCLES.push([x, z, sz * 0.55]);
   };
   // shrubs in the corners and either side of the gate, planted in groups
   for (const [x, z, sz] of [[-2.6, 17.4, 1.3], [2.6, 17.4, 1.3], [17.2, -12.5, 1.6], [16.4, -14.0, 1.2], [-17.2, 15, 1.6], [-16.2, 16.6, 1.1], [12.6, -12, 1.3], [-12.4, -12.6, 1.4], [17.0, 6.0, 1.4], [-17.2, -1.0, 1.3]]) bush(x, z, sz);
@@ -738,7 +760,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const boxHedgeM = mat("#ffffff", { map: boxHedgeT, roughness: 0.95 });
   const clipped = batch(scene);
   // (the left one stops short of the path to the trophy cabinet)
-  for (const [x, z0, z1] of [[-5.0, -8.9, -7.0], [5.0, -8.9, -4.6]]) {
+  for (const [x, z0, z1] of [[-5.0, -8.9, -7.0], [5.0, -8.9, -7.0]]) { // (the right one stops short of the path to the casino, 8 Oct 2026)
     clipped.box(0.7, 0.75, z1 - z0, boxHedgeM, x, 0.375, (z0 + z1) / 2);
     solid(x - 0.35, x + 0.35, z0, z1);
   }
@@ -931,6 +953,245 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       nightLights.push(pl);
     }
   }
+
+  // ── The casino (8 Oct 2026, Harry: "start work on making the casino 3D and
+  // adding it to the garden/shop walkable area") ──
+  // A small glamorous front, same family as the shop's: deep burgundy with
+  // gold bands, an art-deco stepped top, a black fascia with the neon CASINO
+  // ringed by marquee bulbs, gold columns, a canopy, open doors onto a warm
+  // red inside, and a red carpet between gold rope posts. Walk through the
+  // doors and the 3D casino opens (cb.onCasinoDoor).
+  const casG = new THREE.Group();
+  occluders.push(casG);
+  scene.add(casG);
+  let casinoPulse: ((t: number) => void) | null = null;
+  {
+    const C = CASINO.door, F = CASINO.z1, W = CASINO.x1 - CASINO.x0, D = CASINO.z1 - CASINO.z0, H = CASINO.h;
+    const cx = (CASINO.x0 + CASINO.x1) / 2;
+    const cb2 = batch(casG);
+    const wallM = mat("#4a1222", { roughness: 0.55 });
+    const blackM = mat("#141014", { roughness: 0.35, metalness: 0.2 });
+    const gold2M = mat("#d4a94e", { roughness: 0.28, metalness: 0.9 });
+    const redGlowM = new THREE.MeshStandardMaterial({ color: "#3a0610", emissive: "#ff4a3a", emissiveIntensity: night ? 1.1 : 0.55, roughness: 0.8 });
+    const glassM = new THREE.MeshStandardMaterial({ color: "#2a1a22", transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.9, depthWrite: false });
+    // the body (its front 1 m back, as the shop's), the front either side of
+    // and over the doorway, a black plinth and gold bands
+    const hd = CAS_DOOR.half;
+    cb2.box(W, H, D - 1.0, wallM, cx, H / 2, (CASINO.z0 + F - 1.0) / 2);
+    for (const [a, b] of [[CASINO.x0, C - hd], [C + hd, CASINO.x1]]) {
+      cb2.box(b - a, H, 1.0, wallM, (a + b) / 2, H / 2, F - 0.5);
+      cb2.box(b - a + 0.06, 0.5, 1.08, blackM, (a + b) / 2, 0.25, F - 0.48);
+      cb2.box(b - a, 0.08, 0.14, gold2M, (a + b) / 2, 0.52, F + 0.03);
+    }
+    cb2.box(hd * 2, H - CAS_DOOR.h, 1.0, wallM, C, CAS_DOOR.h + (H - CAS_DOOR.h) / 2, F - 0.5);
+    cb2.box(W + 0.08, 0.08, 0.14, gold2M, cx, 3.2, F + 0.03);
+    cb2.box(W + 0.3, 0.22, 0.5, gold2M, cx, H + 0.11, F - 0.1);
+    // the stepped art-deco top over the doors
+    cb2.box(4.4, 0.9, 0.7, wallM, C, H + 0.67, F - 0.25);
+    cb2.box(4.5, 0.1, 0.78, gold2M, C, H + 1.15, F - 0.25);
+    cb2.box(2.6, 0.75, 0.6, wallM, C, H + 1.57, F - 0.3);
+    cb2.box(2.7, 0.1, 0.68, gold2M, C, H + 1.98, F - 0.3);
+    for (const k of [-1, 0, 1]) cb2.box(0.08, 1.6, 0.06, gold2M, C + k * 0.7, H + 1.1, F + 0.11);
+    // the fascia, ringed with bulbs, and the neon name
+    cb2.box(5.0, 1.0, 0.2, blackM, C, 3.75, F + 0.1);
+    const bulbM = new THREE.MeshStandardMaterial({ color: "#000000", emissive: "#ffd27a", emissiveIntensity: night ? 3 : 1.6 });
+    bulbM.userData.keep = true; // it twinkles (freezeStatic must not swap it)
+    const bulbGeo = new THREE.IcosahedronGeometry(0.045, 1);
+    for (let k = 0; k <= 16; k++) for (const y of [3.3, 4.2]) cb2.put(bulbGeo.clone(), bulbM, C - 2.4 + k * 0.3, y, F + 0.22);
+    for (let k = 1; k < 3; k++) for (const sx of [-1, 1]) cb2.put(bulbGeo.clone(), bulbM, C + sx * 2.4, 3.3 + k * 0.3, F + 0.22);
+    const casNeonM = new THREE.MeshBasicMaterial({ map: canvasTex(neonCanvas("CASINO", "#ff3d6e")), transparent: true, depthWrite: false, toneMapped: false });
+    casNeonM.userData.keep = true;
+    const casSign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2 * 192 / 1024), casNeonM);
+    casSign.position.set(C, 3.75, F + 0.21);
+    casG.add(casSign);
+    // little gold card suits either side of the name
+    const suitM = mat("#d4a94e", { roughness: 0.3, metalness: 0.85, emissive: "#6a4a10", emissiveIntensity: 0.3 });
+    for (const sx of [-1, 1]) cb2.put(new THREE.OctahedronGeometry(0.16, 0), suitM, C + sx * 2.05, 3.75, F + 0.24, 0, 0, 0, 0.8, 1.2, 0.3);
+    // the doorway: a warm red inside, a gold frame, both doors open
+    const inside = new THREE.Mesh(new THREE.PlaneGeometry(CAS_DOOR.half * 2, CAS_DOOR.h), new THREE.MeshBasicMaterial({ color: "#ff8a5c", fog: false, toneMapped: false }));
+    inside.position.set(C, CAS_DOOR.h / 2, F - 0.9);
+    casG.add(inside);
+    cb2.box(CAS_DOOR.half * 2, 0.03, 1.0, mat("#7a0f1c", { roughness: 0.9 }), C, 0.015, F - 0.5);
+    cb2.box(CAS_DOOR.half * 2 + 0.24, 0.14, 0.2, gold2M, C, CAS_DOOR.h + 0.07, F + 0.06);
+    for (const sx of [-1, 1]) cb2.box(0.12, CAS_DOOR.h, 0.2, gold2M, C + sx * (CAS_DOOR.half + 0.06), CAS_DOOR.h / 2, F + 0.06);
+    for (const sx of [-1, 1]) {
+      const hx = C + sx * CAS_DOOR.half, open = 1.2, leafW = CAS_DOOR.half - 0.04;
+      const lx = hx - sx * Math.cos(open) * leafW / 2, lz = F - 0.05 - Math.sin(open) * leafW / 2;
+      const ry = sx > 0 ? Math.PI - open : open;
+      cb2.box(leafW, CAS_DOOR.h - 0.05, 0.05, blackM, lx, (CAS_DOOR.h - 0.05) / 2, lz, ry);
+      cb2.box(leafW - 0.22, CAS_DOOR.h - 0.6, 0.06, glassM, lx, CAS_DOOR.h / 2, lz, ry);
+    }
+    // gold columns either side of the doors
+    for (const sx of [-1, 1]) {
+      const px = C + sx * 1.65;
+      cb2.box(0.6, 0.3, 0.6, blackM, px, 0.15, F + 0.35);
+      cb2.put(new THREE.CylinderGeometry(0.2, 0.22, 2.75, 16), gold2M, px, 1.68, F + 0.35);
+      cb2.box(0.58, 0.18, 0.58, gold2M, px, 3.1, F + 0.35);
+    }
+    // the canopy over the doors
+    cb2.box(3.6, 0.12, 1.5, blackM, C, 3.02, F + 0.78);
+    cb2.box(3.66, 0.05, 0.06, gold2M, C, 3.0, F + 1.53);
+    // two tall windows: red curtains lit from behind
+    for (const sx of [-1, 1]) {
+      const wx = C + sx * 2.95;
+      if (wx - 0.55 < CASINO.x0 || wx + 0.55 > CASINO.x1) continue;
+      cb2.box(1.0, 2.0, 0.04, redGlowM, wx, 1.75, F + 0.02);
+      cb2.box(1.14, 0.1, 0.12, gold2M, wx, 2.8, F + 0.06);
+      cb2.box(1.14, 0.1, 0.12, gold2M, wx, 0.72, F + 0.06);
+      cb2.box(0.06, 2.0, 0.08, gold2M, wx, 1.75, F + 0.05);
+    }
+    // the red carpet, gold-edged, and gold rope posts with red ropes
+    const carpetM = mat("#a3101f", { roughness: 0.95 });
+    const carpetL = 3.2;
+    cb2.box(1.8, 0.02, carpetL, carpetM, C, 0.025, F + 0.4 + carpetL / 2);
+    for (const sx of [-1, 1]) cb2.box(0.06, 0.021, carpetL, gold2M, C + sx * 0.9, 0.026, F + 0.4 + carpetL / 2);
+    const ropeM = mat("#b3152a", { roughness: 0.6 });
+    for (const sx of [-1, 1]) {
+      const px = C + sx * 1.3;
+      const zs = [F + 1.0, F + 2.1, F + 3.2];
+      for (const pz of zs) {
+        cb2.put(new THREE.CylinderGeometry(0.035, 0.035, 0.9, 8), gold2M, px, 0.45, pz);
+        cb2.put(new THREE.CylinderGeometry(0.16, 0.18, 0.05, 14), gold2M, px, 0.025, pz);
+        cb2.put(new THREE.SphereGeometry(0.06, 10, 8), gold2M, px, 0.93, pz);
+        CIRCLES.push([px, pz, 0.12]);
+      }
+      for (let k = 0; k < zs.length - 1; k++) cb2.box(0.04, 0.04, zs[k + 1] - zs[k], ropeM, px, 0.8, (zs[k] + zs[k + 1]) / 2);
+    }
+    // black pots with gold rims and clipped topiary either side
+    for (const sx of [-1, 1]) {
+      const px = C + sx * 3.3;
+      if (px < CASINO.x0 - 0.2 || px > CASINO.x1 + 0.2) continue;
+      cb2.box(0.6, 0.6, 0.6, blackM, px, 0.3, F + 0.6);
+      cb2.box(0.66, 0.05, 0.66, gold2M, px, 0.62, F + 0.6);
+      cb2.put(new THREE.IcosahedronGeometry(0.45, 3), boxHedgeM, px, 1.1, F + 0.6);
+      CIRCLES.push([px, F + 0.6, 0.4]);
+    }
+    cb2.done();
+    // the light from the door on the path, stronger after dark
+    const casGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3), new THREE.MeshBasicMaterial({ map: canvasTex(glowCanvas("255,120,110")), transparent: true, depthWrite: false, opacity: night ? 0.7 : 0.25 }));
+    casGlow.rotation.x = -Math.PI / 2;
+    casGlow.position.set(C, 0.03, F + 1.2);
+    scene.add(casGlow);
+    if (night) {
+      const pl = new THREE.PointLight("#ff9a7a", 9, 9, 2);
+      pl.position.set(C, 2.6, F + 1.8);
+      scene.add(pl);
+      nightLights.push(pl);
+    }
+    solid(CASINO.x0 - 0.2, CASINO.x1 + 0.2, CASINO.z0 - 0.2, CASINO.z1 + 0.1);
+    // the bulbs chase round and the sign hums (two numbers, nothing redrawn)
+    casinoPulse = (t: number) => {
+      bulbM.emissiveIntensity = (night ? 2.6 : 1.4) + 0.6 * Math.sin(t * 5);
+      casNeonM.opacity = 0.9 + 0.1 * Math.sin(t * 13) * Math.sin(t * 2.3);
+    };
+  }
+  // the path to it: from the forecourt's right-hand hedge, along, then up to the doors
+  const sidePave = (w: number, d: number, x: number, z: number, y: number) => {
+    const t = paveT.clone();
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(w / 0.9, d / 0.9);
+    t.needsUpdate = true;
+    return flat(w, d, mat("#f3ece0", { map: t, roughness: 0.9 }), x, z, y);
+  };
+  sidePave(CASINO.door + 1.0 - 4.2, 1.4, (4.2 + CASINO.door + 1.0) / 2, -6.0, 0.0155);
+  sidePave(2.0, -6.7 - CASINO.z1, CASINO.door, (CASINO.z1 - 6.7) / 2, 0.016);
+
+  // ── The training pitch (8 Oct 2026): a small fenced pitch, a goal at the
+  // far end, cones, a gate. Walk through the gate and the 3D training opens
+  // (cb.onTrainingGate; the training itself is built separately). ──
+  const pitchG = new THREE.Group();
+  scene.add(pitchG);
+  {
+    const { x0, x1, z0, z1 } = PITCH;
+    const pw = x1 - x0, pd = z1 - z0, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+    const pb = batch(pitchG);
+    // striped turf, a touch greener than the lawn
+    const turf = new THREE.Mesh(new THREE.PlaneGeometry(pw, pd), mat("#ffffff", { map: canvasTex(stripeCanvas("#4f9a3a", "#5aa844"), [1, 1]), roughness: 0.95 }));
+    turf.rotation.x = -Math.PI / 2;
+    turf.rotation.z = Math.PI / 2; // stripes across the pitch
+    turf.position.set(mx, 0.018, mz);
+    turf.receiveShadow = true;
+    pitchG.add(turf);
+    // white lines: the edge, the goal box, a spot, half an arc
+    const lineM = mat("#f4f4f0", { roughness: 0.8 });
+    const L = (w: number, d: number, x: number, z: number) => pb.box(w, 0.012, d, lineM, x, 0.026, z);
+    const ins = 0.35;
+    L(pw - ins * 2, 0.07, mx, z0 + ins); L(pw - ins * 2, 0.07, mx, z1 - ins);
+    L(0.07, pd - ins * 2, x0 + ins, mz); L(0.07, pd - ins * 2, x1 - ins, mz);
+    const boxW = 5.2, boxD = 2.2;
+    L(boxW, 0.07, mx, z0 + ins + boxD); L(0.07, boxD, mx - boxW / 2, z0 + ins + boxD / 2); L(0.07, boxD, mx + boxW / 2, z0 + ins + boxD / 2);
+    pb.put(new THREE.CylinderGeometry(0.11, 0.11, 0.012, 14), lineM, mx, 0.026, z0 + ins + 3.4);
+    const arc = new THREE.RingGeometry(1.55, 1.62, 32, 1, 0, Math.PI);
+    pb.put(arc, lineM, mx, 0.027, z1 - ins, -Math.PI / 2, 0, 0);
+    // the goal: white posts and bar, a net
+    const GW = 3.6, GH = 2.0, GD = 1.1, gz0 = z0 + ins;
+    const postM = mat("#fafafa", { roughness: 0.4 });
+    for (const sx of [-1, 1]) pb.put(new THREE.CylinderGeometry(0.06, 0.06, GH, 10), postM, mx + sx * GW / 2, GH / 2, gz0);
+    pb.put(new THREE.CylinderGeometry(0.06, 0.06, GW + 0.12, 10), postM, mx, GH, gz0, 0, 0, Math.PI / 2);
+    const netM = new THREE.MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.28, roughness: 0.9, side: THREE.DoubleSide, depthWrite: false });
+    pb.box(GW, GH, 0.02, netM, mx, GH / 2, gz0 - GD);
+    pb.box(GW, 0.02, GD, netM, mx, GH, gz0 - GD / 2);
+    for (const sx of [-1, 1]) pb.box(0.02, GH, GD, netM, mx + sx * GW / 2, GH / 2, gz0 - GD / 2);
+    for (const sx of [-1, 1]) pb.put(new THREE.CylinderGeometry(0.025, 0.025, Math.hypot(GD, GH), 6), postM, mx + sx * GW / 2, GH / 2, gz0 - GD / 2, Math.atan2(GD, GH), 0, 0);
+    // cones: a slalom, and a row of four by the gate
+    const coneM = mat("#ff7a1a", { roughness: 0.55 });
+    const coneW = mat("#ffffff", { roughness: 0.6 });
+    const cone = (x: number, z: number) => {
+      pb.put(new THREE.ConeGeometry(0.14, 0.34, 14), coneM, x, 0.19, z);
+      pb.put(new THREE.CylinderGeometry(0.1, 0.12, 0.05, 14), coneW, x, 0.16, z);
+      pb.box(0.32, 0.03, 0.32, coneM, x, 0.03, z);
+    };
+    for (let k = 0; k < 6; k++) cone(mx - 3.2 + k * 1.3, mz + 0.6 + (k % 2 ? 0.7 : -0.7));
+    for (let k = 0; k < 4; k++) cone(x1 - 1.4, z1 - 1.0 - k * 0.9);
+    // balls waiting by the box
+    const tBallM = mat("#f6f6f6", { roughness: 0.5 });
+    for (const [bx, bz] of [[mx - 0.6, z0 + ins + 3.4], [mx + 0.4, z0 + ins + 3.7], [mx + 1.2, z0 + ins + 3.3]]) pb.put(new THREE.IcosahedronGeometry(0.11, 2), tBallM, bx, 0.11, bz);
+    // the fence: green posts, two rails, a see-through mesh; a gap for the gate
+    const fenceGreen = mat("#1f4d2c", { roughness: 0.6, metalness: 0.3 });
+    const meshM = new THREE.MeshStandardMaterial({ color: "#1d3b25", transparent: true, opacity: 0.32, roughness: 0.9, side: THREE.DoubleSide, depthWrite: false });
+    const FH = 1.25;
+    const run = (ax: number, az: number, bx: number, bz: number) => {
+      const len = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az);
+      const n = Math.max(1, Math.round(len / 2.2));
+      for (let k = 0; k <= n; k++) pb.box(0.08, FH + 0.1, 0.08, fenceGreen, ax + ((bx - ax) * k) / n, (FH + 0.1) / 2, az + ((bz - az) * k) / n);
+      for (const y of [FH, 0.15]) pb.box(0.05, 0.05, len, fenceGreen, (ax + bx) / 2, y, (az + bz) / 2, ry);
+      pb.box(0.02, FH - 0.15, len, meshM, (ax + bx) / 2, (FH + 0.15) / 2, (az + bz) / 2, ry);
+    };
+    const g0 = PITCH.gate - PITCH.gateHalf, g1 = PITCH.gate + PITCH.gateHalf;
+    run(x0, z0, x1, z0); run(x0, z0, x0, z1); run(x1, z0, x1, z1);
+    run(x0, z1, g0, z1); run(g1, z1, x1, z1);
+    // the gate: tall posts, a board with the name, both leaves swung in
+    for (const gx of [g0, g1]) pb.box(0.14, 2.6, 0.14, fenceGreen, gx, 1.3, z1);
+    pb.box(g1 - g0 + 0.5, 0.5, 0.08, fenceGreen, PITCH.gate, 2.55, z1);
+    const tSign = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.9 * 192 / 1024), new THREE.MeshBasicMaterial({ map: canvasTex(neonCanvas("TRAINING", "#ffe27a")), transparent: true, depthWrite: false, toneMapped: false }));
+    tSign.position.set(PITCH.gate, 2.55, z1 + 0.05);
+    pitchG.add(tSign);
+    for (const sx of [-1, 1]) {
+      const hx = sx < 0 ? g0 : g1, leaf = PITCH.gateHalf - 0.05, ry = sx < 0 ? -0.9 : 0.9;
+      const lx = hx - sx * Math.cos(0.9) * leaf / 2, lz = z1 - Math.sin(0.9) * leaf / 2;
+      pb.box(leaf, FH - 0.1, 0.05, meshM, lx, FH / 2, lz, ry);
+      pb.box(leaf, 0.05, 0.05, fenceGreen, lx, FH, lz, ry);
+      pb.box(leaf, 0.05, 0.05, fenceGreen, lx, 0.15, lz, ry);
+    }
+    // two floodlights at the far corners
+    for (const fx of [x0 + 0.3, x1 - 0.3]) {
+      pb.put(new THREE.CylinderGeometry(0.07, 0.1, 6.0, 8), mat("#9aa0a6", { roughness: 0.5, metalness: 0.6 }), fx, 3.0, z0 + 0.3);
+      pb.box(0.9, 0.5, 0.2, mat("#2b2f33", { roughness: 0.5 }), fx, 6.0, z0 + 0.3);
+      pb.box(0.8, 0.4, 0.02, glow("#fff6dd", night ? 3 : 0.8), fx, 6.0, z0 + 0.42);
+    }
+    pb.done();
+    if (night) {
+      const pl = new THREE.PointLight("#fff3d6", 12, 14, 1.6);
+      pl.position.set(mx, 5.5, mz);
+      scene.add(pl);
+      nightLights.push(pl);
+    }
+    solid(x0 - 0.1, x1 + 0.1, z0 - 0.1, z1 + 0.1);
+    for (const gx of [g0, g1]) CIRCLES.push([gx, z1, 0.12]);
+  }
+  // the path to it: from the fountain court, west, then up to the gate
+  sidePave(-2.7 - (PITCH.gate - 0.7), 1.4, (-2.7 + PITCH.gate - 0.7) / 2, SIDE_Z, 0.0155);
+  sidePave(1.4, SIDE_Z - 0.7 - PITCH.z1, PITCH.gate, (SIDE_Z - 0.7 + PITCH.z1) / 2, 0.016);
 
   // ── The fountain, and a bird that drops in for a drink ──
   one("fountain", FOUNTAIN.x, FOUNTAIN.z, 1.9);
@@ -1335,7 +1596,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
   let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
-  const st0 = data.arrive === "shop" ? START_SHOP : START_GATE;
+  const st0 = data.arrive === "shop" ? START_SHOP : data.arrive === "casino" ? START_CASINO : data.arrive === "training" ? START_TRAINING : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
   /** The people's outlines (hidden if the scene steps down to Low). */
@@ -1633,6 +1894,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!doorFired && z < SHOP.z1 - 0.1) { doorFired = true; cb.onShopDoor(); }
       return [x, Math.max(z, SHOP.z1 - 0.6)];
     }
+    // the casino's doorway, the same (8 Oct 2026)
+    if (cb.onCasinoDoor && Math.abs(x - CASINO.door) < CAS_DOOR.half - 0.2 && z < CASINO.z1 + 0.7 && z > CASINO.z1 - 1.2) {
+      if (!doorFired && z < CASINO.z1 - 0.1) { doorFired = true; cb.onCasinoDoor(); }
+      return [x, Math.max(z, CASINO.z1 - 0.6)];
+    }
+    // the training pitch's gate
+    if (cb.onTrainingGate && Math.abs(x - PITCH.gate) < PITCH.gateHalf - 0.2 && z < PITCH.z1 + 0.7 && z > PITCH.z1 - 1.0) {
+      if (!doorFired && z < PITCH.z1 - 0.1) { doorFired = true; cb.onTrainingGate(); }
+      return [x, Math.max(z, PITCH.z1 - 0.5)];
+    }
     x = Math.max(-LIMIT, Math.min(LIMIT, x));
     z = Math.max(-LIMIT, Math.min(LIMIT, z));
     for (const [x0, x1, z0, z1] of BOXES) {
@@ -1658,6 +1929,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   };
   const ZONES: { id: GardenSpot; inside: (x: number, z: number) => boolean }[] = [
     { id: "shop", inside: (x, z) => Math.abs(x) < 3 && z < SHOP.z1 + 2.6 },
+    { id: "casino", inside: (x, z) => Math.abs(x - CASINO.door) < 2.4 && z < CASINO.z1 + 3.0 },
+    { id: "training", inside: (x, z) => Math.abs(x - PITCH.gate) < 2.0 && z < PITCH.z1 + 2.6 },
     { id: "trophies", inside: (x, z) => Math.hypot(x - CABINET.x, z - CABINET.z) < 3.4 },
     { id: "teqball", inside: (x, z) => Math.hypot(x - TEQ.x, z - TEQ.z) < 2.6 },
     { id: "mates", inside: (x, z) => x > gz.x - gz.w / 2 - 1.0 && x < gz.x + gz.w / 2 + 0.5 && Math.abs(z - gz.z) < gz.d / 2 + 0.4 },
@@ -1668,6 +1941,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   /** Where to stand to use each thing (inside its zone, so its card shows), and what to look at. */
   const STAND: Record<GardenSpot, { at: XZ; face: XZ }> = {
     shop: { at: [0, SHOP.z1 + 1.7], face: [0, SHOP.z1] },
+    casino: { at: [CASINO.door, CASINO.z1 + 1.9], face: [CASINO.door, CASINO.z1] },
+    training: { at: [PITCH.gate, PITCH.z1 + 1.6], face: [PITCH.gate, PITCH.z1] },
     trophies: { at: [CABINET.x + 2.55, CABINET.z], face: [CABINET.x, CABINET.z] },
     teqball: { at: [TEQ.x - 1.75, TEQ.z + 0.3], face: [TEQ.x, TEQ.z] },
     mates: { at: [gz.x - 0.9, gz.z], face: [BENCH_X, gz.z] },
@@ -1941,6 +2216,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       dropG.attributes.position.needsUpdate = true;
     }
     waterM.emissiveIntensity = 0.35 + 0.08 * Math.sin(gameT * 2.2);
+    casinoPulse?.(gameT);
     clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.25; });
 
     // the camera follows behind him
@@ -2031,6 +2307,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     if (want.x > GAZEBO.x - GAZEBO.w / 2 - 0.9 && want.x < GAZEBO.x + GAZEBO.w / 2 + 0.9 && Math.abs(want.z - GAZEBO.z) < GAZEBO.d / 2 + 0.9) want.y = Math.min(want.y, 2.3);
     // don't let the camera go into the shop's wall
     if (want.z < SHOP.z1 + 0.6 && Math.abs(want.x) < SHOP.x1 + 0.5) want.z = SHOP.z1 + 0.6;
+    // nor the casino's (8 Oct 2026)
+    if (want.z < CASINO.z1 + 0.6 && want.x > CASINO.x0 - 0.5 && want.x < CASINO.x1 + 0.5) want.z = CASINO.z1 + 0.6;
     // something in the way between him and the camera: come in front of it
     headPos.set(player.position.x, 1.5, player.position.z);
     camRay.set(headPos, rayDir.subVectors(want, headPos).normalize());
@@ -2104,7 +2382,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   ray.layers.enableAll();
   const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const targets: { obj: any; spot: GardenSpot }[] = [
-    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" }, { obj: gzG, spot: "mates" },
+    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: casG, spot: "casino" }, { obj: pitchG, spot: "training" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" }, { obj: gzG, spot: "mates" },
   ];
   const aim = (px: number, py: number) => {
     const rct = renderer.domElement.getBoundingClientRect();

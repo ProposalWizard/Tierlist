@@ -12,6 +12,7 @@ import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/camera
 import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
 import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
 import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
+import { useCasino3dLook, setCasino3dLook } from "@/lib/star/casino3d/look";
 import { useBadgeLook, setBadgeLook } from "@/lib/star/badgeLook";
 import { useAllSeasonsLook, setAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import { useOvationLook, setOvationLook } from "@/lib/star/ovationLook";
@@ -152,6 +153,7 @@ export function LookSwitches() {
   const people3d = usePeople3dLook();
   const bossRoom = useBossRoomLook();
   const gardenLook = useGarden3dLook();
+  const casinoLook = useCasino3dLook();
   const badgeLookNow = useBadgeLook();
   const allSeasons = useAllSeasonsLook();
   const ovationNow = useOvationLook();
@@ -202,6 +204,14 @@ export function LookSwitches() {
       </div>
       <SetNote dim className="mt-1 text-[10px]">
         New: golden-hour light, a real shop front, the shop&apos;s own player. Old: the garden as it was.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Casino</span>
+        <SegTabs className="w-[150px] shrink-0" value={casinoLook} onChange={setCasino3dLook} tabs={[["3d", "3D"], ["classic", "Classic"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        3D: walk the casino room; each table opens its game. Classic: the casino menu as before.
       </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">

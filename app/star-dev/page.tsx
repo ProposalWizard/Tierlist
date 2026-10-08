@@ -209,6 +209,9 @@ import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/componen
 import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
 import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
+import Casino3D from "@/components/star/Casino3D";
+import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
+import { useCasino3dLook, casino3dPossible } from "@/lib/star/casino3d/look";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
 import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
 import AdvertShoot from "@/components/star/relgames/AdvertShoot";
@@ -362,7 +365,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training">("gate");
+  // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
+  const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
   useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
@@ -2514,6 +2519,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase !== "dashboard") return;
     preloadScene("garden");
     preloadScene("shop");
+    preloadScene("casino");
   }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
@@ -3108,6 +3114,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav("home");
     setPhase("dashboard");
   }, [career]);
+
+  // The 3D casino: one game closed, its bank goes back into your money and
+  // you stay in the room (the same rules as leaving the classic casino).
+  const handleCasinoBank = useCallback((finalBank: number) => {
+    setCareer(c => {
+      if (!c) return c;
+      const banked = { ...c, money: Math.max(0, Math.round(finalBank)) };
+      const lost = c.money - banked.money;
+      const story = lost > Math.max(1, c.contract.wage) * 8 && Math.random() < 0.25;
+      return story ? brandScandal(banked, "a casino story") : banked;
+    });
+  }, []);
 
   const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
     if (!career) return;
@@ -4176,6 +4194,27 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "casino-3d" || (phase === "casino-menu" && casinoLook === "3d" && casino3dPossible())) {
+    // The 3D casino room. Each station opens that one existing game over the
+    // room; its doors lead out into the garden at the casino's doors.
+    return (
+      <Casino3D
+        career={career}
+        onBack={() => { setActiveNav("home"); setPhase("dashboard"); }}
+        onDoor={() => { setGardenArrive("casino"); setPhase("garden"); }}
+        renderGame={(game, done) => game
+          ? <Casino hud={screenHud("casino")} bankStart={career.money} career={career} startGame={game} onExit={(bank) => { handleCasinoBank(bank); done(); }} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />
+          : <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />}
+      />
+    );
+  }
+
+  if (phase === "training-3d") {
+    // mount Training3D here (the 3D training game, built separately). Until
+    // then: a placeholder with a way back to the pitch gate in the garden.
+    return <TrainingPitchScreen onBack={() => { setGardenArrive("training"); setPhase("garden"); }} />;
+  }
+
   if (phase === "casino-menu") {
     return <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
   }
@@ -4288,6 +4327,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
+        onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
       />
     );
   }

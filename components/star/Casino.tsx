@@ -52,7 +52,13 @@ interface Props {
   onBuyHorse: (horse: Horse, price: number) => void;
   onRenameHorse: (name: string) => void;
   onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
+  /** Open straight into one game, with no menu (the 3D casino: each table
+   *  opens its own game). Leaving that game then calls onExit(bank). */
+  startGame?: CasinoGameId;
 }
+
+/** The casino's games, by id (the 3D casino's stations use the same ids). */
+export type CasinoGameId = "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie";
 
 // Horses available for purchase (same as former HorseRacing.tsx STABLE).
 // Prices rescaled 14 Sep 2026 — same ×2000 personal-money multiplier as the
@@ -115,10 +121,13 @@ export default function CasinoMenu(props: Props) {
   return <HudCtx.Provider value={props.hud ?? null}><CasinoInner {...props} /></HudCtx.Provider>;
 }
 
-function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
-  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
+function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet, startGame }: Props) {
+  const [game, setGameRaw] = useState<"menu" | CasinoGameId>(startGame ?? "menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
+  // Opened on one game (the 3D casino): leaving it hands the bank back
+  // instead of showing the menu.
+  const setGame = (g: "menu" | CasinoGameId) => { if (g === "menu" && startGame) onExit(bank); else setGameRaw(g); };
 
   // Ask once per visit whether this account's bets go to the server.
   useEffect(() => { resetCasinoMode(); void casinoMode(); }, []);
