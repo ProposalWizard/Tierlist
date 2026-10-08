@@ -8,6 +8,15 @@ import {
 import { getTuning } from "@/lib/star/tuningStore";
 import { formatMoney } from "@/lib/star/money";
 import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
+// The rules live in one place, shared with the server (Harry, 8 Oct 2026:
+// "move the casino to the server"). Signed in, the server rolls; signed out
+// (or before star_casino.sql has run), the phone rolls exactly as before.
+import {
+  type Card, type RouletteChoice, ROULETTE_ORDER, isRed, SLOTS_SYMBOLS,
+  spinRoulette, roulettePayout, spinSlots, slotsPayout, drawCard as drawRuleCard, handValue, dealerPlay, blackjackSettle,
+  raceWinOdds as ruleRaceOdds, dealRaceRatings, raceScores, finishOf, ownHorseScores,
+} from "@/lib/star/casinoRules";
+import { casinoMode, casinoCall, playOrLocal, resetCasinoMode, newPlayKey, CASINO_OFFLINE_MESSAGE } from "@/lib/star/casinoClient";
 import GoalieMode from "./GoalieMode";
 import {
   ScreenShell, WalletPill, PressButton, RiseIn, Glow, Shine, Pop, Burst, FloatText,
@@ -110,6 +119,9 @@ function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRen
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
+
+  // Ask once per visit whether this account's bets go to the server.
+  useEffect(() => { resetCasinoMode(); void casinoMode(); }, []);
 
   // Persisted the same way the match speed button is (star-match-speed):
   // read once on mount, written back on every change, so it holds across
@@ -253,8 +265,10 @@ interface CasinoGameProps {
  * Menu, the game's name and your bank (which counts, and floats each win or
  * stake off it), the bet stepper, and the win/loss juice.
  */
-function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children }: CasinoGameProps & {
+function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, children }: CasinoGameProps & {
   title: string; icon: string; fx?: CasinoFx; children?: React.ReactNode;
+  /** A problem reaching the server's casino (nothing was charged). */
+  note?: string | null;
 }) {
   // Float every change of the bank off it: "−★2k" as a stake goes down,
   // "+★4k" as winnings come in.
@@ -279,6 +293,11 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children
     >
       <BetBar bet={bet} bank={bank} onChangeBet={onChangeBet} />
       {children}
+      {note && (
+        <div role="status" className="mt-2 rounded-xl bg-red-900/60 px-3 py-2 text-center text-[12px] font-bold text-white ring-1 ring-red-400/50">
+          {note}
+        </div>
+      )}
       {fx && <LossFlash trigger={fx.lost} />}
       {fx && <WinCelebration trigger={fx.won} amount={fx.amount} format={winText} colors={WIN_COLORS} />}
     </ScreenShell>
@@ -319,41 +338,31 @@ interface RaceRunner {
 
 /**
  * Real win odds for this exact field — measured by actually running the
- * SAME race-scoring formula the real race below settles by
- * (`rating + random noise up to horseRacing.raceNoise`), many times, rather
- * than a hand-derived formula that could quietly drift out of sync with it.
- * Reported directly: the old odds (`12 - rating/10`, a flat linear map) had
- * nothing to do with how the race actually got decided, which is exactly
- * how a rating-95 horse and a rating-40 horse ended up priced only a few
- * points apart despite one of them being close to unbeatable in the real
- * simulation. Cheap enough to run live (a few thousand additions) that
- * there is no reason for the quoted price to ever disagree with reality.
+ * SAME race-scoring formula the real race settles by (`rating + random noise
+ * up to horseRacing.raceNoise`), many times. Reported directly: the old odds
+ * (`12 - rating/10`) had nothing to do with how the race got decided. The
+ * measuring now lives in lib/star/casinoRules.ts (seeded from the ratings),
+ * so the phone and the server price a field the same way.
  */
-function raceWinOdds(ratings: number[]): number[] {
-  const noiseMax = getTuning("horseRacing.raceNoise");
-  const trials = 4000;
-  const wins = new Array(ratings.length).fill(0);
-  for (let t = 0; t < trials; t++) {
-    let bestIdx = 0, bestScore = -Infinity;
-    for (let i = 0; i < ratings.length; i++) {
-      const score = ratings[i] + Math.random() * noiseMax;
-      if (score > bestScore) { bestScore = score; bestIdx = i; }
-    }
-    wins[bestIdx]++;
-  }
-  const overround = 1.15;
-  return wins.map(w => {
-    const prob = Math.max(w, 1) / trials; // never literally zero — a bad enough run still happens sometimes
-    return Math.max(1.2, Math.round((1 / prob / overround) * 10) / 10);
-  });
+function raceWinOdds(ratings: number[], noise = getTuning("horseRacing.raceNoise")): number[] {
+  return ruleRaceOdds(ratings, noise);
+}
+
+function horsesFor(ratings: number[], odds: number[]): RaceHorse[] {
+  const names = shuffle(HORSE_NAMES);
+  return ratings.map((rating, i) => ({ name: names[i], rating, odds: odds[i] }));
 }
 
 function generateRaceHorses(): RaceHorse[] {
-  const shuffled = shuffle(HORSE_NAMES);
-  const ratings: number[] = [];
-  for (let i = 0; i < 6; i++) ratings.push(40 + Math.floor(Math.random() * 56)); // 40-95
-  const odds = raceWinOdds(ratings);
-  return ratings.map((rating, i) => ({ name: shuffled[i], rating, odds: odds[i] }));
+  const ratings = dealRaceRatings(Math.random);
+  return horsesFor(ratings, raceWinOdds(ratings));
+}
+
+/** Lane times from the race's scores: the winner crosses first. */
+function lanesFrom(field: RaceRunner[]): RaceRunner[] {
+  const scores = field.map((r) => r.score);
+  const lo = Math.min(...scores), hi = Math.max(...scores);
+  return field.map((r) => ({ ...r, duration: 3.6 - (hi > lo ? (r.score - lo) / (hi - lo) : 0.5) * 1.4 }));
 }
 
 interface HorseRacingProps extends CasinoGameProps {
@@ -363,20 +372,47 @@ interface HorseRacingProps extends CasinoGameProps {
   onRenameHorse: (name: string) => void;
 }
 
+/** A race card dealt by the server (signed, so the phone cannot pick its own
+ *  field). null: the phone dealt it (local play). */
+type ServerCard = { card: { ratings: number[]; nonce: string; exp: number }; sig: string };
+
 function HorseRacingGame(props: HorseRacingProps) {
   const fx = useCasinoFx();
   const [tab, setTab] = useState<"bet" | "my-horses">("bet");
   const [horses, setHorses] = useState<RaceHorse[]>(() => generateRaceHorses());
+  const [card, setCard] = useState<ServerCard | null>(null);
   const [selectedHorse, setSelectedHorse] = useState<number | null>(null);
   const [runners, setRunners] = useState<RaceRunner[] | null>(null);
   const [go, setGo] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [result, setResult] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
+  // What the race will show once the horses cross the line (decided before
+  // the start: by the server when signed in).
+  const [pending, setPending] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
   const [isMyHorseRace, setIsMyHorseRace] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   const ownsStable = props.career.ownedItems.some((i) => (i.baseId ?? i.id) === "stable");
   const myHorse = props.career.horse;
+
+  // A new race card: from the server when this account bets there.
+  const dealCard = useCallback(async () => {
+    const m = await casinoMode();
+    if (m?.kind === "server") {
+      const a = await casinoCall<ServerCard & { odds: number[] }>(m.slot, { game: "horse", action: "card" });
+      if (a.kind === "ok") {
+        setCard({ card: a.result.card, sig: a.result.sig });
+        setHorses(horsesFor(a.result.card.ratings, a.result.odds));
+        return;
+      }
+      if (a.kind === "error") setNote(a.message);
+    }
+    setCard(null);
+    setHorses(generateRaceHorses());
+  }, []);
+  useEffect(() => { void dealCard(); }, [dealCard]);
 
   // Start CSS transition one tick after lanes mount
   useEffect(() => {
@@ -388,91 +424,82 @@ function HorseRacingGame(props: HorseRacingProps) {
 
   // Reveal result once the slowest runner crosses the line
   useEffect(() => {
-    if (runners && go && !result) {
+    if (runners && go && !result && pending) {
       const maxDur = Math.max(...runners.map((r) => r.duration));
       const t = setTimeout(() => {
-        const ordered = [...runners].sort((a, b) => b.score - a.score);
-        const winnerName = ordered[0].name;
+        setResult(pending);
         if (isMyHorseRace) {
-          // My horse race — a real fixed purse for where you finished, never
-          // a bet. See lib/star/horse.ts's own header for why this changed.
-          const finish = ordered.findIndex((r) => r.isUser) + 1;
-          const prize = myHorse ? horseRacePrize(finish, myHorse) : 0;
-          setResult({ finish, payout: prize, winnerName });
-          if (prize > 0) fx.win(prize);
-        } else {
-          // Betting race — did our pick win?
-          const betHorse = horses[selectedHorse!];
-          const finish = ordered.findIndex((r) => r.name === betHorse.name) + 1;
-          const payout = finish === 1 ? Math.round(props.bet * betHorse.odds) : 0;
-          setResult({ finish, payout, winnerName });
-          if (payout > 0) fx.win(payout - props.bet); else fx.lose();
-        }
+          if (pending.payout > 0) fx.win(pending.payout);
+        } else if (pending.payout > 0) fx.win(pending.payout - props.bet); else fx.lose();
       }, maxDur * 1000 + 250);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runners, go, result, isMyHorseRace, horses, selectedHorse, myHorse]);
+  }, [runners, go, result, pending, isMyHorseRace]);
 
-  const placeBet = () => {
-    if (selectedHorse === null || props.bank < props.bet) return;
-    props.onSetBank(props.bank - props.bet);
-
-    // Build runners from the race horses — the SAME noise the quoted odds
-    // above were actually measured against (raceWinOdds), so the race that
-    // plays out can never quietly disagree with the price it was priced at.
-    const raceNoise = getTuning("horseRacing.raceNoise");
-    const field: RaceRunner[] = horses.map((h) => {
-      const score = h.rating + Math.random() * raceNoise;
-      return { name: h.name, rating: h.rating, score, duration: 0, isUser: false };
-    });
-
-    const scores = field.map((r) => r.score);
-    const lo = Math.min(...scores), hi = Math.max(...scores);
-    field.forEach((r) => {
-      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
-      r.duration = 3.6 - norm * 1.4;
-    });
-
+  const placeBet = async () => {
+    if (selectedHorse === null || props.bank < props.bet || busy) return;
+    setBusy(true);
+    setNote(null);
+    const pickIdx = selectedHorse;
+    const field = horses;
+    const stake = props.bet;
+    // The same noise the quoted odds were measured against, so the race that
+    // plays out can never disagree with the price.
+    const played = await playOrLocal<{ scores: number[]; payout: number }>(
+      card
+        ? { game: "horse", card: card.card, sig: card.sig, pick: pickIdx, stake, bank: props.bank, idemKey: `horse:${card.card.nonce}` }
+        : { game: "horse", pick: pickIdx, stake, bank: props.bank },
+      () => {
+        const scores = raceScores(field.map((h) => h.rating), Math.random, getTuning("horseRacing.raceNoise"));
+        return { scores, payout: finishOf(scores, pickIdx) === 1 ? Math.round(stake * field[pickIdx].odds) : 0 };
+      },
+    );
+    setBusy(false);
+    if (played.kind === "error") {
+      setNote(played.message);
+      if (/race has gone/i.test(played.message)) void dealCard();
+      return;
+    }
+    const { scores, payout } = played.result;
+    props.onSetBank(props.bank - stake);
+    const lanes = lanesFrom(field.map((h, i) => ({ name: h.name, rating: h.rating, score: scores[i], duration: 0, isUser: false })));
+    const winnerIdx = scores.indexOf(Math.max(...scores));
+    setPending({ finish: finishOf(scores, pickIdx), payout, winnerName: field[winnerIdx].name });
     setIsMyHorseRace(false);
     setResult(null);
     setGo(false);
-    setRunners(field);
+    setRunners(lanes);
   };
 
-  const startMyHorseRace = () => {
-    if (!myHorse || myHorse.energy < MY_HORSE_RACE_COST) return;
-    const energyFactor = 0.6 + (myHorse.energy / 100) * 0.4;
+  const startMyHorseRace = async () => {
+    if (!myHorse || myHorse.energy < MY_HORSE_RACE_COST || busy) return;
+    setBusy(true);
+    setNote(null);
     // Reported directly: even the best purchasable horse was winning far
-    // too often (5 of 6 real starts) — barely any real risk to owning the
-    // best horse. `horseRacing.raceNoise` (tuning.ts) is now wide enough,
-    // relative to the real rating gap between a top horse and an average
-    // rival, that the best horse stays the field's real favourite without
-    // being a near-certainty — measured directly, not guessed: at the old,
-    // much narrower noise (22) the best purchasable horse won about 61% of
-    // simulated starts; at this tuning (50) that drops to roughly 40-45% —
-    // still clearly the field's favourite, but losing more often than not.
-    const raceNoise = getTuning("horseRacing.raceNoise");
-    const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * raceNoise;
-
-    const field: RaceRunner[] = [{ name: myHorse.name, rating: Math.round((myHorse.speed + myHorse.stamina) / 2), score: userScore, duration: 0, isUser: true }];
+    // too often — `horseRacing.raceNoise` is now wide enough that the best
+    // horse wins roughly 40-45% of starts (was ~61% at the old 22).
+    const played = await playOrLocal<{ scores: number[]; ratings: number[]; finish: number; payout: number }>(
+      { game: "horse_own", horse: { speed: myHorse.speed, stamina: myHorse.stamina, energy: myHorse.energy } },
+      () => {
+        const { scores, ratings } = ownHorseScores(myHorse, Math.random, getTuning("horseRacing.raceNoise"));
+        const finish = finishOf(scores, 0);
+        return { scores, ratings, finish, payout: horseRacePrize(finish, myHorse) };
+      },
+    );
+    setBusy(false);
+    if (played.kind === "error") { setNote(played.message); return; }
+    const { scores, ratings, finish, payout } = played.result;
     const rivalNames = shuffle(HORSE_NAMES.filter((n) => n !== myHorse.name));
-    for (let i = 0; i < 5; i++) {
-      const rating = 46 + Math.random() * 42;
-      field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * raceNoise, duration: 0, isUser: false });
-    }
-
-    const scores = field.map((r) => r.score);
-    const lo = Math.min(...scores), hi = Math.max(...scores);
-    field.forEach((r) => {
-      const norm = hi > lo ? (r.score - lo) / (hi - lo) : 0.5;
-      r.duration = 3.6 - norm * 1.4;
-    });
-
+    const field: RaceRunner[] = scores.map((score, i) => ({
+      name: i === 0 ? myHorse.name : rivalNames[i - 1], rating: ratings[i], score, duration: 0, isUser: i === 0,
+    }));
+    const winnerIdx = scores.indexOf(Math.max(...scores));
+    setPending({ finish, payout, winnerName: field[winnerIdx].name });
     setIsMyHorseRace(true);
     setResult(null);
     setGo(false);
-    setRunners(field);
+    setRunners(lanesFrom(field));
   };
 
   const collectResult = () => {
@@ -486,14 +513,14 @@ function HorseRacingGame(props: HorseRacingProps) {
     setRunners(null);
     setGo(false);
     setResult(null);
-    setHorses(generateRaceHorses());
+    setPending(null);
+    void dealCard();
     setSelectedHorse(null);
   };
-
   // Race animation view (shared by both bet and my-horse races)
   if (runners) {
     return (
-      <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
+      <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx} note={note}>
           <ShakeX trigger={fx.lost}>
           <div className="overflow-hidden rounded-2xl p-3" style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,.04) 0 34px, transparent 34px 68px), linear-gradient(180deg, #15803d, #064e3b)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 2px ${rgba(GOLD, 0.45)}, 0 16px 30px -16px rgba(0,0,0,.9)` }}>
             <div className="space-y-2 relative">
@@ -555,7 +582,7 @@ function HorseRacingGame(props: HorseRacingProps) {
   }
 
   return (
-    <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
+    <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx} note={note}>
 
         {/* Tabs */}
         {ownsStable && (
@@ -601,12 +628,12 @@ function HorseRacingGame(props: HorseRacingProps) {
             <PressButton
               variant="primary"
               size="none"
-              pulse={selectedHorse !== null && props.bank >= props.bet}
-              disabled={selectedHorse === null || props.bank < props.bet}
-              onClick={placeBet}
+              pulse={selectedHorse !== null && props.bank >= props.bet && !busy}
+              disabled={selectedHorse === null || props.bank < props.bet || busy}
+              onClick={() => void placeBet()}
               className="w-full rounded-2xl py-3 font-black"
             >
-              Place Bet — ★{formatMoney(props.bet)}
+              {busy ? "…" : `Place Bet — ★${formatMoney(props.bet)}`}
             </PressButton>
           </>
         )}
@@ -726,11 +753,11 @@ function HorseRacingGame(props: HorseRacingProps) {
                   variant="primary"
                   size="none"
                   pulse={myHorse.energy >= MY_HORSE_RACE_COST}
-                  onClick={startMyHorseRace}
-                  disabled={myHorse.energy < MY_HORSE_RACE_COST}
+                  onClick={() => void startMyHorseRace()}
+                  disabled={myHorse.energy < MY_HORSE_RACE_COST || busy}
                   className="w-full rounded-2xl py-3 text-lg font-black"
                 >
-                  {myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
+                  {busy ? "…" : myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
                 </PressButton>
                 {myHorse.energy < MY_HORSE_RACE_COST && (
                   <div className="mt-2 text-[10px] text-center text-white/75">Your horse regains 20 energy after each match you play.</div>
@@ -863,23 +890,10 @@ const FELT_TABLE: React.CSSProperties = {
   background: "radial-gradient(75% 55% at 50% 45%, #16a34a 0%, #15803d 45%, #064e3b 100%)",
   boxShadow: `inset 0 0 0 4px ${rgba(GOLD, 0.7)}, inset 0 0 0 7px rgba(0,0,0,.35), inset 0 10px 30px rgba(0,0,0,.45), 0 18px 34px -16px rgba(0,0,0,.9)`,
 };
-type Card = { rank: string; value: number; suit: "♥" | "♠" | "♦" | "♣" };
-const DECK: string[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const SUITS: Array<"♥" | "♠" | "♦" | "♣"> = ["♥", "♠", "♦", "♣"];
-
-function drawCard(): Card {
-  const r = DECK[Math.floor(Math.random() * DECK.length)];
-  const v = r === "A" ? 11 : ["J", "Q", "K"].includes(r) ? 10 : parseInt(r, 10);
-  const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
-  return { rank: r, value: v, suit };
-}
-
-function handValue(cards: Card[]): number {
-  let total = cards.reduce((s, c) => s + c.value, 0);
-  let aces = cards.filter((c) => c.rank === "A").length;
-  while (total > 21 && aces > 0) { total -= 10; aces--; }
-  return total;
-}
+// Cards, hand values and the dealer's rule: lib/star/casinoRules.ts.
+const drawCard = (): Card => drawRuleCard(Math.random);
+/** The dealer's face-down card while the server still holds it. */
+const HIDDEN_CARD: Card = { rank: "?", value: 0, suit: "♠" };
 
 function Blackjack(props: CasinoGameProps) {
   const fx = useCasinoFx();
@@ -894,16 +908,44 @@ function Blackjack(props: CasinoGameProps) {
   const [revealedDealerCount, setRevealedDealerCount] = useState(0);
   const [phase, setPhase] = useState<"bet" | "play" | "dealer-turn" | "done">("bet");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  // Signed in: the server dealt this hand and keeps the dealer's second card
+  // until you stand. null: the phone dealt it.
+  const handRef = useRef<{ slot: number | null; playId: string | null; stake: number } | null>(null);
+  const onServer = () => handRef.current?.slot != null && handRef.current.playId != null;
 
-  const deal = () => {
-    if (props.bank < props.bet) return;
-    setPlayer([drawCard(), drawCard()]);
-    setDealer([drawCard(), drawCard()]);
+  const deal = async () => {
+    if (props.bank < props.bet || busy) return;
+    setBusy(true);
+    setNote(null);
+    const stake = props.bet;
+    const played = await playOrLocal<{ playId?: string; player: Card[]; dealerUp?: Card; dealer?: Card[] }>(
+      { game: "blackjack", action: "deal", stake, bank: props.bank },
+      () => ({ player: [drawCard(), drawCard()], dealer: [drawCard(), drawCard()] }),
+    );
+    setBusy(false);
+    if (played.kind === "error") { setNote(played.message); return; }
+    const r = played.result;
+    handRef.current = played.slot !== null && r.playId
+      ? { slot: played.slot, playId: r.playId, stake } : { slot: null, playId: null, stake };
+    setPlayer(r.player);
+    setDealer(r.dealer ?? [r.dealerUp!, HIDDEN_CARD]);
     setRevealedDealerCount(1); // second card hidden until Hold
     setPhase("play");
     setMessage("");
-    props.onSetBank(props.bank - props.bet);
+    props.onSetBank(props.bank - stake);
   };
+
+  /** A server step (hit/stand). A dropped connection is retried with the
+   *  same key, so a card is never played twice. */
+  async function step<T>(action: "hit" | "stand"): Promise<T | null> {
+    const h = handRef.current!;
+    const a = await casinoCall<T>(h.slot!, { game: "blackjack", action, playId: h.playId, idemKey: newPlayKey() });
+    if (a.kind === "ok") return a.result;
+    setNote(a.kind === "error" ? a.message : CASINO_OFFLINE_MESSAGE);
+    return null;
+  }
 
   const startRound = () => {
     // Back to the bet screen, not straight into a new hand — same reasoning
@@ -913,16 +955,30 @@ function Blackjack(props: CasinoGameProps) {
     setDealer([]);
     setRevealedDealerCount(0);
     setMessage("");
+    setNote(null);
+    handRef.current = null;
     setPhase("bet");
   };
 
-  const hit = () => {
-    if (phase !== "play") return;
-    const next = [...player, drawCard()];
+  const hit = async () => {
+    if (phase !== "play" || busy) return;
+    let next: Card[];
+    let finalDealer = dealer;
+    if (onServer()) {
+      setBusy(true);
+      const r = await step<{ player: Card[]; dealer?: Card[] }>("hit");
+      setBusy(false);
+      if (!r) return;
+      next = r.player;
+      if (r.dealer) finalDealer = r.dealer;
+    } else {
+      next = [...player, drawCard()];
+    }
     setPlayer(next);
     if (handValue(next) > 21) {
       // Bust — reveal dealer card and end
-      setRevealedDealerCount(dealer.length);
+      setDealer(finalDealer);
+      setRevealedDealerCount(finalDealer.length);
       setMessage("BUST!");
       setPhase("done");
       fx.lose();
@@ -930,50 +986,66 @@ function Blackjack(props: CasinoGameProps) {
   };
 
   const hold = async () => {
-    if (phase !== "play") return;
+    if (phase !== "play" || busy) return;
+    // The dealer's whole hand is decided first (by the server when it dealt),
+    // then turned over one card at a time.
+    let full: Card[];
+    let payout: number;
+    let verdict: string;
+    if (onServer()) {
+      setBusy(true);
+      const r = await step<{ dealer: Card[]; payout: number; verdict: string }>("stand");
+      setBusy(false);
+      if (!r) return;
+      full = r.dealer;
+      payout = r.payout;
+      verdict = r.verdict;
+    } else {
+      full = dealerPlay(dealer, Math.random);
+      const s = blackjackSettle(player, full, handRef.current?.stake ?? props.bet);
+      payout = s.payout;
+      verdict = s.verdict;
+    }
     setPhase("dealer-turn");
     // Step 1: reveal dealer's second card after brief pause
     await new Promise((r) => setTimeout(r, 700));
+    setDealer(full.slice(0, 2));
     setRevealedDealerCount(2);
     await new Promise((r) => setTimeout(r, 900));
 
     // Step 2: dealer draws until 17+, one card at a time with delay
-    let d = [...dealer];
-    while (handValue(d) < 17) {
-      d = [...d, drawCard()];
-      setDealer(d);
-      setRevealedDealerCount(d.length);
+    for (let n = 3; n <= full.length; n++) {
+      setDealer(full.slice(0, n));
+      setRevealedDealerCount(n);
       await new Promise((r) => setTimeout(r, 900));
     }
 
     // Step 3: decide result after a short beat
     await new Promise((r) => setTimeout(r, 400));
-    const p = handValue(player);
-    const dv = handValue(d);
-    if (dv > 21) {
+    const stake = handRef.current?.stake ?? props.bet;
+    if (verdict === "dealer-bust") {
       setMessage("DEALER BUSTS — YOU WIN!");
-      props.onSetBank(props.bank + props.bet * 2);
-      fx.win(props.bet);
-    } else if (p > dv) {
+      props.onSetBank(props.bank + payout);
+      fx.win(payout - stake);
+    } else if (verdict === "win") {
       setMessage("YOU WIN!");
-      props.onSetBank(props.bank + props.bet * 2);
-      fx.win(props.bet);
-    } else if (p === dv) {
+      props.onSetBank(props.bank + payout);
+      fx.win(payout - stake);
+    } else if (verdict === "push") {
       setMessage("PUSH");
-      props.onSetBank(props.bank + props.bet);
+      props.onSetBank(props.bank + payout);
     } else {
       setMessage("DEALER WINS");
       fx.lose();
     }
     setPhase("done");
   };
-
   const dealt = phase !== "bet";
   const done = phase === "done";
   const showingSecondCard = revealedDealerCount >= 2;
 
   return (
-    <CasinoFrame {...props} title="Blackjack" icon="🃏" fx={fx}>
+    <CasinoFrame {...props} title="Blackjack" icon="🃏" fx={fx} note={note}>
         <ShakeX trigger={fx.lost}>
         <div className="relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-[26px] p-4" style={FELT_TABLE}>
           <div>
@@ -1026,18 +1098,18 @@ function Blackjack(props: CasinoGameProps) {
           <PressButton
             variant="primary"
             size="none"
-            pulse={props.bank >= props.bet}
-            disabled={props.bank < props.bet}
-            onClick={deal}
+            pulse={props.bank >= props.bet && !busy}
+            disabled={props.bank < props.bet || busy}
+            onClick={() => void deal()}
             className="mt-3 w-full rounded-2xl py-3 font-black"
           >
-            Deal — ★{formatMoney(props.bet)}
+            {busy ? "…" : `Deal — ★${formatMoney(props.bet)}`}
           </PressButton>
         )}
         {phase === "play" && (
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <PressButton variant="danger" size="none" onClick={hold} className="rounded-2xl py-3 font-black">✕ Hold</PressButton>
-            <PressButton variant="primary" size="none" onClick={hit} className="rounded-2xl py-3 font-black">✓ Hit</PressButton>
+            <PressButton variant="danger" size="none" disabled={busy} onClick={() => void hold()} className="rounded-2xl py-3 font-black">{busy ? "…" : "✕ Hold"}</PressButton>
+            <PressButton variant="primary" size="none" disabled={busy} onClick={() => void hit()} className="rounded-2xl py-3 font-black">{busy ? "…" : "✓ Hit"}</PressButton>
           </div>
         )}
         {phase === "dealer-turn" && (
@@ -1070,14 +1142,8 @@ function CardView({ card, hidden }: { card: Card; hidden?: boolean }) {
 }
 
 // ---------- ROULETTE ----------
-// European roulette (0-36). Numbers laid around a wheel in canonical order.
-const ROULETTE_ORDER = [
-  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23,
-  10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
-];
-const RED_NUMBERS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
-
-function isRed(n: number) { return RED_NUMBERS.has(n); }
+// European roulette (0-36). The wheel order, the colours and what each bet
+// pays: lib/star/casinoRules.ts.
 function pocketColor(n: number) {
   if (n === 0) return "#059669"; // green
   return isRed(n) ? "#dc2626" : "#111827";
@@ -1085,22 +1151,33 @@ function pocketColor(n: number) {
 
 function Roulette(props: CasinoGameProps) {
   const fx = useCasinoFx();
-  const [choice, setChoice] = useState<"red" | "black" | "even" | "odd" | number | null>(null);
+  const [choice, setChoice] = useState<RouletteChoice | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [result, setResult] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [note, setNote] = useState<string | null>(null);
 
-  const spin = () => {
-    if (choice === null) return;
-    props.onSetBank(props.bank - props.bet);
+  const spin = async () => {
+    if (choice === null || spinning) return;
+    const stake = props.bet;
+    const bank0 = props.bank;
+    const picked = choice;
     setSpinning(true);
     setResult(null);
     setMessage("");
+    setNote(null);
+    // The winner: rolled by the server when signed in, here otherwise.
+    const played = await playOrLocal<{ winner: number; payout: number }>(
+      { game: "roulette", choice: picked, stake, bank: bank0 },
+      () => { const w = spinRoulette(Math.random); return { winner: w, payout: roulettePayout(picked, w, stake) }; },
+    );
+    if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
+    const { winner, payout: win } = played.result;
+    props.onSetBank(bank0 - stake);
 
-    // Pick winner + compute rotation.
+    // Compute rotation.
     // Each pocket = 360 / 37 degrees. Rotate the wheel so the winning pocket lands under the pointer (top).
-    const winner = Math.floor(Math.random() * 37);
     const winnerIdx = ROULETTE_ORDER.indexOf(winner);
     const anglePer = 360 / 37;
     // Wheel spins clockwise multiple times, then stops with winner at the top pointer.
@@ -1113,17 +1190,10 @@ function Roulette(props: CasinoGameProps) {
     setTimeout(() => {
       setResult(winner);
       setSpinning(false);
-      let win = 0;
-      const redWin = isRed(winner);
-      if (typeof choice === "number" && choice === winner) win = props.bet * 35;
-      else if (choice === "red" && redWin) win = props.bet * 2;
-      else if (choice === "black" && !redWin && winner !== 0) win = props.bet * 2;
-      else if (choice === "even" && winner !== 0 && winner % 2 === 0) win = props.bet * 2;
-      else if (choice === "odd" && winner % 2 === 1) win = props.bet * 2;
       if (win > 0) {
-        setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
-        props.onSetBank(props.bank - props.bet + win);
-        fx.win(win - props.bet);
+        setMessage(`WIN! +★${formatMoney(win - stake)}`);
+        props.onSetBank(bank0 - stake + win);
+        fx.win(win - stake);
       } else {
         setMessage("Lost!");
         fx.lose();
@@ -1132,7 +1202,7 @@ function Roulette(props: CasinoGameProps) {
   };
 
   return (
-    <CasinoFrame {...props} title="Roulette" icon="🎡" fx={fx}>
+    <CasinoFrame {...props} title="Roulette" icon="🎡" fx={fx} note={note}>
 
         {/* Wheel */}
         <ShakeX trigger={fx.lost}>
@@ -1237,17 +1307,29 @@ function Roulette(props: CasinoGameProps) {
 }
 
 // ---------- SLOTS ----------
-const SLOTS_SYMBOLS = ["🍒", "🍋", "🍊", "🔔", "⭐", "7️⃣"];
+// The symbols and what each line pays: lib/star/casinoRules.ts.
 function Slots(props: CasinoGameProps) {
   const fx = useCasinoFx();
   const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍊"]);
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
+  const [note, setNote] = useState<string | null>(null);
 
-  const spin = () => {
-    props.onSetBank(props.bank - props.bet);
+  const spin = async () => {
+    if (spinning) return;
+    const stake = props.bet;
+    const bank0 = props.bank;
     setSpinning(true);
     setMessage("");
+    setNote(null);
+    // The final reels: from the server when signed in, here otherwise. The
+    // blur before them is only for show.
+    const played = await playOrLocal<{ reels: string[]; payout: number }>(
+      { game: "slots", stake, bank: bank0 },
+      () => { const r = spinSlots(Math.random); return { reels: r, payout: slotsPayout(r, stake) }; },
+    );
+    if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
+    props.onSetBank(bank0 - stake);
     const roll = () => SLOTS_SYMBOLS[Math.floor(Math.random() * SLOTS_SYMBOLS.length)];
     let ticks = 0;
     const timer = setInterval(() => {
@@ -1255,22 +1337,14 @@ function Slots(props: CasinoGameProps) {
       ticks++;
       if (ticks > 12) {
         clearInterval(timer);
-        const final = [roll(), roll(), roll()];
+        const final = played.result.reels;
         setReels(final);
         setSpinning(false);
-        const [a, b, c] = final;
-        let win = 0;
-        if (a === b && b === c) {
-          if (a === "7️⃣") win = props.bet * 20;
-          else if (a === "⭐") win = props.bet * 10;
-          else win = props.bet * 5;
-        } else if (a === b || b === c) {
-          win = props.bet;
-        }
+        const win = played.result.payout;
         if (win > 0) {
-          setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
-          props.onSetBank(props.bank - props.bet + win);
-          if (win > props.bet) fx.win(win - props.bet);
+          setMessage(`WIN! +★${formatMoney(win - stake)}`);
+          props.onSetBank(bank0 - stake + win);
+          if (win > stake) fx.win(win - stake);
         } else {
           setMessage("No luck");
           fx.lose();
@@ -1280,7 +1354,7 @@ function Slots(props: CasinoGameProps) {
   };
 
   return (
-    <CasinoFrame {...props} title="Slots" icon="🎰" fx={fx}>
+    <CasinoFrame {...props} title="Slots" icon="🎰" fx={fx} note={note}>
         <ShakeX trigger={fx.lost}>
         <div className="relative overflow-hidden rounded-[26px] p-4" style={{ background: "radial-gradient(70% 60% at 50% 30%, rgba(250,204,21,.3), transparent 70%), linear-gradient(180deg, #7c2d12, #3b0a06)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 3px ${rgba(GOLD, 0.7)}, 0 18px 34px -16px rgba(0,0,0,.9)` }}>
           {/* Marquee lights round the machine. */}
