@@ -27,7 +27,7 @@ import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
 import { HallOfFameList } from "@/components/star/HallOfFame";
 import AllSeasonsNew from "@/components/star/AllSeasonsNew";
 import { CareerCardPicture, ShareCardSheet } from "@/components/star/ShareCard";
-import { FarewellInvite, FarewellResult, GuardOfHonour } from "@/components/star/Farewell";
+import { FarewellInvite, FarewellResult, GuardOfHonour, StandingOvation } from "@/components/star/Farewell";
 import VersusScreen from "@/components/star/VersusScreen";
 import { CompareCareers, CompareFlow, ShareLinkSheet } from "@/components/star/LegendShare";
 import { farewellSides, farewellCareer, farewellFixture, farewellRecordFrom } from "@/lib/star/farewell";
@@ -43,7 +43,7 @@ import type { CareerState } from "@/lib/star/types";
 
 type Source = { kind: "shape"; shape: PreviewShape } | { kind: "save"; key: string };
 type View = "menu" | "notice" | "whistle" | "overview" | "hall" | "hall-entry" | "seasons" | "card"
-  | "fw-invite" | "fw-sheets" | "fw-walkout" | "fw-walkout-drawn" | "fw-result" | "fw-overview"
+  | "fw-invite" | "fw-sheets" | "fw-walkout" | "fw-walkout-drawn" | "fw-ovation" | "fw-ovation-drawn" | "fw-result" | "fw-overview"
   | "compare" | "compare-flow" | "share-link";
 
 /** A made-up full time for the test page: 4–3, two goals and an assist. */
@@ -135,6 +135,9 @@ export default function RetirementPreviewPage() {
   }
   if ((view === "fw-walkout" || view === "fw-walkout-drawn") && lastSeason && farewell) {
     return wrap(<GuardOfHonour key={view} career={lastSeason} sides={farewell.sides} drawn={view === "fw-walkout-drawn"} onDone={() => go("fw-result")} />);
+  }
+  if ((view === "fw-ovation" || view === "fw-ovation-drawn") && lastSeason && farewell) {
+    return wrap(<StandingOvation key={view} career={lastSeason} sides={farewell.sides} minute={85} drawn={view === "fw-ovation-drawn"} onDone={() => go("fw-result")} />);
   }
   if (view === "fw-result" && lastSeason && farewell) {
     return wrap(<FarewellResult career={lastSeason} sides={farewell.sides} stats={SAMPLE_FAREWELL} onDone={() => go("fw-overview")} />);
@@ -276,6 +279,8 @@ export default function RetirementPreviewPage() {
           {button("▶ Team sheets", "fw-sheets", !!farewell, "rgba(251,191,36,.25)")}
           {button("▶ Guard of honour · 3D", "fw-walkout", !!farewell, "rgba(251,191,36,.25)")}
           {button("▶ Guard of honour · drawn", "fw-walkout-drawn", !!farewell, "rgba(255,255,255,.1)")}
+          {button("▶ Standing ovation · 3D", "fw-ovation", !!farewell, "rgba(251,191,36,.25)")}
+          {button("▶ Standing ovation · drawn", "fw-ovation-drawn", !!farewell, "rgba(255,255,255,.1)")}
           {button("▶ Full time (made-up 4–3)", "fw-result", !!farewell, "rgba(255,255,255,.1)")}
           {button("▶ The overview after it", "fw-overview", !!farewell && !!finished, "rgba(255,255,255,.1)")}
           <div className="text-[12px] font-bold text-white/60">The match itself: in the game, Dev Skip to the end of season {LAST}, then Hang them up.</div>

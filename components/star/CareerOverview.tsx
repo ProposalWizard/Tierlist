@@ -123,9 +123,26 @@ export default function CareerOverview({ career, actions, startPage = "career", 
           >
             <span className="mr-1">{OVERVIEW_PAGES[i].icon}</span>{OVERVIEW_PAGES[i].label}
           </EdgeArrows>
-          <div className="mt-1.5 flex justify-center gap-1" aria-hidden>
+          {/* Every page one tap away. Dots alone left no clear way back to
+              the first page (Mikey's playtest, 8 Oct 2026: "very unclear how
+              I was supposed to get back to that career round up"). */}
+          <div className="mt-1.5 -mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5" role="tablist" aria-label="Career pages" data-overview-tabs>
             {OVERVIEW_PAGES.map((p, k) => (
-              <span key={p.id} className="h-1 transition-all" style={{ width: k === i ? 16 : 6, borderRadius: 1, background: k === i ? GOLD : "rgba(255,255,255,.25)" }} />
+              <button
+                key={p.id}
+                type="button"
+                role="tab"
+                aria-selected={k === i}
+                onClick={() => { setPage(p.id); window.scrollTo({ top: 0 }); }}
+                className="flex shrink-0 items-center gap-1 px-2 py-1 text-[10.5px] font-black uppercase tracking-wide transition-colors"
+                style={{
+                  borderRadius: 4,
+                  background: k === i ? GOLD : "rgba(255,255,255,.07)",
+                  color: k === i ? "#160f02" : "rgba(255,255,255,.85)",
+                }}
+              >
+                <span aria-hidden>{p.icon}</span>{p.label}
+              </button>
             ))}
           </div>
         </div>

@@ -158,6 +158,7 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
   for (const slot of SLOTS) {
     let best: RosterPlayer | null = null;
     let bestScore = -1;
+    let bestFit = 0;
     for (const p of pool) {
       if (taken.has(p.sofifa_id)) continue;
       const f = fit(slot, p);
@@ -165,7 +166,7 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       // Fit dominates, rating breaks ties. A 79 right-back beats an 86 striker
       // for the right-back slot, which is the whole point of doing it this way.
       const score = f * 100 + (p.overall || 0);
-      if (score > bestScore) { bestScore = score; best = p; }
+      if (score > bestScore) { bestScore = score; best = p; bestFit = f; }
     }
     if (!best) continue;
     taken.add(best.sofifa_id);
@@ -173,7 +174,8 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       id: `sf_${best.sofifa_id}`,
       name: best.name,
       shortName: shortNameOf(best.name),
-      position: slot,
+      // Out of position (fit 12) keeps his own position: see buildLeagueSquad.
+      position: bestFit > 12 ? slot : (rolesOf(best.positions)[0] as Slot | undefined) ?? slot,
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
       sofifaId: best.sofifa_id,
       overall: best.overall || undefined,
