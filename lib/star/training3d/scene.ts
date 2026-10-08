@@ -20,24 +20,32 @@ import { people3dLook } from "../look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { addClips, clipInfo, ClipPlayer, KICK_FALLBACK, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
 import { CROSSBAR_SPOT, MATE_AFTER_S, MATE_FLIGHT_S, mateBallAt, type MateShot } from "./crossbar";
 
-/** When, in the 3D kick, the foot meets the ball (seconds after the swing starts). */
-export const KICK_DELAY_S = 0.26;
+/**
+ * When, in the 3D kick (the hand-made "kick_r" clip: run-up, plant, strike),
+ * the foot meets the ball, in seconds after the clip starts. The file's own
+ * measured number wins (controller.kickDelayS); this is its fallback.
+ */
+export const KICK_DELAY_S = KICK_FALLBACK.contact!;
 
 export interface TrainingPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
 export interface TrainingData { kit: KitColours; you: TrainingPerson; mate: TrainingPerson }
 
 export type Who = "you" | "mate";
-export type Move = "idle" | "runup" | "kick" | "celebrate" | "watch";
+/** "watch" = waiting his turn (keepy-uppies); "kick" = the run-up and strike (one clip). */
+export type Move = "idle" | "runup" | "kick" | "celebrate" | "frustrated" | "watch";
 
 export interface TrainingController {
+  /** Seconds from the start of the kick to the foot meeting the ball (the engine's ball is shown this late). */
+  readonly kickDelayS: number;
   /** Put the ball back on the spot. */
   resetBall(): void;
   /**
    * One step of the REAL engine's ball (EngineFeature's onBallStep, pitch
-   * metres). Shown KICK_DELAY_S late, so your 3D leg meets the ball as it
+   * metres). Shown kickDelayS late, so your 3D foot meets the ball as it
    * leaves — the path drawn is exactly the engine's, only later.
    */
   feedEngineBall(p: { x: number; y: number; z: number }): void;
@@ -75,6 +83,8 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     loadPeople3d(loader, mateModel, body),
     loadPeople3d(loader, "anims", body),
   ]);
+  // the kick, reactions and keepy-uppies (a failed load just leaves them standing)
+  const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
   const { renderer, release } = acquireRenderer(THREE, container, prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -261,51 +271,97 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   placeBall(ballAt);
 
   // ── The two people ──
+  // Their moves are the hand-made clips (lib/star/three3d/footballAnims.ts):
+  // the kick with its run-up, celebrate, frustrated, and keepy-uppies while waiting.
   const SPOT = new THREE.Vector3(...P(CROSSBAR_SPOT.x, CROSSBAR_SPOT.y, 0));
   const SIDE = new THREE.Vector3(SPOT.x - 3.4, 0, SPOT.z + 2.4);
-  const make = (g: any, look: TrainingPerson, number: number) => {
+  const kickInfo = clipInfo(fb, "kick_r") ?? KICK_FALLBACK;
+  const contactS = kickInfo.contact ?? KICK_FALLBACK.contact!;
+  const make = (g: any, look: TrainingPerson) => {
     const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
     dressPerson3d(THREE, p, { skin: look.skin, hair: look.hair, kit: data.kit, number: null, face: look.face ?? null });
     relaxHands(THREE, p);
-    void number;
+    if (fb) addClips(THREE, p, fb);
     root.add(p.root);
     return p;
   };
-  const people: Record<Who, { p: Person3D; move: Move; t: number; at: any; yaw: number; legSave: any[] }> = {
-    you: { p: make(youG, data.you, 10), move: "idle", t: 0, at: SPOT.clone(), yaw: Math.PI, legSave: [] },
-    mate: { p: make(mateG, data.mate, 8), move: "watch", t: 0, at: SIDE.clone(), yaw: Math.PI * 0.75, legSave: [] },
+  type Body = { p: Person3D; player: ClipPlayer; move: Move; at: any; yaw: number };
+  const person = (g: any, look: TrainingPerson): Body => {
+    const p = make(g, look);
+    return { p, player: new ClipPlayer(THREE, p.actions), move: "idle", at: new THREE.Vector3(), yaw: Math.PI };
   };
+  const people: Record<Who, Body> = { you: person(youG, data.you), mate: person(mateG, data.mate) };
   let shooter: Who = "you";
-  let spotX = SPOT.x;
-  const BEHIND = 1.1; // the shooter stands this far behind the ball, a little to the left (a right-footer)
+  /** Turn a point in a man's own frame (x = his left, z = forward) by his facing. */
+  const toWorld = (x: number, z: number, yaw: number) => new THREE.Vector3(x * Math.cos(yaw) + z * Math.sin(yaw), 0, -x * Math.sin(yaw) + z * Math.cos(yaw));
+  /** Where the kicker starts so his foot meets a ball at `b` on the contact frame. */
+  const kickStart = (b: any, yaw: number) => {
+    const o = kickInfo.ball ?? KICK_FALLBACK.ball!;
+    return b.clone().sub(toWorld(o[0], o[1], yaw)).setY(0);
+  };
+  const spotBall = new THREE.Vector3(SPOT.x, 0, SPOT.z);
   const standFor = (who: Who) => {
     const s = people[who];
-    if (who === shooter) { s.at.set(spotX - 0.45, 0, SPOT.z + BEHIND); s.yaw = Math.PI; }
+    if (who === shooter) { s.yaw = Math.PI; s.at.copy(kickStart(spotBall, s.yaw)); }
     else { s.at.copy(SIDE); s.yaw = Math.PI * 0.82; }
-  };
-  standFor("you"); standFor("mate");
-
-  const legs = (p: Person3D) => [p.bones.RightUpLeg, p.bones.RightLeg].filter(Boolean);
-  const qa = new THREE.Quaternion(), qp = new THREE.Quaternion(), qw = new THREE.Quaternion();
-  /** Turn a bone about a WORLD axis by `ang`, whatever its parents' turns. */
-  const turnWorld = (b: any, axis: any, ang: number) => {
-    b.parent.getWorldQuaternion(qp);
-    qw.setFromAxisAngle(axis, ang);
-    qa.copy(qp).invert().multiply(qw).multiply(qp);
-    b.quaternion.premultiply(qa);
-  };
-
-  const weights = (s: (typeof people)[Who], w: Record<string, number>) => {
-    for (const [n, a] of Object.entries(s.p.actions)) a.setEffectiveWeight(w[n] ?? 0);
+    s.p.root.position.copy(s.at);
+    s.p.root.rotation.y = s.yaw;
   };
   const applyMove = (who: Who) => {
     const s = people[who];
-    const a = s.p.actions;
-    if (s.move === "runup") { weights(s, { jog: 1 }); a.jog.timeScale = 1.2; }
-    else if (s.move === "celebrate" && a.celebrate) { weights(s, { celebrate: 1 }); a.celebrate.time = 0; }
-    else weights(s, { idle: 1 });
+    const pl = s.player;
+    const back = () => { s.move = "idle"; pl.play("idle", { fade: 0.25 }); };
+    if (s.move === "kick" || s.move === "runup") {
+      const ok = pl.play("kick_r", {
+        fade: 0.1, once: true,
+        onEnd: () => {
+          // root motion: he ran on through the ball; stand him where the clip ends
+          const e = kickInfo.end ?? KICK_FALLBACK.end!;
+          s.at.copy(s.p.root.position).add(toWorld(e[0], e[1], s.yaw));
+          s.p.root.position.copy(s.at);
+          s.move = "idle";
+          pl.play("idle", { fade: 0 });
+        },
+      });
+      if (!ok) back();
+    } else if (s.move === "celebrate" || s.move === "frustrated") {
+      const clip = s.move === "celebrate" ? "celebrate_fist" : "frustrated";
+      if (!pl.play(clip, { fade: 0.15, once: true, onEnd: back })) back();
+    } else if (s.move === "watch") {
+      // waiting his turn: keepy-uppies
+      if (!pl.play("juggle", { fade: 0.25 })) pl.play("idle", { fade: 0.25 });
+    } else pl.play("idle", { fade: 0.25 });
   };
+  standFor("you"); standFor("mate");
+  people.mate.move = "watch";
   applyMove("you"); applyMove("mate");
+
+  // The waiting man's own ball, kept up on his feet (the clip's measured touches).
+  const jBall = makeBall();
+  jBall.visible = false;
+  root.add(jBall);
+  const juggleInfo = clipInfo(fb, "juggle");
+  const placeJuggle = () => {
+    const w = (Object.values(people) as Body[]).find((s) => s.player.current === "juggle");
+    const tch = juggleInfo?.touches;
+    if (!w || !tch || tch.length < 2) { jBall.visible = false; return; }
+    jBall.visible = true;
+    const per = juggleInfo!.duration;
+    const t = w.player.time() % per;
+    let i = tch.length - 1;
+    for (let k = 0; k < tch.length; k++) if (t >= tch[k][0]) i = k;
+    const a = tch[i], b = tch[(i + 1) % tch.length];
+    const ta = a[0], tb = b[0] + (b[0] <= ta ? per : 0);
+    const tt = t < ta ? t + per : t;
+    const u = (tt - ta) / (tb - ta);
+    const T = tb - ta;
+    const pa = a[2], pb = b[2];
+    const x = pa[0] + (pb[0] - pa[0]) * u, z = pa[2] + (pb[2] - pa[2]) * u;
+    const y = pa[1] + (pb[1] - pa[1]) * u + (9.8 * T * T / 2) * u * (1 - u);
+    const off = toWorld(x, z, w.p.root.rotation.y);
+    jBall.position.set(w.p.root.position.x + off.x, y, w.p.root.position.z + off.z);
+    jBall.rotation.x += 0.08;
+  };
 
   // ── Camera ──
   let camMode: "behind" | "goal" = "behind";
@@ -313,9 +369,9 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   let snap = true;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   const camTarget = () => {
-    const sx = people[shooter].at.x;
+    const sx = spotBall.x;
     if (camMode === "goal") return { pos: new THREE.Vector3(sx * 0.4 + 2.6, 2.6, 13.5), look: new THREE.Vector3(0, 1.5, 0) };
-    return { pos: new THREE.Vector3(sx * 0.6 - 1.7, 2.7, SPOT.z + 9), look: new THREE.Vector3(0, 1.3, 0) };
+    return { pos: new THREE.Vector3(sx * 0.6 - 2.4, 2.4, SPOT.z + 7.5), look: new THREE.Vector3(sx * 0.6, 0.9, SPOT.z - 1) };
   };
   { const t = camTarget(); camPos.copy(t.pos); camLook.copy(t.look); }
 
@@ -331,57 +387,80 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
   ro?.observe(container);
 
-  // ── The loop (three's own animation loop; nothing here moves the ball) ──
+  // ── The loop (three's own animation loop; nothing here moves the engine's ball) ──
   let active = true;
   let last = performance.now();
+  /** Scene time (ms), advanced by the same clamped steps as the people: the engine's ball is timed on it, so a slow phone keeps foot and ball together. */
+  let clock = 0;
   const feed: { t: number; v: any }[] = [];
+  /** The last engine step shown before the current one, to carry the ball on once the engine stops. */
+  const shown: { t: number; v: any }[] = [];
+  /** After the engine has settled the shot: the 3D ball drops and rolls away (looks only; never fed back). */
+  let loose: { v: any; vel: any } | null = null;
   let mate: { shot: MateShot; t: number; stage: number; onDone: () => void } | null = null;
-  const right = new THREE.Vector3();
+  const MATE_WAIT = 0.3;
+  const HW2 = GOAL_W / 2;
+  const stepLoose = (dt: number) => {
+    if (!loose) return;
+    const { v, vel } = loose;
+    vel.y -= 9.8 * dt;
+    v.addScaledVector(vel, dt);
+    if (v.y < 0.11) {
+      v.y = 0.11;
+      if (vel.y < -0.8) vel.y = -vel.y * 0.5; else vel.y = 0;
+      vel.x *= 0.97; vel.z *= 0.97; // rolling on grass
+    }
+    // the net: in behind the line, between the posts and under the bar
+    if (v.z < 0 && Math.abs(v.x) < HW2 && v.y < GOAL_H + 0.1) {
+      vel.x *= 0.9; vel.z *= 0.8;
+      if (v.z < -1.6) { v.z = -1.6; vel.z = Math.abs(vel.z) * 0.2; }
+    }
+    placeBall(v.clone());
+    if (vel.lengthSq() < 0.02 && v.y <= 0.111) loose = null;
+  };
   const frame = () => {
     const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    clock += dt * 1000;
     for (const who of ["you", "mate"] as Who[]) {
       const s = people[who];
-      s.t += dt;
-      const lg = legs(s.p);
-      // put the kicking leg back where the clips left it before they update
-      lg.forEach((b, i) => { if (s.legSave[i]) b.quaternion.copy(s.legSave[i]); });
-      // the run-up: a few strides towards the ball
-      if (s.move === "runup") {
-        const k = Math.min(1, s.t / 0.75);
-        s.p.root.position.set(spotX - 0.45 - 1.4 * (1 - k), 0, SPOT.z + BEHIND + 2.2 * (1 - k));
-      } else s.p.root.position.lerp(s.at, Math.min(1, dt * 6));
-      const yawNow = s.p.root.rotation.y;
-      s.p.root.rotation.y = yawNow + (s.yaw - yawNow) * Math.min(1, dt * 8);
-      s.p.mixer.update(dt);
-      s.legSave = lg.map((b) => b.quaternion.clone());
-      // the kick: a back-swing, then the leg through the ball (drawn, not physics)
-      if (s.move === "kick") {
-        const k = s.t;
-        const thigh = k < 0.16 ? 0.7 * (k / 0.16) : k < 0.34 ? 0.7 - 1.9 * ((k - 0.16) / 0.18) : k < 0.8 ? -1.2 + 0.9 * ((k - 0.34) / 0.46) : -0.3 * Math.max(0, 1 - (k - 0.8) / 0.3);
-        const knee = k < 0.16 ? 1.1 * (k / 0.16) : k < 0.3 ? 1.1 * (1 - (k - 0.16) / 0.14) : 0;
-        s.p.root.updateMatrixWorld(true);
-        right.set(1, 0, 0).applyQuaternion(s.p.root.quaternion);
-        if (lg[0]) turnWorld(lg[0], right, -thigh);
-        if (lg[1]) { lg[1].parent?.updateMatrixWorld(true); turnWorld(lg[1], right, knee); }
+      if (s.player.current !== "kick_r") {
+        s.p.root.position.lerp(s.at, Math.min(1, dt * 6));
+        const yawNow = s.p.root.rotation.y;
+        s.p.root.rotation.y = yawNow + (s.yaw - yawNow) * Math.min(1, dt * 8);
       }
+      s.player.update(dt);
+      s.p.mixer.update(dt);
     }
-    // the ball: the engine's own steps, played back KICK_DELAY_S late
+    placeJuggle();
+    // the ball: the engine's own steps, shown from the moment the 3D foot reaches it
     if (feed.length) {
-      const showAt = now - KICK_DELAY_S * 1000;
-      while (feed.length > 1 && feed[1].t <= showAt) feed.shift();
-      if (feed[0].t <= showAt) placeBall(feed[0].v);
-    }
-    // his turn: the run-up, the kick, then the cut-scene path
+      const showAt = clock - contactS * 1000;
+      while (feed.length > 1 && feed[1].t <= showAt) { shown.push(feed.shift()!); if (shown.length > 16) shown.shift(); }
+      if (feed[0].t <= showAt) {
+        placeBall(feed[0].v);
+        // the engine has gone quiet: it has settled the shot. Carry the ball on.
+        if (feed.length === 1 && showAt - feed[0].t > 120) {
+          const b = feed[0];
+          // its last speed, over the last few engine steps at least 30 ms back
+          let h = null as { t: number; v: any } | null;
+          for (const x of shown) if (b.t - x.t >= 30) h = x;
+          const vel = h ? b.v.clone().sub(h.v).multiplyScalar(1000 / (b.t - h.t)) : new THREE.Vector3();
+          if (vel.length() > 30) vel.setLength(30);
+          loose = { v: b.v.clone(), vel };
+          feed.length = 0;
+          shown.length = 0;
+        }
+      }
+    } else stepLoose(dt);
+    // his turn: the run-up and kick (one clip), then the cut-scene path
     if (mate) {
       mate.t += dt;
-      const m = people.mate;
-      if (mate.stage === 0 && mate.t > 0.45) { mate.stage = 1; m.move = "runup"; m.t = 0; applyMove("mate"); }
-      else if (mate.stage === 1 && mate.t > 0.45 + 0.75) { mate.stage = 2; m.move = "kick"; m.t = 0; applyMove("mate"); }
-      const since = mate.t - (0.45 + 0.75 + KICK_DELAY_S);
+      if (mate.stage === 0 && mate.t > MATE_WAIT) { mate.stage = 1; people.mate.move = "kick"; applyMove("mate"); }
+      const since = mate.t - (MATE_WAIT + contactS);
+      if (since > 0.25) camMode = "goal";
       if (since > 0) {
-        if (since > 0.25) camMode = "goal";
         const b = mateBallAt(mate.shot, since);
         placeBall(new THREE.Vector3(...P(b.x, b.y, b.z)));
         if (since > MATE_FLIGHT_S + MATE_AFTER_S) { const done = mate.onDone; mate = null; done(); }
@@ -399,12 +478,32 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   };
   renderer.setAnimationLoop(frame);
   // test pages: where everyone is (read by the playtest scripts only)
-  (window as any).__training3d = { people, camera, ball, get shooter() { return shooter; } };
+  (window as any).__training3d = {
+    people, camera, ball, get shooter() { return shooter; },
+    /** Stills: hold one man on a clip at a time (s), the camera in a mode. */
+    hold(who: Who, clip: string, t: number, cam?: "behind" | "goal") {
+      const s = people[who];
+      s.player.play(clip, { fade: 0 });
+      const a = s.p.actions[clip];
+      if (a) { a.time = t; a.paused = true; }
+      if (cam) { camMode = cam; snap = true; }
+      if (who === shooter && clip.startsWith("kick")) { feed.length = 0; loose = null; placeBall(spotBall.clone().setY(0.11)); }
+      else if (who === shooter) {
+        // stand him where the kick leaves him
+        const e = kickInfo.end ?? KICK_FALLBACK.end!;
+        s.at.copy(kickStart(spotBall, s.yaw)).add(toWorld(e[0], e[1], s.yaw));
+        s.p.root.position.copy(s.at);
+      }
+    },
+  };
 
   return {
+    kickDelayS: contactS,
     resetBall() {
       feed.length = 0;
-      spotX = SPOT.x;
+      shown.length = 0;
+      loose = null;
+      spotBall.set(SPOT.x, 0, SPOT.z);
       standFor("you"); standFor("mate");
       lastBall = ballAt.clone();
       placeBall(ballAt.clone());
@@ -413,16 +512,17 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       snap = true;
     },
     feedEngineBall(p) {
-      feed.push({ t: performance.now(), v: new THREE.Vector3(...P(p.x, p.y, Math.max(0.11, p.z))) });
+      feed.push({ t: clock, v: new THREE.Vector3(...P(p.x, p.y, Math.max(0.11, p.z))) });
     },
     playMateShot(shot, onDone) {
       const b0 = new THREE.Vector3(...P(shot.sx, CROSSBAR_SPOT.y, 0.11));
       feed.length = 0;
+      loose = null;
       lastBall = b0.clone();
       placeBall(b0);
       camMode = "behind";
       snap = true;
-      spotX = b0.x;
+      spotBall.set(b0.x, 0, b0.z);
       standFor("mate");
       mate = { shot, t: 0, stage: 0, onDone };
     },
@@ -433,7 +533,6 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     play(who, move) {
       const s = people[who];
       s.move = move;
-      s.t = 0;
       applyMove(who);
     },
     setCamera(mode) { camMode = mode; },
