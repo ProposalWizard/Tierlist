@@ -12,27 +12,61 @@
  *
  * Built the way the guard of honour is (lib/star/farewell3d.ts): the one-body
  * people (people3d.ts), the reach-for-a-point arm solver (signing3dRig.ts).
- * There are no hug or dap-up clips in our files, so every greeting is posed
- * here, arm by arm, onto the other man: a hug reaches round his back, a dap
- * meets his right hand in the middle and pulls in, a pat lands on his
- * shoulder. Kept light like the walk-out: men and crowd follow the phone's
- * 3D quality.
+ * The greetings and claps come from public/star/ovation3d/greetings.glb,
+ * made in Blender with both men posed together (tools/ovation3d/
+ * author_greetings.py): the file also says where he stands, frame by frame.
+ * Settings → Look → "Ovation greetings: Old" (or a file that won't load) is
+ * the first version: every greeting posed here, arm by arm, onto the other
+ * man (a hug reaches round his back, a dap meets his right hand in the
+ * middle and pulls in, a pat lands on his shoulder). Kept light like the
+ * walk-out: men and crowd follow the phone's 3D quality.
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, type Person3D, type PeopleBody, type PlayerModel } from "./people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, poseFingers, fingersDeg, mixFingers, type Person3D, type PeopleBody, type PlayerModel, type FingerPose } from "./people3d";
 import { people3dLook } from "./look3d";
 import { solveArm, handWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
-import { rememberGpu } from "./three3d/perf";
+import { rememberGpu, loadGltfCached } from "./three3d/perf";
+import { ovationMoves } from "./ovationMoves";
 import { withMeshopt } from "./three3d/meshopt";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
 import { makeWalkClip } from "./walkClip";
 import { SKIN_TONES, HAIR_COLOURS } from "./playerIdentity";
 import { guardRand } from "./guardOfHonour";
 import type { SigningYou } from "./signing3dScene";
-import { OVATION, youAt, greetWeight, cameraAngle, type OvationPlan, type OvationStop } from "./ovation";
+import { OVATION, youAt, greetWeight, greetTurn, greetBlend, cameraAngle, type OvationPlan, type OvationStop } from "./ovation";
 
 type Three = typeof import("three");
+
+/** The Blender-made greetings and claps (see the top of this file). */
+export const GREETINGS_URL = "/star/ovation3d/greetings.glb";
+
+interface MoveClip { duration: number; tracks: { bone: string; at: (t: number) => ArrayLike<number> }[] }
+interface Moves {
+  clips: Record<string, MoveClip>;
+  /** Per greeting: where he stands each frame, [distance in front of you, step to your left]. */
+  partner: Record<string, [number, number][]>;
+}
+
+function readMoves(gltf: GLTF): Moves | null {
+  const clips: Record<string, MoveClip> = {};
+  for (const c of gltf.animations) {
+    clips[c.name] = {
+      duration: c.duration,
+      tracks: c.tracks.filter((tr) => tr.name.endsWith(".quaternion")).map((tr) => {
+        const it = tr.createInterpolant();
+        return { bone: tr.name.slice(0, tr.name.lastIndexOf(".")), at: (t: number) => it.evaluate(t) as ArrayLike<number> };
+      }),
+    };
+  }
+  const greet = (gltf.scene.userData as { greet?: Record<string, { partner: [number, number][] }> }).greet;
+  if (!greet) return null;
+  const partner: Moves["partner"] = {};
+  for (const [k, v] of Object.entries(greet)) partner[k] = v.partner;
+  for (const need of ["hug-a", "hug-b", "dap-a", "dap-b", "pat-a", "pat-b", "clap-chest", "clap-high"]) if (!clips[need]) return null;
+  for (const need of ["hug", "dap", "pat"]) if (!partner[need]?.length) return null;
+  return { clips, partner };
+}
 
 export interface OvationKit { shirt: string; trim: string }
 
@@ -212,6 +246,10 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
     ...models.map((m) => loadPeople3d(loader, m, BODY)),
   ]);
   const bodyOf = (m: PlayerModel): GLTF => bodies[models.indexOf(m)];
+  // The Blender-made greetings (New, the default); the first version if Old or if the file won't load.
+  const moves: Moves | null = ovationMoves() === "new"
+    ? await loadGltfCached<GLTF>(loader, GREETINGS_URL).then(readMoves).catch(() => null)
+    : null;
   const v3 = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
   const wpos = (o: THREE.Object3D) => { const v = new T.Vector3(); o.getWorldPosition(v); return v; };
   const UP = v3(0, 1, 0);
@@ -384,6 +422,40 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
     rotateBoneWorld(T, head, qa.setFromAxisAngle(UP, ang * 0.6));
   };
 
+  // ── The Blender moves (when loaded) ──
+  const qm = new T.Quaternion();
+  /** A clip onto a man's upper body (the hips too for a greeting), blended by w. */
+  const play = (p: Person3D, name: string, t: number, w: number, hips = false) => {
+    const c = moves?.clips[name];
+    if (!c || w <= 0) return;
+    const tt = Math.max(0, Math.min(c.duration, t));
+    for (const tr of c.tracks) {
+      if (tr.bone === "Hips" && !hips) continue;
+      const b = p.bones[tr.bone];
+      if (!b) continue;
+      const v = tr.at(tt);
+      qm.set(v[0], v[1], v[2], v[3]);
+      if (w >= 1) b.quaternion.copy(qm); else b.quaternion.slerp(qm, w);
+    }
+    p.root.updateMatrixWorld(true);
+  };
+  const loop = (p: Person3D, name: string, time: number, w: number) => {
+    const d = moves?.clips[name]?.duration || 1;
+    play(p, name, ((time % d) + d) % d, w);
+  };
+  /** Where he stands, from the file: [distance in front of you, step to your left]. */
+  const partnerAt = (kind: string, k: number): [number, number] => {
+    const tb = moves!.partner[kind];
+    const f = Math.max(0, Math.min(1, k)) * (tb.length - 1);
+    const i = Math.min(tb.length - 2, Math.floor(f));
+    const u = f - i;
+    return [tb[i][0] + (tb[i + 1][0] - tb[i][0]) * u, tb[i][1] + (tb[i + 1][1] - tb[i][1]) * u];
+  };
+  const FLAT = fingersDeg({ thumb: [2, 4, 3], index: [4, 6, 3], middle: [4, 6, 3], ring: [5, 7, 4], little: [6, 8, 5], thumbSwing: 4 });
+  const RELAXED = fingersDeg({ thumb: [5, 10, 8], index: [10, 16, 9], middle: [13, 19, 11], ring: [15, 21, 12], little: [17, 23, 14], thumbSwing: 8 });
+  const GRIP = fingersDeg({ thumb: [15, 25, 20], index: [45, 55, 35], middle: [50, 60, 35], ring: [50, 60, 35], little: [45, 55, 35], thumbSwing: 35 });
+  const fingers = (p: Person3D, l: FingerPose, r: FingerPose) => { poseFingers(T, p, "L", l); poseFingers(T, p, "R", r); };
+
   // ── One frame ──
   let lastStop: OvationStop | null | undefined;
   const pose = (time: number, dt: number) => {
@@ -395,7 +467,7 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
 
     // You: walking, or turned to the man who stopped you.
     you.root.position.set(0, 0, at.z);
-    const turn = stop ? w : 0;
+    const turn = stop ? (moves ? greetTurn(k) : w) : 0;
     you.root.rotation.y = stop ? stop.side * (Math.PI / 2) * turn : 0;
     const walking = at.walking ? 1 : 0;
     if (youWalk) { youWalk.setEffectiveWeight(walking); youWalk.timeScale = 0.62; }
@@ -424,6 +496,12 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
         jogW = Math.min(1, run * 3);
         face(g.p, 0, -1);
       } else {
+        if (moves && mine) {
+          // Where the Blender scene stood him, frame by frame.
+          const [d, lat] = partnerAt(s.kind, k);
+          x = s.side * d;
+          z = s.z - s.side * lat;
+        }
         // Facing you as you come, square on while you greet.
         face(g.p, -x, at.z - z + 0.0001);
         if (mine) face(g.p, -s.side, 0);
@@ -435,15 +513,42 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
       settle(g.p);
       g.p.root.updateMatrixWorld(true);
       const youHead = v3(0, 1.6, at.z);
+      if (moves) fingers(g.p, RELAXED, RELAXED);
       if (!mine && jogW === 0) {
         // Clapping you towards him.
-        look(g.p, youHead, 0.9);
-        clap(g.p, time, s.z, false, 1);
+        if (moves) {
+          loop(g.p, "clap-chest", time + s.z * 0.37, 1);
+          fingers(g.p, FLAT, FLAT);
+          look(g.p, youHead, 0.9);
+        } else {
+          look(g.p, youHead, 0.9);
+          clap(g.p, time, s.z, false, 1);
+        }
       }
     }
 
-    // The greeting itself, arm by arm onto each other.
-    if (stop) {
+    if (moves) fingers(you, FLAT, FLAT);
+    if (moves && stop) {
+      // The greeting from the file: both men, the same frame.
+      const g = greeters.find((x) => x.stop === stop)!;
+      const cw = greetBlend(k);
+      const tt = time - stop.from;
+      loop(you, "clap-high", time, 1 - cw);
+      loop(g.p, "clap-chest", time, 1 - cw);
+      play(you, `${stop.kind}-a`, tt, cw, true);
+      play(g.p, `${stop.kind}-b`, tt, cw, true);
+      if (stop.kind === "dap") {
+        const grip = Math.max(0, Math.min(1, (k - 0.2) / 0.1)) * Math.max(0, Math.min(1, (0.85 - k) / 0.1));
+        fingers(you, FLAT, mixFingers(FLAT, GRIP, grip));
+        fingers(g.p, FLAT, mixFingers(FLAT, GRIP, grip));
+      } else {
+        fingers(g.p, FLAT, FLAT);
+      }
+    } else if (moves) {
+      // Hands above your head to every stand in turn.
+      loop(you, "clap-high", time, time < OVATION.walkFrom ? Math.min(1, time / 0.6) : 1);
+    } else if (stop) {
+      // The first version: the greeting arm by arm onto each other.
       const g = greeters.find((x) => x.stop === stop)!;
       look(you, wpos(g.p.bones.Head ?? g.p.root), w);
       look(g.p, wpos(you.bones.Head ?? you.root), w);
@@ -464,8 +569,14 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
       c.p.mixer.update(dt);
       settle(c.p);
       c.p.root.updateMatrixWorld(true);
-      look(c.p, youHead, 0.8);
-      clap(c.p, time, c.phase, false, 1);
+      if (moves) {
+        loop(c.p, "clap-chest", time + c.phase * 0.15, 1);
+        fingers(c.p, FLAT, FLAT);
+        look(c.p, youHead, 0.8);
+      } else {
+        look(c.p, youHead, 0.8);
+        clap(c.p, time, c.phase, false, 1);
+      }
     }
 
     moveCrowd(time);

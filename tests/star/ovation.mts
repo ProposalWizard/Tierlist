@@ -1,4 +1,5 @@
-import { ovationPlan, youAt, greetWeight, cameraAngle, greetingCaption, OVATION, type OvationPerson } from "../../lib/star/ovation";
+import { readFileSync } from "node:fs";
+import { ovationPlan, youAt, greetWeight, greetTurn, greetBlend, cameraAngle, greetingCaption, OVATION, type OvationPerson } from "../../lib/star/ovation";
 
 /** The standing ovation's timeline (Mikey's farewell playtest, 8 Oct 2026). */
 const problems: string[] = [];
@@ -46,6 +47,29 @@ check(none.stops.length === 0 && none.end > 5, "nobody to greet: you still walk 
 const onlyRivals = ovationPlan([], rivals, null);
 check(onlyRivals.stops.length === 2 && onlyRivals.stops.every(s => s.kind === "dap"), "rivals only: two dap-ups");
 check(greetingCaption(plan.stops[4]).includes("Delap"), "the caption names the man");
+
+// The Blender-made greetings (public/star/ovation3d/greetings.glb): the file
+// must fit the game's own timings, and stand him back where he waits.
+check(greetTurn(0) === 0 && greetTurn(1) === 0 && greetTurn(0.5) === 1, "you turn to him, then back to the walk");
+check(greetBlend(0) === 0 && greetBlend(1) === 0 && greetBlend(0.5) === 1, "the file's greeting blends in and out");
+const glbFile = readFileSync(new URL("../../public/star/ovation3d/greetings.glb", import.meta.url));
+const json = JSON.parse(glbFile.subarray(20, 20 + glbFile.readUInt32LE(12)).toString("utf8")) as {
+  scenes: { extras: { greet: Record<string, { frames: number; fps: number; partner: [number, number][] }> } }[];
+  animations: { name: string }[];
+};
+const greet = json.scenes[0].extras.greet;
+const names = json.animations.map(a => a.name);
+for (const clip of ["hug-a", "hug-b", "dap-a", "dap-b", "pat-a", "pat-b", "clap-chest", "clap-high"]) check(names.includes(clip), `the file has ${clip}`);
+for (const kind of ["hug", "dap", "pat"] as const) {
+  const g = greet[kind];
+  check(!!g && g.frames === Math.round(OVATION.hold[kind] * g.fps) + 1, `${kind}: the file is as long as the game's stop (${g?.frames} frames)`);
+  check(!!g && g.partner.length === g.frames, `${kind}: where he stands, every frame`);
+  const first = g.partner[0], last = g.partner[g.partner.length - 1];
+  check(Math.abs(first[0] - 1.25) < 0.01 && Math.abs(last[0] - 1.25) < 0.01 && Math.abs(first[1]) < 0.01 && Math.abs(last[1]) < 0.01,
+    `${kind}: he starts and ends where he waits, 1.25 m off your path`);
+  const closest = Math.min(...g.partner.map(p => p[0]));
+  check(closest > 0.15 && closest < 0.7, `${kind}: he comes in close but never through you (${closest.toFixed(2)} m)`);
+}
 
 if (problems.length) { console.error("FAIL ovation:\n  " + problems.join("\n  ")); process.exit(1); }
 console.log(`ovation: ok (scene ${plan.end.toFixed(1)} s, off at ${plan.offAt.toFixed(1)} s)`);

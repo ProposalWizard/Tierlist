@@ -15,6 +15,7 @@ import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
 import { useBadgeLook, setBadgeLook } from "@/lib/star/badgeLook";
 import { useAllSeasonsLook, setAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import { useOvationLook, setOvationLook } from "@/lib/star/ovationLook";
+import { useOvationMoves, setOvationMoves } from "@/lib/star/ovationMoves";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import { useAnimationsLook, setAnimationsLook } from "@/lib/star/animLook";
 import { useIsTester } from "@/lib/useIsAdmin";
@@ -154,6 +155,7 @@ export function LookSwitches() {
   const badgeLookNow = useBadgeLook();
   const allSeasons = useAllSeasonsLook();
   const ovationNow = useOvationLook();
+  const ovationMovesNow = useOvationMoves();
   const chancesNow = useChanceSet();
   const animNow = useAnimationsLook();
   const tester = useIsTester();
@@ -226,6 +228,14 @@ export function LookSwitches() {
       </div>
       <SetNote dim className="mt-1 text-[10px]">
         New: your farewell&apos;s 85th minute in 3D, hugs on the way off. Old: the banner over the commentary.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Ovation greetings</span>
+        <SegTabs className="w-[150px] shrink-0" value={ovationMovesNow} onChange={setOvationMoves} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: the hugs, dap-ups and claps made in Blender, both players posed together. Old: the first version, arms placed live.
       </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">

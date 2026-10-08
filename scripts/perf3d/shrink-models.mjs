@@ -71,6 +71,8 @@ const POLICY = {
   "star/people3d/anims.glb": ANIM,
   "star/shop3d/anims.glb": ANIM,
   "star/garden3d/anims.glb": ANIM,
+  // The ovation's hugs, dap-ups, pats and claps (tools/ovation3d/author_greetings.py).
+  "star/ovation3d/greetings.glb": ANIM,
   "star/onebody/player.glb": PEOPLE.onebody,
   "star/onebody/player-buzz.glb": PEOPLE.onebody,
   "star/onebody/player-long.glb": PEOPLE.onebody,
