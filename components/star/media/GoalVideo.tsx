@@ -6,6 +6,9 @@ import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } fr
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
 import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
+import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
+import { audioContext } from "@/lib/star/audioOut";
 
 /**
  * A REAL GOAL VIDEO IN A POST (Leo, 7 Oct 2026: "it makes it look like theres
@@ -16,6 +19,12 @@ import { useAnimationsLook } from "@/lib/star/animLook";
  * seconds, with a progress ring) and plays it, looping, like a feed does.
  * Save puts the file in the phone's share menu (Save Video on an iPhone) or
  * downloads it.
+ *
+ * Sound (Leo, 8 Oct 2026): crowd, kick, net and a commentator line, mixed on
+ * the phone (lib/star/goalClip/audio.ts) and put inside the file when the
+ * browser can, so a saved video has it too. A browser that can make the
+ * pictures but not the sound plays the same mix alongside the video. The
+ * speaker button mutes every goal video and is remembered on this device.
  *
  * It is drawn from the goal's recording, so every play — and every save — is
  * the same goal, frame for frame. A post whose recording is not on this
@@ -36,6 +45,40 @@ function keep(key: string, clip: EncodedClip): { clip: EncodedClip; url: string 
   const entry = { clip, url: URL.createObjectURL(clip.blob) };
   made.set(key, entry);
   return entry;
+}
+
+/**
+ * Plays a mix next to a video whose file has no sound, kept in step with it
+ * (it restarts from the video's time on play, a seek or the loop). Only one
+ * runs at a time, like the videos.
+ */
+let side: { video: HTMLVideoElement; src: AudioBufferSourceNode; gain: GainNode; startedAt: number; offset: number } | null = null;
+
+function stopSide(video?: HTMLVideoElement): void {
+  if (!side || (video && side.video !== video)) return;
+  try { side.src.stop(); } catch { /* already stopped */ }
+  side = null;
+}
+
+function syncSide(video: HTMLVideoElement, buffer: AudioBuffer, audible: boolean): void {
+  const c = audioContext();
+  if (!c) return;
+  if (video.paused) { stopSide(video); return; }
+  const want = video.currentTime % Math.max(0.001, buffer.duration);
+  if (side && side.video === video) {
+    side.gain.gain.value = audible ? 1 : 0;
+    const at = side.offset + (c.currentTime - side.startedAt);
+    if (Math.abs(at - want) < 0.25) return;
+  }
+  stopSide();
+  if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });
+  const src = c.createBufferSource();
+  src.buffer = buffer;
+  const gain = c.createGain();
+  gain.gain.value = audible ? 1 : 0;
+  src.connect(gain); gain.connect(c.destination);
+  src.start(0, want);
+  side = { video, src, gain, startedAt: c.currentTime, offset: want };
 }
 
 function mmss(s: number): string {
@@ -68,6 +111,11 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const saveAsked = useRef(false);
+  const soundOn = useClipSound();
+  // The browser refused to start this video with sound (no tap yet): it plays
+  // muted, and the speaker shows muted until it is tapped.
+  const [blocked, setBlocked] = useState(false);
+  const audible = soundOn && !blocked;
   // The men's moves follow Settings → Look → Animations, like the match.
   const moves = useAnimationsLook();
   const key = `${style}|${moves}|${clipIds.join(",")}|${credit?.handle ?? ""}`;
@@ -124,7 +172,10 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     try {
       let job = making.get(key);
       if (!job) {
-        job = encodeEdit(edit, { credit, onProgress: setProgress });
+        const e = edit;
+        job = mixAudio(planAudio(e))
+          .catch(() => null)
+          .then(audio => encodeEdit(e, { credit, onProgress: setProgress, audio }));
         making.set(key, job);
         job.then(() => making.delete(key), () => making.delete(key));
       }
@@ -145,9 +196,48 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, edit, canPlay]);
 
+  const clip = made.get(key)?.clip ?? null;
+
   useEffect(() => {
-    if (status === "ready") videoRef.current?.play().catch(() => { /* a muted video normally plays; if not, the tap does */ });
+    const v = videoRef.current;
+    if (status !== "ready" || !v) return;
+    v.muted = !(clip?.hasAudio && soundOn);
+    v.play().catch(() => {
+      // Sound before a tap is not allowed here: play muted, show it muted.
+      if (!v.muted) { setBlocked(true); v.muted = true; v.play().catch(() => { /* the tap does */ }); }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, url]);
+
+  // The speaker: the file's own sound, or the mix played alongside it.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || status !== "ready" || !clip) return;
+    if (clip.hasAudio) { v.muted = !audible; return; }
+    if (!clip.audio) return;
+    const buf = clip.audio;
+    const tick = () => syncSide(v, buf, audible);
+    tick();
+    const evs = ["play", "pause", "seeked", "timeupdate", "ended"] as const;
+    evs.forEach(n => v.addEventListener(n, tick));
+    return () => { evs.forEach(n => v.removeEventListener(n, tick)); stopSide(v); };
+  }, [status, clip, audible]);
+
+  const toggleSound = () => {
+    const v = videoRef.current;
+    if (blocked) {
+      // The tap itself unlocks sound: turn it on, whatever the setting said.
+      setBlocked(false);
+      setClipSoundOn(true);
+      if (v && clip?.hasAudio) { v.muted = false; void v.play().catch(() => { /* still blocked */ }); }
+      audioContext()?.resume().catch(() => { /* still blocked */ });
+      return;
+    }
+    const next = !soundOn;
+    setClipSoundOn(next);
+    if (next) audioContext()?.resume().catch(() => { /* still blocked */ });
+    if (v && clip?.hasAudio) v.muted = !next;
+  };
 
   // Known to the feed while it is on screen, so starting this one pauses the rest.
   useEffect(() => {
@@ -188,6 +278,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
             autoPlay
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) void v.play(); else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
+            onPause={(ev) => stopSide(ev.currentTarget)}
             data-goal-video-playing
           />
         ) : (
@@ -227,6 +318,23 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
         <div className="pointer-events-none absolute bottom-1.5 right-2 rounded bg-black/60 px-1 text-[10px] font-bold tabular-nums text-white">
           {mmss(dur)}
         </div>
+        {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
+          <button
+            onClick={toggleSound}
+            className="absolute bottom-1.5 left-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white"
+            aria-label={audible ? "Mute" : "Sound on"}
+            data-goal-video-sound={audible ? "on" : "off"}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+              {audible ? (
+                <><path d="M16 9a4 4 0 0 1 0 6" /><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" /></>
+              ) : (
+                <><path d="m16.5 9.5 5 5" /><path d="m21.5 9.5-5 5" /></>
+              )}
+            </svg>
+          </button>
+        )}
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         <button onClick={save} className="flex items-center gap-1 whitespace-nowrap hover:text-white" data-goal-video-save>

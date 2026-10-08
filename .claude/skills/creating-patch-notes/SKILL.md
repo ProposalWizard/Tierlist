@@ -148,6 +148,7 @@ Record each new link here so the next round can find the latest one:
 - Leo v0.7 (site 0.31): https://claude.ai/artifact/MmprHgEH6epYpooT4Cze7r
 - Leo v0.8 (site 0.32): https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6
 - Leo v0.9 (site 0.33): https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr
+- Leo v0.11 (site 0.36): https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY
 - Leo v0.10 (site 0.35): https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X
 - Site 0.22 (UI & Home): https://claude.ai/artifact/AHUmDmsxzNfG1UhEkn3N7n
 - Site 0.23: https://claude.ai/artifact/HBE3svQRyVBbVcUMWjMW1g

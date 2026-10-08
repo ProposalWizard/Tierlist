@@ -230,6 +230,7 @@ export const ADMIN_GUIDES = {
       { group: "3 · Watch it", items: [
         ["TV / Behind the goal / Fan in the stand", "The three cameras. TV is what the club's account posts (with a slow replay from behind the goal); Behind the goal is what pages and papers post; Fan in the stand is a fan's phone video."],
         ["▶ (on the picture)", "Makes the video on this phone (a few seconds, with a ring showing how far) and plays it. It starts by itself here."],
+        ["Speaker (bottom left of the video)", "Sound on or off for every goal video: the crowd, the kick, the net and the commentator (not on the fan's phone video, which has only the crowd). Remembered on this device. The sound is inside a saved video too, where the browser can make it."],
         ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
         ["Moves: Old / New", "Which moves the players use in the video: the older ones, or the newer 3D moves (a shot, a header, a one-handed dive). The video follows Settings → Look → Animations, like the match; these force one while this page is open (the match above follows it too)."],
       ] },

@@ -214,6 +214,9 @@ is recorded frame by frame (`lib/star/goalClip/`, CanvasMatch `onGoalClip`);
 the feed and Goal Replays draw the video FROM the recording. Never rebuild a
 replay by re-simulating the chance. Recordings live in IndexedDB on the
 device, not in the save. Test page: `/star-goal-clips-dev`.
+Sound (Leo, 8 Oct): `lib/star/goalClip/audio.ts` plans and mixes crowd,
+kick, net and commentator (`public/sfx/comm-*.mp3`, replaceable on the
+Sound Board) into the file; the speaker button is `goalClip/sound.ts`.
 
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
@@ -703,6 +706,15 @@ Three people are building this. To avoid two sessions editing the same files:
 ---
 
 ## Recent Session
+
+**8 October 2026 (Leo) — Goal videos get sound: crowd, kick, net, a commentator, and a speaker button. Patch notes Leo v0.11 (site 0.36): https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY**
+
+- **The ask:** "crowd noise and commentator but a mute toggle too. go on and push commit merge so I can see it in game".
+- `lib/star/goalClip/audio.ts`: `planAudio(edit)` (pure, tested in `goalClipAudio.mts`) puts kicks/gloves/net on their frames from the track's events, a crowd bed that rises at the strike and peaks at the goal, the stadium roar, and a commentator line `COMMENTARY_DELAY` after each goal plus one over the replay. Fan cam: no commentator. Replay: bed drops, kick/net slowed. `mixAudio` renders it with OfflineAudioContext from `sfxUrl()` files (so Sound Board replacements apply) through a limiter.
+- `encode.ts`: AudioEncoder (AAC, else Opus in MP4; Opus in WebM) fed in step with the frames; `EncodedClip.hasAudio`/`audio`. A browser that can't encode sound plays the mix alongside the video (`syncSide` in GoalVideo.tsx).
+- Speaker button bottom-left (`data-goal-video-sound`), one setting for all videos (`star-clip-sound`, defaults to Settings → Sound effects); autoplay-with-sound refused → plays muted until tapped.
+- Commentator: 9 lines from the offline Piper TTS ("alan", en-GB), `public/sfx/comm-*.mp3`, credit in `public/sfx/COMMENTARY-LICENSE.txt`; new Sound Board group "Goal video commentator". Calm, no names: replace takes on the Sound Board.
+- **Seen:** a real recorded goal made into WebM with VP9 + Opus tracks (crowd RMS 0.07 → 0.21 at the goal, mix 0.2 s); on the test page the speaker toggled on → off → on and saved, no page errors. **Not seen:** an iPhone, the career feed with sound (same component as the test page). 267/267 tests, tsc clean, guard clean, build passes.
 
 **7 October 2026 (Leo) — Goal videos: every goal recorded frame by frame as you play, real videos in the post-match feed from three cameras, Save video, Goal Replays play the recording. Patch notes Leo v0.10 (site 0.35): https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X**
 

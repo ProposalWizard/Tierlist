@@ -27,6 +27,110 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.36",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-08T01:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY",
+      "summary": "Goal videos have sound: a crowd murmur that rises with the shot and roars at the goal, the kick, the keeper's gloves and the net on the frame they happen, and a commentator line after the goal and over the slow-motion replay (no commentator on a fan's phone video). A speaker button on every goal video mutes them all, remembered on this phone. A saved video keeps its sound. The nine commentator lines are on the Sound Board, so they can be replaced with better recordings.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "commentator lines"
+        },
+        {
+          "value": "~3×",
+          "label": "louder crowd at the goal"
+        },
+        {
+          "value": "0.2 s",
+          "label": "to mix the sound"
+        },
+        {
+          "value": "267/267",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A goal video plays with sound",
+              "detail": "Score in a match → Post Match Reactions → your club's goal post → tap ▶."
+            },
+            {
+              "title": "The speaker button",
+              "detail": "Bottom left of a playing goal video → tap to mute, tap again for sound."
+            },
+            {
+              "title": "Mute is remembered",
+              "detail": "Mute one video, then play another goal video: it stays muted."
+            },
+            {
+              "title": "A fan's video has no commentator",
+              "detail": "A fan's goal post → crowd only."
+            },
+            {
+              "title": "A saved video has sound",
+              "detail": "Save video → open the file."
+            },
+            {
+              "title": "The commentator lines on the Sound Board",
+              "detail": "/admin/sound-board → Goal video commentator."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: goal videos have sound",
+          "items": [
+            {
+              "title": "Crowd, kick, net and a commentator",
+              "detail": "Problem: the goal videos were silent. Fix: a crowd murmur that rises as the shot comes and roars at the goal; each kick, the keeper's gloves and the net on their frame; a commentator line just after the goal and one over the slow-motion replay. A fan's phone video has the crowd only. In the replay the crowd drops back and the kick and net sound slower. Measured on a real recorded goal: the crowd is about 3 times louder at the goal than before the shot; the saved file has a sound track."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A speaker button on every goal video",
+              "detail": "Bottom left. Mutes every goal video; remembered on this phone; starts the way Settings → Sound effects is set. A phone that blocks sound before a tap plays muted until the speaker is tapped. Seen in a browser: on → muted → on, saved."
+            },
+            {
+              "title": "Nine commentator lines, replaceable on the Sound Board",
+              "detail": "Made with a free offline British voice. Listed under Goal video commentator on /admin/sound-board; a replacement is used by the videos straight away."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The commentator sounds calm, not excited",
+              "detail": "A free reading voice. Replace the lines on the Sound Board with better takes; no code change."
+            },
+            {
+              "title": "The commentator does not say names",
+              "detail": "Each line is recorded in advance."
+            },
+            {
+              "title": "Not heard on an iPhone",
+              "detail": "Worked out, not seen: a phone that cannot put sound in the file plays it next to the video, but its saved video is silent."
+            },
+            {
+              "title": "Still open from v0.10",
+              "detail": "Recordings stay on one phone; a recording stops about 1.5 s after the goal; The League posts lower-league matches as Premier League; run star_legend_shares.sql and star_hall_of_fame.sql."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.35",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-07T22:45:00Z",

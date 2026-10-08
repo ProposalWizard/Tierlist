@@ -24,6 +24,10 @@ export interface EncodedClip {
   duration: number;
   width: number;
   height: number;
+  /** True when the sound is inside the file (it plays and saves with it). */
+  hasAudio: boolean;
+  /** The mixed sound, kept so a file without it can still play it alongside. */
+  audio: AudioBuffer | null;
 }
 
 interface Choice {
@@ -62,6 +66,28 @@ async function pickCodec(w: number, h: number, fps: number): Promise<Choice | nu
   return null;
 }
 
+interface AudioChoice {
+  codec: string;
+  /** The muxer's name for it. */
+  mux: "aac" | "opus" | "A_OPUS";
+}
+
+/** The sound codec for this container, or null (the file is then silent). */
+async function pickAudio(container: "mp4" | "webm", sampleRate: number, channels: number): Promise<AudioChoice | null> {
+  const AE = (window as unknown as { AudioEncoder?: typeof AudioEncoder }).AudioEncoder;
+  if (typeof AE !== "function" || typeof (window as unknown as { AudioData?: unknown }).AudioData !== "function") return null;
+  const list: AudioChoice[] = container === "mp4"
+    ? [{ codec: "mp4a.40.2", mux: "aac" }, { codec: "opus", mux: "opus" }]
+    : [{ codec: "opus", mux: "A_OPUS" }];
+  for (const c of list) {
+    try {
+      const r = await AE.isConfigSupported({ codec: c.codec, sampleRate, numberOfChannels: channels, bitrate: 96_000 });
+      if (r.supported) return c;
+    } catch { /* try the next */ }
+  }
+  return null;
+}
+
 const supportCache = new Map<string, Promise<boolean>>();
 
 /**
@@ -88,7 +114,7 @@ const nextTick = () => new Promise<void>(r => setTimeout(r, 0));
  */
 export async function encodeEdit(
   edit: Edit,
-  opts: { credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal } = {},
+  opts: { credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal; audio?: AudioBuffer | null } = {},
 ): Promise<EncodedClip | null> {
   if (!canMakeVideo() || edit.shots.length === 0) return null;
   await prepareClipSprites(edit.moves);
@@ -101,11 +127,26 @@ export async function encodeEdit(
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) return null;
 
+  const audio = opts.audio ?? null;
+  const aChoice = audio ? await pickAudio(choice.container, audio.sampleRate, audio.numberOfChannels) : null;
+  const aCfg = audio && aChoice ? { sampleRate: audio.sampleRate, numberOfChannels: audio.numberOfChannels } : null;
+
   const mp4 = choice.container === "mp4"
-    ? new Mp4Muxer({ target: new Mp4Target(), video: { codec: "avc", width: w, height: h, frameRate: fps }, fastStart: "in-memory", firstTimestampBehavior: "offset" })
+    ? new Mp4Muxer({
+      target: new Mp4Target(),
+      video: { codec: "avc", width: w, height: h, frameRate: fps },
+      ...(aCfg ? { audio: { codec: aChoice!.mux as "aac" | "opus", ...aCfg } } : {}),
+      fastStart: "in-memory",
+      firstTimestampBehavior: "offset",
+    })
     : null;
   const webm = choice.container === "webm"
-    ? new WebmMuxer({ target: new WebmTarget(), video: { codec: choice.muxCodec, width: w, height: h, frameRate: fps }, firstTimestampBehavior: "offset" })
+    ? new WebmMuxer({
+      target: new WebmTarget(),
+      video: { codec: choice.muxCodec, width: w, height: h, frameRate: fps },
+      ...(aCfg ? { audio: { codec: "A_OPUS", ...aCfg } } : {}),
+      firstTimestampBehavior: "offset",
+    })
     : null;
   let failure: unknown = null;
   const encoder = new VideoEncoder({
@@ -119,12 +160,46 @@ export async function encodeEdit(
   if (choice.container === "mp4") (cfg as VideoEncoderConfig & { avc?: { format: "avc" } }).avc = { format: "avc" };
   encoder.configure(cfg);
 
+  // The sound, fed in step with the pictures (the muxers interleave them).
+  let aEnc: AudioEncoder | null = null;
+  let aDone = 0;
+  const A_BLOCK = 4800;
+  if (audio && aChoice && aCfg) {
+    try {
+      aEnc = new AudioEncoder({
+        output: (chunk, meta) => {
+          if (mp4) mp4.addAudioChunk(chunk, meta);
+          else webm?.addAudioChunk(chunk, meta);
+        },
+        error: (e) => { failure = e; },
+      });
+      aEnc.configure({ codec: aChoice.codec, ...aCfg, bitrate: 96_000 });
+    } catch (e) { failure = e; }
+  }
+  const feedAudio = (untilSec: number) => {
+    if (!aEnc || !audio) return;
+    const end = Math.min(audio.length, Math.ceil(untilSec * audio.sampleRate));
+    while (aDone < end) {
+      const k = Math.min(A_BLOCK, audio.length - aDone);
+      const data = new Float32Array(k * audio.numberOfChannels);
+      for (let ch = 0; ch < audio.numberOfChannels; ch++) data.set(audio.getChannelData(ch).subarray(aDone, aDone + k), ch * k);
+      const ad = new AudioData({
+        format: "f32-planar", sampleRate: audio.sampleRate, numberOfFrames: k,
+        numberOfChannels: audio.numberOfChannels, timestamp: Math.round((aDone / audio.sampleRate) * 1e6), data,
+      });
+      aEnc.encode(ad);
+      ad.close();
+      aDone += k;
+    }
+  };
+
   const n = editFrameCount(edit);
   const frameUs = 1e6 / fps;
   try {
     for (let i = 0; i < n; i++) {
       if (opts.signal?.aborted) throw new DOMException("aborted", "AbortError");
       if (failure) throw failure;
+      feedAudio((i + 1) / fps);
       drawEditFrame(ctx, edit, i / fps, opts.credit);
       const frame = new VideoFrame(canvas, { timestamp: Math.round(i * frameUs), duration: Math.round(frameUs) });
       encoder.encode(frame, { keyFrame: i % (fps * 2) === 0 });
@@ -133,17 +208,20 @@ export async function encodeEdit(
       while (encoder.encodeQueueSize > 4) await new Promise<void>(r => setTimeout(r, 4));
       if (i % 3 === 2) { opts.onProgress?.(i / n); await nextTick(); }
     }
+    feedAudio(Infinity);
     await encoder.flush();
+    if (aEnc) await aEnc.flush();
     if (failure) throw failure;
   } finally {
     if (encoder.state !== "closed") encoder.close();
+    if (aEnc && aEnc.state !== "closed") aEnc.close();
   }
   let buffer: ArrayBuffer;
   if (mp4) { mp4.finalize(); buffer = (mp4.target as Mp4Target).buffer; }
   else { webm!.finalize(); buffer = (webm!.target as WebmTarget).buffer; }
   opts.onProgress?.(1);
   const mime = choice.container === "mp4" ? "video/mp4" : "video/webm";
-  return { blob: new Blob([buffer], { type: mime }), mime, ext: choice.container, duration: editDuration(edit), width: w, height: h };
+  return { blob: new Blob([buffer], { type: mime }), mime, ext: choice.container, duration: editDuration(edit), width: w, height: h, hasAudio: !!aEnc, audio };
 }
 
 /**
