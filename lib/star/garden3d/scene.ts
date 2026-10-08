@@ -53,6 +53,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -1852,6 +1853,219 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // picture is exactly the same.
   const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
 
+  // ── The training pitch's team-mates (Harry, 8 Oct 2026: "build all the
+  // animations for any new 3D areas"). Behind the fence: two passing it
+  // back and forth, one dribbling the slalom, one stretching, one jogging
+  // laps. The same body as you (people3d, or the old footballer when the
+  // shop's player is Old) with the hand-made football clips
+  // (lib/star/three3d/footballAnims.ts). How many: the tier's live-character
+  // budget (Low 2, Medium 4, High 5). Off screen they are not drawn and
+  // their legs are not worked out. Added after the freeze: they move. ──
+  type PitchMan = {
+    root: any; mixer: any; acts: Record<string, any>; x: number; z: number; yaw: number;
+    role: "passA" | "passB" | "dribble" | "stretch" | "jog"; blob: any; ball?: any;
+    s?: number; dir?: number; turn?: number;
+  };
+  const pitchMen: PitchMan[] = [];
+  let pitchInfo: { pass: any; dribble: any } = { pass: null, dribble: null };
+  /** A point in a man's own frame (x = his left, z = forward), turned to the world. */
+  const ownToWorld = (x: number, z: number, yaw: number): [number, number] => [x * Math.cos(yaw) + z * Math.sin(yaw), -x * Math.sin(yaw) + z * Math.cos(yaw)];
+  const PASS_Z = -11.75, PASS_X: [number, number] = [-15.8, -11.0];
+  const DRIB = { x0: -15.6, x1: -9.8, z: -13.2, speed: 0.95 };
+  const LAP = { x0: -16.25, x1: -8.2, z0: -16.55, z1: -10.75, r: 1.2 };
+  const lapLen = 2 * (LAP.x1 - LAP.x0 + LAP.z1 - LAP.z0) - 8 * LAP.r + 2 * Math.PI * LAP.r;
+  /** Where on the lap (a rounded rectangle, run anticlockwise seen from above) at distance d, and which way he faces. */
+  const lapAt = (d: number): [number, number, number] => {
+    const { x0, x1, z0, z1, r } = LAP;
+    const segs: [number, number, number, number][] = [
+      [x0 + r, z1, x1 - r, z1], [x1, z1 - r, x1, z0 + r], [x1 - r, z0, x0 + r, z0], [x0, z0 + r, x0, z1 - r],
+    ];
+    const corners: [number, number, number][] = [[x1 - r, z1 - r, 0], [x1 - r, z0 + r, Math.PI / 2], [x0 + r, z0 + r, Math.PI], [x0 + r, z1 - r, Math.PI * 1.5]];
+    d = ((d % lapLen) + lapLen) % lapLen;
+    for (let i = 0; i < 4; i++) {
+      const [ax, az, bx, bz] = segs[i];
+      const L = Math.hypot(bx - ax, bz - az);
+      if (d < L) { const u = d / L; return [ax + (bx - ax) * u, az + (bz - az) * u, Math.atan2(bx - ax, bz - az)]; }
+      d -= L;
+      const arc = (Math.PI / 2) * r;
+      if (d < arc) {
+        const [cx, cz, a0] = corners[i];
+        const a = a0 + d / r;
+        return [cx + Math.sin(a) * r, cz + Math.cos(a) * r, Math.atan2(Math.cos(a), -Math.sin(a))];
+      }
+      d -= arc;
+    }
+    return [x0 + r, z1, Math.PI / 2];
+  };
+  const pitchBallM = mat("#f6f6f6", { roughness: 0.5 });
+  const pitchBall = () => { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 2), pitchBallM); b.castShadow = false; scene.add(b); return b; };
+  const pitchCount = Math.min(5, Math.max(2, prof.maxLiveCharacters));
+  if (!dbg.has("nopitchmen")) (async () => {
+    const fbG: any = await loadAnims3d(loader, "football", newPerson ? "people" : "ual");
+    if (disposed) return;
+    pitchInfo = { pass: clipInfo(fbG, "pass"), dribble: clipInfo(fbG, "cone_dribble") };
+    const roles: PitchMan["role"][] = (["passA", "passB", "dribble", "stretch", "jog"] as PitchMan["role"][]).slice(0, pitchCount);
+    const SKINS = ["#5c3a1e", "#e0ac69", "#8d5524", "#c68642", "#3d2716"];
+    const NUMS = [4, 8, 14, 21, 9];
+    roles.forEach((role, i) => {
+      let root: any, mixer: any;
+      const acts: Record<string, any> = {};
+      if (newPerson) {
+        const SK = SkeletonUtils.default ?? SkeletonUtils;
+        const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+        outlines.push(m.outline);
+        dressPerson3d(THREE, m, { skin: SKINS[i], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(NUMS[i], "#ffffff")) });
+        relaxHands(THREE, m);
+        addClips(THREE, m, fbG);
+        root = m.root; mixer = m.mixer;
+        for (const n of ["idle", "jog", "pass", "stretch", "cone_dribble"]) if (m.actions[n]) acts[n] = m.actions[n];
+      } else {
+        root = SkeletonUtils.clone(charG.scene);
+        const U = {
+          uShirt: { value: new THREE.Color(data.kit.shirt) }, uTrim: { value: new THREE.Color(data.kit.trim) },
+          uBoot: { value: new THREE.Color("#141416") }, uNum: { value: canvasTex(numberCanvas(NUMS[i], "#ffffff")) },
+          uPelvis: { value: new THREE.Vector3() }, uUp: { value: new THREE.Vector3(0, 1, 0) },
+          uRight: { value: new THREE.Vector3(1, 0, 0) }, uFwd: { value: new THREE.Vector3(0, 0, 1) },
+        };
+        root.traverse((o: any) => {
+          if (!o.isMesh) return;
+          o.castShadow = false; o.frustumCulled = false;
+          if (o.isSkinnedMesh && o.material?.name === "Skin") { o.material = o.material.clone(); o.material.name = "Skin"; dressInKit(THREE, o, U, `garden-kit-pitch${i}`); }
+          if (o.material?.name === "Hair") { o.material = o.material.clone(); o.material.name = "Hair"; o.material.color.set(HAIR[i % 3]); }
+        });
+        mixer = new THREE.AnimationMixer(root);
+        const take = (g: any, from: string, as: string) => { const c = clip(g, from); if (c) { const a = mixer.clipAction(c); a.play(); a.setEffectiveWeight(0); acts[as] = a; } };
+        take(animG, "Idle_Loop", "idle"); take(animG, "Jog_Fwd_Loop", "jog");
+        for (const n of ["pass", "stretch", "cone_dribble"]) take(fbG, n, n);
+      }
+      for (const a of Object.values(acts)) a.setEffectiveWeight(0);
+      const man: PitchMan = { root, mixer, acts, x: 0, z: 0, yaw: 0, role, blob: null };
+      if (role === "passA" || role === "passB") {
+        man.x = PASS_X[role === "passA" ? 0 : 1]; man.z = PASS_Z; man.yaw = role === "passA" ? Math.PI / 2 : -Math.PI / 2;
+        if (acts.pass) acts.pass.timeScale = 0; // its time is set by hand: see the loop
+      } else if (role === "dribble") {
+        man.s = 0.3; man.dir = 1; man.turn = 0; man.z = DRIB.z; man.x = DRIB.x0; man.yaw = Math.PI / 2;
+        man.ball = pitchBall();
+        acts.cone_dribble?.setEffectiveWeight(1);
+      } else if (role === "stretch") {
+        man.x = -14.6; man.z = -15.4; man.yaw = 0.35; // facing out, towards the garden
+        acts.stretch?.setEffectiveWeight(1);
+        if (acts.stretch) acts.stretch.time = 1.7;
+      } else {
+        man.s = lapLen * 0.62;
+        acts.jog?.setEffectiveWeight(1);
+      }
+      if (!acts.pass && role.startsWith("pass")) acts.idle?.setEffectiveWeight(1);
+      if (!acts.cone_dribble && role === "dribble") acts.idle?.setEffectiveWeight(1);
+      if (!acts.stretch && role === "stretch") acts.idle?.setEffectiveWeight(1);
+      root.position.set(man.x, 0, man.z);
+      root.rotation.y = man.yaw;
+      scene.add(root);
+      man.blob = blob(0.85, 0.85, man.x, man.z, 0.55);
+      pitchMen.push(man);
+    });
+    if (pitchMen.some((m) => m.role === "passB")) {
+      const b = pitchBall();
+      pitchMen.forEach((m) => { if (m.role === "passA") m.ball = b; });
+    } else {
+      // only one passer: give him the dribble instead
+      pitchMen.forEach((m) => { if (m.role === "passA") m.root.visible = false; });
+    }
+  })().catch((e: any) => console.error("garden pitch people", e));
+
+  /**
+   * The two passers on one 3.2 s round: A's turn is the first 1.6 s (he
+   * traps at 0.4, passes at 1.25), B's the next. The pass clip is played
+   * from 0.9 s (just before its trap at 1.3) round to its pass at 0.55, so
+   * each touch lands on the clip's own measured moment; the ball takes
+   * 0.75 s between them. Off turn each stands in his idle.
+   */
+  const PASS_ROUND = 3.2, PASS_FLIGHT = 0.75;
+  const stepPitchMen = (dt: number) => {
+    if (!pitchMen.length) return;
+    const g = gameT % PASS_ROUND;
+    const A = pitchMen.find((m) => m.role === "passA"), B = pitchMen.find((m) => m.role === "passB");
+    const ballPt = (m: PitchMan): [number, number] => {
+      const o = pitchInfo.pass?.ball ?? [-0.06, 0.31];
+      const [wx, wz] = ownToWorld(o[0], o[1], m.yaw);
+      return [m.x + wx, m.z + wz];
+    };
+    for (const m of pitchMen) {
+      if (!m.root.visible && m.role === "passA" && !B) continue;
+      if (m.role === "passA" || m.role === "passB") {
+        const u = (m.role === "passA" ? g : g - 1.6 + PASS_ROUND) % PASS_ROUND;
+        const on = u < 1.6;
+        const w = on ? Math.min(1, u / 0.2, (1.6 - u) / 0.25) : 0;
+        if (m.acts.pass) {
+          m.acts.pass.time = (0.9 + Math.min(u, 1.6)) % 1.6;
+          m.acts.pass.setEffectiveWeight(w);
+          m.acts.idle?.setEffectiveWeight(1 - w);
+        }
+      } else if (m.role === "dribble") {
+        // weave through the slalom: between each pair of cones, then turn at the end
+        if (m.turn! > 0) {
+          m.turn! -= dt;
+          const want = m.dir! > 0 ? Math.PI / 2 : -Math.PI / 2;
+          m.yaw += angDiff(m.yaw, want) * Math.min(1, dt * 3.2);
+        } else {
+          m.s! += m.dir! * DRIB.speed * dt;
+          if (m.s! > DRIB.x1 - DRIB.x0 || m.s! < 0) { m.s = Math.max(0, Math.min(DRIB.x1 - DRIB.x0, m.s!)); m.dir = -m.dir!; m.turn = 1.3; }
+          const x = DRIB.x0 + m.s!;
+          const ph = (Math.PI * (x - (-15.45))) / 1.3;
+          const z = DRIB.z + 0.4 * Math.cos(ph);
+          const dzdx = -0.4 * Math.sin(ph) * (Math.PI / 1.3);
+          m.yaw = Math.atan2(m.dir!, m.dir! * dzdx);
+          m.x = x; m.z = z;
+        }
+        // the ball: just ahead of his feet, where the clip's touches put it
+        const tch = pitchInfo.dribble?.touches as [number, string, [number, number, number]][] | undefined;
+        let bx = 0, bz = 0.35;
+        if (tch && tch.length >= 2 && m.acts.cone_dribble) {
+          const per = pitchInfo.dribble.duration || 1.2;
+          const t = m.acts.cone_dribble.time % per;
+          const [a, b] = t >= tch[0][0] && t < tch[1][0] ? [tch[0], tch[1]] : [tch[1], tch[0]];
+          const ta = a[0], tb = b[0] + (b[0] <= ta ? per : 0), tt = t < ta ? t + per : t;
+          const k = (tt - ta) / (tb - ta);
+          bx = a[2][0] + (b[2][0] - a[2][0]) * k;
+          bz = 0.32 + (a[2][2] + (b[2][2] - a[2][2]) * k) * 0.5;
+        }
+        const [ox, oz] = ownToWorld(bx, m.turn! > 0 ? 0.3 : bz, m.yaw);
+        m.ball.position.set(m.x + ox, 0.11, m.z + oz);
+        m.ball.rotation.x += dt * (m.turn! > 0 ? 1 : 8);
+      } else if (m.role === "jog") {
+        m.s! += 3.0 * dt;
+        const [x, z, yw] = lapAt(m.s!);
+        m.x = x; m.z = z; m.yaw = yw;
+        if (m.acts.jog) m.acts.jog.timeScale = newPerson ? 1.0 : 0.95;
+      }
+      m.root.position.set(m.x, 0, m.z);
+      m.root.rotation.y = m.yaw;
+      m.blob.position.set(m.x, 0.012, m.z);
+      const seen = inView(m.x, 0.9, m.z, 1.3);
+      m.root.visible = seen && !(m.role === "passA" && !B);
+      if (seen) m.mixer.update(dt);
+    }
+    // the passers' ball
+    if (A && B && A.ball) {
+      const pa = ballPt(A), pb = ballPt(B);
+      // A traps 0.4, passes 1.25; B traps 2.0, passes 2.85 (0.75 s on the way)
+      let p: [number, number], spin = 0;
+      const roll = (from: [number, number], to: [number, number], t0: number) => {
+        const v = ((g - t0 + PASS_ROUND) % PASS_ROUND) / PASS_FLIGHT;
+        const s = v * (1.35 - 0.35 * v);
+        spin = 10;
+        return [from[0] + (to[0] - from[0]) * s, from[1] + (to[1] - from[1]) * s] as [number, number];
+      };
+      if (g >= 0.4 && g < 1.25) p = pa;
+      else if (g >= 1.25 && g < 2.0) p = roll(pa, pb, 1.25);
+      else if (g >= 2.0 && g < 2.85) p = pb;
+      else p = roll(pb, pa, 2.85);
+      A.ball.position.set(p[0], 0.11, p[1]);
+      A.ball.rotation.z -= dt * spin * (g < 2 ? 1 : -1);
+      A.ball.visible = inView(p[0], 0.11, p[1], 0.3);
+    }
+  };
+
   // ── Input, camera, the loop ──
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
@@ -2128,6 +2342,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (m.upright) m.upright.a.time = 0.45 + 0.12 * Math.sin(gameT * 0.45 + m.upright.phase);
       m.mixer.update(dt);
     }
+
+    stepPitchMen(dt);
 
     // the horse: graze, then amble to somewhere else in the paddock
     if (horse) {

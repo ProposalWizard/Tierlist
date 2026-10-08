@@ -57,6 +57,13 @@ export interface TrainingController {
   play(who: Who, move: Move): void;
   /** Camera: behind the shooter, or following the ball to the goal. */
   setCamera(mode: "behind" | "goal"): void;
+  /**
+   * Run `fn` this many seconds from now on the SCENE's clock (the one the
+   * people and the shown ball move on), not the wall's: on a slow phone the
+   * celebration then still waits for the ball to reach the bar. Held while
+   * the scene is resting (setActive(false)).
+   */
+  after(seconds: number, fn: () => void): void;
   /** Stop drawing while hidden (the engine's own pitch is on screen). */
   setActive(on: boolean): void;
   dispose(): void;
@@ -326,6 +333,10 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       if (!ok) back();
     } else if (s.move === "celebrate" || s.move === "frustrated") {
       const clip = s.move === "celebrate" ? "celebrate_fist" : "frustrated";
+      // the kick ran him on towards the goal, out past the side of the goal
+      // camera: cut to a camera in front of him so the reaction is seen
+      // (anim-stills, 8 Oct: he ended half out of frame on the right)
+      camMode = "react"; reactWho = who; snap = true;
       if (!pl.play(clip, { fade: 0.15, once: true, onEnd: back })) back();
     } else if (s.move === "watch") {
       // waiting his turn: keepy-uppies
@@ -364,13 +375,21 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   };
 
   // ── Camera ──
-  let camMode: "behind" | "goal" = "behind";
+  let camMode: "behind" | "goal" | "react" = "behind";
+  /** Who the "react" camera is on. */
+  let reactWho: Who = "you";
   /** Cut (not glide) to the next camera: a new turn starts on a new shot. */
   let snap = true;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   const camTarget = () => {
     const sx = spotBall.x;
     if (camMode === "goal") return { pos: new THREE.Vector3(sx * 0.4 + 2.6, 2.6, 13.5), look: new THREE.Vector3(0, 1.5, 0) };
+    if (camMode === "react") {
+      // in front of him (he faces the goal), a touch to his right, chest high
+      const s = people[reactWho];
+      const pos = s.at.clone().add(toWorld(-0.9, 4.4, s.yaw)).setY(1.75);
+      return { pos, look: s.at.clone().setY(1.05) };
+    }
     return { pos: new THREE.Vector3(sx * 0.6 - 2.4, 2.4, SPOT.z + 7.5), look: new THREE.Vector3(sx * 0.6, 0.9, SPOT.z - 1) };
   };
   { const t = camTarget(); camPos.copy(t.pos); camLook.copy(t.look); }
@@ -392,6 +411,8 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   let last = performance.now();
   /** Scene time (ms), advanced by the same clamped steps as the people: the engine's ball is timed on it, so a slow phone keeps foot and ball together. */
   let clock = 0;
+  /** after(): callbacks waiting on the scene clock (ms). */
+  let timers: { at: number; fn: () => void }[] = [];
   const feed: { t: number; v: any }[] = [];
   /** The last engine step shown before the current one, to carry the ball on once the engine stops. */
   const shown: { t: number; v: any }[] = [];
@@ -434,6 +455,10 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       s.p.mixer.update(dt);
     }
     placeJuggle();
+    if (timers.length) {
+      const due = timers.filter((x) => x.at <= clock);
+      if (due.length) { timers = timers.filter((x) => x.at > clock); due.forEach((x) => x.fn()); }
+    }
     // the ball: the engine's own steps, shown from the moment the 3D foot reaches it
     if (feed.length) {
       const showAt = clock - contactS * 1000;
@@ -487,6 +512,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       const a = s.p.actions[clip];
       if (a) { a.time = t; a.paused = true; }
       if (cam) { camMode = cam; snap = true; }
+      else if (clip === "celebrate_fist" || clip === "frustrated") { camMode = "react"; reactWho = who; snap = true; }
       if (who === shooter && clip.startsWith("kick")) { feed.length = 0; loose = null; placeBall(spotBall.clone().setY(0.11)); }
       else if (who === shooter) {
         // stand him where the kick leaves him
@@ -536,6 +562,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       applyMove(who);
     },
     setCamera(mode) { camMode = mode; },
+    after(seconds, fn) { timers.push({ at: clock + seconds * 1000, fn }); },
     setActive(on) {
       if (on === active) return;
       active = on;
@@ -545,6 +572,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);
+      timers = [];
       release(root);
     },
   };
