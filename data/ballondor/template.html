@@ -1,0 +1,156 @@
+<title>Ballon d'Or Winners File</title>
+<style>
+/* Layout: one column of year cards, newest first, a filter bar on top. Gold for the award, ink for text. */
+:root{
+  --bg:#f6f5f1;--card:#ffffff;--card2:#efede6;--line:#dedad0;
+  --ink:#16140f;--ink2:#4c473b;--ink3:#7a7464;
+  --gold:#a8790c;--goldbg:#f6ead0;--blue:#1d5fa8;--green:#1f8a4c;--red:#b33a2e;--violet:#6a43b8;
+  --r:12px;
+  --disp:"Fraunces",Georgia,serif;--body:"Inter Tight",-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12110d;--card:#1b1a15;--card2:#24221b;--line:#33302566;
+  --ink:#f3efe4;--ink2:#c3bca8;--ink3:#8d8673;
+  --gold:#e3b54a;--goldbg:#3a2f14;--blue:#79b0f0;--green:#5fd18f;--red:#ee8076;--violet:#b49cf0;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12110d;--card:#1b1a15;--card2:#24221b;--line:#33302566;
+  --ink:#f3efe4;--ink2:#c3bca8;--ink3:#8d8673;
+  --gold:#e3b54a;--goldbg:#3a2f14;--blue:#79b0f0;--green:#5fd18f;--red:#ee8076;--violet:#b49cf0;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:28px 70px}
+.eyebrow{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+h1{font-family:var(--disp);font-weight:600;font-size:clamp(30px,8vw,46px);line-height:1.05;margin:8px 0 8px;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--ink3);font-size:13.5px;margin:0 0 22px;max-width:62ch}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:0 0 26px}
+.s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px}
+.s b{display:block;font-family:var(--disp);font-size:28px;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.s span{display:block;font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.35}
+h2{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:30px 0 10px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;background:var(--gold)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px}
+.box p{margin:0 0 6px}
+.cov{width:100%;border-collapse:collapse;font-size:13.5px}
+.cov td{padding:7px 4px;border-top:1px solid var(--line);vertical-align:top}
+.cov td:last-child{text-align:right;white-space:nowrap;font-weight:700}
+.ok{color:var(--green)}.no{color:var(--red)}.half{color:var(--gold)}
+.bar{height:8px;border-radius:99px;background:var(--card2);overflow:hidden;margin:4px 0 2px}
+.bar i{display:block;height:100%;background:var(--gold)}
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;flex-direction:column;gap:8px}
+#q{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+#q:focus-visible,.chip:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12.5px var(--body);padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink2);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--bg)}
+#count{font-size:12px;color:var(--ink3)}
+.list{display:flex;flex-direction:column;gap:7px}
+.yr{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.yr>summary{list-style:none;cursor:pointer;display:flex;gap:14px;align-items:center;padding:11px 14px}
+.yr>summary::-webkit-details-marker{display:none}
+.yr>summary::after{content:"+";margin-left:auto;color:var(--ink3);font-size:18px}
+.yr[open]>summary::after{content:"–"}
+.y{font-family:var(--disp);font-size:22px;color:var(--gold);font-variant-numeric:tabular-nums;min-width:52px}
+.who{min-width:0;display:flex;flex-direction:column}
+.who b{font-size:16px}
+.who small{color:var(--ink3);font-size:12.5px}
+.gap{opacity:.7}.gap>summary::after{content:""}
+.body{padding:2px 14px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;min-width:0}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.tag{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--card2);color:var(--ink2)}
+.tag.cl{color:var(--blue)}.tag.wc{color:var(--green)}.tag.no{color:var(--red)}.tag.st{color:var(--violet)}
+.lab{margin:10px 0 0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--ink3)}
+.pod{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.pod li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:14px}
+.pl{font-variant-numeric:tabular-nums;font-weight:800;color:var(--gold);min-width:20px}
+.pn{font-weight:600}.pc{color:var(--ink3);font-size:12.5px}
+.facts,.hon{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.hon{list-style:none;padding:0;flex-direction:row;flex-wrap:wrap;gap:5px}
+.hon li{background:var(--card2);border-radius:8px;padding:3px 8px;font-size:12.5px}
+.hon b{color:var(--gold)}
+.stat{margin:0;font-weight:700;background:var(--goldbg);border-radius:8px;padding:7px 10px}
+.none{margin:0;color:var(--ink3);font-style:italic}
+.prof{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:0}
+.prof div{background:var(--card2);border-radius:8px;padding:6px 9px}
+.prof dt{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.prof dd{margin:0;font-weight:600;font-size:13.5px}
+.in{margin-top:4px}
+.in>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink2)}
+.bio{font-size:13.5px;color:var(--ink2);margin:6px 0 0}
+.src{font-size:12.5px;color:var(--blue);margin-top:8px}
+details.tog{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-top:8px}
+details.tog>summary{cursor:pointer;font-weight:700}
+details.tog ul{padding-left:18px;margin:8px 0 2px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.yr{transition:border-color .15s}.yr:hover{border-color:var(--gold)}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter+Tight:wght@400;600;700;800&display=swap">
+
+<div class="wrap">
+<div class="eyebrow">Men's Ballon d'Or · 1956–2025</div>
+<h1>Every winner, as ballondor.com tells it</h1>
+<p class="sub">Every fact here comes from ballondor.com only: the winners page, the year rankings, the player pages and about 155 of its articles. Nothing is added from memory. Where the site is silent, the card says so.</p>
+
+<div class="strip">
+<div class="s"><b>69</b><span>awards, 1956–2025 (none in 2020)</span></div>
+<div class="s"><b>47</b><span>different winners</span></div>
+<div class="s"><b>21</b><span>also won the European Cup / Champions League</span></div>
+<div class="s"><b>7</b><span>winning seasons with real stats on the site</span></div>
+</div>
+
+<h2><i></i>What the site has</h2>
+<div class="box">
+<table class="cov">
+<tr><td>Winner, club and country for every year</td><td class="ok">✓ 69 of 69</td></tr>
+<tr><td>2nd and 3rd place, and the full ranking</td><td class="ok">✓ 69 of 69</td></tr>
+<tr><td>Points totals</td><td class="half">only in some articles</td></tr>
+<tr><td>Trophies won in the winning year</td><td class="half">from articles, most years</td></tr>
+<tr><td>Winning-season stats (games, goals, assists)</td><td class="no">✗ 7 of 69, 3 of them full</td></tr>
+</table>
+<div class="bar" aria-hidden="true"><i style="width:10.1%"></i></div>
+<p style="font-size:12.5px;color:var(--ink3);margin:2px 0 0">Gold bar: years with any winning-season stats, 7 of 69. Player pages only show the 2025-26 season (current players) or career totals (retired players).</p>
+</div>
+
+<h2><i></i>The years</h2>
+<div class="filters">
+<input id="q" type="search" placeholder="Search a name, club, country or year" aria-label="Search">
+<div class="chips" id="chips">
+<button class="chip" data-f="all" aria-pressed="true">All</button>
+<button class="chip" data-f="cl" aria-pressed="false">Champions League</button>
+<button class="chip" data-f="wc" aria-pressed="false">World Cup</button>
+<button class="chip" data-f="st" aria-pressed="false">Has season stats</button>
+<button class="chip" data-f="no" aria-pressed="false">No trophy</button>
+</div>
+<span id="count"></span>
+</div>
+<div class="list" id="list">
+<!--CARDS-->
+</div>
+
+<h2><i></i>Where the site disagrees with itself</h2>
+<div class="box"><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px">
+<li><b>1994:</b> the Stoichkov article says he "narrowly beat" his rival. The 1994 points in another article are 210 for Stoichkov and 136 for Roberto Baggio.</li>
+<li><b>2019:</b> the closest-margins article puts Messi 686, Van Dijk 679 "two years earlier" than 2022. The figures sit in its 2019 section.</li>
+<li><b>2025:</b> Dembélé's goals: 37 in the France Football interview box, 35 in the "13 players" article.</li>
+<li><b>Dembélé's year:</b> one article says he was "crowned the 2026 men's champion". Every ranking page shows 2025.</li>
+</ul></div>
+
+<details class="tog"><summary>How this was put together</summary>
+<ul>
+<li>Opened ballondor.com/winners in a real browser (the site blocks plain downloads).</li>
+<li>Read the ranking page for every year, 1956–2025.</li>
+<li>Read all 47 winners' player pages.</li>
+<li>Read about 155 articles from the site's article lists, and kept only facts about a winner's own award year.</li>
+<li>Points, ages and records appear only where an article states them.</li>
+</ul></details>
+</div>
+
+<script>
+(function(){
+  var q=document.getElementById('q'),chips=document.querySelectorAll('.chip'),cards=[].slice.call(document.querySelectorAll('#list>.yr')),cnt=document.getElementById('count'),f='all';
+  function run(){var t=q.value.trim().toLowerCase(),n=0;
+    cards.forEach(function(c){var ok=(!t||c.dataset.q.indexOf(t)>-1)&&(f==='all'||c.querySelector('.tag.'+f));c.hidden=!ok;if(ok)n++;});
+    cnt.textContent=n+' of '+cards.length+' years shown';}
+  q.addEventListener('input',run);
+  chips.forEach(function(b){b.addEventListener('click',function(){f=b.dataset.f;chips.forEach(function(x){x.setAttribute('aria-pressed',x===b)});run();});});
+  run();
+})();
+</script>

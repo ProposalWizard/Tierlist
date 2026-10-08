@@ -176,6 +176,12 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Ballon d'Or winners data (Mikey, 8 Oct 2026)
+
+Every men's winner 1956–2025, from ballondor.com only, for a future game
+mode: `data/ballondor/` (read its README). Page:
+https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
+
 ## The garden is 3D, and joined to the 3D shop (Mikey, 3 Oct 2026)
 
 From his recording: *"make this garden area also a 3D area … you will be the
