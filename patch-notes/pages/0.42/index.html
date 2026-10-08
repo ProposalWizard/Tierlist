@@ -1,0 +1,505 @@
+<title>Knowitball v0.42</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3d5249;--ink3:#667b71;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:700px;margin:0 auto;padding:0 16px 80px}
+  p{margin:0 0 10px}
+  header{padding:36px 0 8px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,38px);line-height:1.08;margin:12px 0 10px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink2);font-size:15px;margin:0 0 8px}
+  .legend{font-size:13px;color:var(--ink3);margin:10px 0 0}
+  .legend span{display:block;margin:4px 0}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:46px 0 14px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .c-g{color:var(--green)} .c-g i{background:var(--green)}
+  .c-b{color:var(--blue)} .c-b i{background:var(--blue)}
+  .c-v{color:var(--violet)} .c-v i{background:var(--violet)}
+  .c-a{color:var(--amber)} .c-a i{background:var(--amber)}
+  .c-t{color:var(--teal)} .c-t i{background:var(--teal)}
+  .c-m{color:var(--ink3)} .c-m i{background:var(--ink3)}
+  .c-r{color:var(--red)} .c-r i{background:var(--red)}
+
+  /* the one-line-per-item checklist */
+  ul.look{list-style:none;margin:0;padding:0}
+  ul.look li{border-bottom:1px solid var(--line);padding:10px 0}
+  ul.look li:last-child{border-bottom:0}
+  ul.look label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  ul.look input{margin:4px 0 0;width:18px;height:18px;flex:0 0 auto;accent-color:var(--green)}
+  ul.look .t{font-weight:700}
+  ul.look .t a{color:inherit;text-decoration:none}
+  ul.look .w{display:block;font-size:13px;color:var(--ink3);font-weight:400;margin-top:2px}
+
+  /* big numbers */
+  .nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 6px}
+  .nums div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .nums b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .nums span{display:block;font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.35}
+
+  /* an item */
+  article.it{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 12px;margin:16px 0;scroll-margin-top:12px}
+  .it-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .no{font-size:12px;font-weight:800;color:var(--ink3);letter-spacing:.06em;margin-right:4px}
+  article.it h3{font-size:19px;line-height:1.25;margin:8px 0 4px;letter-spacing:-.01em;text-wrap:balance}
+  .blk{margin:16px 0 0}
+  .blk h4{margin:0 0 4px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .blk p,.blk li{color:var(--ink2)}
+  .blk b{color:var(--ink)}
+  .blk ul,.blk ol{margin:0 0 10px;padding-left:20px}
+  .blk li{margin:4px 0}
+  .said p{color:var(--ink);font-style:italic}
+  .ask{border-left:3px solid var(--amber);padding-left:12px}
+  ul.opts{list-style:none;padding-left:0!important;margin:4px 0 8px}
+  ul.opts li{margin:0 0 8px;padding-left:28px;text-indent:-28px}
+  ul.opts li b{display:inline-block;width:28px;text-indent:0}
+  p.rec{font-weight:700}
+  .ask h4{color:var(--amber)}
+  .how{display:block;font-size:12.5px;color:var(--ink3);margin-top:6px}
+  .how b{font-weight:700;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:999px;line-height:1.4;white-space:nowrap}
+  .p-ok{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+  .p-chg{background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+  .p-deep{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+  .p-new{background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal)}
+  .p-exp{background:color-mix(in srgb,var(--teal) 12%,transparent);color:var(--teal)}
+  .p-park{background:var(--card2);color:var(--ink3)}
+  .p-core{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
+  .p-wait{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+
+  /* pictures and clips: pairs side by side, everything else full width */
+  .media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:6px 0 4px}
+  .media.one{grid-template-columns:minmax(0,1fr)}
+  figure{margin:0}
+  figure img,figure video{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#05070d}
+  figure a{display:block}
+  figcaption{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.4}
+  figcaption b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+  .tag.b{color:var(--ink3)} .tag.a{color:var(--green)}
+
+  .tbl{overflow-x:auto;margin:4px 0 8px}
+  .tbl table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+  .tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .tbl th{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .tbl td:not(:first-child),.tbl th:not(:first-child){text-align:right;white-space:nowrap}
+  @media (max-width:480px){.tbl table{font-size:13px}.tbl th,.tbl td{padding:6px 5px}.tbl td:not(:first-child),.tbl th:not(:first-child){white-space:normal}}
+
+  /* stacked steps */
+  ol.steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  ol.steps>li{counter-increment:st;padding:12px 0 12px 38px;border-bottom:1px solid var(--line);position:relative}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li::before{content:counter(st);position:absolute;left:0;top:12px;width:26px;height:26px;border-radius:50%;
+    background:var(--teal);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}
+  :root:not([data-theme="light"]) ol.steps>li::before{color:#041b1e}
+  ol.steps .hd{display:block;font-weight:700;color:var(--ink)}
+  ol.steps p{margin:4px 0 0;color:var(--ink2)}
+
+  .box{border:2px solid var(--red);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .box .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
+  .box h3{font-size:20px;margin:4px 0 10px}
+  .hl{border:2px solid var(--green);border-radius:calc(var(--r) + 2px);padding:16px;margin:18px 0}
+  .hl .kick{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+  .hl h3{font-size:20px;margin:4px 0 10px}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:12px 0;font-size:14px;font-weight:700;color:var(--ink2);display:flex;gap:8px;align-items:baseline}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";color:var(--ink3);transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+  footer{margin-top:40px;font-size:13px;color:var(--ink3)}
+</style>
+<style>
+  .status{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;margin-left:6px;
+    background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);padding:4px 10px;border-radius:999px}
+  .strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 8px}
+  @media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .strip div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .strip b{display:block;font-size:clamp(19px,5vw,24px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .strip span{display:block;font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.35}
+  .bars{margin:8px 0 4px}
+  .bar{display:grid;grid-template-columns:minmax(84px,120px) minmax(0,1fr) auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  :root:not([data-theme="light"]) .fill.was{background:color-mix(in srgb,var(--ink3) 45%,transparent)}
+  :root[data-theme="light"] .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.warn{background:var(--amber)} .fill.now.bad{background:var(--red)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.85;margin-left:3px}
+  .bcap{font-size:12.5px;color:var(--ink3);margin:2px 0 6px}
+  .it p.one{color:var(--ink2);margin:2px 0 0;font-size:15px}
+  .pwf{margin:12px 0 0}
+  .pwf h4{margin:10px 0 2px;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf h4.fx{color:var(--green)} .pwf h4.st{color:var(--amber)}
+  .pwf p{margin:0;color:var(--ink2)}
+  .sub-h{font-size:17px;font-weight:800;margin:30px 0 4px;letter-spacing:-.01em}
+  .hl .mean{background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:14px}
+  .hl .mean b{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+  .p-dec{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+  .p-bug{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+  .p-plan{background:var(--card2);color:var(--ink3)}
+  ul.look .tag2{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:4px}
+  ol.dec{list-style:none;margin:0;padding:0}
+  .dec article.it{border-left:3px solid var(--amber)}
+  ul.hist{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.hist li{margin:4px 0}
+  ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)} ul.plain li{margin:3px 0}
+  ul.ts{list-style:none;margin:8px 0 0;padding:0}
+  ul.ts li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14.5px}
+  ul.ts li:last-child{border-bottom:0}
+  ul.ts b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .tbl td:first-child{white-space:normal}
+  figure video{max-height:78vh;object-fit:contain}
+  .media.one figure img{width:auto;max-width:100%;max-height:82vh;margin:0 auto}
+  code{font-size:12.5px;background:var(--card2);padding:1px 5px;border-radius:5px;word-break:break-word}
+</style><style>
+.area{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 15px;margin:14px 0}
+.area h3{margin:0 0 4px;font-size:18px}
+.st{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.st.done{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.st.wip{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.st.dec{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+.chg{list-style:none;margin:8px 0 0;padding:0}
+.chg>li{padding:9px 0;border-bottom:1px solid var(--line)} .chg>li:last-child{border-bottom:0}
+.chg b.t{display:block;color:var(--ink)} .chg .w{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.chg .ev{display:inline-block;font:700 10.5px/1 system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 2px}
+.ba figure{margin:0} .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+.ba figcaption{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.ba .lab{display:inline-block;font:800 10px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:5px;margin-bottom:4px}
+.lab.b{background:var(--card2);color:var(--ink3)} .lab.a{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.solo{margin:10px 0} .solo img{max-width:100%;border-radius:8px;border:1px solid var(--line)}
+.note{border-left:3px solid var(--line);padding:6px 0 6px 11px;margin:9px 0}
+.note.bug{border-color:var(--red)} .note.chg2{border-color:var(--amber)} .note.like{border-color:var(--green)} .note.q{border-color:var(--blue)}
+.note q{display:block;color:var(--ink);font-style:normal} .note small{color:var(--ink3)}
+.note .tb{font:800 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-left:6px}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.toc a{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card2);color:var(--ink);text-decoration:none}
+.dq{border:1px solid color-mix(in srgb,var(--amber) 45%,var(--line));border-radius:12px;padding:11px 13px;margin:10px 0;background:color-mix(in srgb,var(--amber) 6%,var(--card))}
+.dq b{color:var(--ink)} .dq span{display:block;color:var(--ink2);font-size:13.5px;margin-top:3px}
+/* change cards: one clip at a time on a phone, both side by side when wide */
+body{font-size:16px}
+.cx{border-top:1px solid var(--line);padding:18px 0 6px;margin-top:6px}
+.cx:first-of-type{border-top:0}
+.cxh{display:flex;gap:10px;align-items:baseline}
+.cxh .n{flex:none;font:800 13px/1 system-ui,sans-serif;color:var(--ink3);font-variant-numeric:tabular-nums}
+.cxh h4{margin:0;font-size:17.5px;line-height:1.3;color:var(--ink);text-wrap:balance}
+.cx .w{margin:6px 0 0;color:var(--ink2);font-size:15.5px;line-height:1.5}
+.cx .look{margin:8px 0 0;font-size:15px;color:var(--ink);background:var(--card2);border-radius:10px;padding:9px 12px}
+.cx .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.cx .ev{font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-left:auto;white-space:nowrap}
+.seg{display:flex;gap:6px;margin:12px 0 8px}
+.seg button{flex:1;font:800 14px/1 system-ui,sans-serif;padding:11px 0;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);cursor:pointer}
+.seg button.on[data-s="before"]{background:var(--ink3);border-color:var(--ink3);color:var(--bg)}
+.seg button.on[data-s="after"]{background:var(--green);border-color:var(--green);color:#06170e}
+.panes{display:grid;gap:14px}
+.pane[hidden]{display:none!important}
+.pane .lab{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px}
+.pane.before .lab{background:var(--card2);color:var(--ink2)} .pane.after .lab{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.pane video,.pane img.still{display:block;width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+.spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+.spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+.spd button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.spd a{margin-left:auto;color:var(--ink2)}
+.pane .pnote{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+.cx .w2{margin:0;color:var(--ink2);font-size:15px;line-height:1.5} .cx .evs{color:var(--ink3);font-size:13px}
+.cx details{margin-top:10px}
+.pics{display:grid;gap:10px;margin-top:10px}
+.pics img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block}
+@media (min-width:760px){.seg{display:none}.panes{grid-template-columns:repeat(2,minmax(0,1fr))}.pane[hidden]{display:block!important}}
+</style><style>
+.dq .df{display:block;margin-top:5px;color:var(--ink);font-weight:700;font-size:14px}
+.dq .df i{font-style:normal;color:var(--green);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.dq .nn{color:var(--ink3);margin-right:6px;font-variant-numeric:tabular-nums}
+.shopstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:12px 0 4px}
+.shopstrip .fl{grid-column:1/-1;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-top:6px}
+.shopstrip a{display:block;min-width:0}
+.shopstrip img{display:block;width:100%;height:auto;border-radius:6px;background:var(--card2)}
+.strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* evidence tag + Problem / Why / Fix rows */
+.evt{margin-left:auto;flex:none;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap;align-self:center}
+.evt.seen{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.evt.meas{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.evt.reas{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.evt.nf{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
+.cxh{flex-wrap:wrap}
+.pwf{margin:10px 0 0}
+.pwf h5{margin:0 0 2px;font:800 11px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.pwf h5.fx{color:var(--green)}
+.pwf p{margin:0;font-size:15px;line-height:1.5;color:var(--ink2)}
+.pwf p.q{color:var(--ink);border-left:3px solid var(--amber);padding-left:10px}
+.pwf p.q small{color:var(--ink3);font-size:12px;margin-left:4px}
+.pwf p.fixl{color:var(--ink);font-weight:700}
+.pane .pnote{margin:8px 0 0}
+.cx .pstill{display:block;margin-top:10px}
+/* headline block */
+.hl{border:2px solid var(--green);border-radius:16px;padding:16px 16px 12px;margin:20px 0;background:var(--card)}
+.hl h2{margin:0 0 6px}
+.hl .tag{display:inline-block;font:800 11px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#06170e;background:var(--green);padding:5px 9px;border-radius:999px;margin-bottom:8px}
+.hl .mean{background:var(--card2);border-radius:10px;padding:10px 12px;margin:12px 0 4px;font-size:15px}
+.hl .mean b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+/* check these */
+ul.ck{list-style:none;margin:8px 0 0;padding:0}
+ul.ck li{border-bottom:1px solid var(--line)} ul.ck li:last-child{border-bottom:0}
+ul.ck label{display:flex;gap:11px;align-items:flex-start;padding:9px 0;cursor:pointer}
+ul.ck input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--green)}
+ul.ck span b{display:block;color:var(--ink);font-size:15px;line-height:1.3}
+ul.ck span small{display:block;color:var(--ink3);font-size:12.5px;margin-top:1px}
+ul.ck input:checked + span b{color:var(--ink3);text-decoration:line-through}
+.ckh{margin:14px 0 0;font:800 11.5px/1 system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+/* number bars */
+.bars{margin:10px 0 4px}
+.bars .br{margin:10px 0}
+.bars .br>b{display:block;font-size:14px;color:var(--ink);margin-bottom:4px}
+.bars .tr{display:flex;align-items:center;gap:8px;margin:3px 0}
+.bars .tr .bw{flex:1;position:relative;height:16px;background:var(--card2);border-radius:5px;overflow:hidden}
+.bars .tr .bw i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.bars .tr i.o{background:var(--ink3);opacity:.55} .bars .tr i.n{background:var(--green)} .bars .tr i.n.am{background:var(--amber)}
+.bars .tr em{flex:none;width:74px;font:700 12px/16px system-ui,sans-serif;font-style:normal;color:var(--ink2)}
+.bars .lg{font-size:12.5px;color:var(--ink3)}
+/* still working */
+.sw{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--card)}
+.sw .top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sw .top b{font-size:16px;color:var(--ink)}
+.sw p{margin:4px 0 0;color:var(--ink2);font-size:15px}
+.sp{font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.sp.b{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.sp.r{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+.sp.a{background:var(--card2);color:var(--ink3)}
+.lane{border-left:4px solid var(--green);padding:6px 0 6px 12px;margin:10px 0}
+.lane.w{border-color:var(--amber)}
+.lane b{color:var(--ink)} .lane p{margin:3px 0 0;font-size:14.5px;color:var(--ink2)}
+.lane code,.mono{font:12.5px/1.45 ui-monospace,Menlo,monospace;color:var(--ink3);word-break:break-word}
+.later{border:1px dashed color-mix(in srgb,var(--red) 45%,var(--line));border-radius:12px;padding:6px 14px 10px;margin:14px 0}
+.nb{margin:18px 0;padding:11px 14px;border-radius:12px;background:var(--card2);color:var(--ink2);font-size:15px}
+.nb b{color:var(--ink)}
+</style>
+<style>
+.c-d{color:var(--amber)} .c-d i{background:var(--amber)}
+.c-o{color:var(--red)} .c-o i{background:var(--red)}
+.hb{border-top:1px solid var(--line);padding:14px 0 2px;margin-top:10px}
+.hb:first-of-type{border-top:0}
+.hb h3{font-size:18px;line-height:1.3;margin:0 0 4px;text-wrap:balance}
+.hb .more{margin:8px 0 0;font-size:14px}
+.hb .more a,.sub a,.sw a,details a,.cx .w2 a{color:var(--blue)}
+.cxh h4{flex:1 1 60%;min-width:0}
+.cx.slot{border:1px dashed color-mix(in srgb,var(--red) 50%,var(--line));border-radius:14px;padding:14px 14px 8px;margin:14px 0;background:color-mix(in srgb,var(--red) 3%,transparent)}
+.slotb{margin:8px 0 0;font-size:13px;color:var(--red)}
+.tbd{margin:0;font-size:15px;color:var(--ink3);font-style:italic}
+ul.plain.fl{margin-top:4px}
+.wt{font:800 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-left:6px;white-space:nowrap}
+.pstill{margin:12px 0 0}
+.pstill img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+.pstill figcaption{font-size:13px;color:var(--ink3);margin-top:6px}
+.pwf ul.plain{margin:2px 0 0}
+.slot-line{margin:12px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:12px;color:var(--ink3);font-size:14px}
+#draft-banner{margin:14px 0 0;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--ink);font-size:14px;border:1px solid color-mix(in srgb,var(--red) 40%,var(--line))}
+.cx .w2{margin-top:8px}
+</style><style>.media.one-up{grid-template-columns:minmax(0,1fr)} .hl h3 a{color:var(--green)}</style><style>.media.one-up{grid-template-columns:minmax(0,1fr)} .hl h3 a{color:var(--green)}
+.tw{overflow-x:auto;margin:.6rem 0}.tw table{min-width:280px}
+.clip{margin:.8rem 0}.clip video{width:100%;max-width:420px;display:block;border-radius:10px;background:#000}
+.clip.pending{border:1px dashed var(--line);border-radius:10px;padding:.2rem .7rem}
+.spd{display:flex;gap:.4rem;align-items:center;margin:.4rem 0;font-size:12px}
+.spd button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;padding:.15rem .55rem;font:inherit;cursor:pointer}
+.spd button.on{background:var(--green);color:#04130a;border-color:var(--green)}
+.cap{font-size:13px;margin:.2rem 0 0}
+.bars{margin:.7rem 0;display:grid;gap:.45rem}.bar{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:.5rem;align-items:center;font-size:12.5px}
+.bt{position:relative;height:12px;border-radius:6px;background:rgba(127,127,127,.15);overflow:hidden}.bt i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}.bt i+i{top:3px;bottom:3px}
+.bn{font-variant-numeric:tabular-nums;white-space:nowrap}.bn s{opacity:.6;margin-right:.25rem}
+.find{border:2px solid var(--amber);border-radius:12px;padding:.4rem .9rem;margin:1rem 0}</style><style>.media.one-up{grid-template-columns:minmax(0,1fr);max-width:320px}
+.tw{overflow-x:auto;margin:.6rem 0}.tw table{min-width:260px}
+.bars{margin:.7rem 0;display:grid;gap:.45rem}.bar{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:.5rem;align-items:center;font-size:12.5px}
+.bt{position:relative;height:12px;border-radius:6px;background:rgba(127,127,127,.15);overflow:hidden}.bt i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}.bt i+i{top:3px;bottom:3px}
+.bn{font-variant-numeric:tabular-nums;white-space:nowrap;width:6.5em;text-align:right}.bn s{opacity:.6;margin-right:.25rem}
+.find{border:2px solid var(--amber);border-radius:12px;padding:.4rem .9rem;margin:1rem 0}
+.clip{margin:.8rem 0}.clip video{width:100%;max-width:340px;display:block;border-radius:10px;background:#000}
+.spd{display:flex;gap:.4rem;align-items:center;margin:.4rem 0;font-size:12px}
+.spd button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;padding:.15rem .55rem;font:inherit;cursor:pointer}
+.spd button.on{background:var(--green);color:#04130a;border-color:var(--green)}
+.cap{font-size:13px;margin:.2rem 0 0}</style><style>
+.bn{width:auto!important;min-width:6em;text-align:right}
+.bar{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto}
+.find{border:2px solid var(--green)}
+.cx2{margin:16px 0}
+.sec-note{font-size:14px;color:var(--ink2);margin:0 0 10px}
+.media.one-up{max-width:340px}
+.media.one-wide figure img{width:100%}
+</style><div class="wrap"><header><span class="ver">Knowitball v0.42</span><span class="status">Live on the site today · three SQL files for Mikey to run</span><h1>Knowitball v0.42: a 3D casino and training pitch, a rebuilt Settings, cheat locks</h1><p class="sub">8 Oct 2026. Harry's track, built after v0.34. Stills only. Merged on branch Harry. Every item says if it was seen, measured or only reasoned.</p><p class="sub"><b>Number note:</b> Harry's notes called this "v0.35". The site already has Leo's v0.35 to v0.39 and Mikey's v0.37, v0.40 and v0.41, so this page takes the next free site number, 0.42.</p></header>
+
+<div class="strip"><div><b>2 new 3D places</b><span>a casino with 6 games and a training pitch, in the garden</span></div><div><b>4,025 → 931 px</b><span>Settings height in a career (5 screens → 1)</span></div><div><b>47% → 0%</b><span>of horse race cards with a horse that paid back more than you staked</span></div><div><b>20 → 1 tap</b><span>look switches set at once by the new version picker</span></div></div>
+
+<div class="box" id="mikey"><div class="kick">For Mikey: do these in order</div><h3>Supabase SQL Editor, then Vercel</h3><ol class="steps">
+<li><span class="hd">1. Run star_hall_of_fame.sql</span><p>Now with a 30-career cap. Safe to re-run. Verify queries at the bottom. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/star_hall_of_fame.sql" target="_blank" rel="noopener">Open the file</a></p></li>
+<li><span class="hd">2. Run star_legend_shares.sql</span><p>Copies the career from the Hall, 30 shares at most. Safe to re-run. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/star_legend_shares.sql" target="_blank" rel="noopener">Open the file</a></p></li>
+<li><span class="hd">3. Run xp_atomic_award.sql (optional)</span><p>Makes each XP reward pay once. Safe to re-run. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/xp_atomic_award.sql" target="_blank" rel="noopener">Open the file</a></p></li>
+<li><span class="hd">DO NOT run star_casino.sql</span><p>The server casino is switched off (item 6). Leave the file alone.</p></li>
+<li><span class="hd">About 14 Oct: read a week of save-guard flags</span><p>Use the false-alarm query. If it is clean, set <code>STAR_SAVE_GUARD=enforce</code> in Vercel.</p></li>
+<li><span class="hd">Still pending from before (no change)</span><p>draft_records_full_fix.sql (Career Records fail without it), fc27_clone_lower_leagues.sql, sofifa_search_indexes.sql, perf_indexes_jul2026.sql, fix_two_digit_fifa_years.sql.</p></li></ol></div>
+
+<h2 id="headline" class="c-g"><i></i>The headline: the 3D world grew a casino and a training pitch</h2>
+<article class="it find" id="casino"><div class="it-top"><span class="pill p-new">Added</span><span class="pill p-core">live on the site</span><span class="pill p-wait">not seen on a phone</span></div>
+<h3>Walk into a 3D casino from the garden, and play each game at its own station</h3>
+<div class="blk"><h4>Problem</h4><p>The casino was a flat menu. The 3D garden had no place for it, and no place to train.</p></div>
+<div class="blk"><h4>Why</h4><p>The garden and shop were the only 3D places. Everything else was a screen.</p></div>
+<div class="blk"><h4>Fix</h4><ul>
+<li><b>The casino is at the back right of the garden.</b> It has a neon front and a red carpet.</li>
+<li><b>Inside:</b> a roulette table, a blackjack table, 4 slot machines, a horse-racing screen, a betting counter and a Goalie Mode arcade cabinet.</li>
+<li><b>Walk up to a station to open its game.</b> Close the game and you are back in the room.</li>
+<li><b>Doors lead back to the garden.</b></li>
+<li><b>Settings → Look → Casino: 3D | Classic.</b> Default is 3D. Home → Casino goes to the 3D room.</li>
+<li><b>The training pitch is at the back left.</b> It has a fence, floodlights and a TRAINING gate (next item).</li></ul></div>
+<div class="media"><figure><a href="img/garden-overview.jpg" target="_blank"><img src="img/garden-overview.jpg" alt="the garden from above with the casino back right and the pitch back left." loading="lazy"></a><figcaption><b>Look for:</b> casino back right, training pitch back left.</figcaption></figure><figure><a href="img/garden-casino-front.jpg" target="_blank"><img src="img/garden-casino-front.jpg" alt="the casino front with neon and a red carpet." loading="lazy"></a><figcaption><b>Look for:</b> the neon front and the red carpet.</figcaption></figure></div>
+<div class="media"><figure><a href="img/casino-room.jpg" target="_blank"><img src="img/casino-room.jpg" alt="inside the casino: tables, slots and the screens." loading="lazy"></a><figcaption><b>Look for:</b> the room with its tables and machines.</figcaption></figure><figure><a href="img/casino-roulette-game.jpg" target="_blank"><img src="img/casino-roulette-game.jpg" alt="roulette open from the table." loading="lazy"></a><figcaption><b>Look for:</b> roulette opened from its table.</figcaption></figure></div>
+<div class="blk"><h4>What this means for you</h4><div class="hl" style="margin:6px 0 0;padding:12px"><p style="margin:0">You walk to a game instead of picking it from a list. The Classic casino is still there: set Casino to Classic in Settings.</p></div></div>
+<span class="how"><b>How we know:</b> <b>seen</b>: the stills above, in a desktop browser. <b>Not seen</b> on a phone.</span></article>
+
+<article class="it" id="pitch"><div class="it-top"><span class="pill p-new">Added</span><span class="pill p-core">live on the site</span><span class="pill p-wait">not seen on a phone</span></div>
+<h3>A training pitch with a gate, in the back left of the garden</h3>
+<ul class="plain"><li>A fence, floodlights and a TRAINING gate. The gate opens the Crossbar challenge (below).</li></ul>
+<div class="media one-up"><figure><a href="img/garden-training-pitch.jpg" target="_blank"><img src="img/garden-training-pitch.jpg" alt="the pitch with its fence, floodlights and the TRAINING gate." loading="lazy"></a><figcaption><b>Look for:</b> the pitch with its fence, floodlights and the TRAINING gate.</figcaption></figure></div>
+<span class="how"><b>How we know:</b> <b>seen</b>: the still. <b>Not seen</b> on a phone.</span></article>
+
+<article class="it" id="crossbar"><div class="it-top"><span class="pill p-new">Added</span><span class="pill p-core">live on the site</span><span class="pill p-wait">not seen on a phone</span></div>
+<h3>3D Crossbar challenge: you against one real team-mate, 5 shots each</h3>
+<div class="blk"><h4>What it is</h4><ul>
+<li><b>Through the training gate.</b> You and one real team-mate take 5 shots each.</li>
+<li><b>Crossbar = 1 point. Post = 0. A draw counts as a win.</b></li>
+<li><b>Reward:</b> the Team bar, like the Woodwork challenge. It costs training energy.</li>
+<li><b>Your shots are the real match engine.</b> You aim and strike as in a match, then the 3D view shows the flight.</li>
+<li><b>His shots are an animation.</b> His chance of a crossbar comes from his rating: about 1 in 10 at 60, about 1 in 5 at 85.</li></ul></div>
+<div class="media one wide"><figure><a href="img/crossbar-sheet.jpg" target="_blank"><img src="img/crossbar-sheet.jpg" alt="left to right: your aim screen, CROSSBAR! after your shot, the team-mate's shot, OVER THE BAR, round 2." loading="lazy"></a><figcaption><b>Look for:</b> left to right: your aim screen, CROSSBAR! after your shot, the team-mate's shot, OVER THE BAR, then round 2.</figcaption></figure></div>
+<span class="how"><b>How we know:</b> <b>seen</b>: rounds 1 and 2 in a desktop browser. <b>Reasoned</b>: his 1 in 10 and 1 in 5. <b>Not seen</b> on a phone, or through all 5 rounds to the result.</span></article>
+
+<article class="it" id="anim"><div class="it-top"><span class="pill p-new">Added</span><span class="pill p-core">live on the site</span><span class="pill p-wait">not seen on a phone</span></div>
+<h3>3D kick and new animations, hand-made</h3>
+<div class="blk"><h4>Problem</h4><p>The 3D player had no kick. The ball froze in the air after the shot.</p></div>
+<div class="blk"><h4>Why</h4><p>No free animation pack had a kick, so we made the clips ourselves.</p></div>
+<div class="blk"><h4>Fix</h4><ul>
+<li><b>Kick:</b> a 3-step run-up and a right-foot strike. The foot meets the ball when the engine starts it. A left-foot version is the mirror.</li>
+<li><b>Reactions:</b> a fist-pump celebration, hands on head, and keepy-ups for the player who waits.</li>
+<li><b>The ball no longer freezes after the shot.</b> It drops, bounces and goes into the net.</li>
+<li><b>Casino and training clips are made too:</b> dealer deal and spin, slot lever, lean, cheer, groan, bartender; passing, stretching, cone dribble.</li></ul></div>
+<div class="media one wide"><figure><a href="img/anim-sheet.jpg" target="_blank"><img src="img/anim-sheet.jpg" alt="frames: run-up, backswing, contact, follow-through, celebrate, frustrated." loading="lazy"></a><figcaption><b>Look for:</b> run-up, backswing, contact, follow-through, celebrate, frustrated.</figcaption></figure></div>
+<div class="blk"><h4>Rough edges</h4><ul class="plain"><li>The fist pump looks weak from behind.</li><li>The kick is a bit mechanical.</li><li>The foot slides a little.</li></ul></div>
+<div class="blk"><h4>Coming in the next push</h4><p>The casino and training clips are made but not wired onto people yet. The last job is wiring them on and keeping you in frame for reactions.</p></div>
+<span class="how"><b>How we know:</b> <b>seen</b>: the frames above. <b>Not seen</b> as a moving clip or on a phone.</span></article>
+
+<h2 id="check" class="c-b"><i></i>Check these on your phone</h2><article class="it"><ul class="ck"><li><label><input type="checkbox" data-k="v042-casino"><span><b><a href="#headline" style="color:inherit;text-decoration:none">Casino in the 3D garden</a></b><small>Garden → casino doors → walk to each station (roulette, blackjack, slots, horses, betting counter, Goalie Mode)</small></span></label></li><li><label><input type="checkbox" data-k="v042-casinoback"><span><b><a href="#headline" style="color:inherit;text-decoration:none">Close a casino game: back in the room; doors lead back to the garden</a></b><small>Casino room</small></span></label></li><li><label><input type="checkbox" data-k="v042-homecasino"><span><b><a href="#headline" style="color:inherit;text-decoration:none">Home → Casino goes to the 3D room</a></b><small>Home → Casino</small></span></label></li><li><label><input type="checkbox" data-k="v042-pitch"><span><b><a href="#pitch" style="color:inherit;text-decoration:none">Training pitch and gate in the garden</a></b><small>Garden → back left → TRAINING gate</small></span></label></li><li><label><input type="checkbox" data-k="v042-crossbar"><span><b><a href="#crossbar" style="color:inherit;text-decoration:none">Crossbar challenge: 5 rounds to the result</a></b><small>Training gate → Crossbar challenge → play all 5 rounds</small></span></label></li><li><label><input type="checkbox" data-k="v042-kick"><span><b><a href="#anim" style="color:inherit;text-decoration:none">3D kick, celebrate, keepy-ups; ball drops and bounces into the net</a></b><small>Any 3D shot: run-up, strike, then the flight</small></span></label></li><li><label><input type="checkbox" data-k="v042-setver"><span><b><a href="#settings" style="color:inherit;text-decoration:none">Settings: version picker</a></b><small>Settings → Version: Classic · Standard · Preview</small></span></label></li><li><label><input type="checkbox" data-k="v042-setgroups"><span><b><a href="#settings" style="color:inherit;text-decoration:none">Settings: each group opens and holds its switches</a></b><small>Settings → Match, 3D world, Screens, Career &amp; saves</small></span></label></li><li><label><input type="checkbox" data-k="v042-setclassic"><span><b><a href="#settings" style="color:inherit;text-decoration:none">Classic, then back to Standard</a></b><small>Settings → Version → Classic, then Standard</small></span></label></li><li><label><input type="checkbox" data-k="v042-setcasino"><span><b><a href="#headline" style="color:inherit;text-decoration:none">Casino: 3D | Classic switch</a></b><small>Settings → 3D world → Casino</small></span></label></li><li><label><input type="checkbox" data-k="v042-records"><span><b><a href="#locks" style="color:inherit;text-decoration:none">A Draft season posts its records</a></b><small>Play a Draft season to the end → Records</small></span></label></li><li><label><input type="checkbox" data-k="v042-horse"><span><b><a href="#horses" style="color:inherit;text-decoration:none">New horse odds</a></b><small>Casino → Horse racing: no horse should pay more than ★1 per ★1 staked on average</small></span></label></li></ul></article>
+
+<h2 id="settings" class="c-v"><i></i>Changed: Settings rebuilt</h2>
+<article class="it"><div class="it-top"><span class="pill p-chg">Changed</span><span class="pill p-core">live on the site</span></div>
+<h3>Settings is one short screen, with a version picker for every look</h3>
+<div class="blk"><h4>Problem</h4><p>Settings in a career was 4,025 px long. That is about 5 screens of scrolling. Every look had its own New | Old switch, 20 in all.</p></div>
+<div class="blk"><h4>Why</h4><p>Every new look added a row. Nothing was ever grouped or folded.</p></div>
+<div class="blk"><h4>Fix</h4><ul>
+<li><b>Version picker: Classic · Standard · Preview.</b> One tap sets all 20 look switches. Change one and it reads "Custom · Standard + 1 change · Undo".</li>
+<li><b>First screen:</b> Full screen, Sound effects, 3D quality, Skip the line-up.</li>
+<li><b>Folded groups:</b> Match (13), 3D world (6), Screens (6), Career &amp; saves.</li>
+<li><b>Developer tab</b> for testers and admins only.</li>
+<li><b>Main-menu Settings fits one screen.</b></li></ul>
+<div class="bars"><div class="bar"><span class="bl">Settings height in a career (px)</span><span class="bt"><i style="width:100%;background:var(--line)"></i><i style="width:23%;background:var(--green)"></i></span><span class="bn"><s>4,025</s> 931</span></div></div></div>
+<div class="media"><figure><span class="tag b">Before</span><a href="img/settings-before.jpg" target="_blank"><img src="img/settings-before.jpg" alt="the old long Settings: a list of switches." loading="lazy"></a><figcaption><b>Look for:</b> one long list, switches all open.</figcaption></figure><figure><span class="tag a">After</span><a href="img/settings-after.jpg" target="_blank"><img src="img/settings-after.jpg" alt="the new Settings: version picker, quick switches, folded groups." loading="lazy"></a><figcaption><b>Look for:</b> the version picker, 4 quick switches, folded groups.</figcaption></figure></div>
+<div class="media one wide"><figure><a href="img/settings-sheet.jpg" target="_blank"><img src="img/settings-sheet.jpg" alt="left to right: first screen, Standard, a group open, Preview, Developer tab." loading="lazy"></a><figcaption><b>Look for:</b> left to right: the first screen, Standard, the Match group open, Preview, the Developer tab.</figcaption></figure></div>
+<details><summary>More pictures (3)</summary><div class="media"><figure><a href="img/settings-match-open.jpg" target="_blank"><img src="img/settings-match-open.jpg" alt="the Match group open with its 13 switches." loading="lazy"></a><figcaption><b>Look for:</b> the Match group open: 13 switches.</figcaption></figure><figure><a href="img/settings-preview.jpg" target="_blank"><img src="img/settings-preview.jpg" alt="Preview selected in the version picker." loading="lazy"></a><figcaption><b>Look for:</b> Preview selected.</figcaption></figure></div><div class="media one-up"><figure><a href="img/settings-developer.jpg" target="_blank"><img src="img/settings-developer.jpg" alt="the Developer tab (testers and admins only)." loading="lazy"></a><figcaption><b>Look for:</b> the Developer tab (testers and admins only).</figcaption></figure></div></details>
+<div class="blk"><h4>The rule for new looks</h4><ol class="steps"><li><span class="hd">A new look goes into Preview first.</span></li><li><span class="hd">It moves to Standard when Harry says it is settled.</span></li><li><span class="hd">Classic is always the old way.</span></li></ol></div>
+<details><summary>The 20 rows: Classic, Standard, Preview</summary><div class="tbl"><table><tr><th>Row</th><th>Classic</th><th>Standard</th><th>Preview</th></tr>
+<tr><td>Match view</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Players in the match</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Ball</td><td>Old</td><td>New</td><td>New</td></tr>
+<tr><td><b>Chances</b></td><td>Old</td><td><b>Old</b></td><td><b>New</b></td></tr><tr><td><b>Animations</b></td><td>Old</td><td><b>Old</b></td><td><b>New</b></td></tr>
+<tr><td>Keepers</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Dribble runs</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Clearances</td><td>Old</td><td>New</td><td>New</td></tr>
+<tr><td>3D garden</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>3D shop player</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>3D people</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Talk to your manager</td><td>Old</td><td>New</td><td>New</td></tr>
+<tr><td>Casino</td><td>Classic</td><td>3D</td><td>3D</td></tr><tr><td>Signing scene</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>UI</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Club badges</td><td>Old</td><td>New</td><td>New</td></tr>
+<tr><td>All seasons page</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Standing ovation</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Ovation greetings</td><td>Old</td><td>New</td><td>New</td></tr><tr><td>Drawn-player style</td><td>Old</td><td>New</td><td>New</td></tr></table></div>
+<p class="bcap">Only Chances and Animations differ between Standard and Preview. The version picker never touches sound, full screen, camera angle, 3D quality, skip the line-up, faces, names, reactions or "your player in open play".</p></details>
+<span class="how"><b>How we know:</b> <b>seen</b>: the pictures above, in a desktop browser, on a test career. <b>Measured</b>: 4,025 px → 931 px. <b>Not seen</b> on a phone.</span></article>
+
+<h2 id="locks" class="c-r"><i></i>Fixed: cheat locks, with no lag and no new database cost</h2>
+<article class="it find" id="locks"><div class="it-top"><span class="pill p-ok">Fixed</span><span class="pill p-core">live on the site</span><span class="pill p-wait">Mikey runs SQL</span></div>
+<h3>Four places that trusted the phone now check what they are sent</h3>
+<div class="blk"><h4>Problem</h4><p>The public Draft records board, legend share links, XP rewards and the Hall of Fame all took whatever the phone sent. Someone could post a fake record, a fake career, or collect the same reward again and again.</p></div>
+<div class="blk"><h4>Why</h4><p>The game was built to trust the phone. v0.34 locked the save and the wallet. These four were next on its list.</p></div>
+<div class="blk"><h4>Fix</h4><ul>
+<li><b>Draft records board (public):</b> accepts only possible numbers (38 league games at most, 63 wins at most across all competitions), a number that matches your saved season, and real player names.</li>
+<li><b>Legend share links:</b> copy the career from your own Hall of Fame. 30 shares at most.</li>
+<li><b>XP:</b> the server picks the reward key, so each thing pays once. Join once. Daily login once a day. Draft rewards need a real saved season.</li>
+<li><b>Hall of Fame:</b> 30 careers at most.</li></ul></div>
+<details><summary>Honest cases that could be refused</summary><ul class="plain"><li>A record with an odd-character name loses that one record.</li><li>A Draft season whose history save failed (no signal) skips its records.</li><li>More than 10 Ballon d'Or seasons in one day stop paying XP.</li></ul></details>
+<div class="blk"><h4>Mikey</h4><p>Run star_hall_of_fame.sql, star_legend_shares.sql and (optional) xp_atomic_award.sql. The order is in the red box at the top.</p></div>
+<span class="how"><b>How we know:</b> <b>reasoned</b> from the code and tests. <b>Not seen</b> against the live database: the SQL files have not run yet.</span></article>
+
+<h2 id="casinoserver" class="c-d"><i></i>Decision: the casino stays on the phone</h2>
+<article class="it" id="horses"><div class="it-top"><span class="pill p-dec">Decision</span><span class="pill p-ok">Fixed</span><span class="pill p-core">live on the site</span></div>
+<h3>No server casino for now. The horse odds fix stays.</h3>
+<div class="blk"><h4>What happened</h4><ul><li>We built a server casino. Harry decided not to use it for now.</li><li><b>Why:</b> it adds lag, and the free database is too small. 60 days of plays are about 150 MB at 100 daily players.</li><li>It is switched off with <code>CASINO_ON_SERVER = false</code>. The code is kept for later. <b>Mikey: do not run star_casino.sql.</b></li></ul></div>
+<div class="blk"><h4>Problem (horse odds)</h4><p>On 47% of race cards, one horse paid back more than you staked, on average. The best paid ★9.57 for every ★1.</p></div>
+<div class="blk"><h4>Fix</h4><p>The best horse now pays ★0.99 for every ★1. <b>The odds you see changed.</b></p>
+<div class="bars"><div class="bar"><span class="bl">Cards with a horse above ★1 per ★1</span><span class="bt"><i style="width:47%;background:var(--line)"></i><i style="width:0%;background:var(--green)"></i></span><span class="bn"><s>47%</s> 0%</span></div><div class="bar"><span class="bl">Best horse, ★ back per ★1</span><span class="bt"><i style="width:100%;background:var(--line)"></i><i style="width:10%;background:var(--green)"></i></span><span class="bn"><s>9.57</s> 0.99</span></div></div></div>
+<span class="how"><b>How we know:</b> <b>measured</b> over simulated race cards. <b>Not seen</b> in the live casino screen.</span></article>
+
+<h2 id="other" class="c-m"><i></i>Also</h2>
+<article class="it"><ul class="plain"><li><b>Progress updates now include expected token use.</b></li></ul></article>
+
+<h2 id="known" class="c-a"><i></i>Known issues</h2>
+<article class="it"><h3>New this round</h3><ul class="plain">
+<li><b>None of the 3D was seen on a phone.</b> Casino, pitch, crossbar challenge, kick and animations.</li>
+<li><b>The chandeliers read as white blobs.</b></li>
+<li><b>Inside a casino game the back button says "Menu".</b></li>
+<li><b>The Old 3D garden has no casino or pitch.</b></li>
+<li><b>Classic also flips the UI to Old.</b></li>
+<li><b>The Settings Developer tab only shows inside a career.</b></li>
+<li><b>The casino and training clips are not on people yet.</b> Coming in the next push.</li>
+<li><b>Animation rough edges:</b> weak fist pump from behind, a mechanical kick, a little foot slide.</li>
+<li><b>The tour waits on Harry's video.</b></li>
+<li><b>The Ballon d'Or difficulty:</b> later.</li></ul></article>
+<article class="it"><h3>Still open from v0.34 and earlier</h3><ul class="plain">
+<li><b>Save guard is watch-only</b> until about 14 Oct (Mikey, red box at the top).</li>
+<li><b>The casino and Coins still trust the phone.</b> Do not sell Coins for real money.</li>
+<li><b>Still to run in Supabase (Mikey):</b> draft_records_full_fix.sql, fc27_clone_lower_leagues.sql, sofifa_search_indexes.sql, perf_indexes_jul2026.sql, fix_two_digit_fifa_years.sql.</li>
+<li><b>The tight-angle defender</b> at 1.9 to 2 m (Harry's call). <b>The tour flow</b> (half fixed). <b>Boots warnings</b> in the New UI only. <b>Tester access</b> untried.</li></ul></article>
+
+<h2 id="next" class="c-m"><i></i>Next</h2>
+<article class="it"><ul class="plain"><li><b>Wire the casino and training clips onto people</b> and keep you in frame for reactions.</li><li><b>Mikey runs the SQL files</b> and later switches the save guard to enforce.</li><li><b>Harry checks the 3D on his phone.</b></li></ul></article>
+
+<h2 id="prev" class="c-m"><i></i>Previous versions</h2>
+<details><summary>v0.34 — 7 Oct 2026 — paid items cannot be faked, 9 bug fixes, drawn badges</summary><ul class="hist"><li>Gems wallet that only the server can write, and a Save guard on every cloud save (15 of 15 cheat edits caught, 0 false alarms in 7,696 saves)</li><li>9 bugs fixed: the wall chasing a deflected free kick, a byline dead ball sitting for seconds, players lying down on byline crosses, left-footers kicking with the right foot, the flat camera losing players, the Back button over the header, the tiny Power drill goal, stretched close cameras, the open trial panel</li><li>Drawn club badges with symbols (118 of 248 clubs); a badges admin page</li><li>3D polish: tap to walk jogs, the car park keeps you in view, the 3D shop uses 2 real lights, Box Room and Shared Flat redrawn, the horse grazes</li><li>Relations → Boss picks 1 of 3; office moments for captain and the bench</li></ul><p class="w2"><b>Still open from v0.34:</b> the Save guard is watch-only (now due about 14 Oct); the casino and Coins trust the phone; Hall of Fame, legend shares, Draft records and XP were next to lock (done in this version, SQL to run); the 3D office captain and bench moments not seen; 3D shop lights on a phone not measured; tiger and lion drawings weak.</p></details>
+<details><summary>v0.30 — 5 to 6 Oct 2026 — 3D people with fingers, a 3D office, a rebuilt garden</summary><p class="w2"><a href="https://claude.ai/artifact/AN3EiQVU8kb1cBWCFjn39A" target="_blank" rel="noopener"><b>Open the v0.30 page</b></a>.</p><ul class="hist"><li>3D people are one body, with 15 finger joints a hand (3 bodies → 1)</li><li>Talk to your manager in a 3D office</li><li>A rebuilt garden with all its scenery and a new shop front</li><li>The strike screen: the whole ball takes a tap (69 of 69 test taps)</li><li>Signing scene and office about 2× faster; a lighter garden</li><li>Tap to move in the garden and the 3D shop</li><li>3D files about half the size; a 3D quality setting; early download</li><li>Drawn club badges (step 1); Relations → Boss picks 1 of 3</li><li>Tester access links; the database security fix (4 of 4 tables refuse anonymous writes)</li></ul><p class="w2"><b>Still open from v0.30:</b> money and stats trusted from the saved career (the Save guard now watches this, watch-only for a week); the 3D office versions of the captain and bench moments (built, not seen); shop lights on a phone (not measured). Fixed here: the car park, the Box Room and Shared Flat, the horse pose, the Back button overlap, left-footers, the byline crosses, the flat camera.</p></details><details><summary>v0.29 — 5 Oct 2026 — cheat menus locked, a harder Ballon d'Or</summary><p class="w2"><a href="https://claude.ai/artifact/SRj5ZaVsgWFWca9Dy5bNWx" target="_blank" rel="noopener"><b>Open the v0.29 page</b></a>.</p><ul class="hist"><li>The cheat menu and 18 test pages are for admins only</li><li>The Ballon d'Or is much harder: Premier League only, with a major trophy</li><li>A new play-off every season (last year's result no longer carries over)</li><li>The trial shootout is always 2-2 before your kick</li><li>A Later button on the tour</li><li>Commentary speed up to 8×</li><li>Boots warnings (New UI only)</li></ul><p class="w2">Numbers: Championship starts that win a Ballon d'Or 19 → 3 of 20; 70 → 4 wins in 213 simulated seasons; 18 test pages locked; 5 of 5 shootouts at 2-2.</p><p class="w2"><b>Still open from v0.29:</b> money and stats trusted from the saved career, the Back button overlap, the tour flow (half fixed), a possibly too hard Ballon d'Or, boots warnings in the New UI only. All listed above. Tester access, listed as missing in v0.29, is now built.</p></details><details><summary>v0.27 — 3 Oct 2026 — a tipped-back camera, a keeper who behaves</summary><p class="w2"><a href="https://claude.ai/artifact/997ZvUvR6NiqyfDnjh2jDm" target="_blank" rel="noopener"><b>Open the v0.27 page</b></a>.</p><ul class="hist"><li>The pitch tipped back 20° (30° and Flat in Settings)</li><li>A zoom for each kind of highlight</li><li>An even mix of highlights</li><li>Start the drag beside the ball</li><li>The keeper faces out, dives slower and stays down</li><li>The ball no longer stops in the middle of the grass</li><li>A tilted drag kicks as hard as a flat one</li></ul><p class="w2">Numbers: 0° → 20° camera; 20% → 12.5% cutbacks; scoring 32.5% → 32.6% (unchanged).</p><p class="w2"><b>Still open from v0.27:</b> the wall chasing a loose free kick, a cutback along the byline sitting for 1.6 s, two players overlapping on byline crosses, new-chance extras off screen when flat. All listed above.</p></details><details><summary>v0.26 — 3 Oct 2026 — a new-looking match that rarely repeats</summary><p class="w2"><a href="https://claude.ai/artifact/2XikkuNj5Q7hm9xcy9kmYS" target="_blank" rel="noopener"><b>Open the v0.26 page</b></a>.</p><ul class="hist"><li>New match view: zoomed out, 3D players</li><li>About 100 pictures of each chance (to try)</li><li>Playstyle buttons with Higgsfield icons</li><li>High energy drains faster; low energy makes you weaker</li><li>Signing scene and 3D shop on the new characters</li><li>Trial and relations-tour fixes</li><li>Move my saves</li></ul><p class="w2"><b>Still open from v0.26:</b> 3D kick foot for left-footers, signing hands, long-hair model, shop walk, tight-angle defender.</p></details><details><summary>v0.25 — 3 Oct 2026 — live 3D scenes</summary><p class="w2"><a href="https://claude.ai/artifact/7LXrEgwm72sUVZH5Kcmeyz" target="_blank" rel="noopener"><b>Open the v0.25 page</b></a>.</p><ul class="hist"><li>Live 3D signing (first version)</li><li>A 3D shop to walk round</li><li>Rebuilt garden</li><li>First game before the tutorials</li><li>Play goes straight into the first chance</li><li>Fairer shootout and clearances</li><li>Full screen and fewer sounds</li><li>New boots box</li></ul><p class="w2"><b>Still open from v0.25:</b> the unclear points from your recording ("numbers gone, says next up", the Star Pass badge, and the rest).</p></details><details><summary>v0.24 — 2 Oct 2026 — highlights, trial rework, top bars</summary><p class="w2"><a href="https://claude.ai/artifact/CQ5gkXrcPk2gptL1EjX3au" target="_blank" rel="noopener"><b>Open the v0.24 page</b></a>. It holds every older version too.</p><ul class="hist"><li>Highlights no longer impossible</li><li>The trial reworked</li><li>New square top bars</li><li>Home and match day fixes</li><li>Tutorials, first steps and unlocks</li><li>Title screen and boots</li><li>Sound Board</li><li>3D icons, the 3D Test Area and a signing prototype</li></ul><p class="w2"><b>Still open from v0.24:</b> three tests that failed before (fixed in v0.30).</p></details><details><summary>v0.23.1 — 2 Oct 2026 — liquid bars, signing and title look, sounds</summary><p class="w2"><a href="https://claude.ai/artifact/8wzaQV41ZmrhtBXZV46Rav" target="_blank" rel="noopener"><b>Open the v0.23.1 page</b></a>. It also holds the whole v0.23 page.</p><ul class="hist"><li>Smooth glowing bars, quieter arrows, Home bottom-left</li><li>Each screen shows its own bar</li><li>A ? on Style, Settings and Shop</li><li>Settings: compact switches, Sound effects</li><li>Line-up: tap anywhere to start; skip-the-line-up setting</li><li>After-match star bar; achievement and record pop-ups</li><li>Boss meeting win +3, loss −2; two set-piece chats</li><li>Training level squares: big stars, small numbers</li><li>Signing with the contract paper; title screen with floodlights</li><li>Smaller starter house and boots; suit, chain, necklace and horses redone; Blender pictures in the Store</li><li>Sound effects outside the match, with a Settings switch</li></ul><p class="w2">Numbers: lost boss meeting −4 → −2; 3 sounds remade and 9 now played outside the match; 23 before and after clips.</p><p class="w2"><b>Still open from v0.23.1:</b> Box Room and Shared Flat read as three flats; horses have one pose; three tests failed before (fixed in v0.30).</p></details><footer>Knowitball v0.42 · 8 Oct 2026. Stills for every change; no clips this round.</footer></div><script>
+(function () {
+  var KEY = "v042-checks", st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  document.querySelectorAll("ul.ck input").forEach(function (i) {
+    if (st[i.dataset.k]) i.checked = true;
+    i.addEventListener("change", function () { st[i.dataset.k] = i.checked; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} });
+  });
+})();
+</script>
