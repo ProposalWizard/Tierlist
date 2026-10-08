@@ -1691,4 +1691,11 @@ export type StarPhase =
    *  around. All real data reused from elsewhere (career.trophies,
    *  career.horse, career.squad); this only displays it in one place.
    *  See GardenScreen.tsx. */
-  | "garden";
+  | "garden"
+  /** The 3D casino room (8 Oct 2026), walked into from the garden's casino
+   *  doors. Home → Casino also opens it when Settings → Look → "Casino" is
+   *  3D. See components/star/Casino3D.tsx. */
+  | "casino-3d"
+  /** The 3D training pitch, through the gate in the garden (8 Oct 2026).
+   *  Placeholder screen until the 3D training is mounted there. */
+  | "training-3d";
