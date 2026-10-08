@@ -83,8 +83,16 @@
     "version": "0.11",
     "date": "2026-10-08",
     "fromCommit": "15393ac6",
-    "toCommit": "HEAD",
+    "toCommit": "5304e530",
     "url": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
     "headline": "3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked"
+  },
+  {
+    "version": "0.12",
+    "date": "2026-10-08",
+    "fromCommit": "5304e530",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
+    "headline": "The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match"
   }
 ]

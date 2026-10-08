@@ -182,6 +182,16 @@ Every men's winner 1956–2025, from ballondor.com only, for a future game
 mode: `data/ballondor/` (read its README). Page:
 https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
 
+## Blender runs in the cloud sessions (Mikey, 8 Oct 2026)
+
+The cloud environment's setup script installs Blender (`apt-get install -y
+blender`); it also needs `python3-numpy` in the same line. Blender connectors
+can't reach a cloud session, but headless Blender scripts can. First use: the
+farewell ovation's hugs, dap-ups, pats and claps, made with both men posed
+together (`tools/ovation3d/`, read its README) →
+`public/star/ovation3d/greetings.glb`. Settings → Look → "Ovation greetings:
+New | Old" (`lib/star/ovationMoves.ts`).
+
 ## The garden is 3D, and joined to the 3D shop (Mikey, 3 Oct 2026)
 
 From his recording: *"make this garden area also a 3D area … you will be the

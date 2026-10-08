@@ -143,6 +143,27 @@ export function greetWeight(stop: OvationStop, t: number): number {
   return w * w * (3 - 2 * w);
 }
 
+function smooth01(x: number): number {
+  const v = Math.max(0, Math.min(1, x));
+  return v * v * (3 - 2 * v);
+}
+
+/**
+ * The Blender-made greetings (public/star/ovation3d/greetings.glb): how far
+ * you have turned to face the man who stopped you (0 = still walking off,
+ * 1 = square on). You turn first, while your arms are still down, so the
+ * file's poses (made with you facing him) fit by the time you reach.
+ */
+export function greetTurn(k: number): number {
+  return smooth01(k / 0.15) * (1 - smooth01((k - 0.85) / 0.15));
+}
+
+/** How much of the file's greeting shows (the rest is your clap): in and
+ *  out over the first and last 8% of the stop. */
+export function greetBlend(k: number): number {
+  return smooth01(Math.min(k / 0.08, (1 - k) / 0.08, 1));
+}
+
 /** The camera's angle round you (radians; 0 = in front, looking back at you). */
 export function cameraAngle(plan: OvationPlan, t: number): number {
   const k = Math.max(0, Math.min(1, t / plan.end));
