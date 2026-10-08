@@ -5,7 +5,7 @@
     "fromCommit": "88c1966",
     "toCommit": "a406c46",
     "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
-    "headline": "Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers"
+    "headline": "Economy, fame and reputation rebuild: Premier League wages to \u00e2\u02dc\u2026100k, fame levels, one reputation number, 50-season careers"
   },
   {
     "version": "0.2",
@@ -91,8 +91,16 @@
     "version": "0.12",
     "date": "2026-10-08",
     "fromCommit": "5304e530",
-    "toCommit": "HEAD",
+    "toCommit": "86ee3024",
     "url": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
     "headline": "The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match"
+  },
+  {
+    "version": "0.13",
+    "date": "2026-10-08",
+    "fromCommit": "86ee3024",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
+    "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; \u00b125% wage when your club goes down or up; relegation day"
   }
 ]

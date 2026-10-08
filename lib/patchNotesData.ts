@@ -27,6 +27,61 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.41",
+      "title": "Mikey's patch notes — Brackets, the real UEFA knockout, relegation",
+      "publishedAt": "2026-10-08T22:00:00Z",
+      "updatedAt": "2026-10-08T22:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
+      "summary": "Before each play-off match, and after every FA Cup, League Cup and European knockout tie, a round-up shows the results and, from the last 16, an animated \"Road to the Final\" bracket. The Champions and Europa League now use the real UEFA knockout bracket with every tie played. League Cup semi-finals are two legs. Going down with your club cuts your wage and bonuses by 25%; going up raises your wage by 25%. Relegation day gets a news flash and sad fan posts.",
+      "stats": [
+        { "value": "4", "label": "knockout competitions with a results board and a bracket" },
+        { "value": "36 → 24", "label": "the real UEFA knockout after the league phase" },
+        { "value": "2 legs", "label": "League Cup semi-finals" },
+        { "value": "−25% / +25%", "label": "your wage down / up with your club" }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            { "title": "Play-off round-up before each play-off match", "detail": "Finish in the play-off places in any division below the Premier League." },
+            { "title": "Cup results board and bracket", "detail": "After every FA Cup and League Cup tie; the bracket from the last 16." },
+            { "title": "Champions/Europa League table split and bracket", "detail": "After the 8th league-phase match, and after each knockout tie." },
+            { "title": "League Cup semi-final over two legs", "detail": "League Cup semi-final." },
+            { "title": "Wage −25% down with your club, +25% up", "detail": "Contract screen, first week of the new season." },
+            { "title": "Relegation day", "detail": "The last league match, finishing in the drop." },
+            { "title": "Offers after dropping out of North/South follow your season", "detail": "Finish 21st–24th in North or South." }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            { "title": "Europe's knockout used random opponents", "detail": "Now the real UEFA bracket: 1st–8th to the last 16, 9th–24th play off, fixed path after. Every tie is played and the real winner crowned. Tested." },
+            { "title": "An offer after dropping out of North/South could come from the club going up", "detail": "The champion and the play-off winner no longer offer. Measured." },
+            { "title": "The feed said \"relegated\" for the bottom three everywhere", "detail": "Now each division's real number of places." }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Play-off, cup and European round-ups", "detail": "Results board, then the animated bracket: scores pop, losers fade, winners' lines grow and crests slide into the next tie. Seen on a test page at phone size." },
+            { "title": "Relegation day", "detail": "News flash, five sad fan posts and a club statement. Tested, not seen on screen." }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            { "title": "League Cup semi-finals are two legs", "detail": "Aggregate; level goes straight to penalties." },
+            { "title": "Wage when your club goes down or up", "detail": "Down: wage and bonuses −25%. Up: wage +25%. Not when you changed club that summer." },
+            { "title": "Forced-move offers follow your season", "detail": "No goals: the weakest clubs. A great season: the strongest, and National League clubs from reputation 70." }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.40",
       "title": "Mikey's patch notes — Ovation greetings made in Blender",
       "publishedAt": "2026-10-08T14:00:00Z",

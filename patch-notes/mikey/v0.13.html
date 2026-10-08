@@ -1,0 +1,211 @@
+<title>Knowitball Patch Notes Mikey v0.13</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+  .tag.meas{color:var(--blue);border-color:var(--blue)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:10px 0 4px}
+  .shots figure{margin:0}
+  .shots img{display:block;width:100%;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+  .shots figcaption{font-size:12px;color:var(--ink2);margin-top:4px}
+  .check{list-style:none;margin:0;padding:0}
+  .check li{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .check li:last-child{border-bottom:0}
+  .check input{margin-top:4px;accent-color:var(--green);flex:0 0 auto}
+  .check b{display:block;font-size:14px}
+  .check span{display:block;font-size:12.5px;color:var(--ink3)}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.13</span>
+  <h1>Knowitball Patch Notes Mikey v0.13</h1>
+  <p class="sub">8 October 2026 · branch Mikey · tests: 279 of 279 passing · production build passes</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>4</b><span>Knockout competitions with a results board and a bracket: FA Cup, League Cup, Champions League, Europa League</span></div>
+  <div class="s"><b>36 → 24</b><span>Europe's league phase now splits into the real UEFA knockout: top 8 to the last 16, 9th–24th play off</span></div>
+  <div class="s"><b>2 legs</b><span>League Cup semi-finals, as in England</span></div>
+  <div class="s"><b>−25% / +25%</b><span>Your wage when you go down / up with your club</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check" id="check">
+  <li><input type="checkbox" id="c1"><label for="c1"><b>Play-off round-up before each play-off match</b><span>Finish in the play-off places in any division below the Premier League</span></label></li>
+  <li><input type="checkbox" id="c2"><label for="c2"><b>Cup results board after every FA Cup and League Cup tie</b><span>After your cup match, before the draw</span></label></li>
+  <li><input type="checkbox" id="c3"><label for="c3"><b>"Road to the Final" bracket from the last 16</b><span>After your round of 16 tie and every round after it</span></label></li>
+  <li><input type="checkbox" id="c4"><label for="c4"><b>Champions/Europa League table split, play-off pairings and bracket</b><span>After the 8th league-phase match</span></label></li>
+  <li><input type="checkbox" id="c5"><label for="c5"><b>Your European opponents follow the real bracket</b><span>Champions/Europa League knockout fixtures</span></label></li>
+  <li><input type="checkbox" id="c6"><label for="c6"><b>League Cup semi-final over two legs</b><span>League Cup semi-final: a first and a second leg</span></label></li>
+  <li><input type="checkbox" id="c7"><label for="c7"><b>Wage −25% when your club goes down, +25% when it goes up</b><span>Contract screen, first week of the new season</span></label></li>
+  <li><input type="checkbox" id="c8"><label for="c8"><b>Relegation day: news flash, sad fan posts, club statement</b><span>The last league match, finishing in the drop</span></label></li>
+  <li><input type="checkbox" id="c9"><label for="c9"><b>Offers after dropping out of North/South follow your season</b><span>Finish 21st–24th in National League North or South</span></label></li>
+</ul>
+
+<h2 class="fix"><i></i>Headline: Europe's knockout was not real. Now it is.</h2>
+<div class="box">
+  <div class="hd">The Champions League and Europa League now use the real UEFA bracket, and every tie in it is played.</div>
+  <div class="dt"><b>Problem:</b> after the league phase, your next opponent was picked at random from a part of the table. Nobody else's knockout tie was played. A club that "went out" could still be drawn against you, and when you went out the winner was a random pick. <b>Why:</b> the game only ever built your own path. <b>Fix:</b> a fixed bracket off the final table, as UEFA runs it now. 1st–8th go straight to the last 16. 9th–24th play off over two legs (9/10 v 23/24, 11/12 v 21/22, 13/14 v 19/20, 15/16 v 17/18). From the last 16 the path is fixed, and 1st and 2nd can only meet in the final. The better finisher plays the second leg at home; level on aggregate goes to extra time, then penalties. When you go out, the rest is played and the real winner is crowned. A save that is already in a knockout finishes it the old way. <span class="tag meas">tested: 200 brackets</span></div>
+  <div class="shots">
+    <figure><img src="v0.13/img/ucl-table.jpg" alt="League phase table split"><figcaption>The league phase ends: green to the last 16, amber to the play-off, grey out. Your club is highlighted.</figcaption></figure>
+    <figure><img src="v0.13/img/ucl-board.jpg" alt="Round of 16 results"><figcaption>Round of 16 results: aggregate big, both legs small, "aet · pens 4–5" and ✅ on the winner.</figcaption></figure>
+    <figure><img src="v0.13/img/ucl-bracket.jpg" alt="Champions League bracket"><figcaption>The bracket after the last 16: the winners' lines go gold and their crests move into the quarter-finals.</figcaption></figure>
+  </div>
+</div>
+
+<h2 class="add"><i></i>Added</h2>
+<div class="box">
+  <div class="hd">Play-off round-up: the bracket before each of your play-off matches</div>
+  <div class="dt"><b>Problem:</b> finishing 2nd in North/South, the other play-off ties were played in the background, and your semi-final opponent just appeared. <b>Fix:</b> a "Road to the Final" bracket, mirrored like a cup graphic. The round just played pops its scores in, the losers fade, the winners' lines grow and their crests slide into the next tie. Your next match pulses. Other ties stay hidden until your own match in that round is played, because they kick off at the same time. Works for every play-off: four clubs over two legs (Championship, League One, League Two, National League) and six clubs (North/South). <span class="tag seen">seen on a test page at phone size</span></div>
+  <div class="shots">
+    <figure><img src="v0.13/img/playoff-north.jpg" alt="North play-offs"><figcaption>North, finishing 2nd: the 4v7 and 5v6 results, the winners moving into the semi-finals.</figcaption></figure>
+    <figure><img src="v0.13/img/playoff-out.jpg" alt="Out of the play-offs"><figcaption>Out in round 1: the rest plays out and shows who went up.</figcaption></figure>
+    <figure><img src="v0.13/img/playoff-champ.jpg" alt="Championship play-offs"><figcaption>Championship: two-legged semis ("agg."), then the final.</figcaption></figure>
+  </div>
+</div>
+<div class="box" style="margin-top:10px">
+  <div class="hd">Cup round-ups: a results board every round, the bracket from the last 16</div>
+  <div class="dt"><b>Problem:</b> after a cup tie you only saw the next draw. <b>Fix:</b> after every FA Cup and League Cup tie, a board with every result of the round, yours first, with upsets flagged and "aet" or penalties shown. From the last 16, the same bracket as the play-offs. The FA Cup and League Cup are still redrawn from a hat each round, so the bracket shows each draw as it happens: the winners slide out to sit next to the club they drew. From the quarter-finals the bracket replaces the old draw screen. <span class="tag seen">seen on a test page at phone size</span></div>
+  <div class="shots">
+    <figure><img src="v0.13/img/cup-board.jpg" alt="FA Cup board"><figcaption>FA Cup round of 64: your tie on top, upsets in amber, penalties with ✅.</figcaption></figure>
+    <figure><img src="v0.13/img/cup-bracket.jpg" alt="FA Cup bracket"><figcaption>After the last 16: the winners have moved into the quarter-finals.</figcaption></figure>
+    <figure><img src="v0.13/img/cup-final.jpg" alt="FA Cup winners"><figcaption>After the final: the winners' crest at the top.</figcaption></figure>
+  </div>
+</div>
+<div class="box" style="margin-top:10px">
+  <div class="hd">Relegation day</div>
+  <div class="dt"><b>Problem:</b> going down was a line in the feed. <b>Fix:</b> when the last league match leaves your club in the drop, a TV-style news flash ("relegated", and what it means for your wage or your club), five sad posts from your own fans, and a club statement. <span class="tag">tested, not seen on screen</span></div>
+</div>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li><div class="hd">League Cup semi-finals are two legs</div><div class="dt">The first leg goes on the tie and puts the second leg on the calendar at the other ground. The second leg is settled on aggregate. Level on aggregate goes straight to penalties (no extra time, as in the real League Cup). The match knows a level second leg means level on aggregate. <span class="tag meas">tested</span></div></li>
+  <li><div class="hd">Your wage when you go up or down with your club</div><div class="dt">Down: wage, goal and assist bonuses, appearance fee and loyalty bonus all −25%, and the release clause with them. Up: wage +25%, release clause with it; bonuses stay. Not when you changed club that summer: a new contract is its own deal. <span class="tag meas">tested in a real season rollover</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Relegated</span><div class="track"><div class="fill was" style="width:80%"></div><div class="fill now bad" style="width:60%"></div></div><span class="vv"><s>★1,000</s> ★750</span></div>
+      <div class="bar"><span class="lb">Promoted</span><div class="track"><div class="fill was" style="width:60%"></div><div class="fill now" style="width:75%"></div></div><span class="vv"><s>★1,000</s> ★1,250</span></div>
+    </div></li>
+  <li><div class="hd">Offers after dropping out of North/South follow your season</div><div class="dt">You still have to pick a new club (Step 3 has no matches). But a season with no goals now gets the weakest clubs, and a great one the strongest. Before, an awful season and an average one got exactly the same offers. National League clubs come in from reputation 70 (1 in 4) up to 100 (every time), two at 90+. No offer comes from the champion or the play-off winner any more: they go up. <span class="tag meas">measured: 300 runs each</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Awful season</span><div class="track"><div class="fill now bad" style="width:45%"></div></div><span class="vv">club level 59.6</span></div>
+      <div class="bar"><span class="lb">Average</span><div class="track"><div class="fill now warn" style="width:62%"></div></div><span class="vv">66.0</span></div>
+      <div class="bar"><span class="lb">Great</span><div class="track"><div class="fill now" style="width:85%"></div></div><span class="vv">78.8</span></div>
+    </div></li>
+  <li><div class="hd">The feed counts each division's real relegation places</div><div class="dt">It said "relegated" for the bottom three everywhere. Now: League One, National League and North/South four, League Two two, the rest three.</div></li>
+  <li><div class="hd">A Blender "anime goal" look test (not in the game)</div><div class="dt">One real recorded goal replayed in Blender in a Blue Lock style, with set cameras and effects. Only a tool for now (<code>tools/anime3d/</code>); nothing in the game changed.</div></li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">None of the new screens seen in a real career yet <span class="pill p-amb">LOW</span></div><div class="dt">Checked on a test page built from the real cup, European and play-off code, at phone size. Not reached by playing a season through.</div></li>
+  <li><div class="hd">Promotion raises the wage only, not the bonuses <span class="pill p-amb">LOW</span></div><div class="dt">As asked. Say if bonuses should go up too.</div></li>
+  <li><div class="hd">National League play-offs are still four clubs <span class="pill p-amb">LOW</span></div><div class="dt">Real life uses six (2nd–7th), like North/South. Not changed.</div></li>
+  <li><div class="hd">Add numpy to the setup script <span class="pill p-amb">LOW</span></div><div class="dt">Change the line to <code>apt-get update &amp;&amp; apt-get install -y blender python3-numpy</code>.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX">v0.12</a> · 8 October 2026 · The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match</li>
+  <li><a href="https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj">v0.11</a> · 8 October 2026 · 3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked</li>
+  <li><a href="https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk">v0.10</a> · 4 October 2026 · Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off</li>
+  <li><a href="https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg">v0.9</a> · 3 October 2026 · XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data</li>
+  <li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 30 September 2026 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 30 September 2026 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 27 September 2026 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 26 September 2026 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>
+<script>
+(function(){var k="kib-pn-mikey-0.13";var s={};try{s=JSON.parse(localStorage.getItem(k)||"{}")}catch(e){}
+document.querySelectorAll("#check input").forEach(function(c){c.checked=!!s[c.id];c.addEventListener("change",function(){s[c.id]=c.checked;try{localStorage.setItem(k,JSON.stringify(s))}catch(e){}})});})();
+</script>
