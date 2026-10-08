@@ -452,7 +452,7 @@ interface Props {
    *   - no other scores, and the plate reads "Farewell".
    * Absent — every real match — nothing here changes.
    */
-  farewell?: { offAt: number };
+  farewell?: { offAt: number; onOvation?: (minute: number) => void };
 }
 
 
@@ -692,6 +692,10 @@ const KICK_POSE_S = 0.28;
 function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
+
+/** The latest minute Play may jump straight to (the v0.25 quick start).
+ *  Most first chances come by 7' (measured); a later one is read out. */
+const QUICK_START_MAX = 12;
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
@@ -1346,7 +1350,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const ovationShown = !!farewell && ovation !== null && matchMinute >= ovation;
   const ovationHeardRef = useRef(false);
   useEffect(() => {
-    if (ovationShown && !ovationHeardRef.current) { ovationHeardRef.current = true; playCrowdSwell("cheer"); }
+    if (ovationShown && !ovationHeardRef.current) {
+      ovationHeardRef.current = true;
+      playCrowdSwell("cheer");
+      // The 3D standing ovation plays over the match (the page's, Settings → Look).
+      if (ovation !== null) farewellRef.current?.onOvation?.(ovation);
+    }
   }, [ovationShown]);
 
   /**
@@ -5752,7 +5761,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // 14' was ten seconds of nothing). The first stretch of a match you
     // start is written straight into the log and the clock jumps to it.
     // Only when a chance of yours is waiting, and never across half time.
-    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
+    // Only a SHORT jump. A first chance at 44' made the jump swallow the whole
+    // first half: Play went straight to 44' with no commentary at all
+    // (Mikey's farewell playtest, 8 Oct 2026). Past QUICK_START_MAX the first
+    // stretch is read out like any other.
+    const quick = quickStartRef.current && !prior && !!step.request && !step.fullTime
+      && st.minute <= QUICK_START_MAX
+      && (st.minute <= HALF_TIME_MINUTE || halfTimeShownRef.current);
     quickStartRef.current = false;
     if (quick) {
       const lines = linesFrom(events, matchMinuteRef.current);

@@ -14,6 +14,7 @@ import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } fr
 import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
 import { useBadgeLook, setBadgeLook } from "@/lib/star/badgeLook";
 import { useAllSeasonsLook, setAllSeasonsLook } from "@/lib/star/allSeasonsLook";
+import { useOvationLook, setOvationLook } from "@/lib/star/ovationLook";
 import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
 import { useAnimationsLook, setAnimationsLook } from "@/lib/star/animLook";
 import { useIsTester } from "@/lib/useIsAdmin";
@@ -152,6 +153,7 @@ export function LookSwitches() {
   const gardenLook = useGarden3dLook();
   const badgeLookNow = useBadgeLook();
   const allSeasons = useAllSeasonsLook();
+  const ovationNow = useOvationLook();
   const chancesNow = useChanceSet();
   const animNow = useAnimationsLook();
   const tester = useIsTester();
@@ -216,6 +218,14 @@ export function LookSwitches() {
       </div>
       <SetNote dim className="mt-1 text-[10px]">
         New: goals by season, the cabinet and every season, as on the end-of-career screen. Old: the three tables.
+      </SetNote>
+      <SetDivider />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-white">Standing ovation</span>
+        <SegTabs className="w-[150px] shrink-0" value={ovationNow} onChange={setOvationLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: your farewell&apos;s 85th minute in 3D, hugs on the way off. Old: the banner over the commentary.
       </SetNote>
       <SetDivider />
       <div className="flex items-center justify-between gap-2">

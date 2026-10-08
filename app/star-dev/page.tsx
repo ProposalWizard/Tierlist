@@ -74,7 +74,7 @@ import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos, relabelOutOfPosition, withoutPlayersElsewhere, addFullRoster } from "@/lib/star/leagueSquads";
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
@@ -83,7 +83,8 @@ import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
 import TransferSigning from "@/components/star/TransferSigning";
 import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
-import { FarewellInvite, FarewellResult, GuardOfHonour } from "@/components/star/Farewell";
+import { FarewellInvite, FarewellResult, GuardOfHonour, StandingOvation } from "@/components/star/Farewell";
+import { ovationLook } from "@/lib/star/ovationLook";
 import VersusScreen from "@/components/star/VersusScreen";
 import {
   farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped, farewellSeed,
@@ -570,6 +571,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** The title screen's own Settings page (v0.25 points 1-2): this device's
    *  settings only, no save, no top bar — Back returns to the title. */
   const [globalSettings, setGlobalSettings] = useState(false);
+  /** The farewell's standing ovation, playing over the match (the minute you came off). */
+  const [ovationAt, setOvationAt] = useState<number | null>(null);
   /** The Hall of Fame (HallOfFame.tsx): over whatever is underneath, the
    *  title or the end of a career. Back closes it. */
   const [hallOpen, setHallOpen] = useState(false);
@@ -1504,7 +1507,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
     const remaining = from.fixtures.filter((f) => !f.played).length;
     if (remaining === 0) {
-      endSeason(from);
+      // Home, where "End of Season 🏆" waits: you end the season yourself.
+      // Going straight into the awards skipped that moment (Mikey's
+      // playtest, 8 Oct 2026: "didn't let me press end the season").
+      setCareer(from);
+      setActiveNav("home");
+      setPhase("dashboard");
       return;
     }
 
@@ -1604,7 +1612,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setCareer(c => {
         if (!c) return c;
         const already = new Set((c.leagueSquads ?? []).map(s => s.club));
-        const leagueSquads = [...(c.leagueSquads ?? []), ...fresh.filter(s => !already.has(s.club))];
+        // Nobody the career has already moved to another club comes back
+        // with his day-one club too.
+        const clean = withoutPlayersElsewhere(fresh, [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])]);
+        const leagueSquads = [...(c.leagueSquads ?? []), ...clean.filter(s => !already.has(s.club))];
         return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
       });
     });
@@ -1648,8 +1659,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       if (!alive || !full || full.players.some(p => p.id.startsWith("gen:"))) return;
       setCareer(c => {
         if (!c || c.player.club !== club) return c;
-        const merged = mergeLeagueSquadStats([full], c.leagueSquads ?? [])[0];
-        const already = (c.leagueSquads ?? []).some(s => s.club === club);
+        // Added to, never replaced: the club's transfers this career stay.
+        const current = (c.leagueSquads ?? []).find(s => s.club === club);
+        const elsewhere = [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])].filter(s => s.club !== club);
+        const merged = addFullRoster(full, current, elsewhere);
+        const already = !!current;
         const leagueSquads = already
           ? (c.leagueSquads ?? []).map(s => (s.club === club ? merged : s))
           : [...(c.leagueSquads ?? []), merged];
@@ -2212,7 +2226,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
         setCareer(c => {
           if (!c || !(c.leagueSquads ?? []).length) return c;
-          const filled = hydrateSquads(c.leagueSquads ?? []);
+          const filled = relabelOutOfPosition(hydrateSquads(c.leagueSquads ?? []));
           if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
             const leagueSquads = mergeLeagueSquadStats(fresh, filled);
             return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
@@ -2238,7 +2252,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(c => {
           if (!c || !(c.externalSquads ?? []).length) return c;
           const externalSquads = reconcileExternalSquads(
-            hydrateSquads(c.externalSquads ?? []), fresh,
+            relabelOutOfPosition(hydrateSquads(c.externalSquads ?? [])), fresh,
             club => !!c.ownedClubs?.[club]?.dissolvedInto,
           );
           return { ...c, externalSquads };
@@ -3872,10 +3886,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                 pressure={0.3}
                 penaltyRunup={careerPenaltyRunup(career)}
                 freeKickRunup={careerFreeKickRunup(career)}
-                farewell={{ offAt: FAREWELL_OFF_AT }}
+                farewell={{ offAt: FAREWELL_OFF_AT, onOvation: (m) => { if (ovationLook() === "new") setOvationAt(m); } }}
               />
             </div>
           </div>
+          {ovationAt !== null && (
+            <StandingOvation career={career} sides={sides} minute={ovationAt} onDone={() => setOvationAt(null)} />
+          )}
         </PitchScope>
       );
     }

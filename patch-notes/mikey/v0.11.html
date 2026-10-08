@@ -1,0 +1,267 @@
+<title>Knowitball Patch Notes Mikey v0.11</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:10px 0 4px}
+  .shots figure{margin:0}
+  .shots img{display:block;width:100%;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+  .shots figcaption{font-size:12px;color:var(--ink2);margin-top:4px}
+  .check{list-style:none;margin:0;padding:0}
+  .check li{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .check li:last-child{border-bottom:0}
+  .check input{margin-top:4px;accent-color:var(--green);flex:0 0 auto}
+  .check b{display:block;font-size:14px}
+  .check span{display:block;font-size:12.5px;color:var(--ink3)}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.11</span>
+  <h1>Knowitball Patch Notes Mikey v0.11</h1>
+  <p class="sub">8 October 2026 · branch Mikey · 16 commits since v0.10 · tests: 266 of 266 passing</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>360°</b><span>The new 3D standing ovation at the farewell's 85th minute</span></div>
+  <div class="s"><b>0</b><span>Centre-backs labelled as strikers (Khusanov won a Golden Boot this way)</span></div>
+  <div class="s"><b>14–17</b><span>Assist King's total (was 10–14)</span></div>
+  <div class="s"><b>24–34 m/s</b><span>A defender's clearance (was 18–26)</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check" id="check">
+  <li><input type="checkbox" id="c1"><label for="c1"><b>3D standing ovation at 85'</b><span>Farewell match, or /star-retirement-dev → Standing ovation · 3D</span></label></li>
+  <li><input type="checkbox" id="c2"><label for="c2"><b>Standing ovation New | Old switch</b><span>Settings → Look → Standing ovation</span></label></li>
+  <li><input type="checkbox" id="c3"><label for="c3"><b>Kick-off shows the commentary</b><span>Any match whose first chance is after 12'</span></label></li>
+  <li><input type="checkbox" id="c4"><label for="c4"><b>"End of Season" waits for you after the last match</b><span>Home, after the season's last fixture</span></label></li>
+  <li><input type="checkbox" id="c5"><label for="c5"><b>Career round-up page buttons</b><span>End-of-career screen → the row under the title</span></label></li>
+  <li><input type="checkbox" id="c6"><label for="c6"><b>Golden Boot winners are real attackers</b><span>Season Awards</span></label></li>
+  <li><input type="checkbox" id="c7"><label for="c7"><b>Other clubs keep their transfers across seasons</b><span>Team sheets of promoted clubs and the club you join</span></label></li>
+  <li><input type="checkbox" id="c8"><label for="c8"><b>More assists, a clearer Assist King</b><span>Season Awards → Assist King</span></label></li>
+  <li><input type="checkbox" id="c9"><label for="c9"><b>Clearances fly, miscue and hit bodies</b><span>Any chance a defender clears; Settings → Look → Gameplay → Clearances</span></label></li>
+  <li><input type="checkbox" id="c10"><label for="c10"><b>Negotiations roll; sponsors are take it or leave it</b><span>Transfers, contracts, manager hiring; Sponsors</span></label></li>
+  <li><input type="checkbox" id="c11"><label for="c11"><b>Relations: the manager's penalties, a harder signing session</b><span>Life → Relations</span></label></li>
+  <li><input type="checkbox" id="c12"><label for="c12"><b>Phone: Home and Back buttons</b><span>The phone, any app</span></label></li>
+  <li><input type="checkbox" id="c13"><label for="c13"><b>KIB can price, star bar, records, ratings, Star Pass levels</b><span>Shop, post-match, Season Awards, Star Pass</span></label></li>
+</ul>
+
+<h2 class="add"><i></i>Headline: the standing ovation, in 3D</h2>
+<div class="box">
+  <div class="hd">Off at 85' in your farewell: the camera circles you once, the whole ground stands and claps, and team-mates and rivals stop you on the way off.</div>
+  <div class="dt"><b>Problem:</b> the 85th minute was a banner over the commentary. <b>Why:</b> it was built as text first. <b>Fix:</b> a 3D scene of about 24 seconds, asked for in your recording. You walk to the touchline clapping the fans above your head. Your two best team-mates and two rivals stop you, Ballon d'Or winners first: a hug, a dap-up that pulls in, a pat on the back, another dap-up. The substitute waits on the line, hugs you and runs on. Everyone else on the pitch claps you off, and a caption names each man. Skip › ends it at any time. A phone that can't run 3D gets a drawn version. <span class="tag seen">seen on the test page</span></div>
+  <div class="shots">
+    <figure><img src="v0.11/img/ovation-hug.jpg" alt="Your team-mate hugs you"><figcaption>A team-mate's hug: arms round each other's backs.</figcaption></figure>
+    <figure><img src="v0.11/img/ovation-sub.jpg" alt="The substitute hugs you on the line"><figcaption>The substitute on the touchline. Look for: the caption names him.</figcaption></figure>
+    <figure><img src="v0.11/img/ovation-walkoff.jpg" alt="You clap the fans as you walk off"><figcaption>The walk-off: hands above your head to every stand.</figcaption></figure>
+  </div>
+  <details><summary>How it was made</summary>
+    <p>It uses the same players, stadium and clapping arms as the guard of honour. There are no hug or dap-up animations in our files, and none in the free packs we use. Blender isn't on the cloud machine either. So every greeting is posed live, arm by arm: each hand reaches for a point on the other man.</p>
+    <p>A first try had the hands stopping 0.23 m short, on the other man's chest, because an arm reaches only about half a metre. So now the two of them stand chest to chest. Also fixed: at the end of the circle, the camera passed inside the stand. Now it stops short of it.</p>
+    <p>Files: <code>lib/star/ovation.ts</code> (who, where, when; tested), <code>lib/star/ovation3d.ts</code>, <code>components/star/Farewell.tsx</code>, switch <code>lib/star/ovationLook.ts</code>.</p>
+  </details>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">A centre-back won the Golden Boot as a striker</div>
+    <div class="dt"><b>Problem:</b> Man City's Khusanov (a centre-back) won the Golden Boot with 24 goals, and Player of the Season. <b>Why:</b> each club fills fixed slots, two of them strikers. Man City has one real striker. The second slot took "the best player left" and called him a striker, from day one of every career. The dev skip didn't cause it; it only showed it. <b>Fix:</b> a player who fits nowhere near a slot keeps his own position, and old saves are put right when they load. Run through 19 real-data seasons: Khusanov stays a CB, and every Golden Boot winner is a real attacker. <span class="tag">measured</span></div>
+    <div class="shots"><figure><img src="v0.11/img/golden-boot-before.jpg" alt="Before: Khusanov, Golden Boot, 24 goals"><figcaption>Before, from your recording (3:20).</figcaption></figure></div>
+  </li>
+  <li>
+    <div class="hd">Man United and Wolves lined up as on day one after 19 seasons</div>
+    <div class="dt"><b>Problem:</b> their team sheets matched day one, while the Ballon d'Or list showed their players at new clubs. <b>Why:</b> it wasn't the dev skip. Two real causes:
+      <ul>
+        <li>A relegated club's squad was thrown away, and a fresh day-one copy was loaded when it came back up.</li>
+        <li>The club you join was reloaded from the database over its own transfers.</li>
+      </ul>
+      <b>Fix:</b> squads go down and come back up with their clubs. A loaded squad never re-adds a player now at another club. Your new club only gains the players it was missing. Over 19 real-data seasons, no club was missing its squad and no player was at two clubs. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Kick-off jumped straight to a chance at 44'</div>
+    <div class="dt"><b>Problem:</b> in your farewell, pressing kick off went straight to your first chance at 44', with no commentary. <b>Why:</b> since v0.25, Play jumps straight to your first chance. That is fine at 5', but here it skipped a whole half. <b>Fix:</b> it only jumps to a first chance at or before 12'. A later one is read out minute by minute. <span class="tag">not yet seen</span></div>
+    <details><summary>Why the first chance was so late</summary><p>The background match engine on its own, run 1,000 times with the rivals 6 points stronger, gave a first chance by 7' on average, and fewer than 1 in 100 first halves with none. Your farewell was that rare case, or something in the real match differs. Not found yet: see Known issues.</p></details>
+  </li>
+  <li>
+    <div class="hd">The last match went straight into the awards</div>
+    <div class="dt"><b>Problem:</b> "it didn't let me press end the season". <b>Fix:</b> after the last fixture you land on Home, where "End of Season 🏆" waits for you. <span class="tag">not yet seen</span></div>
+  </li>
+  <li>
+    <div class="hd">No clear way back to the start of the career round-up</div>
+    <div class="dt"><b>Problem:</b> on a later page there were only dots and edge arrows. <b>Fix:</b> a row of page buttons (Career, Seasons, Who won, Clubs, Trophies, Records, Life). One tap goes to any page. <span class="tag">not yet seen</span></div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Assists: more of them, and real creators stand out</div>
+    <div class="dt">Goals with an assist: 62 in 100 → 74 in 100 (a real league is about three in four). Better and better-passing creators get them much more often. Measured over 4 real-data seasons. <span class="tag">measured</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Assist King before</span><span class="track"><span class="fill was" style="width:71%"></span></span><span class="vv"><s>10–14</s></span></div>
+      <div class="bar"><span class="lb">Assist King now</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">14–17</span></div>
+      <div class="bar"><span class="lb">More A than G, before</span><span class="track"><span class="fill was" style="width:56%"></span></span><span class="vv"><s>1 in 7</s></span></div>
+      <div class="bar"><span class="lb">More A than G, now</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">1 in 4</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Clearances: you see the boot, and they can go wrong</div>
+    <div class="dt">A clean clearance is 24–34 m/s, up to 60° either way (was 18–26 m/s, about 22°). It keeps flying instead of freezing. New (Settings → Look → Gameplay → Clearances): miscues happen 30 in 100 times for a defender rated 50, down to 10 in 100 at 90. A boot into a body comes off loose, and one live second ball per chance. Over 1,440 chances: goals 480 → 510, own goals 12 → 8. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Negotiations are a roll, not a rule</div>
+    <div class="dt">Every counterpart has a hidden limit (their valuation ± 10%). Each counter-offer is a roll: they come up, hold firm, drop to a worse final offer, or walk out. The risk of walking out climbs with how far past their limit you ask: fair about 9%, cheeky 47%, insulting 97%. Sponsors no longer haggle: Sign or Leave it. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Relations reworked</div>
+    <div class="dt">Happiness is the average of boss, team and fans. Each Relations game costs 30 energy, the same as training. Talk to your manager is replaced by <b>the manager's penalties</b>: three shots, each at the spot he names, +2 a hit, −2 for none. The signing session is always 10 fans, up to 3 things each, scored at the end. A match changes a relationship by ±6 at most. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Smaller changes</div>
+    <div class="dt">
+      <ul>
+        <li><b>Basic KIB can:</b> 2 weeks' wage.</li>
+        <li><b>Post-match star bar:</b> one smooth run that eases out, across a level-up too.</li>
+        <li><b>Records:</b> listed once on the Season Awards round-up, not after every match.</li>
+        <li><b>Ratings:</b> a softer curve for minutes played; goals, passes and misses graded (all tunable).</li>
+        <li><b>Star Pass:</b> a reward can sit at any level, 1–100.</li>
+        <li><b>The phone:</b> Home (left) and Back (right) buttons; the league table is zoomed in.</li>
+      </ul>
+      <span class="tag">from the commits</span></div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Every men's Ballon d'Or winner, 1956–2025, saved for a future game mode</div>
+    <div class="dt">Taken only from ballondor.com: the 70 year rankings, all 47 winners' player pages and about 155 articles. Winning-season stats exist on the site for only 7 of 69 years. Page: <a href="https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC">Ballon d'Or Winners File</a>. Data: <code>data/ballondor/</code>. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Farewell: why the first chance came at 44' <span class="pill p-amb">Low</span></div>
+    <div class="dt">The quick start no longer hides it, but the cause is open. The background engine alone makes a chance-less first half under 1 in 100. Needs a played farewell to check against the real match.</div>
+  </li>
+  <li>
+    <div class="hd">Other clubs' players never age or retire <span class="pill p-amb">Low</span></div>
+    <div class="dt">Found while planning the retirement work (5 Oct). Over 20 seasons the squads are the same people at the same ages. Transfers do move them now (above).</div>
+  </li>
+  <li>
+    <div class="hd">Not yet seen in a played career <span class="pill p-amb">Low</span></div>
+    <div class="dt">The ovation was seen on the test page only. The kick-off commentary, End of Season and the round-up buttons are measured or worked out from the code. A full playtest was running when this page went out.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Your verdict on the ovation</div><div class="dt">Length (about 24 s), who greets you, and whether to make real hug animations in Blender in a local session.</div></li>
+  <li><div class="hd">The Ballon d'Or game mode</div><div class="dt">Waiting on: the design.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk">v0.10</a> · 4 October 2026 · Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off</li>
+  <li><a href="https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg">v0.9</a> · 3 October 2026 · XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data</li>
+  <li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 30 September 2026 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 30 September 2026 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 27 September 2026 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 26 September 2026 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>
+<script>
+(function(){var k="kib-pn-mikey-0.11";var s={};try{s=JSON.parse(localStorage.getItem(k)||"{}")}catch(e){}
+document.querySelectorAll("#check input").forEach(function(c){c.checked=!!s[c.id];c.addEventListener("change",function(){s[c.id]=c.checked;try{localStorage.setItem(k,JSON.stringify(s))}catch(e){}})});})();
+</script>

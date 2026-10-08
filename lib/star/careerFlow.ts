@@ -57,7 +57,7 @@ import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
 import { resolveLadder, membershipOf, type LadderOutcome } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
-import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
+import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
@@ -1776,15 +1776,26 @@ export function advanceSeason(
     // data — facilities.ts) should make its wonderkids grow genuinely
     // faster there, not just be a number a majority owner can cosmetically
     // upgrade.
-    leagueSquads: growWonderkids(
-      resetLeagueSquads((career.leagueSquads ?? []).filter(s => clubs.includes(s.club))),
-      mulberry32(career.season * 71923 + 5),
-      club => facilitiesFor(career, club).trainingGroundTier,
-    ),
-    externalSquads: growWonderkids(
-      career.externalSquads ?? [], mulberry32(career.season * 71923 + 7),
-      club => facilitiesFor(career, club).trainingGroundTier,
-    ),
+    // A club leaving your division keeps its squad (out in the wider world),
+    // and a club coming in takes its own back from there. Dropping them
+    // meant a promoted club was refetched as the database's day-one squad:
+    // after 19 seasons Man United and Wolves lined up exactly as on day one,
+    // while their real players had long moved on (Mikey's playtest, 8 Oct
+    // 2026). See moveSquadsWithLadder.
+    ...(() => {
+      const moved = moveSquadsWithLadder(career.leagueSquads ?? [], career.externalSquads ?? [], clubs);
+      return {
+        leagueSquads: growWonderkids(
+          resetLeagueSquads(moved.leagueSquads),
+          mulberry32(career.season * 71923 + 5),
+          club => facilitiesFor(career, club).trainingGroundTier,
+        ),
+        externalSquads: growWonderkids(
+          moved.externalSquads, mulberry32(career.season * 71923 + 7),
+          club => facilitiesFor(career, club).trainingGroundTier,
+        ),
+      };
+    })(),
     // A fresh season — a rivalry's grace tracking is keyed off cumulative
     // SEASON goals+assists (incumbency.ts's own `lastGoalsPlusAssists`),
     // which `resetLeagueSquads` above just zeroed for everyone. Carrying an

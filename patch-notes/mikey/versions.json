@@ -5,7 +5,7 @@
     "fromCommit": "88c1966",
     "toCommit": "a406c46",
     "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
-    "headline": "Economy, fame and reputation rebuild: Premier League wages to \u00e2\u02dc\u2026100k, fame levels, one reputation number, 50-season careers"
+    "headline": "Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers"
   },
   {
     "version": "0.2",
@@ -75,8 +75,16 @@
     "version": "0.10",
     "date": "2026-10-04",
     "fromCommit": "41d20ef3",
-    "toCommit": "HEAD",
+    "toCommit": "15393ac6",
     "url": "https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk",
     "headline": "Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off"
+  },
+  {
+    "version": "0.11",
+    "date": "2026-10-08",
+    "fromCommit": "15393ac6",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
+    "headline": "3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked"
   }
 ]
