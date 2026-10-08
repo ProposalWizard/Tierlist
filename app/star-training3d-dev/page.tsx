@@ -13,7 +13,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageGuide from "@/components/admin/PageGuide";
-import Training3D, { type Training3DResult } from "@/components/star/Training3D";
+import Training3D, { type TrainingGateResult } from "@/components/star/Training3D";
+import type { DrillId } from "@/lib/star/play3d/drills";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
@@ -46,9 +47,19 @@ export default function StarTraining3DDevPage() {
   return <Body />;
 }
 
+const OPEN: { id: DrillId | "picker"; label: string }[] = [
+  { id: "picker", label: "Picker" }, { id: "crossbar", label: "Crossbar" }, { id: "two-touch", label: "Two Touch" }, { id: "free-roam", label: "Free Roam" },
+];
+
 function Body() {
   const [key, setKey] = useState(0);
-  const [last, setLast] = useState<Training3DResult | null>(null);
+  const [last, setLast] = useState<TrainingGateResult | null>(null);
+  // ?drill=two-touch|free-roam|crossbar opens a drill straight away (no picker)
+  const [drill, setDrill] = useState<DrillId | "picker">("picker");
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("drill");
+    if (q && OPEN.some((o) => o.id === q)) setDrill(q as DrillId);
+  }, []);
   const career = useMemo(() => {
     const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
     const c: CareerState = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
@@ -61,14 +72,20 @@ function Body() {
   return (
     <>
       <Training3D
-        key={key}
+        key={`${drill}-${key}`}
         career={career}
+        startDrill={drill === "picker" ? undefined : drill}
         onExit={() => { window.location.href = "/star-3d-area-dev"; }}
         onFinish={(r) => { setLast(r); setKey((k) => k + 1); }}
       />
+      <div className="fixed left-1/2 top-1 z-[90] flex -translate-x-1/2 gap-1" data-dev-drills>
+        {OPEN.map((o) => (
+          <button key={o.id} onClick={() => { setDrill(o.id); setKey((k) => k + 1); }} className={`h-[26px] rounded-full border px-2 text-[11px] font-extrabold ${drill === o.id ? "border-sky-300 bg-sky-500 text-white" : "border-white/20 bg-black/60 text-white"}`}>{o.label}</button>
+        ))}
+      </div>
       <div className="fixed bottom-3 right-3 z-[90] flex gap-1.5">
         <button onClick={() => setKey((k) => k + 1)} className="h-[30px] rounded-full border border-white/20 bg-black/60 px-2.5 text-[12px] font-extrabold text-white">Restart</button>
-        {last && <div className="h-[30px] rounded-full bg-black/60 px-2.5 text-[12px] font-extrabold leading-[30px] text-white">Last: {last.you}-{last.him} ({last.won ? "won" : "lost"}, Team {last.gain >= 0 ? "+" : ""}{last.gain})</div>}
+        {last && <div className="h-[30px] rounded-full bg-black/60 px-2.5 text-[12px] font-extrabold leading-[30px] text-white">Last: {last.you !== undefined ? `${last.you}-${last.him} ` : ""}({last.drill ?? "crossbar"}, {last.won ? "won" : "lost"}, Team {last.gain >= 0 ? "+" : ""}{last.gain})</div>}
       </div>
       <PageGuide page="/star-training3d-dev" corner="bottom-left" />
     </>
