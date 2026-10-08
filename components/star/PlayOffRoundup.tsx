@@ -57,11 +57,6 @@ function stepsFor(b: Bracket): Step[] {
 
 const pct = (x: number, y: number) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` });
 
-function ordinal(n: number) {
-  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th";
-  return `${n}${s}`;
-}
-
 /** The connector from a tie's two slots to where its winner goes. */
 function connector(b: Bracket, t: BracketTie): { stubs: Record<Slot, string>; out: string } | null {
   const S = SPOTS[b.format];
@@ -209,9 +204,6 @@ export default function PlayOffRoundup({ bracket, title, nextLine, you, onContin
                       </div>
                       <div className="absolute left-1/2 top-full mt-0.5 w-[74px] -translate-x-1/2 truncate text-center text-[9px] font-semibold leading-tight text-white/90">
                         {shortClub(team.club)}
-                      </div>
-                      <div className="absolute -left-1.5 -top-1.5 rounded-full bg-white px-1 text-[8px] font-bold leading-[13px] text-emerald-900">
-                        {ordinal(team.pos)}
                       </div>
                       {score !== undefined && (
                         <div className="absolute grid h-[19px] min-w-[19px] place-items-center rounded-full bg-black px-1 text-[11px] font-bold text-white"
