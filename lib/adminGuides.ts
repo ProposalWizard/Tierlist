@@ -1150,6 +1150,21 @@ export const ADMIN_GUIDES = {
     inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop."],
     dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts (Old look: sceneOld.ts); tap to move lib/star/tapWalk.ts; the walk lib/star/walkClip.ts; draw-call merging lib/star/freezeStatic.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
   },
+  "/star-training3d-dev": {
+    title: "3D Training",
+    what: "The first game on the 3D training pitch: the Crossbar Challenge, you against one team-mate, on a made-up career. It is the screen a career will open from the garden's training-pitch gate.",
+    buttons: [
+      { items: [
+        ["Drag the ball", "Your shot, on the real match: aim, then the strike screen, exactly as in a match. As you strike it the 3D pitch fades in and shows the same ball flying, from behind you."],
+        ["← Back", "Only before your first shot. Goes to the 3D Test Area."],
+        ["Restart", "Starts again with a different team-mate and different shots for him."],
+        ["Continue →", "On the result card. Here it just starts a new challenge and shows the score in the \"Last\" pill."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The career is made up, and the result (and the Team bar change it shows) goes nowhere."],
+    inGame: ["Not in a career yet. The garden's training-pitch gate will open it; there, winning (or drawing) moves the Team bar the same way the Woodwork challenge does."],
+    dev: "app/star-training3d-dev/page.tsx; the screen components/star/Training3D.tsx (your shots on EngineFeature, components/star/EnginePlay.tsx); rules + his cut-scene path lib/star/training3d/crossbar.ts (test tests/star/crossbar3d.mts); the 3D pitch lib/star/training3d/scene.ts (people from lib/star/people3d.ts, loaders through withMeshopt).",
+  },
   "/star-shop3d-dev": {
     title: "3D Shop",
     what: "The walk-around 3D shop, with test controls. It is the same screen a career opens from the Shop page's \"Walk the 3D shop (beta)\" button. Here nothing reaches a career.",
