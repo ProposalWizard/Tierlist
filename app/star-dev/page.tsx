@@ -59,7 +59,7 @@ import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel, divisionOf, isRegionalDivision, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { refreshXpConfig } from "@/lib/star/xpStore";
@@ -144,6 +144,9 @@ import CanvasMatch from "@/components/star/CanvasMatch";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
+import PlayOffRoundup from "@/components/star/PlayOffRoundup";
+import { shortClub } from "@/lib/star/media/grammar";
+import { buildBracket } from "@/lib/star/playOffBracket";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
 import GlobalSettingsScreen from "@/components/star/GlobalSettingsScreen";
@@ -804,6 +807,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // domestic cup, or a new tie in the Champions/Europa League; cleared once
   // the player has clicked through it.
   const [pendingDraw, setPendingDraw] = useState<{ competition: string; round: DrawRound } | null>(null);
+  // The play-off round-up last shown ("season:round:week" or "season:end"),
+  // so coming back from it moves on instead of showing it again.
+  const roundupShown = useRef<string | null>(null);
 
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
@@ -1503,6 +1509,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPhase("draw");
           return;
         }
+      }
+    }
+
+    // Play-offs (Mikey, 8 Oct 2026): the bracket so far before each of your
+    // play-off matches, and once more when your run is over.
+    if (from.playOffState) {
+      const upcoming = from.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+      const runOver = !!from.playOffState.yourRunOver && playedFixture?.kind === "playoff";
+      const key = upcoming?.kind === "playoff" ? `${from.season}:${upcoming.round}:${upcoming.week}`
+        : runOver ? `${from.season}:end` : null;
+      if (key && roundupShown.current !== key) {
+        roundupShown.current = key;
+        setCareer(from);
+        setPhase("playoff-roundup");
+        return;
       }
     }
 
@@ -3790,6 +3811,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPendingDraw(null);
           continueAfterMatch(career, false, true);
         }}
+      />
+    );
+  }
+
+  if (phase === "playoff-roundup" && career.playOffState) {
+    const table = sortLeague(career.league).map((t) => t.name);
+    const upcoming = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+    const nextPo = upcoming?.kind === "playoff" ? upcoming : undefined;
+    const po = career.playOffState;
+    const you = career.player.club;
+    const nextLine = nextPo
+      ? `${nextPo.round} · ${nextPo.round === "Play-Off Final" && po.format !== "six" ? "at Wembley v" : nextPo.home ? "home to" : "away at"} ${shortClub(nextPo.opponent)}`
+      : po.promoted === you ? "Promoted!"
+      : po.promoted ? `${shortClub(po.promoted)} go up`
+      : "Out of the play-offs";
+    return (
+      <PlayOffRoundup
+        bracket={buildBracket(po, you, (c) => table.indexOf(c) + 1, nextPo?.round)}
+        title={leagueNameFor(divisionOf(career))}
+        nextLine={nextLine}
+        you={you}
+        onContinue={() => continueAfterMatch(career, false, true)}
       />
     );
   }

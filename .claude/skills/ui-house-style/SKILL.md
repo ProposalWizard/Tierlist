@@ -39,6 +39,15 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 8 Oct 2026 — play-off brackets (Mikey)
+- **A knockout is shown as a bracket, mirrored like a cup "Road to the Final"
+  graphic**: side A left, side B right, final and trophy in the middle. When a
+  round finishes, "the lines growing and attaching and then becoming a new
+  fixture": scores pop, the loser fades, the winner's line grows and his crest
+  slides into the next tie (`components/star/PlayOffRoundup.tsx`). Shown before
+  each of your play-off matches. The Champions League and cups get their own
+  plan later (bigger brackets).
+
 ### 5 Oct 2026 — post-match relationships are bars, not numbers (Mikey)
 - **No "+10" chips after a match.** The boss/team/fans row shows three bars at
   their real values; when that beat arrives each slides to its new value,
