@@ -54,10 +54,25 @@ const making = new Map<string, Promise<EncodedClip | null>>();
 type QueuedJob = { run: () => Promise<unknown>; priority: number };
 const waiting: QueuedJob[] = [];
 let busy = false;
+// Posts on the page that are owed a video at a priority, made or not yet
+// queued. A job only starts when nothing on the page outranks it: a recorded
+// goal still loading from the device must not let another match's made goal
+// (ready instantly) slip in first. Played 8 Oct 2026, that is what happened.
+const owed = new Map<symbol, number>();
+const outranked = (p: number) => Array.from(owed.values()).some(q => q > p);
+function owe(p: number): () => void {
+  if (p <= 0) return () => {};
+  const t = Symbol("owed");
+  owed.set(t, p);
+  // Never hold the queue for ever if a video cannot be made at all.
+  const timer = setTimeout(() => { owed.delete(t); pump(); }, 45_000);
+  return () => { clearTimeout(timer); if (owed.delete(t)) pump(); };
+}
 function pump(): void {
   if (busy || !waiting.length) return;
   let i = 0;
   for (let k = 1; k < waiting.length; k++) if (waiting[k].priority > waiting[i].priority) i = k;
+  if (outranked(waiting[i].priority)) return;
   const next = waiting.splice(i, 1)[0];
   busy = true;
   next.run().finally(() => { busy = false; pump(); });
@@ -165,6 +180,10 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   // The men's moves follow Settings → Look → Animations, like the match.
   const moves = useAnimationsLook();
   const synthKey = (synth ?? []).map(g => g.seed).join(",");
+  // Hold the queue for this video until it is made (or cannot be).
+  const release = useRef<(() => void) | null>(null);
+  if (release.current === null && priority > 0) release.current = owe(priority);
+  useEffect(() => () => { release.current?.(); }, []);
   const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
 
   useEffect(() => {
@@ -270,6 +289,15 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     if ((near || priority > 0) && edit && canPlay && status === "idle") void start(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [near, priority, edit, canPlay, status]);
+
+  useEffect(() => {
+    // Its own job is queued (inTurn) or done: stop holding the others back.
+    if (status === "making" || status === "ready" || status === "failed" || status === "unsupported" || canPlay === false || (tracks && !tracks.length)) {
+      // Once queued, the queue's own order keeps it ahead of lower ones.
+      release.current?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, canPlay, tracks]);
 
   const clip = made.get(key)?.clip ?? null;
 

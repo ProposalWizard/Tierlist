@@ -119,6 +119,26 @@ export function templateCount(): number {
   return ALL.length;
 }
 
+// Slots the grammar fills from a word pool, not from the event's facts.
+const POOL_SLOTS = new Set(["late", "winVerb", "lossVerb", "bigWin", "bigLoss", "greatGoal", "ratingWord", "poorWord"]);
+/**
+ * Every fact a template's words name is on the event. Without this a missing
+ * score printed as nothing: "-. Thank you for the support today!" and
+ * "…a football club. -." (both seen in the game, 8 Oct 2026, on other clubs'
+ * accounts reacting to a goal event that carries no score).
+ */
+function slotsFilled(e: FootballEvent, body: string | undefined): boolean {
+  if (!body) return true;
+  for (const m of Array.from(body.matchAll(/\{([^}|]+)/g))) {
+    const k = m[1].trim();
+    if (POOL_SLOTS.has(k)) continue;
+    // `{thread.x}` reads the thread's facts (flattened in feed.ts render).
+    const v = k.startsWith("thread.") ? e.thread?.facts[k.slice(7)] : e.facts[k];
+    if (v === undefined || v === null || v === "") return false;
+  }
+  return true;
+}
+
 function has(e: FootballEvent, keys?: string[]): boolean {
   if (!keys) return true;
   return keys.every((k) => {
@@ -156,6 +176,7 @@ export function chooseTemplate(
 
   const usable = pool.filter(t =>
     has(event, t.requires)
+    && slotsFilled(event, wantThread && t.threadBody ? t.threadBody : t.body)
     && !(t.excludes ?? []).some(k => event.facts[k] !== undefined)
     && (!t.frames || t.frames.includes(frame))
     && (!wantThread || !!t.threadBody || t.id.endsWith("-generic"))
