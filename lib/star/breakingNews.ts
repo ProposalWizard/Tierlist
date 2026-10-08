@@ -9,7 +9,8 @@
  * trophy. Nothing else.
  */
 import type { CareerState, Fixture } from "./types";
-import { divisionOf, leagueNameFor } from "./calendar";
+import { divisionOf, leagueNameFor, relegationPlaces, isRegionalDivision, divisionBelow } from "./calendar";
+import { sortLeague } from "./season";
 import { shortClub } from "./media/grammar";
 import { faceOrFake } from "./fakeFaces";
 
@@ -60,5 +61,31 @@ export function newsForMatch(before: CareerState, after: CareerState, fixture: F
   const out: BreakingNews[] = [];
   if ((before.careerStats?.goals ?? 0) === 0 && (after.careerStats?.goals ?? 0) > 0) out.push(firstGoalNews(after));
   if (competition && after.knockoutMessage?.startsWith("🏆")) out.push(trophyNews(after, competition));
+  const down = relegationNews(after, fixture);
+  if (down) out.push(down);
   return out;
+}
+
+/**
+ * Relegation day (Mikey, 8 Oct 2026): the last league match is played and
+ * your club has finished in the drop. Null any other time.
+ */
+export function relegationNews(after: CareerState, fixture: Fixture): BreakingNews | null {
+  if ((fixture.kind ?? "league") !== "league") return null;
+  if (after.fixtures.some(f => !f.played && (f.kind ?? "league") === "league")) return null;
+  const table = sortLeague(after.league);
+  const division = divisionOf(after);
+  const pos = table.findIndex(t => t.name === after.player.club) + 1;
+  if (pos <= 0 || pos <= table.length - relegationPlaces(division)) return null;
+  const club = after.player.club;
+  const below = divisionBelow(division);
+  const where = division === "national_league" ? "the National League North or South"
+    : below ? `the ${leagueNameFor(below)}` : "the division below";
+  return {
+    headline: upper(`${shortClub(club)} relegated`),
+    line: isRegionalDivision(division)
+      ? `${shortClub(club)} drop out of the league system. ${after.player.lastName} needs a new club.`
+      : `Down to ${where}. ${after.player.lastName}'s wage and bonuses are cut by a quarter if he stays.`,
+    club, face: faceOf(after),
+  };
 }

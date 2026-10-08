@@ -183,6 +183,8 @@ export interface MatchRecord {
     relegationGap: number;
     matchesLeft: number;
     clubs: number;
+    /** How many go down from this division (3 if absent, an old record). */
+    relegationPlaces?: number;
   };
 
   cup?: { advanced: boolean; eliminated: boolean; trophy: boolean };

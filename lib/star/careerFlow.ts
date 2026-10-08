@@ -24,7 +24,7 @@ import { allPoolManagers } from "./managerPool";
 import { rivalryMultiplier } from "./rivalries";
 import { horseUpkeep } from "./horse";
 import { progressObjectives, rollSponsorSeason } from "./sponsors";
-import { appearanceMoney, loyaltyMoney } from "./contracts";
+import { appearanceMoney, loyaltyMoney, contractForClubMove } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
   qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, nextFixtureFor,
@@ -1812,7 +1812,12 @@ export function advanceSeason(
     injury: null,
     form: [],
     rawForm: [],
-    contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
+    // Up or down with your club: a quarter on or off the wage (contracts.ts).
+    contract: {
+      ...contractForClubMove(career.contract,
+        justTransferred || career.placement ? null : seasonClubMove(career.player.club, divisionOf(career), ladder)),
+      seasonsRemaining: career.contract.seasonsRemaining - 1,
+    },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
     squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
     europeanQualification: qualification,

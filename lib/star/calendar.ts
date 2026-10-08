@@ -181,6 +181,16 @@ export function divisionRank(division: CareerDivision): number {
 /** The division directly above this one on the English ladder, or null for
  *  the Premier League itself. North and South both answer the National
  *  League. */
+/** How many clubs go down from this division (promotion.ts BOUNDARIES;
+ *  North/South send four to Step 3). The Premier League's three included. */
+export function relegationPlaces(division: CareerDivision): number {
+  switch (division) {
+    case "league_one": case "national_league": case "national_league_north": case "national_league_south": return 4;
+    case "league_two": return 2;
+    default: return 3;
+  }
+}
+
 export function divisionAbove(division: CareerDivision): CareerDivision | null {
   const i = divisionRank(division);
   return i > 0 ? DIVISION_ORDER[i - 1] : null;
