@@ -1640,6 +1640,9 @@ export type StarPhase =
   /** The play-off bracket so far, before each of your play-off matches and
    *  once your run is over. See PlayOffRoundup. */
   | "playoff-roundup"
+  /** A cup or European round-up: results board, bracket, league-phase table.
+   *  See KnockoutRoundup. */
+  | "knockout-roundup"
   /** Golden Boot, Assist King, Golden Glove, Player/Young Player of the
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */

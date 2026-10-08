@@ -57,8 +57,10 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
-import { currentRound } from "@/lib/star/cups";
+import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
+import KnockoutRoundup, { type RoundupStage } from "@/components/star/KnockoutRoundup";
+import { knockoutRoundupFor } from "@/lib/star/knockoutView";
 import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
@@ -810,6 +812,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The play-off round-up last shown ("season:round:week" or "season:end"),
   // so coming back from it moves on instead of showing it again.
   const roundupShown = useRef<string | null>(null);
+  // The cup/European round-up waiting to be shown, and the ones already seen.
+  const [pendingKo, setPendingKo] = useState<{ competition: string; stages: RoundupStage[]; nextLine: string } | null>(null);
+  const koShown = useRef<Set<string>>(new Set());
 
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
@@ -1471,6 +1476,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // domestic final: with one tie left there is nothing to draw, the pairing
     // is just whoever won the semis. `skipDraw` is set on the way back IN
     // from that screen so this does not loop.
+    // Cup and European round-ups (Mikey, 8 Oct 2026): the whole round's
+    // results, and from the last sixteen the bracket, after each of your
+    // knockout matches; the league-phase table splitting in Europe.
+    const ko = playedFixture ? knockoutRoundupFor(from, playedFixture) : null;
+    if (ko && !koShown.current.has(ko.key)) {
+      koShown.current.add(ko.key);
+      setCareer(from);
+      setPendingKo(ko);
+      setPhase("knockout-roundup");
+      return;
+    }
+
     if (!skipDraw && playedFixture) {
       const cupCompetition = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup"
         ? playedFixture.competition : null;
@@ -1482,7 +1499,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // Only a draw you're in (v0.15 item 32) — knocked out, the next
         // round is drawn without you and the game moves straight on.
         const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
-        if (freshlyDrawn && round && youreIn) {
+        // From the quarter-finals the bracket has already shown the draw.
+        const r16 = roundNamesFor(cupCompetition as CupId).indexOf("Round of 16");
+        const shownInBracket = !!state && state.rounds.length - 1 > r16;
+        if (freshlyDrawn && round && youreIn && !shownInBracket) {
           setPendingDraw({ competition: cupCompetition, round });
           setPhase("draw");
           return;
@@ -1499,7 +1519,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // its first leg (or the tie itself) already has a score.
       const isEuroKnockout = playedFixture.kind === "europe"
         && (playedFixture.competition === "Champions League" || playedFixture.competition === "Europa League");
-      if (isEuroKnockout && from.euroState) {
+      if (isEuroKnockout && from.euroState && !from.euroState.bracket) {
         const tie = currentTie(from.euroState);
         const freshlyDrawn = tie && tie.legs.every((l) => l.us === undefined);
         if (freshlyDrawn && tie) {
@@ -3812,6 +3832,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPendingDraw(null);
           continueAfterMatch(career, false, true);
         }}
+      />
+    );
+  }
+
+  if (phase === "knockout-roundup" && pendingKo) {
+    return (
+      <KnockoutRoundup
+        competition={pendingKo.competition}
+        stages={pendingKo.stages}
+        nextLine={pendingKo.nextLine}
+        you={career.player.club}
+        onContinue={() => { setPendingKo(null); continueAfterMatch(career, false); }}
       />
     );
   }
