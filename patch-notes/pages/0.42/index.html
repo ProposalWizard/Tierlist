@@ -360,13 +360,11 @@ ul.plain.fl{margin-top:4px}
 
 <div class="strip"><div><b>2 new 3D places</b><span>a casino with 6 games and a training pitch, in the garden</span></div><div><b>4,025 → 931 px</b><span>Settings height in a career (5 screens → 1)</span></div><div><b>47% → 0%</b><span>of horse race cards with a horse that paid back more than you staked</span></div><div><b>20 → 1 tap</b><span>look switches set at once by the new version picker</span></div></div>
 
-<div class="box" id="mikey"><div class="kick">For Mikey: do these in order</div><h3>Supabase SQL Editor, then Vercel</h3><ol class="steps">
+<div class="box" id="mikey"><div class="kick">For Mikey: do these in order</div><h3>Supabase SQL Editor</h3><ol class="steps">
 <li><span class="hd">1. Run star_hall_of_fame.sql</span><p>Now with a 30-career cap. Safe to re-run. Verify queries at the bottom. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/star_hall_of_fame.sql" target="_blank" rel="noopener">Open the file</a></p></li>
 <li><span class="hd">2. Run star_legend_shares.sql</span><p>Copies the career from the Hall, 30 shares at most. Safe to re-run. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/star_legend_shares.sql" target="_blank" rel="noopener">Open the file</a></p></li>
 <li><span class="hd">3. Run xp_atomic_award.sql (optional)</span><p>Makes each XP reward pay once. Safe to re-run. <a href="https://github.com/ProposalWizard/Tierlist/blob/main/supabase/migrations/xp_atomic_award.sql" target="_blank" rel="noopener">Open the file</a></p></li>
-<li><span class="hd">DO NOT run star_casino.sql</span><p>The server casino is switched off (item 6). Leave the file alone.</p></li>
-<li><span class="hd">About 14 Oct: read a week of save-guard flags</span><p>Use the false-alarm query. If it is clean, set <code>STAR_SAVE_GUARD=enforce</code> in Vercel.</p></li>
-<li><span class="hd">Still pending from before (no change)</span><p>draft_records_full_fix.sql (Career Records fail without it), fc27_clone_lower_leagues.sql, sofifa_search_indexes.sql, perf_indexes_jul2026.sql, fix_two_digit_fifa_years.sql.</p></li></ol></div>
+</ol></div>
 
 <h2 id="headline" class="c-g"><i></i>The headline: the 3D world grew a casino and a training pitch</h2>
 <article class="it find" id="casino"><div class="it-top"><span class="pill p-new">Added</span><span class="pill p-core">live on the site</span><span class="pill p-wait">not seen on a phone</span></div>
@@ -461,7 +459,7 @@ ul.plain.fl{margin-top:4px}
 <h2 id="casinoserver" class="c-d"><i></i>Decision: the casino stays on the phone</h2>
 <article class="it" id="horses"><div class="it-top"><span class="pill p-dec">Decision</span><span class="pill p-ok">Fixed</span><span class="pill p-core">live on the site</span></div>
 <h3>No server casino for now. The horse odds fix stays.</h3>
-<div class="blk"><h4>What happened</h4><ul><li>We built a server casino. Harry decided not to use it for now.</li><li><b>Why:</b> it adds lag, and the free database is too small. 60 days of plays are about 150 MB at 100 daily players.</li><li>It is switched off with <code>CASINO_ON_SERVER = false</code>. The code is kept for later. <b>Mikey: do not run star_casino.sql.</b></li></ul></div>
+<div class="blk"><h4>What happened</h4><ul><li>We built a server casino. Harry decided not to use it for now.</li><li><b>Why:</b> it adds lag, and the free database is too small. 60 days of plays are about 150 MB at 100 daily players.</li><li>It is switched off with <code>CASINO_ON_SERVER = false</code>. The code is kept for later.</li></ul></div>
 <div class="blk"><h4>Problem (horse odds)</h4><p>On 47% of race cards, one horse paid back more than you staked, on average. The best paid ★9.57 for every ★1.</p></div>
 <div class="blk"><h4>Fix</h4><p>The best horse now pays ★0.99 for every ★1. <b>The odds you see changed.</b></p>
 <div class="bars"><div class="bar"><span class="bl">Cards with a horse above ★1 per ★1</span><span class="bt"><i style="width:47%;background:var(--line)"></i><i style="width:0%;background:var(--green)"></i></span><span class="bn"><s>47%</s> 0%</span></div><div class="bar"><span class="bl">Best horse, ★ back per ★1</span><span class="bt"><i style="width:100%;background:var(--line)"></i><i style="width:10%;background:var(--green)"></i></span><span class="bn"><s>9.57</s> 0.99</span></div></div></div>
@@ -483,13 +481,11 @@ ul.plain.fl{margin-top:4px}
 <li><b>The tour waits on Harry's video.</b></li>
 <li><b>The Ballon d'Or difficulty:</b> later.</li></ul></article>
 <article class="it"><h3>Still open from v0.34 and earlier</h3><ul class="plain">
-<li><b>Save guard is watch-only</b> until about 14 Oct (Mikey, red box at the top).</li>
 <li><b>The casino and Coins still trust the phone.</b> Do not sell Coins for real money.</li>
-<li><b>Still to run in Supabase (Mikey):</b> draft_records_full_fix.sql, fc27_clone_lower_leagues.sql, sofifa_search_indexes.sql, perf_indexes_jul2026.sql, fix_two_digit_fifa_years.sql.</li>
 <li><b>The tight-angle defender</b> at 1.9 to 2 m (Harry's call). <b>The tour flow</b> (half fixed). <b>Boots warnings</b> in the New UI only. <b>Tester access</b> untried.</li></ul></article>
 
 <h2 id="next" class="c-m"><i></i>Next</h2>
-<article class="it"><ul class="plain"><li><b>Wire the casino and training clips onto people</b> and keep you in frame for reactions.</li><li><b>Mikey runs the SQL files</b> and later switches the save guard to enforce.</li><li><b>Harry checks the 3D on his phone.</b></li></ul></article>
+<article class="it"><ul class="plain"><li><b>Wire the casino and training clips onto people</b> and keep you in frame for reactions.</li><li><b>Mikey runs the three SQL files.</b></li><li><b>Harry checks the 3D on his phone.</b></li></ul></article>
 
 <h2 id="prev" class="c-m"><i></i>Previous versions</h2>
 <details><summary>v0.34 — 7 Oct 2026 — paid items cannot be faked, 9 bug fixes, drawn badges</summary><ul class="hist"><li>Gems wallet that only the server can write, and a Save guard on every cloud save (15 of 15 cheat edits caught, 0 false alarms in 7,696 saves)</li><li>9 bugs fixed: the wall chasing a deflected free kick, a byline dead ball sitting for seconds, players lying down on byline crosses, left-footers kicking with the right foot, the flat camera losing players, the Back button over the header, the tiny Power drill goal, stretched close cameras, the open trial panel</li><li>Drawn club badges with symbols (118 of 248 clubs); a badges admin page</li><li>3D polish: tap to walk jogs, the car park keeps you in view, the 3D shop uses 2 real lights, Box Room and Shared Flat redrawn, the horse grazes</li><li>Relations → Boss picks 1 of 3; office moments for captain and the bench</li></ul><p class="w2"><b>Still open from v0.34:</b> the Save guard is watch-only (now due about 14 Oct); the casino and Coins trust the phone; Hall of Fame, legend shares, Draft records and XP were next to lock (done in this version, SQL to run); the 3D office captain and bench moments not seen; 3D shop lights on a phone not measured; tiger and lion drawings weak.</p></details>

@@ -67,18 +67,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "3. Run xp_atomic_award.sql (optional)",
               "detail": "Each XP reward pays once. Safe to re-run."
-            },
-            {
-              "title": "DO NOT run star_casino.sql",
-              "detail": "The server casino is switched off."
-            },
-            {
-              "title": "About 14 Oct: read a week of save-guard flags",
-              "detail": "Use the false-alarm query. If clean, set STAR_SAVE_GUARD=enforce in Vercel."
-            },
-            {
-              "title": "Still pending from before",
-              "detail": "draft_records_full_fix.sql, fc27_clone_lower_leagues.sql, sofifa_search_indexes.sql, perf_indexes_jul2026.sql, fix_two_digit_fifa_years.sql."
             }
           ]
         },
@@ -226,7 +214,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "And keep you in frame for reactions."
             },
             {
-              "title": "Mikey runs the SQL files, later sets the save guard to enforce"
+              "title": "Mikey runs the three SQL files"
             },
             {
               "title": "Harry checks the 3D on his phone"
