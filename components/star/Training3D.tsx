@@ -37,7 +37,7 @@ import {
   CROSSBAR_SHOTS, CROSSBAR_SPOT, touchingBar, touchingPost, rollMateShots, crossbarReward, crossbarWinner,
   type MateShot,
 } from "@/lib/star/training3d/crossbar";
-import type { TrainingController } from "@/lib/star/training3d/scene";
+import { KICK_DELAY_S, type TrainingController } from "@/lib/star/training3d/scene";
 import { EngineFeature, useRealMatchWidth } from "./EnginePlay";
 import { buildStrike, DRILL_SCENE } from "./TrainingMinigame";
 import type { ChanceResolved } from "./CanvasMatch";
@@ -173,12 +173,13 @@ export default function Training3D({ career, onExit, onFinish }: {
       setMarks((m) => ({ ...m, him: [...m.him, shot.hit] }));
       setStep("mate-after");
       if (shot.hit) { c?.play("mate", "celebrate"); showFlash(`${mate.name.toUpperCase()} HITS THE BAR!`, false); }
-      else showFlash(shot.miss === "post" ? "Off the post — doesn't count" : shot.miss === "under" ? "Under it — into the net" : shot.miss === "over" ? "Over the bar" : "Wide", true);
+      else c?.play("mate", "frustrated");
+      if (!shot.hit) showFlash(shot.miss === "post" ? "Off the post — doesn't count" : shot.miss === "under" ? "Under it — into the net" : shot.miss === "over" ? "Over the bar" : "Wide", true);
       later(() => {
         c?.play("mate", "watch");
         if (r + 1 >= CROSSBAR_SHOTS) finish(you, total);
         else { c?.resetBall(); c?.setShooter("you"); c?.setCamera("behind"); setRound(r + 1); setStep("you-aim"); }
-      }, 1500);
+      }, 2100);
     };
     if (!c) { later(after, 600); return; }
     c.setShooter("mate");
@@ -210,7 +211,8 @@ export default function Training3D({ career, onExit, onFinish }: {
       setStep("you-flight");
       ctrl.current?.resetBall();
       ctrl.current?.play("you", "kick");
-      later(() => ctrl.current?.setCamera("goal"), 450);
+      // the 3D kick has a run-up: cut to the goal just after his foot meets the ball
+      later(() => ctrl.current?.setCamera("goal"), ((ctrl.current?.kickDelayS ?? KICK_DELAY_S) + 0.2) * 1000);
     }
     ctrl.current?.feedEngineBall(b);
     if (!barRef.current && touchingBar(b)) barRef.current = true;
@@ -223,14 +225,15 @@ export default function Training3D({ career, onExit, onFinish }: {
     const total = yourScore + (hit ? 1 : 0);
     stepRef.current = "you-after";
     setStep("you-after");
-    // the 3D ball runs a moment behind the engine's: say it as it gets there
+    // the 3D ball runs behind the engine's (the run-up): say it as it gets there
+    const lag = (ctrl.current?.kickDelayS ?? KICK_DELAY_S) * 1000;
     later(() => {
       setYourScore(total);
       setMarks((m) => ({ ...m, you: [...m.you, hit] }));
       if (hit) { ctrl.current?.play("you", "celebrate"); showFlash("CROSSBAR!", true); }
-      else showFlash(postRef.current ? "Off the post — doesn't count" : "Missed the bar", false);
-    }, 450);
-    later(() => { ctrl.current?.play("you", "watch"); hisTurn(round, total, hisScore); }, 2000);
+      else { ctrl.current?.play("you", "frustrated"); showFlash(postRef.current ? "Off the post — doesn't count" : "Missed the bar", false); }
+    }, lag + 250);
+    later(() => { ctrl.current?.play("you", "watch"); hisTurn(round, total, hisScore); }, lag + 2700);
   }, [yourScore, hisScore, round, hisTurn]);
 
   const w = useRealMatchWidth();
