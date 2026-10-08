@@ -19,6 +19,25 @@ import type { CareerOverviewData } from "./careerOverview";
 export const LEGEND_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const LEGEND_CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 
+/** At most this many shared careers per account (8 Oct 2026). */
+export const LEGEND_MAX_SHARES = 30;
+const HALL_ID = /^hof-[a-z0-9]{1,16}$/;
+
+/**
+ * Which Hall career a share request names. The phone sends only the id
+ * ({ hallId }); the server copies the career from that account's own Hall
+ * (star_hall_of_fame) itself, so a link can't show anything the phone made
+ * up on the spot. An older phone's { entry } is read for its id only.
+ */
+export function shareRequestHallId(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as { hallId?: unknown; entry?: { id?: unknown } | null };
+  const id = typeof b.hallId === "string" ? b.hallId
+    : b.entry && typeof b.entry === "object" && typeof b.entry.id === "string" ? b.entry.id
+    : null;
+  return id && HALL_ID.test(id) ? id : null;
+}
+
 /** A new code from any random source (Math.random, or seeded in tests). */
 export function newLegendCode(rand: () => number = Math.random): string {
   let s = "";
@@ -74,15 +93,28 @@ export function knownLegendCode(hallId: string): string | null {
 
 export type ShareResult =
   | { ok: true; code: string }
-  | { ok: false; why: "signed-out" | "not-set-up" | "offline" | "too-big"; message: string };
+  | { ok: false; why: "signed-out" | "not-set-up" | "offline" | "too-big" | "full"; message: string };
 
-/** Share a Hall entry: the same career always gets the same code. */
+/**
+ * Share a Hall entry: the same career always gets the same code. The career
+ * goes to the cloud Hall first (a no-op when it's already there); the share
+ * itself sends only its id, and the server copies it from the Hall.
+ */
 export async function shareLegend(entry: HallEntry): Promise<ShareResult> {
   try {
-    const res = await fetch("/api/star/legend", {
+    const hall = await fetch("/api/star/hall-of-fame", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entry }),
+    });
+    if (hall.status === 401) return { ok: false, why: "signed-out", message: "Sign in to share a link." };
+    if (hall.status === 413) return { ok: false, why: "too-big", message: "That career is too big to share." };
+    // 409 (cloud Hall full) is fine if this career is already there: the share says.
+
+    const res = await fetch("/api/star/legend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hallId: entry.id }),
     });
     const body = await res.json().catch(() => ({}));
     if (res.ok && typeof body.code === "string" && LEGEND_CODE.test(body.code)) {
@@ -92,6 +124,9 @@ export async function shareLegend(entry: HallEntry): Promise<ShareResult> {
     if (res.status === 401) return { ok: false, why: "signed-out", message: "Sign in to share a link." };
     if (body?.migrationMissing) return { ok: false, why: "not-set-up", message: "Sharing isn't switched on yet." };
     if (res.status === 413) return { ok: false, why: "too-big", message: "That career is too big to share." };
+    if (res.status === 409 || res.status === 404) {
+      return { ok: false, why: "full", message: typeof body?.error === "string" ? body.error : "Couldn't make the link." };
+    }
     return { ok: false, why: "offline", message: "Couldn't make the link. Try again." };
   } catch {
     return { ok: false, why: "offline", message: "No connection. Try again." };

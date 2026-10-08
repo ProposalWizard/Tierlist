@@ -40,6 +40,44 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- At most 30 careers per account, and 200 rows (careers plus tombstones)
+-- (8 Oct 2026). The API checks this too (app/api/star/hall-of-fame/route.ts,
+-- HALL_MAX_ENTRIES in lib/star/hallOfFame.ts); this trigger stops a direct
+-- write from the browser going round it. An id already there is left to
+-- ON CONFLICT, so re-sending a career is never refused.
+CREATE OR REPLACE FUNCTION star_hall_of_fame_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  live_count INT;
+  row_count INT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF EXISTS (SELECT 1 FROM star_hall_of_fame WHERE user_id = NEW.user_id AND entry_id = NEW.entry_id) THEN
+      RETURN NEW;
+    END IF;
+    SELECT count(*) INTO row_count FROM star_hall_of_fame WHERE user_id = NEW.user_id;
+    IF row_count >= 200 THEN
+      RAISE EXCEPTION 'hall_full: at most 200 Hall of Fame rows per account';
+    END IF;
+  END IF;
+  IF NEW.removed = false AND (TG_OP = 'INSERT' OR OLD.removed = true) THEN
+    SELECT count(*) INTO live_count FROM star_hall_of_fame
+      WHERE user_id = NEW.user_id AND removed = false AND entry_id <> NEW.entry_id;
+    IF live_count >= 30 THEN
+      RAISE EXCEPTION 'hall_full: at most 30 careers per account';
+    END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS star_hall_of_fame_limit ON star_hall_of_fame;
+CREATE TRIGGER star_hall_of_fame_limit
+  BEFORE INSERT OR UPDATE ON star_hall_of_fame
+  FOR EACH ROW EXECUTE FUNCTION star_hall_of_fame_limit();
+
 ALTER TABLE star_hall_of_fame ENABLE ROW LEVEL SECURITY;
 
 -- Each player reads and writes only their own Hall.
@@ -59,6 +97,7 @@ DROP POLICY IF EXISTS "star_hall_of_fame_delete" ON star_hall_of_fame;
 CREATE POLICY "star_hall_of_fame_delete" ON star_hall_of_fame
   FOR DELETE USING (auth.uid() = user_id);
 
--- Verify (should list the four policies and the two checks):
+-- Verify (should list the four policies, the two checks and the trigger):
 -- SELECT polname FROM pg_policy WHERE polrelid = 'star_hall_of_fame'::regclass;
 -- SELECT conname FROM pg_constraint WHERE conrelid = 'star_hall_of_fame'::regclass;
+-- SELECT tgname FROM pg_trigger WHERE tgrelid = 'star_hall_of_fame'::regclass AND NOT tgisinternal;
