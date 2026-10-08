@@ -163,6 +163,9 @@ export const DATA_TEMPLATES: Template[] = [
     // impossibilities at once, all of them the month's numbers wearing the
     // afternoon's sentence.
     id: "st-generic", archetype: "stats", excludes: ["matches", "month"],
+    // Another club's four-goal game has no score or rating on its event and
+    // read "-. Hal Home8:." (found 8 Oct 2026). Only where all four exist.
+    requires: ["homeClub", "hs", "as", "awayClub", "rating"],
     body: "{homeClub} {hs}-{as} {awayClub}. {player}: {rating}.",
     graphic: "statLine", weight: 0.5,
   },

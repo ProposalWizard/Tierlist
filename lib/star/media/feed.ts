@@ -459,7 +459,7 @@ export function feedFor(
   const state = mediaOf(career);
   if (stage === "settled") {
     const now = clockAt(career.season, career.week, 9_999);
-    return { posts: visible(state.posts, now, now - FEED_HORIZON), trends: state.trends, now };
+    return { posts: pinHighlights(visible(state.posts, now, now - FEED_HORIZON), state.lastCycleId), trends: state.trends, now };
   }
   // ── The first wave is the hour after, not the quarter of an hour ──
   //
@@ -471,7 +471,23 @@ export function feedFor(
   // the back pages and Monday's awards still wait for the Feed, which is where
   // the staging was always doing its work.
   const now = state.lastCycleClock + FIRST_WAVE;
-  return { posts: visible(state.posts, now, state.lastCycleClock), trends: state.trends, now };
+  return { posts: pinHighlights(visible(state.posts, now, state.lastCycleClock), state.lastCycleId), trends: state.trends, now };
+}
+
+/**
+ * YOUR MATCH'S VIDEOS GO ON TOP (Leo, 8 Oct 2026: "I want to finish my match
+ * and instantly see my loaded highlights of the game and my highlights, and
+ * THEN see other matches"). The latest match's HIGHLIGHTS post and your-goals
+ * post are pinned above everything else, in that order. They were dated three
+ * minutes after the whistle, so newest-first put them 12th to 29th of 16–32
+ * posts: below the fold, and so made last.
+ */
+export function pinHighlights(posts: StoredPost[], cycleId: string): StoredPost[] {
+  if (!cycleId) return posts;
+  const rank = (p: StoredPost) =>
+    !p.id.startsWith(`${cycleId}:`) ? 2 : p.eventId === "match-highlights" ? 0 : p.eventId === "your-highlights" ? 1 : 2;
+  const top = posts.filter(p => rank(p) < 2).sort((a, b) => rank(a) - rank(b));
+  return top.length ? [...top, ...posts.filter(p => rank(p) === 2)] : posts;
 }
 
 /**
