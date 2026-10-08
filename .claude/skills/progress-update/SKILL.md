@@ -52,3 +52,43 @@ Waiting on: you, to merge Harry → main
 - Whenever asked (any of the trigger phrases).
 - After a long round finishes, as the first thing in the reply, before detail.
 - Mid-round, if more than about 20 minutes have passed with no word.
+
+## Expected token use (Harry, 8 Oct 2026)
+
+*"add an expected token usage to the progress skill … based on previous
+builds the expected percent of weekly usage … or at least token usage."*
+
+Under the bars, add one usage block:
+
+```
+Tokens so far   ~1.2M  (builders finished: 2 of 4)
+Expected total  ~5–7M for this round
+Weekly usage    started at 11% → expected ~18–20% at the end (rough)
+```
+
+- **Count real numbers where you have them.** Every finished agent reports
+  its tokens (`subagent_tokens` in its completion notice). Add those up.
+  Running agents have no count yet: use the guide below for them.
+- **Guide from past builds** (update this table when a round finishes):
+
+  | Kind of job | Typical tokens |
+  |---|---|
+  | Research / audit (everyday model) | 0.2–0.5M |
+  | Option pictures (show-options) | 0.5–1.5M |
+  | Logic or server build (top model) | 1.5–3M |
+  | 3D scene build (top model) | 2–4M |
+  | Playtest / filming pass | 0.5–2M |
+  | Patch notes page | 0.3–0.8M |
+
+- **Weekly %.** We can't read the usage meter. Ask for the % at the start
+  and end of a round, then write the tokens-per-1% figure here so the next
+  estimate is better. Until then say "rough".
+  Calibration log (start % → end %, tokens): *(none yet)*
+- Always say it's an estimate. Never present a guess as measured.
+
+## Timed updates
+
+If asked for updates every N minutes during a build, schedule them with
+`send_later` (claude-code-remote) and re-arm after each one. Stop when the
+round is done or when asked. If nothing changed since the last one, send the
+bars anyway but keep it to the bars.
