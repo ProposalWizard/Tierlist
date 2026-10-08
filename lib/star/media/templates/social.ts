@@ -22,7 +22,8 @@ export const SOCIAL_TEMPLATES: Template[] = [
     // as if it were yours.
     id: "fan-goal", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"], requires: ["short"],
     body: "{short} you absolute beauty",
-    weight: 3,
+    // Filmed on their phone in the stand, when the goal was recorded.
+    graphic: "goalVideo", weight: 3,
   },
   {
     id: "fan-goal-2", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"],

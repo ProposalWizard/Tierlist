@@ -5,6 +5,9 @@ import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
+import GoalVideo from "./GoalVideo";
+import type { ClipStyle } from "@/lib/star/goalClip/edit";
+import type { StoredPost } from "@/lib/star/media/types";
 
 /**
  * The cards a post can carry.
@@ -17,7 +20,39 @@ import { paletteFor } from "@/lib/star/media/graphics/palette";
 
 const PANEL = "rounded-xl overflow-hidden border border-white/15 bg-gray-900/70";
 
-export default function Graphic({ spec }: { spec: GraphicSpec }) {
+/** Who posted it — the kind of video they post (lib/star/goalClip/edit.ts). */
+export type PostAuthor = Pick<StoredPost["author"], "handle" | "name" | "archetype" | "platform">;
+
+/**
+ * The kind of goal video an account posts. Official accounts post the TV
+ * pictures with a slow replay from behind the goal; pages and papers lead with
+ * the angle behind the goal; fans, meme pages and team-mates post it filmed on
+ * a phone in the stand.
+ */
+export function clipStyleFor(author?: PostAuthor): ClipStyle {
+  if (!author) return "broadcast";
+  if (author.platform === "tiktok") return "fan";
+  switch (author.archetype) {
+    case "club": case "league": case "competition": return "broadcast";
+    case "fan": case "rivalFan": case "meme": case "teammate": return "fan";
+    default: return "reverse";
+  }
+}
+
+export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: PostAuthor }) {
+  if (spec.type === "thumbnail") return <Thumbnail s={spec} author={author} />;
+  if (spec.type === "goalVideo") {
+    return (
+      <GoalVideo
+        clipIds={spec.clips}
+        style={clipStyleFor(author)}
+        credit={author ? { handle: author.handle, name: author.name } : undefined}
+        title={spec.title}
+        badge={spec.clips.length > 1 ? "HIGHLIGHTS" : "GOAL"}
+        fallback={null}
+      />
+    );
+  }
   switch (spec.type) {
     case "scoreline": return <Scoreline s={spec} />;
     case "breaking": return <Breaking s={spec} />;
@@ -30,7 +65,6 @@ export default function Graphic({ spec }: { spec: GraphicSpec }) {
     case "transfer": return <Transfer s={spec} />;
     case "trophy": return <Trophy s={spec} />;
     case "poll": return <Poll s={spec} />;
-    case "thumbnail": return <Thumbnail s={spec} />;
     case "potmNominees": return <PotmNominees s={spec} />;
     case "potmWinner": return <PotmWinner s={spec} />;
   }
@@ -292,9 +326,17 @@ function Poll({ s }: { s: Extract<GraphicSpec, { type: "poll" }> }) {
   );
 }
 
-function Thumbnail({ s }: { s: Extract<GraphicSpec, { type: "thumbnail" }> }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-gray-700 to-gray-900">
+/**
+ * A post's video, or its picture.
+ *
+ * Leo, 7 Oct 2026: "it makes it look like theres videos but you cant play
+ * them." When the goal was seen, the post plays its real recording
+ * (GoalVideo). When nothing was seen — a manager meme, a missed penalty, a
+ * simulated match — it is a picture: the headline on a card, no play button.
+ */
+function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" }>; author?: PostAuthor }) {
+  const still = (
+    <div className="relative overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-gray-700 to-gray-900" data-thumbnail-still>
       <div className="flex h-24 items-end p-3">
         <div className="text-sm font-black uppercase leading-tight text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
           {s.title}
@@ -303,12 +345,18 @@ function Thumbnail({ s }: { s: Extract<GraphicSpec, { type: "thumbnail" }> }) {
       <div className="absolute right-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
         {s.badge}
       </div>
-      <div className="absolute inset-0 grid place-items-center">
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-white/25 backdrop-blur-sm">
-          <div className="ml-0.5 h-0 w-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-white" />
-        </div>
-      </div>
     </div>
+  );
+  if (!s.clips?.length) return still;
+  return (
+    <GoalVideo
+      clipIds={s.clips}
+      style={clipStyleFor(author)}
+      credit={author ? { handle: author.handle, name: author.name } : undefined}
+      title={s.title}
+      badge={s.badge}
+      fallback={still}
+    />
   );
 }
 

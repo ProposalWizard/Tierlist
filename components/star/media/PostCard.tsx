@@ -96,7 +96,7 @@ export default function PostCard({ post, now, onToggleLike }: {
 
         {post.graphic && (
           <div className="mt-2.5 overflow-hidden rounded-2xl">
-            <Graphic spec={post.graphic} />
+            <Graphic spec={post.graphic} author={post.author} />
           </div>
         )}
 

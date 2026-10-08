@@ -30,6 +30,8 @@ export interface GoalRecord {
   distance?: number;
   /** The score AFTER it went in, so opener/equaliser/winner is derivable. */
   scoreAfter?: { us: number; them: number };
+  /** Its recording, when it was seen (lib/star/goalClip/). */
+  clipId?: string;
 }
 
 export interface TableSnapshot {
@@ -435,7 +437,19 @@ export type GraphicSpec =
   | { type: "transfer"; player: string; from: string; to: string; fee?: string }
   | { type: "trophy"; competition: string; club: string; season: number }
   | { type: "poll"; question: string; options: string[]; votes: number[] }
-  | { type: "thumbnail"; title: string; badge: string }
+  | {
+      /** A goal video and nothing else (Leo, 7 Oct 2026). Built only when the
+       *  goal was recorded; with no recording the post has no graphic at all,
+       *  exactly as before — never a picture pretending to be a video. */
+      type: "goalVideo"; title: string; clips: string[];
+    }
+  | {
+      type: "thumbnail"; title: string; badge: string;
+      /** Goal videos (Leo, 7 Oct 2026): the recordings this post plays, in
+       *  order (lib/star/goalClip/). Absent: no goal was seen, and the post
+       *  shows a picture, not a play button. */
+      clips?: string[];
+    }
   /**
    * The month's shortlist, before anybody has voted.
    *
