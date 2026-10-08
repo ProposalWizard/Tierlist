@@ -72,6 +72,7 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
+import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos, relabelOutOfPosition, withoutPlayersElsewhere, addFullRoster } from "@/lib/star/leagueSquads";
@@ -2009,6 +2010,32 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career) return;
     setCareer(attachClub(career, club, career.league.map(t => t.name), career.division ?? "premier"));
   }, [career]);
+  // Dev — Squad: move to ANY English club, add/remove/pin players
+  // (lib/star/devTeam.ts). The generated stand-in squad attachClub builds is
+  // replaced by the club's real one as soon as it arrives; pinned men stay.
+  const handleMoveToClub = useCallback((division: CareerDivision, club: string) => {
+    if (!career) return;
+    const kept = (career.squad ?? []).filter(p => p.devStart);
+    const moved = moveToClub(career, division, club);
+    if (!moved) return;
+    setCareer({ ...moved, squad: [...moved.squad, ...kept] });
+    fetchRealSquad(club).then(real => {
+      setCareer(c => {
+        if (!c || c.player.club !== club) return c;
+        const ids = new Set(real.map(p => p.sofifaId).filter(Boolean));
+        return { ...c, squad: [...real, ...(c.squad ?? []).filter(p => p.devStart && !(p.sofifaId && ids.has(p.sofifaId)))] };
+      });
+    });
+  }, [career]);
+  const handleDevAddPlayer = useCallback((hit: PlayerSearchHit, start: boolean) => {
+    setCareer(c => (c ? addToSquad(c, squadPlayerFromHit(hit), start) : c));
+  }, []);
+  const handleDevRemovePlayer = useCallback((id: string) => {
+    setCareer(c => (c ? removeFromSquad(c, id) : c));
+  }, []);
+  const handleDevSetStart = useCallback((id: string, start: boolean) => {
+    setCareer(c => (c ? setDevStart(c, id, start) : c));
+  }, []);
   // Tester access (5 Oct 2026): any cheat above marks the save "Tester save".
   const markGod = () => setCareer(c => markGodMode(c));
 
@@ -4251,6 +4278,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onUnlockTraining={withGodMode(handleUnlockTraining, markGod)}
         onSetHappiness={withGodMode(handleSetHappiness, markGod)}
         onSwitchClub={withGodMode(handleSwitchClub, markGod)}
+        devTeam={{
+          onMoveToClub: withGodMode(handleMoveToClub, markGod),
+          onAddPlayer: withGodMode(handleDevAddPlayer, markGod),
+          onRemovePlayer: withGodMode(handleDevRemovePlayer, markGod),
+          onSetPlayerStart: withGodMode(handleDevSetStart, markGod),
+        }}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}
