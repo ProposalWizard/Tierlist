@@ -57,9 +57,11 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
-import { currentRound } from "@/lib/star/cups";
+import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel, divisionOf, isRegionalDivision, type CareerDivision } from "@/lib/star/calendar";
+import KnockoutRoundup, { type RoundupStage } from "@/components/star/KnockoutRoundup";
+import { knockoutRoundupFor } from "@/lib/star/knockoutView";
+import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { refreshXpConfig } from "@/lib/star/xpStore";
@@ -144,6 +146,9 @@ import CanvasMatch from "@/components/star/CanvasMatch";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
+import PlayOffRoundup from "@/components/star/PlayOffRoundup";
+import { shortClub } from "@/lib/star/media/grammar";
+import { buildBracket } from "@/lib/star/playOffBracket";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
 import GlobalSettingsScreen from "@/components/star/GlobalSettingsScreen";
@@ -804,6 +809,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // domestic cup, or a new tie in the Champions/Europa League; cleared once
   // the player has clicked through it.
   const [pendingDraw, setPendingDraw] = useState<{ competition: string; round: DrawRound } | null>(null);
+  // The play-off round-up last shown ("season:round:week" or "season:end"),
+  // so coming back from it moves on instead of showing it again.
+  const roundupShown = useRef<string | null>(null);
+  // The cup/European round-up waiting to be shown, and the ones already seen.
+  const [pendingKo, setPendingKo] = useState<{ competition: string; stages: RoundupStage[]; nextLine: string } | null>(null);
+  const koShown = useRef<Set<string>>(new Set());
 
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
@@ -1465,17 +1476,33 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // domestic final: with one tie left there is nothing to draw, the pairing
     // is just whoever won the semis. `skipDraw` is set on the way back IN
     // from that screen so this does not loop.
+    // Cup and European round-ups (Mikey, 8 Oct 2026): the whole round's
+    // results, and from the last sixteen the bracket, after each of your
+    // knockout matches; the league-phase table splitting in Europe.
+    const ko = playedFixture ? knockoutRoundupFor(from, playedFixture) : null;
+    if (ko && !koShown.current.has(ko.key)) {
+      koShown.current.add(ko.key);
+      setCareer(from);
+      setPendingKo(ko);
+      setPhase("knockout-roundup");
+      return;
+    }
+
     if (!skipDraw && playedFixture) {
       const cupCompetition = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup"
         ? playedFixture.competition : null;
       if (cupCompetition) {
         const state = from.cupState?.find((s) => s.competition === cupCompetition);
         const round = state ? currentRound(state) : null;
-        const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined);
+        // (a first leg leaves the round unplayed but is not a fresh draw)
+        const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined && !t.legs?.length);
         // Only a draw you're in (v0.15 item 32) — knocked out, the next
         // round is drawn without you and the game moves straight on.
         const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
-        if (freshlyDrawn && round && youreIn) {
+        // From the quarter-finals the bracket has already shown the draw.
+        const r16 = roundNamesFor(cupCompetition as CupId).indexOf("Round of 16");
+        const shownInBracket = !!state && state.rounds.length - 1 > r16;
+        if (freshlyDrawn && round && youreIn && !shownInBracket) {
           setPendingDraw({ competition: cupCompetition, round });
           setPhase("draw");
           return;
@@ -1492,7 +1519,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // its first leg (or the tie itself) already has a score.
       const isEuroKnockout = playedFixture.kind === "europe"
         && (playedFixture.competition === "Champions League" || playedFixture.competition === "Europa League");
-      if (isEuroKnockout && from.euroState) {
+      if (isEuroKnockout && from.euroState && !from.euroState.bracket) {
         const tie = currentTie(from.euroState);
         const freshlyDrawn = tie && tie.legs.every((l) => l.us === undefined);
         if (freshlyDrawn && tie) {
@@ -1503,6 +1530,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPhase("draw");
           return;
         }
+      }
+    }
+
+    // Play-offs (Mikey, 8 Oct 2026): the bracket so far before each of your
+    // play-off matches, and once more when your run is over.
+    if (from.playOffState) {
+      const upcoming = from.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+      const runOver = !!from.playOffState.yourRunOver && playedFixture?.kind === "playoff";
+      const key = upcoming?.kind === "playoff" ? `${from.season}:${upcoming.round}:${upcoming.week}`
+        : runOver ? `${from.season}:end` : null;
+      if (key && roundupShown.current !== key) {
+        roundupShown.current = key;
+        setCareer(from);
+        setPhase("playoff-roundup");
+        return;
       }
     }
 
@@ -3790,6 +3832,40 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPendingDraw(null);
           continueAfterMatch(career, false, true);
         }}
+      />
+    );
+  }
+
+  if (phase === "knockout-roundup" && pendingKo) {
+    return (
+      <KnockoutRoundup
+        competition={pendingKo.competition}
+        stages={pendingKo.stages}
+        nextLine={pendingKo.nextLine}
+        you={career.player.club}
+        onContinue={() => { setPendingKo(null); continueAfterMatch(career, false); }}
+      />
+    );
+  }
+
+  if (phase === "playoff-roundup" && career.playOffState) {
+    const table = sortLeague(career.league).map((t) => t.name);
+    const upcoming = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+    const nextPo = upcoming?.kind === "playoff" ? upcoming : undefined;
+    const po = career.playOffState;
+    const you = career.player.club;
+    const nextLine = nextPo
+      ? `${nextPo.round} · ${nextPo.round === "Play-Off Final" && po.format !== "six" ? "at Wembley v" : nextPo.home ? "home to" : "away at"} ${shortClub(nextPo.opponent)}`
+      : po.promoted === you ? "Promoted!"
+      : po.promoted ? `${shortClub(po.promoted)} go up`
+      : "Out of the play-offs";
+    return (
+      <PlayOffRoundup
+        bracket={buildBracket(po, you, (c) => table.indexOf(c) + 1, nextPo?.round)}
+        title={leagueNameFor(divisionOf(career))}
+        nextLine={nextLine}
+        you={you}
+        onContinue={() => continueAfterMatch(career, false, true)}
       />
     );
   }

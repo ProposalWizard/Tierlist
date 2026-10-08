@@ -974,9 +974,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return { extraTime: false, isLevelNow: () => userScoreRef.current === oppScoreRef.current };
     }
     if (fixture.kind === "cup") {
+      // A two-legged League Cup semi: the first leg can end level; the
+      // second is level only on aggregate (first leg + this leg).
+      if (fixture.leg === 1) return null;
+      let firstUs = 0, firstThem = 0;
+      if (fixture.leg === 2) {
+        const you = careerRef.current?.player.club;
+        const st = careerRef.current?.cupState?.find((c) => c.competition === comp && !c.winner);
+        const tie = st?.rounds[st.rounds.length - 1]?.ties.find((t) => t.home === you || t.away === you);
+        const l1 = tie?.legs?.[0];
+        if (tie && l1) {
+          firstUs = tie.home === you ? l1.hs : l1.as;
+          firstThem = tie.home === you ? l1.as : l1.hs;
+        }
+      }
       return {
         extraTime: hasExtraTime(comp as ExtraTimeCompetition, fixture.round ?? "Final"),
-        isLevelNow: () => userScoreRef.current === oppScoreRef.current,
+        isLevelNow: () => (firstUs + userScoreRef.current) === (firstThem + oppScoreRef.current),
       };
     }
     if (fixture.kind === "europe") {

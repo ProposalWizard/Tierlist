@@ -41,6 +41,8 @@ import { extraTimeScore, simulateShootout } from "./shootout";
  * `simulateEuroMatchday`.
  */
 
+import type { EuroBracket } from "./euroBracket";
+
 export type EuroId = "Champions League" | "Europa League" | "Conference League";
 
 export interface EuroClub {
@@ -138,6 +140,12 @@ export interface EuroState {
   table?: EuroStanding[];
   position?: number;
   ties: EuroTie[];
+  /**
+   * The real knockout bracket (euroBracket.ts), built when the league phase
+   * ends. Absent on a save from before it existed: that campaign keeps the
+   * old one-opponent-at-a-time draw (drawTie) to the end.
+   */
+  bracket?: EuroBracket;
   eliminated?: boolean;
   won?: boolean;
   /** Who lifted it, whether or not that was you. */
@@ -801,7 +809,7 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
  * expected goals, then a Poisson draw around it. Home advantage is a third of a
  * goal, which is roughly what it is worth in the real thing.
  */
-function simulate(a: number, b: number, rng: () => number): [number, number] {
+export function simulate(a: number, b: number, rng: () => number): [number, number] {
   const edge = (a - b) / 22;
   const forA = Math.max(0.25, 1.35 + edge * 0.55 + 0.18);
   const forB = Math.max(0.25, 1.35 - edge * 0.55 - 0.18);

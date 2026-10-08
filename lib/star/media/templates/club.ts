@@ -12,6 +12,11 @@ import type { Template } from "./index";
 export const CLUB_TEMPLATES: Template[] = [
   // ── Full time ─────────────────────────────────────────────────────────────
   {
+    id: "club-relegated", archetype: "club", events: ["relegated"], frames: ["report"],
+    body: "{club} have been relegated. We are hurting, like you. We will be back. Thank you to every supporter who stood with us all season.",
+    weight: 5,
+  },
+  {
     id: "club-ft-win", archetype: "club", events: ["win", "rout"], frames: ["celebrate", "report"],
     body: "FULL TIME | {homeClub} {hs}-{as} {awayClub}. Three points {venue}.",
     graphic: "scoreline", hashtag: true, weight: 3,

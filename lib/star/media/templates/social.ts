@@ -98,6 +98,32 @@ export const SOCIAL_TEMPLATES: Template[] = [
     requires: ["matches"],
     body: "{matches} in a row now. someone do something",
   },
+  // Relegation day (Mikey, 8 Oct 2026: "sad fan posts, stuff like that").
+  {
+    id: "fan-relegated-1", archetype: "fan", events: ["relegated"], frames: ["lament"],
+    body: "relegated. cant even look at the table",
+    weight: 4,
+  },
+  {
+    id: "fan-relegated-2", archetype: "fan", events: ["relegated"], frames: ["lament"],
+    body: "gutted. absolutely gutted. see you next season whatever league it is",
+    weight: 3,
+  },
+  {
+    id: "fan-relegated-3", archetype: "fan", events: ["relegated"], frames: ["lament"],
+    body: "some of them should be ashamed. not all of them. most of them",
+    weight: 3,
+  },
+  {
+    id: "fan-relegated-4", archetype: "fan", events: ["relegated"], frames: ["lament"],
+    body: "still here. still going. always will be 💔",
+    weight: 3,
+  },
+  {
+    id: "fan-relegated-5", archetype: "fan", events: ["relegated"], frames: ["lament"],
+    body: "my dad cried. i havent seen my dad cry since 1998",
+    weight: 2,
+  },
   {
     id: "fan-top", archetype: "fan", events: ["went-top", "champions"],
     body: "TOP OF THE LEAGUE. dont care if its temporary. framing it",

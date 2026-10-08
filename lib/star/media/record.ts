@@ -1,6 +1,7 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { fameOf } from "../fame";
 import { sortLeague } from "../season";
+import { divisionOf, relegationPlaces } from "../calendar";
 import { isDerby, strongestTier, derbyName } from "../rivalries";
 import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
@@ -83,7 +84,8 @@ export function buildMatchRecord(
   const afterTable = snapshot(after);
   const sortedAfter = sortLeague(after.league);
   const leader = sortedAfter[0];
-  const dropZone = sortedAfter[sortedAfter.length - 3];
+  const down = relegationPlaces(divisionOf(after));
+  const dropZone = sortedAfter[sortedAfter.length - down];
   const me = sortedAfter.find(t => t.name === after.player.club);
 
   const goals = withRunningScore(
@@ -223,6 +225,7 @@ export function buildMatchRecord(
       relegationGap: (me?.points ?? 0) - (dropZone?.points ?? 0),
       matchesLeft: after.fixtures.filter(f => !f.played && (f.kind ?? "league") === "league").length,
       clubs: after.league.length,
+      relegationPlaces: down,
     },
 
     cup,

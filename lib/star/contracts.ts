@@ -145,3 +145,35 @@ export function appearanceMoney(contract: Contract): number {
 export function loyaltyMoney(contract: Contract, stayed: boolean): number {
   return stayed ? (contract.loyaltyBonus ?? 0) : 0;
 }
+
+/**
+ * GOING UP OR DOWN WITH YOUR CLUB (Mikey, 8 Oct 2026): "if you get relegated
+ * … your contract should be reduced by 25%. And the same with the bonuses.
+ * And when you go up any division, your wage should increase by 25%."
+ *
+ * Down: wage, goal and assist bonus, appearance fee and loyalty bonus all
+ * drop a quarter (the release clause with them, so leaving gets cheaper).
+ * Up: the wage rises a quarter, the release clause with it; bonuses stay.
+ * Only when you stay at the club that moved (a transfer brings its own deal).
+ */
+export const RELEGATION_PAY_CUT = 0.25;
+export const PROMOTION_PAY_RISE = 0.25;
+
+export function contractForClubMove(c: Contract, move: "promoted" | "relegated" | null | undefined): Contract {
+  if (move === "relegated") {
+    const k = 1 - RELEGATION_PAY_CUT;
+    const wage = Math.max(1, Math.round(c.wage * k));
+    return {
+      ...c, ...rescaleClauses(c, c.wage, wage), wage,
+      goalBonus: Math.round(c.goalBonus * k),
+      assistBonus: Math.round(c.assistBonus * k),
+    };
+  }
+  if (move === "promoted") {
+    const wage = Math.max(1, Math.round(c.wage * (1 + PROMOTION_PAY_RISE)));
+    const out: Contract = { ...c, wage };
+    if (c.releaseClause !== undefined) out.releaseClause = rescaleClauses({ releaseClause: c.releaseClause }, c.wage, wage).releaseClause;
+    return out;
+  }
+  return c;
+}

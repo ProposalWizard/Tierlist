@@ -225,6 +225,9 @@ export interface Fixture {
   /** The one against the club down the road. Same football, louder consequences. */
   derby?: boolean;
   round?: string;
+  /** A two-legged cup tie (the League Cup semi-final): which leg this is.
+   *  Absent on everything else, and on a semi drawn before legs existed. */
+  leg?: 1 | 2;
   /** For opponents that are not in your division. */
   opponentStrength?: number;
 }
@@ -1634,6 +1637,12 @@ export type StarPhase =
   /** The whole division's business the moment a transfer window closed —
    *  club by club, incomings and outgoings. See DeadlineDayRoundup. */
   | "deadline-day"
+  /** The play-off bracket so far, before each of your play-off matches and
+   *  once your run is over. See PlayOffRoundup. */
+  | "playoff-roundup"
+  /** A cup or European round-up: results board, bracket, league-phase table.
+   *  See KnockoutRoundup. */
+  | "knockout-roundup"
   /** Golden Boot, Assist King, Golden Glove, Player/Young Player of the
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */

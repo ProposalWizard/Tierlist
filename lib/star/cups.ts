@@ -60,6 +60,17 @@ export interface CupTie {
   /** True when this tie needed extra time to separate the sides (whether or
    *  not it still went to penalties afterward). */
   wentToExtraTime?: boolean;
+  /**
+   * A two-legged tie (the League Cup semi-final): each leg as home/away goals
+   * of THIS tie's `home` and `away` clubs (leg one at `home`, leg two at
+   * `away`). `hs`/`as` are then the aggregate.
+   */
+  legs?: { hs: number; as: number }[];
+}
+
+/** The League Cup semi-final is two legs, as in England. Nothing else is. */
+export function isTwoLeggedRound(competition: CupId, round: string): boolean {
+  return competition === "League Cup" && round === "Semi-Final";
 }
 
 export interface CupRound {
@@ -428,7 +439,7 @@ export function playCupRound(
   state: CupState,
   league: LeagueTeam[],
   yourClub: string,
-  yourResult: { hs: number; as: number; pens?: { home: number; away: number }; wentToExtraTime?: boolean } | null,
+  yourResult: { hs: number; as: number; pens?: { home: number; away: number }; wentToExtraTime?: boolean; legs?: { hs: number; as: number }[] } | null,
   rng: () => number,
 ): CupState {
   const round = state.rounds[state.rounds.length - 1];
@@ -448,6 +459,14 @@ export function playCupRound(
       hs = yourResult.hs; as = yourResult.as;
       if (yourResult.pens) out.pens = yourResult.pens;
       if (yourResult.wentToExtraTime) out.wentToExtraTime = true;
+      if (yourResult.legs) out.legs = yourResult.legs;
+    } else if (isTwoLeggedRound(state.competition, round.name)) {
+      // Two legs, leg two at the away club's ground; level on aggregate goes
+      // straight to penalties (no extra time in a League Cup semi).
+      const l1 = tieScore(hStr, aStr, rng);
+      const l2 = tieScore(aStr, hStr, rng);
+      out.legs = [{ hs: l1.hs, as: l1.as }, { hs: l2.as, as: l2.hs }];
+      hs = l1.hs + l2.as; as = l1.as + l2.hs;
     } else {
       const played90 = tieScore(hStr, aStr, rng);
       hs = played90.hs; as = played90.as;

@@ -25,7 +25,7 @@ const CLIMB: Detector = (r) => {
       ...base(r), from, to, position: to, left: r.table.matchesLeft,
     }, "hour", "title-race");
   }
-  const drop = r.table.clubs - 2;
+  const drop = r.table.clubs - (r.table.relegationPlaces ?? 3) + 1;
   if (to >= drop && from < drop) {
     return ev("into-the-drop", club(r), 74, ["table", "relegation", "shame"], {
       ...base(r), to, position: to, left: r.table.matchesLeft,
@@ -89,7 +89,7 @@ const SIX_POINTER: Detector = (r) => {
 const SEASON_OVER: Detector = (r) => {
   if (r.kind !== "league" || r.table.matchesLeft > 0) return null;
   const pos = r.table.after.position;
-  const drop = r.table.clubs - 2;
+  const drop = r.table.clubs - (r.table.relegationPlaces ?? 3) + 1;
   if (pos === 1) {
     return ev("champions", club(r), 100, ["title", "trophy", "table"], {
       ...base(r), points: r.table.after.points,

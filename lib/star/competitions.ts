@@ -1,9 +1,10 @@
 import { fameOf } from "./fame";
+import { openEuroBracket, advanceEuroBracket, euroTieFromBracket, settleYourKoTie } from "./euroBracket";
 import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad } from "./types";
 import type { NamedOppGoal } from "./leagueSquads";
 import {
   openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
-  roundNamesFor, stillIn, type CupState, type CupId,
+  roundNamesFor, stillIn, isTwoLeggedRound, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
 import {
@@ -14,7 +15,7 @@ import {
 } from "./calendar";
 import {
   openEuro, poolFor, knockoutSlots, simulateEuroMatchday, sortEuro, leaguePhaseComplete, drawTie,
-  currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict,
+  currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict, simulate as simulateEuroScore,
   type EuroState, type EuroTie,
 } from "./euro";
 
@@ -597,20 +598,22 @@ export function cupRoundWeek(
   for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
   const round = byRound[Math.min(roundIndex, byRound.length - 1)];
   const slot = slots.find(s => s.round === round);
-  let week = slot?.week ?? 3 + roundIndex * 6;
+  return clearOfEurope(slot?.week ?? 3 + roundIndex * 6, competition, division, inEurope);
+}
 
-  if (inEurope && division === "premier") {
-    const otherSlots = competition === "League Cup" ? FA_CUP_SLOTS : LEAGUE_CUP_SLOTS;
-    const reserved = new Set<number>([
-      ...EURO_LEAGUE_PHASE_WEEKS,
-      ...EURO_KO_SLOTS_WITH_R32.map(s => s.week),
-      ...otherSlots.map(s => s.week),
-    ]);
-    let guard = 0;
-    while (reserved.has(week) && guard < 10) { week += 1; guard += 1; }
-  }
-
-  return week;
+/** Push a cup week off a European week (and the other cup's), Premier League only. */
+function clearOfEurope(week: number, competition: CupId, division: CareerDivision, inEurope: boolean, after = -1): number {
+  if (!(inEurope && division === "premier")) return Math.max(week, after + 1);
+  const otherSlots = competition === "League Cup" ? FA_CUP_SLOTS : LEAGUE_CUP_SLOTS;
+  const reserved = new Set<number>([
+    ...EURO_LEAGUE_PHASE_WEEKS,
+    ...EURO_KO_SLOTS_WITH_R32.map(s => s.week),
+    ...otherSlots.map(s => s.week),
+  ]);
+  let w = Math.max(week, after + 1);
+  let guard = 0;
+  while (reserved.has(w) && guard < 10) { w += 1; guard += 1; }
+  return w;
 }
 
 /**
@@ -638,6 +641,7 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
   const opponent = home ? tie.away : tie.home;
   const inEurope = career.europeanQualification === "Champions League"
     || career.europeanQualification === "Europa League";
+  const round = currentRound(state)?.name;
   return {
     week: cupRoundWeek(state.competition, roundIndex, career.league.length, divisionOf(career), inEurope),
     opponent,
@@ -645,8 +649,26 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
     played: false,
     competition: state.competition as Competition,
     kind: "cup",
-    round: currentRound(state)?.name,
+    round,
+    ...(round && isTwoLeggedRound(state.competition, round) ? { leg: 1 as const } : {}),
     opponentStrength: cupStrength(opponent, career.league),
+  };
+}
+
+/** The second leg of your two-legged tie: the other ground, its own week. */
+function secondLegFixture(state: CupState, career: CareerState, firstLeg: Fixture): Fixture {
+  const roundIndex = state.rounds.length - 1;
+  const division = divisionOf(career);
+  const inEurope = career.europeanQualification === "Champions League"
+    || career.europeanQualification === "Europa League";
+  const slot = cupSecondLegWeek(state.competition, roundIndex, division) ?? firstLeg.week + 3;
+  return {
+    ...firstLeg,
+    week: clearOfEurope(slot, state.competition, division, inEurope, firstLeg.week),
+    home: !firstLeg.home,
+    played: false,
+    leg: 2,
+    homeScore: undefined, awayScore: undefined, userGoals: undefined, userAssists: undefined, userRating: undefined,
   };
 }
 
@@ -688,12 +710,42 @@ export function settleCupTie(
   const rng = mulberry32(career.season * 977 + fixture.week * 31 + idx * 7);
 
   // Reported from your point of view; the tie wants home and away.
-  const hs = fixture.home ? userScore : oppScore;
-  const as = fixture.home ? oppScore : userScore;
+  let hs = fixture.home ? userScore : oppScore;
+  let as = fixture.home ? oppScore : userScore;
+  let legs: { hs: number; as: number }[] | undefined;
+  let pens = livePens;
+
+  // A two-legged tie (League Cup semi-final). The first leg just goes on the
+  // tie and puts the second on the calendar; the second settles it on
+  // aggregate. Scores in the tie's own home/away terms (leg two is at the
+  // tie's `away` club, so the fixture's home side is the tie's away side).
+  const yourCupTie = before.rounds[before.rounds.length - 1]?.ties.find(t => t.home === club || t.away === club);
+  if (fixture.leg && yourCupTie) {
+    const youTieHome = yourCupTie.home === club;
+    const leg = { hs: youTieHome ? userScore : oppScore, as: youTieHome ? oppScore : userScore };
+    if (fixture.leg === 1) {
+      const withLeg: CupState = {
+        ...before,
+        rounds: before.rounds.map((r, i) => (i === before.rounds.length - 1
+          ? { ...r, ties: r.ties.map(t => (t === yourCupTie ? { ...t, legs: [leg] } : t)) } : r)),
+      };
+      return {
+        states: states.map((st, i) => (i === idx ? withLeg : st)),
+        nextFixture: secondLegFixture(withLeg, career, fixture),
+        trophy: null,
+        message: `${userScore}-${oppScore} in the first leg of the ${fixture.competition} semi-final. It is settled in the second.`,
+      };
+    }
+    legs = [...(yourCupTie.legs ?? []).slice(0, 1), leg];
+    hs = legs.reduce((s, l) => s + l.hs, 0);
+    as = legs.reduce((s, l) => s + l.as, 0);
+    // The live shootout is in the second leg's home/away terms: flip it.
+    pens = livePens && (fixture.home === youTieHome ? livePens : { home: livePens.away, away: livePens.home });
+  }
   // `livePens` is already in home/away terms (it comes straight off
   // CanvasMatch's own shootout, which tracks the real fixture's home/away
   // sides) — no flip needed the way hs/as needed one above.
-  const after = playCupRound(before, career.league, club, { hs, as, pens: livePens, wentToExtraTime }, rng);
+  const after = playCupRound(before, career.league, club, { hs, as, pens, wentToExtraTime, legs }, rng);
   const next = states.map((st, i) => (i === idx ? after : st));
 
   const tie = before.rounds[before.rounds.length - 1]?.ties
@@ -702,6 +754,7 @@ export function settleCupTie(
     .find(t => t.home === club || t.away === club);
   const won = played ? tieWinner(played) === club : false;
   const onPens = played?.pens !== undefined;
+  const agg = legs ? ` (${played && played.home === club ? `${played.hs}-${played.as}` : `${played?.as}-${played?.hs}`} on aggregate)` : "";
   const opponent = tie ? (tie.home === club ? tie.away : tie.home) : fixture.opponent;
 
   if (!won) {
@@ -727,7 +780,7 @@ export function settleCupTie(
       trophy: null,
       message: onPens
         ? `Out of the ${fixture.competition} on penalties, beaten by ${opponent} in the ${roundName}.`
-        : `Out of the ${fixture.competition} — ${opponent} win the ${roundName} tie.`,
+        : `Out of the ${fixture.competition} — ${opponent} win the ${roundName} tie${agg}.`,
     };
   }
 
@@ -745,7 +798,7 @@ export function settleCupTie(
     states: next,
     nextFixture: cupFixtureFor(after, career, roundIndex),
     trophy: null,
-    message: `Through to the ${currentRound(after)?.name}${onPens ? ", on penalties" : ""}.`,
+    message: `Through to the ${currentRound(after)?.name}${onPens ? ", on penalties" : agg}.`,
   };
 }
 
@@ -912,16 +965,21 @@ export function settleEuro(
     const position = table.findIndex(r => r.isYou) + 1;
     const settled: EuroState = { ...next, table, position };
     const opening = firstRound(position);
+    // The real UEFA bracket off the final table (euroBracket.ts); every tie
+    // you are not in is played the moment both sides are known.
+    const str = euroStrength(settled, career.player.club, yourStrength);
+    const bracket = advanceEuroBracket(
+      openEuroBracket(table.map(r => r.name), rng), career.player.club, str, simulateEuroScore, rng);
     if (!opening) {
       return {
-        state: { ...settled, eliminated: true, winner: crownEurope(settled, career.season * 31 + 5) },
+        state: { ...settled, bracket, eliminated: true, winner: bracket.winner ?? crownEurope(settled, career.season * 31 + 5) },
         nextFixture: null,
         trophy: null,
         message: `${ordinalOf(position)} in the ${state.competition} league phase. ${phaseVerdict(position)}`,
       };
     }
-    const tie = drawTie(settled, opening, career.player.club, rng);
-    const withTie: EuroState = { ...settled, ties: [tie] };
+    const tie = euroTieFromBracket(bracket, career.player.club, str) ?? drawTie(settled, opening, career.player.club, rng);
+    const withTie: EuroState = { ...settled, bracket, ties: [tie] };
     return {
       state: withTie,
       nextFixture: euroTieFixture(withTie, career, tie, 0),
@@ -955,6 +1013,10 @@ export function settleEuro(
 
   const decided = settleTie(played, yourStrength, rng, livePens);
   const ties = state.ties.map((t, i) => (i === state.ties.length - 1 ? decided : t));
+  const str = euroStrength(state, career.player.club, yourStrength);
+  const bracket = state.bracket
+    ? settleYourKoTie(state.bracket, career.player.club, decided, str, simulateEuroScore, rng)
+    : undefined;
   const us = decided.legs.reduce((s, l) => s + (l.us ?? 0), 0);
   const them = decided.legs.reduce((s, l) => s + (l.them ?? 0), 0);
   const etNote = decided.wentToExtraTime ? " after extra time" : "";
@@ -962,8 +1024,8 @@ export function settleEuro(
 
   if (decided.result === "L") {
     const out: EuroState = {
-      ...state, ties, eliminated: true,
-      winner: crownEurope({ ...state, ties }, career.season * 31 + 5),
+      ...state, ties, bracket, eliminated: true,
+      winner: bracket?.winner ?? crownEurope({ ...state, ties }, career.season * 31 + 5),
     };
     return {
       state: out,
@@ -976,7 +1038,7 @@ export function settleEuro(
   }
 
   if (tie.round === "Final") {
-    const won: EuroState = { ...state, ties, won: true, winner: career.player.club };
+    const won: EuroState = { ...state, ties, bracket, won: true, winner: career.player.club };
     return {
       state: won,
       nextFixture: null,
@@ -987,12 +1049,13 @@ export function settleEuro(
     };
   }
 
-  const after = nextRound(state.position ?? 24, tie.round);
+  const fromBracket = bracket ? euroTieFromBracket(bracket, career.player.club, str) : null;
+  const after = fromBracket?.round ?? nextRound(state.position ?? 24, tie.round);
   if (!after) {
-    return { state: { ...state, ties }, nextFixture: null, trophy: null, message: "Through." };
+    return { state: { ...state, ties, bracket }, nextFixture: null, trophy: null, message: "Through." };
   }
-  const drawn = drawTie({ ...state, ties }, after, career.player.club, rng);
-  const advanced: EuroState = { ...state, ties: [...ties, drawn] };
+  const drawn = fromBracket ?? drawTie({ ...state, ties }, after, career.player.club, rng);
+  const advanced: EuroState = { ...state, ties: [...ties, drawn], bracket };
   return {
     state: advanced,
     nextFixture: euroTieFixture(advanced, career, drawn, 0),
@@ -1001,6 +1064,12 @@ export function settleEuro(
       ? `Through to the ${after} on penalties. ${drawn.opponent} next.`
       : `Into the ${after}${aggregate}. ${drawn.opponent} next.`,
   };
+}
+
+/** Strength of a club in this campaign, for the bracket's simulated ties. */
+function euroStrength(state: EuroState, you: string, yourStrength: number): (c: string) => number {
+  const m = new Map(state.clubs.map(c => [c.name, c.strength]));
+  return (c: string) => (c === you ? yourStrength : m.get(c) ?? 75);
 }
 
 function result(us: number, them: number): string {

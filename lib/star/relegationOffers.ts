@@ -92,33 +92,52 @@ export function generateRelegationOffers(career: CareerState, rng: () => number)
   const fromClubs = members[fromKey];
   const bottomFour = names.slice(-Math.min(4, names.length));
 
-  // Every other club in the tier you're leaving, ranked by how close its
-  // strength sits to what your reputation would actually command — not
-  // simply the strongest sides, which would make every relegation read the
-  // same regardless of how the season actually went for you.
-  const survivors = fromClubs.filter(c => !bottomFour.includes(c) && c !== you);
-  const sameTierCandidates = survivors
+  // Every other club in the tier you're leaving that will still be in it —
+  // not the four going down, and not the champion or the play-off winner,
+  // who go UP (an offer from them made a "relegation" a promotion). Ranked by
+  // strength, and you are offered clubs around the rank your season earned:
+  // a season of no goals gets the weakest, a great one the strongest (Mikey,
+  // 8 Oct 2026: "if you got zero goals then obviously you should be getting
+  // the worst possible clubs … if you were very good … big clubs"). Matching
+  // reputation to raw strength did not do that: every club sits between 50
+  // and 70, so any reputation under 60 got the same bottom clubs.
+  const goingUp = new Set([names[0], career.playOffState?.promoted].filter((c): c is string => !!c));
+  const survivors = fromClubs.filter(c => !bottomFour.includes(c) && c !== you && !goingUp.has(c));
+  const ranked = survivors
     .map(name => ({ name, strength: estimateClubStrength(career, name) }))
-    .sort((a, b) => Math.abs(a.strength - rep * 0.85) - Math.abs(b.strength - rep * 0.85));
-  const sameTierCount = Math.min(sameTierCandidates.length, 2 + (rng() < 0.4 ? 1 : 0));
-  const sameTierPicks = sameTierCandidates.slice(0, Math.max(1, sameTierCount));
+    .sort((a, b) => a.strength - b.strength);
+  const centre = Math.round((rep / 100) * (ranked.length - 1));
+  const sameTierCount = Math.min(ranked.length, 2 + (rng() < 0.4 ? 1 : 0));
+  const sameTierPicks = [...ranked]
+    .map((c, i) => ({ c, d: Math.abs(i - centre) + rng() * 1.5 }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, Math.max(1, sameTierCount))
+    .map(x => x.c);
 
   const offers: TransferOffer[] = sameTierPicks.map(({ name, strength }) =>
     buildOffer(career, name, strength, positionOf(name, names), rng, fromDivision, true));
 
-  // A genuinely outstanding season down there gets noticed above it — rare,
-  // and never the majority case.
+  // A genuinely good season down there gets noticed above it: from
+  // reputation 70 (25 in 100) up to 100 (every time), and a second club at
+  // 90+. The better the season, the further up that division's table.
   const aboveDivision = divisionAbove(fromDivision);
   const aboveKey = aboveDivision ? MEMBERSHIP_KEY[aboveDivision] : null;
-  if (aboveDivision && aboveKey && rep >= 74 && rng() < 0.35) {
+  if (aboveDivision && aboveKey) {
+    const chance = Math.max(0, Math.min(1, (rep - 60) / 40));
+    const count = rep >= 90 ? 2 : 1;
     const aboveClubs = members[aboveKey];
-    const aboveByStrength = [...aboveClubs]
+    const aboveRanked = [...aboveClubs]
       .map(name => ({ name, strength: estimateClubStrength(career, name) }))
       .sort((a, b) => a.strength - b.strength);
-    // A weaker side in the tier above is the realistic suitor for a player
-    // stepping straight up out of a relegated team.
-    const pick = aboveByStrength[Math.floor(rng() * Math.min(4, aboveByStrength.length))];
-    if (pick) {
+    // Reputation 70 reaches the weakest few; 100 reaches mid-table.
+    const reach = Math.round(Math.max(0, (rep - 70) / 30) * (aboveRanked.length / 2));
+    const taken = new Set<string>();
+    for (let k = 0; k < count; k++) {
+      if (rng() >= chance) continue;
+      const i = Math.max(0, Math.min(aboveRanked.length - 1, reach - Math.floor(rng() * 4)));
+      const pick = aboveRanked.slice(i).find(c => !taken.has(c.name)) ?? aboveRanked[i];
+      if (!pick || taken.has(pick.name)) continue;
+      taken.add(pick.name);
       offers.unshift(buildOffer(
         career, pick.name, pick.strength, positionOf(pick.name, [...aboveClubs]), rng, aboveDivision, false,
       ));
