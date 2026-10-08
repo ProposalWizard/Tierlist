@@ -48,6 +48,19 @@ def text_card(im, text, size, xy, fill, stroke, angle=-8, sw=8):
     im.alpha_composite(layer)
 
 
+def grade(im):
+    """Glow on the bright parts, a touch more colour, cool shadows."""
+    a = np.asarray(im.convert("RGB"), dtype=np.float32) / 255
+    lum = a @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
+    hot = (np.clip((lum - 0.86) / 0.14, 0, 1)[..., None] * a * 255).astype(np.uint8)
+    glow = np.asarray(Image.fromarray(hot).filter(ImageFilter.GaussianBlur(10)), dtype=np.float32) / 255
+    a = 1 - (1 - a) * (1 - 0.3 * glow)
+    m = a.mean(axis=2, keepdims=True)
+    a = np.clip(m + (a - m) * 1.08, 0, 1)
+    a = a + (1 - lum[..., None]) * np.array([-0.012, 0.0, 0.025], dtype=np.float32)
+    return Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
+
+
 def impact(im):
     g = ImageOps.grayscale(im.convert("RGB"))
     a = np.asarray(g, dtype=np.float32)
@@ -74,6 +87,7 @@ for f in FR:
         im = bg
     else:
         im = src
+    im = grade(im)
     if contact_i is not None:
         if f["i"] == contact_i - 1:
             im = Image.blend(im, Image.new("RGBA", (W, H), (255, 255, 255, 255)), 0.7)

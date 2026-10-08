@@ -236,6 +236,10 @@ def kit_layer(body, arm):
 
 
 LABELS = kit_layer(B0, A0)
+for e in B0.data.edges:  # kit seams get an ink line (sleeves, shorts, socks, boots)
+    a, b = e.vertices
+    if LABELS[a] != LABELS[b]:
+        e.use_freestyle_mark = True
 
 
 def hexc(h):
@@ -251,6 +255,7 @@ KITS = {
 }
 
 LIGHT = Vector((0.45, 0.55, 0.75)).normalized()
+RIM = Vector((-0.5, 0.6, 0.35)).normalized()
 
 
 def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
@@ -269,6 +274,8 @@ def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
     ramp.color_ramp.elements[0].color = (*shadow, 1)
     ramp.color_ramp.elements[1].position = 0.38
     ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
+    hi = ramp.color_ramp.elements.new(0.86)
+    hi.color = (1.14, 1.14, 1.12, 1)
     nt.links.new(dot.outputs["Value"], ramp.inputs[0])
     mul = nt.nodes.new("ShaderNodeMix")
     mul.data_type = "RGBA"
@@ -276,9 +283,39 @@ def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
     mul.inputs[0].default_value = 1.0
     nt.links.new(base_socket_fn(nt), mul.inputs[6])
     nt.links.new(ramp.outputs[0], mul.inputs[7])
+    # rim light: a bright edge on the side away from the camera, lit from behind
+    lw = nt.nodes.new("ShaderNodeLayerWeight")
+    lw.inputs[0].default_value = 0.5
+    gt = nt.nodes.new("ShaderNodeMath"); gt.operation = "GREATER_THAN"; gt.inputs[1].default_value = 0.66
+    nt.links.new(lw.outputs["Facing"], gt.inputs[0])
+    rd = nt.nodes.new("ShaderNodeVectorMath"); rd.operation = "DOT_PRODUCT"
+    rd.inputs[1].default_value = RIM
+    nt.links.new(geo.outputs["Normal"], rd.inputs[0])
+    rg = nt.nodes.new("ShaderNodeMath"); rg.operation = "GREATER_THAN"; rg.inputs[1].default_value = 0.05
+    nt.links.new(rd.outputs["Value"], rg.inputs[0])
+    rm = nt.nodes.new("ShaderNodeMath"); rm.operation = "MULTIPLY"
+    nt.links.new(gt.outputs[0], rm.inputs[0]); nt.links.new(rg.outputs[0], rm.inputs[1])
+    add = nt.nodes.new("ShaderNodeMix"); add.data_type = "RGBA"; add.blend_type = "ADD"
+    nt.links.new(rm.outputs[0], add.inputs[0])
+    nt.links.new(mul.outputs[2], add.inputs[6])
+    add.inputs[7].default_value = (0.5, 0.52, 0.6, 1)
     em = nt.nodes.new("ShaderNodeEmission")
-    nt.links.new(mul.outputs[2], em.inputs[0])
+    nt.links.new(add.outputs[2], em.inputs[0])
     nt.links.new(em.outputs[0], out.inputs[0])
+
+
+def haze(nt, col_socket, near=18.0, far=80.0, most=0.35):
+    """Fade far things towards a pale haze (camera ray length)."""
+    lp = nt.nodes.new("ShaderNodeLightPath")
+    mr = nt.nodes.new("ShaderNodeMapRange")
+    mr.inputs[1].default_value = near; mr.inputs[2].default_value = far
+    mr.inputs[3].default_value = 0.0; mr.inputs[4].default_value = most
+    nt.links.new(lp.outputs["Ray Length"], mr.inputs[0])
+    mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = "RGBA"
+    nt.links.new(mr.outputs[0], mx.inputs[0])
+    nt.links.new(col_socket, mx.inputs[6])
+    mx.inputs[7].default_value = (0.9, 0.93, 0.97, 1)
+    return mx.outputs[2]
 
 
 def outline_mat(name="ink", col=(0.02, 0.02, 0.04)):
@@ -323,7 +360,17 @@ def body_mat(team):
     return m
 
 
+INKCOL = bpy.data.collections.new("Ink")
+sc.collection.children.link(INKCOL)
+
+
 def add_outline(obj, thick):
+    """Ink: Freestyle draws edges, creases and kit seams on these objects."""
+    INKCOL.objects.link(obj)
+    return
+
+
+def _old_outline(obj, thick):
     obj.data.materials.append(INK)
     sol = obj.modifiers.new("ink", "SOLIDIFY")
     sol.thickness = thick
@@ -415,10 +462,10 @@ nt.links.new(mth.outputs[0], fl.inputs[0])
 md = nt.nodes.new("ShaderNodeMath"); md.operation = "PINGPONG"; md.inputs[1].default_value = 1
 nt.links.new(fl.outputs[0], md.inputs[0])
 mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = "RGBA"
-mx.inputs[6].default_value = (*hexc("#3fae2e"), 1)
-mx.inputs[7].default_value = (*hexc("#58c43c"), 1)
+mx.inputs[6].default_value = (*hexc("#7ccb3c"), 1)
+mx.inputs[7].default_value = (*hexc("#86d448"), 1)
 nt.links.new(md.outputs[0], mx.inputs[0])
-nt.links.new(mx.outputs[2], em.inputs[0])
+nt.links.new(haze(nt, mx.outputs[2]), em.inputs[0])
 PITCH.data.materials.append(pm)
 
 white, _, _ = flat_mat("line", (0.95, 0.97, 0.95))
@@ -490,7 +537,7 @@ br.offset = 0
 tcw = nt.nodes.new("ShaderNodeTexCoord")
 nt.links.new(tcw.outputs["Object"], br.inputs["Vector"])
 emw = nt.nodes.new("ShaderNodeEmission")
-nt.links.new(br.outputs["Color"], emw.inputs[0])
+nt.links.new(haze(nt, br.outputs["Color"], 20, 90, 0.4), emw.inputs[0])
 nt.links.new(emw.outputs[0], out.inputs[0])
 lightm, _, _ = flat_mat("lamp", (1, 1, 1))
 WALLS = []
@@ -517,6 +564,55 @@ for y in range(0, 70, 12):
         o.scale = (0.3, 5, 0.6)
         o.data.materials.append(lightm)
         WALLS.append(o)
+
+def scoreboard(loc, rot):
+    m, _, _ = flat_mat("board", (0.08, 0.09, 0.12))
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc, rotation=rot)
+    o = bpy.context.object; o.scale = (11, 4.4, 1); o.data.materials.append(m); WALLS.append(o)
+    tm, _, _ = flat_mat("boardtxt", (1, 1, 1))
+    for txt, size, dz in (("1 - 0", 2.6, -0.5), ("RED        WHITE", 0.7, 1.4)):
+        cu = bpy.data.curves.new("t", "FONT"); cu.body = txt; cu.size = size; cu.align_x = "CENTER"; cu.align_y = "CENTER"
+        t = bpy.data.objects.new("t", cu); sc.collection.objects.link(t)
+        t.rotation_euler = rot
+        n = Matrix.Rotation(rot[2], 3, "Z") @ Matrix.Rotation(rot[0], 3, "X") @ Vector((0, 0, 1))
+        t.location = Vector(loc) + n * 0.05 + Vector((0, 0, dz))
+        cu.materials.append(tm); WALLS.append(t)
+
+
+scoreboard((34, -13.9, 9.5), (math.pi / 2, 0, math.pi))
+scoreboard((34, 71.9, 9.5), (math.pi / 2, 0, 0))
+
+sc.render.use_freestyle = True
+sc.render.line_thickness_mode = "ABSOLUTE"
+vl = sc.view_layers[0]
+vl.use_freestyle = True
+fs = vl.freestyle_settings
+fs.crease_angle = math.radians(128)
+for ls0 in fs.linesets:
+    ls0.show_render = False
+LS = fs.linesets.new("ink")
+LS.select_by_collection = True
+LS.collection = INKCOL
+LS.select_by_visibility = True
+LS.visibility = "VISIBLE"
+LS.select_by_edge_types = True
+LS.select_silhouette = True
+LS.select_border = True
+LS.select_crease = True
+LS.select_edge_mark = True
+LS.select_contour = True
+lst = LS.linestyle
+lst.color = (0.035, 0.035, 0.07)
+lst.thickness = 2.4
+lst.caps = "ROUND"
+cal = lst.thickness_modifiers.new(name="cal", type="CALLIGRAPHY")
+cal.orientation = 50
+cal.thickness_min = 1.0
+cal.thickness_max = 4.2
+far = lst.thickness_modifiers.new(name="far", type="DISTANCE_FROM_CAMERA")
+far.blend = "MULTIPLY"
+far.range_min, far.range_max = 3.0, 22.0
+far.value_min, far.value_max = 1.0, 0.12
 
 world = bpy.data.worlds.new("w")
 world.use_nodes = True
@@ -691,38 +787,38 @@ def shot_wide(t, k):
     b = ball_at(t)
     p = body_at(t, SC)
     tgt = Vector((lerp(b.x, 34, 0.35), lerp(b.y, p.y, 0.5) - 2, 0.9))
-    look(Vector((b.x + 1.5, b.y + 8.5 - 2.0 * k, 1.1)), tgt, 22)
+    look(Vector((b.x + 1.0, b.y + 5.5 - 1.5 * k, 0.55)), tgt, 16)
 
 
 def shot_hero(t, k):
     f, l = scorer_axes()
     p = body_at(TC, SC)
-    loc = p + f * (3.0 - 0.6 * k) - l * 1.4 + UP * 0.28
-    look(loc, p + UP * 1.0 - l * 0.2, 18, roll=-7)
+    loc = p + f * (1.9 - 0.3 * k) - l * 0.8 + UP * 0.12
+    look(loc, p + UP * 1.05 - l * 0.15, 14, roll=-9)
 
 
 def shot_impact(t, k):
     f, l = scorer_axes()
     b = P_CONTACT
-    loc = b - l * 1.7 + f * 0.6 + UP * 0.1
-    look(loc, b + UP * 0.3 - f * 0.15, 28, roll=4)
+    loc = b - l * 0.85 + f * 0.35 + UP * 0.02
+    look(loc, b + UP * 0.22 - f * 0.1, 17, roll=5)
 
 
 def shot_follow(t, k):
     f, l = scorer_axes()
     p = body_at(TC, SC)
-    loc = p - l * 7.5 + f * 1.5 + UP * 0.45
-    look(loc, p + f * 1.2 + UP * 0.7, 26, roll=-14)
+    loc = p - l * 3.6 + f * 1.0 + UP * 0.25
+    look(loc, p + f * 1.0 + UP * 0.75, 18, roll=-16)
 
 
 def shot_net(t, k):
     gb = ball_at(GOAL_T)
-    loc = Vector((gb.x - 0.4, -2.3, 1.05))
-    look(loc, ball_at(t) * 0.6 + Vector((gb.x, 8, 0.9)) * 0.4, 24)
+    loc = Vector((gb.x - 0.3, -1.6, 0.95))
+    look(loc, ball_at(t) * 0.6 + Vector((gb.x, 8, 0.9)) * 0.4, 18)
 
 
 def shot_top(t, k):
-    look(Vector((35.5, 17 - 3 * k, 17)), Vector((35.5, 6 - 1.5 * k, 0)), 26)
+    look(Vector((37, 15 - 3 * k, 9.5)), Vector((35.5, 5 - 1.5 * k, 0)), 20)
 
 
 # (name, t0, t1, seconds on screen, camera fn, white-out)
