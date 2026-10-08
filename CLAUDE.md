@@ -186,7 +186,9 @@ https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
 
 The cloud environment's setup script installs Blender (`apt-get install -y
 blender`); it also needs `python3-numpy` in the same line. Blender connectors
-can't reach a cloud session, but headless Blender scripts can. First use: the
+can't reach a cloud session, but headless Blender scripts can.
+If `blender` is missing (8 Oct 2026: it was), the clip builder `tools/anims3d/build.py`
+needs only python3 + numpy, so clips can still be made; do not skip animations for it. First use: the
 farewell ovation's hugs, dap-ups, pats and claps, made with both men posed
 together (`tools/ovation3d/`, read its README) →
 `public/star/ovation3d/greetings.glb`. Settings → Look → "Ovation greetings:
