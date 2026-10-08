@@ -42,6 +42,9 @@ import { EngineFeature, useRealMatchWidth } from "./EnginePlay";
 import { buildStrike, DRILL_SCENE } from "./TrainingMinigame";
 import type { ChanceResolved } from "./CanvasMatch";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
+import Play3D from "./Play3D";
+import { DRILLS, drillById, pickRandomDrill, type DrillDef, type DrillId } from "@/lib/star/play3d/drills";
+import { makeRng } from "@/lib/star/play3d/rng";
 
 export interface Training3DResult extends GameResult {
   you: number;
@@ -70,7 +73,119 @@ async function faceFrom(url: string | undefined): Promise<{ face: FacePic; skin:
   return Promise.race([job, new Promise<null>((res) => setTimeout(() => res(null), 3000))]);
 }
 
-export default function Training3D({ career, onExit, onFinish }: {
+/**
+ * THE TRAINING GATE (Harry, 8 Oct 2026: "random chance of different training
+ * drills (or a choice)"): a picker — Random drill, or choose one — then the
+ * drill. Crossbar Challenge is the screen below, exactly as before; the fully
+ * 3D drills run on lib/star/play3d (components/star/Play3D.tsx). The list is
+ * lib/star/play3d/drills.ts. `startDrill` skips the picker (the dev page).
+ */
+export type TrainingGateResult = GameResult & Partial<Pick<Training3DResult, "you" | "him" | "mate">> & { drill?: string };
+
+export default function Training3D({ career, onExit, onFinish, startDrill, startMode }: {
+  career: CareerState;
+  onExit: () => void;
+  onFinish: (result: TrainingGateResult) => void;
+  startDrill?: DrillId;
+  /** With startDrill: the picker row's mode (Wembley: "normal" | "doubles"). */
+  startMode?: string;
+}) {
+  const [pick, setPick] = useState<DrillId | null>(startDrill ?? null);
+  const [mode, setMode] = useState<string | undefined>(startMode);
+  /** The pre-screen's answers; null until it's been through (drills with no options skip it). */
+  const [opts, setOpts] = useState<Record<string, string> | null>(null);
+  const seed = career.season * 7919 + career.week * 131;
+  const back = startDrill ? onExit : () => { setPick(null); setOpts(null); };
+  if (pick === "crossbar") return <CrossbarChallenge career={career} onExit={back} onFinish={onFinish} />;
+  const d = pick ? drillById(pick) : null;
+  if (d?.start) {
+    const m = mode ?? d.modes?.[0]?.id;
+    const asks = d.options?.(m) ?? [];
+    if (asks.length && !opts) return <DrillSetup team={career.relationships.team} drill={d} mode={m} onStart={setOpts} onBack={back} />;
+    return <Play3D key={`${pick}-${m}`} career={career} drill={d} seed={seed} mode={m} options={opts ?? undefined} onExit={back} onFinish={onFinish} />;
+  }
+  return <DrillPicker team={career.relationships.team} seed={seed} onPick={(id, md) => { setPick(id); setMode(md); }} onExit={onExit} />;
+}
+
+/** The pre-screen: a drill's choices (Wembley: how many players), then Start. */
+function DrillSetup({ team, drill, mode, onStart, onBack }: { team: number; drill: DrillDef; mode?: string; onStart: (o: Record<string, string>) => void; onBack: () => void }) {
+  const asks = drill.options?.(mode) ?? [];
+  const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(asks.map((a) => [a.key, a.default])));
+  const modeName = drill.modes?.find((x) => x.id === mode)?.label;
+  return (
+    <GameShell title={modeName ? `${drill.name} · ${modeName}` : drill.name} who="Team" current={team} tone="#38bdf8" onBack={onBack}>
+      <div className="mb-3 text-[14px] font-bold" data-drill-setup={drill.id}>{drill.blurb}</div>
+      {asks.map((a) => (
+        <div key={a.key} className="mb-3">
+          <div className="mb-1 text-[12px] font-black uppercase tracking-wide text-sky-200">{a.label}</div>
+          <div className="flex gap-2">
+            {a.choices.map((c) => (
+              <button
+                key={c.value}
+                data-drill-choice={c.value}
+                onClick={() => setVals((v) => ({ ...v, [a.key]: c.value }))}
+                className={`kib-press flex-1 rounded py-3 text-[15px] font-black ring-1 ${vals[a.key] === c.value ? "bg-sky-500 text-white ring-sky-200" : "bg-white/10 ring-white/25"}`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <button data-drill-start onClick={() => onStart(vals)} className="kib-press mt-2 w-full rounded bg-green-500 py-4 text-[18px] font-black uppercase text-white ring-2 ring-green-200">
+        Start
+      </button>
+    </GameShell>
+  );
+}
+
+function DrillPicker({ team, seed, onPick, onExit }: { team: number; seed: number; onPick: (id: DrillId, mode?: string) => void; onExit: () => void }) {
+  return (
+    <GameShell title="Training pitch" who="Team" current={team} tone="#38bdf8" onBack={onExit}>
+      <div className="mb-2 text-[14px] font-bold">Pick a drill, or let the coach pick one.</div>
+      <button
+        data-drill-random
+        onClick={() => onPick(pickRandomDrill(makeRng(seed + 7)).id)}
+        className="kib-press mb-3 w-full rounded bg-sky-500 px-4 py-5 text-left text-[20px] font-black uppercase text-white ring-2 ring-sky-200"
+      >
+        🎲 Random drill
+        <div className="text-[12px] font-bold normal-case text-sky-50">One of the ready drills below, picked for you.</div>
+      </button>
+      <div className="flex flex-col gap-2">
+        {DRILLS.map((d) => d.modes && d.status === "ready" ? (
+          // a drill with modes: the row shows them as its buttons (Wembley: Normal / Doubles)
+          <div key={d.id} data-drill={d.id} className="w-full rounded bg-white/10 px-3 py-3 text-left ring-1 ring-white/25">
+            <div className="text-[15px] font-black uppercase">{d.name}</div>
+            <div className="text-[12px] font-bold text-white">{d.blurb}</div>
+            <div className="mt-2 flex gap-2">
+              {d.modes.map((m) => (
+                <button key={m.id} data-drill-mode={m.id} onClick={() => onPick(d.id, m.id)} className="kib-press flex-1 rounded bg-sky-500/80 py-2 text-[13px] font-black uppercase text-white ring-1 ring-sky-200">
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button
+            key={d.id}
+            data-drill={d.id}
+            disabled={d.status !== "ready"}
+            onClick={() => onPick(d.id)}
+            className={`kib-press w-full rounded px-3 py-3 text-left ring-1 ${d.status === "ready" ? "bg-white/10 ring-white/25" : "bg-white/5 opacity-50 ring-white/10"}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[15px] font-black uppercase">{d.name}</span>
+              {d.status !== "ready" && <span className="text-[11px] font-black uppercase text-sky-200">Coming next</span>}
+            </div>
+            <div className="text-[12px] font-bold text-white">{d.blurb}</div>
+          </button>
+        ))}
+      </div>
+    </GameShell>
+  );
+}
+
+export function CrossbarChallenge({ career, onExit, onFinish }: {
   career: CareerState;
   onExit: () => void;
   onFinish: (result: Training3DResult) => void;

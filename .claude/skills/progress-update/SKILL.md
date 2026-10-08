@@ -58,6 +58,11 @@ Waiting on: you, to merge Harry → main
 *"add an expected token usage to the progress skill … based on previous
 builds the expected percent of weekly usage … or at least token usage."*
 
+**Every progress update carries this block — no exceptions (Harry, 8 Oct
+2026: "dont leave out the expected tokens and percentage in the progress,
+make it a rule").** Even a short bars-only update, even when nothing changed.
+An update without it is incomplete.
+
 Under the bars, add one usage block:
 
 ```
