@@ -367,13 +367,12 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             </button>
           </>
         )}
-        <div className="pointer-events-none absolute bottom-1.5 right-2 rounded bg-black/60 px-1 text-[10px] font-bold tabular-nums text-white">
-          {mmss(dur)}
-        </div>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
           <button
             onClick={toggleSound}
-            className="absolute bottom-1.5 left-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white"
+            className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
             aria-label={audible ? "Mute" : "Sound on"}
             data-goal-video-sound={audible ? "on" : "off"}
           >
@@ -387,8 +386,6 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             </svg>
           </button>
         )}
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         <button onClick={save} className="flex items-center gap-1 whitespace-nowrap hover:text-white" data-goal-video-save>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
@@ -398,6 +395,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         {status === "unsupported" && <span className="text-amber-200">This browser can&apos;t make videos.</span>}
         {status === "failed" && <span className="text-amber-200">The video could not be made.</span>}
         {note && status !== "unsupported" && status !== "failed" && <span className="text-emerald-300">{note}</span>}
+        <span className="ml-auto tabular-nums text-white/60">{mmss(dur)}</span>
       </div>
     </div>
   );

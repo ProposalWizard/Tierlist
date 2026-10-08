@@ -27,6 +27,122 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.38",
+      "title": "Leo's patch notes — goal videos, round 3",
+      "publishedAt": "2026-10-08T09:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/EGUKS4qyVUU6KoA1qkJAKn",
+      "summary": "Goal videos now make themselves in the background and play as you scroll to them, with sound; Save video is the only wait. A new two-man commentary (a lead who calls the goal to fit how it went in, and a co-commentator over the replay), 78 new lines in a new voice, replacing the old 'look at the finish'. Players stand at the right size and the keeper stands in front of his net. Each account cuts its goals its own way, with a new TikTok edit, three new cameras and three new video accounts. Goals in other clubs' matches get their own videos too.",
+      "stats": [
+        {
+          "value": "78",
+          "label": "commentary lines (was 9)"
+        },
+        {
+          "value": "0 taps",
+          "label": "to play a goal video"
+        },
+        {
+          "value": "17 → 29",
+          "label": "goal videos in 30 test matches"
+        },
+        {
+          "value": "270/270",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Goal videos play by themselves",
+              "detail": "Score → Post Match Reactions → scroll down; each video starts as it comes on screen."
+            },
+            {
+              "title": "The new commentary",
+              "detail": "Any goal video with sound: a call as it goes in, a second voice over the replay."
+            },
+            {
+              "title": "Player and keeper sizes",
+              "detail": "Any goal video: the keeper stands in front of the net, not in it."
+            },
+            {
+              "title": "TikTok edit",
+              "detail": "A @pitchside.edits or @footyloops post: tall, slowed down, big captions."
+            },
+            {
+              "title": "Other clubs' goals",
+              "detail": "Phone → England tab after a match week."
+            },
+            {
+              "title": "Speaker and timer under the video",
+              "detail": "Below each goal video, next to Save video."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Goal videos took a long time to start",
+              "detail": "Problem: you tapped play and waited. Why: the video was only made when you tapped. Fix: it is made in the background as the post nears the screen, one at a time, and plays when on screen."
+            },
+            {
+              "title": "The commentator sounded creepy and said the same thing",
+              "detail": "Problem: one flat voice, 9 lines. Fix: a new voice, two commentators, 78 lines picked to fit the finish and the score."
+            },
+            {
+              "title": "Players too big and the keeper in the net",
+              "detail": "Problem: figures stood too tall and too far back. Why: the pictures hang past their feet. Fix: each figure is shrunk and lifted by the right amount."
+            },
+            {
+              "title": "The speaker button covered the name strip",
+              "detail": "Found in the playtest. The speaker and the timer now sit under the video."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Each account edits its own way",
+              "detail": "Clubs and the league: TV with replays from new angles. Fans: a phone video. Meme pages: a TikTok edit. Others: behind the goal."
+            },
+            {
+              "title": "More video posts",
+              "detail": "Three new accounts and more goal posts; 17 → 29 goal videos in 30 test matches."
+            },
+            {
+              "title": "Videos for other clubs' goals",
+              "detail": "A made move for each goal in the England tab, played through the same recorder. 19 of 85 England posts had a video over 8 weeks."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen on an iPhone",
+              "detail": "Checked in a test browser only."
+            },
+            {
+              "title": "England tab videos not seen in the real game",
+              "detail": "The phone was locked in the test career. Checked in tests and stills."
+            },
+            {
+              "title": "One video paused once while on screen",
+              "detail": "Seen once in the playtest; cause not found."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.37",
       "title": "Mikey's patch notes — The standing ovation",
       "publishedAt": "2026-10-08T12:00:00Z",

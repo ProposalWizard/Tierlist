@@ -718,7 +718,7 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
-**8 October 2026 (Leo, cont.) — Goal videos round 3: a commentary box, new cameras and cuts, made in the background, figures the right size, more video posts, videos of other matches' goals. Patch notes Leo v0.12 (site 0.38).**
+**8 October 2026 (Leo, cont.) — Goal videos round 3: a commentary box, new cameras and cuts, made in the background, figures the right size, more video posts, videos of other matches' goals. Patch notes Leo v0.12 (site 0.38): https://claude.ai/artifact/EGUKS4qyVUU6KoA1qkJAKn**
 
 - **The ask (Leo, overnight):** downloads too slow ("it should just naturally do that"), clips' proportions and keeper "off", better edits with variety by poster, more videos and posters, and "the commentator needs BIG improvement"; videos for other games if not much trouble.
 - **Commentary** (`goalClip/commentary.ts`, `commentaryDurations.ts`): two voices (Kokoro `bm_george` lead, `bm_fable` co), 78 lines. `finishOf` (shot mode → how → strike distance) and `scoreTagOf` pick the call and a score line; `pickReplayLine` for the replay, fitting the time left (`MIN_REPLAY_LINE` reserved). Mixer: broadcast-mic EQ, pitch bus ducks to `DUCK` under talk. Old `comm-*` files removed.
