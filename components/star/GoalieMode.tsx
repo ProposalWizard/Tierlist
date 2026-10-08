@@ -132,6 +132,8 @@ interface GoalieModeProps {
   bet: number;
   onSetBank: (n: number) => void;
   onExit: () => void;
+  /** The back button: "Menu" (default), or "Back" when opened from the 3D room. */
+  backLabel?: string;
   onChangeBet: (direction: 1 | -1) => void;
 }
 
@@ -329,7 +331,7 @@ function ballWorldAt(anim: ShotAnim, t: number): { x: number; y: number; z: numb
   };
 }
 
-export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }: GoalieModeProps) {
+export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, backLabel = "Menu" }: GoalieModeProps) {
   const [phase, setPhase] = useState<Phase>("stake");
   const [streak, setStreak] = useState(0);
   const [lastPayout, setLastPayout] = useState(0);
@@ -567,7 +569,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     <div className="h-[100dvh] overflow-hidden bg-gradient-to-b from-sky-950 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-1 mb-2">
-          <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← Menu</button>
+          <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← {backLabel}</button>
           <div className="flex-1 grid grid-cols-3 gap-1">
             <div className="bg-gray-700 rounded px-2 py-1.5 flex flex-col items-center justify-center border border-gray-600">
               <span className="font-black text-[9px] text-white/70">BANK</span>

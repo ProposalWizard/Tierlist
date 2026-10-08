@@ -6,10 +6,14 @@
  *
  * The 3D is lib/star/casino3d/scene.ts; this is the screen around it: the
  * stick (or tap where to go), Home, your money, and a small card when you
- * walk up to a station. Each station opens the casino's EXISTING game over
- * the room (components/star/Casino.tsx, opened straight into that one game;
- * Goalie Mode is GoalieMode.tsx inside it). Closing the game brings you back
- * to the room where you stood. Nothing about the games is changed here.
+ * walk up to a station. Roulette, Slots, Blackjack and Horse racing play AT
+ * THEIR TABLE (Harry, 8 Oct 2026: "having the games actually run in 3D"):
+ * the camera glides in, the buttons sit along the bottom
+ * (./Casino3DTable.tsx) and the wheel, reels, cards and race screen show
+ * each round. Bets and Goalie Mode open the casino's flat game over the
+ * room (components/star/Casino.tsx, opened straight into that one game).
+ * Leaving a game brings you back to the room where you stood. The rules and
+ * payouts are the flat casino's, exactly.
  *
  *   Roulette table  → Roulette        Slot machines   → Slots
  *   Blackjack table → Blackjack       Racing screen   → Horse racing
@@ -33,6 +37,9 @@ import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerI
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { Stick, pill } from "./Shop3D";
+import Casino3DTable from "./Casino3DTable";
+import { isInRoomGame } from "@/lib/star/casino3d/plan";
+import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
 
 const INK = "#f7f1e8";
 const GOLD = "#facc15";
@@ -59,15 +66,25 @@ export interface Casino3DProps {
    *  3D can't run (`game` undefined). `done` closes it. The page keeps all
    *  the casino's money handling (app/star-dev/page.tsx). */
   renderGame: (game: CasinoGameId | undefined, done: () => void) => React.ReactNode;
+  /** Bank a game played at its table in the room (page.tsx handleCasinoBank,
+   *  the same as leaving a flat game). Without it every station opens its
+   *  flat game, as before. */
+  onBank?: (bank: number) => void;
 }
 
-export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, renderGame }: Casino3DProps) {
+export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, renderGame, onBank }: Casino3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<CasinoController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [near, setNear] = useState<CasinoStation | null>(null);
   const [open, setOpen] = useState<CasinoStation | null>(null);
   const [leaving, setLeaving] = useState(false);
+  /** The station's game is the flat screen (Bets, Goalie Mode, a stable
+   *  visit, or no in-room version possible) rather than at the table. */
+  const [flat, setFlat] = useState(false);
+  /** The bank while a table game is on (the money pill shows it). */
+  const [liveBank, setLiveBank] = useState<number | null>(null);
+  const atTable = open !== null && !flat && isInRoomGame(open) && !!onBank && !CASINO_ON_SERVER && status === "ready";
   const doorRef = useRef(onDoor);
   doorRef.current = onDoor;
 
@@ -154,12 +171,20 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
   const moneyAtOpen = useRef<number | null>(null);
   useEffect(() => {
     const c = ctrlRef.current;
-    c?.setPaused(open !== null);
-    if (open !== null) { moneyAtOpen.current = moneyNow.current; return; }
+    c?.setPaused(open !== null && !atTable);
+    if (open !== null) {
+      // at its table: the camera glides in (and back out when it closes)
+      if (atTable && isInRoomGame(open)) c?.focus(open);
+      if (moneyAtOpen.current === null) moneyAtOpen.current = moneyNow.current;
+      return;
+    }
+    c?.focus(null);
+    setFlat(false);
+    setLiveBank(null);
     const before = moneyAtOpen.current;
     moneyAtOpen.current = null;
     if (before !== null) c?.react(Math.sign(moneyNow.current - before));
-  }, [open]);
+  }, [open, atTable]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
 
@@ -187,12 +212,12 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       />
 
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "max(12px, env(safe-area-inset-top)) 12px 0", pointerEvents: "none" }}>
-        <button onClick={onBack} aria-label="Back" style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }}>
+        <button onClick={onBack} aria-label="Back" disabled={atTable} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10, opacity: atTable ? 0 : 1 }}>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ ...pill, gap: 6 }} aria-label="Money">
-          <span aria-hidden style={{ fontSize: 15 }}>★</span><b style={{ color: GOLD }}>{formatMoney(career.money)}</b>
+          <span aria-hidden style={{ fontSize: 15 }}>★</span><b style={{ color: GOLD }}>{formatMoney(liveBank ?? career.money)}</b>
         </div>
       </div>
 
@@ -221,8 +246,22 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
         </div>
       )}
 
-      {/* the station's game, over the room */}
-      {open && (
+      {/* a game at its table, in the room */}
+      {atTable && ctrlRef.current && isInRoomGame(open) && (
+        <Casino3DTable
+          key={open}
+          game={open}
+          ctrl={ctrlRef.current}
+          career={career}
+          bankStart={career.money}
+          onBank={setLiveBank}
+          onLeave={(bank) => { onBank!(bank); setOpen(null); }}
+          onStable={open === "horses" ? (bank) => { onBank!(bank); setLiveBank(null); setFlat(true); } : undefined}
+        />
+      )}
+
+      {/* the station's game, over the room (the flat screen) */}
+      {open && !atTable && (
         <div style={{ position: "fixed", inset: 0, zIndex: 95, overflowY: "auto", touchAction: "auto", userSelect: "auto", background: "#05080f" }} data-casino-game={open}>
           {renderGame(open, () => setOpen(null))}
         </div>

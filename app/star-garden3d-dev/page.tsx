@@ -72,6 +72,7 @@ function Garden3DTest() {
           career={career}
           onBack={() => router.push("/star-3d-area-dev")}
           onDoor={() => { setArrive("casino"); setPlace("garden"); }}
+          onBank={(bank) => setMoney(Math.max(0, Math.round(bank)))}
           renderGame={(game, done) => (
             <Casino bankStart={career.money} career={career} startGame={game}
               onExit={(bank) => { setMoney(Math.max(0, Math.round(bank))); if (game) done(); else router.push("/star-3d-area-dev"); }}
