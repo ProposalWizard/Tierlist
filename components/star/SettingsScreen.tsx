@@ -10,6 +10,9 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import DevCareerPanel from "./DevCareerPanel";
+import DevSquadPanel from "./DevSquadPanel";
+import type { CareerDivision } from "@/lib/star/calendar";
+import type { PlayerSearchHit } from "@/lib/star/devTeam";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
@@ -51,6 +54,13 @@ interface Props {
   onUnlockTraining?: () => void;
   onSetHappiness: (delta: number) => void;
   onSwitchClub: (club: string) => void;
+  /** Dev — move to any English club / add, remove and pin squad players (lib/star/devTeam.ts). */
+  devTeam?: {
+    onMoveToClub: (division: CareerDivision, club: string) => void;
+    onAddPlayer: (hit: PlayerSearchHit, start: boolean) => void;
+    onRemovePlayer: (id: string) => void;
+    onSetPlayerStart: (id: string, start: boolean) => void;
+  };
   onSetPortrait: (portrait: string | undefined) => void;
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
@@ -90,7 +100,7 @@ const DEV = "#f59e0b";
 
 export default function SettingsScreen({
   career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
-  onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
+  onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub, devTeam,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave, moveSaves,
   immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
@@ -271,8 +281,20 @@ export default function SettingsScreen({
           onUnlockTraining={onUnlockTraining}
           onSetHappiness={onSetHappiness}
           onSwitchClub={onSwitchClub}
+          onMoveToClub={devTeam?.onMoveToClub}
         />
       </RiseIn>
+
+      {devTeam && (
+        <RiseIn index={next()}>
+          <DevSquadPanel
+            career={career}
+            onAddPlayer={devTeam.onAddPlayer}
+            onRemovePlayer={devTeam.onRemovePlayer}
+            onSetPlayerStart={devTeam.onSetPlayerStart}
+          />
+        </RiseIn>
+      )}
 
       <RiseIn index={next()}><RefreshPhotosPanel onRefresh={onRefreshPhotos} /></RiseIn>
 
