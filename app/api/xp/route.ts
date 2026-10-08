@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { levelFromXp, checkRewardUnlock, XP_AWARDS, DAILY_XP_CAP, DAILY_CAPPED_EVENTS, type Reward, type UserStats } from "@/lib/xp";
+import { levelFromXp, checkRewardUnlock, XP_AWARDS, DAILY_XP_CAP, type Reward, type UserStats } from "@/lib/xp";
+import { planXpEvent, slotRef, runQualifies, isCappedXp, utcDay } from "@/lib/xpEventKeys";
 
+/**
+ * POST { event_type, event_ref } — award XP for something the player did.
+ *
+ * The amount comes from the server's table (lib/xp.ts), never the client.
+ * The dedup key (event_ref) is built by the server too (lib/xpEventKeys.ts):
+ * the phone's own ref is ignored except as a pointer to a saved draft season
+ * (which must exist and earn the award) or a Ballon d'Or season (capped per
+ * day). Adding to total_xp is one atomic step when add_user_xp exists
+ * (supabase/migrations/xp_atomic_award.sql); until then, read-then-write.
+ */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,25 +29,27 @@ export async function POST(request: Request) {
   }
   const { event_type, event_ref } = (body ?? {}) as {
     event_type?: string;
-    event_ref?: string;
+    event_ref?: unknown;
   };
 
-  if (!event_type || typeof event_type !== "string") {
+  if (!event_type || typeof event_type !== "string" || event_type.length > 80) {
     return NextResponse.json({ error: "Invalid event" }, { status: 400 });
   }
 
-  // XP amounts are resolved SERVER-SIDE only — the client value is never trusted.
-  // Known event types use the award table; objective_<id> events look up the
-  // objective's real reward and require the user to have actually completed it.
-  // Any other event type is rejected, so a caller can't mint arbitrary XP.
   const MAX_SINGLE_AWARD = 1000;
   const svc = createServiceClient();
+  const now = new Date();
 
   let awardXp: number;
+  let insertEventType = event_type;
+  let insertEventRef: string;
+  /** Count today's awards of this type after inserting (race-safe cap). */
+  let recheckCap = false;
+
   const knownAward = (XP_AWARDS as Record<string, number>)[event_type];
-  if (knownAward != null) {
-    awardXp = knownAward;
-  } else if (event_type.startsWith("objective_")) {
+  if (knownAward == null && event_type.startsWith("objective_")) {
+    // Objective awards: the objective must really be completed. One canonical
+    // key shared with /api/objectives/check and the claim route.
     const objectiveId = event_type.slice("objective_".length);
     const [{ data: obj }, { data: userObj }] = await Promise.all([
       svc.from("objectives").select("xp_reward").eq("id", objectiveId).maybeSingle(),
@@ -46,8 +59,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Objective not completed" }, { status: 400 });
     }
     awardXp = Number(obj.xp_reward) || 0;
+    insertEventType = "objective_complete";
+    insertEventRef = event_type;
   } else {
-    return NextResponse.json({ error: "Unknown event type" }, { status: 400 });
+    const plan = planXpEvent(event_type, event_ref, now, knownAward != null);
+    if (plan.kind === "reject") {
+      return NextResponse.json({ error: plan.reason }, { status: 400 });
+    }
+    awardXp = knownAward ?? 0;
+
+    if (plan.kind === "fixed") {
+      if (plan.needStreak) {
+        const { data: prof } = await svc.from("user_profiles").select("current_streak").eq("user_id", user.id).maybeSingle();
+        const streak = prof?.current_streak ?? 0;
+        if (streak < plan.needStreak) {
+          return NextResponse.json({ error: `Needs a ${plan.needStreak}-day streak` }, { status: 400 });
+        }
+      }
+      insertEventRef = plan.ref;
+    } else if (plan.kind === "day") {
+      insertEventRef = plan.ref;
+    } else if (plan.kind === "slot") {
+      const todayCount = await countToday(svc, user.id, event_type, now);
+      const ref = slotRef(plan.base, todayCount);
+      if (!ref) return cappedResponse();
+      insertEventRef = ref;
+    } else if (plan.kind === "run") {
+      const { data: run, error: runErr } = await svc
+        .from("draft_runs")
+        .select("season_number, finish, losses")
+        .eq("user_id", user.id)
+        .eq("event_key", plan.runKey)
+        .limit(1)
+        .maybeSingle();
+      if (runErr) {
+        console.error("[xp] could not read draft_runs:", runErr.message);
+        return NextResponse.json({ error: "Could not check that season" }, { status: 500 });
+      }
+      if (!run) {
+        console.warn(`[xp] ${event_type} refused for ${user.id}: no saved season ${plan.runKey}`);
+        return NextResponse.json({ error: "No saved season matches" }, { status: 400 });
+      }
+      if (!runQualifies(plan.need, run as { season_number: number | null; finish: number | null; losses: number | null })) {
+        console.warn(`[xp] ${event_type} refused for ${user.id}: season ${plan.runKey} does not earn it`);
+        return NextResponse.json({ error: "That season does not earn this" }, { status: 400 });
+      }
+      insertEventRef = plan.ref;
+      recheckCap = isCappedXp(event_type);
+    } else {
+      insertEventRef = plan.ref;
+      recheckCap = true;
+    }
+
+    // Quick refusal before writing anything (the recheck below closes races).
+    if (recheckCap && (await countToday(svc, user.id, event_type, now)) >= DAILY_XP_CAP) {
+      return cappedResponse();
+    }
   }
 
   if (!Number.isFinite(awardXp) || awardXp <= 0) {
@@ -55,42 +122,12 @@ export async function POST(request: Request) {
   }
   awardXp = Math.min(Math.floor(awardXp), MAX_SINGLE_AWARD);
 
-  // Daily earning cap — each capped "way to earn XP" is worth XP at most
-  // DAILY_XP_CAP times per calendar day (UTC). Past the cap the action still
-  // succeeds elsewhere, it just stops awarding XP. Already-earned XP is never
-  // touched — this only limits new awards.
-  if (DAILY_CAPPED_EVENTS.has(event_type)) {
-    const startOfDay = new Date();
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const { count: todayCount } = await svc
-      .from("xp_events")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("event_type", event_type)
-      .gte("created_at", startOfDay.toISOString());
-    if ((todayCount ?? 0) >= DAILY_XP_CAP) {
-      return NextResponse.json({
-        capped: true,
-        message: `Daily limit reached (${DAILY_XP_CAP}/day) for this action`,
-      });
-    }
-  }
-
-  // Objective awards are stored under one canonical key regardless of which of
-  // the three paths credits them (here, /api/objectives/check, or the claim
-  // route). Storing the objective id in event_type instead would sit outside
-  // the UNIQUE(user_id, event_type, event_ref) index the others dedupe on, and
-  // the objective would pay out more than once.
-  const isObjectiveEvent = knownAward == null && event_type.startsWith("objective_");
-  const insertEventType = isObjectiveEvent ? "objective_complete" : event_type;
-  const insertEventRef = isObjectiveEvent ? event_type : (event_ref || event_type);
-
-  const { error: eventError } = await svc.from("xp_events").insert({
+  const { data: inserted, error: eventError } = await svc.from("xp_events").insert({
     user_id: user.id,
     event_type: insertEventType,
     event_ref: insertEventRef,
     xp_awarded: awardXp,
-  });
+  }).select("id").maybeSingle();
 
   if (eventError) {
     if (eventError.code === "23505") {
@@ -99,23 +136,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: eventError.message }, { status: 500 });
   }
 
-  const { data: xpRow } = await svc
-    .from("user_xp")
-    .select("total_xp")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  // Two requests at once could both pass the count above: count again after
+  // writing, and take this one back if it went over the cap.
+  if (recheckCap && (await countToday(svc, user.id, event_type, now)) > DAILY_XP_CAP) {
+    if (inserted?.id) await svc.from("xp_events").delete().eq("id", inserted.id);
+    return cappedResponse();
+  }
 
-  const oldXp = xpRow?.total_xp ?? 0;
-  const newXp = oldXp + awardXp;
+  const { oldXp, newXp } = await addXp(svc, user.id, awardXp);
   const { level: newLevel } = levelFromXp(newXp);
   const { level: oldLevel } = levelFromXp(oldXp);
-
-  await svc.from("user_xp").upsert({
-    user_id: user.id,
-    total_xp: newXp,
-    current_level: newLevel,
-    updated_at: new Date().toISOString(),
-  });
+  if (newLevel !== oldLevel) {
+    await svc.from("user_xp").update({ current_level: newLevel }).eq("user_id", user.id);
+  }
 
   let newRewards: string[] = [];
   if (newLevel > oldLevel) {
@@ -132,6 +165,48 @@ export async function POST(request: Request) {
   });
 }
 
+function cappedResponse() {
+  return NextResponse.json({
+    capped: true,
+    message: `Daily limit reached (${DAILY_XP_CAP}/day) for this action`,
+  });
+}
+
+/** Awards of this type today (UTC). */
+async function countToday(svc: ReturnType<typeof createServiceClient>, userId: string, eventType: string, now: Date): Promise<number> {
+  const { count } = await svc
+    .from("xp_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("event_type", eventType)
+    .gte("created_at", `${utcDay(now)}T00:00:00.000Z`);
+  return count ?? 0;
+}
+
+/**
+ * Add to total_xp. One atomic UPDATE through add_user_xp when that function
+ * exists (xp_atomic_award.sql, pending); otherwise the old read-then-write.
+ */
+async function addXp(svc: ReturnType<typeof createServiceClient>, userId: string, amount: number): Promise<{ oldXp: number; newXp: number }> {
+  const { data, error } = await svc.rpc("add_user_xp", { p_user_id: userId, p_amount: amount });
+  if (!error && data != null) {
+    const newXp = Number(Array.isArray(data) ? data[0] : data);
+    if (Number.isFinite(newXp)) return { oldXp: newXp - amount, newXp };
+  }
+  const missing = error && (error.code === "PGRST202" || error.code === "42883" || /could not find the function|does not exist/i.test(error.message ?? ""));
+  if (error && !missing) console.error("[xp] add_user_xp failed, falling back:", error.message);
+
+  const { data: xpRow } = await svc.from("user_xp").select("total_xp").eq("user_id", userId).maybeSingle();
+  const oldXp = xpRow?.total_xp ?? 0;
+  const newXp = oldXp + amount;
+  await svc.from("user_xp").upsert({
+    user_id: userId,
+    total_xp: newXp,
+    current_level: levelFromXp(newXp).level,
+    updated_at: new Date().toISOString(),
+  });
+  return { oldXp, newXp };
+}
 async function checkAndUnlockRewards(
   svc: ReturnType<typeof createServiceClient>,
   userId: string,

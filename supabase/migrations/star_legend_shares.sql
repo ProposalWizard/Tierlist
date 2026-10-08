@@ -17,6 +17,11 @@
 -- (app/api/star/legend/route.ts answers `migrationMissing: true`). Nothing
 -- else breaks.
 --
+-- 8 Oct 2026: the career shown by a link is copied from the sharer's own
+-- Hall of Fame (star_hall_of_fame) by the trigger below, never taken from
+-- what the browser sends, and an account shares at most 30 careers. So run
+-- star_hall_of_fame.sql FIRST.
+--
 -- Run in the Supabase SQL Editor. Idempotent: safe to re-run.
 
 CREATE TABLE IF NOT EXISTS star_legend_shares (
@@ -44,6 +49,36 @@ DO $$ BEGIN
       CHECK (pg_column_size(entry) < 1000000);
   END IF;
 END $$;
+
+-- The career comes from the sharer's own Hall, whatever the insert carried;
+-- a career not in their Hall (or removed from it) can't be shared; at most
+-- 30 shares per account. The API checks the same (app/api/star/legend).
+CREATE OR REPLACE FUNCTION star_legend_shares_from_hall()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  hall_entry JSONB;
+  share_count INT;
+BEGIN
+  SELECT h.entry INTO hall_entry FROM star_hall_of_fame h
+    WHERE h.user_id = NEW.user_id AND h.entry_id = NEW.hall_id AND h.removed = false;
+  IF hall_entry IS NULL THEN
+    RAISE EXCEPTION 'legend_not_in_hall: share a career from your Hall of Fame';
+  END IF;
+  SELECT count(*) INTO share_count FROM star_legend_shares WHERE user_id = NEW.user_id;
+  IF share_count >= 30 THEN
+    RAISE EXCEPTION 'legend_full: at most 30 shared careers per account';
+  END IF;
+  NEW.entry := hall_entry;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS star_legend_shares_from_hall ON star_legend_shares;
+CREATE TRIGGER star_legend_shares_from_hall
+  BEFORE INSERT ON star_legend_shares
+  FOR EACH ROW EXECUTE FUNCTION star_legend_shares_from_hall();
 
 ALTER TABLE star_legend_shares ENABLE ROW LEVEL SECURITY;
 
@@ -80,3 +115,4 @@ CREATE POLICY "star_legend_shares_delete" ON star_legend_shares
 -- SELECT polname FROM pg_policy WHERE polrelid = 'star_legend_shares'::regclass;
 -- SELECT conname FROM pg_constraint WHERE conrelid = 'star_legend_shares'::regclass;
 -- SELECT proname FROM pg_proc WHERE proname = 'get_legend_share';
+-- SELECT tgname FROM pg_trigger WHERE tgrelid = 'star_legend_shares'::regclass AND NOT tgisinternal;

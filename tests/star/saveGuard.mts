@@ -66,6 +66,14 @@ interface Server {
   stored: unknown | null;
   savedAt: number | null;
   luck: LuckState | null;
+  /** The server casino's rows (star_casino_plays), when it is switched on. */
+  ledger?: { at: number; net: number }[];
+}
+
+/** What the career route passes: the casino net since the last trusted save. */
+function netSince(server: Server, now: number): number | null {
+  if (!server.ledger) return null;
+  return server.ledger.filter(e => (server.savedAt == null || e.at > server.savedAt) && e.at <= now).reduce((t, e) => t + e.net, 0);
 }
 
 interface Tally {
@@ -80,7 +88,7 @@ interface Tally {
 /** One POST, as the route does it. */
 function post(server: Server, c: CareerState, now: number, tally: Tally, mode: GuardMode, casinoJustWon: boolean): CareerState {
   const sent = JSON.parse(JSON.stringify(c));
-  const r = checkSave(server.stored, sent, { mode, now, prevSavedAt: server.savedAt, luck: server.luck });
+  const r = checkSave(server.stored, sent, { mode, now, prevSavedAt: server.savedAt, luck: server.luck, casinoNet: netSince(server, now) });
   tally.posts++;
   for (const f of r.findings) {
     if (f.level === "cheat") tally.cheat.push(f);
@@ -157,11 +165,11 @@ const DIVS: { div: CareerDivision; clubs: readonly string[] }[] = [
 
 /** Plays one honest career. `every` posts only every Nth action (an offline
  *  stretch), `secondsPerAction` is how fast the player taps through. */
-function playHonest(idx: number, seasons: number, opts: { every: number; secondsPerAction: number; casino: boolean; transfers: boolean }): Tally {
+function playHonest(idx: number, seasons: number, opts: { every: number; secondsPerAction: number; casino: boolean; transfers: boolean; ledger?: boolean }): Tally {
   const { div, clubs } = DIVS[idx % DIVS.length];
   const rng = mulberry32(9001 + idx * 77);
   let c = signed(makeInitialCareer(player(clubs[3 % clubs.length]), [...clubs], div), div);
-  const server: Server = { stored: null, savedAt: null, luck: null };
+  const server: Server = { stored: null, savedAt: null, luck: null, ...(opts.ledger ? { ledger: [] } : {}) };
   const tally: Tally = { posts: 0, cheat: [], watch: [], watchAfterCasino: 0, watchOther: [] };
   let now = 1_800_000_000_000;
   let action = 0;
@@ -213,6 +221,8 @@ function playHonest(idx: number, seasons: number, opts: { every: number; seconds
       // of a 1-in-4,000 horse.
       if (opts.casino && guard === 10 && c.money >= 2000) {
         casinoWon = true;
+        // With the server casino on, the server recorded this win.
+        server.ledger?.push({ at: now + 1, net: c.money * 35 });
         act({ ...c, money: c.money * 36 });
       }
       const us = Math.floor(rng() * 4), them = Math.floor(rng() * 3);
@@ -245,6 +255,10 @@ function playHonest(idx: number, seasons: number, opts: { every: number; seconds
     { every: 1, secondsPerAction: 20, casino: false, transfers: false },
     { every: 1, secondsPerAction: 6, casino: true, transfers: true },
     { every: 7, secondsPerAction: 15, casino: true, transfers: true },
+    // The casino on the server (star_casino.sql run): no luck allowance, the
+    // server's own record of the win instead.
+    { every: 1, secondsPerAction: 6, casino: true, transfers: true, ledger: true },
+    { every: 7, secondsPerAction: 15, casino: true, transfers: true, ledger: true },
   ];
   for (const opts of runs) {
     for (let i = 0; i < 5; i++) {
@@ -263,7 +277,7 @@ function playHonest(idx: number, seasons: number, opts: { every: number; seconds
       }
     }
   }
-  console.log(`honest play: ${posts} saves checked across 15 careers × 3 seasons — ${cheat} cheat findings, ${watchOther} unexplained watch findings, ${watchCasino} casino-luck notes`);
+  console.log(`honest play: ${posts} saves checked across 25 careers × 3 seasons — ${cheat} cheat findings, ${watchOther} unexplained watch findings, ${watchCasino} casino-luck notes`);
   for (const e of examples.slice(0, 12)) console.log("  " + e);
   check(cheat === 0, `honest play produces no cheat findings (${cheat}/${posts})`);
   check(watchOther === 0, `honest play produces no watch findings except after a casino win (${watchOther})`);
@@ -404,6 +418,74 @@ const cheats = (r: ReturnType<typeof checkSave>) => r.findings.filter(f => f.lev
   // Off is off.
   check(checkSave(prev, { ...prev, money: 1e12 }, { mode: "off", now }).findings.length === 0, "mode off checks nothing");
   check(guardModeFrom(undefined) === "observe" && guardModeFrom("ENFORCE") === "enforce" && guardModeFrom("nonsense") === "observe", "the mode defaults to observe");
+}
+
+// ── 3. The casino on the server (star_casino.sql run) ─────────────────────
+{
+  const { prev, savedAt, now } = midCareer();
+  const ctx = (casinoNet: number | null, luck: LuckState = { left: LUCK_CAP, at: now }) =>
+    ({ mode: "observe" as GuardMode, now, prevSavedAt: savedAt, luck, casinoNet });
+  const passes = (money: number, casinoNet: number | null) =>
+    checkSave(prev, { ...prev, money }, ctx(casinoNet)).findings.every(f => f.level !== "cheat");
+
+  // How much fake money an edited save gets through, before and after: the
+  // largest bank that passes with no cheat finding, five minutes after the
+  // last trusted save, with no casino play at all.
+  const largest = (casinoNet: number | null) => {
+    let lo = prev.money, hi = prev.money * 1e6 + 1e9;
+    for (let i = 0; i < 200; i++) { const mid = (lo + hi) / 2; if (passes(mid, casinoNet)) lo = mid; else hi = mid; }
+    return lo;
+  };
+  const before = largest(null), after = largest(0);
+  console.log(`fake money let through on a ★${Math.round(prev.money)} bank: before (luck) ★${Math.round(before)} (×${(before / prev.money).toFixed(0)}), after (server casino, no play) ★${Math.round(after)} (+★${Math.round(after - prev.money)}, the honest-earnings slack)`);
+  check(before > prev.money * 1000, `before: the luck allowance let about ×2,000 through (×${(before / prev.money).toFixed(0)})`);
+  check(after < prev.money + (before - prev.money) / 100, `after: an edit gets less than 1% of what luck let through (★${Math.round(after - prev.money)})`);
+  {
+    // The same on a ★10m bank (a player well into a career).
+    const rich = { ...prev, money: 10_000_000 };
+    const ok = (money: number, casinoNet: number | null) =>
+      checkSave(rich, { ...rich, money }, ctx(casinoNet)).findings.every(f => f.level !== "cheat");
+    const top = (casinoNet: number | null) => {
+      let lo = rich.money, hi = rich.money * 1e5;
+      for (let i = 0; i < 200; i++) { const mid = (lo + hi) / 2; if (ok(mid, casinoNet)) lo = mid; else hi = mid; }
+      return lo;
+    };
+    const b = top(null), a = top(0);
+    console.log(`  on a ★10m bank: before ★${(b / 1e9).toFixed(1)}bn (×${(b / rich.money).toFixed(0)}), after +★${Math.round(a - rich.money)}`);
+    check(a - rich.money < (b - rich.money) / 1000, "after, on a big bank: the edit room no longer grows with the bank");
+  }
+
+  // A real server-recorded win passes; an edit on top of it does not.
+  const won = 1_000_000;
+  check(passes(prev.money + won, won), "a bank up by exactly the server-recorded win passes");
+  const w = checkSave(prev, { ...prev, money: prev.money + won }, ctx(won));
+  check(w.findings.some(f => f.level === "watch" && f.field === "money") && w.guard.luck.left === LUCK_CAP,
+    "…noted as casino winnings, and no luck spent");
+  check(!passes(prev.money + 2 * won + (after - prev.money), won), "double the recorded win is caught");
+  check(passes(prev.money + won, null), "with the table missing, the old luck allowance still covers a win");
+  // Losses recorded never let money through.
+  check(!passes(prev.money + won, -won), "a recorded loss gives no allowance");
+
+  // Enforce puts the bank back to what play and the record allow.
+  const e = checkSave(prev, { ...prev, money: prev.money + 50 * won }, { ...ctx(won), mode: "enforce" });
+  const m = (e.clamped as unknown as CareerState).money;
+  check(e.corrected.includes("money") && m <= prev.money + won + (after - prev.money) + 1 && m >= prev.money + won,
+    `enforce: money goes back to the recorded win plus honest pay (${m})`);
+
+  // The bank only reaches the save when the player leaves the casino; a horse
+  // race or a bet can save in between. The win carries over to that later save.
+  const mid1 = checkSave(prev, { ...prev }, ctx(won));
+  check(mid1.findings.every(f => f.level !== "cheat") && (mid1.guard.casino?.credit ?? 0) === won, "a save before the win reaches the bank carries the win forward");
+  const later = checkSave(mid1.clamped, { ...prev, money: prev.money + won }, { mode: "observe", now: now + 60_000, prevSavedAt: now, luck: mid1.guard.luck, casinoNet: 0 });
+  check(later.findings.every(f => f.level !== "cheat") && (later.guard.casino?.credit ?? 0) === 0, "…and the next save uses it up");
+  const again = checkSave(later.clamped, { ...prev, money: prev.money + 2 * won }, { mode: "observe", now: now + 120_000, prevSavedAt: now + 60_000, luck: later.guard.luck, casinoNet: 0 });
+  check(again.findings.some(f => f.level === "cheat" && f.field === "money"), "the same win cannot be used twice");
+  // A carried win runs out after a day.
+  const stale = checkSave(mid1.clamped, { ...prev, money: prev.money + won }, { mode: "observe", now: now + 2 * 86_400_000, prevSavedAt: now, luck: mid1.guard.luck, casinoNet: 0 });
+  check(stale.findings.some(f => f.level === "cheat" && f.field === "money"), "a win carried for over a day lapses");
+  // The client cannot write its own casino credit.
+  const forged = checkSave(prev, { ...prev, money: prev.money + won, serverGuard: { v: 1, luck: { left: 0, at: now }, at: now, casino: { credit: 1e12, at: now } } } as unknown as CareerState, ctx(0));
+  check(forged.findings.some(f => f.level === "cheat" && f.field === "money"), "a forged casino credit in the sent save is ignored");
 }
 
 if (problems.length) {

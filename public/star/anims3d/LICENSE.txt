@@ -1,0 +1,17 @@
+public/star/anims3d/ — football and casino moves for the 3D people
+
+football.glb, casino.glb, football-ual.glb, casino-ual.glb
+
+Every clip in these files is hand-made for Knowitball (tools/anims3d/build.py
+and clips.py: poses keyed in code and solved onto the skeletons). No motion
+capture and no third-party animation is in them. They are ours.
+
+They contain only bone turns and the hips' position for two skeletons that
+come from free (CC0 1.0, public domain) packs, used unchanged:
+  - the new 3D people (public/star/people3d, public/star/onebody), see
+    public/star/shop3d/LICENSE.txt and tools/blender-footballer/LICENSE-Quaternius-UBC.txt;
+  - the old shop/garden footballer: Quaternius "Universal Base Characters"
+    (CC0 1.0), https://quaternius.com.
+The old footballer's resting finger curl is copied from Quaternius
+"Universal Animation Library" Idle_Loop (CC0 1.0), https://quaternius.com.
+CC0 asks for no credit; this note is for our own records.

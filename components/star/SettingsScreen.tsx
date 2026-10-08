@@ -5,7 +5,7 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
-import { GameSwitches, LookSwitches } from "./DeviceSettings";
+import { SettingsTop, SettingsGroups } from "./DeviceSettings";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -25,7 +25,7 @@ import {
 import { PressButton, RiseIn, tint, useClubTheme } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { SegTabs } from "./screenKit";
-import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch } from "./settingsKit";
+import { SetCard, SetHead, SetNote, Switch } from "./settingsKit";
 
 /**
  * SETTINGS — reskinned 28 Sep 2026 to the home screen's look (Harry: "all
@@ -34,6 +34,11 @@ import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch } from "./set
  * cards grouped under small caps headers, lit switches, buttons that press
  * in, and each block rising in on open. Visual only — every handler, save
  * path, switch and dev tool is exactly the one it was before.
+ *
+ * 8 Oct 2026 (Harry picked the "hybrid"): Version on top (Classic |
+ * Standard | Preview), the four quick switches, then folded groups — Match,
+ * 3D world, Screens, Career & saves. Developer tools are their own tab,
+ * testers and admins only. The rows live in DeviceSettings.tsx.
  */
 
 interface Props {
@@ -107,17 +112,98 @@ export default function SettingsScreen({
 }: Props) {
   const { glow } = useClubTheme(career);
 
-  // Live scores moved to the League page's bell (v0.23.1, P61).
-  // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
-  const [devOpen, setDevOpen] = useState(false);
-  // Testers and admins (tester access, 5 Oct 2026). Goal Replays inside
-  // stays admin-only: it checks for itself.
+  // Developer tools sit in their own tab, shown only to testers and admins
+  // (Harry, 8 Oct 2026, the hybrid Settings). Goal Replays inside stays
+  // admin-only: it checks for itself.
   const isTester = useIsTester();
+  const [tab, setTab] = useState<"settings" | "dev">("settings");
+  const showDev = isTester && tab === "dev";
+  // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
   let rise = 0;
   const next = () => rise++;
+
+  // ── Career & saves: only here, inside a career ──
+  const careerAndSaves = (
+    <>
+      <SetCard tone={glow}>
+        <SetHead>Photo</SetHead>
+        <SetNote>Change the photograph on your graphics, or take it back off.</SetNote>
+        <div className="mt-2">
+          <PortraitPicker
+            value={career.player.portrait}
+            onChange={onSetPortrait}
+            club={career.player.club}
+            number={career.squadNumber}
+          />
+        </div>
+      </SetCard>
+
+      {(onSetPenaltyRunup || onSetFreeKickRunup) && (
+        <SetCard tone={glow}>
+          <SetHead>Penalties and free kicks</SetHead>
+          <SetNote>How you run up to the ball. Looks only — the kick is the same.</SetNote>
+          {onSetPenaltyRunup && (
+            <RunupPicker
+              title="Penalty run-up"
+              styles={ownedPenaltyRunups(career.ownedAnimations)}
+              current={careerPenaltyRunup(career)}
+              onPick={onSetPenaltyRunup}
+            />
+          )}
+          {onSetFreeKickRunup && (
+            <RunupPicker
+              title="Free-kick run-up"
+              styles={ownedFreeKickRunups(career.ownedAnimations)}
+              current={careerFreeKickRunup(career)}
+              onPick={onSetFreeKickRunup}
+            />
+          )}
+        </SetCard>
+      )}
+
+      <SetCard tone={glow}>
+        <SetHead>Face editors</SetHead>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <PressButton variant="primary" size="none" onClick={onOpenFaceEditor} className="rounded-xl py-2 text-[11px] font-black">
+            Real Photos →
+          </PressButton>
+          <PressButton variant="accent" accent="#d946ef" size="none" onClick={onOpenFakeFaceEditor} className="rounded-xl py-2 text-[11px] font-black text-white">
+            Fake Faces →
+          </PressButton>
+        </div>
+      </SetCard>
+
+      <SaveSlotsPanel
+        saves={saves}
+        activeSlot={activeSlot}
+        onSwitch={onSwitchSave}
+        onStartNew={onStartNewInSlot}
+        onDelete={onDeleteSave}
+        glow={glow}
+      />
+      {moveSaves && <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={glow} />}
+
+      {onExitCareer && (
+        <div className="pt-2">
+          <PressButton
+            data-exit-career
+            variant="danger"
+            size="none"
+            onClick={onExitCareer}
+            className="w-full rounded-xl py-3 text-sm font-black"
+          >
+            Exit career — back to Knowitball
+          </PressButton>
+          <p className="mt-1.5 text-center text-[10px] font-semibold text-white">
+            Your career stays saved. You come back to exactly this.
+          </p>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <Screen glow={glow} className="max-w-md px-3 pb-10 pt-3">
@@ -135,125 +221,36 @@ export default function SettingsScreen({
         )}
       />
 
-      {/* ── GAME ── small on/off switches, one line each (v0.23.1, P61: "certain
-          things should be small things, like full screen and on and off"). Live
-          scores live on the League page now. */}
-      <RiseIn index={next()}><SetSection className="mb-1.5 mt-1">Game</SetSection></RiseIn>
-      <RiseIn index={next()}>
-        <GameSwitches glow={glow} fullscreen={{ support: fullscreenSupport, on: immersiveActive, onToggle: onToggleImmersive }} />
-      </RiseIn>
-
-      {/* ── YOU ── */}
-      <RiseIn index={next()}><SetSection>You</SetSection></RiseIn>
-      <RiseIn index={next()}>
-        <SetCard tone={glow}>
-          <SetHead>Photo</SetHead>
-          <SetNote>Change the photograph on your graphics, or take it back off.</SetNote>
-          <div className="mt-2">
-            <PortraitPicker
-              value={career.player.portrait}
-              onChange={onSetPortrait}
-              club={career.player.club}
-              number={career.squadNumber}
-            />
-          </div>
-        </SetCard>
-      </RiseIn>
-
-      {/* Moved here from the middle of Settings (Harry, 1 Oct 2026, P84: "I
-          don't think the penalty run-up and three-kick run-up should be in
-          your settings. It should probably be in like a play style section"). */}
-      {(onSetPenaltyRunup || onSetFreeKickRunup) && <RiseIn index={next()}><SetSection>Play style</SetSection></RiseIn>}
-      {(onSetPenaltyRunup || onSetFreeKickRunup) && (
-        <RiseIn index={next()} className="mt-2.5">
-          <SetCard tone={glow}>
-            <SetHead>Penalties and free kicks</SetHead>
-            <SetNote>How you run up to the ball. Looks only — the kick is the same.</SetNote>
-            {onSetPenaltyRunup && (
-              <RunupPicker
-                title="Penalty run-up"
-                styles={ownedPenaltyRunups(career.ownedAnimations)}
-                current={careerPenaltyRunup(career)}
-                onPick={onSetPenaltyRunup}
-              />
-            )}
-            {onSetFreeKickRunup && (
-              <RunupPicker
-                title="Free-kick run-up"
-                styles={ownedFreeKickRunups(career.ownedAnimations)}
-                current={careerFreeKickRunup(career)}
-                onPick={onSetFreeKickRunup}
-              />
-            )}
-          </SetCard>
-        </RiseIn>
-      )}
-
-      {/* ── PLAYER GRAPHICS ── */}
-      <RiseIn index={next()}><SetSection>Player graphics</SetSection></RiseIn>
-      <RiseIn index={next()}>
-        <SetCard tone={glow}>
-          <SetHead>Face editors</SetHead>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <PressButton variant="primary" size="none" onClick={onOpenFaceEditor} className="rounded-xl py-2 text-[11px] font-black">
-              Real Photos →
-            </PressButton>
-            <PressButton variant="accent" accent="#d946ef" size="none" onClick={onOpenFakeFaceEditor} className="rounded-xl py-2 text-[11px] font-black text-white">
-              Fake Faces →
-            </PressButton>
-          </div>
-
-          <SetDivider />
-          <LookSwitches />
-
-        </SetCard>
-      </RiseIn>
-
-      {/* ── SAVES ── */}
-      <RiseIn index={next()}><SetSection>Saves</SetSection></RiseIn>
-      <RiseIn index={next()}>
-        <SaveSlotsPanel
-          saves={saves}
-          activeSlot={activeSlot}
-          onSwitch={onSwitchSave}
-          onStartNew={onStartNewInSlot}
-          onDelete={onDeleteSave}
-          glow={glow}
-        />
-      </RiseIn>
-      {moveSaves && (
-        <RiseIn index={next()} className="mt-2">
-          <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={glow} />
-        </RiseIn>
-      )}
-
-      {/* ── DEVELOPER TOOLS ── hidden behind one button (Mikey, 28 Sep 2026:
-          "the developer tools should be almost hidden… click on it and it
-          shows you all of this stuff, click again to hide it"). */}
-      {/* A save a cheat has touched (lib/star/godMode.ts). Shown to everyone. */}
-      {career.usedGodMode && (
-        <RiseIn index={next()} className="mt-6">
-          <p data-tester-save className="rounded-lg border px-3 py-2 text-[11px] font-bold text-white" style={{ borderColor: DEV, background: "rgba(245,158,11,.12)" }}>
-            🧪 Tester save — developer tools have been used on this career.
-          </p>
-        </RiseIn>
-      )}
-      {/* Admins and testers (Harry, 5 Oct 2026: "lock the doors", then tester access). */}
       {isTester && (
-      <RiseIn index={next()} className="mt-6">
-        <button
-          onClick={() => setDevOpen(o => !o)}
-          aria-expanded={devOpen}
-          className="kib-press flex w-full items-center justify-between rounded-xl border-2 border-dashed px-3 py-2.5 text-left"
-          style={{ borderColor: DEV, background: "rgba(0,0,0,.25)" }}
-        >
-          <span className="text-[13px] font-black text-white">🛠 Developer tools</span>
-          <span className="text-[11px] font-black text-white">{devOpen ? "Hide ▴" : "Show ▾"}</span>
-        </button>
-      </RiseIn>
+        <RiseIn index={next()}>
+          <SegTabs className="mb-1" value={tab} onChange={setTab} tabs={[["settings", "Settings"], ["dev", "🛠 Developer"]] as const} />
+        </RiseIn>
       )}
-      {isTester && devOpen && (<>
-      <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play.</p>
+
+      {!showDev && (<>
+        <RiseIn index={next()}>
+          <SettingsTop glow={glow} fullscreen={{ support: fullscreenSupport, on: immersiveActive, onToggle: onToggleImmersive }} />
+        </RiseIn>
+        <RiseIn index={next()}>
+          <SettingsGroups
+            glow={glow}
+            extra={[{ id: "career", title: "Career & saves", sub: "Photo, run-ups, face editors, saves, exit", content: careerAndSaves }]}
+          />
+        </RiseIn>
+        {/* A save a cheat has touched (lib/star/godMode.ts). Shown to everyone. */}
+        {career.usedGodMode && (
+          <RiseIn index={next()} className="mt-6">
+            <p data-tester-save className="rounded-lg border px-3 py-2 text-[11px] font-bold text-white" style={{ borderColor: DEV, background: "rgba(245,158,11,.12)" }}>
+              🧪 Tester save — developer tools have been used on this career.
+            </p>
+          </RiseIn>
+        )}
+      </>)}
+
+      {/* ── DEVELOPER ── testers and admins only (Harry, 5 Oct 2026: "lock
+          the doors", then tester access; 8 Oct 2026: its own tab). */}
+      {showDev && (<>
+      <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play. A save that uses them is marked as a tester save.</p>
 
       <RiseIn index={next()} className="mt-2">
         <SetCard tone={DEV} strength={0.18}>
@@ -304,25 +301,7 @@ export default function SettingsScreen({
         onSaveReplay={onSaveReplay}
         onDeleteSavedReplay={onDeleteSavedReplay}
       />
-
       </>)}
-
-      {onExitCareer && (
-        <RiseIn index={next()} className="mb-2 mt-6">
-          <PressButton
-            data-exit-career
-            variant="danger"
-            size="none"
-            onClick={onExitCareer}
-            className="w-full rounded-xl py-3 text-sm font-black"
-          >
-            Exit career — back to Knowitball
-          </PressButton>
-          <p className="mt-1.5 text-center text-[10px] font-semibold text-white">
-            Your career stays saved. You come back to exactly this.
-          </p>
-        </RiseIn>
-      )}
     </Screen>
   );
 }

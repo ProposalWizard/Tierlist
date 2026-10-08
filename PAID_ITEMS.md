@@ -79,8 +79,25 @@ so they can be faked today. Before Coins are ever sold for real money, either
 replace them with gems or move them into these tables. Do not sell Coins as
 they are.
 
+## Casino money (8 Oct 2026)
+
+Match money (★) is not paid for, but the casino used to be the biggest hole
+in it: every game rolled on the phone, so the save guard had to let "casino
+luck" through up to ×2,000 a week. Signed in, the casino now rolls and pays
+on the server (`/api/star/casino/play`, rules in `lib/star/casinoRules.ts`,
+server side in `lib/star/casinoEngine.ts`), one row per play in
+`star_casino_plays` (`supabase/migrations/star_casino.sql`, service key only,
+players read their own rows but never the hidden column). The save guard
+then allows casino money only up to what those rows add up to. Signed out,
+or before the migration runs, the casino plays on the phone as before. Same
+rule as gems: never trust a casino result the phone sends.
+
 ## What Mikey runs
 
 `supabase/migrations/star_wallet.sql` in the Supabase SQL Editor (safe to
 re-run). Then the verify queries at the bottom of that file. Until it runs,
 everything says "Gems aren't switched on yet" and nothing else breaks.
+
+`supabase/migrations/star_casino.sql` (safe to re-run), then its verify
+queries. Until it runs the casino stays on the phone and the save guard keeps
+its luck allowance; nothing breaks.
