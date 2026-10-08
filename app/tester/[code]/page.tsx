@@ -95,7 +95,7 @@ export default async function TesterLinkPage({ params }: { params: { code: strin
 
   return (
     <Card title="Become a tester">
-      <p>You&apos;ll get the developer tools in Road to Ballon d&apos;Or (Settings → Developer tools) and the team&apos;s test pages. Any career you use the tools on is marked &quot;Tester save&quot;.</p>
+      <p>You&apos;ll get the developer tools in Road to Ballon d&apos;Or (Settings → Developer tab) and the team&apos;s test pages. Any career you use the tools on is marked &quot;Tester save&quot;.</p>
       <ClaimButton code={code} />
     </Card>
   );

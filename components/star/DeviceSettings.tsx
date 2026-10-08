@@ -1,32 +1,21 @@
 "use client";
-import { useState } from "react";
-import { useUiVersion, setUiVersion } from "@/lib/star/uiLook";
-import { GAMEPLAY_SWITCHES, gameplayVersion, setGameplayVersion, type GameplaySwitch, type GameplayVersion } from "@/lib/star/gameplayVersion";
+import { useEffect, useRef, useState } from "react";
+import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
-import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
-import { useStoredMatchView, setMatchView } from "@/lib/star/matchView";
 import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
-import { useSigning3d, setSigning3d, useShop3dPlayerLook, setShop3dPlayerLook } from "@/lib/star/signing3d";
-import { usePeople3dLook, setPeople3dLook, useBossRoomLook, setBossRoomLook } from "@/lib/star/look3d";
-import { useGarden3dLook, setGarden3dLook } from "@/lib/star/garden3d/look";
-import { useCasino3dLook, setCasino3dLook } from "@/lib/star/casino3d/look";
-import { useBadgeLook, setBadgeLook } from "@/lib/star/badgeLook";
-import { useAllSeasonsLook, setAllSeasonsLook } from "@/lib/star/allSeasonsLook";
-import { useOvationLook, setOvationLook } from "@/lib/star/ovationLook";
-import { useOvationMoves, setOvationMoves } from "@/lib/star/ovationMoves";
-import { useChanceSet, setChanceSet } from "@/lib/star/chanceSet";
-import { useAnimationsLook, setAnimationsLook } from "@/lib/star/animLook";
-import { useIsTester } from "@/lib/useIsAdmin";
+import { useYouInOpenPlay, setYouInOpenPlay } from "@/lib/star/newLook";
+import { GAMEPLAY_SWITCHES, type GameplaySwitch } from "@/lib/star/gameplayVersion";
 import {
-  useMatchPlayersLook, setMatchPlayersLook, useMatchBallLook, setMatchBallLook,
-  useYouInOpenPlay, setYouInOpenPlay,
-} from "@/lib/star/newLook";
+  GAME_VERSIONS, GAME_VERSION_LABEL, LOOK_ROW_IDS, VERSION_PRESETS,
+  applyGameVersion, gameVersionOf, setLookRow, useLook, type LookRowId,
+} from "@/lib/star/gameVersions";
+import { useIsTester } from "@/lib/useIsAdmin";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
-import { SetCard, SetDivider, SetNote, SetToggle } from "./settingsKit";
+import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
 
 /**
@@ -112,247 +101,263 @@ function HomeScreenTip() {
   );
 }
 
-/** The on/off rows: full screen, sound, and the match switches. */
-export function GameSwitches({ glow, fullscreen }: {
+
+// ── THE HYBRID SETTINGS (Harry, 8 Oct 2026) ─────────────────────────────
+//
+//   Version   Classic | Standard | Preview — one tap sets every New | Old
+//             switch (lib/star/gameVersions.ts). "Custom" once one is
+//             changed by hand.
+//   Quick     full screen, sound, 3D quality, skip the line-up.
+//   Groups    folded: Match, 3D world, Screens, then the screen's own
+//             (Career & saves, or Saves on the title). One open at a time.
+// Every row is still stored on this phone only; saves are never touched.
+
+/** The Version card: three versions, and how far this phone is from them. */
+export function VersionCard({ glow }: { glow: string }) {
+  const look = useLook();
+  const state = gameVersionOf(look);
+  const nearest = GAME_VERSION_LABEL[state.nearest];
+  return (
+    <SetCard tone={glow} className="px-3 py-2.5" data-version-card>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-[15px] font-black leading-tight text-white">Version</div>
+        <div className="text-[11px] font-semibold leading-tight text-white/85">Sets all {LOOK_ROW_IDS.length} look and gameplay switches</div>
+      </div>
+      <div className="mt-2">
+        <div className="grid grid-cols-3 gap-0.5 rounded-xl bg-black/30 p-1" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.5)" }} role="radiogroup" aria-label="Version">
+          {GAME_VERSIONS.map((v) => {
+            const on = state.version === v;
+            return (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={on}
+                data-version={v}
+                onClick={() => applyGameVersion(v)}
+                className={`kib-press relative rounded-lg px-1.5 py-1.5 text-[10px] font-black uppercase tracking-wide min-[380px]:text-[11px] ${on ? "bg-white/15 text-white" : "text-white/55"}`}
+                style={on ? { boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(0,0,0,.35)" } : undefined}
+              >
+                {GAME_VERSION_LABEL[v]}
+                {on && <span className="absolute inset-x-2 -bottom-[3px] h-[3px] rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px rgba(52,211,153,.8)" }} />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {state.version === "custom" ? (
+        <p className="mt-2 text-[12px] font-black text-amber-300" data-version-state="custom">
+          ● Custom · {nearest} + {state.changes} change{state.changes === 1 ? "" : "s"} ·{" "}
+          <button onClick={() => applyGameVersion(state.nearest)} className="kib-press underline">Undo</button>
+        </p>
+      ) : (
+        <p className="mt-2 text-[12px] font-black text-emerald-300" data-version-state={state.version}>
+          ✓ {nearest}, no changes of your own
+        </p>
+      )}
+    </SetCard>
+  );
+}
+
+/** The first screen's switches: full screen, sound, 3D quality, skip the line-up. */
+export function QuickSwitches({ glow, fullscreen }: {
   glow: string;
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
 }) {
   const sfxNow = useSfxOn();
-  const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
-  const flipPostMatch = () => { const next = !postMatchReactions; setPostMatchReactions(next); setPostMatchReactionsEnabled(next); };
   const [skipLineup, setSkipLineupState] = useState(() => getSkipLineup());
   const flipSkipLineup = () => { const next = !skipLineup; setSkipLineupState(next); setSkipLineup(next); };
-  // The same shared FaceStyle the face editors and the match read.
+  return (
+    <SetCard tone={glow} className="px-3 py-1">
+      <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />
+      <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
+      <div className="border-b border-white/10 py-2.5"><Quality3dRow /></div>
+      <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} last />
+    </SetCard>
+  );
+}
+
+/** One New | Old row. A dot marks a row you changed by hand. */
+function LookRow({ id, tabs, note, look }: {
+  id: LookRowId;
+  tabs: readonly (readonly [string, string])[];
+  note?: React.ReactNode;
+  look: Record<LookRowId, string>;
+}) {
+  const state = gameVersionOf(look);
+  const changed = state.version === "custom" && look[id] !== VERSION_PRESETS[state.nearest][id];
+  const label = id in GAMEPLAY_SWITCHES ? GAMEPLAY_SWITCHES[id as GameplaySwitch].label : ROW_LABEL[id];
+  return (
+    <div className="border-b border-white/10 py-2 last:border-b-0" data-look-row={id}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-[14px] font-bold leading-tight text-white">
+          {changed && <span aria-label="changed by you" className="h-2 w-2 shrink-0 rounded-full bg-amber-300" />}
+          {label}
+        </span>
+        <SegTabs className="w-[150px] shrink-0" value={look[id]} onChange={(v) => setLookRow(id, v)} tabs={tabs} />
+      </div>
+      {note && <SetNote dim className="mt-1 text-[10px]">{note}</SetNote>}
+    </div>
+  );
+}
+
+const ROW_LABEL: Record<LookRowId, string> = {
+  matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
+  garden: "3D garden", shopPlayer: "3D shop player", people3d: "3D people", bossRoom: "Talk to your manager",
+  casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
+  ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
+};
+
+const NEW_OLD = [["new", "New"], ["old", "Old"]] as const;
+
+/** A preference row with its own tabs (not part of any version). */
+function PrefRow({ label, children, note }: { label: string; children: React.ReactNode; note?: React.ReactNode }) {
+  return (
+    <div className="border-b border-white/10 py-2 last:border-b-0">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold leading-tight text-white">{label}</span>
+        {children}
+      </div>
+      {note && <SetNote dim className="mt-1 text-[10px]">{note}</SetNote>}
+    </div>
+  );
+}
+
+/** Match: the view, its look, the chances, animations, gameplay, faces, names, reactions. */
+function MatchGroup() {
+  const look = useLook();
+  const tilt = useCameraTilt();
+  const you = useYouInOpenPlay();
+  const tester = useIsTester();
+  const [postMatch, setPostMatch] = useState(() => getPostMatchReactionsEnabled());
+  const flipPostMatch = () => { const next = !postMatch; setPostMatch(next); setPostMatchReactionsEnabled(next); };
   const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
   const flipFace = (key: "facesEnabled" | "namesEnabled") => {
     const next = { ...faceStyle, [key]: !faceStyle[key] };
     setFaceStyle(next);
     saveFaceStyle(next);
   };
-
-  return (
-    <SetCard tone={glow} className="px-3 py-1">
-      <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />
-      <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
-      <SetToggle label="Post-match reactions" on={postMatchReactions} onClick={flipPostMatch} />
-      <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
-      <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
-      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} last />
-    </SetCard>
-  );
-}
-
-/** Match view (New/Classic) with its Look group, the signing scene (3D/Drawn), the 3D shop's player (New/Old), Chances (New/Classic), the drawn-player style (Flat/Shaded) and the UI (Old/New). Put inside a SetCard. */
-export function LookSwitches() {
-  const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
-  const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
-  const uiNow = useUiVersion();
-  const viewNow = useStoredMatchView();
-  const signing3d = useSigning3d();
-  const shopPlayer = useShop3dPlayerLook();
-  const people3d = usePeople3dLook();
-  const bossRoom = useBossRoomLook();
-  const gardenLook = useGarden3dLook();
-  const casinoLook = useCasino3dLook();
-  const badgeLookNow = useBadgeLook();
-  const allSeasons = useAllSeasonsLook();
-  const ovationNow = useOvationLook();
-  const ovationMovesNow = useOvationMoves();
-  const chancesNow = useChanceSet();
-  const animNow = useAnimationsLook();
-  const tester = useIsTester();
+  const gp = (k: GameplaySwitch) => (look[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
   return (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Match view</span>
-        <SegTabs className="w-[150px] shrink-0" value={viewNow} onChange={setMatchView} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: zoomed out, the pitch fills the screen. Classic: the close-up view. Next match on.
-      </SetNote>
-      <NewViewLook />
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Signing scene</span>
-        <SegTabs className="w-[150px] shrink-0" value={signing3d ? "3d" : "drawn"} onChange={(v) => setSigning3d(v === "3d")} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        3D: a live scene with your own player in it. Drawn: the picture signing, as before.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">3D shop player</span>
-        <SegTabs className="w-[150px] shrink-0" value={shopPlayer} onChange={setShop3dPlayerLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">3D people</span>
-        <SegTabs className="w-[150px] shrink-0" value={people3d} onChange={setPeople3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: one body in the signing, the shop and the garden — a normal waist, fingers that hold the pen and grip the handshake. Old: as before.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Talk to your manager</span>
-        <SegTabs className="w-[150px] shrink-0" value={bossRoom} onChange={setBossRoomLook} tabs={[["3d", "3D office"], ["old", "Old"]] as const} />
-      </div>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">3D garden</span>
-        <SegTabs className="w-[150px] shrink-0" value={gardenLook} onChange={setGarden3dLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: golden-hour light, a real shop front, the shop&apos;s own player. Old: the garden as it was.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Casino</span>
-        <SegTabs className="w-[150px] shrink-0" value={casinoLook} onChange={setCasino3dLook} tabs={[["3d", "3D"], ["classic", "Classic"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        3D: walk the casino room; each table opens its game. Classic: the casino menu as before.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Club badges</span>
-        <SegTabs className="w-[150px] shrink-0" value={badgeLookNow} onChange={setBadgeLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: drawn badges in each club&apos;s own colours and shape. Old: the letters.
-      </SetNote>
-      <SetDivider />
-      <Quality3dRow />
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">All seasons page</span>
-        <SegTabs className="w-[150px] shrink-0" value={allSeasons} onChange={setAllSeasonsLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: goals by season, the cabinet and every season, as on the end-of-career screen. Old: the three tables.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Standing ovation</span>
-        <SegTabs className="w-[150px] shrink-0" value={ovationNow} onChange={setOvationLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: your farewell&apos;s 85th minute in 3D, hugs on the way off. Old: the banner over the commentary.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Ovation greetings</span>
-        <SegTabs className="w-[150px] shrink-0" value={ovationMovesNow} onChange={setOvationMoves} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: the hugs, dap-ups and claps made in Blender, both players posed together. Old: the first version, arms placed live.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Chances</span>
-        <SegTabs className="w-[150px] shrink-0" value={chancesNow} onChange={setChanceSet} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        Classic (default): your drawn chances, in whichever match view you pick. New (to try): about 100 pictures of each chance with both full teams on the pitch.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Drawn-player style</span>
-        <SegTabs className="w-[150px] shrink-0" value={look} onChange={pickLook} tabs={[["classic", "Flat"], ["3d", "Shaded"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        For drawn players only: &quot;Drawn&quot; above, the Classic view, five-a-side and the dribble. The 3D players ignore it.
-      </SetNote>
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">Animations</span>
-        <SegTabs className="w-[150px] shrink-0" value={animNow} onChange={setAnimationsLook} tabs={[["new", "New"], ["old", "Old"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        New: whoever touches the ball is seen doing it — team-mates&apos; touches, shots, passes and headers, defenders&apos; blocks and clearances, the keeper&apos;s catch, palm, one-handed stretch and fumble. Old: as before.
-      </SetNote>
-      {tester && (
-        <a href="/star-animations-dev" className="mt-1 inline-block text-[12px] font-bold text-amber-300 underline">
-          Animation test area →
-        </a>
-      )}
-      <SetDivider />
-      <GameplaySwitches />
-      <SetDivider />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-white">UI</span>
-        <SegTabs className="w-[150px] shrink-0" value={uiNow} onChange={setUiVersion} tabs={[["old", "Old"], ["new", "New"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        Old is the game as it was before v0.23, kept as a backup. Same save either way. This phone only.
-      </SetNote>
+      <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
+      <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
+        <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
+      </PrefRow>
+      <LookRow id="matchPlayers" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="New view only." />
+      <LookRow id="ball" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New view only." />
+      <PrefRow label="Your player in open play" note="New view only. Hidden: the ball is you; you still take penalties, free kicks and corners.">
+        <SegTabs className="w-[150px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
+      </PrefRow>
+      <LookRow id="chances" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="Classic: your drawn chances. New (being tested): about 100 pictures of each chance with both full teams." />
+      <LookRow id="animations" look={look} tabs={NEW_OLD} note={<>New (being tested): whoever touches the ball is seen doing it — shots, passes, headers, blocks, the keeper&apos;s catch and fumble.{tester && <> <a href="/star-animations-dev" className="font-bold text-amber-300 underline">Animation test area →</a></>}</>} />
+      <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
+      <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
+      <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
+      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
+      <SetToggle label="Post-match reactions" on={postMatch} onClick={flipPostMatch} last />
     </>
   );
 }
 
-/**
- * Look — the new match view's own switches (Harry, 3 Oct 2026: every new look
- * gets a toggle, the old one stays playable). lib/star/newLook.ts. They only
- * change the New match view; Classic is drawn as it always was.
- */
-function NewViewLook() {
-  const players = useMatchPlayersLook();
-  const ball = useMatchBallLook();
-  const you = useYouInOpenPlay();
-  const tilt = useCameraTilt();
-  const row = "mt-2 flex items-center justify-between gap-2";
+/** 3D world: garden, shop player, people, the manager's office, casino, signing. */
+function World3dGroup() {
+  const look = useLook();
   return (
-    <div className="mt-2 rounded-lg bg-white/[0.04] px-2.5 py-2">
-      <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Look · new match view</div>
-      <div className={row}>
-        <span className="text-[13px] font-bold text-white">Camera angle</span>
-        <SegTabs className="w-[130px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
-      </div>
-      <div className={row}>
-        <span className="text-[13px] font-bold text-white">Players in the match</span>
-        <SegTabs className="w-[130px] shrink-0" value={players} onChange={setMatchPlayersLook} tabs={[["3d", "3D"], ["drawn", "Drawn"]] as const} />
-      </div>
-      <div className={row}>
-        <span className="text-[13px] font-bold text-white">Ball</span>
-        <SegTabs className="w-[130px] shrink-0" value={ball} onChange={setMatchBallLook} tabs={[["new", "New"], ["classic", "Classic"]] as const} />
-      </div>
-      <div className={row}>
-        <span className="text-[13px] font-bold text-white">Your player in open play</span>
-        <SegTabs className="w-[130px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
-      </div>
-      <SetNote dim className="mt-1.5 text-[10px]">
-        New match view only. Camera angle: the pitch tipped back (20° default; corners and byline crosses stay flat); Flat is straight down, as before. Hidden: on open play the ball is you; you still take penalties, free kicks and corners.
-      </SetNote>
-    </div>
+    <>
+      <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
+      <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />
+      <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
+      <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
+      <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />
+      <LookRow id="signing" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="3D: a live scene with your player. Drawn: the picture signing." />
+    </>
   );
 }
 
-/**
- * Gameplay changes that might not be better (Leo, 5 Oct 2026: "not risking
- * losing anything if its not better than before"). New is the default; Old
- * plays the game from before the change. lib/star/gameplayVersion.ts.
- */
-function GameplaySwitches() {
-  const keys = Object.keys(GAMEPLAY_SWITCHES) as GameplaySwitch[];
-  const [v, setV] = useState<Record<GameplaySwitch, GameplayVersion>>(
-    () => Object.fromEntries(keys.map((k) => [k, gameplayVersion(k)])) as Record<GameplaySwitch, GameplayVersion>,
-  );
-  const pick = (k: GameplaySwitch, x: GameplayVersion) => { setGameplayVersion(k, x); setV((o) => ({ ...o, [k]: x })); };
+/** Screens: the UI, badges, all seasons, ovations, the drawn-player style. */
+function ScreensGroup() {
+  const look = useLook();
   return (
-    <div className="rounded-lg bg-white/[0.04] px-2.5 py-2">
-      <div className="text-[11px] font-black uppercase tracking-wide text-white/70">Gameplay · new vs old</div>
-      {keys.map((k) => (
-        <div key={k} className="mt-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[13px] font-bold text-white">{GAMEPLAY_SWITCHES[k].label}</span>
-            <SegTabs className="w-[130px] shrink-0" value={v[k]} onChange={(x) => pick(k, x)} tabs={[["new", "New"], ["old", "Old"]] as const} />
-          </div>
-          <SetNote dim className="mt-1 text-[10px]">
-            {v[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText}
-          </SetNote>
-        </div>
-      ))}
-      <SetNote dim className="mt-1.5 text-[10px]">This phone only. Takes effect from the next chance.</SetNote>
-    </div>
+    <>
+      <LookRow id="ui" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
+      <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
+      <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
+      <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
+      <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
+      <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />
+    </>
   );
 }
+
+export interface ExtraGroup {
+  id: string;
+  title: string;
+  sub: string;
+  count?: number;
+  /** Rendered under the open header, outside a card (it brings its own). */
+  content: React.ReactNode;
+}
+
+/** The folded groups. One open at a time; opening one scrolls it to the top. */
+export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: ExtraGroup[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const refs = useRef<Record<string, HTMLDivElement | null>>({});
+  useEffect(() => {
+    if (open) refs.current[open]?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [open]);
+  const groups: (ExtraGroup & { card?: boolean })[] = [
+    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 13, content: <MatchGroup />, card: true },
+    { id: "world", title: "3D world", sub: "Garden, shop, people, office, casino, signing", count: 6, content: <World3dGroup />, card: true },
+    { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
+    ...extra,
+  ];
+  return (
+    <>
+      <SetSection>More</SetSection>
+      <div className="space-y-2">
+        {groups.map((g) => {
+          const isOpen = open === g.id;
+          return (
+            <div key={g.id} ref={(el) => { refs.current[g.id] = el; }} style={{ scrollMarginTop: 112 }} data-group={g.id}>
+              <SetCard tone={glow} className="p-0">
+                <button
+                  onClick={() => setOpen(isOpen ? null : g.id)}
+                  aria-expanded={isOpen}
+                  className="kib-press flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-black leading-tight text-white">{g.title}</span>
+                    <span className="block truncate text-[11px] font-semibold text-white/85">{g.sub}</span>
+                  </span>
+                  <span className="shrink-0 text-[12px] font-black text-emerald-300">
+                    {g.count ? `${g.count} ` : ""}{isOpen ? "▾" : "▸"}
+                  </span>
+                </button>
+                {isOpen && g.card && <div className="border-t border-white/10 px-3 pb-1">{g.content}</div>}
+              </SetCard>
+              {isOpen && !g.card && <div className="mt-2 space-y-2">{g.content}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/** Version on top, then the quick switches: the first screen of both Settings pages. */
+export function SettingsTop({ glow, fullscreen }: {
+  glow: string;
+  fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
+}) {
+  return (
+    <>
+      <SetSection className="mb-1.5 mt-1">Game version</SetSection>
+      <VersionCard glow={glow} />
+      <SetSection className="mb-1.5 mt-3">Quick</SetSection>
+      <QuickSwitches glow={glow} fullscreen={fullscreen} />
+    </>
+  );
+}
+
