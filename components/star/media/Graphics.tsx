@@ -32,6 +32,7 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
       <GoalVideo
         clipIds={spec.clips}
         synth={spec.synth}
+        priority={!!spec.priority || spec.clips.length > 0}
         style={clipStyleFor(author)}
         variant={clipVariantFor(author)}
         credit={author ? { handle: author.handle, name: author.name } : undefined}
@@ -340,6 +341,7 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
     <GoalVideo
       clipIds={s.clips ?? []}
       synth={s.synth}
+      priority={(s.clips?.length ?? 0) > 0}
       style={clipStyleFor(author)}
       variant={clipVariantFor(author)}
       credit={author ? { handle: author.handle, name: author.name } : undefined}

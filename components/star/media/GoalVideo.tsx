@@ -45,11 +45,25 @@ const making = new Map<string, Promise<EncodedClip | null>>();
  * by itself, like a real feed. One at a time so a long feed never makes ten
  * at once and slows the phone.
  */
-let queue: Promise<unknown> = Promise.resolve();
-function inTurn<T>(job: () => Promise<T>): Promise<T> {
-  const run = queue.then(job, job);
-  queue = run.catch(() => undefined);
-  return run;
+// Your own match's videos go first, always (Leo, 8 Oct 2026: "I never want to
+// have to wait for my highlights to load because the highlights of some
+// random games are being loaded first"). A priority job jumps every waiting
+// ordinary one; ordinary jobs only start when no priority job is waiting.
+type QueuedJob = { run: () => Promise<unknown>; priority: boolean };
+const waiting: QueuedJob[] = [];
+let busy = false;
+function pump(): void {
+  if (busy || !waiting.length) return;
+  const i = waiting.findIndex(j => j.priority);
+  const next = waiting.splice(i >= 0 ? i : 0, 1)[0];
+  busy = true;
+  next.run().finally(() => { busy = false; pump(); });
+}
+function inTurn<T>(job: () => Promise<T>, priority = false): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    waiting.push({ priority, run: () => job().then(resolve, reject) });
+    pump();
+  });
 }
 
 /** Every goal video on screen. One plays at a time, like a feed. */
@@ -118,11 +132,13 @@ export interface GoalVideoProps {
   fallback: React.ReactNode;
   /** Start making (and playing) the video as soon as it is on screen. */
   autoStart?: boolean;
+  /** Your own match: made at once, ahead of any other match's videos. */
+  priority?: boolean;
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = false }: GoalVideoProps) {
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -149,11 +165,14 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
 
   useEffect(() => {
     let live = true;
-    if (!clipIds.length && synth?.length) {
-      setTracks(synth.map(synthTrack).filter((t): t is GoalTrack => !!t));
+    const madeTracks = (synth ?? []).map(synthTrack).filter((t): t is GoalTrack => !!t);
+    if (!clipIds.length) {
+      setTracks(madeTracks);
       return () => { live = false; };
     }
-    getClips(clipIds).then(t => { if (live) setTracks(t); }).catch(() => { if (live) setTracks([]); });
+    // Recorded goals and made ones together, in the order they were scored.
+    const merge = (rec: GoalTrack[]) => [...rec, ...madeTracks].sort((a, b) => a.meta.minute - b.meta.minute);
+    getClips(clipIds).then(t => { if (live) setTracks(merge(t)); }).catch(() => { if (live) setTracks(merge([])); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipIds.join(","), synthKey]);
@@ -209,7 +228,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
           .catch(() => null)
           .then(audio => encodeEdit(e, { credit, onProgress: setProgress, audio }));
         // A tap skips the queue; a post merely near the screen waits its turn.
-        job = quiet ? inTurn(make) : make();
+        job = quiet ? inTurn(make, priority) : make();
         making.set(key, job);
         job.then(() => making.delete(key), () => making.delete(key));
       }
@@ -243,9 +262,10 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   }, [edit, canPlay]);
 
   useEffect(() => {
-    if (near && edit && canPlay && status === "idle") void start(true);
+    // Your own match's videos start straight away, near the screen or not.
+    if ((near || priority) && edit && canPlay && status === "idle") void start(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [near, edit, canPlay, status]);
+  }, [near, priority, edit, canPlay, status]);
 
   const clip = made.get(key)?.clip ?? null;
 

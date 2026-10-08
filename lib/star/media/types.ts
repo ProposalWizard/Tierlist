@@ -171,6 +171,8 @@ export interface MatchRecord {
   };
 
   goals: GoalRecord[];
+  /** The other side's goals, named when the match named them (stats.oppGoalEvents). */
+  oppGoals?: { minute: number; scorer: string }[];
 
   table: {
     before: TableSnapshot;
@@ -443,8 +445,12 @@ export type GraphicSpec =
        *  goal was recorded; with no recording the post has no graphic at all,
        *  exactly as before — never a picture pretending to be a video. */
       type: "goalVideo"; title: string; clips: string[];
-      /** A match you did not play: goals to make a video of (goalClip/synth.ts). */
+      /** A match you did not play: goals to make a video of (goalClip/synth.ts).
+       *  Also your own match's goals that were not seen (the other side's,
+       *  the hidden ninety minutes), so its highlights hold every goal. */
       synth?: SynthGoal[];
+      /** Your match's highlights: made first, before anyone else's (Leo, 8 Oct 2026). */
+      priority?: boolean;
     }
   | {
       type: "thumbnail"; title: string; badge: string;

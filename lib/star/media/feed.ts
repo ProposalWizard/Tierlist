@@ -17,7 +17,8 @@ import { buildRoster, selfAccount } from "./accounts";
 import { selectPairings, type Pairing } from "./select";
 import { chooseAngle } from "./narrate";
 import { chooseTemplate } from "./templates";
-import { buildGraphic } from "./graphics";
+import { buildGraphic, matchReel } from "./graphics";
+import type { SynthGoal } from "../goalClip/synth";
 import { metricsFor, resolve, rngFor, speak, surname } from "./grammar";
 import { clockAt, timeFor, visible, FEED_HORIZON, FIRST_WAVE } from "./schedule";
 import { buildTrends } from "./trending";
@@ -265,6 +266,8 @@ function commit(
     used.push(made.templateId);
   }
 
+  if (scope === "club" && record) posts.push(...highlightPosts(career, record, accounts, posts, cycleId, cycleClock));
+
   const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
     .sort((a, b) => a.at - b.at)
@@ -279,6 +282,69 @@ function commit(
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
       : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId }),
   };
+}
+
+/**
+ * EVERY MATCH GETS ITS HIGHLIGHTS (Leo, 8 Oct 2026: "make sure after every
+ * game there is ALWAYS at MINIMUM the highlights of the game (all the goals)
+ * as well as some videos of your highlights and goals").
+ *
+ * Whatever the templates chose, two video posts are added straight after the
+ * whistle: the match's highlights (every goal, both sides — recordings where
+ * the goal was seen, made ones where it was not) from the competition's or
+ * the club's account, and your goals and assists from your club. Both are
+ * `priority`, so the phone makes them before any other match's videos.
+ */
+function highlightPosts(
+  career: CareerState, r: MatchRecord, accounts: MediaAccount[], already: StoredPost[], cycleId: string, cycleClock: number,
+): StoredPost[] {
+  const out: StoredPost[] = [];
+  const clubAcc = accounts.find(a => a.archetype === "club" && a.allegiance?.club === r.club);
+  const compAcc = accounts.find(a => a.archetype === "competition" && a.name === r.competition)
+    ?? (r.competition === "Premier League" ? accounts.find(a => a.archetype === "league") : undefined);
+  const home = r.home ? r.club : r.opponent, away = r.home ? r.opponent : r.club;
+  const hs = r.home ? r.score.us : r.score.them, as = r.home ? r.score.them : r.score.us;
+  const post = (acc: MediaAccount, key: string, minutes: number, text: string, title: string, reel: { clips: string[]; synth: SynthGoal[] }): StoredPost => {
+    const rng = rngFor("post", cycleId, key, acc.id);
+    return {
+      id: `${cycleId}:${key}:${acc.id}`,
+      at: cycleClock + minutes,
+      author: {
+        handle: acc.handle, name: acc.name, archetype: acc.archetype, platform: acc.platform, verified: acc.verified,
+        initials: acc.avatar.initials, tint: acc.avatar.tint, tint2: acc.avatar.tint2, glyph: acc.avatar.glyph,
+      },
+      text,
+      graphic: { type: "goalVideo", title, clips: reel.clips, ...(reel.synth.length ? { synth: reel.synth } : {}), priority: true },
+      metrics: metricsFor(acc.followers, 80, rng),
+      eventId: key,
+      tags: ["goal"],
+      scope: "club",
+    };
+  };
+  const covers = (clips: string[], synthN: number) => already.some(p => {
+    const g = p.graphic;
+    if (!g || (g.type !== "goalVideo" && g.type !== "thumbnail")) return false;
+    const c = g.clips ?? [];
+    return synthN === 0 && clips.length > 0 && c.length === clips.length && clips.every(id => c.includes(id));
+  });
+
+  // The match: every goal.
+  if (hs + as > 0) {
+    const all = matchReel(r, "all");
+    const acc = compAcc ?? clubAcc;
+    if (acc && (all.clips.length + all.synth.length) > 0) {
+      out.push(post(acc, "match-highlights", 3, `HIGHLIGHTS | ${home} ${hs}-${as} ${away}`, "HIGHLIGHTS", all));
+    }
+  }
+  // Yours: your goals and the ones you set up.
+  const yours = matchReel(r, "yours", r.you.name);
+  if (clubAcc && (yours.clips.length + yours.synth.length) > 0 && !covers(yours.clips, yours.synth.length)) {
+    const g = r.goals.filter(x => x.isUser).length;
+    const a = r.goals.filter(x => !x.isUser && x.assist === r.you.name).length;
+    const what = [g ? `${g} goal${g > 1 ? "s" : ""}` : "", a ? `${a} assist${a > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ");
+    out.push(post(clubAcc, "your-highlights", 5, `${r.you.shortName}'s afternoon: ${what} 🎥`, `${r.you.shortName.toUpperCase()} | ${what.toUpperCase()}`, yours));
+  }
+  return out;
 }
 
 function render(

@@ -69,6 +69,45 @@ export function synthFor(e: FootballEvent, r: MatchRecord | null): SynthGoal[] {
   } catch { return []; }
 }
 
+/**
+ * YOUR MATCH'S HIGHLIGHTS, EVERY GOAL (Leo, 8 Oct 2026: "after every game
+ * there is ALWAYS at MINIMUM the highlights of the game (all the goals) as
+ * well as some videos of your highlights and goals").
+ *
+ * The recorded goals play their recordings; every goal that was not seen
+ * (the other side's, a team-mate's in the hidden ninety minutes) is made by
+ * goalClip/synth.ts. `which` picks every goal, or yours (scored or set up).
+ */
+export function matchReel(r: MatchRecord, which: "all" | "yours", you?: string): { clips: string[]; synth: SynthGoal[] } {
+  const home = r.home ? r.club : r.opponent;
+  const away = r.home ? r.opponent : r.club;
+  const last = (n: string) => n.trim().split(/\s+/).pop() || n;
+  const clips: string[] = [];
+  const synth: SynthGoal[] = [];
+  const ours = r.goals.filter(g => which === "all" || g.isUser || (!!you && g.assist === you));
+  for (const g of ours) {
+    if (g.clipId) { clips.push(g.clipId); continue; }
+    const sa = g.scoreAfter;
+    synth.push({
+      home, away, scorer: g.scorer, scorerShort: last(g.scorer), scorerHome: r.home, minute: g.minute,
+      ...(sa ? { scoreAfter: (r.home ? [sa.us, sa.them] : [sa.them, sa.us]) as [number, number] } : {}),
+      competition: r.competition, season: r.season, week: r.week,
+      seed: `${r.id}:u:${g.minute}:${g.scorer}`,
+    });
+  }
+  if (which === "all") {
+    for (const g of r.oppGoals ?? []) {
+      const name = g.scorer || r.opponent;
+      synth.push({
+        home, away, scorer: name, scorerShort: g.scorer ? last(g.scorer) : r.opponent, scorerHome: !r.home,
+        minute: g.minute, competition: r.competition, season: r.season, week: r.week,
+        seed: `${r.id}:t:${g.minute}:${g.scorer}`,
+      });
+    }
+  }
+  return { clips, synth };
+}
+
 export function buildGraphic(
   kind: GraphicKind,
   e: FootballEvent,
