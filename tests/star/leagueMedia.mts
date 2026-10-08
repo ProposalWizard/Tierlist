@@ -74,6 +74,35 @@ function restOfWeek(c: CareerState, week: number): LeagueResult[] {
   );
 }
 
+// ── Other matches' goals come with a video (goalClip/synth.ts) ─────────────
+{
+  let c = newCareer(5);
+  let vids = 0, leaguePosts = 0, events = 0;
+  for (let w = 1; w <= 8; w++) {
+    const r = playOne(c, 7000 + w);
+    if (!r) break;
+    c = r.career;
+    // A real career's results name their scorers (leagueSquads); this test
+    // career has no squads, so give each result named goals of its own.
+    const others = restOfWeek(c, r.week).map((x, i) => ({
+      ...x,
+      hg: Array.from({ length: x.hs }, (_, k) => ({ m: 12 + k * 21 + i, s: `Home${i}`, full: `Hal Home${i}` })),
+      ag: Array.from({ length: x.as }, (_, k) => ({ m: 17 + k * 19 + i, s: `Away${i}`, full: `Abe Away${i}` })),
+    }));
+    events += detectLeagueWeek(others, c.player.club, r.week, "Premier League", 1).filter(e => e.facts.goalVideos).length;
+    if (others.length) c.media = generateForLeagueWeek({ ...c, media: c.media }, others);
+  }
+  for (const p of mediaOf(c).posts) {
+    if (p.scope !== "league") continue;
+    leaguePosts++;
+    const g = p.graphic;
+    if (g && (g.type === "goalVideo" || g.type === "thumbnail") && (g.synth?.length ?? 0) > 0) vids++;
+  }
+  console.log(`  other matches: ${events} goal events with a video, ${leaguePosts} England posts, ${vids} with a made goal video`);
+  check(events > 0, "other matches' goal events carry the goals to show");
+  check(vids > 0, "the England tab shows videos of other matches' goals");
+}
+
 // ── detectLeagueWeek: the shape ─────────────────────────────────────────────
 {
   const results: LeagueResult[] = [
@@ -191,6 +220,7 @@ function restOfWeek(c: CareerState, week: number): LeagueResult[] {
   check(posts.some(p => p.scope === "club"), "the career's own club/match posts still carry scope 'club'");
   check(posts.some(p => p.scope === "league"), `a ten-week career sees at least one real England-wide post (${posts.length} posts total)`);
   check(posts.filter(p => p.scope === "league").every(p => !!p.eventId), "every league post still carries a real event id");
+  check(posts.filter(p => p.scope === "club").every(p => !p.graphic || !("synth" in p.graphic) || !p.graphic.synth?.length), "your own match never plays a made-up goal");
 
   // The replay guard: generating the SAME week's league pass twice must not
   // double the posts, the same "a replayed cycle must not post twice" rule

@@ -153,76 +153,628 @@
       "prompt": "Aluminium drink can cracking open with a fizz hiss."
     },
     {
-      "name": "comm-goal-1",
-      "file": "/sfx/comm-goal-1.mp3",
-      "duration": 0.35,
-      "kb": 2.8,
-      "purpose": "Commentator: Goal!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Goal!"
+      "name": "cl-g1",
+      "file": "/sfx/cl-g1.mp3",
+      "duration": 1.69,
+      "kb": 13.9,
+      "purpose": "Commentator: And it's in! What a finish!",
+      "prompt": "(Kokoro bm_george, speed 1.12) And it's in! What a finish!"
     },
     {
-      "name": "comm-goal-2",
-      "file": "/sfx/comm-goal-2.mp3",
-      "duration": 0.81,
-      "kb": 5.5,
-      "purpose": "Commentator: What a finish!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) What a finish!"
+      "name": "cl-g2",
+      "file": "/sfx/cl-g2.mp3",
+      "duration": 1.33,
+      "kb": 11.1,
+      "purpose": "Commentator: Oh, he's buried it!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, he's buried it!"
     },
     {
-      "name": "comm-goal-3",
-      "file": "/sfx/comm-goal-3.mp3",
-      "duration": 1.51,
-      "kb": 9.5,
-      "purpose": "Commentator: It's in! What a goal!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) It's in! What a goal!"
+      "name": "cl-g3",
+      "file": "/sfx/cl-g3.mp3",
+      "duration": 1.16,
+      "kb": 9.8,
+      "purpose": "Commentator: Back of the net!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Back of the net!"
     },
     {
-      "name": "comm-goal-4",
-      "file": "/sfx/comm-goal-4.mp3",
-      "duration": 0.9,
-      "kb": 6.0,
-      "purpose": "Commentator: He scores!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) He scores!"
+      "name": "cl-g4",
+      "file": "/sfx/cl-g4.mp3",
+      "duration": 1.57,
+      "kb": 13.0,
+      "purpose": "Commentator: He scores! Get in there!",
+      "prompt": "(Kokoro bm_george, speed 1.12) He scores! Get in there!"
     },
     {
-      "name": "comm-goal-5",
-      "file": "/sfx/comm-goal-5.mp3",
-      "duration": 1.37,
-      "kb": 8.9,
-      "purpose": "Commentator: Into the back of the net!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Into the back of the net!"
+      "name": "cl-g5",
+      "file": "/sfx/cl-g5.mp3",
+      "duration": 1.94,
+      "kb": 15.8,
+      "purpose": "Commentator: Oh, that is a goal! Superb!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, that is a goal! Superb!"
     },
     {
-      "name": "comm-goal-6",
-      "file": "/sfx/comm-goal-6.mp3",
-      "duration": 1.54,
-      "kb": 9.7,
-      "purpose": "Commentator: Oh, that is brilliant!",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Oh, that is brilliant!"
+      "name": "cl-g6",
+      "file": "/sfx/cl-g6.mp3",
+      "duration": 2.15,
+      "kb": 17.5,
+      "purpose": "Commentator: In it goes! Absolutely brilliant!",
+      "prompt": "(Kokoro bm_george, speed 1.12) In it goes! Absolutely brilliant!"
     },
     {
-      "name": "comm-replay-1",
-      "file": "/sfx/comm-replay-1.mp3",
+      "name": "cl-g7",
+      "file": "/sfx/cl-g7.mp3",
+      "duration": 1.5,
+      "kb": 12.4,
+      "purpose": "Commentator: Oh, yes! He's done it!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, yes! He's done it!"
+    },
+    {
+      "name": "cl-g8",
+      "file": "/sfx/cl-g8.mp3",
+      "duration": 1.36,
+      "kb": 11.3,
+      "purpose": "Commentator: Bang! Into the net!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Bang! Into the net!"
+    },
+    {
+      "name": "cl-g9",
+      "file": "/sfx/cl-g9.mp3",
+      "duration": 2.25,
+      "kb": 18.2,
+      "purpose": "Commentator: That's in! The crowd are on their feet!",
+      "prompt": "(Kokoro bm_george, speed 1.12) That's in! The crowd are on their feet!"
+    },
+    {
+      "name": "cl-g10",
+      "file": "/sfx/cl-g10.mp3",
+      "duration": 1.32,
+      "kb": 10.9,
+      "purpose": "Commentator: Goal! What a moment!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Goal! What a moment!"
+    },
+    {
+      "name": "cl-h1",
+      "file": "/sfx/cl-h1.mp3",
+      "duration": 2.08,
+      "kb": 16.9,
+      "purpose": "Commentator: Up he goes! And he's headed it in!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Up he goes! And he's headed it in!"
+    },
+    {
+      "name": "cl-h2",
+      "file": "/sfx/cl-h2.mp3",
+      "duration": 2.02,
+      "kb": 16.5,
+      "purpose": "Commentator: What a header! Powered past the keeper!",
+      "prompt": "(Kokoro bm_george, speed 1.12) What a header! Powered past the keeper!"
+    },
+    {
+      "name": "cl-h3",
+      "file": "/sfx/cl-h3.mp3",
+      "duration": 2.29,
+      "kb": 18.6,
+      "purpose": "Commentator: Rises highest, and nods it home!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Rises highest, and nods it home!"
+    },
+    {
+      "name": "cl-v1",
+      "file": "/sfx/cl-v1.mp3",
+      "duration": 2.11,
+      "kb": 17.3,
+      "purpose": "Commentator: Oh, on the volley! What a strike!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, on the volley! What a strike!"
+    },
+    {
+      "name": "cl-v2",
+      "file": "/sfx/cl-v2.mp3",
+      "duration": 2.58,
+      "kb": 20.9,
+      "purpose": "Commentator: He hits it first time, and it flies in!",
+      "prompt": "(Kokoro bm_george, speed 1.12) He hits it first time, and it flies in!"
+    },
+    {
+      "name": "cl-v3",
+      "file": "/sfx/cl-v3.mp3",
+      "duration": 2.07,
+      "kb": 16.9,
+      "purpose": "Commentator: Sweet as you like, on the volley!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Sweet as you like, on the volley!"
+    },
+    {
+      "name": "cl-lr1",
+      "file": "/sfx/cl-lr1.mp3",
+      "duration": 2.75,
+      "kb": 22.2,
+      "purpose": "Commentator: Oh, from all of thirty yards! Unbelievable!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, from all of thirty yards! Unbelievable!"
+    },
+    {
+      "name": "cl-lr2",
+      "file": "/sfx/cl-lr2.mp3",
+      "duration": 2.48,
+      "kb": 20.1,
+      "purpose": "Commentator: He's let fly, and it's in! What a hit!",
+      "prompt": "(Kokoro bm_george, speed 1.12) He's let fly, and it's in! What a hit!"
+    },
+    {
+      "name": "cl-lr3",
+      "file": "/sfx/cl-lr3.mp3",
+      "duration": 2.43,
+      "kb": 19.7,
+      "purpose": "Commentator: From distance! The keeper never moved!",
+      "prompt": "(Kokoro bm_george, speed 1.12) From distance! The keeper never moved!"
+    },
+    {
+      "name": "cl-lr4",
+      "file": "/sfx/cl-lr4.mp3",
+      "duration": 2.18,
+      "kb": 17.7,
+      "purpose": "Commentator: Oh, that is a rocket! Top bins!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, that is a rocket! Top bins!"
+    },
+    {
+      "name": "cl-p1",
+      "file": "/sfx/cl-p1.mp3",
+      "duration": 2.94,
+      "kb": 23.7,
+      "purpose": "Commentator: Sends the keeper the wrong way! Penalty scored!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Sends the keeper the wrong way! Penalty scored!"
+    },
+    {
+      "name": "cl-p2",
+      "file": "/sfx/cl-p2.mp3",
+      "duration": 1.92,
+      "kb": 15.8,
+      "purpose": "Commentator: Cool as you like from the spot!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Cool as you like from the spot!"
+    },
+    {
+      "name": "cl-p3",
+      "file": "/sfx/cl-p3.mp3",
+      "duration": 2.4,
+      "kb": 19.5,
+      "purpose": "Commentator: He's tucked it away! No problem at all.",
+      "prompt": "(Kokoro bm_george, speed 1.12) He's tucked it away! No problem at all."
+    },
+    {
+      "name": "cl-f1",
+      "file": "/sfx/cl-f1.mp3",
+      "duration": 2.61,
+      "kb": 21.0,
+      "purpose": "Commentator: Over the wall, and in! What a free kick!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Over the wall, and in! What a free kick!"
+    },
+    {
+      "name": "cl-f2",
+      "file": "/sfx/cl-f2.mp3",
+      "duration": 2.62,
+      "kb": 21.2,
+      "purpose": "Commentator: Oh, he's curled it in! Stunning set piece!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, he's curled it in! Stunning set piece!"
+    },
+    {
+      "name": "cl-f3",
+      "file": "/sfx/cl-f3.mp3",
+      "duration": 2.7,
+      "kb": 21.8,
+      "purpose": "Commentator: The keeper's left rooted! Free kick, goal!",
+      "prompt": "(Kokoro bm_george, speed 1.12) The keeper's left rooted! Free kick, goal!"
+    },
+    {
+      "name": "cl-ta1",
+      "file": "/sfx/cl-ta1.mp3",
+      "duration": 2.44,
+      "kb": 19.7,
+      "purpose": "Commentator: From that angle?! Oh, that's ridiculous!",
+      "prompt": "(Kokoro bm_george, speed 1.12) From that angle?! Oh, that's ridiculous!"
+    },
+    {
+      "name": "cl-ta2",
+      "file": "/sfx/cl-ta2.mp3",
+      "duration": 2.16,
+      "kb": 17.5,
+      "purpose": "Commentator: There was no room, and he's found it!",
+      "prompt": "(Kokoro bm_george, speed 1.12) There was no room, and he's found it!"
+    },
+    {
+      "name": "cl-o1",
+      "file": "/sfx/cl-o1.mp3",
+      "duration": 2.89,
+      "kb": 23.3,
+      "purpose": "Commentator: Through on goal, keeps his cool, and slots it home!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Through on goal, keeps his cool, and slots it home!"
+    },
+    {
+      "name": "cl-o2",
+      "file": "/sfx/cl-o2.mp3",
+      "duration": 2.28,
+      "kb": 18.6,
+      "purpose": "Commentator: One on one, and he makes no mistake!",
+      "prompt": "(Kokoro bm_george, speed 1.12) One on one, and he makes no mistake!"
+    },
+    {
+      "name": "cl-o3",
+      "file": "/sfx/cl-o3.mp3",
+      "duration": 2.52,
+      "kb": 20.5,
+      "purpose": "Commentator: Just him and the keeper, and he's done him!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Just him and the keeper, and he's done him!"
+    },
+    {
+      "name": "cl-r1",
+      "file": "/sfx/cl-r1.mp3",
+      "duration": 2.93,
+      "kb": 23.7,
+      "purpose": "Commentator: Saved, but it falls kindly, and he pokes it in!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Saved, but it falls kindly, and he pokes it in!"
+    },
+    {
+      "name": "cl-r2",
+      "file": "/sfx/cl-r2.mp3",
+      "duration": 1.89,
+      "kb": 15.4,
+      "purpose": "Commentator: Scrambled in! They all count!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Scrambled in! They all count!"
+    },
+    {
+      "name": "cl-r3",
+      "file": "/sfx/cl-r3.mp3",
+      "duration": 3.19,
+      "kb": 25.7,
+      "purpose": "Commentator: Follows it up, and it's in at the second time of asking!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Follows it up, and it's in at the second time of asking!"
+    },
+    {
+      "name": "cl-c1",
+      "file": "/sfx/cl-c1.mp3",
+      "duration": 2.48,
+      "kb": 20.1,
+      "purpose": "Commentator: Oh, the cheek of it! He's chipped the keeper!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, the cheek of it! He's chipped the keeper!"
+    },
+    {
+      "name": "cl-c2",
+      "file": "/sfx/cl-c2.mp3",
+      "duration": 2.5,
+      "kb": 20.3,
+      "purpose": "Commentator: A delicate little dink, and it drops in!",
+      "prompt": "(Kokoro bm_george, speed 1.12) A delicate little dink, and it drops in!"
+    },
+    {
+      "name": "cl-cu1",
+      "file": "/sfx/cl-cu1.mp3",
+      "duration": 2.33,
+      "kb": 18.8,
+      "purpose": "Commentator: Oh, he's bent that one in! Beautiful!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Oh, he's bent that one in! Beautiful!"
+    },
+    {
+      "name": "cl-cu2",
+      "file": "/sfx/cl-cu2.mp3",
+      "duration": 2.46,
+      "kb": 19.9,
+      "purpose": "Commentator: Curled into the far corner! What a finish!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Curled into the far corner! What a finish!"
+    },
+    {
+      "name": "cl-cb1",
+      "file": "/sfx/cl-cb1.mp3",
+      "duration": 1.74,
+      "kb": 14.3,
+      "purpose": "Commentator: Pulled back, and swept home!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Pulled back, and swept home!"
+    },
+    {
+      "name": "cl-cb2",
+      "file": "/sfx/cl-cb2.mp3",
+      "duration": 2.13,
+      "kb": 17.3,
+      "purpose": "Commentator: The cut-back, the finish, the goal!",
+      "prompt": "(Kokoro bm_george, speed 1.12) The cut-back, the finish, the goal!"
+    },
+    {
+      "name": "cl-k1",
+      "file": "/sfx/cl-k1.mp3",
+      "duration": 1.78,
+      "kb": 14.7,
+      "purpose": "Commentator: From the corner, and it's in!",
+      "prompt": "(Kokoro bm_george, speed 1.12) From the corner, and it's in!"
+    },
+    {
+      "name": "cl-k2",
+      "file": "/sfx/cl-k2.mp3",
+      "duration": 2.97,
+      "kb": 23.9,
+      "purpose": "Commentator: Chaos in the box, and they've scored from the corner!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Chaos in the box, and they've scored from the corner!"
+    },
+    {
+      "name": "cl-s-op1",
+      "file": "/sfx/cl-s-op1.mp3",
+      "duration": 1.8,
+      "kb": 14.7,
+      "purpose": "Commentator: And the deadlock is broken!",
+      "prompt": "(Kokoro bm_george, speed 1.12) And the deadlock is broken!"
+    },
+    {
+      "name": "cl-s-op2",
+      "file": "/sfx/cl-s-op2.mp3",
+      "duration": 0.94,
+      "kb": 8.1,
+      "purpose": "Commentator: First blood!",
+      "prompt": "(Kokoro bm_george, speed 1.12) First blood!"
+    },
+    {
+      "name": "cl-s-lv1",
+      "file": "/sfx/cl-s-lv1.mp3",
+      "duration": 1.35,
+      "kb": 11.3,
+      "purpose": "Commentator: And we're all square!",
+      "prompt": "(Kokoro bm_george, speed 1.12) And we're all square!"
+    },
+    {
+      "name": "cl-s-lv2",
+      "file": "/sfx/cl-s-lv2.mp3",
+      "duration": 1.6,
+      "kb": 13.2,
+      "purpose": "Commentator: They're level! Game on!",
+      "prompt": "(Kokoro bm_george, speed 1.12) They're level! Game on!"
+    },
+    {
+      "name": "cl-s-ah1",
+      "file": "/sfx/cl-s-ah1.mp3",
       "duration": 1.46,
-      "kb": 9.3,
-      "purpose": "Commentator: Let's see that again.",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Let's see that again."
+      "kb": 12.0,
+      "purpose": "Commentator: And they're in front!",
+      "prompt": "(Kokoro bm_george, speed 1.12) And they're in front!"
     },
     {
-      "name": "comm-replay-2",
-      "file": "/sfx/comm-replay-2.mp3",
-      "duration": 1.34,
-      "kb": 8.7,
-      "purpose": "Commentator: Look at the finish.",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Look at the finish."
+      "name": "cl-s-ah2",
+      "file": "/sfx/cl-s-ah2.mp3",
+      "duration": 0.85,
+      "kb": 7.4,
+      "purpose": "Commentator: They lead!",
+      "prompt": "(Kokoro bm_george, speed 1.12) They lead!"
     },
     {
-      "name": "comm-replay-3",
-      "file": "/sfx/comm-replay-3.mp3",
-      "duration": 1.72,
-      "kb": 10.8,
-      "purpose": "Commentator: Have another look at this.",
-      "prompt": "(Offline voice, Piper en-gb 'alan'.) Have another look at this."
+      "name": "cl-s-lw1",
+      "file": "/sfx/cl-s-lw1.mp3",
+      "duration": 1.43,
+      "kb": 11.9,
+      "purpose": "Commentator: Surely, that's the winner!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Surely, that's the winner!"
+    },
+    {
+      "name": "cl-s-lw2",
+      "file": "/sfx/cl-s-lw2.mp3",
+      "duration": 1.33,
+      "kb": 11.1,
+      "purpose": "Commentator: Late, late drama!",
+      "prompt": "(Kokoro bm_george, speed 1.12) Late, late drama!"
+    },
+    {
+      "name": "cl-s-ro1",
+      "file": "/sfx/cl-s-ro1.mp3",
+      "duration": 2.0,
+      "kb": 16.4,
+      "purpose": "Commentator: This is turning into a rout!",
+      "prompt": "(Kokoro bm_george, speed 1.12) This is turning into a rout!"
+    },
+    {
+      "name": "cl-s-ro2",
+      "file": "/sfx/cl-s-ro2.mp3",
+      "duration": 1.59,
+      "kb": 13.2,
+      "purpose": "Commentator: It's raining goals here!",
+      "prompt": "(Kokoro bm_george, speed 1.12) It's raining goals here!"
+    },
+    {
+      "name": "cl-s-co1",
+      "file": "/sfx/cl-s-co1.mp3",
+      "duration": 2.46,
+      "kb": 19.9,
+      "purpose": "Commentator: A goal back, but is it too little, too late?",
+      "prompt": "(Kokoro bm_george, speed 1.12) A goal back, but is it too little, too late?"
+    },
+    {
+      "name": "cc-g1",
+      "file": "/sfx/cc-g1.mp3",
+      "duration": 2.63,
+      "kb": 21.2,
+      "purpose": "Co-commentator: Look at the technique there. Really, really good.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Look at the technique there. Really, really good."
+    },
+    {
+      "name": "cc-g2",
+      "file": "/sfx/cc-g2.mp3",
+      "duration": 3.26,
+      "kb": 26.1,
+      "purpose": "Co-commentator: He's picked his spot. The keeper's got no chance.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) He's picked his spot. The keeper's got no chance."
+    },
+    {
+      "name": "cc-g3",
+      "file": "/sfx/cc-g3.mp3",
+      "duration": 3.17,
+      "kb": 25.4,
+      "purpose": "Co-commentator: Watch the movement. He's lost his man completely.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Watch the movement. He's lost his man completely."
+    },
+    {
+      "name": "cc-g4",
+      "file": "/sfx/cc-g4.mp3",
+      "duration": 2.27,
+      "kb": 18.4,
+      "purpose": "Co-commentator: You won't see many better than that this season.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) You won't see many better than that this season."
+    },
+    {
+      "name": "cc-g5",
+      "file": "/sfx/cc-g5.mp3",
+      "duration": 2.74,
+      "kb": 22.2,
+      "purpose": "Co-commentator: The defending's poor, mind. Nobody tracks him.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) The defending's poor, mind. Nobody tracks him."
+    },
+    {
+      "name": "cc-g6",
+      "file": "/sfx/cc-g6.mp3",
+      "duration": 2.78,
+      "kb": 22.4,
+      "purpose": "Co-commentator: That's a proper striker's finish, that.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) That's a proper striker's finish, that."
+    },
+    {
+      "name": "cc-g7",
+      "file": "/sfx/cc-g7.mp3",
+      "duration": 2.29,
+      "kb": 18.6,
+      "purpose": "Co-commentator: I'd have scored that. In my dreams, anyway.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) I'd have scored that. In my dreams, anyway."
+    },
+    {
+      "name": "cc-g8",
+      "file": "/sfx/cc-g8.mp3",
+      "duration": 2.45,
+      "kb": 19.9,
+      "purpose": "Co-commentator: He'll be buying the drinks tonight, I'll tell you.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) He'll be buying the drinks tonight, I'll tell you."
+    },
+    {
+      "name": "cc-g9",
+      "file": "/sfx/cc-g9.mp3",
+      "duration": 2.85,
+      "kb": 22.9,
+      "purpose": "Co-commentator: Composure. That's what you want in the box.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Composure. That's what you want in the box."
+    },
+    {
+      "name": "cc-h1",
+      "file": "/sfx/cc-h1.mp3",
+      "duration": 2.0,
+      "kb": 16.4,
+      "purpose": "Co-commentator: Look at the leap. He's hung in the air there.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Look at the leap. He's hung in the air there."
+    },
+    {
+      "name": "cc-h2",
+      "file": "/sfx/cc-h2.mp3",
+      "duration": 2.86,
+      "kb": 23.1,
+      "purpose": "Co-commentator: Brave, that. He's put his head where it hurts.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Brave, that. He's put his head where it hurts."
+    },
+    {
+      "name": "cc-lr1",
+      "file": "/sfx/cc-lr1.mp3",
+      "duration": 3.42,
+      "kb": 27.4,
+      "purpose": "Co-commentator: Why not, from there? Sometimes you've just got to hit it.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Why not, from there? Sometimes you've just got to hit it."
+    },
+    {
+      "name": "cc-lr2",
+      "file": "/sfx/cc-lr2.mp3",
+      "duration": 3.49,
+      "kb": 28.0,
+      "purpose": "Co-commentator: Look at the dip on it. The keeper's beaten all ends up.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Look at the dip on it. The keeper's beaten all ends up."
+    },
+    {
+      "name": "cc-p1",
+      "file": "/sfx/cc-p1.mp3",
+      "duration": 3.11,
+      "kb": 25.0,
+      "purpose": "Co-commentator: Never in doubt. Picked his side, and stuck to it.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Never in doubt. Picked his side, and stuck to it."
+    },
+    {
+      "name": "cc-p2",
+      "file": "/sfx/cc-p2.mp3",
+      "duration": 2.73,
+      "kb": 22.0,
+      "purpose": "Co-commentator: Calm as you like. Ice in the veins.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Calm as you like. Ice in the veins."
+    },
+    {
+      "name": "cc-f1",
+      "file": "/sfx/cc-f1.mp3",
+      "duration": 3.33,
+      "kb": 26.7,
+      "purpose": "Co-commentator: Over the wall, and down again. You can't coach that.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Over the wall, and down again. You can't coach that."
+    },
+    {
+      "name": "cc-f2",
+      "file": "/sfx/cc-f2.mp3",
+      "duration": 3.5,
+      "kb": 28.2,
+      "purpose": "Co-commentator: The keeper's taken a step the wrong way, and it's over.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) The keeper's taken a step the wrong way, and it's over."
+    },
+    {
+      "name": "cc-r1",
+      "file": "/sfx/cc-r1.mp3",
+      "duration": 2.45,
+      "kb": 19.9,
+      "purpose": "Co-commentator: Not the prettiest, but they all count.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Not the prettiest, but they all count."
+    },
+    {
+      "name": "cc-r2",
+      "file": "/sfx/cc-r2.mp3",
+      "duration": 3.07,
+      "kb": 24.6,
+      "purpose": "Co-commentator: That's just being in the right place. Striker's instinct.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) That's just being in the right place. Striker's instinct."
+    },
+    {
+      "name": "cc-o1",
+      "file": "/sfx/cc-o1.mp3",
+      "duration": 2.95,
+      "kb": 23.7,
+      "purpose": "Co-commentator: He waits, and waits, and the keeper goes down first.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) He waits, and waits, and the keeper goes down first."
+    },
+    {
+      "name": "cc-o2",
+      "file": "/sfx/cc-o2.mp3",
+      "duration": 2.25,
+      "kb": 18.2,
+      "purpose": "Co-commentator: Calm finish. Didn't panic for a second.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Calm finish. Didn't panic for a second."
+    },
+    {
+      "name": "cc-s1",
+      "file": "/sfx/cc-s1.mp3",
+      "duration": 3.76,
+      "kb": 30.0,
+      "purpose": "Co-commentator: The keeper made some great stops, but you can't stop that one.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) The keeper made some great stops, but you can't stop that one."
+    },
+    {
+      "name": "cc-s2",
+      "file": "/sfx/cc-s2.mp3",
+      "duration": 2.87,
+      "kb": 23.1,
+      "purpose": "Co-commentator: Credit to the goalkeeper, he kept them out for so long.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Credit to the goalkeeper, he kept them out for so long."
+    },
+    {
+      "name": "cc-reel1",
+      "file": "/sfx/cc-reel1.mp3",
+      "duration": 2.03,
+      "kb": 16.5,
+      "purpose": "Co-commentator: What a game this has been.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) What a game this has been."
+    },
+    {
+      "name": "cc-reel2",
+      "file": "/sfx/cc-reel2.mp3",
+      "duration": 2.73,
+      "kb": 22.0,
+      "purpose": "Co-commentator: Goals, goals, goals. Brilliant entertainment.",
+      "prompt": "(Kokoro bm_fable, speed 1.0) Goals, goals, goals. Brilliant entertainment."
     }
   ]
 }

@@ -221,8 +221,13 @@ the feed and Goal Replays draw the video FROM the recording. Never rebuild a
 replay by re-simulating the chance. Recordings live in IndexedDB on the
 device, not in the save. Test page: `/star-goal-clips-dev`.
 Sound (Leo, 8 Oct): `lib/star/goalClip/audio.ts` plans and mixes crowd,
-kick, net and commentator (`public/sfx/comm-*.mp3`, replaceable on the
-Sound Board) into the file; the speaker button is `goalClip/sound.ts`.
+kick, net and the commentary box (`goalClip/commentary.ts`: lead call by
+finish + score line, co-commentator over the replay; 78 lines in
+`public/sfx/cl-*.mp3`/`cc-*.mp3`, made by `scripts/commentary/generate.py`
+with the offline Kokoro voice, each replaceable on the Sound Board). Each
+account cuts its own way (`media/clipStyle.ts`; cuts in `edit.ts`). Goals
+from matches you did not play are made by `goalClip/synth.ts` (a seeded
+move fed through GoalRecorder; never the engine).
 
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
@@ -712,6 +717,17 @@ Three people are building this. To avoid two sessions editing the same files:
 ---
 
 ## Recent Session
+
+**8 October 2026 (Leo, cont.) — Goal videos round 3: a commentary box, new cameras and cuts, made in the background, figures the right size, more video posts, videos of other matches' goals. Patch notes Leo v0.12 (site 0.38): https://claude.ai/artifact/EGUKS4qyVUU6KoA1qkJAKn**
+
+- **The ask (Leo, overnight):** downloads too slow ("it should just naturally do that"), clips' proportions and keeper "off", better edits with variety by poster, more videos and posters, and "the commentator needs BIG improvement"; videos for other games if not much trouble.
+- **Commentary** (`goalClip/commentary.ts`, `commentaryDurations.ts`): two voices (Kokoro `bm_george` lead, `bm_fable` co), 78 lines. `finishOf` (shot mode → how → strike distance) and `scoreTagOf` pick the call and a score line; `pickReplayLine` for the replay, fitting the time left (`MIN_REPLAY_LINE` reserved). Mixer: broadcast-mic EQ, pitch bus ducks to `DUCK` under talk. Old `comm-*` files removed.
+- **Made in the background** (`GoalVideo.tsx`): `inTurn` serial queue, IntersectionObserver (700 px near → make; ≥55% on view → play); a tap skips the queue. No new canvas animation loop (the one-engine guard would need Harry's yes).
+- **Figures the right size** (`render.ts` `standFit`): sprites hang 15–27% of their height below their anchor (top-down bake); measured per facing from the idle cell and taken off.
+- **Cameras/cuts**: `cameras.ts` `high` (spider-cam), `side` (pitch-side low), `tight`; `edit.ts` `makeEdit(..., variant)` 3 cuts per style + `tiktok` (tall, 0.35× through the strike, captions; `drawTikTok`). `clipStyleFor`/`clipVariantFor` moved to `lib/star/media/clipStyle.ts`.
+- **Feed**: accounts @GoalCamHD (youtube aggregator), @pitchside.edits / @footyloops (tiktok memes); templates for team-mate goals and extra angles; budget +1–3 per tier, `MAX_PER_EVENT` 5. 30 test matches: goal videos 17 → 29.
+- **Other matches** (`goalClip/synth.ts`, `detect/league.ts` `goalVideos` JSON fact, `graphics.ts` `synthFor`, spec `synth`): run_in / header / long_range / tap_in / penalty; `synthGoal.mts` checks 200. 8 test weeks: 19 of 85 England posts with a video.
+- Tests: `goalClipAudio.mts`, `goalVideoFeed.mts`, `leagueMedia.mts` extended; `synthGoal.mts` new.
 
 **8 October 2026 (Leo) — Goal videos get sound: crowd, kick, net, a commentator, and a speaker button. Patch notes Leo v0.11 (site 0.36): https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY**
 

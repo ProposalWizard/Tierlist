@@ -23,15 +23,17 @@ export interface Pairing {
 
 /** How many posts an entire cycle produces, given its biggest moment. */
 function budgetFor(topImportance: number): number {
-  if (topImportance >= 90) return 22;
-  if (topImportance >= 75) return 17;
-  if (topImportance >= 55) return 13;
-  if (topImportance >= 35) return 9;
-  return 6;
+  // A few more than before, so a match with goals shows them from several
+  // accounts and angles (Leo, 8 Oct 2026: "more ppl posting").
+  if (topImportance >= 90) return 25;
+  if (topImportance >= 75) return 20;
+  if (topImportance >= 55) return 15;
+  if (topImportance >= 35) return 11;
+  return 7;
 }
 
 const MAX_PER_ACCOUNT = 2;
-const MAX_PER_EVENT = 4;
+const MAX_PER_EVENT = 5;
 
 export function selectPairings(
   events: FootballEvent[],

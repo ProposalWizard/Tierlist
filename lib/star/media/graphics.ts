@@ -1,3 +1,4 @@
+import type { SynthGoal } from "../goalClip/synth";
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace, assistRace } from "../recognition";
@@ -51,6 +52,21 @@ export function clipsFor(e: FootballEvent, r: MatchRecord | null): string[] {
   if (e.subject.kind === "you" && e.tags.includes("goal")) return ids(seen.filter(x => x.isUser));
   // A post about the match as a whole: every goal that was seen.
   return ids(seen);
+}
+
+/**
+ * A post about ANOTHER club's match (the England tab): the goals to make a
+ * video of (lib/star/goalClip/synth.ts), from the event's `goalVideos` fact
+ * (detect/league.ts). Never for your own match — those are real recordings.
+ */
+export function synthFor(e: FootballEvent, r: MatchRecord | null): SynthGoal[] {
+  const raw = e.facts.goalVideos;
+  if (typeof raw !== "string") return [];
+  if (r && e.facts.club === r.club) return [];
+  try {
+    const list = JSON.parse(raw) as SynthGoal[];
+    return Array.isArray(list) ? list.filter(g => g && typeof g.seed === "string").slice(0, 4) : [];
+  } catch { return []; }
 }
 
 export function buildGraphic(
@@ -253,12 +269,15 @@ export function buildGraphic(
 
     case "thumbnail": {
       const clips = clipsFor(e, r);
+      const synth = clips.length ? [] : synthFor(e, r);
+      const n = clips.length || synth.length;
       return {
         type: "thumbnail",
         title: headlineFor(e, you).toUpperCase(),
         // A video of more than one goal is a highlights reel, whatever the post is about.
-        badge: clips.length > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        badge: n > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
         ...(clips.length ? { clips } : {}),
+        ...(synth.length ? { synth } : {}),
       };
     }
 
@@ -267,8 +286,9 @@ export function buildGraphic(
       // when the goal was recorded. No recording, no graphic: the post stays
       // the plain words it always was.
       const clips = clipsFor(e, r);
-      if (!clips.length) return undefined;
-      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips };
+      const synth = clips.length ? [] : synthFor(e, r);
+      if (!clips.length && !synth.length) return undefined;
+      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips, ...(synth.length ? { synth } : {}) };
     }
 
     case "teamOfTheWeek": {

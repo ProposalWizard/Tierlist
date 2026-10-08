@@ -6,6 +6,7 @@ import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } fr
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
 import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
 import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
@@ -36,6 +37,21 @@ import { audioContext } from "@/lib/star/audioOut";
 const made = new Map<string, { clip: EncodedClip; url: string }>();
 /** Videos being made right now: a second post of the same goals waits for it. */
 const making = new Map<string, Promise<EncodedClip | null>>();
+/**
+ * Videos are made in the background, ONE AT A TIME, as soon as a post comes
+ * near the screen (Leo, 8 Oct 2026: "ideally you shouldnt even have to
+ * download it to play it in social media, it should just naturally do that
+ * and quickly"). By the time you scroll to it, it is usually made and plays
+ * by itself, like a real feed. One at a time so a long feed never makes ten
+ * at once and slows the phone.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function inTurn<T>(job: () => Promise<T>): Promise<T> {
+  const run = queue.then(job, job);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
 /** Every goal video on screen. One plays at a time, like a feed. */
 const onScreen = new Set<HTMLVideoElement>();
 
@@ -88,7 +104,11 @@ function mmss(s: number): string {
 
 export interface GoalVideoProps {
   clipIds: string[];
+  /** Goals from a match you did not play: made on the phone (goalClip/synth.ts). */
+  synth?: SynthGoal[];
   style: ClipStyle;
+  /** Which of the poster's cuts (edit.ts makeEdit). */
+  variant?: number;
   credit?: ClipCredit;
   /** Read out and used as the share text. */
   title: string;
@@ -102,7 +122,7 @@ export interface GoalVideoProps {
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, style, credit, title, badge, fallback, autoStart = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false }: GoalVideoProps) {
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -116,18 +136,29 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   // muted, and the speaker shows muted until it is tapped.
   const [blocked, setBlocked] = useState(false);
   const audible = soundOn && !blocked;
+  // Near the screen (start making it) and on it (play it).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  const [onView, setOnView] = useState(false);
+  // Tapped: show how far it has got, and play it the moment it is made.
+  const [wanted, setWanted] = useState(false);
   // The men's moves follow Settings → Look → Animations, like the match.
   const moves = useAnimationsLook();
-  const key = `${style}|${moves}|${clipIds.join(",")}|${credit?.handle ?? ""}`;
+  const synthKey = (synth ?? []).map(g => g.seed).join(",");
+  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
 
   useEffect(() => {
     let live = true;
+    if (!clipIds.length && synth?.length) {
+      setTracks(synth.map(synthTrack).filter((t): t is GoalTrack => !!t));
+      return () => { live = false; };
+    }
     getClips(clipIds).then(t => { if (live) setTracks(t); }).catch(() => { if (live) setTracks([]); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clipIds.join(",")]);
+  }, [clipIds.join(","), synthKey]);
 
-  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style, moves) : null), [tracks, style, moves]);
+  const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style, moves, variant) : null), [tracks, style, moves, variant]);
 
   // Can this browser make the video at all? If not, the post is its plain
   // picture (`fallback`): no play button that cannot play.
@@ -161,7 +192,8 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     return () => { live = false; };
   }, [edit, status, credit]);
 
-  const start = async () => {
+  const start = async (quiet = false) => {
+    if (!quiet) setWanted(true);
     if (!edit || status === "making" || status === "ready") return;
     if (canPlay === false) { setStatus("unsupported"); return; }
     // Made already for another post of the same goals: no second wait.
@@ -173,9 +205,11 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
       let job = making.get(key);
       if (!job) {
         const e = edit;
-        job = mixAudio(planAudio(e))
+        const make = () => mixAudio(planAudio(e))
           .catch(() => null)
           .then(audio => encodeEdit(e, { credit, onProgress: setProgress, audio }));
+        // A tap skips the queue; a post merely near the screen waits its turn.
+        job = quiet ? inTurn(make) : make();
         making.set(key, job);
         job.then(() => making.delete(key), () => making.delete(key));
       }
@@ -196,18 +230,37 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, edit, canPlay]);
 
+  // Watch where the post is: within a screen or so → make it; mostly on
+  // screen → play it; off screen → pause it.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setNear(true); setOnView(true); return; }
+    const nearObs = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) setNear(true); }, { rootMargin: "700px 0px" });
+    const viewObs = new IntersectionObserver(es => { for (const e of es) setOnView(e.intersectionRatio >= 0.55); }, { threshold: [0, 0.55, 1] });
+    nearObs.observe(el);
+    viewObs.observe(el);
+    return () => { nearObs.disconnect(); viewObs.disconnect(); };
+  }, [edit, canPlay]);
+
+  useEffect(() => {
+    if (near && edit && canPlay && status === "idle") void start(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [near, edit, canPlay, status]);
+
   const clip = made.get(key)?.clip ?? null;
 
   useEffect(() => {
     const v = videoRef.current;
     if (status !== "ready" || !v) return;
-    v.muted = !(clip?.hasAudio && soundOn);
+    // Plays while it is on screen (or was tapped); pauses when scrolled away.
+    if (!(onView || wanted || autoStart)) { if (!v.paused) v.pause(); return; }
+    v.muted = !(clip?.hasAudio && soundOn && !blocked);
     v.play().catch(() => {
       // Sound before a tap is not allowed here: play muted, show it muted.
       if (!v.muted) { setBlocked(true); v.muted = true; v.play().catch(() => { /* the tap does */ }); }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, url]);
+  }, [status, url, onView, wanted]);
 
   // The speaker: the file's own sound, or the mix played alongside it.
   useEffect(() => {
@@ -252,7 +305,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   }
   if (!edit || canPlay === false) return <>{fallback}</>;
 
-  const tall = style === "fan";
+  const tall = style === "fan" || style === "tiktok";
   const dur = editDuration(edit);
   const save = async () => {
     const hit = made.get(key);
@@ -262,7 +315,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
   };
 
   return (
-    <div className={tall ? "w-[64%] max-w-[260px]" : "w-full"} data-goal-video data-clip-style={style}>
+    <div ref={wrapRef} className={tall ? "w-[64%] max-w-[260px]" : "w-full"} data-goal-video data-clip-style={style} data-goal-video-status={status}>
       <div
         className="relative overflow-hidden rounded-xl border border-white/15 bg-black"
         style={{ aspectRatio: `${edit.w} / ${edit.h}` }}
@@ -275,7 +328,6 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
             playsInline
             muted
             loop
-            autoPlay
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) void v.play(); else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
             onPause={(ev) => stopSide(ev.currentTarget)}
@@ -290,13 +342,13 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
               </div>
             )}
             <button
-              onClick={start}
-              disabled={status === "making"}
+              onClick={() => void start()}
+              disabled={status === "making" && wanted}
               className="absolute inset-0 grid place-items-center"
               aria-label={status === "making" ? "Making the video" : "Play the goal"}
               data-goal-video-play
             >
-              {status === "making" ? (
+              {status === "making" && wanted ? (
                 <div className="grid place-items-center rounded-full bg-black/55 p-2">
                   <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden>
                     <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
@@ -315,13 +367,12 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
             </button>
           </>
         )}
-        <div className="pointer-events-none absolute bottom-1.5 right-2 rounded bg-black/60 px-1 text-[10px] font-bold tabular-nums text-white">
-          {mmss(dur)}
-        </div>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
           <button
             onClick={toggleSound}
-            className="absolute bottom-1.5 left-2 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white"
+            className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
             aria-label={audible ? "Mute" : "Sound on"}
             data-goal-video-sound={audible ? "on" : "off"}
           >
@@ -335,8 +386,6 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
             </svg>
           </button>
         )}
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-bold text-white/80">
         <button onClick={save} className="flex items-center gap-1 whitespace-nowrap hover:text-white" data-goal-video-save>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
@@ -346,6 +395,7 @@ export default function GoalVideo({ clipIds, style, credit, title, badge, fallba
         {status === "unsupported" && <span className="text-amber-200">This browser can&apos;t make videos.</span>}
         {status === "failed" && <span className="text-amber-200">The video could not be made.</span>}
         {note && status !== "unsupported" && status !== "failed" && <span className="text-emerald-300">{note}</span>}
+        <span className="ml-auto tabular-nums text-white/60">{mmss(dur)}</span>
       </div>
     </div>
   );

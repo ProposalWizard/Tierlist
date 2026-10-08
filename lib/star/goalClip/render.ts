@@ -21,6 +21,7 @@ import { shortClub } from "../media/grammar";
 import {
   drawSprite, spritesReady, spriteKickStrikeT, spriteClipLength, spriteClipReady, spriteClipFps,
   loadSprites, type SpriteClip,
+  spriteCell,
 } from "../sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, sideOfDive } from "../sprite3dAnim";
 import type { SaveResult, BallActionKind, BallActionMode } from "../canvasEngine";
@@ -240,6 +241,28 @@ function shadow(ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: numb
   ctx.restore();
 }
 
+/** How far a standing figure hangs below its anchor, as a share of `height`
+ *  (measured off the idle cell at this facing; ~0.15-0.27). */
+const OVERHANG_CACHE = new Map<string, number>();
+function standOverhang(char: "player" | "keeper", facing: number): number {
+  const key = `${char}:${Math.round(facing * 8)}`;
+  const hit = OVERHANG_CACHE.get(key);
+  if (hit !== undefined) return hit;
+  const cell = spriteCell(char, "idle", 0, facing, 100);
+  if (!cell) return 0.2;
+  const r = Math.max(0, Math.min(0.4, ((cell.sh - cell.ay) * cell.scale) / 100));
+  OVERHANG_CACHE.set(key, r);
+  return r;
+}
+
+/** The height to ask the sprite for, and how far to lift it, so the whole
+ *  standing man is `height` tall on screen with his soles on the ground. */
+export function standFit(char: "player" | "keeper", facing: number, height: number): { height: number; lift: number } {
+  const r = standOverhang(char, facing);
+  const h = height / (1 + r);
+  return { height: h, lift: r * h };
+}
+
 function drawMan(
   ctx: CanvasRenderingContext2D, cam: FpCamera, track: GoalTrack, p: Prep, fr: FrameState, i: number, t: number,
   moves: ClipMoves,
@@ -349,8 +372,16 @@ function drawMan(
       shadow(ctx, cam, pos.x, pos.y, keeper && diving ? 0.7 : 0.42, 0.3);
       const liftPx = lift * feet.scale;
       const kit = { shirt: body.kit.shirt, shorts: body.kit.shorts, socks: body.kit.socks ?? body.kit.shirt };
-      const drawn = spritesReady() && drawSprite(ctx, feet.px, feet.py - liftPx, {
-        char: keeper ? "keeper" : "player", clip, t: Math.max(0, clipT), facingRad: facing, kit, height, centre,
+      // The figures are drawn for the match's top-down camera: a standing
+      // man hangs a quarter of his height BELOW the point he stands on. From
+      // these low cameras that made every man ~1.25x too tall with his feet
+      // under the grass (the keeper looked to be standing in the net). Take
+      // the overhang off his standing pose at this facing: same size on
+      // screen as his real height, soles on the ground.
+      const char = keeper ? "keeper" : "player";
+      const fit = standFit(char, facing, height);
+      const drawn = spritesReady() && drawSprite(ctx, feet.px, feet.py - liftPx - fit.lift, {
+        char, clip, t: Math.max(0, clipT), facingRad: facing, kit, height: fit.height, centre,
       });
       if (!drawn) {
         // Before the figures have loaded: the game's drawn man, same kit.
@@ -671,9 +702,50 @@ export function drawEditFrame(ctx: CanvasRenderingContext2D, edit: Edit, outT: n
       drawTag(ctx, W, "SLOW-MO", "rgba(17,24,39,0.9)");
       drawWipe(ctx, W, H, m.intoShot, "rgba(255,255,255,0.9)");
     }
+  } else if (edit.style === "tiktok") {
+    drawTikTok(ctx, W, H, track, shot.caption, m.intoShot, credit);
   } else {
     drawPhoneLook(ctx, W, H, m.t);
   }
+}
+
+/** The TikTok cut: a big outlined caption up top, the account and the
+ *  match along the bottom. */
+function drawTikTok(
+  ctx: CanvasRenderingContext2D, W: number, H: number, track: GoalTrack, caption: string | undefined, into: number, credit?: ClipCredit,
+): void {
+  const s = W / 360;
+  const g = ctx.createLinearGradient(0, H * 0.72, 0, H);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,0.7)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H * 0.72, W, H * 0.28);
+  if (caption) {
+    // Pops in: a quick overshoot on the first few frames.
+    const pop = into < 0.18 ? 0.7 + (into / 0.18) * 0.38 : into < 0.3 ? 1.08 - ((into - 0.18) / 0.12) * 0.08 : 1;
+    ctx.save();
+    ctx.translate(W / 2, H * 0.17);
+    ctx.scale(pop, pop);
+    ctx.font = `900 ${30 * s}px ${FONT}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 7 * s;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(caption, 0, 0, W * 0.92);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(caption, 0, 0, W * 0.92);
+    ctx.restore();
+  }
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 ${14 * s}px ${FONT}`;
+  const handle = credit?.handle ? `@${credit.handle.replace(/^@/, "")}` : "";
+  if (handle) ctx.fillText(handle, 14 * s, H - 40 * s, W * 0.8);
+  ctx.font = `600 ${12 * s}px ${FONT}`;
+  ctx.fillStyle = "#e5e7eb";
+  ctx.fillText(`${track.meta.scorer} 🔥 ${shortClub(track.meta.home)} v ${shortClub(track.meta.away)} #football #goal`, 14 * s, H - 20 * s, W * 0.86);
 }
 
 /** Where a goal sits in the frame for a still of it (the post's picture). */
