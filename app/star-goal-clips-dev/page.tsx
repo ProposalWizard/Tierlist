@@ -34,7 +34,8 @@ const CHANCES: { kind: ScenarioKind; label: string }[] = [
 const ANGLES: { style: ClipStyle; label: string; who: string }[] = [
   { style: "broadcast", label: "TV", who: "the club's own account" },
   { style: "reverse", label: "Behind the goal", who: "pages and papers" },
-  { style: "fan", label: "Fan in the stand", who: "fans and meme pages" },
+  { style: "fan", label: "Fan in the stand", who: "fans and team-mates" },
+  { style: "tiktok", label: "TikTok edit", who: "meme pages and TikTok accounts" },
 ];
 
 /** A weak keeper and clear weather, so a goal comes quickly. */
@@ -46,6 +47,8 @@ export default function GoalClipsDevPage() {
   const [list, setList] = useState<ClipListing[]>([]);
   const [chosen, setChosen] = useState<string | null>(null);
   const [style, setStyle] = useState<ClipStyle>("broadcast");
+  // Each account cuts its goals one of a few ways; this page can show each.
+  const [variant, setVariant] = useState(0);
   // The men's moves follow Settings → Look → Animations; this page can force
   // one while it is open (the match above follows it too).
   const [movesForced, setMovesForced] = useState<AnimationsLook | null>(null);
@@ -144,6 +147,20 @@ export default function GoalClipsDevPage() {
               In the feed this one is posted by {ANGLES.find(a => a.style === style)?.who}.
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-black uppercase tracking-widest text-white/60">Cut</span>
+              {[0, 1, 2].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setVariant(v)}
+                  className={`rounded px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide ${variant === v ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
+                  data-goal-clip-variant={v}
+                >
+                  {v + 1}
+                </button>
+              ))}
+              <span className="text-[11px] font-bold text-white/60">each account always uses one of these</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] font-black uppercase tracking-widest text-white/60">Moves</span>
               {(["old", "new"] as const).map(m => (
                 <button
@@ -159,9 +176,10 @@ export default function GoalClipsDevPage() {
             </div>
             <div className="mt-2 flex justify-center">
               <GoalVideo
-                key={`${chosenRow.id}-${style}`}
+                key={`${chosenRow.id}-${style}-${variant}`}
                 clipIds={[chosenRow.id]}
                 style={style}
+                variant={variant}
                 credit={{ handle: "FootyGoalsHQ", name: "Footy Goals HQ" }}
                 title={`${chosenRow.scorer} ${chosenRow.minuteLabel}'`}
                 badge="GOAL"

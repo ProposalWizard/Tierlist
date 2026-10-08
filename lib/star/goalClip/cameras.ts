@@ -19,7 +19,7 @@ import { CX, PITCH_W } from "../pitch";
 import { frameAt, trackDuration, type GoalTrack } from "./track";
 import type { StandId } from "./scene";
 
-export type ClipAngle = "tv" | "net" | "fan";
+export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight";
 
 export interface Rig {
   cam: FpCamera;
@@ -92,6 +92,50 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
       cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: W * 0.82, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
       roll: 0,
       skip: ["end"],
+    };
+  }
+  if (angle === "high") {
+    // The spider-cam: high up behind the man who scored, looking down the
+    // line of the shot at the goal.
+    const shotAt = frameAt(track, Math.max(0, track.strikeT)).ball;
+    const ball = smoothBall(track, t, -0.4, 0.3);
+    const back = { x: shotAt.x + (shotAt.x - CX) * 0.35, y: shotAt.y + 13 };
+    const pos = { x: back.x, y: Math.max(16, back.y), eye: 12 };
+    const target = mix({ ...ball, z: 0.6 }, { x: CX, y: 2, z: 1 }, 0.55);
+    const l = look(pos, target);
+    const span = Math.max(20, Math.min(34, Math.hypot(pos.x - CX, pos.y) * 0.75));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (Math.max(W, H * 0.9) * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "side") {
+    // Low at the side of the six-yard box, at grass level, side-on to the
+    // goal mouth: the keeper's dive across the picture.
+    const ball = smoothBall(track, t, -0.3, 0.2);
+    const left = frameAt(track, Math.max(0, track.strikeT)).ball.x < CX;
+    const pos = { x: left ? CX + 23 : CX - 23, y: 7, eye: 3.2 };
+    const target = mix({ ...ball, z: Math.min(ball.z, 2) * 0.5 + 0.6 }, { x: CX, y: 0.5, z: 1 }, 0.6);
+    const l = look(pos, target);
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: Math.max(W, H * 0.9) * 1.6, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "tight") {
+    // The TV camera zoomed right in on the man who scored (the celebration).
+    const pos = { x: -26, y: 19, eye: 14 };
+    const si = track.bodies.findIndex(b => b.id === track.meta.scorerBody);
+    const fr = frameAt(track, t);
+    const who = si >= 0 ? fr.bodies[si] : fr.ball;
+    const target = { x: who.x, y: who.y, z: 0.9 };
+    const l = look(pos, target);
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (Math.max(W, H * 0.9) * l.dist) / 11, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
     };
   }
   // A fan in the end stand by the corner, filming on a phone.

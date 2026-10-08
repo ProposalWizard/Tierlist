@@ -14,6 +14,7 @@
  *
  * Pure data — no browser or server imports — so both sides can use it.
  */
+import { allCommentaryLines } from "./goalClip/commentary";
 
 export interface SfxCatalogEntry {
   /** File name without .mp3 — also the key in the override list. */
@@ -39,15 +40,17 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "whistle-start", label: "Kick-off", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
   { name: "whistle-half", label: "Half time", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
   { name: "whistle-full", label: "Full time", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
-  { name: "comm-goal-1", label: "Commentator: \"Goal!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-goal-2", label: "Commentator: \"What a finish!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-goal-3", label: "Commentator: \"It's in! What a goal!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-goal-4", label: "Commentator: \"He scores!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-goal-5", label: "Commentator: \"Into the back of the net!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-goal-6", label: "Commentator: \"Oh, that is brilliant!\"", group: "Goal video commentator", wired: true, where: "Just after the goal in a TV or behind-the-goal goal video. Each goal always gets the same line." },
-  { name: "comm-replay-1", label: "Commentator: \"Let's see that again.\"", group: "Goal video commentator", wired: true, where: "Over the slow-motion replay in a TV or behind-the-goal goal video." },
-  { name: "comm-replay-2", label: "Commentator: \"Look at the finish.\"", group: "Goal video commentator", wired: true, where: "Over the slow-motion replay in a TV or behind-the-goal goal video." },
-  { name: "comm-replay-3", label: "Commentator: \"Have another look at this.\"", group: "Goal video commentator", wired: true, where: "Over the slow-motion replay in a TV or behind-the-goal goal video." },
+  // The goal-video commentary (lib/star/goalClip/commentary.ts): the lead's
+  // calls and the co-commentator's replay lines, one entry each.
+  ...allCommentaryLines().map((l): SfxCatalogEntry => ({
+    name: l.id,
+    label: `${l.voice === "lead" ? "Commentator" : "Co-commentator"}: "${l.text}"`,
+    group: "Goal video commentator",
+    wired: true,
+    where: l.voice === "lead"
+      ? "In TV, highlights and TikTok goal videos, as the goal goes in (or just after, for what it means for the score)."
+      : "In TV and highlights goal videos, over the slow-motion replay.",
+  })),
   { name: "coin-in", label: "Money paid in", group: "Rewards", wired: true, where: "After a match when your pay comes in. Also when you sell a stake in a club or sell a player." },
   { name: "star-tick", label: "Star bar filling, one tick", group: "Rewards", wired: true, where: "After a match, as the star bar starts to fill." },
   { name: "level-up", label: "Star rating goes up", group: "Rewards", wired: true, where: "After a match when your star rating goes up. Also when a new star banner shows." },

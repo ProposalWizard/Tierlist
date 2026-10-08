@@ -6,7 +6,6 @@ import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
 import GoalVideo from "./GoalVideo";
-import type { ClipStyle } from "@/lib/star/goalClip/edit";
 import type { StoredPost } from "@/lib/star/media/types";
 
 /**
@@ -20,24 +19,11 @@ import type { StoredPost } from "@/lib/star/media/types";
 
 const PANEL = "rounded-xl overflow-hidden border border-white/15 bg-gray-900/70";
 
-/** Who posted it — the kind of video they post (lib/star/goalClip/edit.ts). */
-export type PostAuthor = Pick<StoredPost["author"], "handle" | "name" | "archetype" | "platform">;
+export type { PostAuthor } from "@/lib/star/media/clipStyle";
+import type { PostAuthor } from "@/lib/star/media/clipStyle";
 
-/**
- * The kind of goal video an account posts. Official accounts post the TV
- * pictures with a slow replay from behind the goal; pages and papers lead with
- * the angle behind the goal; fans, meme pages and team-mates post it filmed on
- * a phone in the stand.
- */
-export function clipStyleFor(author?: PostAuthor): ClipStyle {
-  if (!author) return "broadcast";
-  if (author.platform === "tiktok") return "fan";
-  switch (author.archetype) {
-    case "club": case "league": case "competition": return "broadcast";
-    case "fan": case "rivalFan": case "meme": case "teammate": return "fan";
-    default: return "reverse";
-  }
-}
+export { clipStyleFor, clipVariantFor } from "@/lib/star/media/clipStyle";
+import { clipStyleFor, clipVariantFor } from "@/lib/star/media/clipStyle";
 
 export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: PostAuthor }) {
   if (spec.type === "thumbnail") return <Thumbnail s={spec} author={author} />;
@@ -46,6 +32,7 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
       <GoalVideo
         clipIds={spec.clips}
         style={clipStyleFor(author)}
+        variant={clipVariantFor(author)}
         credit={author ? { handle: author.handle, name: author.name } : undefined}
         title={spec.title}
         badge={spec.clips.length > 1 ? "HIGHLIGHTS" : "GOAL"}
@@ -352,6 +339,7 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
     <GoalVideo
       clipIds={s.clips}
       style={clipStyleFor(author)}
+      variant={clipVariantFor(author)}
       credit={author ? { handle: author.handle, name: author.name } : undefined}
       title={s.title}
       badge={s.badge}

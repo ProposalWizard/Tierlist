@@ -1,6 +1,7 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { generateForMatch, mediaOf } from "../../lib/star/media/feed";
 import { clipsFor } from "../../lib/star/media/graphics";
+import { clipStyleFor, clipVariantFor } from "../../lib/star/media/clipStyle";
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { mulberry32 } from "../../lib/star/season";
 import { GoalRecorder } from "../../lib/star/goalClip/recorder";
@@ -172,13 +173,30 @@ function track(id: string, goalAt = 2.2): GoalTrack {
   const wide = makeEdit([a], "broadcast");
   check(wide.w === WIDE.w && wide.h === WIDE.h, "TV and page videos are 16:9");
   check(makeEdit([a], "fan").w === TALL.w && makeEdit([a], "fan").h === TALL.h, "a fan's video is portrait");
-  check(wide.shots.length === 2 && !wide.shots[0].replay && wide.shots[1].replay && wide.shots[0].angle === "tv" && wide.shots[1].angle === "net", "the club's video: TV live, then the replay from behind the goal");
+  check(wide.shots.length === 3 && !wide.shots[0].replay && wide.shots[1].replay && wide.shots[2].replay && wide.shots[0].angle === "tv" && wide.shots[1].angle === "net" && wide.shots[2].angle === "high", "the club's video (cut 1): TV live, then replays from behind the goal and the spider-cam");
+  // Every cut: live first, every replay covers the goal, from a camera other than the live one.
+  for (const style of ["broadcast", "reverse", "tiktok"] as const) for (let v = 0; v < 3; v++) {
+    const e = makeEdit([a], style, "old", v);
+    const reps = e.shots.filter(sh => sh.replay);
+    check(!e.shots[0].replay, `${style} cut ${v + 1}: starts live`);
+    check(reps.length >= 1 && reps.every(sh => sh.from < a.goalT && sh.to > a.goalT && sh.rate < 1), `${style} cut ${v + 1}: every replay covers the goal, slowed`);
+    if (style !== "tiktok") check(reps.every(sh => sh.angle !== e.shots[0].angle), `${style} cut ${v + 1}: replays from another camera`);
+  }
+  const cuts = new Set([0, 1, 2].map(v => makeEdit([a], "broadcast", "old", v).shots.map(sh => sh.angle).join(">")));
+  check(cuts.size === 3, "the club's three cuts are three different videos");
+  const tk = makeEdit([a], "tiktok", "old", 0);
+  check(tk.w === TALL.w && tk.h === TALL.h, "a TikTok edit is portrait");
+  check(tk.shots.some(sh => !sh.replay && sh.rate < 0.5 && sh.from <= a.strikeT && sh.to >= a.goalT), "a TikTok edit slows right down through the strike and the goal");
+  check(tk.shots.some(sh => !!sh.caption), "a TikTok edit has captions");
+  // An account always cuts its goals the same way; different accounts differ.
+  check(clipVariantFor({ handle: "@GoalCamHD", name: "GoalCam", archetype: "aggregator", platform: "youtube" }) === clipVariantFor({ handle: "@GoalCamHD", name: "x", archetype: "aggregator", platform: "youtube" }), "an account's cut is fixed by its handle");
+  check(clipStyleFor({ handle: "@x", name: "x", archetype: "meme", platform: "x" }) === "tiktok" && clipStyleFor({ handle: "@x", name: "x", archetype: "fan", platform: "tiktok" }) === "tiktok", "meme pages and TikTok accounts post the TikTok edit");
   const rev = makeEdit([a], "reverse");
   check(rev.shots[0].angle === "net" && rev.shots[1].angle === "tv", "a page's video: behind the goal, then TV slow motion");
   check(makeEdit([a], "fan").shots.length === 1, "a fan's video is one take");
   const rep = wide.shots[1];
   check(rep.from < a.goalT && rep.to > a.goalT && rep.rate === REPLAY_RATE, `the replay covers the goal, slowed (${rep.from.toFixed(2)}–${rep.to.toFixed(2)} at ${rep.rate}x)`);
-  check(Math.abs(editDuration(wide) - (trackDuration(a) + shotLength(rep))) < 1e-9, "the video's length is the shots' lengths");
+  check(Math.abs(editDuration(wide) - wide.shots.reduce((t, sh) => t + shotLength(sh), 0)) < 1e-9, "the video's length is the shots' lengths");
   check(editFrameCount(wide) === Math.round(editDuration(wide) * wide.fps), "frames = length × 30");
   // Time only moves forward inside a shot, and every frame lands on a shot.
   let last = -1, lastShot = 0, ok = true;

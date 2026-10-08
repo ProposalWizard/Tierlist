@@ -228,9 +228,10 @@ export const ADMIN_GUIDES = {
         ["A goal in the list", "Picks that recording. The newest goal is picked by itself."],
       ] },
       { group: "3 · Watch it", items: [
-        ["TV / Behind the goal / Fan in the stand", "The three cameras. TV is what the club's account posts (with a slow replay from behind the goal); Behind the goal is what pages and papers post; Fan in the stand is a fan's phone video."],
-        ["▶ (on the picture)", "Makes the video on this phone (a few seconds, with a ring showing how far) and plays it. It starts by itself here."],
-        ["Speaker (bottom left of the video)", "Sound on or off for every goal video: the crowd, the kick, the net and the commentator (not on the fan's phone video, which has only the crowd). Remembered on this device. The sound is inside a saved video too, where the browser can make it."],
+        ["TV / Behind the goal / Fan in the stand / TikTok edit", "Who posts it. TV is the club's and the league's cut (live, then two replays from other cameras); Behind the goal is pages and papers; Fan in the stand is a fan's or a team-mate's phone video; TikTok edit is meme pages and TikTok accounts (tall, slows right down for the strike, big captions)."],
+        ["Cut: 1 / 2 / 3", "Each account cuts its goals one of these ways (which one is fixed by its name), so two accounts rarely post the same video. TV cut 1: behind the goal + spider-cam; 2: pitch-side low + behind the goal; 3: spider-cam + behind the goal."],
+        ["▶ (on the picture)", "Plays the video. It is made on this phone in the background as soon as the post comes near the screen, so in the feed it is usually ready (and playing) by the time you reach it."],
+        ["Speaker (bottom left of the video)", "Sound on or off for every goal video: the crowd, the kick, the net, the commentator's call and the co-commentator over the replay (not on the fan's phone video, which has only the crowd). Remembered on this device. The sound is inside a saved video too, where the browser can make it."],
         ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
         ["Moves: Old / New", "Which moves the players use in the video: the older ones, or the newer 3D moves (a shot, a header, a one-handed dive). The video follows Settings → Look → Animations, like the match; these force one while this page is open (the match above follows it too)."],
       ] },
