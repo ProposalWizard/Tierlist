@@ -27,6 +27,138 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.39",
+      "title": "Leo's patch notes — smart passing and highlights",
+      "publishedAt": "2026-10-08T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/M9DmuMCkXzeMW9EJ6mJFtZ",
+      "summary": "Good passers lay it off to your runner before he goes offside: a quicker touch, a pass into his run, lifted over a man in the lane, or a shot if only an offside pass is left. Through-balls reach a man on a run. Every match gets a HIGHLIGHTS video of all its goals, plus a video of your goals, made before other matches' videos. Dev tools to move to any English club and add any real player.",
+      "stats": [
+        {
+          "value": "14% → 4%",
+          "label": "offside lay-offs by a top passer"
+        },
+        {
+          "value": "14% → 48%",
+          "label": "through-balls to his feet that reach him"
+        },
+        {
+          "value": "Every match",
+          "label": "gets a HIGHLIGHTS video"
+        },
+        {
+          "value": "273/273",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Smart lay-offs",
+              "detail": "In a match: send a team-mate on a run, tell another to lay it off to him, pass to the second man."
+            },
+            {
+              "title": "Through-balls reach the runner",
+              "detail": "In a match: send a man past the defence, then pass into the space ahead of him."
+            },
+            {
+              "title": "HIGHLIGHTS after every match",
+              "detail": "After a match with a goal → Post Match Reactions → 'HIGHLIGHTS | …'."
+            },
+            {
+              "title": "A video of your goals",
+              "detail": "Score or assist → your club's '<name> v <opponent>' post."
+            },
+            {
+              "title": "Your videos made first",
+              "detail": "Open the feed: highlights and your goals are ready first."
+            },
+            {
+              "title": "Dev: any club, any player",
+              "detail": "Settings → Dev — Career / Dev — Squad (testers only)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed — the match engine",
+          "items": [
+            {
+              "title": "Good passers keep your runner onside",
+              "detail": "Problem: a top passer took a slow touch and played your runner offside. Why: every team-mate took the same long touch and aimed at where the runner was. Fix: a quicker touch the better he passes, released before the runner crosses the line, led into the run, lifted over a man in the lane; he shoots if only an offside pass is left. Top passer (88), 158 lay-offs: offside 14% → 4%, goals 34% → 39%. A weak passer plays as before."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Through-balls never really worked",
+              "detail": "Problem: a man on a run ran back to the ball. Why: a run that finished while you aimed dropped the order, and a man on his run ignored a ball ahead of him. Fix: he holds the end of his run and meets the ball where it is going. Ball to his feet: he gets it 14% → 48%; 9 m ahead 24% → 57%."
+            },
+            {
+              "title": "A lay-off assist could go to nobody",
+              "detail": "Found while testing; credited to the man who played it now."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "HIGHLIGHTS video after every match",
+              "detail": "Every goal of the match, both sides; goals nobody recorded are made up."
+            },
+            {
+              "title": "A video of your goals",
+              "detail": "From your club, whenever you score or assist."
+            },
+            {
+              "title": "Your videos made first",
+              "detail": "Highlights and your goals, then your match's posts, then other matches."
+            },
+            {
+              "title": "Dev tools",
+              "detail": "Move to any club in the seven English leagues; add/remove any real player; pin men to start. Testers only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A smart lay-off not seen on screen",
+              "detail": "Measured in 158 simulated chances only."
+            },
+            {
+              "title": "Your-goals post and 'highlights first' not seen",
+              "detail": "Fixed after the playtest; tests only."
+            },
+            {
+              "title": "Not seen on an iPhone",
+              "detail": "Goal videos checked in a test browser only."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "0.38 — goal videos, round 3",
+              "detail": "Commentary box (78 lines), videos made in the background, right-size players, new cameras and edits, other clubs' goals on video."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.38",
       "title": "Leo's patch notes — goal videos, round 3",
       "publishedAt": "2026-10-08T09:00:00Z",
