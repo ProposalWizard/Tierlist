@@ -33,8 +33,29 @@ const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
 
 export interface Play3DResult extends GameResult { drill: string }
 
-/** Your numbers, and up to two real team-mates (random from the squad, outfielders). */
-function castFrom(career: CareerState, seed: number): { you: Person3; mates: Person3[] } {
+/** A squad player as a 3D man: his real numbers (missing ones from his overall), his photo, his position. */
+function personOf(p: NonNullable<CareerState["squad"]>[number], i: number): Person3 {
+  const ov = p.overall ?? 65;
+  const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending };
+  return { id: p.id ?? `mate${i}`, name: p.name.split(" ").slice(-1)[0], skills: sk, photo: p.imageUrl ?? fakeFaceFor(p.id ?? `mate${i}`), position: p.position };
+}
+
+/** Bib colours for a free-for-all (Wembley): every other side its own. */
+const BIBS = [
+  { shirt: "#f59e0b", trim: "#1f2937" }, { shirt: "#7c3aed", trim: "#ffffff" }, { shirt: "#0891b2", trim: "#ffffff" },
+  { shirt: "#db2777", trim: "#ffffff" }, { shirt: "#84cc16", trim: "#1f2937" }, { shirt: "#dc2626", trim: "#ffffff" },
+  { shirt: "#1d4ed8", trim: "#ffffff" }, { shirt: "#f8fafc", trim: "#1f2937" },
+];
+const rgb = (h: string) => { const n = parseInt(h.replace("#", "").padEnd(6, "0").slice(0, 6), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+/** Five bibs, none close to your own kit's shirt (so you never look like the man you're playing against). */
+function bibsFor(shirt: string): Record<number, { shirt: string; trim: string }> {
+  const [r, g, b] = /^#[0-9a-f]{6}$/i.test(shirt) ? rgb(shirt) : [0, 0, 0];
+  const far = BIBS.filter((x) => { const [r2, g2, b2] = rgb(x.shirt); return Math.hypot(r - r2, g - g2, b - b2) > 130; });
+  return Object.fromEntries(far.slice(0, 5).map((x, i) => [i + 1, x]));
+}
+
+/** Your numbers, up to five real team-mates (random from the squad, outfielders), and the whole outfield squad. */
+function castFrom(career: CareerState, seed: number): { you: Person3; mates: Person3[]; squad: Person3[] } {
   const s = career.skills;
   const you: Person3 = {
     id: "you", name: career.player.lastName || "You",
@@ -44,26 +65,29 @@ function castFrom(career: CareerState, seed: number): { you: Person3; mates: Per
   const rng = makeRng(seed);
   const pool = (career.squad ?? []).filter((p) => p.position !== "GK");
   const mates: Person3[] = [];
-  for (let i = 0; i < 2; i++) {
-    if (!pool.length) { mates.push({ id: `mate${i}`, name: "Team-mate", skills: skillsOf(65) }); continue; }
+  const squad = pool.map(personOf);
+  // the first two picks are the same as before (Two Touch and Free Roam's team-mates); then up to three more (Wembley)
+  for (let i = 0; i < 5; i++) {
+    if (!pool.length) { mates.push({ id: `mate${i}`, name: `Team-mate ${i + 1}`, skills: skillsOf(65) }); continue; }
     const p = pool.splice(Math.floor(rng() * pool.length), 1)[0];
-    const ov = p.overall ?? 65;
-    const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending };
-    mates.push({ id: p.id ?? `mate${i}`, name: p.name.split(" ").slice(-1)[0], skills: sk, photo: p.imageUrl ?? fakeFaceFor(p.id ?? `mate${i}`) });
+    mates.push(personOf(p, i));
   }
-  return { you, mates };
+  return { you, mates, squad };
 }
 
-export default function Play3D({ career, drill, seed, onExit, onFinish }: {
+export default function Play3D({ career, drill, seed, onExit, onFinish, mode, options }: {
   career: CareerState;
   drill: DrillDef;
   seed: number;
+  /** The picker row's mode and the pre-screen's choices (Wembley). */
+  mode?: string;
+  options?: Record<string, string>;
   onExit: () => void;
   onFinish: (r: Play3DResult) => void;
 }) {
   const team = career.relationships.team;
   const cast = useMemo(() => castFrom(career, seed), [career, seed]);
-  const session = useMemo<DrillSession>(() => drill.start!({ seed, you: cast.you, mates: cast.mates }), [drill, seed, cast]);
+  const session = useMemo<DrillSession>(() => drill.start!({ seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options }), [drill, seed, cast, mode, options]);
   const [hud, setHud] = useState(() => session.hud());
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
   const [result, setResult] = useState<Play3DResult | null>(null);
@@ -80,16 +104,17 @@ export default function Play3D({ career, drill, seed, onExit, onFinish }: {
         const people: Record<string, Play3DPerson> = {};
         const rng = makeRng(seed + 99);
         people[cast.you.id] = { skin: skinToneHex(career.player.skinTone), hair: hairColourHex(career.player.hairColour), hairStyle: resolveHairStyle(career.player.hairStyle) };
-        for (const m of cast.mates) {
-          const fitted = await faceFromUrl(m.photo);
-          people[m.id] = { skin: fitted?.skin ?? SKINS[Math.floor(rng() * SKINS.length)], hair: HAIRS[Math.floor(rng() * HAIRS.length)], hairStyle: "short", face: fitted?.face ?? null };
-        }
-        people.keeper = { skin: SKINS[Math.floor(rng() * SKINS.length)], hair: HAIRS[0], hairStyle: "buzz" };
+        // everyone the drill put on its pitch (team-mates, full-backs, a defender …), faces from their photos
+        await Promise.all(session.world.players.filter((p) => !p.human && !p.keeper && !people[p.id]).map(async (p) => {
+          const fitted = await faceFromUrl(p.photo);
+          people[p.id] = { skin: fitted?.skin ?? SKINS[Math.floor(rng() * SKINS.length)], hair: HAIRS[Math.floor(rng() * HAIRS.length)], hairStyle: "short", face: fitted?.face ?? null };
+        }));
+        for (const k of session.world.players.filter((p) => p.keeper)) people[k.id] = { skin: SKINS[Math.floor(rng() * SKINS.length)], hair: HAIRS[0], hairStyle: "buzz" };
         if (dead) return;
         const { createPlay3DScene } = await import("@/lib/star/play3d/scene");
         const kit = kitsOf(career.player.club).home;
         let acc = 0;
-        const c = await createPlay3DScene(el, session.world, { kit: { shirt: kit.shirt, trim: kit.trim }, people }, {
+        const c = await createPlay3DScene(el, session.world, { kit: { shirt: kit.shirt, trim: kit.trim }, people, teamKits: session.bibs ? bibsFor(kit.shirt) : undefined }, {
           camera: session.camera,
           onFrame: (dt) => {
             acc += dt;
@@ -211,7 +236,22 @@ export default function Play3D({ career, drill, seed, onExit, onFinish }: {
             <circle cx={drag.x} cy={drag.y} r={9} fill="rgba(255,255,255,0.7)" />
           </svg>
         )}
-        {hud.flash && <div className="pointer-events-none absolute inset-x-0 top-[8%] z-30 text-center text-[20px] font-black uppercase" style={{ textShadow: "0 2px 8px #000" }}>{hud.flash}</div>}
+        {hud.flash && !hud.banner && <div className="pointer-events-none absolute inset-x-0 top-[8%] z-30 px-2 text-center text-[20px] font-black uppercase" style={{ textShadow: "0 2px 8px #000" }}>{hud.flash}</div>}
+        {hud.banner && (
+          <div className="pointer-events-none absolute inset-x-0 top-[24%] z-30 px-2 text-center text-[44px] font-black uppercase leading-none" data-play3d-banner style={{ color: hud.banner.tone === "good" ? "#4ade80" : hud.banner.tone === "bad" ? "#f87171" : "#fde047", textShadow: "0 3px 12px #000" }}>
+            {hud.banner.text}
+          </div>
+        )}
+        {hud.note && <div className="pointer-events-none absolute inset-x-0 top-2 z-30 px-2 text-center text-[13px] font-black uppercase text-amber-200" style={{ textShadow: "0 1px 4px #000" }} data-play3d-note>{hud.note}</div>}
+        {!!hud.roster?.length && (
+          <div className="pointer-events-none absolute left-2 top-9 z-30 flex flex-col gap-0.5" data-play3d-roster>
+            {hud.roster.map((r) => (
+              <div key={r.name} className={`rounded px-1.5 py-0.5 text-[11px] font-black ${r.you ? "ring-1 ring-sky-300" : ""}`} style={{ background: "rgba(0,0,0,0.55)", color: r.state === "out" ? "#f87171" : r.state === "safe" ? "#4ade80" : "#fff" }}>
+                {r.state === "safe" ? "✓" : r.state === "out" ? "✗" : "•"} {r.name}
+              </div>
+            ))}
+          </div>
+        )}
         {three === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
         <div className="pointer-events-none absolute inset-x-0 bottom-2 z-30 px-3 text-center text-[12px] font-bold text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint>{session.hint}</div>
@@ -219,7 +259,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish }: {
       {!!session.buttons?.length && !result && (
         <div className="mt-2 flex gap-2">
           {session.buttons.map((b) => (
-            <button key={b.label} onClick={() => w.act(b.action)} className="kib-press flex-1 rounded bg-white/10 py-3 text-[13px] font-black uppercase ring-1 ring-white/25">{b.label}</button>
+            <button key={b.label} onClick={() => (b.onPress ? b.onPress() : b.action && w.act(b.action))} className="kib-press flex-1 rounded bg-white/10 py-3 text-[13px] font-black uppercase ring-1 ring-white/25">{b.label}</button>
           ))}
         </div>
       )}

@@ -13,7 +13,7 @@ export const FREE_ROAM_SECONDS = 120;
 /** A score of this or more is a good session (wins the Team bar). Reasoned, not measured on people yet. */
 export const FREE_ROAM_TARGET = 10;
 
-export interface Person3 { id: string; name: string; skills: Skills3; photo?: string }
+export interface Person3 { id: string; name: string; skills: Skills3; photo?: string; /** His squad position (LB, RB …) where known. */ position?: string }
 
 export interface FreeRoamState {
   goals: number;

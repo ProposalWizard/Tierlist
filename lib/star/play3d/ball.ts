@@ -160,3 +160,20 @@ export function whenAtHeight(b: Ball3, z: number): { t: number; x: number; y: nu
   const k = 1 - AIR_DRAG * t / 2;
   return { t, x: b.x + b.vx * t * k, y: b.y + b.vy * t * k };
 }
+
+/**
+ * Where a ball on its way will next come DOWN through height `z` (curl, drag
+ * and bounces included: the real flight, stepped). null if it doesn't inside
+ * `maxT` seconds. A cross's landing ring uses this.
+ */
+export function meetAt(b: Ball3, z: number, maxT = 3): { t: number; x: number; y: number; z: number } | null {
+  const c = { ...b };
+  const h = 1 / 120;
+  let prevZ = c.z;
+  for (let t = h; t <= maxT + 1e-9; t += h) {
+    stepBall3d(c, h, null);
+    if (c.vz <= 0 && prevZ >= z && c.z <= z) return { t, x: c.x, y: c.y, z: c.z };
+    prevZ = c.z;
+  }
+  return null;
+}

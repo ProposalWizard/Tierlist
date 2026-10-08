@@ -29,6 +29,8 @@ export interface Play3DLook {
   /** Anyone not on your side (a keeper is in his own). */
   oppKit?: KitColours;
   keeperKit?: KitColours;
+  /** A colour per side, by team number (training bibs: Wembley gives every man or pair his own). Falls back to oppKit. */
+  teamKits?: Record<number, KitColours>;
   people: Record<string, Play3DPerson>;
 }
 export type CameraMode = "chase" | "pair";
@@ -178,6 +180,26 @@ export async function createPlay3DScene(
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.16, 20), new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.32, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2;
   root.add(shadow);
+  // ── Rings on the grass (World.markers: a cross's landing spot …) ──
+  const rings: any[] = [];
+  const syncMarkers = () => {
+    const ms = world.markers;
+    while (rings.length < ms.length) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.78, 1, 40), new THREE.MeshBasicMaterial({ color: "#facc15", transparent: true, opacity: 0.85, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      root.add(m);
+      rings.push(m);
+    }
+    rings.forEach((r, i) => {
+      const m = ms[i];
+      r.visible = !!m;
+      if (!m) return;
+      r.position.set(m.x - CX, 0.012, m.y);
+      r.scale.setScalar(m.r ?? 1);
+      r.material.color.set(m.color && !m.color.startsWith("rgba") ? m.color : "#facc15");
+      r.material.opacity = m.color?.startsWith("rgba") ? 0.45 : 0.9;
+    });
+  };
   let lastBall = new THREE.Vector3(...P(world.ball.x, world.ball.y, world.ball.z));
   const placeBall = () => {
     const b = world.ball;
@@ -202,7 +224,9 @@ export async function createPlay3DScene(
     const lk = look.people[who.id] ?? { skin: "#c68642", hair: "#1b120c", hairStyle: "short" };
     const g = models.get(playerModelFor(lk.hairStyle));
     const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
-    const kit = who.keeper ? (look.keeperKit ?? { shirt: "#16a34a", trim: "#0b3d1d" }) : who.team === 0 ? look.kit : (look.oppKit ?? { shirt: "#dc2626", trim: "#ffffff" });
+    const kit = who.keeper ? (look.keeperKit ?? { shirt: "#16a34a", trim: "#0b3d1d" })
+      : who.team === 0 ? look.kit
+      : (look.teamKits?.[who.team] ?? look.oppKit ?? { shirt: "#dc2626", trim: "#ffffff" });
     dressPerson3d(THREE, p, { skin: lk.skin, hair: lk.hair, kit, number: null, face: lk.face ?? null });
     relaxHands(THREE, p);
     if (fb) addClips(THREE, p, fb);
@@ -229,6 +253,8 @@ export async function createPlay3DScene(
     "juggle-foot": { clip: "juggle", from: 0.18, speed: 1.2, len: 0.35 },
     "juggle-thigh": { clip: "juggle", from: 0.78, speed: 1.2, len: 0.35 },
     celebrate: { clip: "celebrate_fist", from: 0, speed: 1, len: 2 },
+    // knocked out (Wembley) / a bad miss: hands on head, head back
+    slump: { clip: "frustrated", from: 0, speed: 1, len: 2.2 },
   };
   const animate = (b: Body, dt: number) => {
     const w = b.who;
@@ -261,7 +287,9 @@ export async function createPlay3DScene(
       b.p.root.rotateZ(-w.dive.side * k * (1.25 - w.dive.up * 0.6));
       b.p.root.position.y = Math.sin(k * Math.PI) * 0.35 + w.dive.up * 0.6 * k;
     }
-    b.p.root.visible = w.active;
+    // off the pitch but in the picture (walking off, standing by the post)
+    b.p.root.visible = w.active || !!w.sideline;
+    if (!w.active && w.sideline && head && w.act === "slump" && w.actT >= 2.2) head.rotateX(0.35);
   };
 
   // ── Camera ──
@@ -270,6 +298,13 @@ export async function createPlay3DScene(
   let snap = true;
   const camTarget = () => {
     const you = world.you() ?? world.players[0];
+    if (opts.camera === "chase" && !you.active) {
+      // you're off (safe, or out and watching): a high view of the ball and the goal
+      const b = world.ball;
+      heading = -Math.PI / 2;
+      const bx = b.x - CX;
+      return { pos: new THREE.Vector3(bx * 0.6, 9.5, Math.max(14, b.y + 13)), look: new THREE.Vector3(bx * 0.7, 0.5, Math.max(4, b.y * 0.55)) };
+    }
     if (opts.camera === "pair") {
       const mate = world.players.find((p) => p !== you) ?? you;
       const mid = new THREE.Vector3((you.x + mate.x) / 2 - CX, 1.1, (you.y + mate.y) / 2);
@@ -315,6 +350,7 @@ export async function createPlay3DScene(
     world.advance(dt);
     for (const b of bodies) animate(b, dt);
     placeBall();
+    syncMarkers();
     const t = camTarget();
     if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));

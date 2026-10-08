@@ -6,9 +6,9 @@
  * removing a man).
  */
 import { BALL_R, CX, GOAL_H, POST_L, POST_R, G, GROUND_FRICTION, STEP } from "../../lib/star/play3d/constants";
-import { newBall, stepBall3d, GOAL, type Ball3 } from "../../lib/star/play3d/ball";
+import { newBall, stepBall3d, meetAt, GOAL, type Ball3 } from "../../lib/star/play3d/ball";
 import { makePlayer, skillsOf, stepMover } from "../../lib/star/play3d/player";
-import { dribbleTouch, strikeBall, juggleWindow, tackleChance } from "../../lib/star/play3d/actions";
+import { dribbleTouch, strikeBall, juggleWindow, tackleChance, crossTo } from "../../lib/star/play3d/actions";
 import { makeRng } from "../../lib/star/play3d/rng";
 import { World, type Rules } from "../../lib/star/play3d/world";
 import { makeTwoTouch, TWO_TOUCH_RALLIES } from "../../lib/star/play3d/twoTouch";
@@ -245,10 +245,70 @@ function skillsMan(ov: number) { return makePlayer({ id: "x", x: 0, y: 0, skills
 // ── 10. The drill list ──
 {
   check(DRILLS.some((d) => d.id === "crossbar" && d.status === "ready"), "Crossbar Challenge is a drill");
-  check(drillById("headers-volleys")?.status === "soon" && drillById("wembley")?.status === "soon", "the two next ones are listed as coming");
+  check(drillById("headers-volleys")?.status === "ready" && drillById("wembley")?.status === "ready", "Headers & Volleys and Wembley are on");
+  check((drillById("wembley")?.modes ?? []).map((m) => m.id).join() === "normal,doubles", "Wembley offers Normal / Doubles");
+  check((drillById("wembley")?.options?.("normal")[0].choices ?? []).map((c) => c.value).join() === "3,4,5,6"
+    && (drillById("wembley")?.options?.("doubles")[0].choices ?? []).map((c) => c.value).join() === "2,3", "Wembley asks 3-6 players, or 2-3 pairs");
   const seen = new Set<string>();
   for (let s = 1; s < 200; s++) seen.add(pickRandomDrill(makeRng(s)).id);
   check([...seen].every((id) => drillById(id)?.status === "ready") && seen.size === DRILLS.filter((d) => d.status === "ready").length, "random only picks ready drills, all of them");
+}
+
+// ── 11. Engine helpers the two new drills added (general, any 3D game can use them) ──
+{
+  // timeScale: "watch it sped up"
+  const w = new World({ seed: 1, players: [makePlayer({ id: "a", x: CX, y: 20, skills: skillsOf(60) })], rules: { id: "x", finished: () => false } });
+  for (let i = 0; i < 10; i++) w.advance(0.01);
+  const t1 = w.t;
+  w.timeScale = 3;
+  for (let i = 0; i < 10; i++) w.advance(0.01);
+  check(Math.abs(t1 - 0.1) < 0.02 && Math.abs(w.t - t1 - 0.3) < 0.02, `timeScale 3 runs three times as fast (${t1.toFixed(3)} then +${(w.t - t1).toFixed(3)})`);
+
+  // meetAt: where a lob comes down through a height, the real flight
+  const b = newBall(10, 10); b.vx = 9; b.vy = 2; b.vz = 7;
+  const m = meetAt(b, 1.2)!;
+  const c = { ...b };
+  stepBall3d(c, m.t, null);
+  check(!!m && Math.abs(c.z - 1.2) < 0.05 && Math.abs(c.x - m.x) < 0.05 && c.vz < 0, `meetAt finds the drop through 1.2 m (${m?.t.toFixed(2)} s, at z ${c.z.toFixed(2)})`);
+
+  // crossTo: a great crosser puts it where he means to, at the height he means; a poor one doesn't
+  const err = (ov: number) => {
+    let sum = 0;
+    for (let s = 1; s <= 80; s++) {
+      const p = makePlayer({ id: "c", x: 8, y: 5, skills: skillsOf(ov) });
+      const bb = newBall(8.4, 5);
+      crossTo(bb, p, { x: CX, y: 9, z: 1.8 }, 1.35, makeRng(s));
+      const mm = meetAt(bb, 1.8);
+      sum += mm ? Math.hypot(mm.x - CX, mm.y - 9) : 9;
+    }
+    return sum / 80;
+  };
+  const eGood = err(95), ePoor = err(40);
+  check(eGood < 0.9 && ePoor > eGood * 1.6, `a cross lands where it's meant to, better crossers closer (95: ${eGood.toFixed(2)} m off, 40: ${ePoor.toFixed(2)} m)`);
+
+  // the turn hook: a man sprinting with it who turns keeps it more often than not
+  let kept = 0;
+  for (let s = 1; s <= 60; s++) {
+    const p = makePlayer({ id: "a", human: true, x: 20, y: 30, facing: 0, skills: skillsOf(70) });
+    const tw = new World({ seed: s, players: [p], rules: { id: "x", finished: () => false }, goal: null });
+    tw.placeBall(20.5, 30, "a");
+    tw.input = { move: { x: 1, y: 0 }, sprint: true };
+    for (let i = 0; i < 120 * 1.5; i++) tw.step(STEP);
+    tw.input = { move: { x: 0, y: 1 }, sprint: true };
+    for (let i = 0; i < 120 * 1.2; i++) tw.step(STEP);
+    if (tw.owner === "a" || Math.hypot(tw.ball.x - p.x, tw.ball.y - p.y) < 2) kept++;
+  }
+  check(kept > 40, `sprinting, then a 90° turn: he hooks it round with him (${kept} of 60 keep it)`);
+
+  // a drill's own shooting call reaches every brain
+  let asked = 0, took = 0;
+  const rules: Rules = { id: "x", finished: () => false, shouldShoot: () => { asked++; return asked > 30; }, shoot: (ww, pp) => { took++; ww.strike(pp, { x: 0, y: -1 }, 0.8); } };
+  const st = makePlayer({ id: "s", x: CX, y: 14, skills: skillsOf(70), mind: { brain: "striker" } });
+  const hw = new World({ seed: 3, players: [st], rules });
+  hw.placeBall(CX, 13.5, "s");
+  for (let i = 0; i < 120 * 2 && !took; i++) hw.step(STEP);
+  check(asked > 30 && took === 1, `Rules.shouldShoot / Rules.shoot decide for the striker brain (asked ${asked}, shot ${took})`);
+  console.log(`engine helpers: timeScale ok; meetAt ok; cross error 95 → ${eGood.toFixed(2)} m, 40 → ${ePoor.toFixed(2)} m; turn hook kept ${kept}/60`);
 }
 
 // keep stepMover in use for the type-check of the shape

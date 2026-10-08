@@ -212,6 +212,40 @@ export function airStrike(b: Ball3, p: P3, kind: "header" | "volley", target: { 
 }
 
 /**
+ * A DELIVERY (a cross, a set ball) that reaches the point `to` at height
+ * `to.z` after `T` seconds, struck by `p`. His passing (else technique) sets
+ * how far off it actually goes: the point wanders by up to a couple of metres
+ * for a poor crosser, the height by a few tens of centimetres. Air drag is
+ * allowed for. Returns where it was really sent (the target after the error).
+ * A ball arriving on the grass (to.z ≈ BALL_R, `ground`) is a driven low cross.
+ */
+export function crossTo(
+  b: Ball3, p: P3, to: { x: number; y: number; z: number }, T: number, rng: Rng, ground = false,
+): { x: number; y: number; z: number } {
+  const sk = skill01(p.skills.passing ?? p.skills.technique);
+  const spread = 0.35 + (1 - sk) * 2.2;
+  const tx = to.x + gauss(rng) * spread, ty = to.y + gauss(rng) * spread * 0.8;
+  const tz = ground ? BALL_R : Math.max(BALL_R + 0.1, to.z + gauss(rng) * (0.08 + (1 - sk) * 0.3));
+  const dx = tx - b.x, dy = ty - b.y, d = Math.max(0.5, Math.hypot(dx, dy));
+  if (ground) {
+    // along the grass: fast enough to still be going at `arrive` when it gets there
+    const s = d / T + GROUND_FRICTION * T / 2;
+    b.vx = dx / d * s; b.vy = dy / d * s; b.vz = 0; b.z = BALL_R;
+    b.spin = 0; b.topspin = 0.4;
+  } else {
+    const k = 1 - AIR_DRAG * T / 2;
+    const s = d / T / k;
+    b.vx = dx / d * s; b.vy = dy / d * s;
+    b.vz = (tz - b.z) / T + 0.5 * G * T;
+    b.z = Math.max(b.z, BALL_R + 0.01);
+    b.spin = 0; b.topspin = -0.3;
+  }
+  b.inNet = false;
+  p.act = ground ? "pass" : "loft"; p.actT = 0; p.cooldown = 0.6;
+  return { x: tx, y: ty, z: tz };
+}
+
+/**
  * A TACKLE / POKE on a man with the ball. His dribbling against the
  * tackler's defending. Won: the ball is knocked loose, away from the
  * dribbler, and he stumbles. Lost: the tackler is left on the floor a moment.

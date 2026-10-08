@@ -20,6 +20,10 @@ import { stepKeeper3d } from "./keeper";
 import { makeRng, type Rng } from "./rng";
 import { BRAINS, BRAIN_REACH } from "./brains";
 
+/** A man on the ball turning: within this of the ball, and the ball rolling more than this (radians) off his heading, he hooks it round. */
+export const TURN_HOOK_R = 2.0;
+export const TURN_HOOK_ANGLE = 0.6;
+
 export interface WorldInput { move: { x: number; y: number }; sprint: boolean }
 
 export type Action3 =
@@ -51,6 +55,10 @@ export interface Rules {
   onAction?(w: World, a: Action3): boolean;
   /** Move an AI man yourself. Return true if handled (else his brain runs). */
   brain?(w: World, p: P3, dt: number): boolean;
+  /** When an AI man shoots (default: brains.ts shouldShoot). The brains ask this. */
+  shouldShoot?(w: World, p: P3): boolean;
+  /** How an AI man shoots (default: brains.ts aiShoot). */
+  shoot?(w: World, p: P3): void;
   /** Where the keeper throws it (default: a random outfielder). */
   throwTarget?(w: World, k: P3): P3 | null;
   finished(w: World): boolean;
@@ -102,6 +110,10 @@ export class World {
   dead = false;
   /** When the keeper took hold of it. */
   heldSince = 0;
+  /** How fast the World runs against real time (1 = real time; a drill's "watch it sped up" sets 3). */
+  timeScale = 1;
+  /** Rings on the grass the picture draws (a cross's landing spot …). A drill sets and clears them. */
+  markers: { x: number; y: number; r?: number; color?: string }[] = [];
 
   constructor(o: WorldOptions) {
     this.rng = makeRng(o.seed);
@@ -157,8 +169,10 @@ export class World {
 
   /** Real seconds in → fixed steps out. */
   advance(realDt: number) {
-    this.acc += Math.min(0.25, Math.max(0, realDt));
-    while (this.acc >= STEP) { this.step(STEP); this.acc -= STEP; }
+    this.acc += Math.min(0.25, Math.max(0, realDt)) * Math.max(0, this.timeScale);
+    let n = 0;
+    while (this.acc >= STEP && n++ < 240) { this.step(STEP); this.acc -= STEP; }
+    if (this.acc >= STEP) this.acc = 0;
   }
 
   step(dt: number) {
@@ -272,6 +286,18 @@ export class World {
         if (r.lost) { this.owner = null; p.cooldown = 0.35; this.emit({ kind: "heavy-touch", who: p.id }); }
         return;
       }
+    }
+    // a turn: the ball is still at his feet but rolling away from where he now
+    // heads (he was sprinting one way and turns): he hooks it round with him,
+    // a dribble touch the new way (heavy if his dribbling can't take it)
+    const bs = Math.hypot(b.vx, b.vy);
+    if (bs > 1.5 && p.cooldown <= 0 && b.z < 0.5 && Math.hypot(b.x - p.x, b.y - p.y) < TURN_HOOK_R
+      && Math.abs(angDiff(p.facing, Math.atan2(b.vy, b.vx))) > TURN_HOOK_ANGLE) {
+      const r = dribbleTouch(b, p, { x: Math.cos(p.facing), y: Math.sin(p.facing) }, this.rng);
+      this.lastTouch = p.id;
+      p.cooldown = 0.15;
+      if (r.lost) { this.owner = null; p.cooldown = 0.35; this.emit({ kind: "heavy-touch", who: p.id }); }
+      return;
     }
     if (Math.hypot(b.x - p.x, b.y - p.y) > 3.2) this.owner = null;
   }

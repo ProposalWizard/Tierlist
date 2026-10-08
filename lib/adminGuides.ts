@@ -1163,12 +1163,15 @@ export const ADMIN_GUIDES = {
   },
   "/star-training3d-dev": {
     title: "3D Training",
-    what: "The 3D training pitch, on a made-up career: the drill picker a career opens from the garden's training-pitch gate, and every drill on it. Crossbar Challenge plays your shot on the real match; Two Touch and Free Roam are fully 3D, on the shared 3D engine.",
+    what: "The 3D training pitch, on a made-up career: the drill picker a career opens from the garden's training-pitch gate, and every drill on it. Crossbar Challenge plays your shot on the real match; Two Touch, Free Roam, Headers & Volleys and Wembley are fully 3D, on the shared 3D engine.",
     buttons: [
       { items: [
-        ["Picker / Crossbar / Two Touch / Free Roam (top)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar) in the address does the same."],
-        ["🎲 Random drill", "On the picker: one of the ready drills, picked for you."],
-        ["A drill row", "Opens that drill. Headers & Volleys and Wembley are greyed: coming next."],
+        ["Picker / Crossbar / Two Touch / Free Roam / Head/Volley / Wembley (top)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar, headers-volleys, wembley) in the address does the same; add &mode=doubles for Wembley Doubles."],
+        ["🎲 Random drill", "On the picker: one of the ready drills, picked for you (Wembley picked this way is Normal)."],
+        ["A drill row", "Opens that drill."],
+        ["Wembley: Normal / Doubles", "On the Wembley row. Then a pre-screen: how many players (3, 4, 5 or 6) or pairs (2 or 3), and Start."],
+        ["Wembley: Watch to the end / Leave", "Once you're out. Watch plays the rest three times as fast; Leave ends it now. Either way your place stands."],
+        ["Headers & Volleys: the yellow ring", "Where the cross comes down (head height, volley height, or along the grass for a low one). Faint while he lines it up, bright once it's struck. Get there and drag (or tap) as it arrives."],
         ["Crossbar: drag the ball", "Your shot, on the real match: aim, then the strike screen, exactly as in a match. As you strike it the 3D pitch fades in and shows the same ball flying."],
         ["3D drills: left thumb", "A stick: push to move, push to the edge to sprint. WASD or arrows on a keyboard (Shift sprints)."],
         ["3D drills: tap on the right", "Free Roam: pass to the team-mate you face if you have the ball, take a touch if it's at your feet, tackle, or call for it. Two Touch: your keepy-up touch (1st controls it up, 2nd sends it back). Space bar does the same."],
@@ -1181,7 +1184,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The career is made up, and the result (and the Team bar change it shows) goes nowhere."],
     inGame: ["Home → Garden → the training-pitch gate opens the same picker. Winning a drill (or a level crossbar finish) moves the Team bar the way the Woodwork challenge does, and costs the usual training energy."],
-    dev: "app/star-training3d-dev/page.tsx; the gate and picker components/star/Training3D.tsx (the crossbar is CrossbarChallenge there, on EngineFeature); the 3D drills components/star/Play3D.tsx on the shared 3D engine lib/star/play3d (drill list drills.ts, rules twoTouch.ts / freeRoam.ts, World world.ts, picture scene.ts; test tests/star/play3d.mts); crossbar rules lib/star/training3d/crossbar.ts (tests/star/crossbar3d.mts). Loaders through withMeshopt.",
+    dev: "app/star-training3d-dev/page.tsx; the gate and picker components/star/Training3D.tsx (the crossbar is CrossbarChallenge there, on EngineFeature); the 3D drills components/star/Play3D.tsx on the shared 3D engine lib/star/play3d (drill list drills.ts, rules twoTouch.ts / freeRoam.ts / wembley.ts / headersVolleys.ts, World world.ts, picture scene.ts; tests tests/star/play3d.mts, wembley3d.mts, headersVolleys3d.mts); crossbar rules lib/star/training3d/crossbar.ts (tests/star/crossbar3d.mts). Loaders through withMeshopt.",
   },
   "/star-shop3d-dev": {
     title: "3D Shop",

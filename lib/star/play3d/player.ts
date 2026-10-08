@@ -22,7 +22,9 @@ export interface Skills3 {
 /** What the renderer should show him doing (it picks the clip). */
 export type Act3 =
   | "none" | "touch" | "pass" | "loft" | "shot" | "volley" | "header"
-  | "juggle-foot" | "juggle-thigh" | "juggle-head" | "tackle" | "dive" | "throw" | "catch" | "celebrate" | "miss";
+  | "juggle-foot" | "juggle-thigh" | "juggle-head" | "tackle" | "dive" | "throw" | "catch" | "celebrate" | "miss"
+  /** Head down, hands on head (knocked out, a miss that hurt). */
+  | "slump";
 
 export interface P3 {
   id: string;
@@ -32,6 +34,13 @@ export interface P3 {
   human: boolean;
   /** Off the pitch (a scorer stepping off in Wembley, a man knocked out). Not stepped, never touches the ball. */
   active: boolean;
+  /**
+   * Off the pitch but still in the picture (standing by the post, walking
+   * off). Only means something while `active` is false: the World never
+   * steps him and he never touches the ball; a drill walks him itself
+   * (stepMover) and the picture keeps drawing him.
+   */
+  sideline?: boolean;
   keeper: boolean;
   x: number; y: number;
   vx: number; vy: number;

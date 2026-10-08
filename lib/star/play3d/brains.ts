@@ -45,6 +45,10 @@ export function aiShoot(w: World, p: P3) {
   w.strike(p, { x: aimX - b.x, y: -b.y }, power, contact);
 }
 
+/** The drill's own shooting call if it has one (Rules.shouldShoot / Rules.shoot), else the defaults above. */
+const wantsShot = (w: World, p: P3) => (w.rules.shouldShoot ? w.rules.shouldShoot(w, p) : shouldShoot(w, p));
+const takeShot = (w: World, p: P3) => (w.rules.shoot ? w.rules.shoot(w, p) : aiShoot(w, p));
+
 /** The point he should run to for a loose ball, and whether he's the man to go. */
 function chase(w: World, p: P3, margin: number): { x: number; y: number } | null {
   const me = w.intercept(p);
@@ -69,7 +73,7 @@ export const BRAINS: Record<string, Brain> = {
       if (m.has === undefined) { m.has = w.t; m.hold = 0.6 + w.rng() * 0.7; }
       const held = w.t - (m.has as number);
       const called = typeof m.call === "number" && w.t - (m.call as number) < 1.5;
-      if (shouldShoot(w, p) && held > 0.25 && !called) { aiShoot(w, p); m.has = undefined; return; }
+      if (wantsShot(w, p) && held > 0.25 && !called) { takeShot(w, p); m.has = undefined; return; }
       if (you && you.active && (held > (m.hold as number) || called)) { w.passBall(p, you); m.has = undefined; m.call = undefined; return; }
       stepMover(p, towards(p, CX + (p.x - CX) * 0.7, Math.max(9, b.y - 6), 2), false, dt);
       return;
@@ -91,7 +95,7 @@ export const BRAINS: Record<string, Brain> = {
     const b = w.ball;
     const o = w.get(w.owner);
     if (o === p) {
-      if (shouldShoot(w, p)) { aiShoot(w, p); return; }
+      if (wantsShot(w, p)) { takeShot(w, p); return; }
       // dribble at goal, bending away from the nearest man in front
       let tx = CX + (b.x - CX) * 0.5, ty = 7;
       let near: P3 | null = null, nd = 5;
@@ -101,7 +105,15 @@ export const BRAINS: Record<string, Brain> = {
         if (d < nd && q.y < p.y + 0.5) { nd = d; near = q; }
       }
       if (near) { const side = near.x > p.x ? -1 : 1; tx = p.x + side * 6; ty = p.y - 4; }
-      const fast = skill01(p.skills.dribbling ?? p.skills.technique) > 0.7 || !near;
+      // never dribble off the pitch: bend back inside a few metres from the line
+      const bx = w.bounds;
+      tx = clamp(tx, bx.x1 + 5, bx.x2 - 5);
+      ty = clamp(ty, 4, bx.y2 - 5);
+      // pinned in a corner (his target is where he stands): turn back towards the spot
+      if (Math.hypot(tx - p.x, ty - p.y) < 1.5) { tx = CX; ty = 11; }
+      // near a line he slows down: short touches, so he can turn back in with it
+      const edge = Math.min(p.x - bx.x1, bx.x2 - p.x, bx.y2 - p.y);
+      const fast = (skill01(p.skills.dribbling ?? p.skills.technique) > 0.7 || !near) && edge > 9;
       stepMover(p, towards(p, tx, ty, 2), fast, dt);
       return;
     }
@@ -120,7 +132,8 @@ export const BRAINS: Record<string, Brain> = {
     }
     if (w.hostile(p, o)) {
       // close him down: goal-side of the ball, then at it (World.tackles pokes)
-      const gx = b.x + (CX - b.x) * 0.08, gy = b.y - 0.6;
+      const gd = Math.hypot(CX - b.x, b.y) || 1;
+      const gx = b.x + (CX - b.x) / gd * 0.6, gy = b.y - b.y / gd * 0.6;
       stepMover(p, towards(p, gx, gy, 0.3), timeToReach(p, gx, gy) > 0.6, dt);
       return;
     }
@@ -132,7 +145,7 @@ export const BRAINS: Record<string, Brain> = {
 /** A loose ball reached by a man with this brain: true if he did something other than control it. */
 export const BRAIN_REACH: Record<string, (w: World, p: P3) => boolean> = {
   striker(w, p) {
-    if (w.ball.z < 0.6 && shouldShoot(w, p) && w.rng() < 0.35) { aiShoot(w, p); return true; }
+    if (w.ball.z < 0.6 && wantsShot(w, p) && w.rng() < 0.35) { takeShot(w, p); return true; }
     return false;
   },
 };

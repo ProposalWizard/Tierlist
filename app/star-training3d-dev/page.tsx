@@ -49,16 +49,21 @@ export default function StarTraining3DDevPage() {
 
 const OPEN: { id: DrillId | "picker"; label: string }[] = [
   { id: "picker", label: "Picker" }, { id: "crossbar", label: "Crossbar" }, { id: "two-touch", label: "Two Touch" }, { id: "free-roam", label: "Free Roam" },
+  { id: "headers-volleys", label: "Head/Volley" }, { id: "wembley", label: "Wembley" },
 ];
 
 function Body() {
   const [key, setKey] = useState(0);
   const [last, setLast] = useState<TrainingGateResult | null>(null);
-  // ?drill=two-touch|free-roam|crossbar opens a drill straight away (no picker)
+  // ?drill=two-touch|free-roam|crossbar|headers-volleys|wembley opens a drill straight away (no picker);
+  // &mode=doubles picks Wembley Doubles (its pre-screen still asks how many)
   const [drill, setDrill] = useState<DrillId | "picker">("picker");
+  const [mode, setMode] = useState<string | undefined>(undefined);
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("drill");
+    const qs = new URLSearchParams(window.location.search);
+    const q = qs.get("drill");
     if (q && OPEN.some((o) => o.id === q)) setDrill(q as DrillId);
+    setMode(qs.get("mode") ?? undefined);
   }, []);
   const career = useMemo(() => {
     const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
@@ -72,9 +77,10 @@ function Body() {
   return (
     <>
       <Training3D
-        key={`${drill}-${key}`}
+        key={`${drill}-${mode}-${key}`}
         career={career}
         startDrill={drill === "picker" ? undefined : drill}
+        startMode={mode}
         onExit={() => { window.location.href = "/star-3d-area-dev"; }}
         onFinish={(r) => { setLast(r); setKey((k) => k + 1); }}
       />
