@@ -227,6 +227,9 @@ export const CLUB_TEMPLATES: Template[] = [
   // ── The fallback that makes the chain terminate ────────────────────────────
   {
     id: "club-generic", archetype: "club",
+    // Only on an event that carries the score: on any other it read
+    // "-. Thank you for the support today!" (seen in the game, 8 Oct 2026).
+    requires: ["homeClub", "hs", "as", "awayClub"],
     body: "{homeClub} {hs}-{as} {awayClub}. Thank you for the support today.",
     // Full-time highlights on the TV pictures: every goal of ours that was
     // recorded. None recorded (a 0-0, a skipped match): just the words.

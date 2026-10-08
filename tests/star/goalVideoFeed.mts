@@ -1,5 +1,5 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
-import { generateForMatch, mediaOf } from "../../lib/star/media/feed";
+import { generateForMatch, generateForLeagueWeek, generateForCareer, feedFor, mediaOf } from "../../lib/star/media/feed";
 import { clipsFor } from "../../lib/star/media/graphics";
 import { clipStyleFor, clipVariantFor } from "../../lib/star/media/clipStyle";
 import { buildMatchRecord } from "../../lib/star/media/record";
@@ -233,6 +233,61 @@ function track(id: string, goalAt = 2.2): GoalTrack {
   check(clipFileName([a, b], "webm") === "Highlights-Arsenal-v-Chelsea.webm", `a reel is named after the match, not its first goal (${clipFileName([a, b], "webm")})`);
   check(clipFileName(a, "mp4", "broadcast") === "Goal-Carter-63-Arsenal-v-Chelsea-TV.mp4" && clipFileName(a, "mp4", "fan") === "Goal-Carter-63-Arsenal-v-Chelsea-Fan-cam.mp4",
     `the TV and the fan's video of one goal save as two files (${clipFileName(a, "mp4", "broadcast")}, ${clipFileName(a, "mp4", "fan")})`);
+}
+
+
+// ── After the whistle: your match's videos on top, every time ──────────────
+// Leo, 8 Oct 2026: "I want to finish my match and instantly see my loaded
+// highlights of the game and my highlights, and THEN see other matches."
+// The other matches of the week are in the same screen, as in the game.
+{
+  let c = newCareer(9);
+  const rng = mulberry32(77);
+  let played = 0, hlNotFirst = 0, yoursNotSecond = 0, brokenText = 0;
+  for (let w = 0; w < 30; w++) {
+    const fixture = c.fixtures.find(f => !f.played);
+    if (!fixture) break;
+    const us = Math.floor(rng() * 4), them = Math.floor(rng() * 3);
+    const events: GoalEvent[] = [];
+    let mine = 0, set = 0;
+    for (let k = 0; k < us; k++) {
+      const m = rng() < 0.5;
+      const a = !m && rng() < 0.3;
+      if (m) mine++; if (a) set++;
+      events.push({ minute: 10 + k * 20, scorer: m ? "Michael Sancho" : "Bukayo Saka", ...(a ? { assist: "Michael Sancho" } : {}),
+        isUserGoal: m, how: "one_on_one", distance: 10, ...(rng() < 0.5 ? { clipId: `p${w}-${k}` } : {}) });
+    }
+    const stats: MatchStats = {
+      chances: 4, goals: mine, assists: set, passes: 20, rating: 7, starMan: false,
+      bossChange: 0, teamChange: 0, fansChange: 0, wage: 1, goalBonus: 0, sponsorPay: 0, totalCash: 1,
+      homeScore: us, awayScore: them, goalEvents: events, minutes: 90,
+    };
+    const { career: after } = creditMatchResult(c, fixture, stats);
+    after.media = generateForMatch(c, after, fixture, stats);
+    const others = (after.results ?? [])
+      .filter(r => r.week === fixture.week && r.home !== after.player.club && r.away !== after.player.club)
+      .map((x, i) => ({ ...x,
+        hg: Array.from({ length: x.hs }, (_, k) => ({ m: 10 + k * 20, s: `H${i}`, full: `Hal H${i}` })),
+        ag: Array.from({ length: x.as }, (_, k) => ({ m: 15 + k * 20, s: `A${i}`, full: `Abe A${i}` })) }));
+    if (others.length) after.media = generateForLeagueWeek({ ...after, media: after.media }, others);
+    // Every fourth match ends a month: the Player of the Month post is made
+    // straight after it, as in app/star-dev/page.tsx. That used to push your
+    // match off the post-match screen (seen in the game, 8 Oct 2026).
+    if (w % 4 === 3) after.media = generateForCareer({ ...after, media: after.media },
+      { kind: "award", won: false, award: "March Player of the Month", detail: "Someone else takes it." }, `potm-t-${w}`);
+    const { posts } = feedFor(after, "moment");
+    played++;
+    if (us + them > 0 && posts[0]?.eventId !== "match-highlights") hlNotFirst++;
+    if (mine + set > 0 && posts[us + them > 0 ? 1 : 0]?.eventId !== "your-highlights") yoursNotSecond++;
+    const bad = posts.filter(p => /^-\.|\s-\.\s/.test(p.text));
+    if (bad.length) console.log(bad.map(p => `${p.author.handle} ${p.eventId} ${p.text}`));
+    brokenText += bad.length;
+    c = after;
+  }
+  check(played >= 20, `enough matches (${played})`);
+  check(hlNotFirst === 0, `the match's HIGHLIGHTS is the first post after every match with a goal (${hlNotFirst} not)`);
+  check(yoursNotSecond === 0, `your goals' video comes straight after it (${yoursNotSecond} not)`);
+  check(brokenText === 0, `no post reads "-." for a missing score (${brokenText})`);
 }
 
 if (problems.length) { console.error("goalVideoFeed FAILED:\n  - " + problems.join("\n  - ")); process.exit(1); }

@@ -152,6 +152,9 @@ export const SOCIAL_TEMPLATES: Template[] = [
   },
   {
     id: "fan-generic", archetype: "fan",
+    // Not on another club's goal event, which has no score of ours: "-. on to
+    // the next one" (found 8 Oct 2026).
+    requires: ["us", "them"],
     body: "{us}-{them}. on to the next one",
     weight: 0.5,
   },

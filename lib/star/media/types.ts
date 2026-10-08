@@ -622,6 +622,11 @@ export interface MediaState {
    *  never collides with, or overwrites, the match/career cycle guard
    *  above. Absent on a career saved before the league-wide pass existed. */
   lastLeagueCycleId?: string;
+  /** Your last match's cycle, kept apart from `lastCycleId`: a career post
+   *  made straight after the whistle (Player of the Month) moves that one on,
+   *  and the post-match screen then lost your match and its highlights. */
+  lastMatchCycleId?: string;
+  lastMatchCycleClock?: number;
   /**
    * Every cycle id ever committed, bounded — the REAL replay guard.
    * `lastCycleId`/`lastLeagueCycleId` only ever remember the single most
