@@ -27,6 +27,152 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.37",
+      "title": "Mikey's patch notes — The standing ovation",
+      "publishedAt": "2026-10-08T12:00:00Z",
+      "updatedAt": "2026-10-08T12:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj",
+      "summary": "A 3D standing ovation at the farewell's 85th minute (the camera circles you, team-mates and rivals hug and dap you up, the sub hugs you on the line). Fixed: a centre-back winning the Golden Boot as a striker, clubs lining up as on day one after many seasons, kick-off jumping to a 44th-minute chance, the last match skipping End of Season. More assists; clearances, negotiations and Relations reworked; every men's Ballon d'Or winner saved for a future mode.",
+      "stats": [
+        {
+          "value": "360°",
+          "label": "3D standing ovation at 85'"
+        },
+        {
+          "value": "0",
+          "label": "centre-backs labelled strikers"
+        },
+        {
+          "value": "10–14 → 14–17",
+          "label": "Assist King's total"
+        },
+        {
+          "value": "24–34 m/s",
+          "label": "a clearance (was 18–26)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D standing ovation at 85'",
+              "detail": "Farewell match, or /star-retirement-dev → Standing ovation · 3D."
+            },
+            {
+              "title": "Standing ovation New | Old",
+              "detail": "Settings → Look → Standing ovation."
+            },
+            {
+              "title": "Kick-off shows the commentary",
+              "detail": "Any match whose first chance is after 12'."
+            },
+            {
+              "title": "End of Season waits after the last match",
+              "detail": "Home, after the season's last fixture."
+            },
+            {
+              "title": "Career round-up page buttons",
+              "detail": "End-of-career screen, the row under the title."
+            },
+            {
+              "title": "Golden Boot winners are real attackers",
+              "detail": "Season Awards."
+            },
+            {
+              "title": "Clubs keep their transfers across seasons",
+              "detail": "Team sheets of promoted clubs and the club you join."
+            },
+            {
+              "title": "More assists",
+              "detail": "Season Awards → Assist King."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "A centre-back won the Golden Boot as a striker",
+              "detail": "Man City's Khusanov: the squad builder called him their second striker because no second real striker filled the slot. A player now keeps his own position; old saves are put right on load. 19 real-data seasons: every Golden Boot winner a real attacker."
+            },
+            {
+              "title": "Man United and Wolves lined up as on day one",
+              "detail": "Relegated clubs' squads were thrown away and reloaded fresh on promotion; the club you join was reloaded over its transfers. Squads now follow their clubs; no player at two clubs."
+            },
+            {
+              "title": "Kick-off jumped to a 44th-minute chance",
+              "detail": "Play only jumps straight to your first chance at or before 12'; a later one is read out."
+            },
+            {
+              "title": "The last match skipped End of Season",
+              "detail": "You land on Home with End of Season 🏆."
+            },
+            {
+              "title": "No clear way back in the career round-up",
+              "detail": "A row of page buttons."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "3D standing ovation",
+              "detail": "About 24 s, skippable, drawn version for phones that can't run 3D."
+            },
+            {
+              "title": "Every men's Ballon d'Or winner, 1956–2025",
+              "detail": "From ballondor.com only, in data/ballondor/, for a future game mode."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Assists",
+              "detail": "62 → 74 in 100 goals assisted; real creators weighted; Assist King 10–14 → 14–17."
+            },
+            {
+              "title": "Clearances",
+              "detail": "24–34 m/s up to 60°; miscues 30 in 100 at 50 down to 10 at 90; second balls (Settings → Look → Gameplay → Clearances)."
+            },
+            {
+              "title": "Negotiations",
+              "detail": "A hidden limit and a roll each counter; sponsors take it or leave it."
+            },
+            {
+              "title": "Relations",
+              "detail": "Happiness is the average of boss, team and fans; the manager's penalties; a harder signing session; games cost 30 energy."
+            },
+            {
+              "title": "Smaller",
+              "detail": "Basic KIB can 2 weeks' wage; star bar eases out; records once on Season Awards; ratings regraded; Star Pass rewards at any level; phone Home and Back buttons."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Why the farewell's first chance came at 44'",
+              "detail": "Cause open; the background engine alone makes that under 1 in 100."
+            },
+            {
+              "title": "Other clubs' players never age or retire",
+              "detail": "Open since 5 Oct."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.36",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-08T01:30:00Z",
