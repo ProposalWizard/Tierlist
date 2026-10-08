@@ -25,6 +25,24 @@
  *
  * Walk out through the doors (+z) and you are back in the garden at the
  * casino's doors (cb.onDoor).
+ *
+ * The people (Harry, 8 Oct 2026: "build all the animations for any new 3D
+ * areas"), on the hand-made casino clips (lib/star/three3d/footballAnims.ts):
+ *   - the roulette croupier: dealer_idle; spins the wheel (dealer_spin, the
+ *     wheel speeds up as he lets go) when you walk up, and now and then
+ *   - the blackjack dealer: dealer_idle; deals a few cards (dealer_deal)
+ *     when you walk up, and now and then
+ *   - a bartender behind the new bar in the back-left corner (bartender_idle)
+ *   - punters on the first and last slot machines (slot_sit, slot_pull)
+ *   - a punter leaning on the blackjack table (lean_table) who now and then
+ *     cheers (cheer_win) or groans (groan_loss)
+ *   - you: close a game and you cheer if your money went up, groan if it
+ *     went down (ctrl.react, from Casino3D.tsx)
+ * The staff and punters are the people3d body, so they only come with the
+ * New 3D shop player (as the dealers did); your own reaction uses the clips
+ * for whichever body you are. How many: Low the two dealers; Medium adds the
+ * bartender, one slot punter and the leaner; High all six. Off screen they
+ * are not worked out.
  */
 import { neonCanvas, numberCanvas, blobCanvas } from "../shop3d/textures";
 import { dressInKit, type KitColours } from "../shop3d/scene";
@@ -36,6 +54,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { addClips, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import {
   carpetCanvas, panelCanvas, wheelCanvas, feltCanvas, layoutCanvas, slotScreenCanvas, marqueeCanvas,
   oddsBoardCanvas, drawRaceScreen, goalieScreenCanvas,
@@ -78,6 +97,8 @@ export interface CasinoController {
   place: (x: number, z: number, yaw?: number) => void;
   where: () => { x: number; z: number; yaw: number; t: number };
   stats: () => { calls: number; triangles: number; pixelRatio: number; frames: number; quality: string; merged?: { before: number; after: number } };
+  /** He just closed a game: cheer (+1, more money than he opened it with), groan (−1), or nothing (0). */
+  react: (sign: number) => void;
   dispose: () => void;
 }
 
@@ -93,6 +114,8 @@ const SCREEN = { x: -1.6, w: 6.0, h: 3.0, y: 2.45 };
 const BETS = { x: 6.0, z0: 1.4, z1: 5.0 };
 const ARCADE = { x: 5.3, z: -6.95 };
 const START = { x: 0, z: ROOM.z - 2.6 };
+/** The bar, back left: the counter (its long side along z) and where the bartender stands. */
+const BAR = { x: -5.75, z0: -6.9, z1: -3.6, top: 1.0 };
 
 const ZONES: { id: CasinoStation; inside: (x: number, z: number) => boolean }[] = [
   { id: "roulette", inside: (x, z) => Math.hypot((x - ROUL.x) / 1.35, z - ROUL.z) < 2.4 },
@@ -121,6 +144,7 @@ const BOXES: [number, number, number, number][] = [
   [SCREEN.x - 2.9, SCREEN.x + 2.9, -ROOM.z, -6.55], // the brass rail before the screen
   [-2.65, -1.95, ROOM.z - 0.95, ROOM.z], // plants by the doors
   [1.95, 2.65, ROOM.z - 0.95, ROOM.z],
+  [-ROOM.x, BAR.x + 0.3, BAR.z0, BAR.z1], // the bar and behind it
 ];
 const CIRCLES: [number, number, number][] = [[BJ.x, BJ.z, BJ.r]];
 
@@ -444,6 +468,34 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   }
   blob(1.6, 1.4, ARCADE.x, ARCADE.z + 0.2, 0.8);
 
+  // ── The bar: a counter with a marble top, a mirrored back shelf of bottles ──
+  {
+    const zc = (BAR.z0 + BAR.z1) / 2, len = BAR.z1 - BAR.z0;
+    box(0.6, BAR.top - 0.05, len, darkWoodM, BAR.x, (BAR.top - 0.05) / 2, zc);
+    box(0.72, 0.05, len + 0.1, mat("#efe6d4", { roughness: 0.25, metalness: 0.1 }), BAR.x + 0.03, BAR.top - 0.025, zc);
+    box(0.04, 0.05, len, goldM, BAR.x + 0.32, 0.18, zc);
+    box(0.04, 0.05, len, goldM, BAR.x + 0.32, 0.9, zc);
+    // the back shelf on the wall: a glow, two shelves, bottles
+    const wx = -ROOM.x + 0.1;
+    plane(len - 0.2, 1.3, glow("#ffb45a", 0.5), wx + 0.01, 1.9, zc, Math.PI / 2);
+    for (const y of [1.45, 2.05]) box(0.28, 0.04, len - 0.2, darkWoodM, wx + 0.14, y, zc);
+    const bottleC = ["#2f7a3a", "#7a3a14", "#c9b27a", "#3a5a8a", "#8a1a2a", "#e8e0c8"];
+    for (let k = 0; k < 14; k++) {
+      for (const y of [1.47, 2.07]) {
+        const bz = BAR.z0 + 0.3 + (k * (len - 0.6)) / 13 + (y > 2 ? 0.1 : 0);
+        add(new THREE.CylinderGeometry(0.035, 0.04, 0.26, 8), mat(bottleC[(k + (y > 2 ? 3 : 0)) % bottleC.length], { roughness: 0.2, metalness: 0.1 }), wx + 0.14, y + 0.15, bz);
+      }
+    }
+    // glasses on the counter, two stools in front
+    for (const gzz of [zc - 0.9, zc + 0.4]) add(new THREE.CylinderGeometry(0.035, 0.03, 0.1, 10), mat("#dfe9f0", { roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.7 }), BAR.x + 0.12, BAR.top + 0.05, gzz);
+    for (const sz of [zc - 0.7, zc + 0.8]) {
+      add(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 16), leatherM, BAR.x + 0.75, 0.74, sz);
+      add(new THREE.CylinderGeometry(0.03, 0.05, 0.7, 8), goldM, BAR.x + 0.75, 0.35, sz);
+    }
+    neon("BAR", "#ffb45a", 1.6, -ROOM.x + 0.08, 3.25, zc, Math.PI / 2);
+  }
+  blob(1.2, BAR.z1 - BAR.z0 + 0.6, BAR.x - 0.2, (BAR.z0 + BAR.z1) / 2, 0.6);
+
   // ── The footballer (the shop's, exactly) ──
   const loader = new GLTFLoader();
   await withMeshopt(loader);
@@ -452,32 +504,57 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   let person: Person3D | null = null;
   /** The casino's staff (newLook only): see "The dealers" below. */
   const dealers: Person3D[] = [];
+  type NpcRole = "croupier" | "dealer" | "bartender" | "slots" | "leaner";
+  /** Each person's clip player, what he does by default, and his next turn. */
+  const npcs: { p: Person3D; pl: ClipPlayer; role: NpcRole; base: string; next: number; until: number; x: number; z: number }[] = [];
+  /** Your reaction after a game (null if the clips didn't load). */
+  let cheerA: any = null, groanA: any = null;
   const circles: [number, number, number][] = [...CIRCLES];
   const numT = canvasTex(numberCanvas(opts.number ?? 10, "#ffffff"));
   if (newLook) {
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
-    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
-    // ── The dealers: the same body in black, behind the roulette and
-    // blackjack tables. Each has its own AnimationMixer playing the existing
-    // idle clip for now. Another builder is making casino clips (dealer idle,
-    // deal, spin, staff idle): wire casino clip "dealer-idle" in place of
-    // `idle` below, and "deal" / "spin" on dealer.mixer when a game opens.
-    const dealerSpots: [number, number, string][] = [
-      [ROUL.x, ROUL.z - ROUL.rz - 0.45, "#e0ac69"],
-      [BJ.x, BJ.z - 0.5, "#8d5524"],
+    const [g, a, cas] = await Promise.all([
+      loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims"),
+      loadAnims3d(loader, "casino").catch((e) => { console.error("casino clips", e); return null; }),
+    ]);
+    // ── The casino's people: the same body, on the casino clips. The tables
+    // are 0.88 m high and the clips were made for a 0.97–1.02 m top, so the
+    // two croupiers and the leaner are a touch smaller (0.9): their hands
+    // land on the felt, not in the air above it. ──
+    const SPOTS: { role: NpcRole; x: number; z: number; yaw: number; skin: string; shirt: string; trim: string; hair: string; scale: number }[] = [
+      { role: "croupier", x: ROUL.x, z: ROUL.z - ROUL.rz - 0.42, yaw: 0, skin: "#e0ac69", shirt: "#141414", trim: "#f5f5f5", hair: "#1b1410", scale: 0.9 },
+      { role: "dealer", x: BJ.x, z: BJ.z - 0.48, yaw: 0, skin: "#8d5524", shirt: "#141414", trim: "#f5f5f5", hair: "#1b1410", scale: 0.9 },
+      { role: "bartender", x: BAR.x - 0.75, z: (BAR.z0 + BAR.z1) / 2 - 0.2, yaw: Math.PI / 2, skin: "#c68642", shirt: "#f4efe6", trim: "#2a1a10", hair: "#2b1b12", scale: 1 },
+      { role: "slots", x: SLOT_X + 0.85, z: SLOT_Z[0], yaw: -Math.PI / 2, skin: "#5c3a1e", shirt: "#2f4f7a", trim: "#d9d0c0", hair: "#120c08", scale: 1 },
+      { role: "leaner", x: 0, z: 0, yaw: 0, skin: "#f1c27d", shirt: "#6b1f2a", trim: "#1f1f1f", hair: "#4a2e1c", scale: 0.9 },
+      { role: "slots", x: SLOT_X + 0.85, z: SLOT_Z[SLOT_Z.length - 1], yaw: -Math.PI / 2, skin: "#8d5524", shirt: "#3b3b3b", trim: "#c08a2a", hair: "#2b1b10", scale: 1 },
     ];
-    for (const [dx, dz, skin] of dealerSpots) {
+    {
+      // the leaner: at the blackjack table's curve, between two stools on its
+      // left, facing in (away from where you stand to play)
+      const a = -0.85, r = BJ.r + 0.32;
+      SPOTS[4].x = BJ.x + Math.sin(a) * r;
+      SPOTS[4].z = BJ.z + Math.cos(a) * r;
+      SPOTS[4].yaw = a + Math.PI;
+    }
+    const budget = !cas ? 2 : tier === "low" ? 2 : tier === "medium" ? 5 : 6;
+    for (const sp of SPOTS.slice(0, budget)) {
       const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
-      dressPerson3d(THREE, d, { skin, hair: "#1b1410", kit: { shirt: "#141414", trim: "#141414" }, number: null });
+      dressPerson3d(THREE, d, { skin: sp.skin, hair: sp.hair, kit: { shirt: sp.shirt, trim: sp.trim }, number: null });
       relaxHands(THREE, d);
-      d.actions.idle.setEffectiveWeight(1); // wire casino clip "dealer-idle" here
-      d.root.position.set(dx, 0, dz);
-      d.root.rotation.y = 0; // facing the players (+z)
+      if (cas) addClips(THREE, d, cas);
+      d.root.position.set(sp.x, 0, sp.z);
+      d.root.rotation.y = sp.yaw;
+      d.root.scale.setScalar(sp.scale);
       scene.add(d.root);
-      blob(0.8, 0.8, dx, dz, 0.7);
+      blob(0.8, 0.8, sp.x, sp.z, 0.7);
       dealers.push(d);
-      circles.push([dx, dz, 0.35]);
+      circles.push([sp.x, sp.z, sp.role === "slots" ? 0.3 : 0.35]);
+      const pl = new ClipPlayer(THREE, d.actions);
+      const base = ({ croupier: "dealer_idle", dealer: "dealer_idle", bartender: "bartender_idle", slots: "slot_sit", leaner: "lean_table" } as const)[sp.role];
+      if (!pl.play(base, { from: Math.random() * 3 })) pl.play("idle");
+      npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z });
     }
     person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
     player = person.root;
@@ -488,6 +565,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     jogA = person.actions.jog;
     dressPerson3d(THREE, person, { skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", kit: opts.kit, number: numT });
     relaxHands(THREE, person);
+    if (cas) {
+      addClips(THREE, person, cas);
+      cheerA = person.actions.cheer_win ?? null;
+      groanA = person.actions.groan_loss ?? null;
+    }
   } else {
     const [charGltf, animGltf]: any[] = await Promise.all([
       loadGltfCached(loader, "/star/shop3d/character.glb"),
@@ -510,6 +592,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     const clip = (n: string) => animGltf.animations.find((x: any) => x.name === n);
     const act = (n: string) => { const x = mixer.clipAction(clip(n)); x.play(); x.setEffectiveWeight(0); return x; };
     idleA = act("Idle_Loop"); walkA = act("Walk_Loop"); jogA = act("Jog_Fwd_Loop");
+    // the old footballer's own cut of the casino clips (his reaction after a game)
+    const casU: any = await loadAnims3d(loader, "casino", "ual").catch((e) => { console.error("casino clips (old body)", e); return null; });
+    const take = (n: string) => { const c = casU?.animations?.find((x: any) => x.name === n); if (!c) return null; const x = mixer.clipAction(c); x.play(); x.setEffectiveWeight(0); return x; };
+    cheerA = take("cheer_win");
+    groanA = take("groan_loss");
   }
   if (disposed) throw new Error("disposed");
   player.position.set(START.x, 0, START.z);
@@ -612,6 +699,49 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
+  // ── The people's day ──
+  let wheelBoost = 0, spinAt = 0;
+  let react: { a: any; t: number; w: number; reps: number; out: boolean } | null = null;
+  const frustum = new THREE.Frustum(), projM = new THREE.Matrix4(), sph = new THREE.Sphere(), v3 = new THREE.Vector3();
+  /** One of the staff's or punters' own moves, now. */
+  const staffMove = (role: NpcRole) => {
+    for (const n of npcs) {
+      if (n.role !== role || n.until > gameT || (n.pl.current !== n.base && n.pl.current !== "idle")) continue;
+      if (role === "croupier" && n.pl.play("dealer_spin", { fade: 0.2, once: true, onEnd: () => n.pl.play(n.base, { fade: 0.3 }) })) {
+        // the wheel picks up as his hand leaves it (the clip's `release`, 0.65 s)
+        spinAt = gameT + 0.65;
+        n.until = gameT + 1.6;
+      } else if (role === "dealer" && n.pl.play("dealer_deal", { fade: 0.2 })) n.until = gameT + 2 + Math.floor(Math.random() * 2);
+      else if (role === "slots" && n.pl.play("slot_pull", { fade: 0.15, once: true, onEnd: () => n.pl.play(n.base, { fade: 0.2 }) })) n.until = gameT + 1.4;
+      else if (role === "leaner") {
+        if (Math.random() < 0.5 ? n.pl.play("cheer_win", { fade: 0.25 }) : n.pl.play("groan_loss", { fade: 0.25, once: true, onEnd: () => n.pl.play(n.base, { fade: 0.35 }) })) n.until = gameT + 2.4;
+      }
+    }
+  };
+  const GAP: Record<NpcRole, [number, number]> = { croupier: [10, 16], dealer: [7, 12], bartender: [99, 99], slots: [5, 10], leaner: [9, 15] };
+  const stepNpcs = (dt: number) => {
+    if (!npcs.length) return;
+    projM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(projM);
+    for (const n of npcs) {
+      // a timed move that loops (deal, cheer) ends here; a one-shot ends itself
+      if (n.until && gameT >= n.until) {
+        n.until = 0;
+        if (n.pl.current === "dealer_deal" || n.pl.current === "cheer_win") n.pl.play(n.base, { fade: 0.3 });
+      }
+      n.next -= dt;
+      if (n.next <= 0) {
+        const [a, b] = GAP[n.role];
+        n.next = a + Math.random() * (b - a);
+        if (n.role !== "bartender") staffMove(n.role);
+      }
+      n.pl.update(dt);
+      const seen = frustum.intersectsSphere(sph.set(v3.set(n.x, 1, n.z), 1.2));
+      n.p.root.visible = seen;
+      if (seen) n.p.mixer.update(dt);
+    }
+  };
+
   renderer.setAnimationLoop(() => {
     if (disposed) return;
     if (paused) { clock.getDelta(); return; }
@@ -660,16 +790,28 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     playerBlob.position.set(nx, 0.012, nz);
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));
-    idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
-    walkA.setEffectiveWeight(wWalk);
-    jogA.setEffectiveWeight(wJog);
+    // your reaction after a game: over the idle, until it ends or you move off
+    if (react) {
+      react.t += dt;
+      const len = react.a.getClip().duration * react.reps;
+      if (mag > 0.08 || walker.active || react.t >= len) react.out = true;
+      react.w = react.out ? Math.max(0, react.w - dt / 0.25) : Math.min(1, react.w + dt / 0.2);
+      react.a.setEffectiveWeight(react.w);
+      if (react.out && react.w <= 0) { react.a.setEffectiveWeight(0); react = null; }
+    }
+    const keep = 1 - (react?.w ?? 0);
+    idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK) * keep);
+    walkA.setEffectiveWeight(wWalk * keep);
+    jogA.setEffectiveWeight(wJog * keep);
     if (newLook) { const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog)); walkA.timeScale = ts; jogA.timeScale = ts; }
     else { walkA.timeScale = Math.max(0.6, speed / 1.45); jogA.timeScale = Math.max(0.8, speed / 3.2); }
     mixer.update(dt);
-    for (const d of dealers) d.mixer.update(dt);
+    stepNpcs(dt);
 
     // the room's life: the wheel turns, the toppers pulse, the race runs
-    wheel.rotation.z += dt * 0.9;
+    wheel.rotation.z += dt * (0.9 + wheelBoost);
+    wheelBoost = Math.max(0, wheelBoost - dt * 1.6);
+    if (spinAt && gameT >= spinAt) { spinAt = 0; wheelBoost = 5; }
     toppers.forEach((t, i) => t.material.color.setScalar(0.82 + 0.18 * Math.sin(gameT * 4 + i * 1.3)));
     raceAcc += dt;
     if (raceAcc > 1 / 10) { raceAcc = 0; drawRaceScreen(raceCv, gameT); raceT.needsUpdate = true; }
@@ -689,7 +831,13 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     let now: CasinoStation | null = null;
     for (const zn of ZONES) if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
-    if (now !== near) { near = now; cb.onNear(near); }
+    if (now !== near) {
+      near = now;
+      cb.onNear(near);
+      // you walk up: the croupier spins, the dealer deals
+      if (near === "roulette") staffMove("croupier");
+      if (near === "blackjack") staffMove("dealer");
+    }
 
     renderer.render(scene, camera);
     drawn++;
@@ -744,6 +892,20 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       paused = p;
       if (p) { stick = { x: 0, y: 0 }; keys.clear(); stopWalk(); speed = 0; }
       else { first = false; acc = 0; }
+    },
+    react: (sign) => {
+      const a = sign > 0 ? cheerA : sign < 0 ? groanA : null;
+      if (!a) return;
+      if (react && react.a !== a) react.a.setEffectiveWeight(0);
+      a.reset();
+      a.setLoop(sign > 0 ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+      a.clampWhenFinished = true;
+      a.play();
+      a.setEffectiveWeight(0);
+      // a win is two bounces of the cheer; a loss is the groan once
+      react = { a, t: 0, w: 0, reps: sign > 0 ? 2 : 1, out: false };
+      // turn round to the camera so the reaction is seen, not his back
+      faceTo = [camPos.x, camPos.z];
     },
     place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT }),
