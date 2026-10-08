@@ -119,10 +119,7 @@ function newCareer(seed = 1): CareerState {
     } else if (hl.length) noHighlights++;
     if (goals > 0) {
       const g = yh[0]?.graphic;
-      // Or a post that already plays exactly your seen goals (made first too).
-      const mine = events.filter(e => e.isUserGoal).map(e => e.clipId);
-      const covered = mine.every(Boolean) && fresh.some(p => p.graphic?.type === "goalVideo" && p.graphic.clips.length === mine.length && mine.every(id => p.graphic?.type === "goalVideo" && p.graphic.clips.includes(id!)));
-      if (!covered && (yh.length !== 1 || g?.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals)) noYours++;
+      if ((yh.length !== 1 || g?.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals)) noYours++;
     }
     for (const p of fresh) {
       if (p.eventId === "match-highlights" || p.eventId === "your-highlights") continue;

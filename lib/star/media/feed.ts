@@ -266,7 +266,7 @@ function commit(
     used.push(made.templateId);
   }
 
-  if (scope === "club" && record) posts.push(...highlightPosts(career, record, accounts, posts, cycleId, cycleClock));
+  if (scope === "club" && record) posts.push(...highlightPosts(career, record, accounts, cycleId, cycleClock));
 
   const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
@@ -296,7 +296,7 @@ function commit(
  * `priority`, so the phone makes them before any other match's videos.
  */
 function highlightPosts(
-  career: CareerState, r: MatchRecord, accounts: MediaAccount[], already: StoredPost[], cycleId: string, cycleClock: number,
+  career: CareerState, r: MatchRecord, accounts: MediaAccount[], cycleId: string, cycleClock: number,
 ): StoredPost[] {
   const out: StoredPost[] = [];
   const clubAcc = accounts.find(a => a.archetype === "club" && a.allegiance?.club === r.club);
@@ -321,12 +321,6 @@ function highlightPosts(
       scope: "club",
     };
   };
-  const covers = (clips: string[], synthN: number) => already.some(p => {
-    const g = p.graphic;
-    if (!g || (g.type !== "goalVideo" && g.type !== "thumbnail")) return false;
-    const c = g.clips ?? [];
-    return synthN === 0 && clips.length > 0 && c.length === clips.length && clips.every(id => c.includes(id));
-  });
 
   // The match: every goal.
   if (hs + as > 0) {
@@ -338,7 +332,7 @@ function highlightPosts(
   }
   // Yours: your goals and the ones you set up.
   const yours = matchReel(r, "yours", r.you.name);
-  if (clubAcc && (yours.clips.length + yours.synth.length) > 0 && !covers(yours.clips, yours.synth.length)) {
+  if (clubAcc && (yours.clips.length + yours.synth.length) > 0) {
     const g = r.goals.filter(x => x.isUser).length;
     const a = r.goals.filter(x => !x.isUser && x.assist === r.you.name).length;
     const what = [g ? `${g} goal${g > 1 ? "s" : ""}` : "", a ? `${a} assist${a > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ");
