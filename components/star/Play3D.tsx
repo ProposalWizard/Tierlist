@@ -206,7 +206,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   useEffect(() => { setVw(window.innerWidth); }, []);
   const [vh, setVh] = useState(0);
   useEffect(() => { setVh(window.innerHeight); }, []);
-  const h = vw ? Math.max(360, Math.min(realMatchHeight(vw), 640, vh - 250)) : 560;
+  const h = vw ? Math.max(360, Math.min(realMatchHeight(vw), 640, vh - 310)) : 560;
   const mins = hud.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : null;
 
   return (
@@ -254,7 +254,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         )}
         {three === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
-        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-30 px-3 text-center text-[12px] font-bold text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint>{session.hint}</div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint>{session.hint}</div>
       </div>
       {!!session.buttons?.length && !result && (
         <div className="mt-2 flex gap-2">
