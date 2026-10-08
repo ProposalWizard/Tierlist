@@ -211,6 +211,7 @@ import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
 import Casino3D from "@/components/star/Casino3D";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
+import Training3D from "@/components/star/Training3D";
 import { useCasino3dLook, casino3dPossible } from "@/lib/star/casino3d/look";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
 import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
@@ -4210,9 +4211,26 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "training-3d") {
-    // mount Training3D here (the 3D training game, built separately). Until
-    // then: a placeholder with a way back to the pitch gate in the garden.
-    return <TrainingPitchScreen onBack={() => { setGardenArrive("training"); setPhase("garden"); }} />;
+    // The 3D training pitch: Crossbar Challenge (you vs one team-mate), on the
+    // real engine. Same reward and cost as the Team game (Woodwork Challenge).
+    const backToGate = () => { setGardenArrive("training"); setPhase("garden"); };
+    if (!career) return <TrainingPitchScreen onBack={backToGate} />;
+    return (
+      <Training3D
+        career={career}
+        onExit={backToGate}
+        onFinish={(res) => {
+          const updated: CareerState = markGamePlayed({
+            ...career,
+            energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+            relationships: { ...career.relationships, team: applyGameGain(career.relationships.team as number, res.gain) },
+          }, "team");
+          checkAndSetAchievements(updated);
+          setCareer(spendAction(updated));
+          backToGate();
+        }}
+      />
+    );
   }
 
   if (phase === "casino-menu") {
