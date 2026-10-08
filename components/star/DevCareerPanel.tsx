@@ -1,6 +1,9 @@
 "use client";
+import { useState } from "react";
 import { happinessOf } from "@/lib/star/relationships";
 import type React from "react";
+import type { CareerDivision } from "@/lib/star/calendar";
+import { devClubsByDivision } from "@/lib/star/devTeam";
 import type { CareerState } from "@/lib/star/types";
 import { PressButton, Pop } from "./ui";
 import { SetCard, SetHead, SetNote } from "./settingsKit";
@@ -43,7 +46,7 @@ function Tile({ label, value, children }: { label: string; value: React.ReactNod
 }
 
 export default function DevCareerPanel({
-  career, onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
+  career, onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub, onMoveToClub,
 }: {
   career: CareerState;
   onSetCaptain: (captain: boolean) => void;
@@ -54,7 +57,13 @@ export default function DevCareerPanel({
   onUnlockTraining?: () => void;
   onSetHappiness: (delta: number) => void;
   onSwitchClub: (club: string) => void;
+  /** Any English club in any division (lib/star/devTeam.ts moveToClub). When
+   *  given, replaces the same-division picker below. */
+  onMoveToClub?: (division: CareerDivision, club: string) => void;
 }) {
+  const [pickDiv, setPickDiv] = useState<CareerDivision>(career.division ?? "premier");
+  const divisions = onMoveToClub ? devClubsByDivision(career) : [];
+  const divClubs = (divisions.find(d => d.id === pickDiv)?.clubs ?? []).filter(c => c !== career.player.club);
   const clubOptions = career.league.map(t => t.name).filter(n => n !== career.player.club);
   const skills = SKILL_KEYS.map(k => career.skills[k]).join("/");
 
@@ -124,7 +133,31 @@ export default function DevCareerPanel({
         </div>
       </div>
 
-      {clubOptions.length > 0 && (
+      {onMoveToClub && (
+        <div className="kit-row mt-2 rounded-xl p-2">
+          <div className="text-[10px] font-bold text-white">
+            Club: <span className="font-black text-white">{career.player.club}</span> ({divisions.find(d => d.id === (career.division ?? "premier"))?.label}) — move to any English club, instantly
+          </div>
+          <select
+            value={pickDiv}
+            onChange={e => setPickDiv(e.target.value as CareerDivision)}
+            className="kit-input mt-1 w-full rounded-lg px-2 py-1.5 text-[11px] text-white"
+          >
+            {divisions.map(d => <option key={d.id} value={d.id}>{d.label} ({d.clubs.length})</option>)}
+          </select>
+          <select
+            key={pickDiv}
+            defaultValue=""
+            onChange={e => { if (e.target.value) { onMoveToClub(pickDiv, e.target.value); e.target.value = ""; } }}
+            className="kit-input mt-1 w-full rounded-lg px-2 py-1.5 text-[11px] text-white"
+          >
+            <option value="" disabled>Move to…</option>
+            {divClubs.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      )}
+
+      {!onMoveToClub && clubOptions.length > 0 && (
         <div className="kit-row mt-2 rounded-xl p-2">
           <div className="text-[10px] font-bold text-white">
             Club: <span className="font-black text-white">{career.player.club}</span> — instantly attach elsewhere in this division

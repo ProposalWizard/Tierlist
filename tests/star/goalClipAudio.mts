@@ -6,7 +6,10 @@
 import { readFileSync } from "node:fs";
 import { trackFromStored, type GoalTrack } from "../../lib/star/goalClip/track";
 import { makeEdit, shotLength, editDuration, type ClipStyle } from "../../lib/star/goalClip/edit";
-import { planAudio, COMMENTARY_GOAL, COMMENTARY_REPLAY, COMMENTARY_DELAY, BED_REPLAY, CLIP_SOUNDS } from "../../lib/star/goalClip/audio";
+import { planAudio, COMMENTARY_DELAY, BED_REPLAY, CLIP_SOUNDS, finishOf, scoreTagOf } from "../../lib/star/goalClip/audio";
+import { CALLS, REPLAY_LINES, SCORE_LINES, allCommentaryLines } from "../../lib/star/goalClip/commentary";
+import { COMMENTARY_SECONDS } from "../../lib/star/goalClip/commentaryDurations";
+import { existsSync } from "node:fs";
 
 const problems: string[] = [];
 const check = (ok: boolean, msg: string) => { if (!ok) problems.push(msg); };
@@ -14,8 +17,18 @@ const load = (f: string) => trackFromStored(JSON.parse(readFileSync(new URL(`./f
 const tracks = [load("scramble.json"), load("lay-off.json")];
 check(tracks.every(Boolean), "fixtures load");
 
-const isGoalLine = (s: string) => (COMMENTARY_GOAL as readonly string[]).includes(s);
-const isReplayLine = (s: string) => (COMMENTARY_REPLAY as readonly string[]).includes(s);
+const CALL_IDS = Object.values(CALLS).flat().map(l => l.id);
+const isGoalLine = (s: string) => CALL_IDS.includes(s);
+const isReplayLine = (s: string) => Object.values(REPLAY_LINES).flat().some(l => l.id === s);
+
+// Every line has its recording and its length.
+for (const l of allCommentaryLines()) {
+  check(existsSync(new URL(`../../public/sfx/${l.id}.mp3`, import.meta.url)), `recording for ${l.id}`);
+  check((COMMENTARY_SECONDS[l.id] ?? 0) > 0.3, `length for ${l.id}`);
+}
+// Ids are unique.
+const ids = allCommentaryLines().map(l => l.id);
+check(new Set(ids).size === ids.length, "commentary ids unique");
 
 for (const tr of tracks) {
   for (const style of ["broadcast", "reverse", "fan"] as ClipStyle[]) {
@@ -45,13 +58,17 @@ for (const tr of tracks) {
     } else {
       check(goalLines.length === 1, `${tag}: one commentator line for one goal (got ${goalLines.length})`);
       check(goalLines.length === 1 && Math.abs(goalLines[0].at - (goalAt + COMMENTARY_DELAY)) < 1e-6, `${tag}: commentator just after the goal`);
+      // Nobody talks over anybody.
+      const talk = p.cues.filter(c => c.sound.startsWith("cl-") || c.sound.startsWith("cc-")).sort((a, b) => a.at - b.at);
+      for (let i = 1; i < talk.length; i++) check(talk[i].at >= talk[i - 1].at + (COMMENTARY_SECONDS[talk[i - 1].sound] ?? 0) - 1e-6, `${tag}: ${talk[i].sound} talks over ${talk[i - 1].sound}`);
+      check(talk.every(c => c.at + (COMMENTARY_SECONDS[c.sound] ?? 0) <= p.duration + 0.1), `${tag}: every line finishes inside the video`);
       check(replayLines.length === 1, `${tag}: a replay line over the slow motion`);
       const replayStart = shotLength(e.shots[0]);
       check(replayLines.length === 1 && replayLines[0].at > replayStart, `${tag}: replay line during the replay`);
       check(p.bed.some(b => b.at >= replayStart && b.gain === BED_REPLAY), `${tag}: the crowd drops back for the replay`);
       // Slow-motion kicks are slower and deeper.
       const slowNet = p.cues.filter(c => c.sound === "goal-net" && c.at > replayStart);
-      check(slowNet.length === 1 && slowNet[0].rate < 1, `${tag}: the replay's net plays slowed`);
+      check(slowNet.length >= 1 && slowNet.every(c => c.rate < 1), `${tag}: the replay's net plays slowed`);
     }
     // One sound per touch: never a soft and a hard kick on the same moment.
     const kicks = p.cues.filter(c => c.sound === "kick-hard" || c.sound === "kick-soft");
@@ -63,6 +80,19 @@ for (const tr of tracks) {
     check(JSON.stringify(planAudio(makeEdit([tr], style))) === JSON.stringify(p), `${tag}: same plan every time`);
   }
 }
+
+// The finish and the score are read off the recording.
+check(finishOf(tracks[0]) === "rebound", `scramble reads as a rebound (got ${finishOf(tracks[0])})`);
+check(finishOf(tracks[1]) === "one_on_one", `lay-off reads as a one-on-one (got ${finishOf(tracks[1])})`);
+const mk = (sa: [number, number], minute: number, home = true) => ({ ...tracks[0], meta: { ...tracks[0].meta, scoreAfter: sa, minute, youAreHome: home } });
+check(scoreTagOf(mk([1, 0], 10)) === "opener", "1-0 is the opener");
+check(scoreTagOf(mk([1, 1], 50)) === "level", "1-1 is level");
+check(scoreTagOf(mk([2, 1], 88)) === "late_winner", "2-1 at 88' is a late winner");
+check(scoreTagOf(mk([2, 1], 30)) === "ahead", "2-1 at 30' is ahead");
+check(scoreTagOf(mk([4, 0], 60)) === "rout", "4-0 is a rout");
+check(scoreTagOf(mk([1, 3], 70)) === "consolation", "1-3 is a consolation");
+check(scoreTagOf(mk([0, 1], 10, false)) === "opener", "away 0-1 is the opener");
+check(Object.keys(SCORE_LINES).length === 6, "six score tags have lines");
 
 // A reel: one commentator line per goal, and two goals do not get the same line.
 const reel = planAudio(makeEdit(tracks, "broadcast"));

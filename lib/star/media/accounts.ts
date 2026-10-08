@@ -99,6 +99,13 @@ const NATIONAL: Seed[] = [
   { handle: "@GaryOnTheBox", name: "Gary Wilkes", archetype: "pundit", verified: true, followers: 1_400_000 },
   { handle: "@RoyKeanTakes", name: "Ronan Keane", archetype: "pundit", verified: true, followers: 980_000 },
   { handle: "@TerraceMemes", name: "Terrace Memes", archetype: "meme", verified: false, followers: 1_100_000 },
+  // Video accounts (Leo, 8 Oct 2026: "more variety, more ppl posting, more
+  // unique things to see"). Each cuts a goal its own way (Graphics.tsx
+  // clipStyleFor/clipVariantFor): a YouTube goal channel, and two TikTok
+  // edit pages.
+  { handle: "@GoalCamHD", name: "GoalCam", archetype: "aggregator", platform: "youtube", verified: true, followers: 3_300_000 },
+  { handle: "@pitchside.edits", name: "pitchside edits", archetype: "meme", platform: "tiktok", verified: false, followers: 2_700_000 },
+  { handle: "@footyloops", name: "footy loops", archetype: "meme", platform: "tiktok", verified: false, followers: 860_000 },
 ];
 
 const FAN_HANDLES = [

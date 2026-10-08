@@ -26,6 +26,16 @@ export const SOCIAL_TEMPLATES: Template[] = [
     graphic: "goalVideo", weight: 3,
   },
   {
+    id: "fan-goal-video-2", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"], requires: ["short"],
+    body: "filmed this from the stand and im still not over it. {short} 😭",
+    graphic: "goalVideo", weight: 2,
+  },
+  {
+    id: "fan-mate-goal", archetype: "fan", events: ["teammate-goal"], requires: ["scorer"], frames: ["celebrate", "hype"],
+    body: "{scorer} WHAT A FINISH 🎥",
+    graphic: "goalVideo", weight: 2,
+  },
+  {
     id: "fan-goal-2", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"],
     body: "im actually shaking. what a player",
     weight: 2,
@@ -250,6 +260,11 @@ export const SOCIAL_TEMPLATES: Template[] = [
     id: "self-goal", archetype: "teammate", tags: ["goal"], subject: "you",
     body: "buzzing to get on the scoresheet today ⚽",
     weight: 2,
+  },
+  {
+    id: "self-goal-video", archetype: "teammate", tags: ["goal"], subject: "you", requires: ["short"],
+    body: "what a finish brother 🎥🔥",
+    graphic: "goalVideo", weight: 2,
   },
   {
     id: "self-goal-win", archetype: "teammate", tags: ["goal"], subject: "you", result: "win",

@@ -16,7 +16,7 @@
 import { trackDuration, type GoalTrack } from "./track";
 import type { ClipAngle } from "./cameras";
 
-export type ClipStyle = "broadcast" | "reverse" | "fan";
+export type ClipStyle = "broadcast" | "reverse" | "fan" | "tiktok";
 
 export interface Shot {
   /** Which recording (index into Edit.tracks). */
@@ -28,6 +28,8 @@ export interface Shot {
   /** Playback speed: 1 live, below 1 slow motion. */
   rate: number;
   replay: boolean;
+  /** A big caption over this shot (the TikTok cut). */
+  caption?: string;
 }
 
 /**
@@ -39,6 +41,8 @@ export type ClipMoves = "new" | "old";
 
 export interface Edit {
   style: ClipStyle;
+  /** Which of the poster's cuts this is (an account always cuts its own way). */
+  variant: number;
   moves: ClipMoves;
   w: number;
   h: number;
@@ -57,23 +61,74 @@ export const REPLAY_RATE = 0.45;
 
 function replayWindow(t: GoalTrack): { from: number; to: number } {
   const dur = trackDuration(t);
-  const from = Math.max(0, Math.min(t.strikeT - 0.45, t.goalT - 0.9));
-  return { from, to: Math.min(dur, t.goalT + 0.85) };
+  const from = Math.max(0, Math.min(t.strikeT - 0.8, t.goalT - 1.3));
+  return { from, to: Math.min(dur, t.goalT + 0.7) };
 }
 
-export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old"): Edit {
-  const size = style === "fan" ? TALL : WIDE;
-  const shots: Shot[] = [];
-  if (tracks.length === 0) return { style, moves, ...size, fps: EDIT_FPS, tracks, shots };
-  const live: ClipAngle = style === "broadcast" ? "tv" : style === "reverse" ? "net" : "fan";
-  tracks.forEach((t, i) => shots.push({ track: i, angle: live, from: 0, to: trackDuration(t), rate: 1, replay: false }));
-  if (style !== "fan") {
-    const last = tracks.length - 1;
-    const w = replayWindow(tracks[last]);
-    shots.push({ track: last, angle: style === "broadcast" ? "net" : "tv", from: w.from, to: w.to, rate: REPLAY_RATE, replay: true });
-  }
-  return { style, moves, ...size, fps: EDIT_FPS, tracks, shots };
+/** A tighter window for a second replay: just the strike and the finish. */
+function closeWindow(t: GoalTrack): { from: number; to: number } {
+  const dur = trackDuration(t);
+  return { from: Math.max(0, Math.min(t.strikeT - 0.35, t.goalT - 0.8)), to: Math.min(dur, t.goalT + 0.45) };
 }
+
+const replay = (track: number, angle: ClipAngle, w: { from: number; to: number }, rate: number, caption?: string): Shot =>
+  ({ track, angle, from: w.from, to: w.to, rate, replay: true, ...(caption ? { caption } : {}) });
+
+/**
+ * The cut, by who posts it. Every account has a few ways of cutting a goal
+ * (`variant`, from its handle), so two clubs, or a club and a highlights page,
+ * never post the same video:
+ *  - broadcast: TV live, then two replays (behind the goal + the spider-cam;
+ *    pitch-side low + behind the goal; spider-cam + behind the goal);
+ *  - reverse: behind the goal live, TV slow; or the spider-cam live, pitch-side slow;
+ *  - fan: the phone in the stand, as it happened;
+ *  - tiktok: tall, slows right down for the strike, big captions, then once more.
+ */
+export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves = "old", variant = 0): Edit {
+  const size = style === "fan" || style === "tiktok" ? TALL : WIDE;
+  const shots: Shot[] = [];
+  const v = Math.abs(Math.floor(variant));
+  const base = { style, variant: v, moves, ...size, fps: EDIT_FPS, tracks, shots };
+  if (tracks.length === 0) return base;
+  const last = tracks.length - 1;
+  const lt = tracks[last];
+  const reel = tracks.length > 1;
+
+  if (style === "tiktok") {
+    const angle: ClipAngle = (["high", "side", "tv"] as const)[v % 3];
+    tracks.forEach((t, i) => {
+      const dur = trackDuration(t);
+      const slowFrom = Math.max(0, t.strikeT - 0.3);
+      const slowTo = Math.min(dur, t.goalT + 0.25);
+      if (slowFrom > 0.05) shots.push({ track: i, angle, from: 0, to: slowFrom, rate: 1, replay: false, caption: i === 0 ? TIKTOK_OPEN[v % TIKTOK_OPEN.length] : undefined });
+      shots.push({ track: i, angle, from: slowFrom, to: slowTo, rate: 0.35, replay: false });
+      if (dur > slowTo + 0.05) shots.push({ track: i, angle, from: slowTo, to: dur, rate: 1, replay: false, caption: TIKTOK_HIT[(v + i) % TIKTOK_HIT.length] });
+    });
+    shots.push(replay(last, "net", closeWindow(lt), 0.5, "ONE MORE TIME"));
+    return base;
+  }
+
+  const live: ClipAngle = style === "broadcast" ? "tv" : style === "reverse" ? (v % 2 ? "high" : "net") : "fan";
+  tracks.forEach((t, i) => shots.push({ track: i, angle: live, from: 0, to: trackDuration(t), rate: 1, replay: false }));
+  if (style === "fan") return base;
+
+  if (style === "reverse") {
+    shots.push(replay(last, v % 2 ? "side" : "tv", replayWindow(lt), REPLAY_RATE));
+    return base;
+  }
+  // Broadcast.
+  const plan: Shot[] = [
+    [replay(last, "net", replayWindow(lt), REPLAY_RATE), replay(last, "high", closeWindow(lt), 0.6)],
+    [replay(last, "side", replayWindow(lt), 0.4), replay(last, "net", closeWindow(lt), 0.55)],
+    [replay(last, "high", replayWindow(lt), 0.5), replay(last, "net", closeWindow(lt), 0.4)],
+  ][v % 3];
+  // A reel keeps to one replay, so it stays short.
+  shots.push(...(reel ? plan.slice(0, 1) : plan));
+  return base;
+}
+
+const TIKTOK_OPEN = ["WAIT FOR IT", "WATCH THIS", "NO WAY HE TRIES THIS", "KEEP WATCHING"];
+const TIKTOK_HIT = ["UNREAL", "HE DID THAT", "COLD", "ABSOLUTE SCENES", "DISGUSTING FINISH", "SIT DOWN KEEPER"];
 
 export function shotLength(s: Shot): number {
   return Math.max(0, (s.to - s.from) / s.rate);
@@ -124,7 +179,7 @@ export function posterMoment(e: Edit): EditMoment {
 /** A file name a phone will keep: "Goal-Saka-63-ARS-v-CHE.mp4". */
 /** The camera, in a saved file's name, so the TV and the fan's video of the
  *  same goal are two files, not one file saved over the other. */
-const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Behind-the-goal", fan: "Fan-cam" };
+const STYLE_IN_NAME: Record<ClipStyle, string> = { broadcast: "TV", reverse: "Highlights", fan: "Fan-cam", tiktok: "Edit" };
 
 export function clipFileName(tracks: GoalTrack | GoalTrack[], ext: string, style?: ClipStyle): string {
   const clean = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");

@@ -1,5 +1,7 @@
-The comm-*.mp3 files (the goal-video commentator) were made offline with the
-Piper text-to-speech engine (https://github.com/rhasspy/piper, MIT) and its
-British English "alan" voice, trained on the Mycroft Mimic 3 apope voice
-(https://github.com/MycroftAI/mimic3-voices). They are stand-ins: an admin can
-replace any of them on the Sound Board (/admin/sound-board).
+The cl-*.mp3 (lead commentator) and cc-*.mp3 (co-commentator) files are the
+goal-video commentary. They were made offline with Kokoro
+(https://github.com/hexgrad/kokoro, Apache-2.0; ONNX build
+https://github.com/thewh1teagle/kokoro-onnx, MIT), voices "bm_george" (lead)
+and "bm_fable" (co-commentator), by scripts/commentary/generate.py from the
+lines in lib/star/goalClip/commentary.ts. Any of them can be replaced on the
+Sound Board (/admin/sound-board).

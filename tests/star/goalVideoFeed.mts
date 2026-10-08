@@ -1,6 +1,7 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { generateForMatch, mediaOf } from "../../lib/star/media/feed";
 import { clipsFor } from "../../lib/star/media/graphics";
+import { clipStyleFor, clipVariantFor } from "../../lib/star/media/clipStyle";
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { mulberry32 } from "../../lib/star/season";
 import { GoalRecorder } from "../../lib/star/goalClip/recorder";
@@ -76,6 +77,7 @@ function newCareer(seed = 1): CareerState {
   let thumbs = 0, withClips = 0, bad = 0, stillsWhenNothingSeen = 0, clipsWhenNothingSeen = 0;
   // The club's own goal post (TV pictures) and a fan's phone video.
   let videos = 0, clubVideos = 0, fanVideos = 0, videoBad = 0, videoWhenNothingSeen = 0, videoNotOneGoal = 0;
+  let noHighlights = 0, highlightsShort = 0, noYours = 0;
   for (let m = 0; m < 30; m++) {
     const fixture = c.fixtures.find(f => !f.played && f.week === c.week) ?? c.fixtures.find(f => !f.played);
     if (!fixture) break;
@@ -106,7 +108,21 @@ function newCareer(seed = 1): CareerState {
     const { career: after } = creditMatchResult(c, fixture, stats);
     after.media = generateForMatch(before, after, fixture, stats);
     const fresh: StoredPost[] = mediaOf(after).posts.filter(p => !mediaOf(before).posts.some(q => q.id === p.id));
+    // Every match: the highlights and your goals, always (Leo, 8 Oct 2026).
+    const hl = fresh.filter(p => p.eventId === "match-highlights");
+    const yh = fresh.filter(p => p.eventId === "your-highlights");
+    const total = stats.homeScore + stats.awayScore;
+    if (total > 0) {
+      const g = hl[0]?.graphic;
+      if (hl.length !== 1 || g?.type !== "goalVideo" || !g.priority) noHighlights++;
+      else if (g.clips.length + (g.synth?.length ?? 0) !== total) highlightsShort++;
+    } else if (hl.length) noHighlights++;
+    if (goals > 0) {
+      const g = yh[0]?.graphic;
+      if ((yh.length !== 1 || g?.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals)) noYours++;
+    }
     for (const p of fresh) {
+      if (p.eventId === "match-highlights" || p.eventId === "your-highlights") continue;
       if (p.graphic?.type === "goalVideo") {
         videos++;
         if (p.author.archetype === "club") clubVideos++;
@@ -130,6 +146,9 @@ function newCareer(seed = 1): CareerState {
     }
     c = after;
   }
+  check(noHighlights === 0, `every match with a goal gets one HIGHLIGHTS video, made first (${noHighlights} matches missed it)`);
+  check(highlightsShort === 0, `the HIGHLIGHTS video holds every goal of the match, both sides (${highlightsShort} short)`);
+  check(noYours === 0, `every match you score in gets a video of your goals, made first (${noYours} missed)`);
   check(thumbs > 0, `video-style posts happen (${thumbs})`);
   check(withClips > 0, `some of them play a real goal (${withClips} of ${thumbs})`);
   check(bad === 0, `a post never plays a goal from another match (${bad})`);
@@ -172,13 +191,30 @@ function track(id: string, goalAt = 2.2): GoalTrack {
   const wide = makeEdit([a], "broadcast");
   check(wide.w === WIDE.w && wide.h === WIDE.h, "TV and page videos are 16:9");
   check(makeEdit([a], "fan").w === TALL.w && makeEdit([a], "fan").h === TALL.h, "a fan's video is portrait");
-  check(wide.shots.length === 2 && !wide.shots[0].replay && wide.shots[1].replay && wide.shots[0].angle === "tv" && wide.shots[1].angle === "net", "the club's video: TV live, then the replay from behind the goal");
+  check(wide.shots.length === 3 && !wide.shots[0].replay && wide.shots[1].replay && wide.shots[2].replay && wide.shots[0].angle === "tv" && wide.shots[1].angle === "net" && wide.shots[2].angle === "high", "the club's video (cut 1): TV live, then replays from behind the goal and the spider-cam");
+  // Every cut: live first, every replay covers the goal, from a camera other than the live one.
+  for (const style of ["broadcast", "reverse", "tiktok"] as const) for (let v = 0; v < 3; v++) {
+    const e = makeEdit([a], style, "old", v);
+    const reps = e.shots.filter(sh => sh.replay);
+    check(!e.shots[0].replay, `${style} cut ${v + 1}: starts live`);
+    check(reps.length >= 1 && reps.every(sh => sh.from < a.goalT && sh.to > a.goalT && sh.rate < 1), `${style} cut ${v + 1}: every replay covers the goal, slowed`);
+    if (style !== "tiktok") check(reps.every(sh => sh.angle !== e.shots[0].angle), `${style} cut ${v + 1}: replays from another camera`);
+  }
+  const cuts = new Set([0, 1, 2].map(v => makeEdit([a], "broadcast", "old", v).shots.map(sh => sh.angle).join(">")));
+  check(cuts.size === 3, "the club's three cuts are three different videos");
+  const tk = makeEdit([a], "tiktok", "old", 0);
+  check(tk.w === TALL.w && tk.h === TALL.h, "a TikTok edit is portrait");
+  check(tk.shots.some(sh => !sh.replay && sh.rate < 0.5 && sh.from <= a.strikeT && sh.to >= a.goalT), "a TikTok edit slows right down through the strike and the goal");
+  check(tk.shots.some(sh => !!sh.caption), "a TikTok edit has captions");
+  // An account always cuts its goals the same way; different accounts differ.
+  check(clipVariantFor({ handle: "@GoalCamHD", name: "GoalCam", archetype: "aggregator", platform: "youtube" }) === clipVariantFor({ handle: "@GoalCamHD", name: "x", archetype: "aggregator", platform: "youtube" }), "an account's cut is fixed by its handle");
+  check(clipStyleFor({ handle: "@x", name: "x", archetype: "meme", platform: "x" }) === "tiktok" && clipStyleFor({ handle: "@x", name: "x", archetype: "fan", platform: "tiktok" }) === "tiktok", "meme pages and TikTok accounts post the TikTok edit");
   const rev = makeEdit([a], "reverse");
   check(rev.shots[0].angle === "net" && rev.shots[1].angle === "tv", "a page's video: behind the goal, then TV slow motion");
   check(makeEdit([a], "fan").shots.length === 1, "a fan's video is one take");
   const rep = wide.shots[1];
   check(rep.from < a.goalT && rep.to > a.goalT && rep.rate === REPLAY_RATE, `the replay covers the goal, slowed (${rep.from.toFixed(2)}–${rep.to.toFixed(2)} at ${rep.rate}x)`);
-  check(Math.abs(editDuration(wide) - (trackDuration(a) + shotLength(rep))) < 1e-9, "the video's length is the shots' lengths");
+  check(Math.abs(editDuration(wide) - wide.shots.reduce((t, sh) => t + shotLength(sh), 0)) < 1e-9, "the video's length is the shots' lengths");
   check(editFrameCount(wide) === Math.round(editDuration(wide) * wide.fps), "frames = length × 30");
   // Time only moves forward inside a shot, and every frame lands on a shot.
   let last = -1, lastShot = 0, ok = true;

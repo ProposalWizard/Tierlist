@@ -2880,7 +2880,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const to = r.commandedTo;
       if (!to) continue;
       const dx = to.x - r.pos.x, dy = to.y - r.pos.y, togo = Math.hypot(dx, dy);
-      if (togo < 0.6) { r.commandedTo = undefined; r.moving = false; continue; }
+      // Arrived while you aim: he holds the spot, still on orders (heldAt).
+      if (togo < 0.6) { r.heldAt = { x: to.x, y: to.y }; r.commandedTo = undefined; r.moving = false; continue; }
       const step = Math.min(togo, r.speed * dt);
       r.pos.x += (dx / togo) * step; r.pos.y += (dy / togo) * step;
       r.moving = true; r.sprint = true;
@@ -2888,7 +2889,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const f = sc.follower;
     if (f.commandedTo) {
       const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y, togo = Math.hypot(dx, dy);
-      if (togo < 0.6) { f.commandedTo = undefined; f.active = false; }
+      if (togo < 0.6) { f.heldAt = { x: f.commandedTo.x, y: f.commandedTo.y }; f.commandedTo = undefined; f.active = false; }
       else { const step = Math.min(togo, FOLLOWER_RUN_SPEED * dt); f.x += (dx / togo) * step; f.y += (dy / togo) * step; f.active = true; }
     }
     const d = presserRef.current;

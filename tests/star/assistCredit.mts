@@ -98,7 +98,7 @@ function run(withLayoff: boolean) {
       const probe = probeMatePlays(sc);
       out = stepBall(ball, sc, rng, H);
       noteMatePlays(plays, probe, sc);
-      if (!probe.relayed && sc.relayed) touches.push(probe.receivedBy?.who?.id ?? "?");
+      if (!probe.relayed && sc.relayed) touches.push((probe.receivedBy ?? sc.receivedBy)?.who?.id ?? "?");
       if ((sc.receiverShots ?? 0) > probe.receiverShots) {
         touches.push(!probe.followerShot && sc.follower.shot ? "F" : sc.receivedBy?.who?.id ?? "?");
       }

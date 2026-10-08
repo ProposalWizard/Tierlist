@@ -391,6 +391,12 @@ export interface Follower {
    * missing feature it was.
    */
   commandedTo?: Vec2;
+  /**
+   * The end of a captain's run (Leo, 8 Oct 2026): he arrived and holds this
+   * spot, still on orders, instead of drifting back towards the ball. A ball
+   * played onto him is still met (runMeetPoint). Cleared when he takes it.
+   */
+  heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
 }
@@ -433,6 +439,12 @@ export interface Runner {
    * Cleared when he arrives, and he goes back to reacting like everybody else.
    */
   commandedTo?: Vec2;
+  /**
+   * The end of a captain's run (Leo, 8 Oct 2026): he arrived and holds this
+   * spot, still on orders, instead of drifting back towards the ball. A ball
+   * played onto him is still met (runMeetPoint). Cleared when he takes it.
+   */
+  heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
 }
@@ -3505,6 +3517,122 @@ function relayTargetFor(scenario: Scenario): Runner | null {
 }
 
 /**
+ * A CLEVER PASSER (Leo, 8 Oct 2026): "the better players and passers should
+ * obviously be able to do passes better. not only accuracy but timing and
+ * intelligence … get the ball to the other player without doing an offside
+ * pass, without having the pass blocked … they should know the run of the
+ * player they've been told to pass to".
+ *
+ * How good the man on the ball is at passing, 0..1: his real passing stat
+ * (else his overall, else the receiver's roll) and how well the side knows
+ * each other. Above SMART_PASS_Q he reads a run (runIntercept) and plays it
+ * before the man goes offside (relayControlT, relayShouldGoNow); above
+ * LOFT_PASS_Q he lifts a ball over a defender in the lane (passLoft).
+ */
+const SMART_PASS_Q = 0.62;
+const LOFT_PASS_Q = 0.6;
+function passerQuality(scenario: Scenario): number {
+  const who = scenario.receivedBy?.who ?? scenario.receiver?.who;
+  const raw = who?.passing ?? who?.overall ?? scenario.receiver?.skill ?? 62;
+  const team = clamp(scenario.teamRelationship / 100, 0, 1);
+  return clamp(clamp(raw, 0, 100) / 100 * 0.62 + team * 0.38, 0, 1);
+}
+
+/** The touch before a lay-off: a good passer gets it off quicker. */
+function relayControlT(q: number): number {
+  return RECEIVER_CONTROL_T * clamp(1.3 - q, 0.3, 1);
+}
+
+/**
+ * Should he play it NOW rather than finish his touch? A good passer who
+ * knows the run sees the man about to cross the offside line and releases
+ * the ball before he does. Only for a man still running his orders.
+ */
+function relayShouldGoNow(scenario: Scenario, target: Runner, ballAt: Vec2, q: number): boolean {
+  if (q < SMART_PASS_Q || !target.commandedTo || !target.moving) return false;
+  if (!offsideRuleEnabled || !goalInView(scenario.kind) || scenario.kind === "corner") return false;
+  const line = opponentLine(scenario);
+  if (line.length < 2) return false;
+  const secondLast = line[1];
+  const dx = target.commandedTo.x - target.pos.x, dy = target.commandedTo.y - target.pos.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const vy = (dy / d) * target.speed;            // towards goal is negative y
+  const lookT = 0.08 + 0.22 * q;                 // how far ahead he reads it
+  const yAhead = target.pos.y + vy * lookT;
+  return yAhead < secondLast + 0.3 && target.pos.y >= secondLast - OFFSIDE_EPS && yAhead < ballAt.y;
+}
+
+/** Is the man he was told to find offside right now? (The same test as offsideSnapshot.) */
+function wouldBeOffside(scenario: Scenario, p: Vec2, ballAt: Vec2): boolean {
+  if (!offsideRuleEnabled || !goalInView(scenario.kind) || scenario.kind === "corner") return false;
+  const line = opponentLine(scenario);
+  if (line.length < 2) return false;
+  return p.y < HALF_LEN - OFFSIDE_EPS && p.y < ballAt.y - OFFSIDE_EPS && p.y < line[1] - OFFSIDE_EPS;
+}
+
+/**
+ * Play the ordered lay-off — unless he is a good passer and the man is
+ * already offside: then he does not play the offside ball, he shoots.
+ */
+function playRelay(ball: Ball, scenario: Scenario, relay: Runner | null, followerRelay: boolean, rng: () => number, composed = true): boolean {
+  const q = passerQuality(scenario);
+  const at = { x: ball.pos.x, y: ball.pos.y };
+  const to = relay ? relay.pos : followerRelay ? { x: scenario.follower.x, y: scenario.follower.y } : null;
+  if (!to) return false;
+  if (q >= SMART_PASS_Q && wouldBeOffside(scenario, to, at)) {
+    launchReceiverShot(ball, scenario, rng, composed);
+    return true;
+  }
+  if (relay) launchReceiverPass(ball, scenario, relay, rng);
+  else launchReceiverFollowerPass(ball, scenario, rng);
+  return true;
+}
+
+/** Where the ball and his run meet: the point on the run he reaches when the ball does. */
+function runIntercept(from: Vec2, r: Runner): Vec2 {
+  let best = { x: r.pos.x, y: r.pos.y };
+  for (let t = 0.1; t <= 2.4; t += 0.05) {
+    const p = aheadOf(r, t);
+    const d = Math.hypot(p.x - from.x, p.y - from.y);
+    const sp = clamp(11 + d * 0.42, 11, 24);
+    // Rolling friction slows it a little on the way: ~5% over a pass.
+    const ballT = (d / sp) * 1.05;
+    best = p;
+    if (ballT <= t) break;
+  }
+  return best;
+}
+
+/**
+ * A ball lifted over a defender in the lane, landing low enough to take at
+ * his feet. Null when the lane is clear (it stays on the ground) or no lift
+ * can clear him. Plain projectile maths — air drag only shortens it a touch.
+ */
+function passLoft(scenario: Scenario, from: Vec2, to: Vec2): { speed: number; vz: number } | null {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 6) return null;
+  let blockAt = -1;
+  for (const def of scenario.defenders) {
+    const u = ((def.x - from.x) * dx + (def.y - from.y) * dy) / (d * d);
+    if (u < 0.08 || u > 0.9) continue;
+    const px = from.x + dx * u, py = from.y + dy * u;
+    if (Math.hypot(def.x - px, def.y - py) > DEF_BLOCK_R + 0.6) continue;
+    blockAt = Math.max(blockAt, u * d);
+  }
+  if (blockAt < 0) return null;
+  const clearZ = (DEF_BLOCK_H + 0.35);
+  const arriveZ = 0.5;
+  for (let sp = clamp(9 + d * 0.32, 10, 20); sp >= 8; sp *= 0.92) {
+    const T = d / sp, tb = blockAt / sp;
+    const vz = (arriveZ - 0.08 + 0.5 * G * T * T) / T;
+    const zb = 0.08 + vz * tb - 0.5 * G * tb * tb;
+    if (zb >= clearZ) return { speed: sp, vz };
+  }
+  return null;
+}
+
+/**
  * He looks up, and plays it where he was told.
  *
  * Deliberately NOT a guaranteed ball. The armband buys you the DECISION — that
@@ -3516,27 +3644,33 @@ function relayTargetFor(scenario: Scenario): Runner | null {
  */
 function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng: () => number) {
   const from = { x: ball.pos.x, y: ball.pos.y };
+  // His passing, and how well the two of them play together (passerQuality).
+  const quality = passerQuality(scenario);
   // Where he will be, not where he is — a man running onto it is played in
-  // front of. Half the flight is a fair lead for a ball over this distance.
-  const dist = Math.hypot(target.pos.x - from.x, target.pos.y - from.y);
-  const speed = clamp(11 + dist * 0.42, 11, 24);
-  const lead = target.commandedTo && target.moving ? Math.min(dist / speed, 0.9) : 0;
-  const aim = lead > 0
-    ? aheadOf(target, lead)
-    : { x: target.pos.x, y: target.pos.y };
+  // front of. A good passer reads the run properly (runIntercept: where the
+  // ball and the run meet); a poor one guesses half the flight, as before.
+  let dist = Math.hypot(target.pos.x - from.x, target.pos.y - from.y);
+  let speed = clamp(11 + dist * 0.42, 11, 24);
+  let aim: Vec2 = { x: target.pos.x, y: target.pos.y };
+  if (target.commandedTo && target.moving) {
+    aim = quality >= SMART_PASS_Q
+      ? runIntercept(from, target)
+      : aheadOf(target, Math.min(dist / speed, 0.9));
+    dist = Math.hypot(aim.x - from.x, aim.y - from.y);
+    speed = clamp(11 + dist * 0.42, 11, 24);
+  }
 
-  // His passing, and how well the two of them play together. The same two
-  // numbers his shot is built from, so a side that finishes well passes well.
-  const skill = clamp(scenario.receiver?.skill ?? 62, 0, 100) / 100;
-  const team = clamp(scenario.teamRelationship / 100, 0, 1);
-  const quality = clamp(skill * 0.62 + team * 0.38, 0, 1);
   // Over twenty metres a degree is about 35 cm, and PASS_CONTROL_R is 2 m — so
   // this is the number that decides whether the ball actually reaches him.
   const sigmaDeg = (1 - quality * 0.8) * 6.5;
+  // A defender in the lane: a good passer lifts it over him (passLoft) to
+  // arrive at the man's feet, rather than playing it into the block.
+  const loft = quality >= LOFT_PASS_Q ? passLoft(scenario, from, aim) : null;
+  if (loft) speed = loft.speed;
   const dir = rotateDeg(normalize({ x: aim.x - from.x, y: aim.y - from.y }), gaussian(rng) * sigmaDeg);
 
   ball.vel = { x: dir.x * speed, y: dir.y * speed };
-  ball.vz = 0;
+  ball.vz = loft ? loft.vz : 0;
   ball.z = 0.08;
   ball.spin = (rng() - 0.5) * 0.35;
   ball.loose = false;
@@ -3560,7 +3694,7 @@ function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng:
   ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
   ball.lastTouch = "attack";
   ball.event = "relay";
-  logBallAction(ball, { kind: "pass", actor: runnerActor(scenario, scenario.receivedBy), mode: "ground", at: { x: from.x, y: from.y, z: ball.z } });
+  logBallAction(ball, { kind: "pass", actor: runnerActor(scenario, scenario.receivedBy), mode: loft ? "chip" : "ground", at: { x: from.x, y: from.y, z: ball.z } });
   // It is a PASS. Setting `shot` here would make every other team-mate step out
   // of its way — including the man it is being played to.
   ball.shot = false;
@@ -3609,15 +3743,15 @@ function launchReceiverFollowerPass(ball: Ball, scenario: Scenario, rng: () => n
   const from = { x: ball.pos.x, y: ball.pos.y };
   const f = scenario.follower;
   const dist = Math.hypot(f.x - from.x, f.y - from.y);
-  const speed = clamp(11 + dist * 0.42, 11, 24);
-  const skill = clamp(scenario.receiver?.skill ?? 62, 0, 100) / 100;
-  const team = clamp(scenario.teamRelationship / 100, 0, 1);
-  const quality = clamp(skill * 0.62 + team * 0.38, 0, 1);
+  let speed = clamp(11 + dist * 0.42, 11, 24);
+  const quality = passerQuality(scenario);
   const sigmaDeg = (1 - quality * 0.8) * 6.5;
+  const loft = quality >= LOFT_PASS_Q ? passLoft(scenario, from, { x: f.x, y: f.y }) : null;
+  if (loft) speed = loft.speed;
   const dir = rotateDeg(normalize({ x: f.x - from.x, y: f.y - from.y }), gaussian(rng) * sigmaDeg);
 
   ball.vel = { x: dir.x * speed, y: dir.y * speed };
-  ball.vz = 0;
+  ball.vz = loft ? loft.vz : 0;
   ball.z = 0.08;
   ball.spin = (rng() - 0.5) * 0.35;
   ball.loose = false;
@@ -5156,6 +5290,68 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
 }
 
 /**
+ * A MAN ON A RUN MEETS THE BALL WHERE IT IS GOING (Leo, 8 Oct 2026).
+ *
+ * "throughballs arent really a thing because players just run towards the
+ * ball … I do want to be able to set a player on a run past the defenders and
+ * play a throughball through the defenders that gets to him … maybe just when
+ * the ball is very close have them go for it while still tryna do their run."
+ *
+ * A man on the captain's orders ignores the ball, except this: a ball near
+ * him (RUN_MEET_R) that is coming his way. Then he goes to the earliest point
+ * on its path he can reach in time — in front of him, on the run, not back to
+ * where it is now. Null when there is nothing to meet: he keeps running.
+ * Same integrator as predictBall, walked once.
+ */
+const RUN_MEET_R = 7;        // metres — a ball this close, coming his way, is his
+const RUN_MEET_CLOSE = 2.6;  // metres — this close, he goes for it whichever way it is going
+const RUN_MEET_T = 1.4;      // seconds of its path he reads
+function runMeetPoint(p: Vec2, speed: number, ball: Ball): Vec2 | null {
+  const vs = Math.hypot(ball.vel.x, ball.vel.y);
+  if (vs < DEAD_BALL_SPEED) return null;
+  const dx = p.x - ball.pos.x, dy = p.y - ball.pos.y;
+  const d = Math.hypot(dx, dy);
+  if (d > RUN_MEET_R) return null;
+  if (d > RUN_MEET_CLOSE && (ball.vel.x * dx + ball.vel.y * dy) / (vs * d) < 0.25) return null;
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z;
+  let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
+  const dt = PREDICT_STEP;
+  for (let s = dt; s <= RUN_MEET_T + 1e-6; s += dt) {
+    if (z > 0.02) { const k = Math.max(0, 1 - AIR_DRAG * dt); vx *= k; vy *= k; }
+    vz -= G * dt; z += vz * dt; x += vx * dt; y += vy * dt;
+    if (z <= 0) {
+      z = 0;
+      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      else {
+        vz = 0;
+        const sp = Math.hypot(vx, vy), drop = GROUND_FRICTION * dt;
+        if (sp <= drop) { vx = 0; vy = 0; } else { const f = (sp - drop) / sp; vx *= f; vy *= f; }
+      }
+    }
+    if (Math.hypot(x - p.x, y - p.y) <= speed * s + PASS_CONTROL_R * 0.5) return { x, y };
+  }
+  return d <= RUN_MEET_CLOSE ? { x: ball.pos.x, y: ball.pos.y } : null;
+}
+
+/** One step of a captain's run: meet a ball coming onto it, else run the line, else hold. */
+function stepOrderedRun(
+  p: Vec2, o: { commandedTo?: Vec2; heldAt?: Vec2 }, speed: number, ball: Ball, dt: number,
+): boolean {
+  const meet = runMeetPoint(p, speed, ball);
+  const to = meet ?? o.commandedTo ?? null;
+  if (!to) return false;                 // run done: he holds his spot
+  const dx = to.x - p.x, dy = to.y - p.y, togo = Math.hypot(dx, dy);
+  if (!meet && togo < 0.6) {             // arrived: hold there, still on orders
+    o.heldAt = { x: to.x, y: to.y };
+    o.commandedTo = undefined;
+    return false;
+  }
+  const step = Math.min(togo, speed * dt);
+  if (togo > 1e-6) { p.x += (dx / togo) * step; p.y += (dy / togo) * step; }
+  return true;
+}
+
+/**
  * Is this ball your strike at goal rather than a ball for a team-mate?
  *
  * Judged on where it was struck and how hard, not on where it will end up: a
@@ -5647,19 +5843,12 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     // A ball that has stopped still outranks it: a side that jogs past a loose
     // ball to complete a run is a side that has lost it, and no captain wants
     // that. Everything else waits until he arrives.
-    if (r.commandedTo && !dead) {
-      const dx = r.commandedTo.x - r.pos.x, dy = r.commandedTo.y - r.pos.y;
-      const togo = Math.hypot(dx, dy);
-      if (togo < 0.6) {
-        r.commandedTo = undefined;   // arrived; back to reacting like everybody else
-        r.moving = false;
-      } else {
-        const step = Math.min(togo, r.speed * dt);
-        r.pos.x += (dx / togo) * step;
-        r.pos.y += (dy / togo) * step;
-        r.moving = true;
-        r.sprint = true;
-      }
+    // At the end of the run he holds his spot (heldAt) instead of drifting
+    // back towards the ball, and either way a ball played onto his run is
+    // met where it is going (runMeetPoint). Leo, 8 Oct 2026.
+    if ((r.commandedTo || r.heldAt) && !dead) {
+      r.moving = stepOrderedRun(r.pos, r, r.speed, ball, dt);
+      r.sprint = r.moving;
       continue;
     }
 
@@ -5684,18 +5873,8 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
       // moved by stepShape (v0.15 item 17); only the poke-in below applies
     } else if (shotLive && !f.commandedTo && sidestepShot(f, ball, dt)) {
       // v0.15 item 13: out of the way until it has gone past him
-    } else if (f.commandedTo && !dead) {
-      const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y;
-      const togo = Math.hypot(dx, dy);
-      if (togo < 0.6) {
-        f.commandedTo = undefined;   // arrived; back to reacting like everybody else
-        f.active = false;
-      } else {
-        const step = Math.min(togo, RUNNER_SPEED * dt);
-        f.x += (dx / togo) * step;
-        f.y += (dy / togo) * step;
-        f.active = true;
-      }
+    } else if ((f.commandedTo || (f.heldAt && !f.shot)) && !dead) {
+      f.active = stepOrderedRun(f, f, RUNNER_SPEED, ball, dt);
     } else {
       const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
       // He walks to a stopped ball whether or not he has already had a go at it.
@@ -6499,9 +6678,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
     if (ball.receiverControlT <= 0) {
       const relay = relayTargetFor(scenario);
-      if (relay) launchReceiverPass(ball, scenario, relay, rng);
-      else if (relayFollowerTargetFor(scenario)) launchReceiverFollowerPass(ball, scenario, rng);
-      else launchReceiverShot(ball, scenario, rng);
+      if (!playRelay(ball, scenario, relay, !relay && relayFollowerTargetFor(scenario), rng)) launchReceiverShot(ball, scenario, rng);
+    } else {
+      // A good passer plays it before the man he was told to find runs offside.
+      const relay = relayTargetFor(scenario);
+      if (relay && relayShouldGoNow(scenario, relay, ball.pos, passerQuality(scenario))) {
+        ball.receiverControlT = 0;
+        playRelay(ball, scenario, relay, false, rng);
+      }
     }
     return null;
   }
@@ -6877,6 +7061,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         });
         // He has the ball; he is no longer running to orders.
         r.commandedTo = undefined;
+        r.heldAt = undefined;
         // The ball is somewhere else now, and the keeper has the beat before it
         // is struck to do something about it. See Keeper.adjusting.
         if (goalInView(scenario.kind) && !scenario.keeper.done) {
@@ -6951,9 +7136,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
             ball.vz = 0; ball.z = 0.08;
-            if (relay) launchReceiverPass(ball, scenario, relay, rng);
-            else if (followerRelay) launchReceiverFollowerPass(ball, scenario, rng);
-            else launchReceiverShot(ball, scenario, rng, false);
+            if (!playRelay(ball, scenario, relay, !!followerRelay, rng, false)) launchReceiverShot(ball, scenario, rng, false);
           } else {
             // ── OR HIT FIRST TIME BECAUSE IT NEVER TOUCHED THE GROUND ──
             //
@@ -7015,7 +7198,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
               // relay pending right now and a relay still pending a beat
               // later are never out of step with each other.
               ball.vz = 0; ball.z = 0.08;
-              ball.receiverControlT = RECEIVER_CONTROL_T;
+              // A lay-off on your orders: a good passer takes a quicker touch.
+              ball.receiverControlT = (relay || followerRelay) ? relayControlT(passerQuality(scenario)) : RECEIVER_CONTROL_T;
               ball.event = "received";
             }
           }

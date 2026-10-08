@@ -434,6 +434,12 @@ export interface SquadPlayer {
    * which read as just `[position]`. See formations.ts's fitness/autoPick.
    */
   positions?: SquadPlayer["position"][];
+  /**
+   * DEV CHEAT (Settings → Dev — Squad): pinned into the starting XI by
+   * `pinDevStarters` (teamsheet.ts), whatever the saved lineup or auto-pick
+   * says. Absent for everyone in a normal save.
+   */
+  devStart?: boolean;
 }
 
 export interface GoalEvent {

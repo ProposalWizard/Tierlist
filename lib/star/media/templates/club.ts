@@ -93,6 +93,12 @@ export const CLUB_TEMPLATES: Template[] = [
     graphic: "goalVideo", hashtag: true,
   },
   {
+    id: "club-mate-goal", archetype: "club", events: ["teammate-goal"], requires: ["scorer"],
+    body: "GOAL! {scorer|caps}! 🔥",
+    // A team-mate's goal on the TV pictures, when it was recorded.
+    graphic: "goalVideo", hashtag: true, weight: 2,
+  },
+  {
     id: "club-goal-assist", archetype: "club", tags: ["assist"], subject: "you", requires: ["assists"], excludes: ["matches"],
     body: "{assists} assist{assists|plural} for {player} today. Everything goes through him.",
     hashtag: true,
@@ -223,6 +229,12 @@ export const CLUB_TEMPLATES: Template[] = [
   },
 
   // ── The league ────────────────────────────────────────────────────────────
+  {
+    id: "league-goal-video", archetype: "league", events: ["winner", "late-winner", "equaliser", "brace", "hat-trick"], subject: "club", requires: ["player", "goalVideos"],
+    body: "⚽ {player} | {club}",
+    // A goal from another match, on the TV pictures (goalClip/synth.ts).
+    graphic: "goalVideo", hashtag: true, weight: 2,
+  },
   {
     id: "league-result", archetype: "league", events: ["win", "draw", "loss", "rout", "hammered"],
     body: "RESULT | {homeClub} {hs}-{as} {awayClub}",

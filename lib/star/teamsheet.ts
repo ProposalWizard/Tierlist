@@ -553,6 +553,72 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
 }
 
 /**
+ * DEV CHEAT — make named squad players start.
+ *
+ * Settings → Dev — Squad lets the tester pin players (`SquadPlayer.devStart`)
+ * so a signing like Haaland actually lines up, whatever the saved /lineups
+ * XI or the auto-pick says. Runs LAST in `matchdayFor`, after you have been
+ * seated, and never removes you or another pinned man. With nobody pinned
+ * it is not called at all, so the normal path is untouched.
+ *
+ * Seat order per pinned man: a vacant slot in his role chain, then the
+ * weakest un-pinned man at his own role, then the weakest in his attacking
+ * chain, then the weakest outfielder. A keeper only ever takes the keeper's
+ * shirt, and an outfielder never takes it. The man he replaces goes to the
+ * front of the bench.
+ */
+export function pinDevStarters(sheet: TeamSheet, pinned: SheetPlayer[]): TeamSheet {
+  if (pinned.length === 0) return sheet;
+  const protectedIds = new Set<string>(pinned.map(p => p.id));
+  let xi = [...sheet.xi];
+  let bench = [...sheet.bench];
+
+  for (const p of pinned) {
+    if (xi.some(x => x.id === p.id)) continue;
+    bench = bench.filter(b => b.id !== p.id);
+    const fixed = (x: SheetPlayer) => !!x.isYou || protectedIds.has(x.id);
+    const chain = SEAT_CHAIN[p.role] ?? [p.role];
+
+    // 1. A vacant slot he can fill.
+    const filled = new Set(xi.map(x => `${x.x},${x.y}`));
+    let vacant: Slot | undefined;
+    for (const r of chain) {
+      vacant = sheet.formation.slots.find(s => s.role === r && !filled.has(`${s.x},${s.y}`));
+      if (vacant) break;
+    }
+    if (vacant && xi.length < 11) {
+      xi.push({ ...p, role: vacant.role, slot: vacant.label ?? vacant.role, x: vacant.x, y: vacant.y, isYou: false });
+      continue;
+    }
+
+    // 2/3/4. Replace somebody.
+    const weakestAt = (test: (x: SheetPlayer) => boolean): number => {
+      let at = -1;
+      xi.forEach((x, i) => {
+        if (fixed(x) || !test(x)) return;
+        if (at < 0 || (x.overall ?? 0) < (xi[at].overall ?? 0)) at = i;
+      });
+      return at;
+    };
+    let at = -1;
+    if (p.role === "GK") {
+      at = weakestAt(x => x.role === "GK");
+    } else {
+      at = weakestAt(x => x.role === p.role);
+      for (let k = 0; at < 0 && k < chain.length; k++) at = weakestAt(x => x.role === chain[k]);
+      if (at < 0) at = weakestAt(x => x.role !== "GK");
+    }
+    if (at < 0) continue;
+    const out = xi[at];
+    xi = xi.map((x, i) => (i === at
+      ? { ...p, role: out.role, slot: out.slot, x: out.x, y: out.y, isYou: false }
+      : x));
+    bench = [{ ...out, isYou: false }, ...bench].slice(0, 9);
+  }
+  return { ...sheet, xi, bench };
+}
+
+/**
  * Put you on the bench, in your own shirt.
  *
  * Named a substitute for this match and nowhere on the sheet — reported
@@ -657,6 +723,16 @@ export function matchdayFor(
   let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench, savedXI);
   if (starting) ours = forceIntoXI(ours, you);
   else if (onBench) ours = forceOntoBench(ours, you);
+  // Dev cheat (Settings → Dev — Squad): pinned men start. See pinDevStarters.
+  const devPinned = (career.squad ?? []).filter(p => p.devStart).map(p => p.id);
+  if (devPinned.length > 0) {
+    const ids = new Set(devPinned);
+    const pins: SheetPlayer[] = ownPool.filter(c => ids.has(c.id)).map(c => ({
+      id: c.id, name: c.name, short: c.short, role: c.position, slot: c.position,
+      overall: c.overall, face: c.face, nation: c.nation, defending: c.defending, x: 0, y: 0,
+    }));
+    ours = pinDevStarters(ours, pins);
+  }
 
   // A cup draw can hand you a club outside your own division entirely — a
   // promotion-pool or "Other" side like Wigan Athletic — whose squad was

@@ -1,3 +1,4 @@
+import type { SynthGoal } from "../goalClip/synth";
 import type { CareerState } from "../types";
 import { sortLeague } from "../season";
 import { goldenBootRace, assistRace } from "../recognition";
@@ -51,6 +52,59 @@ export function clipsFor(e: FootballEvent, r: MatchRecord | null): string[] {
   if (e.subject.kind === "you" && e.tags.includes("goal")) return ids(seen.filter(x => x.isUser));
   // A post about the match as a whole: every goal that was seen.
   return ids(seen);
+}
+
+/**
+ * A post about ANOTHER club's match (the England tab): the goals to make a
+ * video of (lib/star/goalClip/synth.ts), from the event's `goalVideos` fact
+ * (detect/league.ts). Never for your own match — those are real recordings.
+ */
+export function synthFor(e: FootballEvent, r: MatchRecord | null): SynthGoal[] {
+  const raw = e.facts.goalVideos;
+  if (typeof raw !== "string") return [];
+  if (r && e.facts.club === r.club) return [];
+  try {
+    const list = JSON.parse(raw) as SynthGoal[];
+    return Array.isArray(list) ? list.filter(g => g && typeof g.seed === "string").slice(0, 4) : [];
+  } catch { return []; }
+}
+
+/**
+ * YOUR MATCH'S HIGHLIGHTS, EVERY GOAL (Leo, 8 Oct 2026: "after every game
+ * there is ALWAYS at MINIMUM the highlights of the game (all the goals) as
+ * well as some videos of your highlights and goals").
+ *
+ * The recorded goals play their recordings; every goal that was not seen
+ * (the other side's, a team-mate's in the hidden ninety minutes) is made by
+ * goalClip/synth.ts. `which` picks every goal, or yours (scored or set up).
+ */
+export function matchReel(r: MatchRecord, which: "all" | "yours", you?: string): { clips: string[]; synth: SynthGoal[] } {
+  const home = r.home ? r.club : r.opponent;
+  const away = r.home ? r.opponent : r.club;
+  const last = (n: string) => n.trim().split(/\s+/).pop() || n;
+  const clips: string[] = [];
+  const synth: SynthGoal[] = [];
+  const ours = r.goals.filter(g => which === "all" || g.isUser || (!!you && g.assist === you));
+  for (const g of ours) {
+    if (g.clipId) { clips.push(g.clipId); continue; }
+    const sa = g.scoreAfter;
+    synth.push({
+      home, away, scorer: g.scorer, scorerShort: last(g.scorer), scorerHome: r.home, minute: g.minute,
+      ...(sa ? { scoreAfter: (r.home ? [sa.us, sa.them] : [sa.them, sa.us]) as [number, number] } : {}),
+      seed: `${r.season}.${r.week}u${g.minute}${last(g.scorer)}`,
+    });
+  }
+  if (which === "all") {
+    for (const g of r.oppGoals ?? []) {
+      const name = g.scorer || r.opponent;
+      synth.push({
+        home, away, scorer: name, scorerShort: g.scorer ? last(g.scorer) : r.opponent, scorerHome: !r.home,
+        minute: g.minute,
+        seed: `${r.season}.${r.week}t${g.minute}`,
+      });
+    }
+  }
+  return { clips, synth };
 }
 
 export function buildGraphic(
@@ -253,12 +307,15 @@ export function buildGraphic(
 
     case "thumbnail": {
       const clips = clipsFor(e, r);
+      const synth = clips.length ? [] : synthFor(e, r);
+      const n = clips.length || synth.length;
       return {
         type: "thumbnail",
         title: headlineFor(e, you).toUpperCase(),
         // A video of more than one goal is a highlights reel, whatever the post is about.
-        badge: clips.length > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        badge: n > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
         ...(clips.length ? { clips } : {}),
+        ...(synth.length ? { synth } : {}),
       };
     }
 
@@ -267,8 +324,9 @@ export function buildGraphic(
       // when the goal was recorded. No recording, no graphic: the post stays
       // the plain words it always was.
       const clips = clipsFor(e, r);
-      if (!clips.length) return undefined;
-      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips };
+      const synth = clips.length ? [] : synthFor(e, r);
+      if (!clips.length && !synth.length) return undefined;
+      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips, ...(synth.length ? { synth } : {}) };
     }
 
     case "teamOfTheWeek": {

@@ -18,6 +18,7 @@ const ANGLES: { style: ClipStyle; label: string }[] = [
   { style: "broadcast", label: "TV" },
   { style: "reverse", label: "Behind the goal" },
   { style: "fan", label: "Fan in the stand" },
+  { style: "tiktok", label: "TikTok" },
 ];
 
 export default function GoalClipViewer({ clipId, title, fallback }: { clipId: string; title: string; fallback: React.ReactNode }) {
@@ -36,7 +37,7 @@ export default function GoalClipViewer({ clipId, title, fallback }: { clipId: st
   return (
     <div data-goal-clip-viewer>
       <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-amber-200">{title}</div>
-      <div className="mb-2 flex gap-1.5">
+      <div className="mb-2 flex flex-wrap gap-1.5">
         {ANGLES.map(a => (
           <button
             key={a.style}

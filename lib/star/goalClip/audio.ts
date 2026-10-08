@@ -25,16 +25,60 @@
 import type { Edit } from "./edit";
 import { shotLength } from "./edit";
 import { sfxUrl } from "../sfx";
+import type { GoalTrack } from "./track";
+import { frameAt } from "./track";
+import {
+  pickCall, pickLine, pickReplayLine, SCORE_LINES, REEL_LINES, REPLAY_LINES, allCommentaryLines,
+  type FinishTag, type ScoreTag,
+} from "./commentary";
+import { COMMENTARY_SECONDS } from "./commentaryDurations";
 
-export const COMMENTARY_GOAL = ["comm-goal-1", "comm-goal-2", "comm-goal-3", "comm-goal-4", "comm-goal-5", "comm-goal-6"] as const;
-export const COMMENTARY_REPLAY = ["comm-replay-1", "comm-replay-2", "comm-replay-3"] as const;
-
+/** The effects a goal video may use (the commentary lines are the rest). */
+export const EFFECT_SOUNDS = ["kick-hard", "kick-soft", "goal-net", "keeper-save", "crowd-cheer-stadium"] as const;
 /** Every file a goal video may use. */
-export const CLIP_SOUNDS = [
-  "kick-hard", "kick-soft", "goal-net", "keeper-save", "crowd-cheer-stadium",
-  ...COMMENTARY_GOAL, ...COMMENTARY_REPLAY,
-] as const;
-export type ClipSound = (typeof CLIP_SOUNDS)[number];
+export const CLIP_SOUNDS: string[] = [...EFFECT_SOUNDS, ...allCommentaryLines().map(l => l.id)];
+export type ClipSound = string;
+
+/** The shortest co-commentator line, seconds. */
+const MIN_REPLAY_LINE = Math.min(...Object.values(REPLAY_LINES).flat().map(l => COMMENTARY_SECONDS[l.id] ?? 2.5));
+const isComm = (s: string) => s.startsWith("cl-") || s.startsWith("cc-");
+const secs = (id: string) => COMMENTARY_SECONDS[id] ?? 1.8;
+
+/** How the goal went in, for the commentator. */
+export function finishOf(tr: GoalTrack): FinishTag {
+  const strike = tr.events.filter(e => e.kind === "shot" && e.t <= tr.goalT + 0.05).pop();
+  const mode = strike?.mode;
+  if (mode === "header") return "header";
+  if (mode === "volley") return "volley";
+  if (mode === "chip") return "chip";
+  const how = tr.meta.how;
+  if (how === "penalty" || how === "free_kick" || how === "corner" || how === "rebound"
+    || how === "tight_angle" || how === "one_on_one" || how === "cutback" || how === "header" || how === "volley") return how;
+  const at = frameAt(tr, Math.max(0, tr.strikeT)).ball;
+  if (at.y > 21) return "long_range";
+  if (how === "long_range") return "long_range";
+  if (mode === "curl") return "curl";
+  return "generic";
+}
+
+/** What the goal did to the score, from the scorer's side. */
+export function scoreTagOf(tr: GoalTrack): ScoreTag {
+  const sa = tr.meta.scoreAfter;
+  if (!sa) return "none";
+  const us = tr.meta.youAreHome ? sa[0] : sa[1];
+  const them = tr.meta.youAreHome ? sa[1] : sa[0];
+  if (us + them === 1) return "opener";
+  if (us === them) return "level";
+  if (us < them) return "consolation";
+  if (us - them >= 3) return "rout";
+  if (us - them === 1) return tr.meta.minute >= 80 ? "late_winner" : "ahead";
+  return "none";
+}
+
+/** How many saves the keeper made before it went in. */
+function savesOf(tr: GoalTrack): number {
+  return tr.events.filter(e => e.kind === "save" && e.save !== "beaten" && e.t < tr.goalT).length;
+}
 
 export interface Cue {
   /** Video seconds. */
@@ -60,6 +104,8 @@ export const BED_LIVE = 0.16;
 export const BED_SHOT = 0.3;
 export const BED_GOAL = 0.42;
 export const BED_REPLAY = 0.08;
+/** The pitch's level while a commentator is talking. */
+export const DUCK = 0.55;
 
 /** Seconds after the ball crosses the line that the commentator speaks. */
 export const COMMENTARY_DELAY = 0.3;
@@ -83,6 +129,21 @@ export function planAudio(edit: Edit): AudioPlan {
   // One starting line for the whole video, then the next one per goal, so a
   // reel never says the same thing twice in a row.
   const base = hash(edit.tracks[0]?.meta.id ?? "");
+  const total = edit.shots.reduce((a, sh) => a + shotLength(sh), 0);
+  // The commentators never talk over each other or over themselves.
+  let voiceFree = 0;
+  const used: string[] = [];
+  // Video time of the next goal after shot `si` (a reel), or the end.
+  const nextGoalAt = (si: number): number => {
+    let a = 0;
+    for (let i = 0; i < edit.shots.length; i++) {
+      const sh = edit.shots[i];
+      const t2 = edit.tracks[sh.track];
+      if (i > si && t2 && !sh.replay && t2.goalT >= sh.from && t2.goalT <= sh.to) return a + (t2.goalT - sh.from) / sh.rate;
+      a += shotLength(sh);
+    }
+    return a;
+  };
   edit.shots.forEach((s, si) => {
     const tr = edit.tracks[s.track];
     const len = shotLength(s);
@@ -91,6 +152,8 @@ export function planAudio(edit: Edit): AudioPlan {
     const inShot = (t: number) => t >= s.from - 1e-6 && t <= s.to + 1e-6;
     const slow = s.replay || s.rate < 0.99;
     const rate = slow ? Math.max(0.5, s.rate + 0.2) : 1;
+    // A TikTok cut's slow-down is still "live" for the crowd and the call.
+    const liveShot = !s.replay;
     const id = tr.meta.id || `${si}`;
 
     // The ball being played: kicks, the keeper's gloves.
@@ -109,7 +172,7 @@ export function planAudio(edit: Edit): AudioPlan {
     const goalIn = inShot(tr.goalT);
     if (goalIn) cues.push({ at: out(tr.goalT), sound: "goal-net", gain: slow ? 0.5 : 0.75, rate });
 
-    if (!slow) {
+    if (liveShot) {
       // The crowd: a murmur, rising from the strike, a roar at the goal.
       bed.push({ at: acc, gain: BED_LIVE });
       const strike = Math.max(s.from, Math.min(s.to, tr.strikeT));
@@ -119,8 +182,25 @@ export function planAudio(edit: Edit): AudioPlan {
         bed.push({ at: out(tr.goalT), gain: BED_GOAL });
         cues.push({ at: Math.max(acc, out(tr.goalT) - 0.05), sound: "crowd-cheer-stadium", gain: fan ? 1 : 0.85, rate: 1 });
         if (!fan) {
-          const line = COMMENTARY_GOAL[(base + goalNo) % COMMENTARY_GOAL.length];
-          cues.push({ at: out(tr.goalT) + COMMENTARY_DELAY, sound: line, gain: 1, rate: 1 });
+          // The call, then (if there is room before the next goal) what it means.
+          const call = pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
+          used.push(call.id);
+          const at = Math.max(out(tr.goalT) + COMMENTARY_DELAY, voiceFree);
+          cues.push({ at, sound: call.id, gain: 1, rate: 1 });
+          voiceFree = at + secs(call.id) + 0.15;
+          const tag = scoreTagOf(tr);
+          const nextGoal = nextGoalAt(si);
+          // Leave room for the co-commentator over the replay, if there is one.
+          const replayAfter = edit.shots.some((sh, k) => k > si && sh.replay);
+          const keep = replayAfter && edit.style !== "tiktok" ? MIN_REPLAY_LINE + 0.4 : 0;
+          if (tag !== "none") {
+            const say = pickLine(SCORE_LINES[tag], `${id}:score`, used);
+            if (voiceFree + secs(say.id) + keep < Math.min(nextGoal, total) - 0.2) {
+              cues.push({ at: voiceFree, sound: say.id, gain: 1, rate: 1 });
+              used.push(say.id);
+              voiceFree += secs(say.id) + 0.25;
+            }
+          }
         }
         goalNo++;
       }
@@ -129,9 +209,26 @@ export function planAudio(edit: Edit): AudioPlan {
       // The replay: the crowd drops back; the commentator talks over it.
       bed.push({ at: acc, gain: BED_REPLAY });
       bed.push({ at: acc + len, gain: BED_REPLAY });
-      if (!fan) {
-        const line = COMMENTARY_REPLAY[hash(id) % COMMENTARY_REPLAY.length];
-        cues.push({ at: acc + 0.35, sound: line, gain: 0.95, rate: 1 });
+      if (!fan && edit.style !== "tiktok") {
+        // A reel: a line about the game first, if there is room.
+        const reel = edit.tracks.length > 1;
+        const lines = [
+          ...(reel ? [pickLine(REEL_LINES, `${id}:reel`, used)] : []),
+          pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
+        ];
+        for (let line of lines) {
+          const at = Math.max(acc + 0.35, voiceFree);
+          if (at + secs(line.id) > total + 0.1) {
+            // Too long for the time left: the longest line that still fits.
+            const room = total + 0.1 - at;
+            const fits = Object.values(REPLAY_LINES).flat().filter(l => !used.includes(l.id) && secs(l.id) <= room);
+            if (!fits.length) continue;
+            line = pickLine(fits, `${id}:fit`);
+          }
+          cues.push({ at, sound: line.id, gain: 0.95, rate: 1 });
+          used.push(line.id);
+          voiceFree = at + secs(line.id) + 0.3;
+        }
       }
     }
     acc += len;
@@ -211,6 +308,7 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
 
   const names = Array.from(new Set(plan.cues.map(c => c.sound)));
   const decoded = new Map<ClipSound, AudioBuffer>();
+  const decodedOk = (n: string) => decoded.has(n);
   await Promise.all(names.map(async n => {
     const b = await fetchBytes(n);
     const a = b ? await decode(ctx, b) : null;
@@ -226,6 +324,30 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
   master.release.value = 0.2;
   master.connect(ctx.destination);
 
+  // The pitch (crowd, ball) and the commentary box are two buses. While a
+  // commentator talks, the pitch dips a little, as on a real broadcast.
+  const pitchBus = ctx.createGain();
+  pitchBus.connect(master);
+  const talk = plan.cues.filter(c => isComm(c.sound) && decodedOk(c.sound));
+  pitchBus.gain.setValueAtTime(1, 0);
+  for (const c of talk) {
+    const end = c.at + secs(c.sound);
+    pitchBus.gain.setTargetAtTime(DUCK, Math.max(0, c.at - 0.08), 0.06);
+    pitchBus.gain.setTargetAtTime(1, end, 0.25);
+  }
+  // The commentary box: a broadcast mic — no rumble, a little presence.
+  const lowCut = ctx.createBiquadFilter();
+  lowCut.type = "highpass";
+  lowCut.frequency.value = 140;
+  const presence = ctx.createBiquadFilter();
+  presence.type = "peaking";
+  presence.frequency.value = 3200;
+  presence.Q.value = 0.9;
+  presence.gain.value = 3;
+  const boxGain = ctx.createGain();
+  boxGain.gain.value = 1.2;
+  lowCut.connect(presence); presence.connect(boxGain); boxGain.connect(master);
+
   // The crowd murmur.
   if (plan.bed.length) {
     const src = ctx.createBufferSource();
@@ -238,7 +360,7 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     const g = ctx.createGain();
     g.gain.setValueAtTime(plan.bed[0].gain, 0);
     for (const p of plan.bed) g.gain.linearRampToValueAtTime(p.gain, Math.max(0, p.at));
-    src.connect(band); band.connect(g); g.connect(master);
+    src.connect(band); band.connect(g); g.connect(pitchBus);
     src.start(0);
   }
 
@@ -250,7 +372,7 @@ export async function mixAudio(plan: AudioPlan): Promise<AudioBuffer | null> {
     src.playbackRate.value = c.rate;
     const g = ctx.createGain();
     g.gain.value = c.gain;
-    src.connect(g); g.connect(master);
+    src.connect(g); g.connect(isComm(c.sound) ? lowCut : pitchBus);
     src.start(Math.max(0, c.at));
   }
 
