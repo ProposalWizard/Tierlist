@@ -1,5 +1,5 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
-import { generateForMatch, generateForLeagueWeek, feedFor, mediaOf } from "../../lib/star/media/feed";
+import { generateForMatch, generateForLeagueWeek, generateForCareer, feedFor, mediaOf } from "../../lib/star/media/feed";
 import { clipsFor } from "../../lib/star/media/graphics";
 import { clipStyleFor, clipVariantFor } from "../../lib/star/media/clipStyle";
 import { buildMatchRecord } from "../../lib/star/media/record";
@@ -270,6 +270,11 @@ function track(id: string, goalAt = 2.2): GoalTrack {
         hg: Array.from({ length: x.hs }, (_, k) => ({ m: 10 + k * 20, s: `H${i}`, full: `Hal H${i}` })),
         ag: Array.from({ length: x.as }, (_, k) => ({ m: 15 + k * 20, s: `A${i}`, full: `Abe A${i}` })) }));
     if (others.length) after.media = generateForLeagueWeek({ ...after, media: after.media }, others);
+    // Every fourth match ends a month: the Player of the Month post is made
+    // straight after it, as in app/star-dev/page.tsx. That used to push your
+    // match off the post-match screen (seen in the game, 8 Oct 2026).
+    if (w % 4 === 3) after.media = generateForCareer({ ...after, media: after.media },
+      { kind: "award", won: false, award: "March Player of the Month", detail: "Someone else takes it." }, `potm-t-${w}`);
     const { posts } = feedFor(after, "moment");
     played++;
     if (us + them > 0 && posts[0]?.eventId !== "match-highlights") hlNotFirst++;

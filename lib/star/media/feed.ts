@@ -231,11 +231,14 @@ function commit(
   // those two fields drive the "moment" walk-out-of-the-stadium screen,
   // which is about YOUR match specifically. Overwriting them here would
   // silently break that screen's own timing every single week.
+  const matchCycle = scope === "club" && record ? { lastMatchCycleId: cycleId, lastMatchCycleClock: cycleClock } : {};
   if (!events.length) {
     const seenCycleIds = withSeen(state, cycleId);
-    return scope === "league"
-      ? { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds }
-      : { ...state, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds };
+    if (scope === "league") return { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds };
+    // Nothing to say about it, but a match with goals still gets its videos.
+    const extra = record ? highlightPosts(career, record, [...buildRoster(career), selfAccount(career)], cycleId, cycleClock) : [];
+    const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-POST_CAP) : state.posts;
+    return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
 
   const accounts = [...buildRoster(career), selfAccount(career)];
@@ -278,9 +281,12 @@ function commit(
     memory: markSaid(memory, used),
     trends: trends.length ? trends : state.trends,
     seenCycleIds: withSeen(state, cycleId),
+    // Kept through the league's and the career's own cycles; set by a match.
+    lastMatchCycleId: state.lastMatchCycleId,
+    lastMatchCycleClock: state.lastMatchCycleClock,
     ...(scope === "league"
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
-      : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId }),
+      : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId, ...matchCycle }),
   };
 }
 
@@ -459,7 +465,7 @@ export function feedFor(
   const state = mediaOf(career);
   if (stage === "settled") {
     const now = clockAt(career.season, career.week, 9_999);
-    return { posts: pinHighlights(visible(state.posts, now, now - FEED_HORIZON), state.lastCycleId), trends: state.trends, now };
+    return { posts: pinHighlights(visible(state.posts, now, now - FEED_HORIZON), state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
   }
   // ── The first wave is the hour after, not the quarter of an hour ──
   //
@@ -470,8 +476,13 @@ export function feedFor(
   // blank. Walking out of the ground covers the hour after it; the write-ups,
   // the back pages and Monday's awards still wait for the Feed, which is where
   // the staging was always doing its work.
+  // Your match stays on this screen even when a career post (Player of the
+  // Month) was made after it, a week on: show from the match to that post.
+  const match = state.lastMatchCycleClock;
+  const since = match !== undefined && match <= state.lastCycleClock && state.lastCycleClock - match <= WEEK_SPAN
+    ? match : state.lastCycleClock;
   const now = state.lastCycleClock + FIRST_WAVE;
-  return { posts: pinHighlights(visible(state.posts, now, state.lastCycleClock), state.lastCycleId), trends: state.trends, now };
+  return { posts: pinHighlights(visible(state.posts, now, since).filter(p => p.at >= state.lastCycleClock || p.at <= since + FIRST_WAVE), state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
 }
 
 /**
@@ -482,6 +493,9 @@ export function feedFor(
  * minutes after the whistle, so newest-first put them 12th to 29th of 16–32
  * posts: below the fold, and so made last.
  */
+/** One week of the feed clock (clockAt). */
+const WEEK_SPAN = clockAt(1, 2, 0) - clockAt(1, 1, 0);
+
 export function pinHighlights(posts: StoredPost[], cycleId: string): StoredPost[] {
   if (!cycleId) return posts;
   const rank = (p: StoredPost) =>
