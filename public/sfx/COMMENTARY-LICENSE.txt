@@ -1,0 +1,5 @@
+The comm-*.mp3 files (the goal-video commentator) were made offline with the
+Piper text-to-speech engine (https://github.com/rhasspy/piper, MIT) and its
+British English "alan" voice, trained on the Mycroft Mimic 3 apope voice
+(https://github.com/MycroftAI/mimic3-voices). They are stand-ins: an admin can
+replace any of them on the Sound Board (/admin/sound-board).

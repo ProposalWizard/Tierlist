@@ -94,6 +94,7 @@ export function buildMatchRecord(
       isUser: e.isUserGoal,
       how: e.how as GoalRecord["how"],
       distance: e.distance,
+      ...(e.clipId ? { clipId: e.clipId } : {}),
     })),
     us, them,
   );

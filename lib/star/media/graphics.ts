@@ -21,6 +21,38 @@ import { FAKE_FACES } from "../fakeFaces";
  * bug.
  */
 
+/**
+ * WHICH GOALS A VIDEO POST PLAYS (Leo, 7 Oct 2026: actual videos in the feed,
+ * showing the match's goals). Only goals that were seen have a recording
+ * (GoalRecord.clipId). A post about one goal plays that goal; a post about
+ * your goals plays yours; a post about the match (highlights, drama, a derby)
+ * plays every goal seen, in order. A post about anything else — a manager, a
+ * missed penalty, another club's match — plays nothing, and its picture has
+ * no play button.
+ */
+export function clipsFor(e: FootballEvent, r: MatchRecord | null): string[] {
+  if (!r) return [];
+  const f = e.facts;
+  if (typeof f.club === "string" && f.club !== r.club) return [];
+  if (e.tags.includes("manager") || e.id === "cheeky-miss" || e.subject.kind === "manager") return [];
+  const seen = r.goals.filter(g => g.clipId);
+  if (seen.length === 0) return [];
+  const ids = (gs: typeof seen) => gs.map(g => g.clipId as string);
+  // A post about one goal, one man's goals or your goals plays exactly those
+  // — and nothing when they were not seen. Never somebody else's goal in
+  // their place.
+  const minute = typeof f.minute === "number" ? f.minute : undefined;
+  if (minute !== undefined) {
+    const g = seen.find(x => x.minute === minute && (e.subject.kind !== "you" || x.isUser));
+    return g ? ids([g]) : [];
+  }
+  if (typeof f.scorer === "string") return ids(seen.filter(x => x.scorer === f.scorer));
+  if (e.subject.kind === "teammate") return ids(seen.filter(x => !x.isUser && x.scorer === e.subject.name));
+  if (e.subject.kind === "you" && e.tags.includes("goal")) return ids(seen.filter(x => x.isUser));
+  // A post about the match as a whole: every goal that was seen.
+  return ids(seen);
+}
+
 export function buildGraphic(
   kind: GraphicKind,
   e: FootballEvent,
@@ -219,12 +251,25 @@ export function buildGraphic(
       return { type: "poll", question: pollQuestion(e), options, votes };
     }
 
-    case "thumbnail":
+    case "thumbnail": {
+      const clips = clipsFor(e, r);
       return {
         type: "thumbnail",
         title: headlineFor(e, you).toUpperCase(),
-        badge: e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        // A video of more than one goal is a highlights reel, whatever the post is about.
+        badge: clips.length > 1 ? "HIGHLIGHTS" : e.tags.includes("goal") ? "GOAL" : e.tags.includes("shame") ? "REACTION" : "HIGHLIGHTS",
+        ...(clips.length ? { clips } : {}),
       };
+    }
+
+    case "goalVideo": {
+      // The club's own goal post (TV pictures) and a fan's phone video: only
+      // when the goal was recorded. No recording, no graphic: the post stays
+      // the plain words it always was.
+      const clips = clipsFor(e, r);
+      if (!clips.length) return undefined;
+      return { type: "goalVideo", title: headlineFor(e, you).toUpperCase(), clips };
+    }
 
     case "teamOfTheWeek": {
       const squad = career.squad ?? [];

@@ -45,6 +45,7 @@ import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 import { pinChanceSet } from "@/lib/star/chanceSet";
+import type { GoalTrack } from "@/lib/star/goalClip/track";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -161,7 +162,7 @@ const SQUAD_WAIT_MS = 4000;
 
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
-  onChanceServed, onChanceResolved, onComplete, fitParent = false, newChances = false,
+  onChanceServed, onChanceResolved, onComplete, fitParent = false, newChances = false, onGoalClip,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -196,6 +197,9 @@ export default function EnginePlay({
    * (/star-chances-dev) sets it — it has no Save or Commit. Absent: Classic.
    */
   newChances?: boolean;
+  /** Goal videos: every goal scored here, recorded frame by frame (the goal
+   *  videos test page). Absent: nothing is recorded. */
+  onGoalClip?: (track: GoalTrack) => void;
 }) {
   // ── Test screens play the CLASSIC chances ──
   // Harry, 3 Oct 2026: the new chances stay "separate to the scenario gallery
@@ -293,6 +297,7 @@ export default function EnginePlay({
         onChanceServed={served}
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
+        onGoalClip={onGoalClip}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
         penaltyRunup={s.penaltyRunup}

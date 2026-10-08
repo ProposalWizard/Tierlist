@@ -207,6 +207,17 @@ smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
 at their end; a new file needs a POLICY line in the script. Details:
 `scripts/perf3d/README.md`.
 
+## Goal videos are recordings, never re-runs (Leo, 7 Oct 2026)
+
+"the goal replays should always be the same." Every goal in the real match
+is recorded frame by frame (`lib/star/goalClip/`, CanvasMatch `onGoalClip`);
+the feed and Goal Replays draw the video FROM the recording. Never rebuild a
+replay by re-simulating the chance. Recordings live in IndexedDB on the
+device, not in the save. Test page: `/star-goal-clips-dev`.
+Sound (Leo, 8 Oct): `lib/star/goalClip/audio.ts` plans and mixes crowd,
+kick, net and commentator (`public/sfx/comm-*.mp3`, replaceable on the
+Sound Board) into the file; the speaker button is `goalClip/sound.ts`.
+
 ## Club data lives in one place, and /admin/clubs shows the gaps
 
 Mikey, 2 Oct 2026: "make sure that you never lose this information again."
@@ -695,6 +706,28 @@ Three people are building this. To avoid two sessions editing the same files:
 ---
 
 ## Recent Session
+
+**8 October 2026 (Leo) — Goal videos get sound: crowd, kick, net, a commentator, and a speaker button. Patch notes Leo v0.11 (site 0.36): https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY**
+
+- **The ask:** "crowd noise and commentator but a mute toggle too. go on and push commit merge so I can see it in game".
+- `lib/star/goalClip/audio.ts`: `planAudio(edit)` (pure, tested in `goalClipAudio.mts`) puts kicks/gloves/net on their frames from the track's events, a crowd bed that rises at the strike and peaks at the goal, the stadium roar, and a commentator line `COMMENTARY_DELAY` after each goal plus one over the replay. Fan cam: no commentator. Replay: bed drops, kick/net slowed. `mixAudio` renders it with OfflineAudioContext from `sfxUrl()` files (so Sound Board replacements apply) through a limiter.
+- `encode.ts`: AudioEncoder (AAC, else Opus in MP4; Opus in WebM) fed in step with the frames; `EncodedClip.hasAudio`/`audio`. A browser that can't encode sound plays the mix alongside the video (`syncSide` in GoalVideo.tsx).
+- Speaker button bottom-left (`data-goal-video-sound`), one setting for all videos (`star-clip-sound`, defaults to Settings → Sound effects); autoplay-with-sound refused → plays muted until tapped.
+- Commentator: 9 lines from the offline Piper TTS ("alan", en-GB), `public/sfx/comm-*.mp3`, credit in `public/sfx/COMMENTARY-LICENSE.txt`; new Sound Board group "Goal video commentator". Calm, no names: replace takes on the Sound Board.
+- **Seen:** a real recorded goal made into WebM with VP9 + Opus tracks (crowd RMS 0.07 → 0.21 at the goal, mix 0.2 s); on the test page the speaker toggled on → off → on and saved, no page errors. **Not seen:** an iPhone, the career feed with sound (same component as the test page). 267/267 tests, tsc clean, guard clean, build passes.
+
+**7 October 2026 (Leo) — Goal videos: every goal recorded frame by frame as you play, real videos in the post-match feed from three cameras, Save video, Goal Replays play the recording. Patch notes Leo v0.10 (site 0.35): https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X**
+
+- **The ask (Leo):** "actual videos in the social media bit after a game? it makes it look like theres videos but you cant play them … show goals from the match … different angles … download the goal replays … the goal replays should always be the same, not just remaking the situation."
+- **Recording** (`lib/star/goalClip/recorder.ts`, `track.ts`): CanvasMatch's optional `onGoalClip` prop (the career mount in page.tsx; EnginePlay forwards it). `recordGoalFrame` in the rAF loop samples the ball, every body (`clipBodiesFor`: you/taker, follower, mates, runners, defenders, keeper) and the keeper's dive each frame of a live chance with `goalInView`; actionLog events are dated back by `ago`. Every goal branch stamps `GoalEvent.clipId` (+ `GoalReplay.clipId`). `cutClip`: first kick − 0.9 s to goal + 2.2 s, 12 s cap, 30 fps, Int16 cm, base64. 9–15 KB a goal.
+- **Storage** (`store.ts`): IndexedDB `star-goal-clips`, newest 80 plus every clip a saved/recent replay names. Never in the career save (it would grow every cloud sync).
+- **Video** (`cameras.ts`, `scene.ts`, `render.ts`, `edit.ts`, `encode.ts`): perspective stadium through firstPersonView's `project()`, the game's baked sprites with camera-relative facing. Edits: broadcast (TV, then a behind-the-goal slow-mo replay), reverse (behind the goal, then TV slow-mo), fan (9:16 handheld); 2+ goals play as a reel. WebCodecs offline into mp4-muxer (H.264) or webm-muxer (VP9/VP8) — new deps `mp4-muxer@5.2.2`, `webm-muxer@5.1.4`. `videoSupported()` gates the play button; `saveVideo` = the share sheet with the file, else a download.
+- **Feed** (`media/graphics.ts` `clipsFor`, `Graphics.tsx`, `media/GoalVideo.tsx`): the thumbnail spec carries `clips` (aggregator/meme posts); a new `goalVideo` graphic (built ONLY when the goal was recorded, else no graphic, so the post is the same words as before) sits on `club-goal-tag`, `club-goal-plain`, `club-generic` (full-time highlights) and `fan-goal`. The author picks the edit (club/league → broadcast; fan/meme/team-mate/TikTok → fan; else reverse). 2+ clips → HIGHLIGHTS. One video plays at a time; a made video is shared between posts of the same goals.
+- **Goal Replays** (`GoalClipViewer.tsx`): a replay whose clip is on this device plays the video (three cameras, Save); otherwise the old re-run.
+- **Found while checking, fixed:** the sprites are drawn for a top-down camera, so from the fan cam a dive running down the screen read as a keeper on his head — `readableDive` (render.ts) draws it at most 35° from flat, towards the ball (tested over 2,701 facings × directions). The players' moves follow Settings → Look → Animations (`Edit.moves`).
+- **Test page** `/star-goal-clips-dev` (PageGuide + AdminNavPanel). **Dev hook:** `window.__starMatch` (phase, kind, ball/goal client coords), only when `offlineDevPlayEnabled()`, so test bots can find the ball.
+- **Seen in the real game** (`star-playtest`, signed out, made-up squads): 3 goals → 3 IndexedDB rows (6.8/12.6/8.7 KB) → a HIGHLIGHTS post → still → making ring (~5 s) → a 640×360 12.7 s video of all three, real time, loop, tap pauses; Save downloaded a 2.7 MB WebM that plays. It found: only aggregator pages ever showed a video (no club/fan video slot — fixed with `goalVideo`), a second post re-made the same video (5.9 s — now shared), two videos played at once, the reel was named after its first goal, the Save row wrapped, the GOAL label covered the @handle (all fixed). Re-checked on the fixed code in a second match: the club's post played the TV video (made in 2.8 s), a fan's post the phone video (1.3 s), Football Daily the behind-the-goal one; label top-right; one plays at a time; Save row tidy; no page errors. It noticed the TV and fan files of one goal shared a name, so the camera is in the file name now (-TV/-Fan-cam/-Behind-the-goal). A HIGHLIGHTS reel after the fixes was not seen in the feed (one goal of yours that match; tested in goalVideoFeed.mts). Found, NOT fixed (older): "The League" @PremierLeague posts lower-league matches with Premier League labels; a recording stops ~1.3–1.8 s after the goal when the match moves on (POST_GOAL_S is 2.2). The test page end to end (a WebM downloaded). Stills from all three cameras for two goals recorded on the test page (`tests/star/fixtures/goalClips/`). **Not seen:** an iPhone (MP4 and the share sheet; this machine's Chromium only makes WebM), real crests/faces, a phone's encode speed (1.3–3.1 s here, no graphics chip).
+- 266/266 tests (`goalClip.mts`, `goalVideoFeed.mts` new), tsc clean, guard clean. Merged main (Mikey's clearances) and the other Leo chat's 3D sprite moves.
 
 **6 October 2026 (Leo, cont. 3) — Retirement revamp, part 3: your records live on, a share picture, the farewell match, share a career by code and compare. Legacy points / Next generation / the son NOT built (Leo builds it later, after the base game); retiring still ends the save. Patch notes Leo v0.9 (site 0.33): https://claude.ai/artifact/39iLwb8KpLGQmK9R7nbLgr** (Leo's other chat used v0.8 / 0.32 for its animations round, same day.)
 

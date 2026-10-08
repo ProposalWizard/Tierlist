@@ -27,6 +27,342 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.36",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-08T01:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/2Uodrmk5Uj9Fm6ZBpUijAY",
+      "summary": "Goal videos have sound: a crowd murmur that rises with the shot and roars at the goal, the kick, the keeper's gloves and the net on the frame they happen, and a commentator line after the goal and over the slow-motion replay (no commentator on a fan's phone video). A speaker button on every goal video mutes them all, remembered on this phone. A saved video keeps its sound. The nine commentator lines are on the Sound Board, so they can be replaced with better recordings.",
+      "stats": [
+        {
+          "value": "9",
+          "label": "commentator lines"
+        },
+        {
+          "value": "~3×",
+          "label": "louder crowd at the goal"
+        },
+        {
+          "value": "0.2 s",
+          "label": "to mix the sound"
+        },
+        {
+          "value": "267/267",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A goal video plays with sound",
+              "detail": "Score in a match → Post Match Reactions → your club's goal post → tap ▶."
+            },
+            {
+              "title": "The speaker button",
+              "detail": "Bottom left of a playing goal video → tap to mute, tap again for sound."
+            },
+            {
+              "title": "Mute is remembered",
+              "detail": "Mute one video, then play another goal video: it stays muted."
+            },
+            {
+              "title": "A fan's video has no commentator",
+              "detail": "A fan's goal post → crowd only."
+            },
+            {
+              "title": "A saved video has sound",
+              "detail": "Save video → open the file."
+            },
+            {
+              "title": "The commentator lines on the Sound Board",
+              "detail": "/admin/sound-board → Goal video commentator."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: goal videos have sound",
+          "items": [
+            {
+              "title": "Crowd, kick, net and a commentator",
+              "detail": "Problem: the goal videos were silent. Fix: a crowd murmur that rises as the shot comes and roars at the goal; each kick, the keeper's gloves and the net on their frame; a commentator line just after the goal and one over the slow-motion replay. A fan's phone video has the crowd only. In the replay the crowd drops back and the kick and net sound slower. Measured on a real recorded goal: the crowd is about 3 times louder at the goal than before the shot; the saved file has a sound track."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A speaker button on every goal video",
+              "detail": "Bottom left. Mutes every goal video; remembered on this phone; starts the way Settings → Sound effects is set. A phone that blocks sound before a tap plays muted until the speaker is tapped. Seen in a browser: on → muted → on, saved."
+            },
+            {
+              "title": "Nine commentator lines, replaceable on the Sound Board",
+              "detail": "Made with a free offline British voice. Listed under Goal video commentator on /admin/sound-board; a replacement is used by the videos straight away."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The commentator sounds calm, not excited",
+              "detail": "A free reading voice. Replace the lines on the Sound Board with better takes; no code change."
+            },
+            {
+              "title": "The commentator does not say names",
+              "detail": "Each line is recorded in advance."
+            },
+            {
+              "title": "Not heard on an iPhone",
+              "detail": "Worked out, not seen: a phone that cannot put sound in the file plays it next to the video, but its saved video is silent."
+            },
+            {
+              "title": "Still open from v0.10",
+              "detail": "Recordings stay on one phone; a recording stops about 1.5 s after the goal; The League posts lower-league matches as Premier League; run star_legend_shares.sql and star_hall_of_fame.sql."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.35",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-07T22:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Uq2eXdooybw4HrxqC6999X",
+      "summary": "Goal videos: the match records every goal as you play (the ball, every player and the keeper's dive, 30 times a second, 7 to 15 KB a goal, kept on your phone). After the match, posts play it as a real video: your club on the TV pictures (its goal posts and its full-time highlights), highlights pages from behind the goal, fans on a phone in the stand. Two or more goals play as a highlights reel, and Save video puts it in your share menu or downloads it. Goal Replays play the recording, so a replay is always the same goal.",
+      "stats": [
+        {
+          "value": "3",
+          "label": "cameras: TV, behind the goal, a fan in the stand"
+        },
+        {
+          "value": "7–15 KB",
+          "label": "one recorded goal, kept on your phone"
+        },
+        {
+          "value": "1.3–3.1 s",
+          "label": "to make a video on a slow test machine"
+        },
+        {
+          "value": "266 / 266",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A goal video in the feed",
+              "detail": "Score in a match → after the match, Post Match Reactions → a post with a picture of the goal → tap ▶."
+            },
+            {
+              "title": "Save video",
+              "detail": "The same post → Save video (on an iPhone: the share menu → Save Video)."
+            },
+            {
+              "title": "Three cameras",
+              "detail": "Your club's post (TV) · a highlights page (behind the goal) · a fan's post (a phone in the stand)."
+            },
+            {
+              "title": "A highlights reel",
+              "detail": "Score 2 or more in a match, then find the HIGHLIGHTS post."
+            },
+            {
+              "title": "No play button without a video",
+              "detail": "A meme, a missed penalty or a match you skipped: a picture only."
+            },
+            {
+              "title": "Goal Replays play the recording",
+              "detail": "Settings → Goal Replays (admins) → a goal scored after this update → TV · Behind the goal · Fan in the stand."
+            },
+            {
+              "title": "The players' moves follow Animations",
+              "detail": "Settings → Look → Animations: New or Old, then watch a video again."
+            },
+            {
+              "title": "The test page",
+              "detail": "/star-goal-clips-dev → score → watch it from each camera → Save video."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Headline: goals in the feed are real videos now",
+          "items": [
+            {
+              "title": "Every goal is recorded, and the feed plays it",
+              "detail": "Problem: after a match, some posts looked like videos but nothing played, and a goal replay played the chance again with new luck, so it could end differently. Why: the game kept who scored and when, but not how. Fix: the match records every goal while you play (the ball, every player, the keeper's dive, 30 times a second). A post about a goal plays that recording as a real video: tap ▶, the phone makes it in a few seconds (a ring shows how far), then it loops. Your club posts the TV camera with a slow-motion replay from behind the goal (its goal posts and its full-time post); highlights pages post from behind the goal; fans post a tall, shaky phone video from the stand; a post about 2 or more goals plays them all. Seen in the real game: three goals played as one 12.7-second highlights video; after the fixes, a second match showed all three cameras in the feed (club TV made in 2.8 s, fan in 1.3 s, behind the goal), one playing at a time, no page errors."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Every goal is recorded as you play",
+              "detail": "From the first kick of the move to just after the goal (12 seconds at most). 9 to 15 KB a goal, kept on this phone in the browser's own storage, not in the career save (the cloud save stays the same size). The newest 80 goals, plus every goal kept in Goal Replays. In the video every player and the ball are within 5 cm of where they really were (test). Your goals and team-mates' goals."
+            },
+            {
+              "title": "Three cameras, like real posts",
+              "detail": "TV: high at the side, a score bar, a GOAL banner, the scorer and the minute. Behind the goal: low behind the net, the keeper's back and the net bulge. A fan in the stand: a tall phone video, a bit shaky, heads in front, the account's @name. The crowd wears the two clubs' colours; some matches are at night."
+            },
+            {
+              "title": "Save video",
+              "detail": "Under every goal video: the share menu on a phone (Save Video puts it in Photos), a download on a computer. Most phones make an MP4 (worked out from the code); a browser that cannot makes a WebM. Named after the goal and the camera, e.g. Goal-Vance-44-Horsham-v-Farnborough-TV.mp4; several goals: Highlights-Horsham-v-Farnborough-TV.mp4. A browser that cannot make videos shows the picture with no play button."
+            },
+            {
+              "title": "Goal Replays play the recording",
+              "detail": "Settings → Goal Replays (admins): a goal recorded on this phone plays its video with the three camera buttons and Save video. A goal from before this update, or from another phone, plays the old way."
+            },
+            {
+              "title": "The test page",
+              "detail": "/star-goal-clips-dev: score a penalty, one-on-one, free kick or cut-back on the real match (weak keeper), then watch it from each camera and save it. Moves: Old / New."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "A post with no recorded goal is a picture",
+              "detail": "A meme, a missed penalty, a match you skipped, or a goal from before this update: the headline on a card, with no play button."
+            },
+            {
+              "title": "The players' moves follow Settings → Look → Animations",
+              "detail": "New: the newer 3D moves (a shot, a header, a one-handed save). Old: the older moves. The same as your match."
+            },
+            {
+              "title": "A post about 2 or more goals says HIGHLIGHTS",
+              "detail": "It said GOAL. The label sits on the right of the picture now."
+            },
+            {
+              "title": "Your club's goal posts and full-time post carry the goals on video",
+              "detail": "TV pictures, only when the goal was recorded; otherwise the same words as before."
+            },
+            {
+              "title": "A fan's goal post carries their phone video",
+              "detail": "Filmed from the stand."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found by the playtest in the real game)",
+          "items": [
+            {
+              "title": "Only highlights pages posted videos",
+              "detail": "In the real feed only pages like Football Daily had a video, so you only saw the camera behind the goal. Your club's goal posts and full-time post (TV) and a fan's goal post (phone) carry it now. Over 30 test matches: club videos 0 → 7, fan videos 0 → 10."
+            },
+            {
+              "title": "A second post of the same goals made the video again",
+              "detail": "5.9 seconds more. Now the video is made once and shared, and plays at once."
+            },
+            {
+              "title": "Two videos played at the same time",
+              "detail": "Now one at a time: starting one pauses the others."
+            },
+            {
+              "title": "A highlights video was saved under its first goal's name",
+              "detail": "Now Highlights-Horsham-v-Farnborough."
+            },
+            {
+              "title": "The TV and the fan's video of one goal saved under one name",
+              "detail": "Found by the second check. The camera is in the name now (-TV, -Fan-cam, -Behind-the-goal)."
+            },
+            {
+              "title": "Save video wrapped onto two lines; the GOAL label covered the account's name",
+              "detail": "Both fixed: Save stays on one line, the label sits top right."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed (found while checking)",
+          "items": [
+            {
+              "title": "The keeper stood on his head in the fan's video",
+              "detail": "The players' drawings are made for the match's camera, which looks down from above, so a dive that runs down the screen read as a man on his head. A dive is drawn at most 35° from flat now, towards the ball. Tested over 2,701 ways he can face and dive; seen in stills from all three cameras."
+            },
+            {
+              "title": "A post about one goal could play the match's other goals",
+              "detail": "When that goal was not recorded. Now it plays that goal or shows a picture. Over 30 simulated matches, no post plays a wrong goal (test)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Recordings stay on the phone that played the match",
+              "detail": "Another phone shows the post's picture. On purpose: it keeps the cloud save small."
+            },
+            {
+              "title": "Goals from before this update have no recording",
+              "detail": "Their posts are pictures; their replays play the old way."
+            },
+            {
+              "title": "The first play takes a few seconds",
+              "detail": "1.3 to 3.1 seconds on a slow test machine. After that it plays at once until you leave the game."
+            },
+            {
+              "title": "No sound yet",
+              "detail": "The videos are silent."
+            },
+            {
+              "title": "Only goals in the real match are recorded",
+              "detail": "Simulated matches, five-a-side and training drills record nothing."
+            },
+            {
+              "title": "Not seen on an iPhone",
+              "detail": "An iPhone needs iOS 16.4 or later to make the video (worked out, not seen). Older phones show the picture."
+            },
+            {
+              "title": "Goal Replays is for admins only",
+              "detail": "As before. Players see their goals in the feed."
+            },
+            {
+              "title": "The celebration in a video is short",
+              "detail": "A recording stops when the match moves on, about 1.3 to 1.8 seconds after the goal (seen in the real game)."
+            },
+            {
+              "title": "\"The League\" posts lower-league matches as Premier League",
+              "detail": "Found by the playtest (@PremierLeague posting about Horsham, National League South). Older than this update; not fixed here."
+            },
+            {
+              "title": "Still waiting from v0.9",
+              "detail": "Run star_legend_shares.sql and star_hall_of_fame.sql. The world does not age."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "A short clip of a video playing in the feed, in the real game",
+              "detail": "Added to the page after the push."
+            },
+            {
+              "title": "Sound?",
+              "detail": "Crowd noise and a commentator line on the videos. Say if you want it."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.34",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-07T18:00:00Z",
