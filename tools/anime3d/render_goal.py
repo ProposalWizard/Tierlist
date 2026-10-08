@@ -236,10 +236,6 @@ def kit_layer(body, arm):
 
 
 LABELS = kit_layer(B0, A0)
-for e in B0.data.edges:  # kit seams get an ink line (sleeves, shorts, socks, boots)
-    a, b = e.vertices
-    if LABELS[a] != LABELS[b]:
-        e.use_freestyle_mark = True
 
 
 def hexc(h):
@@ -255,7 +251,6 @@ KITS = {
 }
 
 LIGHT = Vector((0.45, 0.55, 0.75)).normalized()
-RIM = Vector((-0.5, 0.6, 0.35)).normalized()
 
 
 def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
@@ -274,8 +269,6 @@ def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
     ramp.color_ramp.elements[0].color = (*shadow, 1)
     ramp.color_ramp.elements[1].position = 0.38
     ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
-    hi = ramp.color_ramp.elements.new(0.86)
-    hi.color = (1.14, 1.14, 1.12, 1)
     nt.links.new(dot.outputs["Value"], ramp.inputs[0])
     mul = nt.nodes.new("ShaderNodeMix")
     mul.data_type = "RGBA"
@@ -283,24 +276,8 @@ def toon_nodes(mat, base_socket_fn, shadow=(0.56, 0.58, 0.80)):
     mul.inputs[0].default_value = 1.0
     nt.links.new(base_socket_fn(nt), mul.inputs[6])
     nt.links.new(ramp.outputs[0], mul.inputs[7])
-    # rim light: a bright edge on the side away from the camera, lit from behind
-    lw = nt.nodes.new("ShaderNodeLayerWeight")
-    lw.inputs[0].default_value = 0.5
-    gt = nt.nodes.new("ShaderNodeMath"); gt.operation = "GREATER_THAN"; gt.inputs[1].default_value = 0.66
-    nt.links.new(lw.outputs["Facing"], gt.inputs[0])
-    rd = nt.nodes.new("ShaderNodeVectorMath"); rd.operation = "DOT_PRODUCT"
-    rd.inputs[1].default_value = RIM
-    nt.links.new(geo.outputs["Normal"], rd.inputs[0])
-    rg = nt.nodes.new("ShaderNodeMath"); rg.operation = "GREATER_THAN"; rg.inputs[1].default_value = 0.05
-    nt.links.new(rd.outputs["Value"], rg.inputs[0])
-    rm = nt.nodes.new("ShaderNodeMath"); rm.operation = "MULTIPLY"
-    nt.links.new(gt.outputs[0], rm.inputs[0]); nt.links.new(rg.outputs[0], rm.inputs[1])
-    add = nt.nodes.new("ShaderNodeMix"); add.data_type = "RGBA"; add.blend_type = "ADD"
-    nt.links.new(rm.outputs[0], add.inputs[0])
-    nt.links.new(mul.outputs[2], add.inputs[6])
-    add.inputs[7].default_value = (0.5, 0.52, 0.6, 1)
     em = nt.nodes.new("ShaderNodeEmission")
-    nt.links.new(add.outputs[2], em.inputs[0])
+    nt.links.new(mul.outputs[2], em.inputs[0])
     nt.links.new(em.outputs[0], out.inputs[0])
 
 
@@ -360,17 +337,7 @@ def body_mat(team):
     return m
 
 
-INKCOL = bpy.data.collections.new("Ink")
-sc.collection.children.link(INKCOL)
-
-
 def add_outline(obj, thick):
-    """Ink: Freestyle draws edges, creases and kit seams on these objects."""
-    INKCOL.objects.link(obj)
-    return
-
-
-def _old_outline(obj, thick):
     obj.data.materials.append(INK)
     sol = obj.modifiers.new("ink", "SOLIDIFY")
     sol.thickness = thick
@@ -582,37 +549,6 @@ def scoreboard(loc, rot):
 scoreboard((34, -13.9, 9.5), (math.pi / 2, 0, math.pi))
 scoreboard((34, 71.9, 9.5), (math.pi / 2, 0, 0))
 
-sc.render.use_freestyle = True
-sc.render.line_thickness_mode = "ABSOLUTE"
-vl = sc.view_layers[0]
-vl.use_freestyle = True
-fs = vl.freestyle_settings
-fs.crease_angle = math.radians(128)
-for ls0 in fs.linesets:
-    ls0.show_render = False
-LS = fs.linesets.new("ink")
-LS.select_by_collection = True
-LS.collection = INKCOL
-LS.select_by_visibility = True
-LS.visibility = "VISIBLE"
-LS.select_by_edge_types = True
-LS.select_silhouette = True
-LS.select_border = True
-LS.select_crease = True
-LS.select_edge_mark = True
-LS.select_contour = True
-lst = LS.linestyle
-lst.color = (0.035, 0.035, 0.07)
-lst.thickness = 2.4
-lst.caps = "ROUND"
-cal = lst.thickness_modifiers.new(name="cal", type="CALLIGRAPHY")
-cal.orientation = 50
-cal.thickness_min = 1.0
-cal.thickness_max = 4.2
-far = lst.thickness_modifiers.new(name="far", type="DISTANCE_FROM_CAMERA")
-far.blend = "MULTIPLY"
-far.range_min, far.range_max = 3.0, 22.0
-far.value_min, far.value_max = 1.0, 0.12
 
 world = bpy.data.worlds.new("w")
 world.use_nodes = True
