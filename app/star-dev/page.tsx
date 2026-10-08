@@ -1477,7 +1477,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       if (cupCompetition) {
         const state = from.cupState?.find((s) => s.competition === cupCompetition);
         const round = state ? currentRound(state) : null;
-        const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined);
+        // (a first leg leaves the round unplayed but is not a fresh draw)
+        const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined && !t.legs?.length);
         // Only a draw you're in (v0.15 item 32) — knocked out, the next
         // round is drawn without you and the game moves straight on.
         const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);

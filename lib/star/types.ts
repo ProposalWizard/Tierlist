@@ -225,6 +225,9 @@ export interface Fixture {
   /** The one against the club down the road. Same football, louder consequences. */
   derby?: boolean;
   round?: string;
+  /** A two-legged cup tie (the League Cup semi-final): which leg this is.
+   *  Absent on everything else, and on a semi drawn before legs existed. */
+  leg?: 1 | 2;
   /** For opponents that are not in your division. */
   opponentStrength?: number;
 }
