@@ -147,8 +147,19 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
   }, [restarts]);
   useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
-  // a game over the room: the room stops drawing until it closes
-  useEffect(() => { ctrlRef.current?.setPaused(open !== null); }, [open]);
+  // a game over the room: the room stops drawing until it closes. Closing
+  // it, he cheers if the money went up while it was open, groans if it fell.
+  const moneyNow = useRef(career.money);
+  moneyNow.current = career.money;
+  const moneyAtOpen = useRef<number | null>(null);
+  useEffect(() => {
+    const c = ctrlRef.current;
+    c?.setPaused(open !== null);
+    if (open !== null) { moneyAtOpen.current = moneyNow.current; return; }
+    const before = moneyAtOpen.current;
+    moneyAtOpen.current = null;
+    if (before !== null) c?.react(Math.sign(moneyNow.current - before));
+  }, [open]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
 
