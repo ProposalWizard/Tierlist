@@ -1,4 +1,5 @@
 import { fameOf } from "./fame";
+import { openEuroBracket, advanceEuroBracket, euroTieFromBracket, settleYourKoTie } from "./euroBracket";
 import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad } from "./types";
 import type { NamedOppGoal } from "./leagueSquads";
 import {
@@ -14,7 +15,7 @@ import {
 } from "./calendar";
 import {
   openEuro, poolFor, knockoutSlots, simulateEuroMatchday, sortEuro, leaguePhaseComplete, drawTie,
-  currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict,
+  currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict, simulate as simulateEuroScore,
   type EuroState, type EuroTie,
 } from "./euro";
 
@@ -912,16 +913,21 @@ export function settleEuro(
     const position = table.findIndex(r => r.isYou) + 1;
     const settled: EuroState = { ...next, table, position };
     const opening = firstRound(position);
+    // The real UEFA bracket off the final table (euroBracket.ts); every tie
+    // you are not in is played the moment both sides are known.
+    const str = euroStrength(settled, career.player.club, yourStrength);
+    const bracket = advanceEuroBracket(
+      openEuroBracket(table.map(r => r.name), rng), career.player.club, str, simulateEuroScore, rng);
     if (!opening) {
       return {
-        state: { ...settled, eliminated: true, winner: crownEurope(settled, career.season * 31 + 5) },
+        state: { ...settled, bracket, eliminated: true, winner: bracket.winner ?? crownEurope(settled, career.season * 31 + 5) },
         nextFixture: null,
         trophy: null,
         message: `${ordinalOf(position)} in the ${state.competition} league phase. ${phaseVerdict(position)}`,
       };
     }
-    const tie = drawTie(settled, opening, career.player.club, rng);
-    const withTie: EuroState = { ...settled, ties: [tie] };
+    const tie = euroTieFromBracket(bracket, career.player.club, str) ?? drawTie(settled, opening, career.player.club, rng);
+    const withTie: EuroState = { ...settled, bracket, ties: [tie] };
     return {
       state: withTie,
       nextFixture: euroTieFixture(withTie, career, tie, 0),
@@ -955,6 +961,10 @@ export function settleEuro(
 
   const decided = settleTie(played, yourStrength, rng, livePens);
   const ties = state.ties.map((t, i) => (i === state.ties.length - 1 ? decided : t));
+  const str = euroStrength(state, career.player.club, yourStrength);
+  const bracket = state.bracket
+    ? settleYourKoTie(state.bracket, career.player.club, decided, str, simulateEuroScore, rng)
+    : undefined;
   const us = decided.legs.reduce((s, l) => s + (l.us ?? 0), 0);
   const them = decided.legs.reduce((s, l) => s + (l.them ?? 0), 0);
   const etNote = decided.wentToExtraTime ? " after extra time" : "";
@@ -962,8 +972,8 @@ export function settleEuro(
 
   if (decided.result === "L") {
     const out: EuroState = {
-      ...state, ties, eliminated: true,
-      winner: crownEurope({ ...state, ties }, career.season * 31 + 5),
+      ...state, ties, bracket, eliminated: true,
+      winner: bracket?.winner ?? crownEurope({ ...state, ties }, career.season * 31 + 5),
     };
     return {
       state: out,
@@ -976,7 +986,7 @@ export function settleEuro(
   }
 
   if (tie.round === "Final") {
-    const won: EuroState = { ...state, ties, won: true, winner: career.player.club };
+    const won: EuroState = { ...state, ties, bracket, won: true, winner: career.player.club };
     return {
       state: won,
       nextFixture: null,
@@ -987,12 +997,13 @@ export function settleEuro(
     };
   }
 
-  const after = nextRound(state.position ?? 24, tie.round);
+  const fromBracket = bracket ? euroTieFromBracket(bracket, career.player.club, str) : null;
+  const after = fromBracket?.round ?? nextRound(state.position ?? 24, tie.round);
   if (!after) {
-    return { state: { ...state, ties }, nextFixture: null, trophy: null, message: "Through." };
+    return { state: { ...state, ties, bracket }, nextFixture: null, trophy: null, message: "Through." };
   }
-  const drawn = drawTie({ ...state, ties }, after, career.player.club, rng);
-  const advanced: EuroState = { ...state, ties: [...ties, drawn] };
+  const drawn = fromBracket ?? drawTie({ ...state, ties }, after, career.player.club, rng);
+  const advanced: EuroState = { ...state, ties: [...ties, drawn], bracket };
   return {
     state: advanced,
     nextFixture: euroTieFixture(advanced, career, drawn, 0),
@@ -1001,6 +1012,12 @@ export function settleEuro(
       ? `Through to the ${after} on penalties. ${drawn.opponent} next.`
       : `Into the ${after}${aggregate}. ${drawn.opponent} next.`,
   };
+}
+
+/** Strength of a club in this campaign, for the bracket's simulated ties. */
+function euroStrength(state: EuroState, you: string, yourStrength: number): (c: string) => number {
+  const m = new Map(state.clubs.map(c => [c.name, c.strength]));
+  return (c: string) => (c === you ? yourStrength : m.get(c) ?? 75);
 }
 
 function result(us: number, them: number): string {
