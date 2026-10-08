@@ -27,6 +27,45 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.40",
+      "title": "Mikey's patch notes — Ovation greetings made in Blender",
+      "publishedAt": "2026-10-08T14:00:00Z",
+      "updatedAt": "2026-10-08T14:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX",
+      "summary": "The standing ovation's hug, dap-up, pat and claps are now real animations made in Blender, with both players posed together so each hand lands on the other player's body. The 3D ovation was checked in a real farewell: it starts at 85' and plays to the end. Settings → Look → Ovation greetings: New | Old.",
+      "stats": [
+        { "value": "8", "label": "moves made in Blender" },
+        { "value": "45 mm", "label": "median gap, hugging hand to his back" },
+        { "value": "49 KB", "label": "the moves file" },
+        { "value": "85'", "label": "3D ovation starts on time in a real farewell" }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            { "title": "The 3D standing ovation at 85' in a farewell", "detail": "Close the game fully and open it again first, so the phone loads the new version." },
+            { "title": "The hug, dap-up, pat and claps", "detail": "Farewell at 85', or /star-retirement-dev → Standing ovation · 3D." },
+            { "title": "Ovation greetings New | Old", "detail": "Settings → Look → Ovation greetings." }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            { "title": "\"The standing ovation didn't do anything\"", "detail": "No fault found: a real farewell showed the 3D scene at 85' for 23 s. Most likely the phone still had the page from before the update. Seen." }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Greetings made in Blender", "detail": "Hug, dap-up, pat (answered with a hand on the heart) and two claps, made with both players posed together. Seen in the 3D scene." }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.39",
       "title": "Leo's patch notes — smart passing and highlights",
       "publishedAt": "2026-10-08T18:00:00Z",
