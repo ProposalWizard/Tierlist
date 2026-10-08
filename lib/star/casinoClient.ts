@@ -15,6 +15,7 @@
  * call `casinoMode()` and `casinoCall()`.
  */
 
+import { CASINO_ON_SERVER } from "./casinoRules";
 export const CASINO_OFFLINE_MESSAGE = "Couldn't reach the casino. Nothing was charged — try again.";
 
 export type CasinoMode = { kind: "server"; slot: number } | { kind: "local" };
@@ -50,7 +51,7 @@ async function probe(): Promise<CasinoMode | null> {
 /** Server or local for this visit. null = the server could not be reached
  *  (asked again next time). Cached once known. */
 export async function casinoMode(): Promise<CasinoMode | null> {
-  if (forcedLocal) return { kind: "local" };
+  if (!CASINO_ON_SERVER || forcedLocal) return { kind: "local" };
   if (!modePromise) modePromise = probe();
   const m = await modePromise;
   if (!m) modePromise = null;

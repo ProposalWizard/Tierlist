@@ -260,3 +260,11 @@ export function ownHorseScores(
  *  ever gets better than what was bought. */
 export const BEST_HORSE = { speed: 88, stamina: 84 };
 export const MY_HORSE_RACE_COST = 40;
+
+/** Server casino switch (Harry, 8 Oct 2026: "I'm really not certain about
+ *  moving casino to server for now, adding lag … until we have a paid database
+ *  plan"). false = every game rolls on the phone exactly as before: no server
+ *  call, no lag, no database rows. The save guard keeps its luck allowance.
+ *  The server route, its tests and star_casino.sql stay in the repo, ready to
+ *  switch on if cheating shows up. */
+export const CASINO_ON_SERVER = false;
