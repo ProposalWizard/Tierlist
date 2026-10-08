@@ -80,8 +80,8 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
   |---|---|
   | Research / audit (everyday model) | 0.2–0.5M |
   | Option pictures (show-options) | 0.5–1.5M |
-  | Logic or server build (top model) | 1.5–3M |
-  | 3D scene build (top model) | 2–4M |
+  | Logic or server build (top model) | 0.4–3M |
+  | 3D scene build (top model) | 0.4–0.5M per focused builder (8 Oct: 3D drills engine 0.41M, two drills 0.47M, animations 0.42M) |
   | Playtest / filming pass | 0.5–2M |
   | Patch notes page | 0.3–0.8M |
 
@@ -91,7 +91,12 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
   Calibrate only when nothing else is running on the account (Harry, 8 Oct:
   other projects share the same weekly meter). Harry says when his other
   tasks are done; then note the %, run one task here, note the % again.
-  Calibration log (start % → end %, tokens): *(none yet)*
+  Calibration log (start % → end %, tokens):
+  - 8 Oct 2026, 3D training drills round: 17% → 18% ("on the higher side"),
+    with nothing else running. Builders 1.5M (research 0.21M + engine 0.41M +
+    two drills 0.47M + animations 0.42M) plus the coordinator's own turns.
+    **So 1% of the week ≈ 1.5–2M builder tokens.** Use this until a second
+    reading refines it.
 - Always say it's an estimate. Never present a guess as measured.
 
 ## Timed updates
