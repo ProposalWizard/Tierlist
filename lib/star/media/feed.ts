@@ -333,7 +333,7 @@ function highlightPosts(
     const all = matchReel(r, "all");
     const acc = compAcc ?? clubAcc;
     if (acc && (all.clips.length + all.synth.length) > 0) {
-      out.push(post(acc, "match-highlights", 3, `HIGHLIGHTS | ${home} ${hs}-${as} ${away}`, "HIGHLIGHTS", all));
+      out.push(post(acc, "match-highlights", 3, `HIGHLIGHTS | ${home} ${hs}-${as} ${away} · ${r.round ?? `Week ${r.week}`}`, "HIGHLIGHTS", all));
     }
   }
   // Yours: your goals and the ones you set up.
@@ -342,7 +342,7 @@ function highlightPosts(
     const g = r.goals.filter(x => x.isUser).length;
     const a = r.goals.filter(x => !x.isUser && x.assist === r.you.name).length;
     const what = [g ? `${g} goal${g > 1 ? "s" : ""}` : "", a ? `${a} assist${a > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ");
-    out.push(post(clubAcc, "your-highlights", 5, `${r.you.shortName}'s afternoon: ${what} 🎥`, `${r.you.shortName.toUpperCase()} | ${what.toUpperCase()}`, yours));
+    out.push(post(clubAcc, "your-highlights", 5, `${r.you.shortName} v ${r.opponent}: ${what} 🎥 (${r.round ?? `Week ${r.week}`})`, `${r.you.shortName.toUpperCase()} | ${what.toUpperCase()}`, yours));
   }
   return out;
 }

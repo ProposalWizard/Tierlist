@@ -91,8 +91,7 @@ export function matchReel(r: MatchRecord, which: "all" | "yours", you?: string):
     synth.push({
       home, away, scorer: g.scorer, scorerShort: last(g.scorer), scorerHome: r.home, minute: g.minute,
       ...(sa ? { scoreAfter: (r.home ? [sa.us, sa.them] : [sa.them, sa.us]) as [number, number] } : {}),
-      competition: r.competition, season: r.season, week: r.week,
-      seed: `${r.id}:u:${g.minute}:${g.scorer}`,
+      seed: `${r.season}.${r.week}u${g.minute}${last(g.scorer)}`,
     });
   }
   if (which === "all") {
@@ -100,8 +99,8 @@ export function matchReel(r: MatchRecord, which: "all" | "yours", you?: string):
       const name = g.scorer || r.opponent;
       synth.push({
         home, away, scorer: name, scorerShort: g.scorer ? last(g.scorer) : r.opponent, scorerHome: !r.home,
-        minute: g.minute, competition: r.competition, season: r.season, week: r.week,
-        seed: `${r.id}:t:${g.minute}:${g.scorer}`,
+        minute: g.minute,
+        seed: `${r.season}.${r.week}t${g.minute}`,
       });
     }
   }
