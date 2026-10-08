@@ -32,7 +32,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-08T21:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/GWaupeUSruCjKW2qYtnHWW",
-      "summary": "The 3D world grew a casino and a training pitch (not seen on a phone), with a 3D Crossbar challenge and a hand-made 3D kick. Settings rebuilt from 4,025 px to 931 px with a Classic / Standard / Preview version picker. Cheat locks on Draft records, legend shares, XP and the Hall of Fame. The server casino stays off; the horse-odds fix stays. Harry's notes called this v0.35; the site number 0.42 is the next free one.",
+      "summary": "The 3D world grew a casino and a training pitch (not seen on a phone), with five 3D training drills (picker, Two Touch, Free Roam, Headers & Volleys, Wembley), a 3D Crossbar challenge and a hand-made 3D kick. Settings rebuilt from 4,025 px to 931 px with a Classic / Standard / Preview version picker. Cheat locks on Draft records, legend shares, XP and the Hall of Fame. The server casino stays off; the horse-odds fix stays. Harry's notes called this v0.35; the site number 0.42 is the next free one.",
       "stats": [
         {
           "value": "2 new 3D places",
@@ -74,6 +74,14 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "changed",
           "title": "Check these",
           "items": [
+            {
+              "title": "Training Pitch opens the drill picker; each drill plays",
+              "detail": "Garden → TRAINING gate → Training Pitch"
+            },
+            {
+              "title": "Wembley ends with one player left; the hint line fits",
+              "detail": "Training Pitch → Wembley → Start"
+            },
             {
               "title": "Casino in the 3D garden",
               "detail": "Garden → casino doors → each station"
@@ -120,6 +128,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "added",
           "title": "Added",
           "items": [
+            {
+              "title": "3D training drills: a picker with five drills",
+              "detail": "Training gate → Training Pitch opens a picker: Random drill, Crossbar Challenge (unchanged), Two Touch, Free Roam, Headers & Volleys, Wembley (Normal / Doubles). One shared 3D engine (movement, touches, passes, juggling, headers, volleys, tackles, keeper); shots use the 2D match's drag-and-aim maths, measured 0.0% difference in kick speed, lift and spin. Two Touch: best of 3 rallies, 6+ passes wins; a mate rated 85 averages 5.4 passes a rally, rated 55 averages 2.1. Free Roam: 2 minutes, score = goals + clean passes, 10+ wins. Headers & Volleys: your full-backs cross 10 balls; header 2, volley 3, other goal 1; 7 wins; an average player scores 3.6 per 10 vs a 60 keeper, 2.5 vs an 80. Wembley (Harry's rules): last player without a goal each round is out; a 4-player game takes about 4.0 minutes (was about 10), 0 of 200 test games stalled. New hand-made moves for headers, volleys, control, tackles and the keeper; the 3D shop and garden download about 150 KB more. Only stills seen: nothing watched in motion or on a phone."
+            },
             {
               "title": "A 3D casino in the garden",
               "detail": "Back right, neon front, red carpet. Roulette, blackjack, 4 slots, horse screen, betting counter, Goalie Mode cabinet. Walk up to open each game; close it and you are back in the room. Settings → Look → Casino: 3D | Classic (default 3D)."
@@ -179,6 +191,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "known",
           "title": "Known issues",
           "items": [
+            {
+              "title": "3D drills only seen as stills",
+              "detail": "Keepy-up headers and foot keepy-ups still borrow other moves; no keeper move for a low-ball catch; your own shot from your feet has no wind-up."
+            },
             {
               "title": "None of the 3D was seen on a phone"
             },
