@@ -19,7 +19,7 @@ import { people3dLook } from "../look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
-import { addClips, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
+import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
 
 export interface Play3DPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
@@ -218,7 +218,18 @@ export async function createPlay3DScene(
   };
 
   // ── The people ──
-  type Body = { p: Person3D; play: ClipPlayer; who: P3; state: string };
+  type Body = {
+    p: Person3D; play: ClipPlayer; who: P3; state: string;
+    /** The act last seen (a fresh one starts its clip). */
+    lastAct?: Act3; lastActT: number;
+    /** Seconds left of the one-off clip playing. */
+    onceLeft: number;
+    /** The nudge that puts the clip's contact point on the ball, held to the contact then faded. */
+    off: any; offHold: number; offFade: number;
+    /** The one-off playing was started early, for a ball seen coming. */
+    antic?: boolean;
+    offRamp: number;
+  };
   const bodies: Body[] = [];
   for (const who of world.players) {
     const lk = look.people[who.id] ?? { skin: "#c68642", hair: "#1b120c", hairStyle: "short" };
@@ -233,63 +244,246 @@ export async function createPlay3DScene(
     root.add(p.root);
     const play = new ClipPlayer(THREE, p.actions);
     play.play("idle", { fade: 0 });
-    bodies.push({ p, play, who, state: "idle" });
+    bodies.push({ p, play, who, state: "idle", lastActT: 9, onceLeft: 0, off: new THREE.Vector3(), offHold: 0, offFade: 0, offRamp: 0 });
   }
 
   /**
    * Which clip, from what he is doing. The World's `act` is the last thing
-   * he did and how long ago; the rest is running speed.
-   * Missing clips (no Blender this round) are made from the nearest ones:
-   * a header is a head nod on top of whatever he's doing; a keeper's dive
-   * is the whole body laid out sideways; a sprint is the jog played faster.
+   * he did and how long ago; the rest is running speed and whether he has
+   * the ball. Every move is its own hand-made clip (tools/anims3d/clips.py).
+   *
+   * Timing: the World sets `act` at the instant the ball is met, so a move
+   * starts at the clip's measured contact frame (the file says when:
+   * clipInfo().contact) plus however long ago that was: the foot or head is on
+   * the ball the frame it leaves. A ball coming to a man (a cross, a pass) is
+   * seen coming: the clip starts early, timed so its contact frame lands when
+   * the ball gets to him, wind-up and all, and is put back on time if the real
+   * touch comes a little early or late. His body is nudged so the clip's
+   * measured contact point (`contactPoint`) sits on the ball; the nudge fades
+   * out after the contact.
+   * A keeper's dive is driven by the World's own dive progress, so his hands
+   * are at full stretch exactly when the World says they are.
    */
-  const ONE_SHOT: Partial<Record<Act3, { clip: string; from: number; speed: number; len: number }>> = {
-    pass: { clip: "pass", from: 0.42, speed: 1.5, len: 0.45 },
-    loft: { clip: "pass", from: 0.4, speed: 1.3, len: 0.5 },
-    touch: { clip: "pass", from: 1.1, speed: 1.4, len: 0.35 },
-    tackle: { clip: "pass", from: 0.35, speed: 1.8, len: 0.4 },
-    shot: { clip: "kick_r", from: 1.05, speed: 1.25, len: 0.75 },
-    volley: { clip: "kick_r", from: 1.1, speed: 1.4, len: 0.6 },
-    "juggle-foot": { clip: "juggle", from: 0.18, speed: 1.2, len: 0.35 },
-    "juggle-thigh": { clip: "juggle", from: 0.78, speed: 1.2, len: 0.35 },
-    celebrate: { clip: "celebrate_fist", from: 0, speed: 1, len: 2 },
-    // knocked out (Wembley) / a bad miss: hands on head, head back
-    slump: { clip: "frustrated", from: 0, speed: 1, len: 2.2 },
+  type Once = { clip: string; lead: number; speed?: number; align?: "flat" | "full"; from?: number };
+  /** Strikes and touches are pinned to the contact; the rest (celebrations, keepy-ups' old clip) start where `lead` says. */
+  const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
+  const info = (n: string) => clipInfo(fb, n);
+  const loopSpeed: Record<string, number> = { jog: 3.2, sprint: 7.4, dribble_run: 4.6, celebrate_safe: 3.4, slump_walk: 1.15 };
+  for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
+  const partOf = (z: number) => (z < 0.6 ? "foot" : z < 1.0 ? "thigh" : z < 1.55 ? "chest" : "head");
+
+  /** The one-shot for a fresh act (null: keep running/standing as he is). */
+  const onceFor = (b: Body, sp: number, ballZ: number): Once | null => {
+    const w = b.who;
+    switch (w.act) {
+      case "shot": return { clip: "shot_r", lead: 0.05, align: "flat" };
+      case "volley": return { clip: "volley", lead: 0.05, align: "flat" };
+      case "header":
+        // flying in at a ball not far above the ground: a diving header; else up for it
+        return sp > 3.2 && ballZ < 1.7 ? { clip: "header_diving", lead: 0.06, align: "full" } : { clip: "header_stand", lead: 0.06, align: "full" };
+      case "pass": return { clip: "pass", lead: 0.05, speed: 1.2, align: "flat" };
+      case "loft": return { clip: "pass_lofted", lead: 0.05, align: "flat" };
+      case "touch": {
+        // a touch while running with it is the dribble's own (dribble_run has it)
+        if (world.owner === w.id && sp > 1.2) return null;
+        const part = partOf(ballZ);
+        if (part === "foot") return sp > 2.5 ? null : { clip: "first_touch", lead: 0.05, align: "flat" };
+        if (part === "thigh") return { clip: "thigh_control", lead: 0.05, align: "flat" };
+        if (part === "chest") return { clip: "chest_control", lead: 0.06, align: "flat" };
+        return { clip: "header_stand", lead: 0.06, align: "full" };
+      }
+      case "tackle": return sp > 3.5 ? { clip: "sliding_tackle", lead: 0.12, align: "flat" } : { clip: "poke_tackle", lead: 0.06, align: "flat" };
+      // keepy-ups: the juggle clip's right-foot touch; a thigh touch is the thigh's own move
+      case "juggle-foot": return { clip: "juggle", lead: 0, from: 0.18, speed: 1.2 };
+      case "juggle-thigh": return { clip: "thigh_control", lead: 0, align: "flat" };
+      case "catch": return ballZ > 1.7 ? { clip: "high_claim", lead: 0.08, align: "full" } : null;
+      case "throw": return { clip: "throw_out", lead: 0.1 };
+      case "celebrate": return { clip: "celebrate_fist", lead: 0 };
+      case "slump": return { clip: "frustrated", lead: 0 };
+      default: return null;
+    }
   };
-  const animate = (b: Body, dt: number) => {
+
+  /** What he does when nothing one-off is playing. */
+  const loopFor = (b: Body, sp: number): string => {
+    const w = b.who;
+    if (!w.active && w.sideline) {
+      if (w.act === "celebrate" && sp > 0.35) return "celebrate_safe";
+      if (w.act === "slump" && sp > 0.15) return "slump_walk";
+    }
+    if (w.keeper) {
+      if (world.owner === w.id) return "hold";
+      return sp > 2.5 ? "jog" : "ready_shuffle";
+    }
+    if (sp < 0.35) return "idle";
+    if (world.owner === w.id && sp > 1.2) return "dribble_run";
+    return sp > 5.4 ? "sprint" : "jog";
+  };
+
+  const R3 = new THREE.Vector3();
+  /** Where the clip's measured contact point is now, in the world (his frame → three). */
+  const contactWorld = (b: Body, cp: [number, number, number]) => {
+    const yaw = yawOf(b.who.facing), c = Math.cos(yaw), s = Math.sin(yaw);
+    return R3.set(b.who.x - CX + cp[0] * c + cp[2] * s, cp[1], b.who.y - cp[0] * s + cp[2] * c);
+  };
+
+  /**
+   * Start a one-off. `ago`: how long ago the ball was met (a pinned clip
+   * starts that far past its contact frame). `early`: the ball is still
+   * coming and gets to him in this many seconds (the clip starts that far
+   * before its contact frame). A clip already playing because the ball was
+   * seen coming is put back on time, not restarted.
+   */
+  const startOnce = (b: Body, o: Once, ball: { x: number; y: number; z: number }, ago: number, early?: number) => {
+    const ci = info(o.clip);
+    if (!ci || !b.play.has(o.clip)) return false;
+    const contact = ci.contact ?? 0;
+    const sp1 = o.speed ?? 1;
+    const pinned = PINNED.has(o.clip);
+    const from = early !== undefined ? Math.max(0, contact - early * sp1)
+      : pinned ? Math.min(ci.duration, contact + ago * sp1) : o.from ?? Math.max(0, contact - o.lead);
+    if (b.state === `once:${o.clip}` && early === undefined && b.antic) {
+      // seen coming: put it back on time, keep the nudge it already has
+      b.p.actions[o.clip].time = from;
+      b.antic = false;
+      b.onceLeft = (ci.duration - from) / sp1;
+      b.offHold = 0; b.offRamp = 0;
+      return true;
+    }
+    b.play.play(o.clip, { fade: early !== undefined ? 0.12 : pinned ? 0.04 : 0.08, from, speed: sp1, once: true });
+    b.antic = early !== undefined;
+    b.state = `once:${o.clip}`;
+    b.onceLeft = (ci.duration - from) / sp1;
+    b.off.set(0, 0, 0);
+    // early: the nudge eases in until the ball arrives; otherwise it is there now
+    b.offHold = early ?? 0;
+    b.offRamp = early ?? 0;
+    b.offFade = 0.45;
+    const cp = ci.contactPoint as [number, number, number] | undefined;
+    if (o.align && cp) {
+      const w = b.who, ahead = early ?? 0;
+      const at = contactWorld(b, cp).add(new THREE.Vector3(w.vx * ahead, 0, w.vy * ahead));
+      const d = new THREE.Vector3(...P(ball.x, ball.y, ball.z)).sub(at);
+      if (o.align === "flat") d.y = 0;
+      else d.y = Math.max(-0.45, Math.min(0.5, d.y));
+      const h = Math.hypot(d.x, d.z);
+      if (h > 0.9) { d.x *= 0.9 / h; d.z *= 0.9 / h; }
+      b.off.copy(d);
+    }
+    return true;
+  };
+
+  /**
+   * A ball coming to him (a pass or a cross meant for him, nobody on it): when
+   * it gets to him, and what he'll meet it with. In Headers & Volleys that is
+   * a strike; anywhere else a touch.
+   */
+  const coming = (b: Body): { once: Once; t: number; at: { x: number; y: number; z: number } } | null => {
+    const w = b.who, bl = world.ball;
+    if (!w.active || w.keeper || world.owner || world.passTarget !== w.id || bl.inNet) return null;
+    const rx = bl.x - w.x, ry = bl.y - w.y;
+    const v2 = bl.vx * bl.vx + bl.vy * bl.vy;
+    if (v2 < 1) return null;
+    const t = -(rx * bl.vx + ry * bl.vy) / v2;
+    if (t <= 0 || t > 0.8) return null;
+    const miss = Math.hypot(rx + bl.vx * t, ry + bl.vy * t);
+    if (miss > 1.3) return null;
+    const z = Math.max(0.11, bl.z + bl.vz * t - 4.9 * t * t);
+    const at = { x: bl.x + bl.vx * t, y: bl.y + bl.vy * t, z };
+    const hv = world.rules.id === "headers-volleys";
+    const sp = Math.hypot(w.vx, w.vy);
+    let once: Once | null;
+    if (hv) once = z > 1.45 ? (sp > 3.2 && z < 1.7 ? { clip: "header_diving", lead: 0, align: "full" } : { clip: "header_stand", lead: 0, align: "full" })
+      : z > 0.65 ? { clip: "volley", lead: 0, align: "flat" } : { clip: "shot_r", lead: 0, align: "flat" };
+    else {
+      const part = partOf(z);
+      once = part === "foot" ? (sp > 2.5 ? null : { clip: "first_touch", lead: 0, align: "flat" })
+        : part === "thigh" ? { clip: "thigh_control", lead: 0, align: "flat" }
+        : part === "chest" ? { clip: "chest_control", lead: 0, align: "flat" } : { clip: "header_stand", lead: 0, align: "full" };
+    }
+    if (!once) return null;
+    const ci = info(once.clip);
+    if (!ci || t > (ci.contact ?? 0)) return null;
+    return { once, t, at };
+  };
+
+  const startLoop = (b: Body, name: string) => {
+    const wasDown = b.state === "" && !!b.play.current?.startsWith("dive_");
+    b.state = name;
+    if (name === "hold") { b.play.play("throw_out", { fade: 0.2, from: 0.1, speed: 0 }); return; }
+    b.play.play(b.play.has(name) ? name : name === "ready_shuffle" ? "idle" : "jog", { fade: wasDown ? 0.5 : name === "idle" ? 0.25 : 0.2 });
+  };
+
+  const animate = (b: Body, dt: number, prevBall: { x: number; y: number; z: number }) => {
     const w = b.who;
     const sp = Math.hypot(w.vx, w.vy);
-    const shot = ONE_SHOT[w.act];
-    let key: string;
-    if (shot && w.actT < shot.len && b.play.has(shot.clip)) key = `${w.act}`;
-    else if (sp < 0.35) key = "idle";
-    else key = "jog";
-    if (key !== b.state) {
-      b.state = key;
-      if (shot && key === w.act) b.play.play(shot.clip, { fade: 0.08, from: shot.from, speed: shot.speed, once: true });
-      else if (key === "jog") b.play.play("jog", { fade: 0.2 });
-      else b.play.play("idle", { fade: 0.25 });
+    const fresh = w.act !== b.lastAct || w.actT < b.lastActT;
+    b.lastAct = w.act; b.lastActT = w.actT;
+    if (w.keeper && w.dive) {
+      // the dive: his own clip, its time pinned to the World's dive progress
+      const clip = w.dive.side > 0 ? "dive_left" : "dive_right";
+      const ci = info(clip);
+      if (ci && b.play.has(clip)) {
+        if (b.state !== `dive:${clip}`) { b.play.play(clip, { fade: 0.06, from: (ci.launch as number) ?? 0.12, once: true }); b.state = `dive:${clip}`; }
+        const a = b.p.actions[clip];
+        const launch = (ci.launch as number) ?? 0.12, reach = ci.contact ?? 0.42;
+        if (w.dive.t < 1) a.time = launch + w.dive.t * (reach - launch);
+      }
+    } else {
+      if (b.state.startsWith("dive:")) b.state = "";
+      if (b.onceLeft > 0) b.onceLeft -= dt;
+      const once = b.state.startsWith("once:") && b.onceLeft > 0;
+      const o = fresh ? onceFor(b, sp, prevBall.z) : null;
+      const c = !o && !once ? coming(b) : null;
+      if (o && startOnce(b, o, prevBall, w.actT)) { /* started */ }
+      else if (c && startOnce(b, c.once, c.at, 0, c.t)) { /* started early: the ball is on its way */ }
+      else {
+        const lp = loopFor(b, sp);
+        // a man walking off doesn't finish his celebration/despair standing still
+        const interrupt = once && (lp === "celebrate_safe" || lp === "slump_walk");
+        if ((!once || interrupt) && lp !== b.state) startLoop(b, lp);
+      }
     }
-    if (key === "jog") { const a = b.p.actions.jog; if (a) a.timeScale = Math.max(0.7, Math.min(2.4, sp / 3.2)); }
+    // loops at the speed he's really going
+    const ls = loopSpeed[b.state];
+    if (ls) { const a = b.p.actions[b.state]; if (a) a.timeScale = Math.max(0.6, Math.min(b.state === "sprint" ? 1.35 : 1.9, sp / ls)); }
+    // dribbling: keep the clip's touch on the World's touch (each touch nudges the stride into step)
+    if (b.state === "dribble_run" && fresh && w.act === "touch") {
+      const a = b.p.actions.dribble_run, ci = info("dribble_run");
+      const tt = ci?.touches?.[0]?.[0];
+      if (a && ci && typeof tt === "number") {
+        let err = tt - a.time;
+        const P2 = ci.duration;
+        while (err > P2 / 2) err -= P2;
+        while (err < -P2 / 2) err += P2;
+        a.time = (((a.time + err * 0.6) % P2) + P2) % P2;
+      }
+    }
     b.play.update(dt);
     b.p.mixer.update(dt);
-    // place him
-    b.p.root.position.set(w.x - CX, 0, w.y);
+    // place him (plus the contact nudge, fading after the contact)
+    let k = 0;
+    if (b.state.startsWith("once:")) {
+      if (b.offHold > 0) { b.offHold -= dt; k = b.offRamp > 0 ? Math.min(1, 1 - b.offHold / b.offRamp) : 1; }
+      else if (b.offFade > 0) { b.offFade -= dt; k = Math.max(0, b.offFade / 0.45); }
+    }
+    b.p.root.position.set(w.x - CX + b.off.x * k, b.off.y * k, w.y + b.off.z * k);
     b.p.root.rotation.set(0, yawOf(w.facing), 0);
-    // procedural extras on top of the clip
-    const head = b.p.bones.Head;
-    if (head && (w.act === "header" || w.act === "juggle-head") && w.actT < 0.35) {
-      const k = Math.sin(Math.min(1, w.actT / 0.35) * Math.PI);
-      head.rotateX(0.55 * k);
-    }
+    // a keeper going for a high one: lift the dive so the hands get up there
     if (w.keeper && w.dive) {
-      const k = Math.min(1, w.dive.t);
-      b.p.root.rotateZ(-w.dive.side * k * (1.25 - w.dive.up * 0.6));
-      b.p.root.position.y = Math.sin(k * Math.PI) * 0.35 + w.dive.up * 0.6 * k;
+      const tz = 0.4 + w.dive.up * 2;
+      const a = b.state.startsWith("dive:") ? b.p.actions[b.state.slice(5)] : null;
+      const ci = a ? info(b.state.slice(5)) : null;
+      const launch = (ci?.launch as number) ?? 0.12, land = (ci?.land as number) ?? 0.7;
+      const s = a ? Math.max(0, Math.min(1, (a.time - launch) / (land - launch))) : 0;
+      b.p.root.position.y = Math.max(0, tz - 0.75) * Math.sin(s * Math.PI);
     }
+    // keepy-up headers: a nod on top of whatever he's doing
+    const head = b.p.bones.Head;
+    if (head && w.act === "juggle-head" && w.actT < 0.35) head.rotateX(0.55 * Math.sin(Math.min(1, w.actT / 0.35) * Math.PI));
     // off the pitch but in the picture (walking off, standing by the post)
     b.p.root.visible = w.active || !!w.sideline;
-    if (!w.active && w.sideline && head && w.act === "slump" && w.actT >= 2.2) head.rotateX(0.35);
+    if (!w.active && w.sideline && head && w.act === "slump" && w.actT >= 2.2 && sp < 0.15) head.rotateX(0.35);
   };
 
   // ── Camera ──
@@ -347,8 +541,9 @@ export async function createPlay3DScene(
     const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    const prevBall = { x: world.ball.x, y: world.ball.y, z: world.ball.z };
     world.advance(dt);
-    for (const b of bodies) animate(b, dt);
+    for (const b of bodies) animate(b, dt, prevBall);
     placeBall();
     syncMarkers();
     const t = camTarget();
@@ -361,7 +556,8 @@ export async function createPlay3DScene(
     opts.onFrame?.(dt);
   };
   renderer.setAnimationLoop(frame);
-  (window as any).__play3d = { world, camera, bodies };
+  // dev/test hook: the World, the camera, the people, and a one-off draw (stills from a frozen frame)
+  (window as any).__play3d = { world, camera, bodies, render: () => renderer.render(scene, camera) };
 
   return {
     heading: () => heading,

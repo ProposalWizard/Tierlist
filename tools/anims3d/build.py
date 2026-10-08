@@ -86,6 +86,29 @@ def instep(ctx, side):
     return a * 0.45 + t * 0.55
 
 
+def part_point(ctx, m):
+    """The point of the body that meets the ball (meta "part"; default the instep of meta "foot")."""
+    part = m.get("part", "foot")
+    if part == "foot":
+        return instep(ctx, m.get("foot", "R"))
+    if part == "head":  # the forehead
+        return ctx.head_at((0, 0.12, 0.10))
+    if part == "chest":
+        return ctx.chest((0, 0.02, 0.15))
+    if part.startswith("thigh"):  # the top of the thigh, near the knee
+        s = part[-1]
+        return lerp3(ctx.pos("thigh" + s), ctx.pos("shin" + s), 0.72) + np.array([0, 0.08, 0])
+    if part == "hands":
+        return (ctx.pos("handL") + ctx.pos("handR")) / 2
+    if part.startswith("hand"):
+        return ctx.pos("hand" + part[-1])
+    raise ValueError(part)
+
+
+def lerp3(a, b, k):
+    return a + (b - a) * k
+
+
 def bake(rig, table):
     """-> (animations json-ready list of (name, times, {bone: rots}, hips pos), meta)"""
     out, meta = [], {}
@@ -116,9 +139,12 @@ def bake(rig, table):
         def at(time):
             return min(ctxs, key=lambda c: abs(c[0] - time))[1]
         if "contact" in m:
-            ip = instep(at(m["contact"]), m.get("foot", "R"))
-            mm["ball"] = [round(float(ip[0]), 3), round(float(ip[2]) + 0.09, 3)]
-            mm["contactFoot"] = [round(float(v), 3) for v in ip]
+            ip = part_point(at(m["contact"]), m)
+            if m.get("part", "foot") == "foot":
+                mm["ball"] = [round(float(ip[0]), 3), round(float(ip[2]) + 0.09, 3)]
+                mm["contactFoot"] = [round(float(v), 3) for v in ip]
+            mm["contactPoint"] = [round(float(v), 3) for v in ip]
+            mm.setdefault("part", "foot")
         if "touches" in m:
             mm["touches"] = [[tt, s, [round(float(v), 3) for v in instep(at(tt), s) + np.array([0, 0.12, 0.03])]] for tt, s in m["touches"]]
         meta[name] = mm
@@ -173,8 +199,12 @@ def sheet(rig, table, path):
     d = ImageDraw.Draw(img)
     for r, name in enumerate(names):
         dur, loop, fn, m = table[name]
+        ts = [dur * cidx / (cols - 1 if not loop else cols) for cidx in range(cols)]
+        if "contact" in m:
+            j = min(range(cols), key=lambda i: abs(ts[i] - m["contact"]))
+            ts[j] = m["contact"]
         for cidx in range(cols):
-            t = dur * cidx / (cols - 1 if not loop else cols)
+            t = ts[cidx]
             _, _, ctx = solve(rig, fn(rig, t))
             P = {k: ctx.pos(k) for k in CANON}
             P["head"] = ctx.head_top((0, -0.08, 0))
@@ -194,9 +224,9 @@ def sheet(rig, table, path):
                     d.line([pt(P[a]), pt(P[b])], fill=col, width=3)
                 hx, hy = pt(P["head"])
                 d.ellipse([hx - 7, hy - 7, hx + 7, hy + 7], outline="black", width=2)
-                if "contact" in m and abs(t - m["contact"]) < dur / cols:
-                    bp = instep(ctx, m.get("foot", "R"))
-                    bx, by = pt(np.array([bp[0], 0.11, bp[2] + 0.09]))
+                if "contact" in m and abs(t - m["contact"]) < dur / cols / 2 + 1e-6:
+                    bp = part_point(ctx, m)
+                    bx, by = pt(bp)
                     d.ellipse([bx - 9, by - 9, bx + 9, by + 9], outline="green", width=2)
     img.save(path)
 

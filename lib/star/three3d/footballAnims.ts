@@ -23,6 +23,28 @@
  *   cone_dribble 1.2 s  loop: low weaving touches (in place: move him yourself); `touches`.
  *   Jogging: use the body's own "jog" (people3d) / "Jog_Fwd_Loop" (old footballer).
  *
+ *   The 3D training drills' moves (play3d/scene.ts picks them). All in place
+ *   (the game moves him). `contact` = when the ball is met, `part` = what meets
+ *   it, `contactPoint` [x, y, z] = where that part is then (measured, his frame).
+ *   sprint        0.62 s loop  real sprint cycle (`speed` 7.4 m/s at timeScale 1)
+ *   dribble_run   0.70 s loop  running with the ball, right-foot touch each stride (`touches`, `speed` 4.6)
+ *   header_stand  1.1 s  jump, arch, neck snap at contact (0.50), land
+ *   header_diving 1.3 s  launch flat out, head at contact (0.40) ~1.2 m up, land on the chest; body ends 0.8 m on
+ *   volley        1.15 s side-on, right foot at contact (0.45) ~0.8 m up
+ *   first_touch   0.85 s cushion with the right foot (0.32)
+ *   chest_control 1.0 s  lean back, chest out (0.38), drop it
+ *   thigh_control 0.9 s  right thigh up (0.30), kill it
+ *   pass_lofted   1.15 s laces under it (0.50), follow through high
+ *   shot_r        1.35 s the kick's plant and strike without the run-up (0.31); ball 0.45 m ahead
+ *   poke_tackle   0.75 s lunge, toe at the ball (0.26)
+ *   sliding_tackle 1.5 s down on the left hip, right leg along the grass (0.40), up again; body ends 0.95 m on
+ *   ready_shuffle 1.0 s loop  keeper's set position, little steps
+ *   dive_left / dive_right 1.5 s  keeper's dive: `launch` 0.12, full stretch at contact 0.42, `land` 0.70, lies
+ *   high_claim    1.2 s  keeper takes off, both hands at contact (0.46) ~2.3 m, into the chest
+ *   throw_out     1.3 s  keeper's overarm throw, `release` 0.72 (0–0.2: holding it at the chest)
+ *   celebrate_safe 0.70 s loop  jogging off with both arms up (`speed` 3.4)
+ *   slump_walk    1.25 s loop  head-down walk off (`speed` 1.15)
+ *
  * CASINO (casino.glb). Table/bar top ≈ 0.97–1.02 m, ~0.35–0.5 m in front of his feet.
  *   dealer_idle    4.0 s loop  croupier, hands on the table edge, looking round
  *   dealer_deal    1.0 s loop  left hand holds the deck, right flicks a card out at `flick` (0.45)
@@ -70,6 +92,12 @@ export interface ClipInfo {
   ball?: [number, number];
   /** Root motion: where he ends, [x, z] metres, his frame. */
   end?: [number, number];
+  /** What meets the ball at `contact`: "foot", "head", "chest", "thighR", "hands", "handR". */
+  part?: string;
+  /** Where that part is at `contact`: [x, y, z] metres, his frame, from his feet. */
+  contactPoint?: [number, number, number];
+  /** A loop's own running speed (m/s) at timeScale 1. */
+  speed?: number;
   /** Juggling / dribbling touches: [time s, foot, ball point [x, y, z] his frame]. */
   touches?: [number, "L" | "R", [number, number, number]][];
   [k: string]: unknown;
