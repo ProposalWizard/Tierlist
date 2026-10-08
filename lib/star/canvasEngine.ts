@@ -391,6 +391,12 @@ export interface Follower {
    * missing feature it was.
    */
   commandedTo?: Vec2;
+  /**
+   * The end of a captain's run (Leo, 8 Oct 2026): he arrived and holds this
+   * spot, still on orders, instead of drifting back towards the ball. A ball
+   * played onto him is still met (runMeetPoint). Cleared when he takes it.
+   */
+  heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
 }
@@ -433,6 +439,12 @@ export interface Runner {
    * Cleared when he arrives, and he goes back to reacting like everybody else.
    */
   commandedTo?: Vec2;
+  /**
+   * The end of a captain's run (Leo, 8 Oct 2026): he arrived and holds this
+   * spot, still on orders, instead of drifting back towards the ball. A ball
+   * played onto him is still met (runMeetPoint). Cleared when he takes it.
+   */
+  heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
 }
@@ -5156,6 +5168,68 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
 }
 
 /**
+ * A MAN ON A RUN MEETS THE BALL WHERE IT IS GOING (Leo, 8 Oct 2026).
+ *
+ * "throughballs arent really a thing because players just run towards the
+ * ball … I do want to be able to set a player on a run past the defenders and
+ * play a throughball through the defenders that gets to him … maybe just when
+ * the ball is very close have them go for it while still tryna do their run."
+ *
+ * A man on the captain's orders ignores the ball, except this: a ball near
+ * him (RUN_MEET_R) that is coming his way. Then he goes to the earliest point
+ * on its path he can reach in time — in front of him, on the run, not back to
+ * where it is now. Null when there is nothing to meet: he keeps running.
+ * Same integrator as predictBall, walked once.
+ */
+const RUN_MEET_R = 7;        // metres — a ball this close, coming his way, is his
+const RUN_MEET_CLOSE = 2.6;  // metres — this close, he goes for it whichever way it is going
+const RUN_MEET_T = 1.4;      // seconds of its path he reads
+function runMeetPoint(p: Vec2, speed: number, ball: Ball): Vec2 | null {
+  const vs = Math.hypot(ball.vel.x, ball.vel.y);
+  if (vs < DEAD_BALL_SPEED) return null;
+  const dx = p.x - ball.pos.x, dy = p.y - ball.pos.y;
+  const d = Math.hypot(dx, dy);
+  if (d > RUN_MEET_R) return null;
+  if (d > RUN_MEET_CLOSE && (ball.vel.x * dx + ball.vel.y * dy) / (vs * d) < 0.25) return null;
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z;
+  let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
+  const dt = PREDICT_STEP;
+  for (let s = dt; s <= RUN_MEET_T + 1e-6; s += dt) {
+    if (z > 0.02) { const k = Math.max(0, 1 - AIR_DRAG * dt); vx *= k; vy *= k; }
+    vz -= G * dt; z += vz * dt; x += vx * dt; y += vy * dt;
+    if (z <= 0) {
+      z = 0;
+      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      else {
+        vz = 0;
+        const sp = Math.hypot(vx, vy), drop = GROUND_FRICTION * dt;
+        if (sp <= drop) { vx = 0; vy = 0; } else { const f = (sp - drop) / sp; vx *= f; vy *= f; }
+      }
+    }
+    if (Math.hypot(x - p.x, y - p.y) <= speed * s + PASS_CONTROL_R * 0.5) return { x, y };
+  }
+  return d <= RUN_MEET_CLOSE ? { x: ball.pos.x, y: ball.pos.y } : null;
+}
+
+/** One step of a captain's run: meet a ball coming onto it, else run the line, else hold. */
+function stepOrderedRun(
+  p: Vec2, o: { commandedTo?: Vec2; heldAt?: Vec2 }, speed: number, ball: Ball, dt: number,
+): boolean {
+  const meet = runMeetPoint(p, speed, ball);
+  const to = meet ?? o.commandedTo ?? null;
+  if (!to) return false;                 // run done: he holds his spot
+  const dx = to.x - p.x, dy = to.y - p.y, togo = Math.hypot(dx, dy);
+  if (!meet && togo < 0.6) {             // arrived: hold there, still on orders
+    o.heldAt = { x: to.x, y: to.y };
+    o.commandedTo = undefined;
+    return false;
+  }
+  const step = Math.min(togo, speed * dt);
+  if (togo > 1e-6) { p.x += (dx / togo) * step; p.y += (dy / togo) * step; }
+  return true;
+}
+
+/**
  * Is this ball your strike at goal rather than a ball for a team-mate?
  *
  * Judged on where it was struck and how hard, not on where it will end up: a
@@ -5647,19 +5721,12 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     // A ball that has stopped still outranks it: a side that jogs past a loose
     // ball to complete a run is a side that has lost it, and no captain wants
     // that. Everything else waits until he arrives.
-    if (r.commandedTo && !dead) {
-      const dx = r.commandedTo.x - r.pos.x, dy = r.commandedTo.y - r.pos.y;
-      const togo = Math.hypot(dx, dy);
-      if (togo < 0.6) {
-        r.commandedTo = undefined;   // arrived; back to reacting like everybody else
-        r.moving = false;
-      } else {
-        const step = Math.min(togo, r.speed * dt);
-        r.pos.x += (dx / togo) * step;
-        r.pos.y += (dy / togo) * step;
-        r.moving = true;
-        r.sprint = true;
-      }
+    // At the end of the run he holds his spot (heldAt) instead of drifting
+    // back towards the ball, and either way a ball played onto his run is
+    // met where it is going (runMeetPoint). Leo, 8 Oct 2026.
+    if ((r.commandedTo || r.heldAt) && !dead) {
+      r.moving = stepOrderedRun(r.pos, r, r.speed, ball, dt);
+      r.sprint = r.moving;
       continue;
     }
 
@@ -5684,18 +5751,8 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
       // moved by stepShape (v0.15 item 17); only the poke-in below applies
     } else if (shotLive && !f.commandedTo && sidestepShot(f, ball, dt)) {
       // v0.15 item 13: out of the way until it has gone past him
-    } else if (f.commandedTo && !dead) {
-      const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y;
-      const togo = Math.hypot(dx, dy);
-      if (togo < 0.6) {
-        f.commandedTo = undefined;   // arrived; back to reacting like everybody else
-        f.active = false;
-      } else {
-        const step = Math.min(togo, RUNNER_SPEED * dt);
-        f.x += (dx / togo) * step;
-        f.y += (dy / togo) * step;
-        f.active = true;
-      }
+    } else if ((f.commandedTo || (f.heldAt && !f.shot)) && !dead) {
+      f.active = stepOrderedRun(f, f, RUNNER_SPEED, ball, dt);
     } else {
       const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
       // He walks to a stopped ball whether or not he has already had a go at it.
@@ -6877,6 +6934,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         });
         // He has the ball; he is no longer running to orders.
         r.commandedTo = undefined;
+        r.heldAt = undefined;
         // The ball is somewhere else now, and the keeper has the beat before it
         // is struck to do something about it. See Keeper.adjusting.
         if (goalInView(scenario.kind) && !scenario.keeper.done) {
