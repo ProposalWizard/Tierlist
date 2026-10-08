@@ -13,9 +13,10 @@ import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
 // (or before star_casino.sql has run), the phone rolls exactly as before.
 import {
   type Card, type RouletteChoice, ROULETTE_ORDER, isRed, SLOTS_SYMBOLS,
-  spinRoulette, roulettePayout, spinSlots, slotsPayout, drawCard as drawRuleCard, handValue, dealerPlay, blackjackSettle,
-  raceWinOdds as ruleRaceOdds, dealRaceRatings, raceScores, finishOf, ownHorseScores,
+  handValue,
+  raceWinOdds as ruleRaceOdds, dealRaceRatings, finishOf, ownHorseScores,
 } from "@/lib/star/casinoRules";
+import { rouletteRound, slotsRound, blackjackDeal, blackjackHit, blackjackStand, horseBetRound } from "@/lib/star/casinoRounds";
 import { casinoMode, casinoCall, playOrLocal, resetCasinoMode, newPlayKey, CASINO_OFFLINE_MESSAGE } from "@/lib/star/casinoClient";
 import GoalieMode from "./GoalieMode";
 import {
@@ -71,7 +72,7 @@ const PURCHASABLE_HORSES: { horse: Omit<Horse, "energy" | "racesRun" | "racesWon
   { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 480000 },
 ];
 
-const HORSE_NAMES = [
+export const HORSE_NAMES = [
   "Thunder Bolt", "Golden Arrow", "Midnight Star", "Silver Streak", "Red Comet",
   "Wild Spirit", "Iron Duke", "Bold Ruler", "Grey Storm", "Nimbus",
   "Blaze", "Royal Flash", "Diamond Dash", "Lucky Strike", "Storm Chaser",
@@ -97,7 +98,7 @@ const MY_HORSE_RACE_COST = 40;
  * same real-money scale, so the chip ladder needed to move with it or every
  * step below "500,000" would have gone meaningless overnight.
  */
-const BET_STEPS: number[] = [
+export const BET_STEPS: number[] = [
   2000, 4000, 10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 800000,
   1000000, 1200000, 1400000, 1600000, 1800000, 2000000,
   2500000, 3000000, 3500000, 4000000, 5000000, 6000000, 7000000, 8000000, 10000000, 12000000,
@@ -109,7 +110,7 @@ const BET_STEPS: number[] = [
 
 /** The nearest step at or below `n` — for clamping a saved/previous bet down
  *  to whatever the current bank can actually afford. */
-function stepAtOrBelow(n: number): number {
+export function stepAtOrBelow(n: number): number {
   let best = BET_STEPS[0];
   for (const s of BET_STEPS) { if (s <= n) best = s; else break; }
   return best;
@@ -124,7 +125,7 @@ export default function CasinoMenu(props: Props) {
 function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet, startGame }: Props) {
   const [game, setGameRaw] = useState<"menu" | CasinoGameId>(startGame ?? "menu");
   const [bank, setBank] = useState(bankStart);
-  const [bet, setBet] = useState(BET_STEPS[0]);
+  const [bet, changeBet] = useCasinoBet(bank, bankStart);
   // Opened on one game (the 3D casino): leaving it hands the bank back
   // instead of showing the menu.
   const setGame = (g: "menu" | CasinoGameId) => { if (g === "menu" && startGame) onExit(bank); else setGameRaw(g); };
@@ -132,33 +133,8 @@ function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRen
   // Ask once per visit whether this account's bets go to the server.
   useEffect(() => { resetCasinoMode(); void casinoMode(); }, []);
 
-  // Persisted the same way the match speed button is (star-match-speed):
-  // read once on mount, written back on every change, so it holds across
-  // casino visits — "if I left it on ten star money as the bet, the next
-  // time I came to do a bet it would still be on ten."
-  useEffect(() => {
-    try {
-      const saved = Number(localStorage.getItem(BET_STORAGE_KEY));
-      if (BET_STEPS.includes(saved)) setBet(stepAtOrBelow(Math.min(saved, bankStart)));
-    } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const changeBet = useCallback((direction: 1 | -1) => {
-    setBet((b) => {
-      const i = BET_STEPS.indexOf(b);
-      // A bet that predates this table (or was clamped to a non-step value
-      // by the bank cap below) may not sit exactly on a step — fall back to
-      // the nearest one below it first, so a press always moves from a real
-      // rung rather than getting stuck between two of them.
-      const cur = i >= 0 ? i : BET_STEPS.indexOf(stepAtOrBelow(b));
-      const next = Math.max(0, Math.min(BET_STEPS.length - 1, cur + direction));
-      const value = Math.min(BET_STEPS[next], Math.max(1, bank));
-      try { localStorage.setItem(BET_STORAGE_KEY, String(value)); } catch { /* ignore */ }
-      return value;
-    });
-  }, [bank]);
-
+  return <BackLabelCtx.Provider value={startGame ? "Back" : "Menu"}>{body()}</BackLabelCtx.Provider>;
+  function body() {
   if (game === "blackjack") {
     return <Blackjack bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
   }
@@ -204,11 +180,53 @@ function CasinoInner({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRen
         onSetBank={setBank}
         onExit={() => setGame("menu")}
         onChangeBet={changeBet}
+        backLabel={startGame ? "Back" : "Menu"}
       />
     );
   }
 
   return <Menu bank={bank} career={career} onExit={() => onExit(bank)} onPick={setGame} />;
+  }
+}
+
+/** The back button inside a game: "Menu" in the casino menu, "Back" when
+ *  the game was opened straight from the 3D room (it goes back to the room). */
+export const BackLabelCtx = createContext("Menu");
+
+/**
+ * The bet, on the BET_STEPS ladder: remembered between visits (the same way
+ * the match speed button is), never above the bank. Shared by the flat games
+ * and the 3D room's tables (components/star/Casino3DTable.tsx).
+ */
+export function useCasinoBet(bank: number, bankStart: number): [number, (direction: 1 | -1) => void] {
+  const [bet, setBet] = useState(BET_STEPS[0]);
+  // Persisted the same way the match speed button is (star-match-speed):
+  // read once on mount, written back on every change, so it holds across
+  // casino visits — "if I left it on ten star money as the bet, the next
+  // time I came to do a bet it would still be on ten."
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem(BET_STORAGE_KEY));
+      if (BET_STEPS.includes(saved)) setBet(stepAtOrBelow(Math.min(saved, bankStart)));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const changeBet = useCallback((direction: 1 | -1) => {
+    setBet((b) => {
+      const i = BET_STEPS.indexOf(b);
+      // A bet that predates this table (or was clamped to a non-step value
+      // by the bank cap below) may not sit exactly on a step — fall back to
+      // the nearest one below it first, so a press always moves from a real
+      // rung rather than getting stuck between two of them.
+      const cur = i >= 0 ? i : BET_STEPS.indexOf(stepAtOrBelow(b));
+      const next = Math.max(0, Math.min(BET_STEPS.length - 1, cur + direction));
+      const value = Math.min(BET_STEPS[next], Math.max(1, bank));
+      try { localStorage.setItem(BET_STORAGE_KEY, String(value)); } catch { /* ignore */ }
+      return value;
+    });
+  }, [bank]);
+  return [bet, changeBet];
 }
 
 const GAMES: { id: "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie"; icon: string; label: string; sub: string; color: string }[] = [
@@ -282,6 +300,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, ch
   // Float every change of the bank off it: "−★2k" as a stake goes down,
   // "+★4k" as winnings come in.
   const hud = useContext(HudCtx);
+  const backLabel = useContext(BackLabelCtx);
   const prev = useRef(bank);
   const [delta, setDelta] = useState({ n: 0, text: "", up: false });
   useEffect(() => {
@@ -297,7 +316,7 @@ function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, note, ch
       title={title}
       icon={icon}
       onBack={onExit}
-      backLabel="Menu"
+      backLabel={backLabel}
       right={<WalletPill value={bank} format={formatMoney} spent={delta.n} spentText={delta.text} spentColor={delta.up ? "#6ee7b7" : "#fca5a5"} />}
     >
       <BetBar bet={bet} bank={bank} onChangeBet={onChangeBet} />
@@ -332,7 +351,7 @@ function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChang
 }
 
 // ---------- HORSE RACING ----------
-interface RaceHorse {
+export interface RaceHorse {
   name: string;
   rating: number;
   odds: number;
@@ -362,7 +381,7 @@ function horsesFor(ratings: number[], odds: number[]): RaceHorse[] {
   return ratings.map((rating, i) => ({ name: names[i], rating, odds: odds[i] }));
 }
 
-function generateRaceHorses(): RaceHorse[] {
+export function generateRaceHorses(): RaceHorse[] {
   const ratings = dealRaceRatings(Math.random);
   return horsesFor(ratings, raceWinOdds(ratings));
 }
@@ -459,10 +478,7 @@ function HorseRacingGame(props: HorseRacingProps) {
       card
         ? { game: "horse", card: card.card, sig: card.sig, pick: pickIdx, stake, bank: props.bank, idemKey: `horse:${card.card.nonce}` }
         : { game: "horse", pick: pickIdx, stake, bank: props.bank },
-      () => {
-        const scores = raceScores(field.map((h) => h.rating), Math.random, getTuning("horseRacing.raceNoise"));
-        return { scores, payout: finishOf(scores, pickIdx) === 1 ? Math.round(stake * field[pickIdx].odds) : 0 };
-      },
+      () => horseBetRound(field.map((h) => h.rating), field.map((h) => h.odds), pickIdx, stake, Math.random, getTuning("horseRacing.raceNoise")),
     );
     setBusy(false);
     if (played.kind === "error") {
@@ -900,7 +916,6 @@ const FELT_TABLE: React.CSSProperties = {
   boxShadow: `inset 0 0 0 4px ${rgba(GOLD, 0.7)}, inset 0 0 0 7px rgba(0,0,0,.35), inset 0 10px 30px rgba(0,0,0,.45), 0 18px 34px -16px rgba(0,0,0,.9)`,
 };
 // Cards, hand values and the dealer's rule: lib/star/casinoRules.ts.
-const drawCard = (): Card => drawRuleCard(Math.random);
 /** The dealer's face-down card while the server still holds it. */
 const HIDDEN_CARD: Card = { rank: "?", value: 0, suit: "♠" };
 
@@ -931,7 +946,7 @@ function Blackjack(props: CasinoGameProps) {
     const stake = props.bet;
     const played = await playOrLocal<{ playId?: string; player: Card[]; dealerUp?: Card; dealer?: Card[] }>(
       { game: "blackjack", action: "deal", stake, bank: props.bank },
-      () => ({ player: [drawCard(), drawCard()], dealer: [drawCard(), drawCard()] }),
+      () => blackjackDeal(Math.random),
     );
     setBusy(false);
     if (played.kind === "error") { setNote(played.message); return; }
@@ -981,7 +996,7 @@ function Blackjack(props: CasinoGameProps) {
       next = r.player;
       if (r.dealer) finalDealer = r.dealer;
     } else {
-      next = [...player, drawCard()];
+      next = blackjackHit(player, Math.random);
     }
     setPlayer(next);
     if (handValue(next) > 21) {
@@ -1010,8 +1025,8 @@ function Blackjack(props: CasinoGameProps) {
       payout = r.payout;
       verdict = r.verdict;
     } else {
-      full = dealerPlay(dealer, Math.random);
-      const s = blackjackSettle(player, full, handRef.current?.stake ?? props.bet);
+      const s = blackjackStand(player, dealer, handRef.current?.stake ?? props.bet, Math.random);
+      full = s.dealer;
       payout = s.payout;
       verdict = s.verdict;
     }
@@ -1179,7 +1194,7 @@ function Roulette(props: CasinoGameProps) {
     // The winner: rolled by the server when signed in, here otherwise.
     const played = await playOrLocal<{ winner: number; payout: number }>(
       { game: "roulette", choice: picked, stake, bank: bank0 },
-      () => { const w = spinRoulette(Math.random); return { winner: w, payout: roulettePayout(picked, w, stake) }; },
+      () => rouletteRound(picked, stake, Math.random),
     );
     if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
     const { winner, payout: win } = played.result;
@@ -1335,7 +1350,7 @@ function Slots(props: CasinoGameProps) {
     // blur before them is only for show.
     const played = await playOrLocal<{ reels: string[]; payout: number }>(
       { game: "slots", stake, bank: bank0 },
-      () => { const r = spinSlots(Math.random); return { reels: r, payout: slotsPayout(r, stake) }; },
+      () => slotsRound(stake, Math.random),
     );
     if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
     props.onSetBank(bank0 - stake);

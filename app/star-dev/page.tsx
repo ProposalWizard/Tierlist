@@ -4203,6 +4203,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         career={career}
         onBack={() => { setActiveNav("home"); setPhase("dashboard"); }}
         onDoor={() => { setGardenArrive("casino"); setPhase("garden"); }}
+        onBank={handleCasinoBank}
         renderGame={(game, done) => game
           ? <Casino hud={screenHud("casino")} bankStart={career.money} career={career} startGame={game} onExit={(bank) => { handleCasinoBank(bank); done(); }} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />
           : <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />}

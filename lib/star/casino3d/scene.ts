@@ -13,9 +13,13 @@
  *   - the betting counter on the right wall (competition bets), its board
  *   - Goalie Mode as an arcade cabinet in the back-right corner
  * Walk up to a station and its card shows (components/star/Casino3D.tsx);
- * tap a station and he walks there and the game opens as he arrives. The
- * games themselves are the existing screens (components/star/Casino.tsx,
- * GoalieMode.tsx), shown over this room: nothing here plays them.
+ * tap a station and he walks there and the game opens as he arrives.
+ * Roulette, Slots, Blackjack and Horse racing PLAY IN THE ROOM (Harry, 8 Oct
+ * 2026: "having the games actually run in 3D"): the camera glides in close
+ * (`focus`), and the wheel, the reels, the cards and the big screen's race
+ * (./games3d.ts) show what components/star/Casino3DTable.tsx rolled with
+ * the flat casino's own rules. Bets and Goalie Mode still open their flat
+ * screens (components/star/Casino.tsx, GoalieMode.tsx) over the room.
  *
  * Built from primitives and canvas paint only (./textures.ts): no model
  * files except the footballer the shop and garden already load, so the
@@ -56,12 +60,16 @@ import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf"
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import {
-  carpetCanvas, panelCanvas, wheelCanvas, feltCanvas, layoutCanvas, slotScreenCanvas, marqueeCanvas,
+  carpetCanvas, panelCanvas, feltCanvas, layoutCanvas, slotScreenCanvas, marqueeCanvas,
   oddsBoardCanvas, drawRaceScreen, goalieScreenCanvas,
 } from "./textures";
+import {
+  type CasinoStation, type InRoomGame, ROOM, DOOR_HALF, DOOR_H, ROUL, BJ, SLOT_X, SLOT_Z, PLAY_SLOT, SCREEN, BETS, ARCADE, START, BAR,
+  STAND, FOCUS, stationAt,
+} from "./plan";
+import { buildGames, type Games3D } from "./games3d";
+export type { CasinoStation } from "./plan";
 
-/** The stations: the same ids as the casino's games (components/star/Casino.tsx). */
-export type CasinoStation = "roulette" | "blackjack" | "slots" | "horses" | "bets" | "goalie";
 
 export interface CasinoCallbacks {
   onNear: (s: CasinoStation | null) => void;
@@ -99,40 +107,20 @@ export interface CasinoController {
   stats: () => { calls: number; triangles: number; pixelRatio: number; frames: number; quality: string; merged?: { before: number; after: number } };
   /** He just closed a game: cheer (+1, more money than he opened it with), groan (−1), or nothing (0). */
   react: (sign: number) => void;
+  /** Play a game in the room: he stands (or sits) at it and the camera
+   *  glides in close; null glides back out and he can walk again. */
+  focus: (g: InRoomGame | null) => void;
+  /** The games' moving parts (./games3d.ts), null until the room is built. */
+  games: Games3D;
+  /** The croupier / dealer / your own hand, for a round. */
+  staff: (role: "croupier" | "dealer") => void;
+  /** Sat at the slot machine: pull the lever (his arm and the lever). The
+   *  reels should start `PULL_AT` seconds after. */
+  pull: () => void;
   dispose: () => void;
 }
 
-// ── The plan (metres; the doors are at +z) ──
-const ROOM = { x: 7, z: 8, h: 4.2 };
-const DOOR_HALF = 1.1;
-const DOOR_H = 2.7;
-const ROUL = { x: -3.4, z: -0.8, rx: 1.7, rz: 0.95 };
-const BJ = { x: 3.4, z: -1.6, r: 1.45 };
-const SLOT_X = -6.35;
-const SLOT_Z = [1.2, 2.5, 3.8, 5.1];
-const SCREEN = { x: -1.6, w: 6.0, h: 3.0, y: 2.45 };
-const BETS = { x: 6.0, z0: 1.4, z1: 5.0 };
-const ARCADE = { x: 5.3, z: -6.95 };
-const START = { x: 0, z: ROOM.z - 2.6 };
-/** The bar, back left: the counter (its long side along z) and where the bartender stands. */
-const BAR = { x: -5.75, z0: -6.9, z1: -3.6, top: 1.0 };
-
-const ZONES: { id: CasinoStation; inside: (x: number, z: number) => boolean }[] = [
-  { id: "roulette", inside: (x, z) => Math.hypot((x - ROUL.x) / 1.35, z - ROUL.z) < 2.4 },
-  { id: "blackjack", inside: (x, z) => Math.hypot(x - BJ.x, z - BJ.z) < 2.9 && z > BJ.z - 0.4 },
-  { id: "slots", inside: (x, z) => x < -4.3 && z > 0.4 && z < 5.9 },
-  { id: "horses", inside: (x, z) => z < -4.9 && x > -4.9 && x < 1.7 },
-  { id: "goalie", inside: (x, z) => Math.hypot(x - ARCADE.x, z - (ARCADE.z + 1.5)) < 1.5 },
-  { id: "bets", inside: (x, z) => x > 4.2 && z > BETS.z0 - 0.4 && z < BETS.z1 + 0.4 },
-];
-const STAND: Record<CasinoStation, { at: XZ; face: XZ }> = {
-  roulette: { at: [ROUL.x + 0.4, ROUL.z + 2.0], face: [ROUL.x, ROUL.z] },
-  blackjack: { at: [BJ.x, BJ.z + 2.45], face: [BJ.x, BJ.z] },
-  slots: { at: [-4.9, 3.15], face: [SLOT_X, 3.15] },
-  horses: { at: [SCREEN.x, -5.6], face: [SCREEN.x, -ROOM.z] },
-  goalie: { at: [ARCADE.x, ARCADE.z + 1.6], face: [ARCADE.x, ARCADE.z] },
-  bets: { at: [4.65, (BETS.z0 + BETS.z1) / 2], face: [ROOM.x, (BETS.z0 + BETS.z1) / 2] },
-};
+// ── The plan: ./plan.ts (shared with the tests) ──
 
 /** Things you can't walk through: boxes [minX, maxX, minZ, maxZ] and circles [x, z, r]. */
 const BOXES: [number, number, number, number][] = [
@@ -152,6 +140,10 @@ const WALK = 1.55;
 const JOG = 3.3;
 
 /** Opens the casino; a part-built one is thrown away properly if anything fails. */
+/** Seconds from pressing Spin at the slot machine to the reels going: the
+ *  slot_pull clip's `pulled` moment (lib/star/three3d/footballAnims.ts). */
+export const PULL_AT = 0.75;
+
 export async function startCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions): Promise<CasinoController> {
   const own: { renderer?: any } = {};
   try {
@@ -332,13 +324,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     add(new THREE.PlaneGeometry(1.6, 0.8), basic(canvasTex(layoutCanvas()), { toneMapped: true }), 0.4, 0.888, 0, g, -Math.PI / 2);
     // the base and legs
     add(new THREE.CylinderGeometry(0.5, 0.65, 0.75, 20), darkWoodM, 0, 0.375, 0, g);
-    // the wheel: a wood bowl, a gold rim, a spinning wheel
-    add(new THREE.CylinderGeometry(0.46, 0.4, 0.16, 32), darkWoodM, -1.0, 0.95, 0, g);
-    add(new THREE.TorusGeometry(0.45, 0.025, 8, 36), goldM, -1.0, 1.03, 0, g, Math.PI / 2);
-    const wheel = add(new THREE.CircleGeometry(0.4, 40), basic(canvasTex(wheelCanvas()), { toneMapped: true }), -1.0, 1.035, 0, g, -Math.PI / 2);
-    const spindle = add(new THREE.CylinderGeometry(0.02, 0.04, 0.16, 8), goldM, -1.0, 1.1, 0, g);
-    void spindle;
-    rg.userData.wheel = wheel;
+    // the wheel itself (numbered pockets, the ball) is games3d's
+    rg.userData.table = g;
     // three stools on the player's side
     for (const dx of [-0.9, 0.2, 1.2]) {
       add(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 16), leatherM, dx, 0.68, ROUL.rz + 0.5, g);
@@ -358,8 +345,9 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     const g = new THREE.Group();
     g.position.set(BJ.x, 0, BJ.z);
     bg.add(g);
+    bg.userData.table = g;
     add(new THREE.CylinderGeometry(BJ.r, BJ.r, 0.14, 40, 1, false, -Math.PI / 2, Math.PI), darkWoodM, 0, 0.8, 0, g);
-    const felt = add(new THREE.CircleGeometry(BJ.r - 0.12, 40, Math.PI, Math.PI), basic(canvasTex(feltCanvas(["", "", "", "BLACKJACK PAYS 3 TO 2", "Dealer stands on 17"])), { toneMapped: true }), 0, 0.875, 0, g, -Math.PI / 2);
+    const felt = add(new THREE.CircleGeometry(BJ.r - 0.12, 40, Math.PI, Math.PI), basic(canvasTex(feltCanvas(["", "", "", "WINS PAY 1 TO 1", "Dealer stands on 17"])), { toneMapped: true }), 0, 0.875, 0, g, -Math.PI / 2);
     void felt;
     box(BJ.r * 2, 0.16, 0.12, darkWoodM, 0, 0.8, -0.04, g);
     add(new THREE.CylinderGeometry(0.45, 0.6, 0.75, 20), darkWoodM, 0, 0.375, 0.5, g);
@@ -369,7 +357,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     box(0.24, 0.14, 0.34, mat("#7a1020", { roughness: 0.4 }), 0.7, 0.95, 0.25, g);
     // cards dealt to two places
     const cardM = mat("#fbfbf8", { roughness: 0.5 });
-    for (const [cx, cz, ry] of [[-0.55, 0.85, 0.3], [-0.45, 0.88, 0.1], [0.5, 0.86, -0.2], [0.62, 0.84, -0.4], [0.0, 0.42, 0]] as [number, number, number][]) {
+    // (the middle, where you play, stays clear for the dealt cards)
+    for (const [cx, cz, ry] of [[-1.02, 0.55, 0.9], [-0.94, 0.6, 0.7], [1.0, 0.56, -0.8]] as [number, number, number][]) {
       add(new THREE.BoxGeometry(0.14, 0.004, 0.2), cardM, cx, 0.89, cz, g, 0, ry);
     }
     // stools round the curve
@@ -385,16 +374,19 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // ── The slots: four machines down the left wall ──
   const sg = station("slots");
   const toppers: any[] = [];
+  let playSlot: any = null;
   SLOT_Z.forEach((z, i) => {
     const g = new THREE.Group();
     g.position.set(SLOT_X, 0, z);
     g.rotation.y = Math.PI / 2; // facing into the room (+x)
     sg.add(g);
+    if (i === PLAY_SLOT) playSlot = g;
     const body = mat(["#9b1020", "#c08a2a", "#5b21b6", "#9b1020"][i], { roughness: 0.35, metalness: 0.4 });
     box(1.0, 1.05, 0.75, body, 0, 0.525, 0, g);
     box(1.0, 0.85, 0.55, body, 0, 1.47, -0.1, g);
     box(1.04, 0.06, 0.8, goldM, 0, 1.06, 0, g);
-    plane(0.78, 0.49, basic(canvasTex(slotScreenCanvas(i * 3 + 1))), 0, 1.45, 0.18, 0, g);
+    // the one you play has real reels (games3d); the others a painted glass
+    if (i !== PLAY_SLOT) plane(0.78, 0.49, basic(canvasTex(slotScreenCanvas(i * 3 + 1))), 0, 1.45, 0.18, 0, g);
     box(0.86, 0.06, 0.06, goldM, 0, 1.72, 0.19, g);
     box(0.86, 0.06, 0.06, goldM, 0, 1.18, 0.19, g);
     // a sloped button deck with three lit buttons
@@ -406,9 +398,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     topM.userData.keep = true;
     box(1.0, 0.36, 0.5, goldM, 0, 2.08, -0.1, g);
     toppers.push(plane(0.94, 0.3, topM, 0, 2.08, 0.155, 0, g));
-    // the lever
-    add(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 8), mat("#c9c9c9", { metalness: 0.9, roughness: 0.25 }), 0.55, 1.3, 0.05, g);
-    add(new THREE.SphereGeometry(0.07, 12, 10), mat("#d1121e", { roughness: 0.3 }), 0.55, 1.57, 0.05, g);
+    // the lever (the one you play: games3d's, so it can be pulled)
+    if (i !== PLAY_SLOT) {
+      add(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 8), mat("#c9c9c9", { metalness: 0.9, roughness: 0.25 }), 0.55, 1.3, 0.05, g);
+      add(new THREE.SphereGeometry(0.07, 12, 10), mat("#d1121e", { roughness: 0.3 }), 0.55, 1.57, 0.05, g);
+    }
     // a stool
     add(new THREE.CylinderGeometry(0.2, 0.2, 0.08, 16), leatherM, 0, 0.66, 0.85, g);
     add(new THREE.CylinderGeometry(0.03, 0.05, 0.62, 8), goldM, 0, 0.31, 0.85, g);
@@ -423,7 +417,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const raceT = canvasTex(raceCv);
   const raceM = basic(raceT);
   raceM.userData.keep = true;
-  plane(SCREEN.w, SCREEN.h, raceM, SCREEN.x, SCREEN.y, -ROOM.z + 0.12, 0, hg);
+  const screenMesh = plane(SCREEN.w, SCREEN.h, raceM, SCREEN.x, SCREEN.y, -ROOM.z + 0.12, 0, hg);
   box(SCREEN.w + 0.3, SCREEN.h + 0.3, 0.1, blackM, SCREEN.x, SCREEN.y, -ROOM.z + 0.05, hg);
   for (const y of [SCREEN.y - SCREEN.h / 2 - 0.16, SCREEN.y + SCREEN.h / 2 + 0.16]) box(SCREEN.w + 0.4, 0.06, 0.14, goldM, SCREEN.x, y, -ROOM.z + 0.08, hg);
   // a brass rail before it
@@ -509,6 +503,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const npcs: { p: Person3D; pl: ClipPlayer; role: NpcRole; base: string; next: number; until: number; x: number; z: number }[] = [];
   /** Your reaction after a game (null if the clips didn't load). */
   let cheerA: any = null, groanA: any = null;
+  /** Sat at the slot machine, and pulling its lever (null if not loaded). */
+  let sitA: any = null, pullA: any = null;
   const circles: [number, number, number][] = [...CIRCLES];
   const numT = canvasTex(numberCanvas(opts.number ?? 10, "#ffffff"));
   if (newLook) {
@@ -569,6 +565,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       addClips(THREE, person, cas);
       cheerA = person.actions.cheer_win ?? null;
       groanA = person.actions.groan_loss ?? null;
+      sitA = person.actions.slot_sit ?? null;
+      pullA = person.actions.slot_pull ?? null;
     }
   } else {
     const [charGltf, animGltf]: any[] = await Promise.all([
@@ -597,6 +595,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     const take = (n: string) => { const c = casU?.animations?.find((x: any) => x.name === n); if (!c) return null; const x = mixer.clipAction(c); x.play(); x.setEffectiveWeight(0); return x; };
     cheerA = take("cheer_win");
     groanA = take("groan_loss");
+    sitA = take("slot_sit");
+    pullA = take("slot_pull");
   }
   if (disposed) throw new Error("disposed");
   player.position.set(START.x, 0, START.z);
@@ -613,6 +613,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0, drawn = 0;
   let paused = false;
   let leftByDoor = false;
+  /** The game being played in the room (camera in close, no walking). */
+  let focused: InRoomGame | null = null;
+  /** Sat at the machine: the seat weight (0 standing … 1 sat), and a pull in progress. */
+  let seat = 0, seatWant = 0, pullT = -1;
   const walker = new TapWalker();
   const marker = makeTapMarker(THREE, scene);
   let grid: WalkGrid | null = null;
@@ -621,7 +625,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase();
     if (!["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(k)) return;
-    if (paused) return;
+    if (paused || focused) return;
     if (down) { keys.add(k); stopWalk(); } else keys.delete(k);
     if (k.startsWith("arrow")) e.preventDefault();
   };
@@ -682,7 +686,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const clock = new THREE.Clock();
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), want = new THREE.Vector3(), wantLook = new THREE.Vector3();
   let first = true;
-  let acc = 0, busy = true, busyT = 0, stillT = 0, capAlways = false, raceAcc = 0;
+  let acc = 0, busy = true, busyT = 0, stillT = 0, capAlways = false, raceAcc = 0, glideOut = 0;
   const stepDown = (): boolean => {
     const next = stepDownTier(tier);
     if (!next) return false;
@@ -694,13 +698,16 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     resize();
     return true;
   };
-  const wheel = rg.userData.wheel;
-  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, wheel, ...toppers, ...dealers.map((d) => d.root)]));
+  const games = buildGames({
+    THREE, renderer, roulTable: rg.userData.table, bjTable: bg.userData.table, slotMachine: playSlot,
+    screenMat: raceM, screenIdle: raceT, tier, goldM, darkWoodM,
+  });
+  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, screenMesh, ...games.keep, ...toppers, ...dealers.map((d) => d.root)]));
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   // ── The people's day ──
-  let wheelBoost = 0, spinAt = 0;
+  let spinAt = 0;
   let react: { a: any; t: number; w: number; reps: number; out: boolean } | null = null;
   const frustum = new THREE.Frustum(), projM = new THREE.Matrix4(), sph = new THREE.Sphere(), v3 = new THREE.Vector3();
   /** One of the staff's or punters' own moves, now. */
@@ -755,8 +762,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       acc = 0;
     }
     gameT += dt;
-    let ix = stick.x, iy = stick.y;
-    if (keys.size) {
+    let ix = focused ? 0 : stick.x, iy = focused ? 0 : stick.y;
+    if (keys.size && !focused) {
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
@@ -799,7 +806,18 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       react.a.setEffectiveWeight(react.w);
       if (react.out && react.w <= 0) { react.a.setEffectiveWeight(0); react = null; }
     }
-    const keep = 1 - (react?.w ?? 0);
+    // sat at the slot machine: the seat pose (and the pull) over the rest
+    seat += (seatWant - seat) * Math.min(1, dt * 6);
+    let pullW = 0;
+    if (pullT >= 0 && pullA) {
+      pullT += dt;
+      const len = pullA.getClip().duration;
+      pullW = Math.min(1, pullT / 0.12, (len - pullT) / 0.2);
+      if (pullT >= len) { pullT = -1; pullW = 0; pullA.setEffectiveWeight(0); }
+      else { pullA.time = pullT; pullA.setEffectiveWeight(pullW * seat); }
+    }
+    if (sitA) sitA.setEffectiveWeight(seat * (1 - pullW));
+    const keep = (1 - (react?.w ?? 0)) * (sitA ? 1 - seat : 1);
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK) * keep);
     walkA.setEffectiveWeight(wWalk * keep);
     jogA.setEffectiveWeight(wJog * keep);
@@ -809,14 +827,15 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     stepNpcs(dt);
 
     // the room's life: the wheel turns, the toppers pulse, the race runs
-    wheel.rotation.z += dt * (0.9 + wheelBoost);
-    wheelBoost = Math.max(0, wheelBoost - dt * 1.6);
-    if (spinAt && gameT >= spinAt) { spinAt = 0; wheelBoost = 5; }
+    // (the games' own moving parts: ./games3d.ts)
+    if (spinAt && gameT >= spinAt) { spinAt = 0; games.wheelKick(5); }
+    games.update(dt);
     toppers.forEach((t, i) => t.material.color.setScalar(0.82 + 0.18 * Math.sin(gameT * 4 + i * 1.3)));
     raceAcc += dt;
-    if (raceAcc > 1 / 10) { raceAcc = 0; drawRaceScreen(raceCv, gameT); raceT.needsUpdate = true; }
+    if (raceAcc > 1 / 10 && raceM.map === raceT) { raceAcc = 0; drawRaceScreen(raceCv, gameT); raceT.needsUpdate = true; }
 
-    // the camera follows behind him, inside the room
+    // the camera follows behind him, inside the room (or, playing a game,
+    // glides in to the game's close-up)
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
@@ -824,13 +843,15 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     wantLook.set(player.position.x + cfx * 2.4, 1.0, player.position.z + cfz * 2.4);
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
+    if (focused) { want.set(...FOCUS[focused].pos); wantLook.set(...FOCUS[focused].look); }
+    const glide = focused || glideOut > 0 ? 2.6 : 5;
+    if (glideOut > 0) glideOut -= dt;
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
-    else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    else { camPos.lerp(want, Math.min(1, dt * glide)); camLook.lerp(wantLook, Math.min(1, dt * (glide + 1))); }
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
-    let now: CasinoStation | null = null;
-    for (const zn of ZONES) if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
+    const now: CasinoStation | null = stationAt(player.position.x, player.position.z);
     if (now !== near) {
       near = now;
       cb.onNear(near);
@@ -841,7 +862,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     renderer.render(scene, camera);
     drawn++;
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
+      || games.busy() || pullT >= 0 || Math.abs(seat - seatWant) > 0.01;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
@@ -873,9 +895,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   };
   const ctrl: CasinoController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx) => { if (focused) return; camYaw -= dx * 0.008; orbitHold = 1.5; },
     pick: (px, py) => { aim(px, py); return pickStation(); },
     tap: (px, py) => {
+      if (focused) return null;
       aim(px, py);
       const s = pickStation();
       if (s) {
@@ -907,11 +930,50 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       // turn round to the camera so the reaction is seen, not his back
       faceTo = [camPos.x, camPos.z];
     },
+    games,
+    focus: (gm) => {
+      if (gm === focused) return;
+      stopWalk(); stick = { x: 0, y: 0 }; keys.clear(); speed = 0;
+      const was = focused;
+      focused = gm;
+      const at = (s: InRoomGame) => {
+        const [x, z] = STAND[s].at, [fx, fz] = STAND[s].face;
+        player.position.x = x; player.position.z = z;
+        yaw = Math.atan2(fx - x, fz - z);
+        player.rotation.y = yaw;
+        playerBlob.position.set(x, 0.012, z);
+      };
+      if (gm) {
+        at(gm);
+        if (gm === "slots" && sitA) {
+          // on the stool, facing the machine (where the slot punters sit)
+          player.position.x = SLOT_X + 0.85; player.position.z = SLOT_Z[PLAY_SLOT];
+          playerBlob.position.set(player.position.x, 0.012, player.position.z);
+          yaw = -Math.PI / 2; player.rotation.y = yaw;
+          sitA.reset(); sitA.play(); seatWant = 1; seat = 1;
+        }
+      } else {
+        if (was === "slots") { seatWant = 0; seat = 0; pullT = -1; pullA?.setEffectiveWeight(0); sitA?.setEffectiveWeight(0); }
+        if (was) {
+          at(was);
+          if (was === "horses") games.raceEnd();
+          // the follow camera picks up from behind where he now faces
+          camYaw = yaw + Math.PI; glideOut = 1.2;
+        }
+      }
+    },
+    staff: (role) => staffMove(role),
+    pull: () => {
+      // the lever is all the way down at the clip's `pulled` moment (PULL_AT)
+      games.lever(PULL_AT * 2);
+      if (pullA && seat > 0.5) { pullA.reset(); pullA.play(); pullA.setEffectiveWeight(0); pullT = 0; }
+    },
     place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT }),
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), frames: drawn, quality: tier, merged: frozen }),
     dispose: () => {
       disposed = true;
+      games.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
