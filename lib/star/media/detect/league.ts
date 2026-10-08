@@ -2,6 +2,7 @@ import { ev } from "./kit";
 import type { FootballEvent, Subject, Tag } from "../types";
 import type { LeagueResult } from "../../types";
 import { PLAYER_GOAL_CHANTS } from "../chants";
+import type { SynthGoal } from "../../goalClip/synth";
 
 /**
  * THE REST OF THE DIVISION.
@@ -215,6 +216,43 @@ function chantEligibleGoalEvents(
 }
 
 /**
+ * GOAL VIDEOS FOR MATCHES YOU DID NOT PLAY (Leo, 8 Oct 2026). Every goal of
+ * the match, in order, with the score once it went in — what
+ * lib/star/goalClip/synth.ts needs to make a video of it. Kept on the event
+ * as a JSON string fact (`goalVideos`): facts are plain values.
+ */
+function matchGoals(r: LeagueResult, competition: string, season: number, week: number): SynthGoal[] {
+  const merged = [
+    ...(r.hg ?? []).map(g => ({ g, home: true })),
+    ...(r.ag ?? []).map(g => ({ g, home: false })),
+  ].sort((a, b) => a.g.m - b.g.m);
+  let h = 0, a = 0;
+  return merged.map(({ g, home }) => {
+    if (home) h++; else a++;
+    return {
+      home: r.home, away: r.away, scorer: g.full ?? g.s, scorerShort: g.s, scorerHome: home,
+      minute: g.m, scoreAfter: [h, a] as [number, number], competition, season, week,
+      seed: `${season}-${week}-${r.home}-${r.away}-${g.m}-${g.s}`,
+    };
+  });
+}
+
+/** Which goals a post about this event shows. */
+function goalsFor(e: FootballEvent, goals: SynthGoal[]): SynthGoal[] {
+  const f = e.facts;
+  const club = typeof f.club === "string" ? f.club : "";
+  const forClub = (g: SynthGoal) => (g.scorerHome ? g.home : g.away) === club;
+  if (typeof f.minute === "number" && typeof f.player === "string") {
+    return goals.filter(g => g.minute === f.minute && forClub(g)).slice(0, 1);
+  }
+  const who = typeof f.player === "string" ? f.player : typeof f.scorer === "string" ? f.scorer : null;
+  if (who) return goals.filter(g => g.scorer === who && forClub(g)).slice(0, 4);
+  // The result itself: the club's goals (a reel), at most four.
+  if (["win", "rout", "draw"].includes(e.id)) return goals.filter(forClub).slice(0, 4);
+  return [];
+}
+
+/**
  * This week's news from everyone else.
  *
  * `results` is the WHOLE division's week — the same `career.results` the
@@ -234,13 +272,21 @@ export function detectLeagueWeek(
     if (r.week !== week) continue;
     if (r.home === excludeClub || r.away === excludeClub) continue;
 
-    out.push(sideResultEvent(r.home, r.away, r.hs, r.as, true, competition, season, week));
-    out.push(sideResultEvent(r.away, r.home, r.as, r.hs, false, competition, season, week));
-    out.push(...hatTrickEvents(r.home, r.away, r.hg, true, competition, season, week));
-    out.push(...hatTrickEvents(r.away, r.home, r.ag, false, competition, season, week));
-    out.push(...decisiveGoalEvents(r.home, r.away, r.hg, r.ag, r.hs, r.as, competition, season, week));
-    out.push(...chantEligibleGoalEvents(r.home, r.away, r.hg, competition, season, week));
-    out.push(...chantEligibleGoalEvents(r.away, r.home, r.ag, competition, season, week));
+    const fromThis: FootballEvent[] = [
+      sideResultEvent(r.home, r.away, r.hs, r.as, true, competition, season, week),
+      sideResultEvent(r.away, r.home, r.as, r.hs, false, competition, season, week),
+      ...hatTrickEvents(r.home, r.away, r.hg, true, competition, season, week),
+      ...hatTrickEvents(r.away, r.home, r.ag, false, competition, season, week),
+      ...decisiveGoalEvents(r.home, r.away, r.hg, r.ag, r.hs, r.as, competition, season, week),
+      ...chantEligibleGoalEvents(r.home, r.away, r.hg, competition, season, week),
+      ...chantEligibleGoalEvents(r.away, r.home, r.ag, competition, season, week),
+    ];
+    const goals = matchGoals(r, competition, season, week);
+    for (const e of fromThis) {
+      const pick = goalsFor(e, goals);
+      if (pick.length) e.facts.goalVideos = JSON.stringify(pick);
+    }
+    out.push(...fromThis);
   }
   return out;
 }

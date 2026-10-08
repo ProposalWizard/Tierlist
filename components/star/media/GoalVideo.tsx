@@ -6,6 +6,7 @@ import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } fr
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
 import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { useAnimationsLook } from "@/lib/star/animLook";
+import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
 import { useClipSound, setClipSoundOn } from "@/lib/star/goalClip/sound";
 import { audioContext } from "@/lib/star/audioOut";
@@ -103,6 +104,8 @@ function mmss(s: number): string {
 
 export interface GoalVideoProps {
   clipIds: string[];
+  /** Goals from a match you did not play: made on the phone (goalClip/synth.ts). */
+  synth?: SynthGoal[];
   style: ClipStyle;
   /** Which of the poster's cuts (edit.ts makeEdit). */
   variant?: number;
@@ -119,7 +122,7 @@ export interface GoalVideoProps {
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, style, variant = 0, credit, title, badge, fallback, autoStart = false }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false }: GoalVideoProps) {
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -141,14 +144,19 @@ export default function GoalVideo({ clipIds, style, variant = 0, credit, title, 
   const [wanted, setWanted] = useState(false);
   // The men's moves follow Settings → Look → Animations, like the match.
   const moves = useAnimationsLook();
-  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${credit?.handle ?? ""}`;
+  const synthKey = (synth ?? []).map(g => g.seed).join(",");
+  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
 
   useEffect(() => {
     let live = true;
+    if (!clipIds.length && synth?.length) {
+      setTracks(synth.map(synthTrack).filter((t): t is GoalTrack => !!t));
+      return () => { live = false; };
+    }
     getClips(clipIds).then(t => { if (live) setTracks(t); }).catch(() => { if (live) setTracks([]); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clipIds.join(",")]);
+  }, [clipIds.join(","), synthKey]);
 
   const edit = useMemo(() => (tracks && tracks.length ? makeEdit(tracks, style, moves, variant) : null), [tracks, style, moves, variant]);
 

@@ -31,11 +31,12 @@ export default function Graphic({ spec, author }: { spec: GraphicSpec; author?: 
     return (
       <GoalVideo
         clipIds={spec.clips}
+        synth={spec.synth}
         style={clipStyleFor(author)}
         variant={clipVariantFor(author)}
         credit={author ? { handle: author.handle, name: author.name } : undefined}
         title={spec.title}
-        badge={spec.clips.length > 1 ? "HIGHLIGHTS" : "GOAL"}
+        badge={(spec.clips.length || spec.synth?.length || 0) > 1 ? "HIGHLIGHTS" : "GOAL"}
         fallback={null}
       />
     );
@@ -334,10 +335,11 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
       </div>
     </div>
   );
-  if (!s.clips?.length) return still;
+  if (!s.clips?.length && !s.synth?.length) return still;
   return (
     <GoalVideo
-      clipIds={s.clips}
+      clipIds={s.clips ?? []}
+      synth={s.synth}
       style={clipStyleFor(author)}
       variant={clipVariantFor(author)}
       credit={author ? { handle: author.handle, name: author.name } : undefined}
