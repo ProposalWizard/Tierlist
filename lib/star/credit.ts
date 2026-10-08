@@ -139,7 +139,9 @@ function keyOf(sc: Scenario, r: Runner | null | undefined): { key: string; who?:
  */
 export function noteMatePlays(plays: MatePlay[], before: MatePlayProbe, sc: Scenario): void {
   if (!before.relayed && sc.relayed === true) {
-    plays.push({ kind: "layoff", ...keyOf(sc, before.receivedBy) });
+    // A good passer's quick touch (relayControlT) can take it and lay it off
+    // inside one step, so the man may only be known after it.
+    plays.push({ kind: "layoff", ...keyOf(sc, before.receivedBy ?? sc.receivedBy) });
   }
   if ((sc.receiverShots ?? 0) > before.receiverShots) {
     if (!before.followerShot && sc.follower.shot === true) {

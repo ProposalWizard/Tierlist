@@ -208,6 +208,13 @@ export function buildMatchRecord(
     },
 
     goals,
+    // The other side's goals, for the match's highlights (Leo, 8 Oct 2026).
+    // Named when the match named them; otherwise the same stable minutes
+    // withRunningScore reconstructs, with no name.
+    oppGoals: (stats.oppGoalEvents?.length
+      ? stats.oppGoalEvents.map(e => ({ minute: e.minute, scorer: e.scorer }))
+      : Array.from({ length: them }, (_, k) => ({ minute: Math.round(((k + 1) / (them + 1)) * 88) + 2, scorer: "" }))
+    ).slice(0, them),
 
     table: {
       before: beforeTable,
