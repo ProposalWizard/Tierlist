@@ -51,6 +51,14 @@ export const SCENES_3D: Scene3d[] = [
     files: "components/star/Shop3D.tsx · app/star-shop3d-dev · lib/star/shop3d · public/star/shop3d · tools/shop3d",
   },
   {
+    id: "home3d",
+    title: "Your house",
+    line: "Walk round your home: change clothes at the wardrobe and see them in the mirror, your trophies in the cabinet, your cars out of the window. Grows from a starter flat to an estate.",
+    status: "Test page",
+    href: "/star-home3d-dev",
+    files: "components/star/Home3D.tsx · app/star-home3d-dev · lib/star/home3d · public/star/home3d · tools/home3d",
+  },
+  {
     id: "footballer",
     title: "Blender footballer",
     line: "The 3D player in any club's kit: stills, hair and three short clips.",

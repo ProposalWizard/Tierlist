@@ -13,6 +13,7 @@
  */
 import type { Rng } from "./rng";
 import type { Action3, World } from "./world";
+import type { PlayState } from "../three3d/practiceCam";
 import { CX } from "./constants";
 import { makeFreeRoam, freeRoamReward, freeRoamScore, FREE_ROAM_TARGET, type Person3 } from "./freeRoam";
 import { makeTwoTouch, twoTouchReward, TWO_TOUCH_RALLIES, TWO_TOUCH_TARGET } from "./twoTouch";
@@ -62,7 +63,15 @@ export interface DrillSession {
    */
   camera: "chase" | "pair" | "practice";
   /** The practice camera's brief: what to keep in shot with you; whether to track a cross in the air. */
-  frame?: (w: World) => { target: { x: number; y: number }; trackBall?: boolean };
+  frame?: (w: World) => { target: { x: number; y: number }; trackBall?: boolean; play?: PlayState };
+  /**
+   * The phone's move stick. "float" (default): it appears under the left thumb.
+   * "corner": a small nudge stick tucked bottom-left, the rest of the screen
+   * is the action (Two Touch: you step under the ball on your own).
+   */
+  stick?: "float" | "corner";
+  /** A "Call for it" button (phone) and key F (PC): World.callForBall. */
+  call?: boolean;
   /** One line, on screen while playing. */
   hint: string;
   /** The same line per device: a phone's thumbs, or a PC's keys and mouse (shown by the control scheme). */
@@ -115,11 +124,11 @@ export const DRILLS: DrillDef[] = [
       const mate = ctx.mates[0] ?? { id: "mate", name: "Team-mate", skills: { overall: 65, pace: 65, power: 65, technique: 65 } };
       const { world, state } = makeTwoTouch({ seed: ctx.seed, you: ctx.you, mate });
       return {
-        world, camera: "practice",
+        world, camera: "practice", stick: "corner",
         frame: (w) => { const m = w.get(mate.id); return { target: m ? { x: m.x, y: m.y } : GOAL_MOUTH }; },
         hint: "Tap as the ball drops to your foot to control it. Swipe at him to send it back: direction aims, length is the weight.",
         hints: {
-          touch: "Tap as it drops to your foot: control. Swipe towards him: send it back (length = weight). You step under it yourself.",
+          touch: "Tap anywhere as it drops to your foot: control. Swipe towards him: send it back (length = weight). You step under it yourself.",
           pc: "Space or click as it drops to your foot: control. Hold the mouse on him and let go: send it back (hold longer = harder). WASD nudges.",
         },
         hud: () => ({
@@ -139,12 +148,19 @@ export const DRILLS: DrillDef[] = [
     start(ctx) {
       const { world, state } = makeFreeRoam({ seed: ctx.seed, you: ctx.you, mates: ctx.mates.slice(0, 2), keeperOverall: ctx.keeperOverall });
       return {
-        world, camera: "practice",
-        frame: () => ({ target: GOAL_MOUTH }),
-        hint: "Left thumb: move. Tap a team-mate to pass to him (or tap anywhere: the white ring shows who). Swipe: shoot.",
+        world, camera: "practice", call: true,
+        // frame the play (practiceCam.ts play mode): tight on you with the ball, the ball when it's away
+        frame: (w) => {
+          const you = w.you();
+          return {
+            target: GOAL_MOUTH,
+            play: { vel: you ? { x: you.vx, y: you.vy } : { x: 0, y: 0 }, have: !!you && w.owner === you.id, shot: !!w.shotBy },
+          };
+        },
+        hint: "Left thumb: move. Tap a team-mate to pass to him (or tap anywhere: the white ring shows who). Swipe: shoot. Call for it to get it back.",
         hints: {
-          touch: "Left thumb: move (push further, run faster). Tap: pass (the white ring shows who). Swipe: shoot — direction aims, length is power.",
-          pc: "WASD or arrows: move. Hold Shift to sprint. Click: pass. Hold the mouse where you want it and let go: shoot. Q/E: look round.",
+          touch: "Left thumb: move (push further, run faster). Tap: pass (the white ring shows who). Swipe: shoot — direction aims, length is power. CALL: ask for it.",
+          pc: "WASD or arrows: move. Hold Shift to sprint. Click: pass. Hold the mouse where you want it and let go: shoot. F: call for it. Q/E: look round.",
         },
         hud: () => ({ big: `${freeRoamScore(state)}`, small: `${state.goals} goals · ${state.cleanPasses} clean passes`, timeLeft: state.timeLeft, flash: state.last }),
         done: () => state.over,

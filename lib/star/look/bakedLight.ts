@@ -27,7 +27,7 @@
  * pixel; kept on Low quality too). Files: public/star/bake/<set>/.
  */
 
-export type BakeSet = "stadium" | "garden" | "shop";
+export type BakeSet = "stadium" | "garden" | "shop" | "casino";
 export type BakeTod = "day" | "golden" | "night" | "indoor";
 
 interface GridMeta { min: [number, number, number]; max: [number, number, number]; dims: [number, number, number]; y?: number }

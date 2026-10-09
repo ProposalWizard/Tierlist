@@ -145,6 +145,9 @@ for (const f of ["boot-starter-hf", "boot-control-hf", "boot-elite-hf", "boot-ma
 // into one instanced geometry at load (applyMatrix4), which would clip 16-bit ones.
 POLICY["star/shop3d/items/can-kib-hf.glb"] = { q: null, webp: true };
 for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable", "house1", "villa", "house2", "estate", "island"].map((h) => `home-${h}-hf`)]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// The 3D home (9 Oct 2026): light copies of the shop's cars (drive window, ~3.9k) and boots (shelf, ~2.4k),
+// made by tools/home3d/make_lods.mjs; fitted at load, nothing reads their vertices.
+for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map((c) => `car-${c}-lod`), ...["starter", "speed", "control", "elite", "classic", "maestro", "power"].map((b) => `boot-${b}-lod`)]) POLICY[`star/home3d/${f}.glb`] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

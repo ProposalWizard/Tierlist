@@ -1,8 +1,7 @@
 "use client";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
-import Shop from "@/components/star/Shop";
+import ShopLabPreview from "@/components/star/shop2d/ShopLabPreview";
 import ContactBall, { type BallMotion } from "@/components/star/ContactBall";
-import { makeInitialCareer } from "@/lib/star/careerFlow";
 import type { Skills } from "@/lib/star/types";
 import { useCallback, useEffect, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
@@ -51,13 +50,14 @@ export default function MediaLab() {
   const [trophiesOnly, setTrophiesOnly] = useState(false);
   // `?training=vision&level=1` plays one training level with every skill at
   // 40, for judging the level-1 how-it-works card and the vision countdown.
-  // `?shop=boots` / `?shop=lifestyle` shows the shop with a sample
-  // National League career and ★1,000,000 to spend, for judging the levels.
+  // `?shop=kib|boots|lifestyle|landing` (+ `&look=old`) shows the shop with a
+  // sample National League career and ★1,000,000; buying works on the sample.
   // `?contact=float` (or bounce / bobble / still) shows the strike screen with
   // the ball moving that way, for judging the movement. A tap resets it.
   const [contactPreview, setContactPreview] = useState<BallMotion | null>(null);
   const [contactRun, setContactRun] = useState(0);
-  const [shopPreview, setShopPreview] = useState<"boots" | "lifestyle" | null>(null);
+  const [shopPreview, setShopPreview] = useState<"kib" | "boots" | "lifestyle" | "landing" | null>(null);
+  const [shopLookLab, setShopLookLab] = useState<"new" | "old">("new");
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -66,7 +66,8 @@ export default function MediaLab() {
     const cm = q.get("contact");
     if (cm === "still" || cm === "float" || cm === "bounce" || cm === "bobble") setContactPreview(cm);
     const sk = q.get("shop");
-    if (sk === "boots" || sk === "lifestyle") setShopPreview(sk);
+    if (sk === "kib" || sk === "boots" || sk === "lifestyle" || sk === "landing") setShopPreview(sk);
+    if (q.get("look") === "old") setShopLookLab("old");
     const t = q.get("training") as keyof Skills | null;
     if (t && ["pace", "power", "technique", "vision", "freeKick"].includes(t)) {
       setTrainingPreview({ skill: t, level: Math.max(1, Math.min(30, Number(q.get("level") ?? 1) || 1)) });
@@ -114,20 +115,8 @@ export default function MediaLab() {
     </>;
   }
   if (shopPreview) {
-    const sample = { ...makeInitialCareer({
-      firstName: "Sample", lastName: "Player", age: 18, skinTone: "light",
-      club: "Barnet", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
-    } as never, ["Barnet", "Yeovil Town"], "national_league"), money: 1_000_000 };
     return <>
-      <Shop
-        career={sample}
-        kind={shopPreview}
-        onBack={() => setShopPreview(null)}
-        onBuyKib={() => {}}
-        onBuyBoot={() => {}}
-        onBuyItem={() => {}}
-        onBuyFromBlackMarket={() => ({ ok: false, reason: "Preview only" })}
-      />
+      <ShopLabPreview kind={shopPreview} look={shopLookLab} onBack={() => setShopPreview(null)} />
       <PageGuide page="/star-dev/media-lab" />
     </>;
   }

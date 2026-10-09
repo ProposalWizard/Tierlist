@@ -98,10 +98,11 @@ export const BRAINS: Record<string, Brain> = {
     if (w.owner === p.id) {
       if (m.has === undefined) { m.has = w.t; m.hold = 0.6 + w.rng() * 0.7; }
       const held = w.t - (m.has as number);
-      const called = typeof m.call === "number" && w.t - (m.call as number) < 1.5;
+      // you called for it (a tap, or Call for it: World.callForBall said yes)
+      const called = typeof m.callUntil === "number" && w.t < (m.callUntil as number);
       if (wantsShot(w, p) && held > 0.25 && !called) { takeShot(w, p); m.has = undefined; return; }
       if (you && you.active && (held > (m.hold as number) || called)) {
-        w.passBall(p, you); m.has = undefined; m.call = undefined;
+        w.passBall(p, you); m.has = undefined; m.callUntil = undefined;
         // give and go: off he goes into the space ahead of him
         startRun(w, p, clamp(p.x + ((m.lane as number) ?? 1) * 3, 8, 60), clamp(p.y - 12, 7, 34), 2.4);
         return;

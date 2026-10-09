@@ -30,6 +30,7 @@ import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerI
 import { garden3dLook } from "@/lib/star/garden3d/look";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
+import { wornAt } from "@/lib/star/home3d/outfits";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
 
@@ -50,6 +51,8 @@ export interface Garden3DProps {
   onCasino?: () => void;
   /** Walked through the training pitch's gate (8 Oct 2026). */
   onTraining?: () => void;
+  /** Walked through your house's back door (9 Oct 2026): your 3D home. Absent: the door stays shut. */
+  onHouse?: () => void;
   /** Where you appear: at the shop's doors (coming out of it), the casino's,
    *  the training pitch's gate, or the garden gate. */
   arrive?: GardenData["arrive"];
@@ -57,7 +60,7 @@ export interface Garden3DProps {
   sky?: GardenData["sky"];
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, arrive = "gate", sky }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, arrive = "gate", sky }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -70,6 +73,8 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   casinoRef.current = onCasino;
   const trainingRef = useRef(onTraining);
   trainingRef.current = onTraining;
+  const houseRef = useRef(onHouse);
+  houseRef.current = onHouse;
 
   // Three real team-mates, picked at random each visit (as before).
   const [visitors] = useState(() => {
@@ -101,6 +106,8 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         hair: hairColourHex(career.player.hairColour),
         hairStyle: resolveHairStyle(career.player.hairStyle),
       },
+      // the clothes from your home's wardrobe (lib/star/home3d/outfits.ts); back from training: the kit
+      worn: wornAt(career, arrive === "training" ? "training" : "garden"),
     };
     // the garden is built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,6 +154,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
             if (dead) return;
             setLeaving(true);
             setTimeout(() => trainingRef.current?.(), 350);
+          } : undefined,
+          onHouseDoor: onHouse ? () => {
+            if (dead) return;
+            setLeaving(true);
+            setTimeout(() => houseRef.current?.(), 350);
           } : undefined,
           onContextLost: () => {
             if (dead) return;
@@ -256,7 +268,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (
-        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} />
+        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} onHouse={onHouse} />
       )}
 
       {/* a quick fade as you step into the shop */}
@@ -266,7 +278,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
 }
 
 /** The small card for wherever you are standing. */
-function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining }: {
+function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining, onHouse }: {
   spot: GardenSpot;
   career: CareerState;
   info: ReturnType<typeof gardenData>;
@@ -275,6 +287,7 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
   onShop: () => void;
   onCasino?: () => void;
   onTraining?: () => void;
+  onHouse?: () => void;
 }) {
   const card: React.CSSProperties = {
     position: "absolute", right: 12, bottom: "max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxWidth: "min(62vw, 300px)",
@@ -289,6 +302,16 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
       <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
         <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
         <button onClick={onShop} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Shop &#8250;</button>
+        {close}
+      </div>
+    );
+  }
+  if (spot === "house") {
+    if (!onHouse) return null;
+    return (
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
+        <span aria-hidden style={{ fontSize: 24 }}>🏠</span>
+        <button onClick={onHouse} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Your house &#8250;</button>
         {close}
       </div>
     );

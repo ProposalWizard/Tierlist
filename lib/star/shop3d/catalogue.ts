@@ -57,7 +57,7 @@ export interface Display {
 const RUNG = SHOP_TIERS.map((t) => t.label);
 
 /** A colour per boot, so each pair on the wall reads as a different boot. */
-const BOOT_COLOURS: Record<string, string> = {
+export const BOOT_COLOURS: Record<string, string> = {
   starter: "#f4f4f2", speed: "#ffd21f", power: "#e8322b", control: "#2f7bff",
   elite: "#1b1b1f", curl: "#19c2b4", maestro: "#9b4dff",
 };

@@ -43,6 +43,7 @@ import EnginePlay from "./EnginePlay";
 import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
+import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
@@ -61,6 +62,7 @@ const APPS: App[] = [
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: ["#2dd4bf", "#0f766e"] },
   { id: "ownership", label: "Owner", icon: "🏛️", bg: ["#818cf8", "#4338ca"] },
   { id: "garden", label: "Garden", icon: "🌳", bg: ["#22c55e", "#166534"] },
+  ...(HOME3D_IN_CAREER ? [{ id: "home-3d", label: "Your house", icon: "🏠", bg: ["#f59e0b", "#92400e"] } as App] : []),
   { id: "achievements", label: "Awards", icon: "⭐", bg: ["#a78bfa", "#6d28d9"] },
   { id: "settings", label: "Settings", icon: "⚙️", bg: ["#9ca3af", "#4b5563"] },
 ];

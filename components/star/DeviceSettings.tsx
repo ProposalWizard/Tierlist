@@ -205,7 +205,7 @@ const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
 
@@ -281,7 +281,7 @@ function World3dGroup() {
       <LookRow id="playerStyle" look={look} tabs={NEW_OLD} note="New: the Knowitball look on every 3D person: painted (cel) shading, a warm rim of light, an ink outline, three new bodies, real kits with the number, trims and a badge; managers in suits. Old: the bodies and shading as before." />
       <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
       <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
-      <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: a follow camera tight on the action (ball, you, your team-mates in the move, the nearest defenders, the keeper and goal), a little lower, kept inside what the phone shows; men and ball smaller (1.6× life size, was up to 2.6×). Old: everyone in the chance on screen, men drawn big." />
+      <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: one broadcast camera, about 48° down, for every chance (corners too); the ball at 55–60% of the height so you drag on the pitch; men and keeper about 6% of the screen tall; smoother moves. Old: everyone in the chance on screen, men drawn big; side-on chances top-down." />
       <LookRow id="playerLight3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the players lit from the side and behind, darker underneath, a shadow under each man. Old: the light as it was." />
       <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
@@ -301,6 +301,7 @@ function ScreensGroup() {
       <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
       <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
       <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
+      <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the store with framed cards, a level ladder and a buy sheet. Old: the shop as before." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
       <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
       <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />

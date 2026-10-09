@@ -54,7 +54,7 @@ import {
 
 const ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5fa", elite: "#c084fc" };
 
-export type HubPhase = "store" | "shop-kib" | "shop-boots" | "shop-lifestyle" | "shop-3d" | "casino-menu" | "sponsors" | "achievements" | "trophies" | "ownership" | "garden";
+export type HubPhase = "store" | "shop-kib" | "shop-boots" | "shop-lifestyle" | "shop-3d" | "casino-menu" | "sponsors" | "achievements" | "trophies" | "ownership" | "garden" | "home-3d";
 
 interface Props {
   career: CareerState;

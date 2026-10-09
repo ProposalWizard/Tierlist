@@ -38,6 +38,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -172,6 +173,9 @@ export interface ShopPlayer {
   skin?: string;
   hair?: string;
   hairStyle?: "short" | "long" | "buzz" | "none";
+  /** What you wear (lib/star/home3d/outfits.ts wornAt): a casual set from your
+   *  home's wardrobe; absent or a kit: the club kit as before. New player only. */
+  worn?: import("../home3d/outfits").Worn;
 }
 
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
@@ -1014,8 +1018,10 @@ async function buildShop(
     uRight: { value: new THREE.Vector3(1, 0, 0) },
     uFwd: { value: new THREE.Vector3(0, 0, 1) },
   };
+  // the casual set from your home's wardrobe (9 Oct 2026, lib/star/home3d): not repainted in a kit
+  const casual = opts.player?.worn?.kind === "casual" ? opts.player.worn : null;
   const dressNew = (k: KitColours) => {
-    if (!person) return;
+    if (!person || casual) return;
     dressPerson3d(THREE, person, {
       skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12",
       kit: k, number: kitU.uNum.value,
@@ -1029,7 +1035,13 @@ async function buildShop(
     const model = playerModelFor(opts.player?.hairStyle);
     // The body: the one body (Settings → Look → "3D people: New") or the old one.
     const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true, you: true });
+    person = casual
+      ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
+        worn: casual, kits: { home: kit0, away: kit0 }, number: null,
+        skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", hairStyle: opts.player?.hairStyle,
+        outline: 0, castShadow: true,
+      })
+      : makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true, you: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
@@ -1263,6 +1275,8 @@ async function buildShop(
   };
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...counterSlots.map((c) => c.group), homeHolder, ...pickables]));
   // warm up: every shader built before the first frame, so the first steps don't stutter
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
@@ -1544,6 +1558,7 @@ async function buildShop(
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);
