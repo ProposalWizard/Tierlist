@@ -12,6 +12,7 @@ import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { formatMoney } from "@/lib/star/money";
 import { mulberry32 } from "@/lib/star/season";
+import { casinoCall, playOrLocal, newPlayKey } from "@/lib/star/casinoClient";
 
 /**
  * GOALIE MODE — "you're the goalie... camera facing the player taking the
@@ -131,6 +132,8 @@ interface GoalieModeProps {
   bet: number;
   onSetBank: (n: number) => void;
   onExit: () => void;
+  /** The back button: "Menu" (default), or "Back" when opened from the 3D room. */
+  backLabel?: string;
   onChangeBet: (direction: 1 | -1) => void;
 }
 
@@ -241,7 +244,7 @@ function wallLiftAt(t: number, strikeAtT: number): number {
   return Math.sin((dt / WALL_JUMP_WINDOW) * Math.PI) * 0.45;
 }
 
-type Phase = "stake" | "facing" | "resolved" | "conceded" | "cashout";
+type Phase = "stake" | "facing" | "resolved" | "conceded" | "cashout" | "retry";
 
 interface ShotAnim {
   shot: GoalieShot;
@@ -328,7 +331,7 @@ function ballWorldAt(anim: ShotAnim, t: number): { x: number; y: number; z: numb
   };
 }
 
-export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }: GoalieModeProps) {
+export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, backLabel = "Menu" }: GoalieModeProps) {
   const [phase, setPhase] = useState<Phase>("stake");
   const [streak, setStreak] = useState(0);
   const [lastPayout, setLastPayout] = useState(0);
@@ -343,6 +346,14 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
   const draggingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const stakedRef = useRef(0);
+  // Signed in, the server deals every shot, judges every dive and pays the
+  // cash-out (Harry, 8 Oct 2026: "move the casino to the server"). null: the
+  // phone plays this run, as before.
+  const runRef = useRef<{ slot: number; playId: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  // A step the server didn't answer: sent again with the same key.
+  const retryRef = useRef<(() => void) | null>(null);
 
   // ── Resize the backing canvas to its container ──
   useEffect(() => {
@@ -377,9 +388,9 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
 
   /** Start a brand-new shot sequence — the striker steps up, the timeline
    *  resets to t=0, no commit yet. */
-  const beginShot = useCallback((s: number) => {
+  const beginShot = useCallback((s: number, dealt?: GoalieShot) => {
     if (!rngRef.current) rngRef.current = mulberry32((Date.now() ^ 0x9e3779b9) >>> 0);
-    const shot = pickShot(s, rngRef.current);
+    const shot = dealt ?? pickShot(s, rngRef.current);
     // A real penalty is struck from dead in front of goal — never offset to
     // one side the way an open-play strike naturally is.
     const shootX = shot.kind === "penalty"
@@ -399,23 +410,57 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     setPhase("facing");
   }, []);
 
-  const startRun = useCallback(() => {
-    if (bank < bet) return;
-    onSetBank(bank - bet);
-    stakedRef.current = bet;
+  const startRun = useCallback(async () => {
+    if (bank < bet || busy) return;
+    setBusy(true);
+    setNote(null);
+    const stake = bet;
+    const played = await playOrLocal<{ playId?: string; shot: GoalieShot | null }>(
+      { game: "goalie", action: "start", stake, bank },
+      () => ({ shot: null }),
+    );
+    setBusy(false);
+    if (played.kind === "error") { setNote(played.message); return; }
+    runRef.current = played.slot !== null && played.result.playId ? { slot: played.slot, playId: played.result.playId } : null;
+    onSetBank(bank - stake);
+    stakedRef.current = stake;
     setStreak(0);
     setLastPayout(0);
-    beginShot(0);
-  }, [bank, bet, onSetBank, beginShot]);
+    beginShot(0, played.result.shot ?? undefined);
+  }, [bank, bet, busy, onSetBank, beginShot]);
 
-  const keepGoing = useCallback(() => beginShot(streak), [beginShot, streak]);
+  /** One step of a server run. If the server can't be reached, the same
+   *  request (same key, so it can never count twice) waits behind TRY AGAIN. */
+  const serverStep = useCallback(<T,>(body: Record<string, unknown>, onDone: (r: T) => void) => {
+    const run = runRef.current!;
+    const sent = { game: "goalie", playId: run.playId, idemKey: newPlayKey(), ...body };
+    const send = async () => {
+      setBusy(true);
+      setNote(null);
+      const a = await casinoCall<T>(run.slot, sent);
+      setBusy(false);
+      if (a.kind === "ok") { retryRef.current = null; onDone(a.result); return; }
+      if (a.kind === "error") setNote(a.message);
+      retryRef.current = () => void send();
+      setPhase("retry");
+    };
+    void send();
+  }, []);
+
+  const keepGoing = useCallback(() => {
+    if (!runRef.current) { beginShot(streak); return; }
+    serverStep<{ shot: GoalieShot }>({ action: "next" }, (r) => beginShot(streak, r.shot));
+  }, [beginShot, streak, serverStep]);
 
   const cashOut = useCallback(() => {
-    const payout = Math.round(stakedRef.current * streakMultiplier(streak));
-    onSetBank(bank + payout);
-    setLastPayout(payout);
-    setPhase("cashout");
-  }, [bank, onSetBank, streak]);
+    const pay = (payout: number) => {
+      onSetBank(bank + payout);
+      setLastPayout(payout);
+      setPhase("cashout");
+    };
+    if (!runRef.current) { pay(Math.round(stakedRef.current * streakMultiplier(streak))); return; }
+    serverStep<{ payout: number }>({ action: "cashout" }, (r) => pay(r.payout));
+  }, [bank, onSetBank, streak, serverStep]);
 
   // ── Resolve the current shot once the ball reaches the goal line ──
   const resolveIfDue = useCallback((t: number) => {
@@ -426,17 +471,21 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     anim.result = result;
     anim.resolvedAt = t;
     const nextStreak = streak + 1;
-    window.setTimeout(() => {
-      if (result.saved) {
+    const settle = (saved: boolean) => {
+      if (saved) {
         setStreak(nextStreak);
         setBestStreak((b) => Math.max(b, nextStreak));
         setPhase("resolved");
       } else {
         setPhase("conceded");
       }
-    }, 850);
+    };
+    if (!runRef.current) { window.setTimeout(() => settle(result.saved), 850); return; }
+    // The server judges the same dive with the same maths; its word decides.
+    const dive = anim.commit;
+    window.setTimeout(() => serverStep<{ saved: boolean }>({ action: "dive", dive }, (r) => settle(r.saved)), 850);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streak]);
+  }, [streak, serverStep]);
 
   // ── Input: a live reticle from the moment you touch/hover, commit only
   // on release. Correct because the camera is dead level (pitch=0) — see
@@ -520,7 +569,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     <div className="h-[100dvh] overflow-hidden bg-gradient-to-b from-sky-950 to-emerald-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-1 mb-2">
-          <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← Menu</button>
+          <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← {backLabel}</button>
           <div className="flex-1 grid grid-cols-3 gap-1">
             <div className="bg-gray-700 rounded px-2 py-1.5 flex flex-col items-center justify-center border border-gray-600">
               <span className="font-black text-[9px] text-white/70">BANK</span>
@@ -570,11 +619,11 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
                 </div>
               </div>
               <button
-                disabled={bank < bet}
-                onClick={startRun}
+                disabled={bank < bet || busy}
+                onClick={() => void startRun()}
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-black text-lg"
               >
-                START SAVE STREAK
+                {busy ? "…" : "START SAVE STREAK"}
               </button>
               <p className="text-center text-[11px] text-white/60 font-bold px-2">
                 Every save stacks the payout. Miss one and the stake's gone — cash out any time.
@@ -591,11 +640,11 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
                 <div className="font-black text-yellow-300 text-xs">Cash out now: ★{formatMoney(potentialPayout)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={cashOut} className="py-3 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-black text-sm">
-                  CASH OUT
+                <button disabled={busy} onClick={cashOut} className="py-3 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 rounded-xl font-black text-sm">
+                  {busy ? "…" : "CASH OUT"}
                 </button>
-                <button onClick={keepGoing} className="py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-sm">
-                  KEEP GOING ★{formatMoney(nextPayout)}
+                <button disabled={busy} onClick={keepGoing} className="py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-black text-sm">
+                  {busy ? "…" : `KEEP GOING ★${formatMoney(nextPayout)}`}
                 </button>
               </div>
             </div>
@@ -623,6 +672,22 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
                 PLAY AGAIN
               </button>
             </div>
+          )}
+
+          {phase === "retry" && (
+            <div className="space-y-2">
+              <div className="bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-center">
+                <div className="font-black text-white text-sm">{note ?? "Lost the connection to the casino."}</div>
+                <div className="font-black text-white/80 text-xs">Your run is held. Try again to carry on.</div>
+              </div>
+              <button disabled={busy} onClick={() => retryRef.current?.()} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-black text-lg">
+                {busy ? "…" : "TRY AGAIN"}
+              </button>
+            </div>
+          )}
+
+          {note && phase !== "retry" && (
+            <p role="status" className="mt-2 rounded-xl bg-red-900/60 px-3 py-2 text-center text-[12px] font-bold text-white">{note}</p>
           )}
 
           {bestStreak > 0 && phase === "stake" && (

@@ -143,6 +143,7 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import Match3DLayer from "@/components/star/Match3DLayer";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
@@ -209,6 +210,10 @@ import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/componen
 import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
 import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
+import Casino3D from "@/components/star/Casino3D";
+import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
+import Training3D from "@/components/star/Training3D";
+import { useCasino3dLook, casino3dPossible } from "@/lib/star/casino3d/look";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
 import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
 import AdvertShoot from "@/components/star/relgames/AdvertShoot";
@@ -362,7 +367,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training">("gate");
+  // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
+  const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
   useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
@@ -2514,6 +2521,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase !== "dashboard") return;
     preloadScene("garden");
     preloadScene("shop");
+    preloadScene("casino");
   }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
@@ -3108,6 +3116,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav("home");
     setPhase("dashboard");
   }, [career]);
+
+  // The 3D casino: one game closed, its bank goes back into your money and
+  // you stay in the room (the same rules as leaving the classic casino).
+  const handleCasinoBank = useCallback((finalBank: number) => {
+    setCareer(c => {
+      if (!c) return c;
+      const banked = { ...c, money: Math.max(0, Math.round(finalBank)) };
+      const lost = c.money - banked.money;
+      const story = lost > Math.max(1, c.contract.wage) * 8 && Math.random() < 0.25;
+      return story ? brandScandal(banked, "a casino story") : banked;
+    });
+  }, []);
 
   const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
     if (!career) return;
@@ -3737,6 +3757,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <PitchScope>
        <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
+          <Match3DLayer>
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
@@ -3758,6 +3779,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             penaltyRunup={careerPenaltyRunup(career)}
             freeKickRunup={careerFreeKickRunup(career)}
           />
+          </Match3DLayer>
         </div>
        </div>
       </PitchScope>
@@ -4176,6 +4198,51 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "casino-3d" || (phase === "casino-menu" && casinoLook === "3d" && casino3dPossible())) {
+    // The 3D casino room. Each station opens that one existing game over the
+    // room; its doors lead out into the garden at the casino's doors.
+    return (
+      <Casino3D
+        career={career}
+        onBack={() => { setActiveNav("home"); setPhase("dashboard"); }}
+        onDoor={() => { setGardenArrive("casino"); setPhase("garden"); }}
+        onBank={handleCasinoBank}
+        renderGame={(game, done) => game
+          ? <Casino hud={screenHud("casino")} bankStart={career.money} career={career} startGame={game} onExit={(bank) => { handleCasinoBank(bank); done(); }} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />
+          : <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />}
+      />
+    );
+  }
+
+  if (phase === "training-3d") {
+    // The 3D training pitch: Crossbar Challenge (you vs one team-mate), on the
+    // real engine. Same reward and cost as the Team game (Woodwork Challenge).
+    const backToGate = () => { setGardenArrive("training"); setPhase("garden"); };
+    if (!career) return <TrainingPitchScreen onBack={backToGate} />;
+    return (
+      <Training3D
+        career={career}
+        onExit={backToGate}
+        onFinish={(res) => {
+          // Pace Sprint (3D): bank its stars on the pace ladder, like a 2D pace drill
+          const trained = res.train ? {
+            ...applyLevelResult(career, res.train.skill, res.train.level, res.train.stars).career,
+            lastTrainedWeek: { ...career.lastTrainedWeek, [res.train.skill]: career.week },
+          } : career;
+          const updated: CareerState = markGamePlayed({
+            ...trained,
+            energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+            relationships: { ...career.relationships, team: applyGameGain(career.relationships.team as number, res.gain) },
+          }, "team");
+          checkAndSetAchievements(updated);
+          if (res.train) updated.starRating = computeStarRating(updated);
+          setCareer(spendAction(updated));
+          backToGate();
+        }}
+      />
+    );
+  }
+
   if (phase === "casino-menu") {
     return <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
   }
@@ -4288,6 +4355,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
+        onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
       />
     );
   }

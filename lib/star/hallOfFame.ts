@@ -33,6 +33,26 @@ import { careerOverview } from "./careerOverview";
 
 export const HALL_KEY = "star-hall-of-fame-v1";
 
+/**
+ * The cloud keeps at most this many careers per account (8 Oct 2026; a
+ * career is 20 seasons, so 30 is a long time). The device keeps every one.
+ * Enforced by /api/star/hall-of-fame and by a trigger in
+ * star_hall_of_fame.sql (so a direct write can't go round it).
+ */
+export const HALL_MAX_ENTRIES = 30;
+/** Every row, careers and tombstones together, per account. */
+export const HALL_MAX_ROWS = 200;
+
+/**
+ * May one more career go into an account's cloud Hall? `live` = careers it
+ * holds now, `rows` = all its rows, `alreadyThere` = this id already has a row
+ * (then nothing new is written, so it never counts as over).
+ */
+export function hallHasRoom(live: number, rows: number, alreadyThere: boolean): boolean {
+  if (alreadyThere) return true;
+  return live < HALL_MAX_ENTRIES && rows < HALL_MAX_ROWS;
+}
+
 /** What the Hall's list shows, worked out once when the career goes in. */
 export interface HallCard {
   name: string;

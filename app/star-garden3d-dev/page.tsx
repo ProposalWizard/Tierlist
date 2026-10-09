@@ -10,6 +10,9 @@ import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import Garden3D from "@/components/star/Garden3D";
+import Casino3D from "@/components/star/Casino3D";
+import Casino from "@/components/star/Casino";
+import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
@@ -28,7 +31,12 @@ export default function Garden3DTestPage() {
 
 function Garden3DTest() {
   const router = useRouter();
-  const arrive = useSearchParams().get("arrive") === "shop" ? "shop" : "gate";
+  const params = useSearchParams();
+  const a0 = params.get("arrive");
+  const [arrive, setArrive] = useState<"shop" | "gate" | "casino" | "training">(a0 === "shop" || a0 === "casino" || a0 === "training" ? a0 : "gate");
+  // the 3D casino and the training pitch open here too (?place=casino)
+  const [place, setPlace] = useState<"garden" | "casino" | "training">(params.get("place") === "casino" ? "casino" : "garden");
+  const [money, setMoney] = useState(250000);
   const [sky, setSky] = useState<Sky>("day");
   const [full, setFull] = useState(true);
   const [key, setKey] = useState(0);
@@ -52,13 +60,34 @@ function Garden3DTest() {
       c.horse = null;
       c.ownedItems = [];
     }
+    c.money = money;
     return c;
-  }, [full]);
+  }, [full, money]);
 
   const btn: React.CSSProperties = { height: 30, padding: "0 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 12, cursor: "pointer" };
+  if (place === "casino") {
+    return (
+      <>
+        <Casino3D
+          career={career}
+          onBack={() => router.push("/star-3d-area-dev")}
+          onDoor={() => { setArrive("casino"); setPlace("garden"); }}
+          onBank={(bank) => setMoney(Math.max(0, Math.round(bank)))}
+          renderGame={(game, done) => (
+            <Casino bankStart={career.money} career={career} startGame={game}
+              onExit={(bank) => { setMoney(Math.max(0, Math.round(bank))); if (game) done(); else router.push("/star-3d-area-dev"); }}
+              onHorseRace={() => {}} onBuyHorse={() => {}} onRenameHorse={() => {}} onPlaceBet={() => {}} />
+          )}
+        />
+        <PageGuide page="/star-garden3d-dev" corner="bottom-left" />
+      </>
+    );
+  }
+  if (place === "training") return <TrainingPitchScreen onBack={() => { setArrive("training"); setPlace("garden"); }} />;
+
   return (
     <>
-      <Garden3D key={`${key}-${sky}-${full}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} />
+      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} />
       <div style={{ position: "fixed", top: 58, left: 12, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {(["day", "sunset", "night"] as Sky[]).map((s) => (
           <button key={s} onClick={() => setSky(s)} style={{ ...btn, background: sky === s ? "#facc15" : btn.background, color: sky === s ? "#111" : "#fff" }}>{s}</button>

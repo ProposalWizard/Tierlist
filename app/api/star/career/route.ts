@@ -6,6 +6,8 @@ import {
   type LuckState,
 } from "@/lib/star/saveGuard";
 import { NextResponse } from "next/server";
+import { casinoNetBetween } from "@/lib/star/casinoDb";
+import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
 
 const MIN_SLOT = 1;
 const MAX_SLOT = 3; // MAX_SAVE_SLOTS, lib/star/storage.ts
@@ -157,10 +159,16 @@ export async function POST(req: Request) {
     try {
       const prev = await readRow(db, user.id, slot);
       const exempt = await isTester(user.id);
+      const prevSavedAt = prev ? new Date(prev.updated_at).getTime() : null;
+      // The server casino's own record since the last trusted save
+      // (star_casino_plays). null when star_casino.sql has not run, or this
+      // is a sandbox without the service key: the guard then falls back to
+      // its luck allowance.
+      const casinoNet = CASINO_ON_SERVER && db !== supabase ? await casinoNetBetween(db as never, user.id, slot, prevSavedAt, now) : null;
       const result = checkSave(prev?.career ?? null, career, {
-        mode, exempt, now,
-        prevSavedAt: prev ? new Date(prev.updated_at).getTime() : null,
+        mode, exempt, now, prevSavedAt,
         luck: await accountLuck(db, user.id, now, prev?.career),
+        casinoNet,
       });
       toStore = result.clamped;
       corrected = result.corrected;

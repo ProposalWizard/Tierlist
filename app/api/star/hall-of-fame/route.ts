@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { HALL_MAX_ENTRIES, HALL_MAX_ROWS, hallHasRoom } from "@/lib/star/hallOfFame";
 
 /**
  * THE HALL OF FAME, IN THE CLOUD — one row per retired career, per account.
@@ -72,6 +73,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "That career is too big to keep." }, { status: 413 });
   }
 
+  // At most HALL_MAX_ENTRIES careers per account in the cloud.
+  const room = await roomFor(supabase, user.id, entry.id);
+  if (room === "missing") return NextResponse.json({ error: MIGRATION_HINT, migrationMissing: true }, { status: 503 });
+  if (room === "error") return NextResponse.json({ error: "Could not save to the Hall of Fame." }, { status: 500 });
+  if (room === "full") return fullResponse(user.id);
+
   // ignoreDuplicates: ON CONFLICT DO NOTHING. An entry already there (or a
   // tombstone) is never overwritten.
   const { error } = await supabase
@@ -79,9 +86,36 @@ export async function POST(req: Request) {
     .upsert({ user_id: user.id, entry_id: entry.id, entry, removed: false }, { onConflict: "user_id,entry_id", ignoreDuplicates: true });
   if (error) {
     if (missingTable(error)) return NextResponse.json({ error: MIGRATION_HINT, migrationMissing: true }, { status: 503 });
+    if (isFullError(error)) return fullResponse(user.id);
     return NextResponse.json({ error: "Could not save to the Hall of Fame." }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
+}
+
+type Supa = Awaited<ReturnType<typeof createClient>>;
+
+/** Whether this account has room for `id` (an id already there always does). */
+async function roomFor(supabase: Supa, userId: string, id: string, tombstone = false): Promise<"ok" | "full" | "missing" | "error"> {
+  const { data, error } = await supabase.from(TABLE).select("entry_id, removed").eq("user_id", userId).limit(HALL_MAX_ROWS + 1);
+  if (error) return missingTable(error) ? "missing" : "error";
+  const rows = (data ?? []) as { entry_id: string; removed: boolean }[];
+  const already = rows.some(r => r.entry_id === id);
+  // A tombstone takes no career place, only a row.
+  const live = tombstone ? 0 : rows.filter(r => !r.removed).length;
+  return hallHasRoom(live, rows.length, already) ? "ok" : "full";
+}
+
+/** The database trigger's own refusal (star_hall_of_fame.sql). */
+function isFullError(err: { message?: string } | null): boolean {
+  return /hall_full/i.test(err?.message ?? "");
+}
+
+function fullResponse(userId: string) {
+  console.warn(`[hall-of-fame] account ${userId} is at the limit`);
+  return NextResponse.json({
+    error: `The Hall of Fame keeps ${HALL_MAX_ENTRIES} careers in the cloud. Remove one to add another. This one stays on this device.`,
+    full: true,
+  }, { status: 409 });
 }
 
 export async function DELETE(req: Request) {
@@ -92,11 +126,17 @@ export async function DELETE(req: Request) {
   const id = new URL(req.url).searchParams.get("id") ?? "";
   if (!ID_SHAPE.test(id)) return NextResponse.json({ error: "That is not a Hall of Fame entry." }, { status: 400 });
 
+  const room = await roomFor(supabase, user.id, id, true);
+  if (room === "missing") return NextResponse.json({ error: MIGRATION_HINT, migrationMissing: true }, { status: 503 });
+  if (room === "error") return NextResponse.json({ error: "Could not remove it." }, { status: 500 });
+  if (room === "full") return fullResponse(user.id);
+
   const { error } = await supabase
     .from(TABLE)
     .upsert({ user_id: user.id, entry_id: id, entry: null, removed: true, updated_at: new Date().toISOString() }, { onConflict: "user_id,entry_id" });
   if (error) {
     if (missingTable(error)) return NextResponse.json({ error: MIGRATION_HINT, migrationMissing: true }, { status: 503 });
+    if (isFullError(error)) return fullResponse(user.id);
     return NextResponse.json({ error: "Could not remove it." }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

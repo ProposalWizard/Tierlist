@@ -97,6 +97,7 @@
  *                                                    to be shorter on phones that have KHR_parallel_shader_compile)
  */
 import type * as THREE from "three";
+import { installFrameMeter } from "./frameMeter";
 import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
 export type { Quality3d, TierProfile } from "./quality";
@@ -262,6 +263,7 @@ let ownerSeq = 0;
  * compiled when the next scene asks for them.
  */
 export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null) => void } {
+  installFrameMeter();
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
     const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
@@ -405,11 +407,13 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
 const bufCache = new Map<string, Promise<ArrayBuffer>>();
 
 /** The files each scene loads first (its loading-cover wait). Keep in step with the scenes. */
-export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing", string[]> = {
+export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing" | "casino", string[]> = {
   garden: ["/star/garden3d/props.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
   shop: ["/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
   office: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
   signing: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
+  // the casino room is all primitives and canvas paint: only you to load
+  casino: ["/star/onebody/player.glb", "/star/people3d/anims.glb"],
 };
 
 /** Should we spend the player's data on files they may not open? Not on Save-Data or 2G. */

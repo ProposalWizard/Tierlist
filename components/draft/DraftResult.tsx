@@ -696,6 +696,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
   // when isSignedIn becomes true even if historySaved already fired with
   // isSignedIn = false (the common case on page load where auth resolves async).
   const creditSaved = useRef(false);
+  // The history save, so XP and records wait for it: the server now checks
+  // both against the saved season (draft_runs, by its season key).
+  const historyDone = useRef<Promise<boolean> | null>(null);
   useEffect(() => {
     // Award XP/objectives/history as soon as the season result is computed — don't gate behind
     // the visual reveal animation finishing, or a player who navigates away mid-animation loses credit
@@ -712,7 +715,9 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     const runKey = `s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
     let alreadyCredited = false;
     try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
-    if (!historySaved.current && !alreadyCredited) {
+    // Signed out, the history save does nothing; wait until sign-in resolves so
+    // the season is really saved before XP and records go up.
+    if (!historySaved.current && !alreadyCredited && isSignedIn) {
       // In-memory guard against duplicate crediting within THIS mount. It resets on
       // remount (refresh/re-nav), so it never permanently blocks re-crediting — the
       // persistent `draft-credited-${runKey}` marker (written below only after the
@@ -731,7 +736,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       }
       const topScorerGoals = Object.values(plPlayerGoals).length > 0 ? Math.max(...Object.values(plPlayerGoals)) : 0;
       const topAssists = Object.values(plPlayerAssists).length > 0 ? Math.max(...Object.values(plPlayerAssists)) : 0;
-      saveRunToHistory({
+      historyDone.current = saveRunToHistory({
         id: runKey,
         date: new Date().toISOString(),
         formation: formationName || "",
@@ -763,6 +768,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
         if (ok && isSignedIn) {
           try { localStorage.setItem(`draft-credited-${runKey}`, "1"); } catch { /* ignore */ }
         }
+        return ok;
       });
     }
 
@@ -770,6 +776,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
       creditSaved.current = true;
       (async () => {
           const runId = runKey;
+          // The server pays run XP only for a season saved in history.
+          await (historyDone.current ?? Promise.resolve(true)).catch(() => false);
           // Track the user's level as XP is awarded sequentially
           let currentLevel: number | null = null;
           const awardXp = async (eventType: string, ref: string, amount: number) => {
@@ -966,6 +974,10 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
         // Submit season records to global leaderboard
         (async () => {
+          // The board checks the season against the saved history row
+          // (same season key), so wait for that save; without it, skip.
+          const saved = await (historyDone.current ?? Promise.resolve(false)).catch(() => false);
+          if (!saved) { console.warn("[records] season not saved to history; records not posted"); return; }
           const findOvr = (name: string) => players.find(p => p.name === name)?.overall ?? null;
           const hasDevPlayers = players.some(p => /^Dev\s/i.test(p.name));
 
@@ -1119,6 +1131,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
             body: JSON.stringify({
               hasDevPlayers,
               mode,
+              eventKey: runKey,
               pl: {
                 wins: { value: season.teamRecord.wins, teamOvr },
                 unbeaten: { value: season.longestUnbeatenRun, teamOvr },

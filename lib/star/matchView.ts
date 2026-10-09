@@ -103,8 +103,11 @@ export const NEW_VIEW_MAX_HW = 83 / 38;
 export const NEW_VIEW_MIN_HW = 8 / 5;
 /** Figures: this much of their zoomed-out size (option D: ~22 px on a phone). */
 export const NEW_FIGURE_SCALE = 0.8;
-/** The ball: this much of its zoomed-out size (option D: ~7 px). */
-export const NEW_BALL_SCALE = 0.7;
+/** Outfield players on top of NEW_FIGURE_SCALE (Harry, 9 Oct 2026: "I like 0.8 but
+ *  with the goalie at 1x"). The keeper keeps his size; the ball shrinks with the men. */
+export const NEW_OUTFIELD_SHRINK = 0.8;
+/** The ball: this much of its zoomed-out size (option D: ~7 px, now 0.8 of that). */
+export const NEW_BALL_SCALE = 0.7 * NEW_OUTFIELD_SHRINK;
 
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;

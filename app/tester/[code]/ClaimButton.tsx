@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 const SAY: Record<string, string> = {
-  joined: "Done — you're a tester. Open the career and look in Settings → Developer tools.",
+  joined: "Done — you're a tester. Open the career and look in Settings → Developer tab.",
   already: "You're already a tester.",
   off: "This link has just been switched off. Ask the Knowitball team for a new one.",
   unknown: "This link doesn't work. Ask the Knowitball team for a new one.",

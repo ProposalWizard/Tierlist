@@ -46,6 +46,17 @@
  * night fits; doing it every save does not. The route shares one allowance
  * across all of an account's slots.
  *
+ * ── The casino on the server (8 Oct 2026) ──
+ *
+ * Once star_casino.sql has run, a signed-in player's casino is rolled and
+ * paid by the server (app/api/star/casino/play), one row per play in
+ * star_casino_plays. Then the luck allowance is not used at all: the route
+ * passes `casinoNet`, the net the server itself recorded for this account
+ * and slot since the last trusted save, and money above what play could earn
+ * is allowed only up to that (plus what earlier saves were owed and had not
+ * shown yet, `casinoCredit`). An edited bank no longer passes as "luck".
+ * Without the table (`casinoNet` null) everything works as before.
+ *
  * ── Real time ──
  *
  * The calendar cannot move faster than the game can be played. Weeks claimed
@@ -118,6 +129,10 @@ export const LUCK_REFILL_MS = 7 * 24 * 60 * 60 * 1000;
 /** Saves closer together than this mean the game was online and saving as
  *  it went, so a casino win and a purchase cannot share one save. */
 export const LONG_GAP_MS = 10 * 60 * 1000;
+/** Server-recorded casino winnings a save has not shown yet are kept for this
+ *  long (the bank only reaches the save when the player leaves the casino,
+ *  and a horse race or a bet can save in between). */
+export const CASINO_CREDIT_MS = 24 * 60 * 60 * 1000;
 
 /** Training: two sessions a week (week.ts), counted as three to be safe.
  *  A session earns at most three new stars (trainingLevels.ts) and moves a
@@ -195,6 +210,9 @@ export interface LuckState {
 export interface ServerGuard {
   v: 1;
   luck: LuckState;
+  /** Casino winnings the server recorded that no save has shown yet
+   *  (server casino only). Spent as the bank rises. */
+  casino?: { credit: number; at: number };
   /** Last time this save was checked (ms). */
   at: number;
 }
@@ -208,6 +226,10 @@ export interface GuardContext {
   prevSavedAt?: number | null;
   /** The account's luck allowance (the route takes the lowest across slots). */
   luck?: LuckState | null;
+  /** Net casino result the SERVER recorded for this account and slot since
+   *  the last trusted save (star_casino_plays). null/undefined: the table
+   *  is not there, so the luck allowance is used instead. */
+  casinoNet?: number | null;
 }
 
 /** The handful of numbers worth logging next to a finding. */
@@ -462,7 +484,11 @@ export function readServerGuard(stored: unknown): ServerGuard | null {
   const g = stored.serverGuard;
   const l = isObj(g.luck) ? g.luck : null;
   if (!l) return null;
-  return { v: 1, luck: { left: num(l.left, LUCK_CAP), at: num(l.at, 0) }, at: num(g.at, 0) };
+  const c = isObj(g.casino) ? g.casino : null;
+  return {
+    v: 1, luck: { left: num(l.left, LUCK_CAP), at: num(l.at, 0) }, at: num(g.at, 0),
+    ...(c ? { casino: { credit: Math.max(0, num(c.credit)), at: num(c.at, 0) } } : {}),
+  };
 }
 
 export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): GuardResult {
@@ -472,6 +498,12 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
   const findings: GuardFinding[] = [];
   const corrected: string[] = [];
   let luck = refillLuck(ctx.luck ?? readServerGuard(prevIn)?.luck ?? null, now);
+  // The server casino's record (see "The casino on the server" above).
+  const ledger = ctx.casinoNet != null && Number.isFinite(ctx.casinoNet);
+  const carried = readServerGuard(prevIn)?.casino;
+  let casinoCredit = ledger
+    ? Math.max(0, (carried && now - carried.at < CASINO_CREDIT_MS ? carried.credit : 0) + (ctx.casinoNet as number))
+    : 0;
 
   // A deleted slot keeps its last trusted career as a tombstone (see the
   // route's DELETE), so deleting and re-uploading an edited copy is still
@@ -493,7 +525,7 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
   const prev: Raw = newCareer ? genesisOf(next) : prevFull!;
 
   const finish = (clamped: Raw): GuardResult => {
-    const guard: ServerGuard = { v: 1, luck, at: now };
+    const guard: ServerGuard = { v: 1, luck, at: now, ...(ledger ? { casino: { credit: Math.max(0, casinoCredit), at: now } } : {}) };
     clamped.serverGuard = guard;
     return {
       ok: !findings.some(f => f.level === "cheat"), clamped, corrected, findings,
@@ -580,7 +612,34 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
   // seconds (the casino and the shop are separate saves); after a long gap
   // (offline play) a win and a spend can share one save.
   const longGap = ctx.prevSavedAt == null || now - ctx.prevSavedAt > LONG_GAP_MS;
-  if (Number.isFinite(money) && spend > 0 && spend > bound && !longGap) {
+  if (ledger && Number.isFinite(money) && money >= 0) {
+    // The server rolled and paid every casino game: winnings are allowed up
+    // to what it recorded, never more, and luck is not needed.
+    const ceiling = bound + casinoCredit;
+    // Any rise in the bank spends the credit first, so it cannot pile up
+    // unused and later cover an edit.
+    const rise = Math.max(0, total - num(prev.money));
+    if (total > ceiling) {
+      flag("money", "cheat", num(prev.money), money, ceiling,
+        spend > 0 ? `more money (plus ★${Math.round(spend)} of new ${parts.join(", ")}) than play and the server's casino record give (casino ★${Math.round(casinoCredit)})`
+          : `more money than play and the server's casino record give (casino ★${Math.round(casinoCredit)})`);
+      if (ctx.mode === "enforce") {
+        if (ceiling < spend && prevFull) {
+          for (const f of parts) putBack(f, prevFull[f]);
+          putBack("money", Math.min(money, Math.max(0, ceiling)));
+        } else {
+          putBack("money", Math.min(money, Math.max(0, ceiling - spend)));
+        }
+      }
+      casinoCredit = 0;
+    } else {
+      if (total > bound) {
+        flag("money", "watch", num(prev.money), money, bound,
+          `above what play could earn by ★${Math.round(total - bound)}: casino winnings the server recorded (★${Math.round(casinoCredit)})`);
+      }
+      casinoCredit = Math.max(0, casinoCredit - rise);
+    }
+  } else if (Number.isFinite(money) && spend > 0 && spend > bound && !longGap) {
     flag(parts[0] ?? "money", "cheat", null, Math.round(spend), bound,
       `new ${parts.join(", ")} worth ★${Math.round(spend)} with only ★${Math.round(bound)} to pay for them`);
     if (ctx.mode === "enforce" && prevFull) for (const f of parts) putBack(f, prevFull[f]);

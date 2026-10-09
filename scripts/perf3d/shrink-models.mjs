@@ -71,8 +71,19 @@ const POLICY = {
   "star/people3d/anims.glb": ANIM,
   "star/shop3d/anims.glb": ANIM,
   "star/garden3d/anims.glb": ANIM,
+  // Kicking, reactions, training and casino moves, both skeletons (tools/anims3d/build.py).
+  "star/anims3d/football.glb": ANIM,
+  "star/anims3d/casino.glb": ANIM,
+  "star/anims3d/football-ual.glb": ANIM,
+  "star/anims3d/casino-ual.glb": ANIM,
+  // Motion capture (CMU) on both skeletons (tools/mocap3d/build.py), Settings → Look → Motion: Mocap.
+  "star/anims3d/mocap.glb": ANIM,
+  "star/anims3d/mocap-ual.glb": ANIM,
   // The ovation's hugs, dap-ups, pats and claps (tools/ovation3d/author_greetings.py).
   "star/ovation3d/greetings.glb": ANIM,
+  // The human body (tools/human3d/build_human.py): float positions on purpose — the game
+  // re-shapes them per person (build shapes, clothes anchors), so no quantizing.
+  "star/human3d/human.glb": { q: null, webp: true, keepOrder: true },
   "star/onebody/player.glb": PEOPLE.onebody,
   "star/onebody/player-buzz.glb": PEOPLE.onebody,
   "star/onebody/player-long.glb": PEOPLE.onebody,
@@ -105,6 +116,23 @@ const POLICY = {
 };
 for (const id of ["control", "curl", "elite", "maestro", "power", "speed", "starter"]) POLICY[`star/shop3d/items/boot-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/items/car-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
+// The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first
+// (gltf-transform textureCompress); nothing reads its vertices, so everything may go small.
+POLICY["star/shop3d/items/car-family-hf.glb"] = { q: /.*/, webp: true };
+// The three generated football boots (Higgsfield → Tripo, 9 Oct 2026; look H: knit, classic, speed): simplified to
+// ~22k triangles and textures cut to 1024 first (gltf-transform simplify/resize); nothing reads its vertices.
+for (const f of ["boot-hf", "boot-classic-hf", "boot-speed-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3 (9 Oct 2026, look H): the other five cars (simplified to ~23k triangles, textures 1024 first;
+// fitted at load by fitCar, nothing reads their vertices).
+for (const f of ["car-hatch-hf", "car-suv-hf", "car-sports-hf", "car-classic-hf", "car-super-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3: the counter's watches and jewellery (~3-4.5k triangles: small on the wall) and four more boots (~21k), same steps.
+for (const f of ["watch-smart-hf", "watch-gold-hf", "watch-luxury-hf", "jewel-silver-hf", "jewel-diamond-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+for (const f of ["boot-starter-hf", "boot-control-hf", "boot-elite-hf", "boot-maestro-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3: the motorbike and jet (turntable, ~17-21k triangles), the nine homes (model table, ~12k),
+// and the KIB can (~310 triangles, textures 512). The can keeps float vertices: the shop bakes them
+// into one instanced geometry at load (applyMatrix4), which would clip 16-bit ones.
+POLICY["star/shop3d/items/can-kib-hf.glb"] = { q: null, webp: true };
+for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable", "house1", "villa", "house2", "estate", "island"].map((h) => `home-${h}-hf`)]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;
@@ -134,7 +162,8 @@ for (const f of todo) {
 
   const steps = [dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.TEXTURE] }), prune({ keepAttributes: true, keepLeaves: true, keepSolidTextures: true })];
   if (pol.anim) steps.push(resample({ tolerance: 1e-4 }));
-  if (root.listMeshes().length) steps.push(reorder({ encoder: MeshoptEncoder, target: "size" }));
+  // keepOrder: the file refers to its own vertices by number (the human body's clothes anchors).
+  if (root.listMeshes().length && !pol.keepOrder) steps.push(reorder({ encoder: MeshoptEncoder, target: "size" }));
   let volume = null;
   if (pol.q) {
     if (pol.quantMeta) volume = meshVolume(root.listMeshes().find((m) => m.listPrimitives().some((p) => p.getAttribute("POSITION"))));

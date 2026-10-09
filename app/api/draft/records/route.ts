@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { checkRecordBody, EVENT_KEY, type RecordBody, type SavedRun } from "@/lib/draftRecordRules";
 
 const MAX_PER_CATEGORY = 5;
 const ASCENDING_RECORD_TYPES = new Set(["goals_conceded"]);
@@ -98,52 +99,6 @@ export async function GET(req: Request) {
   return NextResponse.json({ records: grouped });
 }
 
-interface RecordEntry {
-  value: number;
-  playerName: string | null;
-  playerOvr: number | null;
-}
-
-interface TeamStat {
-  value: number;
-  teamOvr?: number | null;
-  score?: string;
-}
-
-interface RecordPayload {
-  pl: {
-    wins: TeamStat;
-    unbeaten: TeamStat;
-    goals: RecordEntry;
-    assists: RecordEntry;
-    cleanSheets: RecordEntry;
-    goalsConceded: TeamStat;
-    biggestWin?: TeamStat;
-    avgRating?: RecordEntry;
-    mostPoints?: TeamStat;
-  };
-  all: {
-    wins: TeamStat;
-    unbeaten: TeamStat;
-    goals: RecordEntry;
-    assists: RecordEntry;
-    cleanSheets: RecordEntry;
-    goalsConceded?: TeamStat;
-    biggestWin?: TeamStat;
-    avgRating?: RecordEntry;
-    squadOvr?: TeamStat;
-  };
-  career?: {
-    goals: RecordEntry;
-    assists?: RecordEntry;
-    trophies: number;
-    avgRating?: RecordEntry;
-  };
-  seasonNumber?: number;
-  hasDevPlayers?: boolean;
-  mode?: "normal" | "prime";
-}
-
 interface CandidateRow {
   user_id: string;
   username: string;
@@ -156,6 +111,15 @@ interface CandidateRow {
   mode: string;
 }
 
+/**
+ * POST — one finished draft season's records, for the public board and the
+ * player's own bests. Every number is checked first (lib/draftRecordRules.ts):
+ * real limits, the season already saved in draft_runs (same account, same
+ * season key `eventKey`) and agreeing with it, and each player name a real
+ * player in sofifa_players. A season that fails is refused (422) and logged,
+ * never trimmed to fit. A record whose player can't be found is left out and
+ * named in `rejected`.
+ */
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -164,119 +128,84 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const serviceClient = createServiceClient();
-  const { data: profile } = await serviceClient
-    .from("user_profiles")
-    .select("username")
-    .eq("user_id", user.id)
-    .single();
-
-  const username = profile?.username || user.email?.split("@")[0] || "Player";
-
-  let body: RecordPayload;
+  let body: RecordBody & { hasDevPlayers?: unknown; mode?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { pl, all, career, seasonNumber, hasDevPlayers, mode: bodyMode } = body ?? {};
-  const mode = bodyMode === "prime" ? "prime" : "normal";
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+  const mode = body.mode === "prime" ? "prime" : "normal";
 
-  if (hasDevPlayers) {
+  // A dev team never posts (the server also refuses unknown player names below).
+  if (body.hasDevPlayers === true) {
     return NextResponse.json({ ok: true, inserted: 0, skipped: "dev_team" });
   }
 
-  // A malformed body missing pl/all would crash on the dereferences below.
-  if (!pl || !all) {
-    return NextResponse.json({ error: "Missing pl/all record data" }, { status: 400 });
-  }
+  const serviceClient = createServiceClient();
 
-  // Plausible upper bounds per record type. The values are entirely
-  // client-supplied, and because this route prunes the "worst" of the top-5
-  // when a new value beats it, an absurd value (e.g. 999999) would evict
-  // legitimate records. Capping to realistic maxima blocks that while leaving
-  // real records untouched. A season is 38 PL games; "all" includes cups.
-  const VALUE_CAPS: Record<string, number> = {
-    wins: 70, unbeaten: 70, goals: 150, assists: 150, clean_sheets: 70,
-    goals_conceded: 300, biggest_win: 30, avg_rating: 100, most_points: 114,
-    career_goals: 10000, career_assists: 10000, career_avg_rating: 100,
-    career_trophies: 2000, squad_ovr: 99,
-  };
-  const validValue = (record_type: string, value: unknown): number | null => {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    const cap = VALUE_CAPS[record_type] ?? 100000;
-    return n > cap ? null : n;
-  };
-
-  const candidates: CandidateRow[] = [];
-
-  const pushEntry = (competition: string, record_type: string, stat: RecordEntry | undefined) => {
-    if (!stat) return;
-    const value = validValue(record_type, stat.value);
-    if (value == null) return;
-    if (isDevPlayer(stat.playerName)) return;
-    candidates.push({
-      user_id: user.id, username, competition, record_type,
-      value,
-      player_name: stat.playerName,
-      player_ovr: stat.playerOvr,
-      season_number: seasonNumber ?? null,
-      mode,
-    });
-  };
-
-  const pushTeam = (competition: string, record_type: string, stat: TeamStat | undefined) => {
-    if (!stat) return;
-    const value = validValue(record_type, stat.value);
-    if (value == null) return;
-    candidates.push({
-      user_id: user.id, username, competition, record_type,
-      value,
-      player_name: stat.score ?? null,
-      player_ovr: stat.teamOvr ?? null,
-      season_number: seasonNumber ?? null,
-      mode,
-    });
-  };
-
-  pushTeam("pl", "wins", pl.wins);
-  pushTeam("pl", "unbeaten", pl.unbeaten);
-  pushEntry("pl", "goals", pl.goals);
-  pushEntry("pl", "assists", pl.assists);
-  pushEntry("pl", "clean_sheets", pl.cleanSheets);
-  pushTeam("pl", "goals_conceded", pl.goalsConceded);
-  if (pl.biggestWin) pushTeam("pl", "biggest_win", pl.biggestWin);
-  if (pl.avgRating) pushEntry("pl", "avg_rating", pl.avgRating);
-  if (pl.mostPoints) pushTeam("pl", "most_points", pl.mostPoints);
-
-  pushTeam("all", "wins", all.wins);
-  pushTeam("all", "unbeaten", all.unbeaten);
-  pushEntry("all", "goals", all.goals);
-  pushEntry("all", "assists", all.assists);
-  pushEntry("all", "clean_sheets", all.cleanSheets);
-  if (all.goalsConceded) pushTeam("all", "goals_conceded", all.goalsConceded);
-  if (all.biggestWin) pushTeam("all", "biggest_win", all.biggestWin);
-  if (all.avgRating) pushEntry("all", "avg_rating", all.avgRating);
-  if (all.squadOvr) pushTeam("all", "squad_ovr", all.squadOvr);
-
-  if (career) {
-    if (career.goals) pushEntry("career", "career_goals", career.goals);
-    if (career.assists) pushEntry("career", "career_assists", career.assists);
-    const trophies = validValue("career_trophies", career.trophies);
-    if (trophies != null) {
-      candidates.push({
-        user_id: user.id, username, competition: "career", record_type: "career_trophies",
-        value: trophies, player_name: null, player_ovr: null,
-        season_number: seasonNumber ?? null,
-        mode,
-      });
+  // The season this claims to be, as already saved in the player's history.
+  let run: SavedRun | null = null;
+  if (typeof body.eventKey === "string" && EVENT_KEY.test(body.eventKey)) {
+    const { data: runRow, error: runErr } = await serviceClient
+      .from("draft_runs")
+      .select("season_number, finish, points, wins, draws, losses, goals_for, goals_against, avg_ovr, longest_unbeaten_run")
+      .eq("user_id", user.id)
+      .eq("event_key", body.eventKey)
+      .limit(1)
+      .maybeSingle();
+    if (runErr) {
+      console.error("[draft-records] could not read draft_runs:", runErr.message);
+      return NextResponse.json({ error: "Could not check this season against your history. Try again." }, { status: 500 });
     }
-    if (career.avgRating) pushEntry("career", "career_avg_rating", career.avgRating);
+    run = (runRow as SavedRun | null) ?? null;
   }
+
+  const check = checkRecordBody(body, run);
+  if (!check.ok) {
+    console.warn(`[draft-records] refused for user ${user.id}:`, check.errors.join("; "));
+    return NextResponse.json({ error: "These records were refused.", reasons: check.errors }, { status: 422 });
+  }
+
+  // Every named player must be a real player.
+  const names = Array.from(new Set(check.candidates.filter(c => c.needsPlayer).map(c => c.player_name as string)));
+  const known = new Set<string>();
+  if (names.length) {
+    const { data: found, error: nameErr } = await serviceClient
+      .from("sofifa_players")
+      .select("name")
+      .in("name", names)
+      .limit(500);
+    if (nameErr) console.error("[draft-records] could not check player names:", nameErr.message);
+    for (const row of (found ?? []) as { name: string }[]) known.add(row.name);
+  }
+  const rejected: string[] = [];
+  const accepted = check.candidates.filter(c => {
+    if (!c.needsPlayer) return true;
+    if (known.has(c.player_name as string)) return true;
+    rejected.push(`${c.competition} ${c.record_type}: "${c.player_name}" is not a known player`);
+    return false;
+  });
+  if (rejected.length) console.warn(`[draft-records] names refused for user ${user.id}:`, rejected.join("; "));
+
+  const { data: profile } = await serviceClient
+    .from("user_profiles")
+    .select("username")
+    .eq("user_id", user.id)
+    .single();
+  const username = profile?.username || user.email?.split("@")[0] || "Player";
+  const seasonNumber = body.seasonNumber as number;
+
+  const candidates: CandidateRow[] = accepted.map(c => ({
+    user_id: user.id, username, competition: c.competition, record_type: c.record_type,
+    value: c.value, player_name: c.player_name, player_ovr: c.player_ovr,
+    season_number: seasonNumber, mode,
+  }));
 
   if (candidates.length === 0) {
-    return NextResponse.json({ ok: true, inserted: 0 });
+    return NextResponse.json({ ok: true, inserted: 0, rejected });
   }
 
   // Whether the mode column exists — discovered lazily on first error, then
@@ -586,5 +515,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, inserted, recordErrors, actions });
+  return NextResponse.json({ ok: true, inserted, recordErrors, actions, rejected });
 }

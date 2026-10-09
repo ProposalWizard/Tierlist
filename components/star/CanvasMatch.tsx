@@ -3,7 +3,8 @@ import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
-import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, useContext } from "react";
+import { EngineFrameContext, keeperFrame, frameHasKeeper, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct, type EngineFrameOrders } from "@/lib/star/engineFrame";
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
@@ -34,6 +35,8 @@ import {
 } from "@/lib/star/dribble";
 import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
+import Dribble3D from "./Dribble3D";
+import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
 import { oldDribble, oldClearances, oldChances } from "@/lib/star/gameplayVersion";
 import { getTuning } from "@/lib/star/tuningStore";
@@ -149,7 +152,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, MATCH_VIEW_DEFAULT,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
 import { animationsLook } from "@/lib/star/animLook";
@@ -898,6 +901,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const wrapRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   /**
+   * A screen reading the match frame by frame (lib/star/engineFrame.ts): the
+   * Style Testing page's 3D view of the real game. Absent everywhere else
+   * (no provider), and then nothing below that reads it runs. It only ever
+   * READS: what was just drawn is handed over after the frame.
+   */
+  const frameObs = useContext(EngineFrameContext);
+  const frameObsRef = useRef(frameObs);
+  frameObsRef.current = frameObs;
+  /**
    * The match view (lib/star/matchView.ts): Settings → Match view, read once
    * when the match opens. "classic" draws, frames and plays exactly as before.
    * The ref is for the render loop; the state is for the pitch's own height.
@@ -1255,6 +1267,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // fixed for the run's whole lifetime so re-renders while phase ===
   // "fpDribble" never reroll the waves out from under an in-progress run.
   const fpDribbleRef = useRef<{ waveSizes: number[]; seed: number } | null>(null);
+  /** Settings → Look → "Dribble runs 3D", read once per match (switching mid-run would remount it). */
+  const dribble3dRef = useRef(dribble3dLook());
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
   // Curve boots: a swipe captured in screen pixels (not pitch metres — the
   // ball is in flight, moving through 3D space the aim gesture never has to
@@ -2342,6 +2356,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A frame reader's picture goes in the pitch box, over the 2D canvas.
+  useEffect(() => {
+    const o = frameObsRef.current;
+    if (!o?.attach || !wrapRef.current || !canvasRef.current) return;
+    return o.attach(wrapRef.current, canvasRef.current) || undefined;
+  }, []);
+
   // ── New view: the pitch fills the phone's height ──
   //
   // As tall as the room under whatever sits above it (the site's pinned bars,
@@ -2950,6 +2971,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const W = canvas.width, H = canvas.height;
     const sc = scenarioRef.current;
     const vp = viewportRef.current;
+    // A frame reader (lib/star/engineFrame.ts) is told what this frame drew.
+    // Absent (every real match, every other screen): null, nothing recorded.
+    const rec: { figures: EngineFrameFigure[]; keeper: EngineFrameKeeper | null; aim: { from: { x: number; y: number }; to: { x: number; y: number }; power: number } | null } | null =
+      frameObsRef.current ? { figures: [], keeper: null, aim: null } : null;
+    const actOf = (sid: string): EngineFrameAct | undefined => {
+      const a = actorAnimRef.current.get(sid);
+      return a && a.scene === sc ? { kind: a.kind, mode: a.mode, save: a.save, start: a.start } : undefined;
+    };
     // Pixels per metre. The viewport holds the canvas aspect exactly, so these
     // two agree — a metre is a metre whichever way it points, and circles stay
     // circles. In a turned frame the pitch axes have swapped places on the
@@ -3273,6 +3302,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       shirt: string, rim: string,
       opts: FigureOpts = {},
     ) => {
+      if (rec) {
+        const sid = opts.sid ?? `fig${rec.figures.length}`;
+        const them = shirt === theirKit().shirt || sid.startsWith("def") || sid.startsWith("chase");
+        rec.figures.push({
+          sid, x, y, shirt, shorts: opts.shorts ?? rim, team: them ? "them" : "us",
+          kick: opts.pose === "kick", kickFoot: opts.kickFoot ?? 1, act: sid === "you" ? undefined : actOf(sid),
+          star: opts.star, label: opts.label, face: opts.face?.src, drawn: true,
+        });
+      }
       if (figureQueue) {
         const at = toPx(x, y).py;
         figureQueue.push({ py: at, draw: () => paintFootballer(x, y, rBase, shirt, rim, opts) });
@@ -3356,8 +3394,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Now that the projection is flat this holds everywhere on the frame, which
     // it never could before: a man at the goal used to be drawn at 64% of a man
     // at your feet.
-    // New view (option D): 0.8 of the zoomed-out size, ~22 px on a phone.
-    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE : 1);
+    // New view (option D): 0.8 of the zoomed-out size, then 0.8 again for the
+    // outfield men (~18 px on a phone). The keeper is put back to full size below.
+    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK : 1);
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over
@@ -3535,6 +3574,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
      * this pitch is — a defender is never gold and neither is the ball, so an
      * order can never be mistaken for a thing that is about to happen to you.
      */
+    // The same orders, for a frame reader (a 3D view draws them on its own
+    // pitch): read only, built from what drawCaptainOrders below draws.
+    const captainOrdersFrame = (s: Scenario): EngineFrameOrders | null => {
+      if (!isCaptainRef.current || phaseRef.current !== "aim" || !acceptsCaptainOrders(s.kind)) return null;
+      const runners = orderableRunners(s);
+      const all = [s.runner, ...s.secondaryRunners].filter(Boolean) as Runner[];
+      const pickable = runners.map((r) => `run${all.indexOf(r)}`).filter((id) => id !== "run-1");
+      if (goalInView(s.kind)) pickable.push("follower");
+      const runs: { from: { x: number; y: number }; to: { x: number; y: number } }[] = [];
+      for (const r of runners) if (r.commandedTo) runs.push({ from: { x: r.pos.x, y: r.pos.y }, to: { x: r.commandedTo.x, y: r.commandedTo.y } });
+      if (s.follower.commandedTo) runs.push({ from: { x: s.follower.x, y: s.follower.y }, to: { x: s.follower.commandedTo.x, y: s.follower.commandedTo.y } });
+      const relay = s.relayTo ? { x: s.relayTo.pos.x, y: s.relayTo.pos.y } : s.relayToFollower ? { x: s.follower.x, y: s.follower.y } : null;
+      const d = captainDragRef.current;
+      const drag = d && Math.hypot(d.to.x - d.from.x, d.to.y - d.from.y) >= CAPTAIN_DRAG_MIN
+        ? { from: d.target === "follower" ? { x: s.follower.x, y: s.follower.y } : { x: d.target.pos.x, y: d.target.pos.y }, to: { x: d.to.x, y: d.to.y } }
+        : null;
+      return { pickable, runs, relay, drag };
+    };
+
     const drawCaptainOrders = (s: Scenario) => {
       const GOLD = "#fbbf24";
 
@@ -3772,6 +3830,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE),
       label: faceStyleRef.current.namesEnabled ? playerLabel() : undefined,
     });
+    // A frame reader gets you even where the 2D picture lets the ball stand for you.
+    if (rec && !auto && !youShown && sceneRef.current?.you !== false) {
+      rec.figures.push({
+        sid: "you", x: tx, y: ty, shirt: ourKit().shirt, shorts: ourKit().trim, team: "us",
+        kick: kickPoseRef.current > 0, kickFoot: takerFoot, star: true, drawn: false,
+        face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE)?.src,
+      });
+    }
 
     // ── Keeper ──
     // Only where there is a goal to keep. A midfield situation has no goal in
@@ -3784,6 +3850,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // your shot went in. He is still exactly where the save maths says he is —
       // only the artwork is restrained.
       const kk = sc.keeper;
+      if (rec) {
+        const k0 = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+        rec.keeper = keeperFrame(kk, k0, fakeFaceFor("keeper"), actOf("keeper"), true);
+      }
       const { px, py, scale: kScale } = toPx(kk.x, kk.y);
       // `dive` is a lean while patrolling and a committed lunge once a save has
       // been decided; saveLunge eases the second one in after the fact.
@@ -3812,7 +3882,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale;   // smaller than an outfielder, smaller again far away
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
@@ -4189,6 +4259,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const lineLen = power * sameOnScreenM(heightSpan, 1, "height") * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
+      if (rec) rec.aim = { from: { x: sc.ball.x, y: sc.ball.y }, to: { x: ex, y: ey }, power };
       const a = toPx(sc.ball.x, sc.ball.y);
       const b = toPx(ex, ey);
       // Solid, tapered orange arrow: a round-capped shaft into a clean triangular
@@ -4296,6 +4367,40 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       fg.addColorStop(1, "rgba(253,230,138,0)");
       ctx.fillStyle = fg;
       ctx.fillRect(0, 0, W, H);
+    }
+
+    // ── Hand the frame to a reader (lib/star/engineFrame.ts) ──
+    // What was just drawn, in pitch metres, and the camera it was drawn with.
+    // Read only: nothing a reader does reaches the match.
+    const obs = frameObsRef.current;
+    // The keeper the 2D didn't draw (no goal in its frame): still in his goal
+    // for a 3D camera that shows it (Harry, 9 Oct 2026: "no goalie in the goal on some").
+    if (rec && !rec.keeper && frameHasKeeper(sceneRef.current?.keeper)) {
+      const k0 = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+      rec.keeper = keeperFrame(sc.keeper, k0, fakeFaceFor("keeper"), actOf("keeper"), false);
+    }
+    if (obs && rec) {
+      const box = canvasBox();
+      const lb = ballRef.current;
+      obs.onFrame({
+        t: performance.now() / 1000,
+        phase: phaseRef.current,
+        kind: sc.kind,
+        cam: { viewport: { ...viewportRef.current }, facing: facingRef.current, tilt: tiltGeomRef.current, W: box.width, H: box.height },
+        ball: ballAt ? {
+          x: ballAt.x, y: ballAt.y, z: ballAt.z,
+          vx: lb?.vel.x ?? 0, vy: lb?.vel.y ?? 0, vz: lb?.vz ?? 0, live: !!lb, inNet: !!lb?.inNet,
+        } : null,
+        landing: lb && phaseRef.current === "flight" && !lb.inNet && lb.z > 0.15 && lb.landAt ? { ...lb.landAt } : null,
+        keeper: rec.keeper,
+        figures: rec.figures,
+        aim: rec.aim,
+        ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
+          ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
+        goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
+        goalInView: goalInView(sc.kind) || goalOnCamera,
+        orders: captainOrdersFrame(sc),
+      });
     }
   }, [toPx]);
 
@@ -4438,6 +4543,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // a dribble run now, while a chance is waiting to be taken (test bots:
+      // the dribble chance is a roll of the hidden match, so it can take a
+      // whole match to come up). The same set-up the hidden match's request does.
+      dribble: () => {
+        if (phaseRef.current !== "aim") return false;
+        const rng = rngRef.current;
+        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) };
+        setAim(null); setOutcome(null); dragRef.current = null; draggingRef.current = false;
+        setPhase("fpDribble");
+        return true;
+      },
     };
     return () => { delete w.__starMatch; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -7249,6 +7365,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       >
         <canvas
           ref={canvasRef}
+          // A frame reader drawing its own picture over it (lib/star/engineFrame.ts):
+          // still drawn, still the one that takes every touch, just not seen.
+          style={frameObs?.hide2D ? { opacity: 0 } : undefined}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -7314,23 +7433,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             entirely), not something drawn onto it the way the old top-down
             dribble is. `waveSizes`/`seed` are rolled once at trigger time
             (fpDribbleRef) and held fixed so this never remounts mid-run. */}
-        {phase === "fpDribble" && fpDribbleRef.current && (
-          <FirstPersonDribble
-            embedded
-            pace={100}
-            oppStrength={100}
-            waveSizes={fpDribbleRef.current.waveSizes}
-            roster={fpRoster}
-            seed={fpDribbleRef.current.seed}
-            chaseEye={5}
-            chasePitchDeg={5}
-            chaseOffset={4}
-            cameraFollowRate={10}
-            passOptions={oldDribble() ? 0 : Math.round(getTuning("dribble.mates"))}
-            vision={visionRef.current}
-            onComplete={finishFpDribble}
-          />
-        )}
+        {phase === "fpDribble" && fpDribbleRef.current && (() => {
+          // The duel's own props, exactly as before. Settings → Look →
+          // "Dribble runs 3D": 3D plays the SAME run (these waves, this
+          // roster, this onComplete) in the Free Roam look instead
+          // (Dribble3D.tsx); Old is this duel, untouched.
+          const duel = {
+            pace: 100,
+            oppStrength: 100,
+            waveSizes: fpDribbleRef.current.waveSizes,
+            roster: fpRoster,
+            seed: fpDribbleRef.current.seed,
+            chaseEye: 5,
+            chasePitchDeg: 5,
+            chaseOffset: 4,
+            cameraFollowRate: 10,
+            passOptions: oldDribble() ? 0 : Math.round(getTuning("dribble.mates")),
+            vision: visionRef.current,
+            onComplete: finishFpDribble,
+          };
+          if (dribble3dRef.current !== "3d") return <FirstPersonDribble embedded {...duel} />;
+          const car = careerRef.current;
+          return (
+            <Dribble3D
+              {...duel}
+              // a fair run in 3D: the career's real numbers, not the duel's fixed 100
+              oppStrength={Math.round(oppStrength ?? 70)}
+              skills={car ? { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision } : undefined}
+              you={{ name: car?.player.lastName, photo: car?.player.portrait }}
+              kits={{ us: ourKit(), them: theirKit() }}
+              fallback={{ ...duel, embedded: true }}
+            />
+          );
+        })()}
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}

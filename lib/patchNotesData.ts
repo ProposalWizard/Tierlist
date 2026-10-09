@@ -27,6 +27,219 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.42",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-10-08T21:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/GWaupeUSruCjKW2qYtnHWW",
+      "summary": "The 3D world grew a casino and a training pitch (not seen on a phone), with five 3D training drills (picker, Two Touch, Free Roam, Headers & Volleys, Wembley), a 3D Crossbar challenge and a hand-made 3D kick. Settings rebuilt from 4,025 px to 931 px with a Classic / Standard / Preview version picker. Cheat locks on Draft records, legend shares, XP and the Hall of Fame. The server casino stays off; the horse-odds fix stays. Harry's notes called this v0.35; the site number 0.42 is the next free one.",
+      "stats": [
+        {
+          "value": "2 new 3D places",
+          "label": "a casino with 6 games and a training pitch, in the garden"
+        },
+        {
+          "value": "4,025 → 931 px",
+          "label": "Settings height in a career (5 screens → 1)"
+        },
+        {
+          "value": "47% → 0%",
+          "label": "of horse race cards with a horse that paid back more than you staked"
+        },
+        {
+          "value": "20 → 1 tap",
+          "label": "look switches set at once by the version picker"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "For Mikey, in order",
+          "items": [
+            {
+              "title": "1. Run star_hall_of_fame.sql",
+              "detail": "Now with a 30-career cap. Safe to re-run; verify queries at the bottom."
+            },
+            {
+              "title": "2. Run star_legend_shares.sql",
+              "detail": "Copies from the Hall, 30 shares at most. Safe to re-run."
+            },
+            {
+              "title": "3. Run xp_atomic_award.sql (optional)",
+              "detail": "Each XP reward pays once. Safe to re-run."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Training Pitch opens the drill picker; each drill plays",
+              "detail": "Garden → TRAINING gate → Training Pitch"
+            },
+            {
+              "title": "Wembley ends with one player left; the hint line fits",
+              "detail": "Training Pitch → Wembley → Start"
+            },
+            {
+              "title": "Casino in the 3D garden",
+              "detail": "Garden → casino doors → each station"
+            },
+            {
+              "title": "Close a casino game, then take the doors back",
+              "detail": "Casino room"
+            },
+            {
+              "title": "Home → Casino goes to the 3D room",
+              "detail": "Home → Casino"
+            },
+            {
+              "title": "Training pitch and gate",
+              "detail": "Garden → back left → TRAINING gate"
+            },
+            {
+              "title": "Crossbar challenge: 5 rounds to the result",
+              "detail": "Training gate → Crossbar challenge"
+            },
+            {
+              "title": "3D kick, celebrate, keepy-ups; ball bounces into the net",
+              "detail": "Any 3D shot"
+            },
+            {
+              "title": "Settings: version picker, each group, Classic then Standard",
+              "detail": "Settings"
+            },
+            {
+              "title": "Casino: 3D | Classic",
+              "detail": "Settings → 3D world → Casino"
+            },
+            {
+              "title": "A Draft season posts its records",
+              "detail": "Play a Draft season to the end"
+            },
+            {
+              "title": "New horse odds",
+              "detail": "Casino → Horse racing"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "3D training drills: a picker with five drills",
+              "detail": "Training gate → Training Pitch opens a picker: Random drill, Crossbar Challenge (unchanged), Two Touch, Free Roam, Headers & Volleys, Wembley (Normal / Doubles). One shared 3D engine (movement, touches, passes, juggling, headers, volleys, tackles, keeper); shots use the 2D match's drag-and-aim maths, measured 0.0% difference in kick speed, lift and spin. Two Touch: best of 3 rallies, 6+ passes wins; a mate rated 85 averages 5.4 passes a rally, rated 55 averages 2.1. Free Roam: 2 minutes, score = goals + clean passes, 10+ wins. Headers & Volleys: your full-backs cross 10 balls; header 2, volley 3, other goal 1; 7 wins; an average player scores 3.6 per 10 vs a 60 keeper, 2.5 vs an 80. Wembley (Harry's rules): last player without a goal each round is out; a 4-player game takes about 4.0 minutes (was about 10), 0 of 200 test games stalled. New hand-made moves for headers, volleys, control, tackles and the keeper; the 3D shop and garden download about 150 KB more. Only stills seen: nothing watched in motion or on a phone."
+            },
+            {
+              "title": "A 3D casino in the garden",
+              "detail": "Back right, neon front, red carpet. Roulette, blackjack, 4 slots, horse screen, betting counter, Goalie Mode cabinet. Walk up to open each game; close it and you are back in the room. Settings → Look → Casino: 3D | Classic (default 3D)."
+            },
+            {
+              "title": "A training pitch in the garden",
+              "detail": "Back left: fence, floodlights, TRAINING gate."
+            },
+            {
+              "title": "3D Crossbar challenge",
+              "detail": "You against one real team-mate, 5 shots each. Crossbar 1, post 0, a draw counts as a win. Reward: the Team bar. Costs training energy. Your shots use the real match engine; his are an animation (about 1 in 10 at rating 60, 1 in 5 at 85)."
+            },
+            {
+              "title": "3D kick and animations",
+              "detail": "Hand-made: 3-step run-up and strike, left-foot mirror, fist-pump, hands on head, keepy-ups. The ball no longer freezes after the shot. Casino and training clips are made; wiring them onto people is coming in the next push."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Settings rebuilt: 4,025 px → 931 px",
+              "detail": "Version picker Classic · Standard · Preview sets all 20 look switches. Groups: Match (13), 3D world (6), Screens (6), Career & saves. Developer tab for testers and admins. Only Chances and Animations differ between Standard and Preview."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Cheat locks on four places",
+              "detail": "Draft records board (possible numbers only, matched to your saved season, real names); legend shares copy from your own Hall (30 max); XP pays each thing once; Hall of Fame 30 careers max."
+            },
+            {
+              "title": "Horse odds",
+              "detail": "47% of race cards had a horse that paid back more than you staked (up to ★9.57 per ★1). The best is now ★0.99 per ★1."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Decision: the casino stays on the phone",
+          "items": [
+            {
+              "title": "Server casino switched off",
+              "detail": "Harry decided against it for now: lag, and the free database is too small (60 days of plays is about 150 MB at 100 daily players). CASINO_ON_SERVER = false; code kept for later."
+            },
+            {
+              "title": "Progress updates now include expected token use"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "3D drills only seen as stills",
+              "detail": "Keepy-up headers and foot keepy-ups still borrow other moves; no keeper move for a low-ball catch; your own shot from your feet has no wind-up."
+            },
+            {
+              "title": "None of the 3D was seen on a phone"
+            },
+            {
+              "title": "Chandeliers read as white blobs"
+            },
+            {
+              "title": "Inside a casino game the back button says Menu"
+            },
+            {
+              "title": "The Old 3D garden has no casino or pitch"
+            },
+            {
+              "title": "Classic also flips UI to Old"
+            },
+            {
+              "title": "Settings Developer tab only shows inside a career"
+            },
+            {
+              "title": "Animations: weak fist pump from behind, a mechanical kick, a slight foot slide"
+            },
+            {
+              "title": "Tour waits on Harry's video; Ballon d'Or difficulty is for later"
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Wire the casino and training clips onto people",
+              "detail": "And keep you in frame for reactions."
+            },
+            {
+              "title": "Mikey runs the three SQL files"
+            },
+            {
+              "title": "Harry checks the 3D on his phone"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.41",
       "title": "Mikey's patch notes — Brackets, the real UEFA knockout, relegation",
       "publishedAt": "2026-10-08T22:00:00Z",

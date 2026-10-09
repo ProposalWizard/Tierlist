@@ -186,7 +186,9 @@ https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
 
 The cloud environment's setup script installs Blender (`apt-get install -y
 blender`); it also needs `python3-numpy` in the same line. Blender connectors
-can't reach a cloud session, but headless Blender scripts can. First use: the
+can't reach a cloud session, but headless Blender scripts can.
+If `blender` is missing (8 Oct 2026: it was), the clip builder `tools/anims3d/build.py`
+needs only python3 + numpy, so clips can still be made; do not skip animations for it. First use: the
 farewell ovation's hugs, dap-ups, pats and claps, made with both men posed
 together (`tools/ovation3d/`, read its README) →
 `public/star/ovation3d/greetings.glb`. Settings → Look → "Ovation greetings:
@@ -222,6 +224,20 @@ smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
 (`lib/star/three3d/meshopt.ts`) or it fails on them. The 3D builders re-pack
 at their end; a new file needs a POLICY line in the script. Details:
 `scripts/perf3d/README.md`.
+
+**Any 3D, animation, mocap, model or cut-scene work: merge `main` first, then read `docs/3D_HANDBOOK.md` (skill `3d-building`).**
+
+## Cut scenes are scripts on one system (Harry, 9 Oct 2026)
+
+"build a foundation and system that will be translatable for any cut scenes … don't
+put limits." Every new cut scene is DATA in `lib/star/cutscene/` (read its README):
+a script (set, cast, props, timeline tracks) played by `director.ts` in any art style,
+from t alone (`window.__frameStep`). Scenes are GENERATED from a game event
+(`generateScript(event, seed)`: story.ts beats → cinema.ts film rules); hand-made
+ones (`fixtures.ts`) are the benchmark the generator must match
+(`tests/star/cutscene.mts`). Never write a new bespoke cut-scene loop. The people
+layer (faces, hands, IK) plugs in at `peopleAdapter.ts`. Watch any scene:
+/star-style-dev → "Cut-scene Director".
 
 ## Goal videos are recordings, never re-runs (Leo, 7 Oct 2026)
 
@@ -312,6 +328,17 @@ used the base engine … extra stuff built on top of the base engine."*
   named dial (`TEST_ONLY` in the guard), never a copy.
 - **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
   and 2 dev prototypes. The live list is in the guard.
+
+**3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
+got to be changed for 3D — surely it would be a completely different set of
+rulesets almost? And that's okay as long as it doesn't infringe on the base
+game."* Fully 3D games (move around, touch, keep-ups, headers, volleys, free
+roam) get their OWN physics and rules, in their own folder (`lib/star/play3d/`).
+Limits: they never import from or change `lib/star/canvasEngine.ts` or the 2D
+match; the 2D base game is untouched by them; shared basics (ball size, gravity,
+how a player's skills scale a kick) come from one shared file so the 3D ball
+still feels like the same sport. Screens built on the 2D engine (trial, drills,
+Crossbar Challenge's aim) keep the one-engine rule as before.
 
 ## OLD UI / NEW UI — Settings → UI: Old | New (Harry, 1 Oct 2026)
 
@@ -644,11 +671,13 @@ Three people are building this. To avoid two sessions editing the same files:
 | `star_scenarios.sql` | **RUN** (seen in the live database, 3 Oct 2026) (new, Sep 2026) | Creates the `star_scenarios` table: one row per `MatchScenario` (`lib/star/scenarios.ts`) — camera framing plus hand-placed teammate/opponent positions in real pitch metres. The Scenario Builder (`components/star/ScenarioEditor.tsx`, now hosted both at `/star-scenario-dev` and as a third tab in `/star-gallery-dev`) and the gallery's own base-scenario Save button both write here, so a scenario is DATA the game reads rather than something baked into a deploy. `/api/star/scenarios` is GET public / POST+DELETE admin-only via `isAdmin()`, exactly like `star_lineups`; `lib/star/scenarioStore.ts` keeps localStorage as a synchronous read cache, refreshed via `fetchSharedScenarios()` at load. Until this runs, the route degrades honestly instead of 500ing — GET returns an empty list with `migrationMissing: true` (both screens show a red banner naming this file), and a Save keeps the work in that browser while saying plainly "saved on this device ONLY," never a bare "Saved". |
 | `star_career_slots.sql` | **RUN** (seen in the live database, 3 Oct 2026) (new, Sep 2026) | Adds `star_careers.slot` (default 1, backfilling every existing save automatically) and swaps its `UNIQUE (user_id)` for `UNIQUE (user_id, slot)`, so an account can have up to three cloud saves instead of one — see Settings' new Saves panel. `app/api/star/career/route.ts` degrades the same way `league-squads/route.ts` already does: slot 1 (every existing save) works identically whether or not this has run; a second or third save simply stays local to whichever device created it until it has. |
 | `star_pass_config.sql` | **RUN** (seen in the live database, 3 Oct 2026) (new, Oct 2026) | One shared row: which reward sits at each Star Pass level, plus idea cards and statuses set on `/admin/star-pass`. Until it runs, every career uses the five test rewards built into `lib/star/rewardCatalogue.ts` and the admin page's Save stays on that device (it says so). |
-| `star_hall_of_fame.sql` | **PENDING** (new, 5 Oct 2026) | The Hall of Fame in the cloud: one row per retired career per account (`lib/star/hallOfFame.ts`, `/api/star/hall-of-fame`). Until it runs the Hall works on the device it was made on and the Hall screen says "Kept on this device for now"; nothing breaks. Idempotent, RLS own-rows only, a size and id-shape check. |
-| `star_legend_shares.sql` | **PENDING** (new, 6 Oct 2026) | Share a retired career by code: `knowitball.co.uk/legend/CODE` (`lib/star/legendShare.ts`, `/api/star/legend`). One row per (account, Hall career); read only through the `get_legend_share` SECURITY DEFINER function, so nobody can list the shares (no public board, by Leo's "friends first"). Until it runs, Share link says "Sharing isn't switched on yet" and codes can't be read; nothing else breaks. Idempotent. |
+| `star_hall_of_fame.sql` | **RUN** (by Mikey, 8 Oct 2026; seen live: the table answers the anon key) | The Hall of Fame in the cloud: one row per retired career per account (`lib/star/hallOfFame.ts`, `/api/star/hall-of-fame`). Until it runs the Hall works on the device it was made on and the Hall screen says "Kept on this device for now"; nothing breaks. Idempotent, RLS own-rows only, a size and id-shape check. 8 Oct 2026: also a trigger capping each account at 30 careers and 200 rows (tombstones included); the route checks the same (`HALL_MAX_ENTRIES`). Run it BEFORE `star_legend_shares.sql`. |
+| `star_legend_shares.sql` | **RUN** (by Mikey, 8 Oct 2026; seen live: the table and `get_legend_share` answer) | Share a retired career by code: `knowitball.co.uk/legend/CODE` (`lib/star/legendShare.ts`, `/api/star/legend`). One row per (account, Hall career); read only through the `get_legend_share` SECURITY DEFINER function, so nobody can list the shares (no public board, by Leo's "friends first"). Until it runs, Share link says "Sharing isn't switched on yet" and codes can't be read; nothing else breaks. Idempotent. 8 Oct 2026: the phone now sends only the Hall id; the route and a trigger copy the career from the sharer's own `star_hall_of_fame` row (so run `star_hall_of_fame.sql` first), and cap shares at 30 per account. |
+| `xp_atomic_award.sql` | **RUN** (by Mikey, 8 Oct 2026; seen live: `add_user_xp` exists and refuses the anon key, as designed) | `add_user_xp(user, amount)`: adds XP to `user_xp.total_xp` in one statement (service role only), so two awards at once can't lose one. Until it runs, `/api/xp` falls back to its old read-then-write; nothing breaks. Idempotent. |
 | `star_wallet.sql` | **PENDING** (new, 7 Oct 2026) | The gem wallet: paid things that cannot be faked (Harry: "we are DEFINITELY going to have paid items"). Four tables (`star_paid_items`, `star_wallet`, `star_wallet_ledger` append-only, `star_entitlements`), read-own-only RLS and no browser writes at all; changes only through `spend_gems` (players; price read from the table) and the service-only `grant_gems`/`grant_item`. Seeds one test item (`test-golden-boots`, 50 gems). Until it runs, `/api/star/wallet` answers `migrationMissing` ("Gems aren't switched on yet") and nothing else breaks. Idempotent; verify queries at the bottom. Rules for paid items: `PAID_ITEMS.md`. |
 | `star_scenario_corrections.sql` | **RUN** (Sep 2026, by Mikey) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Confirmed live 23 Sep 2026: the table answers the anon key and held 3 corrections. Browser-only corrections upload on the next sync. |
 | `star_save_guard.sql` | **PENDING** (new, 7 Oct 2026) | Star Career saves are now checked against the last trusted one (`lib/star/saveGuard.ts`, `/api/star/career`): edited money, skills, trophies, wage, fame and so on. This file adds `star_save_flags` (every odd save, service key only) and takes WRITE access to `star_careers` away from the browser (it allowed direct writes that skipped the route). Deploy the code first, then run it. Until then: saves are checked and stored as before, findings go to the server log only, and the direct-write hole stays open. Mode: env `STAR_SAVE_GUARD` (observe by default — log only; `enforce` puts bad fields back). Idempotent; verify queries at the bottom. |
+| `star_casino.sql` | **DO NOT RUN** (switched off, 8 Oct 2026) | Harry: not now — lag, and the free database is too small (60 days of plays ≈ 150 MB at 100 daily players). `CASINO_ON_SERVER = false` in `lib/star/casinoRules.ts` keeps every game on the phone with no server call. If cheating shows up: cut storage to ~2 days + a per-account total first, then run this and flip the switch. Was: the casino on the server (Harry: "move the casino to the server"). Adds `star_casino_plays`: one row per bet, blackjack hand or Goalie Mode run (stake, payout, net, what the player saw; the dealer's hidden card in a `secret` column the browser cannot read). RLS read-own, no browser writes. Signed in, every casino game is rolled and paid by `/api/star/casino/play` (`lib/star/casinoEngine.ts`, rules shared with the phone in `lib/star/casinoRules.ts`) and the save guard allows casino money only up to the server-recorded net since the last trusted save, instead of the ×2,000 luck allowance. Until it runs: nothing breaks — the casino plays on the phone as before and the guard keeps the luck allowance. The Old UI's casino (`components/star/legacy/Casino.tsx`, frozen) still rolls on the phone: once this runs, its wins show as save-guard findings for signed-in Old UI players. Optional env `STAR_CASINO_SECRET` signs horse race cards (falls back to the service key). Idempotent; verify queries at the bottom. |
 
 ---
 

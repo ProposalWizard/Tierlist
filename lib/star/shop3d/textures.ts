@@ -67,11 +67,13 @@ const FONT = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
 
 /** A floating price tag: the item's name, its price, and a green "Owned"
  *  chip when the career has it. Transparent round the edges. */
-export function labelCanvas(name: string, price: string, tag?: string | null): HTMLCanvasElement {
+export function labelCanvas(name: string, price: string, tag?: string | null, scale = 1): HTMLCanvasElement {
   const w = 512, h = 168;
   const c = document.createElement("canvas");
-  c.width = w; c.height = h;
+  // drawn in 512×168 units; scale 2 makes a 1024×336 canvas, so the text stays sharp up close
+  c.width = w * scale; c.height = h * scale;
   const g = c.getContext("2d")!;
+  g.scale(scale, scale);
   const r = 34;
   g.beginPath();
   g.moveTo(r, 6); g.lineTo(w - r, 6); g.quadraticCurveTo(w - 6, 6, w - 6, r);

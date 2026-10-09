@@ -39,6 +39,16 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 8 Oct 2026 — Settings is the "hybrid" (Harry)
+- **Version on top: Classic | Standard | Preview**, one tap sets every New |
+  Old switch (`lib/star/gameVersions.ts`; names in one constant). "Custom"
+  once a row is changed by hand, with Undo. A new look goes into Preview
+  first; Classic is always every old option.
+- **First screen, no scrolling at 390×844**: Version, then Full screen,
+  Sound, 3D quality, Skip the line-up. Everything else is a folded group
+  (Match, 3D world, Screens, Career & saves), one open at a time.
+- **Developer tools are their own tab**, testers and admins only.
+
 ### 8 Oct 2026 — play-off brackets (Mikey)
 - **A knockout is shown as a bracket, mirrored like a cup "Road to the Final"
   graphic**: side A left, side B right, final and trophy in the middle. When a

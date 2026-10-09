@@ -5,8 +5,7 @@ import PointerTour from "./PointerTour";
 import type { TourStep } from "@/lib/star/tours";
 import { RiseIn } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
-import { GameSwitches, LookSwitches } from "./DeviceSettings";
-import { SetCard, SetSection } from "./settingsKit";
+import { SettingsTop, SettingsGroups } from "./DeviceSettings";
 import MoveSavesPanel from "./MoveSavesPanel";
 
 /**
@@ -61,18 +60,13 @@ export default function GlobalSettingsScreen({ onBack, fullscreen, moveSaves }: 
           />
         </div>
 
-        <RiseIn index={0}><SetSection className="mb-1.5 mt-1">Game</SetSection></RiseIn>
-        <RiseIn index={1}><GameSwitches glow={GREEN} fullscreen={fullscreen} /></RiseIn>
-
-        <RiseIn index={2}><SetSection>Look</SetSection></RiseIn>
-        <RiseIn index={3}><SetCard tone={GREEN}><LookSwitches /></SetCard></RiseIn>
-
-        {moveSaves && (
-          <>
-            <RiseIn index={4}><SetSection>Saves</SetSection></RiseIn>
-            <RiseIn index={5}><MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={GREEN} /></RiseIn>
-          </>
-        )}
+        <RiseIn index={0}><SettingsTop glow={GREEN} fullscreen={fullscreen} /></RiseIn>
+        <RiseIn index={1}>
+          <SettingsGroups
+            glow={GREEN}
+            extra={moveSaves ? [{ id: "saves", title: "Saves", sub: "Move my saves to another browser or phone", content: <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={GREEN} /> }] : []}
+          />
+        </RiseIn>
       </div>
       {help && <PointerTour key="global-settings" steps={TOUR} onDone={() => setHelp(false)} />}
     </Screen>

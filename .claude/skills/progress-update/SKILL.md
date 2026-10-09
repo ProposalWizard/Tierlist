@@ -14,11 +14,13 @@ piece of work, then at most one line of what is next or blocked.
 ```
 UPDATE · 14:20
 
-Camera tilt 20°        ██████████  done · pushed
-Keeper dive fix        ████████░░  built · filming to check
-Even highlight mix     ██████████  done · pushed
-Patch notes v0.28      ███░░░░░░░  writing
+Camera tilt 20°        ██████████ 100%  pushed
+Keeper dive fix        ████████░░  80%  filming to check · ~10 min left
+Even highlight mix     ██████████ 100%  pushed
+Patch notes v0.28      ███░░░░░░░  30%  writing · ~20 min left
 
+Started 14:05 · est. done ~14:50
+Speed check: started patch notes alongside filming instead of after
 Waiting on: you, to merge Harry → main
 ```
 
@@ -44,6 +46,60 @@ Waiting on: you, to merge Harry → main
 - Follow the house writing rules (CLAUDE.md "How to talk to this team"): short,
   plain English, numbers where there are numbers.
 
+## Every 5 minutes, on every task — hard rule (Harry, 9 Oct 2026)
+
+*"Give the progress every 5 mins and give estimated percents (this should be
+hard coded in the skill and should run on every task) … add a time estimate
+… with an auto run to check every 5 mins that it couldn't be done quicker."*
+
+- **Arm it at the start of every task that takes more than a few minutes.**
+  Call `send_later` (claude-code-remote) with `delay_minutes: 5` and a
+  message like "5-min progress check: post bars + speed check". When it
+  fires: post the update, then re-arm another 5 minutes. Stop re-arming when
+  the task is done or Harry says stop. (Cron triggers can't go below hourly,
+  so it is always a chain of one-shot `send_later` calls.)
+- **Every bar carries an estimated %** (the rules below say how it's worked
+  out) **and a time left**, e.g. `██████░░░░  60% · ~15 min left`.
+- **One line for the whole round:** `Started 14:05 · now 14:20 · est. done
+  ~14:50 (was ~14:45)`. If the estimate moved, say why in four words.
+- **The speed check, every 5 minutes.** Ask: could this finish sooner?
+  Look for: an agent waiting on slow browser checks, work that could run in
+  parallel, a heavier model than the job needs, a re-take that won't change
+  the outcome, an idle wait. Write one line: `Speed check: <what you
+  changed>` or `Speed check: nothing faster found (<what you checked>)`.
+  Act on it in the same turn, don't just note it.
+- Keep it to the bars, the time line, the speed line and the usage block. No
+  prose.
+- **Every status message uses this shape, however short (Harry, 9 Oct 2026:
+  "why have you stopped using the progress skill and reverted to the
+  explanation?").** A quick check-in, a "nothing changed" note or a reply to
+  "what are you doing" is still bars + time line + speed line + usage block.
+  Never swap it for a sentence of prose.
+- **When Harry is away or asleep (Harry, 9 Oct 2026):** *"change updates from
+  every 5 mins to every 30 mins but continuously check to see that you are
+  doing things the best you can every 5 so things don't drift."* The 5-minute
+  timer keeps running and the speed/quality check still happens every time
+  (act on it), but the posted update only goes out every 30 minutes. Between
+  them, say nothing unless something is blocked or broken.
+
+## Auto-deploy at every major update (Harry, 9 Oct 2026)
+
+*"let's also add that it auto deploys at any major update."*
+
+- **A major update** = a piece of work reaching `built` and checked: a new
+  feature, page or screen, a finished fix round, or a bar hitting 100%. Not
+  each small commit.
+- **Deploy** = commit, push `Harry`, then open and merge a PR `Harry` → `main`
+  so Vercel builds the live site. Standing permission from Harry. No need to
+  ask each time.
+- **Only when the checks pass**: `npx tsc --noEmit`, the one-engine guard, the
+  tests for the files touched, and `npm run build`. A red check means no
+  deploy: fix it first, or report the bar as `blocked: <check>`.
+- Never deploy a builder's half-done worktree. Merge it into `Harry` first and
+  check the merged copy.
+- The progress bar shows it: `pushed` → `live` once main has it. Add the
+  merge time to the time line (`Deployed 14:32`).
+
 ## When to send one
 
 - **As you go, without being asked (Harry, 5 Oct 2026: "run the progress
@@ -52,3 +108,71 @@ Waiting on: you, to merge Harry → main
 - Whenever asked (any of the trigger phrases).
 - After a long round finishes, as the first thing in the reply, before detail.
 - Mid-round, if more than about 20 minutes have passed with no word.
+
+## Expected token use (Harry, 8 Oct 2026)
+
+*"add an expected token usage to the progress skill … based on previous
+builds the expected percent of weekly usage … or at least token usage."*
+
+**Every progress update carries this block — no exceptions (Harry, 8 Oct
+2026: "dont leave out the expected tokens and percentage in the progress,
+make it a rule").** Even a short bars-only update, even when nothing changed.
+An update without it is incomplete.
+
+Under the bars, add one usage block:
+
+```
+Tokens so far   ~1.2M  (builders finished: 2 of 4)
+Expected total  ~5–7M for this round
+Weekly usage    started at 11% → expected ~18–20% at the end (rough)
+```
+
+- **Count real numbers where you have them.** Every finished agent reports
+  its tokens (`subagent_tokens` in its completion notice). Add those up.
+  Running agents have no count yet: use the guide below for them.
+- **Guide from past builds** (update this table when a round finishes):
+
+  | Kind of job | Typical tokens |
+  |---|---|
+  | Research / audit (everyday model) | 0.2–0.5M |
+  | Option pictures (show-options) | 0.5–1.5M |
+  | Logic or server build (top model) | 0.4–3M |
+  | 3D scene build (top model) | 0.4–0.5M per focused builder (8 Oct: 3D drills engine 0.41M, two drills 0.47M, animations 0.42M) |
+  | Playtest / filming pass | 0.5–2M |
+  | Patch notes page | 0.3–0.8M |
+
+- **Weekly %.** We can't read the usage meter. Ask for the % at the start
+  and end of a round, then write the tokens-per-1% figure here so the next
+  estimate is better. Until then say "rough".
+  Calibrate only when nothing else is running on the account (Harry, 8 Oct:
+  other projects share the same weekly meter). Harry says when his other
+  tasks are done; then note the %, run one task here, note the % again.
+  Calibration log (start % → end %, tokens):
+  - 8 Oct 2026, 3D training drills round: 17% → 18% ("on the higher side"),
+    with nothing else running. Builders 1.5M (research 0.21M + engine 0.41M +
+    two drills 0.47M + animations 0.42M) plus the coordinator's own turns.
+    **So 1% of the week ≈ 1.5–2M builder tokens.** Use this until a second
+    reading refines it.
+  - 9 Oct 2026, overnight 3D rebuild + day round: 27% (04:38) → 43% (13:38),
+    with ~2% from another chat, so ~14% for this session. Tokens over that
+    span: roughly 17M top-model + 1.5M everyday (builders + coordinator,
+    rough count). **So 1% ≈ 1.2–1.3M top-model tokens.** The estimates
+    posted that day (78–85%) were far too high: they used the 1.5–2M figure
+    but guessed tokens high. Count finished builders' real numbers instead.
+- **Tokens are not equal across models (Harry, 9 Oct 2026).** The weekly
+  limit is spent faster by the top model than by the everyday model for the
+  same number of tokens. So: count tokens **per model** (top / everyday /
+  small), and convert each with its own figure. The 8 Oct reading above was
+  almost all top-model builders, so "1% ≈ 1.5–2M" is a **top-model** figure.
+  There is no everyday-model figure yet: take one the same way (one
+  everyday-model-only task, % before and after) and log it here. Until then,
+  say the everyday-model part is a guess. Usage block then reads e.g.
+  `Tokens so far   ~1.2M top · ~0.4M everyday`.
+- Always say it's an estimate. Never present a guess as measured.
+
+## Timed updates
+
+If asked for updates every N minutes during a build, schedule them with
+`send_later` (claude-code-remote) and re-arm after each one. Stop when the
+round is done or when asked. If nothing changed since the last one, send the
+bars anyway but keep it to the bars.

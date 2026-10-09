@@ -4,6 +4,7 @@ import {
   DynamicResolution, FrameGate, cameraMoved, tierFromBenchMs, tierHintFromGpu, TIER_PROFILES,
   mergeStaticByMaterial, instanceRepeats, disposeObject3D,
 } from "../../lib/star/three3d/perf";
+import { Governor, GOV_LADDER, rungForTier, governedPixelRatio } from "../../lib/star/three3d/governor";
 import { autoTierFromDevice, deviceKind, stepDownTier, shadowSizeFor, parseQuality3d, quality3dTier, type DeviceInfo } from "../../lib/star/three3d/quality";
 
 /**
@@ -20,17 +21,17 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   const fake = { setPixelRatio: (v: number) => { pr = v; } } as unknown as T.WebGLRenderer;
   const prof = TIER_PROFILES.medium;
   const dyn = new DynamicResolution(fake, prof, { devicePixelRatio: 3 });
-  check(pr === 1.25, `starts at the tier ceiling (1.25), got ${pr}`);
+  check(pr === prof.maxPixelRatio, `starts at the tier ceiling (${prof.maxPixelRatio}), got ${pr}`);
   let t = 1000;
   for (let i = 0; i < 40; i++) { t += 60; dyn.frame(t); } // 16 fps for 2.4 s
-  check(pr < 1.25 && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
+  check(pr < prof.maxPixelRatio && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
   for (let i = 0; i < 400; i++) { t += 60; dyn.frame(t); }
   check(pr === prof.minPixelRatio, `never below the floor ${prof.minPixelRatio} (got ${pr})`);
   const low = pr;
   for (let i = 0; i < 150; i++) { t += 16.7; dyn.frame(t); } // 2.5 s of fast frames
   check(pr === low, `does not climb back within 4 s (got ${pr})`);
   for (let i = 0; i < 2000; i++) { t += 16.7; dyn.frame(t); }
-  check(pr === 1.25, `fast frames climb back to the ceiling (got ${pr})`);
+  check(pr === prof.maxPixelRatio, `fast frames climb back to the ceiling (got ${pr})`);
 }
 
 // ── an up-step that has to come straight back down is not retried for 15 s ──
@@ -92,13 +93,14 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
 // ── each tier's caps (High must stay exactly the 5 Oct New look) ──
 {
   const H = TIER_PROFILES.high, M = TIER_PROFILES.medium, L = TIER_PROFILES.low;
-  check(H.maxPixelRatio === 1.5 && H.movePixelRatio === 1 && H.antialias && H.shadows && H.fpsCap === 60 && H.stillFps === 30 && H.outlines,
-    "High = today's New look: 1.5 still / 1 moving, antialias, shadows, 60 moving / 30 still, outlines");
+  // 9 Oct 2026: smooth edges on a 3x phone on every tier (antialias, never under 1.25 px/pt on Medium and High)
+  check(H.maxPixelRatio === 2 && H.movePixelRatio === 1.5 && H.minPixelRatio >= 1.25 && H.antialias && H.shadows && H.fpsCap === 60 && H.stillFps === 20 && H.outlines,
+    "High: 2 still / 1.5 moving, antialias, shadows, 60 moving / 20 still, outlines");
   check(shadowSizeFor(H, 2048) === 2048 && shadowSizeFor(H, 1024) === 1024, "High keeps each scene's own shadow map (garden 2048, shop 1024)");
-  check(M.maxPixelRatio === 1.25 && !M.antialias && M.shadows && shadowSizeFor(M, 2048) === 1024 && shadowSizeFor(M, 1024) === 512 && M.fpsCap === 60 && M.outlines,
-    "Medium: 1.25 still, no antialias, half-size shadows, 60 moving, outlines");
-  check(L.maxPixelRatio === 1 && !L.antialias && !L.shadows && shadowSizeFor(L, 2048) === 0 && L.fpsCap === 30 && L.stillFps === 30 && !L.outlines,
-    "Low: 1 still, no antialias, no shadows, 30 always, no outlines");
+  check(M.maxPixelRatio === 1.5 && M.minPixelRatio >= 1.25 && M.antialias && M.shadows && shadowSizeFor(M, 2048) === 1024 && shadowSizeFor(M, 1024) === 512 && M.fpsCap === 60 && !M.outlines,
+    "Medium: 1.5 still and moving, antialias, half-size shadows, 60 moving, no outlines");
+  check(L.maxPixelRatio === 1.25 && L.antialias && !L.shadows && shadowSizeFor(L, 2048) === 0 && L.fpsCap === 30 && L.stillFps === 20 && !L.outlines,
+    "Low: 1.25, antialias, no shadows, 30 moving / 20 still, no outlines");
   for (const p of [H, M, L]) check(p.minPixelRatio <= p.movePixelRatio && p.movePixelRatio <= p.maxPixelRatio, `${p.tier}: floor <= moving <= still`);
   check(H.maxPixelRatio > M.maxPixelRatio && M.maxPixelRatio > L.maxPixelRatio, "each tier down draws fewer pixels standing still");
   check(stepDownTier("high") === "medium" && stepDownTier("medium") === "low" && stepDownTier("low") === null, "a slow scene steps down one tier at a time");
@@ -120,7 +122,7 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   check(pick({ dpr: 2, ua: IPAD, platform: "MacIntel", touchPoints: 5 }) === "high", "iPad: High");
   check(pick({ dpr: 2.625, ua: ANDROID, memoryGb: 8, cores: 8 }) === "medium", "mid-range Android (8 GB, 8 cores): Medium");
   check(pick({ dpr: 2, ua: ANDROID, memoryGb: 2, cores: 8 }) === "low" && pick({ dpr: 2, ua: ANDROID, memoryGb: 4, cores: 4 }) === "low", "a 2 GB or 4-core Android: Low");
-  check(pick({ dpr: 3, ua: ANDROID, memoryGb: 8, cores: 8, gpuHint: "high" }) === "high", "Android with a known flagship GPU: High");
+  check(pick({ dpr: 3, ua: ANDROID, memoryGb: 8, cores: 8, gpuHint: "high" }) === "medium", "Android, even a flagship GPU: Medium (phones start on Medium, 9 Oct 2026)");
   check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 8, cores: 8 }) === "high" && pick({ dpr: 2, ua: DESKTOP }) === "high", "desktop: High");
   check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 4, cores: 4 }) === "medium", "a 4 GB desktop: Medium");
   check(pick({ dpr: 1, ua: DESKTOP, memoryGb: 8, cores: 8, gpuHint: "low" }) === "low", "software-drawn / weak GPU caps it at Low");
@@ -166,9 +168,63 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   check(texFreed === 1 && matFreed === 1 && geoFreed === 1, `each thing freed once (tex ${texFreed}, mat ${matFreed}, geo ${geoFreed})`);
 }
 
+// ── the governor (three3d/governor.ts): one rung down after ~2.5 s of slow frames, one back up after 15 s of fast ──
+{
+  const changes: string[] = [];
+  const g = new Governor({ start: "medium", onChange: (r, i, why) => changes.push(`${why}:${i}:${r.tier}`) });
+  check(g.index === rungForTier("medium") && g.index === 1 && g.tier === "medium", "a phone opens on Medium (rung 1)");
+  check(GOV_LADDER[1].shadows === "full" && GOV_LADDER[1].post === "full" && GOV_LADDER[1].pixelRatio === 2, "Medium as built: nothing given up while it keeps up");
+  let t = 1000;
+  const run = (ms: number, forS: number, cap = 60) => { const end = t + forS * 1000; while (t < end) { t += ms; g.frame(t, cap); } };
+  run(16.7, 5);
+  check(g.index === 1 && g.downs === 0, "60 fps: stays put");
+  run(33, 6, 30);
+  check(g.index === 1, "a scene capped at 30 on purpose is not slow");
+  t += 1000; g.frame(t); // a pause: the window starts again
+  run(28, 2);
+  check(g.index === 1, "under 2.5 s of slow frames: no step yet");
+  run(28, 0.6);
+  check(g.index === 2 && g.downs === 1, `2.5 s at ~36 fps: one rung down (now ${g.index})`);
+  check(GOV_LADDER[2].pixelRatio === 1.5 && GOV_LADDER[2].shadows === "full" && GOV_LADDER[2].post === "full", "the first thing given up is the moving picture's pixels (to 1.5, no lower)");
+  run(28, 1);
+  check(g.index === 2, "3 s to judge the new rung before another step");
+  run(28, 2.6);
+  check(g.index === 3 && g.rung.shadows === "lite" && g.rung.post === "lite", `then, as an emergency, one light pass and blob shadows (now ${g.index})`);
+  run(80, 30);
+  check(g.index === GOV_LADDER.length - 1 && g.rung.shadows === "off" && g.rung.post === "off", "the bottom: no live shadows, no post pass; never lower");
+  t += 1000; g.frame(t);
+  run(16.7, 13);
+  check(g.index === GOV_LADDER.length - 1, "not fast for long enough yet: no step up");
+  run(16.7, 2.5);
+  check(g.index === GOV_LADDER.length - 2 && g.ups === 1, `15 s at full rate: one rung back up (now ${g.index})`);
+  run(16.7, 3.5);
+  t += 1000; g.frame(t);
+  run(28, 3);
+  check(g.index === GOV_LADDER.length - 1, "slow again soon after: back down");
+  run(16.7, 40);
+  check(g.index === GOV_LADDER.length - 1, "it bounced: never steps up again");
+  const g2 = new Governor({ start: "high" });
+  t = 0; g2.frame(t); t += 5000; g2.frame(t); for (let i = 0; i < 300; i++) { t += 16.7; g2.frame(t); }
+  check(g2.index === 0, "a 5 s gap (hidden tab, a menu) is not a slow frame");
+  for (let i = 0; i < 2000; i++) { t += 16.7; g2.frame(t); }
+  check(g2.index === 0 && g2.ups === 0, "never above the starting rung");
+  let drawn = 0; t = 0;
+  for (let i = 0; i < 60; i++) { t += 16.7; if (g2.shouldDraw(t, true)) drawn++; }
+  check(drawn >= 18 && drawn <= 21, `a still screen draws ~20 a second (drew ${drawn})`);
+  g2.setPaused("menu", true);
+  check(!g2.shouldDraw(t + 100), "paused: no draw");
+  g2.setPaused("menu", false);
+  check(g2.shouldDraw(t + 200), "un-paused: draws");
+  check(governedPixelRatio(2, GOV_LADDER[4], 3) === 1.5 && governedPixelRatio(2, GOV_LADDER[1], 3) === 2 && governedPixelRatio(2.5, GOV_LADDER[0], 1) === 1, "pixel ratio: never under 1.5 from the governor; the screen caps it");
+  const frozen = new Governor({ start: "high", frozen: true });
+  t = 0; for (let i = 0; i < 400; i++) { t += 60; frozen.frame(t); }
+  check(frozen.index === 0, "frozen (?gov=0): never steps");
+  g.dispose(); g2.dispose(); frozen.dispose();
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems) console.error("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS — the shared 3D layer: render scale holds the budget without flicker, the frame gate caps and skips, merges and instances keep the picture; each 3D quality tier gives its caps (High = today's New look) and Auto picks a sensible tier from fake device info");
+console.log("PASS — the shared 3D layer: render scale holds the budget without flicker, the frame gate caps and skips, merges and instances keep the picture; each 3D quality tier gives its caps (High = today's New look) and Auto picks a sensible tier from fake device info; the governor steps one rung at a time, waits, climbs back once, ignores pauses");
