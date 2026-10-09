@@ -57,13 +57,17 @@ export const PLAY = {
   /** How far away (m) is the widest framing. */
   wideAt: 30,
   /** How much of the way from the goal to the ball it turns while the ball is away. */
-  ballTurn: 0.7,
+  ballTurn: 0.5,
+  /** Ball and goal this close in angle (radians, ~36°) both fit a phone's picture: it aims between them. */
+  bothFit: 0.63,
+  /** The furthest it turns off the goal towards the ball (radians, 70°). */
+  maxDev: 1.22,
   /** How much of the way it looks towards the ball while the ball is away. */
   ballLook: 0.5,
   /** Shooting range (m from the goal): beyond FAR it only drifts towards goal; inside NEAR it swings round fully. */
   rangeFar: 34, rangeNear: 22,
   /** Out of range it turns towards the goal at this share of its usual pace. */
-  driftShare: 0.3,
+  driftShare: 0.7,
   /** Lead: it slides this many seconds of your run ahead, at most LEAD_MAX metres. */
   leadS: 0.5, leadMax: 3.2,
 } as const;
@@ -140,13 +144,17 @@ export function wantedHeading(cam: PracticeCam, f: PracticeFrame): number {
   if (f.play) {
     // play mode: towards goal (lazily out of shooting range), and towards the ball while it's away
     const range = Math.max(0, Math.min(1, (PLAY.rangeFar - Math.hypot(dx, dy)) / (PLAY.rangeFar - PLAY.rangeNear)));
-    const g = PLAY.driftShare + (1 - PLAY.driftShare) * range;
-    let want = wrap(cam.heading + wrap(base - cam.heading) * Math.max(g, cam.focus));
-    if (f.ball && cam.focus > 0.01) {
-      const bx = f.ball.x - f.you.x, by = f.ball.y - f.you.y;
-      if (Math.hypot(bx, by) > NEAR) want = wrap(want + wrap(Math.atan2(by, bx) - want) * PLAY.ballTurn * cam.focus);
-    }
-    return want;
+    // with the ball it swings fully to goal; without it, it drifts there (fully once in shooting range)
+    const g = Math.max(PLAY.driftShare + (1 - PLAY.driftShare) * range, cam.tight);
+    const want = wrap(cam.heading + wrap(base - cam.heading) * g);
+    if (!f.ball || cam.focus < 0.01) return want;
+    const bx = f.ball.x - f.you.x, by = f.ball.y - f.you.y;
+    if (Math.hypot(bx, by) < NEAR) return want;
+    // the ball away: keep the ball AND the goal in shot when they fit (aim between them); else turn to the
+    // ball but stay goal-side of it, never more than maxDev off the goal (so it comes back round quickly)
+    const a = wrap(Math.atan2(by, bx) - base), half = PLAY.bothFit / 2;
+    const dev = Math.max(-PLAY.maxDev, Math.min(PLAY.maxDev, Math.abs(a) < PLAY.bothFit ? a * PLAY.ballTurn : Math.sign(a) * (Math.abs(a) - half)));
+    return wrap(want + wrap(base + dev - want) * cam.focus);
   }
   if (!f.ball || cam.track < 0.01) return base;
   const bx = f.ball.x - f.you.x, by = f.ball.y - f.you.y;
@@ -208,9 +216,9 @@ export function stepPracticeCam(cam: PracticeCam, f: PracticeFrame, dt: number):
 }
 
 /** Ease `v` towards `want`: eased by PLAY_EASE, never faster than PLAY_RATE a second. */
-function easeCapped(v: number, want: number, dt: number) {
-  const d = (want - v) * Math.min(1, dt * PLAY_EASE);
-  return v + Math.max(-PLAY_RATE * dt, Math.min(PLAY_RATE * dt, d));
+function easeCapped(v: number, want: number, dt: number, fast = 1) {
+  const d = (want - v) * Math.min(1, dt * PLAY_EASE * fast);
+  return v + Math.max(-PLAY_RATE * fast * dt, Math.min(PLAY_RATE * fast * dt, d));
 }
 
 /** Play mode's blends for this frame: how far away the ball is, whether to frame it, tight or not, the lead. */
@@ -222,7 +230,8 @@ function stepPlay(cam: PracticeCam, f: PracticeFrame, dt: number) {
   const wantFocus = away || p.shot ? 1 : 0;
   if (!cam.ready) { cam.away = wantAway; cam.focus = wantFocus; cam.tight = p.have ? 1 : 0; }
   cam.away = easeCapped(cam.away, wantAway, dt);
-  cam.focus = easeCapped(cam.focus, wantFocus, dt);
+  // the ball back at your feet: it lets go of the ball twice as fast (back round to goal sooner)
+  cam.focus = easeCapped(cam.focus, wantFocus, dt, p.have ? 2 : 1);
   cam.tight = easeCapped(cam.tight, p.have ? 1 : 0, dt);
   // the lead: a slide ahead of your run (never a turn)
   const sp = Math.hypot(p.vel.x, p.vel.y), lead = Math.min(PLAY.leadMax, sp * PLAY.leadS);

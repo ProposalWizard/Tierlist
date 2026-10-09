@@ -240,12 +240,12 @@ const waitTouch = (w: ReturnType<typeof makeTwoTouch>["world"], off: number) => 
     return Math.abs((d.x * r.x + d.y * r.y) / zf) < tx * 0.95 && Math.abs((d.x * u.x + d.y * u.y + d.z * u.z) / zf) < ty * 0.95;
   };
   const run = (dynamic: boolean) => {
-    let ball = 0, goal = 0, n = 0, ballAway = 0, nAway = 0, maxTurn = 0;
+    let ball = 0, goal = 0, n = 0, ballAway = 0, nAway = 0, maxTurn = 0, goalHeld = 0, nHeld = 0;
     for (let seed = 1; seed <= 6; seed++) {
       const d = DRILLS.find((x) => x.id === "free-roam")!;
       const s = d.start!({ seed, you: { id: "you", name: "You", skills: skillsOf(72) }, mates: [{ id: "m1", name: "A", skills: skillsOf(72) }, { id: "m2", name: "B", skills: skillsOf(72) }] });
       const w = s.world, cam = makePracticeCam();
-      let prevH = 0;
+      let prevH = 0, heldSince = -1;
       for (let i = 0; i < 60 * 60; i++) {
         const you = w.you()!, b = w.ball;
         // a simple bot: run at goal with it, pass every couple of seconds, shoot inside 18 m; without it, chase and call
@@ -267,17 +267,21 @@ const waitTouch = (w: ReturnType<typeof makeTwoTouch>["world"], off: number) => 
         n++;
         const bIn = inFrame(c, { x: b.x, y: b.y, z: Math.max(0.11, b.z) });
         if (bIn) ball++;
-        if (inFrame(c, { x: CX, y: 0, z: 1.2 })) goal++;
+        const gIn = inFrame(c, { x: CX, y: 0, z: 1.2 });
+        if (gIn) goal++;
+        heldSince = w.owner === you.id ? (heldSince < 0 ? i : heldSince) : -1;
+        if (heldSince >= 0 && i - heldSince > 90) { nHeld++; if (gIn) goalHeld++; }
         if (w.owner !== you.id && Math.hypot(b.x - you.x, b.y - you.y) > 5) { nAway++; if (bIn) ballAway++; }
       }
     }
-    return { ball: ball / n, goal: goal / n, ballAway: ballAway / Math.max(1, nAway), maxTurn };
+    return { ball: ball / n, goal: goal / n, ballAway: ballAway / Math.max(1, nAway), maxTurn, goalHeld: goalHeld / Math.max(1, nHeld) };
   };
   const before = run(false), after = run(true);
   const pc = (v: number) => `${(v * 100).toFixed(0)}%`;
-  console.log(`free roam framing (6 × 60 s, a bot playing): ball in frame ${pc(before.ball)} → ${pc(after.ball)}; ball in frame while it's away from you ${pc(before.ballAway)} → ${pc(after.ballAway)}; goal in frame ${pc(before.goal)} → ${pc(after.goal)}; fastest turn ${deg(after.maxTurn).toFixed(0)}°/s`);
+  console.log(`free roam framing (6 × 60 s, a bot playing): ball in frame ${pc(before.ball)} → ${pc(after.ball)}; ball in frame while it's away from you ${pc(before.ballAway)} → ${pc(after.ballAway)}; goal in frame ${pc(before.goal)} → ${pc(after.goal)} (with the ball 1.5 s+: ${pc(before.goalHeld)} → ${pc(after.goalHeld)}); fastest turn ${deg(after.maxTurn).toFixed(0)}°/s`);
   check(after.ballAway > before.ballAway + 0.05, `play camera keeps the ball in shot more while it's away (${pc(before.ballAway)} → ${pc(after.ballAway)})`);
   check(after.ball >= before.ball, `ball in frame overall no worse (${pc(before.ball)} → ${pc(after.ball)})`);
+  check(after.goalHeld > 0.85, `with the ball a moment, the goal is in shot (${pc(after.goalHeld)})`);
   check(after.maxTurn <= MAX_TURN * 1.001, `play camera never turns faster than 60°/s (${deg(after.maxTurn).toFixed(1)}°/s)`);
 }
 
