@@ -12,7 +12,8 @@
  */
 import { HALF_LEN, PITCH_W, REACH_FOOT, REACH_JUMP_Z, STEP, clamp, skill01, type Contact3 } from "./constants";
 import { GOAL, newBall, predictBall, stepBall3d, type Ball3, type BallEvent, type GoalShape } from "./ball";
-import { angDiff, speedOf, stepMover, type P3 } from "./player";
+import { angDiff, speedOf, stepHuman, stepMover, type P3 } from "./player";
+import { canSprint, effortOf, freshStamina, speedsForPace, stepStamina, type Stamina } from "../three3d/gait";
 import {
   airStrike, ballAtFeet, strikeBall, dribbleTouch, firstTouch, passTo, passArrive, groundPassTime, shootFromPull, tackle, throwOut,
 } from "./actions";
@@ -62,6 +63,8 @@ export interface Rules {
   /** Where the keeper throws it (default: a random outfielder). */
   throwTarget?(w: World, k: P3): P3 | null;
   finished(w: World): boolean;
+  /** Sprinting uses stamina (Free Roam). Off: you sprint as long as you like. Only with World.newFeel. */
+  stamina?: boolean;
 }
 
 export interface WorldOptions {
@@ -95,6 +98,16 @@ export class World {
   /** Counts every strike (yours and the AI's): the keeper dives at most once per number. */
   shotSeq = 0;
   input: WorldInput = { move: { x: 0, y: 0 }, sprint: false };
+  /**
+   * Your movement, the new feel (Harry, 9 Oct 2026): stick push sets walk /
+   * jog / run, a full push sprints, speed builds and eases off
+   * (play3d/player.ts stepHuman). The screen sets it from Settings → Look →
+   * Motion (Mocap: on; Old: off, the feel from before). Off by default so the
+   * tests' measured AI numbers stay as they were.
+   */
+  newFeel = false;
+  /** Your sprint bar (rules.stamina): 0..1, and locked out after running it to empty. */
+  stamina: Stamina = freshStamina();
   /** A drill's helping hand: moves YOU only while the stick is let go (Two Touch walks you under the ball). */
   assist: WorldInput | null = null;
   private queue: Action3[] = [];
@@ -214,7 +227,11 @@ export class World {
       }
       if (p.human) {
         const i = this.assist && Math.hypot(this.input.move.x, this.input.move.y) < 0.1 ? this.assist : this.input;
-        stepMover(p, i.move, i.sprint, dt);
+        if (this.newFeel) {
+          const useSt = !!this.rules.stamina;
+          stepHuman(p, i.move, i.sprint, dt, !useSt || canSprint(this.stamina));
+          if (useSt) this.stamina = stepStamina(this.stamina, effortOf(speedOf(p), !!p.sprinting, speedsForPace(p.skills.pace)), dt);
+        } else stepMover(p, i.move, i.sprint, dt);
       }
       else if (!this.rules.brain?.(this, p, dt)) (BRAINS[(p.mind.brain as string) ?? "idle"] ?? BRAINS.idle)(this, p, dt);
       // stay on the pitch

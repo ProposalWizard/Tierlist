@@ -39,6 +39,8 @@ import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
+import { strideFor } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
@@ -802,6 +804,9 @@ async function buildShop(
     jogA = act("Jog_Fwd_Loop");
     buyA = mixer.clipAction(clip("Interact"));
   }
+  // Motion: Mocap (Settings → Look): walk → jog → run → sprint, on the same
+  // foot, at the speed his feet go (three3d/gait.ts). Old: the walk/jog blend below.
+  const gaitBlend = await strideFor(THREE, newLook ? person : null, mixer, { idle: idleA, walk: walkA, jog: jogA }).catch((e) => { console.error("gait clips", e); return null; });
   // from the garden: a few steps in from the doors, so the camera fits behind
   const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
   player.position.set(start.x, 0, start.z);
@@ -1001,7 +1006,7 @@ async function buildShop(
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const run = keys.has("shift") ? 1 : 0.6;
+      const run = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * run; iy = (iy / m) * run;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -1020,8 +1025,13 @@ async function buildShop(
         mag = st.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, st.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the shop)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (buying > 0) speed *= 0.8;
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
@@ -1041,11 +1051,15 @@ async function buildShop(
     const wIdle = Math.max(0, 1 - speed / WALK);
     const dur = buyA.getClip().duration;
     const gesture = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
-    idleA.setEffectiveWeight(wIdle * (1 - gesture));
-    walkA.setEffectiveWeight(wWalk * (1 - gesture));
-    jogA.setEffectiveWeight(wJog * (1 - gesture));
     buyA.setEffectiveWeight(gesture);
-    if (newLook) {
+    if (gaitBlend) gaitBlend.update(speed, dt, 1 - gesture);
+    else {
+      idleA.setEffectiveWeight(wIdle * (1 - gesture));
+      walkA.setEffectiveWeight(wWalk * (1 - gesture));
+      jogA.setEffectiveWeight(wJog * (1 - gesture));
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) {
       // the walk and the jog share one stride timing, so they share one pace
       // and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
@@ -1344,3 +1358,4 @@ float kitKitAmt = 0.0; float kitRough = 0.8;`)
   m.customProgramCacheKey = () => cacheKey;
   m.needsUpdate = true;
 }
+
