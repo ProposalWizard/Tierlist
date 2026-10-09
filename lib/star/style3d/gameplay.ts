@@ -36,6 +36,8 @@ export const KEEPER = { shirt: "#16a34a", trim: "#0b3d1d" };
 export interface StyleGameplay {
   session: DrillSession;
   heading(): number;
+  /** The man drawn under a tap (px), or null (Play3DController.pick). */
+  pick(x: number, y: number): string | null;
   setStyle(def: StyleDef): void;
   setFlat(on: boolean): void;
   setTilt(deg: number): void;
@@ -327,6 +329,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   return {
     session,
     heading: () => ctrl.heading(),
+    pick: (x, y) => ctrl.pick(x, y),
     setStyle(d) { def = d; restyle(); },
     setFlat(on) { flat = on; applyBodies(); },
     setTilt(deg) { tilt = deg; },
