@@ -8,7 +8,7 @@ import fs from "node:fs";
 import {
   TOON_BODIES, TOON_FILES, TOON_HEIGHT, toonBodyFor, toonSkinFor, toonHairFor, toonPickFor,
   toonKitColours, toonWearsSuit, setToonYou, toonYou, resolveToonBody, resolveToonHead,
-  TOON_HEADS, TOON_PLAYER_HEADS, TOON_SUIT_HEADS, toonHeadFor, TOON_BUILD_SCALE,
+  TOON_HEADS, TOON_PLAYER_HEADS, TOON_SUIT_HEADS, toonHeadFor, TOON_BUILD_SCALE, yourToonHead, yourToonBody,
 } from "../../lib/star/style3d/toon/bodies";
 import { toonBand, TOON_BANDS } from "../../lib/star/style3d/toon/shader";
 import { SKIN_TONES, HAIR_COLOURS } from "../../lib/star/playerIdentity";
@@ -71,6 +71,14 @@ check(toonYou().body === "c3" && toonYou().head === "h4" && toonYou().skin === "
 setToonYou({ body: "zz" as never, head: "m1" });
 check(toonYou().body === "c1", "an unknown body did not fall back to C1");
 check(toonYou().head === "h1", "a suit head (or unknown) for you did not fall back to H1");
+// an old save (no head3d / body3d): a seeded head and build, stable, nudged by the old hair style
+const old = { firstName: "Sam", lastName: "Reid", startYear: 2026 };
+check(yourToonHead(old) === yourToonHead({ ...old }) && TOON_PLAYER_HEADS.includes(yourToonHead(old)), "an old save gets a stable player head");
+check(TOON_BODIES.includes(yourToonBody(old)), "an old save gets a build");
+check(yourToonHead({ ...old, hairStyle: "buzz" }) === "h3" && yourToonHead({ ...old, hairStyle: "long" }) === "h4", "the old hair style picks a matching head");
+check(yourToonHead({ ...old, head3d: "h5" }) === "h5" && yourToonHead({ ...old, head3d: "m1" }) !== "m1", "a chosen head wins; a suit head is not yours");
+const seen = new Set<string>(); for (let i = 0; i < 60; i++) seen.add(yourToonHead({ firstName: `P${i}`, lastName: "X", startYear: 2026 }));
+check(seen.size >= 5, `old saves spread over ${seen.size} heads`);
 check(resolveToonHead(undefined) === "h1" && resolveToonHead("h5") === "h5", "resolveToonHead");
 check(resolveToonBody(undefined) === "c1" && resolveToonBody("c2") === "c2", "resolveToonBody");
 

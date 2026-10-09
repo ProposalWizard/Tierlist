@@ -174,7 +174,11 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
   mat.roughness = 0.9;
   mat.envMapIntensity = 0.8;
   const lightsPars = (T.ShaderChunk as Record<string, string>).lights_physical_pars_fragment
-    .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = toonStep(dotNL) * directLight.color;\n\ttnLitEdge = max(tnLitEdge, step(0.42, dotNL) * dot(directLight.color, vec3(0.33)));");
+    .replace("vec3 irradiance = dotNL * directLight.color;", "vec3 irradiance = toonStep(dotNL) * directLight.color;\n\ttnLitEdge = max(tnLitEdge, step(0.42, dotNL) * dot(directLight.color, vec3(0.33)));")
+    // The highlight keeps the real light falloff. With the cel band's light (full even at a grazing
+    // angle) the GGX term, which divides by the light's angle, blew up to single white pixels along
+    // the silhouette that the bloom turned into glowing squares (Harry, 9 Oct 2026).
+    .replace("reflectedLight.directSpecular += irradiance * BRDF_GGX(", "reflectedLight.directSpecular += (dotNL * directLight.color) * BRDF_GGX(");
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
@@ -190,9 +194,10 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
   // a warm rim on the lit edge (golden hour)
   float tnF = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
   float tnRim = step(0.72, tnF) * step(0.05, tnLitEdge);
-  outgoingLight += tnRim * 0.35 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb * max(tnLitEdge, 0.5);
+  // capped: a bright lamp close by (the shop's spots) made the rim burn white through the bloom
+  outgoingLight += tnRim * 0.35 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb * clamp(tnLitEdge, 0.5, 1.2);
 }
 #include <opaque_fragment>`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v1";
+  mat.customProgramCacheKey = () => "people3d-toon-v3";
 }

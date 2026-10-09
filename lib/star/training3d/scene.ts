@@ -14,6 +14,7 @@
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal
  * line). The goal mouth is at Z = 0, the D at Z ≈ 18.
  */
+import { toonYou, toonHeadFor } from "../style3d/toon/bodies";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y } from "../pitch";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -87,8 +88,8 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   const youModel: PlayerModel = playerModelFor(data.you.hairStyle);
   const mateModel: PlayerModel = playerModelFor(data.mate.hairStyle);
   const [youG, mateG, animG] = await Promise.all([
-    loadPeople3d(loader, youModel, body),
-    loadPeople3d(loader, mateModel, body),
+    loadPeople3d(loader, youModel, body, [toonYou().head]),
+    loadPeople3d(loader, mateModel, body, [toonHeadFor("training-mate")]),
     loadPeople3d(loader, "anims", body),
   ]);
   // the kick, reactions and keepy-uppies (a failed load just leaves them standing)

@@ -25,6 +25,7 @@
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
+import { toonYou } from "../style3d/toon/bodies";
 import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
@@ -1034,7 +1035,7 @@ async function buildShop(
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
     // The body: the one body (Settings → Look → "3D people: New") or the old one.
-    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
+    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook(), [toonYou().head]), loadPeople3d(loader, "anims")]);
     person = casual
       ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
         worn: casual, kits: { home: kit0, away: kit0 }, number: null,

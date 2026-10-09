@@ -559,6 +559,27 @@ arms/hands?", and gave ~200 Higgsfield credits for better models.
   inside `HomePlayerFigure` (one head file, 30 fps cap, drag to turn on Home,
   the old figure until it loads).
 
+**Fixed after the first round:** glowing white squares on every lit Style A
+person (shop, garden, cut scenes). Cause: the cel band's full-strength light
+also fed the GGX highlight, which divides by the light angle, so silhouette
+pixels blew up under the bloom. The highlight now uses the real falloff
+(`patchToonBody`, `lib/star/style3d/toon/shader.ts`). Old saves get a seeded
+head and build (`yourToonHead`); scenes load only their heads
+(`loadPeople3d(..., heads)`); the house wardrobe in a kit is your Style A player.
+
+**Not done (next):**
+- 2D match sprites. `node tools/sprites/new/bake-new.mjs reskin` re-bakes every
+  cell on a Style A body into the same rects and anchors, but it is not
+  shippable yet: atlas-0's sprint, kick and keeper dives came from GLB clips
+  that were never committed, and the Old cells are cropped tight to the Old
+  silhouette, so the Style A body overflows them (shrinking to fit gave scales
+  down to 0.3). Needs a decision: re-bake with a fresh index (new rects,
+  same frame counts and timings) or keep 2D Old.
+- Kit decals on the Style A shirt: the back number sits low (`uNumBox` comes
+  from the kit lines; place it between the shoulder blades per head) and the
+  shirt is flat colour (add the textured kit: weave, seams, collar trim).
+- Garden's casual sets still use the human body.
+
 **Half-done / not seen:**
 - Stills were taken on the stand-alone harness only (`tools/styletest/heads.ts`,
   stills in the session scratchpad `r3styleA/stylised-hands.jpg`). The Old/New

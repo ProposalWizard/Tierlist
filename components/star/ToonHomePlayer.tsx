@@ -11,9 +11,9 @@
  * tab is hidden. Until he has loaded (or if 3D can't start) the old figure
  * stays, so the box is never empty.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { toonYou } from "@/lib/star/style3d/toon/bodies";
+import { toonYou, subscribeToonYou } from "@/lib/star/style3d/toon/bodies";
 
 export default function ToonHomePlayer({ career, width, height, where, kitShirt, kitTrim, fallback }: {
   career: CareerState; width: number; height: number; where: "home" | "title"; kitShirt: string; kitTrim: string; fallback: ReactNode;
@@ -21,7 +21,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
   const wrap = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const turn = useRef({ yaw: where === "title" ? -0.35 : 0, drag: null as null | number, from: 0 });
-  const you = toonYou();
+  const you = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const num = career.squadNumber ?? 9;
 
   useEffect(() => {
