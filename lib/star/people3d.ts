@@ -29,6 +29,8 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
+import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "./human3d/human";
+import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 
@@ -152,7 +154,8 @@ export interface PersonLook {
   skin: string;
   hair?: string;
   /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
-  kit?: { shirt: string; trim: string };
+  /** shorts: their own colour (most kits: the trim, which is the default). */
+  kit?: { shirt: string; trim: string; shorts?: string };
   /** The back of the shirt (a canvas texture of the number), or none. */
   number?: THREE.Texture | null;
   face?: FacePic | null;
@@ -169,6 +172,17 @@ const cache = new Map<string, Promise<GLTF>>();
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
 export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
+  // The human (Settings → Look → "3D body: Human", the default with "3D people: New"):
+  // one file for every person; makePerson3d builds the one asked for by name.
+  if (body === "new" && which !== "anims" && humanBodyLook() === "human") {
+    let h = cache.get(HUMAN3D_FILE);
+    if (!h) {
+      h = loadGltfCached<GLTF>(loader, HUMAN3D_FILE);
+      h.catch(() => cache.delete(HUMAN3D_FILE));
+      cache.set(HUMAN3D_FILE, h);
+    }
+    return h.then((g) => ({ ...g, humanWhich: which }) as GLTF);
+  }
   const url = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES)[which];
   // Settings → Look → "Motion: Mocap": the clips come with the motion-capture idle and jog in
   const mocap = which === "anims" && motionLook() === "mocap";
@@ -391,6 +405,8 @@ export interface MakePersonOptions {
   castShadow?: boolean;
   /** Thin the outline nearer the camera than this (metres): see outlineMaterial. Unset: a fixed width, as before. */
   outlineNear?: number;
+  /** The human body only: who to build (height, build, hair, outfit …). Unset: by the file name asked for. */
+  human?: HumanSpec;
 }
 
 /**
@@ -401,6 +417,8 @@ export function makePerson3d(
   T: Three, SkeletonUtils: { clone(o: THREE.Object3D): THREE.Object3D },
   model: GLTF, anims: GLTF, opts: MakePersonOptions = {},
 ): Person3D {
+  const which = (model as GLTF & { humanWhich?: string }).humanWhich;
+  if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
   const meta = model.scene.userData as PersonMeta;
   if (meta.quant) dequantize(T, model, meta.quant);
   const root = new T.Group();
@@ -643,7 +661,7 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   u.uHairK.value = new T.Vector3(hair.r, hair.g, hair.b);
   if (look.kit) {
     u.uShirt.value = lin(T, look.kit.shirt);
-    u.uShorts.value = lin(T, look.kit.trim);
+    u.uShorts.value = lin(T, look.kit.shorts ?? look.kit.trim);
     u.uSocks.value = lin(T, look.kit.shirt);
     u.uTrim.value = lin(T, look.kit.trim);
   }
@@ -698,3 +716,10 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
 
 /** World position of a bone. */
 export function bonePos(T: Three, b: THREE.Object3D): THREE.Vector3 { const v = new T.Vector3(); b.getWorldPosition(v); return v; }
+
+/** The body shader's pieces, for scenes that light the same body their own
+ *  way (the cut-scene people, lib/star/cutscene/face.ts). Read only. */
+export const PEOPLE3D_SHADER = { VERT_HEAD, FRAG_HEAD, FRAG_BODY } as const;
+/** The body's uniforms, shader patch and outline (as makePerson3d makes them),
+ *  for the human body (lib/star/human3d/human.ts). */
+export { makeUniforms as makePeople3dUniforms, patchBody as patchPeople3dBody, outlineMaterial as people3dOutline };

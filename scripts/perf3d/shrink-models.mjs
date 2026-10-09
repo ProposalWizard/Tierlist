@@ -81,6 +81,9 @@ const POLICY = {
   "star/anims3d/mocap-ual.glb": ANIM,
   // The ovation's hugs, dap-ups, pats and claps (tools/ovation3d/author_greetings.py).
   "star/ovation3d/greetings.glb": ANIM,
+  // The human body (tools/human3d/build_human.py): float positions on purpose — the game
+  // re-shapes them per person (build shapes, clothes anchors), so no quantizing.
+  "star/human3d/human.glb": { q: null, webp: true, keepOrder: true },
   "star/onebody/player.glb": PEOPLE.onebody,
   "star/onebody/player-buzz.glb": PEOPLE.onebody,
   "star/onebody/player-long.glb": PEOPLE.onebody,
@@ -142,7 +145,8 @@ for (const f of todo) {
 
   const steps = [dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.TEXTURE] }), prune({ keepAttributes: true, keepLeaves: true, keepSolidTextures: true })];
   if (pol.anim) steps.push(resample({ tolerance: 1e-4 }));
-  if (root.listMeshes().length) steps.push(reorder({ encoder: MeshoptEncoder, target: "size" }));
+  // keepOrder: the file refers to its own vertices by number (the human body's clothes anchors).
+  if (root.listMeshes().length && !pol.keepOrder) steps.push(reorder({ encoder: MeshoptEncoder, target: "size" }));
   let volume = null;
   if (pol.q) {
     if (pol.quantMeta) volume = meshVolume(root.listMeshes().find((m) => m.listPrimitives().some((p) => p.getAttribute("POSITION"))));

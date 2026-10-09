@@ -481,7 +481,10 @@ export async function createPlay3DScene(
     b.lastAct = w.act; b.lastActT = w.actT;
     if (w.keeper && w.dive) {
       // the dive: his own clip, its time pinned to the World's dive progress
-      const clip = w.dive.side > 0 ? "dive_left" : "dive_right";
+      // Motion: Mocap has low and high dives too (tools/mocap3d/keyed.py); Old has the one dive each way
+      const base = w.dive.side > 0 ? "dive_left" : "dive_right";
+      const hi = w.dive.up > 0.55 ? `${base}_high` : w.dive.up < 0.2 ? `${base}_low` : base;
+      const clip = b.play.has(hi) ? hi : base;
       const ci = info(clip);
       if (ci && b.play.has(clip)) {
         if (b.state !== `dive:${clip}`) { b.play.play(clip, { fade: 0.06, from: (ci.launch as number) ?? 0.12, once: true }); b.state = `dive:${clip}`; }
@@ -491,6 +494,10 @@ export async function createPlay3DScene(
       }
     } else {
       if (b.state.startsWith("dive:")) b.state = "";
+      // a dive that gets back up inside the clip (getUp) is let finish before he goes back to the set
+      const cur = b.play.current;
+      const gci = cur && cur.startsWith("dive_") ? info(cur) : null;
+      const gettingUp = !!gci?.getUp && (b.p.actions[cur!]?.time ?? 1e9) < gci.duration - 0.12;
       if (b.onceLeft > 0) b.onceLeft -= dt;
       const once = b.state.startsWith("once:") && b.onceLeft > 0;
       const o = fresh ? onceFor(b, sp, prevBall.z) : null;
@@ -501,7 +508,7 @@ export async function createPlay3DScene(
         const lp = loopFor(b, sp);
         // a man walking off doesn't finish his celebration/despair standing still
         const interrupt = once && (lp === "celebrate_safe" || lp === "slump_walk");
-        if ((!once || interrupt) && lp !== b.state) startLoop(b, lp);
+        if ((!once || interrupt) && lp !== b.state && !gettingUp) startLoop(b, lp);
       }
     }
     // loops at the speed he's really going
@@ -536,7 +543,9 @@ export async function createPlay3DScene(
       const ci = a ? info(b.state.slice(5)) : null;
       const launch = (ci?.launch as number) ?? 0.12, land = (ci?.land as number) ?? 0.7;
       const s = a ? Math.max(0, Math.min(1, (a.time - launch) / (land - launch))) : 0;
-      b.p.root.position.y = Math.max(0, tz - 0.75) * Math.sin(s * Math.PI);
+      // the new dives carry their own height: lift only what their hands don't already reach
+      const handsY = ci?.getUp && ci.contactPoint ? ci.contactPoint[1] : 0.75;
+      b.p.root.position.y = Math.max(0, tz - handsY) * Math.sin(s * Math.PI);
     }
     // keepy-up headers: a nod on top of whatever he's doing
     const head = b.p.bones.Head;

@@ -45,12 +45,15 @@ const start = { ...BASE, ...tunedNow, ...(opt("start") ? JSON.parse(opt("start")
 
 const { browser, page } = await openPhone(url, {
   init: () => { window.__lookTune = { params: {}, version: 0 }; },
-  waitFor: "window.__styleReady === true && window.__frameStep",
+  // the drills scene publishes a frame-stepper; the real game in 3D (scene=real) says when look H is built
+  waitFor: opt("wait", "window.__styleReady === true && window.__frameStep"),
   settleMs: 4000, dsf: Number(opt("dsf", "1")),
 });
 // the picture only: no score bar, minimap or labels in the frames
 await page.addStyleTag({ content: "body *{visibility:hidden !important} canvas{visibility:visible !important}" });
-await page.evaluate(async (t) => { await window.__frameStep.seek(t); }, seekT);
+await page.evaluate(async (t) => {
+  if (window.__frameStep) await window.__frameStep.seek(t);
+}, seekT);
 // the baked light and the LUT load in the background: wait until the look reports both (or 20 s)
 await page.waitForTimeout(Number(opt("settle", "6000")));
 
@@ -58,10 +61,20 @@ let frameN = 0;
 async function shoot(params, file) {
   await page.evaluate(async ({ p, t }) => {
     window.__lookTune.params = p; window.__lookTune.version++;
-    await window.__frameStep.seek(t);
+    // the drills: re-draw the same frozen frame. The real game: it keeps drawing itself (nobody moves until
+    // the kick, so the frame holds still); one forced draw makes sure the new dials are on it
+    if (window.__frameStep) await window.__frameStep.seek(t);
+    else window.__lookTune.redraw?.();
   }, { p: params, t: seekT });
   await settle(page);
-  await page.locator("canvas").first().screenshot({ path: file, type: "jpeg", quality: 92 });
+  // the 3D picture: the biggest canvas that is actually drawn (the real game keeps an invisible 2D one on top)
+  const clip = await page.evaluate(() => {
+    const cs = [...document.querySelectorAll("canvas")].filter((c) => getComputedStyle(c).opacity !== "0");
+    const c = cs.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    const r = c.getBoundingClientRect();
+    return { x: Math.max(0, r.x), y: Math.max(0, r.y), width: Math.min(r.width, innerWidth - Math.max(0, r.x)), height: Math.min(r.height, innerHeight - Math.max(0, r.y)) };
+  });
+  await page.screenshot({ path: file, type: "jpeg", quality: 92, clip });
   frameN++;
 }
 
