@@ -163,7 +163,15 @@ interface Props {
   onOpen3D?: () => void;
   /** Test pages: start on this category. */
   startCat?: CatId;
+  /** The rest of the shop (Sponsors, Casino, Store, the 3D shop): small doors at the
+   *  end of the category rail. The shop's front page is gone (Harry, 9 Oct 2026: the
+   *  framed-card grid was "horrendous"); the Showroom IS the shop. */
+  links?: ShopLink[];
+  /** Dev benches only: keep the bottom-right corner clear for the page-guide eye. */
+  guideCorner?: boolean;
 }
+
+export interface ShopLink { id: string; icon: string; label: string; onClick: () => void; locked?: boolean }
 
 type Moment = { art: React.ReactNode; level: number; title: string; word: string; fx?: string };
 type Sheet = { cat: CatId; key: string; level: number };
@@ -177,7 +185,7 @@ interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false }: Props) {
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
   const [spent, setSpent] = useState({ n: 0, text: "" });
   const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
@@ -326,7 +334,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       const upgrade = wearing === key && lv > mineLv;
       return {
         key, cat, title: b.name, sub: `Level ${lv} · ${rungName(lv)}`, level: lv, levels: levels.length,
-        pic: <BigPic kind="boot" base={key} level={lv} className={`h-full w-full scale-[1.12] ${sold ? "opacity-50 grayscale" : ""}`} />,
+        pic: <BigPic kind="boot" base={key} level={lv} className={`h-full w-full ${sold ? "opacity-50 grayscale" : ""}`} />,
         badges, stats, locked: null,
         button: sold ? { label: "Sold out — back next visit", disabled: true, run: () => {} }
           : isBanned ? { label: "Black market", price: blackMarketPrice(b.price), disabled: false, danger: true, run: () => askBoot(b, true) }
@@ -503,7 +511,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
                   return (
                     <div key={k} data-show-item={k} className="relative h-full w-full shrink-0" style={{ scrollSnapAlign: "center", scrollSnapStop: "always" }}>
                       {show ? <ItemPage v={viewOf(c.id, k)} accent={c.accent} catLabel={c.label} pos={`${i + 1}/${keys.length}`}
-                        next={SHOWROOM_CATS[cIdx + 1]?.label} onOpen={() => setSheet({ cat: c.id, key: k, level: viewOf(c.id, k).level })}
+                        next={SHOWROOM_CATS[cIdx + 1]?.label} guideCorner={guideCorner} onOpen={() => setSheet({ cat: c.id, key: k, level: viewOf(c.id, k).level })}
                         onPickLevel={(lv) => setPick((p) => ({ ...p, [k]: lv }))} /> : null}
                     </div>
                   );
@@ -524,7 +532,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pb-3" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="pointer-events-auto mx-auto flex h-[46px] max-w-[820px] items-center gap-1.5 px-2.5">
           <button onClick={onBack} aria-label="Back" data-shop-back className="kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/55 text-[20px] font-black ring-1 ring-white/20 backdrop-blur">‹</button>
-          <Rail ci={ci} onJump={(i) => goCat(i)} />
+          <Rail ci={ci} onJump={(i) => goCat(i)} links={links} />
           <button onClick={() => setFameOpen((v) => !v)} data-balance-chip aria-label="Balance and fame"
             className="kib-press relative flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-black/60 pl-2.5 pr-2 ring-1 ring-amber-300/45 backdrop-blur">
             <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</span>
@@ -570,7 +578,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
 }
 
 /** The thin category rail: icons, the one you are on with its name. */
-function Rail({ ci, onJump }: { ci: number; onJump: (i: number) => void }) {
+function Rail({ ci, onJump, links }: { ci: number; onJump: (i: number) => void; links?: ShopLink[] }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current?.querySelector<HTMLElement>(`[data-rail-cat="${SHOWROOM_CATS[ci].id}"]`);
@@ -589,13 +597,21 @@ function Rail({ ci, onJump }: { ci: number; onJump: (i: number) => void }) {
           </button>
         );
       })}
+      {links && links.length > 0 && <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-white/20" />}
+      {links?.map((l) => (
+        <button key={l.id} onClick={l.onClick} data-shop-link={l.id} aria-label={l.label}
+          className={`kib-press flex h-8 shrink-0 items-center gap-1 rounded-full px-2 ${l.locked ? "opacity-50" : ""}`}>
+          <span className="text-[17px] leading-none">{l.locked ? "🔒" : l.icon}</span>
+          <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-wide text-white/85">{l.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
 
 /** One item, full screen. */
-function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel }: {
-  v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void;
+function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCorner = false }: {
+  v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
 }) {
   const tier = v.levels > 1 ? tierColour(v.level) : accent;
   return (
@@ -638,7 +654,7 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel }: {
             {v.stats.map((s) => <span key={s.text} style={{ color: s.color }}>{s.text}</span>)}
           </div>
           {v.locked === null ? (
-            <div className="mt-2.5 flex gap-2">
+            <div className={`mt-2.5 flex gap-2 ${guideCorner ? "pr-11" : ""}`}>
               <button onClick={v.button.run} disabled={v.button.disabled} data-showroom-buy
                 className="kib-press flex h-[54px] min-w-0 flex-1 items-center justify-between rounded-[12px] px-4 disabled:cursor-not-allowed"
                 style={v.button.disabled ? { background: "rgba(255,255,255,.09)", color: "rgba(255,255,255,.6)" }
@@ -654,7 +670,7 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel }: {
               )}
             </div>
           ) : (
-            <div className="mt-2.5 grid h-[54px] place-items-center rounded-[12px] bg-white/[0.06] text-[13px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/10">Opens at a higher star rating</div>
+            <div className={`mt-2.5 grid h-[54px] place-items-center rounded-[12px] bg-white/[0.06] text-[13px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/10 ${guideCorner ? "mr-11" : ""}`}>Opens at a higher star rating</div>
           )}
         </div>
       </div>
