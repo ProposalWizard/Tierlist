@@ -427,6 +427,7 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 - Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
 
 **Half-done or not seen.**
+- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges: the forearms read a shade darker than the top, a little skin shows at the elbows, and a thin red line sits at the collar. Player style Old keeps the human outfits.
 - The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
 - Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
 
