@@ -37,7 +37,7 @@ import { ovationMoves, setOvationMoves } from "./ovationMoves";
 import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
 import { animationsLook, setAnimationsLook } from "./animLook";
 import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
-import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
+import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
@@ -78,6 +78,8 @@ export const LOOK_ROWS = {
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
+  // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
+  chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
@@ -109,9 +111,10 @@ const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
 /** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
+ *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
 // Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -136,6 +139,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),
+    chanceMix: O("chanceMix"),
     garden: N("garden"),
     look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
@@ -174,6 +178,8 @@ for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.p
 const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
   ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
+  // The chance mix (Mikey, 9 Oct 2026), the same way.
+  ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
 ];
 // Player style arrived on New (its default) for every phone; a phone already on
 // Classic (every row Old) takes its Old once, so Classic stays Classic.
