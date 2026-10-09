@@ -103,6 +103,75 @@ def clap(a, d, period=0.42, y=1.2, z=0.4):
     return f
 
 
+def nod(times, depth=0.32, dur=0.42):
+    """Yes: the head dips and comes back up at each time (a real stand under it)."""
+    def f(src):
+        def ang(t):
+            return sum(depth * env(t, a, a + dur * 0.4, a + dur * 0.45, a + dur) for a in times)
+        src.bend("lowerneck", X, lambda t: 0.55 * ang(t))
+        src.bend("head", X, lambda t: 0.45 * ang(t))
+    return f
+
+
+def hug(a, b, c, d, lean=0.22):
+    """A hug: lean in, both arms round a man's back (his chest 0.3 m in front), the left over the shoulder, the right under the arm."""
+    def f(src):
+        src.bend("lowerback", X, lambda t: lean * env(t, a, b, c, d))
+        src.bend("lowerneck", Y, lambda t: 0.35 * env(t, a, b, c, d))
+        hold_hands({"L": (-0.16, 1.42, 0.42), "R": (0.18, 1.12, 0.40)}, a, b, c, d)(src)
+    return f
+
+
+def chest_down(contact):
+    """Chest control: lean back, chest out, arms wide to meet it, the chest gives, then he folds over to drop it at his feet."""
+    def f(src):
+        back = lambda t: env(t, contact - 0.40, contact - 0.12, contact + 0.06, contact + 0.40)
+        fold = lambda t: env(t, contact + 0.15, contact + 0.40, contact + 0.55, contact + 0.90)
+        src.bend("lowerback", X, lambda t: -0.38 * back(t) + 0.30 * fold(t))
+        src.bend("thorax", X, lambda t: -0.22 * back(t) + 0.12 * fold(t))
+        src.bend("lowerneck", X, lambda t: 0.40 * back(t) + 0.35 * fold(t))
+        arms_wide(contact - 0.40, contact - 0.12, contact + 0.15, contact + 0.60, lift=-0.25)(src)
+    return f
+
+
+def thigh_up(side, contact):
+    """Thigh control: the knee comes up to meet the ball (thigh flat), then drops with it to kill it."""
+    def f(src):
+        s = side.lower()
+        e = lambda t: env(t, contact - 0.32, contact - 0.04, contact + 0.06, contact + 0.40)
+        src.bend(s + "femur", X, lambda t: -1.25 * e(t))
+        src.bend(s + "tibia", X, lambda t: 1.15 * e(t))
+        src.bend("lowerneck", X, lambda t: 0.45 * env(t, contact - 0.5, contact - 0.2, contact + 0.3, contact + 0.6))
+        src.bend("lowerback", X, lambda t: -0.08 * e(t))
+    return f
+
+
+def roar(a, b, c, d):
+    """The roar: chest out, head back, both fists clenched down and out by the hips, then pumped once."""
+    def f(src):
+        src.bend("lowerback", X, lambda t: -0.18 * env(t, a, b, c, d))
+        src.bend("lowerneck", X, lambda t: -0.45 * env(t, a, b, c, d))
+        hold_hands({"L": (0.42, 0.95, 0.12), "R": (-0.42, 0.95, 0.12)}, a, b, c, d)(src)
+    return f
+
+
+def fist_pump(a, d, pumps=3, period=0.45):
+    """Fist pump: the right fist driven down from the shoulder to the hip, three times; head nods with it."""
+    def f(src):
+        for fr in range(src.n):
+            t = src.t(fr)
+            k = env(t, a, a + 0.25, d - 0.3, d)
+            if k <= 0:
+                continue
+            ph = min(pumps, max(0.0, (t - a - 0.2) / period))
+            u = 0.5 - 0.5 * np.cos(2 * np.pi * (ph % 1.0)) if ph < pumps else 0.0
+            hips = src.P["root"][fr]
+            base = np.array([hips[0], 0, hips[2]])
+            src.reach("R", fr, base + src.body_axis(fr, (-0.22, 1.45 - 0.42 * u, 0.25)), k, pole_local=(-0.6, -1.0, 0.1))
+        src.bend("lowerneck", X, lambda t: -0.25 * env(t, a, a + 0.3, d - 0.3, d))
+    return f
+
+
 def chain(*fs):
     def f(src):
         for g in fs:
@@ -171,6 +240,22 @@ CLIPS = {
     "shirt_hold": dict(trial="82_08", cut=(4.0, 7.5),
                        src_edit=hold_hands({"L": (0.25, 1.2, 0.34), "R": (-0.25, 1.2, 0.34)}, 0.0, 0.5, 9, 10, wobble=0.004),
                        adapted="a real stand with both hands holding a shirt up at the chest for the camera"),
+    # ── round 2 (9 Oct 2026): gaps filled ───────────────────────────────
+    "walk_confident": dict(trial="82_09", cut=(0.5, 4.5), loop=True, period=(0.9, 1.4)),
+    "sit_down": dict(trial="143_18", cut=(0.5, 2.1), face="end", end=True),
+    "sit_idle": dict(trial="143_18", cut=(1.65, 2.35), face="start"),
+    "stand_up": dict(trial="143_18", cut=(2.15, 3.5), face="start", end=True),
+    "get_up_side": dict(trial="140_03", cut=(1.0, 6.6), rate=0.67, face="end"),
+    "talk": dict(trial="18_08", cut=(2.0, 7.0)),
+    "point": dict(trial="13_27", cut=(11.8, 13.6), face="start"),
+    "nod": dict(trial="82_08", cut=(1.0, 3.0), src_edit=nod([0.3, 0.95]), adapted="a real stand with two nods"),
+    "hug": dict(trial="82_08", cut=(1.0, 4.0), src_edit=hug(0.1, 0.6, 2.4, 2.9), adapted="a real stand, leaning in with both arms round a man's back"),
+    "chest_control": dict(trial="82_08", cut=(4.2, 5.4), moments={"contact": 0.45}, meta={"part": "chest"}, src_edit=chest_down(0.45),
+                          adapted="a real stand: lean back, chest out, arms wide, then fold over to drop it"),
+    "thigh_control": dict(trial="82_08", cut=(5.4, 6.4), moments={"contact": 0.36}, meta={"part": "thighR"}, src_edit=thigh_up("R", 0.36),
+                          adapted="a real stand: the right knee up to meet the ball, then down with it"),
+    "celebrate_roar": dict(trial="79_69", cut=(0.6, 2.8), src_edit=roar(0.25, 0.55, 1.8, 2.15), adapted="the real 'very happy' capture with chest out, head back and fists down by the hips"),
+    "celebrate_pump": dict(trial="82_08", cut=(2.0, 4.2), src_edit=fist_pump(0.1, 2.1), adapted="a real stand with three right-fist pumps"),
 }
 
 # the old footballer (shop/garden) calls its loops by these names
