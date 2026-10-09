@@ -37,6 +37,7 @@ import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
+import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -60,6 +61,7 @@ const row = <V extends string>(
 /** Every New | Old switch in Settings, keyed by a short id. */
 export const LOOK_ROWS = {
   matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
+  matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
   chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
@@ -91,9 +93,9 @@ export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
-/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body and cut-scene people.
+/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people and Match view 3D (9 Oct 2026).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "matchView3d"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -108,6 +110,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
   classic: build(O),
   standard: {
     matchView: MATCH_VIEW_DEFAULT,
+    matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
     chances: CHANCE_SET_DEFAULT,
@@ -136,6 +139,16 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
 };
 // Preview = Standard + the rows being tried.
 for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.preview[id] = VERSION_PRESETS.standard[id];
+
+// A phone already on Preview picks up a row added to Preview later (Match view
+// 3D, 9 Oct 2026), once: if it has never stored that row and every other row
+// already reads Preview, the new row takes its Preview value. Otherwise the
+// phone would read as "Custom" and Harry would not see the new look.
+if (typeof window !== "undefined" && !matchView3dStored()) {
+  const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
+  const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);
+  if (off.length === 1 && off[0] === "matchView3d") setMatchView3d("on");
+}
 
 // ── Reading and setting ─────────────────────────────────────────────────
 
