@@ -1,6 +1,6 @@
 ---
 name: progress-update
-description: Give Harry or Mikey a quick progress update as text progress bars — one bar per piece of work, how far along it is, and what it is waiting on. Load WHENEVER someone asks "update?", "how's it going", "where are we", "progress", "what are we waiting on", "status", or "how are these changes doing", and at the end of any long build or playtest round. Rebuilt 3 Oct 2026 after the first version (saved outside the repo) was lost with its cloud container; it now lives in the repo so it survives.
+description: Give Harry, Mikey or Leo a quick progress update as text progress bars — one bar per piece of work, how far along it is, and what it is waiting on. Load WHENEVER someone asks "update?", "how's it going", "where are we", "progress", "what are we waiting on", "status", or "how are these changes doing", and at the end of any long build or playtest round. Rebuilt 3 Oct 2026 after the first version (saved outside the repo) was lost with its cloud container; it now lives in the repo so it survives.
 ---
 
 # Progress update — bars, not paragraphs
@@ -89,14 +89,14 @@ hard coded in the skill and should run on every task) … add a time estimate
 - **A major update** = a piece of work reaching `built` and checked: a new
   feature, page or screen, a finished fix round, or a bar hitting 100%. Not
   each small commit.
-- **Deploy** = commit, push `Harry`, then open and merge a PR `Harry` → `main`
-  so Vercel builds the live site. Standing permission from Harry. No need to
-  ask each time.
+- **Deploy** = commit, push the session's own branch (`Harry`, `Mikey` or
+  `Leo`), then open and merge a PR from it → `main` so Vercel builds the live
+  site. Standing permission from Harry and Mikey. No need to ask each time.
 - **Only when the checks pass**: `npx tsc --noEmit`, the one-engine guard, the
   tests for the files touched, and `npm run build`. A red check means no
   deploy: fix it first, or report the bar as `blocked: <check>`.
-- Never deploy a builder's half-done worktree. Merge it into `Harry` first and
-  check the merged copy.
+- Never deploy a builder's half-done worktree. Merge it into the session's
+  branch first and check the merged copy.
 - The progress bar shows it: `pushed` → `live` once main has it. Add the
   merge time to the time line (`Deployed 14:32`).
 
@@ -159,6 +159,14 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
     rough count). **So 1% ≈ 1.2–1.3M top-model tokens.** The estimates
     posted that day (78–85%) were far too high: they used the 1.5–2M figure
     but guessed tokens high. Count finished builders' real numbers instead.
+  - 9 Oct 2026 (Mikey), the Kane drawings task: 48% → 53%. Counted: one
+    everyday-model playtest 0.31M + the top-model coordinator about 0.73M
+    new tokens, so about 1.0M for 5%. That is far below the readings above,
+    because the coordinator ran about 80 tool calls and each one re-reads the
+    whole conversation (about 150k tokens with this CLAUDE.md). **Long
+    coordinator chats cost far more than their new tokens: estimate
+    turns × context size, not new tokens alone.** Not sure nothing else ran
+    on the account, so treat it as rough.
 - **Tokens are not equal across models (Harry, 9 Oct 2026).** The weekly
   limit is spent faster by the top model than by the everyday model for the
   same number of tokens. So: count tokens **per model** (top / everyday /
