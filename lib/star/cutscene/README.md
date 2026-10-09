@@ -16,6 +16,8 @@ StoryEvent ─ story.ts ─▶ beats ─ beats.ts + generate.ts ─▶ performan
 | `beats.ts` | The beat library: sit and talk, the contract, sign with the pen, handshake, shirt photo, strike, celebration, trophy, tunnel, walk-out, press, mentor, bad news, award, applause, injury, stare-down. Each gives tracks + shot intents. |
 | `story.ts` | Event → place, mood, cast, beats (acts setup → build → moment → reaction → aftermath, chosen by weight with a seed). |
 | `cinema.ts` | Shot intents → shots by film rules (open on the place, wide → close as feeling rises, 180° line, reaction after the moment, hero low / defeat high, no jump cuts, length by stakes). `shotQuality` scores a script against these rules. |
+| `cinema.ts` → `filmPass` | Settings → Look → "Cut-scene camera: New": a second pass over any script (wide first, over-the-shoulder talk, weak moves hidden behind faces and props, every shot moving, cuts on action). Move quality tags live in `presets/clips.ts`. Old = the script as written. |
+| `music.ts` | The music bed per scene (`public/sfx/cut-music-*.mp3`, made by `tools/cutscene-music/make_beds.py`): fades, ducks under talk, on the Sound Board. |
 | `generate.ts` | `generateScript(event, seed)`; `compose()` lays beats end to end. |
 | `fixtures.ts` | The hand-made scenes (signing, goal, trophy, walk-out, press, The Icon) = test benchmarks. |
 | `presets/` | camera shots, locations (marks), moods, clip names and stand-ins. |

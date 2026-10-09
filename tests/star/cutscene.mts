@@ -15,7 +15,10 @@ import { makeSignature, signatureAt } from "../../lib/star/cutscene/signature";
 import { shotPose, type Anchor } from "../../lib/star/cutscene/presets/camera";
 import { castLook } from "../../lib/star/cutscene/casting";
 import { makePath, rng, lensToFov } from "../../lib/star/cutscene/math";
-import type { Emotion, StoryEvent } from "../../lib/star/cutscene/types";
+import type { CameraTrack, Emotion, StoryEvent } from "../../lib/star/cutscene/types";
+import { filmPass, weakWideOverrun } from "../../lib/star/cutscene/cinema";
+import { musicBedFor, musicCue, musicGain, talkWindows, type MusicBed } from "../../lib/star/cutscene/music";
+import { SFX_NAMES } from "../../lib/star/sfxCatalog";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -92,6 +95,54 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
   const hand = scoreScript(FIXTURES[id]());
   const best = Math.max(...[1, 2, 3].map((seed) => scoreScript(generateScript(ev, seed)).score));
   check(best >= hand.score - 1e-9, `${id}: generated ${(best * 100).toFixed(0)}% vs hand-made ${(hand.score * 100).toFixed(0)}% (${hand.notes.join("; ")})`);
+}
+
+// ── the film pass (Settings → Look → "Cut-scene camera: New") ──
+{
+  const all: [string, ReturnType<typeof generateScript>][] = Object.entries(FIXTURES).map(([id, make]) => [`hand-made ${id}`, make()]);
+  for (const kind of EVENT_KINDS_COVERED) all.push([`generated ${kind}`, generateScript({ kind, stakes: 0.8, emotion: EMO[kind] ?? "joy", intensity: 0.7 }, 1)]);
+  for (const [n, s] of all) {
+    const f = filmPass(s);
+    const lint = lintScript(f);
+    check(lint.length === 0, `film pass ${n}: clean (${lint.slice(0, 3).join("; ")})`);
+    const cams = f.tracks.filter((t): t is CameraTrack => t.type === "camera").sort((a, b) => a.at - b.at);
+    const end = cams[cams.length - 1];
+    check(cams[0].at < 0.01 && Math.abs(end.at + end.dur - s.duration) < 0.05, `film pass ${n}: covers 0..${s.duration.toFixed(1)} s`);
+    let joins = 0;
+    for (let i = 1; i < cams.length; i++) if (Math.abs(cams[i - 1].at + cams[i - 1].dur - cams[i].at) > 1e-6) joins++;
+    check(joins === 0, `film pass ${n}: shots join end to end (${joins} gaps)`);
+    check(["establishing", "wide", "crowd"].includes(cams[0].shot.preset) || (!!cams[0].shot.fixed && cams[0].shot.preset !== "insert"), `film pass ${n}: opens wide (${cams[0].shot.preset})`);
+    check(cams.every((c) => c.shot.move && c.shot.move !== "static"), `film pass ${n}: no shot stands still`);
+    check(cams.every((c) => c.dur >= 0.69), `film pass ${n}: no sliver (${Math.min(...cams.map((c) => c.dur)).toFixed(2)} s)`);
+    const before = weakWideOverrun(s), after = weakWideOverrun(f);
+    check(after <= Math.min(before, 0.7) + 1e-9, `film pass ${n}: wides on weak moves ${before.toFixed(1)} → ${after.toFixed(1)} s past the 1 s limit`);
+    check(scoreScript(f).score >= 0.9, `film pass ${n}: shot rules ${(scoreScript(f).score * 100).toFixed(0)}% (${scoreScript(f).notes.join("; ")})`);
+    const jour = new Set(f.cast.filter((m) => m.role === "journalist").map((m) => m.id));
+    check(!cams.some((c) => "actor" in c.shot.subject && jour.has(c.shot.subject.actor) && ["close", "medium-close", "extreme-close", "medium", "ots"].includes(c.shot.preset)), `film pass ${n}: no close-up on the journalist`);
+    check(JSON.stringify(filmPass(s)) === JSON.stringify(f), `film pass ${n}: same script, same shots`);
+  }
+  // the old camera is the script exactly as written: filmPass never edits its input
+  const sig = FIXTURES.signing(), copy = JSON.stringify(sig);
+  filmPass(sig);
+  check(JSON.stringify(sig) === copy, "the film pass leaves the written script alone (Old = today exactly)");
+  // the farewell has its own set (it used to fall back to another story's room)
+  const fw = generateScript({ kind: "retired", stakes: 0.9, emotion: "gratitude", intensity: 0.8 }, 1);
+  check(fw.set.location === "pitch" && FIXTURES.farewell().set.location === "pitch", `the farewell plays in the stadium (${fw.set.location})`);
+}
+
+// ── the music bed ──
+{
+  const want: Record<string, MusicBed> = { signing: "signing", trophy: "trophy", walkout: "walkout", press: "press", farewell: "farewell", goal: "trophy", mentor: "press" };
+  for (const [id, bed] of Object.entries(want)) check(musicBedFor(FIXTURES[id]()) === bed, `${id}: music bed ${musicBedFor(FIXTURES[id]())}, wanted ${bed}`);
+  for (const bed of ["signing", "trophy", "walkout", "press", "farewell"] as MusicBed[]) check(SFX_NAMES.includes(musicCue(bed)), `${bed}: its music is on the Sound Board`);
+  const p = FIXTURES.mentor();
+  const talk = talkWindows(p);
+  check(talk.length > 0, "the mentor scene has talk");
+  const [a, b] = talk[0];
+  let quiet = -1;
+  for (let t = 1.3; t < p.duration - 1.7; t += 0.1) if (talk.every(([x, y]) => t < x - 0.4 || t > y + 0.4)) { quiet = t; break; }
+  check(musicGain(p, 0) === 0 && musicGain(p, p.duration) === 0, "music starts and ends silent (fades)");
+  check(quiet > 0 && musicGain(p, (a + b) / 2) < musicGain(p, quiet) * 0.5, `music drops under talk (${musicGain(p, (a + b) / 2).toFixed(2)} vs ${quiet > 0 ? musicGain(p, quiet).toFixed(2) : "no quiet moment"})`);
 }
 
 // ── camera presets ──

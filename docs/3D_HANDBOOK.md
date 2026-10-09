@@ -344,6 +344,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 What landed today on Harry, newest first, one line each.
 
 - Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
+- Cut-scene camera + music: a film pass over every cut scene (wide first, weak moves hidden, always moving), a farewell in the stadium, five music beds; Settings → Look → Cut-scene camera (handover below).
 
 - 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
 
@@ -671,3 +672,51 @@ outline and shadow, as Old); every new look behind New | Old.
 **See it:** `/star-look-dev?head=h4&body=c2` (your player, a mate, a manager;
 `?pstyle=old` for Old). Stand-alone stills without Next.js:
 `tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
+
+### Cut-scene camera + music (9 Oct 2026)
+
+Harry: "do a pass of camera angles in the cut scenes, hide bad animations with
+good zooms and angles, wide angles, music."
+
+**What it is:** Settings → Look → "Cut-scene camera: New | Old" (`lib/star/cutscene/look.ts`,
+row `cutsceneCamera` in `lib/star/gameVersions.ts`, default New). New runs the
+film pass (`filmPass` in `lib/star/cutscene/cinema.ts`) over every script before
+`director.ts` plays it, hand-made or generated. Old plays the script as written.
+The pass, in order: opens on a wide of the place; a plain medium in a two-person
+talk becomes an over-the-shoulder; no close shot on a journalist (his stand-in
+head smears); a wide never stays on a weak move longer than 1 s (`WEAK_WIDE_MAX`):
+it cuts to the prop (pen, trophy, shirt), the face or the other person's
+reaction, 1.2–2.4 s each; a walk is covered from behind into the light or a
+head-and-shoulders from the front; no face ever fills the frame (close-ups
+become head and shoulders: the face texture goes soft and orange that close);
+an insert of hands on the desk or the handshake becomes an over-the-shoulder
+(floating hands); every shot moves a little; cuts snap onto the start of a
+move; no fade up from black; an over-the-shoulder behind a seated man looks
+over his chair. With New the director also softens the bloom (×0.35) and the
+close-up rim light (1.8 → 0.5): they drew a red-orange halo round every body.
+
+**Move quality tags:** `CLIP_QUALITY`, `POSE_QUALITY`, `GAIT_QUALITY` in
+`lib/star/cutscene/presets/clips.ts` (good / ok / weak). `weakWindows(script)`
+reads them plus the pen, handshake and prop grabs. Tag a new clip there when you
+add it; a clip that improves goes from weak to ok and the camera stops hiding it.
+
+**Farewell:** `retired` has its own story now (stadium, `farewell-walk` beat:
+guard of honour, last walk, salute) and a hand-made fixture `farewell`. Before,
+it had no story and fell back to another scene's room.
+
+**Music:** `lib/star/cutscene/music.ts`: five beds (signing, trophy, walkout,
+press, farewell) in `public/sfx/cut-music-*.mp3`, 20–24 s loops, 240–280 KB,
+made from code by `tools/cutscene-music/make_beds.py` (no samples; licence in
+`public/sfx/CUTSCENE-MUSIC-LICENSE.txt`). Fades in and out, drops to a third
+under talk, silent when Sound effects is off. On the Sound Board under
+"Cut-scene music", so a better take can replace any of them. Higgsfield's audio
+tool makes speech only and refuses music, so no credits were spent.
+Only the director page plays cut scenes today; a host plays music with
+`createCutsceneMusic(script, sfxUrl(musicCue(musicBedFor(script))), sfxOn)`.
+
+**See it:** `/star-style-dev?scene=director&fixture=farewell&clean=1` (`&cam=old` for Old).
+**Tests:** `tests/star/cutscene.mts` (film pass on every fixture and event; music bed and ducking).
+
+**Next:** shallow depth of field is not done (the cel style has no depth pass);
+nobody has listened to the music yet (levels measured only); the real game does
+not play these cut scenes yet.
