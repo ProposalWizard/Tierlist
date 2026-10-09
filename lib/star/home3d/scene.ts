@@ -58,6 +58,53 @@ import { safeCompileAsync } from "../three3d/safeCompile";
 
 export type { HomeSpot } from "./rooms";
 
+/** The room camera (Harry, 9 Oct 2026: "pull it back and up so the room reads"). */
+export const ROOM_CAM = {
+  /** How far behind him, metres (was 3.3, and clamped to the walls by axis, so it jammed). */
+  back: 4.4,
+  /** How high (was 2.35). */
+  height: 2.9,
+  /** The point on him it looks past (was 1.0), and how far ahead of him. */
+  lookY: 0.95,
+  lookAhead: 2.2,
+  /** Kept off the walls and under the ceiling. */
+  wallGap: 0.3,
+  ceilingGap: 0.18,
+  /** For each metre the walls take off the boom, the camera rises this much. */
+  riseIfShort: 0.45,
+};
+
+/**
+ * How long the boom can be from (px, pz) along (dx, dz) before it meets a wall
+ * (the room's inside, less a gap): the camera shortens along its own line
+ * instead of sliding sideways round him. Pure (tests/star/home3d.mts).
+ */
+export function roomCamBoom(px: number, pz: number, dx: number, dz: number, want: number, w2: number, d2: number): number {
+  let t = want;
+  if (dx > 1e-6) t = Math.min(t, (w2 - px) / dx); else if (dx < -1e-6) t = Math.min(t, (-w2 - px) / dx);
+  if (dz > 1e-6) t = Math.min(t, (d2 - pz) / dz); else if (dz < -1e-6) t = Math.min(t, (-d2 - pz) / dz);
+  return Math.max(0.6, t);
+}
+
+/**
+ * Backed onto a wall (just through a doorway, by a wall), the camera swings
+ * round him, up to about 70°, to where it has the most room behind him AND
+ * the most room in front to look into: a three-quarter view across the room
+ * instead of the back of his head or a near wall. The camera's yaw
+ * (it stands along (sin yaw, cos yaw) from him). Pure (tests/star/home3d.mts).
+ */
+export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2: number, d2: number): number {
+  let best = yaw, bestScore = -1;
+  for (let i = -6; i <= 6; i++) {
+    const a = i * 0.2, y = yaw + a;
+    // room behind him for the camera, and room in front of him for the camera to look into
+    const ahead = roomCamBoom(px, pz, -Math.sin(y), -Math.cos(y), 6, w2, d2);
+    const score = roomCamBoom(px, pz, Math.sin(y), Math.cos(y), want, w2, d2) + 0.6 * ahead - Math.abs(a) * 0.35;
+    if (score > bestScore + 1e-6) { bestScore = score; best = y; }
+  }
+  return best;
+}
+
 export interface HomeData {
   tier: HomeTier;
   /** The club's kits (home, away) and your shirt number. */
@@ -82,6 +129,10 @@ export interface HomeData {
   stuff?: HomeStuff;
   /** The motorbike's model (the garage). */
   bikeModel?: string | null;
+  /** Your club (its name on the cinema screen). */
+  club?: string;
+  /** Your club's drawn badge, an SVG picture (on the cinema screen). */
+  badge?: string;
 }
 
 export interface HomeCallbacks {
@@ -264,8 +315,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   };
 
   // ── The room you are in: one at a time (./roomBuild.ts; which rooms, ./rooms.ts) ──
-  const roomIn: RoomInput = { tier: data.tier, rooms, kits: data.kits, slots: data.slots, cars: data.cars, boots: data.boots, casual: data.casual, stuff: data.stuff, bikeModel: data.bikeModel ?? null };
-  const env: RoomEnv = { THREE, mergeGeometries, Reflector, prof, quality: tier, envTex, doorOpen: !!cb.onDoor, glb };
+  const roomIn: RoomInput = { tier: data.tier, rooms, kits: data.kits, slots: data.slots, cars: data.cars, boots: data.boots, casual: data.casual, stuff: data.stuff, bikeModel: data.bikeModel ?? null, club: data.club, badge: data.badge };
+  const env: RoomEnv = { THREE, mergeGeometries, Reflector, prof, quality: tier, envTex, doorOpen: !!cb.onDoor, glb, cloneSkinned: (o: any) => SkeletonUtils.clone(o) };
   let room: BuiltRoom = buildRoom(env, roomIn, rooms[0]);
   scene.add(room.group);
   const fitSun = () => {
@@ -311,7 +362,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // ── State ──
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
-  let speed = 0, yaw = Math.PI, camYaw = 0, orbitHold = 0;
+  let speed = 0, yaw = Math.PI, camYaw = openCamYaw(START.x, START.z, START.yaw + Math.PI, ROOM_CAM.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap), orbitHold = 0;
   /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
   const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam();
@@ -421,7 +472,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const preloadRoom = (id: RoomId) => {
     if (preloaded.has(id)) return;
     preloaded.add(id);
-    for (const f of roomFiles(id, data.tier, data.cars, data.boots, data.bikeModel ?? null)) glb(f).catch(() => { /* the room shows without it */ });
+    for (const f of roomFiles(id, data.tier, data.cars, data.boots, data.bikeModel ?? null, data.stuff)) glb(f).catch(() => { /* the room shows without it */ });
   };
   let lastSwapMs = 0;
   async function goToRoom(to: RoomId, from: RoomId | null): Promise<boolean> {
@@ -445,7 +496,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const at = door ? arrivalAt(door, 1.5) : room.start; // far enough in that the camera has room behind him
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
-    camYaw = yaw + Math.PI; orb.reset(); first = true;
+    camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, ROOM_CAM.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap); orb.reset(); first = true;
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     shadowDirty = true;
@@ -590,15 +641,23 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // camera: behind him; a card open frames its spot
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, ROOM_CAM.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap)) * Math.min(1, dt * 1.6);
     const shot = framed ? shotOf(framed) : null;
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
-    const back = Math.min(3.3, D2 * 2 * 0.42);
+    // Harry, 9 Oct 2026: the camera sat jammed behind his head in every room. Now it stands
+    // back and up, like a room view in a third-person game, looking down past him into the
+    // room; where a wall is closer than that, the boom shortens and the camera rises instead
+    // (it never goes through a wall), so the room still reads.
+    const back = Math.min(ROOM_CAM.back, Math.max(W2, D2) * 2 * 0.55);
     const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const crr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    const [camUp, camBack] = orb.lift(Math.min(H - 0.25, 2.35), back, 1.0);
-    want.set(P.x, camUp, P.z).addScaledVector(cf, -camBack).addScaledVector(crr, 0.25);
-    wantLook.set(P.x, 1.0, P.z).addScaledVector(cf, 2.0).addScaledVector(crr, 0.1);
+    const ceil = H - ROOM_CAM.ceilingGap;
+    const [camUp0, camBack0] = orb.lift(Math.min(ceil, ROOM_CAM.height), back, ROOM_CAM.lookY);
+    const room2 = roomCamBoom(P.x, P.z, -cf.x, -cf.z, camBack0, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap);
+    const short = camBack0 - room2;
+    const camUp = Math.min(ceil, camUp0 + short * ROOM_CAM.riseIfShort);
+    want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, 0.2);
+    wantLook.set(P.x, ROOM_CAM.lookY, P.z).addScaledVector(cf, ROOM_CAM.lookAhead + short * 0.5).addScaledVector(crr, 0.1);
     if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
     inRoom(want);

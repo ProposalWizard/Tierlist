@@ -440,8 +440,15 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 - Which rooms: `TIER_ROOMS` / `roomsFor` in `homes.ts`. Starter and flat: the one room. Penthouse: lounge (keeps the cabinet), dressing room, glass terrace. House: hallway (front door to the garden), lounge (sofa, TV, your framed shirts, a fridge of KIB cans, a shelf of watches and cans, your art, the drive window), dressing room (wardrobe, mirror, boots, a glass island of watches and jewellery, your suit on a stand), trophy room (the full cabinet, both kits framed, the Ballon d'Or plinth). Villa adds garage and games room; estate adds cinema, gym, garden terrace.
 - Plans: `lib/star/home3d/rooms.ts` (pure): each room's size, its doorways (`DOOR_AT`, `LINKS`; every door has a door back), its spots, `homeStuffOf` (what you own; unowned = an empty plinth or stand), `roomFiles` (the models a room loads).
 - One room at a time: `lib/star/home3d/roomBuild.ts` `buildRoom(env, input, id)` builds a room under its own group and `dispose()` frees all of it (shapes, materials, pictures, the mirror's picture). "main" is the old room, ported unchanged. `scene.ts` keeps the renderer, lights, you, the camera and walking; walk through a doorway → 0.2 s fade out, old room freed, next built (50–180 ms here), you stand 1.5 m inside the matching door, 0.2 s fade in. A room's models start loading when you are within 2.6 m of its door (one cached load per file, cloned into each room). Room chip and dots (tap to jump) in `Home3D.tsx`.
-- Measured headless (`tests/star/home3d.mts`, room only, no player): house hallway 29 draws / 1.4k triangles, lounge 44 / 2.6k, dressing room 39 / 2.5k, trophy room 32 / 9.6k; at most 2 new 1024 pictures a room; the mirror only in the dressing room (none on Low). Budget 50 draws, 45k triangles. New rooms join every glow into one draw per picture and every doorway sign into one picture.
-- Not built yet: the villa's garage (cars and bike as models) and games room, and the estate's cinema, gym and garden terrace stand as bare rooms with empty plinths; the penthouse terrace is bare too.
+- Measured headless (`tests/star/home3d.mts`, room only, no player, before cars/props load): house hallway 29 draws / 1.4k triangles, lounge 45 / 5.1k, dressing room 39 / 2.5k, trophy room 33 / 9.6k; villa garage 20 / 3.8k, games room 26 / 4.9k; estate cinema 21 / 8.7k, gym 25 / 5.0k, garden terrace 23 / 3.1k; penthouse terrace 27 / 4.6k; flat nook 20 / 1.5k; at most 2 new 1024 pictures a room; the mirror only in the dressing room (none on Low). Budget 50 draws, 45k triangles. New rooms join every glow into one draw per picture and every doorway sign into one picture.
+- Filled (9 Oct 2026, `roomBuild.ts` `buildGarage`, `buildGames`, `buildCinema`, `buildGym`, `buildGardenTerrace`, `buildPenthouseTerrace`, `buildNook`). One hero each; anything not bought is an empty plinth.
+  - Villa garage: four bays, your cars as their light models facing out (an empty turntable plinth per empty bay), polished floor (`ROOM_LOOK.garage.rough`), a closed roller door, a workbench and pegboard of tools, your club colours round the walls, the motorbike (`public/star/home3d/bike-lod.glb`) or its plinth.
+  - Villa games room (now 8.6 × 7.4 m at house size): the pool table under its lamp, a pool (still water in a stone surround), loungers, a cue rack, a shelf of your watches and cans.
+  - Estate cinema: a screen with your club's badge (`HomeData.badge`, the drawn badge SVG, painted onto a 1024 picture), two rows of recliners, a starry ceiling, a snack bar of cans. Estate gym: a power rack with plates in your colours, bench, treadmill, dumbbells, a mirror wall (dark glass, not live), a fridge of cans. Estate garden terrace: open on three sides over a balustrade (`shellOf(..., { open, parapet })`), a built fountain, the garden's own hedges, lanterns, plants, loungers and paddock fence (`public/star/home3d/terrace-props.glb`, `tools/home3d/make_terrace_props.mjs`), your jet (`jet-lod.glb`) on its pad and your horse by his paddock (or their empty stands).
+  - Penthouse terrace: glass balustrade, the skyline all round, an outdoor sofa, planters, string lights; through the glass behind you, your best car in a lit gallery.
+  - The flat now has a hallway nook by its front door (`TIER_ROOMS.flat = ["nook", "main"]`): a boot bench with your boots, your kits on hooks, a key table. The one room's door then reads HALLWAY; Old look unchanged.
+  - Pieces: `painter()` joins many coloured shapes into one draw (vertex colours, kept out of `freezeStatic`); `roundedBox()` for cushions. The lounge sofa now has a base on legs, rounded arms, loose seat and back cushions.
+- Room camera (Harry, 9 Oct 2026: it sat jammed behind his head): `ROOM_CAM` in `scene.ts`, 4.4 m back and 2.9 m up (was 3.3 / 2.35). Near a wall the boom shortens along its own line (`roomCamBoom`, never through the wall) and the camera rises; backed onto a wall it swings up to ~70° round him to where there is room behind AND room ahead to look into (`openCamYaw`, used on arrival and while walking).
 
 **Done.**
 - The room: `lib/star/home3d/scene.ts`, one parametric room (now `roomBuild.ts` "main"). Six presets in `lib/star/home3d/homes.ts`, picked by the best home you own in the shop (`homeTierOf`): starter flat (nothing bought), flat, penthouse, house, villa, estate. Size, floor, panelling, metal trim, chandelier, plants, cabinet size, drive size and the window view grow with the tier.
@@ -575,6 +582,32 @@ Not done:
 - Not seen on a phone. The look of the KTX2 shop items was checked on one still pair only (near-identical; the smart-watch band a shade lighter).
 
 Tools: `scripts/perf3d/load.mjs` (`--files` lists every trip), `prof.mjs` (top costs and who calls them), `newprog.mjs` (shaders built after ready), `png-refs.mjs` (which PNGs the code uses), `serve.mjs --cache=vercel` (the live site's cache headers).
+
+### 3D lag pass 4 (9 Oct, night)
+
+Harry: "I want loading times eradicated, I want animations clean in every mode." Same picture, less work. Measured on this machine (SwiftShader, 390×844, page thread slowed 4×; it has NO parallel shader compile, so a shader built "in the background" here is still paid on first use; count shaders, trust the phone).
+
+| Item | Before | After |
+|---|---|---|
+| 1. Style A heads fetched | drill 8, cut scene 8, garden 8 | drill 3, cut scene 4, garden 5 (−0.9 to −1.1 MB; drill ready 6.5 → 5.2 s, cut 5.7 → 4.4 s) |
+| 2. KTX2 (one bodies, human) | one body 11 MB, human ~50 MB on the chip | ~2.8 MB / ~13 MB (still pairs: mean pixel change 0.9 / 0.4 of 255) |
+| 3. Career 3D revisit (first frame) | 5.7 s (43 shaders rebuilt on frame 1) | 2.8–3.7 s (0 screen shaders; look H's own built before ready) |
+| 4. Bench "GET OUT THERE" freeze | 418 + 344 ms long tasks | built, NOT re-measured (needs a fresh `next build`) |
+| 5. Garden: shaders built after the cover | 22 | ~5 (the cars that arrive late, one lamp variant) |
+
+Done:
+- `toonHeadsFor(people)` (`lib/star/people3d.ts`): the heads makePerson3d will pick for these ids. Garden, drills (play3d), ovation, farewell, cut-scene people pass it to `loadPeople3d`. Files are cached per URL, so scenes share them.
+- KTX2 twins `*.ktx2.glb` for `onebody/*.glb` and `human3d/human.glb` (`scripts/perf3d/ktx2-models.mjs`, `KTX2_MODELS` + `loadModel3d` in `lib/star/three3d/ktx2.ts`, POLICY skip lines). Files grow (one body 0.5 → 1.4 MB, the UASTC normal map). The preload asks for the twins.
+- Career revisit: `RealLook.compile` (`real/look.ts`) builds shaders for look H's own picture target; `createEngineView` waits up to `H_WAIT_MS` for H so it opens straight in it (the kit's first frames had built 43 screen shaders, then H built its own). The spares are built a slice at a time while H loads, the drawing buffer is sized while loading. `relaxIdleArms` reads matrixWorld instead of re-walking the chain: same numbers bit for bit, 42% faster.
+- Bench: the two freezes were the chance space built on the first chance (`generateSpace`, 373k crossings) and each kit's sprite atlas coloured in one go. `warmChanceSpace()` (`chanceFormula.ts`) and `warmSpriteKits()` (`sprites.ts`) do both in slices from CanvasMatch's mount, while the commentary runs.
+- Garden: the bench and car pictures (`makeImpostor`) are drawn into their own target with their own lights and no fog; their first bake built every shader on frame 1 (~2.4 s here). `prime()` builds them during loading.
+
+Not done:
+- Style A heads stay WebP: ETC1S tinted the skin a shade grey-blue (the toon shader reads skin and hair off the map); UASTC kept it but a head went 220 → 920 KB. Try: UASTC with sRGB flag + stronger RDO, or a 512 colour map.
+- `star-pass/3d/reward-glasses.glb`: twin not shipped (no still of it checked; Podium3D already calls `loadModel3d`, so adding it to both lists is all it needs after a still).
+- Item 4 after-numbers; and on this machine the garden's ready→first gap did not shrink (no parallel compile here). Check both on a phone.
+
+Tools: `scripts/perf3d/prof2.mjs` (profile the Nth open in one page: `THROTTLE=4`, `STAY=ms`), `progcache.mjs` (which shaders survive leaving and coming back), `newprog.mjs --visit=2`, `scripts/perf2d/bench-prof.mjs` (profile from GET OUT THERE to the first aim, worst long tasks), harness scene `H.person` (one person under the page's Settings). Note: with `M.finish=false` a long stay piles GPU work up and the next first frame "waits" 25 s; that is the harness, not the game.
 
 ### 2D shop
 

@@ -26,6 +26,7 @@ import { chanceSet } from "@/lib/star/chanceSet";
 import { chanceDeck, careerDeckScope } from "@/lib/star/chanceLibrary";
 import { separateBodies } from "@/lib/star/spacing";
 import { newSelectionMemory } from "@/lib/star/scenarioSelect";
+import { warmChanceSpace } from "@/lib/star/chanceFormula";
 import { finishServedFrame } from "@/lib/star/goalFrame";
 import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, pressFromBehind, foulShareFor, pressStep } from "@/lib/star/pressure";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
@@ -181,11 +182,11 @@ import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
 import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
-import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, type SpriteClip } from "@/lib/star/sprites";
+import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
-import { showYouFigure, matchBallLook, useMatchPlayersLook } from "@/lib/star/newLook";
+import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
@@ -1687,6 +1688,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * away from the other keeper's colours so the two are never the same man.
    */
   const ourKeeperKitRef = useRef(keeperKit(ourKit().shirt, kitsRef.current.keeper.shirt));
+  // Lag pass 4 (9 Oct 2026): the first chance's one-off work done in the
+  // background at kick-off (the bench's commentary, or the first seconds of
+  // play), not in one freeze as it opens: the chance space (chanceFormula.ts)
+  // and the 3D players' kits coloured (sprites.ts). Same chances, same picture.
+  useEffect(() => {
+    warmChanceSpace();
+    if (matchPlayersLook() === "3d") {
+      const sk = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, shorts: k.trim, socks: k.shirt });
+      warmSpriteKits([sk(ourKit()), sk(theirKit()), sk(kitsRef.current.keeper), sk(ourKeeperKitRef.current)]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // strengthRef.current is already the real keeper's own rating here when
   // there is one — see its own assignment just above — so the very first

@@ -331,6 +331,26 @@ function warmAtlas(n: number): void {
   })();
 }
 
+/**
+ * Colour the main atlas in these kits ahead of time, a few rows between frames
+ * (lag pass 4, 9 Oct 2026). Coming on from the bench, the first chance drew
+ * every kit for the first time and coloured each one in one go: a ~230 ms
+ * freeze (CPU slowed 4×) right as the chance opened. The match calls this while
+ * the commentary runs. Same picture: the same colouring, only done earlier.
+ */
+export function warmSpriteKits(kits: SpriteKit[]): void {
+  if (typeof document === "undefined") return;
+  void (async () => {
+    try {
+      if (!(await loadSprites())) return;
+      for (const kit of kits) {
+        await tintChunked(kit, 0);
+        seenKits.set(kit.shirt + "|" + kit.shorts + "|" + kit.socks, kit);
+      }
+    } catch { /* coloured on first draw instead, as before */ }
+  })();
+}
+
 function dirIndex(facing: number, dirs: number): number {
   const step = (Math.PI * 2) / dirs;
   let k = Math.round(facing / step) % dirs;

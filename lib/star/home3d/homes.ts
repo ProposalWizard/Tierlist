@@ -159,17 +159,20 @@ export function cabinetSize(tier: HomeTier): number {
  */
 export type RoomId =
   | "main" | "hallway" | "lounge" | "dressing" | "trophy" | "terrace"
-  | "garage" | "games" | "cinema" | "gym" | "gardenTerrace";
+  | "garage" | "games" | "cinema" | "gym" | "gardenTerrace"
+  /** The flat's little hallway by its front door (boots, coats, keys). */
+  | "nook";
 
 /**
  * The rooms of each tier, in the order the dots show them (the first is where
  * you arrive). From the house up each tier holds every room of the one below.
+ * The flat has a small hallway nook by its front door, then its one room.
  * The penthouse is the odd one: no hallway or trophy room, so its lounge keeps
  * the cabinet, and the glass terrace is its own.
  */
 export const TIER_ROOMS: Record<HomeTier, RoomId[]> = {
   starter: ["main"],
-  flat: ["main"],
+  flat: ["nook", "main"],
   penthouse: ["lounge", "dressing", "terrace"],
   house: ["hallway", "lounge", "dressing", "trophy"],
   villa: ["hallway", "lounge", "dressing", "trophy", "garage", "games"],

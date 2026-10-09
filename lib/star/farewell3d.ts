@@ -21,7 +21,7 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
-  loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, type Person3D, type PeopleBody, type PlayerModel,
+  loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, toonHeadsFor, type Person3D, type PeopleBody, type PlayerModel,
 } from "./people3d";
 import { people3dLook } from "./look3d";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
@@ -225,9 +225,11 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
   const loader = await withMeshopt(new GLTFLoader()); // the files are meshopt-packed (scripts/perf3d/shrink-models.mjs)
   const youModel: PlayerModel = playerModelFor(opts.you.hairStyle);
   const models: PlayerModel[] = ["player", "player-buzz", "player-long"];
+  // only the heads of the men in the two lines (one id a man, in order) and yours: no suits
+  const heads = toonHeadsFor([{ you: true }, ...Array.from({ length: 2 * n }, (_, k) => ({ who: `farewell-${opts.seed}-${k}` }))]);
   const [anims, ...bodies] = await Promise.all([
     loadPeople3d(loader, "anims"),
-    ...models.map((m) => loadPeople3d(loader, m, BODY)),
+    ...models.map((m) => loadPeople3d(loader, m, BODY, heads)),
   ]);
   const bodyOf = (m: PlayerModel): GLTF => bodies[models.indexOf(m)];
 
