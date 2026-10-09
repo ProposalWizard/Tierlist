@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
 
 /**
  * ERROR MONITORING — browser side. Named `instrumentation-client.ts`, not
@@ -18,16 +17,29 @@ import * as Sentry from "@sentry/nextjs";
  * environment without the variable behaves exactly as before this file
  * existed — no console noise, no failed network calls.
  */
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
-  // Sampled, not exhaustive — a free/small Sentry plan has a monthly event
-  // quota, and a trace on every request would burn through it fast on a
-  // multi-page-view site like this one.
-  tracesSampleRate: 0.2,
-});
+// Fetched only when a DSN is set, and after the page has started (speed
+// job D, 9 Oct 2026). With no DSN — today — not a byte of the Sentry SDK is
+// downloaded; it used to ride in every page's first download, switched off.
+// The cost once it is on: an error in the page's first moment, before the SDK
+// arrives, is not reported.
+type SentryModule = typeof import("@sentry/nextjs");
+let sentry: SentryModule | null = null;
+if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  void import("@sentry/nextjs").then((S) => {
+    S.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      enabled: true,
+      // Sampled, not exhaustive — a free/small Sentry plan has a monthly event
+      // quota, and a trace on every request would burn through it fast on a
+      // multi-page-view site like this one.
+      tracesSampleRate: 0.2,
+    });
+    sentry = S;
+  });
+}
 
 // Required by the SDK for it to instrument App Router client-side page
 // transitions (a Next.js router.push doesn't reload the page, so nothing
 // else here would tell Sentry a "navigation" happened).
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const onRouterTransitionStart: SentryModule["captureRouterTransitionStart"] = (...args) =>
+  sentry?.captureRouterTransitionStart(...args);
