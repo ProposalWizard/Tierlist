@@ -50,6 +50,13 @@ uniform vec4 uKit2;       // collar y, shorts low y, sleeve t, -
 uniform sampler2D uBadge;
 uniform float uBadgeOn;   // 0 none, 1 shield, 2 picture
 uniform vec4 uShade;      // soft bands (0/1), face lift, hair sheen (0/1), -
+uniform sampler2D uName;
+uniform float uNameOn;
+uniform vec4 uNameBox;    // the name on the back: centre x, centre y, width, height
+uniform vec4 uFrontNum;   // the small number on his right chest: x, y, size, on
+uniform vec4 uPattern;    // kind (0 plain, 1 stripes, 2 hoops, 3 halves, 4 sleeves), stripe width, -, -
+uniform vec3 uPat2;       // the pattern's second colour
+uniform vec4 uCloth;      // weave strength, seam darkness, skin shade (long sleeves over skin), -
 float tnLitEdge = 0.0;
 float tnFace = 0.0;       // this point is face skin (set before the lights)
 vec3 toonStep(float d) {
@@ -69,6 +76,15 @@ const TOON_BODY = `
   vec3 c = diffuseColor.rgb;
   vec3 mk = texture2D(uMask, vMapUv).rgb;
   float kit = mk.r, skin = mk.g, hairM = mk.b;
+  // below the chin every point is kit, skin or hair: a soft mask edge (the collar, the cuffs) is
+  // shared out between them, so the model's own baked colour never shows as a thin line
+  float mTot = kit + skin + hairM;
+  if (r.y < uFaceF.x - 0.02 && mTot > 0.05 && mTot < 1.0) { kit /= mTot; skin /= mTot; hairM /= mTot; }
+  // and a torso point the mask missed altogether is cloth (the model's own red shirt showed through)
+  else if (mTot <= 0.05 && r.y < uKit2.x + 0.035 && abs(r.x) < 0.3 && r.y > uLines.y) kit = 1.0;
+  // the generated model's own red shirt, where the mask calls it skin (a few texels at the collar and
+  // the hem: the thin red line): far redder than any skin (skin's red is under 3× its green)
+  if ((r.y < uFaceF.x - 0.02 || (r.y < uFaceF.x + 0.03 && r.z < uNeck.z)) && c.r > 5.0 * c.g && c.r > 4.0 * c.b && c.r > 0.06) { kit = 1.0; skin = 0.0; hairM = 0.0; }
   float lum = max(c.r, max(c.g, c.b));
   float shade = clamp(pow(max(c.g, 1e-4), 1.0 / 2.2) / 0.7, 0.25, 1.4);
   float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
@@ -100,26 +116,80 @@ const TOON_BODY = `
     part = mix(part, sh, v);
     // long sleeves and trousers over what is bare skin in the kit
     vec3 tW = tL ? uWrL : uWrR;
-    float onFore = step(0.12, abs(r.x)) * step(p3SegD(r, tE, tW, 0.0, 1.0), 0.09);
-    float sleeve = skin * max(onArm, onFore) * (1.0 - head);
+    // (everything on the arm that is not kit, wide round the elbow, so no skin shows there; the skin's
+    // own shading brought to the cloth's, so the forearms are not a shade darker than the top)
+    float onFore = step(0.12, abs(r.x)) * step(p3SegD(r, tE, tW, 0.0, 1.0), 0.11);
+    float onElbow = step(0.12, abs(r.x)) * step(length(r - tE), 0.13);
+    float onUp = step(0.12, abs(r.x)) * step(p3SegD(r, tS, tE, 0.0, 1.0), 0.13) * step(0.05, tTu);
+    float sleeve = (1.0 - kit) * (1.0 - hairM) * max(max(onUp, onFore), onElbow) * (1.0 - head);
     float hand = step(0.97, p3SegT(r, tE, tW));
-    col = mix(col, uSuitCoat * shade, sleeve * (1.0 - hand));
-    col = mix(col, uSuitTrousers * shade, skin * step(r.y, uLines.x) * step(uLines.z, r.y) * step(abs(r.x), 0.3) * (1.0 - onArm));
+    float skinShade = clamp(shade / uCloth.z, 0.7, 1.2);
+    col = mix(col, uSuitCoat * skinShade, sleeve * (1.0 - hand));
+    // the legs are all trousers (a soft mask edge at the knee or sock top left a skin-coloured band)
+    float legs = step(r.y, uLines.x) * step(uLines.z, r.y) * step(abs(r.x), 0.3) * (1.0 - onArm) * (1.0 - max(onFore, onElbow));
+    col = mix(col, uSuitTrousers * skinShade, (1.0 - kit) * legs);
+    kit = max(kit, legs);
   } else {
-    part = uShirt * shirtW + uShorts * shortsW + uSocks * socksW + uBoots * bootW;
-    // trims: collar, cuffs, shorts hem, sock tops
-    float trim = shirtW * step(uKit2.x - 0.022, r.y) * step(abs(r.x), 0.12);
-    trim = max(trim, shirtW * onArm * step(uKit2.z - 0.07, tTu));
+    // the shirt's own pattern (kitPattern.ts): stripes and halves on the body, hoops all over, contrast sleeves
+    vec3 shirtC = uShirt;
+    float pk = uPattern.x;
+    if (pk > 0.5) {
+      float sw = uPattern.y;
+      float pat = 0.0;
+      if (pk < 1.5) pat = (1.0 - onArm) * step(0.5, fract(abs(r.x) / sw));
+      else if (pk < 2.5) pat = step(0.5, fract((uKit2.x - r.y) / sw));
+      else if (pk < 3.5) pat = step(0.0, r.x) * (1.0 - onArm) + onArm * step(0.0, -r.x);
+      else pat = max(onArm, step(0.17, abs(r.x)) * step(p3SegD(r, tS, tE, -0.3, 1.0), 0.12));
+      // a plain panel behind the name and number on the back (as striped and hooped shirts have)
+      float pTop = uNameOn > 0.5 ? uNameBox.y + uNameBox.w * 0.6 : uNumBox.y + uNumBox.w * 0.34;
+      float panel = (uNumOn > 0.5 && r.z < 0.0 && vRestN.z < -0.25) ? step(abs(r.x), uNumBox.z * 0.42) * step(uNumBox.y - uNumBox.w * 0.36, r.y) * step(r.y, pTop) : 0.0;
+      shirtC = mix(uShirt, uPat2, pat * (1.0 - panel));
+    }
+    part = shirtC * shirtW + uShorts * shortsW + uSocks * socksW + uBoots * bootW;
+    // trims: a ring collar round the neck, cuffs (a band and a thin line above it), shorts hem, sock tops
+    float nr = length(r.xz - uNeck.xz);
+    float trim = shirtW * (1.0 - onArm) * step(uKit2.x - 0.02, r.y) * step(nr, 0.12);
+    trim = max(trim, shirtW * onArm * step(uKit2.z - 0.055, tTu));
+    trim = max(trim, shirtW * onArm * step(uKit2.z - 0.105, tTu) * step(tTu, uKit2.z - 0.085));
     trim = max(trim, shortsW * step(r.y, uKit2.y + 0.022));
     trim = max(trim, socksW * step(uLines.y - 0.03, r.y));
+    // the shorts' side stripe: down the outside of each leg
+    float outS = (r.x > 0.0 ? vRestN.x : -vRestN.x);
+    trim = max(trim, shortsW * smoothstep(0.78, 0.86, outS) * step(abs(r.x), 0.3));
     part = mix(part, uTrim, trim);
+    // the cloth: a fine weave (fading out where it would shimmer) and stitched seams
+    vec2 wv = vec2(r.x + r.z, r.y) * 420.0;
+    float fw = max(fwidth(wv.x), fwidth(wv.y));
+    float weave = (sin(wv.x) * sin(wv.y) + 0.5 * sin((wv.x + wv.y) * 0.5)) * (1.0 - smoothstep(0.45, 1.1, fw));
+    float seam = 0.0;
+    // side seams of the shirt, from the armpit down
+    seam = max(seam, shirtW * (1.0 - onArm) * (1.0 - smoothstep(0.035, 0.07, abs(vRestN.z))) * step(0.5, abs(vRestN.x)) * step(r.y, uShL.y - 0.08));
+    // over each shoulder, neck to sleeve
+    seam = max(seam, shirtW * (1.0 - onArm) * step(abs(r.z - uShL.z - 0.01), 0.006) * step(0.45, vRestN.y) * step(0.1, abs(r.x)));
+    // where the sleeve joins the body
+    seam = max(seam, shirtW * onArm * step(abs(tTu - 0.16), 0.012));
+    // the shirt's hem and the shorts' waistband
+    seam = max(seam, shirtW * step(r.y, uLines.x + 0.018) * step(uLines.x + 0.012, r.y));
+    seam = max(seam, shortsW * step(uLines.x - 0.03, r.y) * step(r.y, uLines.x - 0.024));
+    float clothK = (1.0 + uCloth.x * weave * (shirtW + shortsW)) * (1.0 - uCloth.y * seam);
+    part *= clothK;
     if (uNumOn > 0.5 && shirtW > 0.5 && vRestN.z < -0.25 && r.z < 0.0) {
+      // the number between the shoulder blades, the name arched above it
       vec2 nuv = vec2(0.5 - (r.x - uNumBox.x) / uNumBox.z, (r.y - uNumBox.y) / uNumBox.w + 0.5);
       if (nuv.x > 0.0 && nuv.x < 1.0 && nuv.y > 0.0 && nuv.y < 1.0) part = mix(part, uTrim, texture2D(uNum, nuv).a);
+      if (uNameOn > 0.5) {
+        vec2 mu = vec2(0.5 - (r.x - uNameBox.x) / uNameBox.z, (r.y - uNameBox.y) / uNameBox.w + 0.5);
+        if (mu.x > 0.0 && mu.x < 1.0 && mu.y > 0.0 && mu.y < 1.0) part = mix(part, uTrim, texture2D(uName, mu).a);
+      }
+    }
+    // a small number on his right chest (the badge is on his left)
+    if (uNumOn > 0.5 && uFrontNum.w > 0.5 && shirtW > 0.5 && vRestN.z > 0.2 && r.z > 0.0) {
+      vec2 fu = vec2(0.5 + (r.x - uFrontNum.x) / uFrontNum.z, (r.y - uFrontNum.y) / uFrontNum.z + 0.5);
+      if (fu.x > 0.0 && fu.x < 1.0 && fu.y > 0.0 && fu.y < 1.0) part = mix(part, uTrim, texture2D(uNum, fu).a);
     }
     // the badge, his left chest
     if (uBadgeOn > 0.5 && shirtW > 0.5 && vRestN.z > 0.2 && r.z > 0.0) {
-      vec2 b = vec2((r.x - 0.085) / 0.07 + 0.5, (uKit2.x - 0.1 - r.y) / 0.08 + 0.5);
+      vec2 b = vec2((r.x - 0.085) / 0.07 + 0.5, (uFrontNum.y - r.y) / 0.08 + 0.5);
       if (b.x > 0.0 && b.x < 1.0 && b.y > 0.0 && b.y < 1.0) {
         if (uBadgeOn > 1.5) {
           vec4 bt = texture2D(uBadge, vec2(b.x, 1.0 - b.y));
@@ -135,7 +205,9 @@ const TOON_BODY = `
       }
     }
   }
-  col = mix(col, part * shade, kit);
+  // a suit's or casual set's trousers over a kit body's white shorts: no brighter than the cloth
+  float partShade = (uSuit > 0.5 && shirtW < 0.5) ? min(shade, 1.0) : shade;
+  col = mix(col, part * partShade, kit);
 
   if (uFaceOn > 0.5) {
     vec2 fp = vec2(uFaceA.x + r.x * uFaceA.z, uFaceA.y - (r.y - uFaceF.y) * uFaceA.w);
@@ -149,6 +221,25 @@ const TOON_BODY = `
   }
 `;
 
+/** The cloth: weave strength (± share of the colour) and how much darker a stitched seam is. */
+export const TOON_CLOTH = { weave: 0.04, seam: 0.3 } as const;
+
+/**
+ * Where the shirt's lettering goes on a Style A body, from that head's own
+ * bones and kit lines (rest pose, metres), so it is right for every head and
+ * build (a build is a scale of the whole person, so the rest-pose spot holds).
+ *   number: centred between the shoulder blades, its middle 0.17 m under the shoulder joints
+ *   name:   arched above it, just under the collar
+ *   front:  a small number on his right chest, level with the badge
+ */
+export function toonShirtLayout(m: { shoulderY: number; collarY: number }) {
+  return {
+    number: { x: 0, y: m.shoulderY - 0.17, size: 0.27 },
+    name: { x: 0, y: m.shoulderY - 0.035, w: 0.3, h: 0.075 },
+    front: { x: -0.085, y: m.collarY - 0.1, size: 0.075 },
+  };
+}
+
 /** Uniforms a toon body adds to people3d's own. */
 export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: number; shortsLoY?: number; sleeveT?: number }, neckY: number) {
   const blank = new T.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
@@ -161,6 +252,11 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uKit2: { value: new T.Vector4(kit.collarY ?? neckY - 0.03, kit.shortsLoY ?? 0.65, kit.sleeveT ?? 0.75, 0) },
     uBadge: { value: blank as THREE.Texture }, uBadgeOn: { value: 1 },
     uShade: { value: new T.Vector4(0, 0.35, 0, 0) },
+    uName: { value: blank as THREE.Texture }, uNameOn: { value: 0 },
+    uNameBox: { value: new T.Vector4(0, 1.37, 0.3, 0.075) },
+    uFrontNum: { value: new T.Vector4(-0.085, (kit.collarY ?? neckY - 0.03) - 0.1, 0.075, 1) },
+    uPattern: { value: new T.Vector4(0, 0.1, 0, 0) }, uPat2: { value: new T.Color(1, 1, 1) },
+    uCloth: { value: new T.Vector4(TOON_CLOTH.weave, TOON_CLOTH.seam, 0.7, 0) },
   };
 }
 
@@ -199,5 +295,5 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
 }
 #include <opaque_fragment>`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v3";
+  mat.customProgramCacheKey = () => "people3d-toon-v4";
 }

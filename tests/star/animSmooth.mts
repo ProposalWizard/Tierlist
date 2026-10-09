@@ -331,5 +331,46 @@ if (!OLD) {
   }
 }
 
+// ── 6. Hand-keyed clips: no bone flips (tools/mocap3d/keyed.py steady()) ──
+// The keyed dives, tackles and knee slide used to turn a thigh 160-180° in one
+// key (the IK knee swapping sides). Played at 60 fps, no bone may turn more
+// than KEY_FLIP_DEG between two frames. KEYED_GLB=<dir> reads the files from
+// another folder (the before).
+export const KEYED_FLIP_DEG = 60;
+if (!OLD) {
+  for (const file of ["mocap.glb", "mocap-ual.glb"]) {
+    const kg = await load(`${process.env.KEYED_GLB ?? "public/star/anims3d"}/${file}`);
+    const meta = kg.scene.userData.clips ?? {};
+    const keyed = kg.animations.filter((c: THREE.AnimationClip) => String(meta[c.name]?.source ?? "").startsWith("keyed"));
+    check(keyed.length >= 9, `${file}: only ${keyed.length} keyed clips found`);
+    const rows: string[] = [];
+    for (const clip of keyed as THREE.AnimationClip[]) {
+      const root: THREE.Object3D = kg.scene.clone(true);
+      const objs: THREE.Object3D[] = [];
+      root.traverse((o) => objs.push(o));
+      const mixer = new THREE.AnimationMixer(root);
+      const act = mixer.clipAction(clip);
+      act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = true; act.play();
+      const prev = new Map<THREE.Object3D, THREE.Quaternion>();
+      let worst = 0, at = 0, who = "";
+      const n = Math.ceil(clip.duration * FPS);
+      for (let f = 0; f <= n; f++) {
+        mixer.setTime(Math.min(f * DT, clip.duration));
+        for (const o of objs) {
+          const p = prev.get(o);
+          if (p) {
+            const d = (2 * Math.acos(Math.min(1, Math.abs(p.dot(o.quaternion))))) * 180 / Math.PI;
+            if (d > worst) { worst = d; at = f * DT; who = o.name; }
+            p.copy(o.quaternion);
+          } else prev.set(o, o.quaternion.clone());
+        }
+      }
+      rows.push(`${clip.name} ${worst.toFixed(0)}° (${who} ${at.toFixed(2)} s)`);
+      check(worst <= KEYED_FLIP_DEG, `${file} ${clip.name}: ${who} turns ${worst.toFixed(0)}° in one frame at ${at.toFixed(2)} s`);
+    }
+    console.log(`keyed clips, ${file}, biggest one-frame bone turn at 60 fps: ` + rows.join(" · "));
+  }
+}
+
 if (problems.length) { console.error(problems.map((p) => "  ✗ " + p).join("\n")); process.exit(1); }
 console.log(OLD ? "measured the before" : "animSmooth: all checks passed");

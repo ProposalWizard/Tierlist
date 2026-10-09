@@ -98,6 +98,8 @@
  */
 import type * as THREE from "three";
 import { installFrameMeter } from "./frameMeter";
+import { installAssetVersions, versionedUrl } from "./assetUrl";
+import { safeCompileAsync } from "./safeCompile";
 import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
 export type { Quality3d, TierProfile } from "./quality";
@@ -385,8 +387,11 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
         if (v && (v as THREE.Texture).isTexture && !seen.has(v as THREE.Texture)) { seen.add(v as THREE.Texture); renderer.initTexture(v as THREE.Texture); }
       }
     });
-    const job = typeof renderer.compileAsync === "function" ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera));
+    // safeCompileAsync, not renderer.compileAsync: three's own can throw on
+    // a timer and never settle (a material that lost its program), which left
+    // the garden on its spinner (safeCompile.ts).
     const t = opts.timeoutMs ?? 8000;
+    const job = safeCompileAsync(renderer, scene, camera, t);
     await Promise.race([job, new Promise((r) => setTimeout(r, t))]);
     // One real draw of a single pixel: links the programs, builds the
     // shadow-map shaders (compile() skips those), uploads the skinning
@@ -404,17 +409,72 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
   flushReleased();
 }
 
+/**
+ * Before `PMREMGenerator.fromScene(scene)` (the shop's and the casino's
+ * "bake the room into its reflections"): compile every material's
+ * draw-into-a-picture variant in the background first. Drawing into a render
+ * target needs a second shader per material (no tone mapping, linear
+ * colour); without this, fromScene built all of them one by one on the page
+ * thread — the casino's 9 of its 20 s to open, measured 9 Oct 2026
+ * (scripts/perf3d/prof.mjs casino). Same picture, the work moved off the wait.
+ */
+export async function compileForBake(T: Three, renderer: THREE.WebGLRenderer, scene: THREE.Object3D, camera: THREE.Camera, timeoutMs = 8000) {
+  const rt = new T.WebGLRenderTarget(1, 1, { type: T.HalfFloatType });
+  const prev = renderer.getRenderTarget();
+  renderer.setRenderTarget(rt);
+  let job: Promise<unknown> = Promise.resolve();
+  // compileAsync picks every shader's variant now (synchronously, from the
+  // target set); only the waiting is async, so the target goes straight back
+  try { job = safeCompileAsync(renderer, scene, camera); } catch { /* built by fromScene instead */ }
+  renderer.setRenderTarget(prev);
+  try { await Promise.race([job, new Promise((r) => setTimeout(r, timeoutMs))]); } catch { /* fine */ }
+  rt.dispose();
+}
+
 const bufCache = new Map<string, Promise<ArrayBuffer>>();
 
-/** The files each scene loads first (its loading-cover wait). Keep in step with the scenes. */
-export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing" | "casino", string[]> = {
-  garden: ["/star/garden3d/props.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
-  shop: ["/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
-  office: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
-  signing: ["/star/onebody/manager.glb", "/star/onebody/player.glb", "/star/people3d/anims.glb", "/star/signing3d/room-golden-hour.webp"],
-  // the casino room is all primitives and canvas paint: only you to load
-  casino: ["/star/onebody/player.glb", "/star/people3d/anims.glb"],
+/**
+ * Each place's own files (its loading-cover wait), for a first-ever visit.
+ * The people (bodies, heads, clips) are not listed: warmPeople3d
+ * (people3d.ts) fetches and unpacks exactly the ones the current Settings
+ * use (the Style A heads by default — this list used to fetch the old one
+ * body, which no scene loads under Player style New). After a place has been
+ * opened once, the files it really asked for are kept (noteSceneFiles) and
+ * used instead.
+ */
+export const SCENE_ASSETS: Record<"garden" | "shop" | "office" | "signing" | "casino" | "home", string[]> = {
+  garden: ["/star/garden3d/props.glb", "/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
+  shop: ["/star/shop3d/draco/draco_decoder.wasm", "/star/shop3d/draco/draco_wasm_wrapper.js"],
+  office: ["/star/signing3d/room-golden-hour.webp"],
+  signing: ["/star/signing3d/room-golden-hour.webp"],
+  casino: ["/star/anims3d/casino.glb"],
+  home: [],
 };
+export type Scene3dName = keyof typeof SCENE_ASSETS;
+
+const filesKey = (name: string) => `kib-3d-files-${name}`;
+/** The files a place really asked for since `since` (performance.now()), kept on this device for the next preload. */
+export function noteSceneFiles(name: Scene3dName, since: number) {
+  try {
+    if (typeof performance === "undefined" || typeof localStorage === "undefined") return;
+    const seen = new Set<string>();
+    for (const e of performance.getEntriesByType("resource")) {
+      if (e.startTime < since) continue;
+      const u = new URL(e.name, location.href);
+      if (u.origin !== location.origin || !u.pathname.startsWith("/star/")) continue;
+      if (!/\.(glb|webp|png|ktx2|hdr|wasm|js)$/.test(u.pathname)) continue;
+      seen.add(u.pathname);
+    }
+    if (seen.size) localStorage.setItem(filesKey(name), JSON.stringify(Array.from(seen).slice(0, 48)));
+  } catch { /* no storage: the fixed list next time */ }
+}
+function sceneFiles(name: Scene3dName): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(filesKey(name)) ?? "null");
+    if (Array.isArray(v) && v.every((x) => typeof x === "string" && x.startsWith("/star/"))) return v;
+  } catch { /* fixed list */ }
+  return SCENE_ASSETS[name];
+}
 
 /** Should we spend the player's data on files they may not open? Not on Save-Data or 2G. */
 export function preloadAllowed(): boolean {
@@ -425,39 +485,97 @@ export function preloadAllowed(): boolean {
   return true;
 }
 
+/**
+ * Early downloads go ONE AT A TIME: a phone's browser keeps only a few
+ * connections to the site, and a burst of 3D files on Home queued the
+ * screen's own pictures behind them (the shop's boot stills sat as an empty
+ * glow for 8 s+ on a slow load, 9 Oct 2026). A place that opens meanwhile
+ * jumps the queue for the files it needs (loadGltfCached starts them now).
+ */
+interface Fetch3d { started: boolean; bg?: boolean; start: () => void }
+const waiting: Fetch3d[] = [];
+const jobs = new Map<string, Fetch3d>();
+let busy = false;
+function pump() {
+  if (busy) return;
+  const j = waiting.shift();
+  if (!j) return;
+  busy = true;
+  j.bg = true;
+  j.start();
+}
+
 /** Download files now (low priority, when the page is idle) and keep them in memory for loadGltfCached. */
 export function prefetch3d(urls: string[]) {
   for (const url of urls) {
     if (bufCache.has(url)) continue;
-    const p = fetch(url, { priority: "low" } as RequestInit).then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
+    let resolve!: (b: ArrayBuffer) => void, reject!: (e: unknown) => void;
+    const p = new Promise<ArrayBuffer>((res, rej) => { resolve = res; reject = rej; });
+    const job: Fetch3d = {
+      started: false,
+      start() {
+        if (job.started) return;
+        job.started = true;
+        // the versioned address (assetUrl.ts) is the one the loaders will ask for, so this fills their cache
+        fetch(versionedUrl(url), { priority: "low" } as RequestInit)
+          .then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); })
+          .then(resolve, reject)
+          .finally(() => { jobs.delete(url); if (job.bg) { busy = false; pump(); } });
+      },
+    };
+    jobs.set(url, job);
+    waiting.push(job);
     p.catch(() => bufCache.delete(url)); // a failed prefetch just falls back to a normal load
-    // Only models are read back from memory; the decoder files just warm the browser cache.
+    // Only models are read back from memory; the other files just warm the browser cache.
     if (!url.endsWith(".glb")) p.then(() => bufCache.delete(url), () => {});
     bufCache.set(url, p);
   }
+  pump();
+}
+
+/** A place needs this file NOW: start its early download straight away if it is still queued. */
+function promote(url: string) {
+  const j = jobs.get(url);
+  if (!j || j.started) return;
+  const i = waiting.indexOf(j);
+  if (i >= 0) waiting.splice(i, 1);
+  // runs beside the background one (not counted as it): the place's own load
+  j.start();
 }
 
 /**
- * Call from a screen that leads to a 3D scene (dashboard, a shop button's
- * screen): downloads the scene's files while the player reads, and loads
- * the three.js code itself, once the page is idle. Free if already done;
- * skipped on Save-Data / 2G.
+ * Call from a screen that leads to a 3D scene (Home, a shop button's
+ * screen): once the page is idle, loads the three.js code, the place's
+ * files, and the people every place shares — downloaded one at a time, then
+ * unpacked once (people3d's warmPeople3d) — so the place opens from memory.
+ * Free if already done; skipped on Save-Data / 2G.
  */
-export function preloadScene(name: keyof typeof SCENE_ASSETS) {
-  if (typeof window === "undefined" || !preloadAllowed()) return;
-  const go = () => {
-    prefetch3d(SCENE_ASSETS[name]);
-    void import("three");
+export function preloadScene(name: Scene3dName): Promise<void> {
+  if (typeof window === "undefined" || !preloadAllowed()) return Promise.resolve();
+  const go = async () => {
+    await installAssetVersions();
+    const people = await import("../people3d").catch(() => null);
+    const pf = people ? people.people3dFiles() : [];
+    prefetch3d([...pf, ...sceneFiles(name)]);
     void import("three/examples/jsm/loaders/GLTFLoader.js");
+    if (!people) return;
+    // unpack the people once their files are in (one shared job for every place)
+    await Promise.all(pf.map((u) => bufCache.get(u)?.catch(() => null)));
+    await people.warmPeople3d();
   };
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-  if (ric) ric(go, { timeout: 3000 }); else setTimeout(go, 1500);
+  // resolves when it is all in (the perf3d harness waits on it); callers may ignore it
+  return new Promise<void>((done) => {
+    const run = () => { go().catch(() => {}).finally(() => done()); };
+    if (ric) ric(run, { timeout: 3000 }); else setTimeout(run, 1500);
+  });
 }
 
 /** loader.loadAsync, but from the prefetch cache when preloadScene got there first. */
 export async function loadGltfCached<G = unknown>(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, url: string): Promise<G> {
   const p = bufCache.get(url);
   if (p && loader.parseAsync) {
+    promote(url);
     try {
       const buf = await p;
       bufCache.delete(url); // parsed once; the browser cache has it for the next visit

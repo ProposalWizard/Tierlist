@@ -1271,14 +1271,14 @@ export const ADMIN_GUIDES = {
         ["Free Roam (2D)", "The same free roam with every man drawn flat on a card: plain heads, no faces, the number on the back."],
         ["Cut: Goal", "Now a script on the cut-scene system: on the ball, behind the shooter, the top corner, wheels away, a low knee slide, the roar, team-mates pile on. ?cut=old plays the first hand-coded version."],
         ["Cut: Signing", "Now a script on the cut-scene system: sat across the desk, the contract slides over, he picks up the pen and signs his own signature, looks up and smiles, both stand and shake hands, then he holds his shirt up for the cameras. ?cut=old plays the first version."],
-        ["Cut-scene Director", "Watch any cut scene. Hand-made: the six written scenes (signing, goal, trophy, walk-out, press, The Icon). Generate from event: pick a game event, its feeling, stakes, intensity, rival there, home, night, then Make it; 🎲 Reroll tries another seed. ▶/❚❚ play and pause, ↺ replay, Skip jumps to the end, the slider scrubs (the beats are marked under it). \"Shot rules\" scores the shots against the film rules (opens on the place, pace of cuts, one side of the line, no jump cuts, a close-up). The style chips above change the look live."],
+        ["Cut-scene Director", "Watch any cut scene. Hand-made: the seven written scenes (signing, goal, trophy, walk-out, press, The Icon, Farewell). Generate from event: pick a game event, its feeling, stakes, intensity, rival there, home, night, then Make it; 🎲 Reroll tries another seed. ▶/❚❚ play and pause, ↺ replay, Skip jumps to the end, the slider scrubs (the beats are marked under it). \"Shot rules\" scores the shots against the film rules (opens on the place, pace of cuts, one side of the line, no jump cuts, a close-up). The style chips above change the look live. Settings → Look → Cut-scene camera: New adds the camera pass (a wide first, stiff moves hidden behind faces and props, every shot moving) and the scene's music (when Sound effects is on); Old plays the shots as written."],
         ["Walk-out", "The farewell guard of honour as it is in the game. The styles don't reach it yet."],
         ["Camera … from straight down", "Real game and free roam: the camera's tilt (real game 20 to 70, free roam 10 to 70). 40 is the starting angle; 0 would be straight down. Real game: the camera frames everyone in the chance, the goal at the top. The men lean back towards the camera a little so they read at full height."],
         ["↺ Replay", "Cut scenes: play it again from the start."],
         ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
       ] },
     ],
-    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
+    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
     inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
     dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts → the cut-scene system). The cut-scene system: lib/star/cutscene/ (README.md there); components/star/CutsceneDirector.tsx. Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
@@ -1324,13 +1324,16 @@ export const ADMIN_GUIDES = {
 
   "/star-home3d-dev": {
     title: "3D Home",
-    what: "Your house in 3D: one room you walk round, where you change clothes. The home you own in the shop sets its size, finish and window view (a starter flat before you buy one). Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
+    what: "Your house in 3D, where you change clothes. A bigger home has more rooms (House look New): a house has a hallway, a lounge, a dressing room and a trophy room; walk through a doorway to go to the next room. The starter flat and the flat are one room. Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
     buttons: [
       {
         items: [
           ["‹ 3D area", "Back to the 3D Test Area."],
           ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
-          ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards and cars, or with none."],
+          ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
+          ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
+          ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],
+          ["Walk through a doorway", "The screen fades for a moment and you arrive in that room. Each doorway has the room's name over it."],
           ["The stick (bottom left)", "Drag it to walk. WASD or the arrow keys on a computer."],
           ["Drag the view", "Swings the camera round you."],
           ["Tap something", "The wardrobe, the trophy cabinet or the drive window: you walk up to it and its card opens. Tap the floor to walk there."],
@@ -1357,7 +1360,7 @@ export const ADMIN_GUIDES = {
     saving: [
       "Nothing is saved here: the wardrobe's choice stays on this page.",
       "In a career the wardrobe's choice is saved on your career (it syncs with the rest of the save).",
-      "The address can hold a set-up: ?tier=villa, ?trophies=0, ?look=h or ?look=old (Look H on or off), ?q=low|medium|high, ?fps=1 for the frame meter.",
+      "The address can hold a set-up: ?tier=villa, ?trophies=0, ?house=old (the one room), ?look=h or ?look=old (Look H on or off), ?q=low|medium|high, ?fps=1 for the frame meter.",
     ],
     inGame: [
       "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
@@ -1366,7 +1369,7 @@ export const ADMIN_GUIDES = {
     needs: [
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
     ],
-    dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
+    dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
   "/star-chances-dev": {

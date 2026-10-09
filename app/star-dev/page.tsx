@@ -1,7 +1,6 @@
 "use client";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
-import LegacyStarDevPage from "@/components/star/legacy/LegacyStarDevPage";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
@@ -15,7 +14,6 @@ import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competit
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
-import GoalClipViewer from "@/components/star/GoalClipViewer";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
@@ -24,17 +22,12 @@ import {
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
-import HallOfFame from "@/components/star/HallOfFame";
-import { ShareLinkSheet } from "@/components/star/LegendShare";
-import CareerOverview from "@/components/star/CareerOverview";
-import SaveClashPrompt from "@/components/star/SaveClashPrompt";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32, sortLeague } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { trialOffers, clubsForDivision, SOURED_OFFER_SHARE, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
 import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
-import ScoutOffers from "@/components/star/ScoutOffers";
 // ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
 // Added as new phases beside the existing ones; nothing in the phase machine
 // below was reshaped for them.
@@ -45,13 +38,8 @@ import {
 } from "@/lib/star/youth";
 import { managerTalkFor, agreedWeeklyWage, weeklyToSeason } from "@/lib/star/signingTalk";
 import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
-import NegotiationScreen from "@/components/star/NegotiationScreen";
-import ManagerTalk from "@/components/star/ManagerTalk";
-import YouthTeam from "@/components/star/YouthTeam";
-import LoanBrief from "@/components/star/LoanBrief";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, brandScandal } from "@/lib/star/sponsorDeals";
-import SponsorsScreen from "@/components/star/SponsorsScreen";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
@@ -61,7 +49,7 @@ import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import KnockoutRoundup, { type RoundupStage } from "@/components/star/KnockoutRoundup";
+import { type RoundupStage } from "@/components/star/KnockoutRoundup";
 import { knockoutRoundupFor } from "@/lib/star/knockoutView";
 import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
@@ -83,14 +71,7 @@ import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, sy
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
-import PressConference from "@/components/star/PressConference";
-import TransferWindow from "@/components/star/TransferWindow";
-import RelegationMove from "@/components/star/RelegationMove";
-import TransferSigning from "@/components/star/TransferSigning";
-import { FinalSeasonNotice, FinalWhistle } from "@/components/star/CareerEnd";
-import { FarewellInvite, FarewellResult, GuardOfHonour, StandingOvation } from "@/components/star/Farewell";
 import { ovationLook } from "@/lib/star/ovationLook";
-import VersusScreen from "@/components/star/VersusScreen";
 import {
   farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped, farewellSeed,
   FAREWELL_OFF_AT, type FarewellSides,
@@ -114,10 +95,6 @@ import { welcomeTour, LEAGUE_TOUR, LEAGUE_SCREEN_TOUR, FIRST_GAME_TOUR, shopTour
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { sfx } from "@/lib/star/sfx";
 import { getTuning } from "@/lib/star/tuningStore";
-import ProfileSetup from "@/components/star/ProfileSetup";
-import TrialSequence from "@/components/star/TrialSequence";
-import FreeAgentShell from "@/components/star/FreeAgentShell";
-import TrialReward from "@/components/star/TrialReward";
 import { starsNow, starStatus, matchStarPoints, withStars, starGain, starTitle } from "@/lib/star/starPoints";
 import { clubTheme } from "@/components/star/ui";
 import { POSITION_NAMES, matchdayFor } from "@/lib/star/teamsheet";
@@ -133,40 +110,20 @@ import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
 import PhoneHome from "@/components/star/PhoneHome";
 import RelationsPage from "@/components/star/RelationsPage";
-import LadderScreen from "@/components/star/LadderScreen";
-import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
 import LifeScreen from "@/components/star/LifeScreen";
-import PotmWinModal from "@/components/star/PotmWinModal";
-import LineupIntro from "@/components/star/LineupIntro";
 import PitchScope from "@/components/star/ui/PitchScope";
-import MatchWeek from "@/components/star/MatchWeek";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
-import TrainingMinigame from "@/components/star/TrainingMinigame";
-import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
-import Match3DLayer from "@/components/star/Match3DLayer";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
-import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
-import PlayOffRoundup from "@/components/star/PlayOffRoundup";
+import { type DrawRound } from "@/components/star/CupDrawReveal";
 import { shortClub } from "@/lib/star/media/grammar";
 import { buildBracket } from "@/lib/star/playOffBracket";
-import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
-import SettingsScreen from "@/components/star/SettingsScreen";
-import GlobalSettingsScreen from "@/components/star/GlobalSettingsScreen";
 import { askConfirm } from "@/lib/star/askConfirm";
 import TitleScreen, { titleScreenSkipped } from "@/components/star/TitleScreen";
-import FaceEditorScreen from "@/components/star/FaceEditorScreen";
-import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
-import MediaFeed from "@/components/star/MediaFeed";
-import BallonDor from "@/components/star/BallonDor";
-import Shop from "@/components/star/Shop";
-import ShowroomShop from "@/components/star/shop2d/ShowroomShop";
 import StoreLanding from "@/components/star/shop2d/StoreLanding";
 import { useShopLook } from "@/lib/star/shopLook";
-import Shop3D from "@/components/star/Shop3D";
-import CareerStore from "@/components/star/store/CareerStore";
 import { addCoins } from "@/lib/star/store/career";
 import { LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
 
@@ -180,16 +137,12 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
   elite: { hex: "#c084fc" },
 };
 
-import Casino from "@/components/star/Casino";
-import Investments from "@/components/star/Investments";
-import OwnershipScreen from "@/components/star/OwnershipScreen";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
   proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, findSquadEntry, type SellPlayerVoteProposal,
   recordFailedManagerNegotiation,
 } from "@/lib/star/investments";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
-import VoteCeremony from "@/components/star/VoteCeremony";
 import {
   setClubFormation, setClubKit, proposeKitVote, resolveKitVote, type ClubKit, type KitVoteProposal,
   proposePresidentVote, resolvePresidentVote, setPresidentWage, type PresidentVoteProposal,
@@ -200,7 +153,6 @@ import {
 } from "@/lib/star/clubPowers";
 import { investInfluence, type GoverningBody } from "@/lib/star/governingBodies";
 import { proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, type RuleChangeProposal, type RuleBook } from "@/lib/star/ruleBook";
-import RuleBookScreen from "@/components/star/RuleBookScreen";
 import { bribeVote, rollCaught, applyGettingCaught, blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { forceClubIntoPremierLeague } from "@/lib/star/forcedMovement";
 import {
@@ -210,25 +162,108 @@ import {
 import { createCompetition, playCompetitionToWinner, type NewCompetitionState } from "@/lib/star/newCompetition";
 import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
-import DilemmaModal from "@/components/star/DilemmaModal";
-import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/components/star/SecondaryScreens";
-import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
 import { captainMomentDue } from "@/lib/star/managerMoments";
-import Garden3D from "@/components/star/Garden3D";
-import Home3D from "@/components/star/Home3D";
 import { withOutfit } from "@/lib/star/home3d/outfits";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
-import Casino3D from "@/components/star/Casino3D";
-import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
-import Training3D from "@/components/star/Training3D";
 import { useCasino3dLook, casino3dPossible } from "@/lib/star/casino3d/look";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
-import RelationshipGame, { type GameResult } from "@/components/star/relgames/RelationshipGame";
-import AdvertShoot from "@/components/star/relgames/AdvertShoot";
+import { type GameResult } from "@/components/star/relgames/RelationshipGame";
 import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { changeDealHappiness } from "@/lib/star/sponsorDeals";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 import { setActiveFoot } from "@/lib/star/kickFoot";
+import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
+import { loadSprites } from "@/lib/star/sprites";
+import { matchPlayersLook } from "@/lib/star/newLook";
+
+// ── Screens that download only when first opened (speed job D, 9 Oct 2026;
+// lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
+// first download; everything else is fetched in the background after Home
+// is up (LAZY_PRELOAD below), so it is already there when tapped. ──
+const LegacyStarDevPage = lazyScreen(() => import("@/components/star/legacy/LegacyStarDevPage"));
+const GoalClipViewer = lazyScreen(() => import("@/components/star/GoalClipViewer"));
+const HallOfFame = lazyScreen(() => import("@/components/star/HallOfFame"));
+const CareerOverview = lazyScreen(() => import("@/components/star/CareerOverview"));
+const SaveClashPrompt = lazyScreen(() => import("@/components/star/SaveClashPrompt"));
+const ScoutOffers = lazyScreen(() => import("@/components/star/ScoutOffers"));
+const NegotiationScreen = lazyScreen(() => import("@/components/star/NegotiationScreen"));
+const ManagerTalk = lazyScreen(() => import("@/components/star/ManagerTalk"));
+const YouthTeam = lazyScreen(() => import("@/components/star/YouthTeam"));
+const LoanBrief = lazyScreen(() => import("@/components/star/LoanBrief"));
+const SponsorsScreen = lazyScreen(() => import("@/components/star/SponsorsScreen"));
+const PressConference = lazyScreen(() => import("@/components/star/PressConference"));
+const TransferWindow = lazyScreen(() => import("@/components/star/TransferWindow"));
+const RelegationMove = lazyScreen(() => import("@/components/star/RelegationMove"));
+const TransferSigning = lazyScreen(() => import("@/components/star/TransferSigning"));
+const VersusScreen = lazyScreen(() => import("@/components/star/VersusScreen"));
+const ProfileSetup = lazyScreen(() => import("@/components/star/ProfileSetup"));
+const TrialSequence = lazyScreen(() => import("@/components/star/TrialSequence"));
+const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell"));
+const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
+const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
+const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
+const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
+const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
+const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
+const TrainingMinigame = lazyScreen(() => import("@/components/star/TrainingMinigame"));
+const TrainingLevelSelect = lazyScreen(() => import("@/components/star/TrainingLevelSelect"));
+const Match3DLayer = lazyScreen(() => import("@/components/star/Match3DLayer"));
+const PlayOffRoundup = lazyScreen(() => import("@/components/star/PlayOffRoundup"));
+const DeadlineDayRoundup = lazyScreen(() => import("@/components/star/DeadlineDayRoundup"));
+const SettingsScreen = lazyScreen(() => import("@/components/star/SettingsScreen"));
+const GlobalSettingsScreen = lazyScreen(() => import("@/components/star/GlobalSettingsScreen"));
+const FaceEditorScreen = lazyScreen(() => import("@/components/star/FaceEditorScreen"));
+const FakeFaceEditorScreen = lazyScreen(() => import("@/components/star/FakeFaceEditorScreen"));
+const MediaFeed = lazyScreen(() => import("@/components/star/MediaFeed"));
+const BallonDor = lazyScreen(() => import("@/components/star/BallonDor"));
+const Shop = lazyScreen(() => import("@/components/star/Shop"));
+const ShowroomShop = lazyScreen(() => import("@/components/star/shop2d/ShowroomShop"));
+const Shop3D = lazyScreen(() => import("@/components/star/Shop3D"));
+const CareerStore = lazyScreen(() => import("@/components/star/store/CareerStore"));
+const Casino = lazyScreen(() => import("@/components/star/Casino"));
+const Investments = lazyScreen(() => import("@/components/star/Investments"));
+const OwnershipScreen = lazyScreen(() => import("@/components/star/OwnershipScreen"));
+const VoteCeremony = lazyScreen(() => import("@/components/star/VoteCeremony"));
+const RuleBookScreen = lazyScreen(() => import("@/components/star/RuleBookScreen"));
+const DilemmaModal = lazyScreen(() => import("@/components/star/DilemmaModal"));
+const Garden3D = lazyScreen(() => import("@/components/star/Garden3D"));
+const Home3D = lazyScreen(() => import("@/components/star/Home3D"));
+const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"));
+const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
+const Training3D = lazyScreen(() => import("@/components/star/Training3D"));
+const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
+const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
+const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
+const RelationshipGame = lazyScreen(() => import("@/components/star/relgames/RelationshipGame"));
+const ShareLinkSheet = lazyScreen(() => import("@/components/star/LegendShare").then((m) => ({ default: m.ShareLinkSheet })));
+const FinalSeasonNotice = lazyScreen(() => import("@/components/star/CareerEnd").then((m) => ({ default: m.FinalSeasonNotice })));
+const FinalWhistle = lazyScreen(() => import("@/components/star/CareerEnd").then((m) => ({ default: m.FinalWhistle })));
+const FarewellInvite = lazyScreen(() => import("@/components/star/Farewell").then((m) => ({ default: m.FarewellInvite })));
+const FarewellResult = lazyScreen(() => import("@/components/star/Farewell").then((m) => ({ default: m.FarewellResult })));
+const GuardOfHonour = lazyScreen(() => import("@/components/star/Farewell").then((m) => ({ default: m.GuardOfHonour })));
+const StandingOvation = lazyScreen(() => import("@/components/star/Farewell").then((m) => ({ default: m.StandingOvation })));
+const AchievementsScreen = lazyScreen(() => import("@/components/star/SecondaryScreens").then((m) => ({ default: m.AchievementsScreen })));
+const TrophiesScreen = lazyScreen(() => import("@/components/star/SecondaryScreens").then((m) => ({ default: m.TrophiesScreen })));
+const ReputationScreen = lazyScreen(() => import("@/components/star/SecondaryScreens").then((m) => ({ default: m.ReputationScreen })));
+const ContractInOffice = lazyScreen(() => import("@/components/star/ManagerMoments").then((m) => ({ default: m.ContractInOffice })));
+const ManagerNewsInOffice = lazyScreen(() => import("@/components/star/ManagerMoments").then((m) => ({ default: m.ManagerNewsInOffice })));
+const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoments").then((m) => ({ default: m.CaptainInOffice })));
+
+/** Background download order, most likely next first (the match's team
+ *  sheets, the week, settings), the rare and the 3D rooms last. */
+const LAZY_PRELOAD = [
+  VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
+  TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
+  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, PotmWinModal, DilemmaModal,
+  ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
+  TransferWindow, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
+  ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
+  OwnershipScreen, VoteCeremony, RuleBookScreen, RelationshipGame, AdvertShoot, GoalClipViewer, HallOfFame,
+  CareerOverview, SaveClashPrompt, FaceEditorScreen, FakeFaceEditorScreen, Match3DLayer, Home3D, Garden3D,
+  Shop3D, Casino3D, Training3D, ProfileSetup, TrialSequence, FreeAgentShell, TrialReward, ManagerTalk,
+  ScoutOffers, FinalSeasonNotice, FinalWhistle, FarewellInvite, FarewellResult, GuardOfHonour,
+  StandingOvation, ShareLinkSheet,
+];
 
 /**
  * THE CLUBS THAT CAME IN, from the trial's own seed and final score.
@@ -360,8 +395,20 @@ function NewUiStarDevPage() {
 
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
+  // Fetch the other screens quietly once Home is up (lib/star/lazyScreen.ts).
+  useEffect(() => preloadScreens([
+    // The match's player sprite sheet, read and unpacked before kick-off
+    // rather than on the first frame of the match (only with the 3D
+    // players look, the only one that draws them).
+    { preload: () => (matchPlayersLook() === "3d" ? loadSprites().then(() => {}) : Promise.resolve()) },
+    ...LAZY_PRELOAD,
+  ]), []);
   // Settings → Look → "Shop: New | Old" (lib/star/shopLook.ts).
   const shopLookNow = useShopLook();
+  // New look: the Shop page has no front page any more (Harry, 9 Oct 2026: the
+  // framed-card grid was "horrendous"). Every way into the shop opens the
+  // Showroom, on the category you were last on (Cans first time).
+  const lastShowroom = useRef<"shop-kib" | "shop-boots" | "shop-lifestyle">("shop-kib");
   // v0.25 item 4: the foot you kick with, for the trial and training (they
   // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
   const careerFoot = career?.player.preferredFoot;
@@ -1068,9 +1115,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
   // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
   const yourHead3d = career ? yourToonHead(career.player) : undefined, yourBody3d = career ? yourToonBody(career.player) : undefined, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
+  const yourShirtName = career?.player.nickname ?? career?.player.lastName;
   useEffect(() => {
-    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
-  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d]);
+    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName });
+  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c
@@ -2544,6 +2592,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     preloadScene("garden");
     preloadScene("shop");
     preloadScene("casino");
+    preloadScene("home"); // your house (speed job B: also unpacks the shared people once)
   }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }
@@ -4179,7 +4228,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         career={career}
         atDoor={shopAtDoor}
         onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
-        onBack={() => { setShopAtDoor(false); setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }}
+        onBack={() => {
+          setShopAtDoor(false); setActiveNav("home");
+          if (shopLookNow === "new") setPhase(lastShowroom.current);
+          else { setHomePage(2); setPhase("dashboard"); }
+        }}
         onGoToItem={(display, id, level) => {
           const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
           setShopFocus({ phase: to, id, level });
@@ -4191,6 +4244,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
     const kind = phase === "shop-kib" ? "kib" : phase === "shop-boots" ? "boots" : "lifestyle";
+    lastShowroom.current = phase;
     const shopHelp: HelpScreen = kind === "kib" ? "cans" : kind === "boots" ? "boots" : "style";
     return (
       <>
@@ -4198,13 +4252,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           <ShowroomShop
             career={career}
             kind={kind}
-            onBack={handleBackToDashboard}
+            onBack={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
+            links={[
+              { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => setPhase("sponsors") },
+              { id: "casino", icon: "🎰", label: "Casino", onClick: () => setPhase("casino-menu") },
+              { id: "store", icon: "🛒", label: "Store", onClick: () => setPhase("store") },
+              { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => { setShopAtDoor(false); setPhase("shop-3d"); } },
+            ]}
             onBuyKib={handleBuyKib}
             onBuyBoot={handleBuyBoot}
             onBuyItem={handleBuyItem}
             onBuyFromBlackMarket={handleBuyFromBlackMarket}
             focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
-            onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
+            onKind={(k) => { const to = k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle"; lastShowroom.current = to; setPhase(to); }}
             onUseCan={handleUseCan}
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
           />
@@ -4367,7 +4427,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       if (id === "first-two-sessions") handleNavigate("skills");
       else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
       else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
-      else if (id === "buy-phone") { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+      else if (id === "buy-phone") {
+        if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
+        else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+      }
       else if (id === "sponsors") setPhase("sponsors");
     };
     const stepPrompt = step && !hasSeen(career, `step-${step.id}`) ? step.prompt
@@ -4880,6 +4943,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           inset
           index={homePage}
           onIndex={(i) => {
+            if (i === 2 && shopLookNow === "new" && isOpen(career, "shop")) {
+              // Straight into the Showroom; Back from it lands on Home. The
+              // phone step's pointer is answered by the Showroom itself (it
+              // opens on the phone while you have none).
+              const phoneStep = nextStep(career)?.id === "buy-phone";
+              if (phoneStep) setCareer(c => (c ? markSeen(markSeen(c, "shop-intro"), "help-shop") : c));
+              setHomePage(1);
+              setActiveNav("home");
+              setPhase(phoneStep ? "shop-lifestyle" : lastShowroom.current);
+              return;
+            }
             setHomePage(i as 0 | 1 | 2);
             setActiveNav("home");
             setPhase("dashboard");

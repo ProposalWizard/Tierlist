@@ -159,7 +159,7 @@ export function CongratulationsBanner({
 /**
  * The contract, and a hand writing across it.
  *
- * A supplied document image (public/star/contract.png), the same pattern
+ * A supplied document image (public/star/contract.webp), the same pattern
  * NewspaperHeadline.tsx already established for the front page: real art
  * rather than anything drawn in CSS, with the two dynamic parts — the
  * club's name, and the signature — positioned over it as a percentage of
@@ -170,7 +170,7 @@ export function CongratulationsBanner({
  * change needed.
  *
  * CLUB_NAME_BOX/SIGNATURE_BOX below are measured directly off the real
- * file (public/star/contract.png, 1024×1536) — a two-column layout, "CLUB
+ * file (public/star/contract.webp, 1024×1536) — a two-column layout, "CLUB
  * NAME" on the left above its own ruled line, "PLAYER SIGNATURE" on the
  * right above its own — as a plain percentage of the image's width/height
  * from each edge (top/left/right/bottom). The writable band both boxes
@@ -185,7 +185,7 @@ export function CongratulationsBanner({
  * and still calls back, so the flow can never strand somebody who has motion
  * turned off.
  */
-const CONTRACT_SRC = "/star/contract.png";
+const CONTRACT_SRC = "/star/contract.webp";
 // Nudged down from the original measurement — reported directly, with a
 // screenshot: the club name and signature sat almost touching the "CLUB
 // NAME"/"PLAYER SIGNATURE" pills above them, when a real signature sits
@@ -212,7 +212,7 @@ export interface ContractTerms {
 const starMoney = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
 const seasonsText = (n: number) => `${n} season${n === 1 ? "" : "s"}`;
 
-/** Laid over public/star/contract.png (1024x1536), in % measured off the file. */
+/** Laid over public/star/contract.webp (1024x1536), in % measured off the file. */
 function TermsOverlay({ name, club, terms }: { name: string; club: string; terms: ContractTerms }) {
   const box = (top: number, left: number, width: number, height: number, bg: string): React.CSSProperties =>
     ({ position: "absolute", top: `${top}%`, left: `${left}%`, width: `${width}%`, height: `${height}%`, background: bg });
@@ -353,7 +353,7 @@ export function SignaturePad({
     );
   }
 
-  // Placeholder, only ever seen until public/star/contract.png exists.
+  // Placeholder, only ever seen until public/star/contract.webp exists.
   return (
     <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 text-left">
       <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/45">

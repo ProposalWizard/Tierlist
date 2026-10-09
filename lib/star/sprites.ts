@@ -188,7 +188,11 @@ export function spriteClipReady(char: SpriteChar, clip: SpriteClip): boolean {
   const r = resolveClip(char, clip);
   if (!r) return false;
   const n = r.src.atlas ?? 0;
-  if (atlasData.has(n)) return true;
+  if (atlasData.has(n)) {
+    if (n === 0 || warmDone.has(n)) return true;
+    warmAtlas(n);
+    return false;
+  }
   void loadAtlas(n);
   return false;
 }
@@ -207,51 +211,144 @@ function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** The atlas in one club's colours (made once per kit, then reused). */
-function atlasFor(kit: SpriteKit, n = 0): HTMLCanvasElement | null {
-  const data = atlasData.get(n);
-  if (!index || !data) return null;
-  const { color: colorData, mask: maskData } = data;
-  const key = `${n}|${kit.shirt}|${kit.shorts}|${kit.socks}`;
-  const hit = tinted.get(key);
-  if (hit) return hit;
-  const { width: w, height: h } = colorData;
-  const cv = document.createElement("canvas");
-  cv.width = w; cv.height = h;
-  const g = cv.getContext("2d");
-  if (!g) return null;
-  const out = new ImageData(w, h);
-  const s = colorData.data, m = maskData.data, o = out.data;
-  const cols = [hexRgb(kit.shirt), hexRgb(kit.shorts), hexRgb(kit.socks)];
-  for (let i = 0; i < s.length; i += 4) {
+/**
+ * Tint rows [y0, y1) of an atlas into `o` (an RGBA buffer the atlas's size).
+ *
+ * Same sums as before, unrolled (no little array per pixel): about twice as
+ * fast, and pixel-for-pixel the same picture (speed job D, 9 Oct 2026 —
+ * checked against the old loop over a full random atlas: 0 pixels differ).
+ */
+function tintRows(colorData: ImageData, maskData: ImageData, kit: SpriteKit, o: Uint8ClampedArray, y0: number, y1: number): void {
+  const s = colorData.data, m = maskData.data;
+  const w = colorData.width;
+  const [c0r, c0g, c0b] = hexRgb(kit.shirt);
+  const [c1r, c1g, c1b] = hexRgb(kit.shorts);
+  const [c2r, c2g, c2b] = hexRgb(kit.socks);
+  const kw = kitWhite;
+  const end = y1 * w * 4;
+  for (let i = y0 * w * 4; i < end; i += 4) {
     const a = s[i + 3];
-    o[i] = s[i]; o[i + 1] = s[i + 1]; o[i + 2] = s[i + 2]; o[i + 3] = a;
+    const r = s[i], g = s[i + 1], b = s[i + 2];
+    o[i] = r; o[i + 1] = g; o[i + 2] = b; o[i + 3] = a;
     if (a === 0) continue;
     const mr = m[i], mg = m[i + 1], mb = m[i + 2];
     const sum = mr + mg + mb;
     if (sum < 8) continue;
     // Share of this pixel that is kit (the mask is coverage; the colour's
     // alpha also holds the outline's coverage).
-    const wgt = Math.min(1, sum / a);
-    const shade = Math.min(1.12, lum(s[i], s[i + 1], s[i + 2]) / kitWhite);
-    let tr = 0, tg = 0, tb = 0;
-    const parts = [mr, mg, mb];
-    for (let k = 0; k < 3; k++) {
-      const f = parts[k] / sum;
-      if (f === 0) continue;
-      tr += cols[k][0] * f; tg += cols[k][1] * f; tb += cols[k][2] * f;
-    }
+    const wgt = sum < a ? sum / a : 1;
+    let shade = (0.2126 * r + 0.7152 * g + 0.0722 * b) / kw;
+    if (shade > 1.12) shade = 1.12;
+    const fr = mr / sum, fg = mg / sum, fb = mb / sum;
+    const tr = c0r * fr + c1r * fg + c2r * fb;
+    const tg = c0g * fr + c1g * fg + c2g * fb;
+    const tb = c0b * fr + c1b * fg + c2b * fb;
     // A lit kit: the club colour, shaded as the white kit was, a touch of
     // the highlight kept so dark shirts still have form.
-    const hi = Math.max(0, shade - 1) * 255;
-    o[i] = s[i] * (1 - wgt) + Math.min(255, tr * shade + hi) * wgt;
-    o[i + 1] = s[i + 1] * (1 - wgt) + Math.min(255, tg * shade + hi) * wgt;
-    o[i + 2] = s[i + 2] * (1 - wgt) + Math.min(255, tb * shade + hi) * wgt;
+    const hi = shade > 1 ? (shade - 1) * 255 : 0;
+    const iw = 1 - wgt;
+    let x = tr * shade + hi; o[i] = r * iw + (x < 255 ? x : 255) * wgt;
+    x = tg * shade + hi; o[i + 1] = g * iw + (x < 255 ? x : 255) * wgt;
+    x = tb * shade + hi; o[i + 2] = b * iw + (x < 255 ? x : 255) * wgt;
   }
+}
+
+function kitKey(kit: SpriteKit, n: number): string { return `${n}|${kit.shirt}|${kit.shorts}|${kit.socks}`; }
+
+function storeTinted(key: string, out: ImageData): HTMLCanvasElement | null {
+  const cv = document.createElement("canvas");
+  cv.width = out.width; cv.height = out.height;
+  const g = cv.getContext("2d");
+  if (!g) return null;
   g.putImageData(out, 0, 0);
   tinted.set(key, cv);
   if (tinted.size > 24) tinted.delete(tinted.keys().next().value as string);
   return cv;
+}
+
+/** The atlas in one club's colours (made once per kit, then reused). */
+function atlasFor(kit: SpriteKit, n = 0): HTMLCanvasElement | null {
+  const data = atlasData.get(n);
+  if (!index || !data) return null;
+  const key = kitKey(kit, n);
+  const hit = tinted.get(key);
+  if (hit) return hit;
+  const { width: w, height: h } = data.color;
+  const out = new ImageData(w, h);
+  tintRows(data.color, data.mask, kit, out.data, 0, h);
+  if (n === 0) seenKits.set(kit.shirt + "|" + kit.shorts + "|" + kit.socks, kit);
+  return storeTinted(key, out);
+}
+
+// ── Warming a later atlas in the background (speed job D, 9 Oct 2026) ──
+//
+// The Animations: New atlas (1) used to load and then be coloured in one go
+// the first time a New clip was drawn — mid-match, a 30–80 ms freeze per kit
+// on a phone, right on a kick. Now, once it has loaded, every kit already in
+// the match is coloured a few rows at a time between frames, and the New
+// clips only switch on (spriteClipReady) once that is done. Until then the
+// old clips play, exactly as they did while the atlas was downloading.
+const seenKits = new Map<string, SpriteKit>();
+const warmDone = new Set<number>();
+const warming = new Set<number>();
+const SLICE_MS = 6;
+
+function nextSlice(): Promise<void> {
+  return new Promise((res) => setTimeout(res, 0));
+}
+
+async function tintChunked(kit: SpriteKit, n: number): Promise<void> {
+  const data = atlasData.get(n);
+  if (!data) return;
+  const key = kitKey(kit, n);
+  if (tinted.has(key)) return;
+  const { width: w, height: h } = data.color;
+  const out = new ImageData(w, h);
+  let y = 0;
+  while (y < h) {
+    const t0 = performance.now();
+    while (y < h && performance.now() - t0 < SLICE_MS) {
+      const y1 = Math.min(h, y + 16);
+      tintRows(data.color, data.mask, kit, out.data, y, y1);
+      y = y1;
+    }
+    if (y < h) await nextSlice();
+    if (tinted.has(key)) return; // drawn in the meantime
+  }
+  storeTinted(key, out);
+}
+
+function warmAtlas(n: number): void {
+  if (warmDone.has(n) || warming.has(n)) return;
+  warming.add(n);
+  void (async () => {
+    try {
+      for (const kit of Array.from(seenKits.values())) await tintChunked(kit, n);
+    } finally {
+      warming.delete(n);
+      warmDone.add(n);
+    }
+  })();
+}
+
+/**
+ * Colour the main atlas in these kits ahead of time, a few rows between frames
+ * (lag pass 4, 9 Oct 2026). Coming on from the bench, the first chance drew
+ * every kit for the first time and coloured each one in one go: a ~230 ms
+ * freeze (CPU slowed 4×) right as the chance opened. The match calls this while
+ * the commentary runs. Same picture: the same colouring, only done earlier.
+ */
+export function warmSpriteKits(kits: SpriteKit[]): void {
+  if (typeof document === "undefined") return;
+  void (async () => {
+    try {
+      if (!(await loadSprites())) return;
+      for (const kit of kits) {
+        await tintChunked(kit, 0);
+        seenKits.set(kit.shirt + "|" + kit.shorts + "|" + kit.socks, kit);
+      }
+    } catch { /* coloured on first draw instead, as before */ }
+  })();
 }
 
 function dirIndex(facing: number, dirs: number): number {

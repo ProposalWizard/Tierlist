@@ -66,7 +66,15 @@ const oldArms = q.get("arms") === "old";
   if (fb) addClips(THREE, p, fb as never);
   const ud = (g.scene.userData ?? {}) as { skinAvg?: number[]; hairAvg?: number[] };
   const lin2hex = (v?: number[]) => (v ? "#" + new THREE.Color(v[0], v[1], v[2]).getHexString() : "#8d5524");
-  dressPerson3d(THREE, p, { skin: skin || lin2hex(ud.skinAvg), hair: hair || lin2hex(ud.hairAvg), kit: mgr ? undefined : { shirt: "#c8102e", trim: "#ffffff" }, number: numberTexture(THREE, 10), grey: 0 });
+  // ?shirt=EB172B&trim=FFFFFF (a club's colours: its pattern comes too), ?name=SMITH, ?casual=1 (a casual set)
+  const kitQ = { shirt: "#" + (q.get("shirt") ?? "c8102e"), trim: "#" + (q.get("trim") ?? "ffffff") };
+  dressPerson3d(THREE, p, { skin: skin || lin2hex(ud.skinAvg), hair: hair || lin2hex(ud.hairAvg), kit: mgr ? undefined : kitQ, number: numberTexture(THREE, Number(q.get("num") ?? 10)), name: q.get("name"), grey: 0 });
+  if (q.get("casual") === "1") {
+    const uu = p.u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    uu.uSuit.value = 1; uu.uSuitCoat.value = new THREE.Color("#3b4a63"); uu.uSuitTrousers.value = new THREE.Color("#2a2d34");
+    uu.uShoes.value = new THREE.Color("#f2f2ef"); uu.uSuitShirt.value = new THREE.Color("#3b4a63"); uu.uSuitTie.value = new THREE.Color("#3b4a63");
+    uu.uBadgeOn.value = 0; uu.uNumOn.value = 0;
+  }
   poseClips(p, [[clipName, clipT, 1]]);
   const rk = q.get("relax");
   if (rk) { const k = Number(rk); const R0 = TOON_RELAXED_FINGERS_DEG; const sc = (v: number[]) => v.map((x) => x * k) as [number, number, number]; const f = fingersDeg({ thumb: sc(R0.thumb), index: sc(R0.index), middle: sc(R0.middle), ring: sc(R0.ring), little: sc(R0.little), thumbSwing: R0.thumbSwing * k }); poseFingers(THREE, p, "L", f); poseFingers(THREE, p, "R", f); }
@@ -95,7 +103,7 @@ const oldArms = q.get("arms") === "old";
   }
   ground.visible = false;
   const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 50);
-  if (q.get("full") === "1") { cam.position.set(0, 1.0, 7.4); cam.lookAt(0, 0.95, 0); } else { cam.position.set(0, 1.0, 5.6); cam.lookAt(0, 1.18, 0); }
+  if (q.get("zoom") === "1") { cam.position.set(0, 1.25, 2.4); cam.lookAt(0, 1.2, 0); } else if (q.get("full") === "1") { cam.position.set(0, 1.0, 7.4); cam.lookAt(0, 0.95, 0); } else { cam.position.set(0, 1.0, 5.6); cam.lookAt(0, 1.18, 0); }
   renderer.info.autoReset = false; renderer.info.reset();
   renderer.clear(); renderer.render(scene, cam);
   const stats = { draws: renderer.info.render.calls, triangles: renderer.info.render.triangles };

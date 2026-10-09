@@ -29,13 +29,19 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
+import { loadModel3d, ktx2ModelUrl } from "./three3d/ktx2";
+
+/** A person file: its packed-picture twin when it has one and the phone reads KTX2 (three3d/ktx2.ts), else the plain file. */
+const loadPersonFile = (loader: { loadAsync(url: string): Promise<unknown> }, url: string): Promise<GLTF> =>
+  loadModel3d(loader as never, url, (u) => loadGltfCached<GLTF>(loader, u));
 import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "./human3d/human";
 import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook } from "./style3d/toon/look";
-import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
-import { patchToonBody, toonUniforms } from "./style3d/toon/shader";
+import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
+import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
 type Three = typeof import("three");
@@ -152,6 +158,8 @@ export interface Person3D {
   toonHead?: ToonHead;
   /** Style A: head + build, for scenes that keep spare bodies (toonKey). */
   toonKey?: string;
+  /** Your own player (makePerson3d's `you`): Style A puts your name on the back. */
+  you?: boolean;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -167,7 +175,9 @@ export interface PersonLook {
   hair?: string;
   /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
   /** shorts: their own colour (most kits: the trim, which is the default). */
-  kit?: { shirt: string; trim: string; shorts?: string; socks?: string };
+  kit?: { shirt: string; trim: string; shorts?: string; socks?: string; pattern?: KitPattern | null };
+  /** Style A: the name arched over the back number (your own player: your surname, by default). */
+  name?: string | null;
   /** Style A bodies: a crest picture for the chest (else a shield in the kit's colours). */
   badge?: THREE.Texture | null;
   /** The back of the shirt (a canvas texture of the number), or none. */
@@ -192,7 +202,7 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
   const url = TOON_FILES[head];
   let g = cache.get(url);
   if (!g) {
-    g = loadGltfCached<GLTF>(loader, url);
+    g = loadPersonFile(loader, url);
     g.catch(() => cache.delete(url));
     cache.set(url, g);
   }
@@ -201,6 +211,20 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
     set[TOON_HEADS.indexOf(head)] = one;
     return { ...one, toonBodies: set, toonWhich: TOON_SUIT_HEADS.includes(head) ? "manager" : "player" } as GLTF;
   });
+}
+
+/**
+ * The Style A heads these people will wear (makePerson3d's own pick), so a
+ * scene loads only those, not all eight (lag pass 4, 9 Oct 2026: a garden
+ * with you and a few team-mates fetched and unpacked every head, suits too).
+ * Pass the same `who` / `you` / `suit` the scene gives makePerson3d. A head
+ * left out still works: makePerson3d falls back to the nearest loaded one.
+ * The files are cached per page, so the next scene reuses what this one loaded.
+ */
+export function toonHeadsFor(people: readonly { who?: string; you?: boolean; suit?: boolean }[]): ToonHead[] {
+  const out = new Set<ToonHead>();
+  for (const p of people) out.add(p.you && !p.suit ? toonYou().head : toonHeadFor(p.who ?? "", !!p.suit));
+  return Array.from(out);
 }
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
@@ -215,7 +239,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
       const url = TOON_FILES[b];
       let g = cache.get(url);
       if (!g) {
-        g = loadGltfCached<GLTF>(loader, url);
+        g = loadPersonFile(loader, url);
         g.catch(() => cache.delete(url));
         cache.set(url, g);
       }
@@ -228,7 +252,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   if (body === "new" && which !== "anims" && humanBodyLook() === "human") {
     let h = cache.get(HUMAN3D_FILE);
     if (!h) {
-      h = loadGltfCached<GLTF>(loader, HUMAN3D_FILE);
+      h = loadPersonFile(loader, HUMAN3D_FILE);
       h.catch(() => cache.delete(HUMAN3D_FILE));
       cache.set(HUMAN3D_FILE, h);
     }
@@ -240,12 +264,49 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   const key = mocap ? `${url}#mocap` : url;
   let p = cache.get(key);
   if (!p) {
-    p = loadGltfCached<GLTF>(loader, url); // from the early download when it got there first
+    p = loadPersonFile(loader, url); // from the early download when it got there first
     if (mocap) p = p.then((g) => withMocapOwn(loader as never, g, "people"));
     p.catch(() => cache.delete(key));
     cache.set(key, p);
   }
   return p;
+}
+
+/**
+ * An idle moment on Home (preloadScene): download AND unpack the bodies and
+ * clips every people scene asks for (the garden, shop, casino, house, drills,
+ * signing, office all call loadPeople3d), so opening any of them takes them
+ * from memory instead of the network and the unpacker. The exact calls the
+ * scenes make, so they hit this page's cache. Speed job B, 9 Oct 2026.
+ */
+/** The files loadPeople3d(…, "player") and (…, "anims") fetch under the current Settings (for the early download). */
+export function people3dFiles(): string[] {
+  // the packed twin where the scenes will ask for it (three3d/ktx2.ts)
+  return people3dPlainFiles().map((u) => ktx2ModelUrl(u) ?? u);
+}
+function people3dPlainFiles(): string[] {
+  const body: PeopleBody = (() => {
+    try { return localStorage.getItem("star-look-3d-people") === "old" /* look3d.ts people3dLook (its key; not imported: it pulls in React) */ ? "old" : "new"; } catch { return "new"; }
+  })();
+  const anims = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).anims;
+  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), anims];
+  if (body === "new" && humanBodyLook() === "human") return [HUMAN3D_FILE, anims];
+  return [(body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player, anims];
+}
+let warming: Promise<void> | null = null;
+export function warmPeople3d(): Promise<void> {
+  if (!warming) {
+    warming = (async () => {
+      const [{ GLTFLoader }, { withMeshopt }, { people3dLook }] = await Promise.all([
+        import("three/examples/jsm/loaders/GLTFLoader.js"), import("./three3d/meshopt"), import("./look3d"),
+      ]);
+      const loader = await withMeshopt(new GLTFLoader());
+      const body = people3dLook();
+      await loadPeople3d(loader, "anims", body);
+      await loadPeople3d(loader, "player", body);
+    })().catch((e) => { warming = null; console.warn("3D people warm-up skipped", e); });
+  }
+  return warming;
 }
 
 // ── The shader ────────────────────────────────────────────────────────────
@@ -559,6 +620,7 @@ export function makePerson3d(
   // the suit heads are modelled in their suits; a player head is in a kit
   const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
   if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
+  if (toon && toonHead && TOON_HEM_FIX[toonHead]) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
@@ -577,6 +639,15 @@ export function makePerson3d(
     const mask = mat.aoMap as THREE.Texture;
     mat.aoMap = null;
     Object.assign(u, toonUniforms(T, mask, meta.kit, meta.joints.neck?.[1] ?? 1.5));
+    // the lettering placed from this head's own shoulders and collar (the old body's spot sat at the waist)
+    const tk = meta.kit as PersonMeta["kit"] & { collarY?: number };
+    const lay = toonShirtLayout({ shoulderY: meta.joints.LeftArm?.[1] ?? 1.4, collarY: tk.collarY ?? (meta.joints.neck?.[1] ?? 1.5) - 0.03 });
+    const tu = u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    tu.uNumBox.value.set(lay.number.x, lay.number.y, lay.number.size, lay.number.size);
+    tu.uNameBox.value.set(lay.name.x, lay.name.y, lay.name.w, lay.name.h);
+    tu.uFrontNum.value.set(lay.front.x, lay.front.y, lay.front.size, 1);
+    // the skin's own shading, so long sleeves over the arms shade like the cloth (casual sets)
+    tu.uCloth.value.z = Math.min(1.4, Math.max(0.25, Math.pow(Math.max(meta.skinAvg[1], 1e-4), 1 / 2.2) / 0.7));
     u.uKit.value = 1;
     (u as Record<string, { value: unknown }>).uSuit.value = suit ? 1 : 0;
     const tl = { ...TOON_LOOK_DEFAULT, ...opts.toonLook };
@@ -671,7 +742,7 @@ export function makePerson3d(
       fingers[side] = out;
     }
   }
-  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined };
+  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined, you: !!opts.you };
   if (toonHead && fingers) {
     // Style A: relaxed hands from the start (the clips never move a finger); poseClips keeps them
     const relaxed = fingersDeg(RELAXED_FINGERS_DEG);
@@ -867,6 +938,16 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   }
   u.uNumOn.value = look.number ? 1 : 0;
   if (look.number) u.uNum.value = look.number;
+  if (u.uPattern) {
+    // Style A: the club's stripes/hoops (the shirt and trim of a club kit that has them), and the name
+    const pat = look.kit ? (look.kit.pattern !== undefined ? look.kit.pattern : kitPatternFor(look.kit.shirt, look.kit.trim)) : null;
+    u.uPattern.value.set(pat ? KIT_PATTERN_CODE[pat.kind] : 0, pat?.kind === "hoops" ? 0.11 : 0.1, 0, 0);
+    if (pat) u.uPat2.value = lin(T, pat.colour);
+    const name = look.name !== undefined ? look.name : p.you ? toonYou().name : null;
+    const nt = look.number && name ? shirtNameTexture(T, name) : null;
+    u.uNameOn.value = nt ? 1 : 0;
+    if (nt) u.uName.value = nt;
+  }
   const acc = (slot: string) => look.accessories?.find((a) => a.slot === slot);
   const on4 = (hex: string | undefined) => (hex ? new T.Vector4(...lin(T, hex).toArray(), 1) : new T.Vector4(0, 0, 0, 0));
   const boots = acc("boots");
@@ -912,6 +993,45 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   } else {
     u.uFaceOn.value = 0;
   }
+}
+
+const nameTex = new Map<string, THREE.Texture>();
+/** The name for the back of a Style A shirt: capitals, arched, white on clear (the shader inks it in the trim). */
+function shirtNameTexture(T: Three, name: string): THREE.Texture | null {
+  if (typeof document === "undefined") return null;
+  const text = name.trim().toUpperCase().slice(0, 14);
+  if (!text) return null;
+  let t = nameTex.get(text);
+  if (t) return t;
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 128;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#fff";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  let size = 78;
+  g.font = `800 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+  const spacing = 6;
+  const widthOf = () => Array.from(text).reduce((a, ch) => a + g.measureText(ch).width + spacing, -spacing);
+  while (widthOf() > 470 && size > 30) { size -= 4; g.font = `800 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`; }
+  // a gentle arch: each letter on a circle whose top is the canvas middle
+  const total = widthOf();
+  const R = 900;
+  let x = -total / 2;
+  for (const ch of Array.from(text)) {
+    const w = g.measureText(ch).width;
+    const a = (x + w / 2) / R;
+    g.save();
+    g.translate(256 + Math.sin(a) * R, 64 + 8 + R - Math.cos(a) * R);
+    g.rotate(a);
+    g.fillText(ch, 0, 0);
+    g.restore();
+    x += w + spacing;
+  }
+  t = new T.CanvasTexture(c);
+  t.colorSpace = T.SRGBColorSpace;
+  t.anisotropy = 4;
+  nameTex.set(text, t);
+  return t;
 }
 
 /** World position of a bone. */

@@ -424,7 +424,7 @@ export default function FirstPersonDribble({
 
   useEffect(() => {
     const img = new Image();
-    img.src = "/star/ball.png";
+    img.src = "/star/ball.webp";
     ballImgRef.current = img;
     const bg = new Image();
     bg.src = "/home/scene-sunset.webp";

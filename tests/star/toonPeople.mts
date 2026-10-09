@@ -10,7 +10,9 @@ import {
   toonKitColours, toonWearsSuit, setToonYou, toonYou, resolveToonBody, resolveToonHead,
   TOON_HEADS, TOON_PLAYER_HEADS, TOON_SUIT_HEADS, toonHeadFor, TOON_BUILD_SCALE, yourToonHead, yourToonBody,
 } from "../../lib/star/style3d/toon/bodies";
-import { toonBand, TOON_BANDS } from "../../lib/star/style3d/toon/shader";
+import { toonBand, TOON_BANDS, toonShirtLayout } from "../../lib/star/style3d/toon/shader";
+import { kitPatternFor, parseKitPattern } from "../../lib/star/style3d/toon/kitPattern";
+import { TOON_HEM_FIX } from "../../lib/star/style3d/toon/bodies";
 import { SKIN_TONES, HAIR_COLOURS } from "../../lib/star/playerIdentity";
 
 const problems: string[] = [];
@@ -102,6 +104,15 @@ const levels = new Set<string>();
 for (let d = 0; d <= 1; d += 0.01) levels.add(toonBand(d).join(","));
 check(levels.size === 3, `${levels.size} light levels (want 3)`);
 
+// 6b. Kit patterns: from the club sheets' words, found again from a kit's colours.
+const st = parseKitPattern("Red and white stripes", "#EB172B", "#FFFFFF");
+check(st?.kind === "stripes" && st.colour === "#FFFFFF", `stripes: ${JSON.stringify(st)}`);
+check(parseKitPattern("Blue and white hoops", "#004494", "#FFFFFF")?.kind === "hoops", "hoops");
+check(parseKitPattern("Claret with sky blue sleeves", "#670E36", "#95BFE5")?.colour === "#95BFE5", "sleeves in the club's own trim");
+check(parseKitPattern("Plain", "#000000", "#FFFFFF") === null && parseKitPattern(undefined, "#000000", "#FFFFFF") === null, "plain shirts have no pattern");
+check(kitPatternFor("#EB172B", "#FFFFFF")?.kind === "stripes", "Sunderland's colours bring their stripes");
+check(kitPatternFor("#c8102e", "#ffffff") === null, "an unknown kit has no pattern");
+
 // 7. The head files.
 for (const b of TOON_HEADS) {
   const f = `public${TOON_FILES[b]}`;
@@ -126,6 +137,19 @@ for (const b of TOON_HEADS) {
   // (a suit has no kit lines: its clothes keep their own colours)
   if (!TOON_SUIT_HEADS.includes(b)) check(kl.bootY < kl.sockY && kl.sockY < kl.shortsLoY && kl.shortsLoY < kl.hemY && kl.hemY < kl.collarY, `${f}: kit lines out of order ${JSON.stringify(kl)}`);
   check(ex.face.chinY < ex.face.eyeY && ex.face.eyeY < TOON_HEIGHT, `${f}: face lines ${JSON.stringify(ex.face)}`);
+  // the shirt lettering (Harry, 9 Oct: "why is the kit at the bottom of the back"): the number
+  // between the shoulder blades (top half of the back), the name above it, both under the collar
+  if (!TOON_SUIT_HEADS.includes(b)) {
+    const hem = TOON_HEM_FIX[b] ?? kl.hemY;
+    const lay = toonShirtLayout({ shoulderY: ex.joints.LeftArm[1], collarY: kl.collarY });
+    const back = kl.collarY - hem;
+    const numLo = lay.number.y - lay.number.size * 0.35, numHi = lay.number.y + lay.number.size * 0.3;
+    check((lay.number.y - hem) / back > 0.5, `${f}: number at ${((lay.number.y - hem) / back * 100).toFixed(0)}% up the back (want the top half)`);
+    check(numLo > hem + 0.08, `${f}: number reaches down to ${numLo.toFixed(3)} (hem ${hem})`);
+    check(lay.name.y - lay.name.h / 2 > numHi - 0.01 && lay.name.y + lay.name.h / 2 < kl.collarY - 0.02, `${f}: name ${lay.name.y.toFixed(3)} not between number top ${numHi.toFixed(3)} and collar ${kl.collarY}`);
+    check(lay.front.y < kl.collarY - 0.05 && lay.front.y > ex.joints.LeftArm[1] - 0.15, `${f}: front number at ${lay.front.y.toFixed(3)}`);
+    check(hem > ex.joints.Hips[1] - 0.01, `${f}: hem ${hem} below the hips ${ex.joints.Hips[1]} (shorts painted as shirt)`);
+  }
   const tris = j.accessors[j.meshes[0].primitives[0].indices].count / 3;
   check(tris < 15500, `${f}: ${tris} triangles (old body: 20,865)`);
   check(buf.length < 420 * 1024, `${f}: ${(buf.length / 1024).toFixed(0)} KB`);

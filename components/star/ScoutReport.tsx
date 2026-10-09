@@ -36,9 +36,9 @@ function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
  * frame image and accent now, not that the frame files themselves changed.
  */
 const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: string; accent: string; soft: string; frame: string }> = {
-  scorer: { icon: "⚽", label: "Top Scorer", accent: "#f87171", soft: "rgba(248,113,113,0.16)", frame: "/star/scout/red-frame.png" },
-  assist: { icon: "🎯", label: "Assist King", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)", frame: "/star/scout/blue-frame.png" },
-  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/gold-frame.png" },
+  scorer: { icon: "⚽", label: "Top Scorer", accent: "#f87171", soft: "rgba(248,113,113,0.16)", frame: "/star/scout/red-frame.webp" },
+  assist: { icon: "🎯", label: "Assist King", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)", frame: "/star/scout/blue-frame.webp" },
+  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/gold-frame.webp" },
 };
 
 /**

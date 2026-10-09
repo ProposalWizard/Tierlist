@@ -70,7 +70,7 @@ export default function CameraPicker({ frame, size, onChange }: {
   useEffect(paint);
   useEffect(() => {
     const img = new Image();
-    img.src = "/star/ball.png";
+    img.src = "/star/ball.webp";
     img.onload = paint;
     ballImg.current = img;
     // eslint-disable-next-line react-hooks/exhaustive-deps

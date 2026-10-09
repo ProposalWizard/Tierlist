@@ -14,3 +14,9 @@ rails, mirror, trophy cabinet and the trophies themselves, the window views)
 is built in code (lib/star/home3d/scene.ts, textures.ts). The trophies are
 stylised shapes, not copies of any real trophy. The body is the game's own
 (public/star/people3d, public/star/human3d; see their LICENSE files).
+
+bike-lod.glb, jet-lod.glb (Oct 2026): light copies of the shop's own motorbike and jet
+(public/star/shop3d/items/bike-hf.glb, jet-hf.glb), made by tools/home3d/make_lods.mjs.
+terrace-props.glb (Oct 2026): a few of the 3D garden's Kenney CC0 pieces (hedge, lantern,
+potted plant, lounge chair, oak, bush, wooden fence) copied out of public/star/garden3d/props.glb
+by tools/home3d/make_terrace_props.mjs (see public/star/garden3d/LICENSE.txt). CC0, no change.

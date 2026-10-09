@@ -9,6 +9,9 @@
  *
  * URL (for filming): ?scene=director&fixture=signing  or
  *   ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3 (&clean=1)
+ *   &cam=old|new overrides Settings → Look → "Cut-scene camera" for this page.
+ * Camera New also plays the scene's music bed (cutscene/music.ts) when
+ * Settings → Sound effects is on.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StyleId } from "@/lib/star/style3d/styles";
@@ -19,6 +22,9 @@ import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "@/lib/star/cutscene/beats";
 import { VOICE_LINES } from "@/lib/star/cutscene/voiceLines";
+import { useCutsceneCameraLook, type CutsceneCameraLook } from "@/lib/star/cutscene/look";
+import { createCutsceneMusic, musicBedFor, musicCue, type CutsceneMusic } from "@/lib/star/cutscene/music";
+import { sfxOn, sfxUrl } from "@/lib/star/sfx";
 
 const EMOTIONS: Emotion[] = ["joy", "pride", "relief", "defiance", "anger", "sadness", "shock", "tension", "calm", "gratitude", "hunger", "inspired"];
 
@@ -35,10 +41,15 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
   const [ov, setOv] = useState<Overlay | null>(null);
   const [inited, setInited] = useState(false);
   const styleRef = useRef(style); styleRef.current = style;
+  const lookCam = useCutsceneCameraLook();
+  const [camOverride, setCamOverride] = useState<CutsceneCameraLook | null>(null);
+  const camLook: CutsceneCameraLook = camOverride ?? lookCam;
+  const music = useRef<CutsceneMusic | null>(null);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const f = q.get("fixture"); if (f && FIXTURES[f]) { setFixture(f); setMode("fixture"); }
+    const cm = q.get("cam"); if (cm === "old" || cm === "new") setCamOverride(cm);
     const e = q.get("event") as EventKind | null;
     if (e) {
       setMode("generate");
@@ -66,12 +77,15 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
       try {
         const { createDirector } = await import("@/lib/star/cutscene/director");
         const d = await createDirector(el, script, {
-          style: styleRef.current, onOverlay: (o) => { setOv(o); setTime(o.t); },
+          style: styleRef.current, camera: camLook,
+          onOverlay: (o) => { setOv(o); setTime(o.t); music.current?.update(o.t, !!dir.current?.playing()); },
           // recorded lines play (scripts/cutscene/voice.py); other cues have no sound file yet
           onSound: (cue, vol) => { if (!VOICE_LINES[cue]) return; try { const au = new Audio(`/sfx/cut-${cue}.mp3`); au.volume = Math.min(1, vol); void au.play().catch(() => {}); } catch { /* no sound */ } },
         });
         if (dead) { d.dispose(); return; }
         dir.current = d;
+        music.current?.dispose();
+        music.current = camLook === "new" ? createCutsceneMusic(d.script, sfxUrl(musicCue(musicBedFor(d.script))), sfxOn) : null;
         const t = new URLSearchParams(window.location.search).get("t");
         if (t !== null) d.seek(Number(t));
         setStatus("ready");
@@ -81,8 +95,8 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
         if (!dead) setStatus("off");
       }
     })();
-    return () => { dead = true; dir.current?.dispose(); dir.current = null; };
-  }, [script, inited]);
+    return () => { dead = true; dir.current?.dispose(); dir.current = null; music.current?.dispose(); music.current = null; };
+  }, [script, inited, camLook]);
 
   useEffect(() => { dir.current?.setStyle(style); }, [style]);
 

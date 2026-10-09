@@ -280,7 +280,7 @@ function Hero({ career, fixture, mine }: { career: CareerState; fixture: Fixture
   // Europe's three nights get the UEFA-branded photo; everything else the
   // ordinary floodlit ground.
   const europe = fixture.competition === "Champions League" || fixture.competition === "Europa League" || fixture.competition === "Super Cup";
-  const photo = europe ? "/star/stadium-europe.png" : "/star/stadium-domestic.png";
+  const photo = europe ? "/star/stadium-europe.webp" : "/star/stadium-domestic.webp";
   const date = fixtureDateLabel(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
   const league = !fixture.kind || fixture.kind === "league";
   const comp = league ? `${leagueNameFor(divisionOf(career))} · Wk ${fixture.week}`

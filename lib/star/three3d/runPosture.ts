@@ -334,12 +334,19 @@ export function relaxIdleArms(
   const act = mixer.clipAction(clip);
   act.play();
   const v = () => new T.Vector3();
-  const P = (o: THREE.Object3D) => o.getWorldPosition(v());
+  // Read world positions and turns straight off matrixWorld. Every change below keeps it current
+  // (the clip's pose → root.updateMatrixWorld, a turn → o.updateMatrixWorld, relaxWrist does its own),
+  // so this is the same numbers as getWorldPosition/getWorldQuaternion, without those re-walking the
+  // whole chain to the root on every call: half the cost of each new head's first idle (lag pass 4).
+  root.updateWorldMatrix(true, false);
+  const P = (o: THREE.Object3D) => v().setFromMatrixPosition(o.matrixWorld);
+  const dp = new T.Vector3(), ds = new T.Vector3();
+  const WQ = (o: THREE.Object3D, q = new T.Quaternion()) => { o.matrixWorld.decompose(dp, q, ds); return q; };
   const d2r = Math.PI / 180;
   const turnWorld = (o: THREE.Object3D, axis: THREE.Vector3, ang: number) => {
-    const wq = o.getWorldQuaternion(new T.Quaternion());
+    const wq = WQ(o);
     const r = new T.Quaternion().setFromAxisAngle(axis, ang);
-    const pw = o.parent!.getWorldQuaternion(new T.Quaternion());
+    const pw = WQ(o.parent!);
     o.quaternion.copy(pw.invert().multiply(r.multiply(wq)));
     o.updateMatrixWorld(true);
   };
@@ -362,7 +369,7 @@ export function relaxIdleArms(
       m.elbow = Math.min(m.elbow, elbowOf(s.a, s.f, s.h) / d2r);
       m.wrist = Math.max(m.wrist, s.h.quaternion.angleTo(rest.get(s.h as THREE.Bone)!) / d2r);
       m.out = Math.min(m.out, P(s.h).sub(hp).dot(across) * s.sg);
-      const pw = s.palm.clone().applyQuaternion(s.h.getWorldQuaternion(new T.Quaternion()));
+      const pw = s.palm.clone().applyQuaternion(WQ(s.h));
       m.palmIn = Math.min(m.palmIn, pw.dot(across.clone().multiplyScalar(-s.sg)));
     }
   };
@@ -403,7 +410,7 @@ export function relaxIdleArms(
       // 4. the palm towards the thigh: turn the forearm about its own line
       const axis = P(s.h).sub(P(s.f)).normalize();
       const inward = across.clone().multiplyScalar(-s.sg);
-      const palmW = () => s.palm.clone().applyQuaternion(s.h.getWorldQuaternion(new T.Quaternion()));
+      const palmW = () => s.palm.clone().applyQuaternion(WQ(s.h));
       const proj = (x: THREE.Vector3) => x.clone().sub(axis.clone().multiplyScalar(x.dot(axis))).normalize();
       const a0 = proj(palmW()), b0 = proj(inward);
       const ang = Math.acos(Math.max(-1, Math.min(1, a0.dot(b0)))) * 0.85;

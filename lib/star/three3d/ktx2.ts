@@ -103,3 +103,63 @@ export async function loadPicture3d<Tex>(url: string, fallback: () => Promise<Te
     return fallback();
   }
 }
+
+/**
+ * The shared KTX2 loader for a GLTFLoader's packed models (the shop's items:
+ * tools/shop3d/ktx2_items.mjs), or null when the phone can't read them or
+ * KTX2 is off (?ktx2=0) — the caller then loads the plain model. Speed job B.
+ */
+export async function ktx2LoaderForModels(r: THREE.WebGLRenderer): Promise<any | null> {
+  if (ktx2Off()) return null;
+  useKtx2With(r);
+  const lp = getLoader();
+  if (!lp) return null;
+  try { return await lp; } catch { return null; }
+}
+
+/**
+ * PACKED PEOPLE (lag pass 4, 9 Oct 2026). These models have a `<name>.ktx2.glb`
+ * twin (scripts/perf3d/ktx2-models.mjs) whose pictures stay packed on the chip:
+ * a one body 11 → ~2.8 MB, the human ~50 → ~13 MB. Nothing reads their pixels.
+ * NOT the Style A heads: packed, their skin read a shade grey-blue on a still
+ * pair (the toon shader reads skin and hair off the map), and the careful
+ * packing (UASTC) made each head 220 → 920 KB to download. Not the Star Pass
+ * glasses yet: no still of them was checked.
+ * Keep in step with MODELS in that script. Off: ?ktx2=0.
+ */
+export const KTX2_MODELS = new Set([
+  ...["player", "player-buzz", "player-long", "manager"].map((n) => `onebody/${n}.glb`),
+  "human3d/human.glb",
+]);
+
+/** The packed twin's address for a model with one, when this phone can read it; else null. */
+export function ktx2ModelUrl(url: string): string | null {
+  if (ktx2Off()) return null;
+  const i = url.indexOf("/star/");
+  if (i < 0) return null;
+  const rel = url.slice(i + 6).split("?")[0];
+  if (!KTX2_MODELS.has(rel) || !chip()) return null;
+  return url.slice(0, i + 6) + rel.replace(/\.glb$/, ".ktx2.glb");
+}
+
+/**
+ * Load a model, its packed twin first when it has one (KTX2_MODELS) and the
+ * phone reads KTX2, the plain file on ANY failure. `load` is the caller's own
+ * loading (loadGltfCached, loadAsync): it gets the same loader, now able to
+ * read packed pictures.
+ */
+export async function loadModel3d<G>(
+  loader: { setKTX2Loader?: (l: any) => unknown },
+  url: string,
+  load: (url: string) => Promise<G>,
+): Promise<G> {
+  const twin = ktx2ModelUrl(url);
+  const lp = twin ? getLoader() : null;
+  if (!twin || !lp || !loader.setKTX2Loader) return load(url);
+  try {
+    loader.setKTX2Loader(await lp);
+    return await load(twin);
+  } catch {
+    return load(url);
+  }
+}

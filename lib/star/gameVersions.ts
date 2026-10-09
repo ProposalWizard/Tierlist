@@ -25,6 +25,7 @@ import { storedMatchView, setMatchView, MATCH_VIEW_DEFAULT } from "./matchView";
 import { signing3dOn, setSigning3d, shop3dPlayerLook, setShop3dPlayerLook } from "./signing3d";
 import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./look3d";
 import { garden3dLook, setGarden3dLook } from "./garden3d/look";
+import { houseLook, setHouseLook, houseLookStored } from "./home3d/look";
 import { look3dStyle, setLook3dStyle } from "./look3dStyle";
 import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
@@ -41,7 +42,7 @@ import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook 
 import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
-import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
+import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook, cutsceneCameraStored } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
@@ -85,12 +86,16 @@ export const LOOK_ROWS = {
   // (Standard and Preview) until it is switched on by hand.
   kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
+  // Harry, 9 Oct 2026: a home of rooms you walk through (New by default).
+  house: row("House", "new", "old", houseLook, setHouseLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
   playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
+  // Harry, 9 Oct 2026: camera pass + music on every cut scene (New by default).
+  cutsceneCamera: row("Cut-scene camera", "new", "old", cutsceneCameraLook, setCutsceneCameraLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
   camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
   playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
@@ -148,12 +153,14 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
     garden: N("garden"),
+    house: N("house"),
     look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     humanBody: O("humanBody"),
     playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
+    cutsceneCamera: N("cutsceneCamera"),
     motion: N("motion"),
     camera3d: O("camera3d"),
     playerLight3d: O("playerLight3d"),
@@ -194,6 +201,16 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
 if (typeof window !== "undefined" && !playerStyleStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
+}
+// Cut-scene camera arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !cutsceneCameraStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "cutsceneCamera" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.cutsceneCamera.set("old");
+}
+// House (rooms, 9 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !houseLookStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "house" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.house.set("old");
 }
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;

@@ -11,10 +11,11 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y, HALF_LEN } from "./constants";
 import type { World } from "./world";
 import type { P3, Act3 } from "./player";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, toonHeadsFor, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { governScene } from "../three3d/governThree";
@@ -112,6 +113,7 @@ export async function createPlay3DScene(
   const tier = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
   const SK = SkeletonUtils.default ?? SkeletonUtils;
@@ -123,7 +125,8 @@ export async function createPlay3DScene(
   const want = new Set<PlayerModel>(world.players.map((p) => playerModelFor(look.people[p.id]?.hairStyle)));
   const [animG] = await Promise.all([
     loadPeople3d(loader, "anims", body),
-    ...Array.from(want).map(async (m) => { models.set(m, await loadPeople3d(loader, m, body)); }),
+    // only the heads on this pitch (toonHeadsFor; Style A)
+    ...Array.from(want).map(async (m) => { models.set(m, await loadPeople3d(loader, m, body, toonHeadsFor(world.players.map((p) => ({ who: String(p.id), you: p === world.you() }))))); }),
   ]);
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 

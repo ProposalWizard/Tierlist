@@ -43,10 +43,11 @@
  * Static pieces are merged by material (one draw call each), so the extra
  * detail costs few draw calls.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, toonHeadsFor, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
@@ -54,7 +55,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -68,6 +69,7 @@ import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
 } from "./textures";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house";
 export type GardenSky = "day" | "sunset" | "night";
@@ -206,6 +208,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
@@ -521,7 +524,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const personModel = playerModelFor(data.player?.hairStyle);
   const [propsG, charG, animG, gardenAnimG] = await Promise.all(newPerson ? [
     load("/star/garden3d/props.glb"),
-    loadPeople3d(loader, personModel, people3dLook()).then((g: any) => { loaded++; return g; }),
+    // only the heads the garden shows: you, the bench team-mates, the men on the pitch (toonHeadsFor)
+    loadPeople3d(loader, personModel, people3dLook(), toonHeadsFor([{ you: true }, ...(data.mates ?? []).slice(0, 3).map((n) => ({ who: `garden-mate-${n}` })), ...[0, 1, 2, 3, 4].map((i) => ({ who: `garden-bench-${i}` }))])).then((g: any) => { loaded++; return g; }),
     loadPeople3d(loader, "anims", people3dLook()).then((g: any) => { loaded++; return g; }),
     Promise.resolve(null),
   ] : [
@@ -1631,7 +1635,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       scene.add(c);
       blob(2.4, 4.6, bays[i], PARK.z0 + 3.6, 0.85);
       carGroups.push(c);
-      if (!dbg.has("noimp")) carImpostors.push(makeImpostor([c], CAR_LAYER + i, 9, 10.5));
+      if (!dbg.has("noimp")) { const ci = makeImpostor([c], CAR_LAYER + i, 9, 10.5); carImpostors.push(ci); void ci.prime(); }
     }).catch((e: any) => console.error("garden car", e));
     solid(bays[i] - 1.0, bays[i] + 1.0, PARK.z0 + 1.2, PARK.z0 + 6.0);
   });
@@ -1645,7 +1649,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
    * gone round them by a few degrees. Close up, the real people come back.
    * The picture is taken with the garden's own lights, so it matches.
    */
-  type Impostor = { update: (camPos: any, dt: number) => void; on: () => boolean; dispose: () => void; bakes: () => number; size: () => number };
+  type Impostor = { update: (camPos: any, dt: number) => void; on: () => boolean; dispose: () => void; bakes: () => number; size: () => number; prime: () => Promise<void> };
   let impostor: Impostor | null = null;
   const carImpostors: Impostor[] = [];
   function makeImpostor(roots: any[], layer: number, nearD: number, farD: number): Impostor {
@@ -1696,7 +1700,29 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     };
     const lit = [hemiLight, sun, fillLight, ...nightLights];
     for (const l of lit) l.layers.enable(layer);
+    /**
+     * Build the picture's own shaders in the background, while loading (lag pass 4,
+     * 9 Oct 2026). The picture is drawn into its own target, with only the lights on
+     * its layer and no fog: different shaders from the garden's own, and the first
+     * one was taken on the first frame, building them all there (~2.4 s of the
+     * garden's 3.5 s from loading cover to first picture, on this machine).
+     */
+    const prime = async () => {
+      const bg = scene.background, fog = scene.fog, prev = renderer.getRenderTarget();
+      scene.background = null; scene.fog = null;
+      renderer.setRenderTarget(rt);
+      let job: Promise<unknown> = Promise.resolve();
+      try {
+        // only these things' materials, with the whole garden's lights as the picture sees them
+        const r3 = { compile: (s: any, c: any) => renderer.compile(s, c, scene), properties: renderer.properties, extensions: renderer.extensions };
+        job = Promise.all(roots.map((r0) => safeCompileAsync(r3 as any, r0, cam)));
+      } catch { /* built at the first picture */ }
+      renderer.setRenderTarget(prev);
+      scene.background = bg; scene.fog = fog;
+      await Promise.race([job.catch(() => {}), new Promise((r) => setTimeout(r, 6000))]);
+    };
     return {
+      prime,
       on: () => on,
       bakes: () => bakes,
       size: () => +R.toFixed(2),
@@ -2418,7 +2444,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
+  // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
+  try {
+    await Promise.all([
+      hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera),
+      // the bench's and cars' pictures (makeImpostor), drawn on the first frame from the gate
+      ...[impostor, ...carImpostors].filter(Boolean).map((im) => im!.prime()),
+    ]);
+  } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   renderer.setAnimationLoop(() => {
@@ -2913,7 +2946,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildGarden(container, cb, data, opts, own);
+    const t0 = performance.now();
+    const c = await buildGarden(container, cb, data, opts, own);
+    noteSceneFiles("garden", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) {

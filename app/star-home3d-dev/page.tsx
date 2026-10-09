@@ -7,13 +7,18 @@
  * The same screen a career opens from the garden's house door or Home's
  * "Your house" (components/star/Home3D.tsx), on a made-up career: switch the
  * home (?tier=starter|flat|penthouse|house|villa|estate), an empty or a full
- * trophy cabinet, and the look (?look=h|old). The wardrobe's choice stays on
+ * trophy cabinet, the look (?look=h|old), and the house look (?house=new|old:
+ * rooms you walk through, or the one room). The wardrobe's choice stays on
  * this page; nothing is saved.
  */
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import Home3D from "@/components/star/Home3D";
+import { setToonYou } from "@/lib/star/style3d/toon/bodies";
+
+// the test player's name on the back of his Style A shirt (a career sets it from the save)
+if (typeof window !== "undefined") setToonYou({ name: "Player" });
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
@@ -39,6 +44,7 @@ function Home3DTest() {
   const [full, setFull] = useState(params.get("trophies") !== "0");
   const [outfit, setOutfit] = useState<OutfitChoice | undefined>(undefined);
   const look = params.get("look");
+  const [house, setHouse] = useState<"new" | "old">(params.get("house") === "old" ? "old" : "new");
   const lookH = look === "h" ? true : look === "old" ? false : undefined;
 
   const career = useMemo(() => {
@@ -49,7 +55,9 @@ function Home3DTest() {
       const it = LIFESTYLE_LEVELS.find((l) => baseIdOf(l) === base && (l.level ?? 1) === level);
       return it ? [{ ...it }] : [];
     };
-    c.ownedItems = full ? [...own("car-3", 5), ...own("suv", 3), ...own("classic", 3), ...own("car-1", 2)] : [];
+    c.ownedItems = full ? [...own("car-3", 5), ...own("suv", 3), ...own("classic", 3), ...own("car-1", 2),
+      ...own("rolex", 1), ...own("gold", 1), ...own("diamond", 1), ...own("tv", 1), ...own("console", 1), ...own("art", 1), ...own("suit", 1), ...own("bike", 1)] : [];
+    c.kibCans = full ? { basic: 6, premium: 3, elite: 1 } : { basic: 0, premium: 0, elite: 0 };
     const boot = BOOT_LEVELS.find((b) => baseIdOf(b) === "elite" && (b.level ?? 1) === 3);
     if (boot) c.currentBoot = { ...boot };
     c.trophies = full ? TROPHIES.flatMap((t) => Array.from({ length: t.n }, (_, i) => ({ season: i + 1, competition: t.competition, club: "Arsenal" }))) : [];
@@ -65,20 +73,22 @@ function Home3DTest() {
   return (
     <>
       <Home3D
-        key={`${tier}-${full}`}
+        key={`${tier}-${full}-${house}`}
         career={career}
         tier={tier}
         lookH={lookH}
+        house={house}
         backLabel="3D area"
         onBack={() => router.push("/star-3d-area-dev")}
         onDoor={() => router.push("/star-garden3d-dev?arrive=house")}
         onOutfit={setOutfit}
       />
-      <div style={{ position: "fixed", top: 56, left: 12, right: 12, zIndex: 90, display: "flex", gap: 5, flexWrap: "wrap" }} data-home3d-dev>
+      <div style={{ position: "fixed", top: 128, left: 12, right: 12, zIndex: 90, display: "flex", gap: 5, flexWrap: "wrap" }} data-home3d-dev>
         {HOME_TIERS.map((t) => (
           <button key={t} onClick={() => setTier(t)} style={{ ...btn, background: tier === t ? "#facc15" : btn.background, color: tier === t ? "#111" : "#fff" }}>{t}</button>
         ))}
         <button onClick={() => setFull((f) => !f)} style={btn}>{full ? "Full cabinet" : "Empty cabinet"}</button>
+        <button onClick={() => setHouse((h) => (h === "new" ? "old" : "new"))} style={btn} data-house-look={house}>House: {house === "new" ? "New" : "Old"}</button>
       </div>
       <PageGuide page="/star-home3d-dev" corner="bottom-left" />
     </>

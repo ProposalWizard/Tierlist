@@ -509,7 +509,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
             {/* Ball pinned to left so it doesn't affect text centering */}
             <div className="absolute left-3 top-1/2 -translate-y-1/2">
               <img
-                src="/ball.png"
+                src="/ball.webp"
                 alt=""
                 className="w-16 h-16 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
               />

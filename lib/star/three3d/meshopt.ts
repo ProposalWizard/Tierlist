@@ -8,6 +8,7 @@
 type MeshoptDecoderLike = typeof import("three/examples/jsm/libs/meshopt_decoder.module.js").MeshoptDecoder;
 
 import { installFrameMeter } from "./frameMeter";
+import { installAssetVersions } from "./assetUrl";
 
 let decoder: Promise<MeshoptDecoderLike> | null = null;
 
@@ -18,6 +19,8 @@ export async function withMeshopt<L extends { setMeshoptDecoder(d: MeshoptDecode
     decoder = import("three/examples/jsm/libs/meshopt_decoder.module.js").then((m) => m.MeshoptDecoder);
     decoder.catch(() => { decoder = null; });
   }
-  loader.setMeshoptDecoder(await decoder);
+  // and the files' versioned addresses (./assetUrl.ts: a second visit needs no network)
+  const [d] = await Promise.all([decoder, installAssetVersions()]);
+  loader.setMeshoptDecoder(d);
   return loader;
 }

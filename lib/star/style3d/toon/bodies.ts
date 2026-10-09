@@ -51,6 +51,14 @@ export const TOON_FILES: Record<ToonHead, string> = {
   m1: "/star/people3d/toon-mgr.glb",
   m2: "/star/people3d/toon-mgr2.glb",
 };
+/**
+ * The shirt's hem (rest y, metres) where the head file's own kit line is wrong.
+ * build_toon_bodies.py reads the hem off the generated texture; on the Quiff
+ * and the Fringe it landed ~8 cm low, so the top of the shorts was painted in
+ * shirt colour. Measured by eye on stripes of rest height (9 Oct 2026).
+ */
+export const TOON_HEM_FIX: Partial<Record<ToonHead, number>> = { h2: 0.925, h5: 0.915 };
+
 /** A small face picture of each head (Settings → Your look). */
 export const toonHeadPicture = (h: ToonHead) => `/star/people3d/toon-${h}.webp`;
 
@@ -94,7 +102,7 @@ export function toonHairFor(id: string): string {
   return HAIR_COLOURS.find((h) => h.id === id_)!.hex;
 }
 
-export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string }
+export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string; /** your surname, on the back of your Style A shirt */ name?: string }
 export function toonPickFor(id: string, suit = false): ToonPick {
   return { body: toonBodyFor(id), head: toonHeadFor(id, suit), skin: toonSkinFor(id), hair: suit ? toonGreyHairFor(id) : toonHairFor(id) };
 }
@@ -132,7 +140,7 @@ let you: ToonPick = { body: "c1", head: "h1", skin: SKIN_TONES[3].hex, hair: HAI
 const youListeners = new Set<() => void>();
 export function setToonYou(p: Partial<ToonPick>) {
   const next = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: resolveToonHead(p.head ?? you.head) };
-  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair) return;
+  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair && next.name === you.name) return;
   you = next;
   youListeners.forEach((f) => f());
 }

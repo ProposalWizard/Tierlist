@@ -31,7 +31,8 @@ function sampleCareer(): CareerState {
 export default function ShopLabPreview({ kind, look, onBack, cat }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId }) {
   const [career, setCareer] = useState<CareerState>(sampleCareer);
   const [tab, setTab] = useState<StoreTab>(kind === "landing" ? "kib" : kind);
-  const [page, setPage] = useState<"landing" | "shop">(kind === "landing" ? "landing" : "shop");
+  // New look: no front page, the landing opens straight into the Showroom (as in the game).
+  const [page, setPage] = useState<"landing" | "shop">(kind === "landing" && look !== "new" ? "landing" : "shop");
   const buyKib = (c: KibCan) => setCareer((k) => ({ ...k, money: k.money - kibCanPrice(c, k.contract.wage), kibCans: { ...k.kibCans, [c.id]: (k.kibCans[c.id] ?? 0) + 1 } }));
   const buyBoot = (b: Boot) => setCareer((k) => ({ ...k, money: k.money - b.price, currentBoot: { ...b } }));
   const buyItem = (it: OwnedItem) => setCareer((k) => ({ ...k, money: k.money - it.price, ownedItems: [...k.ownedItems.filter((o) => baseIdOf(o) !== baseIdOf(it)), { ...it }] }));
@@ -55,10 +56,16 @@ export default function ShopLabPreview({ kind, look, onBack, cat }: { kind: Stor
       </div>
     );
   }
-  const back = kind === "landing" ? () => setPage("landing") : onBack;
+  const back = kind === "landing" && look !== "new" ? () => setPage("landing") : onBack;
   if (look === "new") {
     return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat}
-      onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}} />;
+      onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}}
+      guideCorner links={[
+        { id: "sponsors", icon: "🤝", label: "Sponsors", locked: true, onClick: () => {} },
+        { id: "casino", icon: "🎰", label: "Casino", onClick: () => {} },
+        { id: "store", icon: "🛒", label: "Store", onClick: () => {} },
+        { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => {} },
+      ]} />;
   }
   return look === "grid" ? (
     <StoreShop career={career} kind={tab} onKind={setTab} onBack={back} onHome={back}

@@ -14,7 +14,7 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, Vec3 } from "./types";
-import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, type FingerPose, type Person3D, type PersonModel } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, toonHeadsFor, type FingerPose, type Person3D, type PersonModel } from "../people3d";
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
@@ -71,8 +71,9 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
     async create(spec) {
       const [a, fb, cs] = await anims();
       const body = (spec.look.body ?? "player") as PersonModel;
-      const model = await loadPeople3d(loader, body, init.body);
       const out = spec.look.outfit ?? (body === "manager" ? "suit" : "kit");
+      // only this person's head (Style A; lag pass 4): the files are cached, so the cast shares them
+      const model = await loadPeople3d(loader, body, init.body, toonHeadsFor([{ who: spec.id, you: spec.role === "you", suit: out === "suit" }]));
       const p = makePerson3d(T, init.SkeletonUtils, model, a, {
         outline: spec.outline, castShadow: spec.castShadow, outlineNear: 2.5,
         who: spec.id, you: spec.role === "you", suit: out === "suit",

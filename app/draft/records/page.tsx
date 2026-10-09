@@ -32,14 +32,14 @@ interface RecordType {
 }
 
 const SEASON_RECORD_TYPES: RecordType[] = [
-  { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     playerImage: "/f3d83465-95e8-48a7-b770-8bedcd65e0c1-Photoroom.png", isTeam: true },
-  { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       playerImage: "/Klopp and Pep.png",           isTeam: true },
-  { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       playerImage: "/Erling Haaland.png",          isTeam: false },
-  { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     playerImage: "/Bruno Fernandes.png",         isTeam: false },
-  { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      playerImage: "/Petr Cech.png",               isTeam: false },
-  { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   playerImage: "/Arsenal Invincibles.png",     isTeam: true },
-  { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   playerImage: "/Jose Mourinho.png",           isTeam: true, ascending: true },
-  { key: "biggest_win",    label: "Biggest Win",                Icon: ExplosionIcon,  playerImage: "/United 9-0.png",              isTeam: true },
+  { key: "most_points",    label: "Most Points",                Icon: PointsIcon,     playerImage: "/records/most-points.webp", isTeam: true },
+  { key: "wins",           label: "Most Wins",                  Icon: WinsIcon,       playerImage: "/records/most-wins.webp",           isTeam: true },
+  { key: "goals",          label: "Golden Boot",                Icon: BootIcon,       playerImage: "/records/golden-boot.webp",          isTeam: false },
+  { key: "assists",        label: "Most Assists",               Icon: AssistIcon,     playerImage: "/records/most-assists.webp",         isTeam: false },
+  { key: "clean_sheets",   label: "Golden Glove",               Icon: GloveIcon,      playerImage: "/records/golden-glove.webp",               isTeam: false },
+  { key: "unbeaten",       label: "Longest Unbeaten",           Icon: UnbeatenIcon,   playerImage: "/records/unbeaten.webp",     isTeam: true },
+  { key: "goals_conceded", label: "Least Goals Conceded",       Icon: GoalLockIcon,   playerImage: "/records/least-conceded.webp",           isTeam: true, ascending: true },
+  { key: "biggest_win",    label: "Biggest Win",                Icon: ExplosionIcon,  playerImage: "/records/biggest-win.webp",              isTeam: true },
   { key: "avg_rating",     label: "Player of the Season Rating",Icon: RatingStarIcon, isTeam: false, isDecimal: true },
   { key: "squad_ovr",      label: "Highest Squad OVR",          Icon: SquadOvrIcon,   isTeam: true },
 ];

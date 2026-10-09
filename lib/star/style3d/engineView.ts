@@ -26,7 +26,7 @@ import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer, disposeObject3D, warmUp } from "../three3d/perf";
+import { acquireRenderer, disposeObject3D, flushReleased, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
@@ -71,6 +71,8 @@ export interface EngineView {
  */
 export const ENGINE_VIEW_FIG_SCALE = 1.3;
 /** The keeper a size down, so he still fits his goal (the 2D draws him small on purpose too). */
+/** How long a new 3D match waits for look H before it opens on the kit look instead (lag pass 4). */
+const H_WAIT_MS = 4000;
 const KEEPER_SHARE = 0.85;
 /**
  * Motion: Mocap's numbers (Harry, 9 Oct 2026: the on-pitch motion "isn't 100%").
@@ -424,6 +426,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   let h: RealLook | null = null;
   let hTod: TimeOfDay | null = o.tod ?? null;
   let hToken = 0;
+  /** Look H made and its shaders built (restyle). */
+  let hReady: Promise<unknown> | null = null;
   let visible = true;
   /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
   // ?bcam=0 read once (this was parsed from the address bar for every man, several times a frame)
@@ -574,7 +578,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const smallMaps = new Map<any, any>();
   const matchSizedMap = (p: Person3D) => {
     const m = p.body?.material as any;
-    if (!m || Array.isArray(m) || !m.userData?.toon || !m.map) return;
+    // a packed (KTX2) map stays as it is: already about the size this copy would be (lag pass 4)
+    if (!m || Array.isArray(m) || !m.userData?.toon || !m.map || m.map.isCompressedTexture) return;
     const src = m.map;
     let small = smallMaps.get(src);
     if (small === undefined) {
@@ -1124,7 +1129,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      void import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" } }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" } }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1132,8 +1137,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
           for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
-          warmPeople();
+          const warm = warmPeople();
           (window as unknown as { __engineView3dReady?: boolean }).__engineView3dReady = true;
+          return warm;
         })
         .catch((e) => console.error("look H failed to load", e));
       return;
@@ -1151,9 +1157,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * as a player, shown for a one-pixel draw while the scene compiles, then
    * put back.
    */
-  function warmPeople() {
+  function warmPeople(): Promise<void> {
     const p = spares.pop();
-    if (!p) return;
+    if (!p) return h ? h.compile(scene, camera) : Promise.resolve();
     dressPerson3d(THREE, p, { skin: SKINS[0], hair: "#1b120c", kit: { shirt: "#d62828", trim: "#f4f4f4" }, number: numberTex(9), accessories: [] });
     kit?.stylePeople([p]);
     h?.dressPeople([p]);
@@ -1163,7 +1169,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     p.root.visible = true;
     p.root.position.set(0, 0, 30);
     camera.updateMatrixWorld();
-    void warmUp(THREE, renderer, scene, camera, { timeoutMs: 6000 }).finally(() => { p.root.visible = false; root.remove(p.root); spares.push(p); });
+    // look H draws into its own picture (no tone mapping): build THAT variant, in the background
+    // (lag pass 4: warmUp built the screen's variant, so the first H frame built every shader again)
+    const job = h ? h.compile(scene, camera).then(() => flushReleased()) : warmUp(THREE, renderer, scene, camera, { timeoutMs: 6000 });
+    return job.catch(() => {}).finally(() => { p.root.visible = false; root.remove(p.root); spares.push(p); });
   }
   restyle();
   gov.apply();
@@ -1642,6 +1651,22 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   let frameNo = 0;
   let cheered = false;
   let size = { w: 0, h: 0 };
+  // Look H usually arrives with the people (its pictures load side by side): open straight in it,
+  // its shaders already built for its own picture. Without this the kit drew the first frames and
+  // built 43 screen shaders on the spot, then H built its own again (lag pass 4, 9 Oct 2026: the
+  // revisit's 7.7 s). A slow first download still opens on the kit after H_WAIT_MS, as before.
+  // Meanwhile the spares for the first picture's ~22 men are built a few at a time, between the 2D
+  // match's frames, instead of 16 of them inside the first 3D frame (lag pass 4: ~1.3 s of it here).
+  const fillSpares = async () => {
+    while (spareQueue.length && built < SPARE_TARGET) {
+      const t = performance.now();
+      while (spareQueue.length && built < SPARE_TARGET && performance.now() - t < 12) spares.push(buildShell(spareQueue.shift()));
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  };
+  await Promise.all([fillSpares(), def.real && hReady ? Promise.race([hReady, new Promise((r) => setTimeout(r, H_WAIT_MS))]) : null]);
+  // the drawing buffer sized now, while loading, not on the first frame (a ~1 s resize on this machine)
+  { const cw = container.clientWidth, ch = container.clientHeight; if (cw > 0 && ch > 0) { size = { w: cw, h: ch }; renderer.setSize(cw, ch, false); } }
   return {
     frame(f) {
       frameNo++;

@@ -29,7 +29,7 @@ Preview) sets them all at once.
 | 3D drills (Two Touch, Free Roam, Headers & Volleys, Wembley, Pace Sprint) | `components/star/Play3D.tsx`, opened from `components/star/Training3D.tsx` | `lib/star/play3d/scene.ts` (picture) and `lib/star/play3d/world.ts` (rules, own physics). Drill list: `lib/star/play3d/drills.ts` | `/star-training3d-dev`; Free Roam also at `/star-style-dev?scene=play3d` | 3D look: H / Old (`lib/star/look3dStyle.ts`) |
 | Crossbar Challenge | `components/star/Training3D.tsx` | `lib/star/training3d/scene.ts` (your shot is the 2D engine; the 3D pitch draws it) | `/star-training3d-dev` | none |
 | Garden | `components/star/Garden3D.tsx` | `lib/star/garden3d/scene.ts` (old: `lib/star/garden3d/sceneOld.ts`, frozen) | `/star-garden3d-dev` | 3D garden: New / Old (`lib/star/garden3d/look.ts`) |
-| Your house (wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
+| Your house (rooms you walk through: wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (one room at a time: `roomBuild.ts`; which rooms and their doors `rooms.ts`; room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?house=new\|old`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
 | Shop | `components/star/Shop3D.tsx` | `lib/star/shop3d/scene.ts`, items in `lib/star/shop3d/catalogue.ts` | `/star-shop3d-dev` | 3D shop player (`lib/star/signing3d.ts`); 3D look H |
 | Casino | `components/star/Casino3D.tsx`, tables in `components/star/Casino3DTable.tsx` | `lib/star/casino3d/scene.ts` | `/star-garden3d-dev` (has a Casino tab) | Casino: 3D / Classic (`lib/star/casino3d/look.ts`); Casino look: New / Old (`lib/star/casino3d/roomLook.ts`) |
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
@@ -82,6 +82,17 @@ exactly today's bodies. You never pick a file yourself:
   `toonKitColours` maps it onto the textured kit (base, trim on collar/cuffs/sock
   tops, number on the back, badge, socks, boots). Settle clashes first with
   `kitsFor` (`lib/star/kits.ts`); Style A paints what it is given.
+- Shirt lettering and cloth (9 Oct 2026): the number sits between the shoulder
+  blades, your name (`setToonYou({ name })`, or `look.name`) arched above it,
+  a small number on his right chest by the badge. Placed from each head's own
+  shoulder joint and collar (`toonShirtLayout`, `lib/star/style3d/toon/shader.ts`),
+  so every head and build is right. The cloth is drawn in the shader, no
+  texture or draw call added: a fine weave, stitched seams (sides, shoulders,
+  sleeves, hem, waistband), a ring collar, cuff band and line, a shorts side
+  stripe. Stripes, hoops, halves and contrast sleeves come from the club
+  sheets (`lib/star/style3d/toon/kitPattern.ts`, found from the kit's colours;
+  pass `kit.pattern` to set one, `null` for plain). `TOON_HEM_FIX` (bodies.ts)
+  corrects the Quiff's and Fringe's hem line (they painted the shorts top as shirt).
 - Hands: the standing idles get relaxed arms baked per person
   (`relaxIdleArms` in `lib/star/three3d/runPosture.ts`, the same file as the
   running arms' wrist step `relaxWrist`), and the fingers rest curled
@@ -137,6 +148,9 @@ exactly today's bodies. You never pick a file yourself:
 - Every GLB the game loads is packed with meshopt by `scripts/perf3d/shrink-models.mjs`. **Every GLTFLoader must call `withMeshopt(loader)`** (`lib/star/three3d/meshopt.ts`) before loading. A loader without it fails.
 - Every GLB needs a `POLICY` line in `scripts/perf3d/shrink-models.mjs`. The policy says which vertex data may be made small, because some code reads raw vertices (`people3d.ts`, `dressInKit`, the garden's pieces).
 - Props, boots and cars stay Draco where Draco is smaller.
+- **Loading (speed job B, 9 Oct 2026).** `withMeshopt` also hooks every three.js loader to ask for `/star/x?v=<hash>` (`lib/star/three3d/assetUrl.ts`); `next.config.mjs` serves those as immutable and regenerates the hash list (`lib/star/three3d/assetVersions.ts`, by `scripts/perf3d/asset-versions.mjs`) at every build. A new or changed file needs nothing else; `tests/star/assetLoading.mts` fails if the committed list is stale.
+- **Look H scenes compile with `hEnh.compile(scene, camera)`** (`lib/star/style3d/real/enhance.ts`), never `renderer.compileAsync` alone: look H draws into its pass's picture, whose shaders differ from the screen's, so a screen compile is wasted and the first frame builds everything again (the garden's and casino's 9–11 s first frame here).
+- The 3D shop's generated items have KTX2 twins (`*-hf.ktx2.glb`, `tools/shop3d/ktx2_items.mjs`): pictures stay packed on the chip. After changing a `*-hf.glb`, re-run that tool.
 
 ### Cameras
 
@@ -208,7 +222,7 @@ When `lib/star/three3d/footballAnims.ts` loads the mocap file it fixes it once: 
 6. **Play it** (next sections).
 7. **Check it** frame by frame (below).
 
-For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set.
+For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set. Keyed clips pass through `steady()` there (no knee/elbow flips); `tests/star/animSmooth.mts` checks no bone turns over 60° in one 60 fps frame.
 
 ### Play a clip in a scene
 
@@ -333,6 +347,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 What landed today on Harry, newest first, one line each.
 
 - Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
+- Cut-scene camera + music: a film pass over every cut scene (wide first, weak moves hidden, always moving), a farewell in the stadium, five music beds; Settings → Look → Cut-scene camera (handover below).
 
 - 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
 
@@ -421,17 +436,32 @@ Stills from this round: the session scratchpad `r3fr/` (sheet.jpg).
 
 Harry's idea, in his words: *"imagine you actually had your current house with all your stuff and that's where you change clothes."*
 
+**Rooms (Harry, 9 Oct 2026: "the house being 1 room is a bit dead, the bigger the house the bigger the space/rooms etc.").** Settings → Look → "House: New | Old" (`lib/star/home3d/look.ts`, row `house` in `gameVersions.ts`; Old = the one room below, exactly as it was).
+- Which rooms: `TIER_ROOMS` / `roomsFor` in `homes.ts`. Starter and flat: the one room. Penthouse: lounge (keeps the cabinet), dressing room, glass terrace. House: hallway (front door to the garden), lounge (sofa, TV, your framed shirts, a fridge of KIB cans, a shelf of watches and cans, your art, the drive window), dressing room (wardrobe, mirror, boots, a glass island of watches and jewellery, your suit on a stand), trophy room (the full cabinet, both kits framed, the Ballon d'Or plinth). Villa adds garage and games room; estate adds cinema, gym, garden terrace.
+- Plans: `lib/star/home3d/rooms.ts` (pure): each room's size, its doorways (`DOOR_AT`, `LINKS`; every door has a door back), its spots, `homeStuffOf` (what you own; unowned = an empty plinth or stand), `roomFiles` (the models a room loads).
+- One room at a time: `lib/star/home3d/roomBuild.ts` `buildRoom(env, input, id)` builds a room under its own group and `dispose()` frees all of it (shapes, materials, pictures, the mirror's picture). "main" is the old room, ported unchanged. `scene.ts` keeps the renderer, lights, you, the camera and walking; walk through a doorway → 0.2 s fade out, old room freed, next built (50–180 ms here), you stand 1.5 m inside the matching door, 0.2 s fade in. A room's models start loading when you are within 2.6 m of its door (one cached load per file, cloned into each room). Room chip and dots (tap to jump) in `Home3D.tsx`.
+- Measured headless (`tests/star/home3d.mts`, room only, no player, before cars/props load): house hallway 29 draws / 1.4k triangles, lounge 45 / 5.1k, dressing room 39 / 2.5k, trophy room 33 / 9.6k; villa garage 20 / 3.8k, games room 26 / 4.9k; estate cinema 21 / 8.7k, gym 25 / 5.0k, garden terrace 23 / 3.1k; penthouse terrace 27 / 4.6k; flat nook 20 / 1.5k; at most 2 new 1024 pictures a room; the mirror only in the dressing room (none on Low). Budget 50 draws, 45k triangles. New rooms join every glow into one draw per picture and every doorway sign into one picture.
+- Filled (9 Oct 2026, `roomBuild.ts` `buildGarage`, `buildGames`, `buildCinema`, `buildGym`, `buildGardenTerrace`, `buildPenthouseTerrace`, `buildNook`). One hero each; anything not bought is an empty plinth.
+  - Villa garage: four bays, your cars as their light models facing out (an empty turntable plinth per empty bay), polished floor (`ROOM_LOOK.garage.rough`), a closed roller door, a workbench and pegboard of tools, your club colours round the walls, the motorbike (`public/star/home3d/bike-lod.glb`) or its plinth.
+  - Villa games room (now 8.6 × 7.4 m at house size): the pool table under its lamp, a pool (still water in a stone surround), loungers, a cue rack, a shelf of your watches and cans.
+  - Estate cinema: a screen with your club's badge (`HomeData.badge`, the drawn badge SVG, painted onto a 1024 picture), two rows of recliners, a starry ceiling, a snack bar of cans. Estate gym: a power rack with plates in your colours, bench, treadmill, dumbbells, a mirror wall (dark glass, not live), a fridge of cans. Estate garden terrace: open on three sides over a balustrade (`shellOf(..., { open, parapet })`), a built fountain, the garden's own hedges, lanterns, plants, loungers and paddock fence (`public/star/home3d/terrace-props.glb`, `tools/home3d/make_terrace_props.mjs`), your jet (`jet-lod.glb`) on its pad and your horse by his paddock (or their empty stands).
+  - Penthouse terrace: glass balustrade, the skyline all round, an outdoor sofa, planters, string lights; through the glass behind you, your best car in a lit gallery.
+  - The flat now has a hallway nook by its front door (`TIER_ROOMS.flat = ["nook", "main"]`): a boot bench with your boots, your kits on hooks, a key table. The one room's door then reads HALLWAY; Old look unchanged.
+  - Pieces: `painter()` joins many coloured shapes into one draw (vertex colours, kept out of `freezeStatic`); `roundedBox()` for cushions. The lounge sofa now has a base on legs, rounded arms, loose seat and back cushions.
+- Second pass (Harry, 9 Oct 2026): car paint is a glossy paint now, not foil (`carPaint`, `CAR_PAINT` in `roomBuild.ts`: metalness at most 0.18, roughness 0.3, colour kept; the drive too). The garage loads the shop's full car models for the best cars while they fit 50k triangles (`garageCars`, `CAR_HF` in `rooms.ts`; light copies for the rest). A room can set an opening shot (`BuiltRoom.intro`, held until you move): garage from the doorway end along the row, games room over the table to the pool, cinema from the back over the seats to the screen, penthouse terrace onto the car behind the glass, the flat's nook onto the bench and kits. No chandelier in the cinema or the gym (strip lights, stars, sconces). The penthouse skyline sits so its towers rise from just under the glass rail; its string lights hang above the camera. The nook's light is flush to the ceiling.
+- Room camera (Harry, 9 Oct 2026: it sat jammed behind his head): `ROOM_CAM` in `scene.ts`, 4.4 m back and 2.9 m up (was 3.3 / 2.35). Near a wall the boom shortens along its own line (`roomCamBoom`, never through the wall) and the camera rises; backed onto a wall it swings up to ~70° round him to where there is room behind AND room ahead to look into (`openCamYaw`, used on arrival and while walking).
+
 **Done.**
-- The room: `lib/star/home3d/scene.ts`, one parametric room. Six presets in `lib/star/home3d/homes.ts`, picked by the best home you own in the shop (`homeTierOf`): starter flat (nothing bought), flat, penthouse, house, villa, estate. Size, floor, panelling, metal trim, chandelier, plants, cabinet size, drive size and the window view grow with the tier.
+- The room: `lib/star/home3d/scene.ts`, one parametric room (now `roomBuild.ts` "main"). Six presets in `lib/star/home3d/homes.ts`, picked by the best home you own in the shop (`homeTierOf`): starter flat (nothing bought), flat, penthouse, house, villa, estate. Size, floor, panelling, metal trim, chandelier, plants, cabinet size, drive size and the window view grow with the tier.
 - The wardrobe and mirror: rails of casual sets (hoodie and joggers, tee and jeans, shirt and chinos, club tracksuit, smart coat), your home and away kits, plain or your own boots. Tap it, pick, he changes and you see him in a live full-length mirror (a `Reflector` on its own layer, on only near the wardrobe; off on Low). Saved as `CareerState.outfit` (`lib/star/types.ts`, optional). `wornAt` (`lib/star/home3d/outfits.ts`) says what to wear where: the garden and the 3D shop show the casual set, training always the kit.
 - The trophy cabinet: `lib/star/home3d/trophies.ts` reads `trophies`, `awards` and `ballonDorWins`, counts each win once, and fills the empty spots with the big targets ("Win it to fill this"). Trophies are stylised shapes made in code, no real ones.
 - The drive window: your cars (best first, as many as the preset's drive holds) from light copies of the shop's generated models (`public/star/home3d/*-lod.glb`, made by `tools/home3d/make_lods.mjs`, packed by `scripts/perf3d/shrink-models.mjs`). No Higgsfield credits spent.
 - Ways in: the garden's house door on the east boundary (`lib/star/garden3d/scene.ts`, `HOUSE`), the phone's "Your house" app (on the phone from day one, `STARTER_APPS`), phase `home-3d` in `app/star-dev/page.tsx`. Both are behind one switch, `lib/star/home3d/flag.ts` (`HOME3D_IN_CAREER`, now true).
 - Speed at Medium on this machine: 37 to 63 draws, 30k to 92k triangles (limit 120 draws, 150k). No baked light file for the room yet (`enhanceH(..., { bake: null })`): one hemisphere and one sun, as the shop has, no extra lights; the sun's shadow is redrawn only when something moves.
-- Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
+- Tests: `tests/star/home3d.mts` (tier to preset, rooms per tier, doorway pairs, Old = one room, trophy slots, each room built headless within budget, a walk path to every door and spot, everything freed after a loop through all rooms, trophies from a career, outfit saving, the drive).
 
 **Half-done or not seen.**
-- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges: the forearms read a shade darker than the top, a little skin shows at the elbows, and a thin red line sits at the collar. Player style Old keeps the human outfits.
+- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges fixed (9 Oct, later): forearms now shade like the top, no skin at the elbows or knees, and the model's own red shirt no longer shows as a line at the collar or hem. Player style Old keeps the human outfits.
 - The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
 - Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
 
@@ -516,6 +546,70 @@ Next 3 steps, in order:
 2. Pack the shop's 45 models' maps as KTX2 (same picture; ~4× less GPU memory on iPhone).
 3. Profile a real-game chance start on a quiet machine (CanvasMatch's `loadScenario` + the first 3D frame) and fix what the profile names.
 
+### 3D loading (speed job B)
+
+Harry: "I want loading times eradicated … there has to be ways." Same picture, less work.
+
+Measured with `scripts/perf3d/load.mjs` (the real scenes, 390×844, Chrome's Fast 4G, page thread slowed 4×, SwiftShader: no graphics chip). "first" = ms from open to the first frame handed over (CPU side, shader builds included). Trips = requests that reached the server (downloads and "still the same?" checks). The machine was shared by six builders; times moved ±20% run to run, so trust the trips, KB and shader counts more than the ms. The "after" also holds lag pass 3 from main.
+
+| Place | Cold first (s) | Warm first (s) / trips | Revisit first (s) | Home preload, then open (s) |
+|---|---|---|---|---|
+| Casino | 9.6 → 7.3 | 7.1 → 8.1 / 12 → 3 | 3.8 → 4.5 | 6.2 |
+| Garden | 19.5 → 17.8 | 11.7 → 10.9 / 37 → 20 (now 2: bake files fixed later) | 12.0 → 5.8–8.0 | 12.0 |
+| 3D shop | 14.5 → 12.6 | 11.6 → 7.4 / 25 → 9 | 3.6 → 4.9 | 7.1 |
+| House | 5.5 → 4.7 | 3.8 → 2.8 / 3 → 0 | 1.3 → 1.3 | 2.7 |
+| Home/title Style A player | 2.3 → 2.4 | 1.5 → 1.2 / 3 → 0 | 0.3 → 0.3 | 0.6 |
+| 3D drill (Free Roam) | 9.5 → 9.5 | 5.5 → 5.4 / 21 → 7 | 2.5 → 2.7 | – |
+| Office (signing scene) | 4.2 → 4.8 | 3.5 → 2.8 / 6 → 0 | 1.3 → 1.3 | – |
+| Career match 3D | 10.7 → 12.0 | 3.9 → 3.9 / 21 → 8 | 5.0–6.0 → 7.7–7.9 | – |
+| Cut scene (trophy) | 7.0 → 6.6 | 4.4 → 4.6 / 12 → 0 | 1.0 → 0.8 | – |
+
+Shader programs built AFTER the loading cover came down (each one a page-thread stall on the first frames; `scripts/perf3d/newprog.mjs`): garden 57 → 22, house 14 → 6, shop 8 → 4, casino 6 → 3; casino builds 52 → 29 in all. Unthrottled, the casino opened in 20.3 s → 7.2 s and the garden 19.1 s → 12.3 s (`scripts/perf3d/prof.mjs`). 3D shop picture memory on the chip: 288 → 103 MB (`proof.mjs shop --split --beforeq=&ktx2=0`).
+
+Done:
+- `hEnh.compile` (look H scenes): shaders built once, for the pass's picture target (`lib/star/style3d/real/enhance.ts`, `post.ts` `sceneTarget`). Casino: the room's reflection bake reuses them.
+- Versioned addresses + immutable cache: `lib/star/three3d/assetUrl.ts`, `lib/star/three3d/assetVersions.ts` (regenerated by `next.config.mjs` at every build), the header in `next.config.mjs`. The baked light's own fetches too (`lib/star/look/bakedLight.ts`).
+- Home's early download (`preloadScene`, `lib/star/three3d/perf.ts`): one file at a time (a place that opens jumps the queue), the people files the current Settings really use (`people3dFiles`), then unpacked once (`warmPeople3d`, `lib/star/people3d.ts`); each place's real file list is learned after its first visit (`noteSceneFiles`); the house added.
+- 3D shop: KTX2 twins of the 30 generated items (`tools/shop3d/ktx2_items.mjs`, ETC1S; files 8.6 → 14.5 MB, memory a quarter); the car stand and the homes table keep the last two models and free older ones.
+- Home/title Style A player: the kept picture of him (or a grey shape) while he loads, never the old figure (`components/star/ToonHomePlayer.tsx`).
+- Showroom shop: the small render under the big still until it arrives (`components/star/shop2d/ShowroomShop.tsx`).
+- 2D pictures: 20 big PNGs as WebP, 20.6 → 1.4 MB (`scripts/perf3d/pictures-webp.mjs`; the PNGs are kept). Face scanner: a photo it can't read is remembered, so its 15 MB is not fetched again (`lib/star/faceScan.ts`).
+
+Not done:
+- Scenes still load all 8 Style A heads (1.7 MB, ~54 MB on the chip) when they show 1–4 people. Pass the heads up front.
+- KTX2 for the people and heads (toon heads 6.7 MB each on the chip, `star-pass/3d/reward-glasses.glb` 51 MB, `human3d/human.glb` 50 MB): check first that nothing reads their pixels.
+- Load the shop's items only near/in view: the room is 12 × 16 m, everything is in view from the door, so it saves little; not built.
+- Career 3D (engineView, job A's file) and cut scenes (the cut-scene builder's) were measured, not changed.
+- Not seen on a phone. The look of the KTX2 shop items was checked on one still pair only (near-identical; the smart-watch band a shade lighter).
+
+Tools: `scripts/perf3d/load.mjs` (`--files` lists every trip), `prof.mjs` (top costs and who calls them), `newprog.mjs` (shaders built after ready), `png-refs.mjs` (which PNGs the code uses), `serve.mjs --cache=vercel` (the live site's cache headers).
+
+### 3D lag pass 4 (9 Oct, night)
+
+Harry: "I want loading times eradicated, I want animations clean in every mode." Same picture, less work. Measured on this machine (SwiftShader, 390×844, page thread slowed 4×; it has NO parallel shader compile, so a shader built "in the background" here is still paid on first use; count shaders, trust the phone).
+
+| Item | Before | After |
+|---|---|---|
+| 1. Style A heads fetched | drill 8, cut scene 8, garden 8 | drill 3, cut scene 4, garden 5 (−0.9 to −1.1 MB; drill ready 6.5 → 5.2 s, cut 5.7 → 4.4 s) |
+| 2. KTX2 (one bodies, human) | one body 11 MB, human ~50 MB on the chip | ~2.8 MB / ~13 MB (still pairs: mean pixel change 0.9 / 0.4 of 255) |
+| 3. Career 3D revisit (first frame) | 5.7 s (43 shaders rebuilt on frame 1) | 2.8–3.7 s (0 screen shaders; look H's own built before ready) |
+| 4. Bench "GET OUT THERE" freeze | 418 + 344 ms long tasks | built, NOT re-measured (needs a fresh `next build`) |
+| 5. Garden: shaders built after the cover | 22 | ~5 (the cars that arrive late, one lamp variant) |
+
+Done:
+- `toonHeadsFor(people)` (`lib/star/people3d.ts`): the heads makePerson3d will pick for these ids. Garden, drills (play3d), ovation, farewell, cut-scene people pass it to `loadPeople3d`. Files are cached per URL, so scenes share them.
+- KTX2 twins `*.ktx2.glb` for `onebody/*.glb` and `human3d/human.glb` (`scripts/perf3d/ktx2-models.mjs`, `KTX2_MODELS` + `loadModel3d` in `lib/star/three3d/ktx2.ts`, POLICY skip lines). Files grow (one body 0.5 → 1.4 MB, the UASTC normal map). The preload asks for the twins.
+- Career revisit: `RealLook.compile` (`real/look.ts`) builds shaders for look H's own picture target; `createEngineView` waits up to `H_WAIT_MS` for H so it opens straight in it (the kit's first frames had built 43 screen shaders, then H built its own). The spares are built a slice at a time while H loads, the drawing buffer is sized while loading. `relaxIdleArms` reads matrixWorld instead of re-walking the chain: same numbers bit for bit, 42% faster.
+- Bench: the two freezes were the chance space built on the first chance (`generateSpace`, 373k crossings) and each kit's sprite atlas coloured in one go. `warmChanceSpace()` (`chanceFormula.ts`) and `warmSpriteKits()` (`sprites.ts`) do both in slices from CanvasMatch's mount, while the commentary runs.
+- Garden: the bench and car pictures (`makeImpostor`) are drawn into their own target with their own lights and no fog; their first bake built every shader on frame 1 (~2.4 s here). `prime()` builds them during loading.
+
+Not done:
+- Style A heads stay WebP: ETC1S tinted the skin a shade grey-blue (the toon shader reads skin and hair off the map); UASTC kept it but a head went 220 → 920 KB. Try: UASTC with sRGB flag + stronger RDO, or a 512 colour map.
+- `star-pass/3d/reward-glasses.glb`: twin not shipped (no still of it checked; Podium3D already calls `loadModel3d`, so adding it to both lists is all it needs after a still).
+- Item 4 after-numbers; and on this machine the garden's ready→first gap did not shrink (no parallel compile here). Check both on a phone.
+
+Tools: `scripts/perf3d/prof2.mjs` (profile the Nth open in one page: `THROTTLE=4`, `STAY=ms`), `progcache.mjs` (which shaders survive leaving and coming back), `newprog.mjs --visit=2`, `scripts/perf2d/bench-prof.mjs` (profile from GET OUT THERE to the first aim, worst long tasks), harness scene `H.person` (one person under the page's Settings). Note: with `M.finish=false` a long stay piles GPU work up and the next first frame "waits" 25 s; that is the harness, not the game.
+
 ### 2D shop
 
 - **What:** a new 2D shop (Cans · Boots · Style) and a new Shop page. Settings → Look → "Shop: New | Old" (`lib/star/shopLook.ts`, row `shop2d` in `gameVersions.ts`), default New. Old = `components/star/Shop.tsx` + `ShopPage.tsx`, untouched.
@@ -532,6 +626,8 @@ Next 3 steps, in order:
 - **Pictures:** `public/star/shop2d/items/*.webp` — 1440x1080 renders of the same Blender models as `/shop/*.webp`, no shadow floor (the page draws a soft contact shadow). Made by `tools/shop2d/render_big.py` (it sets `SHOP_RES`/`SHOP_NO_FLOOR` in `tools/blender-shop/scripts/studio.py`), about 40 s a picture on this machine. Not the Higgsfield GLBs: those are one model per family, so every level would show the same thing ("Rusty Moped" as a superbike). Missing still → the small picture. Test: `tests/star/showroomShop.mts`.
 - **Kept:** every buy handler, price, sponsor 25%, black market + lawyers, Style locks, worn-out repair, sold out per visit, focus from the 3D shop, Use a can.
 - **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle&cat=cars` (`&look=grid` = the card store, `&look=old` = the old shop).
+- **No front page (9 Oct, Harry: the framed grid was "horrendous"):** Home's Shop swipe/tab opens the Showroom directly (`page.tsx` SwipePages `onIndex`; last category remembered in `lastShowroom`). `StoreLanding.tsx` is now only the shop window you see mid-swipe. Sponsors / Casino / Store / 3D shop are `links` at the end of the rail. The dev bench passes `guideCorner` so the page-guide eye never covers Buy.
+- **Boot pictures (9 Oct):** `public/star/shop2d/items/boot-*-L1..L5.webp` are now Higgsfield (nano_banana_2) product shots made FROM each level's Blender render (same colours, graphic, collar, gold sole, wear), on flat grey, keyed to transparent locally (corner-fit background + edge flood fill). 35 pictures, ~53 credits. The old flat renders are still in `/shop/boot-*.webp` (small fallback).
 - **Not built:** the live GLB turntable on the showing item (the GLBs don't change per level, and a second WebGL scene costs frames on phones).
 
 ### Career 3D camera + size
@@ -618,6 +714,14 @@ head and build (`yourToonHead`); scenes load only their heads
 - Kit decals on the Style A shirt: the back number sits low (`uNumBox` comes
   from the kit lines; place it between the shoulder blades per head) and the
   shirt is flat colour (add the textured kit: weave, seams, collar trim).
+- 2D match sprites. `node tools/sprites/new/bake-new.mjs reskin` re-bakes every
+  cell on a Style A body into the same rects and anchors, but it is not
+  shippable yet: atlas-0's sprint, kick and keeper dives came from GLB clips
+  that were never committed, and the Old cells are cropped tight to the Old
+  silhouette, so the Style A body overflows them (shrinking to fit gave scales
+  down to 0.3). Needs a decision: re-bake with a fresh index (new rects,
+  same frame counts and timings) or keep 2D Old.
+- (Done 9 Oct: the back number between the shoulder blades, name, front number, cloth and patterns.)
 - Garden's casual sets still use the human body.
 
 **Half-done / not seen:**
@@ -652,3 +756,51 @@ outline and shadow, as Old); every new look behind New | Old.
 **See it:** `/star-look-dev?head=h4&body=c2` (your player, a mate, a manager;
 `?pstyle=old` for Old). Stand-alone stills without Next.js:
 `tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
+
+### Cut-scene camera + music (9 Oct 2026)
+
+Harry: "do a pass of camera angles in the cut scenes, hide bad animations with
+good zooms and angles, wide angles, music."
+
+**What it is:** Settings → Look → "Cut-scene camera: New | Old" (`lib/star/cutscene/look.ts`,
+row `cutsceneCamera` in `lib/star/gameVersions.ts`, default New). New runs the
+film pass (`filmPass` in `lib/star/cutscene/cinema.ts`) over every script before
+`director.ts` plays it, hand-made or generated. Old plays the script as written.
+The pass, in order: opens on a wide of the place; a plain medium in a two-person
+talk becomes an over-the-shoulder; no close shot on a journalist (his stand-in
+head smears); a wide never stays on a weak move longer than 1 s (`WEAK_WIDE_MAX`):
+it cuts to the prop (pen, trophy, shirt), the face or the other person's
+reaction, 1.2–2.4 s each; a walk is covered from behind into the light or a
+head-and-shoulders from the front; no face ever fills the frame (close-ups
+become head and shoulders: the face texture goes soft and orange that close);
+an insert of hands on the desk or the handshake becomes an over-the-shoulder
+(floating hands); every shot moves a little; cuts snap onto the start of a
+move; no fade up from black; an over-the-shoulder behind a seated man looks
+over his chair. With New the director also softens the bloom (×0.35) and the
+close-up rim light (1.8 → 0.5): they drew a red-orange halo round every body.
+
+**Move quality tags:** `CLIP_QUALITY`, `POSE_QUALITY`, `GAIT_QUALITY` in
+`lib/star/cutscene/presets/clips.ts` (good / ok / weak). `weakWindows(script)`
+reads them plus the pen, handshake and prop grabs. Tag a new clip there when you
+add it; a clip that improves goes from weak to ok and the camera stops hiding it.
+
+**Farewell:** `retired` has its own story now (stadium, `farewell-walk` beat:
+guard of honour, last walk, salute) and a hand-made fixture `farewell`. Before,
+it had no story and fell back to another scene's room.
+
+**Music:** `lib/star/cutscene/music.ts`: five beds (signing, trophy, walkout,
+press, farewell) in `public/sfx/cut-music-*.mp3`, 20–24 s loops, 240–280 KB,
+made from code by `tools/cutscene-music/make_beds.py` (no samples; licence in
+`public/sfx/CUTSCENE-MUSIC-LICENSE.txt`). Fades in and out, drops to a third
+under talk, silent when Sound effects is off. On the Sound Board under
+"Cut-scene music", so a better take can replace any of them. Higgsfield's audio
+tool makes speech only and refuses music, so no credits were spent.
+Only the director page plays cut scenes today; a host plays music with
+`createCutsceneMusic(script, sfxUrl(musicCue(musicBedFor(script))), sfxOn)`.
+
+**See it:** `/star-style-dev?scene=director&fixture=farewell&clean=1` (`&cam=old` for Old).
+**Tests:** `tests/star/cutscene.mts` (film pass on every fixture and event; music bed and ducking).
+
+**Next:** shallow depth of field is not done (the cel style has no depth pass);
+nobody has listened to the music yet (levels measured only); the real game does
+not play these cut scenes yet.

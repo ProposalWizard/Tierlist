@@ -25,9 +25,15 @@ const JOBS = [
   ...["family", "hatch", "suv", "sports", "classic", "super"].map((c) => [`car-${c}-hf.glb`, `car-${c}-lod.glb`, 4000]),
   ...["starter", "speed", "control", "elite", "classic", "maestro"].map((b) => [`boot-${b}-hf.glb`, `boot-${b}-lod.glb`, 2500]),
   ["boot-hf.glb", "boot-power-lod.glb", 2500],
+  // the garage's motorbike and the jet out on the estate's lawn (Oct 2026)
+  ["bike-hf.glb", "bike-lod.glb", 4000],
+  ["jet-hf.glb", "jet-lod.glb", 4000],
 ];
+// ONLY=bike-lod,jet-lod remakes just those
+const ONLY = (process.env.ONLY ?? "").split(",").filter(Boolean);
 
 for (const [src, out, maxTris] of JOBS) {
+  if (ONLY.length && !ONLY.some((o) => out.startsWith(o))) continue;
   const doc = await io.read(SRC + src);
   const r = doc.getRoot();
   // written unpacked: shrink-models.mjs packs it again

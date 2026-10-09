@@ -12,6 +12,17 @@ import { resolveStyle } from "@/lib/star/style3d/styles";
 import { createDirector } from "@/lib/star/cutscene/director";
 import { FIXTURES } from "@/lib/star/cutscene/fixtures";
 import { startFrameStats } from "@/lib/star/three3d/frameStats";
+import { startHome } from "@/lib/star/home3d/scene";
+import { CASUAL_SETS, BOOT_LOD } from "@/lib/star/home3d/outfits";
+import { cabinetSlots } from "@/lib/star/home3d/trophies";
+import { cabinetSize } from "@/lib/star/home3d/homes";
+import { createPlay3DScene } from "@/lib/star/play3d/scene";
+import { makeFreeRoam } from "@/lib/star/play3d/freeRoam";
+import { play3dH } from "@/lib/star/style3d/real/play3dH";
+import { loadToonHead, loadPeople3d, makePerson3d, dressPerson3d } from "@/lib/star/people3d";
+import { withMeshopt } from "@/lib/star/three3d/meshopt";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 startFrameStats();
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 (window as any).P = P;
@@ -171,6 +182,82 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ready = performance.now();
     M.ctrl = d;
     return true;
+  },
+  /** Your house (a flat), in your kit. */
+  async home(opts: any = {}) {
+    M.t0 = performance.now();
+    const c = await startHome(stage(), { onNear() {} }, {
+      tier: opts.tier ?? "flat", kits: { home: { shirt: KIT.shirt, trim: KIT.trim }, away: { shirt: "#ffffff", trim: "#111111" } } as any, number: 10,
+      worn: { kind: "kit", kit: "home", boots: "#141416" } as any, skin: "#e0b89a", hair: "#3d2616", hairStyle: "short",
+      slots: cabinetSlots({ trophies: [], awards: [], ballonDorWins: 0 } as any, cabinetSize(opts.tier ?? "flat")), cars: [], boots: [{ id: "plain", label: "Plain black", colour: "#141416", model: BOOT_LOD.starter }], casual: CASUAL_SETS,
+    }, { quality: opts.quality ?? "medium", fixedStep: 1 / 30 });
+    M.ready = performance.now();
+    M.ctrl = c;
+    return true;
+  },
+  /** A 3D drill (Free Roam) in look H: you, two team-mates, a keeper. */
+  async drill(opts: any = {}) {
+    M.t0 = performance.now();
+    const sk = { overall: 75, pace: 75, power: 75, technique: 75 };
+    const { world } = makeFreeRoam({ seed: 7, you: { id: "you", name: "You", skills: sk }, mates: [{ id: "m1", name: "A", skills: sk }, { id: "m2", name: "B", skills: sk }] });
+    const h = await play3dH(world, { colours: { home: KIT.shirt, home2: KIT.trim, away: "#1d4ed8" } as any });
+    const people: any = {};
+    for (const p of world.players) people[p.id] = { skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" };
+    const c = await createPlay3DScene(stage(), world, { kit: KIT, people }, { camera: "practice", quality: opts.quality ?? "medium", ...(h.opts as any), onFrame: (dt: number) => h.frame(dt) });
+    M.ready = performance.now();
+    M.ctrl = { dispose() { c.dispose(); h.dispose(); } };
+    return true;
+  },
+  /** Home / title screen: your Style A player alone (ToonHomePlayer's load: one head + the clips). */
+  async toon() {
+    M.t0 = performance.now();
+    const el = stage();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(220, 320); el.appendChild(renderer.domElement);
+    const scene = new THREE.Scene(); scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2));
+    const loader = await withMeshopt(new GLTFLoader());
+    const [g, anims] = await Promise.all([loadToonHead(loader as any, "h1"), loadPeople3d(loader as any, "anims", "new")]);
+    const p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+    dressPerson3d(THREE as any, p, { skin: "#e0b89a", hair: "#3d2616", kit: KIT, number: null });
+    scene.add(p.root);
+    const cam = new THREE.PerspectiveCamera(18, 220 / 320, 0.1, 40); cam.position.set(0, 1, 7); cam.lookAt(0, 0.9, 0);
+    let on = true;
+    const tick = () => { if (!on) return; renderer.render(scene, cam); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
+  /**
+   * One person from loadPeople3d under the page's own Settings (set the look keys in
+   * localStorage first: "star-look-player-style" old + "star-look-3d-body" human/before for
+   * the human or the one body). Lag pass 4: a still of each packed model against the plain one.
+   */
+  async person(opts: any = {}) {
+    M.t0 = performance.now();
+    const el = stage();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(220, 320); el.appendChild(renderer.domElement);
+    const scene = new THREE.Scene(); scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2)); const sun = new THREE.DirectionalLight("#ffffff", 2); sun.position.set(2, 4, 5); scene.add(sun);
+    const loader = await withMeshopt(new GLTFLoader());
+    const [g, anims] = await Promise.all([loadPeople3d(loader as any, opts.model ?? "player", "new"), loadPeople3d(loader as any, "anims", "new")]);
+    const p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+    dressPerson3d(THREE as any, p, { skin: "#e0b89a", hair: "#3d2616", kit: KIT, number: null });
+    scene.add(p.root);
+    const cam = new THREE.PerspectiveCamera(18, 220 / 320, 0.1, 40); cam.position.set(0, 1, 7); cam.lookAt(0, 0.9, 0);
+    let on = true;
+    const tick = () => { if (!on) return; renderer.render(scene, cam); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
+  /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
+  async preload(scene: string) {
+    const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;
+    await P.preloadScene(name);
+    await new Promise((r) => setTimeout(r, 200));
+    (window as any).__preloadDone = true;
   },
   dispose() { M.ctrl?.dispose?.(); M.ctrl = null; },
 };
