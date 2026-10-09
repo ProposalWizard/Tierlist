@@ -51,6 +51,7 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
@@ -220,6 +221,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // take the moving picture a little lower still if frames are slow.
   const dpr = window.devicePixelRatio || 1;
   // look H standing still: the screen's real pixels, capped per tier (Harry: "still that pixelly element"); moving stays the tier's cap
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "garden", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -229,7 +239,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -2342,8 +2352,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // (High and Medium every frame, Low 30)
       acc += raw;
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -2680,12 +2692,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!opts.fixedStep) {
         // too slow for three seconds: one tier down; still too slow at Low:
         // 30 frames a second all the time
-        const slow = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22);
-        slowSeconds = slow ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) {
-          slowSeconds = 0;
-          if (!stepDown()) capAlways = true;
-        }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -2790,6 +2797,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     dispose: () => {
       disposed = true;
+      gov.dispose();
       hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();

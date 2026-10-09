@@ -11,6 +11,7 @@ import { TIER_PROFILES } from "../three3d/quality";
 import type { Person3D } from "../people3d";
 import type { StyleDef } from "./styles";
 import { makeStylePost } from "./post";
+import { currentGovernor } from "../three3d/governor";
 
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
@@ -232,7 +233,12 @@ export function createStyleKit(T: any, renderer: any, scene: any, tier: Quality3
         rainGeo.attributes.position.needsUpdate = true;
       }
     },
-    render(sc, camera) { post.render(sc, camera, def.post, full, burst, def.burst ?? "#ffffff", impact); },
+    render(sc, camera) {
+      // the governor's say (three3d/governor.ts): off = no post pass; lite = the one pass with a lighter glow
+      const r = currentGovernor()?.rung;
+      const on = full && (!r || r.post !== "off");
+      post.render(sc, camera, def.post, on, burst, def.burst ?? "#ffffff", impact, !!r && r.post === "lite");
+    },
     setBurst(v) { burst = v; },
     setImpact(v) { impact = v; },
     setActive(on) { root.visible = on; },
