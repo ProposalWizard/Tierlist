@@ -673,7 +673,7 @@ export interface MakeChanceOptions {
   /** The deck a "new" chance is dealt from (remembered across matches). */
   deck?: ChanceDeck | null;
   /** Deal open play from the real mix, not the even one (kindMix.ts's
-   *  REAL_MIX; Settings → Gameplay → Chances). Absent: the even mix. */
+   *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
   realMix?: boolean;
 }
 

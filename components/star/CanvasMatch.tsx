@@ -1522,7 +1522,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
-      // Settings → Gameplay → Chances: New — you drop off for the ball too,
+      // Settings → Match → Chance mix: New — you drop off for the ball too,
       // Kane-style (hiddenMatch.ts's DEEP_TOUCH).
       deepTouches: !oldChances(),
       // The farewell match: nearly every chance is yours.
@@ -6538,7 +6538,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // career's deck so a picture comes back as rarely as possible).
         set: chanceSet(),
         deck: chanceDeck(careerDeckScope(careerRef.current?.player)),
-        // Settings → Gameplay → Chances: New deals the real (Kane) mix.
+        // Settings → Match → Chance mix: New deals the real (Kane) mix.
         realMix: !oldChances(),
       });
       scenarioRef.current = made.sc;

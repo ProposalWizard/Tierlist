@@ -105,7 +105,7 @@
 <header>
   <span class="ver">v0.14</span>
   <h1>Knowitball Patch Notes Mikey v0.14</h1>
-  <p class="sub">9 October 2026 · branch Mikey · tests: 279 of 279 passing</p>
+  <p class="sub">9 October 2026 · branch Mikey · star tests: 296 of 299 passing (the 3 failing are 3D tests that fail on main too)</p>
 </header>
 
 <div class="strip">
@@ -117,7 +117,7 @@
 
 <h2 class="nxt"><i></i>Check these</h2>
 <ul class="check" id="check">
-  <li><input type="checkbox" id="c1"><label for="c1"><b>Chances (testing): New gives about 9 highlights a match</b><span>Settings → Gameplay → Chances (testing) → New, then play a match</span></label></li>
+  <li><input type="checkbox" id="c1"><label for="c1"><b>Chance mix (testing): New gives about 9 highlights a match</b><span>Settings → More → Match → Chance mix (testing) → New (or the Preview version), then play a match</span></label></li>
   <li><input type="checkbox" id="c2"><label for="c2"><b>"You drop off into midfield and get on the ball" highlights</b><span>In a match with Chances on New</span></label></li>
   <li><input type="checkbox" id="c3"><label for="c3"><b>Real moments page: real shots next to the game's own</b><span>Admin → Real moments → Load moments file</span></label></li>
 </ul>
@@ -144,7 +144,7 @@
 
 <h2 class="add"><i></i>Added</h2>
 <div class="box">
-  <div class="hd">Chances (testing): built from Harry Kane's real touches</div>
+  <div class="hd">Chance mix (testing): built from Harry Kane's real touches</div>
   <div class="dt"><b>Problem:</b> a striker got about 6 highlights a match, nearly all of them chances near goal. Kane is on the ball 33 times a match, half of it 35 m or more from goal (12 England matches). <b>Why:</b> the match only came to you when your side made a chance. <b>Fix:</b> with Chances on New, your side's spells in midfield and the final third can find you too ("You drop off into midfield and get on the ball"). About half of open play is now deep: a pass, build-up or a through ball, where you pass it and can get it back. One-on-ones drop from 1 in 8 highlights to 1 in 17. Your own shots stay about the same, so goals should too. <span class="tag meas">measured: 600 matches</span></div>
   <div class="bars">
     <div class="bar"><span class="lb">Highlights a match</span><div class="track"><div class="fill was" style="width:61%"></div><div class="fill now" style="width:90%"></div></div><span class="vv"><s>6.1</s> 9.0</span></div>
@@ -152,7 +152,10 @@
     <div class="bar"><span class="lb">One-on-ones</span><div class="track"><div class="fill was" style="width:67%"></div><div class="fill now warn" style="width:49%"></div></div><span class="vv"><s>0.67</s> 0.49</span></div>
     <div class="bar"><span class="lb">Your own shots</span><div class="track"><div class="fill was" style="width:41%"></div><div class="fill now" style="width:49%"></div></div><span class="vv"><s>2.1</s> 2.5</span></div>
   </div>
-  <div class="dt">A striker at an even match. Kane's real figure is 2.5 shots a match. <b>Old is still the default:</b> pick New in Settings → Gameplay → Chances (testing) to try it. The setting is per phone.</div>
+  <div class="dt">A striker at an even match. Kane's real figure is 2.5 shots a match. <b>Old is still the default:</b> pick New in Settings → More → Match → Chance mix (testing), or pick the Preview version. The setting is per phone. <span class="tag seen">row seen at phone size</span></div>
+  <div class="shots">
+    <figure><img src="v0.14/img/chance-mix-row.jpg" alt="Chance mix row in Settings"><figcaption>The new row, under Clearances. Old is the default; Preview turns it on.</figcaption></figure>
+  </div>
 </div>
 <div class="box" style="margin-top:10px">
   <div class="hd">Real moments page (admin, testing only)</div>
@@ -164,6 +167,8 @@
 
 <h2 class="bug"><i></i>Known issues</h2>
 <ul class="n">
+  <li><div class="hd">Highlights still follow how good your team is <span class="pill p-amb">LOW</span></div><div class="dt">New adds about 40% at every level: 50 v 80 gives 3.1 → 4.4 a match, 70 v 70 gives 6.7 → 9.6, 80 v 60 gives 9.9 → 14.0 (400 simulated matches each). One real match on New (weak side v Ipswich, FA Cup) gave 4. Say if a strong side's 14 is too many.</div></li>
+  <li><div class="hd">Three 3D tests fail on main <span class="pill p-amb">LOW</span></div><div class="dt">3D assets list out of date, Headers &amp; Volleys scoring 5.7 in 10 (wanted 3–5), Wembley sessions short. They fail on main before this round too; not from this change.</div></li>
   <li><div class="hd">Chances New: goals a match estimated, not played <span class="pill p-amb">LOW</span></div><div class="dt">Worked out from each kind's measured scoring rate: about 0.92 → 0.99 of your own goals a match. Play a few matches on New to check.</div></li>
   <li><div class="hd">The real mix is the same for every position <span class="pill p-amb">LOW</span></div><div class="dt">It comes from a striker (Kane). A winger on New gets the same kinds as a striker; how often the ball finds him is still his own.</div></li>
   <li><div class="hd">Our close chances are easier than real ones <span class="pill p-amb">LOW</span></div><div class="dt">Keeper 1.1 m off his line against 4.5 m for real. Kept out on purpose for now.</div></li>

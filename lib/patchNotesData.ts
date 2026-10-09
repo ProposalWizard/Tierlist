@@ -32,7 +32,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-09T15:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
-      "summary": "Real Premier League 2015/16 shots (StatsBomb's free data) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 20%). A new Chances (testing) switch builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
+      "summary": "Real Premier League 2015/16 shots (StatsBomb's free data) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 20%). A new Chance mix (testing) switch (Settings → More → Match, or the Preview version) builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
       "stats": [
         {
           "value": "7,807",
@@ -57,8 +57,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Check these",
           "items": [
             {
-              "title": "Chances (testing): New gives about 9 highlights a match",
-              "detail": "Settings → Gameplay → Chances (testing) → New, then play a match"
+              "title": "Chance mix (testing): New gives about 9 highlights a match",
+              "detail": "Settings → More → Match → Chance mix (testing) → New (or the Preview version), then play a match"
             },
             {
               "title": "\"You drop off into midfield and get on the ball\" highlights",
@@ -75,7 +75,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Added",
           "items": [
             {
-              "title": "Chances (testing): built from Kane's real touches",
+              "title": "Chance mix (testing): built from Kane's real touches",
               "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (Kane: 2.5). Measured over 600 matches. Old is the default."
             },
             {

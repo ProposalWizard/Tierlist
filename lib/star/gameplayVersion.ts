@@ -27,8 +27,8 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Defenders sometimes miscue, a boot can hit a body and come off loose, and anyone can win that second ball.",
     oldText: "Every clearance is clean (you still see the boot fly off the screen).",
   },
-  chances: {
-    label: "Chances (testing)",
+  chanceMix: {
+    label: "Chance mix (testing)",
     // Mikey, 9 Oct 2026: "the old system should still be the default and the
     // new system … should be the thing that we are testing."
     defaultVersion: "old",
@@ -67,4 +67,8 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
-export const oldChances = () => gameplayVersion("chances") === "old";
+export const oldChances = () => gameplayVersion("chanceMix") === "old";
+/** Has this phone ever picked a chance mix? (For Preview picking it up once.) */
+export function chanceMixStored(): boolean {
+  try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
+}

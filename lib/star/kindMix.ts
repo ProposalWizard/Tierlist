@@ -43,7 +43,7 @@ export function newKindBag(): KindBag { return { left: [] }; }
  * and one in 17 a one-on-one, against one in 8 in the even mix. Long shots
  * and tight angles are dealt more, so your own shots a match stay about the
  * same (a striker: 2.1 → 2.5 a match, one-on-ones 0.67 → 0.49, measured over 600 matches): fewer gift chances, not fewer chances. Settings →
- * Gameplay → Chances: Old deals the even mix exactly as before.
+ * Match → Chance mix: Old deals the even mix exactly as before.
  */
 export const REAL_MIX: Partial<Record<ScenarioKind, number>> = {
   midfield_pass: 3, buildup: 2, through_ball: 3,
