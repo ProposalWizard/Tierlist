@@ -21,6 +21,7 @@ import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
+import { smoothYaw, type YawState } from "../three3d/animBlend";
 import { motionLook } from "../motionLook";
 import { GAIT_BLEND, MAX_LOOP_RATE, gaitEdges, loopRate, pickGait, sameFootTime, speedsForPace, strideLoop, type Gait } from "../three3d/gait";
 import type { KitColours } from "../shop3d/scene";
@@ -308,6 +309,8 @@ export async function createPlay3DScene(
     offRamp: number;
     /** Body size against the clips' capture actor (hips over hips): a loop's own speed × this. */
     k: number;
+    /** The facing shown: eases round instead of snapping (three3d/animBlend.ts smoothYaw). */
+    ys: YawState; lastX: number; lastY: number;
   };
   const bodies: Body[] = [];
   for (const who of world.players) {
@@ -325,7 +328,8 @@ export async function createPlay3DScene(
     play.play("idle", { fade: 0 });
     const hipsRest = p.rest.get(p.bones.Hips)?.[0].y ?? p.bones.Hips.position.y;
     const fbHipsY = (fb?.scene?.userData?.hipsY as number | undefined) ?? 0;
-    bodies.push({ p, play, who, state: "idle", lastActT: 9, onceLeft: 0, off: new THREE.Vector3(), offHold: 0, offFade: 0, offRamp: 0, k: fbHipsY > 0 ? hipsRest / fbHipsY : 1 });
+    const k = fbHipsY > 0 ? hipsRest / fbHipsY : 1;
+    bodies.push({ p, play, who, state: "idle", lastActT: 9, onceLeft: 0, off: new THREE.Vector3(), offHold: 0, offFade: 0, offRamp: 0, k, ys: { yaw: yawOf(who.facing), vel: 0 }, lastX: who.x, lastY: who.y });
   }
 
   /**
@@ -360,6 +364,18 @@ export async function createPlay3DScene(
   /** Team-mates and opponents (the old speeds: jog 4.2, sprint 7–9 m/s). */
   const AI_EDGES: [number, number, number, number] = [0.35, 1.9, 4.0, 5.6];
   for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
+  /**
+   * Motion: Mocap: walk / jog / run / sprint are not picked one at a time any
+   * more but mixed by his real speed on one stride clock (ClipPlayer.loco,
+   * three3d/animBlend.ts): no flicker on a gait edge, the feet at ground
+   * speed, the same foot down through every change (9 Oct 2026, "clean
+   * animations in every mode"). The dribble run, keepers and one-offs are as before.
+   */
+  const LOCO_LOOPS = ["walk", "jog", "run", "sprint"];
+  const GAIT_STATES = new Set(["idle", "walk", "jog", "run", "sprint"]);
+  if (gaitsOn) for (const b of bodies) b.play.setLoco(LOCO_LOOPS.map((n) => ({ name: n, speed: ((info(n)?.speed as number | undefined) ?? 0) * b.k })), "idle");
+  /** The fastest loop he may show: no sprint loop for you unless you really sprint (new feel). */
+  const locoTop = (b: Body) => (b.who.human && world.newFeel && !b.who.sprinting ? 2 : undefined);
   const partOf = (z: number) => (z < 0.6 ? "foot" : z < 1.0 ? "thigh" : z < 1.55 ? "chest" : "head");
 
   /** The one-shot for a fresh act (null: keep running/standing as he is). */
@@ -426,7 +442,7 @@ export async function createPlay3DScene(
   const R3 = new THREE.Vector3();
   /** Where the clip's measured contact point is now, in the world (his frame → three). */
   const contactWorld = (b: Body, cp: [number, number, number]) => {
-    const yaw = yawOf(b.who.facing), c = Math.cos(yaw), s = Math.sin(yaw);
+    const yaw = b.ys.yaw, c = Math.cos(yaw), s = Math.sin(yaw);
     return R3.set(b.who.x - CX + cp[0] * c + cp[2] * s, cp[1], b.who.y - cp[0] * s + cp[2] * c);
   };
 
@@ -515,6 +531,7 @@ export async function createPlay3DScene(
     const was = b.state;
     b.state = name;
     if (name === "hold") { b.play.play("throw_out", { fade: 0.2, from: 0.1, speed: 0 }); return; }
+    if (name === "loco") { b.play.loco(Math.hypot(b.who.vx, b.who.vy), { fade: wasDown ? 0.5 : 0.2, top: locoTop(b) }); return; }
     if (gaitsOn && LOCO.has(name) && b.play.has(name)) {
       // a stride carries on: the new loop starts with the same foot down
       const pa = LOCO.has(was) ? b.p.actions[was] : null;
@@ -558,13 +575,15 @@ export async function createPlay3DScene(
       if (o && startOnce(b, o, prevBall, w.actT)) { /* started */ }
       else if (c && startOnce(b, c.once, c.at, 0, c.t)) { /* started early: the ball is on its way */ }
       else {
-        const lp = loopFor(b, sp);
+        const lp0 = loopFor(b, sp);
+        const lp = gaitsOn && !w.keeper && GAIT_STATES.has(lp0) ? "loco" : lp0;
         // a man walking off doesn't finish his celebration/despair standing still
         const interrupt = once && (lp === "celebrate_safe" || lp === "slump_walk");
         if ((!once || interrupt) && lp !== b.state && !gettingUp) startLoop(b, lp);
       }
     }
-    // loops at the speed he's really going
+    // loops at the speed he's really going (loco: the stride clock follows his speed)
+    if (b.state === "loco") b.play.loco(sp, { top: locoTop(b) });
     const ls = gaitsOn && LOCO.has(b.state) ? null : loopSpeed[b.state];
     if (gaitsOn && LOCO.has(b.state)) { const a = b.p.actions[b.state]; if (a) a.timeScale = loopRate(sp, info(b.state)?.speed as number | undefined, b.k, 0.5, b.state === "dribble_run" ? 1.7 : MAX_LOOP_RATE); }
     if (ls) { const a = b.p.actions[b.state]; if (a) a.timeScale = Math.max(0.6, Math.min(b.state === "sprint" ? 1.35 : 1.9, sp / ls)); }
@@ -589,7 +608,12 @@ export async function createPlay3DScene(
       else if (b.offFade > 0) { b.offFade -= dt; k = Math.max(0, b.offFade / 0.45); }
     }
     b.p.root.position.set(w.x - CX + b.off.x * k, b.off.y * k, w.y + b.off.z * k);
-    b.p.root.rotation.set(0, yawOf(w.facing), 0);
+    // his facing eases round (no one-frame snap); a strike turns quicker so it still meets the ball; a reset jumps
+    const jumped = Math.hypot(w.x - b.lastX, w.y - b.lastY) > 1.5;
+    b.lastX = w.x; b.lastY = w.y;
+    if (jumped) { b.ys.yaw = yawOf(w.facing); b.ys.vel = 0; }
+    else smoothYaw(b.ys, yawOf(w.facing), dt, b.state.startsWith("once:") || b.state.startsWith("dive:") ? 0.05 : undefined);
+    b.p.root.rotation.set(0, b.ys.yaw, 0);
     // a keeper going for a high one: lift the dive so the hands get up there
     if (w.keeper && w.dive) {
       const tz = 0.4 + w.dive.up * 2;

@@ -75,8 +75,8 @@ export class FadeWeights<K> {
 
   get(key: K): number { return this.w.get(key) ?? 0; }
   has(key: K): boolean { return this.w.has(key); }
-  keys(): K[] { return [...this.w.keys()]; }
-  entries(): [K, number][] { return [...this.w.entries()]; }
+  keys(): K[] { return Array.from(this.w.keys()); }
+  entries(): [K, number][] { return Array.from(this.w.entries()); }
   /** Rename a key, keeping its weight (a clip handed over to a stand-in). */
   rekey(from: K, to: K) {
     const v = this.w.get(from);
@@ -193,8 +193,6 @@ export const TURN = {
   settle: 0.11,
   /** Top turn speed, rad/s (about two full turns a second). */
   maxRate: 13,
-  /** Further off than this and he is just put there (a reset, a teleport). */
-  snapOver: Math.PI * 0.98,
 };
 
 /**
@@ -204,8 +202,6 @@ export const TURN = {
  */
 export function smoothYaw(s: YawState, target: number, dt: number, settle = TURN.settle): number {
   if (!(dt > 0)) return s.yaw;
-  const d = angDiff(s.yaw, target);
-  if (Math.abs(d) >= TURN.snapOver) { s.yaw = target; s.vel = 0; return s.yaw; }
   const w = 2 / Math.max(1e-3, settle);
   // critically damped: x'' = w²·d − 2w·x'
   const h = 1 / 60;
@@ -219,4 +215,15 @@ export function smoothYaw(s: YawState, target: number, dt: number, settle = TURN
     left -= st;
   }
   return s.yaw;
+}
+
+/**
+ * For a scene that keeps its own `yaw` number (garden, shop, house, casino):
+ * one eased step from `yaw` towards `target`, the turn speed kept on `s`
+ * between frames. Replaces `yaw += angDiff(yaw, target) * dt * 10`, whose
+ * first frame jumped a sixth of the way round at once (30° on an about-turn).
+ */
+export function turnTo(s: YawState, yaw: number, target: number, dt: number, settle?: number): number {
+  s.yaw = yaw;
+  return smoothYaw(s, target, dt, settle);
 }

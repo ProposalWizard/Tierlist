@@ -26,6 +26,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { readFileSync } from "node:fs";
 import { FadeWeights, LocoPhase, locoWeights, smoothYaw, MIN_FADE, type LocoLoop } from "../../lib/star/three3d/animBlend";
 import { footMark } from "../../lib/star/three3d/locomotion";
+import { levelToonLean, TOON_LEAN_MAX } from "../../lib/star/three3d/runPosture";
 import { gaitEdges, pickGait, strideLoop, sameFootTime, loopRate, STROLL_SPEEDS, MAX_LOOP_RATE, type Gait } from "../../lib/star/three3d/gait";
 
 const OLD = process.env.ANIM_OLD === "1";
@@ -303,5 +304,30 @@ if (!OLD) {
   check(over < 0.01, "no overshoot");
   check(settled > 0 && settled < 30, "settles inside half a second");
 }
+// ── 5. Style A sprint lean (it read as a crouch on the shorter torso) ──────
+if (!OLD) {
+  const raw = readFileSync("public/star/people3d/toon-p1.glb");
+  const jl = raw.readUInt32LE(12);
+  const js = JSON.parse(raw.subarray(20, 20 + jl).toString());
+  delete js.textures; delete js.images; delete js.samplers;
+  for (const m of js.materials ?? []) { delete m.occlusionTexture; delete m.normalTexture; if (m.pbrMetallicRoughness) delete m.pbrMetallicRoughness.baseColorTexture; }
+  js.extensionsUsed = (js.extensionsUsed ?? []).filter((e: string) => e !== "EXT_texture_webp");
+  const jb = Buffer.from(JSON.stringify(js)); const pad = Buffer.alloc((4 - (jb.length % 4)) % 4, 0x20);
+  const rest = raw.subarray(20 + jl);
+  const head = Buffer.alloc(20); head.writeUInt32LE(0x46546c67, 0); head.writeUInt32LE(2, 4);
+  head.writeUInt32LE(20 + jb.length + pad.length + rest.length, 8); head.writeUInt32LE(jb.length + pad.length, 12); head.writeUInt32LE(0x4e4f534a, 16);
+  const glb = Buffer.concat([head, jb, pad, rest]);
+  const toon: any = await new Promise((res, rej) => { const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder as never); l.parse(glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength) as ArrayBuffer, "", res, rej); });
+  const bones: Record<string, THREE.Bone> = {};
+  toon.scene.traverse((o: any) => { if (o.isBone) bones[o.name] = o; });
+  const sprint = g.animations.find((a: THREE.AnimationClip) => a.name === "sprint").clone();
+  const r = levelToonLean(THREE, toon.scene, bones, sprint, TOON_LEAN_MAX.sprint);
+  if (!r) problems.push("Style A sprint lean: not measured");
+  else {
+    console.log(`Style A sprint: forward lean ${r.before.toFixed(1)}° → ${r.after.toFixed(1)}° (the run leans 13°)`);
+    check(r.after <= TOON_LEAN_MAX.sprint + 1.5, `Style A sprint still leans ${r.after.toFixed(1)}°`);
+  }
+}
+
 if (problems.length) { console.error(problems.map((p) => "  ✗ " + p).join("\n")); process.exit(1); }
 console.log(OLD ? "measured the before" : "animSmooth: all checks passed");

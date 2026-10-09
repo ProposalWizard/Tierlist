@@ -150,6 +150,8 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/gaitBlend.ts` — the garden's and shop's legs (`GaitBlend`).
 - `lib/star/three3d/runPosture.ts` — load-time fixes on the run loops: upright neck, lowered shoulders, running arms.
 - `lib/star/three3d/footballAnims.ts` — load and play clips (`loadAnims3d`, `addClips`, `ClipPlayer`, `clipInfo`, `plantedAt`).
+- `lib/star/three3d/animBlend.ts` — clean blending for every mode (9 Oct 2026). `FadeWeights`: a clip change fades from the pose he is in now, however many changes come inside one fade (no pop). `locoWeights` + `LocoPhase`: walk / jog / run / sprint mixed by real speed on one stride clock (no flicker, no foot slide, same foot down). `smoothYaw` / `turnTo`: turns ease in and out. `ClipPlayer.loco(speed)` and `GaitBlend` both run on it. Never write a new crossfade or gait picker: use these. Test: `tests/star/animSmooth.mts` (pops, foot slide, turns; `ANIM_OLD=1` measures the old code if its copies are put back).
+- `lib/star/three3d/locomotion.ts` — `footMark`: each loop's left-foot moment, measured off the motion (the capture's own plant marks put the sprint on the wrong foot).
 - `lib/star/motionLook.ts` — Settings → Look → Motion: Mocap / Old.
 
 ### engineFrame: the 2D game decides, 3D only draws
@@ -329,6 +331,8 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 ## 7. Recent changes (9 Oct 2026)
 
 What landed today on Harry, newest first, one line each.
+
+- Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
 
 - 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
 

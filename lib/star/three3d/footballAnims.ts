@@ -65,7 +65,7 @@
  * The old footballer (shop/garden): loadAnims3d(loader, "football", "ual"), then
  * mixer.clipAction(clip) for each of gltf.animations, as shop3d/scene.ts does.
  */
-import { relaxIdleArms, IDLE_POSTURE_CLIPS } from "./runPosture";
+import { relaxIdleArms, IDLE_POSTURE_CLIPS, levelToonLean, TOON_LEAN_MAX } from "./runPosture";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./perf";
@@ -308,6 +308,8 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
     const c = clip.clone();
     // Style A: a standing idle gets the relaxed arms (three3d/runPosture.ts)
     if (p.toon && IDLE_POSTURE_CLIPS.has(clip.name)) relaxIdleArms(T, p.root, p.bones, c, { L: p.hand.L.palm, R: p.hand.R.palm });
+    // Style A: the run and sprint no longer hunch on the shorter torso (runPosture.ts levelToonLean)
+    if (p.toon && TOON_LEAN_MAX[clip.name] !== undefined) levelToonLean(T, p.root, p.bones, c, TOON_LEAN_MAX[clip.name]);
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
     }
@@ -317,7 +319,6 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
     p.actions[clip.name] = a;
     names.push(clip.name);
   }
-  void T;
   return names;
 }
 
@@ -368,7 +369,8 @@ export class ClipPlayer {
   private locoTop: number | undefined;
 
   constructor(private T: Three, private actions: Record<string, THREE.AnimationAction>) {
-    for (const [n, a] of Object.entries(actions)) this.copies.set(n, [a]);
+    // as before: every action starts held at 0 (only the clips this player shows get a weight)
+    for (const [n, a] of Object.entries(actions)) { this.copies.set(n, [a]); a.setEffectiveWeight(0); }
   }
 
   has(name: string) { return !!this.actions[name]; }
@@ -405,7 +407,7 @@ export class ClipPlayer {
     if (!this.actions[name]) return false;
     const cur = this.actions[name];
     // the same loop again, already in charge and no new start point: keep it going
-    if (this.current === name && this.fw.current === cur && !o.once && o.from === undefined && cur.loop === this.T.LoopRepeat) {
+    if (this.current === name && (this.fw.current as unknown) === cur && !o.once && o.from === undefined && cur.loop === this.T.LoopRepeat) {
       cur.timeScale = o.speed ?? 1;
       this.onEnd = o.onEnd ?? null;
       return true;
@@ -457,7 +459,8 @@ export class ClipPlayer {
     if (this.fw.current === LOCO) return true;
     if (!this.fw.has(LOCO)) {
       // take the loops as they are now; a loop playing on its own hands its stride over
-      const curA = this.fw.current && this.fw.current !== LOCO ? this.fw.current : null;
+      const fc = this.fw.current as Key | null;
+      const curA: Act | null = fc && fc !== LOCO ? fc : null;
       this.members = [];
       let synced = false;
       for (const s of this.locoSpecs) {
@@ -527,9 +530,9 @@ export class ClipPlayer {
       this.members = [];
     }
     for (const [k, w] of this.fw.entries()) if (k !== LOCO) weights.set(k, (weights.get(k) ?? 0) + w);
-    for (const a of this.shown) {
+    this.shown.forEach((a) => {
       if (!weights.has(a)) { a.setEffectiveWeight(0); this.shown.delete(a); }
-    }
+    });
     weights.forEach((w, a) => { a.setEffectiveWeight(w); this.shown.add(a); });
     if (this.current && this.current !== "loco" && this.once && this.onEnd) {
       const a = this.actions[this.current];
