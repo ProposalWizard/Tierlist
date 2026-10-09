@@ -31,6 +31,7 @@ import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, t
 import { people3dLook } from "../look3d";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
+import { motionLook } from "../motionLook";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
 import { canvasToScreen } from "../cameraTilt";
 import { createStyleKit, type StyleKit } from "./kit";
@@ -61,6 +62,35 @@ export interface EngineView {
 export const ENGINE_VIEW_FIG_SCALE = 1.3;
 /** The keeper a size down, so he still fits his goal (the 2D draws him small on purpose too). */
 const KEEPER_SHARE = 0.85;
+/**
+ * Motion: Mocap's numbers (Harry, 9 Oct 2026: the on-pitch motion "isn't 100%").
+ * Motion: Old never reads them.
+ */
+const MO = {
+  /** The fastest a man turns, rad/s. */
+  maxTurn: 6,
+  /** A bigger turn than this (rad, ~100°) while nearly still is a step round (turn_l / turn_r) … */
+  turnClipMin: 1.75,
+  /** … below this speed (m/s on the pitch), played this much quicker. */
+  turnClipBelow: 1,
+  turnSpeed: 1.35,
+  /** Standing still below this (m/s on the pitch). */
+  idleBelow: 0.35,
+  /** A man's own pace (m/s at his drawn size) → which loop: walk, jog, run, sprint. */
+  gaits: [["walk", 1.7], ["jog", 3.3], ["run", 4.9], ["sprint", Infinity]] as [string, number][],
+  /** Stay in a gait this far past its edge before changing (no flicker). */
+  gaitBand: 0.2,
+  /** The kick: the backswing starts this long before contact … */
+  windup: 0.55,
+  /** … and is held this long before contact while the strike screen is up. */
+  windupHold: 0.12,
+  /** A kick seen only at the strike: from this long before contact, played this fast until the foot gets there. */
+  lateStart: 0.2,
+  lateSpeed: 2,
+  /** Seconds of dive clip per second, at most, while it follows the 2D lunge (no one-frame pop). */
+  diveCatchUp: 3,
+  diveFade: 0.16,
+};
 /** How tall a man stands on the glass at the action with the TV camera, CSS px (the 2D match screen's men, coordinator 9 Oct 2026). */
 const TARGET_PX = 46;
 /**
@@ -91,6 +121,22 @@ type Body = {
   seen: number; init: boolean;
   /** Keeper: the side of the dive being played, and whether it has reached full stretch. */
   dive?: { clip: string; full: boolean };
+  // ── Motion: Mocap only (the Old motion never reads these) ──
+  /** This body's size over the clips' (hips height): a clip's metres × k. */
+  k: number;
+  /** His own idle: where in the clip he starts (0..1) and how fast he breathes. */
+  idleOff: number; rate: number;
+  /** A turn on the spot being played: from which way, how far, and how far the clip itself turns his hips. */
+  turn?: { clip: string; start: number; d: number; theta: number; h: number };
+  turnReady: number;
+  /** The kick's backswing, held while the strike screen is up. */
+  windup?: string;
+  /** A one-shot (celebration, head in hands) already played this result. */
+  shotDone?: string;
+  /** Kicking off the left foot: the clip's ball sits further on than shot_r's, so he stands back by this (his frame, metres). */
+  kickOff?: [number, number];
+  /** Keeper: walking sideways along his line. */
+  side?: boolean;
 };
 
 /**
@@ -248,6 +294,9 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const info = (n: string) => clipInfo(fb as any, n);
   const loopSpeed: Record<string, number> = { jog: 3.2, sprint: 7.4, run: 5.2, walk: 1.4 };
   for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
+  /** Motion: Mocap (Settings → Look). Off (Old): every body moves exactly as it did before 9 Oct 2026. */
+  const mo = motionLook() === "mocap" && !!fb;
+  const fbHipsY = ((fb as any)?.scene?.userData?.hipsY as number | undefined) ?? 0;
 
   const numberTex = (n: number) => {
     const c = newNumberCanvas(); drawShirtNumber(c, n);
@@ -265,11 +314,17 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     relaxHands(THREE, p);
     if (fb) addClips(THREE, p, fb as any);
     const play = new ClipPlayer(THREE, p.actions);
-    play.play(sid === "keeper" && play.has("ready_shuffle") ? "ready_shuffle" : "idle", { fade: 0 });
+    const first = sid === "keeper" && play.has("ready_shuffle") ? "ready_shuffle" : "idle";
+    // Mocap: every man starts his idle at his own moment and breathes at his own pace (no one in step)
+    const idleOff = ((hashOf(sid) * 0.6180339887) % 1 + 1) % 1;
+    const rate = 0.9 + (hashOf(`${sid}~rate`) % 21) / 100;
+    play.play(first, { fade: 0, ...(mo ? { from: idleOff * p.actions[first].getClip().duration, speed: rate } : {}) });
     root.add(p.root);
     kit?.stylePeople([p]);
     h?.dressPeople([p]);
-    return { p, play, look, sid, kitKey: `${shirt}|${shorts}`, x: 0, y: 0, vx: 0, vy: 0, yaw: 0, state: "idle", onceLeft: 0, lastAct: -1, kicking: false, seen: 0, init: false };
+    const hipsRest = p.rest.get(p.bones.Hips)?.[0].y ?? p.bones.Hips.position.y;
+    const k = fbHipsY > 0 ? hipsRest / fbHipsY : 1;
+    return { p, play, look, sid, kitKey: `${shirt}|${shorts}`, x: 0, y: 0, vx: 0, vy: 0, yaw: 0, state: mo ? first : "idle", onceLeft: 0, lastAct: -1, kicking: false, seen: 0, init: false, k, idleOff, rate, turnReady: 0 };
   };
   const bodyFor = (sid: string, shirt: string, shorts: string, face?: string): Body => {
     let b = bodies.get(sid);
@@ -294,7 +349,9 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     let d = want - b.yaw;
     while (d > Math.PI) d -= 2 * Math.PI;
     while (d < -Math.PI) d += 2 * Math.PI;
-    b.yaw += d * Math.min(1, dt * rate);
+    const step = d * Math.min(1, dt * rate);
+    // Mocap: never faster than a man can turn (a fixed share per frame spun him on planted feet)
+    b.yaw += mo ? Math.sign(step) * Math.min(Math.abs(step), MO.maxTurn * dt) : step;
   };
   const startLoop = (b: Body, name: string) => {
     const n = b.play.has(name) ? name : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
@@ -309,7 +366,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const dur = ci?.duration ?? b.p.actions[clip].getClip().duration;
     const from = Math.min(dur, contact + ago * speed);
     if (from >= dur - 0.05) return false;
-    b.play.play(clip, { fade: 0.06, from, speed, once: true });
+    b.play.play(clip, { fade: mo ? 0.12 : 0.06, from, speed, once: true });
     b.state = `once:${clip}`;
     b.onceLeft = (dur - from) / speed;
     return true;
@@ -328,6 +385,209 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       case "touch": return mode === "header" ? "header_stand" : "first_touch";
       default: return null;
     }
+  };
+
+  // ── MOTION: MOCAP — how the men move (Settings → Look → "Motion: Mocap | Old") ──
+  // The on-pitch motion pass (Harry, 9 Oct 2026: "isn't 100%"). Only these
+  // functions read MO; with Motion: Old the code above plays exactly as before.
+  const wrapPi = (d: number) => { while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+  /** The hips' turn about the up axis (the clips turn him through the hips). */
+  const hipsYaw = (b: Body) => { const q = b.p.bones.Hips.quaternion; return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.x * q.x)); };
+  const clipDur = (b: Body, n: string) => b.p.actions[n]?.getClip().duration ?? info(n)?.duration ?? 1;
+  const LOCO = new Set(["walk", "jog", "run", "sprint"]);
+  /** A loop, mocap way: a stride continues at the same foot (walk → jog), an idle starts at the man's own moment. */
+  const startLoopM = (b: Body, name: string, fade = 0.25) => {
+    const n = b.play.has(name) ? name : name === "run" ? "jog" : name === "walk" ? "jog" : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
+    if (b.state === n) return;
+    const dur = clipDur(b, n);
+    let from = b.idleOff * dur;
+    const pa = b.p.actions[b.state];
+    if (LOCO.has(b.state) && LOCO.has(n) && pa) {
+      const plant = (c: string) => (info(c)?.plants?.L?.[0]?.[0] as number | undefined) ?? 0;
+      const pd = clipDur(b, b.state);
+      const ph = ((((pa.time - plant(b.state)) / pd) % 1) + 1) % 1;
+      from = (plant(n) + ph * dur) % dur;
+    }
+    b.play.play(n, { fade, from, speed: n === "idle" || n === "ready_shuffle" ? b.rate : 1 });
+    b.state = n;
+  };
+  /** Which loop his pace wants: idle, walk, jog, run, sprint (a band at each edge so he doesn't flicker). */
+  const gaitFor = (b: Body, sp: number, u: number) => {
+    if (sp < (b.state === "idle" ? MO.idleBelow : MO.idleBelow * 0.7)) return "idle";
+    const g = MO.gaits;
+    let i = g.findIndex(([, lim]) => u < lim);
+    const cur = g.findIndex(([n]) => n === b.state);
+    if (cur >= 0 && Math.abs(i - cur) === 1 && Math.abs(u - g[Math.min(i, cur)][1]) < MO.gaitBand) i = cur;
+    return g[i][0];
+  };
+  /** A one-shot (celebration, head in hands): played once, then he stands. */
+  const oneShotThenIdle = (b: Body, name: string) => {
+    if (b.shotDone === name || !b.play.has(name)) { startLoopM(b, "idle"); return; }
+    if (b.state !== `shot1:${name}`) { b.play.play(name, { fade: 0.22, once: true }); b.state = `shot1:${name}`; return; }
+    const a = b.p.actions[name];
+    if (a.time >= clipDur(b, name) - 0.05) { b.shotDone = name; startLoopM(b, "idle", 0.35); }
+  };
+  /** A big turn standing still: a step round, not a spin. Returns false when it can't. */
+  const startTurn = (b: Body, d: number, t: number) => {
+    const clip = d > 0 ? "turn_l" : "turn_r";
+    if (!b.play.has(clip)) return false;
+    b.play.play(clip, { fade: 0.12, from: 0.15, speed: MO.turnSpeed, once: true });
+    b.state = `turn:${clip}`;
+    // how far the clip itself turns his hips (turn_l ≈ +92°, turn_r ≈ −88°)
+    b.turn = { clip, start: b.yaw, d, theta: d > 0 ? 1.6 : -1.5, h: 0 };
+    b.turnReady = t + 1.6;
+    return true;
+  };
+  /** After the mixer: drive his root so hips + root turn exactly `d`, keep him on his spot, and end the turn. */
+  const settleTurn = (b: Body, sp: number) => {
+    const tr = b.turn;
+    if (!tr) return;
+    const a = b.p.actions[tr.clip];
+    const h = tr.h = wrapPi(hipsYaw(b));
+    const over = b.state !== `turn:${tr.clip}` || a.time >= clipDur(b, tr.clip) - 0.06;
+    if (over || sp > 1.2) {
+      // end: the root takes the whole turn; cut (no fade) so the hips don't swing back
+      b.yaw = over ? tr.start + tr.d : tr.start + (h * tr.d) / tr.theta;
+      b.turn = undefined;
+      if (b.state === `turn:${tr.clip}`) { b.state = ""; startLoopM(b, sp < MO.idleBelow ? "idle" : "walk", 0); b.play.update(0); b.p.mixer.update(0); }
+      return;
+    }
+    b.yaw = tr.start + h * (tr.d / tr.theta - 1);
+    // the capture walks him round; here he turns on his spot
+    const r0 = b.p.rest.get(b.p.bones.Hips)?.[0];
+    if (r0) { b.p.bones.Hips.position.x = r0.x; b.p.bones.Hips.position.z = r0.z; }
+  };
+
+  /** An outfield man's moves, Motion: Mocap. Runs the mixer itself. */
+  const moveMocap = (b: Body, fig: EngineFrameFigure, f: EngineFrame, dt: number, sp: number, want: number | null) => {
+    const u = sp / (b.k * figNow());
+    const onceActive = () => {
+      if (!b.state.startsWith("once:")) return false;
+      const n = b.state.slice(5), a = b.p.actions[n];
+      return !!a && a.time < clipDur(b, n) - 0.05;
+    };
+    // turning
+    if (!b.turn && want !== null) {
+      const d = wrapPi(want - b.yaw);
+      const aiming = fig.sid === "you" && (!!f.aim || f.phase === "aim" || f.phase === "runup" || f.phase === "contact");
+      if (!aiming && !onceActive() && !b.windup && sp < MO.turnClipBelow && Math.abs(d) > MO.turnClipMin && f.t >= b.turnReady) startTurn(b, d, f.t);
+      else turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
+    }
+    // the kick: your own swing, off the right foot or the left
+    let started = false;
+    const foot = fig.kickFoot < 0 && b.play.has("kick_l") ? "kick_l" : "shot_r";
+    const ki = info(foot), contact = ki?.contact ?? 0.42;
+    if (fig.sid === "you" && !fig.kick && f.phase === "contact" && b.play.has(foot)) {
+      // the strike screen is up: the kick is coming. Plant and backswing, then hold it there.
+      if (b.windup !== foot) {
+        if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
+        b.play.play(foot, { fade: 0.2, from: Math.max(0, contact - MO.windup), speed: 0.8, once: true });
+        b.state = `wind:${foot}`; b.windup = foot;
+      }
+      const a = b.p.actions[foot];
+      if (a.time >= contact - MO.windupHold) { a.time = contact - MO.windupHold; a.timeScale = 0; }
+    }
+    if (fig.kick && !b.kicking && b.play.has(foot)) {
+      if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
+      const a = b.p.actions[foot];
+      if (b.windup === foot && b.state === `wind:${foot}`) a.timeScale = MO.lateSpeed; // loaded: swing through now
+      else b.play.play(foot, { fade: 0.12, from: Math.max(0, contact - MO.lateStart), speed: MO.lateSpeed, once: true });
+      b.state = `once:${foot}`;
+      const sr = info("shot_r");
+      b.kickOff = foot === "kick_l" && ki?.ball && sr?.ball ? [ki.ball[0] - sr.ball[0], ki.ball[1] - sr.ball[1]] : undefined;
+      started = true;
+    }
+    if (!fig.kick && b.windup && !(fig.sid === "you" && f.phase === "contact")) { b.windup = undefined; if (b.state.startsWith("wind:")) b.state = ""; }
+    if (fig.kick && b.windup) b.windup = undefined;
+    b.kicking = fig.kick;
+    // back to normal speed once the foot has reached the ball
+    if (b.state === `once:${foot}`) { const a = b.p.actions[foot]; if (a.time >= contact) a.timeScale = 1; }
+    if (!started && fig.act && fig.act.start !== b.lastAct) {
+      b.lastAct = fig.act.start;
+      const c = clipForAct(b, fig.act.kind, fig.act.mode);
+      if (c) {
+        if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
+        started = startOnce(b, c, Math.max(0, f.t - fig.act.start));
+      }
+    }
+    if (!f.goalSide) b.shotDone = undefined;
+    if (!started && !onceActive() && !b.turn && !b.state.startsWith("wind:")) {
+      if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) oneShotThenIdle(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
+      else if (f.goalSide && b.play.has("dejected") && sp < 0.5) oneShotThenIdle(b, "dejected");
+      else startLoopM(b, gaitFor(b, sp, u));
+    }
+    // a stride as long as his drawn legs: the feet stay where they land
+    const cs = info(b.state)?.speed;
+    if (LOCO.has(b.state) && typeof cs === "number" && cs > 0) b.p.actions[b.state].timeScale = Math.max(0.5, Math.min(1.6, u / cs));
+    b.play.update(dt);
+    b.p.mixer.update(dt);
+    settleTurn(b, sp);
+  };
+
+  /** The keeper, Motion: Mocap. Runs the mixer itself; returns how far a high dive lifts him. */
+  const keeperMocap = (b: Body, k: NonNullable<EngineFrame["keeper"]>, f: EngineFrame, dt: number, cut: boolean): number => {
+    turnTo(b, 0, dt, 6);
+    let lift = 0;
+    if (cut && b.state.startsWith("dive:")) { b.state = ""; startLoopM(b, "ready_shuffle", 0); }
+    const diving = k.saveLunge > 0.04 && k.saveDir !== 0;
+    if (diving || b.dive) {
+      // facing out (+y), his left is +x. Low, high or middle, as the 2D save is.
+      const side = k.saveDir > 0 ? "left" : "right";
+      const kindClip = k.saveKind === "low" ? `dive_${side}_low` : k.saveKind === "high" || k.saveKind === "fingertip" ? `dive_${side}_high` : `dive_${side}`;
+      const clip = b.dive?.clip ?? (b.play.has(kindClip) ? kindClip : `dive_${side}`);
+      const ci = info(clip);
+      if (ci && b.play.has(clip)) {
+        const launch = (ci.launch as number) ?? 0.12, reach = ci.contact ?? 0.42, land = (ci.land as number) ?? 0.7;
+        const getUp = (ci.getUp as number | undefined) ?? land + 0.4;
+        const dur = clipDur(b, clip);
+        // from his set position (the crouch and push are in the clip), never a jump straight to the launch
+        if (!b.dive) { b.play.play(clip, { fade: MO.diveFade, from: 0.02, once: true }); b.state = `dive:${clip}`; b.dive = { clip, full: false }; }
+        const a = b.p.actions[clip];
+        if (!b.dive.full) {
+          // follow the 2D lunge, but never faster than a real dive
+          const target = k.saveLunge >= 0.985 ? reach : launch + Math.min(1, k.saveLunge) * (reach - launch);
+          a.timeScale = 0;
+          if (target > a.time) a.time = Math.min(target, a.time + dt * MO.diveCatchUp);
+          if (k.saveLunge >= 0.985 && a.time >= reach - 1e-3) b.dive.full = true;
+        }
+        if (b.dive.full) a.timeScale = 1;
+        if (k.saveKind === "high" || k.saveKind === "fingertip") {
+          const s = Math.max(0, Math.min(1, (a.time - launch) / (land - launch)));
+          lift = (clip.endsWith("_high") ? 0.3 : 0.55) * Math.sin(s * Math.PI);
+        }
+        // a new chance: he gets up now (the clip's own get-up), not a slide from lying to standing
+        if (!diving && k.saveLunge === 0 && k.saveKind === null) {
+          b.dive.full = true;
+          if (a.time < getUp) a.time = getUp;
+          a.timeScale = 1.5;
+        }
+        // up again: back to his set position
+        if (a.time >= dur - 0.05) { b.dive = undefined; b.state = ""; startLoopM(b, "ready_shuffle", 0.3); }
+      } else b.dive = undefined;
+    } else {
+      const fs = figNow() * KEEPER_SHARE;
+      if (k.act && k.act.start !== b.lastAct) {
+        b.lastAct = k.act.start;
+        if (k.act.save === "catch" && f.ball && f.ball.z > 1.5) startOnce(b, "high_claim", Math.max(0, f.t - k.act.start));
+      }
+      if (b.onceLeft > 0) b.onceLeft -= dt;
+      if (!(b.state.startsWith("once:") && b.onceLeft > 0)) {
+        // along his line: real side steps (his left is +x), a shuffle when it's quick; else set and alive
+        const ux = Math.abs(b.vx) / (b.k * fs);
+        b.side = Math.abs(b.vx) > (b.side ? 0.2 : 0.35) && Math.abs(b.vx) > Math.abs(b.vy);
+        if (Math.hypot(b.vx, b.vy) > 2.6 && !b.side) startLoopM(b, "jog");
+        else if (b.side) {
+          const quick = ux > 2;
+          const n = `${quick ? "shuffle" : "side_step"}_${b.vx > 0 ? "l" : "r"}`;
+          startLoopM(b, b.play.has(n) ? n : "ready_shuffle", 0.2);
+          const cs = info(n)?.speed;
+          if (b.state === n && typeof cs === "number") b.p.actions[n].timeScale = Math.max(0.6, Math.min(1.8, ux / cs));
+        } else startLoopM(b, "ready_shuffle");
+      }
+    }
+    b.play.update(dt);
+    b.p.mixer.update(dt);
+    return lift;
   };
 
   /** One outfield man for this frame. */
@@ -351,6 +611,8 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     else if (fig.sid === "you" && f.aim) want = yawOf(Math.atan2(f.aim.to.y - f.aim.from.y, f.aim.to.x - f.aim.from.x));
     else if (fig.sid === "you" && (f.phase === "aim" || f.phase === "runup")) want = yawOf(Math.atan2(0 - b.y, CX - b.x));
     else if (bl && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.4) want = yawOf(Math.atan2(bl.y - b.y, bl.x - b.x));
+    if (mo) moveMocap(b, fig, f, dt, sp, want);
+    else {
     if (want !== null) turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
     // what he is doing
     if (b.onceLeft > 0) b.onceLeft -= dt;
@@ -373,9 +635,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     if (ls) { const a = b.p.actions[b.state]; if (a) a.timeScale = Math.max(0.55, Math.min(b.state === "sprint" ? 1.35 : 1.9, sp / ls)); }
     b.play.update(dt);
     b.p.mixer.update(dt);
-    b.p.root.position.set(b.x - CX, 0, b.y);
+    }
+    // Mocap, a left-foot kick: kick_l's ball sits further on than shot_r's, so he stands back by the difference
+    const off = mo && b.kickOff && b.state === "once:kick_l" ? b.kickOff : null;
+    const fs = figNow();
+    const ox = off ? (off[1] * Math.sin(b.yaw) + off[0] * Math.cos(b.yaw)) * b.k * fs : 0;
+    const oz = off ? (off[1] * Math.cos(b.yaw) - off[0] * Math.sin(b.yaw)) * b.k * fs : 0;
+    b.p.root.position.set(b.x - CX - ox, 0, b.y - oz);
     b.p.root.rotation.set(0, b.yaw, 0);
-    b.p.root.scale.setScalar(figNow());
+    b.p.root.scale.setScalar(fs);
     b.p.root.visible = true;
   };
 
@@ -383,15 +651,18 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const b = bodyFor("keeper", k.shirt, k.shorts, faces ? k.face : undefined);
     b.seen = frameNo;
     const jump = Math.hypot(k.x - b.x, k.y - b.y);
+    const cut = !b.init || jump > 4;
     if (!b.init || jump > 4) { b.x = k.x; b.y = k.y; b.vx = 0; b.vy = 0; b.init = true; b.dive = undefined; }
     else if (dt > 0) {
       const kk = Math.min(1, dt * 8);
       b.vx += ((k.x - b.x) / dt - b.vx) * kk; b.vy += ((k.y - b.y) / dt - b.vy) * kk;
       b.x = k.x; b.y = k.y;
     }
+    let lift = 0;
+    if (mo) lift = keeperMocap(b, k, f, dt, cut);
+    else {
     // square to the pitch, out of his goal
     turnTo(b, 0, dt, 6);
-    let lift = 0;
     const diving = k.saveLunge > 0.04 && k.saveDir !== 0;
     if (diving || b.dive) {
       // facing out (+y), his left is +x
@@ -422,6 +693,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     }
     b.play.update(dt);
     b.p.mixer.update(dt);
+    }
     b.p.root.position.set(b.x - CX, lift, b.y);
     b.p.root.rotation.set(0, b.yaw, 0);
     b.p.root.scale.setScalar(figNow() * KEEPER_SHARE);
