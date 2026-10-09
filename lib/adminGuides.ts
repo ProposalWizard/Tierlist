@@ -1492,7 +1492,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
           ["/star-dev/media-lab?contact=float (or bounce, bobble, still)", "Shows the strike screen with the ball moving that way (float = header, bounce = volley, bobble = a ball at your feet). Tap the ball to try it; it starts again a moment later."],
-          ["/star-dev/media-lab?shop=boots (or =lifestyle)", "Shows the shop with a sample National League career and ★1,000,000, for judging the 5 levels. Buying does nothing here."],
+          ["/star-dev/media-lab?shop=kib (or =boots, =lifestyle, =landing; add &look=old for the old shop)", "Shows the shop (new look unless &look=old) with a sample National League career and ★1,000,000. Buying works on the sample only — nothing is saved."],
           ["/star-dev/media-lab?training=vision&level=1", "Plays one training level with every skill at 40 (skill = pace, power, technique, vision or freeKick; level 1-30). Level 1 opens on its how-it-works card. Nothing is saved to a career."],
           ["/star-dev/media-lab?feed", "Shows seven fixed sample posts at phone width, drawn exactly the way the phone feed draws them — for judging how a post looks. Nothing to press; scroll to read."],
         ],

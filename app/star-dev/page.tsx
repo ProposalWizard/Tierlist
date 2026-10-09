@@ -160,6 +160,9 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
+import StoreShop from "@/components/star/shop2d/StoreShop";
+import StoreLanding from "@/components/star/shop2d/StoreLanding";
+import { useShopLook } from "@/lib/star/shopLook";
 import Shop3D from "@/components/star/Shop3D";
 import CareerStore from "@/components/star/store/CareerStore";
 import { addCoins } from "@/lib/star/store/career";
@@ -352,6 +355,8 @@ function NewUiStarDevPage() {
 
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
+  // Settings → Look → "Shop: New | Old" (lib/star/shopLook.ts).
+  const shopLookNow = useShopLook();
   // v0.25 item 4: the foot you kick with, for the trial and training (they
   // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
   const careerFoot = career?.player.preferredFoot;
@@ -4172,6 +4177,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const shopHelp: HelpScreen = kind === "kib" ? "cans" : kind === "boots" ? "boots" : "style";
     return (
       <>
+        {shopLookNow === "new" ? (
+          <StoreShop
+            career={career}
+            kind={kind}
+            onBack={handleBackToDashboard}
+            onBuyKib={handleBuyKib}
+            onBuyBoot={handleBuyBoot}
+            onBuyItem={handleBuyItem}
+            onBuyFromBlackMarket={handleBuyFromBlackMarket}
+            hud={screenHud(kind === "lifestyle" ? "style" : "shop", shopHelp)}
+            onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
+            focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
+            onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
+            onUseCan={handleUseCan}
+            onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
+          />
+        ) : (
         <Shop
           career={career}
           kind={kind}
@@ -4184,6 +4206,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
           focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
         />
+        )}
         {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {!helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
         {/* The phone flashes; one line says what it is (Harry, P102). */}
@@ -4859,7 +4882,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
             />,
             isOpen(career, "shop")
-              ? <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
+              ? (shopLookNow === "new"
+                ? <StoreLanding key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
+                : <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />)
               : <LockedPage key="shop" title="Shop" feature="shop" />,
           ]}
         </SwipePages>
