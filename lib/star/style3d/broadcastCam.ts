@@ -48,8 +48,12 @@ export interface BcInput {
 }
 
 export const BROADCAST = {
-  /** Degrees down from the horizon. */
+  /** Degrees down from the horizon … */
   elevDeg: 40,
+  /** … or up to this when it cuts the empty stand above the action. */
+  elevMaxDeg: 45,
+  /** The top of the action (the crossbar, the furthest man) wanted no lower than this share. */
+  standTop: 0.14,
   /** Vertical field of view, degrees. */
   fov: 40,
   /** The anchor (ball) this far down the screen. */
@@ -90,8 +94,8 @@ export const BROADCAST = {
   /** Our men this near the ball stay on screen (the ones you can pass to). */
   mateR: 24,
   /** … at most this many of them, the nearest, and none more than this far across (m): a winger 20 m wide may go off. */
-  mates: 3,
-  mateSide: 16,
+  mates: 2,
+  mateSide: 11,
 };
 export type BroadcastParams = typeof BROADCAST;
 
@@ -145,15 +149,26 @@ export function bcPose(c: BcCamera): { pos: [number, number, number]; look: [num
 }
 
 /**
- * Solve the broadcast camera for one frame. When the action is too wide for
- * a man to reach the target size at `ballAt`, the anchor may rise to
- * `ballAtMin` (still ≥ 35% pitch below it) if that frames it closer.
+ * Solve the broadcast camera for one frame. A few framings are tried — the
+ * angle at `elevDeg` or `elevMaxDeg`, the anchor at `ballAt` or `ballAtMin` —
+ * and the one kept has the man nearest his target size and the least empty
+ * stand above the top of the action (Harry: "less empty grass", and no wall
+ * of crowd either).
  */
 export function solveBroadcast(inp: BcInput, P: BroadcastParams = BROADCAST): BcCamera {
-  const c = solveAt(inp, P, P.ballAt);
-  if (c.man >= P.manShare * 0.98 || P.ballAtMin >= P.ballAt) return c;
-  const c2 = solveAt(inp, P, P.ballAtMin);
-  return c2.man > c.man + 0.002 ? c2 : c;
+  let best: BcCamera | null = null, bestScore = -Infinity;
+  const vis = inp.vis ?? { a: 0, b: 1 };
+  for (const e of [P.elevDeg, P.elevMaxDeg]) {
+    for (const at of [P.ballAt, P.ballAtMin]) {
+      const c = solveAt(inp, { ...P, elevDeg: e }, at);
+      let topFr = 1;
+      for (const p of inp.points) topFr = Math.min(topFr, bcProject(c, inp.W, inp.H, p).fr);
+      const stand = Math.max(0, topFr - (vis.a + P.standTop * (vis.b - vis.a)));
+      const score = -Math.abs(c.man - P.manShare) * 6 - stand - (e !== P.elevDeg ? 0.01 : 0) - (at !== P.ballAt ? 0.01 : 0);
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+  }
+  return best!;
 }
 
 function solveAt(inp: BcInput, P: BroadcastParams, ballAt: number): BcCamera {

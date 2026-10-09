@@ -17,7 +17,7 @@ let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
 const W = 390, H = 844;
 let n = 0, badAngle = 0, badRoom = 0, badMan = 0, offScreen = 0, kCapped = 0;
-const room: number[] = [], man: number[] = [];
+const room: number[] = [], man: number[] = [], bar: number[] = [];
 const sideKinds = new Set<string>();
 for (const kind of SCENARIO_KINDS) {
   for (let seed = 1; seed <= 20; seed++) {
@@ -41,6 +41,7 @@ for (const kind of SCENARIO_KINDS) {
     const deg = (c.elev * 180) / Math.PI;
     if (deg < 35 || deg > 45) badAngle++;
     room.push(1 - c.anchorShare); man.push(c.man);
+    if (gv) bar.push(bcProject(c, W, H, { x: 34, y: 0, z: 2.44 }).fr);
     if (c.anchorShare < 0.549 || c.anchorShare > 0.65 || 1 - c.anchorShare < 0.25) badRoom++;
     if (c.man < 0.09 || c.man > 0.11) { badMan++; if (process.env.V) console.log(kind, seed, facing, c.man.toFixed(3), c.k.toFixed(2)); }
     if (c.k >= BROADCAST.kMax - 1e-6) kCapped++;
@@ -48,6 +49,7 @@ for (const kind of SCENARIO_KINDS) {
   }
 }
 const pct = (a: number[], q: number) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(q * (s.length - 1))]; };
+console.log(`crossbar at ${(pct(bar, 0.1) * 100).toFixed(0)}/${(pct(bar, 0.5) * 100).toFixed(0)}/${(pct(bar, 0.9) * 100).toFixed(0)}% down (p10/50/90)`);
 console.log(`${n} chances; room below the ball ${pct(room, 0).toFixed(2)}–${pct(room, 1).toFixed(2)}; man height ${(pct(man, 0) * 100).toFixed(1)}–${(pct(man, 1) * 100).toFixed(1)}% (median ${(pct(man, 0.5) * 100).toFixed(1)}%); k at its cap ${kCapped}`);
 ok(SCENARIO_KINDS.length >= 13, `${SCENARIO_KINDS.length} chance kinds`);
 ok(sideKinds.size > 0, `side-on chances are in the set (${[...sideKinds].join(", ")}) and use the same camera`);
