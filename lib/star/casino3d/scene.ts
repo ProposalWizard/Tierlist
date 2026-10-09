@@ -49,6 +49,8 @@
  * are not worked out.
  */
 import { toonYou, TOON_SUIT_HEADS } from "../style3d/toon/bodies";
+import { turnTo } from "../three3d/animBlend";
+import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { neonCanvas, numberCanvas, blobCanvas } from "../shop3d/textures";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
@@ -633,6 +635,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     pullA = take("slot_pull");
   }
   if (disposed) throw new Error("disposed");
+  // your legs walk / jog on the shared stride clock, as in the garden and the shop (Motion: Mocap; Old keeps the blend below)
+  let gaitBlend: GaitBlend | null = null;
+  strideFor(THREE, person, mixer, { idle: idleA, walk: walkA, jog: jogA })
+    .then((gb) => { if (!disposed) gaitBlend = gb; })
+    .catch((e) => console.error("casino: gait clips", e));
   player.position.set(START.x, 0, START.z);
   player.rotation.y = Math.PI;
   scene.add(player);
@@ -643,6 +650,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = Math.PI, camYaw = 0, orbitHold = 0;
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   let near: CasinoStation | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0, drawn = 0;
   let paused = false;
@@ -852,7 +861,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
     speed += (target - speed) * Math.min(1, dt * 8);
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
       yaw += d * Math.min(1, dt * 5);
@@ -886,10 +895,14 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     if (sitA) sitA.setEffectiveWeight(seat * (1 - pullW));
     const keep = (1 - (react?.w ?? 0)) * (sitA ? 1 - seat : 1);
+    if (gaitBlend) gaitBlend.update(speed, dt, keep);
+    else {
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK) * keep);
     walkA.setEffectiveWeight(wWalk * keep);
     jogA.setEffectiveWeight(wJog * keep);
-    if (newLook) { const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog)); walkA.timeScale = ts; jogA.timeScale = ts; }
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) { const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog)); walkA.timeScale = ts; jogA.timeScale = ts; }
     else { walkA.timeScale = Math.max(0.6, speed / 1.45); jogA.timeScale = Math.max(0.8, speed / 3.2); }
     mixer.update(dt);
     stepNpcs(dt);
