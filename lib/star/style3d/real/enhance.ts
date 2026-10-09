@@ -5,12 +5,17 @@
  *   - light from a real sky (image-based, from the HDR files), outdoors only
  *   - the broadcast pass: real bloom, ACES with an S-curve, a gentle split
  *     tone, sharpening (High) or FXAA (Medium), vignette, fine grain
+ *   - (9 Oct 2026) the set's baked light (lib/star/look/bakedLight.ts: the
+ *     garden's open-sky shade, wall and tree shadows and bounce; the shop's
+ *     corner shade), and outdoors the broadcast colour grade (a 3D LUT)
  * Old (Settings → Look → "3D look: Old") never calls this: the scene draws
  * exactly as before.
  */
 import type { Quality3d } from "../../three3d/quality";
 import { envFor, type TimeOfDay } from "./assets";
 import { makeHPost, type HGrade, type HPost } from "./post";
+import { createBakedLight, type BakedLight, type BakeSet } from "../../look/bakedLight";
+import { lookLut } from "../../look/params";
 
 export interface HEnhance {
   render(scene: any, camera: any): void;
@@ -28,10 +33,32 @@ const GRADES: Record<TimeOfDay | "indoor", HGrade> = {
  * `tod` lights the scene from that real sky (outdoors); "indoor" keeps the
  * scene's own environment. `exposure` is the scene's own tone-mapping exposure.
  */
-export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod: TimeOfDay | "indoor", o: { exposure: number; envIntensity?: number }): HEnhance {
+export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod: TimeOfDay | "indoor", o: { exposure: number; envIntensity?: number; bake?: BakeSet | null; lutAmt?: number }): HEnhance {
   const post: HPost = makeHPost(T, renderer, tier);
   const grade: HGrade = { ...GRADES[tod], exposure: o.exposure };
   let dead = false;
+  // the set's baked light: the garden outdoors, the shop indoors (unless told otherwise)
+  const set: BakeSet | null = o.bake === undefined ? (tod === "indoor" ? "shop" : "garden") : o.bake;
+  let baked: BakedLight | null = null;
+  let frames = 0;
+  if (set) {
+    void createBakedLight(T, set, tod === "indoor" ? "indoor" : tod).then((b) => {
+      if (!b) return;
+      if (dead) { b.dispose(); return; }
+      baked = b;
+      // the bounce is the sun's light thrown back: find the scene's strongest sun-like light
+      let sun: any = null;
+      scene.traverse((x: any) => { if (x.isDirectionalLight && (!sun || x.intensity > sun.intensity)) sun = x; });
+      if (sun) b.setLight(sun.color, sun.intensity);
+      // the garden's live sun shadow already covers the whole garden: the baked one only softens it
+      // (at full strength the two sat a hand apart on the stable's front and read as a smudge, 9 Oct still)
+      if (set === "garden") b.setStrength({ shade: 0.3, ao: 0.85 });
+      b.apply(scene);
+    }).catch(() => { /* no bake: as before */ });
+  }
+  if (tod !== "indoor") {
+    void lookLut(T, tod).then((t) => { if (!dead && t) { grade.lut = t; grade.lutAmt = o.lutAmt ?? 0.8; } });
+  }
   if (tod !== "indoor") {
     envFor(T, renderer, tod).then((env) => {
       if (dead) return;
@@ -40,7 +67,11 @@ export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod
     }).catch(() => { /* keep the scene's own light */ });
   }
   return {
-    render(sc, camera) { post.render(sc, camera, grade); },
-    dispose() { dead = true; post.dispose(); },
+    render(sc, camera) {
+      // things built or swapped in after the start (models load in) pick up the baked light too
+      if (baked && (frames++ % 60) === 0) baked.apply(sc);
+      post.render(sc, camera, grade);
+    },
+    dispose() { dead = true; baked?.dispose(); baked = null; post.dispose(); },
   };
 }

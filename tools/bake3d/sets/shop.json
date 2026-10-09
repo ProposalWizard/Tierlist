@@ -1,0 +1,12 @@
+{
+  "about": "The 3D shop (lib/star/shop3d/scene.ts), indoors: only things within aoRadius metres shade (corners, under counters and shelves). The display car (Body*) is left out: it changes with the item on show.",
+  "url": "/star-shop3d-dev",
+  "workers": 4,
+  "groundAlbedo": 0.25,
+  "sunRays": 1,
+  "aoRadius": 2.5,
+  "drop": ["Body"],
+  "tods": [{ "id": "indoor", "sun": [0, 1, 0], "sky": 1.0, "soft": 0 }],
+  "floor": { "min": [-6, 0, -8], "max": [6, 0, 9], "res": [0.05, 1, 0.05], "y": 0.02, "rays": 64 },
+  "volume": { "min": [-6.2, 0, -8.2], "max": [6.4, 3.8, 9.4], "res": [0.25, 0.25, 0.25], "rays": 64 }
+}

@@ -8,7 +8,9 @@
  *      up (a wide, smooth glow round floodlights and sun glints, not a ring)
  *   4. one last pass: soft focus on the far stands by depth, the bloom, ACES,
  *      a broadcast S-curve, a cool-shadow / warm-light split, saturation,
- *      sharpening (High) or FXAA edge smoothing (Medium), vignette, fine grain
+ *      sharpening (High) or FXAA edge smoothing (Medium), vignette, then the
+ *      broadcast colour grade (a 3D LUT matched to the benchmark pictures,
+ *      lib/star/look + tools/look/build_lut.py), fine grain
  *
  * Low quality: none of it (ACES straight to the screen, as before).
  */
@@ -56,7 +58,18 @@ uniform sampler2D tColor, tDepth, tSoft, tBloom;
 uniform vec2 res;
 uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, dof, dofNear, dofFar, useDepth;
 uniform vec3 tint, lift, shadowTint, lightTint;
+uniform sampler2D tLut;
+uniform float lutAmt;
 varying vec2 vUv;
+// a 32-cube LUT laid out as a 1024 x 32 strip (blue picks the tile, red across it, green down it)
+vec3 lut32(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  float b = c.b * 31.0, b0 = floor(b), b1 = min(b0 + 1.0, 31.0);
+  float u = c.r * 31.0 + 0.5, v = (c.g * 31.0 + 0.5) / 32.0;
+  vec3 lo = texture2D(tLut, vec2((b0 * 32.0 + u) / 1024.0, v)).rgb;
+  vec3 hi = texture2D(tLut, vec2((b1 * 32.0 + u) / 1024.0, v)).rgb;
+  return mix(lo, hi, b - b0);
+}
 float linD(float d) { float z = d * 2.0 - 1.0; return (2.0 * cNear * cFar) / (cFar + cNear - z * (cFar - cNear)); }
 vec3 aces(vec3 x) { x *= exposure; return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
 vec3 toSRGB(vec3 c) { return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
@@ -104,6 +117,7 @@ void main() {
   c = mix(vec3(luma(c)), c, sat);
   vec2 v = vUv - 0.5;
   c *= 1.0 - vignette * dot(v, v) * 1.5;
+  if (lutAmt > 0.0) c = mix(c, lut32(c), lutAmt);
   c += (hash(gl_FragCoord.xy + fract(time) * 91.0) - 0.5) * grain;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
@@ -111,6 +125,10 @@ void main() {
 export interface HGrade {
   exposure: number; bloom: number; bloomThresh: number; contrast: number; sat: number;
   tint: [number, number, number]; lift: [number, number, number]; vignette: number;
+  /** The broadcast colour grade (lib/star/look/params.ts lookLut) and how much of it, 0..1. */
+  lut?: any; lutAmt?: number;
+  /** A multiple of the tier's own sharpening (High only; 1 = as it was). */
+  sharpen?: number;
 }
 
 export interface HPost {
@@ -149,6 +167,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },
+    tLut: { value: null }, lutAmt: { value: 0 },
   };
   const finalMat = new T.ShaderMaterial({ uniforms: fu, vertexShader: VERT, fragmentShader: FINAL, depthTest: false, depthWrite: false });
   const size = new T.Vector2();
@@ -201,6 +220,8 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       fu.exposure.value = g.exposure; fu.bloom.value = g.bloom * 0.6; fu.contrast.value = g.contrast; fu.sat.value = g.sat;
       fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000;
       fu.tint.value.set(...g.tint); fu.lift.value.set(...g.lift);
+      fu.sharpen.value = (tier === "high" ? 0.22 : 0) * (g.sharpen ?? 1);
+      fu.tLut.value = g.lut ?? null; fu.lutAmt.value = g.lut ? (g.lutAmt ?? 1) : 0;
       pass(finalMat, null);
       renderer.toneMapping = tm;
       renderer.autoClear = auto;

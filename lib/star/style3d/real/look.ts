@@ -10,6 +10,13 @@
  * The leaned men (the fixed camera's trick) would throw long, wrong shadows,
  * so their shadows are drawn from them standing up: `render` takes a
  * `beforeShadows` / `afterShadows` pair to un-lean and re-lean them.
+ *
+ * Baked light and the broadcast grade (9 Oct 2026, lib/star/look): the
+ * stadium's light is baked in Blender per time of day (open-sky shade, the
+ * stands' and roofs' sun shadow over the whole bowl, light bounced off the
+ * stands), read by every lit surface and by the players; the last step of
+ * the picture is a colour grade matched to the benchmark broadcast frames.
+ * The dials (lib/star/look/params.ts) were set by the look-tuner.
  */
 import { TIER_PROFILES, type Quality3d } from "../../three3d/quality";
 import type { Person3D } from "../../people3d";
@@ -19,6 +26,8 @@ import { buildRealPitch, type RealPitch } from "./pitch";
 import { buildArena, type Arena, type ArenaColours } from "./arena";
 import { makeHPost, type HPost } from "./post";
 import { dressHBall, type HBall } from "./ball";
+import { createBakedLight, type BakedLight } from "../../look/bakedLight";
+import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
 
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
@@ -117,6 +126,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   ]);
   let tod: TimeOfDay = o.tod;
   let look: TodLook = TODS[tod];
+  let p: LookParams = lookParams(tod);
+  let seenVersion = lookVersion();
+  let lut: any = null;
+  let baked: BakedLight | null = null;
+  let dead = false;
 
   // ── sky ──
   const su: Record<string, { value: any }> = {
@@ -182,6 +196,16 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   blindCam.position.set(0, -500, 0); blindCam.lookAt(0, -1000, 0);
   const prevEnv = scene.environment, prevFog = scene.fog, prevBg = scene.background;
   let envToken = 0;
+  /** The dials onto the lights, the grass and the bake (cheap: also run when the tuner turns one). */
+  const applyDials = () => {
+    p = lookParams(tod);
+    sun.intensity = look.sunIntensity * p.sun;
+    hemi.intensity = look.hemi.intensity * p.hemi;
+    scene.environmentIntensity = look.env * p.env;
+    pitch.setLook({ grass: [tuneGrass(look.grass[0], p), tuneGrass(look.grass[1], p)], wet: look.wet, blades: p.blades, stripes: p.stripes });
+    baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce });
+    baked?.setLight(sun.color, sun.intensity);
+  };
   const applyTod = async () => {
     look = TODS[tod];
     const tk = ++envToken;
@@ -197,17 +221,32 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     arena?.setNight(look.floods);
     hball?.setNight(look.floods);
     renderer.toneMappingExposure = look.exposure;
-    const [env, skyTex] = await Promise.all([envFor(T, renderer, tod), hTexture(T, `sky-${tod}.webp`, { repeat: false })]);
+    void baked?.setTod(tod);
+    const [env, skyTex, lt] = await Promise.all([envFor(T, renderer, tod), hTexture(T, `sky-${tod}.webp`, { repeat: false }), lookLut(T, tod)]);
     if (tk !== envToken) return;
     skyTex.wrapS = T.RepeatWrapping; skyTex.needsUpdate = true;
     su.tSky.value = skyTex;
     scene.environment = env;
-    scene.environmentIntensity = look.env;
+    lut = lt;
+    applyDials();
   };
   await applyTod();
+  // the stadium's baked light (the training patch has no stadium to bake)
+  if (withArena) {
+    void createBakedLight(T, "stadium", tod).then((b) => {
+      if (!b) return;
+      if (dead) { b.dispose(); return; }
+      baked = b;
+      void b.setTod(tod);
+      b.apply(scene);
+      applyDials();
+    }).catch(() => { /* no bake: the live light alone, as before */ });
+  }
+  let frameN = 0;
+  let last: { scene: any; camera: any } | null = null;
 
   const dir = new T.Vector3();
-  return {
+  const api: RealLook = {
     get tod() { return tod; },
     setTod(t) { if (t !== tod) { tod = t; void applyTod(); } },
     setColours(c) { arena?.setColours(c); },
@@ -225,6 +264,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     cheer(v) { arena?.cheer(v); },
     update(dt, camera, focus, ball) {
       sky.position.copy(camera.position);
+      // things added after the build (people, props) pick up the baked light too
+      if (baked && (frameN++ % 45) === 0) baked.apply(scene);
+      if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
       dir.set(...look.sunDir).normalize();
       // the shadow box follows the action in 4 m steps (no swimming shadows)
       const fx = Math.round(focus.x / 4) * 4, fz = Math.round(focus.z / 4) * 4;
@@ -234,7 +276,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       floods.forEach((f, i) => { f.position.set(fl[i][0], fl[i][1], fl[i][2]); f.target.position.set(fx, 0, fz); });
       const cx = camera.position.x - fx, cz = camera.position.z - fz, cl = Math.hypot(cx, cz) || 1;
       rim.position.set(fx - (cx / cl) * 60, 14, fz - (cz / cl) * 60); rim.target.position.set(fx, 1, fz);
-      rim.intensity = look.floods ? 1.1 : 0.7;
+      rim.intensity = (look.floods ? 1.1 : 0.7) * p.rim;
       for (const c of contacts) {
         const r = c.p.root;
         c.m.visible = r.visible && c.p.body.visible !== false;
@@ -259,10 +301,23 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       } else {
         renderer.shadowMap.autoUpdate = true;
       }
-      post.render(sc, camera, { exposure: look.exposure, bloom: look.bloom, bloomThresh: look.bloomThresh, contrast: look.contrast, sat: look.sat, tint: look.tint, lift: look.lift, vignette: look.vignette });
+      if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
+      post.render(sc, camera, {
+        exposure: look.exposure * p.exposure, bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
+        contrast: look.contrast * p.contrast, sat: look.sat * p.sat, tint: look.tint, lift: look.lift,
+        vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen,
+      });
       renderer.shadowMap.autoUpdate = true;
+      // dev builds: the look-tuner re-draws this same frame after turning a dial
+      if (!last) {
+        const hook = lookTuneHook();
+        if (hook) hook.redraw = () => { if (last && !dead) api.render(last.scene, last.camera); };
+      }
+      last = { scene: sc, camera };
     },
     dispose() {
+      dead = true;
+      baked?.dispose(); baked = null;
       post.dispose();
       hball?.dispose();
       arena?.dispose();
@@ -275,4 +330,5 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       scene.environment = prevEnv; scene.fog = prevFog; scene.background = prevBg;
     },
   };
+  return api;
 }
