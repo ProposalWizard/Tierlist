@@ -20,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const pub = path.join(root, "public");
 const OUT = path.join(root, "lib/star/three3d/assetVersions.ts");
 /** What the 3D loaders fetch. shop2d (React <img>) and the app icons are left out. */
-const EXT = new Set([".glb", ".gltf", ".bin", ".hdr", ".ktx2", ".webp", ".png", ".jpg", ".wasm", ".js", ".cube"]);
+const EXT = new Set([".glb", ".gltf", ".bin", ".hdr", ".ktx2", ".webp", ".png", ".jpg", ".wasm", ".js", ".cube", ".json"]);
 const SKIP = /^\/star\/(shop2d|app-icon)/;
 
 export function buildAssetVersions() {
