@@ -29,6 +29,7 @@ import {
   RETURN_FULL_PULL, RETURN_IDEAL, SETUP,
 } from "../../lib/star/play3d/twoTouch";
 import { DRILLS } from "../../lib/star/play3d/drills";
+import { CALL_COOLDOWN } from "../../lib/star/play3d/world";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -222,6 +223,98 @@ const waitTouch = (w: ReturnType<typeof makeTwoTouch>["world"], off: number) => 
   }
   check(inReach / n > 0.9, `full stick the wrong way: ball still in reach ${inReach}/${n}`);
   console.log(`stick held the wrong way all rally: ball in reach at the touch ${inReach}/${n}`);
+}
+
+// ── 11. Free Roam: the play camera frames the play (ball and goal in the picture, before vs after) ──
+{
+  const FOV = 62 * Math.PI / 180, ASPECT = 390 / 534;
+  const inFrame = (c: { pos: { x: number; y: number; z: number }; look: { x: number; y: number; z: number } }, p: { x: number; y: number; z: number }) => {
+    const f = { x: c.look.x - c.pos.x, y: c.look.y - c.pos.y, z: c.look.z - c.pos.z };
+    const fl = Math.hypot(f.x, f.y, f.z); f.x /= fl; f.y /= fl; f.z /= fl;
+    let r = { x: f.y, y: -f.x, z: 0 }; const rl = Math.hypot(r.x, r.y) || 1; r = { x: r.x / rl, y: r.y / rl, z: 0 };
+    const u = { x: r.y * f.z - r.z * f.y, y: r.z * f.x - r.x * f.z, z: r.x * f.y - r.y * f.x };
+    const d = { x: p.x - c.pos.x, y: p.y - c.pos.y, z: p.z - c.pos.z };
+    const zf = d.x * f.x + d.y * f.y + d.z * f.z;
+    if (zf <= 0.1) return false;
+    const ty = Math.tan(FOV / 2), tx = ty * ASPECT;
+    return Math.abs((d.x * r.x + d.y * r.y) / zf) < tx * 0.95 && Math.abs((d.x * u.x + d.y * u.y + d.z * u.z) / zf) < ty * 0.95;
+  };
+  const run = (dynamic: boolean) => {
+    let ball = 0, goal = 0, n = 0, ballAway = 0, nAway = 0, maxTurn = 0;
+    for (let seed = 1; seed <= 6; seed++) {
+      const d = DRILLS.find((x) => x.id === "free-roam")!;
+      const s = d.start!({ seed, you: { id: "you", name: "You", skills: skillsOf(72) }, mates: [{ id: "m1", name: "A", skills: skillsOf(72) }, { id: "m2", name: "B", skills: skillsOf(72) }] });
+      const w = s.world, cam = makePracticeCam();
+      let prevH = 0;
+      for (let i = 0; i < 60 * 60; i++) {
+        const you = w.you()!, b = w.ball;
+        // a simple bot: run at goal with it, pass every couple of seconds, shoot inside 18 m; without it, chase and call
+        if (w.owner === you.id) {
+          w.input = { move: { x: (CX - you.x) * 0.05, y: -1 }, sprint: false };
+          if (Math.hypot(you.x - CX, you.y) < 18) w.act({ kind: "shoot", dir: { x: CX - you.x + 2, y: -you.y }, pull: 0.1 });
+          else if (i % 150 === 0) w.act({ kind: "tap" });
+        } else {
+          const dx = b.x - you.x, dy = b.y - you.y, dd = Math.hypot(dx, dy) || 1;
+          w.input = { move: { x: dx / dd, y: dy / dd }, sprint: dd > 8 };
+          if (i % 200 === 100) w.act({ kind: "call" });
+        }
+        w.step(STEP);
+        const fr = s.frame!(w);
+        const c = stepPracticeCam(cam, { you: { x: you.x, y: you.y }, target: fr.target, ball: { x: b.x, y: b.y, z: b.z }, play: dynamic ? fr.play : undefined }, STEP);
+        if (i > 0) maxTurn = Math.max(maxTurn, Math.abs(wrap(c.heading - prevH)) / STEP);
+        prevH = c.heading;
+        if (i < 30) continue;
+        n++;
+        const bIn = inFrame(c, { x: b.x, y: b.y, z: Math.max(0.11, b.z) });
+        if (bIn) ball++;
+        if (inFrame(c, { x: CX, y: 0, z: 1.2 })) goal++;
+        if (w.owner !== you.id && Math.hypot(b.x - you.x, b.y - you.y) > 5) { nAway++; if (bIn) ballAway++; }
+      }
+    }
+    return { ball: ball / n, goal: goal / n, ballAway: ballAway / Math.max(1, nAway), maxTurn };
+  };
+  const before = run(false), after = run(true);
+  const pc = (v: number) => `${(v * 100).toFixed(0)}%`;
+  console.log(`free roam framing (6 × 60 s, a bot playing): ball in frame ${pc(before.ball)} → ${pc(after.ball)}; ball in frame while it's away from you ${pc(before.ballAway)} → ${pc(after.ballAway)}; goal in frame ${pc(before.goal)} → ${pc(after.goal)}; fastest turn ${deg(after.maxTurn).toFixed(0)}°/s`);
+  check(after.ballAway > before.ballAway + 0.05, `play camera keeps the ball in shot more while it's away (${pc(before.ballAway)} → ${pc(after.ballAway)})`);
+  check(after.ball >= before.ball, `ball in frame overall no worse (${pc(before.ball)} → ${pc(after.ball)})`);
+  check(after.maxTurn <= MAX_TURN * 1.001, `play camera never turns faster than 60°/s (${deg(after.maxTurn).toFixed(1)}°/s)`);
+}
+
+// ── 12. Call for it: an open lane gets you a pass into your run; a blocked one gets a no ──
+{
+  const mk = (seed: number) => {
+    const d = DRILLS.find((x) => x.id === "free-roam")!;
+    return d.start!({ seed, you: { id: "you", name: "You", skills: skillsOf(72) }, mates: [{ id: "m1", name: "A", skills: skillsOf(72) }, { id: "m2", name: "B", skills: skillsOf(72) }] }).world;
+  };
+  let yes = 0, passed = 0, tries = 0;
+  for (let s = 1; s <= 30; s++) {
+    const w = mk(s), you = w.you()!, m = w.get("m1")!;
+    m.x = you.x - 10; m.y = you.y + 2; w.placeBall(m.x, m.y - 0.5, m.id); m.mind.has = w.t; m.mind.hold = 99;
+    w.input = { move: { x: 0, y: -0.7 }, sprint: false };
+    for (let i = 0; i < 20; i++) w.step(STEP);
+    if (w.owner !== m.id) continue;
+    tries++;
+    w.act({ kind: "call" }); w.step(STEP);
+    if (w.call?.ok) yes++;
+    for (let i = 0; i < 30 && !(w.passTarget === you.id); i++) w.step(STEP);
+    if (w.passTarget === you.id && w.passFrom === m.id) passed++;
+  }
+  check(tries > 20 && yes === tries && passed >= tries * 0.9, `open lane: he says yes and plays you in (${yes}/${tries} yes, ${passed}/${tries} passes)`);
+  // the keeper stood in the lane: a no, and he keeps it
+  const w = mk(7), you = w.you()!, m = w.get("m1")!, k = w.keeperOf()!;
+  m.x = CX - 12; m.y = 20; you.x = CX + 12; you.y = 20; you.vx = you.vy = 0; w.placeBall(m.x + 0.4, m.y, m.id); m.mind.has = w.t; m.mind.hold = 99;
+  k.x = CX; k.y = 20;
+  w.act({ kind: "call" }); w.step(STEP);
+  check(w.call?.ok === false && w.call.why === "No lane", `a man in the lane: no (${w.call?.why})`);
+  let given = false;
+  for (let i = 0; i < 40; i++) { w.step(STEP); if (w.passTarget === you.id) given = true; }
+  check(!given, "and he keeps it");
+  // the cooldown: a second call straight away does nothing
+  const at = w.call!.at;
+  w.act({ kind: "call" }); w.step(STEP);
+  check(w.call!.at === at && w.callReady() > 0, "can't call again inside the cooldown");
+  console.log(`call for it: open lane ${yes}/${tries} yes, ${passed}/${tries} passed to you; blocked: "${w.call?.why}"; cooldown ${CALL_COOLDOWN} s`);
 }
 
 if (problems.length) { console.error(problems.map((p) => "  ✗ " + p).join("\n")); process.exit(1); }

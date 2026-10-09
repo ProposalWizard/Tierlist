@@ -19,6 +19,13 @@
  *   PC: WASD or arrows move, Shift sprints. The mouse is only the action:
  *     hold and let go kicks towards the pointer (hold longer or drag further
  *     = harder), a click touches / passes. Q/E look round. Space taps.
+ *   Two Touch on a phone (session.stick "corner"; Harry, 9 Oct 2026: "the
+ *     joy stick gets in the way"): no stick under the thumb. The whole screen
+ *     is the touch/swipe; a small nudge stick sits in the bottom-left corner
+ *     only, and a tap near the ball is always a touch, never the stick.
+ *   Call for it (session.call, Free Roam): a CALL button on the right edge
+ *     on a phone, F on a PC (World.callForBall); the answer shows as a tick
+ *     or a cross over you and the team-mate.
  */
 import { look3dStyle } from "@/lib/star/look3dStyle";
 import { motionLook } from "@/lib/star/motionLook";
@@ -51,6 +58,12 @@ const FULL_PULL = 0.14;
 /** A press shorter than this (ms) and moving less than TAP_PX is a tap / click. */
 const TAP_MS = 220;
 const TAP_PX = 12;
+/** Two Touch's corner nudge stick: its size against the floating stick, where it sits (px from the left and the bottom of the picture). */
+export const CORNER_STICK = { scale: 0.6, left: 54, bottom: 92, opacity: 0.4 };
+/** A tap this close (px) to the ball is always the touch, never the corner stick. */
+export const BALL_GUARD_PX = 70;
+/** How long a call's tick or cross stays up (world seconds). */
+const CALL_SHOW = 1.8;
 
 export interface Play3DResult extends GameResult { drill: string; /** A training drill (Pace Sprint): the level and stars for the career to bank. */ train?: DrillTrain }
 
@@ -133,6 +146,16 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     }).filter((m) => m.off || m.aim);
   };
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
+  /** Call for it: the cooldown left, and the last answer with where you and he are on screen. */
+  const [callUi, setCallUi] = useState<{ cd: number; ans?: { ok: boolean; why: string; you?: { x: number; y: number }; mate?: { x: number; y: number; off: boolean } } }>({ cd: 0 });
+  const callView = () => {
+    const c = ctrl.current, w0 = session.world, a = w0.call;
+    const cd = w0.callReady();
+    if (!c || !a || w0.t - a.at > CALL_SHOW) return { cd };
+    const you = c.screen(w0.you()?.id ?? "");
+    const mate = a.mate ? c.screen(a.mate) : null;
+    return { cd, ans: { ok: a.ok, why: a.why, you: you && !you.off ? you : undefined, mate: mate ?? undefined } };
+  };
   /** Your sprint bar (Free Roam, new feel): null while it isn't in use. */
   const [stam, setStam] = useState<{ v: number; tired: boolean } | null>(null);
   // Settings → Look → Motion: Mocap = the new walk/jog/run/sprint feel; Old = as before
@@ -206,6 +229,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             acc += dt;
             if (acc > 0.1) {
               acc = 0; setHud(session.hud()); setMarks(mateMarks());
+              if (session.call) setCallUi(callView());
               const sw = session.world;
               setStam(sw.newFeel && sw.rules.stamina && (sw.stamina.v < 0.995 || sw.stamina.tired) ? { v: sw.stamina.v, tired: sw.stamina.tired } : null);
             }
@@ -227,14 +251,20 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   useEffect(() => { if (result) ctrl.current?.setActive(false); }, [result]);
 
   // ── thumbs and the mouse ──
-  const stick = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
+  const stick = useRef<{ id: number; x0: number; y0: number; t0: number; r: number; corner?: boolean } | null>(null);
   const aim = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const peekT = useRef<{ ids: number[]; x0: number } | null>(null);
-  const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
+  const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number; r: number } | null>(null);
   const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number; t0: number } | null>(null);
   const [now, setNow] = useState(0);
   const toWorld = (sx: number, sy: number) => stickToPitch(ctrl.current?.heading() ?? -Math.PI / 2, sx, sy);
   const STICK_R = 56;
+  /** Two Touch on a phone: the stick only lives in the corner (CORNER_STICK). */
+  const cornerStick = scheme === "touch" && session.stick === "corner";
+  const cornerR = STICK_R * CORNER_STICK.scale;
+  const cornerAt = (boxH: number) => ({ x: CORNER_STICK.left, y: boxH - CORNER_STICK.bottom });
+  /** A tap near the ball (px in the picture): always the touch. */
+  const nearBall = (x: number, y: number) => { const b = ctrl.current?.ballScreen(); return !!b && Math.hypot(b.x - x, b.y - y) < BALL_GUARD_PX; };
   /** A team-mate drawn under a tap (px in the picture), else null: a tap on him passes to him. */
   const mateAt = (x: number, y: number): string | null => {
     const id = ctrl.current?.pick(x, y) ?? null;
@@ -272,7 +302,14 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
       setDrag({ x0: x, y0: y, x, y, t0: t }); setNow(t);
       return;
     }
-    if (x < box.width * 0.5 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: t }; setKnob({ x0: x, y0: y, x, y }); return; }
+    if (cornerStick) {
+      // the corner nudge stick: only a press on it (and never one near the ball); everything else is the action
+      const c = cornerAt(box.height);
+      if (!stick.current && Math.hypot(x - c.x, y - c.y) < cornerR + 22 && !nearBall(x, y)) {
+        stick.current = { id: e.pointerId, x0: c.x, y0: c.y, t0: t, r: cornerR, corner: true }; setKnob({ x0: c.x, y0: c.y, x, y, r: cornerR });
+        return;
+      }
+    } else if (x < box.width * 0.5 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: t, r: STICK_R }; setKnob({ x0: x, y0: y, x, y, r: STICK_R }); return; }
     if (x >= box.width * 0.5 && aim.current && !peekT.current && Math.hypot(x - aim.current.x0, y - aim.current.y0) < 120) {
       // a second finger on the right: peek round (the first finger's swipe is called off)
       peekT.current = { ids: [aim.current.id, e.pointerId], x0: (x + aim.current.x0) / 2 };
@@ -285,10 +322,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
     if (stick.current?.id === e.pointerId) {
+      const R = stick.current.r;
       const dx = x - stick.current.x0, dy = y - stick.current.y0, d = Math.hypot(dx, dy);
-      const k = Math.min(1, d / STICK_R);
-      stickVec.current = d > 1 ? { x: dx / d * k, y: dy / d * k, sprint: d > STICK_R * 0.92 } : { x: 0, y: 0, sprint: false };
-      setKnob({ x0: stick.current.x0, y0: stick.current.y0, x, y });
+      const k = Math.min(1, d / R);
+      stickVec.current = d > 1 ? { x: dx / d * k, y: dy / d * k, sprint: d > R * 0.92 } : { x: 0, y: 0, sprint: false };
+      setKnob({ x0: stick.current.x0, y0: stick.current.y0, x, y, r: R });
     } else if (peekT.current?.ids.includes(e.pointerId)) {
       ctrl.current?.peek(Math.max(-PEEK_MAX, Math.min(PEEK_MAX, -(x - peekT.current.x0) * 0.006)));
     } else if (aim.current?.id === e.pointerId) setDrag((d) => d && { ...d, x, y });
@@ -300,7 +338,8 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     if (stick.current?.id === e.pointerId) {
       const s = stick.current;
       stick.current = null; stickVec.current = { x: 0, y: 0, sprint: false }; setKnob(null);
-      // a quick tap on a team-mate on the left of the screen is a pass to him, not a stick
+      // a quick tap on the corner stick is still a touch (Two Touch); on a team-mate on the left, a pass to him
+      if (s.corner) { if (Math.hypot(x - s.x0, y - s.y0) < s.r * 0.6 && t - s.t0 < TAP_MS) w.act({ kind: "tap" }); return; }
       if (Math.hypot(x - s.x0, y - s.y0) < TAP_PX && t - s.t0 < TAP_MS) { const to = mateAt(x, y); if (to) w.act({ kind: "tap", to }); }
       return;
     }
@@ -328,6 +367,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     const down = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       if (k === " ") { e.preventDefault(); if (!e.repeat) w.act({ kind: "tap" }); return; }
+      if (k === "f" && session.call) { if (!e.repeat) w.act({ kind: "call" }); return; }
       if (k.startsWith("arrow")) e.preventDefault();
       ks.add(k);
       if (k === "q" || k === "e") peekKeys();
@@ -338,7 +378,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     window.addEventListener("keyup", up);
     window.addEventListener("blur", blur);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
-  }, [w]);
+  }, [w, session.call]);
 
   const [vw, setVw] = useState(0);
   useEffect(() => { setVw(window.innerWidth); }, []);
@@ -369,9 +409,16 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
           onContextMenu={(e) => e.preventDefault()}
           data-play3d-pad
         />
+        {cornerStick && !knob && three === "ready" && !result && (
+          // the corner nudge stick at rest: small and faint, always in the same place
+          <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" data-play3d-corner-stick
+            style={{ left: CORNER_STICK.left - cornerR, top: h - CORNER_STICK.bottom - cornerR, width: cornerR * 2, height: cornerR * 2, background: "rgba(0,0,0,0.18)", opacity: CORNER_STICK.opacity }}>
+            <div className="absolute rounded-full bg-white/80" style={{ left: cornerR * 0.68, top: cornerR * 0.68, width: cornerR * 0.64, height: cornerR * 0.64 }} />
+          </div>
+        )}
         {knob && (
-          <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" style={{ left: knob.x0 - STICK_R, top: knob.y0 - STICK_R, width: STICK_R * 2, height: STICK_R * 2, background: "rgba(0,0,0,0.18)" }}>
-            <div className="absolute h-[36px] w-[36px] rounded-full bg-white/80" style={{ left: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.x - knob.x0)), top: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.y - knob.y0)) }} />
+          <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" style={{ left: knob.x0 - knob.r, top: knob.y0 - knob.r, width: knob.r * 2, height: knob.r * 2, background: "rgba(0,0,0,0.18)", opacity: knob.r < STICK_R ? 0.7 : 1 }}>
+            <div className="absolute rounded-full bg-white/80" style={{ width: knob.r * 0.64, height: knob.r * 0.64, left: knob.r * 0.68 + Math.max(-knob.r, Math.min(knob.r, knob.x - knob.x0)), top: knob.r * 0.68 + Math.max(-knob.r, Math.min(knob.r, knob.y - knob.y0)) }} />
           </div>
         )}
         {stam && (
@@ -425,9 +472,51 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             </div>
           </div>
         ))}
+        {session.call && three === "ready" && !result && callUi.ans && (
+          <>
+            {callUi.ans.you && (
+              <div className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-full" style={{ left: callUi.ans.you.x, top: callUi.ans.you.y - 46 }} data-play3d-shout={callUi.ans.ok ? "yes" : "no"}>
+                <div className="relative whitespace-nowrap rounded-xl bg-white px-2.5 py-1 text-[14px] font-black uppercase text-slate-900 shadow">
+                  Here! <span style={{ color: callUi.ans.ok ? "#16a34a" : "#dc2626" }}>{callUi.ans.ok ? "✓" : "✗"}</span>
+                  <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2" style={{ borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "7px solid white" }} />
+                </div>
+              </div>
+            )}
+            {callUi.ans.mate && (
+              <div className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left: Math.max(60, Math.min((holder.current?.clientWidth ?? 400) - 60, callUi.ans.mate.x)), top: callUi.ans.mate.off ? callUi.ans.mate.y : callUi.ans.mate.y - 58 }} data-play3d-call-answer={callUi.ans.ok ? "yes" : "no"}>
+                <div className="whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-black uppercase" style={{ background: callUi.ans.ok ? "#16a34a" : "#dc2626", color: "white", boxShadow: "0 1px 4px #000" }}>
+                  {callUi.ans.ok ? "✓" : "✗"} {callUi.ans.why}
+                </div>
+              </div>
+            )}
+            {!callUi.ans.mate && (
+              <div className="pointer-events-none absolute inset-x-0 top-[18%] z-30 text-center" data-play3d-call-answer="no">
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-[12px] font-black uppercase text-white">✗ {callUi.ans.why}</span>
+              </div>
+            )}
+          </>
+        )}
+        {session.call && scheme === "touch" && three === "ready" && !result && (
+          // Call for it: right edge, above the swipe's usual ground, its own button (a press on it never starts a swipe)
+          <button
+            className="absolute right-2 z-40 grid h-[58px] w-[58px] place-items-center rounded-full text-[11px] font-black uppercase leading-none text-white ring-2 ring-white/60"
+            style={{ top: "34%", background: callUi.cd > 0 ? "rgba(0,0,0,0.35)" : "rgba(14,165,233,0.75)", touchAction: "none" }}
+            data-play3d-call={callUi.cd > 0 ? "cooling" : "ready"}
+            onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); w.act({ kind: "call" }); setCallUi(callView()); }}
+          >
+            <span>📣<br />Call</span>
+            {callUi.cd > 0 && <span className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(rgba(0,0,0,0.45) ${Math.round(callUi.cd / 2.5 * 360)}deg, transparent 0)` }} />}
+          </button>
+        )}
         {three === "loading" &&<div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
-        {scheme === "touch" && session.hints && !knob && !drag && three === "ready" && !result && (
+        {cornerStick && !knob && !drag && three === "ready" && !result && (
+          <>
+            <div className="pointer-events-none absolute left-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/70" style={{ top: h - CORNER_STICK.bottom - cornerR - 22 }} data-play3d-zone="nudge">Nudge</div>
+            <div className="pointer-events-none absolute bottom-[76px] right-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/80" data-play3d-zone="action">Tap · Swipe anywhere</div>
+          </>
+        )}
+        {scheme === "touch" && session.hints && !cornerStick && !knob && !drag && three === "ready" && !result && (
           <>
             <div className="pointer-events-none absolute bottom-[76px] left-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/80" data-play3d-zone="move">◉ Move</div>
             <div className="pointer-events-none absolute bottom-[76px] right-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/80" data-play3d-zone="action">Tap · Swipe ➚</div>
@@ -451,10 +540,10 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 
 /** A PC hint line with its keys drawn as keycaps (WASD, Shift, Space, Q/E). */
 function KeyHint({ text }: { text: string }) {
-  const parts = text.split(/\b(WASD|Shift|Space|Q\/E)\b/);
+  const parts = text.split(/\b(WASD|Shift|Space|Q\/E|F)\b/);
   return (
     <>
-      {parts.map((p, i) => (/^(WASD|Shift|Space|Q\/E)$/.test(p)
+      {parts.map((p, i) => (/^(WASD|Shift|Space|Q\/E|F)$/.test(p)
         ? <kbd key={i} className="mx-0.5 rounded border border-white/50 bg-white/15 px-1 font-mono text-[11px]">{p}</kbd>
         : <span key={i}>{p}</span>))}
     </>
