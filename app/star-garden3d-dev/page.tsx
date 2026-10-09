@@ -33,7 +33,7 @@ function Garden3DTest() {
   const router = useRouter();
   const params = useSearchParams();
   const a0 = params.get("arrive");
-  const [arrive, setArrive] = useState<"shop" | "gate" | "casino" | "training">(a0 === "shop" || a0 === "casino" || a0 === "training" ? a0 : "gate");
+  const [arrive, setArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">(a0 === "shop" || a0 === "casino" || a0 === "training" || a0 === "house" ? a0 : "gate");
   // the 3D casino and the training pitch open here too (?place=casino)
   const [place, setPlace] = useState<"garden" | "casino" | "training">(params.get("place") === "casino" ? "casino" : "garden");
   const [money, setMoney] = useState(250000);
@@ -87,7 +87,7 @@ function Garden3DTest() {
 
   return (
     <>
-      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} />
+      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} />
       <div style={{ position: "fixed", top: 58, left: 12, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {(["day", "sunset", "night"] as Sky[]).map((s) => (
           <button key={s} onClick={() => setSky(s)} style={{ ...btn, background: sky === s ? "#facc15" : btn.background, color: sky === s ? "#111" : "#fff" }}>{s}</button>

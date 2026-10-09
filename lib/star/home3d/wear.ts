@@ -1,0 +1,88 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * DRESS THE 3D PLAYER IN AN OUTFIT — the one place the home (and the garden
+ * and shop, for the casual set) make "you" in clothes. ./outfits.ts says WHAT
+ * you wear; this builds the body wearing it.
+ *
+ *   kit     the 3D shop's own player, exactly as the shop makes him
+ *           (people3d.ts: Settings → "3D people" / "3D body" pick the body),
+ *           in your club's home or away kit, your number, your boot colour.
+ *   casual  the parametric human (human3d/human.ts) in one of its outfits
+ *           (tracksuit, tee and jeans, shirt, quarter-zip, coat), recoloured.
+ *           Built from the human file whatever "3D body" says, because the
+ *           one body has no clothes but the kit.
+ *
+ * ── THE STYLE A HOOK ─────────────────────────────────────────────────────
+ * Style A's new bodies (C1/C2/C3, toon material, textured kits) drop in here
+ * and only here: register a maker with `setWearerBody(fn)` (e.g. from the
+ * Style A look module when its toggle is on). It gets the same WearInput and
+ * must return a Person3D (people3d.ts) on the game skeleton, so every clip,
+ * the gait and the mirror keep working. Return null to fall back to the
+ * makers below. The casual garments are the human's own clothes meshes; to
+ * refit them to a Style A body, give that body the same outfit parts (see
+ * human3d/human.ts partsFor) or paint its clothes from `colours` below.
+ * ──────────────────────────────────────────────────────────────────────────
+ */
+import type { Person3D } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands } from "../people3d";
+import { people3dLook } from "../look3d";
+import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "../human3d/human";
+import { loadGltfCached } from "../three3d/perf";
+import type { Worn, Kit2 } from "./outfits";
+
+export interface WearInput {
+  worn: Worn;
+  /** The club's two kits (home and away), and the shirt-number texture (or null). */
+  kits: { home: Kit2; away: Kit2 };
+  number: any | null;
+  skin: string;
+  hair: string;
+  hairStyle?: "short" | "long" | "buzz" | "none";
+  outline: number;
+  castShadow: boolean;
+}
+
+export type WearerMaker = (T: any, SkeletonUtils: any, loader: any, w: WearInput) => Promise<Person3D | null>;
+let custom: WearerMaker | null = null;
+/** Style A: put your own body maker in front of ours (null: back to ours). */
+export function setWearerBody(fn: WearerMaker | null) { custom = fn; }
+
+let humanFile: Promise<any> | null = null;
+
+/** A person wearing `w.worn`. */
+export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: WearInput): Promise<Person3D> {
+  if (custom) {
+    const p = await custom(T, SkeletonUtils, loader, w).catch((e) => { console.error("wearer body (custom) failed", e); return null; });
+    if (p) return p;
+  }
+  const SK = SkeletonUtils.default ?? SkeletonUtils;
+  const model = playerModelFor(w.hairStyle);
+  const anims = await loadPeople3d(loader, "anims");
+  if (w.worn.kind === "casual") {
+    humanFile ??= loadGltfCached(loader, HUMAN3D_FILE).catch((e) => { humanFile = null; throw e; });
+    const g = await humanFile;
+    const set = w.worn.set;
+    const spec: HumanSpec = { ...defaultHumanSpec(model), outfit: set.outfit, colours: set.colours(w.kits.home), scarf: !!set.scarf };
+    const p = makeHuman(T, SK, g, anims, spec, { outline: 0, castShadow: w.castShadow });
+    dressPerson3d(T, p, { skin: w.skin, hair: w.hair });
+    relaxHands(T, p);
+    return p;
+  }
+  const g = await loadPeople3d(loader, model, people3dLook());
+  const p = makePerson3d(T, SK, g, anims, { outline: w.outline, castShadow: w.castShadow });
+  dressPerson3d(T, p, {
+    skin: w.skin, hair: w.hair, kit: w.kits[w.worn.kit], number: w.number,
+    accessories: [{ slot: "boots", color: w.worn.boots }],
+  });
+  relaxHands(T, p);
+  return p;
+}
+
+/** Repaint a kit-wearing person for another kit or boot colour without rebuilding him. */
+export function repaintKit(T: any, p: Person3D, w: WearInput) {
+  if (w.worn.kind !== "kit") return;
+  dressPerson3d(T, p, {
+    skin: w.skin, hair: w.hair, kit: w.kits[w.worn.kit], number: w.number,
+    accessories: [{ slot: "boots", color: w.worn.boots }],
+  });
+}

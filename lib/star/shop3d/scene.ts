@@ -172,6 +172,9 @@ export interface ShopPlayer {
   skin?: string;
   hair?: string;
   hairStyle?: "short" | "long" | "buzz" | "none";
+  /** What you wear (lib/star/home3d/outfits.ts wornAt): a casual set from your
+   *  home's wardrobe; absent or a kit: the club kit as before. New player only. */
+  worn?: import("../home3d/outfits").Worn;
 }
 
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
@@ -1014,8 +1017,10 @@ async function buildShop(
     uRight: { value: new THREE.Vector3(1, 0, 0) },
     uFwd: { value: new THREE.Vector3(0, 0, 1) },
   };
+  // the casual set from your home's wardrobe (9 Oct 2026, lib/star/home3d): not repainted in a kit
+  const casual = opts.player?.worn?.kind === "casual" ? opts.player.worn : null;
   const dressNew = (k: KitColours) => {
-    if (!person) return;
+    if (!person || casual) return;
     dressPerson3d(THREE, person, {
       skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12",
       kit: k, number: kitU.uNum.value,
@@ -1029,7 +1034,13 @@ async function buildShop(
     const model = playerModelFor(opts.player?.hairStyle);
     // The body: the one body (Settings → Look → "3D people: New") or the old one.
     const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    person = casual
+      ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
+        worn: casual, kits: { home: kit0, away: kit0 }, number: null,
+        skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", hairStyle: opts.player?.hairStyle,
+        outline: 0, castShadow: true,
+      })
+      : makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;

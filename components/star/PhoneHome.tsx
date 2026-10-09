@@ -61,6 +61,7 @@ const APPS: App[] = [
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: ["#2dd4bf", "#0f766e"] },
   { id: "ownership", label: "Owner", icon: "🏛️", bg: ["#818cf8", "#4338ca"] },
   { id: "garden", label: "Garden", icon: "🌳", bg: ["#22c55e", "#166534"] },
+  { id: "home-3d", label: "Your house", icon: "🏠", bg: ["#f59e0b", "#92400e"] },
   { id: "achievements", label: "Awards", icon: "⭐", bg: ["#a78bfa", "#6d28d9"] },
   { id: "settings", label: "Settings", icon: "⚙️", bg: ["#9ca3af", "#4b5563"] },
 ];

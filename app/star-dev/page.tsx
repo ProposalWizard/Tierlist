@@ -210,6 +210,8 @@ import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/componen
 import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
 import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
+import Home3D from "@/components/star/Home3D";
+import { withOutfit } from "@/lib/star/home3d/outfits";
 import Casino3D from "@/components/star/Casino3D";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
 import Training3D from "@/components/star/Training3D";
@@ -367,7 +369,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">("gate");
+  /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
+  const [homeFromGarden, setHomeFromGarden] = useState(false);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
   const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
@@ -4357,6 +4361,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
         onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
+        onHouse={() => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); }}
+      />
+    );
+  }
+  if (phase === "home-3d") {
+    // Your house in 3D: change clothes at the wardrobe (saved on the career), the trophy cabinet, your cars
+    const toGarden = () => { setHomeFromGarden(false); setGardenArrive("house"); setPhase("garden"); };
+    return (
+      <Home3D
+        career={career}
+        backLabel={homeFromGarden ? "Garden" : "Home"}
+        onBack={homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); }}
+        onDoor={toGarden}
+        onOutfit={(choice) => setCareer((c) => (c ? withOutfit(c, choice) : c))}
       />
     );
   }
