@@ -225,6 +225,8 @@ smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
 at their end; a new file needs a POLICY line in the script. Details:
 `scripts/perf3d/README.md`.
 
+**Any 3D, animation, mocap, model or cut-scene work: merge `main` first, then read `docs/3D_HANDBOOK.md` (skill `3d-building`).**
+
 ## Cut scenes are scripts on one system (Harry, 9 Oct 2026)
 
 "build a foundation and system that will be translatable for any cut scenes … don't

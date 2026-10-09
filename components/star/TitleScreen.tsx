@@ -29,6 +29,8 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { hasClub } from "@/lib/star/calendar";
 import { starLevel } from "@/lib/star/starPoints";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
+import HomePlayer from "./HomePlayer";
+import { useHomeLook } from "@/lib/star/homeLook";
 import ClubBadge from "./ClubBadge";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import { useRenderFailed } from "./StylePicture";
@@ -85,6 +87,8 @@ export default function TitleScreen(p: TitleScreenProps) {
   const { career, saves, activeSlot } = p;
   const theme = useClubTheme(career);
   const look = useAvatarStyle();
+  // Settings → Look → "Home screen: New | Old" covers the title too.
+  const homeLookNew = useHomeLook() === "new";
   const [sheet, setSheet] = useState<null | "load" | "full" | "credits">(null);
 
   // Parallax: the stadium drifts against the pointer, the player a little
@@ -175,9 +179,15 @@ export default function TitleScreen(p: TitleScreenProps) {
           <div className="kit-rise absolute inset-x-0 bottom-0 flex justify-center" style={{ animationDelay: "520ms" }}>
             <div className="relative" style={{ transform: `translate3d(${tilt.x * 4}px, 0, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
               <Glow color={theme.glow} alpha={0.4} className="bottom-[1%] left-1/2 h-[10%] w-[90%] -translate-x-1/2 blur-xl" />
-              <div className="kib-breathe">
-                <PlayerAvatar career={shown} width={avW} height={avH} look={look} />
-              </div>
+              {homeLookNew ? (
+                <div data-title-player>
+                  <HomePlayer career={shown} width={avW} height={avH} where="title" look={look} kitShirt={theme.shirt} kitTrim={theme.trim} glow={theme.glow} />
+                </div>
+              ) : (
+                <div className="kib-breathe">
+                  <PlayerAvatar career={shown} width={avW} height={avH} look={look} />
+                </div>
+              )}
             </div>
           </div>
         </div>

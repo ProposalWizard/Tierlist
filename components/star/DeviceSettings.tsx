@@ -202,10 +202,10 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
 
@@ -242,6 +242,7 @@ function MatchGroup() {
   return (
     <>
       <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
+      <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
       <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
         <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
       </PrefRow>
@@ -298,6 +299,7 @@ function ScreensGroup() {
       <LookRow id="ui" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
       <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
       <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
+      <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
       <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
       <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />

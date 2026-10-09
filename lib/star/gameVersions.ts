@@ -29,6 +29,8 @@ import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
+import { homeLook, setHomeLook } from "./homeLook";
+import { chanceFraming, setChanceFraming } from "./chanceFraming";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
 import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
@@ -64,6 +66,7 @@ const row = <V extends string>(
 /** Every New | Old switch in Settings, keyed by a short id. */
 export const LOOK_ROWS = {
   matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
+  chanceFraming: row("Chance framing", "zoom", "old", chanceFraming, setChanceFraming),
   matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
@@ -89,6 +92,7 @@ export const LOOK_ROWS = {
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
   allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
+  homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
   ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
   drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
@@ -117,6 +121,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
   classic: build(O),
   standard: {
     matchView: MATCH_VIEW_DEFAULT,
+    chanceFraming: N("chanceFraming"),
     matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
@@ -142,6 +147,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),
     allSeasons: N("allSeasons"),
+    homeScreen: N("homeScreen"),
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,
