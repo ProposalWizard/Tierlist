@@ -14,7 +14,7 @@ import { HALF_LEN, PITCH_W, REACH_FOOT, REACH_JUMP_Z, STEP, clamp, skill01, type
 import { GOAL, newBall, predictBall, stepBall3d, type Ball3, type BallEvent, type GoalShape } from "./ball";
 import { angDiff, speedOf, stepMover, type P3 } from "./player";
 import {
-  airStrike, ballAtFeet, strikeBall, dribbleTouch, firstTouch, passTo, shootFromPull, tackle, throwOut,
+  airStrike, ballAtFeet, strikeBall, dribbleTouch, firstTouch, passTo, passArrive, groundPassTime, shootFromPull, tackle, throwOut,
 } from "./actions";
 import { stepKeeper3d } from "./keeper";
 import { makeRng, type Rng } from "./rng";
@@ -28,7 +28,7 @@ export interface WorldInput { move: { x: number; y: number }; sprint: boolean }
 
 export type Action3 =
   /** Tap: pass to the team-mate you face if you have it; touch it if it's at your feet; tackle if a man near you has it; else call for it. */
-  | { kind: "tap" }
+  | { kind: "tap"; /** The man tapped on screen, if the tap landed on one (a pass goes to him). */ to?: string }
   /** Drag and release: the 2D game's shot (`pull` = fraction of the real match's canvas height). */
   | { kind: "shoot"; dir: { x: number; y: number }; pull: number; contact?: Contact3 }
   | { kind: "pass"; lofted?: boolean; to?: string };
@@ -92,6 +92,8 @@ export class World {
   passFrom: string | null = null;
   /** A shot in flight (who struck it), cleared when it's dealt with. */
   shotBy: string | null = null;
+  /** Counts every strike (yours and the AI's): the keeper dives at most once per number. */
+  shotSeq = 0;
   input: WorldInput = { move: { x: 0, y: 0 }, sprint: false };
   /** A drill's helping hand: moves YOU only while the stick is let go (Two Touch walks you under the ball). */
   assist: WorldInput | null = null;
@@ -114,6 +116,8 @@ export class World {
   timeScale = 1;
   /** Rings on the grass the picture draws (a cross's landing spot …). A drill sets and clears them. */
   markers: { x: number; y: number; r?: number; color?: string }[] = [];
+  /** Who a tap would pass to right now (you have the ball and a team-mate is on): the picture rings him. */
+  aimMate: string | null = null;
 
   constructor(o: WorldOptions) {
     this.rng = makeRng(o.seed);
@@ -197,7 +201,7 @@ export class World {
       if (!p.active) continue;
       if (p.keeper) {
         const holding = this.owner === p.id;
-        const ev = stepKeeper3d(p, this.ball, dt, this.rng, holding);
+        const ev = stepKeeper3d(p, this.ball, dt, this.rng, holding, this.shotBy ? this.shotSeq : 0, !this.owner && !this.passTarget && !this.shotBy);
         if (ev === "save") { this.lastTouch = p.id; this.shotBy = null; this.passTarget = null; this.emit({ kind: "save", who: p.id }); }
         else if (ev === "catch" || ev === "claim") {
           this.owner = p.id; this.lastTouch = p.id; this.heldSince = this.t;
@@ -217,6 +221,8 @@ export class World {
       p.x = clamp(p.x, this.bounds.x1 - 2, this.bounds.x2 + 2);
       p.y = clamp(p.y, Math.max(0.3, this.bounds.y1), this.bounds.y2 + 2);
     }
+
+    this.aimMate = you && this.owner === you.id ? this.bestTarget(you, this.passFacing(you))?.id ?? null : null;
 
     // the ball
     const owner = this.get(this.owner);
@@ -382,18 +388,28 @@ export class World {
   // ── Actions (yours, and the AI's through the same doors) ──
 
   passBall(p: P3, to: P3, lofted?: boolean) {
-    const d = Math.hypot(to.x - p.x, to.y - p.y);
-    const lead = Math.min(1.4, d / 16);
-    const tx = to.x + to.vx * lead, ty = to.y + to.vy * lead;
-    passTo(this.ball, p, tx, ty, lofted ?? d > 24, this.rng);
+    // into his stride: where he'll be when it gets there (a few passes at the
+    // ball's real travel time), firmer the further it goes
+    const b = this.ball;
+    let tx = to.x, ty = to.y;
+    const loft = lofted ?? Math.hypot(to.x - b.x, to.y - b.y) > 24;
+    for (let i = 0; i < 4; i++) {
+      const d = Math.hypot(tx - b.x, ty - b.y);
+      const t = loft ? 0.7 + d * 0.045 : groundPassTime(d, passArrive(d));
+      const lead = Math.min(2.6, t);
+      tx = to.x + to.vx * lead; ty = to.y + to.vy * lead;
+    }
+    passTo(b, p, tx, ty, loft, this.rng, passArrive(Math.hypot(tx - b.x, ty - b.y)));
     this.owner = null; this.lastTouch = p.id; this.shotBy = null;
     this.passTarget = to.id; this.passFrom = p.id;
+    this.refreshPath(); // the receiver reads the new path this step, not 0.1 s late
     this.emit({ kind: "pass", who: p.id, to: to.id });
   }
 
   /** An AI (or scripted) strike at a set power 0-1: the same launch maths as yours. */
   strike(p: P3, dir: { x: number; y: number }, power: number, contact: Contact3 = { cx: 0, cy: 0 }) {
     strikeBall(this.ball, p, dir, power, contact, this.rng);
+    this.shotSeq++;
     this.owner = null; this.lastTouch = p.id; this.shotBy = p.id; this.passTarget = null; this.passFrom = null;
     this.emit({ kind: "shot", who: p.id });
   }
@@ -411,8 +427,14 @@ export class World {
       if (!shootFromPull(b, p, dir, pull, contact, this.rng)) return false;
       this.emit({ kind: "shot", who: p.id });
     }
-    this.owner = null; this.lastTouch = p.id; this.shotBy = p.id; this.passTarget = null;
+    this.owner = null; this.lastTouch = p.id; this.shotBy = p.id; this.passTarget = null; this.shotSeq++;
     return true;
+  }
+
+  /** Which way a pass goes: the stick if you're pushing it, else the way you face. */
+  passFacing(p: P3): number {
+    const move = this.input.move;
+    return p.human && Math.hypot(move.x, move.y) > 0.2 ? Math.atan2(move.y, move.x) : p.facing;
   }
 
   /** The team-mate you're looking at (or nearest). */
@@ -437,9 +459,10 @@ export class World {
     }
     if (a.kind === "pass" || (a.kind === "tap" && this.owner === p.id)) {
       if (this.owner !== p.id && !(dBall < 1.3 && b.z < 1)) return;
-      const move = this.input.move;
-      const face = Math.hypot(move.x, move.y) > 0.2 ? Math.atan2(move.y, move.x) : p.facing;
-      const to = (a.kind === "pass" && a.to ? this.get(a.to) : null) ?? this.bestTarget(p, face);
+      // a team-mate named (tapped on screen) goes first; else the one you face
+      const named = a.to ? this.get(a.to) : null;
+      const to = (named && named.active && !named.keeper && !this.hostile(p, named) && named !== p ? named : null)
+        ?? this.bestTarget(p, this.passFacing(p));
       if (to) this.passBall(p, to, a.kind === "pass" ? a.lofted : undefined);
       return;
     }

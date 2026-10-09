@@ -90,6 +90,16 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   const cast = useMemo(() => castFrom(career, seed), [career, seed]);
   const session = useMemo<DrillSession>(() => drill.start!({ seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options }), [drill, seed, cast, mode, options]);
   const [hud, setHud] = useState(() => session.hud());
+  // team-mates for the pass: a name over the one a tap passes to, and an edge marker for any out of the picture
+  const [marks, setMarks] = useState<{ id: string; name: string; x: number; y: number; off: boolean; aim: boolean }[]>([]);
+  const mateMarks = () => {
+    const c = ctrl.current, w0 = session.world, you = w0.you();
+    if (!c || !you || !you.active) return [];
+    return w0.players.filter((p) => p.active && !p.human && !p.keeper && p.team === you.team).flatMap((p) => {
+      const s = c.screen(p.id);
+      return s ? [{ id: p.id, name: p.name, x: s.x, y: s.y, off: s.off, aim: w0.aimMate === p.id }] : [];
+    }).filter((m) => m.off || m.aim);
+  };
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
   const [result, setResult] = useState<Play3DResult | null>(null);
   const holder = useRef<HTMLDivElement>(null);
@@ -128,7 +138,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
           onFrame: (dt) => {
             hLook?.frame(dt);
             acc += dt;
-            if (acc > 0.1) { acc = 0; setHud(session.hud()); }
+            if (acc > 0.1) { acc = 0; setHud(session.hud()); setMarks(mateMarks()); }
             if (session.done()) setResult((r) => r ?? { ...session.result(team, Math.random()), drill: drill.id });
           },
         });
@@ -148,7 +158,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 
   // ── thumbs ──
   const w = session.world;
-  const stick = useRef<{ id: number; x0: number; y0: number } | null>(null);
+  const stick = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const aim = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
   const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
@@ -158,11 +168,17 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     return { x: r.x * sx + f.x * -sy, y: r.y * sx + f.y * -sy };
   };
   const STICK_R = 56;
+  /** A team-mate drawn under a tap (px in the picture), else null: a tap on him passes to him. */
+  const mateAt = (x: number, y: number): string | null => {
+    const id = ctrl.current?.pick(x, y) ?? null;
+    const p = w.get(id), you = w.you();
+    return p && you && p !== you && !p.keeper && p.team === you.team ? p.id : null;
+  };
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y }; setKnob({ x0: x, y0: y, x, y }); }
+    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setKnob({ x0: x, y0: y, x, y }); }
     else if (!aim.current) { aim.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setDrag({ x0: x, y0: y, x, y }); }
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -179,12 +195,18 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
-    if (stick.current?.id === e.pointerId) { stick.current = null; w.input = { move: { x: 0, y: 0 }, sprint: false }; setKnob(null); return; }
+    if (stick.current?.id === e.pointerId) {
+      const s = stick.current;
+      stick.current = null; w.input = { move: { x: 0, y: 0 }, sprint: false }; setKnob(null);
+      // a quick tap on a team-mate on the left of the screen is a pass to him, not a stick
+      if (Math.hypot(x - s.x0, y - s.y0) < 12 && performance.now() - s.t0 < 260) { const to = mateAt(x, y); if (to) w.act({ kind: "tap", to }); }
+      return;
+    }
     if (aim.current?.id === e.pointerId) {
       const a = aim.current;
       aim.current = null; setDrag(null);
       const dx = x - a.x0, dy = y - a.y0;
-      if (Math.hypot(dx, dy) < 14) { w.act({ kind: "tap" }); return; }
+      if (Math.hypot(dx, dy) < 14) { w.act({ kind: "tap", to: mateAt(x, y) ?? undefined }); return; }
       // slingshot: the ball goes the other way to the drag; the pull is the 2D game's (a fraction of the real match's canvas height)
       const pull = Math.hypot(dx, dy) / realMatchHeight(window.innerWidth);
       w.act({ kind: "shoot", dir: toWorld(-dx, -dy), pull });
@@ -262,7 +284,14 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             ))}
           </div>
         )}
-        {three === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
+        {three === "ready" && !result && marks.map((m) => (
+          <div key={m.id} className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left: m.x, top: m.off ? m.y : m.y - 34 }} data-play3d-mate={m.id} data-aim={m.aim ? 1 : 0}>
+            <div className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-black uppercase leading-tight ${m.aim ? "bg-white text-slate-900" : "bg-black/60 text-white ring-1 ring-white/40"}`} style={{ textShadow: m.aim ? "none" : "0 1px 3px #000" }}>
+              {m.off ? (m.x < 40 ? "◀ " : m.x > (holder.current?.clientWidth ?? 400) - 40 ? "" : m.y < 40 ? "▲ " : "▼ ") : ""}{m.aim ? "Pass · " : ""}{m.name}{m.off && m.x > (holder.current?.clientWidth ?? 400) - 40 ? " ▶" : ""}
+            </div>
+          </div>
+        ))}
+        {three === "loading" &&<div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint>{session.hint}</div>
       </div>

@@ -34,16 +34,18 @@ export type WembleyMode = "normal" | "doubles";
  * The Wembley keeper's rating. The shared keeper is strong (from 12 m he stops
  * most of a 60's shots, and his reach barely changes with rating), so the
  * free-for-all uses a park keeper: measured, a 4-man session lasts about four
- * minutes at 45 (tests/star/wembley3d.mts). Your career's keeper rating is not used.
+ * minutes at 45 (tests/star/wembley3d.mts). 9 Oct 2026: 36, and the valve floor 18, since the
+ * keeper stopped diving at dribbles (he used to be on the floor when the real
+ * shot came): 4.8 min a session, 22% of shots in, no stalls. Your career's keeper rating is not used.
  */
-export const WEMBLEY_KEEPER = 45;
+export const WEMBLEY_KEEPER = 36;
 
 /** No goal for this long in a round → the keeper tires (rating drops). */
 export const VALVE_SECONDS = 60;
 /** How much his rating drops each time. */
 export const VALVE_DROP = 6;
 /** He never drops below this. */
-export const VALVE_FLOOR = 30;
+export const VALVE_FLOOR = 18;
 /** How long play stops after a goal / the ball going out. */
 const GOAL_PAUSE = 1.5;
 const OUT_PAUSE = 0.5;

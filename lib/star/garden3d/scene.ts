@@ -54,6 +54,8 @@ import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
+import { loadRealNature, makeTree, makeBale, makeFlowerBeds } from "./realNature";
+import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -388,9 +390,22 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const fillLight = new THREE.PointLight(night ? "#ffd9a8" : "#ffe6cc", night ? 7 : data.sky === "sunset" ? 3 : 0, 9, 1.6);
   scene.add(fillLight);
 
+  // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
+  const nature = look3dStyle() === "h" ? await loadRealNature(THREE, renderer).catch((e) => { console.error("garden nature maps failed", e); return null; }) : null;
+  if (disposed) throw new Error("disposed");
+
+  /** Look H: the lawn in look H's scanned grass (blades, normals), a copy every 2.4 m. */
+  function realLawn() {
+    const c = hGrass!.col.clone(), n = hGrass!.nrm.clone();
+    for (const t of [c, n]) { t.repeat.set(39 / 2.4, 39 / 2.4); t.needsUpdate = true; }
+    return mat("#e6f2d2", { map: c, normalMap: n, normalScale: new THREE.Vector2(0.9, 0.9), roughness: 0.95 });
+  }
+  const hGrass = nature ? await grassMaps(THREE).catch(() => null) : null;
+  if (disposed) throw new Error("disposed");
+
   // ── The ground ──
   // the mown lawn stops at the boundary; long meadow grass beyond it
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(39, 39), mat("#ffffff", { map: canvasTex(lawnCanvasSoft(), [9, 9]), roughness: 0.95 }));
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(39, 39), nature && hGrass ? realLawn() : mat("#ffffff", { map: canvasTex(lawnCanvasSoft(), [9, 9]), roughness: 0.95 }));
   lawn.rotation.x = -Math.PI / 2;
   lawn.position.y = 0.004;
   lawn.receiveShadow = true;
@@ -409,7 +424,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return p;
   };
   const paveT = canvasTex(pavingCanvas(), [1, 1]);
+  /** Look H: real pavers, about 2.4 m to one copy of the map (slabs ~30 cm). */
+  const realPaving = (w: number, d: number) => {
+    const t = nature!.paving.clone(), n = nature!.pavingN.clone();
+    for (const m of [t, n]) { m.repeat.set(w / 2.4, d / 2.4); m.needsUpdate = true; }
+    return mat("#f6eee2", { map: t, normalMap: n, normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.88 });
+  };
   const pave = (w: number, d: number, x: number, z: number) => {
+    if (nature) return flat(w, d, realPaving(w, d), x, z, 0.015);
     const t = paveT.clone();
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(w / 0.9, d / 0.9);
@@ -426,7 +448,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   pave(7.0, 1.8, -3.6, -5.8);
   pave(6.6, 1.8, 3.8, 2.2);
   pave(8.4, 8.4, 0, -11 + 4.2); // the forecourt in front of the shop
-  flat(5.4, 5.4, mat("#ffffff", { map: canvasTex(pavingCanvas(), [4.5, 4.5]), roughness: 0.9 }), FOUNTAIN.x, FOUNTAIN.z, 0.017);
+  flat(5.4, 5.4, nature ? realPaving(5.4, 5.4) : mat("#ffffff", { map: canvasTex(pavingCanvas(), [4.5, 4.5]), roughness: 0.9 }), FOUNTAIN.x, FOUNTAIN.z, 0.017);
   flat(PARK.x1 - PARK.x0, PARK.z1 - PARK.z0, mat("#ffffff", { map: canvasTex(gravelCanvas(), [6, 4]), roughness: 1 }), (PARK.x0 + PARK.x1) / 2, (PARK.z0 + PARK.z1) / 2, 0.014);
   flat(PADDOCK.x1 - PADDOCK.x0, PADDOCK.z1 - PADDOCK.z0, mat("#7b8d43", { roughness: 1 }), (PADDOCK.x0 + PADDOCK.x1) / 2, (PADDOCK.z0 + PADDOCK.z1) / 2, 0.008);
   flat(6.2, 3.6, mat("#ffffff", { map: canvasTex(gravelCanvas("#b8a17a"), [3, 2]), roughness: 1 }), -10.6, 6.5, 0.011); // the stable yard
@@ -505,6 +527,21 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       softenLeaves(part);
     }
   });
+  // Look H: every Kenney tree becomes a real one the same size (bark, a crown of scanned leaves or fir twigs)
+  if (nature) {
+    let k = 0;
+    pieces.forEach((parts, key) => {
+      if (!key.startsWith("tree_")) return;
+      const bb = new THREE.Box3();
+      for (const p of parts) { p.geometry.computeBoundingBox(); bb.union(p.geometry.boundingBox); }
+      const size = bb.getSize(new THREE.Vector3());
+      const pine = key.includes("pine");
+      const tint = key === "tree_fat" ? "#b8d894" : key === "tree_tall" ? "#c8e2a0" : key === "tree_oak" ? "#afcf88" : undefined;
+      pieces.set(key, makeTree(THREE, nature, { h: size.y, w: Math.max(size.x, size.z), pine, seed: 101 + k++ * 37, tint }));
+    });
+    // the paddock rails: weathered timber, not orange
+    for (const p of pieces.get("fence_wood") ?? []) { p.material = p.material.clone(); p.material.color.set("#8f7458"); p.material.roughness = 0.92; }
+  }
   /**
    * Rounder crowns (the broadleaf trees; the pines keep their layered cones).
    * Kenney's crowns are a few hard-edged blocks; each block is swapped for a
@@ -605,6 +642,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         im.setMatrixAt(i, m4);
       });
       im.computeBoundingSphere();
+      // leaf cards: the shadow is cut out by the leaves, not the card
+      if (part.material.userData?.depth) { im.customDepthMaterial = part.material.userData.depth; im.customDistanceMaterial = part.material.userData.distance; }
       im.castShadow = cast;
       im.receiveShadow = true;
       holder.add(im);
@@ -739,8 +778,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     scene.add(im);
     return im;
   };
+  if (nature) {
+    // look H: hydrangea bushes along each bed (leaf cards, white / blue / pink heads)
+    const fb = makeFlowerBeds(THREE, nature, beds, 7);
+    for (const m of [fb.leaves, fb.heads]) { m.receiveShadow = true; scene.add(m); }
+  } else {
   sphereMany(leafM, leafAt, 0.1);
   bloomAt.forEach((at, i) => sphereMany(mat(bloomCols[i], { roughness: 0.6, emissive: bloomCols[i], emissiveIntensity: night ? 0.05 : 0.12 }), at, 0.24));
+  }
   // round leafy bushes (Kenney's read as dark spikes at this size)
   const bushM = mat("#33652b", { roughness: 0.9 });
   const bushLightM = mat("#46803a", { roughness: 0.9 });
@@ -1465,7 +1510,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // hay bales and a water trough
   const strawM = mat("#ffffff", { map: canvasTex(strawCanvas()), roughness: 1 });
   const bale = (x: number, z: number, ry: number, y = 0.42) => {
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.1, 18), strawM);
+    const b = nature ? makeBale(THREE, nature) : new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.1, 18), strawM);
     b.rotation.z = Math.PI / 2;
     b.rotation.y = ry;
     add(b, x, y, z);

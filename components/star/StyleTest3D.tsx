@@ -215,7 +215,12 @@ export default function StyleTest3D() {
       aim.current = null; setDrag(null);
       const dx = x - a.x0, dy = y - a.y0;
       if (!w) return;
-      if (Math.hypot(dx, dy) < 14) { w.act({ kind: "tap" }); return; }
+      if (Math.hypot(dx, dy) < 14) {
+        // a tap on a team-mate passes to him; anywhere else, to the one you face
+        const id = play.current?.pick(x, y) ?? null, p = w.get(id), you = w.you();
+        w.act({ kind: "tap", to: p && you && p !== you && !p.keeper && p.team === you.team ? p.id : undefined });
+        return;
+      }
       w.act({ kind: "shoot", dir: toWorld(-dx, -dy), pull: Math.hypot(dx, dy) / realMatchHeight(window.innerWidth) });
     }
   };

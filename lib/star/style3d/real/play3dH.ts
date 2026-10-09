@@ -18,6 +18,7 @@ import type { ArenaColours } from "./arena";
 export interface Play3dH {
   opts: {
     bare: true;
+    sharp: true;
     onBuilt: (ctx: Play3DBuilt) => void;
     draw: (renderer: any, scene: any, camera: any) => void;
   };
@@ -48,6 +49,7 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
   return {
     opts: {
       bare: true,
+      sharp: true,
       onBuilt: (ctx) => {
         built = ctx;
         ctx.camera.far = 600; ctx.camera.updateProjectionMatrix();
@@ -59,7 +61,7 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
             c.position.set(x, 0.17, z); c.castShadow = true; ctx.root.add(c); cones.push(c);
           }
         }
-        void createRealLook(T, ctx.renderer, ctx.scene, tier, { tod: o.tod ?? drillTod(), ball: ctx.ball, colours: o.colours }).then((l) => {
+        void createRealLook(T, ctx.renderer, ctx.scene, tier, { tod: o.tod ?? drillTod(), ball: ctx.ball, colours: o.colours, sharp: true }).then((l) => {
           if (dead) { l.dispose(); return; }
           look = l;
           l.dressPeople(ctx.bodies.map((b) => b.p));

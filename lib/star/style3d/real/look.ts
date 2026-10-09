@@ -47,6 +47,12 @@ export interface RealLookOptions {
   colours?: ArenaColours;
   /** play3d's ball group, to dress. */
   ball?: any;
+  /**
+   * Sharp (the 3D drills): MSAA in the broadcast pass on Medium too (2×; High
+   * keeps 4×), and the pitch, crowd and boards filtered at up to 8× anisotropy
+   * so they hold up at a low angle instead of going to mush.
+   */
+  sharp?: boolean;
 }
 
 export interface RealLook {
@@ -165,7 +171,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const csGeo = new T.PlaneGeometry(1, 1);
   const contacts: { p: Person3D; m: any }[] = [];
 
-  const post: HPost = makeHPost(T, renderer, tier);
+  const post: HPost = makeHPost(T, renderer, tier, o.sharp && tier !== "low" ? { msaa: tier === "high" ? 4 : 2 } : {});
+  if (o.sharp) {
+    const an = Math.min(8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+    for (const t of [maps.col, maps.nrm, maps.orh, crowdTex, ledTex]) if (t && t.anisotropy < an) { t.anisotropy = an; t.needsUpdate = true; }
+  }
   // the shadow-only pass: a 1-pixel target and a camera that sees nothing
   const shadowOnly = new T.WebGLRenderTarget(1, 1);
   const blindCam = new T.PerspectiveCamera(1, 1, 0.001, 0.002);
