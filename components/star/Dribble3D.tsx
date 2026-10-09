@@ -252,9 +252,9 @@ export default function Dribble3D(props: Dribble3DProps) {
         </div>
       )}
       {three === "ready" && !state.end && marks.filter((m) => m.off || m.aim).map((m) => (
-        <div key={m.id} className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left: Math.max(30, Math.min((holder.current?.clientWidth ?? 400) - 30, m.x)), top: m.off ? Math.max(40, m.y) : m.y - 34 }} data-dribble3d-mate={m.id}>
+        <div key={m.id} className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left: Math.max(62, Math.min((holder.current?.clientWidth ?? 400) - 62, m.x)), top: m.off ? Math.max(48, Math.min((holder.current?.clientHeight ?? 600) - 60, m.y)) : m.y - 34 }} data-dribble3d-mate={m.id}>
           <div className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-black uppercase leading-tight ${m.aim ? "bg-white text-slate-900" : "bg-black/60 text-white ring-1 ring-white/40"}`}>
-            {m.aim ? "Pass · " : ""}{m.name}
+            {m.off && m.x < 40 ? "◀ " : ""}{m.aim ? "Pass · " : ""}{m.name}{m.off && m.x > (holder.current?.clientWidth ?? 400) - 40 ? " ▶" : ""}
           </div>
         </div>
       ))}
