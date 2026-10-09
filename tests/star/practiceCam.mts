@@ -3,7 +3,7 @@
  * should be set above the players shoulders not in tandem with the joystick
  * … Two touch has no element of skill and moving messes everything up").
  *
- * Camera (lib/star/three3d/orbitCam.ts):
+ * Camera (lib/star/three3d/practiceCam.ts):
  *   - settles 2.2 m up and 4.6 m behind you, looking a little down;
  *   - never turns faster than 60°/s, and starts and stops a turn smoothly;
  *   - is never turned by your stick or your facing (only by where you are
@@ -23,7 +23,7 @@ import { STEP, CX } from "../../lib/star/play3d/constants";
 import { skillsOf } from "../../lib/star/play3d/player";
 import {
   makePracticeCam, stepPracticeCam, setPeek, wrap, SHOULDER, TRACK, MAX_TURN, PEEK_MAX,
-} from "../../lib/star/three3d/orbitCam";
+} from "../../lib/star/three3d/practiceCam";
 import {
   makeTwoTouch, touchGrade, timeToTouch, returnTarget, juggleWindow, PERFECT_Q, GOOD_Q, JUGGLE_REACH,
   RETURN_FULL_PULL, RETURN_IDEAL, SETUP,

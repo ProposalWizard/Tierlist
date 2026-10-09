@@ -66,7 +66,39 @@ export interface EngineFrameKeeper {
   shorts: string;
   face?: string;
   act?: EngineFrameAct;
+  /**
+   * Drawn by the 2D picture. False: a chance with no goal in its 2D frame
+   * (build-up, midfield pass) still has a keeper in his goal, and a 3D camera
+   * that shows the goal draws him there (Harry, 9 Oct 2026: "no goalie in the
+   * goal on some"). A 3D view never frames its camera on an undrawn keeper.
+   */
+  drawn?: boolean;
 }
+
+/** The engine's keeper, as much of him as a frame needs. */
+export interface KeeperLike {
+  x: number; y: number; dive: number; saveLunge: number; saveDir: number;
+  saveKind: SaveKind | null; idleT: number; who?: { face?: string } | null;
+}
+
+/**
+ * The keeper's frame record. EVERY frame of every chance with a keeper gets
+ * one (the scene can switch him off: technique training has none); `drawn`
+ * says whether the 2D picture shows him. Pure, so tests/star/engineFrameKeeper.mts
+ * can check it for every chance kind.
+ */
+export function keeperFrame(
+  k: KeeperLike, kit: { shirt: string; trim: string }, face: string | undefined,
+  act: EngineFrameAct | undefined, drawn: boolean,
+): EngineFrameKeeper {
+  return {
+    x: k.x, y: k.y, dive: k.dive, saveLunge: k.saveLunge, saveDir: k.saveDir, saveKind: k.saveKind,
+    idleT: k.idleT, shirt: kit.shirt, shorts: kit.trim, face: k.who?.face ?? face, act, drawn,
+  };
+}
+
+/** Whether this frame carries the keeper at all: always, unless the scene has taken him off. */
+export const frameHasKeeper = (sceneKeeper: boolean | undefined): boolean => sceneKeeper !== false;
 
 export interface EngineFrameCamera {
   /** The pitch rectangle the canvas shows (before the tilt). */
@@ -99,6 +131,23 @@ export interface EngineFrame {
   goalSide: "us" | "them" | null;
   /** The goal is part of this picture (a keeper may stand in it). */
   goalInView: boolean;
+  /**
+   * The captain's orders, while you are the captain, the ball is at your feet
+   * and the chance takes orders (null otherwise). A 3D view draws them on its
+   * pitch and lets a tap on one of `pickable` reach the 2D canvas at his feet.
+   */
+  orders?: EngineFrameOrders | null;
+}
+
+export interface EngineFrameOrders {
+  /** The team-mates a tap can pick (figure sids: "run0", "follower" …). */
+  pickable: string[];
+  /** Runs already given: from where he stands to where he was sent. */
+  runs: { from: Vec2; to: Vec2 }[];
+  /** The man it gets laid off to (where he stands), or null. */
+  relay: Vec2 | null;
+  /** The drag in the thumb right now (a run being given), or null. */
+  drag: { from: Vec2; to: Vec2 } | null;
 }
 
 export interface EngineFrameObserver {

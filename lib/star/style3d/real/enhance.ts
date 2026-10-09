@@ -33,8 +33,9 @@ const GRADES: Record<TimeOfDay | "indoor", HGrade> = {
  * `tod` lights the scene from that real sky (outdoors); "indoor" keeps the
  * scene's own environment. `exposure` is the scene's own tone-mapping exposure.
  */
-export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod: TimeOfDay | "indoor", o: { exposure: number; envIntensity?: number; bake?: BakeSet | null; lutAmt?: number }): HEnhance {
-  const post: HPost = makeHPost(T, renderer, tier);
+export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod: TimeOfDay | "indoor", o: { exposure: number; envIntensity?: number; bake?: BakeSet | null; lutAmt?: number; msaa?: number }): HEnhance {
+  // msaa: a scene may ask for real 4x antialias on Medium too (the casino: Harry's "jagged edges", 9 Oct 2026)
+  const post: HPost = makeHPost(T, renderer, tier, o.msaa === undefined ? {} : { msaa: o.msaa });
   const grade: HGrade = { ...GRADES[tod], exposure: o.exposure };
   let dead = false;
   // the set's baked light: the garden outdoors, the shop indoors (unless told otherwise)

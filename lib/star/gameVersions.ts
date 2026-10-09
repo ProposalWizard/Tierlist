@@ -26,6 +26,7 @@ import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./
 import { garden3dLook, setGarden3dLook } from "./garden3d/look";
 import { look3dStyle, setLook3dStyle } from "./look3dStyle";
 import { casino3dLook, setCasino3dLook } from "./casino3d/look";
+import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
 import { ovationLook, setOvationLook } from "./ovationLook";
@@ -37,6 +38,9 @@ import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
+import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
+import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
+import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -60,12 +64,14 @@ const row = <V extends string>(
 /** Every New | Old switch in Settings, keyed by a short id. */
 export const LOOK_ROWS = {
   matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
+  matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
   chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
   animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
   keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
+  dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
@@ -74,8 +80,11 @@ export const LOOK_ROWS = {
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
+  camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
+  playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
   casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
+  casinoLook: row("Casino look", "new", "old", casinoRoomLook, setCasinoRoomLook),
   signing: row("Signing scene", "3d", "drawn", () => (signing3dOn() ? "3d" : "drawn"), (v) => setSigning3d(v === "3d")),
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
@@ -91,9 +100,9 @@ export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
-/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body and cut-scene people.
+/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -108,12 +117,14 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
   classic: build(O),
   standard: {
     matchView: MATCH_VIEW_DEFAULT,
+    matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
     chances: CHANCE_SET_DEFAULT,
     animations: O("animations"),
     keepers: N("keepers"),
     dribble: N("dribble"),
+    dribble3d: O("dribble3d"),
     clearances: N("clearances"),
     garden: N("garden"),
     look3d: N("look3d"),
@@ -122,8 +133,11 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     humanBody: O("humanBody"),
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
+    camera3d: O("camera3d"),
+    playerLight3d: O("playerLight3d"),
     bossRoom: N("bossRoom"),
     casino: N("casino"),
+    casinoLook: N("casinoLook"),
     signing: N("signing"),
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),
@@ -136,6 +150,25 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
 };
 // Preview = Standard + the rows being tried.
 for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.preview[id] = VERSION_PRESETS.standard[id];
+
+// A phone already on Preview picks up a row added to Preview later (Match view
+// 3D, 9 Oct 2026), once: if it has never stored that row and every other row
+// already reads Preview, the new row takes its Preview value. Otherwise the
+// phone would read as "Custom" and Harry would not see the new look.
+// The same goes for the real game's 3D camera and player light, added the same day.
+// Dribble runs 3D (9 Oct 2026, later the same day) the same way, keyed on its
+// own stored choice, so a row someone already set by hand is never changed.
+const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
+  ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
+  ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
+];
+if (LATE_PREVIEW_ROWS.length) {
+  const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
+  const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);
+  if (off.length > 0 && off.every((id) => LATE_PREVIEW_ROWS.includes(id))) {
+    for (const id of off) LOOK_ROWS[id].set(VERSION_PRESETS.preview[id]);
+  }
+}
 
 // ── Reading and setting ─────────────────────────────────────────────────
 

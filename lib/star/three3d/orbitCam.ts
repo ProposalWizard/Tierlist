@@ -1,141 +1,76 @@
 /**
- * THE PRACTICE-ARENA CAMERA — the 3D drills' shared camera (Harry, 9 Oct
- * 2026: "the camera should be set above the players shoulders not in tandem
- * with the joystick. Like fifa in the practice arena." and "the camera also
- * has to follow the ball on headers and volleys").
+ * THE LOOK-AROUND CAMERA, shared by the 3D garden and the 3D shop.
  *
- * The rules, in one place (tests/star/practiceCam.mts checks each one):
- *   - It sits behind you and above your shoulders: SHOULDER.up metres up,
- *     SHOULDER.back metres back, looking a little down.
- *   - It follows your POSITION smoothly (no snapping).
- *   - It turns ON ITS OWN, towards the thing it frames (the goal, or your
- *     team-mate), never faster than MAX_TURN (60° a second), eased in and out.
- *   - Your stick and your facing NEVER turn it. Nothing here reads them.
- *   - Ball track (Headers & Volleys): while a cross is in the air it lifts,
- *     steps back and turns towards the ball so you can read where it drops;
- *     then it settles behind your shoulder for the strike.
- *   - Peek (Q/E on a PC, a two-finger drag on a phone): an extra look round
- *     that springs back when you let go.
- *
- * Pure maths on the pitch plane (x across, y along, z up); no three.js here,
- * so the tests run it headless. The 3D picture (lib/star/play3d/scene.ts)
- * turns {pos, look} into a three.js camera.
+ * Harry, 9 Oct 2026: "the camera is super sensitive in the 3D modes and
+ * doesn't work well." Before: a drag turned the camera 0.008 rad per pixel
+ * (45.8° per 100 px, half a turn across a phone) and the turn went in at
+ * once. Now:
+ *   - half the turn: ORBIT_DEG_PER_100PX (22.9° per 100 px);
+ *   - smoothed: a drag sets where the camera is going, and it eases there
+ *     (ORBIT_EASE per second, never a snap); a jumpy pointer event is capped;
+ *   - an up/down drag tilts the camera, held between PITCH_MIN and PITCH_MAX
+ *     (it can never flip over, nor go under the floor: minCamY);
+ *   - both scenes use these same numbers.
+ * Pure (no three.js): tests/star/orbitCam.mts checks it.
  */
-/** Behind you and above your shoulders. Metres. */
-/** Behind you and above your shoulders (metres): up, back, and a little to the right (over the right shoulder, so you never hide what it frames); where it looks. */
-export const SHOULDER = { up: 2.2, back: 4.6, side: 0.8, lookAhead: 7, lookUp: 0.4 } as const;
-/** While a cross is in the air: higher and further back, so the drop is readable. */
-export const TRACK = { up: 3.6, back: 6.2 } as const;
-/** The fastest it ever turns on its own: 60° a second. */
-export const MAX_TURN = Math.PI / 3;
-/** How hard it eases towards the wanted heading (per second, per radian off). 60°/s is reached 0.42 rad (24°) off. */
-export const TURN_EASE = 2.5;
-/** How fast its own turn speed may change (rad/s²): no jerk at the start or end of a turn. */
-export const TURN_ACCEL = 3.0;
-/** How quickly it follows your position (per second). */
-export const FOLLOW = 5;
-/** How quickly ball-track blends in and out (per second). */
-export const TRACK_EASE = 2.2;
-/** The most a peek turns it (radians, 40°), and how fast a peek moves (per second). */
-export const PEEK_MAX = 0.7;
-export const PEEK_EASE = 6;
-/** Inside this (metres) of what it frames, it stops chasing the heading (no spinning when you stand on the spot). */
-const NEAR = 1.2;
 
-export interface XY { x: number; y: number }
-export interface XYZ { x: number; y: number; z: number }
+/** Turn per pixel of drag (radians). Was 0.008 in both scenes. */
+export const ORBIT_RAD_PER_PX = 0.004;
+export const ORBIT_DEG_PER_100PX = (ORBIT_RAD_PER_PX * 100 * 180) / Math.PI;
+/** Before this change, for the record. */
+export const ORBIT_RAD_PER_PX_OLD = 0.008;
+/** How fast the camera catches up with the drag (1/s: about 90% there in 0.2 s). */
+export const ORBIT_EASE = 12;
+/** One pointer event moves at most this many pixels (a dropped frame or a jump is not a whip-pan). */
+export const ORBIT_MAX_STEP_PX = 60;
+/** Up/down drag tilts less than left/right turns. */
+export const PITCH_PER_PX = ORBIT_RAD_PER_PX * 0.6;
+/** Tilt from the normal follow view (radians): a little lower, or higher to look down on him. */
+export const PITCH_MIN = -0.12;
+export const PITCH_MAX = 0.42;
+/** The camera never goes lower than this (metres). */
+export const CAM_MIN_Y = 0.6;
 
-export interface PracticeCam {
-  /** The way it looks along the ground (0 = +x). Peek not included. */
-  heading: number;
-  /** Its own turn speed, rad/s (eased). */
-  turn: number;
-  /** Where it stands (smoothed). */
-  pos: XYZ;
-  /** Where it looks (smoothed). */
-  look: XYZ;
-  /** 0 = behind your shoulder, 1 = tracking the ball. */
-  track: number;
-  /** The peek now (radians), and where it is heading. */
-  peek: number;
-  peekWant: number;
-  ready: boolean;
-}
+export class OrbitCam {
+  /** Turn still to come (radians): eased in each frame. */
+  private yawLeft = 0;
+  private pitchWant = 0;
+  /** The tilt now (radians, PITCH_MIN..PITCH_MAX). */
+  pitch = 0;
 
-export interface PracticeFrame {
-  /** You (your feet). */
-  you: XY;
-  /** What to keep in the picture with you: the goal, or your team-mate. */
-  target: XY;
-  /** The ball, and whether to track it now (a cross in the air). */
-  ball?: XYZ;
-  trackBall?: boolean;
-}
-
-export function makePracticeCam(heading = -Math.PI / 2): PracticeCam {
-  return { heading, turn: 0, pos: { x: 0, y: 0, z: SHOULDER.up }, look: { x: 0, y: 0, z: SHOULDER.lookUp }, track: 0, peek: 0, peekWant: 0, ready: false };
-}
-
-export const wrap = (a: number) => {
-  while (a > Math.PI) a -= 2 * Math.PI;
-  while (a < -Math.PI) a += 2 * Math.PI;
-  return a;
-};
-
-/** The heading it wants this frame: from you to the target, or (tracking) mostly to the ball. */
-export function wantedHeading(cam: PracticeCam, f: PracticeFrame): number {
-  const dx = f.target.x - f.you.x, dy = f.target.y - f.you.y;
-  const base = Math.hypot(dx, dy) > NEAR ? Math.atan2(dy, dx) : cam.heading;
-  if (!f.ball || cam.track < 0.01) return base;
-  const bx = f.ball.x - f.you.x, by = f.ball.y - f.you.y;
-  if (Math.hypot(bx, by) < NEAR) return base;
-  // tracking: 55% of the way from the target to the ball, so you, the ball and the goal stay readable
-  const toBall = Math.atan2(by, bx);
-  return wrap(base + wrap(toBall - base) * 0.55 * cam.track);
-}
-
-/** One frame. Returns the camera to draw (peek included) and the heading the stick is read against. */
-export function stepPracticeCam(cam: PracticeCam, f: PracticeFrame, dt: number): { pos: XYZ; look: XYZ; heading: number } {
-  dt = Math.max(0, Math.min(0.1, dt));
-  // ball track blends in and out
-  const wantTrack = f.trackBall && f.ball ? 1 : 0;
-  cam.track += (wantTrack - cam.track) * Math.min(1, dt * TRACK_EASE);
-  // the turn: eased towards the wanted heading, capped at MAX_TURN, its own speed changing smoothly
-  const want = wantedHeading(cam, f);
-  if (!cam.ready) { cam.heading = want; cam.turn = 0; }
-  const off = wrap(want - cam.heading);
-  const wantTurn = Math.max(-MAX_TURN, Math.min(MAX_TURN, off * TURN_EASE));
-  const dTurn = Math.max(-TURN_ACCEL * dt, Math.min(TURN_ACCEL * dt, wantTurn - cam.turn));
-  cam.turn = Math.max(-MAX_TURN, Math.min(MAX_TURN, cam.turn + dTurn));
-  // never overshoot the wanted heading
-  const step = cam.turn * dt;
-  cam.heading = wrap(cam.heading + (Math.abs(step) > Math.abs(off) ? off : step));
-  // peek springs to where the thumb or key wants it
-  cam.peek += (cam.peekWant - cam.peek) * Math.min(1, dt * PEEK_EASE);
-  const h = cam.heading + cam.peek;
-  const fx = Math.cos(h), fy = Math.sin(h);
-  const up = SHOULDER.up + (TRACK.up - SHOULDER.up) * cam.track;
-  const back = SHOULDER.back + (TRACK.back - SHOULDER.back) * cam.track;
-  const rx = -fy, ry = fx, side = SHOULDER.side * (1 - cam.track);
-  const pos = { x: f.you.x - fx * back + rx * side, y: f.you.y - fy * back + ry * side, z: up };
-  let look: XYZ = { x: f.you.x + fx * SHOULDER.lookAhead + rx * side, y: f.you.y + fy * SHOULDER.lookAhead + ry * side, z: SHOULDER.lookUp };
-  if (f.ball && cam.track > 0.01) {
-    // look towards the ball (its height too), as much as the track blend says
-    const k = 0.4 * cam.track;
-    look = { x: look.x + (f.ball.x - look.x) * k, y: look.y + (f.ball.y - look.y) * k, z: look.z + (Math.max(0.5, f.ball.z) - look.z) * k };
+  /** A drag of dx, dy pixels (screen right / down). */
+  drag(dx: number, dy = 0): void {
+    const cx = Math.max(-ORBIT_MAX_STEP_PX, Math.min(ORBIT_MAX_STEP_PX, dx || 0));
+    const cy = Math.max(-ORBIT_MAX_STEP_PX, Math.min(ORBIT_MAX_STEP_PX, dy || 0));
+    this.yawLeft -= cx * ORBIT_RAD_PER_PX;
+    this.pitchWant = Math.max(PITCH_MIN, Math.min(PITCH_MAX, this.pitchWant + cy * PITCH_PER_PX));
   }
-  if (!cam.ready) { cam.pos = pos; cam.look = look; cam.ready = true; }
-  const a = Math.min(1, dt * FOLLOW);
-  cam.pos = { x: cam.pos.x + (pos.x - cam.pos.x) * a, y: cam.pos.y + (pos.y - cam.pos.y) * a, z: cam.pos.z + (pos.z - cam.pos.z) * a };
-  cam.look = { x: cam.look.x + (look.x - cam.look.x) * a, y: cam.look.y + (look.y - cam.look.y) * a, z: cam.look.z + (look.z - cam.look.z) * a };
-  return { pos: cam.pos, look: cam.look, heading: h };
-}
 
-/** Set the peek (radians, clamped to ±PEEK_MAX). 0 lets it spring back. */
-export function setPeek(cam: PracticeCam, a: number) { cam.peekWant = Math.max(-PEEK_MAX, Math.min(PEEK_MAX, a)); }
+  /** Is a turn or tilt still easing in? */
+  get moving(): boolean { return Math.abs(this.yawLeft) > 1e-4 || Math.abs(this.pitchWant - this.pitch) > 1e-4; }
 
-/** The stick (screen x right, y down, length 0–1) as a pitch direction, read against the camera's heading. */
-export function stickToPitch(heading: number, sx: number, sy: number): XY {
-  const f = { x: Math.cos(heading), y: Math.sin(heading) }, r = { x: -Math.sin(heading), y: Math.cos(heading) };
-  return { x: r.x * sx + f.x * -sy, y: r.y * sx + f.y * -sy };
+  /** Advance dt seconds: the yaw to add to the camera this frame. */
+  step(dt: number): number {
+    const k = 1 - Math.exp(-ORBIT_EASE * Math.max(0, dt));
+    const d = this.yawLeft * k;
+    this.yawLeft -= d;
+    if (Math.abs(this.yawLeft) < 1e-5) this.yawLeft = 0;
+    this.pitch += (this.pitchWant - this.pitch) * k;
+    return d;
+  }
+
+  /** Forget any turn still to come (the camera was placed). */
+  reset(): void { this.yawLeft = 0; }
+
+  /**
+   * The camera's height for a follow camera `back` metres behind at `baseY`,
+   * tilted by the pitch about the point he is looked at (`lookY`), never under CAM_MIN_Y.
+   * Returns [height, how much nearer in the boom comes] so the distance to him stays the same.
+   */
+  lift(baseY: number, back: number, lookY: number): [number, number] {
+    const a0 = Math.atan2(baseY - lookY, back);
+    const r = Math.hypot(baseY - lookY, back);
+    const a = Math.max(-0.35, Math.min(1.25, a0 + this.pitch)); // never past straight down: no flip
+    return [Math.max(CAM_MIN_Y, lookY + r * Math.sin(a)), r * Math.cos(a)];
+  }
 }

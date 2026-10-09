@@ -21,6 +21,7 @@
  *     = harder), a click touches / passes. Q/E look round. Space taps.
  */
 import { look3dStyle } from "@/lib/star/look3dStyle";
+import { motionLook } from "@/lib/star/motionLook";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
@@ -28,14 +29,16 @@ import { kitsOf } from "@/lib/star/kits";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { faceFromUrl } from "@/lib/star/three3d/faceFromUrl";
-import { stickToPitch, PEEK_MAX } from "@/lib/star/three3d/orbitCam";
+import { stickToPitch, PEEK_MAX } from "@/lib/star/three3d/practiceCam";
 import { makeRng } from "@/lib/star/play3d/rng";
 import { skillsOf, type Skills3 } from "@/lib/star/play3d/player";
 import { controlScheme, useControlChoice, type ControlScheme } from "@/lib/star/play3d/controlScheme";
-import type { DrillDef, DrillSession } from "@/lib/star/play3d/drills";
+import type { DrillDef, DrillSession, DrillTrain } from "@/lib/star/play3d/drills";
+import { applyLevelResult, highestUnlocked, starsOf } from "@/lib/star/trainingLevels";
 import type { Person3 } from "@/lib/star/play3d/freeRoam";
 import type { Play3DController, Play3DPerson } from "@/lib/star/play3d/scene";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
+import BackPill3D from "./BackPill3D";
 
 const SKINS = ["#8d5524", "#c68642", "#e0ac69", "#5c3a1e", "#f1c27d"];
 const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
@@ -49,12 +52,12 @@ const FULL_PULL = 0.14;
 const TAP_MS = 220;
 const TAP_PX = 12;
 
-export interface Play3DResult extends GameResult { drill: string }
+export interface Play3DResult extends GameResult { drill: string; /** A training drill (Pace Sprint): the level and stars for the career to bank. */ train?: DrillTrain }
 
 /** A squad player as a 3D man: his real numbers (missing ones from his overall), his photo, his position. */
 function personOf(p: NonNullable<CareerState["squad"]>[number], i: number): Person3 {
   const ov = p.overall ?? 65;
-  const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending };
+  const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending, physical: p.physical };
   return { id: p.id ?? `mate${i}`, name: p.name.split(" ").slice(-1)[0], skills: sk, photo: p.imageUrl ?? fakeFaceFor(p.id ?? `mate${i}`), position: p.position };
 }
 
@@ -77,7 +80,9 @@ function castFrom(career: CareerState, seed: number): { you: Person3; mates: Per
   const s = career.skills;
   const you: Person3 = {
     id: "you", name: career.player.lastName || "You",
-    skills: { overall: Math.round((s.pace + s.power + s.technique) / 3), pace: s.pace, power: s.power, technique: s.technique, passing: s.vision, shooting: Math.round((s.power + s.technique) / 2), dribbling: s.technique },
+    skills: { overall: Math.round((s.pace + s.power + s.technique) / 3), pace: s.pace, power: s.power, technique: s.technique, passing: s.vision, shooting: Math.round((s.power + s.technique) / 2), dribbling: s.technique,
+      // the career has no physical/stamina stat for you: your strength (power) stands in for fitness (the sprint bar)
+      physical: s.power },
     photo: career.player.portrait,
   };
   const rng = makeRng(seed);
@@ -105,7 +110,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 }) {
   const team = career.relationships.team;
   const cast = useMemo(() => castFrom(career, seed), [career, seed]);
-  const session = useMemo<DrillSession>(() => drill.start!({ seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options }), [drill, seed, cast, mode, options]);
+  const session = useMemo<DrillSession>(() => drill.start!({
+    seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options,
+    paceLevel: highestUnlocked(starsOf(career, "pace")),
+    previewTrain: (t) => applyLevelResult(career, t.skill, t.level, t.stars).gained,
+  }), [drill, seed, cast, mode, options]);
   const [hud, setHud] = useState(() => session.hud());
   // which controls: this device's own, or the Settings override (read after mount: matchMedia is browser-only)
   const choice = useControlChoice();
@@ -124,6 +133,10 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     }).filter((m) => m.off || m.aim);
   };
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
+  /** Your sprint bar (Free Roam, new feel): null while it isn't in use. */
+  const [stam, setStam] = useState<{ v: number; tired: boolean } | null>(null);
+  // Settings → Look → Motion: Mocap = the new walk/jog/run/sprint feel; Old = as before
+  useEffect(() => { session.world.newFeel = motionLook() === "mocap"; }, [session.world]);
   const [result, setResult] = useState<Play3DResult | null>(null);
   const holder = useRef<HTMLDivElement>(null);
   const ctrl = useRef<Play3DController | null>(null);
@@ -142,7 +155,9 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
       const kx = (k.has("d") || k.has("arrowright") ? 1 : 0) - (k.has("a") || k.has("arrowleft") ? 1 : 0);
       const ky = (k.has("s") || k.has("arrowdown") ? 1 : 0) - (k.has("w") || k.has("arrowup") ? 1 : 0);
       const d = Math.hypot(kx, ky);
-      sx = d ? kx / d : 0; sy = d ? ky / d : 0; sprint = k.has("shift");
+      // new feel (Motion: Mocap): keys alone run, Shift sprints (a full stick push would sprint)
+      const kk = w.newFeel && !k.has("shift") ? 0.85 : 1;
+      sx = d ? kx / d * kk : 0; sy = d ? ky / d * kk : 0; sprint = k.has("shift");
     }
     // the chase camera (Wembley) turns with you, so there the direction is fixed when the stick or keys change (as before)
     const sig = `${sx.toFixed(3)},${sy.toFixed(3)}`;
@@ -189,7 +204,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             hLook?.frame(dt);
             applyRef.current();
             acc += dt;
-            if (acc > 0.1) { acc = 0; setHud(session.hud()); setMarks(mateMarks()); }
+            if (acc > 0.1) {
+              acc = 0; setHud(session.hud()); setMarks(mateMarks());
+              const sw = session.world;
+              setStam(sw.newFeel && sw.rules.stamina && (sw.stamina.v < 0.995 || sw.stamina.tired) ? { v: sw.stamina.v, tired: sw.stamina.tired } : null);
+            }
             if (session.done()) setResult((r) => r ?? { ...session.result(team, Math.random()), drill: drill.id });
           },
         });
@@ -327,13 +346,14 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   useEffect(() => { setVh(window.innerHeight); }, []);
   const h = vw ? Math.max(360, Math.min(realMatchHeight(vw), 640, vh - 310)) : 560;
   const mins = hud.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : null;
-  const hint = session.hints ? session.hints[scheme] : session.hint;
+  const hint = session.hints ? session.hints[scheme] : scheme === "pc" && session.hintKeys ? session.hintKeys : session.hint;
   // the aim line: phone — the swipe itself; PC — from you to the pointer, with the power filling up
   const youOnScreen = drag && scheme === "pc" ? ctrl.current?.screen(w.you()?.id ?? "") ?? null : null;
   const pcPower = drag && scheme === "pc" ? pcPull(drag, Math.max(now, drag.t0)) / FULL_PULL : 0;
 
   return (
-    <GameShell title={drill.name} who="Team" current={team} tone="#38bdf8" onBack={!result ? onExit : undefined}>
+    <GameShell title={drill.name} who="Team" current={team} tone="#38bdf8">
+      <BackPill3D onBack={onExit} />
       <div className="mb-2 flex items-end justify-between gap-2" data-play3d-hud={drill.id}>
         <div>
           <div className="text-[34px] font-black leading-none" data-play3d-score>{hud.big}</div>
@@ -352,6 +372,15 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         {knob && (
           <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" style={{ left: knob.x0 - STICK_R, top: knob.y0 - STICK_R, width: STICK_R * 2, height: STICK_R * 2, background: "rgba(0,0,0,0.18)" }}>
             <div className="absolute h-[36px] w-[36px] rounded-full bg-white/80" style={{ left: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.x - knob.x0)), top: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.y - knob.y0)) }} />
+          </div>
+        )}
+        {stam && (
+          // the sprint bar: small, by the stick, only while it isn't full
+          <div className="pointer-events-none absolute z-40" data-play3d-stamina={stam.v.toFixed(2)} data-tired={stam.tired ? 1 : 0}
+            style={knob ? { left: knob.x0 - 30, top: knob.y0 - STICK_R - 16 } : { left: 14, bottom: 84 }}>
+            <div className="h-[6px] w-[60px] overflow-hidden rounded-full bg-black/55 ring-1 ring-white/40">
+              <div className="h-full rounded-full" style={{ width: `${Math.round(stam.v * 100)}%`, background: stam.tired ? "#f87171" : stam.v < 0.3 ? "#fbbf24" : "#4ade80", transition: "width 0.1s linear" }} />
+            </div>
           </div>
         )}
         {drag && scheme === "touch" && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 14 && (

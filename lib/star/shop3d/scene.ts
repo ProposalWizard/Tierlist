@@ -33,14 +33,19 @@ import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
+import { strideFor } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
+import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -73,8 +78,8 @@ export interface ShopController {
   setCardOpen: (open: boolean) => void;
   /** The "Owned" chip on each item's floating tag (item id → text, e.g. "Owned L2"). */
   setOwned: (owned: Record<string, string>) => void;
-  /** Drag on the view to swing the camera round. */
-  orbit: (dxPixels: number) => void;
+  /** Drag on the view: left/right swings the camera round, up/down tilts it (lib/star/three3d/orbitCam.ts). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   /** What is under a tap at (x, y) in page pixels, if anything. */
   pick: (clientX: number, clientY: number) => Picked | null;
   /** Tap to move: a tap on a display walks you up to it (its card opens as
@@ -105,6 +110,8 @@ const PLINTH_Z = [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3];
 const PLINTH_H = 0.92;
 /** The Blender boot is 0.29 m long; on its plinth it is shown at this size. */
 const BOOT_SCALE = 2.75;
+/** Look H: the generated boots are fitted to a real 0.30 m; shown at their own size (a touch up when picked). */
+const BOOT_H_SCALE = 1;
 /** The car's turntable. */
 const CAR = { x: 2.35, z: -1.75, r: 2.85 };
 /** The counter and its light boxes on the back wall. */
@@ -194,7 +201,7 @@ async function buildShop(
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
-  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+  const { mergeGeometries, toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
@@ -206,6 +213,15 @@ async function buildShop(
   // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
   // look H standing still: the screen's real pixels, capped per tier; moving stays the tier's cap (lag)
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "shop", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -215,7 +231,7 @@ async function buildShop(
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -475,6 +491,99 @@ async function buildShop(
   loader.setDRACOLoader(draco); // boots and cars
   await withMeshopt(loader); // people, clips, the old player (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
+  /**
+   * THE CARS AND BOOTS LOOKED ODD (Harry, 9 Oct 2026: "the cars and boots still
+   * look odd in the shop"). Three causes, all in how the files are drawn:
+   *  1. Every face was exported smooth (tools/shop3d/export_items.py sets
+   *     use_smooth on all of them after cutting the triangle count down), so
+   *     the panel lines, wheel arches, sole edge and studs melt into one soft
+   *     blob, like clay. Normals are worked out again with a crease: faces
+   *     meeting at more than CREASE stay sharp, curved panels stay smooth.
+   *  2. The paint never reflected the room: without its own environment a
+   *     material takes the scene's, at environmentIntensity 0.32, so a car
+   *     with a full clear coat read as matte plastic. Each item now has the
+   *     room's reflection at full strength (boots a little less).
+   *  3. The clear coat and glass are mirror-smooth (roughness 0.05): the
+   *     turntable's spotlights made a pin-point hot spot that the H look's
+   *     bloom blew into a white smear across the roof. Coat and glass are a
+   *     touch less sharp (0.28 / 0.24), so the highlight is a shine, not a flare.
+   * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
+   */
+  const CREASE = (38 * Math.PI) / 180;
+  /**
+   * THE FAMILY CAR, REPLACED (Harry, 9 Oct 2026: "the problem with the car
+   * isn't the reflection, it just looks weird"). Our Blender family car is a
+   * lofted, rounded body: no shoulder line, the cabin glass the same light
+   * colour as the paint, small wheels sunk in the arches, a flat grid on the
+   * roof: it reads as an inflated toy. The free CC0 car packs (Kenney Car Kit,
+   * Quaternius Car Pack) are toy cars, further from real. So look H shows a
+   * generated one (Higgsfield: a picture of an unbranded hatchback, then
+   * Tripo image-to-3D; public/star/shop3d/items/car-family-hf.glb). Old: as before.
+   */
+  const CAR_H_MODELS: Record<string, string> = { "car-1": "/star/shop3d/items/car-family-hf.glb" };
+  const HF_MODEL = /-hf\.glb$/;
+  /**
+   * THE BOOTS, REPLACED (Harry, 9 Oct 2026: the boots "look too simple and
+   * smooth"). Our Blender boots are a smooth loft: no knit, no real laces,
+   * studs that melt into the sole. Look H shows three generated boots
+   * (Higgsfield: a picture of an unbranded boot, then Tripo image-to-3D;
+   * public/star/shop3d/items/boot-*-hf.glb): a knit boot, a classic leather
+   * boot and a laceless high-collar speed boot, each level painted in its
+   * colour over the white upper. And at a real size: the Blender boot stood
+   * 0.29 m × BOOT_SCALE 2.75 = 0.80 m long on its plinth (a boot the width of
+   * the plinth); a generated boot is a real boot's 0.30 m (BOOT_H_SCALE 1).
+   * Old: the Blender boots as before.
+   */
+  const BOOT_H_MODELS: Record<string, string> = {
+    starter: "/star/shop3d/items/boot-classic-hf.glb", control: "/star/shop3d/items/boot-classic-hf.glb",
+    speed: "/star/shop3d/items/boot-speed-hf.glb", curl: "/star/shop3d/items/boot-speed-hf.glb",
+    power: "/star/shop3d/items/boot-hf.glb", elite: "/star/shop3d/items/boot-hf.glb", maestro: "/star/shop3d/items/boot-hf.glb",
+  };
+  const isBootH = (url: string) => /\/boot-([a-z]+-)?hf\.glb$/.test(url);
+  /** A real football boot is about 0.30 m long: stand the generated one on its plinth at that length. */
+  const fitBoot = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(0.30 / Math.max(size.x, size.z, 1e-3));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  /** A generated car comes at its own size and facing: stand it on the floor, centred, 4.3 m long along x like ours. */
+  const fitCar = (root: any) => {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    if (size.z > size.x) root.rotation.y = Math.PI / 2; // long side along x, like the Blender cars
+    root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(root);
+    const len = Math.max(b2.max.x - b2.min.x, 1e-3);
+    const k = 4.3 / len;
+    root.scale.multiplyScalar(k);
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  const showroomFinish = (o: any, car: boolean) => {
+    if (o.geometry && !o.geometry.userData.creased) {
+      const g2 = toCreasedNormals(o.geometry, CREASE);
+      g2.userData.creased = true;
+      o.geometry.dispose();
+      o.geometry = g2;
+    }
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (!m || !m.isMeshStandardMaterial) continue;
+      m.envMap = envTex;
+      m.envMapIntensity = car ? 1.0 : 0.7;
+      // (0.14 still bloomed into a smear in the first after-still: 0.28 keeps the room's reflection, loses the flare)
+      if (m.clearcoat > 0) m.clearcoatRoughness = Math.max(m.clearcoatRoughness ?? 0, 0.28);
+      if (m.roughness < 0.24) m.roughness = 0.24; // glass and chrome: still glossy, no pin-point flare
+      m.needsUpdate = true;
+    }
+  };
   const models = new Map<string, Promise<any>>();
   const loadModel = (url: string) => {
     if (!models.has(url)) {
@@ -486,7 +595,11 @@ async function buildShop(
           o.receiveShadow = true;
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
+          if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
+          else if (HF_MODEL.test(url) && m) { m.envMap = envTex; m.envMapIntensity = 1.0; m.needsUpdate = true; }
         });
+        if (isBootH(url)) fitBoot(g.scene);
+        else if (HF_MODEL.test(url)) fitCar(g.scene);
         return g.scene;
       }));
     }
@@ -494,7 +607,10 @@ async function buildShop(
   };
 
   // ── The boots, one on each plinth ──
+  const bootScale = hEnh ? BOOT_H_SCALE : BOOT_SCALE;
   const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
+  // look H: the spot above blew the cream top into a white glow the boot floated on; a stone grey, less glossy
+  if (hEnh) { plinthTopM.color.set("#9a9186"); plinthTopM.roughness = 0.55; }
   const plinthM = mat("#1c1714", { roughness: 0.32, metalness: 0.25 });
   box(1.1, 0.04, 8.0, mat("#100c0a", { roughness: 0.25, metalness: 0.3 }), PLINTH_X, 0.02, 0); // a dark stage under the row
   box(0.06, 2.6, 8.2, mat("#211915", { roughness: 0.55 }), -ROOM.x + 0.14, 1.85, 0); // a dark wall panel behind
@@ -519,7 +635,7 @@ async function buildShop(
     blob(0.95, 0.95, PLINTH_X, z);
     const group = new THREE.Group();
     group.position.set(PLINTH_X, PLINTH_H + 0.035, z);
-    group.scale.setScalar(BOOT_SCALE);
+    group.scale.setScalar(bootScale);
     scene.add(group);
     blob(0.32, 0.18, 0, 0, group, 0.002, 0.8);
     pickable(col, "boots", i);
@@ -527,9 +643,20 @@ async function buildShop(
     pickable(tag.sprite, "boots", i);
     bootSlots.push({ group, ring, tag, z, spin: i * 0.9 });
     if (it.model) {
-      loadModel(it.model).then((m) => {
+      const hfBoot = !!hEnh;
+      loadModel(hfBoot ? (BOOT_H_MODELS[it.id] ?? BOOT_H_MODELS.power) : it.model).then((m) => {
         if (disposed) return;
         const b = m.clone();
+        if (hfBoot) {
+          // this level's colour over the white knit (its own material: the clones share one)
+          const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(it.colour), 0.85);
+          b.traverse((o: any) => {
+            if (!o.isMesh || !o.material) return;
+            o.material = o.material.clone();
+            o.material.color.copy(tint);
+            o.material.envMapIntensity = 0.7;
+          });
+        }
         group.add(b);
         pickable(b, "boots", i);
       }).catch((e) => console.error("boot model", e));
@@ -567,7 +694,7 @@ async function buildShop(
     carWant = i;
     const it = displays.car.items[i];
     if (!it?.model) return;
-    loadModel(it.model).then((m) => {
+    loadModel(hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model).then((m) => {
       if (disposed || carWant !== i || carIndex === i) return;
       carIndex = i;
       for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
@@ -731,6 +858,9 @@ async function buildShop(
     jogA = act("Jog_Fwd_Loop");
     buyA = mixer.clipAction(clip("Interact"));
   }
+  // Motion: Mocap (Settings → Look): walk → jog → run → sprint, on the same
+  // foot, at the speed his feet go (three3d/gait.ts). Old: the walk/jog blend below.
+  const gaitBlend = await strideFor(THREE, newLook ? person : null, mixer, { idle: idleA, walk: walkA, jog: jogA }).catch((e) => { console.error("gait clips", e); return null; });
   // from the garden: a few steps in from the doors, so the camera fits behind
   const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
   player.position.set(start.x, 0, start.z);
@@ -752,7 +882,20 @@ async function buildShop(
   let yaw = Math.PI; // facing
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
+  const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
   let near: DisplayId | null = null;
+  /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
+  let dwellZone: DisplayId | null = null;
+  let dwell = { timer: 0, open: false };
+  let arrivedAt: DisplayId | null = null, itemWalk: DisplayId | null = null;
+  /** The nearest item of a display: its centre and how far its front stands out from it (metres). */
+  const itemFront = (d: DisplayId): [number, number, number] => {
+    const px = player.position.x, pz = player.position.z;
+    if (d === "boots") { let bz = PLINTH_Z[0]; for (const z of PLINTH_Z) if (Math.abs(z - pz) < Math.abs(bz - pz)) bz = z; return [PLINTH_X, bz, 0.4]; }
+    if (d === "car") return [CAR.x, CAR.z, CAR.r];
+    if (d === "cans") return [FRIDGE.x, FRIDGE.z, 0.6];
+    return [Math.max(-2.8, Math.min(2.8, px)), COUNTER_Z, 0.55];
+  };
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
   let framed = false, frame = 0;
@@ -875,7 +1018,8 @@ async function buildShop(
     const path = findPath(grid, [player.position.x, player.position.z], to);
     if (!path) return false;
     faceTo = null;
-    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    itemWalk = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = itemWalk; itemWalk = null; } });
     const g = path[path.length - 1];
     marker.show(g[0], g[1], 0.02);
     orbitHold = 0;
@@ -916,8 +1060,10 @@ async function buildShop(
       acc += Math.min(0.25, clock.getDelta());
       // still: 30 a second; moving: the tier's cap (High and Medium every frame, Low 30)
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -929,7 +1075,7 @@ async function buildShop(
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const run = keys.has("shift") ? 1 : 0.6;
+      const run = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * run; iy = (iy / m) * run;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -948,8 +1094,13 @@ async function buildShop(
         mag = st.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, st.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the shop)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (buying > 0) speed *= 0.8;
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
@@ -969,11 +1120,15 @@ async function buildShop(
     const wIdle = Math.max(0, 1 - speed / WALK);
     const dur = buyA.getClip().duration;
     const gesture = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
-    idleA.setEffectiveWeight(wIdle * (1 - gesture));
-    walkA.setEffectiveWeight(wWalk * (1 - gesture));
-    jogA.setEffectiveWeight(wJog * (1 - gesture));
     buyA.setEffectiveWeight(gesture);
-    if (newLook) {
+    if (gaitBlend) gaitBlend.update(speed, dt, 1 - gesture);
+    else {
+      idleA.setEffectiveWeight(wIdle * (1 - gesture));
+      walkA.setEffectiveWeight(wWalk * (1 - gesture));
+      jogA.setEffectiveWeight(wJog * (1 - gesture));
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) {
       // the walk and the jog share one stride timing, so they share one pace
       // and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
@@ -994,12 +1149,14 @@ async function buildShop(
     }
 
     // camera: follows behind him; with a card open it moves in on the item
+    camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    want.set(player.position.x, 2.85, player.position.z).addScaledVector(cf, -4.6).addScaledVector(cr, 0.3);
+    const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
+    want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
     if (shot) {
       want.lerp(new THREE.Vector3(...shot.cam), frame);
@@ -1010,6 +1167,10 @@ async function buildShop(
     // walking out of the door: the camera stays inside, looking out
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up)
+    camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
+    camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
+    camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // with a card open, slide the picture up so the item sits above the card
@@ -1028,7 +1189,7 @@ async function buildShop(
     bootSlots.forEach((b, i) => {
       const on = sel.display === "boots" && sel.index === i;
       b.group.rotation.y = b.spin + gameT * (on ? 0.6 : 0.25);
-      const s = BOOT_SCALE * (on ? 1.12 : 1);
+      const s = bootScale * (on ? 1.12 : 1);
       b.group.scale.setScalar(b.group.scale.x + (s - b.group.scale.x) * Math.min(1, dt * 6));
       b.group.position.y = PLINTH_H + 0.035 + (on ? 0.04 + 0.02 * Math.sin(gameT * 2.2) : 0);
       b.ring.material.emissiveIntensity = on ? 2.6 + 0.6 * Math.sin(gameT * 4) : 0.9;
@@ -1044,10 +1205,20 @@ async function buildShop(
     }
 
     // which display is he at?
-    let now: DisplayId | null = null;
+    let zone: DisplayId | null = null;
     for (const zn of ZONES) {
-      if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
+      if (zn.inside(player.position.x, player.position.z)) { zone = zn.id; break; }
     }
+    // the card opens only when he stops at, or turns to, an item (./dwell.ts), never walking past
+    if (zone !== dwellZone) { dwellZone = zone; dwell = { timer: 0, open: false }; }
+    {
+      const [ix, iz, front] = zone ? itemFront(zone) : [0, 0, 0];
+      const dist = Math.max(0, Math.hypot(ix - player.position.x, iz - player.position.z) - front);
+      const faceOff = angDiff(yaw, Math.atan2(ix - player.position.x, iz - player.position.z));
+      dwell = stepDwell(dwell.timer, dwell.open, { inZone: !!zone, dist, speed, faceOff, arrived: !!zone && arrivedAt === zone }, dt);
+      if (arrivedAt && arrivedAt === zone) arrivedAt = null;
+    }
+    const now: DisplayId | null = dwell.open ? zone : null;
     if (now !== near) { near = now; cb.onNear(near); }
 
     if (carSpot.castShadow) {
@@ -1062,7 +1233,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1080,12 +1251,7 @@ async function buildShop(
       if (!opts.fixedStep) {
         // still runs at 30 on purpose: only count a slow second against what
         // was asked for
-        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
-        // three slow seconds: one tier down; still too slow at Low: 30 a second always
-        if (slowSeconds >= 3) {
-          slowSeconds = 0;
-          if (!stepDown()) capAlways = true;
-        }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -1122,7 +1288,7 @@ async function buildShop(
       buyA.play();
       buying = buyA.getClip().duration;
     },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => {
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);
@@ -1140,17 +1306,18 @@ async function buildShop(
       if (!hit || Math.abs(hit.x) > ROOM.x + 1 || Math.abs(hit.z) > ROOM.z + 1) return null;
       return walkTo([hit.x, hit.z], null) ? { item: null } : null;
     },
-    walkToItem: (p) => { const s0 = standFor(p); return walkTo(s0.at, s0.face); },
+    walkToItem: (p) => { const s0 = standFor(p); const ok = walkTo(s0.at, s0.face); if (ok) itemWalk = p.display; return ok; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
       stopWalk();
-      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true;
+      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true;
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      gov.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);
@@ -1266,3 +1433,4 @@ float kitKitAmt = 0.0; float kitRough = 0.8;`)
   m.customProgramCacheKey = () => cacheKey;
   m.needsUpdate = true;
 }
+

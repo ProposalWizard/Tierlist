@@ -202,10 +202,10 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
-  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", bossRoom: "Talk to your manager",
-  casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
+  matchView: "Match view", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances",
+  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
 
@@ -245,6 +245,7 @@ function MatchGroup() {
       <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
         <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
       </PrefRow>
+      <LookRow id="matchView3d" look={look} tabs={[["on", "On"], ["off", "Off"]]} note="Being tested. On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes." />
       <LookRow id="matchPlayers" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="New view only." />
       <LookRow id="ball" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New view only." />
       <PrefRow label="Your player in open play" note="New view only. Hidden: the ball is you; you still take penalties, free kicks and corners.">
@@ -254,6 +255,7 @@ function MatchGroup() {
       <LookRow id="animations" look={look} tabs={NEW_OLD} note={<>New (being tested): whoever touches the ball is seen doing it — shots, passes, headers, blocks, the keeper&apos;s catch and fumble.{tester && <> <a href="/star-animations-dev" className="font-bold text-amber-300 underline">Animation test area →</a></>}</>} />
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
       <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
+      <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
       <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
       <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
       <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
@@ -277,9 +279,12 @@ function World3dGroup() {
       <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
       <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
       <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
+      <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: a follow camera tight on the action (ball, you, your team-mates in the move, the nearest defenders, the keeper and goal), a little lower, kept inside what the phone shows; men and ball smaller (1.6× life size, was up to 2.6×). Old: everyone in the chance on screen, men drawn big." />
+      <LookRow id="playerLight3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the players lit from the side and behind, darker underneath, a shadow under each man. Old: the light as it was." />
       <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
       <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />
+      <LookRow id="casinoLook" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="New: the 3D casino in warm light with shadows, crystal chandeliers, woven walls and a camera that keeps out of the lamps. Old: as before." />
       <LookRow id="signing" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="3D: a live scene with your player. Drawn: the picture signing." />
     </>
   );
@@ -317,8 +322,8 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
     if (open) refs.current[open]?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [open]);
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 13, content: <MatchGroup />, card: true },
-    { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 10, content: <World3dGroup />, card: true },
+    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 14, content: <MatchGroup />, card: true },
+    { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 11, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
     ...extra,
   ];

@@ -35,3 +35,17 @@ three@0.169.0 (MIT) from cdn.jsdelivr.net when it opens.
 h/ (look H only, 9 Oct 2026; made by tools/shop3d/h_room.py, about 180 KB):
   parquet.webp, parquet-nrm.webp: Poly Haven "Herringbone Parquet" (polyhaven.com/a/herringbone_parquet), CC0
   planks.webp, planks-nrm.webp: Poly Haven "Dark Wooden Planks" (polyhaven.com/a/dark_wooden_planks), CC0
+
+items/car-family-hf.glb (9 Oct 2026, 3D look H only)
+  The Family Car shown in the 3D shop. Made for this game: a picture of an
+  unbranded hatchback generated with Higgsfield (gpt_image_2_5), turned into
+  a 3D model with Higgsfield's Tripo H3.1 image-to-3D, then packed by
+  scripts/perf3d/shrink-models.mjs. No logos, badges or plates.
+
+items/boot-hf.glb, items/boot-classic-hf.glb, items/boot-speed-hf.glb (9 Oct 2026, 3D look H only)
+  The football boots shown in the 3D shop. Made for this game: three pictures
+  of unbranded boots (a knit boot, a classic leather boot, a laceless speed
+  boot) generated with Higgsfield (gpt_image_2_5), each turned into a 3D model
+  with Higgsfield's Tripo H3.1 image-to-3D, simplified to about 22-30k
+  triangles with textures at 1024 px, then packed by
+  scripts/perf3d/shrink-models.mjs. No logos, stripes or text.

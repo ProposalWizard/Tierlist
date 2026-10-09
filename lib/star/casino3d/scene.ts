@@ -56,7 +56,12 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
-import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
+import { Governor } from "../three3d/governor";
+import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows } from "../three3d/perf";
+import { OrbitCam } from "../three3d/orbitCam";
+import { casinoRoomLook } from "./roomLook";
+import { dressCasinoH, type CasinoH } from "./hRoom";
+import { clampBoom, type V3 } from "./camera";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, ClipPlayer, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
@@ -94,7 +99,8 @@ export interface CasinoOptions {
 
 export interface CasinoController {
   setStick: (x: number, y: number) => void;
-  orbit: (dxPixels: number) => void;
+  /** A drag of dx, dy pixels (New: eased and tilting, the shared look-around camera; Old: a yaw turn only). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   /** What station is under a tap, if any. */
   pick: (clientX: number, clientY: number) => CasinoStation | null;
   /** Tap to move: a station walks you up to it (cb.onArrive as you get
@@ -163,12 +169,25 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
-  // ── Renderer (the shop's settings; no shadow maps here) ──
+  // Settings → Look → "Casino look": New (./hRoom.ts) or Old (exactly as before)
+  const H = casinoRoomLook() === "new";
+  // ── Renderer (the shop's settings; Old: no shadow maps here) ──
   const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
   own.renderer = renderer;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  // New, standing still: the screen's real pixels, capped per tier (the shop's look H numbers); moving: the tier's cap
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "casino", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
+  const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
+  const stillPR = () => Math.min(dpr, H ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
   const makeDyn = () => new DynamicResolution(
     { setPixelRatio: (v: number) => { dynPR = v; } },
@@ -176,13 +195,14 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.enabled = H && prof.shadows;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.display = "block";
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
@@ -200,17 +220,19 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
+  // New: the broadcast picture indoors (bloom, grade), with real 4x antialias on Medium and High
+  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: null, msaa: tier === "low" ? 0 : 4 }) : null;
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 50);
 
-  // ── Light: warm, low, rich ──
-  scene.add(new THREE.HemisphereLight("#ffd9b0", "#3a0e18", 0.95));
-  const fill = new THREE.DirectionalLight("#ffe2c4", 0.55);
+  // ── Light: warm, low, rich (New: less flat fill; ./hRoom.ts adds a key light with shadows) ──
+  scene.add(new THREE.HemisphereLight("#ffd9b0", "#3a0e18", H ? 0.32 : 0.95));
+  const fill = new THREE.DirectionalLight("#ffe2c4", H ? 0.25 : 0.55);
   fill.position.set(1, 6, 8);
   scene.add(fill);
   const chandelierAt: [number, number][] = [[ROUL.x, ROUL.z], [BJ.x, BJ.z + 0.6]];
   chandelierAt.forEach(([x, z], i) => {
     if (tier === "low" && i > 0) return;
-    const pl = new THREE.PointLight("#ffcf8f", tier === "low" ? 26 : 18, 11, 1.4);
+    const pl = new THREE.PointLight("#ffcf8f", (tier === "low" ? 26 : 18) * (H ? 0.6 : 1), 11, 1.4);
     pl.position.set(tier === "low" ? 0 : x, ROOM.h - 0.9, tier === "low" ? -1 : z);
     scene.add(pl);
   });
@@ -247,14 +269,18 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     m.renderOrder = 1;
     return m;
   };
+  /** The tables' hanging names: New fades one out as the camera comes close (it filled the screen from behind the roulette). */
+  const tableSigns: any[] = [];
   const goldM = mat("#d4a94e", { roughness: 0.28, metalness: 0.9 });
   const darkWoodM = mat("#2c160d", { roughness: 0.45 });
   const blackM = mat("#121014", { roughness: 0.35, metalness: 0.25 });
   const leatherM = mat("#7a1020", { roughness: 0.55 });
 
   // ── The room ──
-  const floor = add(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), mat("#ffffff", { map: canvasTex(carpetCanvas(), [ROOM.x / 0.7, ROOM.z / 0.7]), roughness: 0.95 }), 0, 0, 0, scene, -Math.PI / 2);
+  const floorM = mat("#ffffff", { map: canvasTex(carpetCanvas(), [ROOM.x / 0.7, ROOM.z / 0.7]), roughness: 0.95 });
+  const floor = add(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), floorM, 0, 0, 0, scene, -Math.PI / 2);
   void floor;
+  const panelMs: any[] = [];
   const ceil = add(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), mat("#1d0c12", { roughness: 0.9 }), 0, ROOM.h, 0, scene, Math.PI / 2);
   void ceil;
   const paperM = mat("#5a1426", { roughness: 0.8 });
@@ -266,8 +292,12 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     scene.add(g);
     const pt = panelT.clone(); pt.wrapS = pt.wrapT = THREE.RepeatWrapping; pt.repeat.set(len / 2.4, 1); pt.needsUpdate = true;
     const lo = Math.min(1.1, y1);
-    if (y0 < lo) plane(len, lo - y0, mat("#ffffff", { map: pt, roughness: 0.55 }), 0, (y0 + lo) / 2, 0, 0, g);
-    if (y1 > Math.max(lo, y0)) plane(len, y1 - Math.max(lo, y0), paperM, 0, (Math.max(lo, y0) + y1) / 2, 0, 0, g);
+    if (y0 < lo) { const pm = mat("#ffffff", { map: pt, roughness: 0.55 }); panelMs.push(pm); plane(len, lo - y0, pm, 0, (y0 + lo) / 2, 0, 0, g); }
+    if (y1 > Math.max(lo, y0)) {
+      const pp = plane(len, y1 - Math.max(lo, y0), paperM, 0, (Math.max(lo, y0) + y1) / 2, 0, 0, g);
+      // New: the damask's uv in metres (one repeat per 1.1 m) so every wall weaves at the same size
+      if (H) { const uv = pp.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * len) / 1.1, (uv.getY(i) * (y1 - Math.max(lo, y0))) / 1.1); }
+    }
     if (y0 < 1.12 && y1 > 1.1) box(len, 0.07, 0.06, goldM, 0, 1.12, 0.03, g);
     if (y1 >= ROOM.h) box(len, 0.12, 0.1, goldM, 0, ROOM.h - 0.25, 0.05, g);
     return g;
@@ -284,7 +314,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   for (const sx of [-1, 1]) box(0.14, DOOR_H, 0.24, goldM, sx * (DOOR_HALF + 0.07), DOOR_H / 2, ROOM.z - 0.05);
   box(DOOR_HALF * 2 + 0.28, 0.14, 0.24, goldM, 0, DOOR_H + 0.07, ROOM.z - 0.05);
   plane(DOOR_HALF * 2, DOOR_H, new THREE.MeshBasicMaterial({ color: "#ffe6bf", toneMapped: false, fog: false }), 0, DOOR_H / 2, ROOM.z + 0.6, Math.PI);
-  neon("KNOWITBALL CASINO", "#ff3d6e", 4.4, 0, 3.45, ROOM.z - 0.08, Math.PI);
+  // New: the name a little higher, so it reads over the chandeliers from the back of the room
+  neon("KNOWITBALL CASINO", "#ff3d6e", 4.4, 0, H ? 3.62 : 3.45, ROOM.z - 0.08, Math.PI);
   // tall gold pilasters round the walls
   for (const [x, z, ry] of [[-ROOM.x + 0.08, -4, Math.PI / 2], [-ROOM.x + 0.08, 0, Math.PI / 2], [ROOM.x - 0.08, -4, -Math.PI / 2], [ROOM.x - 0.08, 0, -Math.PI / 2], [-4.8, -ROOM.z + 0.08, 0], [3.4, -ROOM.z + 0.08, 0]] as [number, number, number][]) {
     box(0.36, ROOM.h, 0.12, goldM, x, ROOM.h / 2, z, scene, ry);
@@ -293,11 +324,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   for (const sx of [-1, 1]) {
     box(0.6, 0.6, 0.6, blackM, sx * 2.3, 0.3, ROOM.z - 0.55);
     box(0.66, 0.05, 0.66, goldM, sx * 2.3, 0.62, ROOM.z - 0.55);
-    add(new THREE.IcosahedronGeometry(0.48, 2), mat("#2f6a2a", { roughness: 0.85, flatShading: true }), sx * 2.3, 1.15, ROOM.z - 0.55);
+    if (!H) add(new THREE.IcosahedronGeometry(0.48, 2), mat("#2f6a2a", { roughness: 0.85, flatShading: true }), sx * 2.3, 1.15, ROOM.z - 0.55);
   }
   // chandeliers: a gold ring of lit drops
   const dropM = glow("#ffe2a6", 2.2);
-  for (const [x, z] of chandelierAt) {
+  for (const [x, z] of H ? [] : chandelierAt) { // New: hRoom's crystal chandeliers
     add(new THREE.TorusGeometry(0.55, 0.04, 8, 28), goldM, x, ROOM.h - 0.95, z, scene, Math.PI / 2);
     add(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6), goldM, x, ROOM.h - 0.55, z);
     for (let k = 0; k < 12; k++) {
@@ -337,7 +368,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
   }
   blob(ROUL.rx * 2.4, ROUL.rz * 2.6, ROUL.x, ROUL.z, 0.9);
-  neon("ROULETTE", "#ff5a5a", 1.9, ROUL.x, 2.55, ROUL.z - 0.2, 0);
+  tableSigns.push(neon("ROULETTE", "#ff5a5a", 1.9, ROUL.x, H ? 2.4 : 2.55, ROUL.z - 0.2, 0));
 
   // ── Blackjack: a half-moon table, the dealer's side to the back ──
   const bg = station("blackjack");
@@ -369,7 +400,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
   }
   blob(BJ.r * 2.6, BJ.r * 1.8, BJ.x, BJ.z + 0.6, 0.9);
-  neon("BLACKJACK", "#5ad1ff", 1.9, BJ.x, 2.55, BJ.z - 0.4, 0);
+  tableSigns.push(neon("BLACKJACK", "#5ad1ff", 1.9, BJ.x, H ? 2.4 : 2.55, BJ.z - 0.4, 0));
 
   // ── The slots: four machines down the left wall ──
   const sg = station("slots");
@@ -702,9 +733,39 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     THREE, renderer, roulTable: rg.userData.table, bjTable: bg.userData.table, slotMachine: playSlot,
     screenMat: raceM, screenIdle: raceT, tier, goldM, darkWoodM,
   });
-  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, screenMesh, ...games.keep, ...toppers, ...dealers.map((d) => d.root)]));
+  // ── New: the golden-hour room (./hRoom.ts) ──
+  let hRoom: CasinoH | null = null;
+  if (H) {
+    const stools: [number, number][] = [
+      ...[-0.9, 0.2, 1.2].map((dx) => [ROUL.x + dx, ROUL.z + ROUL.rz + 0.5] as [number, number]),
+      ...[-1.25, -0.45, 0.45, 1.25].map((a) => [BJ.x + Math.sin(a) * (BJ.r + 0.42), BJ.z + Math.cos(a) * (BJ.r + 0.42)] as [number, number]),
+      ...SLOT_Z.map((z) => [SLOT_X + 0.85, z] as [number, number]),
+      ...[-0.7, 0.8].map((d) => [BAR.x + 0.75, (BAR.z0 + BAR.z1) / 2 + d] as [number, number]),
+    ];
+    hRoom = await dressCasinoH(THREE, scene, renderer, {
+      room: ROOM, floorM, paperM, panelMs, tier, chandeliers: chandelierAt,
+      plants: [[-2.3, ROOM.z - 0.55, 0.645], [2.3, ROOM.z - 0.55, 0.645]], stools, blobTex: blobT,
+    }).catch((e) => { console.error("casino new look failed", e); return null; });
+    if (disposed) throw new Error("disposed");
+    if (renderer.shadowMap.enabled) {
+      // everything solid casts and takes the key light's shadow; flat paint, glow and lamps don't
+      scene.traverse((o: any) => {
+        if (!o.isMesh || !o.material?.isMeshStandardMaterial) return;
+        let lamp = false;
+        for (let q = o; q && !lamp; q = q.parent) if (q.userData?.noShadow) lamp = true;
+        o.receiveShadow = !lamp;
+        o.castShadow = !lamp && o.geometry?.type !== "PlaneGeometry" && o.position.y < ROOM.h - 0.3;
+      });
+    }
+  }
+  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, screenMesh, ...games.keep, ...toppers, ...dealers.map((d) => d.root), ...(hRoom?.keep ?? []), ...(H ? tableSigns : [])]));
+  if (H && renderer.shadowMap.enabled) freezeStaticShadows(renderer, scene); // nothing that casts moves: drawn once
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
+  hRoom?.bakeReflections();
+  /** New: the shared look-around camera (eased drag, a tilt) with the boom kept out of lamps and walls. */
+  const orb = new OrbitCam();
+  const lampsAt: V3[] = (hRoom?.lamps ?? []) as V3[];
 
   // ── The people's day ──
   let spinAt = 0;
@@ -757,8 +818,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     else {
       acc += Math.min(0.25, clock.getDelta());
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -836,19 +899,35 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     // the camera follows behind him, inside the room (or, playing a game,
     // glides in to the game's close-up)
+    if (H) camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
-    want.set(player.position.x - cfx * 4.6, 2.85, player.position.z - cfz * 4.6);
+    if (H) {
+      // a touch lower than Old (2.85 m) so the view runs under the chandeliers, tilted by the drag,
+      // and the boom stops short of any lamp, wall or the ceiling (./camera.ts)
+      const [cy, back] = orb.lift(2.55, 4.4, 1.0);
+      const p = clampBoom([player.position.x, 1.55, player.position.z], [player.position.x - cfx * back, cy, player.position.z - cfz * back], ROOM, lampsAt);
+      want.set(p[0], p[1], p[2]);
+    } else {
+      want.set(player.position.x - cfx * 4.6, 2.85, player.position.z - cfz * 4.6);
+      want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
+      want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
+    }
     wantLook.set(player.position.x + cfx * 2.4, 1.0, player.position.z + cfz * 2.4);
-    want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
-    want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
     if (focused) { want.set(...FOCUS[focused].pos); wantLook.set(...FOCUS[focused].look); }
     const glide = focused || glideOut > 0 ? 2.6 : 5;
     if (glideOut > 0) glideOut -= dt;
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * glide)); camLook.lerp(wantLook, Math.min(1, dt * (glide + 1))); }
+    if (H && !focused && glideOut <= 0) {
+      // the eased camera too: never inside a lamp or a wall on its way
+      const p = clampBoom([player.position.x, 1.55, player.position.z], [camPos.x, camPos.y, camPos.z], ROOM, lampsAt);
+      camPos.set(p[0], p[1], p[2]);
+    }
     camera.position.copy(camPos);
+    hRoom?.update(camera);
+    if (H) for (const s of tableSigns) { const o = Math.max(0, Math.min(1, (camera.position.distanceTo(s.position) - 1.3) / 1.5)); s.material.opacity = o; s.visible = o > 0.01; }
     camera.lookAt(camLook);
 
     const now: CasinoStation | null = stationAt(player.position.x, player.position.z);
@@ -860,7 +939,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       if (near === "blackjack") staffMove("dealer");
     }
 
-    renderer.render(scene, camera);
+    if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
       || games.busy() || pullT >= 0 || Math.abs(seat - seatWant) > 0.01;
@@ -877,8 +956,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       cb.onFps?.(fps);
       frames = 0; fpsT0 = nowMs;
       if (!opts.fixedStep) {
-        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) { slowSeconds = 0; if (!stepDown()) capAlways = true; }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -895,7 +973,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   };
   const ctrl: CasinoController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx) => { if (focused) return; camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { if (focused) return; if (H) orb.drag(dx, dy); else camYaw -= dx * 0.008; orbitHold = 1.5; },
     pick: (px, py) => { aim(px, py); return pickStation(); },
     tap: (px, py) => {
       if (focused) return null;
@@ -973,7 +1051,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), frames: drawn, quality: tier, merged: frozen }),
     dispose: () => {
       disposed = true;
+      gov.dispose();
       games.dispose();
+      hEnh?.dispose();
+      hRoom?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
