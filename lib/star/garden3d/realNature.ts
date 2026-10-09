@@ -78,11 +78,41 @@ export function cardMaterial(T: any, map: any, tint: string) {
   let mat = m.get(tint);
   if (!mat) {
     mat = new T.MeshStandardMaterial({ map, color: tint, alphaTest: 0.3, side: T.DoubleSide, roughness: 0.82, metalness: 0, vertexColors: true });
+    foliageLight(mat);
     mat.userData.depth = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map, alphaTest: 0.3 });
     mat.userData.distance = new T.MeshDistanceMaterial({ map, alphaTest: 0.3 });
     m.set(tint, mat);
   }
   return mat;
+}
+
+/**
+ * LEAVES THAT READ AS LEAVES (Harry, 9 Oct 2026: the garden "still look[s]
+ * really bad"; the trees were flat, noisy cards). Seen in the stills: the
+ * crowns were yellow-olive on the sun side and near black everywhere else,
+ * so each crown read as a speckle of separate flat cards. Real leaves let
+ * light through and catch the sky: the cards facing away from the sun get a
+ * green glow from behind (translucency) and a sky fill, and the scanned
+ * olive/yellow is pulled towards a living green. Look H only (this file).
+ */
+function foliageLight(mat: any) {
+  mat.onBeforeCompile = (sh: any) => {
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <map_fragment>", `#include <map_fragment>
+  {
+    // a living green: less yellow-brown, a little richer
+    float fl = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    vec3 fg = diffuseColor.rgb * vec3(0.86, 1.04, 0.8);
+    diffuseColor.rgb = max(mix(vec3(fl), fg, 1.25), vec3(0.0));
+  }`)
+      .replace("#include <lights_fragment_end>", `#include <lights_fragment_end>
+  {
+    // light through the leaf and the sky on it: the shaded side stays green, not black
+    float back = 1.0 - clamp(dot(reflectedLight.directDiffuse, vec3(0.333)) / max(dot(diffuseColor.rgb, vec3(0.333)), 1e-3), 0.0, 1.0);
+    reflectedLight.indirectDiffuse += diffuseColor.rgb * vec3(0.55, 0.75, 0.35) * (0.12 + 0.28 * back);
+  }`);
+  };
+  mat.customProgramCacheKey = () => "garden-foliage-v1";
 }
 
 export interface TreePart { geometry: any; material: any }
@@ -123,11 +153,12 @@ export function makeTree(T: any, maps: NatureMaps, o: { h: number; w: number; pi
   const merged = mergeAll(T, limbs);
   // ── crown: cards facing every way, lit from the crown's middle ──
   const a = { p: [] as number[], n: [] as number[], uv: [] as number[], c: [] as number[], i: [] as number[] };
-  const n = o.pine ? 150 : 210;
+  // denser crowns (was 150 / 210 cards: you saw through them as a speckle)
+  const n = o.pine ? 200 : 340;
   const cy = o.pine ? H * 0.5 : trunkTop + (H - trunkTop) * 0.5;
   const ry = o.pine ? H * 0.48 : (H - trunkTop) * 0.55;
   const rx = W * 0.5;
-  const size = o.pine ? W * 0.26 : W * 0.27;
+  const size = o.pine ? W * 0.27 : W * 0.29;
   for (let k = 0; k < n; k++) {
     // a point in the crown, more of them near the surface
     let d: any, y: number;
@@ -150,7 +181,7 @@ export function makeTree(T: any, maps: NatureMaps, o: { h: number; w: number; pi
     const centre = d.clone().addScaledVector(upDir, -s * 0.5);
     // inner cards darker (light hardly gets in)
     const depth = o.pine ? Math.hypot(d.x, d.z) / Math.max(1e-3, rx * (1 - (d.y - H * 0.12) / (H * 0.9))) : d.clone().setY((d.y - cy) * rx / ry).length() / rx;
-    const shade = 0.62 + 0.4 * Math.min(1, depth) + (d.y - cy) / H * 0.25;
+    const shade = 0.7 + 0.34 * Math.min(1, depth) + (d.y - cy) / H * 0.25;
     card(T, a, centre, side.multiplyScalar(s * 0.5), upDir.multiplyScalar(s), out, Math.min(1.1, shade));
   }
   const leafGeo = geomFrom(T, a);
@@ -231,7 +262,16 @@ export function makeFlowerBeds(T: any, maps: NatureMaps, beds: [number, number, 
     }
   }
   const leaves = new T.Mesh(geomFrom(T, L), cardMaterial(T, maps.leaves, "#a9cf86"));
-  const heads = new T.Mesh(geomFrom(T, F), new T.MeshStandardMaterial({ map: maps.blooms, alphaTest: 0.4, side: T.DoubleSide, roughness: 0.7, vertexColors: true }));
+  const bloomM = new T.MeshStandardMaterial({ map: maps.blooms, alphaTest: 0.4, side: T.DoubleSide, roughness: 0.7, vertexColors: true });
+  // The hydrangea heads read as grey blobs (their scan is washed out: grey-green,
+  // slate blue, dusty pink). Twice the colour, a touch brighter, so a bed reads
+  // as white-green, blue and pink flowers (Harry, 9 Oct 2026).
+  bloomM.onBeforeCompile = (sh: any) => {
+    sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", `#include <map_fragment>
+  { float bl = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)); diffuseColor.rgb = max(mix(vec3(bl), diffuseColor.rgb, 2.1), vec3(0.0)) * 1.12; }`);
+  };
+  bloomM.customProgramCacheKey = () => "garden-blooms-v1";
+  const heads = new T.Mesh(geomFrom(T, F), bloomM);
   return { leaves, heads };
 }
 

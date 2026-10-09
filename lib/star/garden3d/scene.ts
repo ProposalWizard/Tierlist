@@ -192,7 +192,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
-  const look = SKY[data.sky];
+  // Look H by day: real golden hour, as the match's H look has it (Harry, 9 Oct 2026:
+  // "make the light golden-hour quality"). The day sky's sun was high and near white
+  // and the H pass graded it as plain day; now the sun sits lower and warmer (longer
+  // shadows, warm fronts) and the H pass uses its golden grade. Old look: as before.
+  const goldenDay = data.sky === "day" && look3dStyle() === "h";
+  const look = goldenDay
+    ? { ...SKY.day, sun: "#ffc98c", sunI: 3.3, dir: [0.75, 0.26, 0.6] as [number, number, number] /* the golden bake's own sun (tools/bake3d), so baked and live shadows agree */, low: "#f7d39c", fog: "#e8cfa8", hemi: ["#d6e2f0", "#5a4a2a", 0.5] as [string, string, number] }
+    : SKY[data.sky];
   // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
   const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
@@ -252,7 +259,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.environmentIntensity = look.env;
   // Settings → Look → "3D look: H": light from a real sky and the broadcast pass (Old: exactly as before)
   const hEnh = look3dStyle() === "h"
-    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
+    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" || goldenDay ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
     : null;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   camera.layers.enable(MATE_LAYER);
