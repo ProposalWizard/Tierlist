@@ -25,7 +25,7 @@ import { motionLook } from "../motionLook";
 import { GAIT_BLEND, MAX_LOOP_RATE, gaitEdges, loopRate, pickGait, sameFootTime, speedsForPace, strideLoop, type Gait } from "../three3d/gait";
 import type { KitColours } from "../shop3d/scene";
 import { makeWorldSeek } from "../frameStep";
-import { makePracticeCam, setPeek, stepPracticeCam } from "../three3d/practiceCam";
+import { makePracticeCam, setPeek, stepPracticeCam, type PlayState } from "../three3d/practiceCam";
 
 export interface Play3DPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
 export interface Play3DLook {
@@ -40,7 +40,7 @@ export interface Play3DLook {
 }
 export type CameraMode = "chase" | "pair" | "practice";
 /** The practice-arena camera's brief, per frame (../three3d/practiceCam.ts): what to keep in shot with you, and whether a cross in the air is to be tracked. */
-export type PracticeFraming = (world: World) => { target: { x: number; y: number }; trackBall?: boolean };
+export type PracticeFraming = (world: World) => { target: { x: number; y: number }; trackBall?: boolean; /** Free Roam: frame the play (practiceCam.ts play mode). */ play?: PlayState };
 
 /** A camera set from outside (the Style Testing page's fixed tilt): three.js coordinates. */
 export type Play3DRig = (world: World) => { pos: [number, number, number]; look: [number, number, number]; heading: number; fov?: number };
@@ -68,6 +68,8 @@ export interface Play3DController {
   pick(x: number, y: number): string | null;
   /** Where a man is on screen (px in the picture); off = out of the picture, x/y then clamped to its edge (his marker). null if he is off the pitch. */
   screen(id: string): { x: number; y: number; off: boolean } | null;
+  /** Where the ball is on screen (px in the picture), or null if it's behind the camera. */
+  ballScreen(): { x: number; y: number } | null;
   /** Frame stepping (dev, lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
   step(dt: number, draw: boolean): void;
   dispose(): void;
@@ -602,6 +604,9 @@ export async function createPlay3DScene(
     // keepy-up headers: a nod on top of whatever he's doing
     const head = b.p.bones.Head;
     if (head && w.act === "juggle-head" && w.actT < 0.35) head.rotateX(0.55 * Math.sin(Math.min(1, w.actT / 0.35) * Math.PI));
+    // you called for it and he can't play you in: he shakes his head (World.callForBall)
+    const shake = typeof w.mind.shakeUntil === "number" ? (w.mind.shakeUntil as number) - world.t : 0;
+    if (head && shake > 0) head.rotateY(0.5 * Math.sin(shake * 22) * Math.min(1, shake * 3));
     // off the pitch but in the picture (walking off, standing by the post)
     b.p.root.visible = w.active || !!w.sideline;
     if (!w.active && w.sideline && head && w.act === "slump" && w.actT >= 2.2 && sp < 0.15) head.rotateX(0.35);
@@ -633,7 +638,7 @@ export async function createPlay3DScene(
       // FIFA's practice arena: behind and above your shoulder, turning on its own (never with the stick)
       const fr = opts.practice ? opts.practice(world) : { target: { x: CX, y: 0 } };
       const b = world.ball;
-      const c = stepPracticeCam(pcam, { you: { x: you.x, y: you.y }, target: fr.target, ball: { x: b.x, y: b.y, z: b.z }, trackBall: fr.trackBall }, camDt);
+      const c = stepPracticeCam(pcam, { you: { x: you.x, y: you.y }, target: fr.target, ball: { x: b.x, y: b.y, z: b.z }, trackBall: fr.trackBall, play: fr.play }, camDt);
       heading = c.heading;
       return { pos: new THREE.Vector3(c.pos.x - CX, c.pos.z, c.pos.y), look: new THREE.Vector3(c.look.x - CX, c.look.z, c.look.y), own: true };
     }
@@ -772,6 +777,11 @@ export async function createPlay3DScene(
     },
     step: stepperApi.step,
     screen(id) { const p = world.get(id); return p && p.active ? screenOf(p) : null; },
+    ballScreen() {
+      const w = container.clientWidth || 1, h = container.clientHeight || 1, b = world.ball;
+      PV.set(b.x - CX, b.z, b.y).project(camera);
+      return PV.z > 1 ? null : { x: (PV.x + 1) / 2 * w, y: (1 - PV.y) / 2 * h };
+    },
     pick(sx, sy) {
       // the man whose body (feet to head) is nearest the tap, within a thumb's width;
       // a team-mate out of the picture is picked by his marker on the edge
