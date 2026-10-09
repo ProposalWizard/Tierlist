@@ -312,27 +312,28 @@ What landed today on Harry, newest first, one line each.
 What the shots showed: one chance drawn straight top-down with dot men (a side-on chance copying the 2D camera); you at the very bottom edge so the drag ran off the pitch; one camera close and low with three huge men and half the frame empty grass.
 
 **Target rules**
-- One angle, 40° down from the horizon, for every chance kind. Never top-down, never at the grass. Corners and side-on chances use the same angle, turned.
+- One angle for every chance kind: asked for 35–45°, then Harry after the 8% still: "the players and goalie could be even smaller and the camera a little bit higher still" → **48° (50° when it cuts empty stand)**. Never top-down, never at the grass. Corners and side-on chances use the same angle, turned.
 - The ball (while you aim) at 55–65% of the height, so ≥ 25% of the canvas below it is pitch to drag on.
 - Frame only the action: ball, you, the 2 nearest team-mates you can pass to (within 11 m across), the 2 nearest defenders, the keeper and goal when in range.
-- A man at the ball about 10% of the canvas height (measured through the camera), not a fixed 1.6×.
+- A man at the ball a set share of the canvas height (measured through the camera), not a fixed 1.6×. Asked for ~10%; Harry chose 8%, then **6%** (players and keeper) after seeing it.
 - Smooth: glide between chances, hold still while you aim, crossfaded clips, no walk/jog flicker, turns capped.
 
 **Done** (all under Settings → Look → "3D camera: New"; Old is untouched)
 - `lib/star/style3d/broadcastCam.ts`: the camera, pure (no three.js). `solveBroadcast`, `actionPoints`, `BROADCAST` numbers.
 - `lib/star/style3d/engineView.ts`: `placeBroadcast` uses it for every facing; glide (~0.4 s), held while a finger is down / the arrow is up / the strike screen shows. Smooth playback: crossfades ≥ 0.24 s, a gait kept ≥ 0.35 s, turns ≤ 540°/s, steadier speed reading, a man who appears starts in the right pose. Ball drawn at the men's scale, capped 2×.
-- `tests/star/broadcastCam.mts`: 13 kinds × 20 seeds at 390×844. Angle 40–45° (45 only when it cuts empty stand); room below the ball 40–45%; man 9.4–10.5% of the height (median 10.3%), all 260 in 9–11%. The crossbar sits 7 / 15 / 35% down the screen (p10 / median / p90): close chances still show a band of stand above the goal.
+- `tests/star/broadcastCam.mts`: 13 kinds × 20 seeds at 390×844. Angle 48–50°; room below the ball 40–45%; at the 6% default the man is 6.0–6.2% of the height in all 260 (8% gave 8.0–8.3%, median 1.45× life size; 10% gave 9.4–10.5%, median 1.8×). The crossbar sits 7 / 13 / 34% down the screen (p10 / median / p90): close chances still show a band of stand above the goal. Seen in one still (one-on-one: 6.1%, 1.55× life size, 48°).
 - In the match's stats bar, by the speaker: a **3D | 2D** switch (instant, the chance carries on; writes "Match view 3D") and a **⚙** that opens this phone's Settings over the match, the match held while open (`components/star/Match3DLayer.tsx`; `EngineFrameObserver.hold` / `.chrome` in `lib/star/engineFrame.ts`; CanvasMatch reads them, additive).
 - Test page: `/star-style-dev?scene=real&cam=new&man=0.08|0.10|0.12` (size candidates), `&bcam=0` (the New camera as it was before, for before stills).
 
 **Half-done**
-- The size is 10% by default; Harry has not picked yet (8 / 10 / 12% stills in the round's sheet). Change `BROADCAST.manShare` in `lib/star/style3d/broadcastCam.ts`.
-- At 10% the median man is 1.8× life size but about 1 chance in 9 reaches the 3.2× cap (`BROADCAST.kMax`): a man can stand taller than the crossbar. Not yet judged on a phone.
+- The size is 6% and the angle 48–50° (`BROADCAST.manShare`, `elevDeg`, `elevMaxDeg` in `lib/star/style3d/broadcastCam.ts`). The full 8 / 10 / 12% sheet over 4 chances was not finished (stopped at Harry's request): only one-on-one stills exist (today, 8%, 6%), in the round's scratch folder, not the repo.
+- At 10% about 1 chance in 9 reached the 3.2× cap (`BROADCAST.kMax`); at 6% none does. Not yet judged on a phone.
+- A small white dot sits on the grass just ahead of you in the one-on-one stills (before and after, so not from this change). Not traced.
 - Close chances (ball 8–12 m out) keep up to a third of the screen as stand above the goal: with the ball held at 60% for the drag there is no room to bring the goal higher without making the men bigger than 10%.
 - Not seen on a phone. Stills came from the Style Testing page's Real game (same engine view), not a career match.
 - Smooth playback lives in `engineView.ts` behind `smooth()`; root motion was already pinned to the 2D record (no change); `ClipPlayer` (`lib/star/three3d/footballAnims.ts`) still drops the older clip if a new change arrives mid-fade.
 
 **Next 3 steps**
-1. Harry picks 8 / 10 / 12%; set `manShare`, and decide whether `kMax` should drop (e.g. 2.2: fewer giants, smaller men on wide chances).
+1. Harry judges 6% / 48° on his phone (`/star-style-dev?scene=real&cam=new&man=0.08` to compare); set `manShare`, and drop `kMax` to ~2.2 if he goes bigger.
 2. Play a career match on a phone with "3D camera: New": check corners and byline crosses (turned 30° behind the attack), the drag room, and the glide between chances; then make New the default in Standard (`lib/star/gameVersions.ts`).
 3. Make `ClipPlayer` blend from the current mix on an interrupted fade (no pop), and play the 3D/2D button and ⚙ with the `star-playtest` agent.

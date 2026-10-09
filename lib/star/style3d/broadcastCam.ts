@@ -10,7 +10,7 @@
  * One camera for every chance kind, worked out here (pure: no three.js, so
  * tests/star/broadcastCam.mts checks it over every kind and many seeds):
  *
- *   - ONE ANGLE: `elevDeg` (40°) down from the horizon, always. Never top-down,
+ *   - ONE ANGLE: `elevDeg` (48°, up to 50°) down from the horizon, always. Never top-down,
  *     never at the grass. Corners and side-on chances use the same angle,
  *     turned to suit (the 2D's side-on facing, swung `sideYawDeg` round
  *     behind the attack so the goal has depth).
@@ -22,7 +22,7 @@
  *     nearest defenders, the keeper and goal mouth when the goal is in range.
  *     The camera comes as close as lets all of that fit.
  *   - MEN A SET SIZE: the figure scale k is picked so a man standing at the
- *     anchor is `manShare` (10%) of the canvas height (measured through this
+ *     anchor is `manShare` (6%) of the canvas height (measured through this
  *     camera, not a fixed 1.6×), within [kMin, kMax].
  *
  * Pitch metres in, as engineFrame: x across (goal centre CX), y out from the
@@ -49,9 +49,9 @@ export interface BcInput {
 
 export const BROADCAST = {
   /** Degrees down from the horizon … */
-  elevDeg: 40,
+  elevDeg: 48,
   /** … or up to this when it cuts the empty stand above the action. */
-  elevMaxDeg: 45,
+  elevMaxDeg: 50,
   /** The top of the action (the crossbar, the furthest man) wanted no lower than this share. */
   standTop: 0.14,
   /** Vertical field of view, degrees. */
@@ -66,8 +66,8 @@ export const BROADCAST = {
   bottom: 0.96,
   /** Room at the sides, CSS px. */
   marginPx: 14,
-  /** A man at the anchor is this share of the canvas height. */
-  manShare: 0.1,
+  /** A man at the anchor is this share of the canvas height (Harry, 9 Oct 2026, after the 8% still: "could be even smaller and the camera a little bit higher still"). */
+  manShare: 0.06,
   /** A man's true height, m. */
   manH: 1.8,
   kMin: 1,

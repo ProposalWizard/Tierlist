@@ -12,8 +12,8 @@
  *
  *   New, round 3 (Harry, 9 Oct 2026, from his iPhone: "players too big,
  *   angle too low … dragging is having to be done off the pitch"): the
- *   broadcast camera (lib/star/style3d/broadcastCam.ts), one 40° angle for
- *   every chance, ball at 60% height, men ~10% of the canvas, plus smoother
+ *   broadcast camera (lib/star/style3d/broadcastCam.ts), one 48–50° angle for
+ *   every chance, ball at 55–60% height, men ~6% of the canvas, plus smoother
  *   playback in engineView. Old is unchanged.
  *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch

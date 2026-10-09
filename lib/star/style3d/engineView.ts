@@ -1284,9 +1284,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   /**
    * THE BROADCAST CAMERA (3D camera: New, lib/star/style3d/broadcastCam.ts):
-   * one 40° angle for every chance kind (side-on ones turned, never top-down),
+   * one 48–50° angle for every chance kind (side-on ones turned, never top-down),
    * the ball at 60% of the height so the drag has pitch under it, men sized to
-   * ~10% of the canvas. It glides between chances and is held still while you
+   * ~6% of the canvas (BROADCAST.manShare). It glides between chances and is held still while you
    * aim (a finger down, the arrow up, or the strike screen).
    */
   const bc = { tx: 0, tz: 0, D: 40, ang: 0, k: 1.6, init: false, key: "", anchor: { x: CX, y: 20 } };
