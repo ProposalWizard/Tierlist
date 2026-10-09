@@ -110,6 +110,12 @@ export class World {
   stamina: Stamina = freshStamina();
   /** A drill's helping hand: moves YOU only while the stick is let go (Two Touch walks you under the ball). */
   assist: WorldInput | null = null;
+  /**
+   * With `assist` set: 0 (default) — the stick takes over while it's pushed;
+   * above 0 — the assist always moves you and the stick only nudges, by this
+   * much (Two Touch: "moving messes everything up", Harry 9 Oct 2026).
+   */
+  assistNudge = 0;
   private queue: Action3[] = [];
   events: WorldEvent[] = [];
   /** Every event since the start (tests). */
@@ -228,7 +234,10 @@ export class World {
         continue;
       }
       if (p.human) {
-        const i = this.assist && Math.hypot(this.input.move.x, this.input.move.y) < 0.1 ? this.assist : this.input;
+        const a = this.assist, n = this.assistNudge;
+        const i = a && n > 0
+          ? { move: { x: a.move.x + this.input.move.x * n, y: a.move.y + this.input.move.y * n }, sprint: a.sprint }
+          : a && Math.hypot(this.input.move.x, this.input.move.y) < 0.1 ? a : this.input;
         if (this.newFeel) {
           const useSt = !!this.rules.stamina;
           stepHuman(p, i.move, i.sprint, dt, !useSt || canSprint(this.stamina));

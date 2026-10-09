@@ -7,14 +7,18 @@
  * 3D games are the one-engine rule's exception (Harry, 8 Oct 2026): they run
  * the shared 3D engine in lib/star/play3d, never the 2D match. This screen
  * only: builds the drill's World from the career, draws it
- * (lib/star/play3d/scene.ts), feeds it your thumbs, and shows the score.
+ * (lib/star/play3d/scene.ts), feeds it your thumbs or keys, and shows the score.
  *
- * Controls (phone first; mouse works the same; WASD/arrows + space on a keyboard):
- *   left thumb anywhere on the left 40% → a stick: a small push walks, a medium
- *   push jogs, a near-full push runs, a full push sprints (Motion: Mocap;
- *   Free Roam's sprint uses the stamina bar). Motion: Old moves as before.
- *   tap on the right → pass / touch / keepy-up touch
- *   drag back on the right and let go → shoot (the 2D game's drag: same power for the same thumb movement)
+ * Controls — one scheme per device (lib/star/play3d/controlScheme.ts; Harry,
+ * 9 Oct 2026). The camera is never turned by the stick or the mouse; the
+ * stick is read against the way the camera looks right now.
+ *   Phone: a stick appears under the left thumb (left half; push further,
+ *     run faster). The right half is the action: a swipe kicks (direction
+ *     aims, length is power), a tap is the touch / pass. Two fingers on the
+ *     right peek round, then spring back.
+ *   PC: WASD or arrows move, Shift sprints. The mouse is only the action:
+ *     hold and let go kicks towards the pointer (hold longer or drag further
+ *     = harder), a click touches / passes. Q/E look round. Space taps.
  */
 import { look3dStyle } from "@/lib/star/look3dStyle";
 import { motionLook } from "@/lib/star/motionLook";
@@ -25,8 +29,10 @@ import { kitsOf } from "@/lib/star/kits";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { faceFromUrl } from "@/lib/star/three3d/faceFromUrl";
+import { stickToPitch, PEEK_MAX } from "@/lib/star/three3d/practiceCam";
 import { makeRng } from "@/lib/star/play3d/rng";
 import { skillsOf, type Skills3 } from "@/lib/star/play3d/player";
+import { controlScheme, useControlChoice, type ControlScheme } from "@/lib/star/play3d/controlScheme";
 import type { DrillDef, DrillSession, DrillTrain } from "@/lib/star/play3d/drills";
 import { applyLevelResult, highestUnlocked, starsOf } from "@/lib/star/trainingLevels";
 import type { Person3 } from "@/lib/star/play3d/freeRoam";
@@ -36,6 +42,15 @@ import BackPill3D from "./BackPill3D";
 
 const SKINS = ["#8d5524", "#c68642", "#e0ac69", "#5c3a1e", "#f1c27d"];
 const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
+
+/** A swipe is longer than the 2D game's drag-back: this share of it counts (full power ≈ twice the 2D drag). */
+export const SWIPE_SCALE = 0.5;
+/** PC: holding the button this long (s) is full power (the 2D game's full pull, 0.14). */
+export const HOLD_FULL_S = 1.0;
+const FULL_PULL = 0.14;
+/** A press shorter than this (ms) and moving less than TAP_PX is a tap / click. */
+const TAP_MS = 220;
+const TAP_PX = 12;
 
 export interface Play3DResult extends GameResult { drill: string; /** A training drill (Pace Sprint): the level and stars for the career to bank. */ train?: DrillTrain }
 
@@ -101,6 +116,12 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     previewTrain: (t) => applyLevelResult(career, t.skill, t.level, t.stars).gained,
   }), [drill, seed, cast, mode, options]);
   const [hud, setHud] = useState(() => session.hud());
+  // which controls: this device's own, or the Settings override (read after mount: matchMedia is browser-only)
+  const choice = useControlChoice();
+  const [scheme, setScheme] = useState<ControlScheme>("touch");
+  useEffect(() => { setScheme(controlScheme()); }, [choice]);
+  const schemeRef = useRef(scheme);
+  schemeRef.current = scheme;
   // team-mates for the pass: a name over the one a tap passes to, and an edge marker for any out of the picture
   const [marks, setMarks] = useState<{ id: string; name: string; x: number; y: number; off: boolean; aim: boolean }[]>([]);
   const mateMarks = () => {
@@ -120,6 +141,34 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   const holder = useRef<HTMLDivElement>(null);
   const ctrl = useRef<Play3DController | null>(null);
   const hRef = useRef<{ dispose(): void } | null>(null);
+
+  // ── input state: the stick (screen units, length 0–1) and the keys; turned into pitch directions every frame ──
+  const w = session.world;
+  const stickVec = useRef({ x: 0, y: 0, sprint: false });
+  const keys = useRef(new Set<string>());
+  /** The stick and keys against the camera as it looks NOW (the camera turns on its own; the stick never turns it). */
+  const applyInput = () => {
+    const k = keys.current;
+    const s = stickVec.current;
+    let sx = s.x, sy = s.y, sprint = s.sprint;
+    if (Math.hypot(sx, sy) < 0.01) {
+      const kx = (k.has("d") || k.has("arrowright") ? 1 : 0) - (k.has("a") || k.has("arrowleft") ? 1 : 0);
+      const ky = (k.has("s") || k.has("arrowdown") ? 1 : 0) - (k.has("w") || k.has("arrowup") ? 1 : 0);
+      const d = Math.hypot(kx, ky);
+      // new feel (Motion: Mocap): keys alone run, Shift sprints (a full stick push would sprint)
+      const kk = w.newFeel && !k.has("shift") ? 0.85 : 1;
+      sx = d ? kx / d * kk : 0; sy = d ? ky / d * kk : 0; sprint = k.has("shift");
+    }
+    // the chase camera (Wembley) turns with you, so there the direction is fixed when the stick or keys change (as before)
+    const sig = `${sx.toFixed(3)},${sy.toFixed(3)}`;
+    if (session.camera === "chase" && sig === lastSig.current) { w.input = { ...w.input, sprint }; return; }
+    lastSig.current = sig;
+    const h = ctrl.current?.heading() ?? -Math.PI / 2;
+    w.input = { move: Math.hypot(sx, sy) > 0.01 ? stickToPitch(h, sx, sy) : { x: 0, y: 0 }, sprint };
+  };
+  const lastSig = useRef("");
+  const applyRef = useRef(applyInput);
+  applyRef.current = applyInput;
 
   // ── the 3D picture (and the World's clock) ──
   useEffect(() => {
@@ -149,9 +198,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         hRef.current = hLook;
         const c = await createPlay3DScene(el, session.world, { kit: { shirt: kit.shirt, trim: kit.trim }, people, teamKits: session.bibs ? bibsFor(kit.shirt) : undefined }, {
           camera: session.camera,
+          practice: session.frame,
           ...(hLook ? hLook.opts : {}),
           onFrame: (dt) => {
             hLook?.frame(dt);
+            applyRef.current();
             acc += dt;
             if (acc > 0.1) {
               acc = 0; setHud(session.hud()); setMarks(mateMarks());
@@ -175,18 +226,14 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   }, []);
   useEffect(() => { if (result) ctrl.current?.setActive(false); }, [result]);
 
-  // ── thumbs ──
-  const w = session.world;
-  /** h: the camera's heading when the thumb went down. The stick keeps that frame while held, so a turning camera never turns your run (9 Oct 2026). */
-  const stick = useRef<{ id: number; x0: number; y0: number; t0: number; h: number } | null>(null);
+  // ── thumbs and the mouse ──
+  const stick = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const aim = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
+  const peekT = useRef<{ ids: number[]; x0: number } | null>(null);
   const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
-  const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
-  const toWorld = (sx: number, sy: number, held?: number) => {
-    const h = held ?? ctrl.current?.heading() ?? -Math.PI / 2;
-    const f = { x: Math.cos(h), y: Math.sin(h) }, r = { x: -Math.sin(h), y: Math.cos(h) };
-    return { x: r.x * sx + f.x * -sy, y: r.y * sx + f.y * -sy };
-  };
+  const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number; t0: number } | null>(null);
+  const [now, setNow] = useState(0);
+  const toWorld = (sx: number, sy: number) => stickToPitch(ctrl.current?.heading() ?? -Math.PI / 2, sx, sy);
   const STICK_R = 56;
   /** A team-mate drawn under a tap (px in the picture), else null: a tap on him passes to him. */
   const mateAt = (x: number, y: number): string | null => {
@@ -194,12 +241,45 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     const p = w.get(id), you = w.you();
     return p && you && p !== you && !p.keeper && p.team === you.team ? p.id : null;
   };
+  /** PC: how hard a hold-and-release kicks (the hold, or the drag, whichever is more). */
+  const pcPull = (d: { x0: number; y0: number; x: number; y: number; t0: number }, t: number) => {
+    const hold = Math.max(0, Math.min(1, (t - d.t0 - TAP_MS) / 1000 / HOLD_FULL_S)) * FULL_PULL;
+    const dragged = Math.hypot(d.x - d.x0, d.y - d.y0) / realMatchHeight(window.innerWidth) * SWIPE_SCALE;
+    return Math.min(FULL_PULL * 1.6, Math.max(hold, dragged));
+  };
+  /** PC: the way to kick — from you towards the pitch point under the pointer. */
+  const pcDir = (x: number, y: number) => {
+    const you = w.you(), g = ctrl.current?.ground(x, y);
+    if (you && g && Math.hypot(g.x - you.x, g.y - you.y) > 0.3) return { x: g.x - you.x, y: g.y - you.y };
+    // above the horizon: straight ahead of the camera, bent by where the pointer is across the screen
+    const box = holder.current?.getBoundingClientRect();
+    return toWorld((x - (box?.width ?? 400) / 2) / 200, -1);
+  };
+  useEffect(() => {
+    if (!drag) return;
+    const id = setInterval(() => setNow(performance.now()), 50);
+    return () => clearInterval(id);
+  }, [drag]);
+
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now(), h: ctrl.current?.heading() ?? -Math.PI / 2 }; setKnob({ x0: x, y0: y, x, y }); }
-    else if (!aim.current) { aim.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setDrag({ x0: x, y0: y, x, y }); }
+    const t = performance.now();
+    if (schemeRef.current === "pc") {
+      if (e.button !== 0 || aim.current) return;
+      aim.current = { id: e.pointerId, x0: x, y0: y, t0: t };
+      setDrag({ x0: x, y0: y, x, y, t0: t }); setNow(t);
+      return;
+    }
+    if (x < box.width * 0.5 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: t }; setKnob({ x0: x, y0: y, x, y }); return; }
+    if (x >= box.width * 0.5 && aim.current && !peekT.current && Math.hypot(x - aim.current.x0, y - aim.current.y0) < 120) {
+      // a second finger on the right: peek round (the first finger's swipe is called off)
+      peekT.current = { ids: [aim.current.id, e.pointerId], x0: (x + aim.current.x0) / 2 };
+      aim.current = null; setDrag(null);
+      return;
+    }
+    if (!aim.current && !peekT.current) { aim.current = { id: e.pointerId, x0: x, y0: y, t0: t }; setDrag({ x0: x, y0: y, x, y, t0: t }); }
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -207,64 +287,69 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     if (stick.current?.id === e.pointerId) {
       const dx = x - stick.current.x0, dy = y - stick.current.y0, d = Math.hypot(dx, dy);
       const k = Math.min(1, d / STICK_R);
-      const m = d > 1 ? toWorld(dx / d * k, dy / d * k, stick.current.h) : { x: 0, y: 0 };
-      w.input = { move: m, sprint: d > STICK_R * 0.92 };
+      stickVec.current = d > 1 ? { x: dx / d * k, y: dy / d * k, sprint: d > STICK_R * 0.92 } : { x: 0, y: 0, sprint: false };
       setKnob({ x0: stick.current.x0, y0: stick.current.y0, x, y });
-    } else if (aim.current?.id === e.pointerId) setDrag({ x0: aim.current.x0, y0: aim.current.y0, x, y });
+    } else if (peekT.current?.ids.includes(e.pointerId)) {
+      ctrl.current?.peek(Math.max(-PEEK_MAX, Math.min(PEEK_MAX, -(x - peekT.current.x0) * 0.006)));
+    } else if (aim.current?.id === e.pointerId) setDrag((d) => d && { ...d, x, y });
   };
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
+    const t = performance.now();
     if (stick.current?.id === e.pointerId) {
       const s = stick.current;
-      stick.current = null; w.input = { move: { x: 0, y: 0 }, sprint: false }; setKnob(null);
+      stick.current = null; stickVec.current = { x: 0, y: 0, sprint: false }; setKnob(null);
       // a quick tap on a team-mate on the left of the screen is a pass to him, not a stick
-      if (Math.hypot(x - s.x0, y - s.y0) < 12 && performance.now() - s.t0 < 260) { const to = mateAt(x, y); if (to) w.act({ kind: "tap", to }); }
+      if (Math.hypot(x - s.x0, y - s.y0) < TAP_PX && t - s.t0 < TAP_MS) { const to = mateAt(x, y); if (to) w.act({ kind: "tap", to }); }
       return;
     }
+    if (peekT.current?.ids.includes(e.pointerId)) { peekT.current = null; ctrl.current?.peek(0); return; }
     if (aim.current?.id === e.pointerId) {
       const a = aim.current;
       aim.current = null; setDrag(null);
       const dx = x - a.x0, dy = y - a.y0;
+      const tap = Math.hypot(dx, dy) < TAP_PX && t - a.t0 < TAP_MS;
+      if (schemeRef.current === "pc") {
+        if (tap) { w.act({ kind: "tap", to: mateAt(x, y) ?? undefined }); return; }
+        w.act({ kind: "shoot", dir: pcDir(x, y), pull: pcPull({ ...a, x, y }, t) });
+        return;
+      }
       if (Math.hypot(dx, dy) < 14) { w.act({ kind: "tap", to: mateAt(x, y) ?? undefined }); return; }
-      // slingshot: the ball goes the other way to the drag; the pull is the 2D game's (a fraction of the real match's canvas height)
-      const pull = Math.hypot(dx, dy) / realMatchHeight(window.innerWidth);
-      w.act({ kind: "shoot", dir: toWorld(-dx, -dy), pull });
+      // a swipe: the ball goes the way the thumb went; its length is the power
+      const pull = Math.hypot(dx, dy) / realMatchHeight(window.innerWidth) * SWIPE_SCALE;
+      w.act({ kind: "shoot", dir: toWorld(dx, dy), pull });
     }
   };
-  // keyboard
+  // keyboard: WASD/arrows move (read every frame against the camera), Shift sprints, Space taps, Q/E look round
   useEffect(() => {
-    const keys = new Set<string>();
-    const sync = () => {
-      const sx = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
-      const sy = (keys.has("s") || keys.has("arrowdown") ? 1 : 0) - (keys.has("w") || keys.has("arrowup") ? 1 : 0);
-      if (stick.current) return;
-      const d = Math.hypot(sx, sy);
-      // new feel: arrows alone run, shift sprints (a full stick push would sprint)
-      const k = w.newFeel && !keys.has("shift") ? 0.85 : 1;
-      w.input = { move: d ? toWorld(sx / d * k, sy / d * k) : { x: 0, y: 0 }, sprint: keys.has("shift") };
-    };
+    const ks = keys.current;
+    const peekKeys = () => ctrl.current?.peek((ks.has("e") ? PEEK_MAX : 0) - (ks.has("q") ? PEEK_MAX : 0));
     const down = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (k === " ") { e.preventDefault(); w.act({ kind: "tap" }); return; }
-      keys.add(k); sync();
+      if (k === " ") { e.preventDefault(); if (!e.repeat) w.act({ kind: "tap" }); return; }
+      if (k.startsWith("arrow")) e.preventDefault();
+      ks.add(k);
+      if (k === "q" || k === "e") peekKeys();
     };
-    const up = (e: KeyboardEvent) => { keys.delete(e.key.toLowerCase()); sync(); };
+    const up = (e: KeyboardEvent) => { const k = e.key.toLowerCase(); ks.delete(k); if (k === "shift") ks.delete("shift"); if (k === "q" || k === "e") peekKeys(); };
+    const blur = () => { ks.clear(); peekKeys(); };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
   }, [w]);
 
-  // the controls' hint by pointer type (Harry: "designed for both PC and phone"): a mouse means a keyboard, a finger means the stick
-  const [fine, setFine] = useState(false);
-  useEffect(() => { try { setFine(window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches); } catch { /* no matchMedia: the phone hint */ } }, []);
   const [vw, setVw] = useState(0);
   useEffect(() => { setVw(window.innerWidth); }, []);
   const [vh, setVh] = useState(0);
   useEffect(() => { setVh(window.innerHeight); }, []);
   const h = vw ? Math.max(360, Math.min(realMatchHeight(vw), 640, vh - 310)) : 560;
   const mins = hud.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : null;
+  const hint = session.hints ? session.hints[scheme] : scheme === "pc" && session.hintKeys ? session.hintKeys : session.hint;
+  // the aim line: phone — the swipe itself; PC — from you to the pointer, with the power filling up
+  const youOnScreen = drag && scheme === "pc" ? ctrl.current?.screen(w.you()?.id ?? "") ?? null : null;
+  const pcPower = drag && scheme === "pc" ? pcPull(drag, Math.max(now, drag.t0)) / FULL_PULL : 0;
 
   return (
     <GameShell title={drill.name} who="Team" current={team} tone="#38bdf8">
@@ -276,11 +361,12 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         </div>
         {mins && <div className="text-[22px] font-black tabular-nums" data-play3d-time>{mins}</div>}
       </div>
-      <div className="relative select-none overflow-hidden" style={{ height: h, borderRadius: 4, touchAction: "none" }} data-play3d={three}>
+      <div className="relative select-none overflow-hidden" style={{ height: h, borderRadius: 4, touchAction: "none" }} data-play3d={three} data-play3d-controls={scheme}>
         <div ref={holder} className="absolute inset-0" />
         <div
           className="absolute inset-0 z-20"
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+          onContextMenu={(e) => e.preventDefault()}
           data-play3d-pad
         />
         {knob && (
@@ -297,13 +383,26 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             </div>
           </div>
         )}
-        {drag && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 14 && (
+        {drag && scheme === "touch" && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 14 && (
           <svg className="pointer-events-none absolute inset-0 z-30" width="100%" height="100%">
-            <line x1={drag.x0} y1={drag.y0} x2={drag.x0 - (drag.x - drag.x0)} y2={drag.y0 - (drag.y - drag.y0)} stroke="#fb923c" strokeWidth={6} strokeLinecap="round" />
+            <line x1={drag.x0} y1={drag.y0} x2={drag.x} y2={drag.y} stroke="#fb923c" strokeWidth={6} strokeLinecap="round" />
             <circle cx={drag.x} cy={drag.y} r={9} fill="rgba(255,255,255,0.7)" />
           </svg>
         )}
+        {drag && scheme === "pc" && (
+          <svg className="pointer-events-none absolute inset-0 z-30" width="100%" height="100%" data-play3d-charge={pcPower.toFixed(2)}>
+            {youOnScreen && !youOnScreen.off && <line x1={youOnScreen.x} y1={youOnScreen.y + 30} x2={drag.x} y2={drag.y} stroke="#fb923c" strokeWidth={4} strokeDasharray="8 6" strokeLinecap="round" />}
+            <circle cx={drag.x} cy={drag.y} r={12} fill="none" stroke="white" strokeWidth={2} />
+            <rect x={drag.x + 18} y={drag.y - 30} width={8} height={60} rx={3} fill="rgba(0,0,0,0.5)" />
+            <rect x={drag.x + 18} y={drag.y + 30 - 60 * Math.min(1, pcPower)} width={8} height={60 * Math.min(1, pcPower)} rx={3} fill={pcPower > 1 ? "#f87171" : "#fb923c"} />
+          </svg>
+        )}
         {hud.flash && !hud.banner && <div className="pointer-events-none absolute inset-x-0 top-[8%] z-30 px-2 text-center text-[20px] font-black uppercase" style={{ textShadow: "0 2px 8px #000" }}>{hud.flash}</div>}
+        {hud.pop && (
+          <div className="pointer-events-none absolute inset-x-0 top-[38%] z-30 text-center" data-play3d-pop>
+            <span className="rounded-full px-3 py-1 text-[17px] font-black uppercase" style={{ background: "rgba(0,0,0,0.55)", color: hud.pop.tone === "good" ? "#4ade80" : hud.pop.tone === "bad" ? "#f87171" : "#fde047" }}>{hud.pop.text}</span>
+          </div>
+        )}
         {hud.banner && (
           <div className="pointer-events-none absolute inset-x-0 top-[24%] z-30 px-2 text-center text-[44px] font-black uppercase leading-none" data-play3d-banner style={{ color: hud.banner.tone === "good" ? "#4ade80" : hud.banner.tone === "bad" ? "#f87171" : "#fde047", textShadow: "0 3px 12px #000" }}>
             {hud.banner.text}
@@ -311,7 +410,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         )}
         {hud.note && <div className="pointer-events-none absolute inset-x-0 top-2 z-30 px-2 text-center text-[13px] font-black uppercase text-amber-200" style={{ textShadow: "0 1px 4px #000" }} data-play3d-note>{hud.note}</div>}
         {!!hud.roster?.length && (
-          <div className="pointer-events-none absolute left-2 top-9 z-30 flex flex-col gap-0.5" data-play3d-roster>
+          <div className="pointer-events-none absolute left-2 top-[60px] z-30 flex flex-col gap-0.5" data-play3d-roster>
             {hud.roster.map((r) => (
               <div key={r.name} className={`rounded px-1.5 py-0.5 text-[11px] font-black ${r.you ? "ring-1 ring-sky-300" : ""}`} style={{ background: "rgba(0,0,0,0.55)", color: r.state === "out" ? "#f87171" : r.state === "safe" ? "#4ade80" : "#fff" }}>
                 {r.state === "safe" ? "✓" : r.state === "out" ? "✗" : "•"} {r.name}
@@ -328,7 +427,15 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         ))}
         {three === "loading" &&<div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint data-pointer={fine ? "fine" : "coarse"}>{fine && session.hintKeys ? session.hintKeys : session.hint}</div>
+        {scheme === "touch" && session.hints && !knob && !drag && three === "ready" && !result && (
+          <>
+            <div className="pointer-events-none absolute bottom-[76px] left-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/80" data-play3d-zone="move">◉ Move</div>
+            <div className="pointer-events-none absolute bottom-[76px] right-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/80" data-play3d-zone="action">Tap · Swipe ➚</div>
+          </>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint={scheme}>
+          {scheme === "pc" && session.hints ? <KeyHint text={hint} /> : hint}
+        </div>
       </div>
       {!!session.buttons?.length && !result && (
         <div className="mt-2 flex gap-2">
@@ -339,5 +446,17 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
       )}
       {result && <ResultPanel result={result} who="Team" current={team} onContinue={() => onFinish(result)} />}
     </GameShell>
+  );
+}
+
+/** A PC hint line with its keys drawn as keycaps (WASD, Shift, Space, Q/E). */
+function KeyHint({ text }: { text: string }) {
+  const parts = text.split(/\b(WASD|Shift|Space|Q\/E)\b/);
+  return (
+    <>
+      {parts.map((p, i) => (/^(WASD|Shift|Space|Q\/E)$/.test(p)
+        ? <kbd key={i} className="mx-0.5 rounded border border-white/50 bg-white/15 px-1 font-mono text-[11px]">{p}</kbd>
+        : <span key={i}>{p}</span>))}
+    </>
   );
 }
