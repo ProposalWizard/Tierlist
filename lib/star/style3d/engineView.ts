@@ -62,9 +62,13 @@ export const ENGINE_VIEW_FIG_SCALE = 1.3;
 /** The keeper a size down, so he still fits his goal (the 2D draws him small on purpose too). */
 const KEEPER_SHARE = 0.85;
 /** How tall a man stands on the glass at the action with the TV camera, CSS px (the 2D match screen's men, coordinator 9 Oct 2026). */
-const TARGET_PX = 40;
-/** The men lean back from the camera by this share of (90° − tilt), so a man reads near full height (the Style Testing gameplay's trick). */
-const LEAN_SHARE = 0.3;
+const TARGET_PX = 46;
+/**
+ * The men lean back from the camera by this share of (90° − tilt). 0: they
+ * stand upright (round 3, 9 Oct 2026: leaning men read small and wrong on the
+ * side-by-side with Harry's target). Kept as a number to tune, not a feature.
+ */
+const LEAN_SHARE = 0;
 const SKINS = ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e", "#f1c27d", "#a0673f"];
 const BALL_R = 0.11;
 
@@ -100,10 +104,15 @@ export const TV_CAMERA = {
   /** Never closer / wider than this (metres across at the action). */
   minViewW: 16,
   maxViewW: 44,
-  /** Room round the outermost men, metres. */
-  marginM: 3,
+  /** Room round the outermost men at the screen's sides, CSS px. */
+  marginPx: 26,
   /** The group's top and bottom stay inside these shares of the screen. */
   top: 0.16,
+  /**
+   * Goal in the chance: the goal line sits this far down the screen, so only
+   * a slim strip of stand shows above the net (about 8–10%, Harry's target).
+   */
+  goalLineAt: 0.12,
   bottom: 0.84,
   /** Where the middle of the group sits (a touch above the middle: the stands above, the HUD below). */
   centre: 0.47,
@@ -140,6 +149,45 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const scene = new THREE.Scene();
   const root = new THREE.Group();
   scene.add(root);
+  // A soft rim light from beyond the play, low over the grass, so the men's
+  // edges catch it and they lift off the pitch (it barely touches flat grass).
+  const rimLight = new THREE.DirectionalLight("#fff1dc", 0.9);
+  root.add(rimLight, rimLight.target);
+
+  /**
+   * Plain heads until the new human body lands (the people builder is
+   * replacing it): from this high camera the body's head texture read as a
+   * pale mask. Here the head is painted flat — hair on top and at the back,
+   * skin on the face — on these men only (their own material copy).
+   */
+  const plainHead = (p: Person3D, skin: string, hair: string) => {
+    const m = p.body.material as any;
+    const u = { uHeadSkin: { value: new THREE.Color(skin) }, uHeadHair: { value: new THREE.Color(hair) } };
+    if (!m.userData.plainHead) {
+      const inner = m.onBeforeCompile;
+      const innerKey = m.customProgramCacheKey?.bind(m);
+      m.onBeforeCompile = (sh: any, r: any) => {
+        inner?.(sh, r);
+        Object.assign(sh.uniforms, m.userData.plainHead);
+        sh.fragmentShader = sh.fragmentShader
+          .replace("#include <common>", "#include <common>\nuniform vec3 uHeadSkin, uHeadHair;")
+          .replace("#include <color_fragment>", `#include <color_fragment>
+{
+  vec3 hr = vRest;
+  float hd = smoothstep(uFaceF.x - 0.01, uFaceF.x + 0.01, hr.y);
+  float onTop = max(step(uFaceF.z - 0.01, hr.y), step(hr.z, uFaceF.w - 0.06));
+  vec3 headCol = mix(uHeadSkin, uHeadHair * 0.8, onTop);
+  diffuseColor.rgb = mix(diffuseColor.rgb, headCol, hd);
+}`);
+      };
+      m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-plainhead`;
+      m.userData.plainHead = u;
+      m.needsUpdate = true;
+    } else {
+      m.userData.plainHead.uHeadSkin.value.set(skin);
+      m.userData.plainHead.uHeadHair.value.set(hair);
+    }
+  };
   const camera = new THREE.PerspectiveCamera(39, 0.5, 0.1, 700);
 
   let def = o.def;
@@ -213,6 +261,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],
     };
     dressPerson3d(THREE, p, look);
+    plainHead(p, look.skin, look.hair ?? "#1b120c");
     relaxHands(THREE, p);
     if (fb) addClips(THREE, p, fb as any);
     const play = new ClipPlayer(THREE, p.actions);
@@ -486,22 +535,46 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     };
     const dFor = (w: number) => w / 2 / Math.tan(hh);
     const Dmin = dFor(TV_CAMERA.minViewW), Dmax = dFor(TV_CAMERA.maxViewW);
-    // wide enough for everyone across (at the far end, where the picture is narrowest, roughly)
-    const Dw = dFor(Math.max(x1 - CX - lx, lx - (x0 - CX)) * 2 + TV_CAMERA.marginM * 2);
-    // deep enough: top of the group under `top`, bottom over `bottom`
-    const fits = (D: number) => shareOf(y1, lookFor(y0, TV_CAMERA.top, D), D) <= TV_CAMERA.bottom;
-    let lo = Math.max(Dmin, Dw), hi = Math.max(lo, Dmax);
-    if (!fits(lo)) { for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fits(m)) hi = m; else lo = m; } lo = hi; }
-    const D = Math.min(Dmax, lo);
-    // centre the group: the middle of its top and bottom at the middle of the screen
-    let fr = TV_CAMERA.top;
-    for (let i = 0; i < 3; i++) {
-      const lzi = lookFor(y0, fr, D);
-      const mid = (shareOf(y0, lzi, D) + shareOf(y1, lzi, D)) / 2;
-      fr = Math.max(0.04, Math.min(0.5, fr + (TV_CAMERA.centre - mid)));
-    }
-    const lz = lookFor(y0, fr, D);
-    return { x: lx, z: lz, D, th, fov: TV_CAMERA.fov, W, H };
+    const topAt = f.goalInView ? TV_CAMERA.goalLineAt : TV_CAMERA.top;
+    // where the camera looks for distance D: the goal end pinned near the top,
+    // or (no goal) the group centred
+    const lzFor = (D: number) => {
+      if (f.goalInView) return lookFor(y0, topAt, D);
+      let fr = TV_CAMERA.top;
+      for (let i = 0; i < 3; i++) {
+        const lzi = lookFor(y0, fr, D);
+        const mid = (shareOf(y0, lzi, D) + shareOf(y1, lzi, D)) / 2;
+        fr = Math.max(0.04, Math.min(0.5, fr + (TV_CAMERA.centre - mid)));
+      }
+      return lookFor(y0, fr, D);
+    };
+    // Everyone actually on the glass (projected through this camera, not
+    // estimated at the look point: the action is beyond it, where the
+    // picture is wider). Closest camera that fits, so the men are big.
+    const tH = Math.tan(hv), tW = Math.tan(hh), sn = Math.sin(th), cs = Math.cos(th);
+    const xMargin = 1 - (2 * TV_CAMERA.marginPx) / Math.max(1, W);
+    const fitsAll = (D: number) => {
+      const lz = lzFor(D);
+      const cy = D * cs, cz = lz + D * sn;
+      for (const q of pts) {
+        const vx = q.x - CX - lx, vy = -cy, vz = q.y - cz;
+        const depth = -cs * vy - sn * vz;
+        if (depth <= 0.1) return false;
+        const nx = vx / (depth * tW);
+        const ny = (sn * vy - cs * vz) / (depth * tH);
+        if (Math.abs(nx) > xMargin || (1 - ny) / 2 > TV_CAMERA.bottom) return false;
+      }
+      return true;
+    };
+    let lo = Math.min(Dmin, dFor(10)), hi = Dmax;
+    if (fitsAll(lo)) hi = lo;
+    else if (!fitsAll(hi)) lo = hi;
+    else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fitsAll(m)) hi = m; else lo = m; }
+    const D = hi;
+    const lz = lzFor(D);
+    // how far the action is from the camera (the men are sized there, not at the look point)
+    const ballDepth = (() => { const cy = D * cs, cz = lz + D * sn; return Math.max(1, cs * cy - sn * (ball.y - cz)); })();
+    return { x: lx, z: lz, D, th, fov: TV_CAMERA.fov, W, H, ballDepth };
   };
   const placeTvCamera = (f: EngineFrame, dt: number) => {
     const t = tvSolve(f);
@@ -524,8 +597,9 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     camera.updateProjectionMatrix();
     lean = (Math.max(0, 90 - (t.th * 180) / Math.PI) * LEAN_SHARE * Math.PI) / 180;
     // men at the 2D match screen's size whatever the zoom: a man ~TARGET_PX tall at the action
-    const pxPerM = t.H / (2 * tv.D * Math.tan((t.fov * Math.PI) / 360));
-    tvFig = Math.max(1, Math.min(2.4, TARGET_PX / (1.8 * pxPerM * (0.55 + 0.45 * Math.sin(t.th)))));
+    const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
+    // an upright man is foreshortened by sin(tilt) from this camera
+    tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
   };
   const placeCamera = (f: EngineFrame, dt: number) => {
     if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
@@ -660,6 +734,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       if (cw !== size.w || ch !== size.h) { size = { w: cw, h: ch }; renderer.setSize(Math.max(1, cw), Math.max(1, ch), false); }
       lastFrame = f;
       placeCamera(f, dt);
+      {
+        // the rim light sits beyond the play, opposite the camera, low
+        const lx = camera.position.x, lz = camera.position.z;
+        const tx = (f.cam.viewport.x1 + f.cam.viewport.x2) / 2 - CX, tz = (f.cam.viewport.y1 + f.cam.viewport.y2) / 2;
+        const dx = tx - lx, dz = tz - lz, dl = Math.hypot(dx, dz) || 1;
+        rimLight.position.set(tx + (dx / dl) * 60, 9, tz + (dz / dl) * 60);
+        rimLight.target.position.set(tx, 1, tz);
+        rimLight.intensity = def.real ? 0.9 : 0.5;
+      }
       // people
       const you = f.figures.find((g) => g.sid === "you");
       for (const g of f.figures) {

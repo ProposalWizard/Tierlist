@@ -71,8 +71,8 @@ export default function StyleTest3D() {
   const [realSeed, setRealSeed] = useState(7);
   const [realKinds, setRealKinds] = useState<ScenarioKind[] | undefined>(undefined);
   const [tilt, setTilt] = useState(40);
-  /** The real game's camera angle (the dial Harry already has; 40° by default). */
-  const [rtilt, setRtilt] = useState(40);
+  /** The real game's camera angle (the dial Harry already has). 45° by default: measured against 55° on the same chance (round 3), 45° gives the bigger men (about 50 px) and a slimmer stand strip; 55° shows more empty pitch on a tall phone. */
+  const [rtilt, setRtilt] = useState(45);
   const [tod, setTod] = useState<"day" | "golden" | "night" | null>(null);
   const todRef = useRef(tod); todRef.current = tod;
   const [seek, setSeek] = useState<number | null>(null);
