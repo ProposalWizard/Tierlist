@@ -203,7 +203,7 @@ function LookRow({ id, tabs, note, look }: {
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
-  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", bossRoom: "Talk to your manager",
+  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
@@ -272,6 +272,8 @@ function World3dGroup() {
       <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
       <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
       <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
+      <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the camera a little lower and tighter on the action; men at the edges can go off screen. Old: everyone in the chance on screen." />
+      <LookRow id="playerLight3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the players lit from the side and behind, darker underneath, a shadow under each man. Old: the light as it was." />
       <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
       <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />

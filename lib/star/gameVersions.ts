@@ -37,6 +37,7 @@ import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
+import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -74,6 +75,8 @@ export const LOOK_ROWS = {
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
+  camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
+  playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
   casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
   signing: row("Signing scene", "3d", "drawn", () => (signing3dOn() ? "3d" : "drawn"), (v) => setSigning3d(v === "3d")),
@@ -91,8 +94,8 @@ export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
-/** Rows still being tested: new in Preview, old in Standard. Today: Chances, Animations, the human 3D body and cut-scene people. */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["chances", "animations", "humanBody", "cutscenePeople"];
+/** Rows still being tested: new in Preview, old in Standard. Today: Chances, Animations, the human 3D body, cut-scene people, and the real game's 3D camera and player light. */
+export const PREVIEW_ROWS: readonly LookRowId[] = ["chances", "animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -121,6 +124,8 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     humanBody: O("humanBody"),
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
+    camera3d: O("camera3d"),
+    playerLight3d: O("playerLight3d"),
     bossRoom: N("bossRoom"),
     casino: N("casino"),
     signing: N("signing"),

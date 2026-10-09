@@ -8,6 +8,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import RealGame3D from "./RealGame3D";
+import { previewRealCameraLook, previewPlayerLightLook } from "@/lib/star/style3d/realGameLook";
 import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { STYLE_CHIPS, resolveStyle, type StyleId } from "@/lib/star/style3d/styles";
 import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
@@ -112,6 +113,9 @@ export default function StyleTest3D() {
     const ks = (q.get("kinds") ?? "").split(",").filter((k): k is ScenarioKind => (SCENARIO_KINDS as readonly string[]).includes(k));
     if (ks.length) setRealKinds(ks);
     if (q.get("clean") === "1") setClean(true);
+    // the real game's 3D camera and player light, for this page only (Settings → Look keeps its own)
+    const cm = q.get("cam"); if (cm === "new" || cm === "old") previewRealCameraLook(cm);
+    const pl = q.get("plight"); if (pl === "new" || pl === "old") previewPlayerLightLook(pl);
     const demo = q.get("demo"); if (demo && DEMOS[demo]) demoRef.current = demo;
     setInited(true);
   }, []);
