@@ -48,6 +48,7 @@ S.onBeforeRender = function (r: any, _s: any, _c: any, rt: any) {
     };
   }
   M.renderer = r; M.scene = this; M.camera = _c;
+  (M.scenes ||= new Set()).add(this);
   tA = performance.now();
 };
 S.onAfterRender = function (r: any) {
@@ -120,10 +121,12 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     us.forEach(([x, y], i) => figures.push(fig(`mate${i}`, x, y, "us")));
     them.forEach(([x, y], i) => figures.push(fig(`def${i}`, x, y, "them")));
     const t0 = performance.now() / 1000;
+    let facing = "up";
+    const bp = { x: 34, y: 17.2 };
     const f = () => ({
       t: performance.now() / 1000, phase: "aim", kind: "one_on_one",
-      cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing: "up", tilt: null, W: 390, H: 600 },
-      ball: { x: 34, y: 17.2, z: 0.11, vx: 0, vy: 0, vz: 0, live: true, inNet: false }, landing: null,
+      cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing, tilt: null, W: 390, H: 600 },
+      ball: { x: bp.x, y: bp.y, z: 0.11, vx: 0, vy: 0, vz: 0, live: true, inNet: false }, landing: null,
       keeper: { x: 34, y: 1.2, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: performance.now() / 1000 - t0, shirt: "#16a34a", shorts: "#111111", drawn: true },
       figures, aim: null, ring: null, goalSide: null, goalInView: true, orders: null,
     });
@@ -132,11 +135,27 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     let vp = { x1: 10, x2: 58, y1: -4, y2: 44 };
     let kind = "one_on_one";
     M.vf = [] as { t: number; ms: number; chance: number }[];
-    M.switchChance = (k = "corner") => {
+    // fresh=true: every man a new sid (the worst case: 20 new bodies at once). Default: the real game's
+    // way (CanvasMatch reuses "mate0", "run1", "def3" …), a different number of each per kind.
+    const COUNTS: Record<string, [number, number, number]> = { corner: [6, 3, 9], one_on_one: [1, 1, 2], cutback: [3, 2, 5], through_ball: [2, 2, 4], long_range: [3, 1, 6] };
+    M.switchChance = (k = "corner", fresh = false) => {
       chance++; kind = k; vp = chance % 2 ? { x1: 30, x2: 68, y1: -4, y2: 30 } : { x1: 10, x2: 58, y1: -4, y2: 44 };
       figures.length = 1;
-      us.forEach(([x, y], i) => figures.push(fig(`c${chance}m${i}`, x + (chance % 2) * 8, y - 6, "us")));
-      them.forEach(([x, y], i) => figures.push(fig(`c${chance}d${i}`, x + (chance % 2) * 8, y - 4, "them")));
+      const sh = (chance % 2) * 8;
+      // a corner is the side-on picture (the 2D's turned facing), the camera swung to the corner flag's side
+      facing = k === "corner" ? (chance % 4 < 2 ? "left" : "right") : "up";
+      const you0 = figures[0];
+      if (k === "corner") { you0.x = facing === "left" ? 66 : 2; you0.y = 1; } else { you0.x = 34 + sh - 4; you0.y = k === "long_range" ? 26 : 16; }
+      bp.x = you0.x + 0.6; bp.y = you0.y - 0.6;
+      if (fresh) {
+        us.forEach(([x, y], i) => figures.push(fig(`c${chance}m${i}`, x + sh, y - 6, "us")));
+        them.forEach(([x, y], i) => figures.push(fig(`c${chance}d${i}`, x + sh, y - 4, "them")));
+        return;
+      }
+      const [nm, nr, nd] = COUNTS[k] ?? [4, 2, 6];
+      for (let i = 0; i < nm; i++) figures.push(fig(`mate${i}`, us[i][0] + sh, us[i][1] - 6, "us"));
+      for (let i = 0; i < nr; i++) figures.push(fig(`run${i}`, us[9 - i][0] + sh, us[9 - i][1] - 10, "us"));
+      for (let i = 0; i < nd; i++) figures.push(fig(`def${i}`, them[i][0] + sh, them[i][1] - 4, "them"));
     };
     let on = true;
     const tick = () => { if (!on) return; const fr: any = f(); fr.kind = kind; fr.cam.viewport = vp; const a = performance.now(); v.frame(fr); M.vf.push({ t: a, ms: performance.now() - a, chance }); requestAnimationFrame(tick); };

@@ -27,7 +27,7 @@ import { buildArena, type Arena, type ArenaColours } from "./arena";
 import { makeHPost, type HPost } from "./post";
 import { currentGovernor, type GovRung } from "../../three3d/governor";
 import { dressHBall, type HBall } from "./ball";
-import { createBakedLight, type BakedLight } from "../../look/bakedLight";
+import { bakedLightNow, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
 import { shadowCacheOff } from "../../three3d/shadowCache";
 import { lightReachOff } from "../../three3d/lightReach";
@@ -284,14 +284,10 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   await applyTod();
   // the stadium's baked light (the training patch has no stadium to bake)
   if (withArena) {
-    void createBakedLight(T, "stadium", tod).then((b) => {
-      if (!b) return;
-      if (dead) { b.dispose(); return; }
-      baked = b;
-      void b.setTod(tod);
-      b.apply(scene);
-      applyDials();
-    }).catch(() => { /* no bake: the live light alone, as before */ });
+    // Patched NOW, its pictures arriving in the background (lag pass 3, 9 Oct 2026): patched
+    // after the first frames, every shader in the stadium was built twice, the second time mid-play.
+    baked = bakedLightNow(T, "stadium", tod);
+    if (baked) { baked.apply(scene); applyDials(); }
   }
   let frameN = 0;
   let last: { scene: any; camera: any } | null = null;
@@ -335,6 +331,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     dressPeople(people) {
       for (const p of people) {
         fabric(p.body.material as any, true);
+        // the baked light now, not up to 45 frames later in update(): each new man's shader was
+        // built twice, once plain and again with the bake (a mid-chance compile; lag pass 3)
+        baked?.apply(p.root);
         if (!contacts.some((c) => c.p === p)) contacts.push({ p });
         // people cast on the full rung; on the emergency rungs the contact shadow stands in
         p.root.traverse((x: any) => { if (x.isSkinnedMesh) { if (x.userData.castOrig === undefined) x.userData.castOrig = !!x.castShadow; x.castShadow = peopleCast && x.userData.castOrig; } });

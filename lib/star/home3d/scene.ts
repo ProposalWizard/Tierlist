@@ -930,6 +930,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   };
   void loadProps();
 
+  const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
@@ -1010,12 +1011,12 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const shot = framed ? shotOf(framed) : null;
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const back = Math.min(3.3, R.d * 0.42);
-    const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
-    const crr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
+    const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+    const crr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const [camUp, camBack] = orb.lift(Math.min(H - 0.25, 2.35), back, 1.0);
     want.set(P.x, camUp, P.z).addScaledVector(cf, -camBack).addScaledVector(crr, 0.25);
     wantLook.set(P.x, 1.0, P.z).addScaledVector(cf, 2.0).addScaledVector(crr, 0.1);
-    if (shot) { want.lerp(new THREE.Vector3(...shot.cam), frame); wantLook.lerp(new THREE.Vector3(...shot.look), frame); }
+    if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
     inRoom(want);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
