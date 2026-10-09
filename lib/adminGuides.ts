@@ -1186,6 +1186,33 @@ export const ADMIN_GUIDES = {
     inGame: ["Home → Garden → the training-pitch gate opens the same picker. Winning a drill (or a level crossbar finish) moves the Team bar the way the Woodwork challenge does, and costs the usual training energy."],
     dev: "app/star-training3d-dev/page.tsx; the gate and picker components/star/Training3D.tsx (the crossbar is CrossbarChallenge there, on EngineFeature); the 3D drills components/star/Play3D.tsx on the shared 3D engine lib/star/play3d (drill list drills.ts, rules twoTouch.ts / freeRoam.ts / wembley.ts / headersVolleys.ts, World world.ts, picture scene.ts; tests tests/star/play3d.mts, wembley3d.mts, headersVolleys3d.mts); crossbar rules lib/star/training3d/crossbar.ts (tests/star/crossbar3d.mts). Loaders through withMeshopt.",
   },
+  "/star-style-dev": {
+    title: "Style Testing",
+    what: "Try the five shortlisted art styles (and Mix) on real 3D gameplay, the 2D look and cut scenes, switching live. A test area: nothing here changes the game.",
+    buttons: [
+      { group: "Style (top row)", items: [
+        ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
+        ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
+        ["D", "Pixel: drawn small and blown up with square pixels, a limited palette with dither."],
+        ["E", "Low-Poly: faceted flat shading, pastel colours, hills behind, no lines."],
+        ["H", "Console Real: realistic lighting, mown stripes, a glow on bright things."],
+        ["Mix", "H for gameplay, A for cut scenes, the same warm evening sky and colour grade on both."],
+      ] },
+      { group: "Scene (second row)", items: [
+        ["Gameplay 3D", "Free Roam, playable: you, two team-mates and a keeper, four opponents standing goal-side (scenery: they never tackle). The camera is fixed and follows the ball."],
+        ["Gameplay 2D", "The same play with every man drawn flat on a card: plain heads, no faces, the number on the back."],
+        ["Cut: Goal", "Wide, behind the shooter, the run, then a low close-up of a knee slide while team-mates pile in."],
+        ["Cut: Signing", "An office high in the stand: the manager and the player shake hands, the pitch through the window."],
+        ["Walk-out", "The farewell guard of honour as it is in the game. The styles don't reach it yet."],
+        ["Camera … from straight down", "Gameplay only: the camera's tilt, 10 to 70. 40 is the starting angle; 0 would be straight down. The men lean back towards the camera a little so they read at full height."],
+        ["↺ Replay", "Cut scenes: play it again from the start."],
+        ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds)."],
+    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
+    dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts). Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
+  },
   "/star-shop3d-dev": {
     title: "3D Shop",
     what: "The walk-around 3D shop, with test controls. It is the same screen a career opens from the Shop page's \"Walk the 3D shop (beta)\" button. Here nothing reaches a career.",
