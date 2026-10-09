@@ -323,7 +323,7 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 
 **Half-done or not seen.**
 - The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
-- Not seen: the house opened from a real career (garden door and phone app), on a phone, or the casual set in the garden and shop on screen (reasoned from the code; the test page works).
+- Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
 
 **Next 3 steps, in order.**
 1. Play a career to the garden, walk through the house door, change into the coat, walk back out: check the garden and the shop show the coat and the save keeps it.
