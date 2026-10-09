@@ -150,7 +150,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, MATCH_VIEW_DEFAULT,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
 import { animationsLook } from "@/lib/star/animLook";
@@ -3387,8 +3387,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Now that the projection is flat this holds everywhere on the frame, which
     // it never could before: a man at the goal used to be drawn at 64% of a man
     // at your feet.
-    // New view (option D): 0.8 of the zoomed-out size, ~22 px on a phone.
-    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE : 1);
+    // New view (option D): 0.8 of the zoomed-out size, then 0.8 again for the
+    // outfield men (~18 px on a phone). The keeper is put back to full size below.
+    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK : 1);
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over
@@ -3858,7 +3859,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale;   // smaller than an outfielder, smaller again far away
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
