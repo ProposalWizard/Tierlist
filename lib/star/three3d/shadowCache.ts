@@ -438,7 +438,9 @@ export function installShadowCache(T: Three, renderer: THREE.WebGLRenderer): Ins
     try {
       const cached: any[] = [], plain: any[] = [];
       for (const l of todo) {
-        const s = off || uncached(l) ? null : lightState(l);
+        // a light that already redraws its shadow only on demand (shadow.autoUpdate false, e.g. the shop's car spot)
+        // gains nothing from the cache, and the cache's own pass on its needsUpdate frames was an extra draw
+        const s = off || uncached(l) || l.shadow.autoUpdate === false ? null : lightState(l);
         if (!s || frame < s.offUntil) plain.push(l); else cached.push(l);
       }
       stats.passed += plain.length ? 1 : 0;
