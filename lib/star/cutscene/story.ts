@@ -34,6 +34,7 @@ const STORIES: Partial<Record<EventKind, Story>> = {
     props: [
       { id: "contract", kind: "contract", at: "contract.start", yaw: 180 },
       { id: "pen", kind: "pen", at: "pen.rest", yaw: 0 },
+      { id: "chairY", kind: "chair", at: "chairpos.you", yaw: 180 }, { id: "chairB", kind: "chair", at: "chairpos.boss", yaw: 0 },
       { id: "shirt", kind: "shirt" },
     ],
     acts: [

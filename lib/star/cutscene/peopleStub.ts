@@ -198,7 +198,7 @@ class StubActor implements CutsceneActor {
         const off = new this.T.Vector3(0, 0.125, 0.095).applyQuaternion(this.headRestLocal.clone().invert()).applyQuaternion(q);
         return this.wp(B.Head).add(off);
       }
-      case "chest": return this.wp(B.Spine).add(new this.T.Vector3(0, 0.06, 0)).add(this.dirOf(0, 0, 0.1));
+      case "chest": return this.wp(B.Spine).add(new this.T.Vector3(0, 0.06, 0)).add(this.dirOf(0, 0, 1).multiplyScalar(0.1));
       case "hips": return this.wp(B.Hips);
       case "feet": { const a = this.wp(B.LeftFoot), b = this.wp(B.RightFoot); return a.add(b).multiplyScalar(0.5).setY(this.root.position.y); }
       case "hand.L": return this.wp(B.LeftHand);

@@ -11,12 +11,14 @@ import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
 import type { CutScene } from "@/lib/star/style3d/cutscenes";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { quality3dTier } from "@/lib/star/three3d/quality";
+import CutsceneDirector from "@/components/star/CutsceneDirector";
 import { DEMOS, makeWorldSeek, publishFrameStep, type TimelineEvent } from "@/lib/star/frameStep";
 
-export type StyleScene = "play3d" | "play2d" | "goal" | "signing" | "walkout";
+export type StyleScene = "play3d" | "play2d" | "goal" | "signing" | "walkout" | "director";
 const SCENES: { id: StyleScene; label: string }[] = [
   { id: "play3d", label: "Gameplay 3D" }, { id: "play2d", label: "Gameplay 2D" },
   { id: "goal", label: "Cut: Goal" }, { id: "signing", label: "Cut: Signing" }, { id: "walkout", label: "Walk-out" },
+  { id: "director", label: "Cut-scene Director" },
 ];
 const isPlay = (s: StyleScene) => s === "play3d" || s === "play2d";
 
@@ -64,7 +66,7 @@ export default function StyleTest3D() {
   // what is built: the gameplay (3D and 2D share one) or a cut scene
   const family = isPlay(scene) ? "play" : scene;
   useEffect(() => {
-    if (!inited) return;
+    if (!inited || family === "director") return;
     const el = holder.current;
     if (!el) return;
     let dead = false;
@@ -95,7 +97,8 @@ export default function StyleTest3D() {
           guard = h;
         } else {
           const { createCutScene } = await import("@/lib/star/style3d/cutscenes");
-          const c = await createCutScene(el, family as "goal" | "signing", resolveStyle(styleRef.current, "cut"), { onShot: (n) => setShot(n) });
+          const old = new URLSearchParams(window.location.search).get("cut") === "old";
+          const c = await createCutScene(el, family as "goal" | "signing", resolveStyle(styleRef.current, "cut"), { onShot: (n) => setShot(n), old });
           if (dead) { c.dispose(); return; }
           cut.current = c;
           worn.current = styleRef.current;
@@ -229,7 +232,7 @@ export default function StyleTest3D() {
       </div>
 
       <div className="relative flex-1 select-none overflow-hidden" style={{ touchAction: "none" }}>
-        <div ref={holder} className="absolute inset-0" data-style-canvas={status} />
+        {scene === "director" ? <CutsceneDirector style={style} clean={clean} /> : <div ref={holder} className="absolute inset-0" data-style-canvas={status} />}
         {isPlay(scene) && (
           <div className="absolute inset-0 z-10" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         )}
@@ -265,7 +268,7 @@ export default function StyleTest3D() {
         {!clean && isPlay(scene) && status === "ready" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-black/45 px-3 py-1 text-center text-[11px] font-bold">Left thumb: move · Tap: pass · Drag back, let go: shoot</div>
         )}
-        {!clean && status === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
+        {!clean && status === "loading" && scene !== "director" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
         {status === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This device can&apos;t show the 3D test.</div>}
         {!clean && <div className="pointer-events-none absolute bottom-7 left-2 z-20 text-[10px] font-bold text-white/50">3D quality: {quality3dTier()}</div>}
       </div>

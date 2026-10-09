@@ -235,6 +235,16 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
     };
   }
 
+  if (k === "chair") {
+    // the office chair (the live signing's): its origin under the seat's back edge, facing +z
+    const leather = mat("#231a16", { rough: 0.45 }), steel = mat("#222222", { metal: 0.6, rough: 0.4 });
+    mesh(new T.BoxGeometry(0.52, 0.09, 0.5), leather, 0, 0.515, -0.23);
+    const back = mesh(new T.BoxGeometry(0.52, 0.68, 0.1), leather, 0, 0.93, -0.52); back.rotation.x = -0.1;
+    for (const s of [-1, 1]) mesh(new T.BoxGeometry(0.05, 0.04, 0.4), leather, s * 0.29, 0.72, -0.25);
+    mesh(new T.BoxGeometry(0.06, 0.44, 0.06), steel, 0, 0.25, -0.23);
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const l = mesh(new T.BoxGeometry(0.03, 0.025, 0.3), steel, Math.sin(a) * 0.15, 0.04, -0.23 + Math.cos(a) * 0.15); l.rotation.y = a; }
+    return { ...base, handles: { grip: [0, 0.9, -0.5] } };
+  }
   if (k === "clipboard") {
     mesh(new T.BoxGeometry(0.23, 0.31, 0.01), mat("#7a5230"), 0, 0.12, 0);
     mesh(new T.PlaneGeometry(0.2, 0.26), mat("#f7f3ea"), 0, 0.11, 0.0055);

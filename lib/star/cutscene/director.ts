@@ -44,6 +44,8 @@ export interface DirectorOptions {
   onEnd?: () => void;
   /** Start paused at this time. */
   holdAt?: number;
+  /** A ready-made style (the Style Testing page passes its own); else `style`. */
+  def?: StyleDef;
 }
 
 export interface Director {
@@ -57,6 +59,10 @@ export interface Director {
   replay(): void;
   skip(): void;
   setStyle(id: StyleId): void;
+  /** A ready-made style (the mood is still laid over it). */
+  setStyleDef(def: StyleDef): void;
+  /** Frame stepping: stop the real-time loop and draw exactly t. */
+  frameSeek(t: number): void;
   dispose(): void;
 }
 
@@ -82,7 +88,9 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
   scene.add(root);
   const camera = new T.PerspectiveCamera(40, 1, 0.03, 600);
   let styleId: StyleId = o.style ?? script.set.look ?? "golden";
-  let def: StyleDef = structuredClone(applyMood(resolveStyle(styleId, "cut"), script.set.mood));
+  let given: StyleDef | null = o.def ?? null;
+  const resolveDef = () => structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), script.set.mood));
+  let def: StyleDef = resolveDef();
   const kit: StyleKit = createStyleKit(T, renderer, scene, tier, def);
   const mood = MOODS[script.set.mood];
 
@@ -206,6 +214,19 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
       const sitW = cs.entries.reduce((s, e) => s + (SITS.has(e[0]) ? e[2] : 0), 0);
       if (sitW < 0.5) a.plantFeet(1 - sitW * 2);
       if (cs.upright > 0) a.lean(-0.2 * cs.upright);
+      // getting up, the clip folds him far forward (two men at one desk would meet head to head): keep the back nearer upright
+      const riseW = cs.entries.reduce((s, e) => s + (e[0] === "sitdown" ? e[2] : 0), 0);
+      if (riseW > 0.05) {
+        const nk = a.bone("neck"), hp = a.bone("Hips");
+        const f = new T.Vector3(Math.sin(r.yaw), 0, Math.cos(r.yaw));
+        for (let i = 0; i < 4 && nk && hp; i++) {
+          const d = new T.Vector3().setFromMatrixPosition(nk.matrixWorld).sub(new T.Vector3().setFromMatrixPosition(hp.matrixWorld));
+          const bend = Math.atan2(d.dot(f), d.y);
+          if (bend <= 0.2) break;
+          a.lean(-(bend - 0.2) * Math.min(1, riseW * 1.5));
+          a.root.updateMatrixWorld(true);
+        }
+      }
       const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z] };
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const w = trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1);
@@ -392,21 +413,61 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
     const yaw = "actor" in tg ? rootAt(C, tg.actor, t).yaw : 0;
     return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height: 0.4, thing: true };
   };
-  const anchors = new Map<CameraTrack, { a: Anchor; b: Anchor | null }>();
+  /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind. */
+  const bodiesAt = (t: number, except: Set<string>): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => { const r = rootAt(C, m.id, t); return [r.pos[0], r.pos[1] + 1.15, r.pos[2]] as Vec3; });
+  /** A shot whose camera is inside someone, or has someone right in front of the lens, swings round until it is clear. */
+  const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number): CameraTrack["shot"] => {
+    if (spec.fixed || spec.preset === "ots" || spec.preset === "pov" || spec.preset === "insert") return spec;
+    const except = new Set<string>();
+    for (const tg of [spec.subject, spec.subject2]) if (tg && "actor" in tg) except.add(tg.actor);
+    const bodies = bodiesAt(t, except);
+    const blocked = (sp: CameraTrack["shot"]) => {
+      const p = shotPose(sp, a, b, { aspect: camera.aspect, k: 0.5, t, seed: 0 });
+      const cam = v(p.pos), look = v(p.look);
+      const seg = look.clone().sub(cam); const L = seg.length(); seg.normalize();
+      return bodies.some((q) => {
+        const w = v(q).sub(cam); const along = w.dot(seg);
+        if (along < -0.3 || along > L * 0.85) return false;
+        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.42 + Math.max(0, along) * 0.04;
+      });
+    };
+    if (!blocked(spec)) return spec;
+    for (const dy of [28, -28, 55, -55, 85, -85]) { const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy }; if (!blocked(s2)) return s2; }
+    return { ...spec, rise: (spec.rise ?? 0) + 0.8 };
+  };
+  const anchors = new Map<CameraTrack, { a: Anchor; b: Anchor | null; shot: CameraTrack["shot"] }>();
   const measureAnchors = () => {
     anchors.clear();
     for (const cam of C.cameras) {
-      const at = cam.at + 0.02;
+      // a subject who travels during the shot: frame where he ends up (he moves into the shot)
+      let at = cam.at + 0.02;
+      if ("actor" in cam.shot.subject && cam.shot.move !== "follow" && cam.shot.move !== "track") {
+        const id = cam.shot.subject.actor;
+        const p0 = rootAt(C, id, cam.at).pos, p1 = rootAt(C, id, cam.at + cam.dur * 0.85).pos;
+        if (Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) > 1) at = cam.at + cam.dur * 0.85;
+      }
       poseActors(at);
-      anchors.set(cam, { a: anchorOf(cam.shot.subject, at), b: cam.shot.subject2 ? anchorOf(cam.shot.subject2, at) : null });
+      const a = anchorOf(cam.shot.subject, at), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, at) : null;
+      anchors.set(cam, { a, b, shot: clearShot(cam.shot, a, b, at) });
     }
   };
   measureAnchors();
 
   const camPose = (cam: CameraTrack, k: number, t: number): ShotPose => {
     const live = cam.shot.move === "follow" || cam.shot.move === "track";
-    const an = live ? { a: anchorOf(cam.shot.subject, t), b: cam.shot.subject2 ? anchorOf(cam.shot.subject2, t) : null } : anchors.get(cam)!;
-    return shotPose(cam.shot, an.a, an.b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
+    const st = anchors.get(cam)!;
+    if (live) {
+      const a = anchorOf(cam.shot.subject, t), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, t) : null;
+      return shotPose(clearShot(cam.shot, a, b, t), a, b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
+    }
+    const p = shotPose(st.shot, st.a, st.b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
+    // the camera stands still; its eye keeps on the subject as he moves a little
+    if ("actor" in cam.shot.subject && !cam.shot.fixed && !cam.shot.subject.local) {
+      const now = anchorOf(cam.shot.subject, t);
+      const d: Vec3 = [now.chest[0] - st.a.chest[0], now.chest[1] - st.a.chest[1], now.chest[2] - st.a.chest[2]];
+      p.look = [p.look[0] + d[0] * 0.7, p.look[1] + d[1] * 0.7, p.look[2] + d[2] * 0.7];
+    }
+    return p;
   };
 
   // ── one frame at t ──
@@ -466,7 +527,7 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
   let baseExposure = def.post.exposure;
 
   const restyle = () => {
-    def = structuredClone(applyMood(resolveStyle(styleId, "cut"), script.set.mood));
+    def = resolveDef();
     baseExposure = def.post.exposure;
     kit.apply(def);
     root.remove(set.group); set.dispose();
@@ -526,7 +587,9 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
     pause() { held = t; },
     replay() { t = 0; held = null; ended = false; last = performance.now(); },
     skip() { t = duration; held = null; if (!ended) { ended = true; o.onEnd?.(); } },
-    setStyle(id) { styleId = id; restyle(); },
+    setStyle(id) { styleId = id; given = null; restyle(); },
+    setStyleDef(d) { given = d; restyle(); },
+    frameSeek(s) { renderer.setAnimationLoop(null); held = clamp(s, 0, duration); draw(held); },
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);
@@ -539,7 +602,8 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
     },
   };
   // the frame-by-frame filming hook: seek(t) draws exactly that moment
-  (window as any).__frameStep = { owner: api, duration, seek: (s: number) => { held = clamp(s, 0, duration); draw(held); } };
+  (window as any).__frameStep = { owner: api, duration, seek: (s: number) => api.frameSeek(s) };
   (window as any).__cutscene = api;
+  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t) };
   return api;
 }

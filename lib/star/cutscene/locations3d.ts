@@ -122,7 +122,7 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
       box(0.06, 0.44, 0.06, 0, 0.25, -0.23, mat("#222222", { metal: 0.6, rough: 0.4 }), g);
       g.position.z = z; g.rotation.y = yaw; G.add(g); return g;
     };
-    chair(-(0.72 - 0.3), 0); chair(0.72 - 0.3, Math.PI);
+    void chair; // the chairs are props (chair.you / chair.boss), so a scene can push them back
     // the scarf over the manager's chair back
     const sc = canvas(256, 32); { const g = sc.getContext("2d")!; for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? o.trim : o.shirt; g.fillRect(i * 32, 0, 32, 32); } }
     const scarf = box(0.16, 0.7, 0.02, -0.18, 1.0, -0.98, mat("#ffffff", { map: tex(sc) })); scarf.rotation.set(-0.1, 0, 0.05);

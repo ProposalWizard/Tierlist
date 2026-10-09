@@ -68,10 +68,13 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
     case "kneel": kneel(a, c, w, 0); break;
     case "kneel-pray": kneel(a, c, w, 0); twoHands(a, c, w, [0.02, chest + 0.05, 0.22], [-0.02, chest + 0.05, 0.22], [0, 1, 0.2], [-1, 0, 0], [0, 1, 0.2], [1, 0, 0]); a.hand("L", "flat", w); a.hand("R", "flat", w); break;
     case "knee-slide": {
-      kneel(a, c, w, 0.22);
-      const up = Math.min(1, t / 0.5);
-      twoHands(a, c, w, [0.62, sh + 0.05 + 0.3 * up, 0.12], [-0.62, sh + 0.05 + 0.3 * up, 0.12], [1, 0.3, 0.1], [0, 0.2, 1], [-1, 0.3, 0.1], [0, 0.2, 1], [0, -1, -0.6]);
-      a.hand("L", "spread", w); a.hand("R", "spread", w);
+      // arms flung wide, then the roar (fists pulled in), then up again: something changes every second or so
+      const roar = Math.min(1, Math.max(0, Math.min((t - 1.2) / 0.35, (2.5 - t) / 0.4)));
+      kneel(a, c, w, 0.22 - 0.1 * roar);
+      const up = Math.min(1, t / 0.5) * (1 - roar) + (t > 2.5 ? Math.min(1, (t - 2.5) / 0.5) * 0.4 : 0);
+      const ox = 0.62 - 0.38 * roar, oy = sh + 0.05 + 0.3 * up - 0.12 * roar, oz = 0.12 + 0.16 * roar;
+      twoHands(a, c, w, [ox, oy, oz], [-ox, oy, oz], [1 - 1.3 * roar, 0.3 + 0.5 * roar, 0.1], [0, 0.2, 1], [-1 + 1.3 * roar, 0.3 + 0.5 * roar, 0.1], [0, 0.2, 1], [0, -1, -0.6]);
+      a.hand("L", roar > 0.5 ? "fist" : "spread", w); a.hand("R", roar > 0.5 ? "fist" : "spread", w);
       break;
     }
     case "arms-wide":
@@ -118,8 +121,8 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "hold-shirt-up": {
-      const y = chest + 0.18;
-      twoHands(a, c, w, [0.2, y, 0.34], [-0.2, y, 0.34], [-0.2, 0.6, 0.6], [0, -0.2, 1], [0.2, 0.6, 0.6], [0, -0.2, 1], [0, -1, -0.3]);
+      const y = chest + 0.02;
+      twoHands(a, c, w, [0.21, y, 0.42], [-0.21, y, 0.42], [-0.2, 0.6, 0.6], [0, -0.2, 1], [0.2, 0.6, 0.6], [0, -0.2, 1], [0, -1, -0.3]);
       a.hand("L", "pinch", w); a.hand("R", "pinch", w);
       break;
     }

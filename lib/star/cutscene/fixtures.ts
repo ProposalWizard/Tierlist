@@ -37,7 +37,8 @@ function signing(): CutsceneScript {
   const ids = { you: "you", other: "boss", mates: [] };
   const c = compose([officeSeated, contractSlide, signContract, handshake, shirtPhoto], ev, ids, "office", 4, 0.4, {
     cast: [{ id: "you", role: "you", mark: "chair.you" }, { id: "boss", role: "manager", mark: "chair.boss" }],
-    props: [{ id: "contract", kind: "contract", at: "contract.start", yaw: 180 }, { id: "pen", kind: "pen", at: "pen.rest", yaw: 0 }, { id: "shirt", kind: "shirt" }],
+    props: [{ id: "contract", kind: "contract", at: "contract.start", yaw: 180 }, { id: "pen", kind: "pen", at: "pen.rest", yaw: 0 },
+      { id: "chairY", kind: "chair", at: "chairpos.you", yaw: 180 }, { id: "chairB", kind: "chair", at: "chairpos.boss", yaw: 0 }, { id: "shirt", kind: "shirt" }],
   });
   const [b0, b1, b2, b3, b4] = c.beats;
   const B: Target = { actor: "boss" };
@@ -52,7 +53,7 @@ function signing(): CutsceneScript {
     cam(b3.at, 1.5, { preset: "two-shot", subject: Y, subject2: B, side: 1 }, "Both stand"),
     cam(b3.at + 1.5, 1.2, { preset: "insert", subject: { point: [-0.02, 1.08, 0] }, side: 1, yaw: 75, lens: 42 }, "The handshake"),
     cam(b3.at + 2.7, b3.dur - 2.7, { preset: "ots", subject: Y, subject2: B, side: 1, lens: 50 }, "Eye to eye"),
-    cam(b4.at, b4.dur * 0.6, { preset: "full", subject: Y, fixed: { pos: [0.15, 1.3, 2.35], look: [0.0, 1.25, 1.2], lens: 26 } }, "The photo"),
+    cam(b4.at, b4.dur * 0.6, { preset: "full", subject: Y, fixed: { pos: [0.0, 1.38, 2.42], look: [0.0, 1.22, 1.2], lens: 24 } }, "The photo"),
     cam(b4.at + b4.dur * 0.6, c.duration - b4.at - b4.dur * 0.6, { preset: "medium-close", subject: Y, side: 1, yaw: -10, move: "push" }, "Your new number"),
   ];
   return {
@@ -70,13 +71,16 @@ function goal(): CutsceneScript {
   const [b0, b1] = c.beats;
   const contact = b0.at + 2.4 + 0.31;
   const cams: CameraTrack[] = [
-    cam(0, b0.at + 1.3, { preset: "wide", subject: Y, fixed: { pos: [-24, 9.5, 31], look: [-3.5, 0.6, 16], lens: 30 }, move: "dolly-in", moveAmount: 0.12 }, "Wide"),
-    cam(b0.at + 1.3, contact - b0.at - 1.3 + 0.05, { preset: "ots", subject: { mark: "goal", y: 1.2 }, subject2: Y, side: 1, lens: 32, move: "follow" }, "Behind the shooter"),
+    // open close and moving (a broadcast cuts in within a second)
+    cam(0, b0.at + 0.9, { preset: "medium-wide", subject: Y, side: -1, yaw: 25, move: "follow", lens: 35 }, "On the ball"),
+    cam(b0.at + 0.9, contact - b0.at - 0.9 + 0.05, { preset: "ots", subject: { mark: "goal", y: 1.2 }, subject2: Y, side: 1, lens: 32, move: "follow" }, "Behind the shooter"),
     cam(contact + 0.05, 0.8, { preset: "wide", subject: { prop: "ball" }, fixed: { pos: [6.8, 1.2, 7.8], look: [1.4, 1.5, 0], lens: 26 } }, "Top corner"),
-    cam(contact + 0.85, b1.at - contact - 0.85 + 1.5, { preset: "medium-wide", subject: Y, side: -1, yaw: 10, move: "follow" }, "Wheels away", "cut"),
-    cam(b1.at + 1.5, 2.7, { preset: "low-hero", subject: Y, side: 1, yaw: 4, lens: 26, move: "dolly-in", moveAmount: 0.2 }, "The slide · low"),
-    cam(b1.at + 4.2, c.duration - b1.at - 4.2, { preset: "medium-close", subject: Y, side: 1, yaw: -14, lens: 50, move: "push", shake: 0.15 }, "The roar"),
+    cam(contact + 0.85, b1.at - contact - 0.85 + 1.5, { preset: "medium-wide", subject: Y, side: -1, yaw: 10, move: "follow" }, "Wheels away"),
+    cam(b1.at + 1.5, 2.0, { preset: "low-hero", subject: Y, side: 1, yaw: 4, lens: 26, move: "dolly-in", moveAmount: 0.25 }, "The slide · low"),
+    cam(b1.at + 3.5, 1.3, { preset: "close", subject: Y, side: 1, yaw: -12, lens: 60, move: "push", shake: 0.15 }, "The roar"),
+    cam(b1.at + 4.8, c.duration - b1.at - 4.8, { preset: "medium-wide", subject: Y, side: 1, yaw: 150, lens: 30, move: "orbit-left", moveAmount: 28 }, "The pile-on"),
   ];
+
   return {
     id: "fixture-goal", title: "Goal celebration (hand-made)", duration: c.duration,
     set: { location: "pitch", mood: "golden-hour" }, cast: c.cast, props: c.props, beats: c.beats,

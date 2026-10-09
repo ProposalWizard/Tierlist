@@ -51,7 +51,7 @@ export const SHOT_PRESETS: Record<ShotPreset, PresetDef> = {
   "two-shot": { size: 1.9, lens: 35, aim: 1.2, height: { eye: 0.05 }, angle: 90 },
   "low-hero": { size: 2.5, lens: 24, aim: 1.25, height: { abs: 0.32 }, angle: 28 },
   "high-angle": { size: 3.0, lens: 35, aim: 1, height: { eye: 2.4 }, angle: 22 },
-  insert: { size: 0.34, lens: 60, aim: 1, height: { eye: 0.32 }, angle: 32 },
+  insert: { size: 0.62, lens: 50, aim: 1, height: { eye: 0.42 }, angle: 32 },
   pov: { size: 1.2, lens: 35, aim: 1.8, height: { eye: 0 }, angle: 0 },
   profile: { size: 1.1, lens: 50, aim: 1.7, height: { eye: 0.02 }, angle: 88 },
   dutch: { size: 1.2, lens: 40, aim: 1.5, height: { eye: 0.05 }, angle: 26, roll: 11 },
@@ -115,7 +115,7 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
     const dir = rotY(fwd, ang);
     look = aimPoint(A, P.aim);
     // On a phone the frame is narrow: a full shot fits his height, a wide one its width too.
-    const size = P.size * (A.thing ? Math.max(0.4, A.height / 1.8) : 1) * (A.height < 1.5 && !A.thing ? 0.85 : 1);
+    const size = P.size * (A.thing && spec.preset !== "insert" ? Math.max(0.4, A.height / 1.8) : 1) * (A.height < 1.5 && !A.thing ? 0.85 : 1);
     const d = distForHeight(fov, size);
     const y = P.height.abs !== undefined ? floor + P.height.abs : look[1] + (P.height.eye ?? 0);
     pos = [look[0] + dir[0] * d, y + (spec.rise ?? 0), look[2] + dir[2] * d];

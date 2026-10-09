@@ -185,13 +185,18 @@ export const handshake: BeatDef = {
         { type: "clip", actor: Y, at: t + rise + 0.35, clip: "idle", blendIn: 0.6 },
         { type: "clip", actor: O, at: t + rise + 0.45, clip: "idle-boss", blendIn: 0.6 },
         { type: "move", actor: Y, at: t + 0.2, dur: rise, path: ["stand.you"], gait: "none", facing: 180, ease: 1 },
+        { type: "reach", actor: Y, hand: "L", at: t, dur: rise - 0.1, target: { actor: Y, local: [0.22, 0.79, 0.4] }, along: [-0.2, -0.3, 1], palm: [0, -1, 0], grip: "flat", blendIn: 0.25, blendOut: 0.4 },
+        { type: "reach", actor: O, hand: "L", at: t + 0.1, dur: rise - 0.1, target: { actor: O, local: [0.22, 0.79, 0.4] }, along: [-0.2, -0.3, 1], palm: [0, -1, 0], grip: "flat", blendIn: 0.25, blendOut: 0.4 },
+        { type: "reach", actor: O, hand: "R", at: t + 0.1, dur: rise - 0.3, target: { actor: O, local: [-0.22, 0.79, 0.4] }, along: [0.2, -0.3, 1], palm: [0, -1, 0], grip: "flat", blendIn: 0.25, blendOut: 0.4 },
+        { type: "prop", prop: "chairY", at: t + 0.35, action: "place", to: "chairback.you", dur: rise * 0.8 },
+        { type: "prop", prop: "chairB", at: t + 0.45, action: "place", to: "chairback.boss", dur: rise * 0.8 },
         { type: "move", actor: O, at: t + 0.3, dur: rise, path: ["stand.boss"], gait: "none", facing: 0, ease: 1 },
       );
     }
-    const meet: Target = { point: seated ? [-0.02, 1.08, 0.0] : [0, 1.08, 0] };
+    const meet: Target = { point: seated ? [-0.02, 1.12, 0.0] : [0, 1.08, 0] };
     tr.push(
-      { type: "reach", actor: Y, hand: "R", at: t + rise, dur: 2.4, target: seated ? meet : { actor: O, part: "hand.R" }, offset: [0, 0, 0.045], grip: "shake", along: [-0.3, -0.2, 1], palm: [1, 0.1, 0], pump: [0.03, 1.6], blendIn: 0.55, blendOut: 0.5 },
-      { type: "reach", actor: O, hand: "R", at: t + rise + 0.05, dur: 2.35, target: seated ? meet : { actor: Y, part: "hand.R" }, offset: [0, 0, -0.045], grip: "shake", along: [-0.3, -0.2, 1], palm: [1, 0.1, 0], pump: [0.03, 1.6], blendIn: 0.55, blendOut: 0.5 },
+      { type: "reach", actor: Y, hand: "R", at: t + rise, dur: 2.4, target: seated ? meet : { actor: O, part: "hand.R" }, offset: [0.025, 0, 0.035], grip: "shake", along: [-0.3, -0.2, 1], palm: [1, 0.1, 0], pump: [0.03, 1.6], blendIn: 0.55, blendOut: 0.5 },
+      { type: "reach", actor: O, hand: "R", at: t + rise + 0.05, dur: 2.35, target: seated ? meet : { actor: Y, part: "hand.R" }, offset: [-0.025, 0, -0.035], grip: "shake", along: [-0.3, -0.2, 1], palm: [1, 0.1, 0], pump: [0.03, 1.6], blendIn: 0.55, blendOut: 0.5 },
       { type: "pose", actor: Y, at: t + rise, dur: 2.4, pose: "lean-in", amount: 0.45 },
       { type: "pose", actor: O, at: t + rise, dur: 2.4, pose: "lean-in", amount: 0.45 },
       { type: "look", actor: Y, at: t + 0.6, dur: d, target: { actor: O, part: "eyes" }, amount: 0.9 },
@@ -318,12 +323,15 @@ export const goalCelebration: BeatDef = {
     const mates = c.ids.mates;
     mates.forEach((m, i) => {
       const s = i % 2 ? 1 : -1;
-      const end: Vec3 = [SLIDE_END[0] + s * (1.3 + i * 0.4), 0, SLIDE_END[2] - 1.6 - i * 0.5];
+      const end: Vec3 = [SLIDE_END[0] + s * (0.75 + i * 0.25), 0, SLIDE_END[2] - 0.55 - i * 0.35];
       tr.push(
         { type: "move", actor: m, at: t + run * 0.6 + i * 0.2, dur: run + slide + 0.6, path: [end], gait: "sprint", ease: 0.4 },
         { type: "clip", actor: m, at: t + run * 1.6 + slide + i * 0.2, clip: i % 2 ? "celebrate" : "celebrate-fist", blendIn: 0.25, loop: true },
         { type: "face", actor: m, at: t + run, expression: "elated" },
         { type: "turn", actor: m, at: t + run * 1.6 + slide + i * 0.2, dur: 0.4, to: { actor: Y } },
+        // the pile-on: a hand on his head / shoulder, leaning in
+        { type: "reach", actor: m, hand: i % 2 ? "L" : "R", at: t + run + slide + 1.5 + i * 0.25, dur: hold - 1.5, target: { actor: Y, part: i === 0 ? "head" : i % 2 ? "shoulder.R" : "shoulder.L" }, offset: [0, 0.04, 0], grip: "flat", blendIn: 0.35 },
+        { type: "pose", actor: m, at: t + run + slide + 1.5 + i * 0.25, dur: hold - 1.5, pose: "lean-in", amount: 0.6 },
       );
     });
     return {
@@ -331,8 +339,9 @@ export const goalCelebration: BeatDef = {
       cast: mates.map((m, i) => ({ id: m, role: "teammate", mark: [3 + i * 1.2, 0, 9 + i * 0.8] as Vec3, face: 180 })),
       shots: [
         { at: t, dur: run, purpose: "follow", subject: you(c), weight: 0.7, name: "Wheels away" },
-        { at: t + run, dur: slide + hold * 0.55, purpose: "hero", subject: you(c), weight: 1, name: "The slide · low", hint: { preset: "low-hero", yaw: 6, lens: 26 } },
-        { at: t + run + slide + hold * 0.55, dur: hold * 0.45, purpose: "emotion", subject: you(c), weight: 0.9, name: "The roar" },
+        { at: t + run, dur: slide + 1.0, purpose: "hero", subject: you(c), weight: 1, name: "The slide · low", hint: { preset: "low-hero", yaw: 6, lens: 26 } },
+        { at: t + run + slide + 1.0, dur: 1.3, purpose: "emotion", subject: you(c), weight: 0.9, name: "The roar", hint: { preset: "close" } },
+        { at: t + run + slide + 2.3, dur: hold - 2.3, purpose: "crowd", subject: you(c), weight: 0.8, name: "The pile-on", hint: { preset: "medium-wide", yaw: 150, move: "orbit-left", moveAmount: 25 } },
       ],
     };
   },

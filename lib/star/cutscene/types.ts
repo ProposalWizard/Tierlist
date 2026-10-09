@@ -79,7 +79,7 @@ export interface CastMember {
 export type PropKind =
   | "pen" | "contract" | "shirt" | "trophy-cup" | "trophy-league" | "mic" | "mic-stand"
   | "phone" | "scarf" | "ball" | "champagne" | "camera" | "medal" | "boots" | "bag"
-  | "flag" | "corner-flag" | "clipboard" | "water-bottle" | "armband" | "award-statue";
+  | "flag" | "corner-flag" | "clipboard" | "water-bottle" | "armband" | "award-statue" | "chair";
 
 export interface PropSpec {
   id: string;

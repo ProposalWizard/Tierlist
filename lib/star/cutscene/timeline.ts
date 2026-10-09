@@ -186,7 +186,7 @@ export interface ClipSample { entries: [string, number, number][]; upright: numb
 function clipTime(tr: ClipTrack, t: number, dur: number, from?: number, speedK = 1, holdC?: number): number {
   const hold = tr.hold ?? holdC;
   if (hold !== undefined) return clamp(hold, 0, Math.max(0, dur - 1e-3));
-  const sp = (tr.speed ?? 1) * speedK;
+  const sp = speedK < 0 ? -Math.abs((tr.speed ?? 1) * speedK) : (tr.speed ?? 1) * speedK;
   let tt = (tr.from ?? from ?? 0) + (t - tr.at) * sp;
   if (tr.loop) tt = ((tt % dur) + dur) % dur;
   else tt = clamp(tt, 0, Math.max(0, dur - 1e-3));
