@@ -191,13 +191,13 @@ def knee_slide(rig, t):
     hips0 = rig.restP[rig.b["hips"]][1]
     kneel_y = (th + 0.06) - hips0  # hips over the knees, knees on the grass
     down = K([(0, 0), (KS_DROP - 0.10, 0), (KS_DROP + 0.05, 1), (KS_END, 1)], t)
-    lean = K([(0, 0.15), (KS_DROP, 0.10), (KS_DROP + 0.25, -0.30), (1.9, -0.45), (2.4, -0.25), (KS_END, -0.15)], t)
+    lean = K([(0, 0.15), (KS_DROP, 0.10), (KS_DROP + 0.25, -0.22), (1.9, -0.32), (2.4, -0.15), (KS_END, -0.08)], t)
     hz = K([(0, 0), (0.18, 0.95), (0.36, 1.95), (KS_DROP, 2.90), (KS_DROP + 0.5, 4.60), (1.4, 5.55), (1.9, 5.85), (KS_END, 5.88)], t)
     hy = K([(0, -0.03), (0.09, 0.0), (0.18, -0.05), (0.27, 0.0), (0.36, -0.05), (KS_DROP - 0.08, -0.08), (KS_DROP + 0.05, kneel_y - 0.02),
             (KS_DROP + 0.12, kneel_y + 0.01), (1.9, kneel_y), (KS_END, kneel_y + 0.02)], t)
-    off, rot = (0.0, hy, hz), (lean * 0.6, 0, 0)
+    off, rot = (0.0, hy, hz), (lean * 0.2, 0, 0)  # the lean is in the back, not the hips (the hips stay over the knees)
     p = {"hips": {"pos": off, "rot": rot}}
-    p["spine"] = (lean * 0.8 + 0.1 * (1 - down), 0, 0)
+    p["spine"] = (lean * 0.9 + 0.1 * (1 - down), 0, 0)
     p["head"] = (K([(0, 0.1), (KS_DROP, 0.0), (KS_DROP + 0.3, -0.45), (1.9, -0.55), (2.5, -0.35), (KS_END, -0.3)], t), 0, 0)
     # strides: R, L, R, then both drop
     fr = K([(0, (aR[0], 0, aR[1])), (0.09, (aR[0], 0.25, aR[1] + 0.95)), (0.18, (aR[0], 0, aR[1] + 1.80)),
