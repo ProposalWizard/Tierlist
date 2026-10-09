@@ -2212,7 +2212,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const seamRef = useRef(0);                            // ball roll angle
   /**
    * The same real ball ContactBall already puts on the strike screen —
-   * public/star/ball.png — instead of a canvas-drawn white disc. Reported
+   * public/star/ball.webp — instead of a canvas-drawn white disc. Reported
    * directly: "the football that you kick in the game... is something that
    * you have created, which looks just like a white circle" next to a real
    * photo everywhere else the ball appears. Loaded once per match rather
@@ -2255,7 +2255,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (attempt >= MAX_ATTEMPTS) return;
         window.setTimeout(load, 400 * 3 ** (attempt - 1));
       };
-      img.src = attempt === 0 ? "/star/ball.png" : `/star/ball.png?retry=${attempt}`;
+      img.src = attempt === 0 ? "/star/ball.webp" : `/star/ball.webp?retry=${attempt}`;
       ballImgRef.current = img;
     };
     load();

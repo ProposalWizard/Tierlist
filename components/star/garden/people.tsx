@@ -147,7 +147,7 @@ export function Walker({ outfit, faceUrl, faceKey, faces, ball = false, walking 
         <g transform="translate(15 -5)">
           <ellipse cx="0" cy="5.4" rx="6" ry="1.4" fill={shadow} />
           <g className="gdn-roll">
-            <image href="/star/ball.png" x="-5.5" y="-5.5" width="11" height="11" />
+            <image href="/star/ball.webp" x="-5.5" y="-5.5" width="11" height="11" />
           </g>
         </g>
       )}

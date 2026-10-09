@@ -255,6 +255,16 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
  * from memory instead of the network and the unpacker. The exact calls the
  * scenes make, so they hit this page's cache. Speed job B, 9 Oct 2026.
  */
+/** The files loadPeople3d(…, "player") and (…, "anims") fetch under the current Settings (for the early download). */
+export function people3dFiles(): string[] {
+  const body: PeopleBody = (() => {
+    try { return localStorage.getItem("star-look-3d-people") === "old" /* look3d.ts people3dLook (its key; not imported: it pulls in React) */ ? "old" : "new"; } catch { return "new"; }
+  })();
+  const anims = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).anims;
+  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), anims];
+  if (body === "new" && humanBodyLook() === "human") return [HUMAN3D_FILE, anims];
+  return [(body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player, anims];
+}
 let warming: Promise<void> | null = null;
 export function warmPeople3d(): Promise<void> {
   if (!warming) {

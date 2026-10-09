@@ -114,7 +114,7 @@ export default function ScenarioEditor() {
   // disc for the handful of frames before this resolves.
   useEffect(() => {
     const img = new Image();
-    img.src = "/star/ball.png";
+    img.src = "/star/ball.webp";
     ballImgRef.current = img;
     img.onload = () => paint();
     // eslint-disable-next-line react-hooks/exhaustive-deps

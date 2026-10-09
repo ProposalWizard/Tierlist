@@ -610,6 +610,8 @@ export function cachedScanOf(url: string): string | null | undefined {
   if (memo.has(url)) return memo.get(url);
   try {
     const v = localStorage.getItem(CACHE_KEY + portraitKey(url));
+    // "-": scanned before and it couldn't be done — never fetch the 15 MB scanner for it again
+    if (v === "-") { memo.set(url, null); return null; }
     if (v) { memo.set(url, v); return v; }
   } catch { /* private mode */ }
   return undefined;
@@ -620,6 +622,7 @@ export function cachedScanOf(url: string): string | null | undefined {
  * the scanned portrait, or null if it can't be scanned (then the old face
  * fit keeps drawing it). A photo that is already a scan resolves to itself.
  */
+const unreadable = new Set<string>();
 export function scanLegacyPortrait(url: string): Promise<string | null> {
   const hit = cachedScanOf(url);
   if (hit !== undefined) return Promise.resolve(hit);
@@ -638,12 +641,17 @@ export function scanLegacyPortrait(url: string): Promise<string | null> {
         resolve(url); return;
       }
       const r = await scanFace(img);
+      // the scan ran and found no usable face: remembered (below), so it is not tried again
+      if (!r.ok && (r.reason === "noface" || r.reason === "small")) unreadable.add(url);
       resolve(r.ok ? r.dataUrl : null);
     };
     img.src = url;
   }).then((v) => {
     memo.set(url, v);
     if (v && v !== url) { try { localStorage.setItem(CACHE_KEY + portraitKey(url), v); } catch { /* full: memory only */ } }
+    // a photo the scan can't read is remembered too, so the scanner (models/facescan, ~15 MB) is
+    // not downloaded again on every visit to Home for it (speed job B, 9 Oct 2026)
+    if (v === null && unreadable.has(url)) { try { localStorage.setItem(CACHE_KEY + portraitKey(url), "-"); } catch { /* memory only */ } }
     inflight.delete(url);
     return v;
   });

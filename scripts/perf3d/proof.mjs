@@ -52,7 +52,7 @@ async function open(off) {
     P.deleteTexture = function (x) { bytes.delete(x); return dt.call(this, x); };
     window.__gpuTexMB = () => { let b = 0; bytes.forEach((v) => b += v); return +(b / 1048576).toFixed(1); };
   });
-  await page.goto(`http://localhost:3502/index.html?gov=0${off ? flag("beforeq", "&shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0") : ""}`);
+  await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0${off ? flag("beforeq", "&shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0") : ""}`);
   await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [scene, opts]);
   await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
   if (await page.evaluate(() => window.__err)) { console.log(JSON.stringify({ scene, err: await page.evaluate(() => window.__err), errs })); process.exit(1); }

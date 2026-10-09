@@ -482,33 +482,83 @@ export function preloadAllowed(): boolean {
   return true;
 }
 
+/**
+ * Early downloads go ONE AT A TIME: a phone's browser keeps only a few
+ * connections to the site, and a burst of 3D files on Home queued the
+ * screen's own pictures behind them (the shop's boot stills sat as an empty
+ * glow for 8 s+ on a slow load, 9 Oct 2026). A place that opens meanwhile
+ * jumps the queue for the files it needs (loadGltfCached starts them now).
+ */
+interface Fetch3d { started: boolean; bg?: boolean; start: () => void }
+const waiting: Fetch3d[] = [];
+const jobs = new Map<string, Fetch3d>();
+let busy = false;
+function pump() {
+  if (busy) return;
+  const j = waiting.shift();
+  if (!j) return;
+  busy = true;
+  j.bg = true;
+  j.start();
+}
+
 /** Download files now (low priority, when the page is idle) and keep them in memory for loadGltfCached. */
 export function prefetch3d(urls: string[]) {
   for (const url of urls) {
     if (bufCache.has(url)) continue;
-    // the versioned address (assetUrl.ts) is the one the loaders will ask for, so this fills their cache
-    const p = fetch(versionedUrl(url), { priority: "low" } as RequestInit).then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
+    let resolve!: (b: ArrayBuffer) => void, reject!: (e: unknown) => void;
+    const p = new Promise<ArrayBuffer>((res, rej) => { resolve = res; reject = rej; });
+    const job: Fetch3d = {
+      started: false,
+      start() {
+        if (job.started) return;
+        job.started = true;
+        // the versioned address (assetUrl.ts) is the one the loaders will ask for, so this fills their cache
+        fetch(versionedUrl(url), { priority: "low" } as RequestInit)
+          .then((r) => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); })
+          .then(resolve, reject)
+          .finally(() => { jobs.delete(url); if (job.bg) { busy = false; pump(); } });
+      },
+    };
+    jobs.set(url, job);
+    waiting.push(job);
     p.catch(() => bufCache.delete(url)); // a failed prefetch just falls back to a normal load
     // Only models are read back from memory; the other files just warm the browser cache.
     if (!url.endsWith(".glb")) p.then(() => bufCache.delete(url), () => {});
     bufCache.set(url, p);
   }
+  pump();
+}
+
+/** A place needs this file NOW: start its early download straight away if it is still queued. */
+function promote(url: string) {
+  const j = jobs.get(url);
+  if (!j || j.started) return;
+  const i = waiting.indexOf(j);
+  if (i >= 0) waiting.splice(i, 1);
+  // runs beside the background one (not counted as it): the place's own load
+  j.start();
 }
 
 /**
  * Call from a screen that leads to a 3D scene (Home, a shop button's
  * screen): once the page is idle, loads the three.js code, the place's
- * files, and unpacks the people every place shares (warmPeople3d) — so the
- * place opens from memory. Free if already done; skipped on Save-Data / 2G.
+ * files, and the people every place shares — downloaded one at a time, then
+ * unpacked once (people3d's warmPeople3d) — so the place opens from memory.
+ * Free if already done; skipped on Save-Data / 2G.
  */
 export function preloadScene(name: Scene3dName) {
   if (typeof window === "undefined" || !preloadAllowed()) return;
   const go = async () => {
     await installAssetVersions();
-    prefetch3d(sceneFiles(name));
+    const people = await import("../people3d").catch(() => null);
+    const pf = people ? people.people3dFiles() : [];
+    prefetch3d([...pf, ...sceneFiles(name)]);
     void import("three/examples/jsm/loaders/GLTFLoader.js");
-    // the people: one shared job for every place (people3d's own cache keeps the unpacked files)
-    await import("../people3d").then((m) => m.warmPeople3d()).catch(() => { /* loaded by the place instead */ });
+    if (!people) return;
+    // unpack the people once their files are in (one shared job for every place)
+    await Promise.all(pf.map((u) => bufCache.get(u)?.catch(() => null)));
+    await people.warmPeople3d();
   };
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   if (ric) ric(() => { void go(); }, { timeout: 3000 }); else setTimeout(() => { void go(); }, 1500);
@@ -518,6 +568,7 @@ export function preloadScene(name: Scene3dName) {
 export async function loadGltfCached<G = unknown>(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, url: string): Promise<G> {
   const p = bufCache.get(url);
   if (p && loader.parseAsync) {
+    promote(url);
     try {
       const buf = await p;
       bufCache.delete(url); // parsed once; the browser cache has it for the next visit

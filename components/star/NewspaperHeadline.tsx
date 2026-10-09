@@ -8,7 +8,7 @@ const anton = Anton({ subsets: ["latin"], weight: "400", display: "swap" });
  * THE FRONT PAGE.
  *
  * A real front page, not a generated one — the newspaper art is a supplied
- * asset (public/star/fa-youth-cup-newspaper.png) with its headline band left
+ * asset (public/star/fa-youth-cup-newspaper.webp) with its headline band left
  * blank on purpose. Everything this file does is put four lines of type into
  * that blank band: the player's surname, WINS, the club, THE FA YOUTH CUP! —
  * the same shape as any real back-page splash, where the words that matter
@@ -20,7 +20,7 @@ const anton = Anton({ subsets: ["latin"], weight: "400", display: "swap" });
  * to the photograph's own left and right edges so the type block lines up
  * with the picture it sits above rather than the page's outer margin.
  */
-const NEWSPAPER_SRC = "/star/fa-youth-cup-newspaper.png";
+const NEWSPAPER_SRC = "/star/fa-youth-cup-newspaper.webp";
 const BOX = { top: 6.1, bottom: 46.4, left: 4.9, right: 4.9 }; // % of the image
 
 /**

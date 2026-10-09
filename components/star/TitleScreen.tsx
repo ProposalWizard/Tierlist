@@ -378,11 +378,11 @@ function PitchFloor() {
   );
 }
 
-/** The ball at his feet: the match's own ball (public/star/ball.png, the
+/** The ball at his feet: the match's own ball (public/star/ball.webp, the
  *  one the real match draws), with a soft shadow on the grass under it.
  *  v0.25 (Harry and Mikey, 2 Oct 2026, P39: "the ball needs changing"): it
  *  was a hand-drawn ball with one black patch. */
-const BALL_SRC = "/star/ball.png";
+const BALL_SRC = "/star/ball.webp";
 function TitleBall({ className = "", style, size = 68 }: { className?: string; style?: React.CSSProperties; size?: number }) {
   return (
     <div className={className} style={{ ...style, width: size, height: Math.round(size * 1.12) }} aria-hidden>
