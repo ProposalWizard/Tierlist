@@ -32,10 +32,35 @@ export interface KindBag { left: ScenarioKind[]; last?: ScenarioKind }
 
 export function newKindBag(): KindBag { return { left: [] }; }
 
-/** Deal the next kind. A fresh round never starts with the kind just dealt. */
-export function nextEvenKind(bag: KindBag, rng: () => number): ScenarioKind {
+/**
+ * THE REAL MIX (Mikey, 9 Oct 2026, from Kane's real touches): "Kane would get
+ * less chances for one-on-ones … but gets the ball in deeper situations far
+ * more often … you can pass it … and then you might get the ball back".
+ *
+ * Measured from StatsBomb (12 England matches): Kane is on the ball 33 times a
+ * match, 49% of it 35m+ from goal, 31% 18–35m out, 20% in the box. So a round
+ * of the bag is 17 deals, 8 of them deep (a pass, build-up, a through ball)
+ * and one in 17 a one-on-one, against one in 8 in the even mix. Long shots
+ * and tight angles are dealt more, so your own shots a match stay about the
+ * same (a striker: 2.1 → 2.5 a match, one-on-ones 0.67 → 0.49, measured over 600 matches): fewer gift chances, not fewer chances. Settings →
+ * Gameplay → Chances: Old deals the even mix exactly as before.
+ */
+export const REAL_MIX: Partial<Record<ScenarioKind, number>> = {
+  midfield_pass: 3, buildup: 2, through_ball: 3,
+  long_range: 2, cutback: 2, byline_cross: 2,
+  tight_angle: 2, one_on_one: 1,
+};
+
+/** One round of the real-mix bag: each kind as many times as its weight. */
+export function realMixRound(): ScenarioKind[] {
+  return EVEN_KINDS.flatMap((k) => Array<ScenarioKind>(REAL_MIX[k] ?? 1).fill(k));
+}
+
+/** Deal the next kind. A fresh round never starts with the kind just dealt.
+ *  `real`: deal from the real mix (REAL_MIX) instead of the even one. */
+export function nextEvenKind(bag: KindBag, rng: () => number, real = false): ScenarioKind {
   if (bag.left.length === 0) {
-    const round = [...EVEN_KINDS];
+    const round = real ? realMixRound() : [...EVEN_KINDS];
     for (let i = round.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [round[i], round[j]] = [round[j], round[i]];

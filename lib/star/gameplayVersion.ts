@@ -26,6 +26,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Defenders sometimes miscue, a boot can hit a body and come off loose, and anyone can win that second ball.",
     oldText: "Every clearance is clean (you still see the boot fly off the screen).",
   },
+  chances: {
+    label: "Chances",
+    newText: "Built from Kane's real touches: about 9 highlights a match, half of them deeper where you pass and can get it back, and half as many one-on-ones.",
+    oldText: "About 6 highlights a match, every kind equally often (from before 9 Oct 2026).",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -51,3 +56,4 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
+export const oldChances = () => gameplayVersion("chances") === "old";
