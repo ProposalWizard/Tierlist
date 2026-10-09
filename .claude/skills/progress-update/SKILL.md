@@ -71,6 +71,24 @@ hard coded in the skill and should run on every task) … add a time estimate
 - Keep it to the bars, the time line, the speed line and the usage block. No
   prose.
 
+## Auto-deploy at every major update (Harry, 9 Oct 2026)
+
+*"let's also add that it auto deploys at any major update."*
+
+- **A major update** = a piece of work reaching `built` and checked: a new
+  feature, page or screen, a finished fix round, or a bar hitting 100%. Not
+  each small commit.
+- **Deploy** = commit, push `Harry`, then open and merge a PR `Harry` → `main`
+  so Vercel builds the live site. Standing permission from Harry. No need to
+  ask each time.
+- **Only when the checks pass**: `npx tsc --noEmit`, the one-engine guard, the
+  tests for the files touched, and `npm run build`. A red check means no
+  deploy: fix it first, or report the bar as `blocked: <check>`.
+- Never deploy a builder's half-done worktree. Merge it into `Harry` first and
+  check the merged copy.
+- The progress bar shows it: `pushed` → `live` once main has it. Add the
+  merge time to the time line (`Deployed 14:32`).
+
 ## When to send one
 
 - **As you go, without being asked (Harry, 5 Oct 2026: "run the progress
