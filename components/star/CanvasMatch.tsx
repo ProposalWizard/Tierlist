@@ -3,7 +3,8 @@ import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
-import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, useContext } from "react";
+import { EngineFrameContext, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct } from "@/lib/star/engineFrame";
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
@@ -897,6 +898,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  /**
+   * A screen reading the match frame by frame (lib/star/engineFrame.ts): the
+   * Style Testing page's 3D view of the real game. Absent everywhere else
+   * (no provider), and then nothing below that reads it runs. It only ever
+   * READS: what was just drawn is handed over after the frame.
+   */
+  const frameObs = useContext(EngineFrameContext);
+  const frameObsRef = useRef(frameObs);
+  frameObsRef.current = frameObs;
   /**
    * The match view (lib/star/matchView.ts): Settings → Match view, read once
    * when the match opens. "classic" draws, frames and plays exactly as before.
@@ -2339,6 +2349,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A frame reader's picture goes in the pitch box, over the 2D canvas.
+  useEffect(() => {
+    const o = frameObsRef.current;
+    if (!o?.attach || !wrapRef.current || !canvasRef.current) return;
+    return o.attach(wrapRef.current, canvasRef.current) || undefined;
+  }, []);
+
   // ── New view: the pitch fills the phone's height ──
   //
   // As tall as the room under whatever sits above it (the site's pinned bars,
@@ -2947,6 +2964,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const W = canvas.width, H = canvas.height;
     const sc = scenarioRef.current;
     const vp = viewportRef.current;
+    // A frame reader (lib/star/engineFrame.ts) is told what this frame drew.
+    // Absent (every real match, every other screen): null, nothing recorded.
+    const rec: { figures: EngineFrameFigure[]; keeper: EngineFrameKeeper | null; aim: { from: { x: number; y: number }; to: { x: number; y: number }; power: number } | null } | null =
+      frameObsRef.current ? { figures: [], keeper: null, aim: null } : null;
+    const actOf = (sid: string): EngineFrameAct | undefined => {
+      const a = actorAnimRef.current.get(sid);
+      return a && a.scene === sc ? { kind: a.kind, mode: a.mode, save: a.save, start: a.start } : undefined;
+    };
     // Pixels per metre. The viewport holds the canvas aspect exactly, so these
     // two agree — a metre is a metre whichever way it points, and circles stay
     // circles. In a turned frame the pitch axes have swapped places on the
@@ -3270,6 +3295,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       shirt: string, rim: string,
       opts: FigureOpts = {},
     ) => {
+      if (rec) {
+        const sid = opts.sid ?? `fig${rec.figures.length}`;
+        const them = shirt === theirKit().shirt || sid.startsWith("def") || sid.startsWith("chase");
+        rec.figures.push({
+          sid, x, y, shirt, shorts: opts.shorts ?? rim, team: them ? "them" : "us",
+          kick: opts.pose === "kick", kickFoot: opts.kickFoot ?? 1, act: sid === "you" ? undefined : actOf(sid),
+          star: opts.star, label: opts.label, face: opts.face?.src, drawn: true,
+        });
+      }
       if (figureQueue) {
         const at = toPx(x, y).py;
         figureQueue.push({ py: at, draw: () => paintFootballer(x, y, rBase, shirt, rim, opts) });
@@ -3769,6 +3803,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE),
       label: faceStyleRef.current.namesEnabled ? playerLabel() : undefined,
     });
+    // A frame reader gets you even where the 2D picture lets the ball stand for you.
+    if (rec && !auto && !youShown && sceneRef.current?.you !== false) {
+      rec.figures.push({
+        sid: "you", x: tx, y: ty, shirt: ourKit().shirt, shorts: ourKit().trim, team: "us",
+        kick: kickPoseRef.current > 0, kickFoot: takerFoot, star: true, drawn: false,
+        face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE)?.src,
+      });
+    }
 
     // ── Keeper ──
     // Only where there is a goal to keep. A midfield situation has no goal in
@@ -3781,6 +3823,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // your shot went in. He is still exactly where the save maths says he is —
       // only the artwork is restrained.
       const kk = sc.keeper;
+      if (rec) {
+        const k0 = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+        rec.keeper = {
+          x: kk.x, y: kk.y, dive: kk.dive, saveLunge: kk.saveLunge, saveDir: kk.saveDir, saveKind: kk.saveKind,
+          idleT: kk.idleT, shirt: k0.shirt, shorts: k0.trim, face: kk.who?.face ?? fakeFaceFor("keeper"), act: actOf("keeper"),
+        };
+      }
       const { px, py, scale: kScale } = toPx(kk.x, kk.y);
       // `dive` is a lean while patrolling and a committed lunge once a save has
       // been decided; saveLunge eases the second one in after the fact.
@@ -4186,6 +4235,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const lineLen = power * sameOnScreenM(heightSpan, 1, "height") * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
+      if (rec) rec.aim = { from: { x: sc.ball.x, y: sc.ball.y }, to: { x: ex, y: ey }, power };
       const a = toPx(sc.ball.x, sc.ball.y);
       const b = toPx(ex, ey);
       // Solid, tapered orange arrow: a round-capped shaft into a clean triangular
@@ -4293,6 +4343,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       fg.addColorStop(1, "rgba(253,230,138,0)");
       ctx.fillStyle = fg;
       ctx.fillRect(0, 0, W, H);
+    }
+
+    // ── Hand the frame to a reader (lib/star/engineFrame.ts) ──
+    // What was just drawn, in pitch metres, and the camera it was drawn with.
+    // Read only: nothing a reader does reaches the match.
+    const obs = frameObsRef.current;
+    if (obs && rec) {
+      const box = canvasBox();
+      const lb = ballRef.current;
+      obs.onFrame({
+        t: performance.now() / 1000,
+        phase: phaseRef.current,
+        kind: sc.kind,
+        cam: { viewport: { ...viewportRef.current }, facing: facingRef.current, tilt: tiltGeomRef.current, W: box.width, H: box.height },
+        ball: ballAt ? {
+          x: ballAt.x, y: ballAt.y, z: ballAt.z,
+          vx: lb?.vel.x ?? 0, vy: lb?.vel.y ?? 0, vz: lb?.vz ?? 0, live: !!lb, inNet: !!lb?.inNet,
+        } : null,
+        landing: lb && phaseRef.current === "flight" && !lb.inNet && lb.z > 0.15 && lb.landAt ? { ...lb.landAt } : null,
+        keeper: keeperInView ? rec.keeper : null,
+        figures: rec.figures,
+        aim: rec.aim,
+        ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
+          ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
+        goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
+        goalInView: goalInView(sc.kind) || goalOnCamera,
+      });
     }
   }, [toPx]);
 
@@ -7244,6 +7321,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       >
         <canvas
           ref={canvasRef}
+          // A frame reader drawing its own picture over it (lib/star/engineFrame.ts):
+          // still drawn, still the one that takes every touch, just not seen.
+          style={frameObs?.hide2D ? { opacity: 0 } : undefined}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}

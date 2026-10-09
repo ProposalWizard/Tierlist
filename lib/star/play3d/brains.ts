@@ -10,7 +10,7 @@
  *             get there first, dribbles at goal round men, shoots when it's
  *             on, closes down and pokes at whoever has it
  */
-import { CX, POST_L, POST_R, clamp, skill01, type Contact3 } from "./constants";
+import { CX, JOG_SPEED, POST_L, POST_R, clamp, skill01, sprintSpeed, type Contact3 } from "./constants";
 import { speedOf, stepMover, timeToReach, towards, type P3 } from "./player";
 import type { World } from "./world";
 
@@ -49,6 +49,32 @@ export function aiShoot(w: World, p: P3) {
 const wantsShot = (w: World, p: P3) => (w.rules.shouldShoot ? w.rules.shouldShoot(w, p) : shouldShoot(w, p));
 const takeShot = (w: World, p: P3) => (w.rules.shoot ? w.rules.shoot(w, p) : aiShoot(w, p));
 
+/** A Free Roam team-mate makes a run in behind about this often while you have the ball (s). */
+export const RUN_EVERY = 3.2;
+
+/** Send a man on a run to a point for up to `secs` (support brain). */
+function startRun(w: World, p: P3, x: number, y: number, secs: number) {
+  p.mind.runX = x; p.mind.runY = y; p.mind.runUntil = w.t + secs;
+  w.emit({ kind: "info", who: p.id, text: "run" });
+}
+
+/**
+ * A pass played into his stride: the point on the ball's coming path nearest
+ * where his run already takes him (within a metre or so, low enough to take),
+ * and when the ball is there. null if the pass isn't on his line.
+ */
+function inStride(w: World, p: P3): { x: number; y: number; t: number } | null {
+  if (speedOf(p) < 2) return null;
+  let best: { x: number; y: number; t: number } | null = null, bd = Infinity;
+  for (const s of w.path) {
+    if (s.t > 2.8) break;
+    if (s.z > 1.2 || s.t < 0.15) continue;
+    const d = Math.hypot(s.x - (p.x + p.vx * s.t), s.y - (p.y + p.vy * s.t));
+    if (d < 1 + 0.45 * s.t && d < bd) { bd = d; best = { x: s.x, y: s.y, t: s.t }; }
+  }
+  return best;
+}
+
 /** The point he should run to for a loose ball, and whether he's the man to go. */
 function chase(w: World, p: P3, margin: number): { x: number; y: number } | null {
   const me = w.intercept(p);
@@ -74,19 +100,51 @@ export const BRAINS: Record<string, Brain> = {
       const held = w.t - (m.has as number);
       const called = typeof m.call === "number" && w.t - (m.call as number) < 1.5;
       if (wantsShot(w, p) && held > 0.25 && !called) { takeShot(w, p); m.has = undefined; return; }
-      if (you && you.active && (held > (m.hold as number) || called)) { w.passBall(p, you); m.has = undefined; m.call = undefined; return; }
+      if (you && you.active && (held > (m.hold as number) || called)) {
+        w.passBall(p, you); m.has = undefined; m.call = undefined;
+        // give and go: off he goes into the space ahead of him
+        startRun(w, p, clamp(p.x + ((m.lane as number) ?? 1) * 3, 8, 60), clamp(p.y - 12, 7, 34), 2.4);
+        return;
+      }
       stepMover(p, towards(p, CX + (p.x - CX) * 0.7, Math.max(9, b.y - 6), 2), false, dt);
       return;
     }
     m.has = undefined;
+    // a pass played into his stride: keep running his line and take it on the move (charging at the ball makes the touch harder)
+    const meet = w.passTarget === p.id ? inStride(w, p) : null;
+    if (meet) {
+      // at the pace that gets him there with the ball (not flat out and past it)
+      const d = Math.hypot(meet.x - p.x, meet.y - p.y), need = d / Math.max(0.2, meet.t);
+      const sprint = need > JOG_SPEED;
+      const k = Math.min(1, need / (sprint ? sprintSpeed(p.skills.pace) : JOG_SPEED));
+      stepMover(p, d > 0.05 ? { x: (meet.x - p.x) / d * k, y: (meet.y - p.y) / d * k } : { x: 0, y: 0 }, sprint, dt);
+      return;
+    }
     if (w.passTarget === p.id || (!w.owner && w.passTarget === null && chase(w, p, 0.15))) {
       const i = w.intercept(p);
       if (i) { stepMover(p, towards(p, i.x, i.y, 0.6), true, dt); return; }
     }
+    // a run on: sprint to it (a give-and-go, or one in behind while you have it)
+    if (typeof m.runUntil === "number" && w.t < m.runUntil) {
+      const rx = m.runX as number, ry = m.runY as number;
+      if (Math.hypot(rx - p.x, ry - p.y) > 0.8) { stepMover(p, towards(p, rx, ry, 1.5), true, dt); return; }
+      m.runUntil = undefined;
+    }
+    // you have it: now and then one of the two goes in behind (never both at once)
+    if (you && w.owner === you.id) {
+      const lane = (m.lane as number) ?? 1;
+      const other = w.players.some((q) => q !== p && q.active && !q.human && typeof q.mind.runUntil === "number" && w.t < (q.mind.runUntil as number));
+      if (m.nextRun === undefined) m.nextRun = w.t + RUN_EVERY * (lane > 0 ? 0.55 : 1.1);
+      if (!other && w.t > (m.nextRun as number) && you.y > 12) {
+        startRun(w, p, clamp(CX + lane * (5 + w.rng() * 4), 8, 60), clamp(you.y - 11 - w.rng() * 5, 7, 30), 2.2);
+        m.nextRun = w.t + RUN_EVERY * (0.8 + w.rng() * 0.6);
+        return;
+      }
+    }
     // into space: a channel either side of you, a little ahead (towards goal)
     const lane = (m.lane as number) ?? 1;
     const ref = you ?? p;
-    const tx = clamp(ref.x + lane * 11, 6, 62), ty = clamp(ref.y - 5 + lane * 2, 7, 40);
+    const tx = clamp(ref.x + lane * 9, 6, 62), ty = clamp(ref.y - 7 + lane * 1.5, 7, 40);
     const d = Math.hypot(tx - p.x, ty - p.y);
     stepMover(p, d > 1 ? towards(p, tx, ty, 3) : { x: 0, y: 0 }, d > 8, dt, face(p, b.x, b.y));
   },

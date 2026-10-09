@@ -1,0 +1,14 @@
+{
+  "about": "Look H's stadium (lib/star/style3d/real/arena.ts). Suns from lib/star/style3d/real/tod.ts; night's 'sun' is the main floodlight bank. sky = the sky's light as a share of the sun's.",
+  "url": "/star-style-dev?style=real&scene=play3d&tod=day&clean=1",
+  "workers": 4,
+  "groundAlbedo": 0.12,
+  "sunRays": 4,
+  "tods": [
+    { "id": "day", "sun": [-0.42, 0.86, -0.3], "sky": 0.3, "soft": 0.8 },
+    { "id": "golden", "sun": [-0.74, 0.34, -0.58], "sky": 0.35, "soft": 1.0 },
+    { "id": "night", "sun": [-0.3, 0.86, -0.4], "sky": 0.5, "soft": 3.0 }
+  ],
+  "floor": { "min": [-58, 0, -22], "max": [58, 0, 127], "res": [0.25, 1, 0.25], "y": 0.03, "rays": 96 },
+  "volume": { "min": [-72, 0, -37], "max": [72, 32, 142], "res": [1.5, 1.0, 1.5], "rays": 96 }
+}

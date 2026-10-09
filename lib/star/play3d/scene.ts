@@ -54,12 +54,24 @@ export interface Play3DController {
   /** Which way the camera looks, as a pitch-plane angle (0 = +x): the screen maps the stick and the drag with it. */
   heading(): number;
   setActive(on: boolean): void;
+  /** The man drawn under a tap at (x, y) px inside the picture (nearest within a thumb's width), or null. */
+  pick(x: number, y: number): string | null;
+  /** Where a man is on screen (px in the picture); off = out of the picture, x/y then clamped to its edge (his marker). null if he is off the pitch. */
+  screen(id: string): { x: number; y: number; off: boolean } | null;
   /** Frame stepping (dev, lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
   step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
 const P = (x: number, y: number, z: number): [number, number, number] => [x - CX, z, y];
+/** A tap this close (px) to a man's drawn body picks him (a pass to him). */
+const PICK_PX = 46;
+/** A team-mate out of the picture gets a marker this far (px) inside the edge. */
+const EDGE_PX = 26;
+/** Look H's pixel ratio cap per tier (the tier's own cap is for the garden and shop's busier scenes). */
+const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2.5 };
+/** Look H's chase camera: metres behind and up, where it looks (metres ahead, height), field of view tall / wide. Old: 7.5 back, 3.6 up, 6 ahead at 0.9, 58° / 48°. */
+const CHASE_SHARP = { back: 6.2, up: 2.7, ahead: 10, lookUp: 0.9, fovTall: 56, fovWide: 44, lean: 0.32 };
 const yawOf = (facing: number) => Math.PI / 2 - facing;
 
 export async function createPlay3DScene(
@@ -70,6 +82,8 @@ export async function createPlay3DScene(
     rig?: Play3DRig;
     /** Optional: no sky, lights, grass, lines, goal or hedge — the caller builds its own world round the people and the ball. */
     bare?: boolean;
+    /** Optional (look H): draw at the screen's real pixel ratio (capped per tier) and use the close behind-the-player camera. */
+    sharp?: boolean;
     /** Optional: draw the frame yourself (post-processing). Default renderer.render. */
     draw?: (renderer: any, scene: any, camera: any) => void;
     /** Optional: called once everything is made, before the first frame. */
@@ -94,7 +108,8 @@ export async function createPlay3DScene(
   ]);
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  // sharp (look H): the full screen's pixels, capped per tier (a 3x phone at Medium draws 2x, not 1.25x)
+  const { renderer, release } = acquireRenderer(THREE, container, opts.sharp ? { ...prof, maxPixelRatio: SHARP_PIXEL_RATIO[tier] } : prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -228,6 +243,21 @@ export async function createPlay3DScene(
       r.material.color.set(m.color && !m.color.startsWith("rgba") ? m.color : "#facc15");
       r.material.opacity = m.color?.startsWith("rgba") ? 0.45 : 0.9;
     });
+  };
+  // ── The pass ring: under the team-mate a tap would pass to (World.aimMate) ──
+  const aimRing = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 40), new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.8, depthWrite: false }));
+  aimRing.rotation.x = -Math.PI / 2;
+  aimRing.renderOrder = 2;
+  aimRing.visible = false;
+  root.add(aimRing);
+  let aimT = 0;
+  const syncAim = (dt: number) => {
+    const m = world.get(world.aimMate);
+    aimRing.visible = !!m && m.active;
+    if (!m) return;
+    aimT += dt;
+    aimRing.position.set(m.x - CX, 0.014, m.y);
+    aimRing.scale.setScalar(1 + 0.08 * Math.sin(aimT * 6));
   };
   let lastBall = new THREE.Vector3(...P(world.ball.x, world.ball.y, world.ball.z));
   const placeBall = () => {
@@ -564,8 +594,13 @@ export async function createPlay3DScene(
       heading += Math.max(-1, Math.min(1, d)) * Math.min(1, 0.025 * sp);
     }
     const fx = Math.cos(heading), fy = Math.sin(heading);
-    const pos = new THREE.Vector3(you.x - CX - fx * 7.5, 3.6, you.y - fy * 7.5);
-    const look2 = new THREE.Vector3(you.x - CX + fx * 6, 0.9, you.y + fy * 6);
+    // sharp (look H): the broadcast "behind the player" shot, close and low, so he fills the picture
+    const back = opts.sharp ? CHASE_SHARP.back : 7.5, up = opts.sharp ? CHASE_SHARP.up : 3.6;
+    const pos = new THREE.Vector3(you.x - CX - fx * back, up, you.y - fy * back);
+    const look2 = opts.sharp ? new THREE.Vector3(you.x - CX + fx * CHASE_SHARP.ahead, CHASE_SHARP.lookUp, you.y + fy * CHASE_SHARP.ahead) : new THREE.Vector3(you.x - CX + fx * 6, 0.9, you.y + fy * 6);
+    // sharp: lean the view a little towards the man a tap would pass to, so he is in the picture
+    const aim = opts.sharp ? world.get(world.aimMate) : undefined;
+    if (aim && Math.hypot(aim.x - you.x, aim.y - you.y) < 28) look2.lerp(new THREE.Vector3(aim.x - CX, CHASE_SHARP.lookUp, aim.y), CHASE_SHARP.lean);
     return { pos, look: look2 };
   };
 
@@ -573,7 +608,7 @@ export async function createPlay3DScene(
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    if (!opts.rig) camera.fov = w / h < 0.8 ? 58 : 48;
+    if (!opts.rig) camera.fov = opts.sharp ? (w / h < 0.8 ? CHASE_SHARP.fovTall : CHASE_SHARP.fovWide) : w / h < 0.8 ? 58 : 48;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -589,6 +624,7 @@ export async function createPlay3DScene(
     for (const b of bodies) animate(b, dt, prevBall);
     placeBall();
     syncMarkers();
+    syncAim(dt);
     const t = camTarget();
     if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));
@@ -621,9 +657,51 @@ export async function createPlay3DScene(
     (window as any).__frameStep = { duration: 0, seek, timeline: undefined, byScene: true };
   }
 
+  const PV = new THREE.Vector3();
+  /** Where a man's chest is on screen (px), clamped inside the edge when he is out of the picture. */
+  const screenOf = (p: P3) => {
+    const w = container.clientWidth || 1, h = container.clientHeight || 1;
+    PV.set(p.x - CX, 1.2, p.y).project(camera);
+    let x = (PV.x + 1) / 2 * w, y = (1 - PV.y) / 2 * h;
+    const behind = PV.z > 1;
+    if (behind) { x = w - x; y = h; }
+    const off = behind || x < 0 || x > w || y < 0 || y > h;
+    const m = EDGE_PX;
+    if (off) {
+      // along the line from the middle of the picture towards him, to the edge
+      const cx = w / 2, cy = h / 2, dx = x - cx, dy = y - cy;
+      const k = Math.min((w / 2 - m) / Math.max(1e-6, Math.abs(dx)), (h / 2 - m) / Math.max(1e-6, Math.abs(dy)));
+      x = cx + dx * k; y = cy + dy * k;
+    }
+    return { x, y, off };
+  };
   return {
     heading: () => heading,
     step: stepperApi.step,
+    screen(id) { const p = world.get(id); return p && p.active ? screenOf(p) : null; },
+    pick(sx, sy) {
+      // the man whose body (feet to head) is nearest the tap, within a thumb's width;
+      // a team-mate out of the picture is picked by his marker on the edge
+      const w = container.clientWidth || 1, h = container.clientHeight || 1;
+      const you = world.you();
+      let best: string | null = null, bd = PICK_PX;
+      for (const b of bodies) {
+        const p = b.who;
+        if (!p.active) continue;
+        let d = Infinity;
+        for (const z of [0.2, 0.9, 1.6]) {
+          PV.set(p.x - CX, z, p.y).project(camera);
+          if (PV.z > 1) continue;
+          d = Math.min(d, Math.hypot((PV.x + 1) / 2 * w - sx, (1 - PV.y) / 2 * h - sy));
+        }
+        if (you && p !== you && !p.keeper && p.team === you.team) {
+          const s = screenOf(p);
+          if (s.off) d = Math.min(d, Math.hypot(s.x - sx, s.y - sy));
+        }
+        if (d < bd) { bd = d; best = p.id; }
+      }
+      return best;
+    },
     setActive(on) {
       if (on === active) return;
       active = on;

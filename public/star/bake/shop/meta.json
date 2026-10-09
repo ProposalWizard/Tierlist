@@ -1,0 +1,54 @@
+{
+ "tods": [
+  "indoor"
+ ],
+ "aoRadius": 2.5,
+ "bounce": {
+  "floor": {
+   "indoor": 0.09309
+  },
+  "volume": {
+   "indoor": 0.13214
+  }
+ },
+ "files": {
+  "indoor-floor.webp": 37516,
+  "indoor-vol.webp": 50726
+ },
+ "floor": {
+  "min": [
+   -6,
+   0,
+   -8
+  ],
+  "max": [
+   6,
+   0,
+   9
+  ],
+  "dims": [
+   241,
+   1,
+   341
+  ],
+  "y": 0.02
+ },
+ "volume": {
+  "min": [
+   -6.2,
+   0,
+   -8.2
+  ],
+  "max": [
+   6.4,
+   3.8,
+   9.4
+  ],
+  "dims": [
+   51,
+   16,
+   71
+  ],
+  "y": 0.03
+ }
+}
