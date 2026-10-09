@@ -10,8 +10,8 @@
  *             get there first, dribbles at goal round men, shoots when it's
  *             on, closes down and pokes at whoever has it
  */
-import { CX, JOG_SPEED, POST_L, POST_R, clamp, skill01, sprintSpeed, type Contact3 } from "./constants";
-import { speedOf, stepMover, timeToReach, towards, type P3 } from "./player";
+import { CX, POST_L, POST_R, clamp, skill01, type Contact3 } from "./constants";
+import { cruiseSpeed, speedOf, stepMover, timeToReach, topSpeed, towards, type P3 } from "./player";
 import type { World } from "./world";
 
 export type Brain = (w: World, p: P3, dt: number) => void;
@@ -115,8 +115,8 @@ export const BRAINS: Record<string, Brain> = {
     if (meet) {
       // at the pace that gets him there with the ball (not flat out and past it)
       const d = Math.hypot(meet.x - p.x, meet.y - p.y), need = d / Math.max(0.2, meet.t);
-      const sprint = need > JOG_SPEED;
-      const k = Math.min(1, need / (sprint ? sprintSpeed(p.skills.pace) : JOG_SPEED));
+      const sprint = need > cruiseSpeed(p);
+      const k = Math.min(1, need / (sprint ? topSpeed(p) : cruiseSpeed(p)));
       stepMover(p, d > 0.05 ? { x: (meet.x - p.x) / d * k, y: (meet.y - p.y) / d * k } : { x: 0, y: 0 }, sprint, dt);
       return;
     }

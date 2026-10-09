@@ -186,7 +186,13 @@ export async function loadMocap(loader: Loader, body: Anims3dBody = "people"): P
   let p = mocapCache.get(url);
   if (!p) {
     p = loadGltfCached<GLTF>(loader, url)
-      .then((g) => { if (body === "people") levelMocapHeads(g); return g; })
+      .then(async (g) => {
+        if (body === "people") levelMocapHeads(g);
+        // the running neck: upright neck, lowered shoulders on the moving loops (runPosture.ts)
+        const [T, rp] = await Promise.all([import("three"), import("./runPosture")]);
+        try { rp.uprightRunPosture(T, g as never, body === "people" ? rp.PEOPLE_POSTURE : rp.UAL_POSTURE); } catch (e) { console.error("run posture", e); }
+        return g;
+      })
       .catch((e) => { console.error("mocap clips failed to load; the old clips play", e); mocapCache.delete(url); return null; });
     mocapCache.set(url, p);
   }
