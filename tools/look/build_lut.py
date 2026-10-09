@@ -39,6 +39,8 @@ ap.add_argument("--mid", type=float, default=0.1, help="midtone lift (shadows an
 ap.add_argument("--white", type=float, default=5.0, help="lightness added to near-whites (lines, posts, shirts)")
 ap.add_argument("--grass-sat", type=float, default=0.92, help="grass colourfulness, x")
 ap.add_argument("--grass-contrast", type=float, default=1.3, help="stretch of the grass's own light-to-dark range")
+ap.add_argument("--other-chroma", type=float, default=0.0, help="how much of the colour move non-grass colours get")
+ap.add_argument("--stand-desat", type=float, default=0.12, help="colourfulness taken off dark non-green colours (the crowd)")
 ap.add_argument("--chroma", type=float, default=1.0, help="how much of the colour (a,b) move to keep")
 a = ap.parse_args()
 
@@ -117,6 +119,10 @@ if a.mode == "tone":
     D[:, 0] -= shift
 else:
     D[:, 1:] *= a.chroma
+    # the colour move is for the grass only: everything else (the crowd, stands, boards) keeps its own colour and
+    # only follows the lightness curve. Matching the rest's colour pulled the crowd navy/purple (9 Oct still):
+    # the benchmark's non-grass pixels are mostly blue boards and a navy score bar.
+    D[~gs[pick], 1:] *= a.other_chroma
 D = np.clip(D, -a.max_shift, a.max_shift)
 
 # the grid
@@ -178,6 +184,10 @@ white = np.clip((C[:, 0] - 78) / 12, 0, 1) * np.clip(1 - np.hypot(C[:, 1], C[:, 
 Lab = Lab * (1 - white[:, None]) + C * white[:, None]
 #    ... and a touch brighter (the reference's crisp lines and shirts)
 Lab[:, 0] = np.minimum(100, Lab[:, 0] + white * a.white)
+# 4. the stands stay neutral: dark colours that are not grass (the crowd in shade) a little less colourful,
+#    so the crowd reads as the target's dark neutral-warm blur, not a field of red flecks
+dk = np.clip((50 - C[:, 0]) / 20, 0, 1) * (1 - green)
+Lab[:, 1:] *= (1 - a.stand_desat * dk)[:, None]
 out = to_rgb(Lab).reshape(n, n, n, 3)  # [b][g][r]
 strip = np.zeros((n, n * n, 3))
 for b in range(n):

@@ -14,6 +14,10 @@
  *           half of the pitch, the roof's shadow on the upper tier)
  *   bounce  the light thrown back off the lit stands, walls and grass
  *
+ * A material with userData.bakeNeutral (the crowd) keeps a floor under its
+ * shade and has its sky light turned neutral-warm, so a shaded stand reads as
+ * a dark crowd, not a blue one.
+ *
  * Two pictures carry it: the FLOOR (the ground seen from above) and the
  * VOLUME (the same numbers through the air, as stacked slices). Static
  * things AND the people and ball read the volume where they stand, so a man
@@ -121,12 +125,22 @@ if (uBkOn > 0.5) {
     bk = mix(vec3(1.0, 1.0, 0.0), texture(uBkVol, clamp(q.xzy, 0.0, 1.0)).rgb, inb.x * inb.y * inb.z);
   }
   float bkSky = mix(1.0, bk.r, uBkAO);
+#ifdef BK_NEUTRAL
+  // the crowd: never darker than half the open sky's light (under the roof it read as a black hole)
+  bkSky = max(bkSky, 0.55);
+#endif
   float bkSun = mix(1.0, bk.g, uBkShade);
   reflectedLight.indirectDiffuse *= bkSky;
   reflectedLight.indirectSpecular *= mix(1.0, bkSky, 0.75);
   reflectedLight.directDiffuse *= bkSun;
   reflectedLight.directSpecular *= bkSun;
   reflectedLight.indirectDiffuse += bounceCol * bk.b * BRDF_Lambert(diffuseColor.rgb);
+#ifdef BK_NEUTRAL
+  // ... and its shade is neutral-warm, not the blue sky's colour (9 Oct still: a navy crowd with red flecks)
+  { vec3 ind = reflectedLight.indirectDiffuse; float g = dot(ind, vec3(0.3333));
+    reflectedLight.indirectDiffuse = mix(vec3(g), ind, 0.3) * vec3(1.14, 1.0, 0.8) * 1.3;
+    float gs = dot(reflectedLight.indirectSpecular, vec3(0.3333)); reflectedLight.indirectSpecular = vec3(gs) * 0.6; }
+#endif
 }`;
 
 /** Materials that light per pixel with three's usual light chunks. */
@@ -214,6 +228,7 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
     m.onBeforeCompile = (sh: any, r: any) => {
       inner?.call(m, sh, r);
       if (!m.userData.bakeOn) return;
+      if (m.userData.bakeNeutral) sh.fragmentShader = `#define BK_NEUTRAL\n${sh.fragmentShader}`;
       Object.assign(sh.uniforms, U);
       sh.vertexShader = sh.vertexShader
         .replace("#include <common>", `#include <common>\n${VERT_HEAD}`)
@@ -222,7 +237,7 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
         .replace("#include <common>", `#include <common>\n${FRAG_HEAD}`)
         .replace("#include <aomap_fragment>", `${FRAG_BODY}\n#include <aomap_fragment>`);
     };
-    m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-bk${m.userData.bakeOn ? 1 : 0}`;
+    m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-bk${m.userData.bakeOn ? 1 : 0}${m.userData.bakeNeutral ? "n" : ""}`;
     m.userData.bakeOn = true;
     m.userData.bakeU = U;
     m.needsUpdate = true;
