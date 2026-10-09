@@ -35,6 +35,20 @@ export interface Play3DLook {
 }
 export type CameraMode = "chase" | "pair";
 
+/** A camera set from outside (the Style Testing page's fixed tilt): three.js coordinates. */
+export type Play3DRig = (world: World) => { pos: [number, number, number]; look: [number, number, number]; heading: number; fov?: number };
+
+/** What onBuilt hands a caller that dresses the picture itself (Style Testing). */
+export interface Play3DBuilt {
+  THREE: any;
+  scene: any;
+  root: any;
+  renderer: any;
+  camera: any;
+  bodies: { p: Person3D; who: P3 }[];
+  ball: any;
+}
+
 export interface Play3DController {
   /** Which way the camera looks, as a pitch-plane angle (0 = +x): the screen maps the stick and the drag with it. */
   heading(): number;
@@ -47,7 +61,17 @@ const yawOf = (facing: number) => Math.PI / 2 - facing;
 
 export async function createPlay3DScene(
   container: HTMLElement, world: World, look: Play3DLook,
-  opts: { camera: CameraMode; quality?: Quality3d; onFrame?: (dt: number) => void },
+  opts: {
+    camera: CameraMode; quality?: Quality3d; onFrame?: (dt: number) => void;
+    /** Optional (Style Testing only): a fixed camera instead of `camera`. */
+    rig?: Play3DRig;
+    /** Optional: no sky, lights, grass, lines, goal or hedge — the caller builds its own world round the people and the ball. */
+    bare?: boolean;
+    /** Optional: draw the frame yourself (post-processing). Default renderer.render. */
+    draw?: (renderer: any, scene: any, camera: any) => void;
+    /** Optional: called once everything is made, before the first frame. */
+    onBuilt?: (ctx: Play3DBuilt) => void;
+  },
 ): Promise<Play3DController> {
   const tier = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
@@ -76,9 +100,10 @@ export async function createPlay3DScene(
   const scene = new THREE.Scene();
   const root = new THREE.Group();
   scene.add(root);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 260);
+  if (!opts.bare) {
   scene.background = new THREE.Color("#a9d4ef");
   scene.fog = new THREE.Fog("#a9d4ef", 60, 140);
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 260);
 
   root.add(new THREE.HemisphereLight("#e8f4ff", "#3f6b2a", 1.15));
   const sun = new THREE.DirectionalLight("#fff4df", 2.1);
@@ -165,6 +190,7 @@ export async function createPlay3DScene(
   const hedge = new THREE.Mesh(new THREE.BoxGeometry(140, 3.5, 1.5), hedgeMat);
   hedge.position.set(0, 1.75, -14); root.add(hedge);
   for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 90), hedgeMat); h.position.set(sx * 44, 1.75, 30); root.add(h); }
+  }
 
   // ── The ball ──
   const ballMat = new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 });
@@ -491,6 +517,12 @@ export async function createPlay3DScene(
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let snap = true;
   const camTarget = () => {
+    if (opts.rig) {
+      const r = opts.rig(world);
+      heading = r.heading;
+      if (r.fov && camera.fov !== r.fov) { camera.fov = r.fov; camera.updateProjectionMatrix(); }
+      return { pos: new THREE.Vector3(...r.pos), look: new THREE.Vector3(...r.look) };
+    }
     const you = world.you() ?? world.players[0];
     if (opts.camera === "chase" && !you.active) {
       // you're off (safe, or out and watching): a high view of the ball and the goal
@@ -528,7 +560,7 @@ export async function createPlay3DScene(
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.8 ? 58 : 48;
+    if (!opts.rig) camera.fov = w / h < 0.8 ? 58 : 48;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -552,9 +584,10 @@ export async function createPlay3DScene(
     camLook.lerp(t.look, Math.min(1, dt * 5));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
-    renderer.render(scene, camera);
+    if (opts.draw) opts.draw(renderer, scene, camera); else renderer.render(scene, camera);
     opts.onFrame?.(dt);
   };
+  opts.onBuilt?.({ THREE, scene, root, renderer, camera, bodies: bodies.map((b) => ({ p: b.p, who: b.who })), ball });
   renderer.setAnimationLoop(frame);
   // dev/test hook: the World, the camera, the people, and a one-off draw (stills from a frozen frame)
   (window as any).__play3d = { world, camera, bodies, render: () => renderer.render(scene, camera) };
