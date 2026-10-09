@@ -17,6 +17,7 @@ import type { P3, Act3 } from "./player";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
+import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
@@ -687,9 +688,19 @@ export async function createPlay3DScene(
     const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    governed?.frame(now);
     tick(dt, true);
   };
   opts.onBuilt?.({ THREE, scene, root, renderer, camera, bodies: bodies.map((b) => ({ p: b.p, who: b.who })), ball });
+  // The governor (three3d/governor.ts): slow for 2.5 s → one rung down. Look H
+  // (opts.draw) reads the rung itself for its shadows and post pass.
+  const castLights: any[] = [];
+  scene.traverse((x: any) => { if (x.isDirectionalLight && x.castShadow) castLights.push(x); });
+  const governed = governScene(THREE, {
+    name: "play3d", start: tier, renderer, scene, camera, lights: castLights,
+    basePR: renderer.getPixelRatio(), shadowSize: prof.shadowScale >= 1 ? 2048 : 1024,
+    ownShadows: !!opts.draw, keepCasting: (m: any) => m === ball || m.parent === ball,
+  });
   renderer.setAnimationLoop(frame);
   // dev/test hook: the World, the camera, the people, and a one-off draw (stills from a frozen frame)
   (window as any).__play3d = { world, camera, bodies, render: () => renderer.render(scene, camera) };
@@ -760,6 +771,7 @@ export async function createPlay3DScene(
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);
+      governed.dispose();
       release(root);
       if ((window as any).__play3d?.world === world) delete (window as any).__play3d;
       if ((window as any).__frameStep?.byScene) delete (window as any).__frameStep;

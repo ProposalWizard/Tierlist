@@ -20,11 +20,12 @@
  */
 import { TIER_PROFILES, type Quality3d } from "../../three3d/quality";
 import type { Person3D } from "../../people3d";
-import { envFor, grassMaps, hTexture, SKY_SCALE, type TimeOfDay } from "./assets";
+import { envFor, grassMaps, hTexture, preloadHdr, SKY_SCALE, type TimeOfDay } from "./assets";
 import { TODS, type TodLook } from "./tod";
 import { buildRealPitch, type RealPitch } from "./pitch";
 import { buildArena, type Arena, type ArenaColours } from "./arena";
 import { makeHPost, type HPost } from "./post";
+import { currentGovernor, type GovRung } from "../../three3d/governor";
 import { dressHBall, type HBall } from "./ball";
 import { createBakedLight, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
@@ -119,6 +120,21 @@ if (uKit > 0.5) diffuseColor.rgb *= mix(0.74, 1.0, step(uFaceF.x - 0.04, vRest.y
   if (!!m.userData.fabric !== on) { m.userData.fabric = on; m.needsUpdate = true; }
 }
 
+/**
+ * Start-up (9 Oct 2026, Harry: "the long load is when the game first starts"):
+ * fetch and decode the look's pictures — grass, crowd, boards, sky, light,
+ * grade — while the people's files load, instead of after them. Everything
+ * it starts is cached, so createRealLook picks the same promises up.
+ */
+export function preloadRealLook(T: any, tod: TimeOfDay, o: { arena?: boolean } = {}) {
+  const ok = (p: Promise<unknown>) => { p.catch(() => {}); };
+  ok(grassMaps(T));
+  if (o.arena !== false) { ok(hTexture(T, "crowd.webp")); ok(hTexture(T, "led.webp")); ok(import("three/examples/jsm/utils/BufferGeometryUtils.js")); }
+  ok(hTexture(T, `sky-${tod}.webp`, { repeat: false }));
+  ok(preloadHdr(T, tod));
+  ok(lookLut(T, tod));
+}
+
 export async function createRealLook(T: any, renderer: any, scene: any, tier: Quality3d, o: RealLookOptions): Promise<RealLook> {
   const prof = TIER_PROFILES[tier];
   const root = new T.Group();
@@ -138,6 +154,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   let lut: any = null;
   let baked: BakedLight | null = null;
   let dead = false;
+  let rungSeen: GovRung | null = null;
 
   // ── sky ──
   const su: Record<string, { value: any }> = {
@@ -204,7 +221,14 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   })();
   const csMat = new T.MeshBasicMaterial({ map: csTex, transparent: true, depthWrite: false, opacity: 0.6 });
   const csGeo = new T.PlaneGeometry(1, 1);
-  const contacts: { p: Person3D; m: any }[] = [];
+  csGeo.rotateX(-Math.PI / 2);
+  // one draw for every contact shadow (9 Oct 2026: was one draw a man, 22 in a match)
+  const CS_MAX = 40;
+  const csInst = new T.InstancedMesh(csGeo, csMat, CS_MAX);
+  csInst.renderOrder = 1; csInst.count = 0; csInst.frustumCulled = false;
+  root.add(csInst);
+  const csM = new T.Matrix4(), csQ = new T.Quaternion(), csP = new T.Vector3(), csS = new T.Vector3();
+  const contacts: { p: Person3D }[] = [];
 
   const post: HPost = makeHPost(T, renderer, tier, o.sharp && tier !== "low" ? { msaa: tier === "high" ? 4 : 2 } : {});
   if (o.sharp) {
@@ -238,7 +262,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     su.sunDir.value.set(...look.sunDir).normalize(); su.sunCol.value.set(look.sunColor); su.sunDisc.value = look.sunDisc;
     su.gain.value = look.sky; su.scale.value = SKY_SCALE[tod];
     su.below.value.set(look.fog.color).multiplyScalar(0.4);
-    for (const f of floods) { f.castShadow = prof.shadows && look.floods; }
+    for (const f of floods) { f.castShadow = prof.shadows && look.floods && rungSeen?.shadows === "full"; }
     pitch.setLook({ grass: look.grass, wet: look.wet });
     arena?.setNight(look.floods);
     hball?.setNight(look.floods);
@@ -273,6 +297,30 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
    */
   const shadowEvery = tier === "high" ? 1 : 2;
   let shadowFrame = 0;
+  /**
+   * The governor's rung (three3d/governor.ts), read each frame:
+   *   full  as built (High and Medium exactly as before)
+   *   lite  emergency only (a phone still under ~45 fps): the sun only (no
+   *         flood maps); people and the stands stop casting (the contact
+   *         shadows stay); one combined post pass
+   *   off   no live shadow map, no post pass
+   */
+  let shadowsOn = prof.shadows;
+  let peopleCast = prof.shadows;
+  const applyRung = (r: GovRung) => {
+    rungSeen = r;
+    post.setMode(r.post);
+    const mode = prof.shadows ? r.shadows : "off";
+    shadowsOn = mode !== "off";
+    peopleCast = mode === "full";
+    sun.castShadow = shadowsOn;
+    for (const f of floods) f.castShadow = mode === "full" && look.floods;
+    renderer.shadowMap.enabled = shadowsOn;
+    arena?.group.traverse((x: any) => { if (x.isMesh) { if (x.userData.castOrig === undefined) x.userData.castOrig = !!x.castShadow; x.castShadow = mode === "full" && x.userData.castOrig; } });
+    for (const c of contacts) c.p.root.traverse((x: any) => { if (x.isSkinnedMesh) { if (x.userData.castOrig === undefined) x.userData.castOrig = !!x.castShadow; x.castShadow = peopleCast && x.userData.castOrig; } });
+  };
+  const fallbackRung: GovRung = { tier, pixelRatio: 2, shadows: tier === "low" ? "off" : "full", post: tier === "low" ? "off" : "full" };
+  applyRung(fallbackRung);
 
   const dir = new T.Vector3();
   const api: RealLook = {
@@ -282,12 +330,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     dressPeople(people) {
       for (const p of people) {
         fabric(p.body.material as any, true);
-        if (!contacts.some((c) => c.p === p)) {
-          const m = new T.Mesh(csGeo, csMat);
-          m.rotation.x = -Math.PI / 2; m.renderOrder = 1;
-          root.add(m);
-          contacts.push({ p, m });
-        }
+        if (!contacts.some((c) => c.p === p)) contacts.push({ p });
+        // people cast on the full rung; on the emergency rungs the contact shadow stands in
+        p.root.traverse((x: any) => { if (x.isSkinnedMesh) { if (x.userData.castOrig === undefined) x.userData.castOrig = !!x.castShadow; x.castShadow = peopleCast && x.userData.castOrig; } });
       }
     },
     cheer(v) { arena?.cheer(v); },
@@ -310,24 +355,29 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       const cx = camera.position.x - fx, cz = camera.position.z - fz, cl = Math.hypot(cx, cz) || 1;
       rim.position.set(fx - (cx / cl) * 60, 14, fz - (cz / cl) * 60); rim.target.position.set(fx, 1, fz);
       rim.intensity = (look.floods ? 1.1 : 0.7) * p.rim;
+      let ci = 0;
       for (const c of contacts) {
         const r = c.p.root;
-        c.m.visible = r.visible && c.p.body.visible !== false;
+        if (!(r.visible && c.p.body.visible !== false) || ci >= CS_MAX) continue;
         const s = r.scale.x || 1;
-        c.m.position.set(r.position.x, 0.015, r.position.z + 0.04 * s);
-        c.m.scale.set(0.75 * s, 0.75 * s, 1);
+        csP.set(r.position.x, 0.015, r.position.z + 0.04 * s); csS.set(0.75 * s, 1, 0.75 * s);
+        csInst.setMatrixAt(ci++, csM.compose(csP, csQ, csS));
       }
+      csInst.count = ci;
+      csInst.instanceMatrix.needsUpdate = true;
       arena?.update(dt, ball);
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
     },
     render(sc, camera, hooks) {
+      const gr = currentGovernor()?.rung ?? fallbackRung;
+      if (gr !== rungSeen) applyRung(gr);
       const freshShadow = shadowFrame++ % shadowEvery === 0;
-      if (hooks?.beforeShadows && prof.shadows && !freshShadow) {
+      if (hooks?.beforeShadows && shadowsOn && !freshShadow) {
         // keep last frame's shadow map; the picture still gets its lean
         renderer.shadowMap.autoUpdate = false;
         renderer.shadowMap.needsUpdate = false;
         hooks.afterShadows?.();
-      } else if (hooks?.beforeShadows && prof.shadows) {
+      } else if (hooks?.beforeShadows && shadowsOn) {
         // shadows from the men standing up, then the picture with them leaned
         hooks.beforeShadows();
         renderer.shadowMap.autoUpdate = false;
@@ -363,7 +413,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       arena?.dispose();
       pitch.dispose();
       shadowOnly.dispose();
-      for (const c of contacts) { root.remove(c.m); fabric(c.p.body.material as any, false); }
+      root.remove(csInst);
+      for (const c of contacts) fabric(c.p.body.material as any, false);
       csGeo.dispose(); csMat.dispose(); csTex.dispose();
       sky.geometry.dispose(); sky.material.dispose();
       scene.remove(root);

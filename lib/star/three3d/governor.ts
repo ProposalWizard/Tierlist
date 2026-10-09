@@ -11,10 +11,12 @@
  *     above where the scene started, and never again once it has bounced
  *     (dropped within 20 s of a step up).
  *
- * The ladder gives things up in this order: the pixel ratio first, then the
- * shadows and the post pass (Medium: a small shadow map and one light pass),
- * then all of them (Low: no live shadows, no post pass), then the pixel ratio
- * again. Phones start on Medium (rung 2), desktops on High (rung 0).
+ * Harry, 9 Oct 2026: "I don't want our solution to bad lag to just be make
+ * the game look worse." So a phone opens on Medium exactly as built (rung 1)
+ * and stays there while it keeps up. Only a phone that cannot is stepped
+ * down: first the MOVING picture's pixels (never under 1.5; a still frame
+ * stays full), and only then, as an emergency, one light post pass and blob
+ * shadows for the people, then no live shadows or post at all.
  *
  * Pure, no three.js: the scenes read `rung` and change their own renderer
  * (pixel ratio, shadow map, post) in `onChange`. Tested in
@@ -32,7 +34,7 @@ export type GovPost = "full" | "lite" | "off";
 export interface GovRung {
   /** The tier this rung belongs to (what the frame meter shows). */
   tier: Quality3d;
-  /** The most pixels per screen point a scene may draw at this rung. */
+  /** The most pixels per screen point the MOVING picture may draw at this rung (still frames keep the scene's own). */
   pixelRatio: number;
   /** full: the scene's own; lite: one smaller map, players near the camera only; off: no live shadow map. */
   shadows: GovShadows;
@@ -41,17 +43,20 @@ export interface GovRung {
 }
 
 export const GOV_LADDER: readonly GovRung[] = [
+  // High, as built
   { tier: "high", pixelRatio: 2, shadows: "full", post: "full" },
-  { tier: "high", pixelRatio: 1.5, shadows: "full", post: "full" },
-  { tier: "medium", pixelRatio: 1.5, shadows: "lite", post: "lite" },
-  { tier: "medium", pixelRatio: 1.25, shadows: "lite", post: "lite" },
-  { tier: "low", pixelRatio: 1.25, shadows: "off", post: "off" },
-  { tier: "low", pixelRatio: 1, shadows: "off", post: "off" },
+  // Medium, as built: a phone opens here and, if it keeps up, never moves
+  { tier: "medium", pixelRatio: 2, shadows: "full", post: "full" },
+  // the moving picture may drop to 1.5 px (never lower; a still frame stays full)
+  { tier: "medium", pixelRatio: 1.5, shadows: "full", post: "full" },
+  // emergency only (a phone still under ~45 fps): one light pass, a smaller sun map, people on blob shadows
+  { tier: "low", pixelRatio: 1.5, shadows: "lite", post: "lite" },
+  { tier: "low", pixelRatio: 1.5, shadows: "off", post: "off" },
 ];
 
 /** The rung a scene opens at for a tier. */
 export function rungForTier(t: Quality3d): number {
-  return t === "high" ? 0 : t === "medium" ? 2 : 4;
+  return t === "high" ? 0 : t === "medium" ? 1 : 3;
 }
 
 export interface GovernorOptions {
@@ -71,7 +76,8 @@ export interface GovernorOptions {
   now?: () => number;
 }
 
-interface Sample { t: number; ms: number }
+/** A drawn frame: when, and its gap over the slow budget / the full-rate mark at the cap it aimed for. */
+interface Sample { t: number; slow: number; fast: number }
 
 const median = (a: number[]) => {
   if (!a.length) return 0;
@@ -94,7 +100,7 @@ export class Governor {
   /** Steps taken, for the meter and tests. */
   downs = 0;
   ups = 0;
-  /** The median gap the last decision saw (ms). */
+  /** The last median gap over the slow budget (over 1 = slow). */
   lastMedian = 0;
   /** Anything the scene wants the frame meter to show (casters, skinned, passes). */
   stats: Record<string, number | string> = {};
@@ -143,23 +149,22 @@ export class Governor {
     const ms = now - prev;
     if (ms <= 0) return false;
     if (ms > 250) { this.samples.length = 0; return false; } // a pause, a hidden tab, a load
-    this.samples.push({ t: now, ms });
+    // judged against the rate the scene aimed for at that frame (a capped scene is not slow)
+    this.samples.push({ t: now, slow: ms / Math.max(22, (1000 / cap) * 1.35), fast: ms / ((1000 / cap) * 1.12) });
     const keep = Math.max(this.o.fastSeconds ?? 15, this.o.slowSeconds ?? 2.5) * 1000;
     while (this.samples.length && now - this.samples[0].t > keep) this.samples.shift();
     if (this.frozen || now < this.cooldownUntil) return false;
-    const budget = Math.max(22, (1000 / cap) * 1.35);
     const slowWin = (this.o.slowSeconds ?? 2.5) * 1000;
     const recent = this.samples.filter((s) => now - s.t <= slowWin);
     if (recent.length >= 4 && now - recent[0].t >= slowWin * 0.9) {
-      const m = median(recent.map((s) => s.ms));
+      const m = median(recent.map((s) => s.slow));
       this.lastMedian = m;
-      if (m > budget && this.index < GOV_LADDER.length - 1) return this.step(+1, now);
+      if (m > 1 && this.index < GOV_LADDER.length - 1) return this.step(+1, now);
     }
     const fastWin = (this.o.fastSeconds ?? 15) * 1000;
     if (!this.bounced && this.index > this.startIndex && this.samples.length >= 8 && now - this.samples[0].t >= fastWin * 0.95) {
-      const m = median(this.samples.map((s) => s.ms));
-      this.lastMedian = m;
-      if (m <= (1000 / cap) * 1.12) return this.step(-1, now);
+      const m = median(this.samples.map((s) => s.fast));
+      if (m <= 1) return this.step(-1, now);
     }
     return false;
   }
@@ -206,5 +211,5 @@ export function currentGovernor(): Governor | null { return live.length ? live[l
 
 /** A pixel ratio a scene wants, capped by the rung (never above the screen's own). */
 export function governedPixelRatio(want: number, rung: GovRung, dpr: number): number {
-  return Math.max(1, Math.min(want, rung.pixelRatio, dpr));
+  return Math.min(want, dpr, Math.max(1.5, rung.pixelRatio));
 }

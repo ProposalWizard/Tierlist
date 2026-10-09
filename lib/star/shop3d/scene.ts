@@ -37,6 +37,7 @@ import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -212,6 +213,15 @@ async function buildShop(
   // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
   // look H standing still: the screen's real pixels, capped per tier; moving stays the tier's cap (lag)
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "shop", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -221,7 +231,7 @@ async function buildShop(
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1050,8 +1060,10 @@ async function buildShop(
       acc += Math.min(0.25, clock.getDelta());
       // still: 30 a second; moving: the tier's cap (High and Medium every frame, Low 30)
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -1239,12 +1251,7 @@ async function buildShop(
       if (!opts.fixedStep) {
         // still runs at 30 on purpose: only count a slow second against what
         // was asked for
-        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
-        // three slow seconds: one tier down; still too slow at Low: 30 a second always
-        if (slowSeconds >= 3) {
-          slowSeconds = 0;
-          if (!stepDown()) capAlways = true;
-        }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -1310,6 +1317,7 @@ async function buildShop(
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      gov.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);

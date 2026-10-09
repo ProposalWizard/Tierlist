@@ -26,7 +26,8 @@ import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer } from "../three3d/perf";
+import { acquireRenderer, warmUp } from "../three3d/perf";
+import { Governor, governedPixelRatio } from "../three3d/governor";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -208,10 +209,16 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const camMode = o.camera ?? "tv";
   const tier = o.tier ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
-  const THREE: any = await import("three");
-  const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
-  const SkU: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
+  // Start-up (Harry, 9 Oct 2026: "the long load is when the game first starts"):
+  // the code, the people's files and look H's pictures all load side by side,
+  // not one after another. The 2D match plays meanwhile.
+  const [THREE, { GLTFLoader }, SkU, lookMod]: any[] = await Promise.all([
+    import("three"), import("three/examples/jsm/loaders/GLTFLoader.js"), import("three/examples/jsm/utils/SkeletonUtils.js"),
+    o.def.real ? import("./real/look").catch(() => null) : Promise.resolve(null),
+  ]);
   const SK = SkU.default ?? SkU;
+  if (lookMod && o.def.real) lookMod.preloadRealLook(THREE, o.tod ?? o.def.real);
+  if (o.def.real) void import("./real/ball").catch(() => null);
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   const [model, animG, fb] = await Promise.all([
@@ -223,6 +230,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const { renderer, release } = acquireRenderer(THREE, container, prof);
   const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
+  // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
+  // (pixel ratio, then shadows and the post pass; look H reads the rung itself).
+  const gov = new Governor({
+    start: tier, name: "real game",
+    onChange: (r) => {
+      renderer.setPixelRatio(governedPixelRatio(dprCap, r, window.devicePixelRatio || 1));
+      if (!h) renderer.shadowMap.enabled = prof.shadows && r.shadows !== "off";
+    },
+  });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -344,6 +360,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   })();
   const footMat = new THREE.MeshBasicMaterial({ map: footTex, transparent: true, depthWrite: false, opacity: 0.6 });
   const footGeo = new THREE.PlaneGeometry(1, 1);
+  const FEET_MAX = 40;
+  const feet = new THREE.InstancedMesh(footGeo, footMat, FEET_MAX);
+  feet.count = 0; feet.renderOrder = 2; feet.frustumCulled = false;
+  root.add(feet);
+  const footMx = new THREE.Matrix4(), footQ = new THREE.Quaternion(), footE = new THREE.Euler(), footP = new THREE.Vector3(), footS = new THREE.Vector3();
   const camera = new THREE.PerspectiveCamera(39, 0.5, 0.1, 700);
 
   let def = o.def;
@@ -470,8 +491,29 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const c = newNumberCanvas(); drawShirtNumber(c, n);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
   };
-  const makeBody = (sid: string, shirt: string, shorts: string): Body => {
+  /**
+   * SPARE BODIES (9 Oct 2026, Harry's phone: a 500 ms stall mid-match). A man
+   * was built (skeleton copy, mixer, clips) the first frame he appeared, often
+   * several at once when a chance opened. Now bodies are built ahead: a few
+   * while loading, then one a frame until there are enough for a full match,
+   * and a new man just takes one and is dressed (cheap: colours and a number).
+   */
+  const SPARE_TARGET = 24;
+  const spares: Person3D[] = [];
+  let built = 0;
+  const buildShell = () => {
     const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
+    if (fb) addClips(THREE, p, fb as any);
+    p.root.visible = false;
+    built++;
+    return p;
+  };
+  for (let i = 0; i < 6; i++) spares.push(buildShell());
+  const topUpSpares = () => { if (built < SPARE_TARGET) spares.push(buildShell()); };
+  const makeBody = (sid: string, shirt: string, shorts: string): Body => {
+    const spare = spares.pop();
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
+    if (!spare) built++;
     const look: PersonLook = {
       skin: SKINS[hashOf(sid) % SKINS.length], hair: "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
@@ -480,7 +522,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     dressPerson3d(THREE, p, look);
     plainHead(p, look.skin, look.hair ?? "#1b120c");
     relaxHands(THREE, p);
-    if (fb) addClips(THREE, p, fb as any);
+    if (fb && !spare) addClips(THREE, p, fb as any);
+    p.root.visible = true;
     const play = new ClipPlayer(THREE, p.actions);
     const first = sid === "keeper" && play.has("ready_shuffle") ? "ready_shuffle" : "idle";
     // Mocap: every man starts his idle at his own moment and breathes at his own pace (no one in step)
@@ -886,6 +929,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
           for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
+          warmPeople();
           (window as unknown as { __engineView3dReady?: boolean }).__engineView3dReady = true;
         })
         .catch((e) => console.error("look H failed to load", e));
@@ -898,7 +942,28 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     root.add(stadium.group);
     (window as unknown as { __engineView3dReady?: boolean }).__engineView3dReady = true;
   };
+  /**
+   * Build every shader a man needs before the first chance (9 Oct 2026: the
+   * first man of a match compiled his shaders mid-play). One spare is dressed
+   * as a player, shown for a one-pixel draw while the scene compiles, then
+   * put back.
+   */
+  function warmPeople() {
+    const p = spares.pop();
+    if (!p) return;
+    dressPerson3d(THREE, p, { skin: SKINS[0], hair: "#1b120c", kit: { shirt: "#d62828", trim: "#f4f4f4" }, number: numberTex(9), accessories: [] });
+    kit?.stylePeople([p]);
+    h?.dressPeople([p]);
+    const raw = p.body.material as any;
+    for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; solidBody(m, playerLightLook() === "new"); }
+    root.add(p.root);
+    p.root.visible = true;
+    p.root.position.set(0, 0, 30);
+    camera.updateMatrixWorld();
+    void warmUp(THREE, renderer, scene, camera, { timeoutMs: 6000 }).finally(() => { p.root.visible = false; root.remove(p.root); spares.push(p); });
+  }
   restyle();
+  gov.apply();
   if (def.real) {
     // the ball's look H dressing, kept across style changes
     const { dressHBall } = await import("./real/ball");
@@ -1321,6 +1386,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const dt = lastT === null ? 0 : Math.max(0, Math.min(0.1, f.t - lastT));
       lastT = f.t;
       if (!visible) return;
+      gov.frame(performance.now());
+      topUpSpares();
       const cw = container.clientWidth, ch = container.clientHeight;
       if (cw !== size.w || ch !== size.h) { size = { w: cw, h: ch }; renderer.setSize(Math.max(1, cw), Math.max(1, ch), false); }
       lastFrame = f;
@@ -1354,20 +1421,22 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const sd = TODS[h?.tod ?? hTod ?? (def.real || "day")]?.sunDir ?? TODS.day.sunDir;
         camera.updateMatrixWorld();
         solidU.uSolidRimDir.value.set(sd[0], sd[1], sd[2]).normalize().transformDirection(camera.matrixWorldInverse);
+        let nFeet = 0;
         for (const b of list) {
           const m = b.p.body.material as any;
           solidBody(m, solidOn);
           const own = Array.isArray(m) ? undefined : m?.userData?.solidOwn;
           if (own) { own.uSolidBase.value = b.p.root.position.y; own.uSolidScale.value = b.p.root.scale.x || 1; }
-          if (solidOn && !b.foot) { b.foot = new THREE.Mesh(footGeo, footMat); b.foot.rotation.x = -Math.PI / 2; b.foot.renderOrder = 2; root.add(b.foot); }
-          if (b.foot) {
-            b.foot.visible = solidOn && b.p.root.visible;
+          // the foot shades: one instanced draw for every man (9 Oct 2026: was a draw each)
+          if (solidOn && b.p.root.visible && nFeet < FEET_MAX) {
             const sc = b.p.root.scale.x || 1;
-            b.foot.position.set(b.p.root.position.x, 0.02, b.p.root.position.z);
-            b.foot.scale.set(0.52 * sc, 0.4 * sc, 1);
-            b.foot.rotation.z = -b.yaw;
+            footE.set(-Math.PI / 2, 0, -b.yaw);
+            footP.set(b.p.root.position.x, 0.02, b.p.root.position.z); footS.set(0.52 * sc, 0.4 * sc, 1);
+            feet.setMatrixAt(nFeet++, footMx.compose(footP, footQ.setFromEuler(footE), footS));
           }
         }
+        feet.count = nFeet;
+        feet.instanceMatrix.needsUpdate = true;
       }
       // the ball
       const fb0 = f.ball;
@@ -1436,9 +1505,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     setTod(t) { hTod = t; h?.setTod(t); },
     setFigureScale(k) { figScale = k; },
     setTilt(d) { tvTilt = d; },
-    setVisible(on) { visible = on; if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
+    setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
+      gov.dispose();
       hball?.dispose(); hball = null;
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
