@@ -80,6 +80,7 @@ import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
 import { libraryFor, serveEntry, shapeOfEntry, type ChanceDeck } from "./chanceLibrary";
 import { addContext, withoutContext } from "./contextShape";
+import { buildKaneMoment, dealKaneMoment, type KaneMoment } from "./kaneMoments";
 import type { ChanceSet } from "./chanceSet";
 import { markNewChance } from "./libraryMark";
 import { mulberry32 } from "./season";
@@ -675,13 +676,16 @@ export interface MakeChanceOptions {
   /** Deal open play from the real mix, not the even one (kindMix.ts's
    *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
   realMix?: boolean;
+  /** Real Kane drawings to deal from (kaneMoments.ts; Settings → Match →
+   *  Kane drawings). Absent or null: the game's own, exactly as before. */
+  kaneDrawings?: KaneMoment[] | null;
 }
 
 export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "generator" | "plan" | "builder" | "library";
+  how: "drawing" | "generator" | "plan" | "builder" | "library" | "kane";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -749,6 +753,18 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     kind = playableKind(kind, rng);
     plan = null;
     first = null;
+  }
+
+  // ── 1a. Kane drawings (testing): one of Kane's real moments of this kind ──
+  if (o.kaneDrawings?.length) {
+    const km = dealKaneMoment(kind, rng, o.kaneDrawings);
+    if (km) {
+      const sc = buildKaneMoment(km);
+      return {
+        sc, shape: null, how: "kane", appliedPlan: false, appliedAuthored: true, sourceId: km.id,
+        faultRebuilds: 0, memoryRebuilds: 0, faults: km.faults, nearestRecent: Infinity, separated: 0, mode,
+      };
+    }
   }
 
   // ── 1b. New chances: a picture from the library, dealt from the deck ──
