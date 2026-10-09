@@ -88,14 +88,14 @@ const P: Record<HomeTier, RoomPreset> = {
     view: "city", backWindows: 1, wardrobe: 2.2, cabinet: { cols: 3, rows: 3 }, cars: 1, drive: "street", chandelier: false, plants: 1,
   },
   penthouse: {
-    tier: "penthouse", label: "Penthouse", w: 7.4, d: 8.0, h: 3.0, floor: "oak",
+    tier: "penthouse", label: "Penthouse", w: 7.0, d: 7.6, h: 2.9, floor: "oak",
     wall: "#e4e0d8", panel: "#e4e0d8", trim: "#2b2b2e", panelled: false, metal: "#c9cdd2",
-    view: "skyline", backWindows: 2, wardrobe: 2.8, cabinet: { cols: 4, rows: 3 }, cars: 2, drive: "street", chandelier: false, plants: 2,
+    view: "skyline", backWindows: 2, wardrobe: 2.6, cabinet: { cols: 4, rows: 3 }, cars: 2, drive: "street", chandelier: false, plants: 2,
   },
   house: {
-    tier: "house", label: "House", w: 7.0, d: 7.6, h: 2.8, floor: "oak",
+    tier: "house", label: "House", w: 7.4, d: 8.0, h: 3.0, floor: "oak",
     wall: "#e6dccb", panel: "#e6dccb", trim: "#fbf8f2", panelled: false, metal: "#b08d57",
-    view: "garden", backWindows: 2, wardrobe: 2.6, cabinet: { cols: 4, rows: 3 }, cars: 2, drive: "drive", chandelier: false, plants: 2,
+    view: "garden", backWindows: 2, wardrobe: 2.8, cabinet: { cols: 4, rows: 3 }, cars: 2, drive: "drive", chandelier: false, plants: 2,
   },
   villa: {
     tier: "villa", label: "Villa", w: 8.6, d: 9.2, h: 3.3, floor: "stone",
