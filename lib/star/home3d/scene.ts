@@ -375,6 +375,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let changing = false;
   let shadowDirty = true, shadowT = 0;
   let dbgCam: { pos: [number, number, number]; look: [number, number, number] } | null = null;
+  /** The room's opening shot, held until he moves (a room frames its hero: the garage's cars, the games room). */
+  let intro = room.intro ?? null;
   const walker = new TapWalker();
   const marker = makeTapMarker(THREE, scene);
   let grid: WalkGrid | null = null;
@@ -497,6 +499,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, ROOM_CAM.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap); orb.reset(); first = true;
+    intro = room.intro ?? null;
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     shadowDirty = true;
@@ -658,6 +661,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const camUp = Math.min(ceil, camUp0 + short * ROOM_CAM.riseIfShort);
     want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, 0.2);
     wantLook.set(P.x, ROOM_CAM.lookY, P.z).addScaledVector(cf, ROOM_CAM.lookAhead + short * 0.5).addScaledVector(crr, 0.1);
+    if (intro && (speed > 0.3 || walker.active || orbitHold > 0 || shot)) intro = null; // he moved: the follow camera takes over
+    if (intro) { want.set(...intro.cam); wantLook.set(...intro.look); }
     if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
     inRoom(want);
