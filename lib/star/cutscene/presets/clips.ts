@@ -89,3 +89,41 @@ export function resolveClip(name: string, has: (c: string) => boolean): ClipChoi
   if (has("idle")) return { clip: "idle" };
   return null;
 }
+
+/**
+ * HOW GOOD EACH MOVE LOOKS (the cinematographer hides the weak ones).
+ *   good  real mocap that holds up in a wide (celebrations, the strike, idles)
+ *   ok    fine at mid size (talking, sitting)
+ *   weak  a stand-in or a hand-made hold that looks stiff from far away
+ *         (standing up from a chair, the handshake, walking, the pen, the
+ *         trophy held up, the shirt held up, clapping)
+ * cinema.ts `filmPass` never holds a wide shot on a weak move for more than
+ * about a second: it cuts to a face, a prop or a reaction instead.
+ * Names not listed count as "ok".
+ */
+export type MoveQuality = "good" | "ok" | "weak";
+
+export const CLIP_QUALITY: Record<string, MoveQuality> = {
+  idle: "good", "idle-boss": "good", jog: "good", run: "good", sprint: "good", dribble: "good",
+  shot: "good", kick: "good", celebrate: "good", "celebrate-fist": "good", "celebrate-roar": "good", "fist-pump": "good",
+  "celebrate-run": "good", "knee-slide": "good", "keeper-ready": "good", "dive-left": "good", "dive-right": "good",
+  cheer: "ok", talk: "ok", "talk-boss": "ok", "talk-hands": "ok", sit: "ok", "sit-boss": "ok", "sit-talk": "ok", nod: "ok", wave: "ok", "wave-boss": "ok",
+  frustrated: "ok", despair: "ok",
+  "stand-up": "weak", "sit-down": "weak", "get-up": "weak", handshake: "weak", hug: "weak", point: "weak", applaud: "weak",
+  walk: "weak", "walk-proud": "weak", "walk-sad": "weak", "walk-confident": "weak", pickup: "weak",
+};
+
+/** Body holds laid over the clips (perform3d.ts). */
+export const POSE_QUALITY: Partial<Record<string, MoveQuality>> = {
+  "trophy-overhead": "weak", "trophy-chest": "weak", "hold-shirt-up": "weak", "hand-on-shoulder": "weak",
+  applaud: "weak", "salute-crowd": "weak", "badge-kiss": "weak", "arms-up": "ok", "knee-slide": "good",
+  "lean-in": "ok", "lean-back": "ok", sit: "ok", stand: "ok", nod: "ok",
+};
+
+/** Walking gaits on a move track are weak (the feet slide); running ones hold up. */
+export const GAIT_QUALITY: Record<string, MoveQuality> = {
+  walk: "weak", "walk-proud": "weak", "walk-sad": "weak", "walk-confident": "weak",
+  jog: "good", run: "good", sprint: "good", dribble: "good",
+};
+
+export const clipQuality = (name: string): MoveQuality => CLIP_QUALITY[name] ?? "ok";

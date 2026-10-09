@@ -35,6 +35,8 @@ import { applyPose, actorDir, type PoseCtx } from "./perform3d";
 import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
+import { filmPass } from "./cinema";
+import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
 
 export interface DirectorOptions {
   career?: CareerContext;
@@ -48,6 +50,8 @@ export interface DirectorOptions {
   holdAt?: number;
   /** A ready-made style (the Style Testing page passes its own); else `style`. */
   def?: StyleDef;
+  /** Settings → Look → "Cut-scene camera": New runs the film pass (cinema.ts) over the script; Old plays it as written. Default: the phone's setting. */
+  camera?: CutsceneCameraLook;
 }
 
 export interface Director {
@@ -73,7 +77,9 @@ interface Cast { id: string; role: string; body: string; actor: CutsceneActor; c
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
-export async function createDirector(container: HTMLElement, script: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
+export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
+  const newCam = (o.camera ?? cutsceneCameraLook()) === "new";
+  const script: CutsceneScript = newCam ? filmPass(written) : written;
   const tier = o.tier ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   const T: any = await import("three");
@@ -93,6 +99,8 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
   let given: StyleDef | null = o.def ?? null;
   const resolveDef = () => {
     const d = structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), script.set.mood));
+    // Cut-scene camera New: a much softer bloom (it drew a red-orange halo round every body edge)
+    if (newCam) { d.post.bloom *= 0.35; d.post.bloomThresh = Math.max(d.post.bloomThresh, 0.95); }
     // indoors the sky's fill is mostly walled off: the set's own lamps and the window do the lighting
     if (C.loc.indoor) d.hemi = { ...d.hemi, intensity: d.hemi.intensity * 0.6 };
     return d;
@@ -530,7 +538,7 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
         faceRim.target.position.copy(head);
       }
     }
-    faceFill.intensity = 0.9 * closeK; faceRim.intensity = 1.8 * closeK;
+    faceFill.intensity = 0.9 * closeK; faceRim.intensity = (newCam ? 0.5 : 1.8) * closeK;
     def.post.posterMix = basePoster * (1 - 0.65 * closeK);
     // lights
     let expo = 1, sunK = 1;

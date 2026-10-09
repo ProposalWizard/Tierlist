@@ -250,6 +250,143 @@ def poke_tackle(rig, t):
     return p
 
 
+# ── no wild bone flips ───────────────────────────────────────────────────
+# The legs and arms are placed by two-bone IK: the knee (or elbow) bends
+# toward a "pole" given in the character's frame. When the line hip→ankle
+# swings across that pole (the dive's get-up, the knee slide's kneel, the
+# tackle's pole swap), the bend side jumps to the other side of the limb in
+# one key: the thigh turned 179° in a single 1/30 s key (measured 9 Oct 2026,
+# tests/star/animSmooth.mts). The quaternions were already kept in one
+# hemisphere (tools/anims3d/build.py bake); this was a real flip of the pose.
+#
+# The real causes, found by splitting each jump into swing and twist: the
+# thighs' line moved only 3-4° in those keys, the rest was TWIST. Two things
+# make the twist undefined: (1) the dive's get-up and the slide's recovery
+# ask for an ankle almost inside the hip (0.12 of the leg's length), where
+# the folded thigh points along the bend side and has no "front"; (2) a
+# target whipping across the pole flips the bend side.
+#
+# steady(fn) fixes both, per leg and arm, key by key:
+#   - MIN_REACH: a target nearer than this share of the limb's length is
+#     pushed out (a foot level, never into the grass);
+#   - LINE_TURN_RATE: the hip→ankle (shoulder→hand) line turns at most this
+#     fast;
+#   - POLE_TURN_RATE: the bend side carries on from last key and turns toward
+#     the asked-for pole at most this fast, about the limb's line.
+# Measured on both skeletons: foot slide and plants unchanged except the
+# dive's get-up (the near foot lands ~0.1 s later). Pure in t: sampled out of
+# order, it re-runs from 0 in KEY_STEP steps.
+from rig import solve as _solve, qaxis as _qaxis, qrot as _qrot  # noqa: E402
+
+KEY_STEP = 1.0 / 30  # the key rate of tools/anims3d/build.py (FPS)
+POLE_TURN_RATE = 9.0  # rad/s: a full swap of sides takes ~0.35 s
+MIN_REACH = 0.45  # of the limb's length
+LINE_TURN_RATE = 18.0  # rad/s: the hip→ankle (shoulder→hand) line; a real kick swings ~15
+
+
+def _bend_dir(along, pole):
+    p = np.asarray(pole, float) - along * np.dot(pole, along)
+    if np.linalg.norm(p) < 1e-6:  # the same fallback as rig.two
+        p = np.array([0, 0, 1.0]) - along * along[2]
+    return p / np.linalg.norm(p)
+
+
+def steady(fn):
+    state = {"t": None, "prev": {}}
+
+    def limit(rig, pose):
+        _, _, ctx = _solve(rig, pose)
+        out = dict(pose)
+        for s in "LR":
+            for part, root in (("leg", "thigh"), ("arm", "arm")):
+                lim = pose.get(part + s)
+                if not lim:
+                    continue
+                H = ctx.pos(root + s)
+                if part == "leg":
+                    A = np.asarray(lim["ankle"], float) + np.array([0, rig.ankleY, 0])
+                else:
+                    A = lim["hand"](ctx) if callable(lim["hand"]) else np.asarray(lim["hand"], float)
+                v = A - H
+                d = np.linalg.norm(v)
+                if d < 1e-6:
+                    continue
+                along = v / d
+                prev = state["prev"].get(part + s)
+                moved = False
+                # a target almost inside the hip (shoulder) folds the limb so tight
+                # that its twist has no defined front: keep it at least MIN_REACH long
+                reach = rig.L[root + s] + rig.L[("shin" if part == "leg" else "fore") + s]
+                if d < MIN_REACH * reach:
+                    d = MIN_REACH * reach
+                    moved = "reach"
+                    if part == "leg":
+                        # push the foot out level, never into the grass
+                        dy = A[1] - H[1]
+                        hz = np.array([v[0], 0.0, v[2]])
+                        if np.linalg.norm(hz) < 1e-6:
+                            hz = np.array([prev[0][0], 0.0, prev[0][2]]) if prev is not None else np.array([0, 0, 1.0])
+                        hz = hz / max(np.linalg.norm(hz), 1e-9)
+                        v = hz * np.sqrt(max(d * d - dy * dy, 0.0)) + np.array([0, dy, 0])
+                    else:
+                        v = along * d
+                    along = v / np.linalg.norm(v)
+                if prev is not None:
+                    # the limb's line may not whip round faster than LINE_TURN_RATE
+                    # (it does when a target passes through the hip / shoulder)
+                    pa = prev[0]
+                    ang = float(np.arccos(np.clip(np.dot(pa, along), -1, 1)))
+                    step = LINE_TURN_RATE * KEY_STEP
+                    if ang > step:
+                        ax = np.cross(pa, along)
+                        if np.linalg.norm(ax) < 1e-9:
+                            ax = _bend_dir(pa, prev[1])
+                        along = _qrot(_qaxis(ax, step), pa)
+                        along /= np.linalg.norm(along)
+                        moved = moved or "line"
+                want = _bend_dir(along, lim["pole"])
+                p = want
+                if prev is not None:
+                    pp = prev[1] - along * np.dot(prev[1], along)
+                    if np.linalg.norm(pp) > 1e-6:
+                        pp /= np.linalg.norm(pp)
+                        ang = np.arctan2(np.dot(np.cross(pp, want), along), np.dot(pp, want))
+                        step = POLE_TURN_RATE * KEY_STEP
+                        p = _qrot(_qaxis(along, float(np.clip(ang, -step, step))), pp)
+                        p /= np.linalg.norm(p)
+                state["prev"][part + s] = (along, p)
+                lim = dict(lim)
+                lim["pole"] = tuple(float(x) for x in p)
+                if moved:
+                    A2 = H + along * d
+                    state["held"] = max(state.get("held", 0.0), float(np.linalg.norm(A2 - A)))
+                    if part == "leg":
+                        lim["ankle"] = A2 - np.array([0, rig.ankleY, 0])
+                    else:
+                        lim["hand"] = A2
+                out[part + s] = lim
+        return out
+
+    def g(rig, t):
+        t = float(t)
+        last = state["t"]
+        if last is not None and abs(t - last) < 1e-9:
+            state["prev"] = dict(state["before"])  # the same key again: redo it from the key before
+        elif last is None or abs(t - last - KEY_STEP) > 1e-6:
+            # not the next key: walk up to t from the start, so the answer never
+            # depends on what was sampled before
+            state["prev"] = {}
+            i = 0
+            while i * KEY_STEP < t - 1e-6:
+                limit(rig, fn(rig, i * KEY_STEP))
+                i += 1
+        state["before"] = dict(state["prev"])
+        state["t"] = t
+        return limit(rig, fn(rig, t))
+    g.state = state  # state['held']: the furthest a target was moved, metres (for the build's print)
+    return g
+
+
 # name: (duration, loop, fn, meta) — the same shape as tools/anims3d/clips.py
 def _dive_meta(h):
     return {"contact": DIVE_REACH[h], "part": "hands", "launch": DIVE_LAUNCH, "land": DIVE_LAND[h], "getUp": 1.12,
@@ -268,3 +405,6 @@ KEYED = {
     "poke_tackle": (1.0, False, poke_tackle, {"contact": POKE_CONTACT, "foot": "R", "source": "keyed (no free capture of a poke tackle exists)"}),
     "knee_slide": (KS_END, False, knee_slide, {"end": [0, 5.88], "source": "keyed (no free capture of a knee slide exists)"}),
 }
+
+# every keyed clip goes through steady(): no knee or elbow swaps sides in one key
+KEYED = {name: (dur, loop, steady(fn), meta) for name, (dur, loop, fn, meta) in KEYED.items()}
