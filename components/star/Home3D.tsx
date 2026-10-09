@@ -21,7 +21,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { HomeController, HomeData, HomeSpot } from "@/lib/star/home3d/scene";
-import { homeTierOf, homeNameOf, roomPreset, cabinetSize, type HomeTier } from "@/lib/star/home3d/homes";
+import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
+import { homeStuffOf, carsIn, ROOM_LABEL } from "@/lib/star/home3d/rooms";
+import { houseLook, type HouseLook } from "@/lib/star/home3d/look";
 import { cabinetSlots } from "@/lib/star/home3d/trophies";
 import { CASUAL_SETS, outfitOf, wornAt, bootChoices, carsOnDrive, type OutfitChoice } from "@/lib/star/home3d/outfits";
 import { kitsOf } from "@/lib/star/kits";
@@ -49,11 +51,13 @@ export interface Home3DProps {
   tier?: HomeTier;
   /** Test page: force Look H on or off (?look=h|old). */
   lookH?: boolean;
+  /** Test page: force the house look (?house=new|old); else Settings → Look → "House". */
+  house?: HouseLook;
 }
 
 type Tab = "casual" | "kit" | "boots";
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house }: Home3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<HomeController | null>(null);
   const doorRef = useRef(onDoor);
@@ -66,12 +70,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const [tab, setTab] = useState<Tab>(() => (outfitOf(career).wear === "casual" ? "casual" : "kit"));
   const [changing, setChanging] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [roomNow, setRoomNow] = useState<RoomId | null>(null);
 
   const tier: HomeTier = tierProp ?? homeTierOf(career.ownedItems);
   const room = roomPreset(tier);
   const kits = kitsOf(career.player.club);
   const slots = useMemo(() => cabinetSlots(career, cabinetSize(tier)), [career, tier]);
-  const cars = useMemo(() => carsOnDrive(career, room.cars), [career, room.cars]);
+  const rooms = useMemo(() => roomsFor(tier, house ?? houseLook()), [tier, house]);
+  const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
   const homeName = tierProp ? room.label : homeNameOf(career.ownedItems);
 
@@ -87,9 +93,11 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     cars,
     boots,
     casual: CASUAL_SETS,
+    rooms,
+    stuff: homeStuffOf(career),
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [tier]);
+  }), [tier, rooms]);
 
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
@@ -108,6 +116,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         const q = new URLSearchParams(window.location.search);
         const start = () => startHome(el, {
           onNear: (s) => setNear(s),
+          onRoom: (id) => setRoomNow(id),
           onFps: (f) => { (window as unknown as { __home3dFps?: number }).__home3dFps = f; },
           ...(onDoor ? { onDoor: () => { if (dead) return; setLeaving(true); setTimeout(() => doorRef.current?.(), 350); } } : {}),
           onContextLost: () => {
@@ -229,7 +238,20 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && !open && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 180, textAlign: "right", fontSize: 12.5, fontWeight: 800, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
-          Wardrobe and mirror on the left. Trophies at the back. Your cars out of the window.
+          {ROOM_HINT[roomNow ?? "main"] ?? ""}
+        </div>
+      )}
+      {status === "ready" && rooms.length > 1 && roomNow && (
+        <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
+          <div style={{ ...pill, fontWeight: 900, fontSize: 13, height: 30 }}>{ROOM_LABEL[roomNow]}</div>
+          <div style={{ display: "flex", gap: 2, pointerEvents: "auto" }} aria-label="Rooms">
+            {rooms.map((id) => (
+              <button key={id} onClick={() => { void ctrlRef.current?.goToRoom(id); }} aria-label={`Go to the ${ROOM_LABEL[id]}`} title={ROOM_LABEL[id]} data-home3d-dot={id}
+                style={{ width: 22, height: 22, border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <span style={{ width: id === roomNow ? 10 : 7, height: id === roomNow ? 10 : 7, borderRadius: 999, background: id === roomNow ? GOLD : "rgba(255,255,255,0.55)", boxShadow: "0 1px 4px rgba(0,0,0,.6)" }} />
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -332,6 +354,15 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     </div>
   );
 }
+
+/** What to look for in each room (bottom right). */
+const ROOM_HINT: Partial<Record<RoomId, string>> = {
+  main: "Wardrobe and mirror on the left. Trophies at the back. Your cars out of the window.",
+  hallway: "Walk through a doorway to go to that room. The front door goes out to the garden.",
+  lounge: "Your cars are out of the window.",
+  dressing: "Wardrobe and mirror on the left. Your watches and jewellery on the island.",
+  trophy: "Every trophy you have won is in the cabinet.",
+};
 
 /** A little outfit drawing: a top over trousers (or shorts for a kit). */
 function Swatch({ top, low, kit = false }: { top: string; low: string; kit?: boolean }) {

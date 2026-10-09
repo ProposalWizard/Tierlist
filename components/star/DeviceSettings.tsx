@@ -204,7 +204,7 @@ function LookRow({ id, tabs, note, look }: {
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)",
-  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
+  garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
 };
@@ -278,6 +278,7 @@ function World3dGroup() {
         <SegTabs className="w-[150px] shrink-0" value={controls} onChange={(v) => setControlChoice(v as ControlChoice)} tabs={[["auto", "Auto"], ["touch", "Touch"], ["pc", "Keys"]] as const} />
       </PrefRow>
       <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
+      <LookRow id="house" look={look} tabs={NEW_OLD} note="New: your home has rooms (a house: hallway, lounge, dressing room, trophy room). Old: the one room." />
       <LookRow id="look3d" look={look} tabs={[["h", "H"], ["old", "Old"]] as const} note="H: console realism. The 3D drills in a full stadium with a crowd, real sky light, a broadcast picture; the garden and shop lit by a real sky. Old: as before." />
       <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />
       <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />

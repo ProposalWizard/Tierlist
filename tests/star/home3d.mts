@@ -1,7 +1,9 @@
 import { LIFESTYLE_LEVELS, BOOT_LEVELS, baseIdOf } from "../../lib/star/shopDefaults";
 import {
   HOME_TIERS, HOME_FAMILY_TIER, roomPreset, homeTierOf, homeNameOf, parseHomeTier, cabinetSize, bestHome,
+  roomsFor, type HomeTier, type RoomId,
 } from "../../lib/star/home3d/homes";
+import { roomPlan, spotsOf, trophySlotsByRoom, arrivalAt, arrivalDoor, homeStuffOf } from "../../lib/star/home3d/rooms";
 import { cabinetSlots, winsOf, CABINET_TARGETS } from "../../lib/star/home3d/trophies";
 import {
   outfitOf, withOutfit, wornAt, DEFAULT_OUTFIT, CASUAL_SETS, carsOnDrive, bootChoices, CAR_LOD, BOOT_LOD,
@@ -134,8 +136,184 @@ for (const id of ["car-1", "car-2", "suv", "car-3", "classic", "car-4"]) check(!
 // ── Your house is on the phone from day one ─────────────────────────────
 check(STARTER_APPS.includes("home-3d") && appInstalled({ unlocks: { apps: [] } } as unknown as Pick<CareerState, "unlocks">, "home-3d"), "Your house is on the phone from the start");
 
+
+// ── Rooms (Harry, 9 Oct 2026: "the bigger the house the bigger the space/rooms") ──
+check(roomsFor("starter").length === 1 && roomsFor("starter")[0] === "main", "the starter flat stays one room");
+check(roomsFor("flat").length === 1, "the flat is one room");
+check(roomsFor("penthouse").length === 3 && roomsFor("house").length === 4, "penthouse 3 rooms, house 4");
+check(JSON.stringify(roomsFor("house")) === JSON.stringify(["hallway", "lounge", "dressing", "trophy"]), "the house: hallway, lounge, dressing room, trophy room");
+for (const t of HOME_TIERS) check(JSON.stringify(roomsFor(t, "old")) === JSON.stringify(["main"]), `Old look: ${t} is the one room`);
+// from the house up, each tier holds every room of the one below
+for (const [a, b] of [["house", "villa"], ["villa", "estate"]] as const) {
+  for (const r of roomsFor(a)) check(roomsFor(b).includes(r), `${b} has the ${a}'s ${r}`);
+  check(roomsFor(b).length > roomsFor(a).length, `${b} has more rooms than ${a}`);
+}
+// every tier keeps everything you could stop at in the tier below (wardrobe, cabinet, drive)
+const spotsOfTier = (t: HomeTier) => new Set(roomsFor(t).flatMap((r) => spotsOf(r, roomsFor(t))));
+for (let i = 1; i < HOME_TIERS.length; i++) {
+  const lo = spotsOfTier(HOME_TIERS[i - 1]), hi = spotsOfTier(HOME_TIERS[i]);
+  lo.forEach((s) => check(hi.has(s), `${HOME_TIERS[i]} still has the ${s}`));
+}
+// the trophy slots add up to the tier's cabinet, in exactly one room
+for (const t of HOME_TIERS) for (const look of ["new", "old"] as const) {
+  const by = trophySlotsByRoom(t, roomsFor(t, look));
+  const sum = Object.values(by).reduce((n, v) => n + (v ?? 0), 0);
+  check(sum === cabinetSize(t), `${t} (${look}): trophy slots ${sum} = cabinet ${cabinetSize(t)}`);
+  check(Object.keys(by).length === 1, `${t} (${look}): one room keeps the cabinet`);
+}
+// doorways: every door to a room has a door back; the first room has the front door; doors sit on their walls and never overlap
+for (const t of HOME_TIERS) {
+  const rs = roomsFor(t);
+  const plans = new Map(rs.map((r) => [r, roomPlan(t, r, rs)]));
+  check(plans.get(rs[0])!.doors.some((d) => d.to === "garden"), `${t}: the first room has the front door`);
+  check(rs.slice(1).every((r) => !plans.get(r)!.doors.some((d) => d.to === "garden")), `${t}: only the first room has the front door`);
+  plans.forEach((p, r) => {
+    for (const d of p.doors) {
+      if (d.to !== "garden") {
+        check(rs.includes(d.to), `${t} ${r}: its door leads to a room of this home (${d.to})`);
+        check(!!plans.get(d.to as RoomId)?.doors.some((b) => b.to === r), `${t}: ${r} → ${d.to} has a door back`);
+      }
+      const along = d.wall === "n" || d.wall === "s" ? d.x : d.z;
+      const half = (d.wall === "n" || d.wall === "s" ? p.w : p.d) / 2;
+      check(Math.abs(along) + d.half <= half - 0.3, `${t} ${r}: the ${d.to} door fits its wall`);
+      const a = arrivalAt(d, 1.5);
+      check(Math.abs(a.x) < p.w / 2 && Math.abs(a.z) < p.d / 2, `${t} ${r}: you arrive inside the room by the ${d.to} door`);
+    }
+    for (const d of p.doors) for (const e of p.doors) {
+      if (d === e || d.wall !== e.wall) continue;
+      const da = d.wall === "n" || d.wall === "s" ? d.x : d.z, ea = e.wall === "n" || e.wall === "s" ? e.x : e.z;
+      check(Math.abs(da - ea) >= d.half + e.half + 0.3, `${t} ${r}: doors ${d.to} and ${e.to} do not overlap`);
+    }
+    // all rooms reachable from the first
+  });
+  const seenR = new Set<RoomId>([rs[0]]);
+  const todo: RoomId[] = [rs[0]];
+  while (todo.length) for (const d of plans.get(todo.pop()!)!.doors) if (d.to !== "garden" && !seenR.has(d.to)) { seenR.add(d.to); todo.push(d.to); }
+  check(seenR.size === rs.length, `${t}: every room can be walked to from the front door`);
+}
+check(arrivalDoor(roomPlan("house", "lounge", roomsFor("house")), "hallway")?.to === "hallway", "from the hallway you arrive at the lounge's hallway door");
+
+// your things, from the shop
+const stuffCareer = { ownedItems: [lvl("rolex", 1), lvl("smartwatch", 1), lvl("diamond", 1), lvl("tv", 1), lvl("bike", 1)], kibCans: { basic: 2, premium: 1, elite: 0 } } as unknown as CareerState;
+const st = homeStuffOf(stuffCareer);
+check(st.watches.includes("luxury") && st.watches.includes("smart") && !st.watches.includes("gold"), "watches you own (and not the ones you don't)");
+check(st.jewellery.join() === "diamond" && st.tv && st.bike && !st.jet && st.cans === 3, "jewellery, TV, bike, cans");
+check(homeStuffOf({ ownedItems: [] } as unknown as CareerState).cans === 0, "nothing bought: empty plinths");
+
+// ── Each room built headless: within budget, every path walkable, freed on dispose ──
+{
+  // a canvas that draws nothing (the room's pictures are drawn in a browser; here only their sizes matter)
+  const ctx2d: any = new Proxy({}, {
+    get: (_t, k) => k === "createLinearGradient" || k === "createRadialGradient" ? () => ({ addColorStop() {} })
+      : k === "measureText" ? () => ({ width: 10 })
+        : k === "createImageData" || k === "getImageData" ? (w: number, h: number) => ({ data: new Uint8ClampedArray(Math.max(1, (w | 0) * (h | 0) * 4)), width: w, height: h })
+          : () => undefined,
+    set: () => true,
+  });
+  (globalThis as any).document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d, style: {} }) };
+  const THREE: any = await import("three");
+  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+  const { Reflector }: any = await import("three/examples/jsm/objects/Reflector.js");
+  const { buildRoom, roomFree } = await import("../../lib/star/home3d/roomBuild");
+  const { buildGrid, findPath } = await import("../../lib/star/tapWalk");
+  const career = {
+    ...full, ownedItems: [lvl("car-3", 2), lvl("suv", 1), lvl("rolex", 1), lvl("gold", 1), lvl("diamond", 1), lvl("tv", 1), lvl("console", 1), lvl("art", 1), lvl("suit", 1)],
+    kibCans: { basic: 5, premium: 2, elite: 1 }, currentBoot: { ...BOOT_LEVELS.find((b) => baseIdOf(b) === "speed")! },
+  } as unknown as CareerState;
+  const kit = { home: { shirt: "#c8102e", trim: "#ffffff" }, away: { shirt: "#f2d200", trim: "#101010" } };
+  const env = (quality: "low" | "medium" | "high") => ({
+    THREE, mergeGeometries, Reflector, prof: { anisotropy: 4 }, quality, envTex: null, doorOpen: true,
+    glb: () => new Promise<any>(() => { /* not loaded in a test */ }),
+  });
+  const stats = (g: any) => {
+    let draws = 0, tris = 0;
+    const big = new Set<any>();
+    g.traverse((o: any) => {
+      if (!o.isMesh || !o.visible) return;
+      const geo = o.geometry;
+      const n = (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
+      draws += Array.isArray(o.material) ? o.material.length : 1;
+      tris += n * (o.isInstancedMesh ? o.count : 1);
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m?.map?.image && m.map.image.width >= 1024) big.add(m.map);
+    });
+    return { draws, tris: Math.round(tris), big: big.size };
+  };
+  const table: string[] = [];
+  for (const t of HOME_TIERS) for (const look of ["new", "old"] as const) {
+    const rs = roomsFor(t, look);
+    if (look === "old" && t !== "house" && t !== "estate") continue; // the old room: once small, once grand
+    for (const id of rs) {
+      const inp = {
+        tier: t, rooms: rs, kits: kit, slots: cabinetSlots(career, cabinetSize(t)), cars: carsOnDrive(career, 4),
+        boots: bootChoices(career), casual: CASUAL_SETS, stuff: homeStuffOf(career),
+      };
+      const room = buildRoom(env("medium"), inp, id);
+      // the mirror counts once, and only in the dressing room (or the one room)
+      let mirrors = 0;
+      room.group.traverse((o: any) => { if (o.isMesh && o.camera && o.getRenderTarget) mirrors++; });
+      check(mirrors === (id === "dressing" || id === "main" ? 1 : 0), `${t} ${id}: mirror only in the dressing room (got ${mirrors})`);
+      const s = stats(room.group);
+      table.push(`${t.padEnd(9)} ${look} ${id.padEnd(13)} draws ${String(s.draws).padStart(2)}  tris ${String(s.tris).padStart(6)}  1024-pictures ${s.big}`);
+      if (id !== "main") {
+        check(s.draws <= 50, `${t} ${id}: ${s.draws} draws (budget 50)`);
+        check(s.tris <= 45000, `${t} ${id}: ${s.tris} triangles (budget 45k)`);
+        check(s.big <= 2, `${t} ${id}: ${s.big} new 1024 pictures (budget 2)`);
+      }
+      // the walk grid: from the first door to every other door and to every spot
+      const grid = buildGrid(-room.w2, room.w2, -room.d2, room.d2, 0.2, (x: number, z: number) => roomFree(room, x, z));
+      const ins = room.doors.map((d) => ({ d, a: arrivalAt(d, 1.5) }));
+      for (const { d, a } of ins) check(roomFree(room, a.x, a.z), `${t} ${id}: you arrive clear of the furniture by the ${d.to} door`);
+      const from = ins[0]?.a ?? room.start;
+      const goals: [string, [number, number]][] = [
+        ...ins.slice(1).map(({ d, a }) => [`the ${d.to} door`, [a.x, a.z]] as [string, [number, number]]),
+        ...room.plan.spots.map((sp) => [`the ${sp}`, room.standFor(sp, [from.x, from.z]).at] as [string, [number, number]]),
+      ];
+      for (const [what, at] of goals) {
+        const p = findPath(grid, [from.x, from.z], at);
+        const end = p?.[p.length - 1];
+        check(!!p && !!end && Math.hypot(end[0] - at[0], end[1] - at[1]) < 0.45, `${t} ${id}: a walkable path to ${what}`);
+      }
+      // dispose frees everything it made
+      const made: any[] = [];
+      room.group.traverse((o: any) => {
+        if (o.geometry) made.push(o.geometry);
+        for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) { made.push(m); if (m.map) made.push(m.map); }
+      });
+      const freed = new Set<any>();
+      for (const x of made) x.addEventListener?.("dispose", () => freed.add(x));
+      room.dispose();
+      const left = made.filter((x) => !freed.has(x));
+      check(left.length === 0, `${t} ${id}: ${left.length} things not freed on dispose`);
+      check(!room.group.parent, `${t} ${id}: the room's group is gone`);
+    }
+  }
+  // a walk through every room of the estate and back again: nothing left behind
+  {
+    const rs = roomsFor("estate");
+    const inp = { tier: "estate" as HomeTier, rooms: rs, kits: kit, slots: cabinetSlots(career, cabinetSize("estate")), cars: carsOnDrive(career, 4), boots: bootChoices(career), casual: CASUAL_SETS, stuff: homeStuffOf(career) };
+    const scene = new THREE.Scene();
+    let live = 0;
+    for (const id of [...rs, ...rs.slice().reverse()]) {
+      const room = buildRoom(env("high"), inp, id);
+      scene.add(room.group);
+      room.group.traverse((o: any) => { if (o.geometry) { live++; o.geometry.addEventListener("dispose", () => live--); } });
+      room.dispose();
+    }
+    check(scene.children.length === 0, "after a loop through every room the scene is empty");
+    check(live === 0, `after a loop through every room every shape is freed (${live} left)`);
+  }
+  // the mirror is off on Low
+  {
+    const rs = roomsFor("house");
+    const room = buildRoom(env("low"), { tier: "house", rooms: rs, kits: kit, slots: [], cars: [], boots: [], casual: CASUAL_SETS }, "dressing");
+    check(!room.mirror, "Low: no live mirror in the dressing room");
+    room.dispose();
+  }
+  if (process.env.HOME3D_TABLE || problems.length) console.log(table.join("\n"));
+}
+
 if (problems.length) {
   console.error(`home3d: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);
 }
-console.log("home3d: rooms by tier, trophy cabinet, outfit saving, drive — all OK");
+console.log("home3d: rooms by tier, doorways, budgets, walk paths, dispose, trophy cabinet, outfit saving, drive — all OK");

@@ -25,6 +25,7 @@ import { storedMatchView, setMatchView, MATCH_VIEW_DEFAULT } from "./matchView";
 import { signing3dOn, setSigning3d, shop3dPlayerLook, setShop3dPlayerLook } from "./signing3d";
 import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./look3d";
 import { garden3dLook, setGarden3dLook } from "./garden3d/look";
+import { houseLook, setHouseLook, houseLookStored } from "./home3d/look";
 import { look3dStyle, setLook3dStyle } from "./look3dStyle";
 import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
@@ -85,6 +86,8 @@ export const LOOK_ROWS = {
   // (Standard and Preview) until it is switched on by hand.
   kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
+  // Harry, 9 Oct 2026: a home of rooms you walk through (New by default).
+  house: row("House", "new", "old", houseLook, setHouseLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
@@ -150,6 +153,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
     garden: N("garden"),
+    house: N("house"),
     look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
@@ -202,6 +206,11 @@ if (typeof window !== "undefined" && !playerStyleStored()) {
 if (typeof window !== "undefined" && !cutsceneCameraStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "cutsceneCamera" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.cutsceneCamera.set("old");
+}
+// House (rooms, 9 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !houseLookStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "house" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.house.set("old");
 }
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;

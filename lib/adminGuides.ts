@@ -1324,13 +1324,16 @@ export const ADMIN_GUIDES = {
 
   "/star-home3d-dev": {
     title: "3D Home",
-    what: "Your house in 3D: one room you walk round, where you change clothes. The home you own in the shop sets its size, finish and window view (a starter flat before you buy one). Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
+    what: "Your house in 3D, where you change clothes. A bigger home has more rooms (House look New): a house has a hallway, a lounge, a dressing room and a trophy room; walk through a doorway to go to the next room. The starter flat and the flat are one room. Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
     buttons: [
       {
         items: [
           ["‹ 3D area", "Back to the 3D Test Area."],
           ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
-          ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards and cars, or with none."],
+          ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
+          ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
+          ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],
+          ["Walk through a doorway", "The screen fades for a moment and you arrive in that room. Each doorway has the room's name over it."],
           ["The stick (bottom left)", "Drag it to walk. WASD or the arrow keys on a computer."],
           ["Drag the view", "Swings the camera round you."],
           ["Tap something", "The wardrobe, the trophy cabinet or the drive window: you walk up to it and its card opens. Tap the floor to walk there."],
@@ -1357,7 +1360,7 @@ export const ADMIN_GUIDES = {
     saving: [
       "Nothing is saved here: the wardrobe's choice stays on this page.",
       "In a career the wardrobe's choice is saved on your career (it syncs with the rest of the save).",
-      "The address can hold a set-up: ?tier=villa, ?trophies=0, ?look=h or ?look=old (Look H on or off), ?q=low|medium|high, ?fps=1 for the frame meter.",
+      "The address can hold a set-up: ?tier=villa, ?trophies=0, ?house=old (the one room), ?look=h or ?look=old (Look H on or off), ?q=low|medium|high, ?fps=1 for the frame meter.",
     ],
     inGame: [
       "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
@@ -1366,7 +1369,7 @@ export const ADMIN_GUIDES = {
     needs: [
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
     ],
-    dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
+    dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
   "/star-chances-dev": {
