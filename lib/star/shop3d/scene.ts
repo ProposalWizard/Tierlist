@@ -530,6 +530,7 @@ async function buildShop(
     // look H also puts the motorbike and the private jet on the turntable (shopDisplays(…, { h: true }))
     bike: "/star/shop3d/items/bike-hf.glb", jet: "/star/shop3d/items/jet-hf.glb",
   };
+  const HF_TONE: Record<string, number> = { "car-hatch-hf": 0.85, "car-sports-hf": 0.62, "car-super-hf": 0.62, "jet-hf": 0.75 };
   /** Each generated car at its real length (metres, nose to tail). */
   const CAR_H_LENGTH: Record<string, number> = {
     "car-family-hf": 4.3, "car-hatch-hf": 4.1, "car-suv-hf": 4.95, "car-sports-hf": 4.35, "car-classic-hf": 4.5, "car-super-hf": 4.6,
@@ -595,11 +596,11 @@ async function buildShop(
     root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
   };
   const isShowpieceH = (url: string) => /\/(watch|jewel)-[a-z]+-hf\.glb$/.test(url);
-  /** A watch, or a necklace on its bust: stood on its shelf, centred, 0.6 m at its largest side (see COUNTER_H_MODELS). */
+  /** A watch, or a necklace on its bust: stood on its shelf, centred, 0.8 m at its largest side (see COUNTER_H_MODELS). */
   const fitShowpiece = (root: any) => {
     root.updateMatrixWorld(true);
     const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
-    root.scale.multiplyScalar(0.6 / Math.max(size.x, size.y, size.z, 1e-3));
+    root.scale.multiplyScalar(0.8 / Math.max(size.x, size.y, size.z, 1e-3));
     root.updateMatrixWorld(true);
     const b3 = new THREE.Box3().setFromObject(root);
     const c = b3.getCenter(new THREE.Vector3());
@@ -635,7 +636,14 @@ async function buildShop(
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
           if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
-          else if (HF_MODEL.test(url) && m) { m.envMap = envTex; m.envMapIntensity = 1.0; m.needsUpdate = true; }
+          else if (HF_MODEL.test(url) && m) {
+            m.envMap = envTex; m.envMapIntensity = 1.0;
+            // the yellow, orange and white paints sat in the spotlight above the turntable and the
+            // H look's bloom blew them into a glare: a touch darker, so they read as paint (9 Oct 2026)
+            const tone = HF_TONE[url.split("/").pop()!.replace(/\.glb$/, "")];
+            if (tone) m.color.multiplyScalar(tone);
+            m.needsUpdate = true;
+          }
         });
         if (isBootH(url)) fitBoot(g.scene);
         else if (isShowpieceH(url)) fitShowpiece(g.scene);
@@ -852,7 +860,7 @@ async function buildShop(
    * on it, turning slowly. Generated like the cars (Higgsfield picture →
    * Tripo; public/star/shop3d/items/watch-*-hf.glb, jewel-*-hf.glb). A real
    * watch is 4 cm, a speck from the shop floor, so every piece is shown as a
-   * showpiece SHOWPIECE_M at its largest side (a watch about 15× life size, a
+   * showpiece 0.8 m at its largest side (a watch about 20× life size, a
    * necklace on its bust about 1.5×): the size the old picture was.
    * Old: the shop pictures in light boxes, exactly as before.
    */
@@ -870,12 +878,12 @@ async function buildShop(
     const hModel = hEnh ? COUNTER_H_MODELS[it.id] : undefined;
     if (hModel) {
       // the niche: velvet back, a glass shelf on a brass lip, a warm strip light under the top of the frame
-      const back = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 0.96), mat("#2a1f1a", { roughness: 0.95 }));
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 0.96), mat("#4a3a2f", { roughness: 0.95 }));
       back.position.set(x, BOX_Y, zb + 0.035);
       scene.add(back);
       box(1.0, 0.025, 0.5, mat("#cfe3e6", { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.55 }), x, SHELF_Y, zb + 0.27);
       box(1.0, 0.012, 0.02, frameM, x, SHELF_Y - 0.018, zb + 0.51);
-      box(1.1, 0.014, 0.03, glow("#ffd9a8", 3), x, BOX_Y + 0.45, zb + 0.08);
+      box(1.1, 0.014, 0.03, glow("#ffe2bd", 4.5), x, BOX_Y + 0.45, zb + 0.08);
       const group = new THREE.Group();
       group.position.set(x, SHELF_Y + 0.013, zb + 0.27);
       scene.add(group);
@@ -1172,9 +1180,11 @@ async function buildShop(
     }
     if (display === "counter") {
       const x = BOX_X[index] ?? 0;
-      return { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
+      // look H: the showpiece sits on a shelf lower in its niche, so the camera looks over his head at it
+      return hEnh ? { cam: [x * 0.7, 2.2, -4.3], look: [x, BOX_Y - 0.15, -ROOM.z] } : { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
     }
-    if (display === "homes") return { cam: [HOMES.x - 0.3, 1.95, HOMES.z - 2.0], look: [HOMES.x, HOMES.h + 0.32, HOMES.z] };
+    // from his left shoulder, so he never stands between the camera and the model
+    if (display === "homes") return { cam: [HOMES.x - 1.45, 2.15, HOMES.z - 1.35], look: [HOMES.x, HOMES.h + 0.3, HOMES.z] };
     return { cam: [2.6, 1.8, FRIDGE.z + 0.9], look: [FRIDGE.x, 1.2, FRIDGE.z] };
   };
 
