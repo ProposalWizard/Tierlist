@@ -16,7 +16,7 @@
 import { BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanEffectLabel, baseIdOf, type KibCan } from "../shopData";
 import { SHOP_TIERS } from "../economy";
 
-export type DisplayId = "boots" | "car" | "cans" | "counter";
+export type DisplayId = "boots" | "car" | "cans" | "counter" | "homes";
 
 export interface ShopLevel {
   /** "L1" … "L5", or the can's own name. */
@@ -65,7 +65,7 @@ const BOOT_COLOURS: Record<string, string> = {
 /** A paint colour per car. */
 const CAR_COLOURS: Record<string, string> = {
   "car-1": "#8aa0b8", "car-2": "#e04a3a", suv: "#2b2f36", "car-3": "#f2c230",
-  classic: "#1f5a3c", "car-4": "#ff6a00",
+  classic: "#1f5a3c", "car-4": "#ff6a00", bike: "#c81e1e", jet: "#e8e4da",
 };
 
 /** The car families, and which level each .glb was exported at (a mix of
@@ -103,7 +103,7 @@ function boots(pr: ShopPrices): ShopItem[] {
   });
 }
 
-function lifestyle(category: "vehicle" | "item", only?: string[]): ShopItem[] {
+function lifestyle(category: "vehicle" | "item" | "property", only?: string[]): ShopItem[] {
   const byBase = new Map<string, typeof LIFESTYLE_ALL_LEVELS>();
   for (const it of LIFESTYLE_ALL_LEVELS) {
     if (it.category !== category) continue;
@@ -146,12 +146,19 @@ function cans(pr: ShopPrices): ShopItem[] {
   }];
 }
 
-export function shopDisplays(prices: ShopPrices = {}): Record<DisplayId, Display> {
+/**
+ * `h`: the 3D look H (Settings → Look → "3D look"). Look H shows every vehicle on
+ * the turntable (the motorbike and the private jet too) and adds the homes'
+ * model table; Old keeps today's six cars and no homes (an empty display).
+ */
+export function shopDisplays(prices: ShopPrices = {}, opts: { h?: boolean } = {}): Record<DisplayId, Display> {
+  const cars = ["car-1", "car-2", "suv", "car-3", "classic", "car-4"];
   return {
     boots: { id: "boots", title: "Boots", items: boots(prices) },
-    car: { id: "car", title: "Cars", items: lifestyle("vehicle", ["car-1", "car-2", "suv", "car-3", "classic", "car-4"]) },
+    car: { id: "car", title: opts.h ? "Motors" : "Cars", items: lifestyle("vehicle", opts.h ? ["bike", ...cars, "jet"] : cars) },
     cans: { id: "cans", title: "KIB Cans", items: cans(prices) },
     counter: { id: "counter", title: "Watches & jewellery", items: lifestyle("item", ["smartwatch", "silver", "gold", "diamond", "rolex"]) },
+    homes: { id: "homes", title: "Homes", items: opts.h ? lifestyle("property", ["flat-1", "flat-2", "penthouse", "stable", "house-1", "villa", "house-2", "estate", "island"]) : [] },
   };
 }
 

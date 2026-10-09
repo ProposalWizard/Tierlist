@@ -13,7 +13,7 @@
 import { HALF_LEN, PITCH_W, REACH_FOOT, REACH_JUMP_Z, STEP, clamp, skill01, type Contact3 } from "./constants";
 import { GOAL, newBall, predictBall, stepBall3d, type Ball3, type BallEvent, type GoalShape } from "./ball";
 import { angDiff, speedOf, stepHuman, stepMover, type P3 } from "./player";
-import { canSprint, effortOf, freshStamina, speedsForPace, stepStamina, type Stamina } from "../three3d/gait";
+import { canSprint, effortOf, freshStamina, speedsForPace, staminaFor, stepStamina, type Stamina } from "../three3d/gait";
 import {
   airStrike, ballAtFeet, strikeBall, dribbleTouch, firstTouch, passTo, passArrive, groundPassTime, shootFromPull, tackle, throwOut,
 } from "./actions";
@@ -110,6 +110,12 @@ export class World {
   stamina: Stamina = freshStamina();
   /** A drill's helping hand: moves YOU only while the stick is let go (Two Touch walks you under the ball). */
   assist: WorldInput | null = null;
+  /**
+   * With `assist` set: 0 (default) — the stick takes over while it's pushed;
+   * above 0 — the assist always moves you and the stick only nudges, by this
+   * much (Two Touch: "moving messes everything up", Harry 9 Oct 2026).
+   */
+  assistNudge = 0;
   private queue: Action3[] = [];
   events: WorldEvent[] = [];
   /** Every event since the start (tests). */
@@ -194,6 +200,8 @@ export class World {
 
   step(dt: number) {
     this.t += dt;
+    // everyone moves on the same feel as you (player.ts cruiseSpeed / topSpeed), a drill's own steps too
+    for (const p of this.players) p.newFeel = this.newFeel;
     if (this.timers.length) {
       const due = this.timers.filter((x) => x.at <= this.t);
       if (due.length) { this.timers = this.timers.filter((x) => x.at > this.t); due.forEach((x) => x.fn()); }
@@ -226,11 +234,14 @@ export class World {
         continue;
       }
       if (p.human) {
-        const i = this.assist && Math.hypot(this.input.move.x, this.input.move.y) < 0.1 ? this.assist : this.input;
+        const a = this.assist, n = this.assistNudge;
+        const i = a && n > 0
+          ? { move: { x: a.move.x + this.input.move.x * n, y: a.move.y + this.input.move.y * n }, sprint: a.sprint }
+          : a && Math.hypot(this.input.move.x, this.input.move.y) < 0.1 ? a : this.input;
         if (this.newFeel) {
           const useSt = !!this.rules.stamina;
           stepHuman(p, i.move, i.sprint, dt, !useSt || canSprint(this.stamina));
-          if (useSt) this.stamina = stepStamina(this.stamina, effortOf(speedOf(p), !!p.sprinting, speedsForPace(p.skills.pace)), dt);
+          if (useSt) this.stamina = stepStamina(this.stamina, effortOf(speedOf(p), !!p.sprinting, speedsForPace(p.skills.pace)), dt, 1, staminaFor(p.skills.physical ?? p.skills.overall));
         } else stepMover(p, i.move, i.sprint, dt);
       }
       else if (!this.rules.brain?.(this, p, dt)) (BRAINS[(p.mind.brain as string) ?? "idle"] ?? BRAINS.idle)(this, p, dt);

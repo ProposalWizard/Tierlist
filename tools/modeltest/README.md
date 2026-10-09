@@ -30,3 +30,23 @@ How the fit works (`fit.py`):
 `tearcheck.py` plays run, kick and sprint and reports the largest gap any edge opens.
 The fitted model is ~2 m tall (cartoon head); `render_cand.py` scales the root node to
 1.83 m, which also scales the clips' hip movement.
+
+## Committed inputs (rescued 9 Oct 2026)
+
+Everything the three test bodies were made from is here, so anyone can redo or extend it:
+
+| File | What |
+|------|------|
+| `c1/` `c2/` `c3/` `concept.png` | the concept picture (Higgsfield image model) |
+| `*/gen.glb` | the raw 3D download (Higgsfield, Tripo H3.1 image-to-3D, ~10k triangles, textured). Faces +X: fit with `-90` |
+| `*/fit.glb` | `gen.glb` fitted to the game skeleton by `fit.py` (no clips yet) |
+| `*/anim.glb` | `fit.glb` plus the mocap clips (`addclips.mjs`) |
+| `*/fit.log`, `*/rig_sheet.jpg` | what the fit measured, and a picture of the rig |
+| `toon/toon-c*-base.png`, `-mask.png` | the colour and mask pictures the toon look reads for each body |
+| `concepts.jpg` | the three concepts side by side |
+
+Not kept: the Blender look renders (`look/*.png`, `prev/`), logs, and the two
+big scratch inputs `human_s.glb` / `mocap-unpacked.glb`. Make them again from
+`public/star/human3d/human.glb` and `public/star/anims3d/mocap.glb` with
+`tools/ovation3d/unpack.mjs` (and `tools/styletest/strip.mjs` for the body).
+To put a body in the game, see `docs/3D_HANDBOOK.md` section 4.

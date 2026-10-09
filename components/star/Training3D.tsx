@@ -42,8 +42,9 @@ import { EngineFeature, useRealMatchWidth } from "./EnginePlay";
 import { buildStrike, DRILL_SCENE } from "./TrainingMinigame";
 import type { ChanceResolved } from "./CanvasMatch";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
+import BackPill3D from "./BackPill3D";
 import Play3D from "./Play3D";
-import { DRILLS, drillById, pickRandomDrill, type DrillDef, type DrillId } from "@/lib/star/play3d/drills";
+import { DRILLS, drillById, pickRandomDrill, type DrillDef, type DrillId, type DrillTrain } from "@/lib/star/play3d/drills";
 import { makeRng } from "@/lib/star/play3d/rng";
 
 export interface Training3DResult extends GameResult {
@@ -80,7 +81,7 @@ async function faceFrom(url: string | undefined): Promise<{ face: FacePic; skin:
  * 3D drills run on lib/star/play3d (components/star/Play3D.tsx). The list is
  * lib/star/play3d/drills.ts. `startDrill` skips the picker (the dev page).
  */
-export type TrainingGateResult = GameResult & Partial<Pick<Training3DResult, "you" | "him" | "mate">> & { drill?: string };
+export type TrainingGateResult = GameResult & Partial<Pick<Training3DResult, "you" | "him" | "mate">> & { drill?: string; /** Pace Sprint: the level and stars to bank (page.tsx, applyLevelResult). */ train?: DrillTrain };
 
 export default function Training3D({ career, onExit, onFinish, startDrill, startMode }: {
   career: CareerState;
@@ -113,7 +114,8 @@ function DrillSetup({ team, drill, mode, onStart, onBack }: { team: number; dril
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(asks.map((a) => [a.key, a.default])));
   const modeName = drill.modes?.find((x) => x.id === mode)?.label;
   return (
-    <GameShell title={modeName ? `${drill.name} · ${modeName}` : drill.name} who="Team" current={team} tone="#38bdf8" onBack={onBack}>
+    <GameShell title={modeName ? `${drill.name} · ${modeName}` : drill.name} who="Team" current={team} tone="#38bdf8">
+      <BackPill3D onBack={onBack} />
       <div className="mb-3 text-[14px] font-bold" data-drill-setup={drill.id}>{drill.blurb}</div>
       {asks.map((a) => (
         <div key={a.key} className="mb-3">
@@ -141,7 +143,8 @@ function DrillSetup({ team, drill, mode, onStart, onBack }: { team: number; dril
 
 function DrillPicker({ team, seed, onPick, onExit }: { team: number; seed: number; onPick: (id: DrillId, mode?: string) => void; onExit: () => void }) {
   return (
-    <GameShell title="Training pitch" who="Team" current={team} tone="#38bdf8" onBack={onExit}>
+    <GameShell title="Training pitch" who="Team" current={team} tone="#38bdf8">
+      <BackPill3D onBack={onExit} />
       <div className="mb-2 text-[14px] font-bold">Pick a drill, or let the coach pick one.</div>
       <button
         data-drill-random
@@ -361,7 +364,8 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
   const engineOn = step === "you-aim" || step === "you-flight" || step === "you-after";
 
   return (
-    <GameShell title="Crossbar challenge" who="Team" current={team} tone="#38bdf8" onBack={round === 0 && step === "you-aim" && !result ? onExit : undefined}>
+    <GameShell title="Crossbar challenge" who="Team" current={team} tone="#38bdf8">
+      <BackPill3D onBack={onExit} />
       <div className="mb-2 text-[14px] font-bold">Hit the crossbar. Five shots each. A post doesn&apos;t count.</div>
       <div className="mb-2 grid grid-cols-2 gap-1 text-center" data-crossbar-score>
         <Strip name="You" score={yourScore} marks={marks.you} active={engineOn && !result} />

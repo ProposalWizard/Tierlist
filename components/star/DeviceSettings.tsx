@@ -17,6 +17,7 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
+import { useControlChoice, setControlChoice, detectScheme, type ControlChoice } from "@/lib/star/play3d/controlScheme";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -201,7 +202,7 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
@@ -241,6 +242,7 @@ function MatchGroup() {
   return (
     <>
       <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
+      <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
       <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
         <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
       </PrefRow>
@@ -266,8 +268,12 @@ function MatchGroup() {
 /** 3D world: garden, shop player, people, the manager's office, casino, signing. */
 function World3dGroup() {
   const look = useLook();
+  const controls = useControlChoice();
   return (
     <>
+      <PrefRow label="3D drill controls" note={`Auto: this device's own (${detectScheme() === "touch" ? "touch" : "keys and mouse"}). Touch: a stick under your left thumb, swipe to kick. Keys: WASD, Shift sprints, the mouse kicks.`}>
+        <SegTabs className="w-[150px] shrink-0" value={controls} onChange={(v) => setControlChoice(v as ControlChoice)} tabs={[["auto", "Auto"], ["touch", "Touch"], ["pc", "Keys"]] as const} />
+      </PrefRow>
       <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
       <LookRow id="look3d" look={look} tabs={[["h", "H"], ["old", "Old"]] as const} note="H: console realism. The 3D drills in a full stadium with a crowd, real sky light, a broadcast picture; the garden and shop lit by a real sky. Old: as before." />
       <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />

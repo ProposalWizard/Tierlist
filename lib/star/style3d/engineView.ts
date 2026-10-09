@@ -44,6 +44,7 @@ import type { StyleDef } from "./styles";
 import type { RealLook } from "./real/look";
 import type { TimeOfDay } from "./real/assets";
 import { realCameraLook, playerLightLook } from "./realGameLook";
+import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 
 export interface EngineView {
@@ -96,6 +97,20 @@ const MO = {
   /** Seconds of dive clip per second, at most, while it follows the 2D lunge (no one-frame pop). */
   diveCatchUp: 3,
   diveFade: 0.16,
+  /**
+   * The keeper (Harry, 9 Oct 2026: "needs to move more fluidly and not feel so NPC").
+   * His drawn spot follows the 2D keeper through a spring this stiff (rad/s): the
+   * 2D walks him at a fixed pace and stops dead; this starts and stops him like a man.
+   */
+  keeperSpring: 11,
+  /** He turns his chest to the ball, never more than this far off square (rad, ~50°). */
+  keeperFaceMax: 0.87,
+  /** Ball this near his goal (m): set (feet apart, weight forward) … */
+  keeperSetR: 32,
+  /** … and on his toes (quicker shuffle) when it is struck, crossed or in the air near the box. */
+  keeperToes: 1.3,
+  /** A strike near him (ball speed jumps by this, m/s): a split step, this high (m of the clip's size) for this long (s). */
+  splitJump: 6, splitH: 0.045, splitS: 0.22,
 };
 /** How tall a man stands on the glass at the action with the TV camera, CSS px (the 2D match screen's men, coordinator 9 Oct 2026). */
 const TARGET_PX = 46;
@@ -141,8 +156,16 @@ type Body = {
   shotDone?: string;
   /** Kicking off the left foot: the clip's ball sits further on than shot_r's, so he stands back by this (his frame, metres). */
   kickOff?: [number, number];
+  /** The kick being played (lib/star/style3d/kickStyle.ts): its clip, swing and hop, and seconds since the strike. */
+  kickStyle?: KickStyle; kickT?: number;
+  /** The power of the last aim (0..1): how far back the strike screen's backswing goes. */
+  aimP?: number;
   /** Keeper: walking sideways along his line. */
   side?: boolean;
+  /** Keeper, Motion: Mocap: the ball's speed last frame (a jump is a strike) and seconds since his split step. */
+  lastBallSp?: number; splitT?: number;
+  /** Keeper, Motion: Mocap: how ready he is (0 relaxed, 1 set, 2 on his toes). */
+  alert?: number;
   /** The tight shadow under his feet ("3D player light: New"). */
   foot?: any;
 };
@@ -692,35 +715,49 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (!aiming && !onceActive() && !b.windup && sp < MO.turnClipBelow && Math.abs(d) > MO.turnClipMin && f.t >= b.turnReady) startTurn(b, d, f.t);
       else turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
     }
-    // the kick: your own swing, off the right foot or the left
+    // the kick: your own swing, off the right foot or the left, and as hard as the real kick
+    // (Harry, 9 Oct 2026: "every kick animation is the same no matter the power")
     let started = false;
     const foot = fig.kickFoot < 0 && b.play.has("kick_l") ? "kick_l" : "shot_r";
     const ki = info(foot), contact = ki?.contact ?? 0.42;
+    if (fig.sid === "you" && f.aim && f.phase !== "contact") b.aimP = f.aim.power;
     if (fig.sid === "you" && !fig.kick && f.phase === "contact" && b.play.has(foot)) {
-      // the strike screen is up: the kick is coming. Plant and backswing, then hold it there.
+      // the strike screen is up: the kick is coming. Plant and backswing (further back for a harder aim), then hold it there.
+      const ap = b.aimP ?? 0.6;
       if (b.windup !== foot) {
         if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
-        b.play.play(foot, { fade: 0.2, from: Math.max(0, contact - MO.windup), speed: 0.8, once: true });
+        b.play.play(foot, { fade: 0.2, from: Math.max(0, contact - (0.25 + 0.4 * ap)), speed: 0.8, once: true });
         b.state = `wind:${foot}`; b.windup = foot;
       }
       const a = b.p.actions[foot];
-      if (a.time >= contact - MO.windupHold) { a.time = contact - MO.windupHold; a.timeScale = 0; }
+      const hold = contact - (0.06 + 0.16 * ap);
+      if (a.time >= hold) { a.time = hold; a.timeScale = 0; }
     }
-    if (fig.kick && !b.kicking && b.play.has(foot)) {
+    if (fig.kick && !b.kicking) {
       if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
-      const a = b.p.actions[foot];
-      if (b.windup === foot && b.state === `wind:${foot}`) a.timeScale = MO.lateSpeed; // loaded: swing through now
-      else b.play.play(foot, { fade: 0.12, from: Math.max(0, contact - MO.lateStart), speed: MO.lateSpeed, once: true });
-      b.state = `once:${foot}`;
-      const sr = info("shot_r");
-      b.kickOff = foot === "kick_l" && ki?.ball && sr?.ball ? [ki.ball[0] - sr.ball[0], ki.ball[1] - sr.ball[1]] : undefined;
-      started = true;
+      const st = kickStyleFor(f.ball && f.ball.live ? f.ball : null, foot === "kick_l", (n) => b.play.has(n));
+      const c = b.play.has(st.clip) ? st.clip : foot;
+      if (b.play.has(c)) {
+        const cc = info(c)?.contact ?? contact;
+        const a = b.p.actions[c];
+        if (c === b.windup && b.state === `wind:${c}`) a.timeScale = st.swing; // loaded: swing through now, as hard as the kick
+        else b.play.play(c, { fade: 0.1, from: Math.max(0, cc - Math.min(st.backswing, b.windup ? 0.2 : MO.lateStart)), speed: st.swing, once: true });
+        b.state = `once:${c}`;
+        b.kickStyle = { ...st, clip: c }; b.kickT = 0;
+        const sr = info("shot_r");
+        b.kickOff = c === "kick_l" && ki?.ball && sr?.ball ? [ki.ball[0] - sr.ball[0], ki.ball[1] - sr.ball[1]] : undefined;
+        started = true;
+      }
     }
     if (!fig.kick && b.windup && !(fig.sid === "you" && f.phase === "contact")) { b.windup = undefined; if (b.state.startsWith("wind:")) b.state = ""; }
     if (fig.kick && b.windup) b.windup = undefined;
     b.kicking = fig.kick;
-    // back to normal speed once the foot has reached the ball
-    if (b.state === `once:${foot}`) { const a = b.p.actions[foot]; if (a.time >= contact) a.timeScale = 1; }
+    // after contact: the follow-through at the kick's own pace
+    if (b.kickStyle && b.state === `once:${b.kickStyle.clip}`) {
+      const ks = b.kickStyle, a = b.p.actions[ks.clip];
+      if (a.time >= (info(ks.clip)?.contact ?? contact)) a.timeScale = ks.follow;
+      b.kickT = (b.kickT ?? 0) + dt;
+    } else if (b.kickStyle && !b.state.startsWith("once:")) { b.kickStyle = undefined; b.kickT = undefined; }
     if (!started && fig.act && fig.act.start !== b.lastAct) {
       b.lastAct = fig.act.start;
       const c = clipForAct(b, fig.act.kind, fig.act.mode);
@@ -745,8 +782,25 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
 
   /** The keeper, Motion: Mocap. Runs the mixer itself; returns how far a high dive lifts him. */
   const keeperMocap = (b: Body, k: NonNullable<EngineFrame["keeper"]>, f: EngineFrame, dt: number, cut: boolean): number => {
-    turnTo(b, 0, dt, 6);
     let lift = 0;
+    const bl = f.ball;
+    // the strike: any kick near him gets a split step (he lands on both feet, ready)
+    const bsp = bl && bl.live ? Math.hypot(bl.vx, bl.vy, bl.vz) : 0;
+    const near = !!bl && Math.hypot(bl.x - CX, bl.y) < 40;
+    if (!cut && b.lastBallSp !== undefined && bsp - b.lastBallSp > MO.splitJump && near && !b.dive) b.splitT = 0;
+    b.lastBallSp = bsp;
+    if (b.splitT !== undefined) { b.splitT += dt; if (b.splitT > MO.splitS) b.splitT = undefined; }
+    // how ready: relaxed with play far away, set as it comes near, on his toes when it is struck or in the air near the box
+    const dBall = bl ? Math.hypot(bl.x - CX, bl.y) : 99;
+    const flying = !!bl && bl.live && (f.phase === "flight") && (bl.vy < -2 || bl.z > 0.8 || !!f.landing);
+    const want = f.phase === "contact" || f.phase === "runup" || (flying && dBall < MO.keeperSetR + 8) ? 2 : dBall < MO.keeperSetR ? 1 : 0;
+    b.alert = want;
+    // square to the ball (a cross: to where it drops), within reason; square to the pitch in a dive
+    const look = f.landing && f.landing.y < 18 ? f.landing : bl;
+    const faceYaw = look && !b.dive && Math.hypot(look.x - b.x, look.y - b.y) > 0.6
+      ? Math.max(-MO.keeperFaceMax, Math.min(MO.keeperFaceMax, wrapPi(yawOf(Math.atan2(look.y - b.y, look.x - b.x)))))
+      : 0;
+    turnTo(b, faceYaw, dt, b.dive ? 14 : 5);
     if (cut && b.state.startsWith("dive:")) { b.state = ""; startLoopM(b, "ready_shuffle", 0); }
     const diving = k.saveLunge > 0.04 && k.saveDir !== 0;
     if (diving || b.dive) {
@@ -791,21 +845,33 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
       if (b.onceLeft > 0) b.onceLeft -= dt;
       if (!(b.state.startsWith("once:") && b.onceLeft > 0)) {
-        // along his line: real side steps (his left is +x), a shuffle when it's quick; else set and alive
-        const ux = Math.abs(b.vx) / (b.k * fs);
-        b.side = Math.abs(b.vx) > (b.side ? 0.2 : 0.35) && Math.abs(b.vx) > Math.abs(b.vy);
+        // across his body: real side steps (his left is his own +x, turned with him), a shuffle when it's quick
+        const lat = b.vx * Math.cos(b.yaw) - b.vy * Math.sin(b.yaw);
+        const fwd = b.vx * Math.sin(b.yaw) + b.vy * Math.cos(b.yaw);
+        const ux = Math.abs(lat) / (b.k * fs);
+        b.side = Math.abs(lat) > (b.side ? 0.18 : 0.3) && Math.abs(lat) > Math.abs(fwd) * 0.8;
         if (Math.hypot(b.vx, b.vy) > 2.6 && !b.side) startLoopM(b, "jog");
         else if (b.side) {
           const quick = ux > 2;
-          const n = `${quick ? "shuffle" : "side_step"}_${b.vx > 0 ? "l" : "r"}`;
+          const n = `${quick ? "shuffle" : "side_step"}_${lat > 0 ? "l" : "r"}`;
           startLoopM(b, b.play.has(n) ? n : "ready_shuffle", 0.2);
           const cs = info(n)?.speed;
           if (b.state === n && typeof cs === "number") b.p.actions[n].timeScale = Math.max(0.6, Math.min(1.8, ux / cs));
-        } else startLoopM(b, "ready_shuffle");
+        } else if (Math.abs(fwd) > 0.35) {
+          // stepping off his line or back: small steps, set (the ready shuffle moving)
+          startLoopM(b, "ready_shuffle", 0.25);
+          if (b.state === "ready_shuffle") b.p.actions.ready_shuffle.timeScale = b.rate * MO.keeperToes;
+        } else {
+          // standing: relaxed with play far away, set as it comes, on his toes when it is struck or crossed
+          const n = b.alert === 0 && b.play.has("idle") ? "idle" : "ready_shuffle";
+          startLoopM(b, n, 0.35);
+          if (b.state === "ready_shuffle") b.p.actions.ready_shuffle.timeScale = b.rate * (b.alert === 2 ? MO.keeperToes : 1);
+        }
       }
     }
     b.play.update(dt);
     b.p.mixer.update(dt);
+    if (b.splitT !== undefined && !b.dive) lift += MO.splitH * b.k * figNow() * KEEPER_SHARE * Math.sin((b.splitT / MO.splitS) * Math.PI);
     return lift;
   };
 
@@ -860,7 +926,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const fs = figNow();
     const ox = off ? (off[1] * Math.sin(b.yaw) + off[0] * Math.cos(b.yaw)) * b.k * fs : 0;
     const oz = off ? (off[1] * Math.cos(b.yaw) - off[0] * Math.sin(b.yaw)) * b.k * fs : 0;
-    b.p.root.position.set(b.x - CX - ox, 0, b.y - oz);
+    // a full-power strike: a little hop off the standing foot as the leg follows through
+    const hopT = mo && b.kickStyle?.hop && b.kickT !== undefined ? b.kickT : -1;
+    const hop = hopT >= 0 && hopT < 0.32 ? b.kickStyle!.hop * Math.sin((hopT / 0.32) * Math.PI) * b.k * fs : 0;
+    b.p.root.position.set(b.x - CX - ox, hop, b.y - oz);
     b.p.root.rotation.set(0, b.yaw, 0);
     b.p.root.scale.setScalar(fs);
     b.p.root.visible = true;
@@ -871,8 +940,18 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.seen = frameNo;
     const jump = Math.hypot(k.x - b.x, k.y - b.y);
     const cut = !b.init || jump > 4;
-    if (!b.init || jump > 4) { b.x = k.x; b.y = k.y; b.vx = 0; b.vy = 0; b.init = true; b.dive = undefined; }
-    else if (dt > 0) {
+    if (!b.init || jump > 4) { b.x = k.x; b.y = k.y; b.vx = 0; b.vy = 0; b.init = true; b.dive = undefined; b.lastBallSp = undefined; b.splitT = undefined; }
+    else if (mo && dt > 0 && !(k.saveLunge > 0.04 || b.dive)) {
+      // Motion: Mocap — a spring onto the 2D spot: he gets going and pulls up like a man,
+      // never a fixed-pace slide that stops dead (and never more than a few cm behind).
+      // stiffer as he goes faster, so he is never more than ~0.3 m behind (a scramble after a spill)
+      const w = Math.max(MO.keeperSpring, (2 * Math.hypot(b.vx, b.vy)) / 0.3);
+      for (let s = 0, n = Math.max(1, Math.ceil(dt / 0.01)); s < n; s++) {
+        const h = dt / n;
+        b.vx += (w * w * (k.x - b.x) - 2 * w * b.vx) * h; b.vy += (w * w * (k.y - b.y) - 2 * w * b.vy) * h;
+        b.x += b.vx * h; b.y += b.vy * h;
+      }
+    } else if (dt > 0) {
       const kk = Math.min(1, dt * 8);
       b.vx += ((k.x - b.x) / dt - b.vx) * kk; b.vy += ((k.y - b.y) / dt - b.vy) * kk;
       b.x = k.x; b.y = k.y;
@@ -1105,7 +1184,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
     const extra: { x: number; y: number }[] = [];
     if (f.goalInView) extra.push({ x: CX - 4.5, y: -0.5 }, { x: CX + 4.5, y: -0.5 });
-    if (f.keeper) extra.push({ x: f.keeper.x, y: f.keeper.y });
+    // only a keeper the 2D drew frames the shot (an undrawn one is just stood in his goal)
+    if (f.keeper && f.keeper.drawn !== false) extra.push({ x: f.keeper.x, y: f.keeper.y });
     if (!nu) {
       // Old: everyone in the chance, the ball, and the goal mouth when the goal is in it:
       // all of it on the screen, centred, as close as that allows.

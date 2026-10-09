@@ -13,12 +13,24 @@
  */
 import type { Rng } from "./rng";
 import type { Action3, World } from "./world";
+import { CX } from "./constants";
 import { makeFreeRoam, freeRoamReward, freeRoamScore, FREE_ROAM_TARGET, type Person3 } from "./freeRoam";
 import { makeTwoTouch, twoTouchReward, TWO_TOUCH_RALLIES, TWO_TOUCH_TARGET } from "./twoTouch";
+
+/** The goal, for the practice camera to frame. */
+const GOAL_MOUTH = { x: CX, y: 0 };
+/** A cross further than this from you (m) is tracked by the camera; nearer, it settles behind your shoulder for the strike. */
+export const HV_TRACK_UNTIL = 7;
+/** How long a touch-grade pop stays up (world seconds). */
+const POP_FOR = 0.9;
 import { makeWembley, wembleyLeave, wembleyPlace, wembleyPlayers, wembleyReward, wembleyWatch, ordinal, type WembleyMode } from "./wembley";
 import { makeHeadersVolleys, hvReward, crossWord, HV_CROSSES, HV_TARGET, HV_POINTS } from "./headersVolleys";
+import { makePaceDrill, paceCountdown, kmhText, PACE_DISTANCE, STAR_SLACK } from "./paceDrill";
 
-export type DrillId = "crossbar" | "two-touch" | "free-roam" | "headers-volleys" | "wembley";
+export type DrillId = "crossbar" | "two-touch" | "free-roam" | "headers-volleys" | "wembley" | "pace";
+
+/** A drill that trains a skill: the level played and its stars (the career banks them, lib/star/trainingLevels.ts applyLevelResult). */
+export interface DrillTrain { skill: "pace"; level: number; stars: number }
 
 export interface DrillContext {
   seed: number;
@@ -32,6 +44,10 @@ export interface DrillContext {
   mode?: string;
   /** The pre-screen's choices (Wembley: count). */
   options?: Record<string, string>;
+  /** The pace level to run (your next one: the first with no star). */
+  paceLevel?: number;
+  /** How many points this many stars on this level would add to the skill now (for the result line). */
+  previewTrain?(t: DrillTrain): number;
 }
 
 /** One row on the HUD's roster (who's safe, who's still to score, who's out). */
@@ -39,10 +55,20 @@ export interface RosterLine { name: string; state: "safe" | "todo" | "out"; you?
 
 export interface DrillSession {
   world: World;
-  /** "chase": behind you, turning with you. "pair": side-on, you and your partner both in shot. */
-  camera: "chase" | "pair";
+  /**
+   * "practice": FIFA's practice arena — behind and above your shoulder, turning
+   * on its own towards `frame`'s target, never with the stick (../three3d/practiceCam.ts).
+   * "chase": behind you, turning with you (Wembley). "pair": side-on, you and your partner.
+   */
+  camera: "chase" | "pair" | "practice";
+  /** The practice camera's brief: what to keep in shot with you; whether to track a cross in the air. */
+  frame?: (w: World) => { target: { x: number; y: number }; trackBall?: boolean };
   /** One line, on screen while playing. */
   hint: string;
+  /** The same line per device: a phone's thumbs, or a PC's keys and mouse (shown by the control scheme). */
+  hints?: { touch: string; pc: string };
+  /** The same line for a mouse and keyboard (a fine pointer: Play3D picks by pointer type, not screen width). Unset: `hint` for both. */
+  hintKeys?: string;
   /** Extra buttons beyond tap / drag (e.g. "Send it back"). Read every frame, so a drill can change them. */
   buttons?: { label: string; action?: Action3; onPress?: () => void }[];
   /** Every side in its own training bib (Wembley). */
@@ -56,10 +82,12 @@ export interface DrillSession {
     banner?: { text: string; tone: "good" | "bad" | "info" } | null;
     roster?: RosterLine[];
     note?: string;
+    /** A small pop for a moment (Two Touch's touch grade). */
+    pop?: { text: string; tone: "good" | "ok" | "bad" } | null;
   };
   done(): boolean;
   /** The Team bar move, the crossbar's way (relationships.ts gameReward). */
-  result(team: number, roll: number): { won: boolean; gain: number; line: string };
+  result(team: number, roll: number): { won: boolean; gain: number; line: string; train?: DrillTrain };
 }
 
 /** A choice on the pre-screen (Wembley: how many players). */
@@ -87,10 +115,17 @@ export const DRILLS: DrillDef[] = [
       const mate = ctx.mates[0] ?? { id: "mate", name: "Team-mate", skills: { overall: 65, pace: 65, power: 65, technique: 65 } };
       const { world, state } = makeTwoTouch({ seed: ctx.seed, you: ctx.you, mate });
       return {
-        world, camera: "pair",
-        hint: "Tap as the ball drops to your foot: 1st tap controls it up, 2nd sends it back.",
-        buttons: [{ label: "Send it back first time", action: { kind: "pass" } }],
-        hud: () => ({ big: `${state.rally}`, small: `Rally · best ${state.longest} · ${state.ralliesLeft} of ${TWO_TOUCH_RALLIES} left`, flash: state.last }),
+        world, camera: "practice",
+        frame: (w) => { const m = w.get(mate.id); return { target: m ? { x: m.x, y: m.y } : GOAL_MOUTH }; },
+        hint: "Tap as the ball drops to your foot to control it. Swipe at him to send it back: direction aims, length is the weight.",
+        hints: {
+          touch: "Tap as it drops to your foot: control. Swipe towards him: send it back (length = weight). You step under it yourself.",
+          pc: "Space or click as it drops to your foot: control. Hold the mouse on him and let go: send it back (hold longer = harder). WASD nudges.",
+        },
+        hud: () => ({
+          big: `${state.rally}`, small: `Rally · best ${state.longest} · ${state.ralliesLeft} of ${TWO_TOUCH_RALLIES} left`, flash: state.last,
+          pop: state.pop && world.t - state.pop.at < POP_FOR ? state.pop : null,
+        }),
         done: () => state.over,
         result(team, roll) {
           const r = twoTouchReward(state, team, roll);
@@ -104,8 +139,13 @@ export const DRILLS: DrillDef[] = [
     start(ctx) {
       const { world, state } = makeFreeRoam({ seed: ctx.seed, you: ctx.you, mates: ctx.mates.slice(0, 2), keeperOverall: ctx.keeperOverall });
       return {
-        world, camera: "chase",
-        hint: "Left thumb: move. Tap a team-mate to pass to him (or tap anywhere: the white ring shows who). Drag back and let go: shoot.",
+        world, camera: "practice",
+        frame: () => ({ target: GOAL_MOUTH }),
+        hint: "Left thumb: move. Tap a team-mate to pass to him (or tap anywhere: the white ring shows who). Swipe: shoot.",
+        hints: {
+          touch: "Left thumb: move (push further, run faster). Tap: pass (the white ring shows who). Swipe: shoot — direction aims, length is power.",
+          pc: "WASD or arrows: move. Hold Shift to sprint. Click: pass. Hold the mouse where you want it and let go: shoot. Q/E: look round.",
+        },
         hud: () => ({ big: `${freeRoamScore(state)}`, small: `${state.goals} goals · ${state.cleanPasses} clean passes`, timeLeft: state.timeLeft, flash: state.last }),
         done: () => state.over,
         result(team, roll) {
@@ -124,8 +164,17 @@ export const DRILLS: DrillDef[] = [
       const rb = pick(["RB", "RWB"], lb.id) ?? (fallback(1).id === lb.id ? fallback(0) : fallback(1));
       const { world, state } = makeHeadersVolleys({ seed: ctx.seed, you: ctx.you, leftBack: lb, rightBack: rb, keeperOverall: ctx.keeperOverall });
       return {
-        world, camera: "chase", bibs: true,
-        hint: "Run to the yellow ring. Drag back and let go as it arrives (or tap): head it, volley it, or hit it first time.",
+        world, camera: "practice", bibs: true,
+        frame: (w) => {
+          const you = w.you(), b = w.ball;
+          const live = state.phase === "setup" || state.phase === "flight";
+          return { target: GOAL_MOUTH, trackBall: live && !!you && Math.hypot(b.x - you.x, b.y - you.y) > HV_TRACK_UNTIL };
+        },
+        hint: "Run to the yellow ring. Swipe as it arrives (or tap): head it, volley it, or hit it first time.",
+        hints: {
+          touch: "Left thumb: run to the yellow ring. Swipe as it arrives to aim (or tap): head it, volley it, or hit it first time.",
+          pc: "WASD: run to the yellow ring. Hold Shift to sprint. Hold the mouse where you want it, let go as it arrives (or Space): head, volley, first time.",
+        },
         hud: () => ({
           big: `${state.points}`,
           small: `Points · cross ${Math.min(state.cross, HV_CROSSES)} of ${HV_CROSSES} · ${state.goals} goals`,
@@ -186,6 +235,37 @@ export const DRILLS: DrillDef[] = [
         },
       };
       return session;
+    },
+  },
+  {
+    id: "pace", name: "Pace Sprint", blurb: "30 metres flat out with a defender on your shoulder. Your time earns pace stars.", status: "ready", kind: "play3d",
+    start(ctx) {
+      const def = ctx.squad?.find((p) => ["CB", "LB", "RB"].includes(p.position ?? "")) ?? ctx.mates[0];
+      const { world, state } = makePaceDrill({ seed: ctx.seed, you: ctx.you, level: ctx.paceLevel, chaser: def ? { id: def.id, name: def.name, photo: def.photo } : undefined });
+      const starLine = (n: number) => "★".repeat(n) + "☆".repeat(3 - n);
+      return {
+        world, camera: "chase", bibs: true,
+        hint: "Push the stick all the way up to sprint (hold it ready before GO). Run straight for the yellow line. Don't let him catch you.",
+        hintKeys: "Hold W (or ↑) and hold Shift to sprint (hold them ready before GO). Run straight for the yellow line. Don't let him catch you.",
+        hud: () => {
+          const cd = paceCountdown(world);
+          const t3 = state.target + STAR_SLACK[0];
+          return {
+            big: `${state.time.toFixed(2)}`,
+            small: `Top speed ${kmhText(state.topSpeed)} · level ${state.level} · 3★ under ${t3.toFixed(2)} s`,
+            note: cd ? "" : (state.finished ? `${starLine(state.stars)} · ${PACE_DISTANCE} m in ${state.time.toFixed(2)} s` : ""),
+            banner: cd && cd !== "GO!" ? { text: cd, tone: "info" } : cd === "GO!" ? { text: "GO!", tone: "good" } : state.caught ? { text: state.last, tone: "bad" } : state.finished ? { text: starLine(state.stars), tone: "good" } : null,
+          };
+        },
+        done: () => state.over,
+        result() {
+          const train: DrillTrain = { skill: "pace", level: state.level, stars: state.caught ? 0 : state.stars };
+          const plus = ctx.previewTrain?.(train) ?? 0;
+          const head = state.caught ? `${state.chaserName} caught you` : `${PACE_DISTANCE} m in ${state.time.toFixed(2)} s`;
+          const pace = plus > 0 ? ` Pace +${plus}.` : train.stars > 0 ? " No new stars on this level." : "";
+          return { won: train.stars > 0, gain: 0, train, line: `${head} · top speed ${kmhText(state.topSpeed)} · level ${state.level} ${starLine(train.stars)}.${pace}` };
+        },
+      };
     },
   },
 ];
