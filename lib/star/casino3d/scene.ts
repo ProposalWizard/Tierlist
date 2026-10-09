@@ -56,6 +56,7 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
@@ -176,6 +177,15 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
   // New, standing still: the screen's real pixels, capped per tier (the shop's look H numbers); moving: the tier's cap
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "casino", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, H ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -185,7 +195,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -808,8 +818,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     else {
       acc += Math.min(0.25, clock.getDelta());
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -944,8 +956,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       cb.onFps?.(fps);
       frames = 0; fpsT0 = nowMs;
       if (!opts.fixedStep) {
-        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) { slowSeconds = 0; if (!stepDown()) capAlways = true; }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -1040,6 +1051,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), frames: drawn, quality: tier, merged: frozen }),
     dispose: () => {
       disposed = true;
+      gov.dispose();
       games.dispose();
       hEnh?.dispose();
       hRoom?.dispose();

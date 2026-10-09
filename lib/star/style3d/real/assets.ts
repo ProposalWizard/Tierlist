@@ -46,6 +46,9 @@ function hdr(T: any, tod: TimeOfDay): Promise<any> {
   });
 }
 
+/** Start downloading the time of day's light file now (start-up runs it beside the people's files). */
+export const preloadHdr = (T: any, tod: TimeOfDay): Promise<any> => hdr(T, tod);
+
 const pmrems = new WeakMap<any, Map<TimeOfDay, Promise<any>>>();
 /** Image-based light for this renderer and time of day (a PMREM cube, cached). */
 export function envFor(T: any, renderer: any, tod: TimeOfDay): Promise<any> {

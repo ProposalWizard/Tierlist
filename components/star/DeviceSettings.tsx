@@ -17,6 +17,7 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
+import { useControlChoice, setControlChoice, detectScheme, type ControlChoice } from "@/lib/star/play3d/controlScheme";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -266,8 +267,12 @@ function MatchGroup() {
 /** 3D world: garden, shop player, people, the manager's office, casino, signing. */
 function World3dGroup() {
   const look = useLook();
+  const controls = useControlChoice();
   return (
     <>
+      <PrefRow label="3D drill controls" note={`Auto: this device's own (${detectScheme() === "touch" ? "touch" : "keys and mouse"}). Touch: a stick under your left thumb, swipe to kick. Keys: WASD, Shift sprints, the mouse kicks.`}>
+        <SegTabs className="w-[150px] shrink-0" value={controls} onChange={(v) => setControlChoice(v as ControlChoice)} tabs={[["auto", "Auto"], ["touch", "Touch"], ["pc", "Keys"]] as const} />
+      </PrefRow>
       <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
       <LookRow id="look3d" look={look} tabs={[["h", "H"], ["old", "Old"]] as const} note="H: console realism. The 3D drills in a full stadium with a crowd, real sky light, a broadcast picture; the garden and shop lit by a real sky. Old: as before." />
       <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />

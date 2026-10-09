@@ -16,6 +16,7 @@
  */
 import type { CameraTrack, CareerContext, CutsceneActor, CutsceneScript, FxTrack, LightTrack, PoseTrack, PropTrack, ReachTrack, Target, TraceTrack, Vec3, HandTrack, LookTrack, FaceTrack, SpeakTrack } from "./types";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
+import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { people3dLook } from "../look3d";
@@ -609,8 +610,15 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
       t = Math.min(duration, t + dt);
       if (t >= duration && !ended) { ended = true; o.onEnd?.(); }
     }
+    governed.frame(now);
+    if ((nFrame++ % 30) === 0) governed.refreshPeople();
     draw(held ?? t);
   };
+  // the governor (three3d/governor.ts): slow for 2.5 s → one rung down; the people keep their shadows in a cut scene
+  const castLights: any[] = [];
+  scene.traverse((x: any) => { if (x.isDirectionalLight && x.castShadow) castLights.push(x); });
+  const governed = governScene(T, { name: "cut scene", start: tier, renderer, scene, camera, lights: castLights, basePR: renderer.getPixelRatio(), litePeopleCast: true });
+  let nFrame = 0;
   renderer.setAnimationLoop(frame);
 
   const api: Director = {
@@ -628,6 +636,7 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);
+      governed.dispose();
       fx.dispose(); people.dispose();
       for (const p of Array.from(props.values())) p.dispose();
       set.dispose(); kit.dispose();

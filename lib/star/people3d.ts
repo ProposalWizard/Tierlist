@@ -601,7 +601,8 @@ export function fingerTip(T: Three, p: Person3D, side: "L" | "R", f: FingerName)
  *  enough unless something else bends them. */
 export function relaxHands(T: Three, p: Person3D) {
   if (!p.fingers) return;
-  const relaxed = fingersDeg({ thumb: [5, 10, 8], index: [10, 16, 9], middle: [13, 19, 11], ring: [15, 21, 12], little: [17, 23, 14], thumbSwing: 8 });
+  // a little more curl than flat (Harry, 9 Oct 2026: the running hand read as a flat "karate chop")
+  const relaxed = fingersDeg({ thumb: [10, 15, 10], index: [24, 32, 18], middle: [27, 35, 20], ring: [30, 38, 22], little: [33, 41, 24], thumbSwing: 12 });
   poseFingers(T, p, "L", relaxed);
   poseFingers(T, p, "R", relaxed);
 }

@@ -56,7 +56,7 @@ const FINAL = /* glsl */ `
 precision highp float;
 uniform sampler2D tColor, tDepth, tSoft, tBloom;
 uniform vec2 res;
-uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, dof, dofNear, dofFar, useDepth;
+uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, dof, dofNear, dofFar, useDepth, lite, bloomThresh;
 uniform vec3 tint, lift, shadowTint, lightTint;
 uniform sampler2D tLut;
 uniform float lutAmt;
@@ -82,12 +82,22 @@ vec3 scene(vec2 uv) {
     float k = smoothstep(dofNear, dofFar, d) * dof;
     c = mix(c, texture2D(tSoft, uv).rgb, k);
   }
-  c += texture2D(tBloom, uv).rgb * bloom;
+  if (lite < 0.5) c += texture2D(tBloom, uv).rgb * bloom;
   return toSRGB(aces(c));
 }
 void main() {
   vec2 px = 1.0 / res;
   vec3 c = scene(vUv);
+  // lite (Medium, 9 Oct 2026): no bloom chain; a light 8-tap glow here instead, added once
+  vec3 glow = vec3(0.0);
+  if (lite > 0.5 && bloom > 0.0) {
+    for (int i = 0; i < 8; i++) {
+      float a = float(i) * 0.7854;
+      vec2 o = vec2(cos(a), sin(a)) * 0.008 * vec2(res.y / res.x, 1.0);
+      glow += max(texture2D(tColor, vUv + o).rgb - bloomThresh, 0.0);
+    }
+    glow = toSRGB(aces(glow * bloom * 0.18)) ;
+  }
   if (fxaa > 0.5) {
     vec3 nw = scene(vUv + vec2(-1.0, 1.0) * px), ne = scene(vUv + vec2(1.0, 1.0) * px);
     vec3 sw = scene(vUv + vec2(-1.0, -1.0) * px), se = scene(vUv + vec2(1.0, -1.0) * px);
@@ -108,6 +118,7 @@ void main() {
     vec3 n = scene(vUv + vec2(0.0, px.y)) + scene(vUv - vec2(0.0, px.y)) + scene(vUv + vec2(px.x, 0.0)) + scene(vUv - vec2(px.x, 0.0));
     c = max(c + (c - n * 0.25) * sharpen, 0.0);
   }
+  c += glow;
   // the grade: S-curve, split tone, saturation
   c = c * tint + lift;
   vec3 s = c * c * (3.0 - 2.0 * c);
@@ -131,8 +142,17 @@ export interface HGrade {
   sharpen?: number;
 }
 
+export type HPostMode = "full" | "lite" | "off";
+
 export interface HPost {
   render(scene: any, camera: any, g: HGrade): void;
+  /**
+   * The governor's say (three3d/governor.ts): full = the tier's own pass
+   * (High: exactly as before); lite = ONE pass after the scene (grade, FXAA
+   * unless MSAA, a light glow; no half-size copy, no bloom chain, no depth
+   * blur); off = straight to the screen (ACES), as Low always was.
+   */
+  setMode(m: HPostMode): void;
   dispose(): void;
 }
 
@@ -167,18 +187,20 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },
-    tLut: { value: null }, lutAmt: { value: 0 },
+    tLut: { value: null }, lutAmt: { value: 0 }, lite: { value: 0 }, bloomThresh: { value: 1 },
   };
   const finalMat = new T.ShaderMaterial({ uniforms: fu, vertexShader: VERT, fragmentShader: FINAL, depthTest: false, depthWrite: false });
   const size = new T.Vector2();
   const t0 = performance.now();
   let depthOk = true;
+  let mode: HPostMode = tier === "low" ? "off" : "full";
 
   const pass = (mat: any, target: any) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
 
   return {
+    setMode(m) { mode = tier === "low" ? "off" : m; },
     render(scene, camera, g) {
-      if (tier === "low") {
+      if (mode === "off") {
         renderer.toneMapping = T.ACESFilmicToneMapping;
         renderer.toneMappingExposure = g.exposure;
         renderer.setRenderTarget(null);
@@ -198,6 +220,21 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       renderer.autoClear = true;
       renderer.setRenderTarget(main);
       renderer.render(scene, camera);
+      if (mode === "lite") {
+        fu.tColor.value = main.texture; fu.tDepth.value = main.depthTexture; fu.tSoft.value = main.texture; fu.tBloom.value = main.texture;
+        fu.useDepth.value = 0; fu.lite.value = 1; fu.dof.value = 0; fu.bloomThresh.value = g.bloomThresh;
+        fu.fxaa.value = msaa ? 0 : 1; fu.sharpen.value = 0;
+        fu.res.value.set(w, h); fu.cNear.value = camera.near; fu.cFar.value = camera.far;
+        fu.exposure.value = g.exposure; fu.bloom.value = g.bloom * 0.6; fu.contrast.value = g.contrast; fu.sat.value = g.sat;
+        fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000;
+        fu.tint.value.set(...g.tint); fu.lift.value.set(...g.lift);
+        fu.tLut.value = g.lut ?? null; fu.lutAmt.value = g.lut ? (g.lutAmt ?? 1) : 0;
+        pass(finalMat, null);
+        renderer.toneMapping = tm;
+        renderer.autoClear = auto;
+        return;
+      }
+      fu.lite.value = 0; fu.dof.value = tier === "high" ? 0.75 : 0; fu.fxaa.value = tier === "medium" && !msaa ? 1 : 0;
       // half size copy, then the bloom chain
       du.tSrc.value = main.texture; du.texel.value.set(0.5 / w, 0.5 / h); du.thresh.value = 0;
       pass(downMat, soft);

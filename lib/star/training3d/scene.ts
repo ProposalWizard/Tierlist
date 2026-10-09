@@ -18,6 +18,7 @@ import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y } from "../pitch";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
+import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, KICK_FALLBACK, loadAnims3d } from "../three3d/footballAnims";
@@ -443,6 +444,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    governed.frame(now);
     clock += dt * 1000;
     for (const who of ["you", "mate"] as Who[]) {
       const s = people[who];
@@ -501,6 +503,11 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     camera.lookAt(camLook);
     renderer.render(scene, camera);
   };
+  // the governor (three3d/governor.ts): slow for 2.5 s → one rung down
+  const governed = governScene(THREE, {
+    name: "training", start: tier, renderer, scene, camera, lights: [sun], basePR: renderer.getPixelRatio(),
+    shadowSize: prof.shadowScale >= 1 ? 2048 : 1024, keepCasting: (m: any) => m === ball || m.parent === ball,
+  });
   renderer.setAnimationLoop(frame);
   // test pages: where everyone is (read by the playtest scripts only)
   (window as any).__training3d = {
@@ -572,6 +579,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);
+      governed.dispose();
       timers = [];
       release(root);
     },

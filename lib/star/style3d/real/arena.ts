@@ -155,15 +155,30 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
 
   // ── LED boards ──
   const ledMats: any[] = [];
+  // One LED material per scroll speed (9 Oct 2026, lag): each board used to be a
+  // six-material box (six draws) with its own texture copy. Now the box is plain
+  // dark concrete (merged with the rest) and the screen is a plane whose UVs
+  // carry the board's length, sharing its speed's material: a handful of draws in all.
+  const ledBySpeed = new Map<number, any>();
+  const ledMatFor = (speed: number) => {
+    let m = ledBySpeed.get(speed);
+    if (!m) {
+      const t = keep(maps.led.clone());
+      t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
+      m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
+      m.userData.speed = speed;
+      ledMats.push(m);
+      ledBySpeed.set(speed, m);
+    }
+    return m;
+  };
   const ledBoard = (len: number, h: number, scrollSpeed: number) => {
-    const t = keep(maps.led.clone());
-    t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
-    t.repeat.set(len / 13, 1);
-    const m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
-    m.userData.speed = scrollSpeed;
-    ledMats.push(m);
-    const box = new T.Mesh(new T.BoxGeometry(len, h, 0.18), [darkConcrete, darkConcrete, darkConcrete, darkConcrete, m, darkConcrete]);
-    keep(box.geometry);
+    const box = new T.Mesh(keep(new T.BoxGeometry(len, h, 0.18)), darkConcrete);
+    const sg = keep(new T.PlaneGeometry(len, h));
+    const uv = sg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / 13));
+    sg.translate(0, 0, 0.091);
+    const screen = new T.Mesh(sg, ledMatFor(scrollSpeed));
+    box.add(screen);
     return box;
   };
   const boardRing = () => {

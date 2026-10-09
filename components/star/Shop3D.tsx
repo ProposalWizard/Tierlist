@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d/catalogue";
+import { look3dStyle } from "@/lib/star/look3dStyle";
 import type { ShopController, KitColours } from "@/lib/star/shop3d/scene";
 import { CLUB_KITS, kitsOf } from "@/lib/star/kits";
 import { formatMoney } from "@/lib/star/money";
@@ -71,12 +72,14 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
   // Prices: the career's own (boot sponsor, cans off your wage) or the list prices.
   const careerKey = career ? `${career.contract.wage}|${hasBootDeal(career)}` : "";
   const displays = useMemo(() => {
-    if (!career) return shopDisplays();
+    // look H: the motorbike and the jet on the turntable, and the homes' model table
+    const h = look3dStyle() === "h";
+    if (!career) return shopDisplays({}, { h });
     const prices: ShopPrices = {
       boot: (p) => bootPrice(career, p),
       can: (c) => kibCanPrice(c, career.contract.wage),
     };
-    return shopDisplays(prices);
+    return shopDisplays(prices, { h });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [careerKey]);
   // The level the shop opens on: the one priced for your league.

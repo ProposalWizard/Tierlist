@@ -4,6 +4,9 @@
  * this puts a small readout in the corner of every 3D place —
  *   fps · slowest frame in the last 2 s · draw calls · triangles · pixel ratio · tier
  * — for admins and testers (and anyone with ?fps=1; ?fps=0 hides it).
+ * Second pass (9 Oct 2026): also shadow-map draws, skinned draws, post passes,
+ * JS ms per frame (frameStats.ts) and the governor's rung (governor.ts).
+ * The same numbers sit on window.__frame3d for measuring scripts.
  *
  * One file, no scene changes. It counts at the WebGL level (the browser's own
  * drawElements / drawArrays), so every renderer on the page is seen — the
@@ -14,6 +17,8 @@
  * second. It hides 3 s after the last 3D frame (leaving a 3D place).
  */
 import { quality3dTier } from "./quality";
+import { currentGovernor } from "./governor";
+import { startFrameStats } from "./frameStats";
 
 let installed = false;
 
@@ -31,37 +36,7 @@ export function installFrameMeter(): void {
   installed = true;
   void wanted().then((on) => {
     if (!on) return;
-    let inFrame = false, calls = 0, tris = 0, lastCalls = 0, lastTris = 0, lastStart = 0, lastDraw = 0, pr = 1;
-    const starts: number[] = [];
-    const gaps: { t: number; ms: number }[] = [];
-    const endFrame = () => { inFrame = false; lastCalls = calls; lastTris = tris; calls = 0; tris = 0; };
-    const count = (gl: WebGLRenderingContext | WebGL2RenderingContext, mode: number, n: number) => {
-      const now = performance.now();
-      if (!inFrame) {
-        inFrame = true;
-        if (lastStart) gaps.push({ t: now, ms: now - lastStart });
-        starts.push(now);
-        lastStart = now;
-        queueMicrotask(endFrame);
-        const c = gl.canvas as HTMLCanvasElement;
-        if (c && c.clientWidth > 0) pr = c.width / c.clientWidth;
-      }
-      calls++;
-      if (mode === 4) tris += n / 3;
-      lastDraw = now;
-    };
-    const wrap = (proto: any) => {
-      if (!proto || proto.__frameMeter) return;
-      proto.__frameMeter = true;
-      const de = proto.drawElements, da = proto.drawArrays, dei = proto.drawElementsInstanced, dai = proto.drawArraysInstanced;
-      proto.drawElements = function (m: number, c: number, t: number, o: number) { count(this, m, c); return de.call(this, m, c, t, o); };
-      proto.drawArrays = function (m: number, f: number, c: number) { count(this, m, c); return da.call(this, m, f, c); };
-      if (dei) proto.drawElementsInstanced = function (m: number, c: number, t: number, o: number, k: number) { count(this, m, c * k); return dei.call(this, m, c, t, o, k); };
-      if (dai) proto.drawArraysInstanced = function (m: number, f: number, c: number, k: number) { count(this, m, c * k); return dai.call(this, m, f, c, k); };
-    };
-    wrap(typeof WebGLRenderingContext !== "undefined" ? WebGLRenderingContext.prototype : null);
-    wrap(typeof WebGL2RenderingContext !== "undefined" ? WebGL2RenderingContext.prototype : null);
-
+    const st = startFrameStats();
     const el = document.createElement("div");
     el.setAttribute("data-frame-meter", "");
     Object.assign(el.style, {
@@ -71,13 +46,11 @@ export function installFrameMeter(): void {
     } as Partial<CSSStyleDeclaration>);
     document.body.appendChild(el);
     window.setInterval(() => {
-      const now = performance.now();
-      while (starts.length && now - starts[0] > 2000) starts.shift();
-      while (gaps.length && now - gaps[0].t > 2000) gaps.shift();
-      if (now - lastDraw > 3000) { el.style.display = "none"; return; }
-      const fps = starts.length / 2;
-      const slow = gaps.reduce((m, g) => Math.max(m, g.ms), 0);
-      el.textContent = `${fps.toFixed(0)} fps  worst ${slow.toFixed(0)} ms\n${lastCalls} draws  ${(lastTris / 1000).toFixed(0)}k tris\npx ${pr.toFixed(2)}  ${quality3dTier()}`;
+      const f = st.summary();
+      if (!f) { el.style.display = "none"; return; }
+      const g = currentGovernor();
+      const gov = g ? `${g.tier} (rung ${g.index}${g.index !== g.startIndex ? ` from ${g.startIndex}` : ""})` : quality3dTier();
+      el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}`;
       el.style.display = "block";
     }, 500);
   });

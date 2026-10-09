@@ -49,21 +49,25 @@ export default function StarTraining3DDevPage() {
 
 const OPEN: { id: DrillId | "picker"; label: string }[] = [
   { id: "picker", label: "Picker" }, { id: "crossbar", label: "Crossbar" }, { id: "two-touch", label: "Two Touch" }, { id: "free-roam", label: "Free Roam" },
-  { id: "headers-volleys", label: "Head/Volley" }, { id: "wembley", label: "Wembley" },
+  { id: "headers-volleys", label: "Head/Volley" }, { id: "wembley", label: "Wembley" }, { id: "pace", label: "Pace" },
 ];
 
 function Body() {
   const [key, setKey] = useState(0);
   const [last, setLast] = useState<TrainingGateResult | null>(null);
-  // ?drill=two-touch|free-roam|crossbar|headers-volleys|wembley opens a drill straight away (no picker);
+  // ?drill=two-touch|free-roam|crossbar|headers-volleys|wembley|pace opens a drill straight away (no picker);
   // &mode=doubles picks Wembley Doubles (its pre-screen still asks how many)
   const [drill, setDrill] = useState<DrillId | "picker">("picker");
   const [mode, setMode] = useState<string | undefined>(undefined);
+  // &pace=85: your pace for this test career (Pace Sprint: feel the top speed change)
+  const [pace, setPace] = useState<number | null>(null);
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search);
     const q = qs.get("drill");
     if (q && OPEN.some((o) => o.id === q)) setDrill(q as DrillId);
     setMode(qs.get("mode") ?? undefined);
+    const pc = Number(qs.get("pace"));
+    if (qs.get("pace") && Number.isFinite(pc)) setPace(Math.max(0, Math.min(100, pc)));
   }, []);
   const career = useMemo(() => {
     const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
@@ -71,8 +75,9 @@ function Body() {
     c.squad = generateSquad(7 + key);
     // a new team-mate (and his shots) every Restart
     c.week = 1 + key;
+    if (pace !== null) c.skills = { ...c.skills, pace };
     return c;
-  }, [key]);
+  }, [key, pace]);
 
   return (
     <>
