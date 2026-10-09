@@ -640,6 +640,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       button: e.button, buttons: e.buttons, bubbles: true, cancelable: true, composed: true,
     }));
   };
+  /** How near the ball's picture a press grabs it, CSS px (a fingertip either side of a small ball). */
+  const GRAB_PX = 48;
+  /** Where the ball is on the glass right now (client px), or null. */
+  const ballOnGlass = (): { x: number; y: number } | null => {
+    if (!lastFrame?.ball || !ball.visible) return null;
+    const r = container.getBoundingClientRect();
+    const v = ball.position.clone().project(camera);
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  };
   const onDown = (e: PointerEvent) => {
     if (!visible || touch.id !== -1) return;
     const g = groundAt(e.clientX, e.clientY);
@@ -649,8 +658,17 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
     const f = lastFrame;
     touch.id = e.pointerId; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
-    touch.shot = !!f?.ball && (f.phase === "aim") && Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2;
-    send("pointerdown", e, at);
+    // A press on or near the ball AS SEEN (its 3D picture, lifted off the grass
+    // and drawn big) grabs the ball: the 2D game is pressed exactly on its own
+    // ball, so the aim starts as surely as a press on the 2D ball does.
+    const b3 = ballOnGlass();
+    const nearBall = !!b3 && Math.hypot(e.clientX - b3.x, e.clientY - b3.y) <= GRAB_PX;
+    touch.shot = !!f?.ball && f.phase === "aim" && (nearBall || Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2);
+    if (touch.shot && f?.ball) {
+      const b2 = to2dClient(f.ball);
+      if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
+    }
+    send("pointerdown", e, touch.start2);
   };
   const moveTarget = (e: PointerEvent) => {
     const g = groundAt(e.clientX, e.clientY);
@@ -790,11 +808,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       stadium?.update(dt, f.t);
       drawArrow(f);
       // dev: where the 3D ball is on the glass (the filming tool drags from it)
-      if (fb0) {
-        const r = container.getBoundingClientRect();
-        tmpV.set(fb0.x - CX, 0, fb0.y).project(camera);
-        (window as unknown as { __engineView3dBall?: { x: number; y: number } }).__engineView3dBall = { x: r.left + (tmpV.x + 1) / 2 * r.width, y: r.top + (1 - tmpV.y) / 2 * r.height };
-      }
+      (window as unknown as { __engineView3dBall?: { x: number; y: number } | null }).__engineView3dBall = visible ? ballOnGlass() : null;
       // frame-stepped filming (lib/star/virtualClock.ts) draws only the frames it films
       if ((window as unknown as { __view3dSkipDraw?: boolean }).__view3dSkipDraw) { leanAll(); return; }
       if (f.phase === "contact") return; // the strike screen covers the pitch
@@ -813,7 +827,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     setTod(t) { hTod = t; h?.setTod(t); },
     setFigureScale(k) { figScale = k; },
     setTilt(d) { tvTilt = d; },
-    setVisible(on) { visible = on; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
+    setVisible(on) { visible = on; if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
       hball?.dispose(); hball = null;
