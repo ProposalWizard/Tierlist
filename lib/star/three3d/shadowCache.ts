@@ -228,17 +228,31 @@ const bodyOk = (o: any) => {
 
 // ── the installer ──
 
-interface Installed { stats: ShadowCacheStats; invalidate(): void }
+interface Installed {
+  stats: ShadowCacheStats;
+  invalidate(): void;
+  /** A light leaving for good (its scene closed): free its two kept maps now, not whenever the browser collects them. */
+  forget(light: unknown): void;
+}
 
+// the address bar is read once per page (these ran every shadow frame)
+const urlFlag = (() => {
+  const seen = new Map<string, boolean>();
+  return (k: string) => {
+    let v = seen.get(k);
+    if (v === undefined) { try { v = new URLSearchParams(window.location.search).get(k) === "0"; } catch { v = false; } seen.set(k, v); }
+    return v;
+  };
+})();
 export function shadowCacheOff(): boolean {
   if (typeof window === "undefined") return false;
   if ((window as any).__shadowCacheOff) return true;
-  try { return new URLSearchParams(window.location.search).get("shadowcache") === "0"; } catch { return false; }
+  return urlFlag("shadowcache");
 }
 function shadowBodyOff(): boolean {
   if (typeof window === "undefined") return false;
   if ((window as any).__shadowBodyOff) return true;
-  try { return new URLSearchParams(window.location.search).get("shadowbody") === "0"; } catch { return false; }
+  return urlFlag("shadowbody");
 }
 
 /**
@@ -522,7 +536,18 @@ export function installShadowCache(T: Three, renderer: THREE.WebGLRenderer): Ins
     }
   };
 
-  const inst: Installed = { stats, invalidate() { forced = 1; } };
+  const inst: Installed = {
+    stats,
+    invalidate() { forced = 1; },
+    forget(l: any) {
+      const s = lights.get(l);
+      if (!s) return;
+      if (l.shadow && (l.shadow.map === s.cacheRT || l.shadow.map === s.dynRT)) l.shadow.map = null;
+      s.cacheRT?.dispose(); s.dynRT?.dispose();
+      s.cacheRT = null; s.dynRT = null; s.ready = false;
+      lights.delete(l);
+    },
+  };
   r.__shadowCache = inst;
   return inst;
 }

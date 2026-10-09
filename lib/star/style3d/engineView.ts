@@ -26,7 +26,7 @@ import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer, warmUp } from "../three3d/perf";
+import { acquireRenderer, disposeObject3D, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
@@ -1775,6 +1775,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       hball?.dispose(); hball = null;
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
+      // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here
+      spareBins.forEach((l) => { for (const p of l) disposeObject3D(p.root); }); spareBins.clear();
       numberCache.forEach((t) => t.dispose()); numberCache.clear();
       new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
       svg.remove();

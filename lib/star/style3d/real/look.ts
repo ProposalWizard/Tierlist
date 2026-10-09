@@ -418,6 +418,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     },
     dispose() {
       dead = true;
+      // the lights' kept shadow maps (two a light, 8 MB each at 1024 on Medium) freed now: the match's
+      // renderer is shared, so they used to wait for the browser's own clean-up (lag pass 3)
+      for (const l of [sun, ...floods]) { (renderer as any).__shadowCache?.forget?.(l); l.shadow?.map?.dispose?.(); }
       baked?.dispose(); baked = null;
       post.dispose();
       hball?.dispose();
