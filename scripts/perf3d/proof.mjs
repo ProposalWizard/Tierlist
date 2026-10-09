@@ -18,6 +18,7 @@ const split = args.includes("--split");
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--js-flags=--max-old-space-size=1024"] });
 const errs = [];
 let page = null;
+// --beforeq=&a=0&b=0: what "before" switches off (default: every saving of this pass)
 // --split: "before" is its own page with every saving of this pass off from the start (?shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0),
 // for savings that are built into the shaders (lights only where they reach); else one page, switched live.
 async function open(off) {
@@ -51,7 +52,7 @@ async function open(off) {
     P.deleteTexture = function (x) { bytes.delete(x); return dt.call(this, x); };
     window.__gpuTexMB = () => { let b = 0; bytes.forEach((v) => b += v); return +(b / 1048576).toFixed(1); };
   });
-  await page.goto(`http://localhost:3502/index.html?gov=0${off ? "&shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0" : ""}`);
+  await page.goto(`http://localhost:3502/index.html?gov=0${off ? flag("beforeq", "&shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0") : ""}`);
   await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [scene, opts]);
   await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
   if (await page.evaluate(() => window.__err)) { console.log(JSON.stringify({ scene, err: await page.evaluate(() => window.__err), errs })); process.exit(1); }

@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { startGarden } from "@/lib/star/garden3d/scene";
 import { startShop } from "@/lib/star/shop3d/scene";
+import { startCasino } from "@/lib/star/casino3d/scene";
 import { shopDisplays } from "@/lib/star/shop3d/catalogue";
 import { createSigningScene } from "@/lib/star/signing3dScene";
 import * as P from "@/lib/star/three3d/perf";
@@ -99,6 +100,15 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = h;
     return true;
   },
+  async casino(opts: any = {}) {
+    M.t0 = performance.now();
+    const c = await startCasino(stage(), { onNear() {}, onFps() {}, onArrive() {} } as any, {
+      quality: opts.quality ?? "high", fixedStep: 1 / 30, kit: KIT, number: 10, player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" } as any,
+    });
+    M.ready = performance.now();
+    M.ctrl = c;
+    return true;
+  },
   /** The real game's 3D view (career), fed one still made-up frame of a chance, 22 men. */
   async career(opts: any = {}) {
     M.t0 = performance.now();
@@ -145,3 +155,9 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
   },
   dispose() { M.ctrl?.dispose?.(); M.ctrl = null; },
 };
+
+// ?auto=<scene>: start a scene on load (tools/bake3d/capture.mjs opens the page and waits for window.__M.ready)
+{
+  const auto = new URLSearchParams(location.search).get("auto");
+  if (auto && (window as any).H[auto]) void (window as any).H[auto]({ quality: new URLSearchParams(location.search).get("q") ?? "high" });
+}

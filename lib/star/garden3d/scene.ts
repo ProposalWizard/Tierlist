@@ -62,6 +62,7 @@ import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footba
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { cullSkinned } from "../three3d/cullPeople";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -1837,6 +1838,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
           entry.drink = { a, sit, next: 4, t: 0 };
         }
       }
+      cullSkinned(THREE, entry.root); // not drawn while the bench is off screen (three3d/cullPeople.ts)
       mates.push(entry);
     });
 
@@ -2045,6 +2047,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       root.rotation.y = man.yaw;
       scene.add(root);
       man.blob = blob(0.85, 0.85, man.x, man.z, 0.55);
+      cullSkinned(THREE, root); // the training pitch's men are not drawn while it is off screen (three3d/cullPeople.ts)
       pitchMen.push(man);
     });
     if (pitchMen.some((m) => m.role === "passB")) {

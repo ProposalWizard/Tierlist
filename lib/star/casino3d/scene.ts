@@ -222,7 +222,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
   // New: the broadcast picture indoors (bloom, grade), with real 4x antialias on Medium and High
-  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: null, msaa: tier === "low" ? 0 : 4 }) : null;
+  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: "casino", msaa: tier === "low" ? 0 : 4 }) : null;
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 50);
 
   // ── Light: warm, low, rich (New: less flat fill; ./hRoom.ts adds a key light with shadows) ──
