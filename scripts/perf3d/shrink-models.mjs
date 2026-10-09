@@ -94,9 +94,16 @@ const POLICY = {
   "star/people3d/manager.glb": PEOPLE.old,
   // Style A bodies (scripts/people3d/build_toon_bodies.py): float, quantized here like the old bodies
   // (extras.quant written; people3d.ts dequantizes). occlusionTexture is the kit/skin/hair MASK.
-  "star/people3d/toon-c1.glb": PEOPLE.old,
-  "star/people3d/toon-c2.glb": PEOPLE.old,
-  "star/people3d/toon-c3.glb": PEOPLE.old,
+  // Style A heads (Harry, 9 Oct 2026: "Stylised"; "use the credits to improve the models"):
+  // six players in a kit + two in suits, weighted fingers (build_toon_bodies.py)
+  "star/people3d/toon-p1.glb": PEOPLE.old,
+  "star/people3d/toon-p2.glb": PEOPLE.old,
+  "star/people3d/toon-p3.glb": PEOPLE.old,
+  "star/people3d/toon-p4.glb": PEOPLE.old,
+  "star/people3d/toon-p5.glb": PEOPLE.old,
+  "star/people3d/toon-p6.glb": PEOPLE.old,
+  "star/people3d/toon-mgr.glb": PEOPLE.old,
+  "star/people3d/toon-mgr2.glb": PEOPLE.old,
   // The old shop/garden player: dressInKit (shop3d/scene.ts) reads positions
   // in metres and skinWeight.array as 0..1 floats, so those two stay float.
   "star/shop3d/character.glb": { q: /^(NORMAL|TEXCOORD_\d+|COLOR_\d+)$/, keepWeights: true, webp: true },

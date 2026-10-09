@@ -7,7 +7,7 @@ import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { setToonYou, resolveToonBody } from "@/lib/star/style3d/toon/bodies";
+import { setToonYou, resolveToonBody, resolveToonHead } from "@/lib/star/style3d/toon/bodies";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -1053,14 +1053,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
 
   // Settings → Your look (Style A 3D people): body, skin tone, hair colour.
-  const handleSetLook3d = useCallback((look: Partial<Pick<CareerState["player"], "body3d" | "skinTone" | "hairColour">>) => {
+  const handleSetLook3d = useCallback((look: Partial<Pick<CareerState["player"], "body3d" | "head3d" | "skinTone" | "hairColour">>) => {
     setCareer(c => (c ? { ...c, player: { ...c.player, ...look } } : c));
   }, []);
   // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
-  const yourBody3d = career?.player.body3d, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
+  const yourBody3d = career?.player.body3d, yourHead3d = career?.player.head3d, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
   useEffect(() => {
-    setToonYou({ body: resolveToonBody(yourBody3d), skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
-  }, [yourBody3d, yourSkin3d, yourHair3d]);
+    setToonYou({ body: resolveToonBody(yourBody3d), head: resolveToonHead(yourHead3d), skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
+  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c

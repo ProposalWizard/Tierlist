@@ -29,10 +29,10 @@ import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality
 import { acquireRenderer, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
 import { withMeshopt } from "../three3d/meshopt";
-import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, type PersonLook } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { playerStyleLook } from "./toon/look";
-import { TOON_BODIES, toonBodyFor, toonHairFor, toonYou, type ToonBody } from "./toon/bodies";
+import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
 import { motionLook } from "../motionLook";
@@ -524,14 +524,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * and a new man just takes one and is dressed (cheap: colours and a number).
    */
   const SPARE_TARGET = 24;
-  // Style A (Player style: New): a man's body is seeded by who he is, so spares are kept per body.
+  // Style A (Player style: New): a man's head is seeded by who he is, so spares are kept per head
+  // (his build is a scale, set again when a spare is used).
   const toonOn = playerStyleLook() === "new";
   const spareBins = new Map<string, Person3D[]>();
-  const bin = (b?: ToonBody) => { const k = b ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
-  const spares = { push: (p: Person3D) => bin(p.toon).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
+  const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
+  const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
-  const buildShell = (tb?: ToonBody) => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: toonOn ? (tb ?? TOON_BODIES[built % TOON_BODIES.length]) : undefined });
+  const buildShell = (th?: ToonHead) => {
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
     if (fb) addClips(THREE, p, fb as any);
     p.root.visible = false;
     built++;
@@ -541,11 +542,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const topUpSpares = () => { if (built < SPARE_TARGET) spares.push(buildShell()); };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
     const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
-    const spare = bin(tb).pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb });
+    const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
+    const spare = bin(th).pop();
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
     if (!spare) built++;
+    if (tb) setToonBuild(p, tb);
     const look: PersonLook = {
-      skin: sid === "you" && toonOn ? toonYou().skin : SKINS[hashOf(sid) % SKINS.length],
+      skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
       accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],

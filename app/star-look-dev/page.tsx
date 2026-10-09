@@ -14,7 +14,7 @@ import YourLookPanel, { type YourLook } from "@/components/star/YourLookPanel";
 import type { StarPlayer } from "@/lib/star/types";
 import type { Person3D } from "@/lib/star/people3d";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
-import { setToonYou, resolveToonBody } from "@/lib/star/style3d/toon/bodies";
+import { setToonYou, resolveToonBody, resolveToonHead } from "@/lib/star/style3d/toon/bodies";
 import { previewPlayerStyleLook, usePlayerStyleLook } from "@/lib/star/style3d/toon/look";
 
 const KIT = { shirt: "#c8102e", trim: "#ffffff" };
@@ -31,10 +31,12 @@ export default function StarLookDevPage() {
     if (q === "old" || q === "new") previewPlayerStyleLook(q);
     const b = new URLSearchParams(window.location.search).get("body");
     if (b) setLook((l) => ({ ...l, body3d: resolveToonBody(b) }));
+    const h = new URLSearchParams(window.location.search).get("head");
+    if (h) setLook((l) => ({ ...l, head3d: resolveToonHead(h) }));
   }, []);
 
   useEffect(() => {
-    setToonYou({ body: resolveToonBody(look.body3d), skin: skinToneHex(look.skinTone), hair: hairColourHex(look.hairColour) });
+    setToonYou({ body: resolveToonBody(look.body3d), head: resolveToonHead(look.head3d), skin: skinToneHex(look.skinTone), hair: hairColourHex(look.hairColour) });
     rebuild.current?.();
   }, [look]);
 
@@ -129,7 +131,7 @@ export default function StarLookDevPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [style]);
 
-  const player = { skinTone: look.skinTone ?? "tan", hairColour: look.hairColour, body3d: look.body3d } as StarPlayer;
+  const player = { skinTone: look.skinTone ?? "tan", hairColour: look.hairColour, body3d: look.body3d, head3d: look.head3d } as StarPlayer;
   return (
     <div className="flex min-h-screen flex-col bg-gray-950 text-white">
       <div className="px-3 pt-3 text-sm font-black">Player style: {style === "new" ? "New (Style A)" : "Old"}</div>

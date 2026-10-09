@@ -1120,22 +1120,42 @@ export const ASSETS_3D: Asset3dFolder[] = [
   },
   {
     "id": "toon",
-    "title": "Style A bodies: C1, C2, C3 (every 3D person, Player style: New)",
+    "title": "Style A heads: six players, two in suits (every 3D person, Player style: New)",
     "kind": "model",
     "made": "scripts/people3d/build_toon_bodies.py (Higgsfield-generated bodies, rigged to the MakeHuman skeleton)",
-    "note": "Three bodies at 1.83 m, ~9.4-10k triangles each, a grey-kit colour texture and a kit/skin/hair mask, recoloured live in the Style A shader (lib/star/style3d/toon). ~175 KB each (packed by scripts/perf3d/shrink-models.mjs). Clips: star/people3d/anims.glb.",
+    "note": "Eight stylised people at 1.83 m (toon-p1..p6 in a kit, toon-mgr/mgr2 in suits), ~14.5k triangles each, weighted fingers, a grey-kit colour texture and a kit/skin/hair mask, recoloured live in the Style A shader (lib/star/style3d/toon). Builds (Slim/Strong/Tall) are a scale, not a file. Packed by scripts/perf3d/shrink-models.mjs. Clips: star/people3d/anims.glb.",
     "files": [
       {
-        "path": "/star/people3d/toon-c1.glb",
-        "bytes": 181520
+        "path": "/star/people3d/toon-mgr.glb",
+        "bytes": 227628
       },
       {
-        "path": "/star/people3d/toon-c2.glb",
-        "bytes": 179128
+        "path": "/star/people3d/toon-mgr2.glb",
+        "bytes": 210536
       },
       {
-        "path": "/star/people3d/toon-c3.glb",
-        "bytes": 176384
+        "path": "/star/people3d/toon-p1.glb",
+        "bytes": 223228
+      },
+      {
+        "path": "/star/people3d/toon-p2.glb",
+        "bytes": 240512
+      },
+      {
+        "path": "/star/people3d/toon-p3.glb",
+        "bytes": 226288
+      },
+      {
+        "path": "/star/people3d/toon-p4.glb",
+        "bytes": 225640
+      },
+      {
+        "path": "/star/people3d/toon-p5.glb",
+        "bytes": 235740
+      },
+      {
+        "path": "/star/people3d/toon-p6.glb",
+        "bytes": 231648
       }
     ]
   },
@@ -1164,8 +1184,16 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "note": "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop.",
     "files": [
       {
+        "path": "/star/shop3d/items/bike-hf.glb",
+        "bytes": 392612
+      },
+      {
         "path": "/star/shop3d/items/boot-classic-hf.glb",
         "bytes": 348916
+      },
+      {
+        "path": "/star/shop3d/items/boot-control-hf.glb",
+        "bytes": 275836
       },
       {
         "path": "/star/shop3d/items/boot-control.glb",
@@ -1176,12 +1204,20 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 69376
       },
       {
+        "path": "/star/shop3d/items/boot-elite-hf.glb",
+        "bytes": 240664
+      },
+      {
         "path": "/star/shop3d/items/boot-elite.glb",
         "bytes": 67056
       },
       {
         "path": "/star/shop3d/items/boot-hf.glb",
         "bytes": 276272
+      },
+      {
+        "path": "/star/shop3d/items/boot-maestro-hf.glb",
+        "bytes": 229828
       },
       {
         "path": "/star/shop3d/items/boot-maestro.glb",
@@ -1200,8 +1236,16 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 69144
       },
       {
+        "path": "/star/shop3d/items/boot-starter-hf.glb",
+        "bytes": 186676
+      },
+      {
         "path": "/star/shop3d/items/boot-starter.glb",
         "bytes": 66808
+      },
+      {
+        "path": "/star/shop3d/items/can-kib-hf.glb",
+        "bytes": 53604
       },
       {
         "path": "/star/shop3d/items/car-1.glb",
@@ -1220,6 +1264,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 168800
       },
       {
+        "path": "/star/shop3d/items/car-classic-hf.glb",
+        "bytes": 415152
+      },
+      {
         "path": "/star/shop3d/items/car-classic.glb",
         "bytes": 200612
       },
@@ -1228,8 +1276,84 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 463340
       },
       {
+        "path": "/star/shop3d/items/car-hatch-hf.glb",
+        "bytes": 362244
+      },
+      {
+        "path": "/star/shop3d/items/car-sports-hf.glb",
+        "bytes": 340276
+      },
+      {
+        "path": "/star/shop3d/items/car-super-hf.glb",
+        "bytes": 360320
+      },
+      {
+        "path": "/star/shop3d/items/car-suv-hf.glb",
+        "bytes": 394252
+      },
+      {
         "path": "/star/shop3d/items/car-suv.glb",
         "bytes": 167936
+      },
+      {
+        "path": "/star/shop3d/items/home-estate-hf.glb",
+        "bytes": 327948
+      },
+      {
+        "path": "/star/shop3d/items/home-flat1-hf.glb",
+        "bytes": 264944
+      },
+      {
+        "path": "/star/shop3d/items/home-flat2-hf.glb",
+        "bytes": 338452
+      },
+      {
+        "path": "/star/shop3d/items/home-house1-hf.glb",
+        "bytes": 352200
+      },
+      {
+        "path": "/star/shop3d/items/home-house2-hf.glb",
+        "bytes": 329244
+      },
+      {
+        "path": "/star/shop3d/items/home-island-hf.glb",
+        "bytes": 293764
+      },
+      {
+        "path": "/star/shop3d/items/home-penthouse-hf.glb",
+        "bytes": 365696
+      },
+      {
+        "path": "/star/shop3d/items/home-stable-hf.glb",
+        "bytes": 362088
+      },
+      {
+        "path": "/star/shop3d/items/home-villa-hf.glb",
+        "bytes": 272804
+      },
+      {
+        "path": "/star/shop3d/items/jet-hf.glb",
+        "bytes": 305708
+      },
+      {
+        "path": "/star/shop3d/items/jewel-diamond-hf.glb",
+        "bytes": 198328
+      },
+      {
+        "path": "/star/shop3d/items/jewel-silver-hf.glb",
+        "bytes": 280608
+      },
+      {
+        "path": "/star/shop3d/items/watch-gold-hf.glb",
+        "bytes": 217824
+      },
+      {
+        "path": "/star/shop3d/items/watch-luxury-hf.glb",
+        "bytes": 343680
+      },
+      {
+        "path": "/star/shop3d/items/watch-smart-hf.glb",
+        "bytes": 165496
       }
     ]
   }

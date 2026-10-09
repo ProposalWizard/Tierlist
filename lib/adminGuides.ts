@@ -1141,7 +1141,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved, and your phone's Settings are not changed. Add ?pstyle=old to the address to see the same three people in today's bodies (Settings → Look → Player style: Old)."],
     inGame: ["Every 3D person: the real game in 3D, Free Roam and the 3D drills, the dribble runs, the shop, garden and casino, the signing, the walk-out and ovation, and the cut scenes. In a career, Settings → Your look saves your choice on the career."],
-    dev: "lib/star/style3d/toon/ (shader.ts the material, bodies.ts the seeded picks and kit colours, look.ts the switch); lib/star/people3d.ts loadPeople3d/makePerson3d (who, you, suit, toonBody); the bodies public/star/people3d/toon-c1..c3.glb from scripts/people3d/build_toon_bodies.py. Stills: window.__lookReady, window.__lookStats (draws and triangles for one person).",
+    dev: "lib/star/style3d/toon/ (shader.ts the material, bodies.ts the seeded picks and kit colours, look.ts the switch); lib/star/people3d.ts loadPeople3d/makePerson3d (who, you, suit, toonBody, toonHead); the heads public/star/people3d/toon-p1..p6.glb and toon-mgr/mgr2.glb from scripts/people3d/build_toon_bodies.py. Stills: window.__lookReady, window.__lookStats (draws and triangles for one person).",
   },
   "/star-people-dev": {
     title: "Cut-scene people",

@@ -34,8 +34,9 @@ import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook } from "./style3d/toon/look";
-import { TOON_BODIES, TOON_FILES, toonBodyFor, toonYou, toonWearsSuit, type ToonBody } from "./style3d/toon/bodies";
+import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms } from "./style3d/toon/shader";
+import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
 type Three = typeof import("three");
 
@@ -145,8 +146,12 @@ export interface Person3D {
   unit: number;
   /** The one body only: each hand's fingers. */
   fingers?: Record<"L" | "R", Record<FingerName, FingerRig>>;
-  /** Style A (Settings → Look → "Player style: New"): which of the three bodies. */
+  /** Style A (Settings → Look → "Player style: New"): his build (Slim / Strong / Tall). */
   toon?: ToonBody;
+  /** Style A: his head (face and haircut; one generated body each). */
+  toonHead?: ToonHead;
+  /** Style A: head + build, for scenes that keep spare bodies (toonKey). */
+  toonKey?: string;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -179,12 +184,31 @@ export interface PersonLook {
 
 const cache = new Map<string, Promise<GLTF>>();
 
+/**
+ * Style A, ONE head only (Home and the title screen show just you, so they
+ * never fetch the other heads). makePerson3d reads it like loadPeople3d's set.
+ */
+export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> }, head: ToonHead): Promise<GLTF> {
+  const url = TOON_FILES[head];
+  let g = cache.get(url);
+  if (!g) {
+    g = loadGltfCached<GLTF>(loader, url);
+    g.catch(() => cache.delete(url));
+    cache.set(url, g);
+  }
+  return g.then((one) => {
+    const set: GLTF[] = [];
+    set[TOON_HEADS.indexOf(head)] = one;
+    return { ...one, toonBodies: set, toonWhich: TOON_SUIT_HEADS.includes(head) ? "manager" : "player" } as GLTF;
+  });
+}
+
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
 export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
-  // Style A (Settings → Look → "Player style: New", the default): the three new
-  // bodies for every person; makePerson3d picks one per person.
+  // Style A (Settings → Look → "Player style: New", the default): every head
+  // (players' and the suits'); makePerson3d picks one per person.
   if (which !== "anims" && playerStyleLook() === "new") {
-    const all = Promise.all(TOON_BODIES.map((b) => {
+    const all = Promise.all(TOON_HEADS.map((b) => {
       const url = TOON_FILES[b];
       let g = cache.get(url);
       if (!g) {
@@ -439,8 +463,10 @@ export interface MakePersonOptions {
   /** Style A: who this is (a stable id seeds his body), or `you` for your player (your chosen body). */
   who?: string;
   you?: boolean;
-  /** Style A: this body exactly (spare bodies built before anyone is known). */
+  /** Style A: this build exactly (spare bodies built before anyone is known). */
   toonBody?: ToonBody;
+  /** Style A: this head exactly. */
+  toonHead?: ToonHead;
   /** Style A: smart clothes (coat, trousers, shirt and tie) instead of a kit. Unset: managers do. */
   suit?: boolean;
   /** Style A: the look being judged (heads-sheet variants). Unset: TOON_LOOK_DEFAULT. */
@@ -462,11 +488,12 @@ export interface ToonLook {
   hands: number;
   neck: number;
 }
-export const TOON_LOOK_DEFAULT: ToonLook = { soft: false, faceLift: 0, hairSheen: false, outlineThin: 1, head: 1, hands: 1, neck: 1 };
+/** Harry's pick (9 Oct 2026, the heads sheet): "Stylised", with the hands made smaller (0.88: "what is happening with those arms/hands?"). */
+export const TOON_LOOK_DEFAULT: ToonLook = { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1.1, hands: 0.88, neck: 1.25 };
 export const TOON_LOOK_VARIANTS: Record<string, ToonLook> = {
-  current: TOON_LOOK_DEFAULT,
+  current: { soft: false, faceLift: 0, hairSheen: false, outlineThin: 1, head: 1, hands: 1, neck: 1 },
   soft: { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1, hands: 1, neck: 1 },
-  stylised: { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1.1, hands: 1.15, neck: 1.25 },
+  stylised: { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1.1, hands: 0.88, neck: 1.25 },
   bold: { soft: true, faceLift: 0.5, hairSheen: true, outlineThin: 0.3, head: 1.18, hands: 1.2, neck: 1.35 },
 };
 
@@ -504,22 +531,29 @@ export function makePerson3d(
 ): Person3D {
   const tg = model as GLTF & { toonBodies?: GLTF[]; toonWhich?: string };
   let toon: ToonBody | undefined;
+  let toonHead: ToonHead | undefined;
   let role = "player";
   if (tg.toonBodies) {
     role = tg.toonWhich ?? "player";
-    toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(opts.who ?? `anon-${toonAnon++}`));
-    model = tg.toonBodies[TOON_BODIES.indexOf(toon)];
+    const id = opts.who ?? `anon-${toonAnon++}`;
+    const suitWanted = opts.suit ?? toonWearsSuit(role, opts.human?.outfit);
+    toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(id));
+    toonHead = opts.toonHead ?? (opts.you && !suitWanted ? toonYou().head : toonHeadFor(id, suitWanted));
+    model = tg.toonBodies[TOON_HEADS.indexOf(toonHead)];
   } else {
     const which = (model as GLTF & { humanWhich?: string }).humanWhich;
     if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
   }
   let meta = model.scene.userData as PersonMeta;
   if (meta.quant) dequantize(T, model, meta.quant);
-  const suit = !!toon && (opts.suit ?? toonWearsSuit(role, opts.human?.outfit));
+  // the suit heads are modelled in their suits; a player head is in a kit
+  const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
   if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
+  // Style A build: the whole person a touch slimmer, broader or taller
+  if (toon) inner.scale.set(...TOON_BUILD_SCALE[toon]);
   const body = inner.getObjectByName("Body") as THREE.SkinnedMesh;
   const bones: Record<string, THREE.Bone> = {};
   inner.traverse((o) => { if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone; });
@@ -589,7 +623,8 @@ export function makePerson3d(
   const mixer = new T.AnimationMixer(inner);
   const actions: Record<string, THREE.AnimationAction> = {};
   for (const clip of anims.animations) {
-    const c = clip.clone();
+    // Style A: the standing idles with relaxed arms (his own copy, baked once per body)
+    const c = toonHead && IDLE_POSTURE_CLIPS.has(clip.name) ? toonIdleClip(T, toonHead, inner, bones, clip, hand) : clip.clone();
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
     }
@@ -626,7 +661,36 @@ export function makePerson3d(
       fingers[side] = out;
     }
   }
-  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon };
+  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined };
+  if (toonHead && fingers) {
+    // Style A: relaxed hands from the start (the clips never move a finger); poseClips keeps them
+    const relaxed = fingersDeg(RELAXED_FINGERS_DEG);
+    poseFingers(T, person, "L", relaxed);
+    poseFingers(T, person, "R", relaxed);
+    for (const side of ["L", "R"] as const) for (const f of FINGER_NAMES) for (const b of fingers[side][f].bones) base.get(b)?.[1].copy(b.quaternion);
+  }
+  return person;
+}
+
+/** Style A: change a person's build (a spare body reused for someone else). */
+export function setToonBuild(p: Person3D, body: ToonBody) {
+  if (!p.toonHead) return;
+  p.root.children[0]?.scale.set(...TOON_BUILD_SCALE[body]);
+  p.toon = body;
+  p.toonKey = toonKey(p.toonHead, body);
+}
+
+const toonIdleCache = new Map<string, THREE.AnimationClip>();
+/** A Style A body's copy of a standing idle, its arms baked relaxed (three3d/runPosture.ts). */
+function toonIdleClip(T: Three, toon: ToonHead, inner: THREE.Object3D, bones: Record<string, THREE.Bone>, clip: THREE.AnimationClip, hand: Record<"L" | "R", HandFrame>): THREE.AnimationClip {
+  const key = `${toon}|${clip.uuid}`;
+  let fixed = toonIdleCache.get(key);
+  if (!fixed) {
+    fixed = clip.clone();
+    relaxIdleArms(T, inner, bones, fixed, { L: hand.L.palm, R: hand.R.palm });
+    toonIdleCache.set(key, fixed);
+  }
+  return fixed.clone();
 }
 
 /**
@@ -721,7 +785,8 @@ export function fingerTip(T: Three, p: Person3D, side: "L" | "R", f: FingerName)
 export function relaxHands(T: Three, p: Person3D) {
   if (!p.fingers) return;
   // a little more curl than flat (Harry, 9 Oct 2026: the running hand read as a flat "karate chop")
-  const relaxed = fingersDeg({ thumb: [10, 15, 10], index: [24, 32, 18], middle: [27, 35, 20], ring: [30, 38, 22], little: [33, 41, 24], thumbSwing: 12 });
+  // Style A: the shared relaxed hand (three3d/runPosture.ts), the same everywhere
+  const relaxed = p.toonHead ? fingersDeg(RELAXED_FINGERS_DEG) : fingersDeg({ thumb: [10, 15, 10], index: [24, 32, 18], middle: [27, 35, 20], ring: [30, 38, 22], little: [33, 41, 24], thumbSwing: 12 });
   poseFingers(T, p, "L", relaxed);
   poseFingers(T, p, "R", relaxed);
 }

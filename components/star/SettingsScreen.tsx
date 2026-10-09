@@ -69,7 +69,7 @@ interface Props {
   };
   onSetPortrait: (portrait: string | undefined) => void;
   /** Settings → Your look: your 3D player's body, skin tone and hair colour (Style A). */
-  onSetLook3d?: (look: Partial<Pick<CareerState["player"], "body3d" | "skinTone" | "hairColour">>) => void;
+  onSetLook3d?: (look: Partial<Pick<CareerState["player"], "body3d" | "head3d" | "skinTone" | "hairColour">>) => void;
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
   onDeleteSavedReplay: (id: string) => void;

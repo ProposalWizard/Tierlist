@@ -38,6 +38,7 @@ Preview) sets them all at once.
 | Cut-scene people bench (faces, hands, props) | page only | `lib/star/cutscene/peopleAdapter.ts` | `/star-people-dev` | same |
 | Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
 | Star Pass podium | `components/star/Podium3D.tsx` | spins a GLB from `tools/star-pass-art/export_live3d.py` | on the Star Pass screens | none |
+| Style A people (every 3D person under Player style: New) | Settings → Your look (`components/star/YourLookPanel.tsx`); Home and title (`components/star/ToonHomePlayer.tsx` via `HomePlayerFigure`) | `lib/star/style3d/toon/` (shader, heads, builds, switch) through `lib/star/people3d.ts` | `/star-look-dev` (`?head=h1..h6`, `?body=c1..c3`, `?pstyle=old`) | Player style: New / Old (`lib/star/style3d/toon/look.ts`) |
 | The test area index | page only | `lib/star/area3d.ts`, `lib/star/assets3dManifest.ts` | `/star-3d-area-dev` | none |
 | One of every mode in 3D skin | page only | `lib/star/figureSkin.ts`, `lib/star/figure3d.ts` | `/star-3d-dev` | Drawn-player style |
 
@@ -59,6 +60,42 @@ Use these. Do not make a second copy.
 - `lib/star/human3d/human.ts` — the parametric human (`makeHuman`, `HumanSpec`): height, build, hair, outfit. Built from MakeHuman by `tools/human3d/build_human.py`. `makePerson3d` calls it when "3D people" is New and "3D body" is Human.
 - `lib/star/human3d/npc.ts` — seeded people (managers, fans). `lib/star/human3d/boots.ts` — real boots on the human.
 - `public/star/human3d/human.glb`, `public/star/onebody/` (the plain one bodies), `public/star/people3d/` (old bodies + `anims.glb`).
+
+### Style A: how to dress a person
+
+Every 3D person goes through `makePerson3d` (`lib/star/people3d.ts`). Under
+Settings → Look → "Player style: New" it builds a Style A person; under Old,
+exactly today's bodies. You never pick a file yourself:
+
+- `makePerson3d(T, SK, loadedPlayer, anims, { who: "<stable id>" })`: a seeded
+  head (face + haircut, `toon-p1..p6`), build (Slim / Strong / Tall, a scale,
+  `TOON_BUILD_SCALE`), and you pass `skin`/`hair` to `dressPerson3d` from
+  `toonSkinFor(id)` / `toonHairFor(id)` (`lib/star/style3d/toon/bodies.ts`).
+  The same id is the same man every time.
+- `{ you: true }`: your own look from Settings → Your look (`CareerState.player.head3d`,
+  `body3d`, `skinTone`, `hairColour`; the page calls `setToonYou`).
+- Managers, staff, presenters: `{ suit: true }` (or role "manager", or a
+  cut-scene outfit that is not a kit) → a suit head (`toon-mgr`, `toon-mgr2`),
+  greyer hair (`toonGreyHairFor`).
+- Kit: `dressPerson3d(..., { kit: { shirt, trim, shorts?, socks? }, number, badge })`.
+  `toonKitColours` maps it onto the textured kit (base, trim on collar/cuffs/sock
+  tops, number on the back, badge, socks, boots). Settle clashes first with
+  `kitsFor` (`lib/star/kits.ts`); Style A paints what it is given.
+- Hands: the standing idles get relaxed arms baked per person
+  (`relaxIdleArms` in `lib/star/three3d/runPosture.ts`, the same file as the
+  running arms' wrist step `relaxWrist`), and the fingers rest curled
+  (`RELAXED_FINGERS_DEG`; `relaxHands` uses it for Style A). Hands are scaled
+  0.88 (`TOON_LOOK_DEFAULT.hands`).
+- A scene that keeps spare bodies bins them by `p.toonHead` and sets the build
+  with `setToonBuild(p, body)` (see `engineView.ts`).
+- Only one person on screen (Home, title)? `loadToonHead(loader, head)` fetches
+  one head file instead of all eight.
+- A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
+  15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
+  tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
+  a POLICY line + `node scripts/perf3d/shrink-models.mjs` → `TOON_FILES` and
+  `TOON_HEADS` in `bodies.ts` → `node scripts/assets3d-manifest.mjs`.
+  Inputs live in `tools/modeltest/` (one folder per tag).
 
 ### Kits
 
@@ -325,3 +362,67 @@ Left:
 - No star-playtest run.
 
 The player-render hook: `HomePlayerFigure` in `components/star/HomePlayer.tsx`. Both screens give it a box (width × height, boots on the bottom edge) and never draw him themselves. Put the Style A render in that one function and keep the same box; neither screen's layout changes. Old look does not use it.
+
+### Style A (cel-shaded people for every 3D person)
+
+Harry: "Style A becomes the Knowitball standard look for EVERY 3D person". He
+picked **Stylised** on the heads sheet, asked "what is happening with those
+arms/hands?", and gave ~200 Higgsfield credits for better models.
+
+**Done** (behind Settings → Look → "Player style: New | Old", default New, in
+`PREVIEW_ROWS`; Old = exactly the old bodies and materials):
+- Eight new generated people: six player heads (`public/star/people3d/toon-p1.glb` … `toon-p6.glb`:
+  curls, quiff, buzz & beard, bun, fringe, ginger crop & beard) and two in suits
+  (`toon-mgr.glb` grey & stubble, `toon-mgr2.glb` fade & beard). ~14.5k triangles
+  each (old body 20.9k), 206–235 KB packed. The old C1–C3 files are gone from
+  `public/` (sources stay in `tools/modeltest/c1`–`c3`).
+- Builds are a scale now, not a file: Slim / Strong / Tall on any head.
+- Hands: fingers are really skinned now (`weight_fingers` in
+  `scripts/people3d/build_toon_bodies.py`; before, every hand vertex followed
+  the hand bone only, so no finger pose ever showed). Hands 0.88 size; relaxed
+  curl; idle arms baked (wrist 22° → 8°, elbow 27° → 13°, palms to the thighs
+  0.68 → 0.96; `tests/star/runPosture.mts`). A light fingertip by the white
+  shorts no longer reads as kit (hand zone kept out of the kit mask).
+- Seeded picks: head, build, skin, hair per id (`toonPickFor`); a squad of 25
+  uses 5–6 heads (`tests/star/toonPeople.mts`). Your look: Settings → Your look
+  (head, build, skin, hair colour), saved as `player.head3d` / `body3d`.
+- Wired places (through `makePerson3d`): career 3D match and Real game
+  (`engineView.ts`), drills (`play3d/scene.ts`, `training3d/scene.ts`), dribble
+  3D (`style3d/gameplay.ts`), shop, garden, casino, signing scene, farewell and
+  ovation, cut scenes (`cutscene/people.ts`). Home and title: `ToonHomePlayer`
+  inside `HomePlayerFigure` (one head file, 30 fps cap, drag to turn on Home,
+  the old figure until it loads).
+
+**Half-done / not seen:**
+- Stills were taken on the stand-alone harness only (`tools/styletest/heads.ts`,
+  stills in the session scratchpad `r3styleA/stylised-hands.jpg`). The Old/New
+  per-place sheet (`r3styleA/sheet.jpg`) was NOT made this round; the earlier
+  WIP stills in `r3styleA/*-new.jpg` show the old C1 body.
+- Home/title Style A player: built, type-checked, never seen on screen.
+- Every scene loads all eight heads (~1.8 MB) when it makes its first person;
+  fine on Wi-Fi, heavy on a first match on mobile data.
+- Managers: the seeded suit head + grey hair works; no per-club manager face
+  yet; the house wardrobe (`setWearerBody`, Harry branch) does not know Style A.
+- Hair colour recolours the modelled cut; there is no ginger in `HAIR_COLOURS`,
+  so the ginger head is shown in the seeded colour.
+
+**Next 3 steps, in order:**
+1. Open each place with Player style New and Old on a phone and make the
+   Old/New sheet (`/star-look-dev`, `/star-shop3d-dev`, `/star-garden3d-dev`,
+   `/star-style-dev?scene=play3d`, the Real game tab, `/star-3d-area-dev/signing`,
+   Home and title in `/star-dev` signed out). Fix what looks wrong there.
+2. Loading: let scenes ask only for the heads they will use (pass the ids up
+   front, or start with `loadToonHead` and fetch the rest after first paint).
+3. Managers/staff: more suit heads (one Higgsfield image-to-3D is 18 credits),
+   a per-club manager pick, and the house wardrobe's casual sets on Style A.
+
+**Harry's decisions that apply:** Stylised for everyone; hands ~0.88, relaxed
+curl, wrists ≤10°, elbows ~10–15°; Higgsfield up to ~200 credits, never below
+a 60 balance (this round: 74 for heads 1–3 and the first suit, then 90 for heads 4–6 and the second suit = 164 credits; balance now 168.25);
+same or fewer triangles per person than Old (14.5k vs 20.9k, 3 draws each with
+outline and shadow, as Old); every new look behind New | Old.
+
+**See it:** `/star-look-dev?head=h4&body=c2` (your player, a mate, a manager;
+`?pstyle=old` for Old). Stand-alone stills without Next.js:
+`tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
+

@@ -211,8 +211,7 @@ export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animatio
         const hp = () => P(B.hips!);
         for (const [a, f, h, sg] of [[B.armL!, B.foreL!, B.handL!, -1], [B.armR!, B.foreR!, B.handR!, 1]] as const) {
           // the wrist nearly straight
-          h.quaternion.slerp(rest.get(h)!, 1 - WRIST_KEEP);
-          h.updateMatrixWorld(true);
+          relaxWrist(h, rest.get(h)!, { keep: WRIST_KEEP });
           const fwdOf = () => P(h).sub(hp()).dot(fwd);
           const outOf = () => P(h).sub(hp()).dot(across) * sg;
           const armLen = Math.max(0.2, P(a).distanceTo(P(h)));
@@ -257,4 +256,172 @@ export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animatio
   for (const [o, p, q, s] of allRest) { o.position.copy(p); o.quaternion.copy(q); o.scale.copy(s); }
   scene.updateMatrixWorld(true);
   return out;
+}
+
+
+
+/**
+ * THE HAND-RELAX STEP, shared by the running arms (above) and the standing arms
+ * (below): bring a wrist back towards its rest bend. `keep` keeps that share of
+ * the bend (the run keeps WRIST_KEEP); `maxDeg` caps what is left.
+ */
+export function relaxWrist(h: THREE.Object3D, restQ: THREE.Quaternion, o: { keep?: number; maxDeg?: number }) {
+  if (o.keep !== undefined) h.quaternion.slerp(restQ, 1 - o.keep);
+  if (o.maxDeg !== undefined) {
+    const wa = h.quaternion.angleTo(restQ), lim = (o.maxDeg * Math.PI) / 180;
+    if (wa > lim) h.quaternion.slerp(restQ, 1 - lim / wa);
+  }
+  h.updateMatrixWorld(true);
+}
+
+/**
+ * THE STANDING ARMS AND HANDS (Harry, 9 Oct 2026, on the Style A heads sheet:
+ * "what is happening with those arms/hands?" — stiff straight arms, wrists bent
+ * back, palms turned backwards, fingers fanned out like claws).
+ *
+ * Baked into a person's OWN copy of each standing idle (people3d.ts clones every
+ * clip per person; footballAnims.ts addClips does the same), so shared clips stay
+ * as they are. At every key of the clip, each arm:
+ *   - the wrist goes back to within IDLE_WRIST_MAX of straight (relaxWrist);
+ *   - the elbow is softly bent (IDLE_ELBOW_BEND, the hand moves forward);
+ *   - the hand hangs IDLE_HAND_OUT from the middle of the hips (arms off the hips);
+ *   - the forearm turns so the palm faces the thigh.
+ * And the fingers rest loosely curled (RELAXED_FINGERS_DEG, people3d.ts poses
+ * them; the Style A bodies' fingers are weighted by build_toon_bodies.py).
+ * Measured in tests/star/runPosture.mts on the real bodies.
+ */
+export const IDLE_POSTURE_CLIPS = new Set(["idle", "boss-idle", "Idle_Loop"]);
+/** Degrees. */
+export const IDLE_WRIST_MAX = 8;
+export const IDLE_ELBOW_BEND = 13;
+/** Metres from the middle of the hips, sideways, that each hand hangs at least. */
+export const IDLE_HAND_OUT = 0.21;
+
+/**
+ * Relaxed fingers, degrees per joint (root first), on top of the sculpt's own
+ * soft bend (the generated hands are modelled a little curled, ~10–15° a joint),
+ * so the index ends ~30° a joint as asked; the others progressively more; the
+ * thumb along the index.
+ */
+export const RELAXED_FINGERS_DEG = {
+  thumb: [5, 9, 7] as [number, number, number],
+  index: [18, 20, 14] as [number, number, number],
+  middle: [21, 22, 16] as [number, number, number],
+  ring: [23, 25, 18] as [number, number, number],
+  little: [26, 27, 20] as [number, number, number],
+  thumbSwing: 14,
+};
+
+export interface ArmMeasure { elbow: number; wrist: number; out: number; palmIn: number }
+
+/**
+ * Bake the idle arms into `clip` (its quaternion tracks for the arm bones are
+ * replaced). `root` is the person's skeleton (posed and put back to rest here);
+ * `palm` each hand's palm direction in the hand bone's own frame (people3d hand.L/R.palm).
+ * Returns the worst values before and after, for the tests.
+ */
+export function relaxIdleArms(
+  T: Three, root: THREE.Object3D, bones: Record<string, THREE.Bone>, clip: THREE.AnimationClip,
+  palm: { L: THREE.Vector3; R: THREE.Vector3 },
+): { before: ArmMeasure; after: ArmMeasure } | null {
+  const need = ["Hips", "LeftArm", "RightArm", "LeftForeArm", "RightForeArm", "LeftHand", "RightHand"];
+  if (need.some((n) => !bones[n])) return null;
+  const key = clip.tracks.find((t) => t.name === "LeftArm.quaternion") ?? clip.tracks.find((t) => t.name.endsWith(".quaternion"));
+  if (!key) return null;
+  const saved = Object.values(bones).map((b) => [b, b.position.clone(), b.quaternion.clone()] as const);
+  const rest = new Map(saved.map(([b, , q]) => [b, q.clone()] as const));
+  const mixer = new T.AnimationMixer(root);
+  const act = mixer.clipAction(clip);
+  act.play();
+  const v = () => new T.Vector3();
+  const P = (o: THREE.Object3D) => o.getWorldPosition(v());
+  const d2r = Math.PI / 180;
+  const turnWorld = (o: THREE.Object3D, axis: THREE.Vector3, ang: number) => {
+    const wq = o.getWorldQuaternion(new T.Quaternion());
+    const r = new T.Quaternion().setFromAxisAngle(axis, ang);
+    const pw = o.parent!.getWorldQuaternion(new T.Quaternion());
+    o.quaternion.copy(pw.invert().multiply(r.multiply(wq)));
+    o.updateMatrixWorld(true);
+  };
+  const turnFor = (o: THREE.Object3D, axis: THREE.Vector3, ang: number, score: () => number) => {
+    if (Math.abs(ang) < 1e-5) return;
+    const s0 = score();
+    turnWorld(o, axis, ang);
+    if (score() < s0) turnWorld(o, axis, -2 * ang);
+  };
+  const elbowOf = (a: THREE.Object3D, f: THREE.Object3D, h: THREE.Object3D) => { const e = P(f); return P(a).sub(e).angleTo(P(h).sub(e)); };
+  const sides = [
+    { a: bones.LeftArm, f: bones.LeftForeArm, h: bones.LeftHand, sg: 1, palm: palm.L },
+    { a: bones.RightArm, f: bones.RightForeArm, h: bones.RightHand, sg: -1, palm: palm.R },
+  ];
+  const fresh = (): ArmMeasure => ({ elbow: 180, wrist: 0, out: 9, palmIn: 1 });
+  const before = fresh(), after = fresh();
+  const measure = (m: ArmMeasure, across: THREE.Vector3) => {
+    const hp = P(bones.Hips);
+    for (const s of sides) {
+      m.elbow = Math.min(m.elbow, elbowOf(s.a, s.f, s.h) / d2r);
+      m.wrist = Math.max(m.wrist, s.h.quaternion.angleTo(rest.get(s.h as THREE.Bone)!) / d2r);
+      m.out = Math.min(m.out, P(s.h).sub(hp).dot(across) * s.sg);
+      const pw = s.palm.clone().applyQuaternion(s.h.getWorldQuaternion(new T.Quaternion()));
+      m.palmIn = Math.min(m.palmIn, pw.dot(across.clone().multiplyScalar(-s.sg)));
+    }
+  };
+  const WRITE = sides.flatMap((s) => [s.a, s.f, s.h]);
+  const times = Array.from(key.times);
+  const vals = WRITE.map(() => [] as number[]);
+  const up = new T.Vector3(0, 1, 0);
+  for (const t of times) {
+    for (const o of WRITE) o.quaternion.copy(rest.get(o as THREE.Bone)!);
+    mixer.setTime(t);
+    root.updateMatrixWorld(true);
+    // his left → right is +x → -x in his own frame; "across" points to HIS left
+    const across = P(bones.LeftArm).sub(P(bones.RightArm)); across.y = 0; across.normalize();
+    const fwd = across.clone().cross(up).normalize(); // his front (+z at rest)
+    measure(before, across);
+    const hp = () => P(bones.Hips);
+    for (const s of sides) {
+      // 1. the wrist nearly straight
+      relaxWrist(s.h, rest.get(s.h as THREE.Bone)!, { maxDeg: IDLE_WRIST_MAX });
+      const armLen = Math.max(0.2, P(s.a).distanceTo(P(s.h)));
+      // 2. the hand away from the hips
+      const outOf = () => P(s.h).sub(hp()).dot(across) * s.sg;
+      for (let it = 0; it < 3; it++) {
+        const inn = IDLE_HAND_OUT - outOf();
+        if (inn > 0.002) turnFor(s.a, fwd, Math.min(0.4, inn / armLen), outOf);
+      }
+      // 3. the elbow softly bent, the hand forward
+      const want = (180 - IDLE_ELBOW_BEND) * d2r;
+      const el = elbowOf(s.a, s.f, s.h);
+      if (el > want) {
+        const fwdOf = () => P(s.h).sub(hp()).dot(fwd);
+        turnFor(s.f, across, el - want, fwdOf);
+      } else if (el < want - 3 * d2r) {
+        // bent more than a relaxed arm (the capture's idle folds it ~27°): open it to the same bend
+        const e = P(s.f), n = P(s.a).sub(e).cross(P(s.h).sub(e)).normalize();
+        turnFor(s.f, n, want - el, () => -Math.abs(elbowOf(s.a, s.f, s.h) - want));
+      }
+      // 4. the palm towards the thigh: turn the forearm about its own line
+      const axis = P(s.h).sub(P(s.f)).normalize();
+      const inward = across.clone().multiplyScalar(-s.sg);
+      const palmW = () => s.palm.clone().applyQuaternion(s.h.getWorldQuaternion(new T.Quaternion()));
+      const proj = (x: THREE.Vector3) => x.clone().sub(axis.clone().multiplyScalar(x.dot(axis))).normalize();
+      const a0 = proj(palmW()), b0 = proj(inward);
+      const ang = Math.acos(Math.max(-1, Math.min(1, a0.dot(b0)))) * 0.85;
+      if (ang > 0.02) turnFor(s.f, axis, ang, () => palmW().dot(inward));
+    }
+    root.updateMatrixWorld(true);
+    measure(after, across);
+    WRITE.forEach((o, i) => vals[i].push(o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w));
+  }
+  act.stop();
+  mixer.uncacheRoot(root);
+  WRITE.forEach((o, i) => {
+    const name = `${o.name}.quaternion`;
+    const tr = new T.QuaternionKeyframeTrack(name, times, vals[i]);
+    const k = clip.tracks.findIndex((x) => x.name === name);
+    if (k >= 0) clip.tracks[k] = tr; else clip.tracks.push(tr);
+  });
+  for (const [b, p, q] of saved) { b.position.copy(p); b.quaternion.copy(q); }
+  root.updateMatrixWorld(true);
+  return { before, after };
 }

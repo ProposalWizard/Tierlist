@@ -65,6 +65,7 @@
  * The old footballer (shop/garden): loadAnims3d(loader, "football", "ual"), then
  * mixer.clipAction(clip) for each of gltf.animations, as shop3d/scene.ts does.
  */
+import { relaxIdleArms, IDLE_POSTURE_CLIPS } from "./runPosture";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./perf";
@@ -303,6 +304,8 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
   for (const clip of g.animations) {
     if (p.actions[clip.name]) { names.push(clip.name); continue; }
     const c = clip.clone();
+    // Style A: a standing idle gets the relaxed arms (three3d/runPosture.ts)
+    if (p.toon && IDLE_POSTURE_CLIPS.has(clip.name)) relaxIdleArms(T, p.root, p.bones, c, { L: p.hand.L.palm, R: p.hand.R.palm });
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
     }

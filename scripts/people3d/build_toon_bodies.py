@@ -58,6 +58,101 @@ def dilate_into(img, covered, steps=10):
     return img
 
 
+FINGERS4 = ("Index", "Middle", "Ring", "Little")
+
+
+def weight_fingers(P, JN, WT, J, bnames, hands, nodes, ibm, sk, j):
+    """The generated bodies come with finger bones but every hand vertex is weighted to the
+    hand bone alone, so the fingers could not curl (Harry, 9 Oct 2026: "what is happening
+    with those arms/hands?"). Per hand: the four fingers are found in the mesh (four bands
+    across the hand beyond the knuckles), each finger's three bones are moved onto it
+    (direction and roll kept, so the clips and the finger axes still mean the same), and
+    its vertices are weighted along it: hand -> 1st -> 2nd -> 3rd bone, blended at each
+    joint and between neighbouring fingers. The thumb stays with the hand (the sculpt
+    already lays it along the index). Returns what it did, for the build log."""
+    log = {}
+    parent = {}
+    for i, n in enumerate(j["nodes"]):
+        for c in n.get("children", []):
+            parent[c] = i
+    jidx = {j["nodes"][i]["name"]: k for k, i in enumerate(sk["joints"])}
+    for side, pre in (("L", "Left"), ("R", "Right")):
+        hb = pre + "Hand"
+        if hb not in jidx or any(f"{pre}Hand{f}1" not in jidx for f in FINGERS4):
+            continue
+        hi = jidx[hb]
+        w_hand = ((JN == hi) * WT).sum(1)
+        sel = w_hand > 0.5
+        if sel.sum() < 50:
+            continue
+        wrist = J[hb][:3, 3]
+        along = np.array(hands[side]["along"]); palm = np.array(hands[side]["palm"]); lat = np.array(hands[side]["thumb"])
+        V = P.astype(np.float64) - wrist
+        a = V @ along; l = V @ lat
+        amax = float(a[sel].max())
+        kb = float(np.mean([(J[f"{pre}Hand{f}1"][:3, 3] - wrist) @ along for f in FINGERS4]))
+        ak = min(max(kb, 0.42 * amax), 0.6 * amax)      # the knuckles, along the hand
+        fl = amax - ak
+        fz = sel & (a > ak + 0.3 * fl)                    # clearly finger
+        lo, hi_l = np.percentile(l[fz], 2), np.percentile(l[fz], 98)
+        bw = (hi_l - lo) / 4
+        centre = [hi_l - (k + 0.5) * bw for k in range(4)]  # index (thumb side) .. little
+        moved = []
+        for k, f in enumerate(FINGERS4):
+            band = sel & (np.abs(l - centre[k]) < 0.5 * bw)
+            for jn, t in ((1, 0.0), (2, 0.42), (3, 0.72)):
+                bn = f"{pre}Hand{f}{jn}"
+                at = ak + t * fl
+                near = band & (np.abs(a - at) < max(0.012, 0.12 * fl))
+                if near.sum() < 3:
+                    continue
+                c = P[near].astype(np.float64).mean(0)
+                pos = wrist + along * at + lat * ((c - wrist) @ lat) + palm * ((c - wrist) @ palm)
+                M = J[bn].copy(); M[:3, 3] = pos; J[bn] = M
+                moved.append(bn)
+        # the moved bones' inverse binds and local translations
+        for bn in moved:
+            k = jidx[bn]
+            ibm[k] = np.linalg.inv(J[bn]).T.reshape(16)
+            node = sk["joints"][k]
+            par = j["nodes"][parent[node]]["name"]
+            loc = np.linalg.inv(J[par]) @ np.append(J[bn][:3, 3], 1.0)
+            nodes[node]["translation"] = [float(v) for v in loc[:3]]
+        # weights: along (hand, 1st, 2nd, 3rd) x across (two nearest fingers)
+        ja = {f: [ak] + [float((J[f"{pre}Hand{f}{n}"][:3, 3] - wrist) @ along) for n in (2, 3)] for f in FINGERS4}
+        idxs = np.where(sel & (a > ak - 0.01))[0]
+        bl = max(0.006, 0.08 * fl)
+        for vi in idxs:
+            # across: the two nearest fingers, blended in the gap between them
+            pos_l = (hi_l - l[vi]) / bw - 0.5           # 0 = index centre .. 3 = little centre
+            pos_l = min(max(pos_l, 0.0), 3.0)
+            f0 = int(np.floor(pos_l)); fr = pos_l - f0
+            if f0 >= 3:
+                f0, fr = 2, 1.0
+            g = min(max((fr - 0.35) / 0.3, 0.0), 1.0)   # a hard middle, a soft edge
+            across = [(FINGERS4[f0], 1 - g), (FINGERS4[f0 + 1], g)]
+            ws = {}
+            for f, wf in across:
+                if wf <= 0:
+                    continue
+                b0, b1, b2 = ja[f]
+                av = a[vi]
+                def ramp(x, e):
+                    return min(max((x - (e - bl)) / (2 * bl), 0.0), 1.0)
+                r0, r1, r2 = ramp(av, b0), ramp(av, b1), ramp(av, b2)
+                seg = {hb: 1 - r0, f"{pre}Hand{f}1": r0 - r1, f"{pre}Hand{f}2": r1 - r2, f"{pre}Hand{f}3": r2}
+                for n, w in seg.items():
+                    if w > 1e-4:
+                        ws[n] = ws.get(n, 0.0) + w * wf
+            top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]
+            tot = sum(w for _, w in top)
+            JN[vi] = 0; WT[vi] = 0
+            for slot, (n, w) in enumerate(top):
+                JN[vi, slot] = jidx[n]; WT[vi, slot] = w / tot
+        log[side] = {"knuckle": round(ak / amax, 2), "bone knuckle": round(kb / amax, 2), "finger verts": int(len(idxs)), "bones moved": len(moved), "width": round(float(hi_l - lo), 3)}
+    return log
+
+
 def build(src, tag, suit=False):
     """src: a fitted .glb (tools/modeltest/fit.py). suit: a manager in a suit — his clothes
     keep their own colours (no kit mask), only skin and hair are recoloured."""
@@ -143,6 +238,16 @@ def build(src, tag, suit=False):
         kit = np.zeros_like(kit)
     skin = cov & (cls == 0) & ~keep
     hair = cov & (cls == 1) & ~keep
+    # the hands are skin: a light fingertip by the white shorts must not read as kit (a white blob)
+    handz = np.zeros_like(cov)
+    for side in ("Left", "Right"):
+        e, w = J[side + "ForeArm"][:3, 3], J[side + "Hand"][:3, 3]
+        d_ = (w - e) / max(np.linalg.norm(w - e), 1e-6)
+        rel = pos - w
+        handz |= (np.linalg.norm(rel, axis=-1) < 0.24) & ((rel @ d_) > 0.005)
+    kit &= ~handz
+    if not suit:
+        skin |= cov & handz & ~keep & ~hair
 
     # Kit lines (rest y), from the classes.
     legs = cov & (np.abs(x) > 0.03)
@@ -154,6 +259,8 @@ def build(src, tag, suit=False):
     boot_top = pct(legs & (cls == 5) & (y < footY + 0.1), 95, footY + 0.02)
     if np.linalg.norm(ref["shirt"] - ref["shorts"]) < 0.15:
         shirt_lo = hipsY - 0.055   # one colour: the hem where the generated shirt ends (cN/concept.png)
+    # a stray low texel (a red sock top) must not drag the hem to the knee: it sits near the hips
+    shirt_lo = min(max(shirt_lo, hipsY - 0.06), hipsY + 0.08)
     collar = pct(cov & kit & (np.abs(x) < 0.1) & ~head, 98, neckY - 0.06)
     shorts_lo = pct(legs & (cls == 3) & (y < shirt_lo), 3, kneeY + 0.08)
     ts = []
@@ -211,6 +318,10 @@ def build(src, tag, suit=False):
         thumb = thumb * np.sign(thumb[2])
         hands[side] = {"along": [round(float(v), 4) for v in along], "palm": [round(float(v), 4) for v in palm],
                        "thumb": [round(float(v), 4) for v in thumb], "len": round(float(((H - wrist) @ along).max()), 4)}
+
+    JN = JN.astype(np.int32).copy()
+    print("  fingers", weight_fingers(P, JN, WT, J, bnames, hands, nodes, ibm, sk, j))
+    jp = {k: [round(float(v), 4) for v in M[:3, 3]] for k, M in J.items()}
 
     # Fingers (their bones came with the rig): the axis each one curls about,
     # as the one body's (build_onebody.py), so the grips and relaxed hands work.

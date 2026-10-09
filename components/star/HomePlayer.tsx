@@ -21,6 +21,8 @@ import type { AvatarStyle } from "@/lib/star/heroFigure";
 import PlayerAvatar from "./PlayerAvatar";
 import SpinPlayer from "./SpinPlayer";
 import { rgba } from "./ui";
+import ToonHomePlayer from "./ToonHomePlayer";
+import { usePlayerStyleLook } from "@/lib/star/style3d/toon/look";
 
 export interface HomePlayerProps {
   career: CareerState;
@@ -41,10 +43,13 @@ export interface HomePlayerProps {
 /** THE SWAP POINT: the figure itself. Replace the body of this function with
  *  the Style A render when it lands; keep the same box. */
 export function HomePlayerFigure({ career, width, height, where, look, kitShirt, kitTrim, celebrate = false }: HomePlayerProps) {
-  if (where === "home") {
-    return <SpinPlayer career={career} width={width} height={height} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />;
-  }
-  return <PlayerAvatar career={career} width={width} height={height} look={look} />;
+  const style = usePlayerStyleLook();
+  const old = where === "home"
+    ? <SpinPlayer career={career} width={width} height={height} look={look} kitShirt={kitShirt} kitTrim={kitTrim} autoCelebrate={celebrate} />
+    : <PlayerAvatar career={career} width={width} height={height} look={look} />;
+  // Settings → Look → "Player style: New": your Style A player (same box); Old: today's figure.
+  if (style === "new") return <ToonHomePlayer career={career} width={width} height={height} where={where} kitShirt={kitShirt} kitTrim={kitTrim} fallback={old} />;
+  return old;
 }
 
 const CSS = `
