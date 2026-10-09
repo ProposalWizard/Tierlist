@@ -333,7 +333,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                 <div style={{ fontSize: 21, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
               </div>
               <div style={{ fontSize: 11, fontWeight: 800, color: MUTED, marginTop: 1 }}>
-                {isModel ? `3D model · level ${item.modelLevel} shown` : item.picture ? `Picture of level ${levelNo}` : `${open.items.length > 1 ? "" : "Three cans"}`}
+                {isModel ? (item.modelLevel != null ? `3D model · level ${item.modelLevel} shown` : "3D model") : item.picture ? `Picture of level ${levelNo}` : `${open.items.length > 1 ? "" : "Three cans"}`}
                 {open.items.length > 1 ? ` · ${Math.min(itemIx, open.items.length - 1) + 1} of ${open.items.length}` : ""}
               </div>
             </div>
