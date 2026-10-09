@@ -30,6 +30,7 @@ import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
 import { homeLook, setHomeLook } from "./homeLook";
+import { shopLook, setShopLook } from "./shopLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
@@ -93,6 +94,7 @@ export const LOOK_ROWS = {
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
   allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
   homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
+  shop2d: row("Shop", "new", "old", shopLook, setShopLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
   ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
   drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
@@ -148,6 +150,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     badges: N("badges"),
     allSeasons: N("allSeasons"),
     homeScreen: N("homeScreen"),
+    shop2d: N("shop2d"),
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,

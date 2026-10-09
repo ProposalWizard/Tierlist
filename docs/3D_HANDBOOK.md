@@ -441,3 +441,12 @@ Next 3 steps, in order:
 3. Check KTX2 on an iPhone (GPU memory and load time); keep or trim the list.
 
 How to measure: `?fps=1` on any page shows the frame meter (fps, worst frame, draws, triangles, shadow draws, rung); the numbers are on `window.__frame3d`. `?gov=0` stops the governor stepping so one tier can be measured. Off switches for each saving are listed under "Quality, the governor and the frame meter".
+
+### 2D shop
+
+- **What:** a new 2D shop (Cans · Boots · Style) and a new Shop page. Settings → Look → "Shop: New | Old" (`lib/star/shopLook.ts`, row `shop2d` in `gameVersions.ts`), default New. Old = `components/star/Shop.tsx` + `ShopPage.tsx`, untouched.
+- **Where:** `components/star/shop2d/` — `StoreShop.tsx` (the three tabs, item sheets with the level ladder, confirm sheet, purchase moment), `StoreLanding.tsx` (Home's Shop page), `parts.tsx` (hero, tabs, framed card, ladder, badges, sheets). Wired in `app/star-dev/page.tsx` (shop phases + the Shop swipe page).
+- **Art:** Higgsfield UI dressing only (Harry: "I meant higgs for the UI"), 17 credits, in `public/star/shop2d/` (credits in its `LICENSE.txt`; packer `tools/shop2d/pack.py`). Item pictures are the existing `/shop/*.webp`, KIB can art and drawings — no new item art.
+- **Kept:** every buy handler and price, boot sponsor 25%, banned boots via the black market (lawyers option in the confirm sheet), unlock chain locks, phone flash + `phone-tile` tour target, worn-out repair, "Sold out" per visit, focus from the 3D shop. New: Use a can from the Cans tab, "View in 3D shop" on items the 3D shop has (opens the 3D shop; it does not jump to the item).
+- **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle|landing` (+ `&look=old`), buying works on a sample career.
+- **Open:** Harry approved Cans and Boots; Style had one more pass (2-up cards, chunky group tabs, fame banner) — not yet re-judged. The basket stays off (`BASKET_ON`), so the new shop has no basket.

@@ -1,0 +1,25 @@
+NEW 2D SHOP — STORE ART (Settings → Look → "Shop: New")
+
+Every picture in this folder was generated on Higgsfield (the team's shared
+account), 9 Oct 2026, with the Nano Banana 2 Lite image model, from text
+prompts only. No reference images, no real brands, no logos. Used under the
+account's Higgsfield plan terms for generated output.
+
+Made: 17 generations (16 kept), 1 credit each = 17 credits. One more request
+was refused by the service (no charge). Packed to small WebPs by
+tools/shop2d/pack.py (crop, chroma-key the green sheets, turn the black-
+backed effects into transparency, resize).
+
+  hero.webp            store banner (the boutique at night)
+  bg.webp              page texture (navy hex grid)
+  panel.webp           the buy-sheet backdrop
+  frame-1..5.webp      card frames by level: bronze, sapphire, ruby, amethyst, gold
+  rank-1..5.webp       level emblems for the level ladder (one sheet, cut up)
+  badge-gold/blue/green.webp   badge shapes (green = the blue tag recoloured)
+  icon-*.webp          tab icons: cans, boots, style, drip, gadgets, cars, homes, holiday
+  burst.webp           purchase burst
+  fx-energy/curve/touch/power.webp   can and boot effect glows
+  divider.webp         section divider
+
+The item pictures themselves are NOT here: the shop keeps the existing ones
+(public/shop/*.webp, the KIB can art and the drawn fallbacks).

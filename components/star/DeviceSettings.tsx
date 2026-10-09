@@ -205,7 +205,7 @@ const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
 
@@ -300,6 +300,7 @@ function ScreensGroup() {
       <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
       <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
       <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
+      <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the store with framed cards, a level ladder and a buy sheet. Old: the shop as before." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
       <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
       <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />
