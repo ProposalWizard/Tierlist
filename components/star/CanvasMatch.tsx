@@ -153,6 +153,7 @@ import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
+  playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
 import { animationsLook } from "@/lib/star/animLook";
@@ -2535,6 +2536,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const viewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
   /** The situation's framing. It is set once and never moves — see the loop. */
   const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
+  /** PROTOTYPE zoom-to-play: how far this chance's camera is zoomed in (1 = today). */
+  const playZoomRef = useRef(1);
+  /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
+  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
@@ -2577,6 +2582,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
+    playZoomRef.current = playZoomOf(sc);
+    if (playZoomProbe() && typeof window !== "undefined") {
+      (window as unknown as { __zg?: unknown }).__zg = {
+        sc, cam: { ...cam }, zoom: playZoomRef.current,
+        /** A finger pull of (dx, dy) glass px from the ball: power, aim and launch speed. */
+        drag: (dx: number, dy: number) => {
+          const s = scenarioRef.current, b = s.ball;
+          const c = pitchToClient(b);
+          const d = pitchFromPointer(c.x + dx, c.y + dy);
+          const power = powerFromDrag(d, b);
+          const dir = { x: b.x - d.x, y: b.y - d.y };
+          const ball = launch(JSON.parse(JSON.stringify(s)), dir, power, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, () => 0.5);
+          return {
+            pull: screenPull(d, b), power, aimDeg: (Math.atan2(dir.x, -dir.y) * 180) / Math.PI,
+            speed: Math.hypot(ball.vel.x, ball.vel.y, ball.vz ?? 0),
+          };
+        },
+      };
+    }
     // Where the ball sits down the screen decides where the sandbox's
     // commentary goes: under a corner's ball it would cover the pull-back.
     const fx = (sc.ball.x - cam.x1) / (cam.x2 - cam.x1);
@@ -2625,7 +2649,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const turned = facingRef.current !== "up";
     const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
     const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
-    const ballPx = newViewRef.current ? Math.max(3, unit * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
+    const ballPx = newViewRef.current ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
     const { px, py, scale } = toPx(b.pos.x, b.pos.y);
     const h = Math.max(0, b.z);
     const by = py - h * uy * scale;
@@ -2999,7 +3023,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // is exaggerated a little and floored at a readable pixel size.
     // New view (option D): the zoom already shrinks it; 0.7 of that again.
     const nv = newViewRef.current;
-    const BALL_PX = nv ? Math.max(3, unit * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
+    const BALL_PX = nv ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
 
     // Pitch-space drawing helpers — everything below goes through these so the
     // markings sit exactly where the physics thinks they are.
@@ -3396,7 +3420,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // at your feet.
     // New view (option D): 0.8 of the zoomed-out size, then 0.8 again for the
     // outfield men (~18 px on a phone). The keeper is put back to full size below.
-    const R = unit * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK : 1);
+    // Chance framing "Zoom": divided by the zoom, so the men stay today's size.
+    const R = (unit / (nv ? figZoomDiv() : 1)) * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK : 1);
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over
@@ -4670,6 +4695,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           facingRef.current = "up";
           viewportRef.current = { ...view };
           baseViewportRef.current = { ...view };
+          playZoomRef.current = 1;
           // The engine reads the frame too — out of it is out of the game — so
           // the situation moves with the picture.
           sc.viewport = { ...view };
@@ -6491,6 +6517,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       facingRef.current = "up";
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
+      playZoomRef.current = 1;
       setPhase("dribble");
       onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
