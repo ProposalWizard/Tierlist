@@ -14,7 +14,7 @@ export interface ClipChoice { clip: string; speed?: number; from?: number; hold?
 export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   // gaits
   walk: [{ clip: "walk" }, { clip: "slump_walk", speed: 1.05, upright: 1 }, { clip: "jog", speed: 0.55 }],
-  "walk-proud": [{ clip: "walk-proud" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
+  "walk-proud": [{ clip: "walk-proud" }, { clip: "walk_confident" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
   "walk-sad": [{ clip: "walk-sad" }, { clip: "slump_walk", speed: 0.9 }],
   jog: [{ clip: "jog" }, { clip: "celebrate_safe", speed: 0.8 }],
   run: [{ clip: "run" }, { clip: "sprint", speed: 0.8 }, { clip: "jog", speed: 1.3 }],
@@ -27,19 +27,29 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   "talk-boss": [{ clip: "boss-talk" }, { clip: "idle" }],
   wave: [{ clip: "wave" }, { clip: "boss-wave" }],
   "wave-boss": [{ clip: "boss-wave" }, { clip: "wave" }],
-  applaud: [{ clip: "applaud" }, { clip: "idle" }],
+  applaud: [{ clip: "applaud" }, { clip: "applause" }, { clip: "idle" }],
+  // acting (Motion: Mocap — captured or adapted from captures, tools/mocap3d; Old plays the stand-in)
+  "walk-confident": [{ clip: "walk_confident" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
+  handshake: [{ clip: "handshake" }, { clip: "wave", speed: 0.8 }, { clip: "idle" }],
+  hug: [{ clip: "hug" }, { clip: "idle" }],
+  nod: [{ clip: "nod" }, { clip: "idle" }],
+  point: [{ clip: "point" }, { clip: "boss-talk" }, { clip: "idle" }],
+  "talk-hands": [{ clip: "talk" }, { clip: "boss-talk" }, { clip: "idle" }],
+  "get-up": [{ clip: "get_up_side" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
   // seated
-  sit: [{ clip: "sitidle", hold: 0.45 }, { clip: "boss-sit", hold: 0.45 }],
+  sit: [{ clip: "sit_idle", hold: 0.35 }, { clip: "sitidle", hold: 0.45 }, { clip: "boss-sit", hold: 0.45 }],
   "sit-boss": [{ clip: "boss-sit", hold: 0.45 }, { clip: "sitidle", hold: 0.45 }],
   "sit-talk": [{ clip: "sit-talk" }, { clip: "sitidle", hold: 0.45 }],
   /** Getting up from a chair: the sitdown clip played backwards (sat 4.3 s → stood 0.75 s). */
-  "stand-up": [{ clip: "stand-up" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
-  "sit-down": [{ clip: "sit-down" }, { clip: "sitdown", from: 0.75, speed: 1.1 }],
+  "stand-up": [{ clip: "stand-up" }, { clip: "stand_up" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
+  "sit-down": [{ clip: "sit-down" }, { clip: "sit_down" }, { clip: "sitdown", from: 0.75, speed: 1.1 }],
   // football
   shot: [{ clip: "shot_r" }, { clip: "kick_r" }],
   kick: [{ clip: "kick_r" }],
   celebrate: [{ clip: "celebrate" }, { clip: "celebrate_fist" }],
   "celebrate-fist": [{ clip: "celebrate_fist" }, { clip: "celebrate" }],
+  "celebrate-roar": [{ clip: "celebrate_roar" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
+  "fist-pump": [{ clip: "celebrate_pump" }, { clip: "celebrate_fist" }, { clip: "celebrate" }],
   "celebrate-run": [{ clip: "celebrate_safe" }, { clip: "jog" }],
   cheer: [{ clip: "cheer_win" }, { clip: "celebrate" }],
   frustrated: [{ clip: "frustrated" }, { clip: "groan_loss" }],
@@ -47,6 +57,14 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   "keeper-ready": [{ clip: "ready_shuffle" }],
   "dive-left": [{ clip: "dive_left" }],
   "dive-right": [{ clip: "dive_right" }],
+  "dive-left-low": [{ clip: "dive_left_low" }, { clip: "dive_left" }],
+  "dive-right-low": [{ clip: "dive_right_low" }, { clip: "dive_right" }],
+  "dive-left-high": [{ clip: "dive_left_high" }, { clip: "dive_left" }],
+  "dive-right-high": [{ clip: "dive_right_high" }, { clip: "dive_right" }],
+  "slide-tackle": [{ clip: "sliding_tackle" }],
+  "poke-tackle": [{ clip: "poke_tackle" }],
+  "chest-control": [{ clip: "chest_control" }],
+  "thigh-control": [{ clip: "thigh_control" }],
   "knee-slide": [{ clip: "knee_slide" }, { clip: "celebrate_fist", from: 0.3, speed: 0.5 }],
   pickup: [{ clip: "pickup" }],
   stretch: [{ clip: "stretch" }],
@@ -55,7 +73,7 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
 
 /** Running speed (m/s) of a gait clip at speed 1, so a path's pace sets its speed. */
 export const GAIT_SPEED: Record<string, number> = {
-  walk: 1.35, "walk-proud": 1.3, "walk-sad": 1.0, slump_walk: 1.15,
+  walk: 1.35, "walk-proud": 1.3, walk_confident: 1.4, "walk-sad": 1.0, slump_walk: 1.15,
   jog: 3.0, celebrate_safe: 3.4, sprint: 7.4, dribble_run: 4.6, run: 5.5,
 };
 
