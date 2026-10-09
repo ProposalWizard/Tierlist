@@ -105,6 +105,8 @@ export interface StyleDef {
   apron: string;
   stand: string; roof: string;
   crowd: string[];
+  /** Look H (Console Realism): built by style3d/real instead of the kit's stadium, at this time of day. */
+  real?: "day" | "golden" | "night";
   /** Bigger ball on the fixed camera (the 2D game draws it big for the same reason). */
   ballScale: number;
   confetti: boolean;
@@ -240,7 +242,8 @@ export const STYLES: Record<Exclude<StyleId, "mix">, StyleDef> = {
     grass: ["#3f7d2c", "#4f9238"], apron: "#3a6f29",
     stand: "#4b525c", roof: "#2c3138",
     crowd: CROWD_MIX,
-    ballScale: 1.8, confetti: false,
+    ballScale: 2.0, confetti: false,
+    real: "day",
     post: { ...POST0, bloom: 0.35, bloomThresh: 0.9, sat: 1.05, contrast: 1.06, vignette: 0.28, grain: 0.012, exposure: 1.05 },
   },
 };
@@ -259,7 +262,7 @@ export function resolveStyle(id: StyleId, kind: SceneKind): StyleDef {
   if (kind === "play") {
     const r = STYLES.real;
     return {
-      ...r, id: "mix-play", sky: MIX_SKY, sun: MIX_SUN, sunDir: MIX_DIR,
+      ...r, id: "mix-play", real: "golden", sky: MIX_SKY, sun: MIX_SUN, sunDir: MIX_DIR,
       hemi: { sky: "#ffe6c8", ground: "#55603a", intensity: 1.0 },
       fog: { color: "#e8c9a6", near: 110, far: 320 },
       post: { ...r.post, tint: MIX_TINT, lift: [0.015, 0.008, 0], bloom: 0.45, sat: 1.08, exposure: 1.45 },
