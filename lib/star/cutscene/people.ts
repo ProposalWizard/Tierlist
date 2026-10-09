@@ -33,11 +33,12 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
-  loadPeople3d, makePerson3d, dressPerson3d, poseClips, poseFingers, mixFingers, fingerTip,
+  loadPeople3d, makePerson3d, dressPerson3d, poseClips, poseFingers, mixFingers, fingerTip, toonHeadsFor,
   type Person3D, type PersonModel, type PersonLook, type FingerPose, type WornThing,
 } from "../people3d";
 import { solveArm, setBoneWorldQuat, rotateBoneWorld, handWorldQuat, type HandAxes } from "../signing3dRig";
 import { withMeshopt } from "../three3d/meshopt";
+import { toonWearsSuit } from "../style3d/toon/bodies";
 import { makeWalkClip } from "../walkClip";
 import { addCutsceneFace, makeCutLight, makeToonRamp, mixFace, blendExpressions, EXPRESSIONS, NEUTRAL_FACE, setFaceColours, type CutLight, type ExpressionName, type FaceParams, type FaceRig } from "./face";
 import { handPose, gripKind, type HandPoseName } from "./hands";
@@ -572,7 +573,8 @@ export class Cast {
   /** A person, dressed, in the scene. */
   async actor(spec: ActorSpec, opts: { outline?: number } = {}): Promise<Actor> {
     const T = this.T;
-    const model = await loadPeople3d(this.loader, spec.model, "new");
+    // only this person's head (Style A; lag pass 4): the files are cached, so the cast shares them
+    const model = await loadPeople3d(this.loader, spec.model, "new", toonHeadsFor([{ who: spec.name, you: spec.name === "you", suit: toonWearsSuit(spec.model, spec.human?.outfit) }]));
     const p = makePerson3d(T, this.SkeletonUtils, model, this.anims, { outline: opts.outline ?? 0.003, outlineNear: 1.6, human: spec.human, who: spec.name, you: spec.name === "you" });
     const isNew = this.look === "new";
     // The human body in a kit wears real football boots (the shop's model), in the kit colour.

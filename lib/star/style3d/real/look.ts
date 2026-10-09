@@ -31,6 +31,7 @@ import { bakedLightNow, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
 import { shadowCacheOff } from "../../three3d/shadowCache";
 import { lightReachOff } from "../../three3d/lightReach";
+import { safeCompileAsync } from "../../three3d/safeCompile";
 
 /** Each of the three extra floodlight banks, as a share of the night "sun" (the fourth bank). */
 const FLOOD_BANK = 1.0;
@@ -79,6 +80,13 @@ export interface RealLook {
   cheer(v: number): void;
   update(dt: number, camera: any, focus: { x: number; z: number }, ball?: { x: number; y: number; z: number; vx: number; vy: number; vz: number }): void;
   render(scene: any, camera: any, hooks?: { beforeShadows?: () => void; afterShadows?: () => void }): void;
+  /**
+   * Build every shader the scene needs for THIS look's own picture target
+   * (no tone mapping: the post pass grades), in the background, before the
+   * first frame. A screen compile (warmUp) builds the wrong variant. Lag pass 4,
+   * 9 Oct 2026: the career revisit built 43 shaders on its first frame.
+   */
+  compile(scene: any, camera: any): Promise<void>;
   dispose(): void;
 }
 
@@ -371,6 +379,17 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       csInst.instanceMatrix.needsUpdate = true;
       arena?.update(dt, ball);
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
+    },
+    async compile(sc, camera) {
+      if (dead) return;
+      const rt = post.sceneTarget();
+      const prevT = renderer.getRenderTarget(), tm = renderer.toneMapping;
+      if (rt) { renderer.toneMapping = T.NoToneMapping; renderer.setRenderTarget(rt); }
+      let job: Promise<unknown> = Promise.resolve();
+      // the variant is picked now, from the target set; only the waiting is async (three3d/safeCompile.ts)
+      try { job = safeCompileAsync(renderer, sc, camera); } catch { /* built on first use */ }
+      renderer.setRenderTarget(prevT); renderer.toneMapping = tm;
+      await Promise.race([job.catch(() => {}), new Promise((r) => setTimeout(r, 8000))]);
     },
     render(sc, camera, hooks) {
       const gr = currentGovernor()?.rung ?? fallbackRung;

@@ -228,6 +228,30 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
     return true;
   },
+  /**
+   * One person from loadPeople3d under the page's own Settings (set the look keys in
+   * localStorage first: "star-look-player-style" old + "star-look-3d-body" human/before for
+   * the human or the one body). Lag pass 4: a still of each packed model against the plain one.
+   */
+  async person(opts: any = {}) {
+    M.t0 = performance.now();
+    const el = stage();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(220, 320); el.appendChild(renderer.domElement);
+    const scene = new THREE.Scene(); scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2)); const sun = new THREE.DirectionalLight("#ffffff", 2); sun.position.set(2, 4, 5); scene.add(sun);
+    const loader = await withMeshopt(new GLTFLoader());
+    const [g, anims] = await Promise.all([loadPeople3d(loader as any, opts.model ?? "player", "new"), loadPeople3d(loader as any, "anims", "new")]);
+    const p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+    dressPerson3d(THREE as any, p, { skin: "#e0b89a", hair: "#3d2616", kit: KIT, number: null });
+    scene.add(p.root);
+    const cam = new THREE.PerspectiveCamera(18, 220 / 320, 0.1, 40); cam.position.set(0, 1, 7); cam.lookAt(0, 0.9, 0);
+    let on = true;
+    const tick = () => { if (!on) return; renderer.render(scene, cam); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
   async preload(scene: string) {
     const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;

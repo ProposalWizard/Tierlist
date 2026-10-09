@@ -387,6 +387,39 @@ function paramsOf(v: ChanceParams): ChancePlan {
 /** Cross every dimension, filter for football sense, keep the survivors. */
 export function generateSpace(): { plans: ChancePlan[]; report: GenerationReport } {
   if (CACHE) return CACHE;
+  // the rest of a background build, or the whole build, here and now
+  const gen = building ?? buildSpace();
+  building = null;
+  while (!gen.next().done) { /* run it out */ }
+  return CACHE!;
+}
+
+let building: Generator<void, void, void> | null = null;
+
+/**
+ * Build the space in the background, a slice between frames (lag pass 4, 9 Oct
+ * 2026). It was built the first time a chance was asked for: ~310 ms (CPU
+ * slowed 4×) frozen as you came on from the bench. The match calls this while
+ * the commentary runs; a chance asked for before it finishes completes it at
+ * once (generateSpace). Same plans, same order.
+ */
+export function warmChanceSpace(sliceMs = 6): void {
+  if (CACHE || building || typeof setTimeout === "undefined") return;
+  const gen = buildSpace();
+  building = gen;
+  const step = () => {
+    if (building !== gen) return; // finished by generateSpace meanwhile
+    const t0 = Date.now();
+    while (Date.now() - t0 < sliceMs) {
+      if (gen.next().done) { building = null; return; }
+    }
+    setTimeout(step, 0);
+  };
+  setTimeout(step, 0);
+}
+
+/** generateSpace's work, pausing after each kind × distance (48 slices). */
+function* buildSpace(): Generator<void, void, void> {
   const plans: ChancePlan[] = [];
   const rejectedBy: Record<string, number> = {};
   const byKind: Record<string, number> = {};
@@ -394,7 +427,8 @@ export function generateSpace(): { plans: ChancePlan[]; report: GenerationReport
   let crossings = 0;
 
   for (const kind of PARAM_SPACE.kind)
-  for (const distance of PARAM_SPACE.distance)
+  for (const distance of PARAM_SPACE.distance) {
+  yield;
   for (const lateral of PARAM_SPACE.lateral)
   for (const side of PARAM_SPACE.side)
   for (const engagement of PARAM_SPACE.engagement)
@@ -415,9 +449,9 @@ export function generateSpace(): { plans: ChancePlan[]; report: GenerationReport
     plans.push(paramsOf(v));
     byKind[kind] = (byKind[kind] ?? 0) + 1;
   }
+  }
 
   CACHE = { plans, report: { crossings, survivors: plans.length, rejectedBy, byKind } };
-  return CACHE;
 }
 
 export function allPlans(): ChancePlan[] { return generateSpace().plans; }

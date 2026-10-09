@@ -23,7 +23,7 @@
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, poseFingers, fingersDeg, mixFingers, type Person3D, type PeopleBody, type PlayerModel, type FingerPose } from "./people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, poseFingers, fingersDeg, mixFingers, toonHeadsFor, type Person3D, type PeopleBody, type PlayerModel, type FingerPose } from "./people3d";
 import { people3dLook } from "./look3d";
 import { solveArm, handWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
 import { rememberGpu, loadGltfCached } from "./three3d/perf";
@@ -241,9 +241,11 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
   // ── People ──
   const loader = await withMeshopt(new GLTFLoader());
   const models: PlayerModel[] = ["player", "player-buzz", "player-long"];
+  // only the heads of the men who will be made (person() below: one id a man, in order) and yours
+  const heads = toonHeadsFor([{ you: true }, ...Array.from({ length: plan.stops.length + BACKGROUND_MEN[tier] }, (_, k) => ({ who: `ovation-${opts.seed}-${k}` }))]);
   const [anims, ...bodies] = await Promise.all([
     loadPeople3d(loader, "anims"),
-    ...models.map((m) => loadPeople3d(loader, m, BODY)),
+    ...models.map((m) => loadPeople3d(loader, m, BODY, heads)),
   ]);
   const bodyOf = (m: PlayerModel): GLTF => bodies[models.indexOf(m)];
   // The Blender-made greetings (New, the default); the first version if Old or if the file won't load.

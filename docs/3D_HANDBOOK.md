@@ -576,6 +576,32 @@ Not done:
 
 Tools: `scripts/perf3d/load.mjs` (`--files` lists every trip), `prof.mjs` (top costs and who calls them), `newprog.mjs` (shaders built after ready), `png-refs.mjs` (which PNGs the code uses), `serve.mjs --cache=vercel` (the live site's cache headers).
 
+### 3D lag pass 4 (9 Oct, night)
+
+Harry: "I want loading times eradicated, I want animations clean in every mode." Same picture, less work. Measured on this machine (SwiftShader, 390×844, page thread slowed 4×; it has NO parallel shader compile, so a shader built "in the background" here is still paid on first use; count shaders, trust the phone).
+
+| Item | Before | After |
+|---|---|---|
+| 1. Style A heads fetched | drill 8, cut scene 8, garden 8 | drill 3, cut scene 4, garden 5 (−0.9 to −1.1 MB; drill ready 6.5 → 5.2 s, cut 5.7 → 4.4 s) |
+| 2. KTX2 (one bodies, human) | one body 11 MB, human ~50 MB on the chip | ~2.8 MB / ~13 MB (still pairs: mean pixel change 0.9 / 0.4 of 255) |
+| 3. Career 3D revisit (first frame) | 5.7 s (43 shaders rebuilt on frame 1) | 2.8–3.7 s (0 screen shaders; look H's own built before ready) |
+| 4. Bench "GET OUT THERE" freeze | 418 + 344 ms long tasks | built, NOT re-measured (needs a fresh `next build`) |
+| 5. Garden: shaders built after the cover | 22 | ~5 (the cars that arrive late, one lamp variant) |
+
+Done:
+- `toonHeadsFor(people)` (`lib/star/people3d.ts`): the heads makePerson3d will pick for these ids. Garden, drills (play3d), ovation, farewell, cut-scene people pass it to `loadPeople3d`. Files are cached per URL, so scenes share them.
+- KTX2 twins `*.ktx2.glb` for `onebody/*.glb` and `human3d/human.glb` (`scripts/perf3d/ktx2-models.mjs`, `KTX2_MODELS` + `loadModel3d` in `lib/star/three3d/ktx2.ts`, POLICY skip lines). Files grow (one body 0.5 → 1.4 MB, the UASTC normal map). The preload asks for the twins.
+- Career revisit: `RealLook.compile` (`real/look.ts`) builds shaders for look H's own picture target; `createEngineView` waits up to `H_WAIT_MS` for H so it opens straight in it (the kit's first frames had built 43 screen shaders, then H built its own). The spares are built a slice at a time while H loads, the drawing buffer is sized while loading. `relaxIdleArms` reads matrixWorld instead of re-walking the chain: same numbers bit for bit, 42% faster.
+- Bench: the two freezes were the chance space built on the first chance (`generateSpace`, 373k crossings) and each kit's sprite atlas coloured in one go. `warmChanceSpace()` (`chanceFormula.ts`) and `warmSpriteKits()` (`sprites.ts`) do both in slices from CanvasMatch's mount, while the commentary runs.
+- Garden: the bench and car pictures (`makeImpostor`) are drawn into their own target with their own lights and no fog; their first bake built every shader on frame 1 (~2.4 s here). `prime()` builds them during loading.
+
+Not done:
+- Style A heads stay WebP: ETC1S tinted the skin a shade grey-blue (the toon shader reads skin and hair off the map); UASTC kept it but a head went 220 → 920 KB. Try: UASTC with sRGB flag + stronger RDO, or a 512 colour map.
+- `star-pass/3d/reward-glasses.glb`: twin not shipped (no still of it checked; Podium3D already calls `loadModel3d`, so adding it to both lists is all it needs after a still).
+- Item 4 after-numbers; and on this machine the garden's ready→first gap did not shrink (no parallel compile here). Check both on a phone.
+
+Tools: `scripts/perf3d/prof2.mjs` (profile the Nth open in one page: `THROTTLE=4`, `STAY=ms`), `progcache.mjs` (which shaders survive leaving and coming back), `newprog.mjs --visit=2`, `scripts/perf2d/bench-prof.mjs` (profile from GET OUT THERE to the first aim, worst long tasks), harness scene `H.person` (one person under the page's Settings). Note: with `M.finish=false` a long stay piles GPU work up and the next first frame "waits" 25 s; that is the harness, not the game.
+
 ### 2D shop
 
 - **What:** a new 2D shop (Cans · Boots · Style) and a new Shop page. Settings → Look → "Shop: New | Old" (`lib/star/shopLook.ts`, row `shop2d` in `gameVersions.ts`), default New. Old = `components/star/Shop.tsx` + `ShopPage.tsx`, untouched.
