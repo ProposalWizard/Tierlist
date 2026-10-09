@@ -219,7 +219,7 @@ When `lib/star/three3d/footballAnims.ts` loads the mocap file it fixes it once: 
 6. **Play it** (next sections).
 7. **Check it** frame by frame (below).
 
-For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set.
+For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set. Keyed clips pass through `steady()` there (no knee/elbow flips); `tests/star/animSmooth.mts` checks no bone turns over 60° in one 60 fps frame.
 
 ### Play a clip in a scene
 
