@@ -126,7 +126,7 @@ for (const f of ["boot-hf", "boot-classic-hf", "boot-speed-hf"]) POLICY[`star/sh
 // fitted at load by fitCar, nothing reads their vertices).
 for (const f of ["car-hatch-hf", "car-suv-hf", "car-sports-hf", "car-classic-hf", "car-super-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 // Round 3: the counter's watches and jewellery (~3-4.5k triangles: small on the wall) and four more boots (~21k), same steps.
-for (const f of ["watch-smart-hf", "watch-gold-hf", "watch-rolex-hf", "jewel-silver-hf", "jewel-diamond-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+for (const f of ["watch-smart-hf", "watch-gold-hf", "watch-luxury-hf", "jewel-silver-hf", "jewel-diamond-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 for (const f of ["boot-starter-hf", "boot-control-hf", "boot-elite-hf", "boot-maestro-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 // Round 3: the motorbike and jet (turntable, ~17-21k triangles), the nine homes (model table, ~12k),
 // and the KIB can (~310 triangles, textures 512). The can keeps float vertices: the shop bakes them

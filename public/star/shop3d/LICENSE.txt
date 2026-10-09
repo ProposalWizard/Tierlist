@@ -58,7 +58,7 @@ items/car-hatch-hf.glb, items/car-suv-hf.glb, items/car-sports-hf.glb, items/car
   23k triangles with textures at 1024 px, then packed by
   scripts/perf3d/shrink-models.mjs. No logos, badges or plates.
 
-items/watch-smart-hf.glb, items/watch-gold-hf.glb, items/watch-rolex-hf.glb, items/jewel-silver-hf.glb, items/jewel-diamond-hf.glb (9 Oct 2026, 3D look H only)
+items/watch-smart-hf.glb, items/watch-gold-hf.glb, items/watch-luxury-hf.glb, items/jewel-silver-hf.glb, items/jewel-diamond-hf.glb (9 Oct 2026, 3D look H only)
   The counter's watches and jewellery (Smartwatch, Gold Watch, Diamond Rolex,
   Silver Chain, Diamond Necklace). Made for this game the same way (Higgsfield
   picture, Tripo H3.1, simplified to about 3-4.5k triangles, textures 1024 px,

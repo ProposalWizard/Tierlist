@@ -877,7 +877,7 @@ async function buildShop(
   const COUNTER_H_MODELS: Record<string, string> = {
     smartwatch: "/star/shop3d/items/watch-smart-hf.glb", silver: "/star/shop3d/items/jewel-silver-hf.glb",
     gold: "/star/shop3d/items/watch-gold-hf.glb", diamond: "/star/shop3d/items/jewel-diamond-hf.glb",
-    rolex: "/star/shop3d/items/watch-rolex-hf.glb",
+    rolex: "/star/shop3d/items/watch-luxury-hf.glb",
   };
   const SHELF_Y = BOX_Y - 0.43;
   const counterSlots: { group: any; spin: number }[] = [];
