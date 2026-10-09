@@ -222,10 +222,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Loading", items: [
         ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert)."],
-        ["Kane drawings (in the game)", "The 376 Kane drawings the game uses when Settings → Match → Kane drawings (testing) is New: every Kane pass and shot from 21 matches (Euro 2020, World Cup 2022, Euro 2024, Bayern v Leverkusen 2023/24). No file needed."],
+        ["Striker drawings (in the game)", "The drawings the game uses when Settings → Match → Kane drawings (testing) is New: real strikers' passes and shots from every free StatsBomb set with positions (Kane's marked ★ and dealt 3× as often). Each card says easy / normal / hard; the game deals 50 / 35 / 15. No file needed."],
       ] },
       { group: "Filters", items: [
-        ["Premier League 15/16 shots / Kane, every touch", "Which set to show."],
+        ["Premier League 15/16 shots / Striker drawings", "Which set to show."],
         ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
         ["Goals only", "Only shots that went in for real."],
@@ -239,7 +239,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
-    inGame: ["The Kane drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
+    inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
   },
   "/star-goal-clips-dev": {
