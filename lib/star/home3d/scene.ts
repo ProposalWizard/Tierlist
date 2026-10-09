@@ -29,6 +29,7 @@
  * The governor (three3d/governor.ts) and the quality tier work as in the shop.
  */
 import type { Person3D } from "../people3d";
+import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
@@ -778,6 +779,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = Math.PI, camYaw = 0, orbitHold = 0;
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam();
   let near: HomeSpot | null = null;
   let dwellZone: HomeSpot | null = null;
@@ -970,7 +973,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // indoors: walk and jog only (a small room has no sprint)
     speed = approach(speed, Math.min(STROLL_SPEEDS.jog, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS)), dt, STROLL_SPEEDS);
     if (changing) speed = 0;
-    if (wantYaw !== null && !changing) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null && !changing) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       const d = angDiff(yaw, Math.atan2(faceTo[0] - P.x, faceTo[1] - P.z));
       yaw += d * Math.min(1, dt * 5);

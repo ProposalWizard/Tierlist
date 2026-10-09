@@ -44,6 +44,7 @@
  * detail costs few draw calls.
  */
 import { dressInKit, type KitColours } from "../shop3d/scene";
+import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -2219,6 +2220,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = st0.yaw, camYaw = st0.yaw + Math.PI, orbitHold = 0;
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the shop)
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
@@ -2466,7 +2469,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
       speed += (target - speed) * Math.min(1, dt * 8);
     }
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       // arrived at something: turn to it
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
