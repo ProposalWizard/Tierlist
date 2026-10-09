@@ -45,6 +45,20 @@ export const KEEPER_REACT = 0.3, KEEPER_READ_ERR = 0.55;
 export const KEEPER_REACH = 0.7, KEEPER_REACH_SKILL = 1.0;
 export const KEEPER_DIVE_SPEED = 3.2, KEEPER_DIVE_SKILL = 1.8;
 export const KEEPER_GRAB = 0.34;
+/**
+ * A strike from close in (under CLOSE_RANGE m from him: a header or volley off a
+ * cross, a first-time finish in the box). He has watched the cross come in and is
+ * set, low and expecting it, so he goes on reflex: a quicker start (CLOSE_REACT
+ * instead of KEEPER_REACT), an explosive spring across (CLOSE_SPRING m/s more dive
+ * speed) and a full star-jump spread (CLOSE_REACH m more sideways). Spring and
+ * spread scale with his rating (x1.0 at 60, x1.2 at 80). Full effect at CLOSE_FULL m
+ * and nearer, none at CLOSE_RANGE. Free Roam's shots from 12 m (10.8 m+ from him)
+ * and further are untouched (play3dKeeperRate.mts).
+ * Without it, Headers & Volleys went from 3.1 to 5.7 goals per 10 against a
+ * 60 keeper when the keeper above was made beatable (9 Oct 2026).
+ */
+export const CLOSE_RANGE = 10.5, CLOSE_FULL = 7.5;
+export const CLOSE_REACT = 0.1, CLOSE_SPRING = 4, CLOSE_REACH = 0.9;
 
 /** Where he stands: on the line from goal centre to the ball, a little off his line. */
 export function keeperSpot(b: Ball3): { x: number; y: number } {
@@ -85,7 +99,10 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
     const line = shotLine(k, b);
     m.shot = shot; // one read per shot: wide now is wide later
     if (line && onTarget(line)) {
-      m.react = KEEPER_REACT - r * 0.1 + Math.abs(gauss(rng)) * 0.05;
+      // how close in the strike is (0 = 10 m+ away, 1 = 7 m or nearer): a reflex save
+      const close = clamp((CLOSE_RANGE - Math.hypot(b.x - k.x, b.y - k.y)) / (CLOSE_RANGE - CLOSE_FULL), 0, 1);
+      m.close = close;
+      m.react = KEEPER_REACT + (CLOSE_REACT - KEEPER_REACT) * close - r * 0.1 + Math.abs(gauss(rng)) * 0.05;
       // his read: worse the less time he has (a close-range header or volley is a guess)
       const rush = clamp(1 - line.t / READ_TIME, 0, 1);
       m.tx = clamp(line.x + gauss(rng) * (KEEPER_READ_ERR - r * 0.25 + rush * READ_RUSH), POST_L - 0.6, POST_R + 0.6);
@@ -117,8 +134,8 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
     } else {
       const tx = m.tx as number, tz = m.tz as number, x0 = m.x0 as number;
       const side = Math.sign(tx - x0) || 1;
-      const reach = KEEPER_REACH + r * KEEPER_REACH_SKILL; // how far his body can go sideways
-      const speed = KEEPER_DIVE_SPEED + r * KEEPER_DIVE_SKILL; // m/s across his goal
+      const reach = KEEPER_REACH + r * KEEPER_REACH_SKILL + ((m.close as number) ?? 0) * CLOSE_REACH * (0.4 + r); // how far his body can go sideways
+      const speed = KEEPER_DIVE_SPEED + r * KEEPER_DIVE_SKILL + ((m.close as number) ?? 0) * CLOSE_SPRING * (0.4 + r); // m/s across his goal
       const wantX = clamp(tx - side * 0.75, x0 - reach, x0 + reach);
       const step = clamp(wantX - k.x, -speed * dt, speed * dt);
       k.x += step;
