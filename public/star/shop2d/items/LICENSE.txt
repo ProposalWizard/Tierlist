@@ -1,0 +1,8 @@
+SHOWROOM SHOP ITEM STILLS (public/star/shop2d/items/*.webp)
+
+1440x1080 renders, made in this repo, 9 Oct 2026, by tools/shop2d/render_big.py:
+the same Blender scripts as public/shop/*.webp (tools/blender-shop/scripts —
+every model built in code, no downloaded assets, no brands or logos; the only
+outside file is the system font DejaVu Sans Bold, free licence). Cycles, 10
+samples + OpenImageDenoise, transparent background, no shadow-catcher floor.
+WebP quality 80. No Higgsfield credits used for these.

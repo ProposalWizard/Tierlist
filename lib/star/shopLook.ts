@@ -16,16 +16,17 @@ import { useSyncExternalStore } from "react";
 
 export type ShopLook = "new" | "old";
 // v2 (9 Oct 2026): the framed-card shop went live and Harry called it "horrendous"; held on Old
-// for everyone (a fresh key, so earlier "new" choices reset) until Showroom + Feed replaces it.
+// for everyone (a fresh key, so earlier "new" choices reset) until Showroom + Feed replaced it.
+// Showroom + Feed landed the same day: New (the default again) = shop2d/ShowroomShop.tsx.
 export const SHOP_LOOK_KEY = "star-shop-look-v2";
 let stored: ShopLook | undefined;
 const listeners = new Set<() => void>();
 
 function read(): ShopLook {
   try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(SHOP_LOOK_KEY) === "new" ? "new" : "old";
+    return typeof localStorage !== "undefined" && localStorage.getItem(SHOP_LOOK_KEY) === "old" ? "old" : "new";
   } catch {
-    return "old";
+    return "new";
   }
 }
 

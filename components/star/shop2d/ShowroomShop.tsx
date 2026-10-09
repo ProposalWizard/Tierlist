@@ -515,7 +515,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
 
       {/* Top: back · the category rail · balance + fame. Floats over the item. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pb-3" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="pointer-events-auto flex h-[46px] items-center gap-1.5 px-2.5">
+        <div className="pointer-events-auto mx-auto flex h-[46px] max-w-[820px] items-center gap-1.5 px-2.5">
           <button onClick={onBack} aria-label="Back" data-shop-back className="kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/55 text-[20px] font-black ring-1 ring-white/20 backdrop-blur">‹</button>
           <Rail ci={ci} onJump={(i) => goCat(i)} />
           <button onClick={() => setFameOpen((v) => !v)} data-balance-chip aria-label="Balance and fame"
