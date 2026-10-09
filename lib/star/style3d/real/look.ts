@@ -127,7 +127,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.add(hemi, sun, sun.target);
   if (prof.shadows) {
     sun.castShadow = true;
-    const s = prof.shadowScale >= 1 ? 4096 : 2048;
+    const s = prof.shadowScale >= 1 ? 2048 : 1024;
     sun.shadow.mapSize.set(s, s);
     Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, near: 1, far: 320 });
     sun.shadow.bias = -0.00025;
@@ -137,6 +137,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   // night: three more lamp banks (no shadows) round the bowl
   const floods = [new T.DirectionalLight("#dfe8ff", 0), new T.DirectionalLight("#dfe8ff", 0), new T.DirectionalLight("#dfe8ff", 0)];
   for (const f of floods) root.add(f, f.target);
+  // a rim light from beyond the action, towards the camera: lifts players off the grass (a TV picture's edge light)
+  const rim = new T.DirectionalLight("#fff6ea", 0.7);
+  root.add(rim, rim.target);
 
   // ── pitch, stadium, ball ──
   const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
@@ -219,6 +222,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       sun.position.set(fx + dir.x * 150, dir.y * 150, fz + dir.z * 150);
       const fl = [[-70, 60, -40], [70, 60, -40], [0, 55, 150]];
       floods.forEach((f, i) => { f.position.set(fl[i][0], fl[i][1], fl[i][2]); f.target.position.set(fx, 0, fz); });
+      const cx = camera.position.x - fx, cz = camera.position.z - fz, cl = Math.hypot(cx, cz) || 1;
+      rim.position.set(fx - (cx / cl) * 60, 14, fz - (cz / cl) * 60); rim.target.position.set(fx, 1, fz);
+      rim.intensity = look.floods ? 1.1 : 0.7;
       for (const c of contacts) {
         const r = c.p.root;
         c.m.visible = r.visible && c.p.body.visible !== false;

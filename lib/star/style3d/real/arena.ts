@@ -360,7 +360,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
     g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
     const t = keep(new T.CanvasTexture(c)); t.colorSpace = T.SRGBColorSpace; return t;
   })();
-  const shaftMat = keep(new T.MeshBasicMaterial({ map: shaftTex, color: "#cfdcff", transparent: true, opacity: 0.075, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide, fog: false }));
+  const shaftMat = keep(new T.MeshBasicMaterial({ map: shaftTex, color: "#cfdcff", transparent: true, opacity: 0.04, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide, fog: false }));
   const shafts = new T.InstancedMesh(shaftGeo, shaftMat, Math.max(1, lampPos.length));
   {
     const q = new T.Quaternion(), sc = new T.Vector3(1, 1, 1), p = new T.Vector3(), t = new T.Vector3(), dn = new T.Vector3(0, -1, 0);
@@ -373,7 +373,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       tmpM.compose(p, q, sc);
       lamps.setMatrixAt(i, tmpM);
       // the shaft: a long thin cone from the lamp towards the pitch
-      const len = d.length() * 0.85;
+      const len = d.length() * 0.6;
       // the cone's tip is at the lamp and it opens down its own −y: aim −y along d
       q.setFromUnitVectors(dn, d.clone().normalize());
       sc.set(4.5, len, 4.5);
@@ -383,6 +383,24 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
     });
   }
   lamps.count = shafts.count = lampPos.length;
+  // night: a soft glare round every lamp (one draw of points), what the eye and a TV camera see
+  const glareTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.12, "rgba(235,242,255,0.85)"); gr.addColorStop(0.4, "rgba(200,220,255,0.18)"); gr.addColorStop(1, "rgba(200,220,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    const t = keep(new T.CanvasTexture(c)); t.colorSpace = T.SRGBColorSpace; return t;
+  })();
+  const gp: number[] = [];
+  {
+    const p = new T.Vector3();
+    for (const lp of lampPos as any[]) { p.set(lp.x, lp.y - 0.3, lp.z - 0.4).applyMatrix4(lp.s.matrixWorld); gp.push(p.x, p.y, p.z); }
+  }
+  const glareGeo = keep(new T.BufferGeometry());
+  glareGeo.setAttribute("position", new T.Float32BufferAttribute(gp, 3));
+  const glare = new T.Points(glareGeo, keep(new T.PointsMaterial({ map: glareTex, size: 7, sizeAttenuation: true, color: new T.Color(3, 3, 3), transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false })));
+  glare.visible = false; glare.renderOrder = 5;
+  G.add(glare);
   shafts.visible = false;
   shafts.renderOrder = 4;
   G.add(lamps, shafts);
@@ -482,6 +500,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       night = on;
       lampMat.color.copy(on ? lampOn : lampOff);
       shafts.visible = on && hi;
+      glare.visible = on;
       // at night the stands sit darker than the floodlit pitch
       cu.uLit.value = on ? 0.62 : 1;
       for (const m of ledMats) m.color.setScalar(on ? 1.5 : 1.05);
