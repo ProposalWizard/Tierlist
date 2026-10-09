@@ -42,6 +42,8 @@ import { useAvatarStyle } from "./PlayerAvatar";
 import { useFigureSkin } from "./FigureSkinToggle";
 import ClubBadge from "./ClubBadge";
 import SpinPlayer from "./SpinPlayer";
+import HomePlayer from "./HomePlayer";
+import { useHomeLook } from "@/lib/star/homeLook";
 import { LeagueDropdown, LEAGUE_DROPDOWN_H } from "./MiniLeague";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import {
@@ -52,7 +54,7 @@ import {
 
 const ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5fa", elite: "#c084fc" };
 
-export type HubPhase = "store" | "shop-kib" | "shop-boots" | "shop-lifestyle" | "shop-3d" | "casino-menu" | "sponsors" | "achievements" | "trophies" | "ownership" | "garden";
+export type HubPhase = "store" | "shop-kib" | "shop-boots" | "shop-lifestyle" | "shop-3d" | "casino-menu" | "sponsors" | "achievements" | "trophies" | "ownership" | "garden" | "home-3d";
 
 interface Props {
   career: CareerState;
@@ -132,7 +134,7 @@ export function leagueRowsFor(room: number | null): number {
   return room !== null && room >= 440 ? 5 : 3;
 }
 /** The player's box: what is left after the next match and the league table. */
-export function playerSizeFor(room: number | null, rows = 3): { w: number; h: number } {
+export function playerSizeFor(room: number | null, rows = 3, extra = 0, maxH = 290): { w: number; h: number } {
   if (room === null) return { w: 130, h: 154 };
   // + ARROW_STRIP: the bottom-edge arrows (Stats ‹ › Shop) sit under him (v0.23).
   // The league is a one-row dropdown now (Harry, 1 Oct 2026), so `rows` no
@@ -141,9 +143,10 @@ export function playerSizeFor(room: number | null, rows = 3): { w: number; h: nu
   // + CANS_H: the energy cans row under him (v0.24). He is bigger too: up
   // to 270 tall (was 226), so on a tall phone he fills the space the old
   // goal-and-sky gap used.
-  const fixed = NEXT_H + 4 + LEAGUE_DROPDOWN_H + 4 + 4 + CANS_H + 6 + ARROW_STRIP + 4;
-  const h = Math.max(104, Math.min(290, room - fixed));
-  const w = Math.min(FIG_MAX_W, Math.round(h * FIG_ASPECT));
+  // + extra: the New look's stat tiles (STATS_H) under the next match.
+  const fixed = NEXT_H + 4 + LEAGUE_DROPDOWN_H + 4 + 4 + CANS_H + 6 + ARROW_STRIP + 4 + extra;
+  const h = Math.max(104, Math.min(maxH, room - fixed));
+  const w = Math.min(maxH > 290 ? Math.round(maxH * FIG_ASPECT) : FIG_MAX_W, Math.round(h * FIG_ASPECT));
   return { w, h: Math.round(w / FIG_ASPECT) };
 }
 
@@ -152,6 +155,23 @@ export default function HomeHub(p: Props) {
   const { shirt, trim, glow } = useClubTheme(career);
   const [ref, room] = useRoom();
   const rows = leagueRowsFor(room);
+  const lookHome = useHomeLook();
+  if (lookHome === "new") {
+    // Settings → Look → "Home screen: New" (Harry, 9 Oct 2026): the stat
+    // tiles go up top, the goal goes, he stands centre stage.
+    // No goal to share the row with: he may stand taller (up to 360).
+    const size = playerSizeFor(room, rows, STATS_H + 4, 360);
+    return (
+      <div ref={ref} data-home-look="new" className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
+        <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
+        <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
+        <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>
+        <div data-home-league className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
+        <HeroNew {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
+        <MiddleLinks career={career} onOpen={p.onOpen} />
+      </div>
+    );
+  }
   const size = playerSizeFor(room, rows);
   return (
     // Full width: the page's own side padding is cancelled (-mx-3) so the
@@ -442,6 +462,101 @@ function SeasonStat({ label, value }: { label: string; value: number }) {
   );
 }
 
+// ── 2b. The New Home look (Settings → Look → "Home screen: New") ──────────
+//
+// Harry, 9 Oct 2026: "make the rep/fame + goals and assists and the cans more
+// prominent", "remove the goal", "the players to look really fun and good".
+// Four big tiles near the top, the goal gone, you centre stage through the
+// one hook (HomePlayer.tsx), the cans with big counts under you.
+
+/** The stat tiles' height (New look). */
+export const STATS_H = 66;
+
+interface Tile { key: string; label: string; value: number; icon: string; color: string; bar?: number }
+
+/** Reputation, Fame, Goals and Assists: one big number each, a 3D icon and a
+ *  short label. Goals and assists are this season's. */
+export function StatTiles({ career }: { career: CareerState }) {
+  const fame = fameOf(career);
+  const ps = career.seasonStats;
+  const tiles: Tile[] = [
+    { key: "rep", label: "Rep", value: Math.round(career.reputation), icon: "/icons3d/world.png", color: "#0ea5e9", bar: career.reputation },
+    { key: "fame", label: "Fame", value: fame, icon: "/icons3d/fame.png", color: "#d946ef", bar: Math.min(100, fame) },
+    { key: "goals", label: "Goals", value: ps.goals, icon: "/star/ball.png", color: "#22c55e" },
+    { key: "assists", label: "Assists", value: ps.assists, icon: "/shop/boot-control-L1.webp", color: "#f59e0b" },
+  ];
+  return (
+    <div data-home-stats className="grid grid-cols-4 gap-1.5" style={{ height: STATS_H }}>
+      {tiles.map((t) => <StatTile key={t.key} t={t} />)}
+    </div>
+  );
+}
+
+function StatTile({ t }: { t: Tile }) {
+  const shown = useCountUp(t.value, 600);
+  return (
+    <div data-stat={t.key} className="relative flex min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl px-1"
+      style={{
+        background: `radial-gradient(90% 80% at 50% 0%, ${rgba(t.color, 0.38)} 0%, transparent 75%), rgba(5,8,15,.72)`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1.5px ${rgba(t.color, 0.6)}, 0 6px 14px -8px ${rgba(t.color, 0.8)}`,
+      }}>
+      <div className="flex items-center gap-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={t.icon} alt="" aria-hidden draggable={false} className="h-[22px] w-[22px] shrink-0 select-none object-contain" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,.6))" }} />
+        <span className="text-[23px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 10px ${rgba(t.color, 0.7)}, 0 1px 2px rgba(0,0,0,.8)` }}>{Math.round(shown)}</span>
+      </div>
+      <div className="mt-1 text-[10px] font-black uppercase leading-none tracking-[0.14em] text-white">{t.label}</div>
+      {t.bar !== undefined && (
+        <div className="absolute inset-x-1.5 bottom-1 h-[4px] overflow-hidden rounded-full bg-white/15">
+          <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, t.bar))}%`, background: t.color }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyCan, hallChase }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+  const [skin] = useFigureSkin();
+  const style = useAvatarStyle();
+  const look = skin === "classic" ? "A1" : style;
+  // A win in your last match: celebrate once per match per visit (as Old).
+  const last = lastFive(career).at(-1);
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    if (!last || last.res !== "W") return;
+    const key = `kib-celebrated-${career.season}-${last.week}`;
+    try { if (sessionStorage.getItem(key)) return; } catch { /* ignore */ }
+    const on = setTimeout(() => {
+      try { sessionStorage.setItem(key, "1"); } catch { /* ignore */ }
+      setCelebrate(true);
+    }, 450);
+    const off = setTimeout(() => setCelebrate(false), 2100);
+    return () => { clearTimeout(on); clearTimeout(off); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [career.season, last?.week, last?.res]);
+  // No goal. The stadium picture still lines its hoardings up with the same
+  // marker the Old look used, so the set behind him does not move.
+  const marker = goalBoxFor(figW, figH, 0).hoardings;
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col justify-end px-3" style={{ paddingBottom: ARROW_STRIP + 4 }}>
+      <div className="relative flex w-full min-h-0 flex-1 items-end justify-center pt-1">
+        <div data-goal-line aria-hidden className="pointer-events-none absolute -inset-x-3 h-0" style={{ bottom: marker }} />
+        <div data-tour="player" data-home-player className="relative z-10 shrink-0" style={{ width: figW }}>
+          <HomePlayer career={career} width={figW} height={figH} where="home" look={look} kitShirt={kitShirt} kitTrim={kitTrim} glow={glow} celebrate={celebrate} />
+        </div>
+        {hallChase && (
+          <div data-hall-chase className="absolute right-0 top-1 z-10 flex max-w-[44%] items-start gap-1 px-1.5 py-1 text-[10px] font-black leading-tight text-amber-200" style={{ background: "rgba(5,8,15,.6)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)", borderRadius: 4, textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>
+            <span aria-hidden>🏛️</span><span>{hallChase}</span>
+          </div>
+        )}
+      </div>
+      <div data-home-cans className="relative z-10 mt-1.5 grid shrink-0 grid-cols-3 gap-1.5" style={{ height: CANS_H }}>
+        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={career.energy ?? 100} onUse={onUseCan} onBuy={onBuyCan} mini bold />)}
+      </div>
+    </div>
+  );
+}
+
 // ── 3. Achievements and Sponsors, two small links in the middle ────────────
 
 /** The two small links in the middle of Home's bottom strip: Achievements
@@ -480,7 +595,7 @@ function prefersReducedMotionSafe(): boolean {
 }
 
 /** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
-export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean; mini?: boolean }) {
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini = false, bold = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean; mini?: boolean; bold?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -512,7 +627,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
           <Shake trigger={drinking} className="absolute inset-0 flex items-end justify-center" style={{ filter: `drop-shadow(0 3px 6px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
             <KibCanIcon can={c} className="h-[38px] w-[22px]" />
           </Shake>
-          <span className="absolute -bottom-1 -right-1.5 min-w-[18px] rounded-full px-1 text-center text-[9.5px] font-black leading-[14px] tabular-nums text-gray-950"
+          <span className={`absolute rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "-bottom-1.5 -right-3 min-w-[24px] px-1.5 text-[13px] leading-[18px]" : "-bottom-1 -right-1.5 min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
             style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
           {drinking > 0 && (
             <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
@@ -522,7 +637,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[11px] font-black leading-tight text-white">{c.name.replace(" KIB Can", "")}</div>
+          <div className={`truncate font-black leading-tight text-white ${bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</div>
           <div className="line-clamp-2 text-[9.5px] font-bold leading-[11px] text-white/80">{effect}</div>
         </div>
       </div>

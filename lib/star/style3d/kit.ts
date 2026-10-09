@@ -251,7 +251,7 @@ export function createStyleKit(T: any, renderer: any, scene: any, tier: Quality3
         // The human body ("3D body: Human") has a list of materials, the old body one.
         const raw = p.body?.material as any;
         for (const m of (Array.isArray(raw) ? raw : raw ? [raw] : [])) {
-          if (!m.userData) continue;
+          if (!m.userData || m.userData.toon) continue; // Style A shades itself
           celShade(m, !!def.celPeople);
           m.roughness = def.glossy ? 0.32 : def.mat === "pbr" ? 0.62 : 0.8;
           m.metalness = 0;

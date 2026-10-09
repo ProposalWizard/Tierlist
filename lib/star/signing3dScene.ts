@@ -281,7 +281,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
 
   // ── People ──
   const makePerson = (gltf: GLTF, model: PersonModel, facing: 1 | -1): Person => {
-    const p3 = makePerson3d(T, SkeletonUtils, gltf, anims, { outline: prof.outlines ? 0.0035 : 0, outlineNear: ONE ? 1.6 : undefined });
+    const p3 = makePerson3d(T, SkeletonUtils, gltf, anims, { outline: prof.outlines ? 0.0035 : 0, outlineNear: ONE ? 1.6 : undefined, you: model !== "manager", who: model === "manager" ? "signing-manager" : undefined });
     const seatZ = facing === 1 ? -SEAT_Z : SEAT_Z;
     p3.root.position.set(0, 0, seatZ);
     p3.root.rotation.y = facing === 1 ? 0 : Math.PI;

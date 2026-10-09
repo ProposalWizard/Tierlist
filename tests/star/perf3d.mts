@@ -168,7 +168,7 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   check(texFreed === 1 && matFreed === 1 && geoFreed === 1, `each thing freed once (tex ${texFreed}, mat ${matFreed}, geo ${geoFreed})`);
 }
 
-// ── the governor (three3d/governor.ts): one rung down after ~2.5 s of slow frames, one back up after 15 s of fast ──
+// ── the governor (three3d/governor.ts): one rung down after ~2.5 s of slow frames, one back up after 8 s of fast; stalls ignored ──
 {
   const changes: string[] = [];
   const g = new Governor({ start: "medium", onChange: (r, i, why) => changes.push(`${why}:${i}:${r.tier}`) });
@@ -186,23 +186,46 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   run(28, 0.6);
   check(g.index === 2 && g.downs === 1, `2.5 s at ~36 fps: one rung down (now ${g.index})`);
   check(GOV_LADDER[2].pixelRatio === 1.5 && GOV_LADDER[2].shadows === "full" && GOV_LADDER[2].post === "full", "the first thing given up is the moving picture's pixels (to 1.5, no lower)");
-  run(28, 1);
-  check(g.index === 2, "3 s to judge the new rung before another step");
-  run(28, 2.6);
-  check(g.index === 3 && g.rung.shadows === "lite" && g.rung.post === "lite", `then, as an emergency, one light pass and blob shadows (now ${g.index})`);
+  run(28, 10);
+  check(g.index === 2, `36 fps sustained: the ordinary rule stops at rung 2, keeping shadows and post (now ${g.index})`);
+  run(40, 5.5);
+  check(g.index === 3 && g.rung.shadows === "lite" && g.rung.post === "lite", `then, only under 30 fps for 5 s, one light pass and blob shadows (now ${g.index})`);
   run(80, 30);
   check(g.index === GOV_LADDER.length - 1 && g.rung.shadows === "off" && g.rung.post === "off", "the bottom: no live shadows, no post pass; never lower");
   t += 1000; g.frame(t);
-  run(16.7, 13);
+  run(16.7, 6);
   check(g.index === GOV_LADDER.length - 1, "not fast for long enough yet: no step up");
   run(16.7, 2.5);
-  check(g.index === GOV_LADDER.length - 2 && g.ups === 1, `15 s at full rate: one rung back up (now ${g.index})`);
+  check(g.index === GOV_LADDER.length - 2 && g.ups === 1, `8 s at full rate: one rung back up (now ${g.index})`);
   run(16.7, 3.5);
   t += 1000; g.frame(t);
-  run(28, 3);
+  run(40, 6);
   check(g.index === GOV_LADDER.length - 1, "slow again soon after: back down");
+  run(16.7, 30);
+  check(g.index === GOV_LADDER.length - 1, "it bounced: no climb for a minute");
   run(16.7, 40);
-  check(g.index === GOV_LADDER.length - 1, "it bounced: never steps up again");
+  check(g.index < GOV_LADDER.length - 1, `a minute after the bounce it may climb again (now ${g.index})`);
+}
+// ── Harry's iPhone (9 Oct): 60 fps with one-off 500-730 ms stalls at each chance start is NOT slow ──
+{
+  const g = new Governor({ start: "medium" });
+  let t = 1000;
+  for (let s = 0; s < 180; s += 20) {
+    g.hush(t); t += 700; g.frame(t); // the stall at the chance start
+    for (let i = 0; i < 6; i++) { t += 45; g.frame(t); } // a few slow frames right after
+    const end = t + 19000; while (t < end) { t += 17; g.frame(t); }
+  }
+  check(g.index === 1 && g.downs === 0, `3 min of 60 fps with a stall every chance: stays on rung 1 (rung ${g.index}, downs ${g.downs})`);
+  const g3 = new Governor({ start: "medium" });
+  t = 1000; for (let i = 0; i < 300; i++) { t += 17; g3.frame(t); if (i % 40 === 0) { t += 200; g3.frame(t); } }
+  check(g3.index === 1, "single long frames (no hush) are left out too");
+  const g4 = new Governor({ start: "medium" });
+  t = 1000; for (let i = 0; i < 2000; i++) { t += 30; g4.frame(t); }
+  check(g4.index === 2, `33 fps sustained: never past rung 2 (rung ${g4.index})`);
+  g.dispose(); g3.dispose(); g4.dispose();
+}
+{
+  let t = 0;
   const g2 = new Governor({ start: "high" });
   t = 0; g2.frame(t); t += 5000; g2.frame(t); for (let i = 0; i < 300; i++) { t += 16.7; g2.frame(t); }
   check(g2.index === 0, "a 5 s gap (hidden tab, a menu) is not a slow frame");
@@ -219,7 +242,7 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   const frozen = new Governor({ start: "high", frozen: true });
   t = 0; for (let i = 0; i < 400; i++) { t += 60; frozen.frame(t); }
   check(frozen.index === 0, "frozen (?gov=0): never steps");
-  g.dispose(); g2.dispose(); frozen.dispose();
+  g2.dispose(); frozen.dispose();
 }
 
 if (problems.length) {

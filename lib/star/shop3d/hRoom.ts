@@ -16,16 +16,22 @@
  *
  * Maps: public/star/shop3d/h (≈180 KB, tools/shop3d/h_room.py, Poly Haven CC0).
  */
+import { loadPicture3d, useKtx2With } from "../three3d/ktx2";
+
 export interface ShopRoom { x: number; z: number; h: number }
 
 export async function dressShopH(T: any, scene: any, renderer: any, room: ShopRoom, parts: { floor: any; wallM: any; panelM: any; tier: string }) {
   const an = Math.min(8, renderer?.capabilities?.getMaxAnisotropy?.() ?? 4);
-  const load = (f: string, srgb: boolean, rx: number, ry: number) => new Promise<any>((res) => {
-    new T.TextureLoader().load(`/star/shop3d/h/${f}`, (t: any) => {
-      t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;
-      t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = an;
-      res(t);
-    }, undefined, () => res(null));
+  // a packed KTX2 copy when there is one (three3d/ktx2.ts), else the WebP exactly as before
+  if (renderer) useKtx2With(renderer);
+  const load = (f: string, srgb: boolean, rx: number, ry: number) => loadPicture3d(`/star/shop3d/h/${f}`, () => new Promise<any>((res) => {
+    new T.TextureLoader().load(`/star/shop3d/h/${f}`, res, undefined, () => res(null));
+  })).then((t: any) => {
+    if (!t) return t;
+    t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;
+    t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = an;
+    t.needsUpdate = true;
+    return t;
   });
   const [pq, pqN, pl, plN] = await Promise.all([
     load("parquet.webp", true, room.x * 2 / 2.2, room.z * 2 / 2.2), load("parquet-nrm.webp", false, room.x * 2 / 2.2, room.z * 2 / 2.2),

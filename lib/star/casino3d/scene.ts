@@ -57,6 +57,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
@@ -221,7 +222,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
   // New: the broadcast picture indoors (bloom, grade), with real 4x antialias on Medium and High
-  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: null, msaa: tier === "low" ? 0 : 4 }) : null;
+  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: "casino", msaa: tier === "low" ? 0 : 4 }) : null;
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 50);
 
   // ── Light: warm, low, rich (New: less flat fill; ./hRoom.ts adds a key light with shadows) ──
@@ -567,7 +568,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     const budget = !cas ? 2 : tier === "low" ? 2 : tier === "medium" ? 5 : 6;
     for (const sp of SPOTS.slice(0, budget)) {
-      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+      // staff and guests wear smart clothes (Style A), never a kit
+      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, who: `casino-${sp.role}-${dealers.length}`, suit: true });
       dressPerson3d(THREE, d, { skin: sp.skin, hair: sp.hair, kit: { shirt: sp.shirt, trim: sp.trim }, number: null });
       relaxHands(THREE, d);
       if (cas) addClips(THREE, d, cas);
@@ -583,7 +585,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       if (!pl.play(base, { from: Math.random() * 3 })) pl.play("idle");
       npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z });
     }
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
@@ -760,6 +762,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   }
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, screenMesh, ...games.keep, ...toppers, ...dealers.map((d) => d.root), ...(hRoom?.keep ?? []), ...(H ? tableSigns : [])]));
   if (H && renderer.shadowMap.enabled) freezeStaticShadows(renderer, scene); // nothing that casts moves: drawn once
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
   hRoom?.bakeReflections();
@@ -1053,6 +1057,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       disposed = true;
       gov.dispose();
       games.dispose();
+      savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);

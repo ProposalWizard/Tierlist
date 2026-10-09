@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { readFileSync } from "node:fs";
-import { uprightRunPosture, PEOPLE_POSTURE, UAL_POSTURE, NECK_LEAN_MAX, HAND_BEHIND_MAX, ELBOW_MIN, ELBOW_MAX } from "../../lib/star/three3d/runPosture";
+import { uprightRunPosture, PEOPLE_POSTURE, UAL_POSTURE, NECK_LEAN_MAX, HAND_BEHIND_MAX, ELBOW_MIN, ELBOW_MAX, relaxIdleArms, IDLE_WRIST_MAX, IDLE_HAND_OUT } from "../../lib/star/three3d/runPosture";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -48,6 +48,42 @@ for (const [file, bones, label] of [["public/star/anims3d/mocap.glb", PEOPLE_POS
   }
   const sp = rep.find((r) => r.clip === "sprint")?.arms;
   if (sp) check(sp.after.high >= 0.35, `${label} sprint: the front hand comes up to the chest (${cm(sp.after.high)})`);
+}
+
+// THE STANDING ARMS (Harry: "what is happening with those arms/hands?"): the idle on a Style A head
+{
+  // the skeleton only: the pictures are dropped (Node has no image decoder)
+  const raw = readFileSync("public/star/people3d/toon-p1.glb");
+  const jl = raw.readUInt32LE(12);
+  const js = JSON.parse(raw.subarray(20, 20 + jl).toString());
+  delete js.textures; delete js.images; delete js.samplers;
+  for (const m of js.materials ?? []) { delete m.occlusionTexture; delete m.normalTexture; if (m.pbrMetallicRoughness) delete m.pbrMetallicRoughness.baseColorTexture; }
+  js.extensionsUsed = (js.extensionsUsed ?? []).filter((e: string) => e !== "EXT_texture_webp");
+  const jb = Buffer.from(JSON.stringify(js)); const pad = Buffer.alloc((4 - (jb.length % 4)) % 4, 0x20);
+  const rest = raw.subarray(20 + jl);
+  const head = Buffer.alloc(20); head.writeUInt32LE(0x46546c67, 0); head.writeUInt32LE(2, 4);
+  head.writeUInt32LE(20 + jb.length + pad.length + rest.length, 8); head.writeUInt32LE(jb.length + pad.length, 12); head.writeUInt32LE(0x4e4f534a, 16);
+  const glb = Buffer.concat([head, jb, pad, rest]);
+  const body: any = await new Promise((res, rej) => { const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder as never); l.parse(glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength) as ArrayBuffer, "", res, rej); });
+  const anims = await load("public/star/people3d/anims.glb");
+  const bones: Record<string, THREE.Bone> = {};
+  body.scene.traverse((o: THREE.Object3D) => { if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone; });
+  body.scene.updateMatrixWorld(true);
+  const palmOf = (side: "L" | "R") => {
+    const q = new THREE.Quaternion(); bones[side === "L" ? "LeftHand" : "RightHand"].getWorldQuaternion(q);
+    return new THREE.Vector3(...(body.scene.userData.hands[side].palm as [number, number, number])).applyQuaternion(q.invert());
+  };
+  const clip = anims.animations.find((a: THREE.AnimationClip) => a.name === "idle").clone();
+  const r = relaxIdleArms(THREE, body.scene, bones, clip, { L: palmOf("L"), R: palmOf("R") });
+  if (!r) problems.push("idle arms: not done");
+  else {
+    const a = r.after, b = r.before;
+    console.log(`idle arms: wrist ${b.wrist.toFixed(0)}° → ${a.wrist.toFixed(0)}° · elbow bend ${(180 - b.elbow).toFixed(0)}° → ${(180 - a.elbow).toFixed(0)}° · hand out ${(b.out * 100).toFixed(0)} → ${(a.out * 100).toFixed(0)} cm · palm to thigh ${b.palmIn.toFixed(2)} → ${a.palmIn.toFixed(2)}`);
+    check(a.wrist <= IDLE_WRIST_MAX + 2, `idle: wrist ${a.wrist.toFixed(0)}° (want ≤ ${IDLE_WRIST_MAX + 2})`);
+    check(180 - a.elbow >= 8 && 180 - a.elbow <= 20, `idle: elbow bend ${(180 - a.elbow).toFixed(0)}° (want about 10-15)`);
+    check(a.out >= IDLE_HAND_OUT - 0.03, `idle: hands ${(a.out * 100).toFixed(0)} cm out from the hips`);
+    check(a.palmIn > 0.3, `idle: palms towards the thighs (${a.palmIn.toFixed(2)})`);
+  }
 }
 
 if (problems.length) { console.error("FAIL\n  " + problems.join("\n  ")); process.exit(1); }

@@ -1154,6 +1154,20 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
+  "/star-look-dev": {
+    title: "Player style (Style A)",
+    what: "The Knowitball look for every 3D person (Harry, 9 Oct 2026: Style A, painted cel shading with an ink outline) on the three new bodies. Your player in a club kit turns slowly in golden-hour light, with a team-mate (his body picked from his name) and a manager in his suit behind. Under it is the same Your look panel as in Settings.",
+    buttons: [
+      { items: [
+        ["Slim / Strong / Tall", "Your player's body: C1, C2 or C3."],
+        ["The coloured dots", "Your skin tone (the game's eight)."],
+        ["Black / Brown / Fair / Blond", "Your hair colour. Each body's haircut is part of the body, so only the colour changes."],
+      ] },
+    ],
+    saving: ["Nothing here is saved, and your phone's Settings are not changed. Add ?pstyle=old to the address to see the same three people in today's bodies (Settings → Look → Player style: Old)."],
+    inGame: ["Every 3D person: the real game in 3D, Free Roam and the 3D drills, the dribble runs, the shop, garden and casino, the signing, the walk-out and ovation, and the cut scenes. In a career, Settings → Your look saves your choice on the career."],
+    dev: "lib/star/style3d/toon/ (shader.ts the material, bodies.ts the seeded picks and kit colours, look.ts the switch); lib/star/people3d.ts loadPeople3d/makePerson3d (who, you, suit, toonBody, toonHead); the heads public/star/people3d/toon-p1..p6.glb and toon-mgr/mgr2.glb from scripts/people3d/build_toon_bodies.py. Stills: window.__lookReady, window.__lookStats (draws and triangles for one person).",
+  },
   "/star-people-dev": {
     title: "Cut-scene people",
     what: "The people every cut scene is made of, on their own: faces and expressions, blinking eyes that look at things, hand poses, things held in the hands, a handshake. Each button runs one short proof so it can be judged before a scene uses it.",
@@ -1304,6 +1318,53 @@ export const ADMIN_GUIDES = {
       "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own. Standing still it draws 30 times a second; walking, every frame at fewer pixels.",
     ],
     dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · the footballer: the new player (lib/star/people3d.ts, public/star/people3d/) by default, or the old character.glb + anims.glb (tools/shop3d/build_assets.py) when Settings → Look → \"3D shop player\" is Old (?player=old here) · three.js is the site's own package, loaded only when the shop opens",
+  },
+
+  "/star-home3d-dev": {
+    title: "3D Home",
+    what: "Your house in 3D: one room you walk round, where you change clothes. The home you own in the shop sets its size, finish and window view (a starter flat before you buy one). Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
+    buttons: [
+      {
+        items: [
+          ["‹ 3D area", "Back to the 3D Test Area."],
+          ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
+          ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards and cars, or with none."],
+          ["The stick (bottom left)", "Drag it to walk. WASD or the arrow keys on a computer."],
+          ["Drag the view", "Swings the camera round you."],
+          ["Tap something", "The wardrobe, the trophy cabinet or the drive window: you walk up to it and its card opens. Tap the floor to walk there."],
+          ["Walk out of the front door", "Opens the 3D Garden test page. In a career it opens your 3D garden."],
+        ],
+      },
+      {
+        group: "The wardrobe card",
+        items: [
+          ["Clothes", "Five casual sets: hoodie and joggers, tee and jeans, shirt and chinos, the club tracksuit, a smart coat. Tap one: you change into it and see it in the mirror."],
+          ["Kits", "Your club's home and away kit."],
+          ["Boots", "Plain black, or the boots you own now. Boots show with a kit."],
+          ["✕", "Closes the card. It opens again the next time you stop at the wardrobe."],
+        ],
+      },
+      {
+        group: "The other cards",
+        items: [
+          ["Trophy cabinet", "Everything you have won and how many times. Faint spots are the big ones still to win (\"Win it to fill this\" on the plate)."],
+          ["Your cars", "The cars you own, parked on the drive outside the window."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved here: the wardrobe's choice stays on this page.",
+      "In a career the wardrobe's choice is saved on your career (it syncs with the rest of the save).",
+      "The address can hold a set-up: ?tier=villa, ?trophies=0, ?look=h or ?look=old (Look H on or off), ?q=low|medium|high, ?fps=1 for the frame meter.",
+    ],
+    inGame: [
+      "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
+      "The casual set you pick is what you wear in the 3D garden and the 3D shop. The training pitch and matches are always in kit.",
+    ],
+    needs: [
+      "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
+    ],
+    dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
   "/star-chances-dev": {
@@ -1517,7 +1578,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
           ["/star-dev/media-lab?contact=float (or bounce, bobble, still)", "Shows the strike screen with the ball moving that way (float = header, bounce = volley, bobble = a ball at your feet). Tap the ball to try it; it starts again a moment later."],
-          ["/star-dev/media-lab?shop=boots (or =lifestyle)", "Shows the shop with a sample National League career and ★1,000,000, for judging the 5 levels. Buying does nothing here."],
+          ["/star-dev/media-lab?shop=kib (or =boots, =lifestyle, =landing; add &look=old for the old shop)", "Shows the shop (new look unless &look=old) with a sample National League career and ★1,000,000. Buying works on the sample only — nothing is saved."],
           ["/star-dev/media-lab?training=vision&level=1", "Plays one training level with every skill at 40 (skill = pace, power, technique, vision or freeKick; level 1-30). Level 1 opens on its how-it-works card. Nothing is saved to a career."],
           ["/star-dev/media-lab?feed", "Shows seven fixed sample posts at phone width, drawn exactly the way the phone feed draws them — for judging how a post looks. Nothing to press; scroll to read."],
         ],

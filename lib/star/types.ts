@@ -122,6 +122,10 @@ export interface StarPlayer {
   /** His 3D avatar's hair (the live 3D signing). Absent = short, brown. */
   hairStyle?: import("./playerIdentity").HairStyle;
   hairColour?: import("./playerIdentity").HairColour;
+  /** His 3D body (Settings → Your look; Style A, lib/star/style3d/toon). Absent = C1, the slim one. */
+  body3d?: import("./style3d/toon/bodies").ToonBody;
+  /** His 3D head: face and haircut (Settings → Your look; Style A). Absent = H1, the curls. */
+  head3d?: import("./style3d/toon/bodies").ToonHead;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
@@ -1076,6 +1080,15 @@ export interface CareerState {
   /** Accessory slot → the accessory id worn there. On the store's figure
    *  only for now, not yet on the match figure. */
   equippedAccessories?: Record<string, string>;
+  /**
+   * What you wear, picked at the wardrobe in your 3D home (9 Oct 2026, Harry:
+   * "imagine you actually had your current house with all your stuff and
+   * that's where you change clothes"). `wear` is the last thing picked: a
+   * casual set (lib/star/home3d/outfits.ts CASUAL_SETS) or a club kit. The
+   * garden and the 3D shop show the casual set when `wear` is "casual"; the
+   * training pitch and matches always show the kit. Absent: the kit, as before.
+   */
+  outfit?: { wear: "casual" | "kit"; casual: string; kit: "home" | "away"; boots?: "plain" | "own" };
   /** Date key → daily-special ids already bought at the discount that day. */
   storeSpecialsBought?: Record<string, string[]>;
   /** The store's "first Coin pack: double" offer has been used. */
@@ -1698,4 +1711,8 @@ export type StarPhase =
   | "casino-3d"
   /** The 3D training pitch, through the gate in the garden (8 Oct 2026).
    *  Placeholder screen until the 3D training is mounted there. */
-  | "training-3d";
+  | "training-3d"
+  /** Your house in 3D (9 Oct 2026): the wardrobe and mirror, the trophy
+   *  cabinet, your cars out of the window. From the garden's house door or
+   *  Home's "Your house". See components/star/Home3D.tsx. */
+  | "home-3d";

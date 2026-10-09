@@ -92,6 +92,18 @@ const POLICY = {
   "star/people3d/player-buzz.glb": PEOPLE.old,
   "star/people3d/player-long.glb": PEOPLE.old,
   "star/people3d/manager.glb": PEOPLE.old,
+  // Style A bodies (scripts/people3d/build_toon_bodies.py): float, quantized here like the old bodies
+  // (extras.quant written; people3d.ts dequantizes). occlusionTexture is the kit/skin/hair MASK.
+  // Style A heads (Harry, 9 Oct 2026: "Stylised"; "use the credits to improve the models"):
+  // six players in a kit + two in suits, weighted fingers (build_toon_bodies.py)
+  "star/people3d/toon-p1.glb": PEOPLE.old,
+  "star/people3d/toon-p2.glb": PEOPLE.old,
+  "star/people3d/toon-p3.glb": PEOPLE.old,
+  "star/people3d/toon-p4.glb": PEOPLE.old,
+  "star/people3d/toon-p5.glb": PEOPLE.old,
+  "star/people3d/toon-p6.glb": PEOPLE.old,
+  "star/people3d/toon-mgr.glb": PEOPLE.old,
+  "star/people3d/toon-mgr2.glb": PEOPLE.old,
   // The old shop/garden player: dressInKit (shop3d/scene.ts) reads positions
   // in metres and skinWeight.array as 0..1 floats, so those two stay float.
   "star/shop3d/character.glb": { q: /^(NORMAL|TEXCOORD_\d+|COLOR_\d+)$/, keepWeights: true, webp: true },
@@ -133,6 +145,9 @@ for (const f of ["boot-starter-hf", "boot-control-hf", "boot-elite-hf", "boot-ma
 // into one instanced geometry at load (applyMatrix4), which would clip 16-bit ones.
 POLICY["star/shop3d/items/can-kib-hf.glb"] = { q: null, webp: true };
 for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable", "house1", "villa", "house2", "estate", "island"].map((h) => `home-${h}-hf`)]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// The 3D home (9 Oct 2026): light copies of the shop's cars (drive window, ~3.9k) and boots (shelf, ~2.4k),
+// made by tools/home3d/make_lods.mjs; fitted at load, nothing reads their vertices.
+for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map((c) => `car-${c}-lod`), ...["starter", "speed", "control", "elite", "classic", "maestro", "power"].map((b) => `boot-${b}-lod`)]) POLICY[`star/home3d/${f}.glb`] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

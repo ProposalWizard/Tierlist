@@ -7,6 +7,8 @@ import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { setToonYou, resolveToonBody, resolveToonHead } from "@/lib/star/style3d/toon/bodies";
+import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
@@ -160,6 +162,9 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
+import StoreShop from "@/components/star/shop2d/StoreShop";
+import StoreLanding from "@/components/star/shop2d/StoreLanding";
+import { useShopLook } from "@/lib/star/shopLook";
 import Shop3D from "@/components/star/Shop3D";
 import CareerStore from "@/components/star/store/CareerStore";
 import { addCoins } from "@/lib/star/store/career";
@@ -210,6 +215,9 @@ import { AchievementsScreen, TrophiesScreen, ReputationScreen } from "@/componen
 import { ContractInOffice, ManagerNewsInOffice, CaptainInOffice } from "@/components/star/ManagerMoments";
 import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
+import Home3D from "@/components/star/Home3D";
+import { withOutfit } from "@/lib/star/home3d/outfits";
+import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import Casino3D from "@/components/star/Casino3D";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
 import Training3D from "@/components/star/Training3D";
@@ -352,6 +360,8 @@ function NewUiStarDevPage() {
 
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
+  // Settings → Look → "Shop: New | Old" (lib/star/shopLook.ts).
+  const shopLookNow = useShopLook();
   // v0.25 item 4: the foot you kick with, for the trial and training (they
   // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
   const careerFoot = career?.player.preferredFoot;
@@ -367,7 +377,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">("gate");
+  /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
+  const [homeFromGarden, setHomeFromGarden] = useState(false);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
   const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
@@ -1049,6 +1061,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSetFreeKickRunup = useCallback((id: FreeKickRunupId) => {
     setCareer(c => (c ? { ...c, freeKickRunup: id } : c));
   }, []);
+
+  // Settings → Your look (Style A 3D people): body, skin tone, hair colour.
+  const handleSetLook3d = useCallback((look: Partial<Pick<CareerState["player"], "body3d" | "head3d" | "skinTone" | "hairColour">>) => {
+    setCareer(c => (c ? { ...c, player: { ...c.player, ...look } } : c));
+  }, []);
+  // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
+  const yourBody3d = career?.player.body3d, yourHead3d = career?.player.head3d, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
+  useEffect(() => {
+    setToonYou({ body: resolveToonBody(yourBody3d), head: resolveToonHead(yourHead3d), skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
+  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c
@@ -4172,6 +4194,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const shopHelp: HelpScreen = kind === "kib" ? "cans" : kind === "boots" ? "boots" : "style";
     return (
       <>
+        {shopLookNow === "new" ? (
+          <StoreShop
+            career={career}
+            kind={kind}
+            onBack={handleBackToDashboard}
+            onBuyKib={handleBuyKib}
+            onBuyBoot={handleBuyBoot}
+            onBuyItem={handleBuyItem}
+            onBuyFromBlackMarket={handleBuyFromBlackMarket}
+            hud={screenHud(kind === "lifestyle" ? "style" : "shop", shopHelp)}
+            onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
+            focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
+            onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
+            onUseCan={handleUseCan}
+            onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
+          />
+        ) : (
         <Shop
           career={career}
           kind={kind}
@@ -4184,6 +4223,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
           focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
         />
+        )}
         {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {!helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
         {/* The phone flashes; one line says what it is (Harry, P102). */}
@@ -4357,6 +4397,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
         onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
+        onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
+      />
+    );
+  }
+  if (phase === "home-3d") {
+    // Your house in 3D: change clothes at the wardrobe (saved on the career), the trophy cabinet, your cars
+    const toGarden = () => { setHomeFromGarden(false); setGardenArrive("house"); setPhase("garden"); };
+    return (
+      <Home3D
+        career={career}
+        backLabel={homeFromGarden ? "Garden" : "Home"}
+        onBack={homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); }}
+        onDoor={toGarden}
+        onOutfit={(choice) => setCareer((c) => (c ? withOutfit(c, choice) : c))}
       />
     );
   }
@@ -4430,6 +4484,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onSetPlayerStart: withGodMode(handleDevSetStart, markGod),
         }}
         onSetPortrait={handleSetPortrait}
+        onSetLook3d={handleSetLook3d}
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}
         onDeleteSavedReplay={handleDeleteSavedReplay}
@@ -4859,7 +4914,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
             />,
             isOpen(career, "shop")
-              ? <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
+              ? (shopLookNow === "new"
+                ? <StoreLanding key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
+                : <ShopPage key="shop" career={career} onOpen={openHub} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />)
               : <LockedPage key="shop" title="Shop" feature="shop" />,
           ]}
         </SwipePages>

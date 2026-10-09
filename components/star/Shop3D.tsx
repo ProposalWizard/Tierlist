@@ -30,6 +30,7 @@ import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
+import { wornAt } from "@/lib/star/home3d/outfits";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -143,6 +144,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             skin: career ? skinToneHex(career.player.skinTone) : undefined,
             hair: career ? hairColourHex(career.player.hairColour) : undefined,
             hairStyle: career ? resolveHairStyle(career.player.hairStyle) : undefined,
+            // the clothes from your home's wardrobe (lib/star/home3d/outfits.ts)
+            worn: career ? wornAt(career, "shop") : undefined,
           },
         });
         let c: ShopController;

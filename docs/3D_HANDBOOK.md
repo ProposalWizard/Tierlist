@@ -29,6 +29,7 @@ Preview) sets them all at once.
 | 3D drills (Two Touch, Free Roam, Headers & Volleys, Wembley, Pace Sprint) | `components/star/Play3D.tsx`, opened from `components/star/Training3D.tsx` | `lib/star/play3d/scene.ts` (picture) and `lib/star/play3d/world.ts` (rules, own physics). Drill list: `lib/star/play3d/drills.ts` | `/star-training3d-dev`; Free Roam also at `/star-style-dev?scene=play3d` | 3D look: H / Old (`lib/star/look3dStyle.ts`) |
 | Crossbar Challenge | `components/star/Training3D.tsx` | `lib/star/training3d/scene.ts` (your shot is the 2D engine; the 3D pitch draws it) | `/star-training3d-dev` | none |
 | Garden | `components/star/Garden3D.tsx` | `lib/star/garden3d/scene.ts` (old: `lib/star/garden3d/sceneOld.ts`, frozen) | `/star-garden3d-dev` | 3D garden: New / Old (`lib/star/garden3d/look.ts`) |
+| Your house (wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
 | Shop | `components/star/Shop3D.tsx` | `lib/star/shop3d/scene.ts`, items in `lib/star/shop3d/catalogue.ts` | `/star-shop3d-dev` | 3D shop player (`lib/star/signing3d.ts`); 3D look H |
 | Casino | `components/star/Casino3D.tsx`, tables in `components/star/Casino3DTable.tsx` | `lib/star/casino3d/scene.ts` | `/star-garden3d-dev` (has a Casino tab) | Casino: 3D / Classic (`lib/star/casino3d/look.ts`); Casino look: New / Old (`lib/star/casino3d/roomLook.ts`) |
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
@@ -38,6 +39,7 @@ Preview) sets them all at once.
 | Cut-scene people bench (faces, hands, props) | page only | `lib/star/cutscene/peopleAdapter.ts` | `/star-people-dev` | same |
 | Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
 | Star Pass podium | `components/star/Podium3D.tsx` | spins a GLB from `tools/star-pass-art/export_live3d.py` | on the Star Pass screens | none |
+| Style A people (every 3D person under Player style: New) | Settings → Your look (`components/star/YourLookPanel.tsx`); Home and title (`components/star/ToonHomePlayer.tsx` via `HomePlayerFigure`) | `lib/star/style3d/toon/` (shader, heads, builds, switch) through `lib/star/people3d.ts` | `/star-look-dev` (`?head=h1..h6`, `?body=c1..c3`, `?pstyle=old`) | Player style: New / Old (`lib/star/style3d/toon/look.ts`) |
 | The test area index | page only | `lib/star/area3d.ts`, `lib/star/assets3dManifest.ts` | `/star-3d-area-dev` | none |
 | One of every mode in 3D skin | page only | `lib/star/figureSkin.ts`, `lib/star/figure3d.ts` | `/star-3d-dev` | Drawn-player style |
 
@@ -59,6 +61,42 @@ Use these. Do not make a second copy.
 - `lib/star/human3d/human.ts` — the parametric human (`makeHuman`, `HumanSpec`): height, build, hair, outfit. Built from MakeHuman by `tools/human3d/build_human.py`. `makePerson3d` calls it when "3D people" is New and "3D body" is Human.
 - `lib/star/human3d/npc.ts` — seeded people (managers, fans). `lib/star/human3d/boots.ts` — real boots on the human.
 - `public/star/human3d/human.glb`, `public/star/onebody/` (the plain one bodies), `public/star/people3d/` (old bodies + `anims.glb`).
+
+### Style A: how to dress a person
+
+Every 3D person goes through `makePerson3d` (`lib/star/people3d.ts`). Under
+Settings → Look → "Player style: New" it builds a Style A person; under Old,
+exactly today's bodies. You never pick a file yourself:
+
+- `makePerson3d(T, SK, loadedPlayer, anims, { who: "<stable id>" })`: a seeded
+  head (face + haircut, `toon-p1..p6`), build (Slim / Strong / Tall, a scale,
+  `TOON_BUILD_SCALE`), and you pass `skin`/`hair` to `dressPerson3d` from
+  `toonSkinFor(id)` / `toonHairFor(id)` (`lib/star/style3d/toon/bodies.ts`).
+  The same id is the same man every time.
+- `{ you: true }`: your own look from Settings → Your look (`CareerState.player.head3d`,
+  `body3d`, `skinTone`, `hairColour`; the page calls `setToonYou`).
+- Managers, staff, presenters: `{ suit: true }` (or role "manager", or a
+  cut-scene outfit that is not a kit) → a suit head (`toon-mgr`, `toon-mgr2`),
+  greyer hair (`toonGreyHairFor`).
+- Kit: `dressPerson3d(..., { kit: { shirt, trim, shorts?, socks? }, number, badge })`.
+  `toonKitColours` maps it onto the textured kit (base, trim on collar/cuffs/sock
+  tops, number on the back, badge, socks, boots). Settle clashes first with
+  `kitsFor` (`lib/star/kits.ts`); Style A paints what it is given.
+- Hands: the standing idles get relaxed arms baked per person
+  (`relaxIdleArms` in `lib/star/three3d/runPosture.ts`, the same file as the
+  running arms' wrist step `relaxWrist`), and the fingers rest curled
+  (`RELAXED_FINGERS_DEG`; `relaxHands` uses it for Style A). Hands are scaled
+  0.88 (`TOON_LOOK_DEFAULT.hands`).
+- A scene that keeps spare bodies bins them by `p.toonHead` and sets the build
+  with `setToonBuild(p, body)` (see `engineView.ts`).
+- Only one person on screen (Home, title)? `loadToonHead(loader, head)` fetches
+  one head file instead of all eight.
+- A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
+  15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
+  tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
+  a POLICY line + `node scripts/perf3d/shrink-models.mjs` → `TOON_FILES` and
+  `TOON_HEADS` in `bodies.ts` → `node scripts/assets3d-manifest.mjs`.
+  Inputs live in `tools/modeltest/` (one folder per tag).
 
 ### Kits
 
@@ -82,10 +120,17 @@ Use these. Do not make a second copy.
 
 - Quality tiers: `lib/star/three3d/quality.ts`. `TIER_PROFILES` has low / medium / high (pixel caps, antialias, shadows, fps cap, outlines, how many live characters). Auto picks from the device. Pick the tier BEFORE you make the renderer.
 - One renderer for all scenes, warm-up, cached loads, dynamic resolution, frame gate: `lib/star/three3d/perf.ts` (`acquireRenderer`, `warmUp`, `loadGltfCached`, `DynamicResolution`, `FrameGate`). Its header lists the steps to adopt.
-- The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s; back up after 15 s) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
+- The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s, but only to rung 2; rungs 3–4 need under 30 fps for 5 s; back up after 8 s; one-off long frames and the 1 s after `hush()` — a chance start or camera cut — are not judged) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
 - The frame meter: `lib/star/three3d/frameMeter.ts`. Shows fps, worst frame, draw calls, triangles, shadow and skinned draws, post passes, JS ms, tier and rung. Add `?fps=1` to any page (`?fps=0` hides it; admins and testers see it anyway). The numbers are also on `window.__frame3d`.
 - The build machine has NO graphics chip. Frame times here are 10 to 100 times a phone's. Read percentages, never milliseconds. A phone is the only true judge.
 - `scripts/perf3d` measures a scene without Next (read its README).
+- **Speed pass 2 (9 Oct 2026): same picture, less work.** Each saving has a switch so a before/after still can be taken:
+  - Shadow cache: `lib/star/three3d/shadowCache.ts`. Still things go into the shadow map once; only movers are drawn on top each frame. People cast from a lighter "shadow body". Off: `?shadowcache=0`, `?shadowbody=0`.
+  - Lights only where they reach: `lib/star/three3d/lightReach.ts`. A dark light leaves the shader; far materials skip the lamp loop. Off: `?lightreach=0`.
+  - Off-screen people are not drawn: `lib/star/three3d/cullPeople.ts` (`cullSkinned`). Off: `?cullpeople=0`.
+  - Packed pictures: `lib/star/three3d/ktx2.ts` (`loadPicture3d`) tries a `.ktx2` beside the WebP and falls back on any failure. Make them with `scripts/perf3d/ktx2-textures.mjs`. Transcoder: `public/star/three/basis`. Off: `?ktx2=0`.
+  - Baked light: `lib/star/look/bakedLight.ts`, sets in `tools/bake3d/sets` (stadium, garden, shop, casino). Off: `?bake=0`.
+  - Proof: `node scripts/perf3d/proof.mjs <garden|shop|casino|career|cut> '{...}' --split --out=DIR` gives a before and after still and the counters.
 
 ### Files must be packed small: meshopt
 
@@ -96,7 +141,7 @@ Use these. Do not make a second copy.
 ### Cameras
 
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
-- `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek. Test: `tests/star/practiceCam.mts`.
+- `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
 
 ### Movement and animation helpers
@@ -285,6 +330,10 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
+
+
+- Your house in 3D: one parametric room in six presets from the home you own (starter flat → estate), a wardrobe with a full-length mirror (casual sets, home/away kit, boots; saved as `CareerState.outfit`; the garden and shop show the casual set, training always the kit), a trophy cabinet from your real trophies and awards ("Win it to fill this"), your cars on the drive (light copies in `public/star/home3d`, `tools/home3d/make_lods.mjs`). Ways in: the garden's house door and the phone's "Your house" app.
 - Merge: running arms. Elbows bent 80 to 100 degrees, back hand beside the hip, front hand up to the chest, relaxed hands.
 - 3D drill cameras: the practice-arena camera, phone and PC control schemes, the Two Touch skill.
 - 3D pace: speeds scale with the pace stat (sprint 5.6 to 8.2 m/s), stamina from fitness, a Pace Sprint drill, an upright running neck, a Back pill.
@@ -301,3 +350,235 @@ What landed today on Harry, newest first, one line each.
 - Cut-scene system: film rules, close-ups, real grass plates, the people layer (`lib/star/cutscene`), The Icon speaks.
 - Real game in 3D on the Style Testing page: "same brain, new camera" (`lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`).
 - Rescued into the repo: `tools/styletest` (look test for cel / Spider-Verse / stylised PBR), `tools/modeltest` (three generated stylised bodies, concept pictures, raw and fitted GLBs), `tools/models3d` (picture to game-ready GLB tools), this handbook and `.claude/skills/3d-building`.
+
+## Handover (9 Oct) → Leo
+
+### Home + title screen
+
+Harry's three asks (9 Oct 2026, New UI Home and title):
+1. "I think we just need the players to look really fun and good."
+2. "remove the goal or make it actually be facing the right way (goals in the middle of the pitch)."
+3. "make the rep/fame + goals and assists and the cans more prominent."
+
+Done (behind Settings → Look → "Home screen: New | Old", default New; Old is exactly the screens as they were; `lib/star/homeLook.ts`, row `homeScreen` in `lib/star/gameVersions.ts`):
+- Home, New: four big tiles under Next match (Rep, Fame, Goals, Assists this season), each with a 3D icon and a big number (`StatTiles` in `components/star/HomeHub.tsx`).
+- The goal behind him is gone (ask 2: removed, it read better than turning it). The stadium picture still lines up on the same marker, so the set does not move.
+- He stands centre stage, taller (up to 360 px, was 290), in a club-coloured glow with a pool of light and a gentle bob.
+- Cans: bigger ×N counts and names (`CanTile` `bold` prop).
+- Title, New: the same hook, with the glow, light pool and bob. Little else changes there.
+- Checked at 390×844 signed out: no page errors, no sideways scroll. tsc, the one-engine guard and `gameVersions.mts` pass.
+
+Left:
+- Ask 1 is only half done: he is the same figure, just lit and moving. The fun look needs the Style A body.
+- Not checked on a short phone (360×640). The height maths has a floor, but nobody has looked.
+- No star-playtest run.
+
+The player-render hook: `HomePlayerFigure` in `components/star/HomePlayer.tsx`. Both screens give it a box (width × height, boots on the bottom edge) and never draw him themselves. Put the Style A render in that one function and keep the same box; neither screen's layout changes. Old look does not use it.
+
+### Drill cameras / Free Roam
+
+Harry, after playing it on his phone: "Free Roam camera is still bad, Headers & Volleys is amazing, make it more dynamic, ask for the ball, the joystick gets in the way in Two Touch".
+
+**Done (built, tested headless, seen in stills at 390×844; not yet judged on a real phone):**
+
+- **Free Roam camera = PLAY mode** (`lib/star/three3d/practiceCam.ts`, `PLAY` constants; turned on by Free Roam's `frame` returning `play` in `lib/star/play3d/drills.ts`; passed through `lib/star/play3d/scene.ts`).
+  - With the ball: tight behind your shoulder (1.9 m up, 3.7 m back), swings fully to goal.
+  - Ball away (pass, loose ball, shot): turns towards the ball, aiming between ball and goal when both fit, never more than 70° off the goal; pulls back and rises with distance (up to 6 m up, 9 m back at 30 m).
+  - Leads your run by sliding ahead (0.5 s of your run, max 3.2 m), never by turning, so the stick still never turns it.
+  - All blends eased and rate-capped (`PLAY_EASE`, `PLAY_RATE`); turn still capped at 60°/s.
+  - Measured (bot playing Free Roam, 6 × 60 s, phone frustum): ball in frame 61% → 83%; ball in frame while away from you 50% → 82%; goal in frame 97% → 58% overall, 97% → 93% once you have had the ball 1.5 s.
+- **Call for it** (`World.callForBall` in `lib/star/play3d/world.ts`, action `{ kind: "call" }`; support brain in `brains.ts` reads `mind.callUntil`).
+  - Phone: round CALL button top-right of the picture. PC: F (E is peek, Space is tap). In the hints.
+  - The mate on the ball (or the one a pass is going to, or the first to a loose ball) plays you a pass weighted to your run (`World.passBall`) if the lane is open and you are within 36 m. Else ✗ with a reason ("No lane", "Too far", "Keeper's ball", "Their ball") and he shakes his head (`scene.ts`, head bone).
+  - Bubble "HERE! ✓/✗" over you, ✓/✗ + reason over him. Cooldown 2.5 s, drawn on the button.
+  - Not in Two Touch: there he always sends it back on his second touch, so a call changes nothing.
+- **Two Touch stick** (`components/star/Play3D.tsx`, session `stick: "corner"`): on a phone no stick appears under the thumb. Whole screen = tap/swipe. A small nudge stick (60% size, 40% opacity) sits bottom-left only (`CORNER_STICK`). A tap within 70 px of the ball is always the touch (`BALL_GUARD_PX`, uses the new `ballScreen()` on the scene controller); a quick tap on the corner stick is also a touch.
+- Tests: `tests/star/practiceCam.mts` sections 11 (Free Roam framing, before vs after) and 12 (call: open lane 30/30 yes and passed; keeper in the lane = "No lane" and he keeps it; cooldown).
+
+**Half-done / not checked:**
+
+- Look and feel on a phone: this machine draws at 0–1 fps, so the stills could not catch the camera mid-turn to a team-mate or a shot in flight (still 2 shows the ball still off to the left). Harry has to judge it on his phone.
+- Goal in frame drops while the ball is away (58% overall). That is the trade for following the ball; tune `PLAY.ballTurn`, `PLAY.bothFit`, `PLAY.maxDev` in `lib/star/three3d/practiceCam.ts` if he wants more goal.
+- The call answer label over an off-screen mate is clamped to the edge and can sit next to "HERE!" (`Play3D.tsx`, call bubbles).
+
+**Next 3 steps, in order:**
+
+1. Harry plays Free Roam on his phone; tune the `PLAY` numbers from what he says (re-run `node scripts/run-star-tests.mjs practiceCam` for the before/after numbers).
+2. If he likes it, give Wembley's chase camera the same play mode (`camera: "practice"` + `play` in its `frame`), or keep its chase camera.
+3. Two Touch: if the corner nudge stick is never used, drop it (set `stick` to a new "none" option in `Play3D.tsx`).
+
+Stills from this round: the session scratchpad `r3fr/` (sheet.jpg).
+
+
+---
+
+
+### Your house (the 3D home)
+
+Harry's idea, in his words: *"imagine you actually had your current house with all your stuff and that's where you change clothes."*
+
+**Done.**
+- The room: `lib/star/home3d/scene.ts`, one parametric room. Six presets in `lib/star/home3d/homes.ts`, picked by the best home you own in the shop (`homeTierOf`): starter flat (nothing bought), flat, penthouse, house, villa, estate. Size, floor, panelling, metal trim, chandelier, plants, cabinet size, drive size and the window view grow with the tier.
+- The wardrobe and mirror: rails of casual sets (hoodie and joggers, tee and jeans, shirt and chinos, club tracksuit, smart coat), your home and away kits, plain or your own boots. Tap it, pick, he changes and you see him in a live full-length mirror (a `Reflector` on its own layer, on only near the wardrobe; off on Low). Saved as `CareerState.outfit` (`lib/star/types.ts`, optional). `wornAt` (`lib/star/home3d/outfits.ts`) says what to wear where: the garden and the 3D shop show the casual set, training always the kit.
+- The trophy cabinet: `lib/star/home3d/trophies.ts` reads `trophies`, `awards` and `ballonDorWins`, counts each win once, and fills the empty spots with the big targets ("Win it to fill this"). Trophies are stylised shapes made in code, no real ones.
+- The drive window: your cars (best first, as many as the preset's drive holds) from light copies of the shop's generated models (`public/star/home3d/*-lod.glb`, made by `tools/home3d/make_lods.mjs`, packed by `scripts/perf3d/shrink-models.mjs`). No Higgsfield credits spent.
+- Ways in: the garden's house door on the east boundary (`lib/star/garden3d/scene.ts`, `HOUSE`), the phone's "Your house" app (on the phone from day one, `STARTER_APPS`), phase `home-3d` in `app/star-dev/page.tsx`. Both are behind one switch, `lib/star/home3d/flag.ts` (`HOME3D_IN_CAREER`, now true).
+- Speed at Medium on this machine: 37 to 63 draws, 30k to 92k triangles (limit 120 draws, 150k). No baked light file for the room yet (`enhanceH(..., { bake: null })`): one hemisphere and one sun, as the shop has, no extra lights; the sun's shadow is redrawn only when something moves.
+- Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
+
+**Half-done or not seen.**
+- The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
+- Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
+
+**Next 3 steps, in order.**
+1. Play a career to the garden, walk through the house door, change into the coat, walk back out: check the garden and the shop show the coat and the save keeps it.
+2. Judge it on a phone: the mirror's frame rate and the wardrobe camera (`shotOf` in `scene.ts`).
+3. When Style A lands, register its body with `setWearerBody` and refit the casual sets.
+
+**How to see it.** `/star-home3d-dev?tier=villa` (buttons switch the tier and empty/full cabinet; `?fps=1` for the meter, `?look=old` without Look H). In a career: Garden → the door at the right-hand boundary, or the phone's "Your house".
+
+### 3D speed pass 2 (lag pass 2)
+
+Harry's rule: "I don't want our solution to bad lag to just be make the game look worse, let's be more innovative than that." Same picture, less work. A still frame must look the same or better.
+
+His phone (before this pass): career 3D 43 fps, worst 516–586 ms, ~280 draws, 743–831k triangles (about 460k of them the players again in the shadow map), px 1.5, Medium. Cut scenes 160 shadow draws a frame. Garden 40 fps, 104 draws, 231k triangles, px 2.0. Shop 25 fps at px 2.0. Later on the same day: the governor fell to rung 4 at 60 fps because of one-off 500–730 ms stalls at each chance start.
+
+Measured here (SwiftShader, 390×844, Medium, before → after, `scripts/perf3d/proof.mjs --split`):
+
+| Place | Draws | Triangles | Shadow draws | Shadow triangles a frame | GPU picture MB |
+|---|---|---|---|---|---|
+| Career 3D | 98 → 80 | 946k → 512k | 17 → 11 | 232k → 46k | 56 → 58 |
+| Cut scene (trophy) | 117 → 81 | 288k → 182k | 43 → 7 | 127k → 22k | – |
+| Garden | 145 → 145 | 192k → 198k | 0 → 0 | – | 86 → 74 |
+| Shop | 70 → 78 | 56k → 55k | 0.8 → 3 | – | 292 → 288 |
+| Casino | 58 → 58 | 86k → 86k | 0 → 0 | – | 71 → 72 |
+
+Governor, a simulated 3-minute match with Harry's stall pattern: before rung 1 → 2 → 3 → 4 → back; after 1 → 2 → 1 (`tests/star/perf3d.mts` keeps it).
+
+Done:
+- Shadow cache with shadow bodies (all places through `governScene` and the real game). Test: a still frame never redraws the kept map (`tests/star/shadowCache.mts`).
+- Lights only where they reach (`lib/star/three3d/lightReach.ts`).
+- Off-screen men culled in the real game, the garden bench (both paths) and the training pitch.
+- KTX2 for 13 big colour maps, with WebP fallback.
+- Baked shade in the casino (`public/star/bake/casino`); the garden and shop already had theirs.
+- Governor: stalls and the 1 s after a chance start or cut are ignored; never below rung 2 from a stall; climbs after 8 s; re-climbs a minute after a bounce. `engineView.ts` calls `gov.hush()` on every chance cut.
+
+Half-done:
+- The shop got WORSE on draws (70 → 78) and shadow draws (0.8 → 3): the shop already drew its shadows only when something moved (`carSpot.shadow.autoUpdate = false`), and the cache's copy-back + mover overlay runs on those frames. Fix in `lib/star/three3d/shadowCache.ts`, `sm.render`: for a light with `shadow.autoUpdate === false`, skip the cache (pass straight to three) — or leave the shop out of `installShadowCache`.
+- KTX2 downloads are bigger than the WebPs (2.0 MB vs 1.1 MB for the 13 files; ETC1S quality 255). The career set showed no GPU saving on SwiftShader (it transcodes to plain RGBA there). Check on an iPhone with `?fps=1`; if no gain, lower `QUALITY` in `scripts/perf3d/ktx2-textures.mjs` or drop the skies from `KTX2_FILES` in `lib/star/three3d/ktx2.ts`.
+- The chance-start stalls themselves are hidden from the governor, not removed. Time them with `M.switchChance()` in `scripts/perf3d/entry.ts` (`window.__M.vf` holds ms per `frame()` call). Suspects: a new 256×256 number texture per new man (`numberTex` in `engineView.ts`, uploaded on first draw), `h.dressPeople` on new bodies, the shadow cache redrawing the stadium when the shadow box moves at a cut.
+
+Not done:
+- Far-tree impostors in the garden. Measured: the 82 far trees are 29k triangles in 14 draws, and they stand 23–32 m out, a few hundred pixels tall on a phone. A picture card that size would look softer, which breaks Harry's rule. Left out on purpose.
+- Dropping decorative realtime lights: none was dropped. The lamps light real things; `lightReach.ts` already removes their cost on far materials (garden: 72 of 121 lit materials skip them).
+
+Next 3 steps, in order:
+1. Fix the shop regression (above) and re-run `proof.mjs shop --split`.
+2. Kill the chance-start stall: cache number textures per shirt number and `renderer.initTexture` them while the chance plays; pre-dress the next chance's spares.
+3. Check KTX2 on an iPhone (GPU memory and load time); keep or trim the list.
+
+How to measure: `?fps=1` on any page shows the frame meter (fps, worst frame, draws, triangles, shadow draws, rung); the numbers are on `window.__frame3d`. `?gov=0` stops the governor stepping so one tier can be measured. Off switches for each saving are listed under "Quality, the governor and the frame meter".
+
+### 2D shop
+
+- **What:** a new 2D shop (Cans · Boots · Style) and a new Shop page. Settings → Look → "Shop: New | Old" (`lib/star/shopLook.ts`, row `shop2d` in `gameVersions.ts`), default New. Old = `components/star/Shop.tsx` + `ShopPage.tsx`, untouched.
+- **Where:** `components/star/shop2d/` — `StoreShop.tsx` (the three tabs, item sheets with the level ladder, confirm sheet, purchase moment), `StoreLanding.tsx` (Home's Shop page), `parts.tsx` (hero, tabs, framed card, ladder, badges, sheets). Wired in `app/star-dev/page.tsx` (shop phases + the Shop swipe page).
+- **Art:** Higgsfield UI dressing only (Harry: "I meant higgs for the UI"), 17 credits, in `public/star/shop2d/` (credits in its `LICENSE.txt`; packer `tools/shop2d/pack.py`). Item pictures are the existing `/shop/*.webp`, KIB can art and drawings — no new item art.
+- **Kept:** every buy handler and price, boot sponsor 25%, banned boots via the black market (lawyers option in the confirm sheet), unlock chain locks, phone flash + `phone-tile` tour target, worn-out repair, "Sold out" per visit, focus from the 3D shop. New: Use a can from the Cans tab, "View in 3D shop" on items the 3D shop has (opens the 3D shop; it does not jump to the item).
+- **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle|landing` (+ `&look=old`), buying works on a sample career.
+- **Open:** Harry approved Cans and Boots; Style had one more pass (2-up cards, chunky group tabs, fame banner) — not yet re-judged. The basket stays off (`BASKET_ON`), so the new shop has no basket.
+
+### Career 3D camera + size
+
+**Harry's feedback** (4 iPhone screenshots, Chelsea v Brentford, Match view 3D On): "have you even applied the camera and sizing changes to 3d? The animations are a bit wild and rough, dragging is having to be done off the pitch alot and players too big, angle too low etc. … also we need a 3d/2d toggle in game and a setting cog whilst match commentary is on."
+What the shots showed: one chance drawn straight top-down with dot men (a side-on chance copying the 2D camera); you at the very bottom edge so the drag ran off the pitch; one camera close and low with three huge men and half the frame empty grass.
+
+**Target rules**
+- One angle for every chance kind: asked for 35–45°, then Harry after the 8% still: "the players and goalie could be even smaller and the camera a little bit higher still" → **48° (50° when it cuts empty stand)**. Never top-down, never at the grass. Corners and side-on chances use the same angle, turned.
+- The ball (while you aim) at 55–65% of the height, so ≥ 25% of the canvas below it is pitch to drag on.
+- Frame only the action: ball, you, the 2 nearest team-mates you can pass to (within 11 m across), the 2 nearest defenders, the keeper and goal when in range.
+- A man at the ball a set share of the canvas height (measured through the camera), not a fixed 1.6×. Asked for ~10%; Harry chose 8%, then **6%** (players and keeper) after seeing it.
+- Smooth: glide between chances, hold still while you aim, crossfaded clips, no walk/jog flicker, turns capped.
+
+**Done** (all under Settings → Look → "3D camera: New"; Old is untouched)
+- `lib/star/style3d/broadcastCam.ts`: the camera, pure (no three.js). `solveBroadcast`, `actionPoints`, `BROADCAST` numbers.
+- `lib/star/style3d/engineView.ts`: `placeBroadcast` uses it for every facing; glide (~0.4 s), held while a finger is down / the arrow is up / the strike screen shows. Smooth playback: crossfades ≥ 0.24 s, a gait kept ≥ 0.35 s, turns ≤ 540°/s, steadier speed reading, a man who appears starts in the right pose. Ball drawn at the men's scale, capped 2×.
+- `tests/star/broadcastCam.mts`: 13 kinds × 20 seeds at 390×844. Angle 48–50°; room below the ball 40–45%; at the 6% default the man is 6.0–6.2% of the height in all 260 (8% gave 8.0–8.3%, median 1.45× life size; 10% gave 9.4–10.5%, median 1.8×). The crossbar sits 7 / 13 / 34% down the screen (p10 / median / p90): close chances still show a band of stand above the goal. Seen in one still (one-on-one: 6.1%, 1.55× life size, 48°).
+- In the match's stats bar, by the speaker: a **3D | 2D** switch (instant, the chance carries on; writes "Match view 3D") and a **⚙** that opens this phone's Settings over the match, the match held while open (`components/star/Match3DLayer.tsx`; `EngineFrameObserver.hold` / `.chrome` in `lib/star/engineFrame.ts`; CanvasMatch reads them, additive).
+- Test page: `/star-style-dev?scene=real&cam=new&man=0.08|0.10|0.12` (size candidates), `&bcam=0` (the New camera as it was before, for before stills).
+
+**Half-done**
+- The size is 6% and the angle 48–50° (`BROADCAST.manShare`, `elevDeg`, `elevMaxDeg` in `lib/star/style3d/broadcastCam.ts`). The full 8 / 10 / 12% sheet over 4 chances was not finished (stopped at Harry's request): only one-on-one stills exist (today, 8%, 6%), in the round's scratch folder, not the repo.
+- At 10% about 1 chance in 9 reached the 3.2× cap (`BROADCAST.kMax`); at 6% none does. Not yet judged on a phone.
+- A small white dot sits on the grass just ahead of you in the one-on-one stills (before and after, so not from this change). Not traced.
+- Close chances (ball 8–12 m out) keep up to a third of the screen as stand above the goal: with the ball held at 60% for the drag there is no room to bring the goal higher without making the men bigger than 10%.
+- Not seen on a phone. Stills came from the Style Testing page's Real game (same engine view), not a career match.
+- Smooth playback lives in `engineView.ts` behind `smooth()`; root motion was already pinned to the 2D record (no change); `ClipPlayer` (`lib/star/three3d/footballAnims.ts`) still drops the older clip if a new change arrives mid-fade.
+
+**Next 3 steps**
+1. Harry judges 6% / 48° on his phone (`/star-style-dev?scene=real&cam=new&man=0.08` to compare); set `manShare`, and drop `kMax` to ~2.2 if he goes bigger.
+2. Play a career match on a phone with "3D camera: New": check corners and byline crosses (turned 30° behind the attack), the drag room, and the glide between chances; then make New the default in Standard (`lib/star/gameVersions.ts`).
+3. Make `ClipPlayer` blend from the current mix on an interrupted fade (no pop), and play the 3D/2D button and ⚙ with the `star-playtest` agent.
+
+### Style A (cel-shaded people for every 3D person)
+
+Harry: "Style A becomes the Knowitball standard look for EVERY 3D person". He
+picked **Stylised** on the heads sheet, asked "what is happening with those
+arms/hands?", and gave ~200 Higgsfield credits for better models.
+
+**Done** (behind Settings → Look → "Player style: New | Old", default New, in
+`PREVIEW_ROWS`; Old = exactly the old bodies and materials):
+- Eight new generated people: six player heads (`public/star/people3d/toon-p1.glb` … `toon-p6.glb`:
+  curls, quiff, buzz & beard, bun, fringe, ginger crop & beard) and two in suits
+  (`toon-mgr.glb` grey & stubble, `toon-mgr2.glb` fade & beard). ~14.5k triangles
+  each (old body 20.9k), 206–235 KB packed. The old C1–C3 files are gone from
+  `public/` (sources stay in `tools/modeltest/c1`–`c3`).
+- Builds are a scale now, not a file: Slim / Strong / Tall on any head.
+- Hands: fingers are really skinned now (`weight_fingers` in
+  `scripts/people3d/build_toon_bodies.py`; before, every hand vertex followed
+  the hand bone only, so no finger pose ever showed). Hands 0.88 size; relaxed
+  curl; idle arms baked (wrist 22° → 8°, elbow 27° → 13°, palms to the thighs
+  0.68 → 0.96; `tests/star/runPosture.mts`). A light fingertip by the white
+  shorts no longer reads as kit (hand zone kept out of the kit mask).
+- Seeded picks: head, build, skin, hair per id (`toonPickFor`); a squad of 25
+  uses 5–6 heads (`tests/star/toonPeople.mts`). Your look: Settings → Your look
+  (head, build, skin, hair colour), saved as `player.head3d` / `body3d`.
+- Wired places (through `makePerson3d`): career 3D match and Real game
+  (`engineView.ts`), drills (`play3d/scene.ts`, `training3d/scene.ts`), dribble
+  3D (`style3d/gameplay.ts`), shop, garden, casino, signing scene, farewell and
+  ovation, cut scenes (`cutscene/people.ts`). Home and title: `ToonHomePlayer`
+  inside `HomePlayerFigure` (one head file, 30 fps cap, drag to turn on Home,
+  the old figure until it loads).
+
+**Half-done / not seen:**
+- Stills were taken on the stand-alone harness only (`tools/styletest/heads.ts`,
+  stills in the session scratchpad `r3styleA/stylised-hands.jpg`). The Old/New
+  per-place sheet (`r3styleA/sheet.jpg`) was NOT made this round; the earlier
+  WIP stills in `r3styleA/*-new.jpg` show the old C1 body.
+- Home/title Style A player: built, type-checked, never seen on screen.
+- Every scene loads all eight heads (~1.8 MB) when it makes its first person;
+  fine on Wi-Fi, heavy on a first match on mobile data.
+- Managers: the seeded suit head + grey hair works; no per-club manager face
+  yet; the house wardrobe (`setWearerBody`, Harry branch) does not know Style A.
+- Hair colour recolours the modelled cut; there is no ginger in `HAIR_COLOURS`,
+  so the ginger head is shown in the seeded colour.
+
+**Next 3 steps, in order:**
+1. Open each place with Player style New and Old on a phone and make the
+   Old/New sheet (`/star-look-dev`, `/star-shop3d-dev`, `/star-garden3d-dev`,
+   `/star-style-dev?scene=play3d`, the Real game tab, `/star-3d-area-dev/signing`,
+   Home and title in `/star-dev` signed out). Fix what looks wrong there.
+2. Loading: let scenes ask only for the heads they will use (pass the ids up
+   front, or start with `loadToonHead` and fetch the rest after first paint).
+3. Managers/staff: more suit heads (one Higgsfield image-to-3D is 18 credits),
+   a per-club manager pick, and the house wardrobe's casual sets on Style A.
+
+**Harry's decisions that apply:** Stylised for everyone; hands ~0.88, relaxed
+curl, wrists ≤10°, elbows ~10–15°; Higgsfield up to ~200 credits, never below
+a 60 balance (this round: 74 for heads 1–3 and the first suit, then 90 for heads 4–6 and the second suit = 164 credits; balance now 168.25);
+same or fewer triangles per person than Old (14.5k vs 20.9k, 3 draws each with
+outline and shadow, as Old); every new look behind New | Old.
+
+**See it:** `/star-look-dev?head=h4&body=c2` (your player, a mate, a manager;
+`?pstyle=old` for Old). Stand-alone stills without Next.js:
+`tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
