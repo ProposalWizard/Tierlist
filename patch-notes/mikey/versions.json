@@ -99,8 +99,16 @@
     "version": "0.13",
     "date": "2026-10-08",
     "fromCommit": "86ee3024",
-    "toCommit": "HEAD",
+    "toCommit": "db7bb13c",
     "url": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
     "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; \u00b125% wage when your club goes down or up; relegation day"
+  },
+  {
+    "version": "0.14",
+    "date": "2026-10-09",
+    "fromCommit": "db7bb13c",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
+    "headline": "Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default"
   }
 ]
