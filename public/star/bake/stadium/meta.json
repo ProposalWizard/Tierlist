@@ -13,16 +13,16 @@
   },
   "volume": {
    "day": 0.36006,
-   "golden": 0.22489,
+   "golden": 0.22539,
    "night": 0.51182
   }
  },
  "files": {
   "day-floor.webp": 196012,
-  "golden-floor.webp": 205906,
+  "golden-floor.webp": 206026,
   "night-floor.webp": 196892,
   "day-vol.webp": 406814,
-  "golden-vol.webp": 440800,
+  "golden-vol.webp": 439830,
   "night-vol.webp": 402436
  },
  "floor": {
