@@ -158,7 +158,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     badges: N("badges"),
     allSeasons: N("allSeasons"),
     homeScreen: N("homeScreen"),
-    shop2d: N("shop2d"),
+    shop2d: O("shop2d"), // held on Old until Showroom + Feed lands (9 Oct 2026)
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,
