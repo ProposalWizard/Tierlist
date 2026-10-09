@@ -439,8 +439,8 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
       const seg = look.clone().sub(cam); const L = seg.length(); seg.normalize();
       return bodies.some((q) => {
         const w = v(q).sub(cam); const along = w.dot(seg);
-        if (along < -0.3 || along > L * 0.85) return false;
-        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.42 + Math.max(0, along) * 0.04;
+        if (along < -0.3 || along > Math.min(L * 0.7, 1.8)) return false;
+        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.45;
       });
     };
     if (!blocked(spec)) return spec;
@@ -453,10 +453,12 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
     for (const cam of C.cameras) {
       // a subject who travels during the shot: frame where he ends up (he moves into the shot)
       let at = cam.at + 0.02;
-      if ("actor" in cam.shot.subject && cam.shot.move !== "follow" && cam.shot.move !== "track") {
-        const id = cam.shot.subject.actor;
-        const p0 = rootAt(C, id, cam.at).pos, p1 = rootAt(C, id, cam.at + cam.dur * 0.85).pos;
-        if (Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) > 1) at = cam.at + cam.dur * 0.85;
+      if (cam.shot.move !== "follow" && cam.shot.move !== "track") {
+        for (const tg of [cam.shot.subject, cam.shot.subject2]) {
+          if (!tg || !("actor" in tg)) continue;
+          const p0 = rootAt(C, tg.actor, cam.at).pos, p1 = rootAt(C, tg.actor, cam.at + cam.dur * 0.85).pos;
+          if (Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) > 1) at = cam.at + cam.dur * 0.85;
+        }
       }
       poseActors(at);
       const a = anchorOf(cam.shot.subject, at), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, at) : null;

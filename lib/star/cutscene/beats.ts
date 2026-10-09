@@ -260,7 +260,7 @@ export const goalStrike: BeatDef = {
     const Y = c.ids.you;
     const K = "keeper";
     const run = 2.4, contact = t + run + 0.31;
-    const d = run + 1.6;
+    const d = run + 0.95;
     // the ball runs ahead of him, then flies into the top corner and drops in the net
     const pts: Vec3[] = [[-5.0, 0.12, 22.6], [-4.3, 0.12, 20.3], [-3.6, 0.12, 18.1], [-2.95, 0.12, 15.9], [-2.6, 0.12, 13.7]];
     const ball: Track[] = pts.map((p, i) => ({ type: "prop", prop: "ball", at: t + (i * run) / pts.length, action: "place", to: p, dur: run / pts.length } as Track));
@@ -271,7 +271,7 @@ export const goalStrike: BeatDef = {
     return {
       name: "The strike", act: "moment", dur: d,
       cast: [{ id: K, role: "keeper", mark: "goal.line", face: 0 }, { id: "def4", role: "rival", mark: [-9.5, 0, 25], face: "shot.spot" }],
-      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.12, 23.2] }],
+      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.12, 23.2], scale: 1.6 }],
       tracks: [
         { type: "place", actor: Y, at: t, to: "run.start", yaw: 160 },
         { type: "move", actor: Y, at: t, dur: run, path: [SHOT_SPOT], gait: "dribble", ease: 0 },
@@ -293,7 +293,7 @@ export const goalStrike: BeatDef = {
         { at: t, dur: run * 0.55, purpose: "follow", subject: you(c), weight: 0.6, name: "On the ball" },
         { at: t + run * 0.55, dur: run * 0.45 + 0.35, purpose: "action", subject: you(c), subject2: { mark: "goal", y: 1 }, weight: 1, name: "Behind the shooter", hint: { preset: "ots", side: 1 } },
         { at: contact + 0.05, dur: 0.75, purpose: "action", subject: { prop: "ball" }, weight: 0.8, name: "Top corner", hint: { fixed: { pos: [6.5, 1.3, 7.5], look: [1.2, 1.4, 0], lens: 28 } } },
-        { at: contact + 0.8, dur: d - run - 1.1, purpose: "reaction", subject: { actor: K }, weight: 0.5, name: "The keeper beaten" },
+
       ],
     };
   },

@@ -54,7 +54,7 @@ function signing(): CutsceneScript {
     cam(b3.at, 1.5, { preset: "two-shot", subject: Y, subject2: B, side: 1 }, "Both stand"),
     cam(b3.at + 1.5, 1.2, { preset: "insert", subject: { point: [-0.02, 1.08, 0] }, side: 1, yaw: 75, lens: 42 }, "The handshake"),
     cam(b3.at + 2.7, b3.dur - 2.7, { preset: "ots", subject: Y, subject2: B, side: 1, lens: 50 }, "Eye to eye"),
-    cam(b4.at, b4.dur * 0.6, { preset: "full", subject: Y, fixed: { pos: [0.0, 1.38, 2.42], look: [0.0, 1.22, 1.2], lens: 24 } }, "The photo"),
+    cam(b4.at, b4.dur * 0.6, { preset: "full", subject: Y, fixed: { pos: [0.0, 1.4, 2.4], look: [0.0, 1.2, 1.2], lens: 18 } }, "The photo"),
     cam(b4.at + b4.dur * 0.6, c.duration - b4.at - b4.dur * 0.6, { preset: "medium-close", subject: Y, side: 1, yaw: -10, move: "push" }, "Your new number"),
   ];
   return {
@@ -149,7 +149,7 @@ function mentor(): CutsceneScript {
   const ev = FIXTURE_EVENTS.mentor;
   const ids = { you: "you", other: "mentor", mates: [] };
   const c = compose([mentorWord], ev, ids, "training-ground", 7, 0.5, {
-    cast: [{ id: "you", role: "you", mark: [0, 0, 1.2], face: 200, look: { outfit: "training-bib" } }, { id: "mentor", role: "mentor", mark: [-1.4, 0, -2.2], face: "you" }], props: [],
+    cast: [{ id: "you", role: "you", mark: [0, 0, 1.2], face: 200, look: { outfit: "tracksuit" } }, { id: "mentor", role: "mentor", mark: [-1.4, 0, -2.2], face: "you" }], props: [],
   });
   const [b0] = c.beats;
   const M: Target = { actor: "mentor" };

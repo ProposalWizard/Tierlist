@@ -193,6 +193,7 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
       const v = new T.Vector3(Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b));
       p.position.copy(v.multiplyScalar(0.1105)); p.lookAt(v.clone().multiplyScalar(2)); g.add(p); disp.push(p.geometry);
     }
+    g.scale.setScalar(spec.scale ?? 1);
     return { ...base, grip: "grip", handles: { grip: [0, 0, 0] } };
   }
 

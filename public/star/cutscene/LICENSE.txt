@@ -1,0 +1,5 @@
+Cut-scene set textures (made by scripts/cutscene/make_plates.py)
+
+grass.webp          Grass004 by ambientCG (https://ambientcg.com/view?id=Grass004), CC0 1.0. Resized.
+plate-golden.webp   The project's own golden-hour sky picture (the Style Testing round's sky-golden.png),
+                    mirrored into a 360° strip, with a painted line of trees added in code, softened.

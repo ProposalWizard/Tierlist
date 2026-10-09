@@ -39,6 +39,7 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
   const L = o.lamps;
   let stadium: Stadium | null = null;
   const R = rng(o.seed + 7);
+  void cyl;
 
   /** A crowd of simple people (instanced): bodies in mixed colours (or a club's), heads, bobbing from t. */
   const crowd = (pts: Vec3[], colours: string[], face: Vec3 | null, scale = 1, bob = 0.04) => {
@@ -207,10 +208,21 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
     light(new T.PointLight("#fff2dc", 3 * L.intensity, 9, 1.3), 0, 2.8, 1.6);
     light(new T.PointLight("#ffe7c4", 1.6 * L.intensity, 8, 1.3), -2.5, 2.5, 3);
   } else if (id === "training-ground" || id === "garden") {
-    const gc = canvas(256, 256); { const g = gc.getContext("2d")!; for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#5fae43" : "#55a23c"; g.fillRect(0, i * 32, 256, 32); } }
-    plane(120, 120, 0, 0, 0, -Math.PI / 2, 0, mat("#ffffff", { map: tex(gc, [12, 12]) }));
-    const tree = (x: number, z: number, s: number) => { cyl(0.12 * s, 0.18 * s, 2 * s, x, s, z, mat("#5a3d24")); const top = new T.Mesh(new T.IcosahedronGeometry(1.3 * s, 0), mat("#3f7a3a")); top.position.set(x, 2.6 * s, z); top.castShadow = true; G.add(top); disp.push(top.geometry); };
-    for (let i = 0; i < 26; i++) { const a = R.next() * Math.PI * 2, d = 22 + R.next() * 18; tree(Math.sin(a) * d, Math.cos(a) * d - 10, 0.9 + R.next() * 0.9); }
+    // real grass (ambientCG Grass004, CC0) and a painted golden-hour plate all round, soft as if out of
+    // focus (no modelled trees: low-poly trees behind a close-up read cheap)
+    const tl = new T.TextureLoader();
+    const grassT = tl.load("/star/cutscene/grass.webp"); grassT.colorSpace = T.SRGBColorSpace; grassT.wrapS = grassT.wrapT = T.RepeatWrapping; grassT.repeat.set(60, 60); grassT.anisotropy = 8; disp.push(grassT);
+    plane(240, 240, 0, 0, 0, -Math.PI / 2, 0, mat("#93b870", { map: grassT, rough: 0.95 }));
+    // mown stripes over it, faint
+    const gc = canvas(64, 256); { const g = gc.getContext("2d")!; for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.06)"; g.fillRect(0, i * 32, 64, 32); } }
+    const stripes = plane(120, 120, 0, 0.004, 0, -Math.PI / 2, 0, mat("#ffffff", { map: tex(gc, [1, 4]), transparent: true }));
+    stripes.receiveShadow = true;
+    const plateT = tl.load("/star/cutscene/plate-golden.webp"); plateT.colorSpace = T.SRGBColorSpace; plateT.wrapS = T.RepeatWrapping; disp.push(plateT);
+    const plateG = new T.CylinderGeometry(75, 75, 26, 64, 1, true); disp.push(plateG);
+    // its top fades into the style's own sky (no hard edge)
+    const ac = canvas(4, 64); { const g = ac.getContext("2d")!; const gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, "#000"); gr.addColorStop(0.45, "#fff"); gr.addColorStop(1, "#fff"); g.fillStyle = gr; g.fillRect(0, 0, 4, 64); }
+    const plateM = new T.MeshBasicMaterial({ map: plateT, alphaMap: tex(ac), transparent: true, depthWrite: false, side: T.BackSide, fog: false, toneMapped: false, color: "#e8d8c8" }); disp.push(plateM);
+    const plateMesh = new T.Mesh(plateG, plateM); plateMesh.position.set(0, 9.5, 0); plateMesh.rotation.y = 2.4; plateMesh.renderOrder = -5; G.add(plateMesh);
     if (id === "training-ground") {
       for (let i = 0; i < 8; i++) { const c = new T.Mesh(new T.ConeGeometry(0.11, 0.24, 12), mat("#f97316")); c.position.set(-3 + (i % 4) * 1.4, 0.12, 4 + Math.floor(i / 4) * 1.4); G.add(c); disp.push(c.geometry); }
       const post = mat("#f4f4f4");
