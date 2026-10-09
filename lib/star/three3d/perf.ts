@@ -547,8 +547,8 @@ function promote(url: string) {
  * unpacked once (people3d's warmPeople3d) — so the place opens from memory.
  * Free if already done; skipped on Save-Data / 2G.
  */
-export function preloadScene(name: Scene3dName) {
-  if (typeof window === "undefined" || !preloadAllowed()) return;
+export function preloadScene(name: Scene3dName): Promise<void> {
+  if (typeof window === "undefined" || !preloadAllowed()) return Promise.resolve();
   const go = async () => {
     await installAssetVersions();
     const people = await import("../people3d").catch(() => null);
@@ -561,7 +561,11 @@ export function preloadScene(name: Scene3dName) {
     await people.warmPeople3d();
   };
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-  if (ric) ric(() => { void go(); }, { timeout: 3000 }); else setTimeout(() => { void go(); }, 1500);
+  // resolves when it is all in (the perf3d harness waits on it); callers may ignore it
+  return new Promise<void>((done) => {
+    const run = () => { go().catch(() => {}).finally(() => done()); };
+    if (ric) ric(run, { timeout: 3000 }); else setTimeout(run, 1500);
+  });
 }
 
 /** loader.loadAsync, but from the prefetch cache when preloadScene got there first. */

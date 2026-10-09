@@ -207,6 +207,13 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
     return true;
   },
+  /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
+  async preload(scene: string) {
+    const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;
+    await P.preloadScene(name);
+    await new Promise((r) => setTimeout(r, 200));
+    (window as any).__preloadDone = true;
+  },
   dispose() { M.ctrl?.dispose?.(); M.ctrl = null; },
 };
 

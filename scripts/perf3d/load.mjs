@@ -67,6 +67,7 @@ for (const scene of scenes) {
   const row = { scene };
   for (const run of runs) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    try {
     let { page, net } = await newPage(ctx);
     if (run === "warm") {
       await enter(page, net, scene); await page.evaluate(() => window.H.dispose());
@@ -82,7 +83,11 @@ for (const scene of scenes) {
     }
     row[run] = await enter(page, net, scene);
     await page.evaluate(() => window.H.dispose()).catch(() => {});
-    await ctx.close();
+    } catch (e) {
+      // a page that runs out of memory (the shop before its packed pictures) is a result too
+      row[run] = { err: String(e).split("\n")[0].slice(0, 80) };
+    }
+    await ctx.close().catch(() => {});
     console.error(scene, run, JSON.stringify(row[run]));
   }
   out.push(row);
