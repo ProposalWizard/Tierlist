@@ -98,6 +98,7 @@
  */
 import type * as THREE from "three";
 import { installFrameMeter } from "./frameMeter";
+import { safeCompileAsync } from "./safeCompile";
 import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
 export type { Quality3d, TierProfile } from "./quality";
@@ -385,8 +386,11 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
         if (v && (v as THREE.Texture).isTexture && !seen.has(v as THREE.Texture)) { seen.add(v as THREE.Texture); renderer.initTexture(v as THREE.Texture); }
       }
     });
-    const job = typeof renderer.compileAsync === "function" ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera));
+    // safeCompileAsync, not renderer.compileAsync: three's own can throw on
+    // a timer and never settle (a material that lost its program), which left
+    // the garden on its spinner (safeCompile.ts).
     const t = opts.timeoutMs ?? 8000;
+    const job = safeCompileAsync(renderer, scene, camera, t);
     await Promise.race([job, new Promise((r) => setTimeout(r, t))]);
     // One real draw of a single pixel: links the programs, builds the
     // shadow-map shaders (compile() skips those), uploads the skinning

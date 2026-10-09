@@ -68,6 +68,7 @@ import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
 } from "./textures";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house";
 export type GardenSky = "day" | "sunset" | "night";
@@ -2418,7 +2419,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
+  try { await safeCompileAsync(renderer, scene, camera); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   renderer.setAnimationLoop(() => {
