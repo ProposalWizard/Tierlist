@@ -41,7 +41,7 @@ import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook 
 import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
-import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
+import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook, cutsceneCameraStored } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
@@ -81,6 +81,9 @@ export const LOOK_ROWS = {
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
   chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
+  // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
+  // (Standard and Preview) until it is switched on by hand.
+  kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
@@ -88,6 +91,8 @@ export const LOOK_ROWS = {
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
   playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
+  // Harry, 9 Oct 2026: camera pass + music on every cut scene (New by default).
+  cutsceneCamera: row("Cut-scene camera", "new", "old", cutsceneCameraLook, setCutsceneCameraLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
   camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
   playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
@@ -143,6 +148,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),
     chanceMix: O("chanceMix"),
+    kaneDrawings: O("kaneDrawings"),
     garden: N("garden"),
     look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
@@ -150,6 +156,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     humanBody: O("humanBody"),
     playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
+    cutsceneCamera: N("cutsceneCamera"),
     motion: N("motion"),
     camera3d: O("camera3d"),
     playerLight3d: O("playerLight3d"),
@@ -190,6 +197,11 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
 if (typeof window !== "undefined" && !playerStyleStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
+}
+// Cut-scene camera arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !cutsceneCameraStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "cutsceneCamera" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.cutsceneCamera.set("old");
 }
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;

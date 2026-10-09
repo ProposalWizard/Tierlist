@@ -1111,9 +1111,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
   // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
   const yourHead3d = career ? yourToonHead(career.player) : undefined, yourBody3d = career ? yourToonBody(career.player) : undefined, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
+  const yourShirtName = career?.player.nickname ?? career?.player.lastName;
   useEffect(() => {
-    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
-  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d]);
+    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName });
+  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c

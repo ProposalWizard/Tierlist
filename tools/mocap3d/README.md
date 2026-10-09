@@ -68,7 +68,10 @@ into the set inside the clip; `getUp` in the file), `sliding_tackle`,
 `poke_tackle`, `knee_slide`. They go into mocap.glb under the same names, so
 Motion: Old keeps the old ones. build.py prints FOOT SLIDE per clip (worst
 drift of a planted foot inside one planted run, cm) and writes `plants` for the
-keyed clips too.
+keyed clips too. Every keyed clip goes through `steady()` (keyed.py): no knee or
+elbow can swap sides in one key (they used to flip a thigh 180°);
+`tests/star/animSmooth.mts` fails any keyed clip turning a bone over 60° in one
+60 fps frame.
 
 **Still the old hand-made clip**: `header_diving`, `ready_shuffle`, the drill
 loops `juggle`, `pass`, `cone_dribble`, `stretch`.

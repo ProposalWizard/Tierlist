@@ -26,6 +26,7 @@
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
 import { toonYou } from "../style3d/toon/bodies";
+import { turnTo } from "../three3d/animBlend";
 import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
@@ -1102,6 +1103,8 @@ async function buildShop(
   const keys = new Set<string>();
   let speed = 0;
   let yaw = Math.PI; // facing
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
@@ -1281,6 +1284,7 @@ async function buildShop(
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
+  const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
@@ -1331,7 +1335,7 @@ async function buildShop(
       speed += (target - speed) * Math.min(1, dt * 8);
     }
     if (buying > 0) speed *= 0.8;
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
       yaw += d * Math.min(1, dt * 5);
@@ -1382,14 +1386,14 @@ async function buildShop(
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
-    const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
-    const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
+    const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+    const cr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
     want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
     if (shot) {
-      want.lerp(new THREE.Vector3(...shot.cam), frame);
-      wantLook.lerp(new THREE.Vector3(...shot.look), frame);
+      want.lerp(scratchShot.set(...shot.cam), frame);
+      wantLook.lerp(scratchShot.set(...shot.look), frame);
     }
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
