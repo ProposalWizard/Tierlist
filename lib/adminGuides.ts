@@ -221,7 +221,8 @@ export const ADMIN_GUIDES = {
     what: "Real match positions from StatsBomb's free data (every Premier League 2015/16 shot, every Kane touch at the 2022 World Cup and Euro 2024), each drawn as a chance in the game's camera and playable in the real match. Testing only.",
     buttons: [
       { group: "Loading", items: [
-        ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert). Nothing loads without it."],
+        ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert)."],
+        ["Kane drawings (in the game)", "The 376 Kane drawings the game uses when Settings → Match → Kane drawings (testing) is New: every Kane pass and shot from 21 matches (Euro 2020, World Cup 2022, Euro 2024, Bayern v Leverkusen 2023/24). No file needed."],
       ] },
       { group: "Filters", items: [
         ["Premier League 15/16 shots / Kane, every touch", "Which set to show."],
@@ -238,7 +239,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
-    inGame: ["Nowhere. It is a test of whether real positions make better chances; the data is not used in the game."],
+    inGame: ["The Kane drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
   },
   "/star-goal-clips-dev": {
