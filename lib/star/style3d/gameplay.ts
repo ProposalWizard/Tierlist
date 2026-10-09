@@ -109,6 +109,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   const shadowMat = new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.3, depthWrite: false });
 
   const focus = { x: 0, z: 18 };
+  let camInit = false;
   let aspect = 0.55;
   /**
    * The fixed camera: `tilt` from straight down, never turning. Framed like
@@ -134,7 +135,9 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     const fx = Math.max(-34 + VIEW_W / 2 - 2, Math.min(34 - VIEW_W / 2 + 2, (b.x - CX) * 0.85));
     // test pages (stills from a frozen frame) can ask for the camera to arrive at once
     const w = window as unknown as { __styleSnapCam?: number };
-    const snapK = w.__styleSnapCam ? 1 : 0.06;
+    // the first frame starts on the player (no glide in from a default spot)
+    const snapK = w.__styleSnapCam || !camInit ? 1 : 0.06;
+    camInit = true;
     if (w.__styleSnapCam) w.__styleSnapCam--;
     focus.x += (fx - focus.x) * snapK; focus.z += (fz - focus.z) * snapK;
     const look: [number, number, number] = [focus.x, 0, focus.z];

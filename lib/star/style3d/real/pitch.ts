@@ -83,11 +83,11 @@ const FRAG_MAP = /* glsl */ `
   g *= 1.0 + (cross - 0.5) * 0.035 * inPitch * uStripes;
   // big soft patches: no pitch is one green
   float m1 = fbm3(P * 0.03), m2 = fbm3(P * 0.11 + 4.0);
-  g *= 0.86 + 0.22 * m1 + 0.08 * (m2 - 0.5);
+  g *= 0.9 + 0.14 * m1 + 0.05 * (m2 - 0.5);
   // tufts and clumps at hand size: what makes it read as grass, not felt
   float tuft = vn(P * 2.6) * 0.6 + vn(P * 6.1 + 2.0) * 0.4;
-  g *= 0.9 + 0.2 * tuft;
-  g = mix(g, g * vec3(0.9, 1.05, 0.8), smoothstep(0.62, 0.9, vn(P * 0.9 + 9.0)) * 0.5);
+  g *= 0.96 + 0.08 * tuft;
+  g = mix(g, g * vec3(0.9, 1.05, 0.8), smoothstep(0.62, 0.9, vn(P * 0.9 + 9.0)) * 0.18);
   g = mix(g, g * vec3(1.06, 1.02, 0.86), smoothstep(0.55, 0.8, m1) * 0.35);
   // wear: goalmouths, the spots, the centre
   vec2 q = vec2(P.x, P.y > uL * 0.5 ? uL - P.y : P.y);

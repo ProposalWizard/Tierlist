@@ -203,7 +203,7 @@ function LookRow({ id, tabs, note, look }: {
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
-  garden: "3D garden", shopPlayer: "3D shop player", people3d: "3D people", bossRoom: "Talk to your manager",
+  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", bossRoom: "Talk to your manager",
   casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
@@ -267,6 +267,7 @@ function World3dGroup() {
   return (
     <>
       <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
+      <LookRow id="look3d" look={look} tabs={[["h", "H"], ["old", "Old"]] as const} note="H: console realism. The 3D drills in a full stadium with a crowd, real sky light, a broadcast picture; the garden and shop lit by a real sky. Old: as before." />
       <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />
       <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />

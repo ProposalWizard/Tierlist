@@ -48,7 +48,7 @@ varying float vShade;`;
 const CROWD_FRAG_HEAD = /* glsl */ `
 varying float vTeam;
 varying float vShade;
-uniform float uTime, uBob, uCheer;
+uniform float uTime, uBob, uCheer, uLit;
 uniform vec3 uHome, uHome2, uAway;
 float ch(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }`;
 const CROWD_MAP = /* glsl */ `
@@ -69,14 +69,14 @@ const CROWD_MAP = /* glsl */ `
   vec3 kit = vTeam > 0.5 ? uAway : (hs < 0.58 ? uHome : uHome2);
   float wears = hs < 0.8 ? 1.0 : 0.0;
   tc.rgb = mix(tc.rgb, kit * (0.2 + lum * 2.4), cloth * wears * 0.92);
-  diffuseColor *= vec4(tc.rgb * vShade, 1.0);
+  diffuseColor *= vec4(tc.rgb * vShade * uLit, 1.0);
 }`;
 
 function netCanvas(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
   const g = c.getContext("2d")!;
-  g.strokeStyle = "#ffffff"; g.lineWidth = 3.2;
+  g.strokeStyle = "#ffffff"; g.lineWidth = 7;
   g.beginPath(); g.moveTo(0, 32); g.lineTo(32, 0); g.lineTo(64, 32); g.lineTo(32, 64); g.closePath(); g.stroke();
   return c;
 }
@@ -131,13 +131,13 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   const roofMap = canvasTex(roofCanvas());
   const roofMat = keep(new T.MeshStandardMaterial({ color: "#ffffff", map: roofMap, roughness: 0.42, metalness: 0.55 }));
   const glass = keep(new T.MeshStandardMaterial({ color: "#bcd6e6", roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.28, depthWrite: false }));
-  const padding = keep(new T.MeshStandardMaterial({ color: "#16233a", roughness: 0.7 }));
+  const padding = keep(new T.MeshStandardMaterial({ color: "#3b4a5e", roughness: 0.7 }));
   const lampOff = new T.Color("#dfe4ea"), lampOn = new T.Color(14, 14, 12.5);
   const lampMat = keep(new T.MeshBasicMaterial({ color: lampOff.clone(), toneMapped: true }));
 
   // ── the crowd material ──
   const cu: Record<string, { value: any }> = {
-    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 },
+    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 }, uLit: { value: 1 },
     uHome: { value: new T.Color(colours.home) }, uHome2: { value: new T.Color(colours.home2) }, uAway: { value: new T.Color(colours.away) },
   };
   const crowdMat = keep(new T.MeshStandardMaterial({ map: maps.crowd, roughness: 0.95, side: T.FrontSide }));
@@ -294,7 +294,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
 
   // Behind each goal: two tiers. Along the sides: two tiers. The camera's end (S) is lower.
   const two: Tier[] = [{ z0: 0.4, y0: 1.1, rows: 20, depth: 0.82, rise: 0.4 }, { z0: 14.5, y0: 12.2, rows: 17, depth: 0.86, rise: 0.56 }];
-  const gapEnd = 5.8, gapSide = 6.6;
+  const gapEnd = 4.9, gapSide = 6.0;
   const stands: { S: any; first: number; last: number }[] = [];
   const mark = () => crowdP.length / 3;
   let f = mark();
@@ -482,6 +482,8 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       night = on;
       lampMat.color.copy(on ? lampOn : lampOff);
       shafts.visible = on && hi;
+      // at night the stands sit darker than the floodlit pitch
+      cu.uLit.value = on ? 0.62 : 1;
       for (const m of ledMats) m.color.setScalar(on ? 1.5 : 1.05);
     },
     setColours(c) {

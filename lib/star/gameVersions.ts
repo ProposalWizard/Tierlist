@@ -24,6 +24,7 @@ import { storedMatchView, setMatchView, MATCH_VIEW_DEFAULT } from "./matchView";
 import { signing3dOn, setSigning3d, shop3dPlayerLook, setShop3dPlayerLook } from "./signing3d";
 import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./look3d";
 import { garden3dLook, setGarden3dLook } from "./garden3d/look";
+import { look3dStyle, setLook3dStyle } from "./look3dStyle";
 import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
@@ -64,6 +65,7 @@ export const LOOK_ROWS = {
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
+  look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
@@ -107,6 +109,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble: N("dribble"),
     clearances: N("clearances"),
     garden: N("garden"),
+    look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     bossRoom: N("bossRoom"),

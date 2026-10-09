@@ -14,6 +14,7 @@
  *   tap on the right → pass / touch / keepy-up touch
  *   drag back on the right and let go → shoot (the 2D game's drag: same power for the same thumb movement)
  */
+import { look3dStyle } from "@/lib/star/look3dStyle";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
@@ -93,6 +94,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   const [result, setResult] = useState<Play3DResult | null>(null);
   const holder = useRef<HTMLDivElement>(null);
   const ctrl = useRef<Play3DController | null>(null);
+  const hRef = useRef<{ dispose(): void } | null>(null);
 
   // ── the 3D picture (and the World's clock) ──
   useEffect(() => {
@@ -114,9 +116,17 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         const { createPlay3DScene } = await import("@/lib/star/play3d/scene");
         const kit = kitsOf(career.player.club).home;
         let acc = 0;
+        // Settings → Look → "3D look": H puts the drill in a full stadium (lib/star/style3d/real); Old as before
+        const hLook = look3dStyle() === "h"
+          ? await import("@/lib/star/style3d/real/play3dH").then((m) => m.play3dH(session.world, { colours: { home: kit.shirt, home2: kit.trim, away: "#1d4ed8" } })).catch((e) => { console.error("look H failed", e); return null; })
+          : null;
+        if (dead) { hLook?.dispose(); return; }
+        hRef.current = hLook;
         const c = await createPlay3DScene(el, session.world, { kit: { shirt: kit.shirt, trim: kit.trim }, people, teamKits: session.bibs ? bibsFor(kit.shirt) : undefined }, {
           camera: session.camera,
+          ...(hLook ? hLook.opts : {}),
           onFrame: (dt) => {
+            hLook?.frame(dt);
             acc += dt;
             if (acc > 0.1) { acc = 0; setHud(session.hud()); }
             if (session.done()) setResult((r) => r ?? { ...session.result(team, Math.random()), drill: drill.id });
@@ -130,7 +140,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         if (!dead) setThree("off");
       }
     })();
-    return () => { dead = true; ctrl.current?.dispose(); ctrl.current = null; };
+    return () => { dead = true; hRef.current?.dispose(); hRef.current = null; ctrl.current?.dispose(); ctrl.current = null; };
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
