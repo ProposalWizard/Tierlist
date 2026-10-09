@@ -5,3 +5,6 @@ Made from MakeHuman assets, all CC0 (public domain):
   - clothes, hair, eyebrows, skin textures: MakeHuman system assets (https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/)
 
 Built by tools/human3d/build_human.py, packed by scripts/perf3d/shrink-models.mjs.
+
+The face part of the skin texture (tools/human3d/skins/skin_face_hf.jpg) was repainted from the CC0
+MakeHuman skin with a Higgsfield image model (9 Oct 2026): same layout, stubble, pores and shading added.

@@ -282,7 +282,7 @@ export function makeHuman(
         const pname = hm.parts[sl.part[v]];
         const isSkin = pname.startsWith("skin.");
         // skin: _ZONE is how deep in a hollow the point sits (0 open .. 0.7), a soft painted shadow
-        const occ = isSkin ? 1 - 0.55 * sl.zone[v] : 1;
+        const occ = isSkin ? 1 - 0.35 * sl.zone[v] : 1;
         const c0 = sl.uv && sl.material.map ? [1, 1, 1] : baseColour(T, pname, isSkin ? 0 : Math.round(sl.zone[v]), spec);
         const col = [c0[0] * occ, c0[1] * occ * (isSkin ? 0.97 : 1), c0[2] * occ * (isSkin ? 0.94 : 1)];
         Ca.push(col[0], col[1], col[2]);
@@ -411,12 +411,15 @@ export function makeHuman(
   body.material = mats;
   body.frustumCulled = false;
   body.castShadow = !!opts.castShadow;
-  const om = people3dOutline(T, opts.outline ?? 0.0045, opts.outlineNear);
+  // No ink line round the human body (Harry, 9 Oct 2026: the black outline "reads cartoon";
+  // the target has none). A toon style can still ask for one with humanOutline.
+  const ow = (opts as { humanOutline?: number }).humanOutline ?? 0;
+  const om = people3dOutline(T, ow || 0.0045, opts.outlineNear);
   const hidden = new T.MeshBasicMaterial({ visible: false });
   const outline = new T.SkinnedMesh(geo, groups.map((g) => (g.slot.alpha || g.slot.name === "brows" ? hidden : om)));
   outline.name = "Outline";
   outline.frustumCulled = false;
-  outline.visible = (opts.outline ?? 0.0045) > 0;
+  outline.visible = ow > 0;
   body.parent!.add(outline);
   outline.bind(body.skeleton, body.bindMatrix);
 
@@ -486,12 +489,17 @@ function patchHuman(mat: THREE.MeshStandardMaterial, u: Record<string, { value: 
     float l0 = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
     diffuseColor.rgb = vec3(clamp(0.82 + (l0 - 0.12) * 2.2, 0.55, 0.95));
   }
+  if (${isP("kit.tee")}) {
+    // the shirt's cloth texture (a mid grey, 0.62) around near-white, so the kit colour comes through true
+    float l1 = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+    diffuseColor.rgb = vec3(clamp(0.95 + (l1 - 0.62) * 1.6, 0.6, 1.0));
+  }
   if (vHumSkin > 0.5) {
     // the skin texture as detail: its colour around its own average, on the body's base tone
     vec3 dt = diffuseColor.rgb / max(vColor.rgb, vec3(1e-3)) / uHumSkinTex;
     float dl = dot(dt, vec3(0.299, 0.587, 0.114));
-    dt = mix(vec3(dl), dt, 0.55);
-    dt = vec3(1.0) + (dt - vec3(1.0)) * 1.5;   // the texture is soft; its shading and stubble, a little stronger
+    dt = mix(vec3(dl), dt, 0.45);
+    dt = vec3(1.0) + (dt - vec3(1.0)) * 0.85;  // the repainted face carries strong stubble and shading: a touch softer
     diffuseColor.rgb = vec3(0.62, 0.36, 0.24) * clamp(dt, vec3(0.3), vec3(1.8)) * vColor.rgb;
   }`;
   // Clothes' details drawn from where each point sits (crisp at any distance):

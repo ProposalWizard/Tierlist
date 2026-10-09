@@ -575,6 +575,11 @@ export class Cast {
     const model = await loadPeople3d(this.loader, spec.model, "new");
     const p = makePerson3d(T, this.SkeletonUtils, model, this.anims, { outline: opts.outline ?? 0.003, outlineNear: 1.6, human: spec.human });
     const isNew = this.look === "new";
+    // The human body in a kit wears real football boots (the shop's model), in the kit colour.
+    if (Array.isArray(p.body.material) && spec.kit) {
+      const { addHumanBoots } = await import("../human3d/boots");
+      await addHumanBoots(T, p.root, spec.kit.shirt);
+    }
     dressPerson3d(T, p, {
       skin: spec.skin, hair: spec.hair, kit: spec.kit, number: spec.number ?? null, accessories: spec.accessories, grey: spec.grey,
       face: isNew ? null : spec.face ?? null, faceSkin: spec.faceSkin,

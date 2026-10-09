@@ -221,6 +221,12 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
         import os
         p_ = os.path.join(pose["assets"], "skins", "young_caucasian_male", "young_lightskinned_male_diffuse.png")
         SKIN_TEX = p_ if os.path.exists(p_) else None
+    # The face repainted on MakeHuman's own layout (Higgsfield image model, from the CC0
+    # texture: stubble, pores, a buzz-cut shadow, shading) — used when it is there.
+    import os as _os
+    _hf = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "skins", "skin_face_hf.jpg")
+    if _os.path.exists(_hf):
+        SKIN_TEX = _hf
 
     # ── Skin regions: each body triangle goes to the region of its majority vertex.
     reg = np.array([region(i) for i in range(len(VB))])
