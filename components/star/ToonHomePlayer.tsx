@@ -8,8 +8,10 @@
  * (Settings → Your look), your club kit and number, the relaxed idle with the
  * fixed hands. Home: drag to turn him. Light on purpose: ONE head file (not the
  * squad's set), one small canvas, 30 frames a second at most, paused when the
- * tab is hidden. Until he has loaded (or if 3D can't start) the old figure
- * stays, so the box is never empty.
+ * tab is hidden. Until he has loaded: the picture of him from the last visit
+ * (kept on this device) or a plain grey shape, never the old figure (speed
+ * job B, 9 Oct 2026: a slow load showed the old drawn player first). Only if
+ * 3D can't start does the old figure stay, so the box is never empty.
  */
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
@@ -20,9 +22,14 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const turn = useRef({ yaw: where === "title" ? -0.35 : 0, drag: null as null | number, from: 0 });
   const you = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const num = career.squadNumber ?? 9;
+  // what he looks like now: the kept picture is shown only while it still matches
+  const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair].join("|");
+  const [snap, setSnap] = useState<string | null>(null);
+  useEffect(() => { setSnap(readSnap(where, sig)); }, [where, sig]);
 
   useEffect(() => {
     const el = wrap.current;
@@ -68,6 +75,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const idle = p.actions.idle ? "idle" : Object.keys(p.actions)[0];
         const dur = p.actions[idle]?.getClip().duration ?? 1;
         const t0 = performance.now();
+        let snapped = false;
         const frame = (now: number) => {
           raf = requestAnimationFrame(frame);
           if (document.hidden || now - last < 33) return;
@@ -78,6 +86,8 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
           if (tr.drag === null && where === "home") tr.yaw *= 0.96; // drifts back to face you
           p.root.rotation.y = tr.yaw;
           renderer.render(scene, cam);
+          // keep this first picture for the next visit's wait (read straight after the draw)
+          if (!snapped) { snapped = true; keepSnap(where, sig, renderer.domElement); }
         };
         raf = requestAnimationFrame(frame);
         setReady(true);
@@ -88,9 +98,11 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         };
       } catch (e) {
         console.error("Style A home player", e);
+        if (!dead) setFailed(true);
       }
     })();
     return () => { dead = true; cancelAnimationFrame(raf); dispose(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair]);
 
   const onDown = (e: React.PointerEvent) => { if (where !== "home") return; turn.current.drag = e.clientX; turn.current.from = turn.current.yaw; (e.target as Element).setPointerCapture?.(e.pointerId); };
@@ -100,8 +112,39 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
   return (
     <div className="relative" style={{ width, height, touchAction: "pan-y" }} data-toon-home={where}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-      {!ready && <div className="absolute inset-0">{fallback}</div>}
+      {!ready && failed && <div className="absolute inset-0">{fallback}</div>}
+      {!ready && !failed && (snap
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={snap} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full" data-toon-snap />
+        : <WaitShape />)}
       <div ref={wrap} className="absolute inset-0" />
     </div>
   );
+}
+
+/** The wait with no kept picture: a soft grey player shape where he will stand. */
+function WaitShape() {
+  return (
+    <svg viewBox="0 0 100 200" preserveAspectRatio="xMidYMax meet" className="pointer-events-none absolute inset-0 h-full w-full animate-pulse" aria-hidden data-toon-wait>
+      <g fill="rgba(255,255,255,0.13)">
+        <circle cx="50" cy="26" r="11" />
+        <path d="M33 44 Q50 38 67 44 L72 98 Q60 102 56 100 L54 188 L44 188 L44 100 Q40 102 28 98 Z" />
+      </g>
+    </svg>
+  );
+}
+
+/** One kept picture per place (Home, title), with what he looked like when it was taken. */
+const snapKey = (where: string) => "kib-toon-snap-" + where;
+function readSnap(where: string, sig: string): string | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(snapKey(where)) ?? "null") as { sig?: string; url?: string } | null;
+    return v && v.sig === sig && typeof v.url === "string" ? v.url : null;
+  } catch { return null; }
+}
+function keepSnap(where: string, sig: string, canvas: HTMLCanvasElement) {
+  try {
+    const url = canvas.toDataURL("image/webp", 0.85);
+    if (url.startsWith("data:image/") && url.length < 400_000) localStorage.setItem(snapKey(where), JSON.stringify({ sig, url }));
+  } catch { /* no room or no storage: the grey shape next time */ }
 }

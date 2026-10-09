@@ -153,6 +153,14 @@ export interface HPost {
    * blur); off = straight to the screen (ACES), as Low always was.
    */
   setMode(m: HPostMode): void;
+  /**
+   * Where the scene itself is drawn (its own picture before the pass), or
+   * null when it goes straight to the screen. A scene's shaders differ by
+   * target (a picture: no tone mapping, linear colour), so a warm-up must
+   * compile them FOR this target, or the first frame builds every shader
+   * again (speed job B: the garden's 11 s first frame, 9 Oct 2026).
+   */
+  sceneTarget(): any | null;
   dispose(): void;
 }
 
@@ -199,6 +207,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
 
   return {
     setMode(m) { mode = tier === "low" ? "off" : m; },
+    sceneTarget() { return mode === "off" ? null : main; },
     render(scene, camera, g) {
       if (mode === "off") {
         renderer.toneMapping = T.ACESFilmicToneMapping;

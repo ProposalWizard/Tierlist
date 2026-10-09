@@ -31,7 +31,7 @@
 import type { Person3D } from "../people3d";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
-import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -119,7 +119,10 @@ const MIRROR_LAYER = 5;
 export async function startHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions = {}): Promise<HomeController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildHome(container, cb, data, opts, own);
+    const t0 = performance.now();
+    const c = await buildHome(container, cb, data, opts, own);
+    noteSceneFiles("home", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* gone */ } }
@@ -771,7 +774,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const keep = new Set<any>([me.person.root, props, garments, trophies.gold, trophies.silver, trophies.ghost, trophies.plates, meBlob, ...pickables, mirror].filter(Boolean));
   // the mirror's own layer must survive joining: pieces it sees join only with each other
   const frozen = freezeStatic(THREE, mergeGeometries, scene, keep);
-  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
+  // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
+  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   // ── State ──
@@ -904,7 +908,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
         scene.add(next.person.root);
         me = next;
         disposePerson(old.person, old.worn.kind === "casual");
-        try { await renderer.compileAsync(scene, camera); } catch { /* first use */ }
+        try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* first use */ }
         shadowDirty = true;
       } finally { changing = false; }
     });

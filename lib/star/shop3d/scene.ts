@@ -40,7 +40,8 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles } from "../three3d/perf";
+import { ktx2LoaderForModels } from "../three3d/ktx2";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
 import { strideFor } from "../three3d/gaitBlend";
@@ -193,7 +194,10 @@ export async function startShop(
 ): Promise<ShopController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildShop(container, cb, kit0, displays, opts, own);
+    const t0 = performance.now();
+    const c = await buildShop(container, cb, kit0, displays, opts, own);
+    noteSceneFiles("shop", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ } }
@@ -505,6 +509,11 @@ async function buildShop(
   const loader = new GLTFLoader();
   loader.setDRACOLoader(draco); // boots and cars
   await withMeshopt(loader); // people, clips, the old player (scripts/perf3d/shrink-models.mjs)
+  // The generated items' packed pictures (speed job B, 9 Oct 2026: the shop held ~377 MB of
+  // pictures): each *-hf.glb has a *-hf.ktx2.glb twin (tools/shop3d/ktx2_items.mjs) whose maps
+  // stay packed on the chip, about a quarter of the memory. Only when this phone reads KTX2.
+  const ktx2 = hEnh ? await ktx2LoaderForModels(renderer) : null;
+  if (ktx2) loader.setKTX2Loader(ktx2);
   let loaded = 0;
   /**
    * THE CARS AND BOOTS LOOKED ODD (Harry, 9 Oct 2026: "the cars and boots still
@@ -640,9 +649,40 @@ async function buildShop(
     }
   };
   const models = new Map<string, Promise<any>>();
+  /** The packed twin first (when this phone reads KTX2), the plain file on any failure. */
+  const fetchModel = (url: string) => {
+    const twin = ktx2 && HF_MODEL.test(url) ? url.replace(/\.glb$/, ".ktx2.glb") : null;
+    return twin ? loader.loadAsync(twin).catch(() => loader.loadAsync(url)) : loader.loadAsync(url);
+  };
+  /**
+   * Let a model go (its pictures and shapes leave the chip). The car turntable and the homes
+   * table show one at a time: before, every car or home you flicked through stayed loaded.
+   */
+  const dropModel = (url: string) => {
+    const p = models.get(url);
+    if (!p) return;
+    models.delete(url);
+    p.then((root: any) => root.traverse((o: any) => {
+      if (!o.isMesh) return;
+      o.geometry?.dispose?.();
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!m) continue;
+        for (const v of Object.values(m)) if (v && (v as any).isTexture && v !== envTex) (v as any).dispose();
+        m.dispose();
+      }
+    })).catch(() => {});
+  };
+  /** The last two shown on a one-at-a-time stand stay loaded (flicking back is instant); older ones go. */
+  const keepRecent = (list: string[], url: string) => {
+    const i = list.indexOf(url);
+    if (i >= 0) list.splice(i, 1);
+    list.push(url);
+    while (list.length > 2) dropModel(list.shift()!);
+  };
+  const recentCars: string[] = [], recentHomes: string[] = [];
   const loadModel = (url: string) => {
     if (!models.has(url)) {
-      models.set(url, loader.loadAsync(url).then((g: any) => {
+      models.set(url, fetchModel(url).then((g: any) => {
         loaded++;
         g.scene.traverse((o: any) => {
           if (!o.isMesh) return;
@@ -758,9 +798,11 @@ async function buildShop(
     carWant = i;
     const it = displays.car.items[i];
     if (!it?.model) return;
-    loadModel(hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model).then((m) => {
+    const carUrl = hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model;
+    loadModel(carUrl).then((m) => {
       if (disposed || carWant !== i || carIndex === i) return;
       carIndex = i;
+      keepRecent(recentCars, carUrl);
       for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
       const c = m.clone();
       c.userData.car = true;
@@ -988,9 +1030,11 @@ async function buildShop(
     const it = displays.homes.items[i];
     const f = it && HOME_MODELS[it.id];
     if (!f) return;
-    loadModel(`/star/shop3d/items/${f}-hf.glb`).then((m) => {
+    const homeUrl = `/star/shop3d/items/${f}-hf.glb`;
+    loadModel(homeUrl).then((m) => {
       if (disposed || homeWant !== i || homeIndex === i) return;
       homeIndex = i;
+      keepRecent(recentHomes, homeUrl);
       for (const c of [...homeHolder.children]) if (c.userData.home) homeHolder.remove(c);
       const c = m.clone();
       c.userData.home = true;
@@ -1095,7 +1139,7 @@ async function buildShop(
   buyA.clampWhenFinished = false;
   let buying = 0; // seconds left of the buy gesture
 
-  hRoom?.bakeReflections();
+  if (hRoom) { await compileForBake(THREE, renderer, scene, camera); if (disposed) throw new Error("disposed"); hRoom.bakeReflections(); }
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -1278,7 +1322,8 @@ async function buildShop(
   // warm up: every shader built before the first frame, so the first steps don't stutter
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
+  // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
+  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
   renderer.setAnimationLoop(() => {

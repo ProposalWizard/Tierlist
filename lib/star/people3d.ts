@@ -248,6 +248,29 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   return p;
 }
 
+/**
+ * An idle moment on Home (preloadScene): download AND unpack the bodies and
+ * clips every people scene asks for (the garden, shop, casino, house, drills,
+ * signing, office all call loadPeople3d), so opening any of them takes them
+ * from memory instead of the network and the unpacker. The exact calls the
+ * scenes make, so they hit this page's cache. Speed job B, 9 Oct 2026.
+ */
+let warming: Promise<void> | null = null;
+export function warmPeople3d(): Promise<void> {
+  if (!warming) {
+    warming = (async () => {
+      const [{ GLTFLoader }, { withMeshopt }, { people3dLook }] = await Promise.all([
+        import("three/examples/jsm/loaders/GLTFLoader.js"), import("./three3d/meshopt"), import("./look3d"),
+      ]);
+      const loader = await withMeshopt(new GLTFLoader());
+      const body = people3dLook();
+      await loadPeople3d(loader, "anims", body);
+      await loadPeople3d(loader, "player", body);
+    })().catch((e) => { warming = null; console.warn("3D people warm-up skipped", e); });
+  }
+  return warming;
+}
+
 // ── The shader ────────────────────────────────────────────────────────────
 
 const VERT_HEAD = `

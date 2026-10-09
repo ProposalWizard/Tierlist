@@ -59,7 +59,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
 import { dressCasinoH, type CasinoH } from "./hRoom";
@@ -155,7 +155,10 @@ export const PULL_AT = 0.75;
 export async function startCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions): Promise<CasinoController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildCasino(container, cb, opts, own);
+    const t0 = performance.now();
+    const c = await buildCasino(container, cb, opts, own);
+    noteSceneFiles("casino", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ } }
@@ -765,9 +768,22 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   if (H && renderer.shadowMap.enabled) freezeStaticShadows(renderer, scene); // nothing that casts moves: drawn once
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
+  // Speed job B (9 Oct 2026, the casino took 20-30 s to open): every shader is
+  // built ONCE, in the background, for the picture look H really draws into
+  // (enhance.ts compile: after the baked light is on). Baking the room into its
+  // reflections then reuses those same shaders (a picture target, no tone
+  // mapping), where it used to build them all again on the page thread, and
+  // the first frame a third time. Same picture.
+  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
-  hRoom?.bakeReflections();
+  if (hRoom) {
+    if (!hEnh) await compileForBake(THREE, renderer, scene, camera);
+    if (disposed) throw new Error("disposed");
+    hRoom.bakeReflections();
+    // the reflections are a new light on every shiny material: anything it changed is built now, not on the first frame
+    try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* first use */ }
+    if (disposed) throw new Error("disposed");
+  }
   /** New: the shared look-around camera (eased drag, a tilt) with the boom kept out of lamps and walls. */
   const orb = new OrbitCam();
   const lampsAt: V3[] = (hRoom?.lamps ?? []) as V3[];
