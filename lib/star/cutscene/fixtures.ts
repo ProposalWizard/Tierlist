@@ -79,7 +79,7 @@ function goal(): CutsceneScript {
     cam(contact + 0.85, b1.at - contact - 0.85 + 1.5, { preset: "medium-wide", subject: Y, side: -1, yaw: 10, move: "follow" }, "Wheels away"),
     cam(b1.at + 1.5, 2.0, { preset: "low-hero", subject: Y, side: 1, yaw: 4, lens: 26, move: "dolly-in", moveAmount: 0.25 }, "The slide · low"),
     cam(b1.at + 3.5, 1.3, { preset: "close", subject: Y, side: 1, yaw: -12, lens: 60, move: "push", shake: 0.15 }, "The roar"),
-    cam(b1.at + 4.8, c.duration - b1.at - 4.8, { preset: "medium-wide", subject: Y, side: 1, yaw: 150, lens: 30, move: "orbit-left", moveAmount: 28 }, "The pile-on"),
+    cam(b1.at + 4.8, c.duration - b1.at - 4.8, { preset: "medium-wide", subject: Y, side: 1, yaw: 35, lens: 30, move: "orbit-left", moveAmount: 28 }, "The pile-on"),
   ];
 
   return {

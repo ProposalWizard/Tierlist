@@ -342,7 +342,7 @@ export const goalCelebration: BeatDef = {
         { at: t, dur: run, purpose: "follow", subject: you(c), weight: 0.7, name: "Wheels away" },
         { at: t + run, dur: slide + 1.0, purpose: "hero", subject: you(c), weight: 1, name: "The slide · low", hint: { preset: "low-hero", yaw: 6, lens: 26 } },
         { at: t + run + slide + 1.0, dur: 1.3, purpose: "emotion", subject: you(c), weight: 0.9, name: "The roar", hint: { preset: "close" } },
-        { at: t + run + slide + 2.3, dur: hold - 2.3, purpose: "crowd", subject: you(c), weight: 0.8, name: "The pile-on", hint: { preset: "medium-wide", yaw: 150, move: "orbit-left", moveAmount: 25 } },
+        { at: t + run + slide + 2.3, dur: hold - 2.3, purpose: "crowd", subject: you(c), weight: 0.8, name: "The pile-on", hint: { preset: "medium-wide", yaw: 35, move: "orbit-left", moveAmount: 25 } },
       ],
     };
   },

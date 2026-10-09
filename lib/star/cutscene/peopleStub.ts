@@ -291,7 +291,8 @@ class StubActor implements CutsceneActor {
     }
     // a handle in the closed hand: across the palm, a little in from the knuckles
     const pos = W.clone().addScaledVector(along, h.len * 0.55).addScaledVector(palm, 0.035);
-    const axis = new this.T.Vector3().crossVectors(along, palm).normalize().multiplyScalar(hand === "R" ? 1 : -1);
+    // a held thing stands up out of the fist the way the thumb points (a mic, a statue, a bottle)
+    const axis = thumb.clone().sub(palm.clone().multiplyScalar(thumb.dot(palm))).normalize();
     return { pos, axis, up: palm.clone() };
   }
 

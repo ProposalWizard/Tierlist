@@ -56,7 +56,12 @@ export function cinematograph(intents: ShotIntent[], o: CinemaOpts): CameraTrack
       const cut = x.at - prev.at;
       if (cut < 0.75) {
         if ((x.weight ?? 0.5) > (prev.weight ?? 0.5)) { kept.pop(); x.dur += x.at - prev.at; x.at = prev.at; }
-        else { const end = x.at + x.dur; if (end > prev.at + prev.dur) prev.dur = end - prev.at; continue; }
+        else {
+          // the lighter one waits for the heavier to finish, if enough of it is left
+          const end = x.at + x.dur, pend = prev.at + prev.dur;
+          if (end - pend >= 0.75) { x.at = pend; x.dur = end - pend; }
+          else { if (end > pend) prev.dur = end - prev.at; continue; }
+        }
       } else prev.dur = cut;
     }
     kept.push(x);
