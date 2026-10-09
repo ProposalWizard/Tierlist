@@ -22,6 +22,7 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
@@ -244,7 +245,11 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
    * skin on the face — on these men only (their own material copy).
    */
   const plainHead = (p: Person3D, skin: string, hair: string) => {
-    const m = p.body.material as any;
+    const m = p.body?.material as any;
+    // The human body (Settings → Look "3D body: Human") has its own face and a
+    // different material (no userData/uFaceF): it needs no plain head. Without
+    // this guard the career match's 3D view crashed on Preview (9 Oct 2026).
+    if (!m || Array.isArray(m) || !m.userData || humanBodyLook() === "human") return;
     const u = { uHeadSkin: { value: new THREE.Color(skin) }, uHeadHair: { value: new THREE.Color(hair) } };
     if (!m.userData.plainHead) {
       const inner = m.onBeforeCompile;

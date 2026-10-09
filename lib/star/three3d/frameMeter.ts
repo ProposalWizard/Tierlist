@@ -65,7 +65,7 @@ export function installFrameMeter(): void {
     const el = document.createElement("div");
     el.setAttribute("data-frame-meter", "");
     Object.assign(el.style, {
-      position: "fixed", left: "4px", top: "calc(env(safe-area-inset-top, 0px) + 4px)", zIndex: "2147483000",
+      position: "fixed", left: "4px", bottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)", zIndex: "2147483000",
       pointerEvents: "none", font: "700 10px/1.25 ui-monospace, Menlo, monospace", color: "#d1fae5",
       background: "rgba(0,0,0,0.62)", padding: "3px 5px", borderRadius: "5px", whiteSpace: "pre", display: "none",
     } as Partial<CSSStyleDeclaration>);
