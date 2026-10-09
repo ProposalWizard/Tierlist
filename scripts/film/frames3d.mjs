@@ -64,10 +64,45 @@ const hide = ["[data-page-guide]", ...(opt("hide", "") ? [opt("hide")] : [])].jo
 await page.addStyleTag({ content: `${hide}{display:none !important}` });
 
 const timelineFile = opt("timeline");
+// Touches, done by this tool between frames (the real match on the Style Testing page: a drag from the
+// ball and a tap on the strike screen). Everything else in the timeline is the page's own scripted input.
+//   { "t": 0.6, "drag": { "from": "ball", "dx": -30, "dy": 120, "dur": 0.5 } }   CSS px, from the ball (window.__starMatch)
+//   { "t": 1.4, "contact": { "cx": 0, "cy": 0.2 } }                             a tap on the strike screen's ball (−1..1 from its centre)
+const touches = [];
 if (timelineFile) {
   const tl = JSON.parse(fs.readFileSync(timelineFile, "utf8"));
-  await page.evaluate((t) => { window.__frameStep.timeline = t; }, tl);
+  for (const e of tl) {
+    if (e.drag) {
+      const n = Math.max(2, Math.round((e.drag.dur ?? 0.4) * fps));
+      touches.push({ t: e.t, kind: "down", drag: e.drag });
+      for (let k = 1; k <= n; k++) touches.push({ t: e.t + ((e.drag.dur ?? 0.4) * k) / n, kind: "move", drag: e.drag, f: k / n });
+      touches.push({ t: e.t + (e.drag.dur ?? 0.4) + 1e-4, kind: "up", drag: e.drag });
+    } else if (e.contact) touches.push({ t: e.t, kind: "contact", contact: e.contact });
+  }
+  touches.sort((a, b) => a.t - b.t);
+  const own = tl.filter((e) => !e.drag && !e.contact);
+  await page.evaluate((t) => { window.__frameStep.timeline = t; }, own);
 }
+let dragAt = null;
+const doTouches = async (t) => {
+  while (touches.length && touches[0].t <= t + 1e-6) {
+    const e = touches.shift();
+    if (e.kind === "down") {
+      // the ball as seen: the 3D view's ball when one is drawn, else the 2D match's
+      const b = await page.evaluate(() => window.__engineView3dBall ?? window.__starMatch?.ball?.() ?? null);
+      if (!b) { console.error(`[touch] no ball to drag at t=${e.t}`); continue; }
+      dragAt = b;
+      await page.mouse.move(b.x, b.y); await page.mouse.down();
+    } else if (e.kind === "move" && dragAt) await page.mouse.move(dragAt.x + e.drag.dx * e.f, dragAt.y + e.drag.dy * e.f);
+    else if (e.kind === "up" && dragAt) { await page.mouse.up(); dragAt = null; }
+    else if (e.kind === "contact") {
+      const box = await page.locator('div.cursor-pointer[style*="aspect-ratio"]').first().boundingBox().catch(() => null);
+      if (!box) { console.error(`[touch] no strike screen at t=${e.t}`); continue; }
+      const r = box.width / 2;
+      await page.mouse.click(box.x + r + (e.contact.cx ?? 0) * r, box.y + r + (e.contact.cy ?? 0) * r);
+    }
+  }
+};
 const pageDuration = await page.evaluate(() => window.__frameStep.duration || 0);
 const duration = Number(opt("duration", pageDuration));
 if (!(duration > 0)) { console.error("no duration: pass --duration (the page did not say how long it runs)"); await browser.close(); process.exit(2); }
@@ -79,9 +114,10 @@ const nameOf = (i) => path.join(out, `frame_${String(i).padStart(5, "0")}.${ext}
 const t0 = Date.now();
 let done = 0, skipped = 0;
 for (let i = from; i < to; i++) {
-  if (fs.existsSync(nameOf(i)) && fs.statSync(nameOf(i)).size > 0) { skipped++; continue; }
+  if (fs.existsSync(nameOf(i)) && fs.statSync(nameOf(i)).size > 0 && !touches.length) { skipped++; continue; }
   const t = i / fps;
   const f0 = Date.now();
+  await doTouches(t);
   // be at exactly t, draw once, then let the page and the compositor settle (two animation frames)
   await page.evaluate(async (tt) => {
     await window.__frameStep.seek(tt);

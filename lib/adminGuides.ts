@@ -1188,7 +1188,7 @@ export const ADMIN_GUIDES = {
   },
   "/star-style-dev": {
     title: "Style Testing",
-    what: "Try the shortlisted art styles (and Mix) on real 3D gameplay, the 2D look and cut scenes, switching live. A test area: nothing here changes the game.",
+    what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
       { group: "Style (top row)", items: [
         ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
@@ -1200,19 +1200,21 @@ export const ADMIN_GUIDES = {
         ["Mix", "H for gameplay, A for cut scenes, the same warm evening sky and colour grade on both."],
       ] },
       { group: "Scene (second row)", items: [
-        ["Gameplay 3D", "Free Roam, playable: you, two team-mates and a keeper, four opponents standing goal-side (scenery: they never tackle). The camera is fixed and follows the ball."],
-        ["Gameplay 2D", "The same play with every man drawn flat on a card: plain heads, no faces, the number on the back."],
+        ["Real game (opens first)", "The real match: Infinite Highlights' chances one after another on the one engine, with its scoreboard and commentary. Drag back from the ball, pick where to strike, and the real keeper and scoring decide it. The 3D picture only draws what the match does."],
+        ["View: 2D | 3D view", "Real game: the 2D game itself, or the same game drawn in 3D in the chosen style. In 3D a touch is handed to the 2D game at the same spot of grass; a shot's drag keeps your finger's own length, so it kicks as hard as in 2D."],
+        ["Free Roam (3D)", "Free Roam, playable: you, two team-mates and a keeper, four opponents standing goal-side (scenery: they never tackle). The camera is fixed and follows the ball."],
+        ["Free Roam (2D)", "The same free roam with every man drawn flat on a card: plain heads, no faces, the number on the back."],
         ["Cut: Goal", "Wide, behind the shooter, the run, then a low close-up of a knee slide while team-mates pile in."],
         ["Cut: Signing", "An office high in the stand: the manager and the player shake hands, the pitch through the window."],
         ["Walk-out", "The farewell guard of honour as it is in the game. The styles don't reach it yet."],
-        ["Camera … from straight down", "Gameplay only: the camera's tilt, 10 to 70. 40 is the starting angle; 0 would be straight down. The men lean back towards the camera a little so they read at full height."],
+        ["Camera … from straight down", "Real game and free roam: the camera's tilt (real game 20 to 70, free roam 10 to 70). 40 is the starting angle; 0 would be straight down. Real game: the camera frames everyone in the chance, the goal at the top. The men lean back towards the camera a little so they read at full height."],
         ["↺ Replay", "Cut scenes: play it again from the start."],
         ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
       ] },
     ],
-    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds)."],
+    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
     inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
-    dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts). Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
+    dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts). Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
   "/star-shop3d-dev": {
     title: "3D Shop",
