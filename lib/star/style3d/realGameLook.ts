@@ -4,9 +4,11 @@
  *
  *   Settings → Look → "3D camera: New | Old" (Harry, 9 Oct 2026: "a mix of A
  *   and B … less of it was empty grass"). New: the camera sits a little lower
- *   and frames only the action (ball, you, the nearest defenders, the keeper
- *   and goal), so men at the edges may go off screen. Old: the camera exactly
- *   as it was (everyone in the chance on screen).
+ *   and frames only the action (ball, you, your team-mates in the move, the
+ *   nearest defenders, the keeper and goal), so men at the edges may go off
+ *   screen; it follows the play and stays inside what the phone shows; men,
+ *   keeper and ball near true size (1.15×). Old: the camera exactly as it
+ *   was (everyone in the chance on screen, men drawn 1.3–2.6×).
  *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch
  *   still look slightly flat"). New: a soft key and rim light on the players

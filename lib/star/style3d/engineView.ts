@@ -143,6 +143,10 @@ export const TV_CAMERA_NEW = {
   nearR: 8,
   /** Any man this near the ball stays on screen too (a team-mate in the move). */
   closeR: 6,
+  /** Our men this near the ball stay on screen (the ones you can pass to). */
+  mateR: 22,
+  /** The men, the keeper and the ball, this many times life size (1 = true size). */
+  fig: 1.15,
   /** No goal in the chance: the nearest man's feet are pinned this far down the screen. */
   pinBottom: 0.82,
   /** Goal in the chance: the nearest man's feet are wanted at least this far down the screen … */
@@ -522,7 +526,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.p.mixer.update(dt);
     b.p.root.position.set(b.x - CX, lift, b.y);
     b.p.root.rotation.set(0, b.yaw, 0);
-    b.p.root.scale.setScalar(figNow() * KEEPER_SHARE);
+    b.p.root.scale.setScalar(figNow() * (camMode === "tv" && tv.init && realCameraLook() === "new" ? 1 : KEEPER_SHARE));
     b.p.root.visible = true;
   };
 
@@ -602,6 +606,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * crosses) keep the 2D's own side-on camera.
    */
   const tv = { x: 0, z: 0, D: 60, th: 0.7, key: "", init: false };
+  /** The new camera's men, keeper and ball (× life size). Test page: ?fig=1 (true size) to compare. */
+  const FIG_NEW = (() => {
+    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("fig"));
+    return q >= 0.8 && q <= 2.6 ? q : TV_CAMERA_NEW.fig;
+  })();
   /** The TV camera's figure scale this frame (see TARGET_PX). */
   let tvFig = ENGINE_VIEW_FIG_SCALE;
   const figNow = () => (camMode === "tv" && tv.init ? tvFig : figScale);
@@ -693,11 +702,25 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       return tvSolveAt(f, TV_CAMERA, tvTilt, pts, false);
     }
     // New: the action only (see TV_CAMERA_NEW); the rest may go off screen.
-    const N = TV_CAMERA_NEW;
+    // Framed inside the part of the pitch box the phone actually shows, so the
+    // play is never under the fold (Harry, 9 Oct 2026: "you can't see the full
+    // pitch at once" — the box is taller than the screen under the test page's
+    // controls, and a touch on the pitch cannot scroll the page).
+    const vis = (() => {
+      const r = container.getBoundingClientRect();
+      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
+      const a = Math.max(0, Math.min(0.5, -r.top / r.height));
+      const b = Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height));
+      return { a, b };
+    })();
+    const sh = (v: number) => vis.a + v * (vis.b - vis.a);
+    const N = { ...TV_CAMERA_NEW, top: sh(TV_CAMERA_NEW.top), bottom: sh(TV_CAMERA_NEW.bottom), goalLineAt: sh(TV_CAMERA_NEW.goalLineAt), goalLineMax: sh(TV_CAMERA_NEW.goalLineMax), pinBottom: sh(TV_CAMERA_NEW.pinBottom), fillTo: sh(TV_CAMERA_NEW.fillTo) };
     const near = (g: { x: number; y: number }) => Math.hypot(g.x - ball.x, g.y - ball.y);
     const them = f.figures.filter((g) => g.team === "them" && near(g) <= N.nearR)
       .sort((a, b) => near(a) - near(b)).slice(0, N.nearDefenders);
-    const action = f.figures.filter((g) => g.sid === "you" || them.includes(g) || near(g) <= N.closeR);
+    // our men in the move (the pass is to them) stay on; their far men may go
+    const action = f.figures.filter((g) => g.sid === "you" || them.includes(g) || near(g) <= N.closeR
+      || (g.team === "us" && near(g) <= N.mateR));
     const pts = [{ x: ball.x, y: ball.y }, ...action.map((g) => ({ x: g.x, y: g.y })), ...extra];
     const base = tvTilt + N.tiltAdd;
     // No goal: the nearest man is pinned near the bottom (no grass under him).
@@ -740,6 +763,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
     // an upright man is foreshortened by sin(tilt) from this camera
     tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
+    // New camera: men, keeper and ball near TRUE size against the goal (Harry, 9 Oct 2026:
+    // "the players and goalie should be a lot smaller in game, with the ball as well").
+    // One fixed size: 1.15 → a 2.07 m man under the 2.44 m bar (the old camera drew him
+    // 1.3–2.6× → 2.3–4.7 m, the keeper 0.85 of that).
+    if (realCameraLook() === "new") tvFig = FIG_NEW;
   };
   const placeCamera = (f: EngineFrame, dt: number) => {
     if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
@@ -771,7 +799,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false };
+  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, last: 0 };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -790,7 +818,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
   };
   const onDown = (e: PointerEvent) => {
-    if (!visible || touch.id !== -1) return;
+    if (!visible) return;
+    // One finger at a time — but a touch that never ended here (its "up" went
+    // elsewhere) must never lock the pitch: the same pointer pressing again, or
+    // a touch silent for a second, starts afresh. (The bug behind "stuck on
+    // round 2", 9 Oct 2026: the 2D canvas took the first touch's capture, its
+    // "up" never came back here, and every later press was ignored.)
+    if (touch.id !== -1 && touch.id !== e.pointerId && performance.now() - touch.last < 1000) return;
     const g = groundAt(e.clientX, e.clientY);
     const at = g && to2dClient(g);
     if (!g || !at) return;
@@ -808,7 +842,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
     }
+    touch.last = performance.now();
     send("pointerdown", e, touch.start2);
+    // The 2D canvas captures the pointer on its own pointerdown, which would
+    // send the rest of this touch to it at the raw finger spot (not the
+    // matching grass) and never back here. Take the capture back.
+    try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
   };
   const moveTarget = (e: PointerEvent) => {
     const g = groundAt(e.clientX, e.clientY);
@@ -822,6 +861,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   const onMove = (e: PointerEvent) => {
     if (e.pointerId !== touch.id) return;
+    touch.last = performance.now();
     const at = moveTarget(e);
     if (at) send("pointermove", e, at);
   };
@@ -940,7 +980,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const fb0 = f.ball;
       ball.visible = !!fb0;
       if (fb0) {
-        const bs = def.ballScale * 0.85;
+        // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
+        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? figNow() : def.ballScale * 0.85;
         ball.scale.setScalar(bs);
         const v = new THREE.Vector3(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
@@ -981,7 +1022,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         };
         for (const b of list) if (b.p.root.visible) feet(b.p.root.position.x, b.p.root.position.z, 0);
         if (fb0) feet(fb0.x - CX, fb0.y, 0);
-        (window as unknown as { __engineView3dFrame?: unknown }).__engineView3dFrame = { emptyBelow: on ? 1 - low : 1, onScreen: on, offScreen: off, kind: f.kind, phase: f.phase };
+        (window as unknown as { __engineView3dFrame?: unknown }).__engineView3dFrame = { emptyBelow: on ? 1 - low : 1, onScreen: on, offScreen: off, kind: f.kind, phase: f.phase, ballTo2d: fb0 ? to2dClient(fb0) : null };
       }
       // frame-stepped filming (lib/star/virtualClock.ts) draws only the frames it films
       if ((window as unknown as { __view3dSkipDraw?: boolean }).__view3dSkipDraw) { leanAll(); return; }
