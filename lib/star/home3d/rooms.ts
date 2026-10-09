@@ -26,6 +26,7 @@
  *   cinema        a big screen and rows of seats
  *   gym           a treadmill, a rack of weights, a bench, your KIB cans
  *   gardenTerrace the estate's terrace onto the grounds
+ *   nook          the flat's hallway: a boot bench, your kits on hooks, keys
  *
  * Anything you have not bought stands as an empty plinth.
  * Tested in tests/star/home3d.mts.
@@ -44,6 +45,7 @@ export type Wall = "n" | "s" | "e" | "w";
 export const ROOM_LABEL: Record<RoomId, string> = {
   main: "Home", hallway: "Hallway", lounge: "Lounge", dressing: "Dressing room", trophy: "Trophy room",
   terrace: "Terrace", garage: "Garage", games: "Games room", cinema: "Cinema", gym: "Gym", gardenTerrace: "Garden terrace",
+  nook: "Hallway",
 };
 
 /**
@@ -53,7 +55,8 @@ export const ROOM_LABEL: Record<RoomId, string> = {
  * hallway, you come in on the lounge's east side.
  */
 const DOOR_AT: Record<RoomId, Partial<Record<RoomId | "garden", [Wall, number]>>> = {
-  main: { garden: ["s", 0] },
+  main: { garden: ["s", 0], nook: ["s", 0] },
+  nook: { garden: ["s", 0], main: ["n", 0] },
   hallway: { garden: ["s", 0], lounge: ["w", 0.18], gym: ["w", -0.24], dressing: ["e", 0.18], garage: ["e", -0.24], trophy: ["n", 0] },
   lounge: { hallway: ["e", 0.3], dressing: ["e", 0.3], garden: ["s", 0], terrace: ["n", 0.36], games: ["n", -0.22], cinema: ["n", 0.22], gardenTerrace: ["s", -0.25] },
   dressing: { hallway: ["s", 0.24], lounge: ["s", 0.24] },
@@ -72,13 +75,16 @@ const LINKS: [RoomId, RoomId][] = [
   ["lounge", "games"], ["lounge", "cinema"], ["lounge", "gardenTerrace"],
   // the penthouse has no hallway: its lounge is the hub
   ["lounge", "dressing"], ["lounge", "terrace"],
+  // the flat: its nook by the front door, then the one room
+  ["nook", "main"],
 ];
 
 /** Room size at the house tier, metres (w along x, d along z). Grand tiers grow them. */
 const BASE: Record<RoomId, [number, number]> = {
   main: [0, 0], // the tier's own preset
   hallway: [3.4, 6.4], lounge: [6.6, 6.2], dressing: [4.8, 5.6], trophy: [5.6, 6.0], terrace: [6.4, 4.4],
-  garage: [9.4, 6.8], games: [6.2, 6.0], cinema: [5.6, 6.6], gym: [5.8, 6.0], gardenTerrace: [7.2, 6.0],
+  garage: [9.4, 6.8], games: [8.6, 7.4], cinema: [5.6, 6.6], gym: [5.8, 6.0], gardenTerrace: [7.2, 6.0],
+  nook: [2.6, 3.4],
 };
 
 export interface DoorPlan {
@@ -190,16 +196,18 @@ export interface HomeStuff {
   cans: number;
   bike: boolean;
   jet: boolean;
+  /** A horse of your own (the garden terrace looks out on him). */
+  horse: boolean;
   tv: boolean;
   console: boolean;
   art: boolean;
   suit: boolean;
 }
 
-export const NO_STUFF: HomeStuff = { watches: [], jewellery: [], cans: 0, bike: false, jet: false, tv: false, console: false, art: false, suit: false };
+export const NO_STUFF: HomeStuff = { watches: [], jewellery: [], cans: 0, bike: false, jet: false, horse: false, tv: false, console: false, art: false, suit: false };
 
 /** Your things, from the shop items you own and your cans. */
-export function homeStuffOf(career: Pick<CareerState, "ownedItems"> & { kibCans?: CareerState["kibCans"] }): HomeStuff {
+export function homeStuffOf(career: Pick<CareerState, "ownedItems"> & { kibCans?: CareerState["kibCans"]; horse?: CareerState["horse"] }): HomeStuff {
   const ids = new Set((career.ownedItems ?? []).map((it) => baseIdOf(it)));
   const k = career.kibCans;
   return {
@@ -208,6 +216,7 @@ export function homeStuffOf(career: Pick<CareerState, "ownedItems"> & { kibCans?
     cans: k ? Math.max(0, (k.basic ?? 0) + (k.premium ?? 0) + (k.elite ?? 0)) : 0,
     bike: ids.has("bike"),
     jet: ids.has("jet"),
+    horse: !!career.horse,
     tv: ids.has("tv"),
     console: ids.has("console") || ids.has("gaming-pc"),
     art: ids.has("art"),
@@ -218,14 +227,26 @@ export function homeStuffOf(career: Pick<CareerState, "ownedItems"> & { kibCans?
 /** How many cars a room parks: the drive through the lounge window, or the garage. */
 export function carsIn(id: RoomId, tier: HomeTier): number {
   if (id === "garage") return 4;
+  if (id === "terrace") return 1; // the penthouse terrace: your best car, through the glass
   if (id === "main" || id === "lounge") return roomPreset(tier).cars;
   return 0;
 }
 
+/** The motorbike, the jet and the garden props, light copies for the home (tools/home3d). */
+export const BIKE_LOD = "/star/home3d/bike-lod.glb";
+export const JET_LOD = "/star/home3d/jet-lod.glb";
+export const TERRACE_PROPS = "/star/home3d/terrace-props.glb";
+export const HORSE_MODEL = "/star/garden3d/horse.glb";
+
 /** The model files a room loads (so they can be fetched while you walk to its door). */
-export function roomFiles(id: RoomId, tier: HomeTier, cars: { model: string }[], boots: { model: string | null }[], bikeModel: string | null): string[] {
+export function roomFiles(id: RoomId, tier: HomeTier, cars: { model: string }[], boots: { model: string | null }[], bikeModel: string | null, stuff: HomeStuff = NO_STUFF): string[] {
   const out = cars.slice(0, carsIn(id, tier)).map((c) => c.model);
-  if (id === "main" || id === "dressing") for (const b of boots.slice(0, 2)) if (b.model) out.push(b.model);
+  if (id === "main" || id === "dressing" || id === "nook") for (const b of boots.slice(0, 2)) if (b.model) out.push(b.model);
   if (id === "garage" && bikeModel) out.push(bikeModel);
+  if (id === "gardenTerrace") {
+    out.push(TERRACE_PROPS);
+    if (stuff.jet) out.push(JET_LOD);
+    if (stuff.horse) out.push(HORSE_MODEL);
+  }
   return out.filter((f, i) => out.indexOf(f) === i);
 }

@@ -22,7 +22,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { HomeController, HomeData, HomeSpot } from "@/lib/star/home3d/scene";
 import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
-import { homeStuffOf, carsIn, ROOM_LABEL } from "@/lib/star/home3d/rooms";
+import { homeStuffOf, carsIn, ROOM_LABEL, BIKE_LOD } from "@/lib/star/home3d/rooms";
+import { badgeSvg } from "@/lib/star/clubBadge";
 import { houseLook, type HouseLook } from "@/lib/star/home3d/look";
 import { cabinetSlots } from "@/lib/star/home3d/trophies";
 import { CASUAL_SETS, outfitOf, wornAt, bootChoices, carsOnDrive, type OutfitChoice } from "@/lib/star/home3d/outfits";
@@ -95,6 +96,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     casual: CASUAL_SETS,
     rooms,
     stuff: homeStuffOf(career),
+    bikeModel: homeStuffOf(career).bike ? BIKE_LOD : null,
+    club: career.player.club,
+    badge: badgeSvg(career.player.club, "home-cinema"),
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [tier, rooms]);
