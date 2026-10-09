@@ -28,6 +28,7 @@
  * (a layer of its own) at a small size, and only while you are near it.
  * The governor (three3d/governor.ts) and the quality tier work as in the shop.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
@@ -137,6 +138,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const R = roomPreset(data.tier);
   const W2 = R.w / 2, D2 = R.d / 2, H = R.h;
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");

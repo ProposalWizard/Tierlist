@@ -43,6 +43,7 @@
  * Static pieces are merged by material (one draw call each), so the extra
  * detail costs few draw calls.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
@@ -206,6 +207,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");

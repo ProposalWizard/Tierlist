@@ -25,6 +25,7 @@
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { toonYou } from "../style3d/toon/bodies";
 import { turnTo } from "../three3d/animBlend";
 import type { Display, DisplayId } from "./catalogue";
@@ -215,6 +216,7 @@ async function buildShop(
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");

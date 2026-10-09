@@ -137,6 +137,9 @@ exactly today's bodies. You never pick a file yourself:
 - Every GLB the game loads is packed with meshopt by `scripts/perf3d/shrink-models.mjs`. **Every GLTFLoader must call `withMeshopt(loader)`** (`lib/star/three3d/meshopt.ts`) before loading. A loader without it fails.
 - Every GLB needs a `POLICY` line in `scripts/perf3d/shrink-models.mjs`. The policy says which vertex data may be made small, because some code reads raw vertices (`people3d.ts`, `dressInKit`, the garden's pieces).
 - Props, boots and cars stay Draco where Draco is smaller.
+- **Loading (speed job B, 9 Oct 2026).** `withMeshopt` also hooks every three.js loader to ask for `/star/x?v=<hash>` (`lib/star/three3d/assetUrl.ts`); `next.config.mjs` serves those as immutable and regenerates the hash list (`lib/star/three3d/assetVersions.ts`, by `scripts/perf3d/asset-versions.mjs`) at every build. A new or changed file needs nothing else; `tests/star/assetLoading.mts` fails if the committed list is stale.
+- **Look H scenes compile with `hEnh.compile(scene, camera)`** (`lib/star/style3d/real/enhance.ts`), never `renderer.compileAsync` alone: look H draws into its pass's picture, whose shaders differ from the screen's, so a screen compile is wasted and the first frame builds everything again (the garden's and casino's 9–11 s first frame here).
+- The 3D shop's generated items have KTX2 twins (`*-hf.ktx2.glb`, `tools/shop3d/ktx2_items.mjs`): pictures stay packed on the chip. After changing a `*-hf.glb`, re-run that tool.
 
 ### Cameras
 

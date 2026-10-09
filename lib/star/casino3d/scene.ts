@@ -48,6 +48,7 @@
  * bartender, one slot punter and the leaner; High all six. Off screen they
  * are not worked out.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { toonYou, TOON_SUIT_HEADS } from "../style3d/toon/bodies";
 import { turnTo } from "../three3d/animBlend";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
@@ -172,6 +173,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");

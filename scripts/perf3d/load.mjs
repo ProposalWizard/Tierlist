@@ -6,9 +6,11 @@
 //   warm    — a later day: a new page load, the browser's HTTP cache kept
 //   revisit — the same session: leave the place and open it again
 //   preload — the same as cold, but Home's idle preload ran first (H.preload)
-// Each number is ms from "open" to the first picture on screen (first), to
-// the place taking input (ready), the bytes and the requests it needed
-// (304s counted as requests: on Fast 4G each one costs a round trip).
+// Each number is ms from "open" to the place taking input (ready), to its
+// first frame handed to the screen (first: the CPU side, shader builds
+// included; SwiftShader's own pixel time left out), the KB downloaded and the
+// trips to the server (downloads and "still the same?" checks: on Fast 4G
+// each one costs a round trip; a file kept by the browser costs none).
 //
 //   node scripts/perf3d/build.mjs
 //   node scripts/perf3d/serve.mjs --cache=vercel &
@@ -24,6 +26,8 @@ const scenes = (args[0] && !args[0].startsWith("--") ? args[0] : "garden").split
 const runs = flag("runs", "cold,warm,revisit").split(",");
 const port = flag("port", "3502");
 const q = flag("q", "");
+/** --files: list every trip to the server (to find a file that is not cached). */
+const showFiles = args.includes("--files");
 const FAST4G = { offline: false, latency: 165, downloadThroughput: (9e6 / 8) * 0.9, uploadThroughput: (1.5e6 / 8) * 0.9 };
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--js-flags=--max-old-space-size=1024"] });
@@ -34,9 +38,14 @@ async function newPage(ctx) {
   await cdp.send("Network.enable");
   await cdp.send("Network.emulateNetworkConditions", FAST4G);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  // trips: requests for game files that went to the server (a fresh download or a "still the same?" check);
+  // a file answered from the browser's own cache with no question asked costs none
   const net = { bytes: 0, reqs: 0, r304: 0 };
-  cdp.on("Network.loadingFinished", (e) => { net.bytes += e.encodedDataLength; });
-  cdp.on("Network.responseReceived", (e) => { if (!/\/star\/|\/shop\//.test(e.response.url)) return; net.reqs++; if (e.response.status === 304) net.r304++; });
+  const game = new Set();
+  const urls = new Map();
+  cdp.on("Network.requestWillBeSent", (e) => { if (/\/star\/|\/shop\//.test(e.request.url)) { game.add(e.requestId); urls.set(e.requestId, e.request.url); } });
+  cdp.on("Network.responseReceived", (e) => { if (game.has(e.requestId) && e.response.status === 304) net.r304++; });
+  cdp.on("Network.loadingFinished", (e) => { net.bytes += e.encodedDataLength; if (game.has(e.requestId) && e.encodedDataLength > 0) { net.reqs++; if (showFiles) console.error(`   ${(e.encodedDataLength / 1024) | 0} KB ${urls.get(e.requestId)?.replace(/^https?:\/\/[^/]+/, "")}`); } });
   page.on("pageerror", (e) => console.error("pageerror", String(e).slice(0, 200)));
   await page.goto(`http://localhost:${port}/index.html?gov=0${q}`);
   return { page, net };
@@ -46,6 +55,9 @@ async function enter(page, net, scene) {
   const n0 = { ...net };
   const r = await page.evaluate(async (s) => {
     const M = window.__M;
+    // time the CPU side of each frame (when render() hands it over), not SwiftShader finishing the
+    // pixels: this machine has no graphics chip, a phone draws a frame in milliseconds
+    M.finish = false;
     M.frames.length = 0; M.ready = 0;
     const t = performance.now();
     try { await window.H[s]({}); } catch (e) { return { err: String(e) }; }
