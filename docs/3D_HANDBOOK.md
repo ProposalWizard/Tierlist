@@ -301,3 +301,27 @@ What landed today on Harry, newest first, one line each.
 - Cut-scene system: film rules, close-ups, real grass plates, the people layer (`lib/star/cutscene`), The Icon speaks.
 - Real game in 3D on the Style Testing page: "same brain, new camera" (`lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`).
 - Rescued into the repo: `tools/styletest` (look test for cel / Spider-Verse / stylised PBR), `tools/modeltest` (three generated stylised bodies, concept pictures, raw and fitted GLBs), `tools/models3d` (picture to game-ready GLB tools), this handbook and `.claude/skills/3d-building`.
+
+## Handover (9 Oct) → Leo
+
+### Home + title screen
+
+Harry's three asks (9 Oct 2026, New UI Home and title):
+1. "I think we just need the players to look really fun and good."
+2. "remove the goal or make it actually be facing the right way (goals in the middle of the pitch)."
+3. "make the rep/fame + goals and assists and the cans more prominent."
+
+Done (behind Settings → Look → "Home screen: New | Old", default New; Old is exactly the screens as they were; `lib/star/homeLook.ts`, row `homeScreen` in `lib/star/gameVersions.ts`):
+- Home, New: four big tiles under Next match (Rep, Fame, Goals, Assists this season), each with a 3D icon and a big number (`StatTiles` in `components/star/HomeHub.tsx`).
+- The goal behind him is gone (ask 2: removed, it read better than turning it). The stadium picture still lines up on the same marker, so the set does not move.
+- He stands centre stage, taller (up to 360 px, was 290), in a club-coloured glow with a pool of light and a gentle bob.
+- Cans: bigger ×N counts and names (`CanTile` `bold` prop).
+- Title, New: the same hook, with the glow, light pool and bob. Little else changes there.
+- Checked at 390×844 signed out: no page errors, no sideways scroll. tsc, the one-engine guard and `gameVersions.mts` pass.
+
+Left:
+- Ask 1 is only half done: he is the same figure, just lit and moving. The fun look needs the Style A body.
+- Not checked on a short phone (360×640). The height maths has a floor, but nobody has looked.
+- No star-playtest run.
+
+The player-render hook: `HomePlayerFigure` in `components/star/HomePlayer.tsx`. Both screens give it a box (width × height, boots on the bottom edge) and never draw him themselves. Put the Style A render in that one function and keep the same box; neither screen's layout changes. Old look does not use it.
