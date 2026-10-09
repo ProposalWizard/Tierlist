@@ -40,7 +40,7 @@ export const GAMEPLAY_SWITCHES = {
     // Mikey, 9 Oct 2026: "make this a setting you can switch into, don't
     // apply to the current scenarios yet."
     defaultVersion: "old",
-    newText: "Chances drawn from 376 real Harry Kane passes and shots (21 matches, 2021–2024): team-mates and opponents stand where they really stood.",
+    newText: "Chances drawn from real strikers' passes and shots (Harry Kane's dealt most often): everyone near the play stands where they really stood. Mostly easy and normal, a few hard.",
     oldText: "The game's own drawings.",
   },
 } as const;

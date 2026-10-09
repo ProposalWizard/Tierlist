@@ -424,6 +424,9 @@ Neither Harry nor Mikey writes code. Stated directly: *"we AREN'T coders -
 english only."* Everything below is a standing instruction, confirmed more
 than once.
 
+**Progress updates follow `.claude/skills/progress-update/SKILL.md`: every 5
+minutes on every task, auto-deploy at every major update.**
+
 **Answer shape — key point, key number, key change.** Reported directly:
 *"there's sometimes too much fluff in how you speak… I'm having to skim
 through too much yap."* No preamble, no restating the request, no praise for
