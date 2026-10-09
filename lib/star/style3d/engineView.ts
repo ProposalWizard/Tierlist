@@ -244,7 +244,7 @@ export const TV_CAMERA_NEW = {
   goalLineMax: 0.24,
 };
 
-export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement }): Promise<EngineView> {
+export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
   let tvTilt = o.tilt ?? 40;
   const camMode = o.camera ?? "tv";
@@ -288,6 +288,13 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const canvas3d = renderer.domElement as HTMLCanvasElement;
   canvas3d.style.pointerEvents = "none";
+  // iPhone Safari takes the 3D away when memory runs short (Harry, 9 Oct 2026:
+  // "3D just stopped working mid game"). Say so, so the screen can show the 2D
+  // match again; preventDefault lets the browser offer the context back.
+  const onLostEv = (e: Event) => { e.preventDefault(); o.onContextLost?.(); };
+  const onRestoredEv = () => { o.onContextRestored?.(); };
+  canvas3d.addEventListener("webglcontextlost", onLostEv);
+  canvas3d.addEventListener("webglcontextrestored", onRestoredEv);
 
   const scene = new THREE.Scene();
   const root = new THREE.Group();
@@ -1697,6 +1704,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
       svg.remove();
+      canvas3d.removeEventListener("webglcontextlost", onLostEv);
+      canvas3d.removeEventListener("webglcontextrestored", onRestoredEv);
       container.removeEventListener("pointerdown", onDown);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerup", onUp);
