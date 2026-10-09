@@ -27,6 +27,80 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.43",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-10-09T15:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
+      "summary": "Real Premier League 2015/16 shots (StatsBomb's free data) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 20%). A new Chances (testing) switch builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
+      "stats": [
+        {
+          "value": "7,807",
+          "label": "real Premier League shots playable as test chances"
+        },
+        {
+          "value": "6.1 → 9.0",
+          "label": "highlights a match for a striker on Chances: New"
+        },
+        {
+          "value": "68% vs 20%",
+          "label": "a game-made one-on-one against a real one, same shooter"
+        },
+        {
+          "value": "Old",
+          "label": "stays the default; New is opt-in"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Chances (testing): New gives about 9 highlights a match",
+              "detail": "Settings → Gameplay → Chances (testing) → New, then play a match"
+            },
+            {
+              "title": "\"You drop off into midfield and get on the ball\" highlights",
+              "detail": "In a match with Chances on New"
+            },
+            {
+              "title": "Real moments page",
+              "detail": "Admin → Real moments → Load moments file"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Chances (testing): built from Kane's real touches",
+              "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (Kane: 2.5). Measured over 600 matches. Old is the default."
+            },
+            {
+              "title": "Real moments page (admin, testing only)",
+              "detail": "Real shots in the game's camera, playable, next to a game-made chance of the same kind. Data loaded from a file on your device."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Our close chances are easier than real ones",
+              "detail": "Keeper 1.1 m off his line against 4.5 m for real. Kept out on purpose for now."
+            },
+            {
+              "title": "Goals a match on New are estimated, not played",
+              "detail": "About 0.92 → 0.99 of your own goals a match."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.42",
       "title": "Harry's patch notes",
       "publishedAt": "2026-10-08T21:00:00Z",
