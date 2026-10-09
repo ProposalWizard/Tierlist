@@ -26,6 +26,7 @@ import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEng
 import { goalInView } from "./canvasEngine";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen } from "./cameraTilt";
+import { chanceFraming } from "./chanceFraming";
 
 export type MatchView = "new" | "classic";
 
@@ -312,32 +313,37 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   const today = fitCameraToTilt(base, facing, hw, tiltDeg, keyPointsOf(sc));
   let cam = today;
   f.playZoom = 1;
-  if (playZoom() !== "off") {
+  // Chance framing "Zoom" (lib/star/chanceFraming.ts): only up the pitch with
+  // the goal in the picture. Side-on chances (corners, byline crosses) and
+  // build-up stay exactly as they were.
+  if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    cam = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, keyPointsOf(sc));
-    f.playZoom = (today.x2 - today.x1) / (cam.x2 - cam.x1);
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, keyPointsOf(sc));
+    const k = (today.x2 - today.x1) / (zc.x2 - zc.x1);
+    // Never wider than today (the tilt fit can pull a zoomed camera back past it).
+    if (z !== base && k > 1.001) { cam = zc; f.playZoom = k; }
   }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROTOTYPE (zoom to the play, 9 Oct 2026, show-options). Off by default.
-// The canvas keeps its size; the camera zooms in so the screen ends about
-// ZOOM_ROOM_M below the lowest man. "z1": figures grow with the zoom.
-// "z2": figures and ball stay today's size on screen (only the pitch zooms).
+// ZOOM TO THE PLAY — Settings → Look → "Chance framing: Zoom | Old"
+// (lib/star/chanceFraming.ts). The canvas keeps its size; the camera zooms in
+// so the screen ends about ZOOM_ROOM_M below the lowest man, as far as it can
+// without cutting anyone off. Harry picked "z2" (9 Oct 2026): the men and the
+// ball stay today's size on screen, only the pitch zooms. "z1" (figures grow)
+// and "z2max" (zoom all the way, men may be cut off) are reachable only from
+// the test page /star-zoomgrass-dev.
 // ─────────────────────────────────────────────────────────────────────────────
 export type PlayZoom = "off" | "z1" | "z2" | "z2max";
-export const PLAY_ZOOM_KEY = "star-play-zoom";
 let playZoomOverride: PlayZoom | null = null;
 export function playZoom(): PlayZoom {
   if (playZoomOverride) return playZoomOverride;
-  try {
-    const v = typeof localStorage !== "undefined" ? localStorage.getItem(PLAY_ZOOM_KEY) : null;
-    return v === "z1" || v === "z2" || v === "z2max" ? v : "off";
-  } catch { return "off"; }
+  return chanceFraming() === "zoom" ? "z2" : "off";
 }
-export function setPlayZoomOverride(v: PlayZoom | null): void { playZoomOverride = v; probe = true; }
+/** The test page's own choice (null: follow Settings). */
+export function setPlayZoomOverride(v: PlayZoom | null): void { playZoomOverride = v; probe = v !== null; }
 let probe = false;
 /** The zoom test page is open (it reads the camera through window.__zg). */
 export function playZoomProbe(): boolean { return probe; }
