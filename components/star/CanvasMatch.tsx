@@ -4,7 +4,7 @@ import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, useContext } from "react";
-import { EngineFrameContext, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct, type EngineFrameOrders } from "@/lib/star/engineFrame";
+import { EngineFrameContext, keeperFrame, frameHasKeeper, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct, type EngineFrameOrders } from "@/lib/star/engineFrame";
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
@@ -3849,10 +3849,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const kk = sc.keeper;
       if (rec) {
         const k0 = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
-        rec.keeper = {
-          x: kk.x, y: kk.y, dive: kk.dive, saveLunge: kk.saveLunge, saveDir: kk.saveDir, saveKind: kk.saveKind,
-          idleT: kk.idleT, shirt: k0.shirt, shorts: k0.trim, face: kk.who?.face ?? fakeFaceFor("keeper"), act: actOf("keeper"),
-        };
+        rec.keeper = keeperFrame(kk, k0, fakeFaceFor("keeper"), actOf("keeper"), true);
       }
       const { px, py, scale: kScale } = toPx(kk.x, kk.y);
       // `dive` is a lean while patrolling and a committed lunge once a save has
@@ -4373,6 +4370,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // What was just drawn, in pitch metres, and the camera it was drawn with.
     // Read only: nothing a reader does reaches the match.
     const obs = frameObsRef.current;
+    // The keeper the 2D didn't draw (no goal in its frame): still in his goal
+    // for a 3D camera that shows it (Harry, 9 Oct 2026: "no goalie in the goal on some").
+    if (rec && !rec.keeper && frameHasKeeper(sceneRef.current?.keeper)) {
+      const k0 = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
+      rec.keeper = keeperFrame(sc.keeper, k0, fakeFaceFor("keeper"), actOf("keeper"), false);
+    }
     if (obs && rec) {
       const box = canvasBox();
       const lb = ballRef.current;
@@ -4386,7 +4389,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           vx: lb?.vel.x ?? 0, vy: lb?.vel.y ?? 0, vz: lb?.vz ?? 0, live: !!lb, inNet: !!lb?.inNet,
         } : null,
         landing: lb && phaseRef.current === "flight" && !lb.inNet && lb.z > 0.15 && lb.landAt ? { ...lb.landAt } : null,
-        keeper: keeperInView ? rec.keeper : null,
+        keeper: rec.keeper,
         figures: rec.figures,
         aim: rec.aim,
         ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
