@@ -26,6 +26,7 @@ import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEng
 import { goalInView } from "./canvasEngine";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen } from "./cameraTilt";
+import { chanceFraming } from "./chanceFraming";
 
 export type MatchView = "new" | "classic";
 
@@ -289,7 +290,7 @@ export function newViewCamera(
 }
 
 /** The scenario as CanvasMatch frames it: the engine's own frame, kept. */
-type Framed = Scenario & { engineFrame?: Viewport };
+type Framed = Scenario & { engineFrame?: Viewport; playZoom?: number };
 
 /** The frame the engine built this chance in (today's camera). */
 export function engineFrameOf(sc: Scenario): Viewport {
@@ -307,9 +308,123 @@ export function engineFrameOf(sc: Scenario): Viewport {
 export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, tiltDeg = 0): Viewport {
   const f = sc as Framed;
   if (!f.engineFrame) f.engineFrame = { ...sc.viewport };
-  const cam = fitCameraToTilt(cameraFor(sc, f.engineFrame, hw), sc.facing ?? "up", hw, tiltDeg, keyPointsOf(sc));
+  const facing = sc.facing ?? "up";
+  const base = cameraFor(sc, f.engineFrame, hw);
+  const today = fitCameraToTilt(base, facing, hw, tiltDeg, keyPointsOf(sc));
+  let cam = today;
+  f.playZoom = 1;
+  // Chance framing "Zoom" (lib/star/chanceFraming.ts): only up the pitch with
+  // the goal in the picture. Side-on chances (corners, byline crosses) and
+  // build-up stay exactly as they were.
+  if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
+    const z = zoomToPlay(base, sc, hw);
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, keyPointsOf(sc));
+    const k = (today.x2 - today.x1) / (zc.x2 - zc.x1);
+    // Never wider than today (the tilt fit can pull a zoomed camera back past it).
+    if (z !== base && k > 1.001) { cam = zc; f.playZoom = k; }
+  }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ZOOM TO THE PLAY — Settings → Look → "Chance framing: Zoom | Old"
+// (lib/star/chanceFraming.ts). The canvas keeps its size; the camera zooms in
+// so the screen ends about ZOOM_ROOM_M below the lowest man, as far as it can
+// without cutting anyone off. Harry picked "z2" (9 Oct 2026): the men and the
+// ball stay today's size on screen, only the pitch zooms. "z1" (figures grow)
+// and "z2max" (zoom all the way, men may be cut off) are reachable only from
+// the test page /star-zoomgrass-dev.
+// ─────────────────────────────────────────────────────────────────────────────
+export type PlayZoom = "off" | "z1" | "z2" | "z2max";
+let playZoomOverride: PlayZoom | null = null;
+export function playZoom(): PlayZoom {
+  if (playZoomOverride) return playZoomOverride;
+  return chanceFraming() === "zoom" ? "z2" : "off";
+}
+/** The test page's own choice (null: follow Settings). */
+export function setPlayZoomOverride(v: PlayZoom | null): void { playZoomOverride = v; probe = v !== null; }
+let probe = false;
+/** The zoom test page is open (it reads the camera through window.__zg). */
+export function playZoomProbe(): boolean { return probe; }
+/** The zoom the last framing used for this chance (1 = today). */
+export function playZoomOf(sc: Scenario): number { return (sc as Framed).playZoom ?? 1; }
+
+/** Grass kept below the lowest man. */
+export const ZOOM_ROOM_M = 6;
+/** A man's centre at least this far from a side edge / the top edge. */
+const ZOOM_SIDE_M = 0.9;
+const ZOOM_TOP_M = 1;
+/** Never more than this much zoom. */
+export const ZOOM_MAX = 2.5;
+/** At least this much grass below the ball, to pull back into. */
+export const ZOOM_MIN_PULL_M = 5;
+
+/** Everyone in the chance (the follower too when he is drawn). */
+export function bodiesOf(sc: Scenario): Vec2[] {
+  const decorative = sc.kind === "volley" || sc.kind === "header";
+  const pts: Vec2[] = [sc.ball, sc.player, ...sc.defenders, ...(decorative ? [] : sc.teammates)];
+  if (sc.runner) pts.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
+  if (sc.follower && goalInView(sc.kind)) pts.push(sc.follower);
+  return pts;
+}
+
+/**
+ * Zoom `cam` in about the top-centre of the screen (where the goal hangs),
+ * panning sideways as needed, so the screen ends ZOOM_ROOM_M below the
+ * lowest man with everyone, the goal and the keeper still in view. Same
+ * aspect, so the canvas and the drag are untouched. Steps the zoom down
+ * until it fits; 1 = no zoom.
+ */
+export function zoomToPlay(cam: Viewport, sc: Scenario, hw: number): Viewport {
+  const facing = sc.facing ?? "up";
+  const spanX = cam.x2 - cam.x1, spanY = cam.y2 - cam.y1;
+  const across = facing === "up" ? spanX : spanY;
+  const down = facing === "up" ? spanY : spanX;
+  void hw;
+  const bodies = bodiesOf(sc).map((p) => fracOf(cam, facing, p));
+  const key = goalInView(sc.kind)
+    ? [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].map((p) => fracOf(cam, facing, p))
+    : [];
+  const ballF = fracOf(cam, facing, sc.ball);
+  const low = Math.max(...bodies.map((b) => b.sy));
+  for (let k = Math.min(ZOOM_MAX, 1 / (low + ZOOM_ROOM_M / down)); k > 1; k -= 0.02) {
+    if ((1 - ballF.sy * k) * (down / k) < ZOOM_MIN_PULL_M) continue;
+    const mx = (ZOOM_SIDE_M * k) / across, my = (ZOOM_TOP_M * k) / down;
+    if (bodies.some((b) => b.sy * k < my) && playZoom() !== "z2max") continue;
+    let pLo = -Infinity, pHi = Infinity;
+    const need = (sx: number, m: number) => {
+      const a = 0.5 + (sx - 0.5) * k;
+      pLo = Math.max(pLo, m - a); pHi = Math.min(pHi, 1 - m - a);
+    };
+    bodies.forEach((b) => need(b.sx, mx));
+    key.forEach((b) => need(b.sx, 0));
+    // "z2max" (the option past the line): zoom all the way, men may fall off
+    // the sides; the pan keeps the cut even on both sides.
+    if (pLo > pHi && playZoom() === "z2max") return zoomView(cam, facing, k, (pLo + pHi) / 2);
+    if (pLo > pHi) continue;
+    let p = Math.max(pLo, Math.min(pHi, 0));
+    if (facing === "up") {
+      // Keep no more than EDGE_M past a touchline when that fits.
+      const w = spanX / k;
+      const x1At = (q: number) => cam.x1 + (0.5 + (-0.5 - q) / k) * spanX;
+      const want = Math.max(-EDGE_M, Math.min(PITCH_W + EDGE_M - w, x1At(p)));
+      p = Math.max(pLo, Math.min(pHi, p - ((want - x1At(p)) / spanX) * k));
+    }
+    return zoomView(cam, facing, k, p);
+  }
+  return cam;
+}
+
+/** `cam` zoomed k× about the screen's top-centre, then panned p (new-screen widths). */
+function zoomView(cam: Viewport, facing: Facing, k: number, p: number): Viewport {
+  const spanX = cam.x2 - cam.x1, spanY = cam.y2 - cam.y1;
+  const s0 = 0.5 + (-0.5 - p) / k, s1 = 0.5 + (0.5 - p) / k;  // old sx at the new edges
+  const t1 = 1 / k;                                           // old sy at the new bottom
+  if (facing === "up") return { x1: cam.x1 + s0 * spanX, x2: cam.x1 + s1 * spanX, y1: cam.y1, y2: cam.y1 + t1 * spanY };
+  if (facing === "right") return { x1: cam.x1, x2: cam.x1 + t1 * spanX, y1: cam.y1 + (1 - s1) * spanY, y2: cam.y1 + (1 - s0) * spanY };
+  return { x1: cam.x2 - t1 * spanX, x2: cam.x2, y1: cam.y1 + s0 * spanY, y2: cam.y1 + s1 * spanY };
 }
 
 /** The camera for this chance: its kind's zoom (NEW_VIEW_KIND_WIDTH_M). */
