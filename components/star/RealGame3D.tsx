@@ -96,6 +96,16 @@ export default function RealGame3D({ def, tod, tilt, view, seed = 7, kinds }: {
     const v = ev.current;
     if (!v) return;
     v.frame(f);
+    // Test bots find the ball through window.__starMatch.ball() (CanvasMatch's
+    // dev hook, 2D coordinates). With the 3D view on, the ball they must press
+    // is the 3D one: answer with that while it is drawn, else the 2D answer.
+    const w = window as unknown as { __starMatch?: { ball?: () => unknown; __ball2d?: () => unknown }; __engineView3dBall?: unknown };
+    const sm = w.__starMatch;
+    if (sm?.ball && !sm.__ball2d) {
+      const ball2d = sm.ball;
+      sm.__ball2d = ball2d;
+      sm.ball = () => w.__engineView3dBall ?? ball2d();
+    }
     if (!firstFrame.current) {
       firstFrame.current = true;
       (window as unknown as { __styleReady?: boolean }).__styleReady = true;
