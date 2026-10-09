@@ -15,6 +15,9 @@ import { grassMaps, hTexture, type TimeOfDay } from "./assets";
 import type { RealLook } from "./look";
 import type { ArenaColours } from "./arena";
 
+/** Look H drills: people a touch broader than the shop model (see onBuilt). */
+export const BUILD_WIDTH = 1.1;
+
 export interface Play3dH {
   opts: {
     bare: true;
@@ -65,6 +68,9 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
           if (dead) { l.dispose(); return; }
           look = l;
           l.dressPeople(ctx.bodies.map((b) => b.p));
+          // a broadcast footballer's build (Harry: "the player looks like a slim pixel character"): measured from behind,
+          // shoulders were 0.24 of his height; a real one with his arms is about 0.27
+          for (const b of ctx.bodies) b.p.root.scale.set(BUILD_WIDTH, 1, BUILD_WIDTH);
           for (const b of ctx.bodies) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
         }).catch((e) => console.error("look H failed to load", e));
       },

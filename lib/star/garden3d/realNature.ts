@@ -19,7 +19,7 @@
  */
 export const NATURE_BASE = "/star/garden3d/h/";
 
-export interface NatureMaps { leaves: any; needles: any; bark: any; barkN: any; paving: any; pavingN: any; straw: any; strawN: any; blooms: any }
+export interface NatureMaps { leaves: any; needles: any; bark: any; barkN: any; paving: any; pavingN: any; straw: any; strawN: any; blooms: any; tuft: any }
 
 export async function loadRealNature(T: any, renderer: any): Promise<NatureMaps> {
   const an = Math.min(8, renderer?.capabilities?.getMaxAnisotropy?.() ?? 4);
@@ -31,11 +31,11 @@ export async function loadRealNature(T: any, renderer: any): Promise<NatureMaps>
       res(t);
     }, undefined, rej);
   });
-  const [leaves, needles, bark, barkN, paving, pavingN, straw, strawN, blooms] = await Promise.all([
+  const [leaves, needles, bark, barkN, paving, pavingN, straw, strawN, blooms, tuft] = await Promise.all([
     load("leaves.webp", true, false), load("needles.webp", true, false), load("bark.webp"), load("bark-nrm.webp", false),
-    load("paving.webp"), load("paving-nrm.webp", false), load("straw.webp"), load("straw-nrm.webp", false), load("blooms.webp", true, false),
+    load("paving.webp"), load("paving-nrm.webp", false), load("straw.webp"), load("straw-nrm.webp", false), load("blooms.webp", true, false), load("tuft.webp", true, false),
   ]);
-  return { leaves, needles, bark, barkN, paving, pavingN, straw, strawN, blooms };
+  return { leaves, needles, bark, barkN, paving, pavingN, straw, strawN, blooms, tuft };
 }
 
 /** A tiny seeded random. */
@@ -233,4 +233,53 @@ export function makeFlowerBeds(T: any, maps: NatureMaps, beds: [number, number, 
   const leaves = new T.Mesh(geomFrom(T, L), cardMaterial(T, maps.leaves, "#a9cf86"));
   const heads = new T.Mesh(geomFrom(T, F), new T.MeshStandardMaterial({ map: maps.blooms, alphaTest: 0.4, side: T.DoubleSide, roughness: 0.7, vertexColors: true }));
   return { leaves, heads };
+}
+
+let contactT: any = null;
+/** A soft dark disc (the shade where a thing meets the ground). */
+function contactTex(T: any) {
+  if (contactT) return contactT;
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d")!;
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.fillStyle = "#000"; g.fillRect(0, 0, 64, 64);
+  gr.addColorStop(0, "rgb(216,216,216)"); gr.addColorStop(0.5, "rgb(100,100,100)"); gr.addColorStop(1, "rgb(0,0,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  contactT = new T.CanvasTexture(c);
+  return contactT;
+}
+
+/**
+ * Where things meet the ground: a soft dark ring under each (`spots`: x, z,
+ * radius: trees, bushes, bales), and long-grass tufts round their feet and
+ * along the inside of the boundary (`edge`: half the lawn's width). One mesh each.
+ */
+export function makeGroundDetail(T: any, maps: NatureMaps, spots: [number, number, number][], edge: number, seed: number) {
+  const r = rand(seed);
+  const V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
+  const C = { p: [] as number[], n: [] as number[], uv: [] as number[], c: [] as number[], i: [] as number[] };
+  const G = { p: [] as number[], n: [] as number[], uv: [] as number[], c: [] as number[], i: [] as number[] };
+  const up = V(0, 1, 0);
+  const tuftAt = (x: number, z: number, s: number) => {
+    for (const turn of [0, Math.PI / 2]) {
+      const a = r() * Math.PI + turn;
+      card(T, G, V(x, 0, z), V(Math.cos(a) * s * 0.5, 0, Math.sin(a) * s * 0.5), V(0, s * 0.8, 0), up, 0.75 + r() * 0.3);
+    }
+  };
+  for (const [x, z, rad] of spots) {
+    const R = rad * 1.7;
+    card(T, C, V(x, 0.02, z - R), V(R, 0, 0), V(0, 0, 2 * R), up, 1);
+    const n = 4 + Math.floor(rad * 6);
+    for (let k = 0; k < n; k++) { const a = r() * Math.PI * 2, d = rad * (0.7 + r() * 0.5); tuftAt(x + Math.cos(a) * d, z + Math.sin(a) * d, 0.35 + r() * 0.3); }
+  }
+  for (let k = 0; k < 220; k++) {
+    const side = Math.floor(r() * 4), t = (r() * 2 - 1) * edge, inset = edge - 0.25 - r() * 0.5;
+    const [x, z] = side === 0 ? [t, -inset] : side === 1 ? [t, inset] : side === 2 ? [-inset, t] : [inset, t];
+    tuftAt(x, z, 0.3 + r() * 0.35);
+  }
+  const contacts = new T.Mesh(geomFrom(T, C), new T.MeshBasicMaterial({ color: "#000000", alphaMap: contactTex(T), transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  contacts.renderOrder = 1;
+  const tufts = new T.Mesh(geomFrom(T, G), cardMaterial(T, maps.tuft, "#c8d8a8"));
+  tufts.receiveShadow = true;
+  return { contacts, tufts };
 }

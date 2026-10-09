@@ -54,7 +54,7 @@ import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
-import { loadRealNature, makeTree, makeBale, makeFlowerBeds } from "./realNature";
+import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
@@ -208,7 +208,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // pixels to colour while you walk). While walking, dynamic resolution may
   // take the moving picture a little lower still if frames are slow.
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  // look H standing still: the screen's real pixels, capped per tier (Harry: "still that pixelly element"); moving stays the tier's cap
+  const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
+  const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
   const makeDyn = () => new DynamicResolution(
     { setPixelRatio: (v: number) => { dynPR = v; } },
@@ -2299,6 +2301,13 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // don't stutter while the phone compiles them.
   camera.position.set(player.position.x, CAM_UP, player.position.z + CAM_BACK);
   camera.lookAt(player.position.x, 1.3, player.position.z);
+  // Look H: shade where things meet the grass, and long-grass tufts round them and along the boundary
+  if (nature) {
+    const spots: [number, number, number][] = CIRCLES.filter(([, , rr]) => rr >= 0.45 && rr <= 1.2).map(([x, z, rr]) => [x, z, rr]);
+    for (const list of Object.values(treeAt)) for (const [x, z, s] of list) if (Math.hypot(x, z) < 30) spots.push([x, z, Math.min(1.1, 0.16 * s)]);
+    const gd = makeGroundDetail(THREE, nature, spots, B, 11);
+    scene.add(gd.contacts, gd.tufts);
+  }
   try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 

@@ -6,7 +6,7 @@ Harry, 9 Oct 2026, on the garden: "look at the trees, the hay, the back of the
 player, the flowers." The cartoon pieces are swapped (look H only; Old keeps
 today's garden) for cards and surfaces made from real photo-scanned CC0 maps:
 
-  leaves.webp    a leafy spray (512², RGBA): real leaves from Poly Haven's
+  leaves.webp    a leafy spray (1024², RGBA): real leaves from Poly Haven's
                  island_tree_02 (CC0) on a drawn twig. A tree's crown is a
                  hundred or so of these cards (lib/star/garden3d/realNature.ts)
   needles.webp   a fir spray (512², RGBA): Poly Haven fir_tree_01's twigs (CC0)
@@ -105,7 +105,7 @@ def spray(size=512, n=34):
         t = i / 39
         pts.append((size * (0.5 + 0.06 * math.sin(t * 2.6)), size * (0.98 - 0.86 * t)))
     for i in range(len(pts) - 1):
-        wdt = max(2, int(9 * (1 - i / len(pts))))
+        wdt = max(2, int(size / 56 * (1 - i / len(pts))))
         d.line([pts[i], pts[i + 1]], fill=(86, 64, 44, 255), width=wdt)
     order = []
     for i in range(n):
@@ -136,7 +136,7 @@ def spray(size=512, n=34):
     return c
 
 
-save(spray(), "leaves.webp", 84)
+save(spray(1024), "leaves.webp", 84)
 
 # ── 2. The fir spray ──
 fir = rgba(src("fir_twig_diff.jpg"), src("fir_twig_alpha.jpg"))
@@ -161,7 +161,7 @@ for i in range(9):
 save(nd, "needles.webp", 84)
 
 # ── 3. Bark ──
-save(src("it2_branches_diff.jpg").convert("RGB").resize((512, 512), Image.LANCZOS), "bark.webp", 80)
+save(src("it2_branches_diff.jpg").convert("RGB"), "bark.webp", 80)
 save(src("it2_branches_nor.jpg").convert("RGB").resize((256, 256), Image.LANCZOS), "bark-nrm.webp", 88)
 
 # ── 4. Paving ──
@@ -209,6 +209,25 @@ def head(pal, size=256):
         d.ellipse([x - pr * 0.28, y - pr * 0.28, x + pr * 0.28, y + pr * 0.28], fill=(200, 196, 120, 255))
     return im.filter(ImageFilter.SMOOTH)
 
+
+# ── 7. A tuft of long grass (ours): blades from the root, lighter at the tips ──
+tuft = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+td = ImageDraw.Draw(tuft)
+for _ in range(70):
+    x0 = 128 + (rng.random() - 0.5) * 70
+    lean = (rng.random() - 0.5) * 1.6
+    hgt = 120 + rng.random() * 120
+    g = int(110 + rng.random() * 70)
+    pts = []
+    for i in range(12):
+        t = i / 11
+        pts.append((x0 + lean * t * t * hgt * 0.5, 255 - t * hgt))
+    for i in range(len(pts) - 1):
+        t = i / (len(pts) - 1)
+        w = max(1, int(5 * (1 - t)))
+        col = (int(70 + 90 * t), int(g + 50 * t), int(40 + 30 * t), 255)
+        td.line([pts[i], pts[i + 1]], fill=col, width=w)
+save(tuft, "tuft.webp", 86)
 
 blooms = Image.new("RGBA", (768, 256), (0, 0, 0, 0))
 for i, pal in enumerate(PALETTES):

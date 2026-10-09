@@ -40,6 +40,7 @@ import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
 import { look3dStyle } from "../look3dStyle";
+import { dressShopH } from "./hRoom";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -204,7 +205,9 @@ async function buildShop(
   // while the picture moves), and dynamic resolution a little below that
   // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  // look H standing still: the screen's real pixels, capped per tier; moving stays the tier's cap (lag)
+  const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
+  const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
   const makeDyn = () => new DynamicResolution(
     { setPixelRatio: (v: number) => { dynPR = v; } },
@@ -419,6 +422,8 @@ async function buildShop(
   };
   plant(-5.5, 6.1);
   plant(5.5, -7.1);
+  // Look H: parquet, panelling, coffers, practical lights, lit wall units (./hRoom.ts); Old: as before
+  const hRoom = hEnh ? await dressShopH(THREE, scene, renderer, ROOM, { floor, wallM, panelM, tier }).catch((e) => { console.error("shop look H room failed", e); return null; }) : null;
 
   // ── Floating price tags ──
   type Tag = { sprite: any; tex: any; key: string; base: [number, number, number]; display: DisplayId; index: number };
@@ -737,6 +742,8 @@ async function buildShop(
   buyA.setLoop(THREE.LoopOnce, 1);
   buyA.clampWhenFinished = false;
   let buying = 0; // seconds left of the buy gesture
+
+  hRoom?.bakeReflections();
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -1145,6 +1152,7 @@ async function buildShop(
     dispose: () => {
       disposed = true;
       hEnh?.dispose();
+      hRoom?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
