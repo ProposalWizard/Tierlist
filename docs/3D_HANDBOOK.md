@@ -82,6 +82,17 @@ exactly today's bodies. You never pick a file yourself:
   `toonKitColours` maps it onto the textured kit (base, trim on collar/cuffs/sock
   tops, number on the back, badge, socks, boots). Settle clashes first with
   `kitsFor` (`lib/star/kits.ts`); Style A paints what it is given.
+- Shirt lettering and cloth (9 Oct 2026): the number sits between the shoulder
+  blades, your name (`setToonYou({ name })`, or `look.name`) arched above it,
+  a small number on his right chest by the badge. Placed from each head's own
+  shoulder joint and collar (`toonShirtLayout`, `lib/star/style3d/toon/shader.ts`),
+  so every head and build is right. The cloth is drawn in the shader, no
+  texture or draw call added: a fine weave, stitched seams (sides, shoulders,
+  sleeves, hem, waistband), a ring collar, cuff band and line, a shorts side
+  stripe. Stripes, hoops, halves and contrast sleeves come from the club
+  sheets (`lib/star/style3d/toon/kitPattern.ts`, found from the kit's colours;
+  pass `kit.pattern` to set one, `null` for plain). `TOON_HEM_FIX` (bodies.ts)
+  corrects the Quiff's and Fringe's hem line (they painted the shorts top as shirt).
 - Hands: the standing idles get relaxed arms baked per person
   (`relaxIdleArms` in `lib/star/three3d/runPosture.ts`, the same file as the
   running arms' wrist step `relaxWrist`), and the fingers rest curled
@@ -431,7 +442,7 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 - Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
 
 **Half-done or not seen.**
-- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges: the forearms read a shade darker than the top, a little skin shows at the elbows, and a thin red line sits at the collar. Player style Old keeps the human outfits.
+- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges fixed (9 Oct, later): forearms now shade like the top, no skin at the elbows or knees, and the model's own red shirt no longer shows as a line at the collar or hem. Player style Old keeps the human outfits.
 - The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
 - Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
 
@@ -618,6 +629,14 @@ head and build (`yourToonHead`); scenes load only their heads
 - Kit decals on the Style A shirt: the back number sits low (`uNumBox` comes
   from the kit lines; place it between the shoulder blades per head) and the
   shirt is flat colour (add the textured kit: weave, seams, collar trim).
+- 2D match sprites. `node tools/sprites/new/bake-new.mjs reskin` re-bakes every
+  cell on a Style A body into the same rects and anchors, but it is not
+  shippable yet: atlas-0's sprint, kick and keeper dives came from GLB clips
+  that were never committed, and the Old cells are cropped tight to the Old
+  silhouette, so the Style A body overflows them (shrinking to fit gave scales
+  down to 0.3). Needs a decision: re-bake with a fresh index (new rects,
+  same frame counts and timings) or keep 2D Old.
+- (Done 9 Oct: the back number between the shoulder blades, name, front number, cloth and patterns.)
 - Garden's casual sets still use the human body.
 
 **Half-done / not seen:**
