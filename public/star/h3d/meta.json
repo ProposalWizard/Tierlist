@@ -1,0 +1,11 @@
+{
+ "day": {
+  "skyScale": 4.125
+ },
+ "golden": {
+  "skyScale": 14.0
+ },
+ "night": {
+  "skyScale": 1.1015625
+ }
+}

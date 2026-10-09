@@ -20,15 +20,52 @@ const SCENES: { id: StyleScene; label: string }[] = [
 const isPlay = (s: StyleScene) => s === "play3d" || s === "play2d";
 
 type Hud = { big: string; small: string; timeLeft?: number; flash?: string };
+type Dot = { x: number; z: number; team: number; you?: boolean; ball?: boolean };
+
+/** Look H: a broadcast scorebug (team, score, clock) like a TV match. */
+function HScorebug({ hud, mins }: { hud: Hud; mins: string }) {
+  return (
+    <div className="pointer-events-none absolute left-2 top-2 z-20 flex flex-col gap-0.5" data-h-scorebug>
+      <div className="flex h-[26px] items-stretch overflow-hidden rounded-[4px] text-[13px] font-black leading-none shadow-[0_2px_8px_rgba(0,0,0,.45)]">
+        <span className="flex items-center bg-[#d62828] px-2 tracking-wide text-white">RED</span>
+        <span className="flex items-center bg-[#0f1419]/90 px-2.5 tabular-nums text-white">{hud.big}</span>
+        <span className="flex items-center bg-[#1d4ed8] px-2 tracking-wide text-white">BLU</span>
+        <span className="flex items-center border-l-2 border-[#22c55e] bg-[#0f1419]/90 px-2 tabular-nums text-white">{mins}</span>
+      </div>
+      <span className="w-fit rounded-[3px] bg-black/50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/90">{hud.small}</span>
+    </div>
+  );
+}
+
+/** Look H: the radar under the action (the whole pitch, everyone on it). */
+function HMinimap({ dots }: { dots: Dot[] }) {
+  const W = 132, H = 86, sx = (x: number) => ((x + 34) / 68) * W, sz = (z: number) => (z / 105) * H;
+  return (
+    <svg className="pointer-events-none absolute bottom-7 left-1/2 z-20 -translate-x-1/2" width={W + 4} height={H + 4} viewBox={`-2 -2 ${W + 4} ${H + 4}`} data-h-minimap>
+      <rect x={0} y={0} width={W} height={H} rx={3} fill="rgba(8,24,12,0.55)" stroke="rgba(255,255,255,0.55)" strokeWidth={1} />
+      <line x1={0} y1={H / 2} x2={W} y2={H / 2} stroke="rgba(255,255,255,0.45)" strokeWidth={0.8} />
+      <circle cx={W / 2} cy={H / 2} r={7} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={0.8} />
+      <rect x={sx(-20.16)} y={0} width={sx(20.16) - sx(-20.16)} height={sz(16.5)} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={0.8} />
+      <rect x={sx(-20.16)} y={H - sz(16.5)} width={sx(20.16) - sx(-20.16)} height={sz(16.5)} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={0.8} />
+      {dots.filter((d) => !d.ball).map((d, i) => (
+        <circle key={i} cx={sx(d.x)} cy={sz(d.z)} r={d.you ? 3.4 : 2.6} fill={d.team === 2 ? "#22c55e" : d.team === 0 ? "#ef4444" : "#3b82f6"} stroke={d.you ? "#facc15" : "rgba(0,0,0,.6)"} strokeWidth={d.you ? 1.4 : 0.6} />
+      ))}
+      {dots.filter((d) => d.ball).map((d, i) => <circle key={`b${i}`} cx={sx(d.x)} cy={sz(d.z)} r={1.8} fill="#ffffff" />)}
+    </svg>
+  );
+}
 
 export default function StyleTest3D() {
   const [style, setStyle] = useState<StyleId>("golden");
   const [scene, setScene] = useState<StyleScene>("play3d");
   const [tilt, setTilt] = useState(40);
+  const [tod, setTod] = useState<"day" | "golden" | "night" | null>(null);
+  const todRef = useRef(tod); todRef.current = tod;
   const [seek, setSeek] = useState<number | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "off">("loading");
   const [shot, setShot] = useState("");
   const [hud, setHud] = useState<Hud | null>(null);
+  const [dots, setDots] = useState<Dot[]>([]);
   const [run, setRun] = useState(0);
   const [inited, setInited] = useState(false);
   const holder = useRef<HTMLDivElement>(null);
@@ -51,6 +88,7 @@ export default function StyleTest3D() {
     const s = q.get("style"); if (s && STYLE_CHIPS.some((c) => c.id === s)) setStyle(s as StyleId);
     const sc = q.get("scene"); if (sc && SCENES.some((c) => c.id === sc)) setScene(sc as StyleScene);
     const ti = Number(q.get("tilt")); if (ti > 0) setTilt(ti);
+    const td = q.get("tod"); if (td === "day" || td === "golden" || td === "night") setTod(td);
     const t = q.get("t"); if (t !== null && !Number.isNaN(Number(t))) setSeek(Number(t));
     setInited(true);
   }, []);
@@ -69,7 +107,7 @@ export default function StyleTest3D() {
       try {
         if (family === "play") {
           const { createStyleGameplay } = await import("@/lib/star/style3d/gameplay");
-          const g = await createStyleGameplay(el, { def: resolveStyle(styleRef.current, "play"), flat: scene === "play2d", tilt: tiltRef.current });
+          const g = await createStyleGameplay(el, { def: resolveStyle(styleRef.current, "play"), flat: scene === "play2d", tilt: tiltRef.current, tod: todRef.current ?? undefined });
           if (dead) { g.dispose(); return; }
           play.current = g;
           worn.current = styleRef.current;
@@ -114,9 +152,12 @@ export default function StyleTest3D() {
   }, [style, status]);
   useEffect(() => { play.current?.setFlat(scene === "play2d"); }, [scene, status]);
   useEffect(() => { play.current?.setTilt(tilt); }, [tilt, status]);
+  useEffect(() => { if (tod) play.current?.setTod(tod); }, [tod, status]);
+  const isH = style === "real" || style === "mix";
+  const todNow = tod ?? (style === "mix" ? "golden" : "day");
   useEffect(() => {
     if (!isPlay(scene) || status !== "ready") return;
-    const id = window.setInterval(() => { const g = play.current; if (g) setHud(g.session.hud()); }, 250);
+    const id = window.setInterval(() => { const g = play.current; if (g) { setHud(g.session.hud()); setDots(g.dots()); } }, 120);
     return () => window.clearInterval(id);
   }, [scene, status]);
 
@@ -206,6 +247,14 @@ export default function StyleTest3D() {
             <button key={c.id} onClick={() => { setSeek(null); setScene(c.id); }} className={chip(scene === c.id)} data-scene={c.id}>{c.label}</button>
           ))}
         </div>
+        {isPlay(scene) && isH && (
+          <div className="flex items-center gap-1.5" data-tod-chips>
+            <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Light</span>
+            {(["day", "golden", "night"] as const).map((t) => (
+              <button key={t} onClick={() => setTod(t)} className={chip(todNow === t)} data-tod={t}>{t === "day" ? "Day" : t === "golden" ? "Golden hour" : "Night"}</button>
+            ))}
+          </div>
+        )}
         {isPlay(scene) && (
           <label className="flex items-center gap-2 text-[12px] font-bold">
             <span className="shrink-0">Camera {tilt}° from straight down</span>
@@ -219,7 +268,9 @@ export default function StyleTest3D() {
         {isPlay(scene) && (
           <div className="absolute inset-0 z-10" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         )}
-        {isPlay(scene) && hud && (
+        {isPlay(scene) && hud && isH && <HScorebug hud={hud} mins={mins} />}
+        {isPlay(scene) && isH && status === "ready" && <HMinimap dots={dots} />}
+        {isPlay(scene) && hud && !isH && (
           <div className="pointer-events-none absolute left-2 top-2 z-20 flex items-center gap-2 rounded bg-black/55 px-2 py-1 text-[13px] font-black">
             <span>{hud.big}</span><span className="text-[11px] font-bold text-white/80">{hud.small}</span><span className="tabular-nums">{mins}</span>
           </div>
