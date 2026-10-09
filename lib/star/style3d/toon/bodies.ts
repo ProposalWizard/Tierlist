@@ -108,11 +108,36 @@ export function toonGreyHairFor(id: string): string {
 /** The spare-body bin a person belongs in (scenes that reuse bodies, engineView). */
 export function toonKey(head: ToonHead, body: ToonBody): string { return `${head}|${body}`; }
 
+/**
+ * YOUR head and build when the save has none (every career from before Style A):
+ * seeded from who you are, so it is the same on every device and every load,
+ * and nudged by the old 3D hair style you picked (buzz → the buzz head, long →
+ * the bun). Your skin tone and hair colour carry over as they are.
+ */
+export function yourToonHead(p: { head3d?: unknown; firstName?: string; lastName?: string; startYear?: number; hairStyle?: string }): ToonHead {
+  if ((TOON_PLAYER_HEADS as readonly unknown[]).includes(p.head3d)) return p.head3d as ToonHead;
+  if (p.hairStyle === "buzz") return "h3";
+  if (p.hairStyle === "long") return "h4";
+  return toonHeadFor(`you:${p.firstName ?? ""} ${p.lastName ?? ""}#${p.startYear ?? 0}`);
+}
+export function yourToonBody(p: { body3d?: unknown; firstName?: string; lastName?: string; startYear?: number }): ToonBody {
+  if ((TOON_BODIES as readonly unknown[]).includes(p.body3d)) return p.body3d as ToonBody;
+  return toonBodyFor(`you:${p.firstName ?? ""} ${p.lastName ?? ""}#${p.startYear ?? 0}`);
+}
+
 // ── You ─────────────────────────────────────────────────────────────────
 
 let you: ToonPick = { body: "c1", head: "h1", skin: SKIN_TONES[3].hex, hair: HAIR_COLOURS[1].hex };
 /** The page sets this from the career (and Settings → Your look on a change). */
-export function setToonYou(p: Partial<ToonPick>) { you = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: resolveToonHead(p.head ?? you.head) }; }
+const youListeners = new Set<() => void>();
+export function setToonYou(p: Partial<ToonPick>) {
+  const next = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: resolveToonHead(p.head ?? you.head) };
+  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair) return;
+  you = next;
+  youListeners.forEach((f) => f());
+}
+/** For a React screen that draws you (useSyncExternalStore(subscribeToonYou, toonYou)). */
+export function subscribeToonYou(f: () => void) { youListeners.add(f); return () => { youListeners.delete(f); }; }
 export function toonYou(): ToonPick { return you; }
 
 // ── Kits ────────────────────────────────────────────────────────────────
