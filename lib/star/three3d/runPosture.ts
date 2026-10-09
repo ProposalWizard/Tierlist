@@ -425,3 +425,68 @@ export function relaxIdleArms(
   root.updateMatrixWorld(true);
   return { before, after };
 }
+
+/**
+ * STYLE A SPRINT LEAN ("Style A sprint looks crouched", 9 Oct 2026). On the
+ * capture's own skeleton the sprint leans 14° (the run 12°), but on the Style
+ * A body's shorter torso the same spine turns read as a 20° hunch. Each
+ * moving loop is brought back to at most TOON_LEAN_MAX of forward lean
+ * (hips → neck, averaged over the loop) by turning the lowest spine bone back
+ * about his own left-right line; the legs, arms and the loop's rhythm are
+ * untouched. Returns the lean before and after (degrees), for the tests.
+ */
+export const TOON_LEAN_MAX: Record<string, number> = { sprint: 14, run: 12, jog: 12 };
+export function levelToonLean(
+  T: Three, root: THREE.Object3D, bones: Record<string, THREE.Bone>, clip: THREE.AnimationClip, maxDeg: number,
+): { before: number; after: number } | null {
+  const spineName = ["Spine02", "spine_01"].find((n) => bones[n]);
+  const neck = bones.neck ?? bones.neck_01;
+  const hips = bones.Hips ?? bones.pelvis;
+  if (!spineName || !neck || !hips) return null;
+  const spine = bones[spineName];
+  const name = `${spineName}.quaternion`;
+  const track = clip.tracks.find((t) => t.name === name);
+  if (!track) return null;
+  const saved = Object.values(bones).map((b) => [b, b.position.clone(), b.quaternion.clone()] as const);
+  const mixer = new T.AnimationMixer(root);
+  const act = mixer.clipAction(clip);
+  act.play();
+  const times = Array.from(track.times);
+  const H = new T.Vector3(), N = new T.Vector3();
+  const leanAt = (t: number) => {
+    mixer.setTime(t);
+    root.updateMatrixWorld(true);
+    hips.getWorldPosition(H); neck.getWorldPosition(N);
+    const d = N.sub(H);
+    return Math.atan2(d.z, d.y) * 180 / Math.PI;
+  };
+  const mean = () => times.reduce((s, t) => s + leanAt(t), 0) / Math.max(1, times.length);
+  const before = mean();
+  const excess = before - maxDeg;
+  if (excess <= 0.5) { act.stop(); mixer.uncacheRoot(root); for (const [b, p, q] of saved) { b.position.copy(p); b.quaternion.copy(q); } root.updateMatrixWorld(true); return { before, after: before }; }
+  const v = Float32Array.from(track.values as ArrayLike<number>);
+  const right = new T.Vector3(1, 0, 0);
+  const pq = new T.Quaternion(), r = new T.Quaternion(), q = new T.Quaternion();
+  times.forEach((t, i) => {
+    mixer.setTime(t);
+    root.updateMatrixWorld(true);
+    // his left-right line, in the spine's parent frame: turn back by the excess
+    spine.parent!.getWorldQuaternion(pq);
+    const axis = right.clone().applyQuaternion(pq.invert()).normalize();
+    r.setFromAxisAngle(axis, (-excess * Math.PI) / 180);
+    q.set(v[i * 4], v[i * 4 + 1], v[i * 4 + 2], v[i * 4 + 3]);
+    q.premultiply(r);
+    v[i * 4] = q.x; v[i * 4 + 1] = q.y; v[i * 4 + 2] = q.z; v[i * 4 + 3] = q.w;
+  });
+  track.values = v as never;
+  act.stop();
+  mixer.uncacheRoot(root);
+  const m2 = new T.AnimationMixer(root);
+  const a2 = m2.clipAction(clip); a2.play();
+  let after = 0;
+  for (const t of times) { m2.setTime(t); root.updateMatrixWorld(true); hips.getWorldPosition(H); neck.getWorldPosition(N); const d = N.sub(H); after += Math.atan2(d.z, d.y) * 180 / Math.PI / times.length; }
+  a2.stop(); m2.uncacheRoot(root);
+  for (const [b, p, qq] of saved) { b.position.copy(p); b.quaternion.copy(qq); }
+  root.updateMatrixWorld(true);
+  return { before, after };
+}

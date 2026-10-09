@@ -1,59 +1,75 @@
 /**
- * THE GARDEN'S AND THE SHOP'S LEGS — idle / walk / jog / run / sprint on one
- * mixer's actions, the gait picked by speed (three3d/gait.ts), a 0.2 s
- * crossfade, the new loop on the same foot, and each loop played at the
- * speed its own feet go (no slide). Motion: Mocap only; Motion: Old keeps
+ * THE GARDEN'S, SHOP'S AND HOUSE'S LEGS — idle / walk / jog / run / sprint on
+ * one mixer's actions, mixed by his real speed on one stride clock
+ * (three3d/animBlend.ts): the two loops either side of his speed share the
+ * weight, every loop has the same foot down, and the clock runs at ground
+ * speed ÷ the mixed stride, so the feet never slide and nothing flickers
+ * (9 Oct 2026, "clean animations in every mode"). Motion: Mocap only; Motion: Old keeps
  * each scene's own walk/jog blend.
  */
 import type * as THREE from "three";
 import { addClips, loadMocap, type ClipInfo } from "./footballAnims";
 import { withMeshopt } from "./meshopt";
-import { GAIT_BLEND, STROLL_SPEEDS, gaitEdges, loopRate, pickGait, sameFootTime, type Gait, type GaitSpeeds } from "./gait";
+import { STROLL_SPEEDS, type Gait, type GaitSpeeds } from "./gait";
+import { LocoPhase, locoWeights, type LocoLoop } from "./animBlend";
+import { footMark } from "./locomotion";
+import { LOCO_MIX_TAU } from "./footballAnims";
 
 export class GaitBlend {
+  /** The loop with the most weight just now (for anything that wants a name). */
   gait: Gait = "idle";
-  private from: Gait | null = null;
-  private fade = 0;
-  private edges: [number, number, number, number];
+  private loops: { g: Gait; a: THREE.AnimationAction; loop: LocoLoop }[] = [];
+  private phase = new LocoPhase();
+  private w: number[] = [];
+  private idleW = 1;
+  private T: typeof import("three") | null = null;
 
   /**
-   * `acts`: the loops (missing ones fall back to the nearest there is).
-   * `info`: their measured speeds and foot plants. `size`: body ÷ capture actor.
+   * `acts`: the loops (missing ones are skipped). `info`: their measured
+   * speeds. `size`: body ÷ capture actor. `T` (three) lets each loop's
+   * left-foot moment be measured; without it the capture's plant marks are used.
    */
   constructor(
     private acts: Partial<Record<Gait, THREE.AnimationAction>>,
     private info: Partial<Record<Gait, ClipInfo | null | undefined>>,
     speeds: GaitSpeeds,
     private size = 1,
+    T?: typeof import("three"),
   ) {
-    this.edges = gaitEdges(speeds);
+    void speeds;
+    this.T = T ?? null;
     for (const a of Object.values(acts)) if (a) { a.play(); a.setEffectiveWeight(0); }
     acts.idle?.setEffectiveWeight(1);
+    for (const g of ["walk", "jog", "run", "sprint"] as Gait[]) {
+      const a = acts[g], sp = info[g]?.speed as number | undefined;
+      if (!a || !sp) continue;
+      const measured = this.T ? footMark(this.T, a.getClip(), a.getRoot() as THREE.Object3D) : null;
+      const mark = measured ?? ((info[g]?.plants?.L?.[0]?.[0] as number | undefined) ?? 0);
+      this.loops.push({ g, a, loop: { speed: sp * size, dur: a.getClip().duration, mark } });
+    }
+    this.loops.sort((x, y) => x.loop.speed - y.loop.speed);
+    this.w = this.loops.map(() => 0);
   }
-
-  private act(g: Gait | null) { return g ? this.acts[g] : undefined; }
 
   /** `speed` m/s on the ground; `scale` 0..1 (a gesture playing over the top takes the rest). */
   update(speed: number, dt: number, scale = 1) {
-    const want = pickGait(this.gait, speed / this.size, this.edges);
-    if (want !== this.gait && this.acts[want]) {
-      const pa = this.act(this.gait), na = this.acts[want]!;
-      const plant = (g: Gait) => (this.info[g]?.plants?.L?.[0]?.[0] as number | undefined) ?? 0;
-      if (pa && this.gait !== "idle" && want !== "idle") {
-        na.time = sameFootTime(pa.time, pa.getClip().duration, plant(this.gait), na.getClip().duration, plant(want));
-      } else if (want !== "idle") na.time = plant(want);
-      this.from = this.gait;
-      this.gait = want;
-      this.fade = GAIT_BLEND;
+    const L = this.loops.map((l) => l.loop);
+    const target = locoWeights(speed, L);
+    const k = dt > 0 ? 1 - Math.exp(-dt / LOCO_MIX_TAU) : 1;
+    for (let i = 0; i < L.length; i++) this.w[i] += (target.w[i] - this.w[i]) * k;
+    this.idleW += (target.idle - this.idleW) * k;
+    const rate = this.phase.step(dt, speed, L, this.w);
+    let best = this.idleW, bestG: Gait = "idle";
+    for (let i = 0; i < this.loops.length; i++) {
+      const l = this.loops[i];
+      l.a.time = this.phase.timeOf(l.loop);
+      l.a.timeScale = 0;
+      l.a.setEffectiveWeight(this.w[i] * scale);
+      if (this.w[i] > best) { best = this.w[i]; bestG = l.g; }
     }
-    this.fade = Math.max(0, this.fade - dt);
-    const k = 1 - this.fade / GAIT_BLEND;
-    for (const g of Object.keys(this.acts) as Gait[]) {
-      const a = this.acts[g]!;
-      const w = g === this.gait ? k : g === this.from && this.fade > 0 ? 1 - k : 0;
-      a.setEffectiveWeight(w * scale);
-      if (g !== "idle") a.timeScale = loopRate(Math.max(speed, 0.3), this.info[g]?.speed as number | undefined, this.size, 0.45, 1.7);
-    }
+    if (this.acts.idle) this.acts.idle.setEffectiveWeight(this.idleW * scale);
+    this.gait = bestG;
+    void rate; void this.size;
   }
 }
 
@@ -91,5 +107,5 @@ export async function strideFor(
   // the old made-up walk sits out (the capture's walk takes over)
   if (own.walk && own.walk !== acts.walk) own.walk.setEffectiveWeight(0);
   if (own.jog && own.jog !== acts.jog) own.jog.setEffectiveWeight(0);
-  return new GaitBlend(acts, { walk: info("walk"), jog: info("jog"), run: info("run"), sprint: info("sprint") }, STROLL_SPEEDS, size);
+  return new GaitBlend(acts, { walk: info("walk"), jog: info("jog"), run: info("run"), sprint: info("sprint") }, STROLL_SPEEDS, size, T);
 }
