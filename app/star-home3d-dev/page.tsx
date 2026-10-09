@@ -14,6 +14,10 @@ import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import Home3D from "@/components/star/Home3D";
+import { setToonYou } from "@/lib/star/style3d/toon/bodies";
+
+// the test player's name on the back of his Style A shirt (a career sets it from the save)
+if (typeof window !== "undefined") setToonYou({ name: "Player" });
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";

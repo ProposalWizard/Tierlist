@@ -14,6 +14,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import Shop3D from "@/components/star/Shop3D";
+import { setToonYou } from "@/lib/star/style3d/toon/bodies";
+
+// the test player's name on the back of his Style A shirt (a career sets it from the save)
+if (typeof window !== "undefined") setToonYou({ name: "Player" });
 
 export default function Shop3DPage() {
   return <Suspense><Shop3DTest /></Suspense>;

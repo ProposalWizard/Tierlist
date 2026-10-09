@@ -10,6 +10,10 @@ import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import Garden3D from "@/components/star/Garden3D";
+import { setToonYou } from "@/lib/star/style3d/toon/bodies";
+
+// the test player's name on the back of his Style A shirt (a career sets it from the save)
+if (typeof window !== "undefined") setToonYou({ name: "Player" });
 import Casino3D from "@/components/star/Casino3D";
 import Casino from "@/components/star/Casino";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
