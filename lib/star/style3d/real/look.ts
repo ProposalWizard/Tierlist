@@ -80,7 +80,10 @@ export interface RealLook {
 }
 
 /** Fabric and per-part sheen on a people3d body: rest-space knit bumps on the kit, shinier boots and skin. */
-function fabric(m: any, on: boolean) {
+function fabric(m: any, on: boolean): void {
+  // the human body has a list of materials
+  if (Array.isArray(m)) { for (const x of m) fabric(x, on); return; }
+  if (!m?.userData) return;
   if (!m.userData.fabricWrapped) {
     const inner = m.onBeforeCompile;
     const innerKey = m.customProgramCacheKey?.bind(m);

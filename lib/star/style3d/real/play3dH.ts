@@ -75,7 +75,7 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
           // a broadcast footballer's build (Harry: "the player looks like a slim pixel character"): measured from behind,
           // shoulders were 0.24 of his height; a real one with his arms is about 0.27
           for (const b of ctx.bodies) b.p.root.scale.set(BUILD_WIDTH, 1, BUILD_WIDTH);
-          for (const b of ctx.bodies) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
+          for (const b of ctx.bodies) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
         }).catch((e) => console.error("look H failed to load", e));
       },
       draw: (renderer, scene, camera) => {

@@ -294,7 +294,10 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     uSolidRimCol: { value: new THREE.Color("#fff4e2") },
     uSolidKey: { value: SOLID.key }, uSolidRim: { value: SOLID.rim }, uSolidFill: { value: SOLID.fill },
   };
-  const solidBody = (m: any, on: boolean) => {
+  const solidBody = (m: any, on: boolean): void => {
+    // the human body has a list of materials
+    if (Array.isArray(m)) { for (const x of m) solidBody(x, on); return; }
+    if (!m?.userData) return;
     if (!m.userData.solidWrapped) {
       const inner = m.onBeforeCompile;
       const innerKey = m.customProgramCacheKey?.bind(m);
@@ -824,7 +827,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
           h = made;
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
-          for (const b of list) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
+          for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
           (window as unknown as { __engineView3dReady?: boolean }).__engineView3dReady = true;
         })
         .catch((e) => console.error("look H failed to load", e));
@@ -1242,7 +1245,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         for (const b of list) {
           const m = b.p.body.material as any;
           solidBody(m, solidOn);
-          const own = m.userData.solidOwn;
+          const own = Array.isArray(m) ? undefined : m?.userData?.solidOwn;
           if (own) { own.uSolidBase.value = b.p.root.position.y; own.uSolidScale.value = b.p.root.scale.x || 1; }
           if (solidOn && !b.foot) { b.foot = new THREE.Mesh(footGeo, footMat); b.foot.rotation.x = -Math.PI / 2; b.foot.renderOrder = 2; root.add(b.foot); }
           if (b.foot) {

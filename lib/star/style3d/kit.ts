@@ -238,12 +238,18 @@ export function createStyleKit(T: any, renderer: any, scene: any, tier: Quality3
     setActive(on) { root.visible = on; },
     stylePeople(people) {
       for (const p of people) {
-        p.outline.visible = def.personOutline && prof.outlines;
-        (p.outline.material as any).color?.set(def.outlineColor);
-        const m = p.body.material as any;
-        celShade(m, !!def.celPeople);
-        m.roughness = def.glossy ? 0.32 : def.mat === "pbr" ? 0.62 : 0.8;
-        m.metalness = 0;
+        if (p.outline) {
+          p.outline.visible = def.personOutline && prof.outlines;
+          (p.outline.material as any)?.color?.set(def.outlineColor);
+        }
+        // The human body ("3D body: Human") has a list of materials, the old body one.
+        const raw = p.body?.material as any;
+        for (const m of (Array.isArray(raw) ? raw : raw ? [raw] : [])) {
+          if (!m.userData) continue;
+          celShade(m, !!def.celPeople);
+          m.roughness = def.glossy ? 0.32 : def.mat === "pbr" ? 0.62 : 0.8;
+          m.metalness = 0;
+        }
         const s = def.chunky ?? 1;
         p.root.userData.chunky = s;
       }
