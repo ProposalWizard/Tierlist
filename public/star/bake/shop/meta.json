@@ -5,15 +5,15 @@
  "aoRadius": 2.5,
  "bounce": {
   "floor": {
-   "indoor": 0.09314
+   "indoor": 0.09309
   },
   "volume": {
-   "indoor": 0.13032
+   "indoor": 0.13214
   }
  },
  "files": {
-  "indoor-floor.webp": 36786,
-  "indoor-vol.webp": 46038
+  "indoor-floor.webp": 37516,
+  "indoor-vol.webp": 50726
  },
  "floor": {
   "min": [

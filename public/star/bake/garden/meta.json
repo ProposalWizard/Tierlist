@@ -7,23 +7,23 @@
  "aoRadius": 0,
  "bounce": {
   "floor": {
-   "day": 0.09375,
-   "golden": 0.08222,
-   "night": 0.10609
+   "day": 0.05325,
+   "golden": 0.04973,
+   "night": 0.07259
   },
   "volume": {
-   "day": 0.1422,
-   "golden": 0.10872,
-   "night": 0.26277
+   "day": 0.11806,
+   "golden": 0.07577,
+   "night": 0.23709
   }
  },
  "files": {
-  "day-floor.webp": 211248,
-  "golden-floor.webp": 209912,
-  "night-floor.webp": 206826,
-  "day-vol.webp": 270678,
-  "golden-vol.webp": 276088,
-  "night-vol.webp": 258242
+  "day-floor.webp": 217268,
+  "golden-floor.webp": 211056,
+  "night-floor.webp": 216004,
+  "day-vol.webp": 259242,
+  "golden-vol.webp": 268708,
+  "night-vol.webp": 251450
  },
  "floor": {
   "min": [
