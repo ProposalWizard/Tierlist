@@ -330,6 +330,17 @@ check(homeStuffOf({ ownedItems: [] } as unknown as CareerState).cans === 0, "not
   check(roomCamBoom(0, 2.9, 0, 1, 4, 3, 3) === 0.6, "camera: backed onto a wall, the boom never goes under 0.6 m");
   { const t = roomCamBoom(1, 1, Math.SQRT1_2, Math.SQRT1_2, 9, 3, 3); check(Math.abs(1 + t * Math.SQRT1_2 - 3) < 1e-9, "camera: on a slant, it stops where its own line meets the wall"); }
   check(ROOM_CAM.back > 3.3 && ROOM_CAM.height > 2.35, "camera: further back and higher than before (3.3 m, 2.35 m)");
+  { // the garage: full models for the best cars while they fit, light copies after
+    const { garageCars, CAR_HF, GARAGE_HF_TRIS } = await import("../../lib/star/home3d/rooms");
+    const four = ["car-4", "car-3", "classic", "suv"].map((id) => ({ id, model: `/lod/${id}` }));
+    const g = garageCars(four);
+    const tris = g.reduce((n, c) => n + (c.model.startsWith("/lod/") ? 4000 : CAR_HF[c.id].tris), 0);
+    check(g.length === 4 && tris <= GARAGE_HF_TRIS && g[0].model === CAR_HF["car-4"].model, `garage: best cars as full models, ${tris} car triangles (budget ${GARAGE_HF_TRIS})`);
+    const { carPaint, CAR_PAINT } = await import("../../lib/star/home3d/roomBuild");
+    const foil = new THREE.MeshStandardMaterial({ color: "#2a6", metalness: 1, roughness: 0.05 });
+    const paint = carPaint(foil, null);
+    check(paint.metalness <= CAR_PAINT.metalness && paint.roughness >= 0.3 && paint.color.getHexString() === foil.color.getHexString() && foil.metalness === 1, "car paint: little metal, smooth, colour kept, the shared material untouched");
+  }
   if (process.env.HOME3D_TABLE || problems.length) console.log(table.join("\n"));
 }
 

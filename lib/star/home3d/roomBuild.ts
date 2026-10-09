@@ -22,7 +22,7 @@ import { freezeStatic } from "../freezeStatic";
 import { blobCanvas } from "../shop3d/textures";
 import type { Quality3d } from "../three3d/quality";
 import { roomPreset, type HomeTier, type RoomId, type RoomPreset, type WindowView } from "./homes";
-import { roomPlan, carsIn, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
+import { roomPlan, carsIn, garageCars, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
 import type { CabinetSlot, TrophyShape } from "./trophies";
 import type { BootChoice, CasualSet, Kit2 } from "./outfits";
 import type { XZ } from "../tapWalk";
@@ -98,6 +98,8 @@ export interface BuiltRoom {
   start: { x: number; z: number; yaw: number };
   /** How the room's merging went (still pieces joined into one draw per material). */
   frozen: { before: number; after: number };
+  /** The room's opening shot as you arrive (held until you move): frames its hero. Unset: the follow camera. */
+  intro?: { cam: [number, number, number]; look: [number, number, number] };
   /** Cars, boots, the bike: loaded after the room shows. */
   loadProps: () => Promise<void>;
   /** Free everything the room made. */
@@ -517,6 +519,24 @@ function driveSet(k: Kit, R: RoomPreset, W2: number) {
   return [driveG, driveBack];
 }
 
+/**
+ * Glossy car paint (Harry, 9 Oct 2026: the cars read as crumpled chrome). The
+ * generated models come fully metallic, so every dent in their low-poly body
+ * mirrors the room like foil. Paint is mostly a coloured base under a clear
+ * coat: little metal, a smooth-ish surface, its own colour kept.
+ */
+export const CAR_PAINT = { metalness: 0.18, roughness: 0.3, envMapIntensity: 0.9 };
+export function carPaint(m: any, envTex: any): any {
+  const p = m.clone();
+  p.metalness = Math.min(p.metalness ?? 0, CAR_PAINT.metalness);
+  p.roughness = Math.max(CAR_PAINT.roughness, Math.min(p.roughness ?? 1, 0.45));
+  if (p.metalnessMap) p.metalnessMap = null;
+  if (p.roughnessMap) p.roughnessMap = null;
+  p.envMap = envTex;
+  p.envMapIntensity = CAR_PAINT.envMapIntensity;
+  return p;
+}
+
 /** Your cars on the drive (best first), loaded after the room shows. */
 function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: number, n: number, len: number) => [number, number, number], props: any, fitLen: ReturnType<typeof fitLenWith>, alive: () => boolean, seen: (o: any) => any) {
   const { THREE } = env;
@@ -524,7 +544,7 @@ function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: n
     if (!alive()) return;
     const holder = new THREE.Group();
     const root = g.scene.clone(true);
-    root.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) { o.material.envMap = env.envTex; o.material.envMapIntensity = 1; } } });
+    root.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) o.material = carPaint(o.material, env.envTex); } });
     fitLen(root, car.length, false); // nose towards the house
     holder.add(root);
     const [x, z, ry] = place(i, Math.min(n, cars.length), car.length);
@@ -1208,6 +1228,8 @@ interface Ctx {
   potM: any;
   leafM: any;
   plinthM: any;
+  /** Set by a room: its opening shot. */
+  intro?: { cam: [number, number, number]; look: [number, number, number] };
 }
 
 /** A shelf of your watches and cans on a wall (an empty stand for each you have not bought). */
@@ -1281,8 +1303,10 @@ function buildGarage(c: Ctx) {
     }
     solids.push([x - 1.05, x + 1.05, z0 - 0.1, z0 + carL]);
   });
+  // the opening shot: from the doorway end, up by the ceiling: you below, the row of cars across the middle
+  c.intro = { cam: [-W2 + 0.3, H - 0.2, D2 - 0.3], look: [xs[2], 0.4, zc + 0.6] };
   // the cars face out of their bays (towards you), side by side
-  c.propJobs.push(() => loadCars(env, inp.cars, nCars, (i) => [xs[i], zc, -Math.PI / 2], c.props, c.fitLen, c.alive, k.seen));
+  c.propJobs.push(() => loadCars(env, garageCars(inp.cars), nCars, (i) => [xs[i], zc, -Math.PI / 2], c.props, c.fitLen, c.alive, k.seen));
   // the tool wall (south): a workbench, a pegboard of tools, a red tool chest
   const bl = Math.min(3.0, W2 - 0.4), bx = -0.2, bz = D2 - 0.34;
   P.box(bl, 0.06, 0.64, c.wood, bx, 0.92, bz);
@@ -1375,6 +1399,8 @@ function buildGames(c: Ctx) {
   k.box(0.32, 0.01, 1.6, k.glowM("#fff1d6", 2.6), tx, H - 1.03, tz);
   k.glow(k.patchT, "#fff0d0", 0.34, cw + 0.4, cl + 0.3, tx, 0.88, tz, -Math.PI / 2, 0);
   k.glow(k.glowT, "#fff0d0", 0.2, 3.0, 3.8, tx, 0.01, tz, -Math.PI / 2, 0);
+  // the opening shot: from the south-east corner, high, the table in front and the pool beyond it
+  c.intro = { cam: [W2 - 0.4, Math.min(H - 0.2, 3.0), D2 - 0.35], look: [(pcx + tx) / 2 - 0.3, 0.2, (pcz + tz) / 2 - 0.4] };
   // a cue rack on the east wall, the shelf of your things beside it
   const rz = Math.min(D2 - 1.1, tz + 1.9);
   P.box(0.04, 1.3, 0.6, wood, W2 - 0.03, 1.3, rz);
@@ -1484,6 +1510,8 @@ function buildCinema(c: Ctx) {
     solids.push([bx - 0.55, bx + 0.55, bz - 0.3, D2]);
   } else solids.push(plinth(k, c.plinthM, bx, bz, 0.5, 0.9));
   k.glow(k.glowT, "#ffcf8a", 0.16, 1.4, 1.4, bx, 1.4, D2 - 0.03, 0, Math.PI);
+  // the opening shot: from the back, up by the ceiling, over the seats to the screen
+  c.intro = { cam: [0.6, H - 0.25, D2 - 0.3], look: [0, sy - 0.3, -D2] };
   P.done({ roughness: 0.85 });
   S.done({ roughness: 0.25, metalness: 0.9, env: 1.4, cast: false });
   return shell;
@@ -1693,10 +1721,11 @@ function buildPenthouseTerrace(c: Ctx) {
   skyDome(k, "#5f8fd0", "#f2d0a8");
   // the city all round, its towers far below
   const cityM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("skyline")), fog: false });
-  const far = 9;
-  k.plane(44, 22, cityM, 0, -2, -D2 - far, 0, 0);
-  k.plane(44, 22, cityM, W2 + far, -2, 0, 0, -Math.PI / 2);
-  k.plane(44, 22, cityM, -W2 - far, -2, 0, 0, Math.PI / 2);
+  // (the picture's skyline sits 80% down it: placed so the towers rise from just under the glass rail)
+  const far = 9, cy = 5.6;
+  k.plane(44, 22, cityM, 0, cy, -D2 - far, 0, 0);
+  k.plane(44, 22, cityM, W2 + far, cy, 0, 0, -Math.PI / 2);
+  k.plane(44, 22, cityM, -W2 - far, cy, 0, 0, Math.PI / 2);
   // the car gallery behind the glass: a dark polished floor, a lit back wall, your best car (an empty plinth without)
   const gz = D2 + 2.0;
   k.plane(gw + 1.2, 4.2, k.mat("#1d1f24", { roughness: 0.18, metalness: 0.3, envMapIntensity: 1.5 }), gc, 0.0, D2 + 2.1, -Math.PI / 2);
@@ -1726,18 +1755,21 @@ function buildPenthouseTerrace(c: Ctx) {
   solids.push(plant(k, c.potM, c.leafM, W2 - 0.4, -D2 + 0.4));
   // string lights over the terrace between two posts
   const posts: [number, number][] = [[-W2 + 0.15, -D2 + 0.15], [W2 - 0.15, D2 - 0.9]];
-  for (const [x, z] of posts) P.box(0.06, 2.6, 0.06, "#2b2b30", x, 1.3, z);
+  const top = H + 0.6; // above the camera, so the bulbs never fill the screen
+  for (const [x, z] of posts) P.box(0.06, top + 0.1, 0.06, "#2b2b30", x, (top + 0.1) / 2, z);
   const nB = 16;
   const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 8, 6), k.glowM("#ffd9a0", 2.6), nB);
   const m = new THREE.Matrix4();
   for (let i = 0; i < nB; i++) {
     const t = (i + 0.5) / nB;
-    m.makeTranslation(posts[0][0] + (posts[1][0] - posts[0][0]) * t, 2.55 - Math.sin(t * Math.PI) * 0.45, posts[0][1] + (posts[1][1] - posts[0][1]) * t);
+    m.makeTranslation(posts[0][0] + (posts[1][0] - posts[0][0]) * t, top - Math.sin(t * Math.PI) * 0.3, posts[0][1] + (posts[1][1] - posts[0][1]) * t);
     bulbs.setMatrixAt(i, m);
   }
   k.add(bulbs);
   c.keep.add(bulbs);
   k.glow(k.glowT, "#ffd9a0", 0.12, 3.2, 3.2, 0, 0.01, 0, -Math.PI / 2, 0);
+  // the opening shot: from the far corner, over the terrace to your car behind the glass
+  c.intro = { cam: [W2 - 0.3, H - 0.3, -D2 + 0.3], look: [gc, 0.7, D2 + 1.2] };
   P.done({ roughness: 0.7 });
   return shell;
 }
@@ -1803,11 +1835,14 @@ function buildNook(c: Ctx) {
   k.add(glassDisc);
   solids.push([W2 - 0.32, W2, tz - 0.48, tz + 0.48]);
   // a pendant over the middle
-  const pend = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), k.glowM("#fff1d6", 2.2));
-  pend.position.set(0, H - 0.6, 0);
+  // a flush light on the ceiling (a hanging one filled the screen: the camera is up near the ceiling here)
+  const pend = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 8), k.glowM("#fff1d6", 2.2));
+  pend.scale.set(1, 0.3, 1);
+  pend.position.set(0, H - 0.03, 0.4);
   k.add(pend);
-  P.cyl(0.006, 0.006, 0.5, "#2b2b30", 0, H - 0.27, 0);
-  k.glow(k.glowT, "#ffe2b0", 0.18, 1.8, 1.8, 0, H - 0.02, 0, Math.PI / 2, 0);
+  k.glow(k.glowT, "#ffe2b0", 0.18, 1.8, 1.8, 0, H - 0.02, 0.4, Math.PI / 2, 0);
+  // the opening shot: from the corner by the front door, onto the bench and your kits
+  c.intro = { cam: [W2 - 0.3, H - 0.2, D2 - 0.3], look: [-W2 + 0.2, 0.9, -0.3] };
   P.done({ roughness: 0.7 });
   return shell;
 }
@@ -1873,6 +1908,7 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
   };
 
   let shell: ReturnType<typeof shellOf>;
+  let intro: BuiltRoom["intro"];
 
   if (id === "hallway") {
     shell = shellOf(k, env, R, plan, []);
@@ -2093,13 +2129,13 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
       gardenTerrace: buildGardenTerrace, terrace: buildPenthouseTerrace, nook: buildNook,
     };
     const f = make[id];
-    if (f) shell = f(ctx);
+    if (f) { shell = f(ctx); intro = ctx.intro; }
     else {
       // a room with nothing built for it yet: an honest bare room with plinths, so a tier never breaks
       shell = shellOf(k, env, R, plan, []);
       for (const [x, z] of [[-W2 + 1, -D2 + 1], [W2 - 1, -D2 + 1]] as XZ[]) solids.push(plinth(k, plinthM, x, z));
     }
-    if (R.chandelier && (id === "cinema" || id === "gym" || id === "nook")) chandelier(k, shell.metalM, H, 0, id === "cinema" ? 1.0 : 0.2);
+    // (no chandelier in these: it hung in front of the cinema screen and over the gym's rack)
   }
 
   for (const gl of k.flushGlows(env.mergeGeometries)) keep.add(gl);
@@ -2119,6 +2155,7 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     dropMirror: () => { if (mirror) { mirror.parent?.remove(mirror); mirror.dispose?.(); mirror = null; } },
     start,
     frozen,
+    intro,
     loadProps: async () => { await Promise.all(propJobs.flatMap((f) => f())); },
     dispose: () => { alive = false; disposeGroup(group); mirror = null; },
   } as BuiltRoom;

@@ -232,6 +232,34 @@ export function carsIn(id: RoomId, tier: HomeTier): number {
   return 0;
 }
 
+/**
+ * The garage shows your cars close up, so it loads the shop's full models
+ * (Harry, 9 Oct 2026: the light copies look crumpled and blotchy up close),
+ * best car first, while they fit GARAGE_HF_TRIS; the rest stay light copies.
+ * Triangles measured from the files.
+ */
+export const CAR_HF: Record<string, { model: string; tris: number }> = {
+  "car-1": { model: "/star/shop3d/items/car-family-hf.glb", tris: 36413 },
+  "car-2": { model: "/star/shop3d/items/car-hatch-hf.glb", tris: 23280 },
+  suv: { model: "/star/shop3d/items/car-suv-hf.glb", tris: 23279 },
+  "car-3": { model: "/star/shop3d/items/car-sports-hf.glb", tris: 23278 },
+  classic: { model: "/star/shop3d/items/car-classic-hf.glb", tris: 23279 },
+  "car-4": { model: "/star/shop3d/items/car-super-hf.glb", tris: 23279 },
+};
+/** The garage's car triangles at most (full models while they fit; light copies about 4k each). */
+export const GARAGE_HF_TRIS = 50000;
+/** The garage's cars: full models for the best while they fit the budget, light copies after. */
+export function garageCars<T extends { id: string; model: string }>(cars: T[]): T[] {
+  let used = 0;
+  return cars.slice(0, 4).map((c, i, all) => {
+    const hf = CAR_HF[c.id];
+    const restLight = (all.length - i - 1) * 4000;
+    if (hf && used + hf.tris + restLight <= GARAGE_HF_TRIS) { used += hf.tris; return { ...c, model: hf.model }; }
+    used += 4000;
+    return c;
+  });
+}
+
 /** The motorbike, the jet and the garden props, light copies for the home (tools/home3d). */
 export const BIKE_LOD = "/star/home3d/bike-lod.glb";
 export const JET_LOD = "/star/home3d/jet-lod.glb";
@@ -240,7 +268,7 @@ export const HORSE_MODEL = "/star/garden3d/horse.glb";
 
 /** The model files a room loads (so they can be fetched while you walk to its door). */
 export function roomFiles(id: RoomId, tier: HomeTier, cars: { model: string }[], boots: { model: string | null }[], bikeModel: string | null, stuff: HomeStuff = NO_STUFF): string[] {
-  const out = cars.slice(0, carsIn(id, tier)).map((c) => c.model);
+  const out = (id === "garage" ? garageCars(cars.slice(0, carsIn(id, tier)).map((c) => ({ id: (c as { id?: string }).id ?? "", model: c.model }))) : cars.slice(0, carsIn(id, tier))).map((c) => c.model);
   if (id === "main" || id === "dressing" || id === "nook") for (const b of boots.slice(0, 2)) if (b.model) out.push(b.model);
   if (id === "garage" && bikeModel) out.push(bikeModel);
   if (id === "gardenTerrace") {
