@@ -70,8 +70,9 @@ def read_obj(path):
     return np.array(V), np.array(VT) if VT else np.zeros((0, 2)), F
 
 
-def fit(clo, Vmh):
-    """Proxy vertex positions on a (shaped, unposed) base mesh, MakeHuman units."""
+def fit(clo, Vmh, snug=1.0):
+    """Proxy vertex positions on a (shaped, unposed) base mesh, MakeHuman units.
+    snug < 1 brings the cloth closer to the body (its offsets scaled down)."""
     r, w, off = clo["refs"], clo["w"], clo["off"]
     P = (Vmh[r] * w[:, :, None]).sum(1)
     sc = np.ones(3)
@@ -79,7 +80,7 @@ def fit(clo, Vmh):
         if k in clo["scale"]:
             a, b, d = clo["scale"][k]
             sc[ax] = abs(Vmh[a, ax] - Vmh[b, ax]) / d
-    return P + off * sc
+    return P + off * sc * snug
 
 
 def split_uv(V, VT, F):

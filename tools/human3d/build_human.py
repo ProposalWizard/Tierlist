@@ -144,6 +144,12 @@ def macro(m):
     return out
 
 
+# The look target (tools/human3d/fit_a.py): one offset per vertex that gives the
+# body the reference footballer's proportions; every shape is built on top of it.
+_fit = os.path.join(HERE, "fit_a.npz")
+FIT = np.load(_fit)["fit"].astype(np.float64) if os.path.exists(_fit) and not os.environ.get("HUMAN_NO_FIT") else None
+
+
 def shape(m, extra=None):
     V = V0.copy()
     w = macro(m)
@@ -158,14 +164,18 @@ def shape(m, extra=None):
         idx, d = target(rel)
         if len(idx):
             V[idx] += d * wt
+    if FIT is not None:
+        V += FIT
     return V
 
 
 # The default: a 25-year-old athletic footballer, ~1.80 m.
 BASE = {"gender": 1.0, "age": 0.5, "muscle": 0.72, "weight": 0.42, "height": 0.5, "proportions": 1.0,
         "race": {"caucasian": 1 / 3, "african": 1 / 3, "asian": 1 / 3}}
-BASE_EXTRA = {"torso/torso-vshape-incr": 0.25, "neck/measure-neck-circ-incr": 0.2, "stomach/stomach-tone-incr": 0.4,
-              "chin/chin-width-incr": 0.2, "chin/chin-prominent-incr": 0.15}
+BASE_EXTRA = {"torso/torso-vshape-incr": 0.25, "neck/measure-neck-circ-incr": 0.2, "neck/measure-neck-height-incr": 0.35, "stomach/stomach-tone-incr": 0.4,
+              "chin/chin-width-incr": 0.35, "chin/chin-prominent-incr": 0.2, "chin/chin-bones-incr": 0.3,
+              "cheek/l-cheek-bones-incr": 0.35, "cheek/r-cheek-bones-incr": 0.35,
+              "cheek/l-cheek-volume-decr": 0.25, "cheek/r-cheek-volume-decr": 0.25}
 
 # Build shapes (morph targets): (name, macro changes, extra targets).
 SHAPES = [
@@ -365,10 +375,28 @@ def repose(V, J):
     return out, P, R
 
 
+def slope_points(X, P, drop=0.03):
+    """The reference's sloped shoulders (Harry, 9 Oct 2026: "the players proportions"). In the
+    one body's rest pose the collar bones are level, which leaves the shoulders square; the
+    top of each shoulder comes down toward its tip: nothing at the neck, nothing below the
+    armpit. Used on the body and on every garment, so the clothes come down with it."""
+    X = X.copy()
+    nx = P["neck"][0]
+    for S_ in ("Left", "Right"):
+        ax = P[S_ + "Arm"]
+        span = abs(ax[0] - nx); side = np.sign(ax[0] - nx)
+        t = np.clip(((X[:, 0] - nx) * side - 0.04) / max(span - 0.04, 1e-3), 0, 1)
+        wy = np.clip((X[:, 1] - (ax[1] - 0.08)) / 0.1, 0, 1) * np.clip(((P["Head"][1] - 0.01) - X[:, 1]) / 0.04, 0, 1)
+        m_ = ((X[:, 0] - nx) * side > 0)
+        X[:, 1] -= drop * (t ** 1.2) * wy * m_
+    return X
+
+
 def build_pose(m, extra, keep=False):
     V = shape(m, extra) * DM
     J = joints_of(V / DM)
     Vr, P, R = repose(V, J)
+    Vr = slope_points(Vr, P)
     if keep:
         return Vr, P, R, V, J
     return Vr, P, R
@@ -424,6 +452,6 @@ if os.environ.get("STAGE1"):
 # Hand the rest of the build to parts.py (garments, hair, glasses) and the writer.
 from parts import build_parts, write_glb  # noqa: E402
 
-POSE = {"V": VMH, "J": JMH, "R": RBASE, "P": {k: v + np.array([0, ground, 0]) for k, v in PB.items()}, "ground": ground, "assets": ASSETS}
+POSE = {"V": VMH, "J": JMH, "R": RBASE, "P": {k: v + np.array([0, ground, 0]) for k, v in PB.items()}, "ground": ground, "assets": ASSETS, "slope": slope_points}
 parts = build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPE_OUT, vrange, MPFB, POSE)
 write_glb(OUT, VB, parts, PB, RBASE, SHAPE_OUT, height, REX, RJ, RJOINTS, RPAR, RROT, RNODES, RIDX, BONE_W)

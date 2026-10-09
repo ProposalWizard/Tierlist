@@ -13,7 +13,7 @@ import type { CutscenePeopleLook } from "./look";
 
 type Three = typeof import("three");
 
-export type BenchProof = "faces" | "hands" | "sign" | "shake" | "shirt" | "trophy" | "goal" | "lineup" | "builds" | "rest" | "heads";
+export type BenchProof = "faces" | "hands" | "sign" | "shake" | "shirt" | "trophy" | "goal" | "lineup" | "builds" | "rest" | "heads" | "bakeoff";
 
 export interface BenchState {
   proof: BenchProof;
@@ -39,7 +39,7 @@ export interface BenchHandle {
 }
 
 const SIG_D = "M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40";
-const KIT = { shirt: "#b3202c", trim: "#f5f1e6" };
+const KIT = { shirt: "#b3202c", trim: "#f5f1e6", shorts: "#b3202c" };
 
 export async function createPeopleBench(container: HTMLElement, init: BenchState): Promise<BenchHandle> {
   const T: Three = await import("three");
@@ -97,6 +97,7 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
   let state: BenchState = { ...init };
   let actors: Actor[] = [];
   let props: CutProp[] = [];
+  let extras: THREE.Object3D[] = [];
   let cam: { pos: THREE.Vector3; look: THREE.Vector3; fov: number } | null = null;
   let tNow = 0, live = true, last = performance.now(), raf = 0;
   const sig = signaturePoints(SIG_D);
@@ -127,6 +128,26 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
         a.root.position.set((i - (list.length - 1) / 2) * 0.72, 0, 0);
         actors.push(a);
       }
+    }
+    if (s.proof === "bakeoff") {
+      // TEMP bake-off: A = image-to-3D mesh, B = raw MakeHuman default male, C = ours (you).
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+      const ld = new GLTFLoader();
+      extras.forEach((o) => o.removeFromParent()); extras = [];
+      for (const [url, x] of [["/star/_bakeoff/higgs.glb", -0.85], ["/star/_bakeoff/mhbase.glb", 0]] as [string, number][]) {
+        const g = await ld.loadAsync(url);
+        const o = g.scene;
+        const box = new T.Box3().setFromObject(o);
+        const k = 1.8 / (box.max.y - box.min.y);
+        const piv = new T.Group();
+        o.scale.setScalar(k);
+        const c = box.getCenter(new T.Vector3());
+        o.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+        piv.add(o); piv.position.x = x;
+        o.traverse((m) => { const mm = m as THREE.Mesh; if (mm.isMesh) { mm.frustumCulled = false; (mm.material as THREE.MeshStandardMaterial).metalness = 0; } });
+        scene.add(piv); extras.push(piv);
+      }
+      you.root.position.x = 0.85;
     }
     if (s.proof === "shake") {
       const boss = await cast.actor({ model: "manager", skin: "#c68642", hair: "#3a2a20", grey: 0.55, beard: 0.85, name: "boss" });
@@ -217,6 +238,13 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
         you.expression(t > 1.2 ? "roar" : "joy", 0.4);
         you.look(t > 1.0 ? { prop: tr, point: "top" } : { camera: true }, { head: 0.7 });
         if (!cam) setCam([0.4, 1.35, 2.6], [0, 1.45, 0], 36);
+        break;
+      }
+      case "bakeoff": {
+        you.clips = [];
+        you.root.rotation.y = (s.turn * Math.PI) / 180;
+        for (const e of extras) e.rotation.y = (s.turn * Math.PI) / 180;
+        if (!cam) setCam([0, 1.0, 9], [0, 0.95, 0], 22);
         break;
       }
       case "rest": {
@@ -312,7 +340,7 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
     },
     play(t = 0) { tNow = t; live = true; last = performance.now(); for (const a of actors) a.autoBlink = true; },
     camera(pos, look, fov) { cam = pos ? { pos: new T.Vector3(...pos), look: new T.Vector3(...(look ?? [0, 1.6, 0])), fov: fov ?? 30 } : null; },
-    info() { return { t: tNow, actors: actors.map((a) => a.name), face: actors[0]?.currentFace() }; },
+    info() { return { heads: [...extras.map((e) => { const b = new T.Box3().setFromObject(e); return [b.min.x, b.max.y, b.max.z]; })], eyes: actors[0]?.eyes().toArray(), t: tNow, actors: actors.map((a) => a.name), face: actors[0]?.currentFace() }; },
     dispose() { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); cast.dispose(); renderer.dispose(); renderer.domElement.remove(); },
   };
 }

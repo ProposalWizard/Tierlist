@@ -107,7 +107,7 @@ export interface ActorSpec {
   skin: string;
   hair?: string;
   /** Club colours (players). */
-  kit?: { shirt: string; trim: string };
+  kit?: { shirt: string; trim: string; shorts?: string };
   number?: THREE.Texture | null;
   accessories?: WornThing[];
   /** Manager: grey hair 0 … 1, a beard 0 … 1. */

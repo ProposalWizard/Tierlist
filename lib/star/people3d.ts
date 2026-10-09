@@ -152,7 +152,8 @@ export interface PersonLook {
   skin: string;
   hair?: string;
   /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
-  kit?: { shirt: string; trim: string };
+  /** shorts: their own colour (most kits: the trim, which is the default). */
+  kit?: { shirt: string; trim: string; shorts?: string };
   /** The back of the shirt (a canvas texture of the number), or none. */
   number?: THREE.Texture | null;
   face?: FacePic | null;
@@ -654,7 +655,7 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   u.uHairK.value = new T.Vector3(hair.r, hair.g, hair.b);
   if (look.kit) {
     u.uShirt.value = lin(T, look.kit.shirt);
-    u.uShorts.value = lin(T, look.kit.trim);
+    u.uShorts.value = lin(T, look.kit.shorts ?? look.kit.trim);
     u.uSocks.value = lin(T, look.kit.shirt);
     u.uTrim.value = lin(T, look.kit.trim);
   }

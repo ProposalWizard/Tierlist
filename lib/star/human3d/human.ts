@@ -89,6 +89,8 @@ export interface HumanInfo {
 
 interface HumanMeta {
   version: number;
+  /** The skin texture's average colour (linear): the texture is used as detail around each person's own tone. */
+  skinTexMean?: V3 | null;
   slots?: string[];
   alphaSlots?: string[];
   deleteParts?: string[];
@@ -106,7 +108,7 @@ function partsFor(s: HumanSpec): string[] {
   const outfit = s.outfit ?? "kit";
   const allSkin = ["skin.forearm", "skin.uparmLow", "skin.uparmTop", "skin.torso", "skin.hips", "skin.thighTop", "skin.thighLow", "skin.knee", "skin.shin"];
   switch (outfit) {
-    case "kit": add("kit.tee", "kit.teeShorts", "kit.socks", "kit.trainers", "skin.forearm", "skin.uparmLow", "skin.uparmTop", "skin.torso", "skin.thighLow", "skin.knee"); break;
+    case "kit": add("kit.tee", "kit.teeShorts", "kit.socks", "kit.trainers", "skin.forearm", "skin.uparmLow", "skin.torso", "skin.thighLow", "skin.knee"); break;
     case "kitLong": add("kit.shirtLong", "kit.teeShorts", "kit.socks", "kit.trainers", "skin.thighLow", "skin.knee"); break;
     case "keeper": add("kit.shirtLong", "kit.teeShorts", "kit.socks", "kit.trainers", "kit.gkGloves", "skin.thighLow", "skin.knee"); break;
     case "suit": case "suitOpen": add("out.suit", "out.formalShoes", ...allSkin); break;
@@ -277,7 +279,12 @@ export function makeHuman(
         UVa.push(sl.uv ? sl.uv[v * 2] : 0, sl.uv ? sl.uv[v * 2 + 1] : 0);
         for (let k = 0; k < 4; k++) { SIa.push(sl.skinIndex[v * 4 + k]); SWa.push(sl.skinWeight[v * 4 + k]); }
         PTa.push(sl.part[v]);
-        const col = sl.uv && sl.material.map ? [1, 1, 1] : baseColour(T, hm.parts[sl.part[v]], Math.round(sl.zone[v]), spec);
+        const pname = hm.parts[sl.part[v]];
+        const isSkin = pname.startsWith("skin.");
+        // skin: _ZONE is how deep in a hollow the point sits (0 open .. 0.7), a soft painted shadow
+        const occ = isSkin ? 1 - 0.55 * sl.zone[v] : 1;
+        const c0 = sl.uv && sl.material.map ? [1, 1, 1] : baseColour(T, pname, isSkin ? 0 : Math.round(sl.zone[v]), spec);
+        const col = [c0[0] * occ, c0[1] * occ * (isSkin ? 0.97 : 1), c0[2] * occ * (isSkin ? 0.94 : 1)];
         Ca.push(col[0], col[1], col[2]);
       }
       idx.push(keep[a], keep[b], keep[c]);
@@ -384,6 +391,7 @@ export function makeHuman(
     uHumNeck: { value: new T.Vector4(J.neck[0], J.neck[1], J.neck[2], J.Spine01[1]) },
     uHumHips: { value: J.Hips[1] }, uHumHipX: { value: J.LeftUpLeg[0] * 0.9 },
     uHumKind: { value: KIND[spec.outfit ?? ""] ?? 0 },
+    uHumSkinTex: { value: new T.Vector3(...(hm.skinTexMean ?? [0.5, 0.3, 0.22])) },
     uHumC0: { value: lin(cc.main, "#1f2a44") }, uHumC1: { value: lin(cc.second, "#f4f4f2") }, uHumC2: { value: lin(cc.accent, "#7a1626") }, uHumC3: { value: lin(cc.trousers ?? cc.main, "#20242c") },
     uHumHead: { value: new T.Vector3(...J.Head).add(new T.Vector3(0, 0.09, 0)) },
     uHumEyeL: { value: new T.Vector3(...J.eyeL).add(new T.Vector3(0, 0, 0.0118)) }, uHumEyeR: { value: new T.Vector3(...J.eyeR).add(new T.Vector3(0, 0, 0.0118)) },
@@ -474,8 +482,17 @@ function patchHuman(mat: THREE.MeshStandardMaterial, u: Record<string, { value: 
   if (body === FRAG_BODY) throw new Error("human: the body shader changed shape");
   const pre = /* glsl */ `
   if (${isP("kit.teeShorts")} || ${isP("kit.trainers")}) {
+    // the cloth texture's folds and weave, around white (the kit painter colours it)
     float l0 = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-    diffuseColor.rgb = vec3(clamp(l0 * 2.0, 0.35, 0.95));
+    diffuseColor.rgb = vec3(clamp(0.82 + (l0 - 0.12) * 2.2, 0.55, 0.95));
+  }
+  if (vHumSkin > 0.5) {
+    // the skin texture as detail: its colour around its own average, on the body's base tone
+    vec3 dt = diffuseColor.rgb / max(vColor.rgb, vec3(1e-3)) / uHumSkinTex;
+    float dl = dot(dt, vec3(0.299, 0.587, 0.114));
+    dt = mix(vec3(dl), dt, 0.55);
+    dt = vec3(1.0) + (dt - vec3(1.0)) * 1.5;   // the texture is soft; its shading and stubble, a little stronger
+    diffuseColor.rgb = vec3(0.62, 0.36, 0.24) * clamp(dt, vec3(0.3), vec3(1.8)) * vColor.rgb;
   }`;
   // Clothes' details drawn from where each point sits (crisp at any distance):
   // the jacket's V, lapels, tie and buttons; zips, stripes, collars; the lips; hair strands.
@@ -565,35 +582,48 @@ function patchHuman(mat: THREE.MeshStandardMaterial, u: Record<string, { value: 
     float sheen = smoothstep(0.55, 0.85, n.y) * (1.0 - smoothstep(0.9, 1.0, n.y));
     col *= strands * (1.0 + 0.25 * sheen);
   }
-  if (vHumSkin > 0.5) {
-    // brows: a tapered arc over each eye
-    for (int i = 0; i < 2; i++) {
-      vec3 E = i == 0 ? uHumEyeL : uHumEyeR;
-      float sd = i == 0 ? 1.0 : -1.0;
-      float dx = (r.x - E.x) * sd;
-      float t = clamp((dx + 0.016) / 0.042, 0.0, 1.0);
-      float yc = E.y + 0.0205 + 0.0045 * sin(t * 2.6) - 0.002 * t;
-      float th = 0.0026 * (1.0 - 0.6 * t) + 0.0006;
-      float on = step(-0.02, dx) * step(dx, 0.028) * step(E.z - 0.012, r.z);
-      float b = on * (1.0 - smoothstep(th - aa, th + aa, abs(r.y - yc))) * (0.85 + 0.15 * sin(t * 120.0 + r.y * 2000.0));
-      col = mix(col, uHairK * 0.55, b * 0.92);
-    }
-    vec2 lp = (r.xy - uHumMouth.xy) / vec2(uHumMouth.z * 1.05, 0.0085);
-    float lips = (1.0 - smoothstep(0.75, 1.0, length(lp))) * step(uHumMouth.w - 0.02, r.z);
-    col = mix(col, col * vec3(0.9, 0.66, 0.62), lips * 0.6);
-  }
   diffuseColor.rgb = col;
 }`;
+  const SKIN_LIGHT = /* glsl */ `
+  if (vHumSkin > 0.5) {
+    vec3 dd = reflectedLight.directDiffuse;
+    float base = max(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)), 1e-3);
+    float L = dot(dd, vec3(0.299, 0.587, 0.114)) / base;
+    // a soft painted ramp: three gentle tones instead of a smooth roll-off
+    float Lr = 0.1 + 0.42 * smoothstep(0.04, 0.4, L) + 0.6 * smoothstep(0.5, 1.15, L);
+    dd *= mix(1.0, Lr / max(L, 0.02), 0.35);
+    // light under the skin: the turn into shadow goes warm, never grey
+    float term = smoothstep(0.0, 0.22, L) * (1.0 - smoothstep(0.3, 0.9, L));
+    dd += diffuseColor.rgb * vec3(0.5, 0.14, 0.05) * (0.03 + 0.25 * term);
+    reflectedLight.directDiffuse = dd;
+    reflectedLight.indirectDiffuse *= vec3(1.07, 0.97, 0.92);
+    // a warm rim where the skin turns away
+    float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+    reflectedLight.directDiffuse += diffuseColor.rgb * vec3(1.0, 0.72, 0.5) * fr * 0.3;
+  }`;
+  const EYE_CATCH = /* glsl */ `
+  if (${isP("eyes")}) {
+    // a catchlight high on each iris, the same side as the key light
+    for (int i = 0; i < 2; i++) {
+      vec3 E = i == 0 ? uHumEyeL : uHumEyeR;
+      vec2 cpos = E.xy + vec2(0.0022, 0.0026);
+      float sp = 1.0 - smoothstep(0.0008, 0.0014, length(vRest.xy - cpos));
+      totalEmissiveRadiance += vec3(0.95) * sp * step(E.z - 0.004, vRest.z);
+    }
+  }`;
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader
       .replace("#include <common>", `#include <common>${VERT_HEAD}\nattribute float _part;\nvarying float vHumPart;`)
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = position;\nvRestN = normal;\nvHumPart = _part;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", `#include <common>${FRAG_HEAD}\nvarying float vHumPart;\nuniform vec4 uHumNeck, uHumMouth;\nuniform vec3 uHumC0, uHumC1, uHumC2, uHumC3, uHumHead, uHumEyeL, uHumEyeR;\nuniform float uHumHips, uHumKind, uHumHipX;`)
+      .replace("#include <common>", `#include <common>${FRAG_HEAD}\nvarying float vHumPart;\nuniform vec4 uHumNeck, uHumMouth;\nuniform vec3 uHumC0, uHumC1, uHumC2, uHumC3, uHumHead, uHumEyeL, uHumEyeR;\nuniform float uHumHips, uHumKind, uHumHipX;\nuniform vec3 uHumSkinTex;`)
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>\nif (${isP("eyes")}) roughnessFactor = 0.14;`)
+      .replace("#include <lights_fragment_end>", `#include <lights_fragment_end>\n${SKIN_LIGHT}`)
+      .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>\n${EYE_CATCH}`)
       .replace("#include <color_fragment>", `#include <color_fragment>\n${test("vHumSkin", ids("skin."))}\n${test("vHumHair", [...ids("hair."), ...ids("brows")])}\n${test("vHumKit", ids("kit."))}\n${test("vHumHead", [id("skin.head"), id("skin.neck"), ...ids("hair."), ...ids("brows"), id("eyes"), id("teeth")])}\n${pre}\n${body}\n${outfit}`);
   };
-  mat.customProgramCacheKey = () => `human-body-v3-${slot}`;
+  mat.customProgramCacheKey = () => `human-body-v4-${slot}`;
 }
 
 /** A spec for the four people files the scenes ask for by name. */
@@ -602,6 +632,6 @@ export function defaultHumanSpec(which: string): HumanSpec {
     case "player-buzz": return { hair: "buzz", outfit: "kit" };
     case "player-long": return { hair: "long", outfit: "kit" };
     case "manager": return { age: 54, build: 0.25, muscle: -0.3, belly: 0.25, hair: "slick", outfit: "suit", height: 1.79 };
-    default: return { hair: "short", outfit: "kit" };
+    default: return { hair: "crop", outfit: "kit" };
   }
 }

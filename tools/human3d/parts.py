@@ -140,6 +140,8 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
     for f, g in zip(FACES, FGROUP):
         groups.setdefault(g, []).append(f)
     TB = tri(groups["body"])
+    # the same triangles' texture corners (MakeHuman's own UV layout, for the skin texture)
+    TBt = tri([ft for ft, g in zip(FTEX, FGROUP) if g == "body"])
     TT = tri(groups["helper-tights"])
     TS = tri(groups.get("helper-skirt", []))
     THair = tri(groups["helper-hair"])
@@ -203,6 +205,23 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
 
     out = []  # list of dicts: name, V, T, src (index into VB for weights/anchors), zone, offsetFrom
 
+    # ── Soft shadow in the skin's hollows (eye sockets, under the nose and lips, ears, armpits):
+    # how far each point sits below its neighbours, at two sizes. Carried in _ZONE (0 open .. 1 deep).
+    btree = cKDTree(VB[BODY])
+    OCC = np.zeros(len(VB))
+    for r_, k_ in ((0.012, 1.6), (0.03, 0.9)):
+        nbrs = btree.query_ball_point(VB[BODY], r_)
+        for ii, (i, lst) in enumerate(zip(BODY, nbrs)):
+            if len(lst) > 2:
+                c_ = (VB[BODY[lst]] - VB[i]).mean(0) @ NB[i] / r_
+                OCC[i] += max(0.0, c_) * k_
+    OCC = np.clip(OCC, 0, 0.7)
+    SKIN_TEX = None
+    if pose and pose.get("assets"):
+        import os
+        p_ = os.path.join(pose["assets"], "skins", "young_caucasian_male", "young_lightskinned_male_diffuse.png")
+        SKIN_TEX = p_ if os.path.exists(p_) else None
+
     # ── Skin regions: each body triangle goes to the region of its majority vertex.
     reg = np.array([region(i) for i in range(len(VB))])
     treg = np.array([max(set(reg[t]), key=list(reg[t]).count) for t in TB])
@@ -212,8 +231,22 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
         T = TB[treg == name]
         if not len(T):
             continue
-        used, Tn = compact(VB, T)
-        out.append({"name": name, "V": VB[used], "T": Tn, "src": used, "zone": np.zeros(len(used)), "body": True})
+        Tt = TBt[treg == name]
+        # one point per (vertex, texture corner): a UV seam splits a vertex; the copies keep
+        # its weights, anchor and (in the writer) its normal, so nothing shows at the seam
+        key = {}
+        srcs, uvi, Tn = [], [], []
+        for tv, tt in zip(T, Tt):
+            row = []
+            for v, t_ in zip(tv, tt):
+                k_ = (int(v), int(t_))
+                if k_ not in key:
+                    key[k_] = len(srcs); srcs.append(int(v)); uvi.append(int(t_))
+                row.append(key[k_])
+            Tn.append(row)
+        used = np.array(srcs); Tn = np.array(Tn, dtype=np.int64)
+        out.append({"name": name, "V": VB[used], "T": Tn, "src": used, "zone": OCC[used], "body": True,
+                    "uv": VT[np.array(uvi)].astype(np.float32), "slot": "skin", "tex": SKIN_TEX})
 
     # ── Eyes: a ball in each socket, at MakeHuman's eye joint.
     def ball(c, r, nlat=14, nlon=20):
@@ -419,13 +452,42 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
             V = cyl_drape(V, m, a, ax, np.array([0, 0, 1.0]), (0.03, 0.09), lambda t: t - 0.09, 0.9, 0.006)
         return V
 
+    def smooth_cloth(V, T):
+        """Irons the crumples out of a snug fit (its open edges stay where they are)."""
+        from collections import Counter
+        e = Counter()
+        for a_, b_, c_ in T:
+            for x_, y_ in ((a_, b_), (b_, c_), (c_, a_)):
+                e[(min(x_, y_), max(x_, y_))] += 1
+        edge = np.zeros(len(V), bool)
+        enb = [[] for _ in range(len(V))]
+        for (x_, y_), k_ in e.items():
+            if k_ == 1:
+                edge[x_] = edge[y_] = True
+                enb[x_].append(y_); enb[y_].append(x_)
+        # the open edges (collar, sleeve ends, hems) straightened along themselves first
+        V = V.copy()
+        ei = np.nonzero(edge)[0]
+        for _ in range(8):
+            avg = np.array([V[enb[i]].mean(0) if enb[i] else V[i] for i in ei])
+            V[ei] = V[ei] + 0.5 * (avg - V[ei])
+        return smooth(V, T, it=5, lam=0.45, fixed=ei)
+
+    def drape_sleeves(V, dv, tv):
+        V = V.copy()
+        for S in ("Left", "Right"):
+            a, b = J[f"{S}Arm"], J[f"{S}ForeArm"]
+            m = np.isin(dv, (f"{S}Arm",))
+            V = cyl_drape(V, m, a, unit(b - a), np.array([0, 0, 1.0]), (0.03, 0.09), lambda t: t - 0.09, 0.3, 0.004)
+        return V
+
     def drape_shorts(V, dv, tv):
         V = V.copy()
         for S in ("Left", "Right"):
             a, b = J[f"{S}UpLeg"], J[f"{S}Leg"]
             ax = unit(b - a)
             m = np.isin(dv, (f"{S}UpLeg",)) | ((dv == "Hips") & (np.sign(V[:, 0]) == (1 if S == "Left" else -1)) & (V[:, 1] < hips_y - 0.05))
-            V = cyl_drape(V, m, a, ax, np.array([0, 0, 1.0]), (0.04, 0.12), lambda t: t - 0.1, 0.35, 0.007)
+            V = cyl_drape(V, m, a, ax, np.array([0, 0, 1.0]), (0.04, 0.12), lambda t: t - 0.1, 0.05, 0.004)
         return V
 
     TORSO = ("Spine", "Spine01", "Spine02", "LeftShoulder", "RightShoulder")
@@ -709,8 +771,10 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
         A = pose["assets"]
         VMH, JMH, RP, PP, g0 = pose["V"], pose["J"], pose["R"], pose["P"], pose["ground"]
         tree_mh = cKDTree(VMH[:13380])
+        NMH = np.zeros((13380, 3))
+        NMH[:] = vnormals(VMH[:13380], TB)[:13380] if TB.max() < 13380 else vnormals(VMH, TB)[:13380]
 
-        def proxy(name, rel, slot, keep_face=None, tex=None, normal=None, alpha=False, post=None, drape=None, lip=0.0, hem=None, delete=True, zone=0, delete_above=None):
+        def proxy(name, rel, slot, keep_face=None, tex=None, normal=None, alpha=False, post=None, drape=None, lip=0.0, hem=None, delete=True, zone=0, delete_above=None, snug=1.0, clear=0.0, room=0.03):
             folder = os.path.join(A, rel)
             base = os.path.basename(rel)
             if tex == "auto":
@@ -723,7 +787,20 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
                             if len(t) >= 2 and t[0] == "normalmapTexture": normal = os.path.basename(t[1])
             clo = read_mhclo(os.path.join(folder, base + ".mhclo"))
             PV, PT, PF = read_obj(os.path.join(folder, clo["obj"] or base + ".obj"))
-            P = fit(clo, VMH / 0.1) * 0.1
+            P = fit(clo, VMH / 0.1, snug) * 0.1
+            if clear > 0:
+                # A worn fit: every point's distance from the skin under it is redone — `clear`
+                # plus a share of the garment's own room, never more than `room` — along the
+                # skin's normal, so the cloth takes the body's shape (sloped shoulders, the chest,
+                # the taper to the waist) and keeps its own layout, seams and folds.
+                dq, jq = tree_mh.query(P, k=4)
+                wq = 1 / np.maximum(dq, 1e-4); wq /= wq.sum(1, keepdims=True)
+                nq = unit((NMH[jq] * wq[..., None]).sum(1))
+                bq = (VMH[jq] * wq[..., None]).sum(1)
+                gap = np.einsum("ij,ij->i", P - bq, nq)
+                want = clear + np.clip(gap - clear, 0, None) * 0.25
+                want = np.minimum(want, room)
+                P = P + nq * (want - gap)[:, None]
             src, uv, tris = split_uv(PV, PT, PF)
             if keep_face is not None:
                 img = None
@@ -757,6 +834,13 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
                 remap = -np.ones(len(src), dtype=np.int64); remap[used] = np.arange(len(used))
                 tris = remap[tris]; src = src[used]; uv = uv[used]
             refs, rw = clo["refs"][src], clo["w"][src]
+            if snug < 1.0:
+                # a close fit moves exactly with the skin under it: weights and anchors from the
+                # three nearest body points (MakeHuman's own refs reach across the shoulder and
+                # leave the shirt's shoulders standing up like pads when the arms come down)
+                dq, jq = tree_mh.query(P[src], k=3)
+                refs = jq.astype(np.int64)
+                rw = 1 / np.maximum(dq, 1e-4); rw = rw / rw.sum(1, keepdims=True)
             Vp = P[src]
             outV = np.zeros_like(Vp)
             bw = []
@@ -770,6 +854,8 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
                 top = [(b, w / tot) for b, w in top]
                 bw.append(top)
                 outV[i] = sum(w * (RP[b] @ (Vp[i] - JMH[b]) + PP[b]) for b, w in top)
+            if pose.get("slope"):
+                outV = pose["slope"](outV, PP)
             outV[:, 1] -= g0
             anc = refs.copy()
             helper = anc >= 13380
@@ -798,9 +884,11 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
 
         blue = lambda c: c is not None and (c[2] - c[0]) > 0.08
         knee = J["LeftLeg"][1]
+        # A fitted football shirt (the reference's cut): close over the chest and back, a slight
+        # taper to the waist, sleeves to mid-bicep with a little room.
         proxy("kit.tee", "clothes/male_casualsuit06", "tee", keep_face=lambda p, c: not blue(c), tex="male_casualsuit06_diffuse.png", delete_above=hips_y - 0.06,
-              normal="male_casualsuit06_normal.png", lip=0.01, drape=lambda V, dv, tv: drape_top(V, dv, tv, ease=0.004, grow=0.08))
-        proxy("kit.teeShorts", "clothes/male_casualsuit06", "tee", keep_face=lambda p, c: blue(c) and p[1] > knee + 0.2, delete=False,
+              normal="male_casualsuit06_normal.png", lip=0.006, snug=0.45, clear=0.006, room=0.016, drape=drape_sleeves, post=smooth_cloth)
+        proxy("kit.teeShorts", "clothes/male_casualsuit06", "tee", keep_face=lambda p, c: blue(c) and p[1] > knee + 0.2, delete=False, snug=0.6, clear=0.008, room=0.03, post=smooth_cloth,
               tex="male_casualsuit06_diffuse.png", normal="male_casualsuit06_normal.png", lip=0.01, zone=3,
               hem=lambda p, d: ("t", 0.62) if d in LEG else None, drape=drape_shorts)
         proxy("kit.trainers", "clothes/shoes06", "shoes06", keep_face=lambda p, c: p[1] < 0.1, tex="shoes06_diffuse.png", delete=False)
@@ -819,11 +907,24 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
     return {"parts": out, "TB": TB, "NB": NB, "land": LAND}
 
 
+def skin_tex_mean(path):
+    """The skin texture's average colour (linear), over the skin itself (not the flat background)."""
+    if not path:
+        return None
+    from PIL import Image
+    a = np.asarray(Image.open(path).convert("RGB").resize((256, 256))).astype(float) / 255
+    bg = a[2, 2]
+    m = np.abs(a - bg).sum(-1) > 0.03
+    lin = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+    return [round(float(x), 4) for x in lin[m].mean(0)]
+
+
 def write_glb(OUT, VB, built, PB, RBASE, SHAPES, height, REX, RJ, RJOINTS, RPAR, RROT, RNODES, RIDX, BONE_W):
     import io
     from PIL import Image
     parts = built["parts"]
     body_tree = cKDTree(VB[:13380])
+    BODY_N = built["NB"].astype(np.float32)
     bone_index = {n: i for i, n in enumerate(RJOINTS)}
 
     # Which proxies hide which skin (their delete lists), one bit each.
@@ -945,6 +1046,14 @@ def write_glb(OUT, VB, built, PB, RBASE, SHAPES, height, REX, RJ, RJOINTS, RPAR,
         P = np.vstack(P).astype(np.float32); T = np.vstack(T).astype(np.uint32)
         JW_ = np.vstack(JW); JW_ = JW_ / np.maximum(JW_.sum(1, keepdims=True), 1e-9)
         N = vnormals(P.astype(np.float64), T.astype(np.int64)).astype(np.float32)
+        if any(p.get("body") for p in ps):
+            # a body point split at a seam or a region edge: every copy gets the body's own normal
+            k0 = 0
+            for p in ps:
+                n_ = len(p["V"])
+                if p.get("body"):
+                    N[k0:k0 + n_] = BODY_N[p["src"]]
+                k0 += n_
         attrs = {
             "POSITION": w.acc(P, "VEC3", 34962, minmax=True),
             "NORMAL": w.acc(N, "VEC3", 34962),
@@ -958,7 +1067,7 @@ def write_glb(OUT, VB, built, PB, RBASE, SHAPES, height, REX, RJ, RJOINTS, RPAR,
         if any(p.get("uv") is not None for p in ps):
             uv = np.vstack(UV).astype(np.float32).copy(); uv[:, 1] = 1 - uv[:, 1]
             attrs["TEXCOORD_0"] = w.acc(uv, "VEC2", 34962)
-        if sl == "body":
+        if any(p.get("body") for p in ps):
             attrs["_DEL"] = w.acc(np.concatenate(DEL).astype(np.float32), "SCALAR", 34962)
         mat = {"name": sl, "pbrMetallicRoughness": {"baseColorFactor": [1, 1, 1, 1], "metallicFactor": 0, "roughnessFactor": 0.75}, "doubleSided": True}
         t0 = ps[0].get("tex")
@@ -1003,6 +1112,7 @@ def write_glb(OUT, VB, built, PB, RBASE, SHAPES, height, REX, RJ, RJOINTS, RPAR,
         "human": {
             "version": 2, "height": round(float(height), 4), "parts": PARTS, "slots": slots, "bodyVerts": 13380, "deleteParts": del_parts,
             "alphaSlots": [sl for sl in slots if by_slot[sl][0].get("alpha")],
+            "skinTexMean": skin_tex_mean(by_slot.get("skin", [{}])[0].get("tex")),
             "shapes": [{"name": n, "height": round(float(h), 4), "joints": dj} for n, _, dj, h in shape_deltas],
         },
     }
