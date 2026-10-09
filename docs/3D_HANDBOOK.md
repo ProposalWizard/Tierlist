@@ -631,9 +631,15 @@ film pass (`filmPass` in `lib/star/cutscene/cinema.ts`) over every script before
 The pass, in order: opens on a wide of the place; a plain medium in a two-person
 talk becomes an over-the-shoulder; no close shot on a journalist (his stand-in
 head smears); a wide never stays on a weak move longer than 1 s (`WEAK_WIDE_MAX`):
-it cuts to the face, the prop (pen, trophy, shirt), the boots on the floor or
-the other person's reaction, 1.2–2.4 s each; every shot moves a little; cuts
-snap onto the start of a move.
+it cuts to the prop (pen, trophy, shirt), the face or the other person's
+reaction, 1.2–2.4 s each; a walk is covered from behind into the light or a
+head-and-shoulders from the front; no face ever fills the frame (close-ups
+become head and shoulders: the face texture goes soft and orange that close);
+an insert of hands on the desk or the handshake becomes an over-the-shoulder
+(floating hands); every shot moves a little; cuts snap onto the start of a
+move; no fade up from black; an over-the-shoulder behind a seated man looks
+over his chair. With New the director also softens the bloom (×0.35) and the
+close-up rim light (1.8 → 0.5): they drew a red-orange halo round every body.
 
 **Move quality tags:** `CLIP_QUALITY`, `POSE_QUALITY`, `GAIT_QUALITY` in
 `lib/star/cutscene/presets/clips.ts` (good / ok / weak). `weakWindows(script)`

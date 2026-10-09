@@ -333,6 +333,35 @@ export function filmPass(script: CutsceneScript): CutsceneScript {
     if (shotSizeRank(c.shot.preset) > shotSizeRank("medium-wide")) c.shot = { ...c.shot, preset: "medium-wide", lens: 35, yaw: (c.shot.yaw ?? 0) + 10 };
   }
 
+  // 3c. no face fills the frame (its texture goes soft and orange that close): close-ups become head and shoulders
+  for (const c of cams) {
+    if (!("actor" in c.shot.subject) || c.shot.fixed) continue;
+    if (c.shot.preset === "close" || c.shot.preset === "extreme-close") c.shot = { ...c.shot, preset: "medium-close", lens: Math.min(c.shot.lens ?? 50, 50) };
+  }
+  // 3d. an insert of hands on the desk or the handshake (floating hands, arms cut off by the frame):
+  //     over the other man's shoulder onto you instead. The pen on the paper stays (it holds up).
+  const mainOther = script.cast.find((m) => m.id !== you.actor && ["manager", "mentor", "presenter", "agent", "chairman"].includes(m.role))?.id;
+  for (let ci = 0; ci < cams.length; ci++) {
+    const c = cams[ci];
+    if (c.shot.preset !== "insert") continue;
+    // a neighbour already over his shoulder onto you: take the reverse (over yours onto him), no jump cut
+    const onYou = (x?: CameraTrack) => !!x && x.shot.preset === "ots" && "actor" in x.shot.subject && x.shot.subject.actor === you.actor;
+    if (mainOther && (onYou(cams[ci - 1]) || onYou(cams[ci + 1]))) {
+      const w0 = weakIn(ws.filter((x) => x.what === "hands" || x.what === "handshake"), c.at, c.at + c.dur);
+      if (w0.secs >= Math.min(0.5, c.dur * 0.4) && weakIn(ws.filter((x) => x.what === "pen"), c.at, c.at + c.dur).secs <= 0.3) {
+        c.shot = { preset: "ots", subject: { actor: mainOther }, subject2: you, side: (-(c.shot.side ?? 1)) as 1 | -1, lens: 45 };
+        c.name = `${c.name ?? "shot"} · over your shoulder`;
+        continue;
+      }
+    }
+    const w = weakIn(ws.filter((x) => x.what === "hands" || x.what === "handshake"), c.at, c.at + c.dur);
+    if (w.secs < Math.min(0.5, c.dur * 0.4) || weakIn(ws.filter((x) => x.what === "pen"), c.at, c.at + c.dur).secs > 0.3) continue;
+    c.shot = mainOther
+      ? { preset: "ots", subject: you, subject2: { actor: mainOther }, side: c.shot.side ?? 1, lens: 45 }
+      : { preset: "medium-close", subject: you, side: c.shot.side ?? 1, lens: 45 };
+    c.name = `${c.name ?? "shot"} · over the shoulder`;
+  }
+
   // 4. hide weak animation
   const out: CameraTrack[] = [];
   let coverK = 0;
@@ -416,7 +445,9 @@ export function filmPass(script: CutsceneScript): CutsceneScript {
     if (prev && c.dur < 0.7) { prev.dur += c.dur; continue; }
     final.push(c);
   }
-  return { ...script, tracks: [...rest, ...final], id: script.id, source: script.source };
+  // open straight on the first wide: no fade up from black (the fade-out at the end stays)
+  const rest2 = rest.filter((t) => !(t.type === "transition" && t.kind === "fade-in" && t.at < 0.05));
+  return { ...script, tracks: [...rest2, ...final], id: script.id, source: script.source };
 }
 
 /** Of a script, the seconds a body-showing shot sits on a weak move past WEAK_WIDE_MAX (0 = all hidden). */
