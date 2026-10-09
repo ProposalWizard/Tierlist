@@ -1,0 +1,44 @@
+Blender 4.0.2
+Data are loaded, start creating Blender stuff
+glTF import finished in 1.10s
+Data are loaded, start creating Blender stuff
+glTF import finished in 0.04s
+FIT crotch mh 0.919 cand 0.919 scale 1.907 height 1.907 tris 9970
+LM mh {'top': 1.817, 'crotch': 0.919, 'neck': 1.601} cand {'top': 1.907, 'crotch': 0.919, 'neck': 1.649}
+ARMJ Left [(0.186, -0.013, 1.521), (0.286, -0.022, 1.26), (0.417, -0.06, 1.008), (0.469, -0.086, 0.795)]
+ARMJ Right [(-0.193, -0.013, 1.522), (-0.291, -0.018, 1.255), (-0.414, -0.059, 1.002), (-0.463, -0.074, 0.793)]
+WEIGHTS unweighted verts 0 of 4987
+WEIGHTS pruned verts 753
+Info: 1412 vertex weights limited
+TURN LeftArm (0.36, -0.03, -0.93) (0.32, 0.09, -0.94) 7.5
+TURN LeftForeArm (0.43, -0.01, -0.9) (0.41, -0.35, -0.84) 20.0
+TURN LeftHand (0.19, -0.33, -0.93) (0.22, -0.37, -0.9) 3.3
+TURN RightArm (-0.35, -0.02, -0.94) (-0.28, 0.08, -0.96) 6.9
+TURN RightForeArm (-0.37, -0.05, -0.93) (-0.43, -0.34, -0.83) 18.1
+TURN RightHand (-0.24, -0.27, -0.93) (-0.25, -0.36, -0.9) 5.7
+TURN LeftUpLeg (-0.02, -0.08, -1.0) (0.12, -0.09, -0.99) 8.6
+TURN LeftLeg (0.26, 0.06, -0.96) (0.08, 0.05, -1.0) 10.2
+TURN LeftFoot (0.26, -0.57, -0.78) (0.28, -0.55, -0.79) 1.1
+TURN RightUpLeg (0.04, -0.04, -1.0) (-0.12, -0.09, -0.99) 9.8
+TURN RightLeg (-0.25, 0.02, -0.97) (-0.11, 0.05, -0.99) 8.1
+TURN RightFoot (-0.29, -0.57, -0.77) (-0.26, -0.55, -0.79) 2.2
+POSE max limb turn to MakeHuman rest (deg) 20.0
+BBOX before [-0.478, 0.478, -0.181, 0.112, 0.0, 1.907] <Vector (0.0000, 0.0000, 0.0000)> <Vector (1.0000, 1.0000, 1.0000)>
+BBOX after [-0.463, 0.453, -0.212, 0.105, 0.002, 1.907]
+11:46:43 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+11:46:43 | INFO: Starting glTF 2.0 export
+11:46:43 | INFO: Extracting primitive: tripo_mesh_6bba6b73-1746-498c-9e37-bc124bc88650
+11:46:43 | INFO: Primitives created: 1
+11:46:43 | INFO: Finished glTF 2.0 export in 0.18915414810180664 s
+
+JOINTS {'Hips': (0.0, 0.022, 1.012), 'Spine02': (0.0, 0.022, 1.108), 'Spine01': (0.0, 0.03, 1.162), 'Spine': (0.0, -0.111, 1.224), 'neck': (0.0, 0.023, 1.603), 'Head': (0.0, -0.007, 1.725), 'head_end': (0.0, -0.03, 1.914), 'headfront': (0.0, -0.116, 1.725), 'LeftShoulder': (0.022, -0.02, 1.521), 'LeftArm': (0.186, -0.013, 1.521), 'LeftForeArm': (0.276, 0.014, 1.257), 'LeftHand': (0.394, -0.087, 1.016), 'RightShoulder': (-0.023, -0.022, 1.522), 'RightArm': (-0.193, -0.013, 1.522), 'RightForeArm': (-0.272, 0.01, 1.25), 'RightHand': (-0.395, -0.087, 1.013), 'LeftUpLeg': (0.125, 0.015, 1.006), 'LeftLeg': (0.177, -0.024, 0.594), 'LeftFoot': (0.214, -0.003, 0.147), 'LeftToeBase': (0.252, -0.08, 0.037), 'RightUpLeg': (-0.131, -0.003, 1.008), 'RightLeg': (-0.18, -0.041, 0.594), 'RightFoot': (-0.229, -0.019, 0.153), 'RightToeBase': (-0.267, -0.098, 0.041)}
+11:46:43 | ERROR: Draco mesh compression is not available because library could not be found at /usr/bin/4.0/python/lib/python3.12/site-packages/libextern_draco.so
+11:46:43 | INFO: Starting glTF 2.0 export
+11:46:43 | INFO: Extracting primitive: tripo_mesh_6bba6b73-1746-498c-9e37-bc124bc88650
+11:46:43 | INFO: Primitives created: 1
+11:46:43 | INFO: Finished glTF 2.0 export in 0.15422534942626953 s
+
+WROTE /tmp/claude-0/-home-user-Tierlist/36643638-fd75-5950-83da-ee5f6b43df22/scratchpad/model-test/c3/fit.glb tris 9970
+
+Blender quit
+Error: Not freed memory blocks: 1, total unfreed memory 0.038048 MB

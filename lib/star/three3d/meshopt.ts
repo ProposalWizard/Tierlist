@@ -7,10 +7,13 @@
  */
 type MeshoptDecoderLike = typeof import("three/examples/jsm/libs/meshopt_decoder.module.js").MeshoptDecoder;
 
+import { installFrameMeter } from "./frameMeter";
+
 let decoder: Promise<MeshoptDecoderLike> | null = null;
 
 /** Give a GLTFLoader the meshopt decoder (loaded once per page). Returns the loader. */
 export async function withMeshopt<L extends { setMeshoptDecoder(d: MeshoptDecoderLike): unknown }>(loader: L): Promise<L> {
+  installFrameMeter(); // every 3D scene comes through here: the testers' fps readout (frameMeter.ts)
   if (!decoder) {
     decoder = import("three/examples/jsm/libs/meshopt_decoder.module.js").then((m) => m.MeshoptDecoder);
     decoder.catch(() => { decoder = null; });

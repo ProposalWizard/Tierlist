@@ -116,6 +116,23 @@ const POLICY = {
 };
 for (const id of ["control", "curl", "elite", "maestro", "power", "speed", "starter"]) POLICY[`star/shop3d/items/boot-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/items/car-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
+// The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first
+// (gltf-transform textureCompress); nothing reads its vertices, so everything may go small.
+POLICY["star/shop3d/items/car-family-hf.glb"] = { q: /.*/, webp: true };
+// The three generated football boots (Higgsfield → Tripo, 9 Oct 2026; look H: knit, classic, speed): simplified to
+// ~22k triangles and textures cut to 1024 first (gltf-transform simplify/resize); nothing reads its vertices.
+for (const f of ["boot-hf", "boot-classic-hf", "boot-speed-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3 (9 Oct 2026, look H): the other five cars (simplified to ~23k triangles, textures 1024 first;
+// fitted at load by fitCar, nothing reads their vertices).
+for (const f of ["car-hatch-hf", "car-suv-hf", "car-sports-hf", "car-classic-hf", "car-super-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3: the counter's watches and jewellery (~3-4.5k triangles: small on the wall) and four more boots (~21k), same steps.
+for (const f of ["watch-smart-hf", "watch-gold-hf", "watch-luxury-hf", "jewel-silver-hf", "jewel-diamond-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+for (const f of ["boot-starter-hf", "boot-control-hf", "boot-elite-hf", "boot-maestro-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
+// Round 3: the motorbike and jet (turntable, ~17-21k triangles), the nine homes (model table, ~12k),
+// and the KIB can (~310 triangles, textures 512). The can keeps float vertices: the shop bakes them
+// into one instanced geometry at load (applyMatrix4), which would clip 16-bit ones.
+POLICY["star/shop3d/items/can-kib-hf.glb"] = { q: null, webp: true };
+for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable", "house1", "villa", "house2", "estate", "island"].map((h) => `home-${h}-hf`)]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

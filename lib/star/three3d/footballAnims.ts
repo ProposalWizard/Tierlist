@@ -185,10 +185,70 @@ export async function loadMocap(loader: Loader, body: Anims3dBody = "people"): P
   const url = MOCAP_FILES[body];
   let p = mocapCache.get(url);
   if (!p) {
-    p = loadGltfCached<GLTF>(loader, url).catch((e) => { console.error("mocap clips failed to load; the old clips play", e); mocapCache.delete(url); return null; });
+    p = loadGltfCached<GLTF>(loader, url)
+      .then(async (g) => {
+        if (body === "people") levelMocapHeads(g);
+        // the running neck: upright neck, lowered shoulders on the moving loops (runPosture.ts)
+        const [T, rp] = await Promise.all([import("three"), import("./runPosture")]);
+        try { rp.uprightRunPosture(T, g as never, body === "people" ? rp.PEOPLE_POSTURE : rp.UAL_POSTURE); } catch (e) { console.error("run posture", e); }
+        return g;
+      })
+      .catch((e) => { console.error("mocap clips failed to load; the old clips play", e); mocapCache.delete(url); return null; });
     mocapCache.set(url, p);
   }
   return p;
+}
+
+/**
+ * THE BENT NECK (Harry, 9 Oct 2026: "his neck is bent"). The capture actors
+ * stood and ran with the head held to one side: over the whole mocap idle the
+ * neck sits tilted 13° sideways and turned 10°, and the head turned another
+ * 14° on top (walk and jog: 4–12° the same way). Put on our body, that reads
+ * as a crooked neck in every still. For the standing and moving clips, each
+ * neck and head track keeps its motion and its forward/back pitch, but its
+ * average sideways tilt and turn are taken out, so on average he looks
+ * straight ahead. Done once per loaded file (the clips are shared).
+ */
+export const LEVEL_HEAD_CLIPS = new Set(["idle", "walk", "jog", "run", "sprint", "dribble_run", "walk_confident"]);
+const LEVEL_HEAD_BONES = ["neck", "Head"];
+const leveled = new WeakSet<object>();
+export function levelMocapHeads(g: GLTF): void {
+  for (const clip of g.animations ?? []) {
+    if (!LEVEL_HEAD_CLIPS.has(clip.name) || leveled.has(clip)) continue;
+    leveled.add(clip);
+    for (const tr of clip.tracks) {
+      const bone = tr.name.slice(0, tr.name.lastIndexOf("."));
+      if (!tr.name.endsWith(".quaternion") || !LEVEL_HEAD_BONES.includes(bone)) continue;
+      tr.values = levelQuatTrack(tr.values as Float32Array) as never;
+    }
+  }
+}
+/** Pre-multiply every key so the track's average turn has no yaw or roll (its pitch kept). Pure: returns new values. */
+export function levelQuatTrack(v: ArrayLike<number>): Float32Array {
+  const n = v.length / 4;
+  const out = Float32Array.from(v as ArrayLike<number>);
+  if (!n) return out;
+  let mx = 0, my = 0, mz = 0, mw = 0;
+  for (let i = 0; i < n; i++) {
+    const s = v[i * 4 + 3] < 0 ? -1 : 1;
+    mx += v[i * 4] * s; my += v[i * 4 + 1] * s; mz += v[i * 4 + 2] * s; mw += v[i * 4 + 3] * s;
+  }
+  const L = Math.hypot(mx, my, mz, mw) || 1;
+  mx /= L; my /= L; mz /= L; mw /= L;
+  // the average's pitch (rotation about x, XYZ order), the only part kept
+  const pitch = Math.atan2(2 * (mw * mx + my * mz), 1 - 2 * (mx * mx + my * my));
+  const tx = Math.sin(pitch / 2), tw = Math.cos(pitch / 2);
+  // c = target * inverse(mean)
+  const [ix, iy, iz, iw] = [-mx, -my, -mz, mw];
+  const cx = tw * ix + tx * iw, cy = tw * iy - tx * iz, cz = tw * iz + tx * iy, cw = tw * iw - tx * ix;
+  for (let i = 0; i < n; i++) {
+    const qx = v[i * 4], qy = v[i * 4 + 1], qz = v[i * 4 + 2], qw = v[i * 4 + 3];
+    out[i * 4] = cw * qx + cx * qw + cy * qz - cz * qy;
+    out[i * 4 + 1] = cw * qy - cx * qz + cy * qw + cz * qx;
+    out[i * 4 + 2] = cw * qz + cx * qy - cy * qx + cz * qw;
+    out[i * 4 + 3] = cw * qw - cx * qx - cy * qy - cz * qz;
+  }
+  return out;
 }
 
 /** The bodies' own clips that the mocap set replaces (people3d anims.glb / shop3d anims.glb). */

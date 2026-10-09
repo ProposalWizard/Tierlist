@@ -6,6 +6,7 @@
  * drops as he speeds up, so a sprinting man runs wide round a turn.
  */
 import { DECEL, JOG_SPEED, TURN_SPRINT, TURN_STAND, accel, clamp, sprintSpeed } from "./constants";
+import { MOVE, approach, speedsForPace, stickTarget } from "../three3d/gait";
 
 export interface Skills3 {
   overall: number;
@@ -17,6 +18,8 @@ export interface Skills3 {
   shooting?: number;
   dribbling?: number;
   defending?: number;
+  /** Fitness: the size of the sprint bar and how fast it refills (three3d/gait.ts staminaFor). Missing → overall. */
+  physical?: number;
 }
 
 /** What the renderer should show him doing (it picks the clip). */
@@ -57,6 +60,14 @@ export interface P3 {
   /** A keeper's dive: lateral reach used (−1..1) and height 0..1, for the renderer. */
   dive?: { side: number; up: number; t: number };
   photo?: string;
+  /** You only, new feel (stepHuman): he is sprinting now (the renderer shows the sprint loop). */
+  sprinting?: boolean;
+  /**
+   * The new feel (Motion: Mocap): he moves on the same pace rules as you
+   * (three3d/gait.ts speedsForPace), so a 60-pace man is slower than an
+   * 85-pace you. The World sets it on everyone each step from World.newFeel.
+   */
+  newFeel?: boolean;
 }
 
 export function makePlayer(o: Partial<P3> & { id: string; x: number; y: number; skills: Skills3 }): P3 {
@@ -84,13 +95,26 @@ export function angDiff(a: number, b: number): number {
 }
 
 /**
+ * A computer player's easy pace, not sprinting. Old feel: 4.2 m/s for everyone.
+ * New feel: 0.82 × his own run (pace 50 → 4.2, the same as before; pace 85 → 4.9).
+ */
+export const AI_CRUISE = 0.82;
+export function cruiseSpeed(p: P3): number {
+  return p.newFeel ? speedsForPace(p.skills.pace).run * AI_CRUISE : JOG_SPEED;
+}
+/** His flat-out speed: old feel 7–9.2 m/s, new feel his own sprint (5.6–8.2, the same rule as yours). */
+export function topSpeed(p: P3): number {
+  return p.newFeel ? speedsForPace(p.skills.pace).sprint : sprintSpeed(p.skills.pace);
+}
+
+/**
  * Move a man one step. `want` is where he wants to go as a vector whose
  * length (0..1) is how hard he pushes the stick; `sprint` lets him go flat out.
  * `face` (optional) turns him to a heading while standing (a keeper squaring up).
  */
 export function stepMover(p: P3, want: { x: number; y: number }, sprint: boolean, dt: number, face?: number) {
   const mag = Math.min(1, Math.hypot(want.x, want.y));
-  const top = (sprint ? sprintSpeed(p.skills.pace) : JOG_SPEED) * mag;
+  const top = (sprint ? topSpeed(p) : cruiseSpeed(p)) * mag;
   const sp = speedOf(p);
   // turning: limited by how fast he is going
   if (mag > 0.05) {
@@ -105,7 +129,39 @@ export function stepMover(p: P3, want: { x: number; y: number }, sprint: boolean
   // speed along the way he now faces (a man can't run sideways at full pelt)
   const along = mag > 0.05 ? Math.max(0, Math.cos(angDiff(p.facing, Math.atan2(want.y, want.x)))) : 0;
   const goal = top * along;
-  const next = sp < goal ? Math.min(goal, sp + accel(p.skills.pace) * dt) : Math.max(goal, sp - DECEL * dt);
+  // new feel: speed builds and eases exactly as yours does (gait.ts approach)
+  const next = p.newFeel ? approach(sp, goal, dt, speedsForPace(p.skills.pace))
+    : sp < goal ? Math.min(goal, sp + accel(p.skills.pace) * dt) : Math.max(goal, sp - DECEL * dt);
+  p.vx = Math.cos(p.facing) * next;
+  p.vy = Math.sin(p.facing) * next;
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+  if (p.cooldown > 0) p.cooldown = Math.max(0, p.cooldown - dt);
+  p.actT += dt;
+}
+
+/**
+ * YOU, the new feel (Harry, 9 Oct 2026; Settings → Look → Motion: Mocap).
+ * How far the stick is pushed sets the speed: a small push walks, a medium
+ * push jogs, a near-full push runs, a full push (or sprint) sprints at 1.35×
+ * the run (lib/star/three3d/gait.ts). Speed builds over ~0.25 s and eases
+ * off when you let go. `canSprint` false (stamina out): a full push runs.
+ * Turning is as stepMover.
+ */
+export function stepHuman(p: P3, want: { x: number; y: number }, sprint: boolean, dt: number, canSprint = true) {
+  const mag = Math.min(1, Math.hypot(want.x, want.y));
+  const s = speedsForPace(p.skills.pace);
+  const top = stickTarget(mag, sprint && mag > 0.3, s, canSprint);
+  const sp = speedOf(p);
+  if (mag > 0.05) {
+    const target = Math.atan2(want.y, want.x);
+    const rate = TURN_STAND + (TURN_SPRINT - TURN_STAND) * Math.min(1, sp / 8);
+    const d = angDiff(p.facing, target);
+    p.facing += clamp(d, -rate * dt, rate * dt);
+  }
+  const along = mag > 0.05 ? Math.max(0, Math.cos(angDiff(p.facing, Math.atan2(want.y, want.x)))) : 0;
+  const next = approach(sp, top * along, dt, s);
+  p.sprinting = top >= s.sprint - 1e-6 && along > 0.5;
   p.vx = Math.cos(p.facing) * next;
   p.vy = Math.sin(p.facing) * next;
   p.x += p.vx * dt;
@@ -125,8 +181,9 @@ export function towards(p: P3, x: number, y: number, ease = 1.5): { x: number; y
 /** How long he needs to run to a point (rough: turn, then accelerate to sprint). */
 export function timeToReach(p: P3, x: number, y: number): number {
   const d = Math.hypot(x - p.x, y - p.y);
-  const top = sprintSpeed(p.skills.pace);
-  const a = accel(p.skills.pace);
+  const top = topSpeed(p);
+  // new feel: standing to sprint in MOVE.upToRun + MOVE.runToSprint, as an average push
+  const a = p.newFeel ? top / (MOVE.upToRun + MOVE.runToSprint) : accel(p.skills.pace);
   const v0 = speedOf(p);
   const turn = Math.abs(angDiff(p.facing, Math.atan2(y - p.y, x - p.x))) / TURN_STAND;
   const tAcc = (top - v0) / a, dAcc = v0 * tAcc + 0.5 * a * tAcc * tAcc;

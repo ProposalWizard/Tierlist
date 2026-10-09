@@ -56,6 +56,12 @@ for (const disp of [d.boots, d.car, d.counter]) {
   }
 }
 check(d.cans.items[0].levels.length === 3, "the fridge has the shop's three cans");
+// Old shows no homes and today's six cars; look H adds the motorbike, the jet and the nine homes.
+check(d.homes.items.length === 0 && d.car.items.length === 6, "Old: six cars, no homes table");
+const h = shopDisplays({}, { h: true });
+check(h.car.items.map((i) => i.id).join() === "bike,car-1,car-2,suv,car-3,classic,car-4,jet", `look H: every vehicle on the turntable (got ${h.car.items.map((i) => i.id).join()})`);
+check(h.homes.items.length === 9, `look H: nine homes on the model table (got ${h.homes.items.length})`);
+for (const it of [...h.car.items, ...h.homes.items]) check(it.levels.length === 5, `${it.name} has 5 levels`);
 
 if (problems.length) { console.error("shop3d FAILED:\n  " + problems.join("\n  ")); process.exit(1); }
 console.log("shop3d: all passed");

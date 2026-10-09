@@ -70,6 +70,7 @@ export function makeFreeRoam(o: { seed: number; you: Person3; mates: Person3[]; 
       return pool.length ? pool[Math.floor(w.rng() * pool.length)] : you;
     },
     finished: () => state.over,
+    stamina: true,
   };
   const world = new World({ seed: o.seed, players: [you, ...mates, keeper], rules });
   kickOff(world);

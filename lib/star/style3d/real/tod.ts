@@ -4,8 +4,9 @@
  *   day     a bright afternoon: high sun from the west stand's side, so its
  *           shadow lies along the left touchline (the TV picture everyone knows)
  *   golden  the low warm sun of a late kick-off, long soft light, a pink sky
- *   night   floodlights: four lamp banks on the roof, light shafts, a damp
- *           sheen on the grass, glow round every lamp
+ *   night   floodlights: four lamp banks on the roof corners, each with its
+ *           own soft shadow (the four-way shadow star), light shafts, a
+ *           damp sheen on the grass, glow round every lamp
  */
 import type { TimeOfDay } from "./assets";
 
@@ -37,7 +38,7 @@ export interface TodLook {
 
 export const TODS: Record<TimeOfDay, TodLook> = {
   day: {
-    sunDir: [-0.42, 0.86, -0.3], sunColor: "#fff1dc", sunIntensity: 3.1,
+    sunDir: [-0.6, 0.64, -0.48], sunColor: "#fff1dc", sunIntensity: 3.1,
     env: 0.85, hemi: { sky: "#dbe9ff", ground: "#47602f", intensity: 0.25 },
     sky: 1.0, sunDisc: 0.6,
     fog: { color: "#c9d6e2", near: 170, far: 650 },
@@ -55,12 +56,12 @@ export const TODS: Record<TimeOfDay, TodLook> = {
     bloom: 0.35, bloomThresh: 1.3, vignette: 0.3,
   },
   night: {
-    sunDir: [-0.3, 0.86, -0.4], sunColor: "#e9f1ff", sunIntensity: 2.5,
+    sunDir: [-0.3, 0.86, -0.4], sunColor: "#e9f1ff", sunIntensity: 0.75,
     env: 0.12, hemi: { sky: "#7088b8", ground: "#14200f", intensity: 0.1 },
     sky: 0.8, sunDisc: 0,
     fog: { color: "#0e1522", near: 120, far: 380 },
-    wet: 0.7, grass: ["#2c5f22", "#386d2a"], floods: true,
-    exposure: 1.05, contrast: 1.12, sat: 1.08, tint: [0.97, 1.0, 1.06], lift: [0.0, 0.004, 0.014],
+    wet: 0.3, grass: ["#2c5f22", "#386d2a"], floods: true,
+    exposure: 1.05, contrast: 1.12, sat: 1.08, tint: [0.98, 1.0, 1.03], lift: [0.0, 0.002, 0.006],
     bloom: 0.8, bloomThresh: 1.0, vignette: 0.38,
   },
 };

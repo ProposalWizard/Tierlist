@@ -216,7 +216,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
-          ctrlRef.current?.orbit(e.clientX - d.x);
+          ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
         }}
         onPointerUp={(e) => {

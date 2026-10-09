@@ -513,6 +513,14 @@ function patchHuman(mat: THREE.MeshStandardMaterial, u: Record<string, { value: 
   float frontS = smoothstep(0.1, 0.35, n.z);
   vec3 col = diffuseColor.rgb;
   float kind = uHumKind;
+  if (vHumSkin > 0.5) {
+    // The skin tones are picker swatches (flat sRGB chips: "Tan" is 10x more red than blue
+    // in linear light). Used as the albedo of a lit body they read orange, more so under
+    // the H look's warm grade (Harry, 9 Oct 2026: "textures off"). Real skin is far less
+    // saturated: keep 70% of the swatch's colour, around its own brightness.
+    float sl = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(vec3(sl), col, 0.7);
+  }
   {
     // MakeHuman's textured clothes, in this person's colours (the texture keeps the folds).
     float l = dot(col, vec3(0.299, 0.587, 0.114));

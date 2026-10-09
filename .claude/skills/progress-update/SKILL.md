@@ -153,6 +153,12 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
     two drills 0.47M + animations 0.42M) plus the coordinator's own turns.
     **So 1% of the week ≈ 1.5–2M builder tokens.** Use this until a second
     reading refines it.
+  - 9 Oct 2026, overnight 3D rebuild + day round: 27% (04:38) → 43% (13:38),
+    with ~2% from another chat, so ~14% for this session. Tokens over that
+    span: roughly 17M top-model + 1.5M everyday (builders + coordinator,
+    rough count). **So 1% ≈ 1.2–1.3M top-model tokens.** The estimates
+    posted that day (78–85%) were far too high: they used the 1.5–2M figure
+    but guessed tokens high. Count finished builders' real numbers instead.
 - **Tokens are not equal across models (Harry, 9 Oct 2026).** The weekly
   limit is spent faster by the top model than by the everyday model for the
   same number of tokens. So: count tokens **per model** (top / everyday /

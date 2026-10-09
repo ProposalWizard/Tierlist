@@ -51,12 +51,16 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
+import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
+import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -107,7 +111,8 @@ export interface GardenCallbacks {
 
 export interface GardenController {
   setStick: (x: number, y: number) => void;
-  orbit: (dxPixels: number) => void;
+  /** A drag on the view (pixels): left/right turns, up/down tilts (lib/star/three3d/orbitCam.ts). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   pick: (clientX: number, clientY: number) => GardenSpot | null;
   /** Tap to move: a tap on something you can use walks you up to it (its
    *  card then appears as you arrive); a tap on the ground walks you there.
@@ -190,7 +195,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
-  const look = SKY[data.sky];
+  // Look H by day: real golden hour, as the match's H look has it (Harry, 9 Oct 2026:
+  // "make the light golden-hour quality"). The day sky's sun was high and near white
+  // and the H pass graded it as plain day; now the sun sits lower and warmer (longer
+  // shadows, warm fronts) and the H pass uses its golden grade. Old look: as before.
+  const goldenDay = data.sky === "day" && look3dStyle() === "h";
+  const look = goldenDay
+    ? { ...SKY.day, sun: "#ffc98c", sunI: 3.3, dir: [0.75, 0.26, 0.6] as [number, number, number] /* the golden bake's own sun (tools/bake3d), so baked and live shadows agree */, low: "#f7d39c", fog: "#e8cfa8", hemi: ["#d6e2f0", "#5a4a2a", 0.5] as [string, string, number] }
+    : SKY[data.sky];
   // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
   const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
@@ -209,6 +221,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // take the moving picture a little lower still if frames are slow.
   const dpr = window.devicePixelRatio || 1;
   // look H standing still: the screen's real pixels, capped per tier (Harry: "still that pixelly element"); moving stays the tier's cap
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "garden", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -218,7 +239,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -250,7 +271,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.environmentIntensity = look.env;
   // Settings → Look → "3D look: H": light from a real sky and the broadcast pass (Old: exactly as before)
   const hEnh = look3dStyle() === "h"
-    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
+    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" || goldenDay ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
     : null;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   camera.layers.enable(MATE_LAYER);
@@ -1649,6 +1670,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
   let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
+  /** Motion: Mocap: walk → jog → run → sprint (three3d/gait.ts). Null: Motion: Old, the walk/jog blend. */
+  let gaitBlend: GaitBlend | null = null;
+  let personRef: Person3D | null = null;
   const st0 = data.arrive === "shop" ? START_SHOP : data.arrive === "casino" ? START_CASINO : data.arrive === "training" ? START_TRAINING : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
@@ -1668,6 +1692,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     });
     relaxHands(THREE, person); // the one body's fingers in a natural curl
     player = person.root;
+    personRef = person;
     mixer = person.mixer;
     idleA = person.actions.idle;
     // a real walk (made from the jog, pulled back towards standing), and the jog
@@ -1815,6 +1840,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
 
   }
+  // Motion: Mocap: your walk → jog → run → sprint, the same foot down through each change
+  strideFor(THREE, personRef, mixer, { idle: idleA, walk: walkA, jog: jogA })
+    .then((g) => { if (!disposed) gaitBlend = g; })
+    .catch((e) => console.error("gait clips", e));
   // ── Your horse, grazing and wandering the paddock ──
   // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
   // either grazes (head down, nose at knee height, chewing) or stands and looks
@@ -2122,6 +2151,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = st0.yaw, camYaw = st0.yaw + Math.PI, orbitHold = 0;
+  const orb = new OrbitCam(); // the look-around drag, eased (shared with the shop)
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
@@ -2322,8 +2352,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // (High and Medium every frame, Low 30)
       acc += raw;
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -2332,7 +2364,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const runK = keys.has("shift") ? 1 : 0.6;
+      const runK = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * runK; iy = (iy / m) * runK;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -2350,8 +2382,13 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         mag = s.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, s.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the garden)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
       // arrived at something: turn to it
@@ -2366,10 +2403,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     marker.update(dt);
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));
-    idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
-    walkA.setEffectiveWeight(wWalk);
-    jogA.setEffectiveWeight(wJog);
-    if (newPerson) {
+    if (gaitBlend) gaitBlend.update(speed, dt);
+    else {
+      idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
+      walkA.setEffectiveWeight(wWalk);
+      jogA.setEffectiveWeight(wJog);
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newPerson) {
       // the walk and the jog are the same stride timing, so they share one
       // pace and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
@@ -2495,6 +2536,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.25; });
 
     // the camera follows behind him
+    camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     // The gazebo between him and the camera (standing south of it, looking at
@@ -2540,7 +2582,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
     const cfx = -Math.sin(camYaw + dodge), cfz = -Math.cos(camYaw + dodge);
     // lower and further back than before: more garden and sky in the frame
-    want.set(player.position.x - cfx * CAM_BACK, CAM_UP, player.position.z - cfz * CAM_BACK);
+    const [camUp, camBack] = orb.lift(CAM_UP, CAM_BACK, 1.3); // the drag's tilt, same distance from him
+    want.set(player.position.x - cfx * camBack, camUp, player.position.z - cfz * camBack);
     wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
     {
       // Things the camera must not end up inside or behind, in plan:
@@ -2567,7 +2610,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (boom < L) {
         want.x = hx + ux * boom; want.z = hz + uz * boom;
         // closer in, a little lower, so it still looks over his shoulder
-        want.y = CAM_UP - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4));
+        want.y = Math.max(CAM_MIN_Y, camUp - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4)));
       }
       fountainHide += ((hideTop ? 1 : 0) - fountainHide) * Math.min(1, dt * 9);
       const op = 1 - fountainHide;
@@ -2595,6 +2638,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const camWas = camPos.clone();
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; shadowDirty = true; }
     else { camPos.lerp(want, Math.min(1, dt * (block ? 12 : 5))); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    // the eased camera must not lag into what the boom stopped short of (a tree, a wall): never further out than the clear distance
+    if (block) {
+      const lim = Math.max(1.2, block.distance - 0.35);
+      if (camPos.distanceTo(headPos) > lim) camPos.sub(headPos).setLength(lim).add(headPos);
+    }
+    if (camPos.y < CAM_MIN_Y) camPos.y = CAM_MIN_Y;
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
@@ -2624,7 +2673,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
     // pixels; still: 30 a second at full pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap (the
@@ -2643,12 +2692,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!opts.fixedStep) {
         // too slow for three seconds: one tier down; still too slow at Low:
         // 30 frames a second all the time
-        const slow = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22);
-        slowSeconds = slow ? slowSeconds + 1 : 0;
-        if (slowSeconds >= 3) {
-          slowSeconds = 0;
-          if (!stepDown()) capAlways = true;
-        }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -2680,7 +2724,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   };
   const ctrl: GardenController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => { aim(px, py); return pickSpot(); },
     tap: (px, py) => {
       aim(px, py);
@@ -2692,7 +2736,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
-    place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
+    place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true; },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), dodge: +dodge.toFixed(2), block: lastBlock }),
     stats: () => {
       // the sun's shadow pass: one draw per visible caster (renderer.info doesn't count it)
@@ -2753,6 +2797,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     dispose: () => {
       disposed = true;
+      gov.dispose();
       hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();

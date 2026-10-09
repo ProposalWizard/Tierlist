@@ -26,7 +26,7 @@ uniform vec2 res;
 uniform float cNear, cFar, exposure, time, dpr;
 uniform float edge, edgeW, posterize, posterMix, halftone, grain, bloom, bloomThresh, sat, contrast, vignette, palette, dither;
 uniform vec3 edgeColor, tint, lift, burstColor;
-uniform float burst, impact;
+uniform float burst, impact, lite;
 varying vec2 vUv;
 
 float linD(float d) { float z = d * 2.0 - 1.0; return (2.0 * cNear * cFar) / (cFar + cNear - z * (cFar - cNear)); }
@@ -55,6 +55,7 @@ void main() {
     vec3 b = vec3(0.0);
     float rad = 0.012;
     for (int i = 0; i < 16; i++) {
+      if (lite > 0.5 && i >= 8) break;
       float a = float(i) * 0.3927 + (i >= 8 ? 0.2 : 0.0);
       float r = i < 8 ? rad : rad * 2.3;
       vec2 o = vec2(cos(a), sin(a)) * r * vec2(res.y / res.x, 1.0);
@@ -132,14 +133,17 @@ void main() {
 `;
 
 export interface StylePost {
-  render(scene: any, camera: any, look: PostLook, full: boolean, burst?: number, burstColor?: string, impact?: number): void;
+  render(scene: any, camera: any, look: PostLook, full: boolean, burst?: number, burstColor?: string, impact?: number, lite?: boolean): void;
   dispose(): void;
 }
 
 export function makeStylePost(T: any, renderer: any): StylePost {
   const mkRT = (nearest: boolean) => {
     const f = nearest ? T.NearestFilter : T.LinearFilter;
-    const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: f, magFilter: f, depthBuffer: true });
+    // the scene is drawn into this target, so the screen's own antialias never reaches it:
+    // 4× MSAA here (WebGL2) keeps edges smooth (9 Oct 2026); the pixel style stays crisp on purpose
+    const samples = !nearest && renderer.capabilities?.isWebGL2 !== false ? 4 : 0;
+    const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: f, magFilter: f, depthBuffer: true, samples });
     rt.depthTexture = new T.DepthTexture(4, 4);
     rt.depthTexture.type = T.UnsignedIntType;
     rt.depthTexture.minFilter = T.NearestFilter;
@@ -153,7 +157,7 @@ export function makeStylePost(T: any, renderer: any): StylePost {
     edge: { value: 0 }, edgeW: { value: 1 }, posterize: { value: 4 }, posterMix: { value: 0 }, halftone: { value: 0 },
     grain: { value: 0 }, bloom: { value: 0 }, bloomThresh: { value: 1 }, sat: { value: 1 }, contrast: { value: 1 },
     vignette: { value: 0 }, palette: { value: 0 }, dither: { value: 0 },
-    edgeColor: { value: new T.Color() }, burstColor: { value: new T.Color() }, burst: { value: 0 }, impact: { value: 0 }, tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
+    edgeColor: { value: new T.Color() }, burstColor: { value: new T.Color() }, burst: { value: 0 }, impact: { value: 0 }, lite: { value: 0 }, tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
   };
   const mat = new T.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false });
   const quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat);
@@ -165,7 +169,8 @@ export function makeStylePost(T: any, renderer: any): StylePost {
   const t0 = performance.now();
 
   return {
-    render(scene, camera, look, full, burst = 0, burstColor = "#ffffff", impact = 0) {
+    render(scene, camera, look, full, burst = 0, burstColor = "#ffffff", impact = 0, lite = false) {
+      u.lite.value = lite ? 1 : 0;
       renderer.getDrawingBufferSize(size);
       const dpr = renderer.getPixelRatio();
       if (!full && !look.pixel) {

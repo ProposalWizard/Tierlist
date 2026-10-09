@@ -143,6 +143,7 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import Match3DLayer from "@/components/star/Match3DLayer";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
@@ -3756,6 +3757,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <PitchScope>
        <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
+          <Match3DLayer>
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
@@ -3777,6 +3779,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             penaltyRunup={careerPenaltyRunup(career)}
             freeKickRunup={careerFreeKickRunup(career)}
           />
+          </Match3DLayer>
         </div>
        </div>
       </PitchScope>
@@ -4221,12 +4224,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         career={career}
         onExit={backToGate}
         onFinish={(res) => {
+          // Pace Sprint (3D): bank its stars on the pace ladder, like a 2D pace drill
+          const trained = res.train ? {
+            ...applyLevelResult(career, res.train.skill, res.train.level, res.train.stars).career,
+            lastTrainedWeek: { ...career.lastTrainedWeek, [res.train.skill]: career.week },
+          } : career;
           const updated: CareerState = markGamePlayed({
-            ...career,
+            ...trained,
             energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
             relationships: { ...career.relationships, team: applyGameGain(career.relationships.team as number, res.gain) },
           }, "team");
           checkAndSetAchievements(updated);
+          if (res.train) updated.starRating = computeStarRating(updated);
           setCareer(spendAction(updated));
           backToGate();
         }}

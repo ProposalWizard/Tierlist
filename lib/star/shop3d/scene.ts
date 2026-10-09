@@ -33,14 +33,19 @@ import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
+import { Governor } from "../three3d/governor";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
+import { strideFor } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
+import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -73,8 +78,8 @@ export interface ShopController {
   setCardOpen: (open: boolean) => void;
   /** The "Owned" chip on each item's floating tag (item id → text, e.g. "Owned L2"). */
   setOwned: (owned: Record<string, string>) => void;
-  /** Drag on the view to swing the camera round. */
-  orbit: (dxPixels: number) => void;
+  /** Drag on the view: left/right swings the camera round, up/down tilts it (lib/star/three3d/orbitCam.ts). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   /** What is under a tap at (x, y) in page pixels, if anything. */
   pick: (clientX: number, clientY: number) => Picked | null;
   /** Tap to move: a tap on a display walks you up to it (its card opens as
@@ -105,6 +110,8 @@ const PLINTH_Z = [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3];
 const PLINTH_H = 0.92;
 /** The Blender boot is 0.29 m long; on its plinth it is shown at this size. */
 const BOOT_SCALE = 2.75;
+/** Look H: the generated boots are fitted to a real 0.30 m; shown at their own size (a touch up when picked). */
+const BOOT_H_SCALE = 1;
 /** The car's turntable. */
 const CAR = { x: 2.35, z: -1.75, r: 2.85 };
 /** The counter and its light boxes on the back wall. */
@@ -112,6 +119,8 @@ const COUNTER_Z = -6.45;
 const BOX_X = [-3.6, -1.8, 0, 1.8, 3.6];
 const BOX_Y = 1.95;
 const FRIDGE = { x: 5.4, z: 4.3 };
+/** Look H: the homes' model table (an estate agent's scale models), right of the doors. */
+const HOMES = { x: 2.7, z: 6.3, w: 1.7, d: 1.1, h: 0.85 };
 
 type Zone = { id: DisplayId; inside: (x: number, z: number) => boolean };
 const ZONES: Zone[] = [
@@ -119,6 +128,8 @@ const ZONES: Zone[] = [
   { id: "car", inside: (x, z) => Math.hypot(x - CAR.x, z - CAR.z) < CAR.r + 1.05 },
   { id: "cans", inside: (x, z) => Math.hypot(x - FRIDGE.x, z - FRIDGE.z) < 1.75 },
   { id: "counter", inside: (x, z) => z < -4.75 && Math.abs(x) < 3.4 },
+  // look H only (the table is built only when the shop has homes): the model table by the door
+  { id: "homes", inside: (x, z) => x > HOMES.x - 1.35 && x < HOMES.x + 1.0 && z > HOMES.z - 1.75 },
 ];
 
 /** Things you can't walk through: boxes [minX, maxX, minZ, maxZ] and circles [x, z, r]. */
@@ -129,6 +140,9 @@ const BOXES: [number, number, number, number][] = [
   [-6, -5.1, 5.6, 6.6], // plant
   [5.1, 6, -7.6, -6.6], // plant
 ];
+/** The homes table: only in the way when it is there (look H). */
+const HOME_M = 1.0;
+const HOMES_BOX: [number, number, number, number] = [HOMES.x - HOMES.w / 2 - 0.05, HOMES.x + HOMES.w / 2 + 0.05, HOMES.z - HOMES.d / 2 - 0.05, HOMES.z + HOMES.d / 2 + 0.05];
 const CIRCLES: [number, number, number][] = [[CAR.x, CAR.z, CAR.r - 0.05]];
 
 const WALK = 1.55; // m/s
@@ -194,7 +208,7 @@ async function buildShop(
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
-  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+  const { mergeGeometries, toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
@@ -206,6 +220,15 @@ async function buildShop(
   // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
   // look H standing still: the screen's real pixels, capped per tier; moving stays the tier's cap (lag)
+  // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
+  // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
+  // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
+  const gov = new Governor({ start: tier, name: "shop", slowSeconds: 2, onChange: (r, _i, why) => {
+    if (why === "start") return;
+    if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
+    pr = stillPR(); renderer.setPixelRatio(pr);
+  } });
+  let govCap = 60;
   const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
   const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
@@ -215,7 +238,7 @@ async function buildShop(
     { step: 0.125, devicePixelRatio: dpr },
   );
   let dyn = makeDyn();
-  const movePR = () => Math.min(dpr, prof.movePixelRatio, dynPR);
+  const movePR = () => Math.min(dpr, gov.rung.pixelRatio, prof.movePixelRatio, dynPR);
   let pr = stillPR();
   renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -440,7 +463,10 @@ async function buildShop(
   };
   const makeTag = (display: DisplayId, index: number, x: number, y: number, z: number, w = 1.05) => {
     const t = tagText(display, index);
-    const tex = canvasTex(labelCanvas(t.name, t.price, t.tag));
+    // drawn at 2× and never mip-mapped, so the price reads sharp, not as a blur (Harry, 9 Oct 2026)
+    const tex = canvasTex(labelCanvas(t.name, t.price, t.tag, 2));
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
     sp.scale.set(w, (w * 168) / 512, 1);
     sp.position.set(x, y, z);
@@ -456,7 +482,7 @@ async function buildShop(
       const key = JSON.stringify(t);
       if (key === tg.key) continue;
       tg.key = key;
-      tg.tex.image = labelCanvas(t.name, t.price, t.tag);
+      tg.tex.image = labelCanvas(t.name, t.price, t.tag, 2);
       tg.tex.needsUpdate = true;
     }
   };
@@ -475,6 +501,139 @@ async function buildShop(
   loader.setDRACOLoader(draco); // boots and cars
   await withMeshopt(loader); // people, clips, the old player (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
+  /**
+   * THE CARS AND BOOTS LOOKED ODD (Harry, 9 Oct 2026: "the cars and boots still
+   * look odd in the shop"). Three causes, all in how the files are drawn:
+   *  1. Every face was exported smooth (tools/shop3d/export_items.py sets
+   *     use_smooth on all of them after cutting the triangle count down), so
+   *     the panel lines, wheel arches, sole edge and studs melt into one soft
+   *     blob, like clay. Normals are worked out again with a crease: faces
+   *     meeting at more than CREASE stay sharp, curved panels stay smooth.
+   *  2. The paint never reflected the room: without its own environment a
+   *     material takes the scene's, at environmentIntensity 0.32, so a car
+   *     with a full clear coat read as matte plastic. Each item now has the
+   *     room's reflection at full strength (boots a little less).
+   *  3. The clear coat and glass are mirror-smooth (roughness 0.05): the
+   *     turntable's spotlights made a pin-point hot spot that the H look's
+   *     bloom blew into a white smear across the roof. Coat and glass are a
+   *     touch less sharp (0.28 / 0.24), so the highlight is a shine, not a flare.
+   * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
+   */
+  const CREASE = (38 * Math.PI) / 180;
+  /**
+   * THE FAMILY CAR, REPLACED (Harry, 9 Oct 2026: "the problem with the car
+   * isn't the reflection, it just looks weird"). Our Blender family car is a
+   * lofted, rounded body: no shoulder line, the cabin glass the same light
+   * colour as the paint, small wheels sunk in the arches, a flat grid on the
+   * roof: it reads as an inflated toy. The free CC0 car packs (Kenney Car Kit,
+   * Quaternius Car Pack) are toy cars, further from real. So look H shows a
+   * generated one (Higgsfield: a picture of an unbranded hatchback, then
+   * Tripo image-to-3D; public/star/shop3d/items/car-family-hf.glb). Old: as before.
+   */
+  const CAR_H_MODELS: Record<string, string> = {
+    "car-1": "/star/shop3d/items/car-family-hf.glb",
+    /* Round 3 (Harry, 9 Oct 2026: "make every model that good"): the other five
+     * cars the same way, each painted in its shop colour in the picture. */
+    "car-2": "/star/shop3d/items/car-hatch-hf.glb", suv: "/star/shop3d/items/car-suv-hf.glb",
+    "car-3": "/star/shop3d/items/car-sports-hf.glb", classic: "/star/shop3d/items/car-classic-hf.glb",
+    "car-4": "/star/shop3d/items/car-super-hf.glb",
+    // look H also puts the motorbike and the private jet on the turntable (shopDisplays(…, { h: true }))
+    bike: "/star/shop3d/items/bike-hf.glb", jet: "/star/shop3d/items/jet-hf.glb",
+  };
+  const HF_TONE: Record<string, number> = { "car-hatch-hf": 0.85, "car-sports-hf": 0.55, "car-super-hf": 0.55, "jet-hf": 0.6 };
+  /** Each generated car at its real length (metres, nose to tail). */
+  const CAR_H_LENGTH: Record<string, number> = {
+    "car-family-hf": 4.3, "car-hatch-hf": 4.1, "car-suv-hf": 4.95, "car-sports-hf": 4.35, "car-classic-hf": 4.5, "car-super-hf": 4.6,
+    // a real motorbike is about 2.05 m; the jet is a 1:4 display model (a real one is about 20 m)
+    "bike-hf": 2.05, "jet-hf": 5.2,
+  };
+  const HF_MODEL = /-hf\.glb$/;
+  /**
+   * THE BOOTS, REPLACED (Harry, 9 Oct 2026: the boots "look too simple and
+   * smooth"). Our Blender boots are a smooth loft: no knit, no real laces,
+   * studs that melt into the sole. Look H shows three generated boots
+   * (Higgsfield: a picture of an unbranded boot, then Tripo image-to-3D;
+   * public/star/shop3d/items/boot-*-hf.glb): a knit boot, a classic leather
+   * boot and a laceless high-collar speed boot, each level painted in its
+   * colour over the white upper. And at a real size: the Blender boot stood
+   * 0.29 m × BOOT_SCALE 2.75 = 0.80 m long on its plinth (a boot the width of
+   * the plinth); a generated boot is a real boot's 0.30 m (BOOT_H_SCALE 1).
+   * Old: the Blender boots as before.
+   */
+  const BOOT_H_MODELS: Record<string, string> = {
+    // round 3 (9 Oct 2026): four more, so every boot on the wall is its own shape —
+    // a plain budget boot, a padded fold-over-tongue boot, a sock-collar boot, a laceless ridged boot
+    starter: "/star/shop3d/items/boot-starter-hf.glb", control: "/star/shop3d/items/boot-control-hf.glb",
+    speed: "/star/shop3d/items/boot-speed-hf.glb", curl: "/star/shop3d/items/boot-classic-hf.glb",
+    power: "/star/shop3d/items/boot-hf.glb", elite: "/star/shop3d/items/boot-elite-hf.glb", maestro: "/star/shop3d/items/boot-maestro-hf.glb",
+  };
+  const isBootH = (url: string) => /\/boot-([a-z]+-)?hf\.glb$/.test(url);
+  /** A real football boot is about 0.30 m long: stand the generated one on its plinth at that length. */
+  const fitBoot = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(0.30 / Math.max(size.x, size.z, 1e-3));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  /** A generated car comes at its own size and facing: stand it on the floor, centred, its real length along x like ours. */
+  const fitCar = (root: any, length = 4.3) => {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    if (size.z > size.x) root.rotation.y = Math.PI / 2; // long side along x, like the Blender cars
+    root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(root);
+    const len = Math.max(b2.max.x - b2.min.x, 1e-3);
+    const k = length / len;
+    root.scale.multiplyScalar(k);
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  const isHomeH = (url: string) => /\/home-[a-z0-9]+-hf\.glb$/.test(url);
+  /** A home's scale model: stood on the table, centred, HOME_M across its widest side (a tower no taller than 1.1 m). */
+  const fitHome = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(Math.min(HOME_M / Math.max(size.x, size.z, 1e-3), 1.1 / Math.max(size.y, 1e-3)));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  const isShowpieceH = (url: string) => /\/(watch|jewel)-[a-z]+-hf\.glb$/.test(url);
+  /** A watch, or a necklace on its bust: stood on its shelf, centred, 0.8 m at its largest side (see COUNTER_H_MODELS). */
+  const fitShowpiece = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(0.8 / Math.max(size.x, size.y, size.z, 1e-3));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  const showroomFinish = (o: any, car: boolean) => {
+    if (o.geometry && !o.geometry.userData.creased) {
+      const g2 = toCreasedNormals(o.geometry, CREASE);
+      g2.userData.creased = true;
+      o.geometry.dispose();
+      o.geometry = g2;
+    }
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (!m || !m.isMeshStandardMaterial) continue;
+      m.envMap = envTex;
+      m.envMapIntensity = car ? 1.0 : 0.7;
+      // (0.14 still bloomed into a smear in the first after-still: 0.28 keeps the room's reflection, loses the flare)
+      if (m.clearcoat > 0) m.clearcoatRoughness = Math.max(m.clearcoatRoughness ?? 0, 0.28);
+      if (m.roughness < 0.24) m.roughness = 0.24; // glass and chrome: still glossy, no pin-point flare
+      m.needsUpdate = true;
+    }
+  };
   const models = new Map<string, Promise<any>>();
   const loadModel = (url: string) => {
     if (!models.has(url)) {
@@ -486,7 +645,20 @@ async function buildShop(
           o.receiveShadow = true;
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
+          if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
+          else if (HF_MODEL.test(url) && m) {
+            m.envMap = envTex; m.envMapIntensity = 1.0;
+            // the yellow, orange and white paints sat in the spotlight above the turntable and the
+            // H look's bloom blew them into a glare: a touch darker, so they read as paint (9 Oct 2026)
+            const tone = HF_TONE[url.split("/").pop()!.replace(/\.glb$/, "")];
+            if (tone) m.color.multiplyScalar(tone);
+            m.needsUpdate = true;
+          }
         });
+        if (isBootH(url)) fitBoot(g.scene);
+        else if (isShowpieceH(url)) fitShowpiece(g.scene);
+        else if (isHomeH(url)) fitHome(g.scene);
+        else if (HF_MODEL.test(url) && !/\/can-/.test(url)) fitCar(g.scene, CAR_H_LENGTH[url.split("/").pop()!.replace(/\.glb$/, "")]);
         return g.scene;
       }));
     }
@@ -494,7 +666,10 @@ async function buildShop(
   };
 
   // ── The boots, one on each plinth ──
+  const bootScale = hEnh ? BOOT_H_SCALE : BOOT_SCALE;
   const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
+  // look H: the spot above blew the cream top into a white glow the boot floated on; a stone grey, less glossy
+  if (hEnh) { plinthTopM.color.set("#9a9186"); plinthTopM.roughness = 0.55; }
   const plinthM = mat("#1c1714", { roughness: 0.32, metalness: 0.25 });
   box(1.1, 0.04, 8.0, mat("#100c0a", { roughness: 0.25, metalness: 0.3 }), PLINTH_X, 0.02, 0); // a dark stage under the row
   box(0.06, 2.6, 8.2, mat("#211915", { roughness: 0.55 }), -ROOM.x + 0.14, 1.85, 0); // a dark wall panel behind
@@ -519,7 +694,7 @@ async function buildShop(
     blob(0.95, 0.95, PLINTH_X, z);
     const group = new THREE.Group();
     group.position.set(PLINTH_X, PLINTH_H + 0.035, z);
-    group.scale.setScalar(BOOT_SCALE);
+    group.scale.setScalar(bootScale);
     scene.add(group);
     blob(0.32, 0.18, 0, 0, group, 0.002, 0.8);
     pickable(col, "boots", i);
@@ -527,9 +702,20 @@ async function buildShop(
     pickable(tag.sprite, "boots", i);
     bootSlots.push({ group, ring, tag, z, spin: i * 0.9 });
     if (it.model) {
-      loadModel(it.model).then((m) => {
+      const hfBoot = !!hEnh;
+      loadModel(hfBoot ? (BOOT_H_MODELS[it.id] ?? BOOT_H_MODELS.power) : it.model).then((m) => {
         if (disposed) return;
         const b = m.clone();
+        if (hfBoot) {
+          // this level's colour over the white knit (its own material: the clones share one)
+          const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(it.colour), 0.85);
+          b.traverse((o: any) => {
+            if (!o.isMesh || !o.material) return;
+            o.material = o.material.clone();
+            o.material.color.copy(tint);
+            o.material.envMapIntensity = 0.7;
+          });
+        }
         group.add(b);
         pickable(b, "boots", i);
       }).catch((e) => console.error("boot model", e));
@@ -567,7 +753,7 @@ async function buildShop(
     carWant = i;
     const it = displays.car.items[i];
     if (!it?.model) return;
-    loadModel(it.model).then((m) => {
+    loadModel(hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model).then((m) => {
       if (disposed || carWant !== i || carIndex === i) return;
       carIndex = i;
       for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
@@ -609,6 +795,54 @@ async function buildShop(
   }
   scene.add(cansMesh);
   pickable(cansMesh, "cans", 0);
+  /**
+   * THE CANS (look H; Harry, 9 Oct 2026: "the cans need fixing in shop too").
+   * The flat coloured cylinders become one generated can (Higgsfield picture of
+   * an unbranded slim can → Tripo, cut to ~310 triangles: public/star/shop3d/
+   * items/can-kib-hf.glb), drawn as one instanced mesh and tinted per tier
+   * (CAN_COLOURS: basic orange, premium blue, elite purple). Four a group
+   * instead of nine (36 cans of ~310 triangles, no shadows: about 11k triangles in all).
+   * Old: the cylinders as before.
+   */
+  if (hEnh) {
+    loadModel("/star/shop3d/items/can-kib-hf.glb").then((m) => {
+      if (disposed) return;
+      let src: any = null;
+      m.updateMatrixWorld(true);
+      m.traverse((o: any) => { if (!src && o.isMesh) src = o; });
+      if (!src) return;
+      const g = src.geometry.clone();
+      g.applyMatrix4(src.matrixWorld);
+      g.computeBoundingBox();
+      const bb = g.boundingBox, c = bb.getCenter(new THREE.Vector3());
+      const k = 0.17 / Math.max(bb.max.y - bb.min.y, 1e-3); // a slim can is 17 cm tall, like the cylinders
+      g.translate(-c.x, -c.y, -c.z);
+      g.scale(k, k, k);
+      const cm = src.material.clone();
+      cm.envMapIntensity = 1.0;
+      const PER_H = 4;
+      const cans = new THREE.InstancedMesh(g, cm, 3 * 3 * PER_H);
+      let n = 0;
+      for (let shelf = 0; shelf < 3; shelf++) {
+        const y = 0.55 + shelf * 0.55;
+        for (let col = 0; col < 3; col++) {
+          const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(CAN_COLOURS[col]), 0.8);
+          for (let k2 = 0; k2 < PER_H; k2++) {
+            tmp.position.set(fx - 0.5 + (k2 % 2) * 0.13, y, fz - 0.9 + col * 0.75 + Math.floor(k2 / 2) * 0.13);
+            tmp.rotation.set(0, 0.6 + k2 * 0.9, 0);
+            tmp.updateMatrix();
+            cans.setMatrixAt(n, tmp.matrix);
+            cans.setColorAt(n, tint);
+            n++;
+          }
+        }
+      }
+      tmp.rotation.set(0, 0, 0);
+      scene.add(cans);
+      pickable(cans, "cans", 0);
+      cansMesh.visible = false;
+    }).catch((e) => console.error("can model", e));
+  }
   const fridgeGlass = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.0), glassM);
   fridgeGlass.position.set(fx - 0.52, 1.2, fz);
   fridgeGlass.rotation.y = -Math.PI / 2;
@@ -629,10 +863,55 @@ async function buildShop(
   const boxM: any[] = [];
   const boxLevel: number[] = [];
   const frameM = mat("#c79a4b", { roughness: 0.3, metalness: 0.85 });
+  /**
+   * THE WATCHES AND JEWELLERY AS 3D MODELS (look H; Harry, 9 Oct 2026: "make
+   * every model that good … all the shop items"). Each light box becomes a lit
+   * niche: a dark velvet back, a glass shelf, a warm strip light, and the piece
+   * on it, turning slowly. Generated like the cars (Higgsfield picture →
+   * Tripo; public/star/shop3d/items/watch-*-hf.glb, jewel-*-hf.glb). A real
+   * watch is 4 cm, a speck from the shop floor, so every piece is shown as a
+   * showpiece 0.8 m at its largest side (a watch about 20× life size, a
+   * necklace on its bust about 1.5×): the size the old picture was.
+   * Old: the shop pictures in light boxes, exactly as before.
+   */
+  const COUNTER_H_MODELS: Record<string, string> = {
+    smartwatch: "/star/shop3d/items/watch-smart-hf.glb", silver: "/star/shop3d/items/jewel-silver-hf.glb",
+    gold: "/star/shop3d/items/watch-gold-hf.glb", diamond: "/star/shop3d/items/jewel-diamond-hf.glb",
+    rolex: "/star/shop3d/items/watch-luxury-hf.glb",
+  };
+  const SHELF_Y = BOX_Y - 0.43;
+  const counterSlots: { group: any; spin: number }[] = [];
   displays.counter.items.forEach((it, i) => {
     const x = BOX_X[i] ?? 0;
     const zb = -ROOM.z + 0.16;
     box(1.32, 1.06, 0.06, frameM, x, BOX_Y, zb);
+    const hModel = hEnh ? COUNTER_H_MODELS[it.id] : undefined;
+    if (hModel) {
+      // the niche: velvet back, a glass shelf on a brass lip, a warm strip light under the top of the frame
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 0.96), mat("#4a3a2f", { roughness: 0.95 }));
+      back.position.set(x, BOX_Y, zb + 0.035);
+      scene.add(back);
+      box(1.0, 0.025, 0.5, mat("#cfe3e6", { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.55 }), x, SHELF_Y, zb + 0.27);
+      box(1.0, 0.012, 0.02, frameM, x, SHELF_Y - 0.018, zb + 0.51);
+      box(1.1, 0.014, 0.03, glow("#ffe2bd", 4.5), x, BOX_Y + 0.45, zb + 0.08);
+      const group = new THREE.Group();
+      group.position.set(x, SHELF_Y + 0.013, zb + 0.27);
+      scene.add(group);
+      counterSlots.push({ group, spin: i * 1.3 });
+      boxM.push(null);
+      boxLevel.push(0);
+      pickable(back, "counter", i);
+      pickable(makeTag("counter", i, x, BOX_Y + 0.78, zb + 0.35, 1.0).sprite, "counter", i);
+      loadModel(hModel).then((m) => {
+        if (disposed) return;
+        const c = m.clone();
+        // lit by its niche; no shadow pass for it (the counter has no shadow light anyway)
+        c.traverse((o: any) => { if (o.isMesh) o.castShadow = o.receiveShadow = false; });
+        group.add(c);
+        pickable(c, "counter", i);
+      }).catch((e) => console.error("counter model", e));
+      return;
+    }
     // the light box: a warm white panel the picture sits on
     const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 0.96), new THREE.MeshBasicMaterial({ color: "#f3ead9", toneMapped: false }));
     panel.position.set(x, BOX_Y, zb + 0.035);
@@ -649,7 +928,7 @@ async function buildShop(
   });
   const showPicture = (i: number, level: number) => {
     const it = displays.counter.items[i];
-    if (!it?.picture || boxLevel[i] === level) return;
+    if (!it?.picture || !boxM[i] || boxLevel[i] === level) return;
     boxLevel[i] = level;
     texLoader.load(it.picture(level), (t: any) => {
       if (disposed || boxLevel[i] !== level) { t.dispose(); return; }
@@ -661,6 +940,63 @@ async function buildShop(
     });
   };
   displays.counter.items.forEach((_, i) => showPicture(i, 3));
+
+  /**
+   * THE HOMES (look H; Harry, 9 Oct 2026: "do everything … every jet, home").
+   * The 3D shop never showed the homes. Look H adds an estate agent's model
+   * table by the doors: one scale model at a time on a turning glass top, like
+   * the car turntable (one model drawn at a time keeps the shop as light as
+   * before). Each home is its own generated model (Higgsfield picture → Tripo;
+   * public/star/shop3d/items/home-*-hf.glb), HOME_M across.
+   */
+  const HOME_MODELS: Record<string, string> = {
+    "flat-1": "home-flat1", "flat-2": "home-flat2", penthouse: "home-penthouse", stable: "home-stable",
+    "house-1": "home-house1", villa: "home-villa", "house-2": "home-house2", estate: "home-estate", island: "home-island",
+  };
+  const homesOn = !!hEnh && (displays.homes?.items.length ?? 0) > 0;
+  let homeIndex = -1, homeWant = 0, homePop = 1;
+  const homeHolder = new THREE.Group();
+  let homeTag: Tag | null = null;
+  if (homesOn) {
+    const hx = HOMES.x, hz = HOMES.z;
+    const woodM = mat("#3b2a1e", { roughness: 0.45 });
+    box(HOMES.w, HOMES.h - 0.05, HOMES.d, woodM, hx, (HOMES.h - 0.05) / 2, hz, true);
+    box(HOMES.w + 0.06, 0.04, HOMES.d + 0.06, frameM, hx, HOMES.h - 0.03, hz);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.02, 48), mat("#d9e7ea", { roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.6 }));
+    top.position.set(hx, HOMES.h + 0.01, hz);
+    scene.add(top);
+    box(HOMES.w - 0.1, 0.012, 0.02, glow("#ffd9a8", 2.6), hx, HOMES.h - 0.06, hz - HOMES.d / 2 - 0.035);
+    homeHolder.position.set(hx, HOMES.h + 0.02, hz);
+    scene.add(homeHolder);
+    blob(1.2, 1.2, 0, 0, homeHolder, 0.003, 0.7);
+    blob(2.2, 1.6, hx, hz);
+    pickable(top, "homes", 0);
+    homeTag = makeTag("homes", 0, hx, 2.35, hz, 1.2);
+    pickable(homeTag.sprite, "homes", 0);
+    neon("HOMES", "#9ef0c0", 1.8, hx, 2.95, ROOM.z - 0.1, Math.PI);
+  }
+  /** What he can't walk through: the fixed boxes, plus the homes table when it is there. */
+  const walls = homesOn ? [...BOXES, HOMES_BOX] : BOXES;
+  const showHome = (i: number) => {
+    if (!homesOn) return;
+    homeWant = i;
+    const it = displays.homes.items[i];
+    const f = it && HOME_MODELS[it.id];
+    if (!f) return;
+    loadModel(`/star/shop3d/items/${f}-hf.glb`).then((m) => {
+      if (disposed || homeWant !== i || homeIndex === i) return;
+      homeIndex = i;
+      for (const c of [...homeHolder.children]) if (c.userData.home) homeHolder.remove(c);
+      const c = m.clone();
+      c.userData.home = true;
+      homeHolder.add(c);
+      pickable(c, "homes", i);
+      homePop = 0;
+      if (homeTag) homeTag.index = i;
+      redrawTags();
+    }).catch((e) => console.error("home model", e));
+  };
+  if (homesOn) showHome(0);
 
   // ── The footballer ──
   const newLook = (opts.player?.look ?? "new") === "new";
@@ -731,6 +1067,9 @@ async function buildShop(
     jogA = act("Jog_Fwd_Loop");
     buyA = mixer.clipAction(clip("Interact"));
   }
+  // Motion: Mocap (Settings → Look): walk → jog → run → sprint, on the same
+  // foot, at the speed his feet go (three3d/gait.ts). Old: the walk/jog blend below.
+  const gaitBlend = await strideFor(THREE, newLook ? person : null, mixer, { idle: idleA, walk: walkA, jog: jogA }).catch((e) => { console.error("gait clips", e); return null; });
   // from the garden: a few steps in from the doors, so the camera fits behind
   const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
   player.position.set(start.x, 0, start.z);
@@ -752,7 +1091,21 @@ async function buildShop(
   let yaw = Math.PI; // facing
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
+  const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
   let near: DisplayId | null = null;
+  /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
+  let dwellZone: DisplayId | null = null;
+  let dwell = { timer: 0, open: false };
+  let arrivedAt: DisplayId | null = null, itemWalk: DisplayId | null = null;
+  /** The nearest item of a display: its centre and how far its front stands out from it (metres). */
+  const itemFront = (d: DisplayId): [number, number, number] => {
+    const px = player.position.x, pz = player.position.z;
+    if (d === "boots") { let bz = PLINTH_Z[0]; for (const z of PLINTH_Z) if (Math.abs(z - pz) < Math.abs(bz - pz)) bz = z; return [PLINTH_X, bz, 0.4]; }
+    if (d === "car") return [CAR.x, CAR.z, CAR.r];
+    if (d === "cans") return [FRIDGE.x, FRIDGE.z, 0.6];
+    if (d === "homes") return [HOMES.x, HOMES.z, 0.6];
+    return [Math.max(-2.8, Math.min(2.8, px)), COUNTER_Z, 0.55];
+  };
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
   let framed = false, frame = 0;
@@ -805,7 +1158,7 @@ async function buildShop(
     const inDoor = !!cb.onDoor && Math.abs(x) < DOOR_HALF - 0.15;
     z = Math.max(-ROOM.z + r, Math.min(inDoor ? ROOM.z + 0.9 : ROOM.z - 0.4, z));
     if (inDoor && z > ROOM.z + 0.25 && !leftByDoor) { leftByDoor = true; cb.onDoor?.(); }
-    for (const [x0, x1, z0, z1] of BOXES) {
+    for (const [x0, x1, z0, z1] of walls) {
       if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) {
         const push = [x - (x0 - r), x1 + r - x, z - (z0 - r), z1 + r - z];
         const m = Math.min(...push);
@@ -839,8 +1192,11 @@ async function buildShop(
     }
     if (display === "counter") {
       const x = BOX_X[index] ?? 0;
-      return { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
+      // look H: the showpiece sits on a shelf lower in its niche, so the camera looks over his head at it
+      return hEnh ? { cam: [x * 0.7, 2.2, -4.3], look: [x, BOX_Y - 0.15, -ROOM.z] } : { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
     }
+    // from his left shoulder, so he never stands between the camera and the model
+    if (display === "homes") return { cam: [HOMES.x - 1.75, 2.35, HOMES.z - 1.65], look: [HOMES.x, HOMES.h + 0.4, HOMES.z] };
     return { cam: [2.6, 1.8, FRIDGE.z + 0.9], look: [FRIDGE.x, 1.2, FRIDGE.z] };
   };
 
@@ -855,7 +1211,7 @@ async function buildShop(
   const isFree = (x: number, z: number) => {
     const r = 0.4;
     if (Math.abs(x) > ROOM.x - r || z < -ROOM.z + r || z > ROOM.z - 0.45) return false;
-    for (const [x0, x1, z0, z1] of BOXES) if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) return false;
+    for (const [x0, x1, z0, z1] of walls) if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) return false;
     for (const [cx, cz, cr] of CIRCLES) if (Math.hypot(x - cx, z - cz) < cr + r) return false;
     return true;
   };
@@ -863,6 +1219,7 @@ async function buildShop(
   const standFor = (p: Picked): { at: XZ; face: XZ } => {
     if (p.display === "boots") { const z = PLINTH_Z[p.index] ?? 0; return { at: [-3.35, z], face: [PLINTH_X, z] }; }
     if (p.display === "counter") { const x = BOX_X[p.index] ?? 0; return { at: [Math.max(-3.2, Math.min(3.2, x)), -5.15], face: [x, -ROOM.z] }; }
+    if (p.display === "homes") return { at: [HOMES.x, HOMES.z - 1.25], face: [HOMES.x, HOMES.z] };
     if (p.display === "cans") return { at: [FRIDGE.x - 1.35, FRIDGE.z], face: [FRIDGE.x, FRIDGE.z] };
     // the car: the nearest side of the turntable to where he is
     let a = Math.atan2(player.position.x - CAR.x, player.position.z - CAR.z);
@@ -875,7 +1232,8 @@ async function buildShop(
     const path = findPath(grid, [player.position.x, player.position.z], to);
     if (!path) return false;
     faceTo = null;
-    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    itemWalk = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = itemWalk; itemWalk = null; } });
     const g = path[path.length - 1];
     marker.show(g[0], g[1], 0.02);
     orbitHold = 0;
@@ -903,7 +1261,7 @@ async function buildShop(
     resize();
     return true;
   };
-  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...pickables]));
+  const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...counterSlots.map((c) => c.group), homeHolder, ...pickables]));
   // warm up: every shader built before the first frame, so the first steps don't stutter
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
@@ -916,8 +1274,10 @@ async function buildShop(
       acc += Math.min(0.25, clock.getDelta());
       // still: 30 a second; moving: the tier's cap (High and Medium every frame, Low 30)
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
+      govCap = cap;
       if (cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
+      gov.frame(performance.now(), govCap);
       acc = 0;
     }
     gameT += dt;
@@ -929,7 +1289,7 @@ async function buildShop(
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const run = keys.has("shift") ? 1 : 0.6;
+      const run = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * run; iy = (iy / m) * run;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -948,8 +1308,13 @@ async function buildShop(
         mag = st.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, st.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the shop)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (buying > 0) speed *= 0.8;
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
@@ -969,11 +1334,15 @@ async function buildShop(
     const wIdle = Math.max(0, 1 - speed / WALK);
     const dur = buyA.getClip().duration;
     const gesture = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
-    idleA.setEffectiveWeight(wIdle * (1 - gesture));
-    walkA.setEffectiveWeight(wWalk * (1 - gesture));
-    jogA.setEffectiveWeight(wJog * (1 - gesture));
     buyA.setEffectiveWeight(gesture);
-    if (newLook) {
+    if (gaitBlend) gaitBlend.update(speed, dt, 1 - gesture);
+    else {
+      idleA.setEffectiveWeight(wIdle * (1 - gesture));
+      walkA.setEffectiveWeight(wWalk * (1 - gesture));
+      jogA.setEffectiveWeight(wJog * (1 - gesture));
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) {
       // the walk and the jog share one stride timing, so they share one pace
       // and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
@@ -994,12 +1363,14 @@ async function buildShop(
     }
 
     // camera: follows behind him; with a card open it moves in on the item
+    camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    want.set(player.position.x, 2.85, player.position.z).addScaledVector(cf, -4.6).addScaledVector(cr, 0.3);
+    const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
+    want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
     if (shot) {
       want.lerp(new THREE.Vector3(...shot.cam), frame);
@@ -1010,6 +1381,10 @@ async function buildShop(
     // walking out of the door: the camera stays inside, looking out
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up)
+    camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
+    camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
+    camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // with a card open, slide the picture up so the item sits above the card
@@ -1028,10 +1403,19 @@ async function buildShop(
     bootSlots.forEach((b, i) => {
       const on = sel.display === "boots" && sel.index === i;
       b.group.rotation.y = b.spin + gameT * (on ? 0.6 : 0.25);
-      const s = BOOT_SCALE * (on ? 1.12 : 1);
+      const s = bootScale * (on ? 1.12 : 1);
       b.group.scale.setScalar(b.group.scale.x + (s - b.group.scale.x) * Math.min(1, dt * 6));
       b.group.position.y = PLINTH_H + 0.035 + (on ? 0.04 + 0.02 * Math.sin(gameT * 2.2) : 0);
       b.ring.material.emissiveIntensity = on ? 2.6 + 0.6 * Math.sin(gameT * 4) : 0.9;
+    });
+    if (homesOn) {
+      homeHolder.rotation.y += dt * 0.25;
+      if (homePop < 1) homePop = Math.min(1, homePop + dt * 2.2);
+      homeHolder.scale.setScalar(0.85 + 0.15 * (1 - Math.pow(1 - homePop, 3)));
+    }
+    counterSlots.forEach((c, i) => {
+      const on = sel.display === "counter" && sel.index === i;
+      c.group.rotation.y = c.spin + gameT * (on ? 0.5 : 0.2);
     });
     // tags: full when you're near, fading out across the room
     for (const tg of tags) {
@@ -1044,10 +1428,21 @@ async function buildShop(
     }
 
     // which display is he at?
-    let now: DisplayId | null = null;
+    let zone: DisplayId | null = null;
     for (const zn of ZONES) {
-      if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
+      if (zn.id === "homes" && !homesOn) continue;
+      if (zn.inside(player.position.x, player.position.z)) { zone = zn.id; break; }
     }
+    // the card opens only when he stops at, or turns to, an item (./dwell.ts), never walking past
+    if (zone !== dwellZone) { dwellZone = zone; dwell = { timer: 0, open: false }; }
+    {
+      const [ix, iz, front] = zone ? itemFront(zone) : [0, 0, 0];
+      const dist = Math.max(0, Math.hypot(ix - player.position.x, iz - player.position.z) - front);
+      const faceOff = angDiff(yaw, Math.atan2(ix - player.position.x, iz - player.position.z));
+      dwell = stepDwell(dwell.timer, dwell.open, { inZone: !!zone, dist, speed, faceOff, arrived: !!zone && arrivedAt === zone }, dt);
+      if (arrivedAt && arrivedAt === zone) arrivedAt = null;
+    }
+    const now: DisplayId | null = dwell.open ? zone : null;
     if (now !== near) { near = now; cb.onNear(near); }
 
     if (carSpot.castShadow) {
@@ -1062,7 +1457,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1080,12 +1475,7 @@ async function buildShop(
       if (!opts.fixedStep) {
         // still runs at 30 on purpose: only count a slow second against what
         // was asked for
-        slowSeconds = fps < (busy && !capAlways && prof.fpsCap === 60 ? 28 : 22) ? slowSeconds + 1 : 0;
-        // three slow seconds: one tier down; still too slow at Low: 30 a second always
-        if (slowSeconds >= 3) {
-          slowSeconds = 0;
-          if (!stepDown()) capAlways = true;
-        }
+        void slowSeconds; // the governor judges slow frames now (gov, above)
       }
     }
   });
@@ -1098,6 +1488,7 @@ async function buildShop(
     select: (display, index) => {
       sel = { display, index };
       if (display === "car") showCar(index);
+      if (display === "homes") showHome(index);
     },
     setLevel: (display, index, level) => {
       if (display === "counter") showPicture(index, level);
@@ -1115,6 +1506,7 @@ async function buildShop(
         return Math.min(best, displays.counter.items.length - 1);
       }
       if (display === "car") return Math.max(0, carIndex);
+      if (display === "homes") return Math.max(0, homeIndex);
       return 0;
     },
     playBuy: () => {
@@ -1122,14 +1514,14 @@ async function buildShop(
       buyA.play();
       buying = buyA.getClip().duration;
     },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => {
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);
       const hit = ray.intersectObjects(pickables.filter((o) => o.visible !== false), false)[0];
       const p = hit?.object?.userData?.pick as Picked | undefined;
       if (!p) return null;
-      return p.display === "car" ? { display: "car", index: Math.max(0, carIndex) } : p;
+      return p.display === "car" ? { display: "car", index: Math.max(0, carIndex) } : p.display === "homes" ? { display: "homes", index: Math.max(0, homeIndex) } : p;
     },
     tap: (px, py) => {
       const p = ctrl.pick(px, py);
@@ -1140,17 +1532,18 @@ async function buildShop(
       if (!hit || Math.abs(hit.x) > ROOM.x + 1 || Math.abs(hit.z) > ROOM.z + 1) return null;
       return walkTo([hit.x, hit.z], null) ? { item: null } : null;
     },
-    walkToItem: (p) => { const s0 = standFor(p); return walkTo(s0.at, s0.face); },
+    walkToItem: (p) => { const s0 = standFor(p); const ok = walkTo(s0.at, s0.face); if (ok) itemWalk = p.display; return ok; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
       stopWalk();
-      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true;
+      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true;
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      gov.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);
@@ -1266,3 +1659,4 @@ float kitKitAmt = 0.0; float kitRough = 0.8;`)
   m.customProgramCacheKey = () => cacheKey;
   m.needsUpdate = true;
 }
+

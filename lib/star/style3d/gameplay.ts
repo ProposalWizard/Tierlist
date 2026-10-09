@@ -12,7 +12,7 @@
  */
 import { drillById, type DrillSession } from "../play3d/drills";
 import type { Person3 } from "../play3d/freeRoam";
-import type { Play3DBuilt, Play3DController } from "../play3d/scene";
+import type { Play3DBuilt, Play3DController, Play3DPerson } from "../play3d/scene";
 import { skillsOf } from "../play3d/player";
 import { CX } from "../play3d/constants";
 import { quality3dTier, type Quality3d } from "../three3d/quality";
@@ -35,6 +35,8 @@ export const KEEPER = { shirt: "#16a34a", trim: "#0b3d1d" };
 
 export interface StyleGameplay {
   session: DrillSession;
+  /** Where a man stands on the screen (px in the picture), as Play3DController.screen. */
+  screen(id: string): { x: number; y: number; off: boolean } | null;
   heading(): number;
   /** The man drawn under a tap (px), or null (Play3DController.pick). */
   pick(x: number, y: number): string | null;
@@ -64,14 +66,31 @@ const FIG_SCALE = 2.0;
 const H_FIG_SCALE = 1.45, H_VIEW_W = 18;
 const SKINS = ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e", "#f1c27d"];
 
-export async function createStyleGameplay(container: HTMLElement, o: { def: StyleDef; flat: boolean; tilt: number; seed?: number; tier?: Quality3d; tod?: TimeOfDay }): Promise<StyleGameplay> {
+export interface StyleGameplayOptions {
+  def: StyleDef; flat: boolean; tilt: number; seed?: number; tier?: Quality3d; tod?: TimeOfDay;
+  /**
+   * Another 3D session played in this look instead of Free Roam (the career's
+   * dribble run, lib/star/play3d/dribbleRun.ts). Absent: Free Roam, exactly as before.
+   */
+  session?: DrillSession;
+  /** The four scenery opponents (default on; off when the session brings its own men). */
+  scenery?: boolean;
+  /** Your side's and the other side's kits (default the Style Testing red and blue). */
+  kits?: { home: { shirt: string; trim: string }; away: { shirt: string; trim: string } };
+  /** Skin, hair and face per man (default made-up skins, no faces). */
+  people?: Record<string, Play3DPerson>;
+  /** Shirt numbers by man (default you 9, the two team-mates 7 and 10, keeper 1). */
+  numbers?: Record<string, number>;
+}
+
+export async function createStyleGameplay(container: HTMLElement, o: StyleGameplayOptions): Promise<StyleGameplay> {
   const tier = o.tier ?? quality3dTier();
   const seed = o.seed ?? 7;
   const you: Person3 = { id: "you", name: "You", skills: skillsOf(78) };
   const mates: Person3[] = [{ id: "m1", name: "Saka", skills: skillsOf(80) }, { id: "m2", name: "Rice", skills: skillsOf(79) }];
-  const drill = drillById("free-roam")!;
-  const session = drill.start!({ seed, you, mates, squad: [] });
+  const session = o.session ?? drillById("free-roam")!.start!({ seed, you, mates, squad: [] });
   const world = session.world;
+  const HOME_K = o.kits?.home ?? HOME, AWAY_K = o.kits?.away ?? AWAY;
 
   const THREE: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
@@ -85,7 +104,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   ]);
 
   const people: Record<string, any> = {};
-  world.players.forEach((p, i) => { people[p.id] = { skin: SKINS[i % SKINS.length], hair: "#1b120c", hairStyle: "short" }; });
+  world.players.forEach((p, i) => { people[p.id] = o.people?.[p.id] ?? { skin: SKINS[i % SKINS.length], hair: "#1b120c", hairStyle: "short" }; });
 
   let def = o.def;
   let flat = o.flat;
@@ -98,7 +117,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   let hTod: TimeOfDay | null = o.tod ?? null;
   let hToken = 0;
   let goals = 0;
-  const numbers: Record<string, number> = { you: 9, m1: 7, m2: 10, keeper: 1 };
+  const numbers: Record<string, number> = o.numbers ?? { you: 9, m1: 7, m2: 10, keeper: 1 };
 
   // scenery opponents
   type Extra = { p: Person3D; play: ClipPlayer; x: number; z: number; vx: number; vz: number; lane: number; depth: number; state: string; num: number; yaw: number };
@@ -155,7 +174,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   };
 
   const flatKitFor = (team: number, keeper: boolean, num: number, i: number): FlatKit => {
-    const k = keeper ? KEEPER : team === 0 ? HOME : AWAY;
+    const k = keeper ? KEEPER : team === 0 ? HOME_K : AWAY_K;
     return { shirt: k.shirt, shorts: keeper ? k.trim : k.trim, socks: k.shirt, skin: SKINS[i % SKINS.length], hair: "#1b120c", number: num, gloves: keeper ? "#f5f5f5" : undefined };
   };
 
@@ -207,7 +226,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); applyBodies(); return; }
       const ctx = built;
-      void import("./real/look").then(({ createRealLook }) => createRealLook(THREE, ctx.renderer, ctx.scene, tier, { tod, ball: ctx.ball, colours: { home: HOME.shirt, home2: "#f4f4f4", away: AWAY.shirt } }))
+      void import("./real/look").then(({ createRealLook }) => createRealLook(THREE, ctx.renderer, ctx.scene, tier, { tod, ball: ctx.ball, colours: { home: HOME_K.shirt, home2: "#f4f4f4", away: AWAY_K.shirt } }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -226,7 +245,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   };
 
   const { createPlay3DScene } = await import("../play3d/scene");
-  const ctrl: Play3DController = await createPlay3DScene(container, world, { kit: HOME, keeperKit: KEEPER, people }, {
+  const ctrl: Play3DController = await createPlay3DScene(container, world, { kit: HOME_K, oppKit: AWAY_K, keeperKit: KEEPER, people }, {
     camera: "chase", quality: tier, bare: true,
     rig: () => rig(),
     draw: (_r, scene, camera) => {
@@ -253,7 +272,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
       }
       // four opponents (scenery)
       const lanes = [[-9, 9], [-3, 4], [4, 6], [10, 11]];
-      lanes.forEach(([lane, depth], i) => {
+      if (o.scenery !== false) lanes.forEach(([lane, depth], i) => {
         const p = makePerson3d(THREE, SK, model, animG, { outline: 0.006, castShadow: tier !== "low" });
         dressPerson3d(THREE, p, { skin: SKINS[(i + 2) % SKINS.length], hair: "#1b120c", kit: AWAY, number: numberTexture(THREE, [4, 5, 6, 3][i]) });
         relaxHands(THREE, p);
@@ -330,6 +349,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     session,
     heading: () => ctrl.heading(),
     pick: (x, y) => ctrl.pick(x, y),
+    screen: (id) => ctrl.screen(id),
     setStyle(d) { def = d; restyle(); },
     setFlat(on) { flat = on; applyBodies(); },
     setTilt(deg) { tilt = deg; },

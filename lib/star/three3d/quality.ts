@@ -50,8 +50,8 @@ export interface TierProfile {
   shadowMapSize: number;
   /** Frames a second while moving. */
   fpsCap: 30 | 60;
-  /** Frames a second while nothing but idle sway moves. */
-  stillFps: 30 | 60;
+  /** Frames a second while nothing but idle sway moves (20 on every tier since 9 Oct 2026: a still screen needs no more). */
+  stillFps: 20 | 30 | 60;
   /** The thin dark outline round each person (one more skinned draw each). */
   outlines: boolean;
   anisotropy: number;
@@ -59,10 +59,20 @@ export interface TierProfile {
   maxLiveCharacters: number;
 }
 
+/**
+ * 9 Oct 2026 (Harry's iPhone screenshots: "every edge is jagged and
+ * pixel-stepped"): Medium (every iPhone's Auto) drew 1.25 pixels per point
+ * standing still and 1 (as low as 0.7) moving, with no antialias, on a 3×
+ * screen. Every tier now keeps edges smooth — antialias on, never under 1.25
+ * pixels on Medium and High — and wins the time back elsewhere: Medium drops
+ * the outline (one more skinned draw per person), the stadium is merged into
+ * a few draws, and dynamic resolution only trims down to a floor that still
+ * looks smooth.
+ */
 export const TIER_PROFILES: Record<Quality3d, TierProfile> = {
-  low: { tier: "low", maxPixelRatio: 1, movePixelRatio: 0.85, minPixelRatio: 0.6, antialias: false, shadows: false, shadowScale: 0, shadowMapSize: 0, fpsCap: 30, stillFps: 30, outlines: false, anisotropy: 1, maxLiveCharacters: 2 },
-  medium: { tier: "medium", maxPixelRatio: 1.25, movePixelRatio: 1, minPixelRatio: 0.7, antialias: false, shadows: true, shadowScale: 0.5, shadowMapSize: 1024, fpsCap: 60, stillFps: 30, outlines: true, anisotropy: 2, maxLiveCharacters: 4 },
-  high: { tier: "high", maxPixelRatio: 1.5, movePixelRatio: 1, minPixelRatio: 0.75, antialias: true, shadows: true, shadowScale: 1, shadowMapSize: 2048, fpsCap: 60, stillFps: 30, outlines: true, anisotropy: 4, maxLiveCharacters: 8 },
+  low: { tier: "low", maxPixelRatio: 1.25, movePixelRatio: 1.25, minPixelRatio: 1, antialias: true, shadows: false, shadowScale: 0, shadowMapSize: 0, fpsCap: 30, stillFps: 20, outlines: false, anisotropy: 1, maxLiveCharacters: 2 },
+  medium: { tier: "medium", maxPixelRatio: 1.5, movePixelRatio: 1.5, minPixelRatio: 1.25, antialias: true, shadows: true, shadowScale: 0.5, shadowMapSize: 1024, fpsCap: 60, stillFps: 20, outlines: false, anisotropy: 2, maxLiveCharacters: 4 },
+  high: { tier: "high", maxPixelRatio: 2, movePixelRatio: 1.5, minPixelRatio: 1.25, antialias: true, shadows: true, shadowScale: 1, shadowMapSize: 2048, fpsCap: 60, stillFps: 20, outlines: true, anisotropy: 4, maxLiveCharacters: 8 },
 };
 
 /** One tier down (null at Low). A scene too slow for three seconds takes this step. */
@@ -145,8 +155,9 @@ export function deviceKind(d: Pick<DeviceInfo, "ua" | "platform" | "touchPoints"
  *     away when memory runs short (seen on Harry's phone); Medium has no
  *     MSAA buffers, a half-size shadow map and 1.25 pixels standing still.
  *   - iPad → High (bigger battery and memory).
- *   - Android → Medium; Low with ≤3 GB or ≤4 cores; High only once its GPU
- *     is known to be a flagship one (Adreno 640+, Mali-G77+, Immortalis).
+ *   - Android → Medium; Low with ≤3 GB or ≤4 cores. Never High on a phone
+ *     (9 Oct 2026); the governor (three3d/governor.ts) drops further on a
+ *     phone that still struggles.
  *   - Desktop → High; Medium with ≤4 GB or ≤2 cores.
  *   - A GPU known to be weak or software-drawn caps it (Low), a mid one caps
  *     it at Medium.
@@ -159,7 +170,9 @@ export function autoTierFromDevice(d: DeviceInfo): Quality3d {
   else if (kind === "ipad") t = "high";
   else if (kind === "android") {
     if ((mem !== undefined && mem <= 3) || (cores !== undefined && cores <= 4)) t = "low";
-    else t = d.gpuHint === "high" && (mem === undefined || mem >= 6) ? "high" : "medium";
+    // Phones open on Medium, flagship or not (Harry, 9 Oct 2026: the 3D "struggling
+    // on phone"); the governor (three3d/governor.ts) drops it further if it struggles.
+    else t = "medium";
   } else {
     t = (mem !== undefined && mem <= 4) || (cores !== undefined && cores <= 2) ? "medium" : "high";
   }

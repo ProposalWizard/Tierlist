@@ -21,6 +21,7 @@
  */
 import type { Quality3d } from "../../three3d/quality";
 import { PITCH_LEN as L, PITCH_HALF_W as W } from "./pitch";
+import { mergeStaticByMaterial } from "../../three3d/perf";
 
 const GOAL_W = 7.32, GOAL_H = 2.44, NET_D = 2.0;
 
@@ -106,7 +107,7 @@ function concreteCanvas(): HTMLCanvasElement {
   return c;
 }
 
-export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any }, o: { colours?: ArenaColours; skip?: ("N" | "S" | "W" | "E")[] } = {}): Arena {
+export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any }, o: { colours?: ArenaColours; skip?: ("N" | "S" | "W" | "E")[]; merge?: (gs: any[], useGroups?: boolean) => any } = {}): Arena {
   const G = new T.Group();
   G.name = "h-arena";
   const disp: any[] = [];
@@ -154,15 +155,30 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
 
   // ── LED boards ──
   const ledMats: any[] = [];
+  // One LED material per scroll speed (9 Oct 2026, lag): each board used to be a
+  // six-material box (six draws) with its own texture copy. Now the box is plain
+  // dark concrete (merged with the rest) and the screen is a plane whose UVs
+  // carry the board's length, sharing its speed's material: a handful of draws in all.
+  const ledBySpeed = new Map<number, any>();
+  const ledMatFor = (speed: number) => {
+    let m = ledBySpeed.get(speed);
+    if (!m) {
+      const t = keep(maps.led.clone());
+      t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
+      m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
+      m.userData.speed = speed;
+      ledMats.push(m);
+      ledBySpeed.set(speed, m);
+    }
+    return m;
+  };
   const ledBoard = (len: number, h: number, scrollSpeed: number) => {
-    const t = keep(maps.led.clone());
-    t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
-    t.repeat.set(len / 13, 1);
-    const m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
-    m.userData.speed = scrollSpeed;
-    ledMats.push(m);
-    const box = new T.Mesh(new T.BoxGeometry(len, h, 0.18), [darkConcrete, darkConcrete, darkConcrete, darkConcrete, m, darkConcrete]);
-    keep(box.geometry);
+    const box = new T.Mesh(keep(new T.BoxGeometry(len, h, 0.18)), darkConcrete);
+    const sg = keep(new T.PlaneGeometry(len, h));
+    const uv = sg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / 13));
+    sg.translate(0, 0, 0.091);
+    const screen = new T.Mesh(sg, ledMatFor(scrollSpeed));
+    box.add(screen);
     return box;
   };
   const boardRing = () => {
@@ -490,6 +506,16 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
     const fg = keep(new T.PlaneGeometry(0.45, 0.32, 6, 2)); fg.translate(0.225, 0, 0);
     const flag = new T.Mesh(fg, flagMat); flag.position.set(sx * W, 1.33, z); flag.castShadow = true; G.add(flag);
     flags.push({ geo: fg, base: Float32Array.from(fg.attributes.position.array), ph: r() * 6 });
+  }
+
+  // One draw per material for everything that never moves (9 Oct 2026, lag): the
+  // stands, roofs, walls, dugouts, posts and boards were ~190 separate draws a
+  // frame (measured on the real game 3D). The nets and corner flags move, and
+  // see-through things keep their own draw so they still sort.
+  if (o.merge) {
+    const moving = new Set<any>([...nets.map((n) => n.geo), ...flags.map((f) => f.geo)]);
+    mergeStaticByMaterial(T, o.merge, G, { filter: (m: any) => !moving.has(m.geometry) && !m.material?.transparent });
+    G.traverse((x: any) => { if (typeof x.name === "string" && x.name.startsWith("merged:")) keep(x.geometry); });
   }
 
   let time = 0, cheer = 0, night = false;
