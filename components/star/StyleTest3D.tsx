@@ -2,10 +2,13 @@
 
 /**
  * STYLE TESTING — one screen to flip between the art styles (lib/star/style3d)
- * on real 3D gameplay, the 2D "fake 3D" look and cut scenes. A test area only:
- * nothing here reaches a career, and the 2D match is untouched.
+ * on the REAL game (Infinite Highlights' chances on the one engine, drawn in
+ * 3D: components/star/RealGame3D.tsx), the 3D free roam, and cut scenes. A
+ * test area only: nothing here reaches a career, and the 2D match is untouched.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import RealGame3D from "./RealGame3D";
+import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { STYLE_CHIPS, resolveStyle, type StyleId } from "@/lib/star/style3d/styles";
 import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
 import type { CutScene } from "@/lib/star/style3d/cutscenes";
@@ -14,9 +17,11 @@ import { quality3dTier } from "@/lib/star/three3d/quality";
 import CutsceneDirector from "@/components/star/CutsceneDirector";
 import { DEMOS, makeWorldSeek, publishFrameStep, type TimelineEvent } from "@/lib/star/frameStep";
 
-export type StyleScene = "play3d" | "play2d" | "goal" | "signing" | "walkout" | "director";
+export type StyleScene = "real" | "play3d" | "play2d" | "goal" | "signing" | "walkout" | "director";
 const SCENES: { id: StyleScene; label: string }[] = [
-  { id: "play3d", label: "Gameplay 3D" }, { id: "play2d", label: "Gameplay 2D" },
+  // Harry, 9 Oct 2026: "remake the style testing with the base game … then have this new 3D game style as an option too"
+  { id: "real", label: "Real game" },
+  { id: "play3d", label: "Free Roam (3D)" }, { id: "play2d", label: "Free Roam (2D)" },
   { id: "goal", label: "Cut: Goal" }, { id: "signing", label: "Cut: Signing" }, { id: "walkout", label: "Walk-out" },
   { id: "director", label: "Cut-scene Director" },
 ];
@@ -59,9 +64,15 @@ function HMinimap({ dots }: { dots: Dot[] }) {
 }
 
 export default function StyleTest3D() {
-  const [style, setStyle] = useState<StyleId>("golden");
-  const [scene, setScene] = useState<StyleScene>("play3d");
+  const [style, setStyle] = useState<StyleId>("real");
+  const [scene, setScene] = useState<StyleScene>("real");
+  /** The real game: the 3D view, or the 2D game it is drawn from. */
+  const [view, setView] = useState<"3d" | "2d">("3d");
+  const [realSeed, setRealSeed] = useState(7);
+  const [realKinds, setRealKinds] = useState<ScenarioKind[] | undefined>(undefined);
   const [tilt, setTilt] = useState(40);
+  /** The real game's camera angle (the dial Harry already has; 40° by default). */
+  const [rtilt, setRtilt] = useState(40);
   const [tod, setTod] = useState<"day" | "golden" | "night" | null>(null);
   const todRef = useRef(tod); todRef.current = tod;
   const [seek, setSeek] = useState<number | null>(null);
@@ -93,9 +104,13 @@ export default function StyleTest3D() {
     const q = new URLSearchParams(window.location.search);
     const s = q.get("style"); if (s && STYLE_CHIPS.some((c) => c.id === s)) setStyle(s as StyleId);
     const sc = q.get("scene"); if (sc && SCENES.some((c) => c.id === sc)) setScene(sc as StyleScene);
-    const ti = Number(q.get("tilt")); if (ti > 0) setTilt(ti);
+    const ti = Number(q.get("tilt")); if (ti > 0) { setTilt(ti); setRtilt(ti); }
     const td = q.get("tod"); if (td === "day" || td === "golden" || td === "night") setTod(td);
     const t = q.get("t"); if (t !== null && !Number.isNaN(Number(t))) setSeek(Number(t));
+    if (q.get("view") === "2d") setView("2d");
+    const sd = Number(q.get("seed")); if (sd > 0) setRealSeed(sd);
+    const ks = (q.get("kinds") ?? "").split(",").filter((k): k is ScenarioKind => (SCENARIO_KINDS as readonly string[]).includes(k));
+    if (ks.length) setRealKinds(ks);
     if (q.get("clean") === "1") setClean(true);
     const demo = q.get("demo"); if (demo && DEMOS[demo]) demoRef.current = demo;
     setInited(true);
@@ -104,7 +119,8 @@ export default function StyleTest3D() {
   // what is built: the gameplay (3D and 2D share one) or a cut scene
   const family = isPlay(scene) ? "play" : scene;
   useEffect(() => {
-    if (!inited || family === "director") return;
+    // the real game builds itself (RealGame3D); the director has its own canvas
+    if (!inited || family === "real" || family === "director") return;
     const el = holder.current;
     if (!el) return;
     let dead = false;
@@ -171,6 +187,11 @@ export default function StyleTest3D() {
   useEffect(() => { play.current?.setTilt(tilt); }, [tilt, status]);
   useEffect(() => { if (tod) play.current?.setTod(tod); }, [tod, status]);
   const isH = style === "real" || style === "mix";
+  const real = scene === "real";
+  /** The real game's style (one object per choice, so the 3D view restyles only on a change). */
+  const realDef = useMemo(() => resolveStyle(style, "play"), [style]);
+  /** The real game's camera: the 2D canvas's tilt maths stops covering the screen past about 50°. */
+  const realTilt = Math.max(20, Math.min(70, rtilt));
   const todNow = tod ?? (style === "mix" ? "golden" : "day");
   useEffect(() => {
     if (!isPlay(scene) || status !== "ready") return;
@@ -269,7 +290,16 @@ export default function StyleTest3D() {
             <button key={c.id} onClick={() => { setSeek(null); setScene(c.id); }} className={chip(scene === c.id)} data-scene={c.id}>{c.label}</button>
           ))}
         </div>
-        {isPlay(scene) && isH && (
+        {real && (
+          <div className="flex items-center gap-1.5" data-view-chips>
+            <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">View</span>
+            {(["2d", "3d"] as const).map((v) => (
+              <button key={v} onClick={() => setView(v)} className={chip(view === v)} data-view={v}>{v === "2d" ? "2D" : "3D view"}</button>
+            ))}
+            <span className="ml-1 truncate text-[11px] font-bold text-white/70">The real match, its real chances</span>
+          </div>
+        )}
+        {(isPlay(scene) || real) && isH && (
           <div className="flex items-center gap-1.5" data-tod-chips>
             <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Light</span>
             {(["day", "golden", "night"] as const).map((t) => (
@@ -277,16 +307,21 @@ export default function StyleTest3D() {
             ))}
           </div>
         )}
-        {isPlay(scene) && (
+        {(isPlay(scene) || real) && (
           <label className="flex items-center gap-2 text-[12px] font-bold">
-            <span className="shrink-0">Camera {tilt}° from straight down</span>
-            <input type="range" min={10} max={70} value={tilt} onChange={(e) => setTilt(Number(e.target.value))} className="w-full accent-amber-400" data-tilt />
+            <span className="shrink-0">Camera {real ? realTilt : tilt}° from straight down</span>
+            <input type="range" min={real ? 20 : 10} max={70} value={real ? realTilt : tilt} onChange={(e) => (real ? setRtilt : setTilt)(Number(e.target.value))} className="w-full accent-amber-400" data-tilt />
           </label>
         )}
       </div>
 
       <div className="relative flex-1 select-none overflow-hidden" style={{ touchAction: "none" }}>
         {scene === "director" ? <CutsceneDirector style={style} clean={clean} /> : <div ref={holder} className="absolute inset-0" data-style-canvas={status} />}
+        {real && inited && (
+          <div className="absolute inset-0 overflow-y-auto overflow-x-hidden px-0 pt-1" data-real-scene>
+            <RealGame3D def={realDef} tod={tod} tilt={realTilt} view={view} seed={realSeed} kinds={realKinds} />
+          </div>
+        )}
         {isPlay(scene) && (
           <div className="absolute inset-0 z-10" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         )}
@@ -324,9 +359,9 @@ export default function StyleTest3D() {
         {!clean && isPlay(scene) && status === "ready" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-black/45 px-3 py-1 text-center text-[11px] font-bold">Left thumb: move · Tap: pass · Drag back, let go: shoot</div>
         )}
-        {!clean && status === "loading" && scene !== "director" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
-        {status === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This device can&apos;t show the 3D test.</div>}
-        {!clean && <div className="pointer-events-none absolute bottom-7 left-2 z-20 text-[10px] font-bold text-white/50">3D quality: {quality3dTier()}</div>}
+        {!clean && !real && status === "loading" && scene !== "director" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
+        {!real && status === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This device can&apos;t show the 3D test.</div>}
+        {!clean && !real && <div className="pointer-events-none absolute bottom-7 left-2 z-20 text-[10px] font-bold text-white/50">3D quality: {quality3dTier()}</div>}
       </div>
     </div>
   );
