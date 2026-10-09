@@ -17,8 +17,9 @@ const cur = JSON.parse(fs.readFileSync(D + "index.json", "utf8"));
 const sa = JSON.parse(fs.readFileSync(D + "index-a.json", "utf8"));
 
 check(spriteIndexFile("current") === "index.json" && spriteIndexFile("stylea") === "index-a.json", "index file per look");
-check(SPRITES2D_DEFAULT === "current", "Current is the default");
-for (const v of ["classic", "standard", "preview"] as const) check(VERSION_PRESETS[v].sprites2d === "current", `${v}: 2D players ${VERSION_PRESETS[v].sprites2d}`);
+check(SPRITES2D_DEFAULT === "stylea", "Style A is the default (Harry, 9 Oct 2026)");
+check(VERSION_PRESETS.classic.sprites2d === "current", `classic: 2D players ${VERSION_PRESETS.classic.sprites2d}`);
+for (const v of ["standard", "preview"] as const) check(VERSION_PRESETS[v].sprites2d === "stylea", `${v}: 2D players ${VERSION_PRESETS[v].sprites2d}`);
 
 const KEYS = ["fps", "loop", "dirs", "frames", "strikeFrame", "atlas", "mirrorOf"] as const;
 let clips = 0, cells = 0;
@@ -40,4 +41,4 @@ for (const f of [sa.atlas.color, sa.atlas.mask, sa.atlases["1"].color, sa.atlase
 check(cur.atlas.color === "atlas-0.webp" && cur.atlases["1"].color === "atlas-1.webp", "the current index still points at the current atlases");
 
 if (problems.length) { console.log("FAIL\n  " + problems.join("\n  ")); process.exit(1); }
-console.log(`spritesStyleA: ${clips} clips, ${cells} cells, every fps/frame/facing/loop/strike the same; standing height ${sa.standH.toFixed(1)} vs ${cur.standH.toFixed(1)} px (${(dh * 100).toFixed(1)}%); Current in every preset`);
+console.log(`spritesStyleA: ${clips} clips, ${cells} cells, every fps/frame/facing/loop/strike the same; standing height ${sa.standH.toFixed(1)} vs ${cur.standH.toFixed(1)} px (${(dh * 100).toFixed(1)}%); Style A default, Classic keeps Current`);

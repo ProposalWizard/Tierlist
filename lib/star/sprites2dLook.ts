@@ -13,7 +13,7 @@ import { useSyncExternalStore } from "react";
 
 export type Sprites2dLook = "current" | "stylea";
 const KEY = "star-look-sprites2d";
-export const SPRITES2D_DEFAULT: Sprites2dLook = "current";
+export const SPRITES2D_DEFAULT: Sprites2dLook = "stylea"; // Harry, 9 Oct 2026: "actually make the new 2d the default"
 let cached: Sprites2dLook | null = null;
 const listeners = new Set<() => void>();
 
@@ -21,7 +21,7 @@ export function sprites2dLook(): Sprites2dLook {
   if (cached) return cached;
   let v: string | null = null;
   try { v = typeof localStorage === "undefined" ? null : localStorage.getItem(KEY); } catch { v = null; }
-  cached = v === "stylea" ? "stylea" : SPRITES2D_DEFAULT;
+  cached = v === "stylea" || v === "current" ? v : SPRITES2D_DEFAULT;
   return cached;
 }
 export function setSprites2dLook(v: Sprites2dLook) {

@@ -165,7 +165,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,
-    sprites2d: O("sprites2d"),
+    sprites2d: N("sprites2d"), // Style A 2D is the default (Harry, 9 Oct 2026)
   },
   preview: build((id) => (PREVIEW_ROWS.includes(id) ? N(id) : "")),
 };
