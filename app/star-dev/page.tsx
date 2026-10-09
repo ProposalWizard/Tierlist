@@ -162,7 +162,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import StoreShop from "@/components/star/shop2d/StoreShop";
+import ShowroomShop from "@/components/star/shop2d/ShowroomShop";
 import StoreLanding from "@/components/star/shop2d/StoreLanding";
 import { useShopLook } from "@/lib/star/shopLook";
 import Shop3D from "@/components/star/Shop3D";
@@ -4195,7 +4195,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <>
         {shopLookNow === "new" ? (
-          <StoreShop
+          <ShowroomShop
             career={career}
             kind={kind}
             onBack={handleBackToDashboard}
@@ -4203,8 +4203,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onBuyBoot={handleBuyBoot}
             onBuyItem={handleBuyItem}
             onBuyFromBlackMarket={handleBuyFromBlackMarket}
-            hud={screenHud(kind === "lifestyle" ? "style" : "shop", shopHelp)}
-            onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
             onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
             onUseCan={handleUseCan}

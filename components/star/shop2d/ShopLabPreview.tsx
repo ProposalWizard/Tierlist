@@ -2,7 +2,8 @@
 
 /**
  * The media lab's shop bench (/star-dev/media-lab?shop=kib|boots|lifestyle|landing
- * &look=new|old). A sample National League career with ★1,000,000, a few cans,
+ * &look=new|old|grid&cat=cans|boots|drip|gadgets|cars|homes|holiday). New = the
+ * Showroom + Feed shop; grid = the earlier card store (StoreShop), only here now. A sample National League career with ★1,000,000, a few cans,
  * a phone and a car; buying works on this sample only (nothing is saved).
  */
 import { useState } from "react";
@@ -13,6 +14,7 @@ import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import Shop from "../Shop";
 import ShopPage from "../ShopPage";
 import StoreShop from "./StoreShop";
+import ShowroomShop, { type CatId } from "./ShowroomShop";
 import StoreLanding from "./StoreLanding";
 import type { StoreTab } from "./parts";
 
@@ -26,7 +28,7 @@ function sampleCareer(): CareerState {
   return { ...c, money: 1_000_000, kibCans: { basic: 3, premium: 1, elite: 0 }, ownedItems: owned, energy: 72, unlocks: undefined } as CareerState;
 }
 
-export default function ShopLabPreview({ kind, look, onBack }: { kind: StoreTab | "landing"; look: "new" | "old"; onBack: () => void }) {
+export default function ShopLabPreview({ kind, look, onBack, cat }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId }) {
   const [career, setCareer] = useState<CareerState>(sampleCareer);
   const [tab, setTab] = useState<StoreTab>(kind === "landing" ? "kib" : kind);
   const [page, setPage] = useState<"landing" | "shop">(kind === "landing" ? "landing" : "shop");
@@ -49,12 +51,16 @@ export default function ShopLabPreview({ kind, look, onBack }: { kind: StoreTab 
   if (page === "landing") {
     return (
       <div className="min-h-[100dvh] bg-[#070b16] px-4 pt-4 text-white">
-        {look === "new" ? <StoreLanding career={career} onOpen={open as never} /> : <ShopPage career={career} onOpen={open as never} />}
+        {look !== "old" ? <StoreLanding career={career} onOpen={open as never} /> : <ShopPage career={career} onOpen={open as never} />}
       </div>
     );
   }
   const back = kind === "landing" ? () => setPage("landing") : onBack;
-  return look === "new" ? (
+  if (look === "new") {
+    return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat}
+      onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}} />;
+  }
+  return look === "grid" ? (
     <StoreShop career={career} kind={tab} onKind={setTab} onBack={back} onHome={back}
       onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}} />
   ) : (

@@ -27,6 +27,11 @@ def setup_render(res=(600, 450), samples=48, look='AgX - Punchy', view='Standard
     scn.cycles.transmission_bounces = 6
     scn.cycles.transparent_max_bounces = 6
     scn.render.film_transparent = True
+    # SHOP_RES=1440x1080 (2D shop Showroom stills, 9 Oct 2026): every script renders big
+    _r = __import__('os').environ.get('SHOP_RES')
+    if _r:
+        res = tuple(int(v) for v in _r.lower().split('x'))
+        scn.cycles.samples = int(__import__('os').environ.get('SHOP_SAMPLES', samples))
     scn.render.resolution_x, scn.render.resolution_y = res
     scn.render.resolution_percentage = 100
     scn.view_settings.view_transform = view
@@ -98,6 +103,10 @@ def studio_lights(scale=1.0, aim=(0, 0, 0), key=1.0):
 
 
 def shadow_catcher(z=0.0, size=40):
+    # SHOP_NO_FLOOR=1: no shadow-catcher floor, so the still has no baked shadow edge
+    # (the 2D shop draws its own soft contact shadow under the item)
+    if __import__('os').environ.get('SHOP_NO_FLOOR') == '1':
+        return None
     bpy.ops.mesh.primitive_plane_add(size=size, location=(0, 0, z))
     p = bpy.context.object
     p.name = 'Ground'

@@ -488,6 +488,15 @@ How to measure: `?fps=1` on any page shows the frame meter (fps, worst frame, dr
 - **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle|landing` (+ `&look=old`), buying works on a sample career.
 - **Open:** Harry approved Cans and Boots; Style had one more pass (2-up cards, chunky group tabs, fame banner) — not yet re-judged. The basket stays off (`BASKET_ON`), so the new shop has no basket.
 
+### 2D shop (Showroom + Feed)
+
+- **What:** the New option of Settings → Look → "Shop: New | Old" is now the Showroom + Feed shop (Harry, 9 Oct: "showroom swipe + feed is definitely something"). One item fills the screen. Swipe left/right = items in a category (dots, tap a dot to jump); swipe up/down = the next category (Cans → Boots → Drip → Gadgets → Cars → Homes → Holiday; the rail at the top jumps). Back chip top-left; balance + fame chip top-right (tap it: the fame banner). Buy/Upgrade pinned at the bottom; tap the item for its sheet (level ladder, what you gain, View in 3D). PC: mouse drag, wheel/trackpad, arrow keys, side arrows.
+- **Where:** `components/star/shop2d/ShowroomShop.tsx`, wired in `app/star-dev/page.tsx` (shop phases). Old is still `components/star/Shop.tsx`. The earlier card store (`StoreShop.tsx`) is only on the media-lab bench now (`&look=grid`).
+- **Pictures:** `public/star/shop2d/items/*.webp` — 1440x1080 renders of the same Blender models as `/shop/*.webp`, no shadow floor (the page draws a soft contact shadow). Made by `tools/shop2d/render_big.py` (it sets `SHOP_RES`/`SHOP_NO_FLOOR` in `tools/blender-shop/scripts/studio.py`), about 40 s a picture on this machine. Not the Higgsfield GLBs: those are one model per family, so every level would show the same thing ("Rusty Moped" as a superbike). Missing still → the small picture. Test: `tests/star/showroomShop.mts`.
+- **Kept:** every buy handler, price, sponsor 25%, black market + lawyers, Style locks, worn-out repair, sold out per visit, focus from the 3D shop, Use a can.
+- **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle&cat=cars` (`&look=grid` = the card store, `&look=old` = the old shop).
+- **Not built:** the live GLB turntable on the showing item (the GLBs don't change per level, and a second WebGL scene costs frames on phones).
+
 ### Career 3D camera + size
 
 **Harry's feedback** (4 iPhone screenshots, Chelsea v Brentford, Match view 3D On): "have you even applied the camera and sizing changes to 3d? The animations are a bit wild and rough, dragging is having to be done off the pitch alot and players too big, angle too low etc. … also we need a 3d/2d toggle in game and a setting cog whilst match commentary is on."

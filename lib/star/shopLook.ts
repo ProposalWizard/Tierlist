@@ -6,7 +6,10 @@
  * sucks (use higgs for this) this is the 2d shop im talking about." New = the
  * store in components/star/shop2d/ (Higgsfield store art, framed cards, a
  * level ladder, a confirm sheet and a purchase burst). Old = the shop exactly
- * as it was (components/star/Shop.tsx, ShopPage.tsx). Every new look gets a
+ * as it was (components/star/Shop.tsx, ShopPage.tsx). 9 Oct 2026 (later): New
+ * is now the Showroom + Feed shop (shop2d/ShowroomShop.tsx: one item per screen,
+ * swipe sideways for items, up/down for categories); the framed-card store
+ * (StoreShop.tsx) is only on the media-lab bench (?shop=kib&look=grid). Every new look gets a
  * toggle and the old one stays (Harry, 3 Oct 2026). Same pattern as homeLook.ts.
  */
 import { useSyncExternalStore } from "react";
