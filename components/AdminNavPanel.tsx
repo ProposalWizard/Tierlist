@@ -146,6 +146,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Relationship games", href: "/star-relgames-dev" },
       { name: "Retirement preview", href: "/star-retirement-dev" },
       { name: "Goal videos", href: "/star-goal-clips-dev" },
+      { name: "Real moments", href: "/star-real-moments-dev" },
       { name: "Scenario Gallery", href: "/star-gallery-dev" },
       { name: "New Chances", href: "/star-chances-dev" },
       { name: "Play Area", href: "/star-play-dev" },
