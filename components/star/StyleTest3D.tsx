@@ -8,6 +8,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import RealGame3D from "./RealGame3D";
+import { previewRealCameraLook, previewPlayerLightLook } from "@/lib/star/style3d/realGameLook";
 import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { STYLE_CHIPS, resolveStyle, type StyleId } from "@/lib/star/style3d/styles";
 import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
@@ -112,6 +113,9 @@ export default function StyleTest3D() {
     const ks = (q.get("kinds") ?? "").split(",").filter((k): k is ScenarioKind => (SCENARIO_KINDS as readonly string[]).includes(k));
     if (ks.length) setRealKinds(ks);
     if (q.get("clean") === "1") setClean(true);
+    // the real game's 3D camera and player light, for this page only (Settings → Look keeps its own)
+    const cm = q.get("cam"); if (cm === "new" || cm === "old") previewRealCameraLook(cm);
+    const pl = q.get("plight"); if (pl === "new" || pl === "old") previewPlayerLightLook(pl);
     const demo = q.get("demo"); if (demo && DEMOS[demo]) demoRef.current = demo;
     setInited(true);
   }, []);
@@ -192,7 +196,8 @@ export default function StyleTest3D() {
   const realDef = useMemo(() => resolveStyle(style, "play"), [style]);
   /** The real game's camera: the 2D canvas's tilt maths stops covering the screen past about 50°. */
   const realTilt = Math.max(20, Math.min(70, rtilt));
-  const todNow = tod ?? (style === "mix" ? "golden" : "day");
+  // the real game opens in Golden hour (Harry, 9 Oct 2026: "by far the best textures"); Day and Night stay a tap away
+  const todNow = tod ?? (style === "mix" || real ? "golden" : "day");
   useEffect(() => {
     if (!isPlay(scene) || status !== "ready") return;
     const id = window.setInterval(() => { const g = play.current; if (g) { setHud(g.session.hud()); setDots(g.dots()); } }, 120);
@@ -319,7 +324,7 @@ export default function StyleTest3D() {
         {scene === "director" ? <CutsceneDirector style={style} clean={clean} /> : <div ref={holder} className="absolute inset-0" data-style-canvas={status} />}
         {real && inited && (
           <div className="absolute inset-0 overflow-y-auto overflow-x-hidden px-0 pt-1" data-real-scene>
-            <RealGame3D def={realDef} tod={tod} tilt={realTilt} view={view} seed={realSeed} kinds={realKinds} />
+            <RealGame3D def={realDef} tod={tod ?? "golden"} tilt={realTilt} view={view} seed={realSeed} kinds={realKinds} />
           </div>
         )}
         {isPlay(scene) && (
