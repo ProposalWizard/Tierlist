@@ -302,7 +302,7 @@ export async function createPlay3DScene(
   for (const who of world.players) {
     const lk = look.people[who.id] ?? { skin: "#c68642", hair: "#1b120c", hairStyle: "short" };
     const g = models.get(playerModelFor(lk.hairStyle));
-    const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
+    const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows, who: String(who.id), you: who === world.you() });
     const kit = who.keeper ? (look.keeperKit ?? { shirt: "#16a34a", trim: "#0b3d1d" })
       : who.team === 0 ? look.kit
       : (look.teamKits?.[who.team] ?? look.oppKit ?? { shirt: "#dc2626", trim: "#ffffff" });

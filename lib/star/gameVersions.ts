@@ -36,6 +36,7 @@ import { animationsLook, setAnimationsLook } from "./animLook";
 import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
 import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
+import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
@@ -78,6 +79,7 @@ export const LOOK_ROWS = {
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
+  playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
   camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
@@ -102,7 +104,8 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
 /** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d"];
+// Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -131,6 +134,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     humanBody: O("humanBody"),
+    playerStyle: N("playerStyle"),
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
     camera3d: O("camera3d"),
@@ -162,6 +166,12 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
   ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
 ];
+// Player style arrived on New (its default) for every phone; a phone already on
+// Classic (every row Old) takes its Old once, so Classic stays Classic.
+if (typeof window !== "undefined" && !playerStyleStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
+}
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
   const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);

@@ -1,0 +1,72 @@
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
+import { withMeshopt } from "@/lib/star/three3d/meshopt";
+import { loadPeople3d, makePerson3d, dressPerson3d, poseClips, relaxToonArms, TOON_LOOK_VARIANTS } from "@/lib/star/people3d";
+import { previewPlayerStyleLook } from "@/lib/star/style3d/toon/look";
+import { numberTexture } from "@/lib/star/style3d/gameplay";
+
+const q = new URLSearchParams(location.search);
+const variant = q.get("v") ?? "current";
+const view = q.get("view") ?? "front";
+const body = (q.get("body") ?? "c1") as "c1" | "c2" | "c3";
+const skin = q.get("skin") ?? "#8d5524";
+const hair = q.get("hair") ?? "#17110d";
+const mgr = q.get("mgr") === "1";
+
+(async () => {
+  previewPlayerStyleLook("new");
+  const W = 390, H = 844;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1);
+  renderer.setSize(W, H);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.autoClear = false;
+  document.body.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#d9b27e");
+  // golden hour, as the scenes light people: warm low sun, cool sky
+  scene.add(new THREE.HemisphereLight("#a7bfe2", "#4d5a2e", 1.15));
+  const sun = new THREE.DirectionalLight("#ffd6a0", 2.8);
+  sun.position.set(3.5, 4, 4);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 48), new THREE.MeshStandardMaterial({ color: "#557f37", roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const loader = await withMeshopt(new GLTFLoader());
+  const [g, anims] = await Promise.all([loadPeople3d(loader, mgr ? "manager" : "player", "new"), loadPeople3d(loader, "anims", "new")]);
+  const look = TOON_LOOK_VARIANTS[variant];
+  const p = makePerson3d(THREE, SkeletonUtils as never, g, anims, { outline: 0.006, castShadow: true, toonBody: body, toonLook: look });
+  dressPerson3d(THREE, p, { skin, hair, kit: { shirt: "#c8102e", trim: "#ffffff" }, number: numberTexture(THREE, 10), grey: 0.4 });
+  poseClips(p, [["idle", 0.4, 1]]);
+  if (variant !== "current") relaxToonArms(THREE, p);
+  p.root.rotation.y = view === "front" ? 0 : -0.75;
+  scene.add(p.root);
+  p.root.updateMatrixWorld(true);
+  const headY = new THREE.Vector3(); p.bones.Head.getWorldPosition(headY);
+  // one person: draws and triangles (with his shadow)
+  ground.visible = false;
+  const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 50);
+  cam.position.set(0, 1.0, 5.6); cam.lookAt(0, 1.18, 0);
+  renderer.info.autoReset = false; renderer.info.reset();
+  renderer.clear(); renderer.render(scene, cam);
+  const stats = { draws: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+  ground.visible = true;
+  renderer.info.autoReset = true;
+  renderer.clear();
+  renderer.setViewport(0, 0, W, H); renderer.setScissorTest(false);
+  renderer.render(scene, cam);
+  // the head close-up, top right (phone-size face)
+  const hc = new THREE.PerspectiveCamera(22, 1, 0.05, 20);
+  hc.position.set(0, headY.y + 0.07, 1.2); hc.lookAt(0, headY.y + 0.07, 0);
+  const s = 150;
+  renderer.setScissorTest(true);
+  renderer.setScissor(W - s - 8, H - s - 8, s, s); renderer.setViewport(W - s - 8, H - s - 8, s, s);
+  renderer.setClearColor("#2a2a30"); renderer.clear();
+  renderer.render(scene, hc);
+  renderer.setScissorTest(false);
+  (window as unknown as { __done: unknown }).__done = { ...stats, variant, view, body };
+})();

@@ -33,6 +33,9 @@ import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "./hum
 import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
+import { playerStyleLook } from "./style3d/toon/look";
+import { TOON_BODIES, TOON_FILES, toonBodyFor, toonYou, toonWearsSuit, type ToonBody } from "./style3d/toon/bodies";
+import { patchToonBody, toonUniforms } from "./style3d/toon/shader";
 
 type Three = typeof import("three");
 
@@ -81,7 +84,7 @@ export interface PersonMeta {
   skinAvg: V3;
   hairAvg: V3;
   face: { chinY: number; eyeY: number; browY: number; frontZ: number };
-  kit: { hemY: number; sockY: number; bootY: number };
+  kit: { hemY: number; sockY: number; bootY: number; collarY?: number; shortsLoY?: number; sleeveT?: number };
   joints: Record<string, V3>;
   hands: Record<"L" | "R", { along: V3; palm: V3; thumb: V3; len: number }>;
   /** The one body only: each finger's bones and the axes it bends about
@@ -90,6 +93,8 @@ export interface PersonMeta {
   fingers?: Record<"L" | "R", Record<FingerName, { bones: string[]; axis: V3; dir: V3; len: number; swing?: V3 }>>;
   /** The one body only: positions are stored as 16-bit steps (see makePerson3d). */
   quant?: { scale: number; offset: V3 };
+  /** A Style A body (style3d/toon): its kit lines also carry the collar, shorts hem and sleeve end. */
+  toon?: boolean;
 }
 
 export type FingerName = "thumb" | "index" | "middle" | "ring" | "little";
@@ -140,6 +145,8 @@ export interface Person3D {
   unit: number;
   /** The one body only: each hand's fingers. */
   fingers?: Record<"L" | "R", Record<FingerName, FingerRig>>;
+  /** Style A (Settings → Look → "Player style: New"): which of the three bodies. */
+  toon?: ToonBody;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -155,7 +162,9 @@ export interface PersonLook {
   hair?: string;
   /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
   /** shorts: their own colour (most kits: the trim, which is the default). */
-  kit?: { shirt: string; trim: string; shorts?: string };
+  kit?: { shirt: string; trim: string; shorts?: string; socks?: string };
+  /** Style A bodies: a crest picture for the chest (else a shield in the kit's colours). */
+  badge?: THREE.Texture | null;
   /** The back of the shirt (a canvas texture of the number), or none. */
   number?: THREE.Texture | null;
   face?: FacePic | null;
@@ -172,6 +181,21 @@ const cache = new Map<string, Promise<GLTF>>();
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
 export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
+  // Style A (Settings → Look → "Player style: New", the default): the three new
+  // bodies for every person; makePerson3d picks one per person.
+  if (which !== "anims" && playerStyleLook() === "new") {
+    const all = Promise.all(TOON_BODIES.map((b) => {
+      const url = TOON_FILES[b];
+      let g = cache.get(url);
+      if (!g) {
+        g = loadGltfCached<GLTF>(loader, url);
+        g.catch(() => cache.delete(url));
+        cache.set(url, g);
+      }
+      return g;
+    }));
+    return all.then((gs) => ({ ...gs[0], toonBodies: gs, toonWhich: which }) as GLTF);
+  }
   // The human (Settings → Look → "3D body: Human", the default with "3D people: New"):
   // one file for every person; makePerson3d builds the one asked for by name.
   if (body === "new" && which !== "anims" && humanBodyLook() === "human") {
@@ -365,8 +389,13 @@ function patchBody(mat: THREE.MeshStandardMaterial, u: Record<string, { value: u
  *  same few pixels in a close-up as in a medium shot (a fixed 3.5 mm was a
  *  thick black band round every finger in the hand close-ups, and poked out
  *  between them as shards). Further than `near`, exactly as without it. */
-function outlineMaterial(T: Three, width: number, near?: number): THREE.MeshBasicMaterial {
+function outlineMaterial(T: Three, width: number, near?: number, thin?: { chinY: number; handX: number; k: number }): THREE.MeshBasicMaterial {
   const m = new T.MeshBasicMaterial({ color: 0x15171c, side: T.BackSide });
+  // Style A: the ink thinner on the face and the hands (rest-pose position: above the chin, out past the wrists)
+  const W = thin
+    ? `(${width.toFixed(4)} * mix(1.0, ${thin.k.toFixed(3)}, max(step(${thin.chinY.toFixed(3)}, position.y), step(${thin.handX.toFixed(3)}, abs(position.x)))))`
+    : width.toFixed(4);
+  const key = thin ? `-thin${thin.chinY.toFixed(3)}-${thin.handX.toFixed(3)}-${thin.k.toFixed(2)}` : "";
   if (near) {
     m.onBeforeCompile = (sh) => {
       sh.vertexShader = sh.vertexShader.replace(
@@ -378,22 +407,22 @@ vec3 p3n = normalize(transformedNormal);
 #ifdef FLIP_SIDED
 p3n = -p3n;
 #endif
-mvPosition.xyz += p3n * ${width.toFixed(4)} * p3k;
+mvPosition.xyz += p3n * ${W} * p3k;
 mvPosition.z -= 0.015 * p3k;
 gl_Position = projectionMatrix * mvPosition;`,
       );
     };
-    m.customProgramCacheKey = () => `people3d-outline-near-${width.toFixed(4)}-${near.toFixed(3)}`;
+    m.customProgramCacheKey = () => `people3d-outline-near-${width.toFixed(4)}-${near.toFixed(3)}${key}`;
     return m;
   }
   m.onBeforeCompile = (sh) => {
     // Pushed out along the (seam-welded) normals, and 1.5 cm back from the
     // camera, so it shows round the edge and never pokes through a fold.
     sh.vertexShader = sh.vertexShader
-      .replace("#include <begin_vertex>", `vec3 transformed = vec3(position) + normalize(normal) * ${width.toFixed(4)};`)
+      .replace("#include <begin_vertex>", `vec3 transformed = vec3(position) + normalize(normal) * ${W};`)
       .replace("#include <project_vertex>", "#include <project_vertex>\nmvPosition.z -= 0.015;\ngl_Position = projectionMatrix * mvPosition;");
   };
-  m.customProgramCacheKey = () => `people3d-outline-${width.toFixed(4)}`;
+  m.customProgramCacheKey = () => `people3d-outline-${width.toFixed(4)}${key}`;
   return m;
 }
 
@@ -407,7 +436,63 @@ export interface MakePersonOptions {
   outlineNear?: number;
   /** The human body only: who to build (height, build, hair, outfit …). Unset: by the file name asked for. */
   human?: HumanSpec;
+  /** Style A: who this is (a stable id seeds his body), or `you` for your player (your chosen body). */
+  who?: string;
+  you?: boolean;
+  /** Style A: this body exactly (spare bodies built before anyone is known). */
+  toonBody?: ToonBody;
+  /** Style A: smart clothes (coat, trousers, shirt and tie) instead of a kit. Unset: managers do. */
+  suit?: boolean;
+  /** Style A: the look being judged (heads-sheet variants). Unset: TOON_LOOK_DEFAULT. */
+  toonLook?: Partial<ToonLook>;
 }
+
+/** Style A's dials: shading, outline and proportions (one of these is Harry's pick). */
+export interface ToonLook {
+  /** Two soft bands (true) or three hard ones. */
+  soft: boolean;
+  /** Face skin's light pushed up (0..0.6): no dark stripe across the face. */
+  faceLift: number;
+  /** Hair as one flat colour with a painted sheen band. */
+  hairSheen: boolean;
+  /** Outline on the face and hands × this (1 = as the body). */
+  outlineThin: number;
+  /** Bone scales: the head, the hands, the neck's girth (1 = as built). */
+  head: number;
+  hands: number;
+  neck: number;
+}
+export const TOON_LOOK_DEFAULT: ToonLook = { soft: false, faceLift: 0, hairSheen: false, outlineThin: 1, head: 1, hands: 1, neck: 1 };
+export const TOON_LOOK_VARIANTS: Record<string, ToonLook> = {
+  current: TOON_LOOK_DEFAULT,
+  soft: { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1, hands: 1, neck: 1 },
+  stylised: { soft: true, faceLift: 0.35, hairSheen: true, outlineThin: 0.4, head: 1.1, hands: 1.15, neck: 1.25 },
+  bold: { soft: true, faceLift: 0.5, hairSheen: true, outlineThin: 0.3, head: 1.18, hands: 1.2, neck: 1.35 },
+};
+
+/** Turn a bone by `deg` about a direction in the person's own frame (a pose on top of the clips). */
+export function turnBoneInBody(T: Three, p: Person3D, name: string, axis: [number, number, number], deg: number) {
+  const b = p.bones[name];
+  if (!b?.parent) return;
+  p.root.updateMatrixWorld(true);
+  const rootQ = new T.Quaternion(); p.root.getWorldQuaternion(rootQ);
+  const ax = new T.Vector3(...axis).applyQuaternion(rootQ).normalize();
+  const pq = new T.Quaternion(); b.parent.getWorldQuaternion(pq);
+  const turn = new T.Quaternion().setFromAxisAngle(ax, (deg * Math.PI) / 180);
+  // local' = parent⁻¹ · turn · parent · local
+  b.quaternion.premultiply(pq.clone().invert().multiply(turn).multiply(pq));
+  b.updateMatrixWorld(true);
+}
+
+/** Style A's relaxed idle arms: out from the sides a little, elbows a little bent (after the clips pose him). */
+export function relaxToonArms(T: Three, p: Person3D, out = 5, bend = 10) {
+  turnBoneInBody(T, p, "LeftArm", [0, 0, 1], out);
+  turnBoneInBody(T, p, "RightArm", [0, 0, 1], -out);
+  turnBoneInBody(T, p, "LeftForeArm", [1, 0, 0], -bend);
+  turnBoneInBody(T, p, "RightForeArm", [1, 0, 0], -bend);
+}
+
+let toonAnon = 0;
 
 /**
  * One person from a loaded body and the loaded clips. `SkeletonUtils` is
@@ -417,10 +502,21 @@ export function makePerson3d(
   T: Three, SkeletonUtils: { clone(o: THREE.Object3D): THREE.Object3D },
   model: GLTF, anims: GLTF, opts: MakePersonOptions = {},
 ): Person3D {
-  const which = (model as GLTF & { humanWhich?: string }).humanWhich;
-  if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
-  const meta = model.scene.userData as PersonMeta;
+  const tg = model as GLTF & { toonBodies?: GLTF[]; toonWhich?: string };
+  let toon: ToonBody | undefined;
+  let role = "player";
+  if (tg.toonBodies) {
+    role = tg.toonWhich ?? "player";
+    toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(opts.who ?? `anon-${toonAnon++}`));
+    model = tg.toonBodies[TOON_BODIES.indexOf(toon)];
+  } else {
+    const which = (model as GLTF & { humanWhich?: string }).humanWhich;
+    if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
+  }
+  let meta = model.scene.userData as PersonMeta;
   if (meta.quant) dequantize(T, model, meta.quant);
+  const suit = !!toon && (opts.suit ?? toonWearsSuit(role, opts.human?.outfit));
+  if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
@@ -432,13 +528,29 @@ export function makePerson3d(
 
   const u = makeUniforms(T, meta);
   const mat = (body.material as THREE.MeshStandardMaterial).clone();
-  mat.metalness = 0;
-  mat.roughness = 0.72;
-  patchBody(mat, u);
+  if (toon) {
+    // Style A: the mask rides in the occlusion slot (build_toon_bodies.py); it is not occlusion.
+    const mask = mat.aoMap as THREE.Texture;
+    mat.aoMap = null;
+    Object.assign(u, toonUniforms(T, mask, meta.kit, meta.joints.neck?.[1] ?? 1.5));
+    u.uKit.value = 1;
+    (u as Record<string, { value: unknown }>).uSuit.value = suit ? 1 : 0;
+    const tl = { ...TOON_LOOK_DEFAULT, ...opts.toonLook };
+    ((u as Record<string, { value: unknown }>).uShade.value as THREE.Vector4).set(tl.soft ? 1 : 0, tl.faceLift, tl.hairSheen ? 1 : 0, 0);
+    patchToonBody(T, mat, u, FRAG_HEAD, FRAG_ACCESSORIES);
+    mat.userData.toon = true;
+  } else {
+    mat.metalness = 0;
+    mat.roughness = 0.72;
+    patchBody(mat, u);
+  }
   body.material = mat;
   body.frustumCulled = false;
   body.castShadow = !!opts.castShadow;
-  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, opts.outline ?? 0.0045, opts.outlineNear));
+  // Style A's ink line is a little bolder (the look test's 7 mm against the old 4.5).
+  const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...opts.toonLook } : null;
+  const thin = tlk && tlk.outlineThin < 1 ? { chinY: meta.face.chinY - 0.03, handX: Math.abs(meta.joints.LeftHand?.[0] ?? 0.4) - 0.01, k: tlk.outlineThin } : undefined;
+  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, (opts.outline ?? 0.0045) * (toon ? 1.3 : 1), opts.outlineNear, thin));
   outline.name = "Outline";
   outline.frustumCulled = false;
   outline.visible = (opts.outline ?? 0.0045) > 0;
@@ -464,6 +576,13 @@ export function makePerson3d(
   };
   const hand = { L: handOf("L"), R: handOf("R") };
   const hipsRest = bones.Hips.position.clone();
+  // Style A proportions: a bigger head and hands, a thicker neck (bone scales; the clips only turn bones)
+  if (tlk && (tlk.head !== 1 || tlk.hands !== 1 || tlk.neck !== 1)) {
+    bones.neck?.scale.set(tlk.neck, 1, tlk.neck);
+    bones.Head?.scale.set(tlk.head / tlk.neck, tlk.head, tlk.head / tlk.neck);
+    bones.LeftHand?.scale.setScalar(tlk.hands);
+    bones.RightHand?.scale.setScalar(tlk.hands);
+  }
 
   // Clips, the hips' height brought to this body's.
   const k = hipsRest.y / ((anims.scene.userData as { hipsY?: number }).hipsY || hipsRest.y);
@@ -507,7 +626,7 @@ export function makePerson3d(
       fingers[side] = out;
     }
   }
-  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers };
+  return { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon };
 }
 
 /**
@@ -662,8 +781,13 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   if (look.kit) {
     u.uShirt.value = lin(T, look.kit.shirt);
     u.uShorts.value = lin(T, look.kit.shorts ?? look.kit.trim);
-    u.uSocks.value = lin(T, look.kit.shirt);
+    u.uSocks.value = lin(T, look.kit.socks ?? look.kit.shirt);
     u.uTrim.value = lin(T, look.kit.trim);
+    if (u.uSuitTie) u.uSuitTie.value = lin(T, look.kit.shirt);
+  }
+  if (u.uBadgeOn) {
+    u.uBadgeOn.value = look.badge ? 2 : 1;
+    if (look.badge) u.uBadge.value = look.badge;
   }
   u.uNumOn.value = look.number ? 1 : 0;
   if (look.number) u.uNum.value = look.number;
@@ -720,6 +844,8 @@ export function bonePos(T: Three, b: THREE.Object3D): THREE.Vector3 { const v = 
 /** The body shader's pieces, for scenes that light the same body their own
  *  way (the cut-scene people, lib/star/cutscene/face.ts). Read only. */
 export const PEOPLE3D_SHADER = { VERT_HEAD, FRAG_HEAD, FRAG_BODY } as const;
+/** The arm and head accessories (sleeves, tape, gloves, armband, headband, snood), shared with Style A. */
+const FRAG_ACCESSORIES = FRAG_BODY.slice(FRAG_BODY.indexOf("  // Arms: forearm"));
 /** The body's uniforms, shader patch and outline (as makePerson3d makes them),
  *  for the human body (lib/star/human3d/human.ts). */
 export { makeUniforms as makePeople3dUniforms, patchBody as patchPeople3dBody, outlineMaterial as people3dOutline };

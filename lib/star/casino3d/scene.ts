@@ -567,7 +567,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     const budget = !cas ? 2 : tier === "low" ? 2 : tier === "medium" ? 5 : 6;
     for (const sp of SPOTS.slice(0, budget)) {
-      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+      // staff and guests wear smart clothes (Style A), never a kit
+      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, who: `casino-${sp.role}-${dealers.length}`, suit: true });
       dressPerson3d(THREE, d, { skin: sp.skin, hair: sp.hair, kit: { shirt: sp.shirt, trim: sp.trim }, number: null });
       relaxHands(THREE, d);
       if (cas) addClips(THREE, d, cas);
@@ -583,7 +584,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       if (!pl.play(base, { from: Math.random() * 3 })) pl.play("idle");
       npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z });
     }
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;

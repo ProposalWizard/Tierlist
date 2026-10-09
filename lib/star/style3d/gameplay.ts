@@ -273,7 +273,7 @@ export async function createStyleGameplay(container: HTMLElement, o: StyleGamepl
       // four opponents (scenery)
       const lanes = [[-9, 9], [-3, 4], [4, 6], [10, 11]];
       if (o.scenery !== false) lanes.forEach(([lane, depth], i) => {
-        const p = makePerson3d(THREE, SK, model, animG, { outline: 0.006, castShadow: tier !== "low" });
+        const p = makePerson3d(THREE, SK, model, animG, { outline: 0.006, castShadow: tier !== "low", who: `scenery-${i}` });
         dressPerson3d(THREE, p, { skin: SKINS[(i + 2) % SKINS.length], hair: "#1b120c", kit: AWAY, number: numberTexture(THREE, [4, 5, 6, 3][i]) });
         relaxHands(THREE, p);
         if (fb) addClips(THREE, p, fb);

@@ -84,7 +84,7 @@ export interface RealLook {
 function fabric(m: any, on: boolean): void {
   // the human body has a list of materials
   if (Array.isArray(m)) { for (const x of m) fabric(x, on); return; }
-  if (!m?.userData) return;
+  if (!m?.userData || m.userData.toon) return; // Style A's kit is its own
   if (!m.userData.fabricWrapped) {
     const inner = m.onBeforeCompile;
     const innerKey = m.customProgramCacheKey?.bind(m);

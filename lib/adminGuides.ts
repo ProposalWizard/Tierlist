@@ -1129,6 +1129,20 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
+  "/star-look-dev": {
+    title: "Player style (Style A)",
+    what: "The Knowitball look for every 3D person (Harry, 9 Oct 2026: Style A, painted cel shading with an ink outline) on the three new bodies. Your player in a club kit turns slowly in golden-hour light, with a team-mate (his body picked from his name) and a manager in his suit behind. Under it is the same Your look panel as in Settings.",
+    buttons: [
+      { items: [
+        ["Slim / Strong / Tall", "Your player's body: C1, C2 or C3."],
+        ["The coloured dots", "Your skin tone (the game's eight)."],
+        ["Black / Brown / Fair / Blond", "Your hair colour. Each body's haircut is part of the body, so only the colour changes."],
+      ] },
+    ],
+    saving: ["Nothing here is saved, and your phone's Settings are not changed. Add ?pstyle=old to the address to see the same three people in today's bodies (Settings → Look → Player style: Old)."],
+    inGame: ["Every 3D person: the real game in 3D, Free Roam and the 3D drills, the dribble runs, the shop, garden and casino, the signing, the walk-out and ovation, and the cut scenes. In a career, Settings → Your look saves your choice on the career."],
+    dev: "lib/star/style3d/toon/ (shader.ts the material, bodies.ts the seeded picks and kit colours, look.ts the switch); lib/star/people3d.ts loadPeople3d/makePerson3d (who, you, suit, toonBody); the bodies public/star/people3d/toon-c1..c3.glb from scripts/people3d/build_toon_bodies.py. Stills: window.__lookReady, window.__lookStats (draws and triangles for one person).",
+  },
   "/star-people-dev": {
     title: "Cut-scene people",
     what: "The people every cut scene is made of, on their own: faces and expressions, blinking eyes that look at things, hand poses, things held in the hands, a handshake. Each button runs one short proof so it can be judged before a scene uses it.",

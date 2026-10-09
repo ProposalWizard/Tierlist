@@ -122,6 +122,8 @@ export interface StarPlayer {
   /** His 3D avatar's hair (the live 3D signing). Absent = short, brown. */
   hairStyle?: import("./playerIdentity").HairStyle;
   hairColour?: import("./playerIdentity").HairColour;
+  /** His 3D body (Settings → Your look; Style A, lib/star/style3d/toon). Absent = C1, the slim one. */
+  body3d?: import("./style3d/toon/bodies").ToonBody;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *

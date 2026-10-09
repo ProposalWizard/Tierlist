@@ -1119,6 +1119,27 @@ export const ASSETS_3D: Asset3dFolder[] = [
     ]
   },
   {
+    "id": "toon",
+    "title": "Style A bodies: C1, C2, C3 (every 3D person, Player style: New)",
+    "kind": "model",
+    "made": "scripts/people3d/build_toon_bodies.py (Higgsfield-generated bodies, rigged to the MakeHuman skeleton)",
+    "note": "Three bodies at 1.83 m, ~9.4-10k triangles each, a grey-kit colour texture and a kit/skin/hair mask, recoloured live in the Style A shader (lib/star/style3d/toon). ~175 KB each (packed by scripts/perf3d/shrink-models.mjs). Clips: star/people3d/anims.glb.",
+    "files": [
+      {
+        "path": "/star/people3d/toon-c1.glb",
+        "bytes": 181520
+      },
+      {
+        "path": "/star/people3d/toon-c2.glb",
+        "bytes": 179128
+      },
+      {
+        "path": "/star/people3d/toon-c3.glb",
+        "bytes": 176384
+      }
+    ]
+  },
+  {
     "id": "models",
     "title": "3D models (live in the browser)",
     "kind": "model",
@@ -1143,6 +1164,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "note": "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop.",
     "files": [
       {
+        "path": "/star/shop3d/items/boot-classic-hf.glb",
+        "bytes": 348916
+      },
+      {
         "path": "/star/shop3d/items/boot-control.glb",
         "bytes": 68120
       },
@@ -1155,12 +1180,20 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 67056
       },
       {
+        "path": "/star/shop3d/items/boot-hf.glb",
+        "bytes": 276272
+      },
+      {
         "path": "/star/shop3d/items/boot-maestro.glb",
         "bytes": 68632
       },
       {
         "path": "/star/shop3d/items/boot-power.glb",
         "bytes": 68060
+      },
+      {
+        "path": "/star/shop3d/items/boot-speed-hf.glb",
+        "bytes": 293452
       },
       {
         "path": "/star/shop3d/items/boot-speed.glb",
@@ -1189,6 +1222,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
       {
         "path": "/star/shop3d/items/car-classic.glb",
         "bytes": 200612
+      },
+      {
+        "path": "/star/shop3d/items/car-family-hf.glb",
+        "bytes": 463340
       },
       {
         "path": "/star/shop3d/items/car-suv.glb",

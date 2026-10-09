@@ -1684,7 +1684,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // exactly as the 3D shop builds him (shop3d/scene.ts): the same body,
     // the same outline, his own skin, hair and the club kit with his number
     const SK = SkeletonUtils.default ?? SkeletonUtils;
-    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, you: true });
     outlines.push(person.outline);
     dressPerson3d(THREE, person, {
       skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12",
@@ -1708,7 +1708,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
     data.mates.slice(0, 3).forEach((num, i) => {
-      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, who: `garden-mate-${num}` });
       outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
       relaxHands(THREE, m);
@@ -1993,7 +1993,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const acts: Record<string, any> = {};
       if (newPerson) {
         const SK = SkeletonUtils.default ?? SkeletonUtils;
-        const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+        const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: false, who: `garden-bench-${i}` });
         outlines.push(m.outline);
         dressPerson3d(THREE, m, { skin: SKINS[i], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(NUMS[i], "#ffffff")) });
         relaxHands(THREE, m);

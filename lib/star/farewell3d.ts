@@ -243,6 +243,7 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
       const model = models[Math.floor(guardRand(opts.seed, k, 1) * models.length)];
       const live = i < LIVE;
       const p = makePerson3d(T, SkeletonUtils, bodyOf(model), anims, {
+        who: `farewell-${opts.seed}-${k}`,
         outline: prof.outlines && i < OUTLINED ? 0.0035 : 0, castShadow: prof.shadows && i < OUTLINED, outlineNear: BODY === "new" ? 1.6 : undefined,
       });
       // Your XI on your left as you walk out (the camera's right), the Rivals XI opposite.
@@ -281,7 +282,7 @@ export async function createGuardScene(container: HTMLElement, opts: GuardSceneO
   };
 
   // You.
-  const you = makePerson3d(T, SkeletonUtils, bodyOf(youModel), anims, { outline: prof.outlines ? 0.0035 : 0, castShadow: prof.shadows, outlineNear: BODY === "new" ? 1.6 : undefined });
+  const you = makePerson3d(T, SkeletonUtils, bodyOf(youModel), anims, { outline: prof.outlines ? 0.0035 : 0, castShadow: prof.shadows, outlineNear: BODY === "new" ? 1.6 : undefined, you: true });
   dressPerson3d(T, you, {
     skin: opts.you.skin, hair: opts.you.hair, kit: opts.you.kit, number: null,
     face: opts.you.face ?? null, faceSkin: opts.you.face?.skin, accessories: opts.you.accessories,

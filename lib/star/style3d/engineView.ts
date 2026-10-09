@@ -31,6 +31,8 @@ import { Governor, governedPixelRatio } from "../three3d/governor";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
+import { playerStyleLook } from "./toon/look";
+import { TOON_BODIES, toonBodyFor, toonHairFor, toonYou, type ToonBody } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
 import { motionLook } from "../motionLook";
@@ -265,7 +267,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     // The human body (Settings → Look "3D body: Human") has its own face and a
     // different material (no userData/uFaceF): it needs no plain head. Without
     // this guard the career match's 3D view crashed on Preview (9 Oct 2026).
-    if (!m || Array.isArray(m) || !m.userData || humanBodyLook() === "human") return;
+    if (!m || Array.isArray(m) || !m.userData || m.userData.toon || humanBodyLook() === "human") return;
     const u = { uHeadSkin: { value: new THREE.Color(skin) }, uHeadHair: { value: new THREE.Color(hair) } };
     if (!m.userData.plainHead) {
       const inner = m.onBeforeCompile;
@@ -313,7 +315,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const solidBody = (m: any, on: boolean): void => {
     // the human body has a list of materials
     if (Array.isArray(m)) { for (const x of m) solidBody(x, on); return; }
-    if (!m?.userData) return;
+    if (!m?.userData || m.userData.toon) return; // Style A lights itself (cel bands + rim)
     if (!m.userData.solidWrapped) {
       const inner = m.onBeforeCompile;
       const innerKey = m.customProgramCacheKey?.bind(m);
@@ -499,10 +501,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * and a new man just takes one and is dressed (cheap: colours and a number).
    */
   const SPARE_TARGET = 24;
-  const spares: Person3D[] = [];
+  // Style A (Player style: New): a man's body is seeded by who he is, so spares are kept per body.
+  const toonOn = playerStyleLook() === "new";
+  const spareBins = new Map<string, Person3D[]>();
+  const bin = (b?: ToonBody) => { const k = b ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
+  const spares = { push: (p: Person3D) => bin(p.toon).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
-  const buildShell = () => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
+  const buildShell = (tb?: ToonBody) => {
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: toonOn ? (tb ?? TOON_BODIES[built % TOON_BODIES.length]) : undefined });
     if (fb) addClips(THREE, p, fb as any);
     p.root.visible = false;
     built++;
@@ -511,11 +517,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   for (let i = 0; i < 6; i++) spares.push(buildShell());
   const topUpSpares = () => { if (built < SPARE_TARGET) spares.push(buildShell()); };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
-    const spare = spares.pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
+    const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
+    const spare = bin(tb).pop();
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb });
     if (!spare) built++;
     const look: PersonLook = {
-      skin: SKINS[hashOf(sid) % SKINS.length], hair: "#1b120c",
+      skin: sid === "you" && toonOn ? toonYou().skin : SKINS[hashOf(sid) % SKINS.length],
+      hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
       accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],
     };
