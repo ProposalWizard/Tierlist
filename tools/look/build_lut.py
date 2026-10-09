@@ -33,9 +33,11 @@ ap.add_argument("--yellow-cap", type=float, default=0.0, help="most yellow (Lab 
 ap.add_argument("--cool", type=float, default=4.0, help="Lab b taken off greens (cooler grass)")
 ap.add_argument("--contrast", type=float, default=0.35, help="S-curve strength on lightness, 0..1")
 ap.add_argument("--black", type=float, default=0.6, help="extra depth in the darkest tones")
-ap.add_argument("--mid", type=float, default=0.06, help="midtone lift (shadows and whites untouched)")
+ap.add_argument("--warm", type=float, default=7.0, help="degrees the light greens turn towards yellow")
+ap.add_argument("--warm-b", type=float, default=7.0, help="most yellow (Lab b) the grade may add to light greens")
+ap.add_argument("--mid", type=float, default=0.1, help="midtone lift (shadows and whites untouched)")
 ap.add_argument("--white", type=float, default=5.0, help="lightness added to near-whites (lines, posts, shirts)")
-ap.add_argument("--grass-sat", type=float, default=0.8, help="grass colourfulness, x")
+ap.add_argument("--grass-sat", type=float, default=0.92, help="grass colourfulness, x")
 ap.add_argument("--grass-contrast", type=float, default=1.3, help="stretch of the grass's own light-to-dark range")
 ap.add_argument("--chroma", type=float, default=1.0, help="how much of the colour (a,b) move to keep")
 a = ap.parse_args()
@@ -141,21 +143,24 @@ dark = np.clip((35 - C[:, 0]) / 15, 0, 1)
 Dn[:, 0] = Dn[:, 0] * (1 - dark) + np.minimum(Dn[:, 0], 0) * dark
 # ── art direction on top of the match (9 Oct review: "yellow-olive and flat" next to the reference) ──
 Lab = C + Dn
-# 1. no yellow added: the move may take yellow out, never put it in; greens are pulled a touch cool
-Lab[:, 2] = np.minimum(Lab[:, 2], C[:, 2] + a.yellow_cap)
-#    and greens keep their hue (or turn a few degrees cooler): the match may calm them, not turn them olive
+# 1. greens: shadows cool, highlights warm (two reviews, 9 Oct: "pull the yellow out", then "the light stripes have
+#    yellow-green highlights, more alive"). Below the grass's middle lightness: no yellow added, hue turned a few
+#    degrees cooler. Above it: a little warmth allowed, hue turned towards yellow-green.
+gT = (T[:, 1] < -6) & (T[:, 0] > 12)
+gmid = float(np.median((S + D)[gT, 0])) if gT.any() else 45.0
+hi = np.clip((C[:, 0] - gmid) / 12, 0, 1)
+lo = 1 - hi
+Lab[:, 2] = np.minimum(Lab[:, 2], C[:, 2] + a.yellow_cap + hi * a.warm_b)
 green = np.clip((-C[:, 1] - 6) / 14, 0, 1)
 h0 = np.degrees(np.arctan2(C[:, 2], C[:, 1]))
 ch = np.hypot(Lab[:, 1], Lab[:, 2])
-h1 = np.maximum(np.degrees(np.arctan2(Lab[:, 2], Lab[:, 1])), h0 + a.cool)
-h = h0 + (h1 - h0) * 1.0
-hr = np.radians(np.where(green > 0, h, np.degrees(np.arctan2(Lab[:, 2], Lab[:, 1]))))
+hm = np.degrees(np.arctan2(Lab[:, 2], Lab[:, 1]))
+h = np.maximum(hm, h0 + a.cool) * lo + (h0 - a.warm) * hi
+hr = np.radians(np.where(green > 0, h, hm))
 Lab[:, 1] = Lab[:, 1] * (1 - green) + ch * np.cos(hr) * green
 Lab[:, 2] = Lab[:, 2] * (1 - green) + ch * np.sin(hr) * green
-#    second review ("flat, saturated cartoon green"): grass about 20% less colourful, and its own
+#    second review ("flat, saturated cartoon green"): grass a little less colourful, and its own
 #    light-to-dark range stretched round its middle so blade texture and mowing stripes read stronger
-gT = (T[:, 1] < -6) & (T[:, 0] > 12)
-gmid = float(np.median((S + D)[gT, 0])) if gT.any() else 45.0
 Lab[:, 1] *= 1 - (1 - a.grass_sat) * green
 Lab[:, 2] *= 1 - (1 - a.grass_sat) * green
 near = green * np.exp(-((Lab[:, 0] - gmid) / 22) ** 2)
