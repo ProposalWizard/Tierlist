@@ -912,6 +912,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   frameObsRef.current = frameObs;
   /** The screen holds the match (its Settings is open): see EngineFrameObserver.hold. */
   const heldByScreen = !!frameObs?.hold;
+  /** A frame reader has thrown once already (logged once, not every frame). */
+  const frameReaderErrRef = useRef(false);
   /**
    * The match view (lib/star/matchView.ts): Settings → Match view, read once
    * when the match opens. "classic" draws, frames and plays exactly as before.
@@ -4400,6 +4402,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // What was just drawn, in pitch metres, and the camera it was drawn with.
     // Read only: nothing a reader does reaches the match.
     const obs = frameObsRef.current;
+    // Never let a reader stop the match: this runs inside the match's own
+    // frame loop, so a throw here would end the loop and freeze both pictures
+    // (Harry, 9 Oct 2026: "3D just stopped working mid game").
+    try {
     // The keeper the 2D didn't draw (no goal in its frame): still in his goal
     // for a 3D camera that shows it (Harry, 9 Oct 2026: "no goalie in the goal on some").
     if (rec && !rec.keeper && frameHasKeeper(sceneRef.current?.keeper)) {
@@ -4428,6 +4434,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
       });
+    }
+    } catch (e) {
+      if (!frameReaderErrRef.current) { frameReaderErrRef.current = true; console.error("Match frame reader failed (the match carries on)", e); }
     }
   }, [toPx]);
 
