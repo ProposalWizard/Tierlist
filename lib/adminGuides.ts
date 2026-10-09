@@ -1129,6 +1129,27 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
+  "/star-people-dev": {
+    title: "Cut-scene people",
+    what: "The people every cut scene is made of, on their own: faces and expressions, blinking eyes that look at things, hand poses, things held in the hands, a handshake. Each button runs one short proof so it can be judged before a scene uses it.",
+    buttons: [
+      { items: [
+        ["Face / Hands / Pen signing / Handshake / Shirt / Trophy / Knee slide / Line-up / Builds / Heads / Rest", "Picks the proof. Line-up: eight managers, chairmen and fans made from the same body. Builds: one player at eight heights and builds. Heads: the hair styles. Rest: the body standing still, for checking its shape. Face: a close-up. Hands: a hand held up in each pose. Pen signing: sat at a desk, writes his name on the contract and looks up. Handshake: you and the manager shake and pump, then both look at the camera. Shirt: holds the club shirt up by its shoulders. Trophy: lifts the cup over his head. Knee slide: down on his knees, arms wide."],
+        ["Short / Buzz / Long / Manager", "Which head: the three player hair styles (each a different man, as in the game) or the manager."],
+        ["The coloured dots", "The 8 skin tones a player can pick."],
+        ["Black hair / Brown hair / Fair hair", "Hair colour."],
+        ["neutral, smile, joy, roar, determined, effort, proud, emotional, disappointed, surprised, talk", "Changes his face to that expression (it fades over a third of a second)."],
+        ["relaxed, open, flat, wave, fist, point, thumbsUp, pen, cup, mic, phone, shake, pinch, applause, ball, pump", "Hands proof only: the hand pose."],
+        ["Turn", "Face proof only: turns him left or right so the face can be judged from the side."],
+        ["Cut-scene people: New / Old", "For this page only. New: the painted face with real eyes. Old: the 3D people's own face, as in the 3D scenes before. Settings → Look has the real switch."],
+        ["↺ Play again", "Runs the proof from the start."],
+      ] },
+    ],
+    saving: ["Nothing here is saved. The page always shows the new human body and new faces; add ?body=before or ?look=old to the address to compare. Your phone's Settings are not changed."],
+    needs: ["Both looks are being tested: they are on in Settings → Version → Preview only (rows \"3D body\" and \"Cut-scene people\" in 3D world)."],
+    inGame: ["Every cut scene built on the people layer: the people here are the ones the scenes use. The game's own 3D people (match, shop, garden) are not changed."],
+    dev: "lib/star/cutscene/people.ts (the API: Cast, Actor), face.ts (the face, eyes, expressions), hands.ts (hand poses), props.ts (props and grips), look.ts (the switch), peopleBench.ts (this page's proofs). The body: lib/star/human3d/human.ts (makeHuman, HumanSpec), npc.ts (seeded people), public/star/human3d/human.glb built by tools/human3d/build_human.py. Stills: window.__people.hold(t).",
+  },
   "/star-garden3d-dev": {
     title: "3D Garden",
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",

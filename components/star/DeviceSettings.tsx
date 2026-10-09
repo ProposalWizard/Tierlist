@@ -203,7 +203,7 @@ function LookRow({ id, tabs, note, look }: {
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
-  garden: "3D garden", shopPlayer: "3D shop player", people3d: "3D people", bossRoom: "Talk to your manager",
+  garden: "3D garden", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", bossRoom: "Talk to your manager",
   casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
@@ -269,6 +269,8 @@ function World3dGroup() {
       <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
       <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />
       <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
+      <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
+      <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
       <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />
       <LookRow id="signing" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="3D: a live scene with your player. Drawn: the picture signing." />
@@ -309,7 +311,7 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
   }, [open]);
   const groups: (ExtraGroup & { card?: boolean })[] = [
     { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 13, content: <MatchGroup />, card: true },
-    { id: "world", title: "3D world", sub: "Garden, shop, people, office, casino, signing", count: 6, content: <World3dGroup />, card: true },
+    { id: "world", title: "3D world", sub: "Garden, shop, people, body, office, casino, signing", count: 8, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
     ...extra,
   ];

@@ -1,0 +1,7 @@
+human.glb — the human body, clothes, hair, eyes and brows.
+
+Made from MakeHuman assets, all CC0 (public domain):
+  - base mesh, targets, game-engine rig and weights: MPFB2 (https://github.com/makehumancommunity/mpfb2, LICENSE.ASSETS.md)
+  - clothes, hair, eyebrows, skin textures: MakeHuman system assets (https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/)
+
+Built by tools/human3d/build_human.py, packed by scripts/perf3d/shrink-models.mjs.
