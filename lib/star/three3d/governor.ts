@@ -7,9 +7,16 @@
  * frames, and
  *   - if the middle frame (the median) is slower than the budget (about
  *     22 ms at 60 a second, under ~45 fps) for 2.5 s, step DOWN one rung;
- *   - if frames hold the full rate for 15 s, step back UP one rung — never
- *     above where the scene started, and never again once it has bounced
- *     (dropped within 20 s of a step up).
+ *   - if frames hold the full rate for 8 s, step back UP one rung — never
+ *     above where the scene started; after a bounce (dropped within 20 s of
+ *     a step up) it may try again a minute later.
+ *
+ * STALLS ARE NOT SLOWNESS (Harry's iPhone, 9 Oct 2026: rung 4 at 60 fps).
+ * One-off long frames (a chance starting, a camera cut, new men) are left
+ * out: a single frame over 3× the running median, and every frame within
+ * HUSH_MS of `hush()` (the scene calls it on a chance start or a cut). The
+ * emergency rungs (3–4: no post, no shadows) need a SUSTAINED median under
+ * 30 fps for 5 s; the ordinary slow rule stops at rung 2.
  *
  * Harry, 9 Oct 2026: "I don't want our solution to bad lag to just be make
  * the game look worse." So a phone opens on Medium exactly as built (rung 1)
@@ -70,14 +77,25 @@ export interface GovernorOptions {
   frozen?: boolean;
   /** Seconds of slow frames before a step down (default 2.5). */
   slowSeconds?: number;
-  /** Seconds of full-rate frames before a step up (default 15). */
+  /** Seconds of full-rate frames before a step up (default 8). */
   fastSeconds?: number;
   /** A clock for tests. */
   now?: () => number;
 }
 
 /** A drawn frame: when, and its gap over the slow budget / the full-rate mark at the cap it aimed for. */
-interface Sample { t: number; slow: number; fast: number }
+interface Sample { t: number; slow: number; fast: number; ms: number }
+
+/** Frames this long after `hush()` (a chance start, a camera cut) are not judged. */
+export const HUSH_MS = 1000;
+/** The deepest rung the ordinary slow rule reaches; deeper needs DEEP_FPS sustained for DEEP_SECONDS. */
+export const SLOW_FLOOR = 2;
+export const DEEP_FPS = 30;
+export const DEEP_SECONDS = 5;
+/** After a bounce, the next climb waits this long (ms). */
+export const RECLIMB_MS = 60000;
+/** A frame over this many times the running median is a one-off stall, not slowness. */
+export const SPIKE_X = 3;
 
 const median = (a: number[]) => {
   if (!a.length) return 0;
@@ -94,7 +112,8 @@ export class Governor {
   private lastDraw = -1e9;
   private cooldownUntil = -1e9;
   private lastUpAt = -1e9;
-  private bounced = false;
+  private bouncedAt = -1e9;
+  private hushUntil = -1e9;
   private paused = new Set<string>();
   private frozen: boolean;
   /** Steps taken, for the meter and tests. */
@@ -118,6 +137,9 @@ export class Governor {
 
   /** Tell the scene the starting rung (call once after building). */
   apply() { this.o.onChange?.(this.rung, this.index, "start"); }
+
+  /** A chance started or the camera cut: the next HUSH_MS of frames are not judged (they stall on new men, not on the phone). */
+  hush(now: number, ms = HUSH_MS) { this.hushUntil = Math.max(this.hushUntil, now + ms); }
 
   /** Pause drawing for a reason (a menu over the scene); `false` lifts it. */
   setPaused(reason: string, on: boolean) {
@@ -148,10 +170,16 @@ export class Governor {
     if (prev < 0) return false;
     const ms = now - prev;
     if (ms <= 0) return false;
-    if (ms > 250) { this.samples.length = 0; return false; } // a pause, a hidden tab, a load
+    if (ms > 250) { this.samples.length = 0; return false; } // a pause, a hidden tab, a load, a stall: never judged; the window starts again
+    if (now < this.hushUntil) return false; // a chance start / a camera cut
+    // a single frame far over the running median is a one-off stall
+    if (this.samples.length >= 8) {
+      const m = median(this.samples.slice(-30).map((s) => s.ms));
+      if (ms > m * SPIKE_X) return false;
+    }
     // judged against the rate the scene aimed for at that frame (a capped scene is not slow)
-    this.samples.push({ t: now, slow: ms / Math.max(22, (1000 / cap) * 1.35), fast: ms / ((1000 / cap) * 1.12) });
-    const keep = Math.max(this.o.fastSeconds ?? 15, this.o.slowSeconds ?? 2.5) * 1000;
+    this.samples.push({ t: now, ms, slow: ms / Math.max(22, (1000 / cap) * 1.35), fast: ms / ((1000 / cap) * 1.12) });
+    const keep = Math.max(this.o.fastSeconds ?? 8, this.o.slowSeconds ?? 2.5, DEEP_SECONDS) * 1000;
     while (this.samples.length && now - this.samples[0].t > keep) this.samples.shift();
     if (this.frozen || now < this.cooldownUntil) return false;
     const slowWin = (this.o.slowSeconds ?? 2.5) * 1000;
@@ -159,10 +187,16 @@ export class Governor {
     if (recent.length >= 4 && now - recent[0].t >= slowWin * 0.9) {
       const m = median(recent.map((s) => s.slow));
       this.lastMedian = m;
-      if (m > 1 && this.index < GOV_LADDER.length - 1) return this.step(+1, now);
+      if (m > 1 && this.index < SLOW_FLOOR) return this.step(+1, now);
     }
-    const fastWin = (this.o.fastSeconds ?? 15) * 1000;
-    if (!this.bounced && this.index > this.startIndex && this.samples.length >= 8 && now - this.samples[0].t >= fastWin * 0.95) {
+    // the emergency rungs: only a sustained median under DEEP_FPS for DEEP_SECONDS
+    if (this.index >= SLOW_FLOOR && this.index < GOV_LADDER.length - 1) {
+      const win = DEEP_SECONDS * 1000;
+      const deep = this.samples.filter((s) => now - s.t <= win);
+      if (deep.length >= 8 && now - deep[0].t >= win * 0.9 && median(deep.map((s) => s.ms)) > 1000 / DEEP_FPS) return this.step(+1, now);
+    }
+    const fastWin = (this.o.fastSeconds ?? 8) * 1000;
+    if (now - this.bouncedAt >= RECLIMB_MS && this.index > this.startIndex && this.samples.length >= 8 && now - this.samples[0].t >= fastWin * 0.95) {
       const m = median(this.samples.map((s) => s.fast));
       if (m <= 1) return this.step(-1, now);
     }
@@ -180,7 +214,7 @@ export class Governor {
 
   private step(dir: 1 | -1, now: number): boolean {
     if (dir > 0) {
-      if (now - this.lastUpAt < 20000) this.bounced = true;
+      if (now - this.lastUpAt < 20000) this.bouncedAt = now;
       this.downs++;
     } else {
       this.ups++;

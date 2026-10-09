@@ -1229,6 +1229,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // a new chance (or a cut in the 2D) cuts here too
     const vp = f.cam.viewport;
     const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
+    if (tv.init && key !== tv.key) gov.hush(performance.now()); // a chance start / cut stalls once (new men): not slowness
     if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.th = t.th; tv.key = key; tv.init = true; }
     else {
       const k = Math.min(1, dt * 2.5);

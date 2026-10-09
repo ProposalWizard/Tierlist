@@ -18,7 +18,7 @@ const split = args.includes("--split");
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--js-flags=--max-old-space-size=1024"] });
 const errs = [];
 let page = null;
-// --split: "before" is its own page with every saving off from the start (?shadowcache=0&shadowbody=0&lightreach=0),
+// --split: "before" is its own page with every saving of this pass off from the start (?shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0),
 // for savings that are built into the shaders (lights only where they reach); else one page, switched live.
 async function open(off) {
   if (page) await page.context().close();
@@ -26,7 +26,32 @@ async function open(off) {
   page = await ctx.newPage();
   page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0, 200)); });
   page.on("pageerror", (e) => errs.push(String(e).slice(0, 200)));
-  await page.goto(`http://localhost:3502/index.html?gov=0${off ? "&shadowcache=0&shadowbody=0&lightreach=0" : ""}`);
+  // GPU picture memory: every texture the page uploads, by its real stored size (packed formats at their own size)
+  await page.addInitScript(() => {
+    const P = WebGL2RenderingContext.prototype;
+    const bytes = new Map(); let bound = new Map();
+    const FMT = { 0x8058: 4, 0x8c43: 4, 0x881a: 8, 0x8814: 16, 0x8229: 1, 0x822b: 2, 0x81a6: 4, 0x88f0: 4, 0x8cac: 4, 0x8d48: 1, 0x8051: 3, 0x8c41: 3 };
+    const cur = (gl, target) => bound.get(target === 0x8513 ? 0x8513 : 0x0de1);
+    const set = (tex, b) => { if (tex) bytes.set(tex, b); };
+    const bt = P.bindTexture, ts = P.texStorage2D, ti = P.texImage2D, ci = P.compressedTexImage2D, dt = P.deleteTexture;
+    P.bindTexture = function (t, x) { bound.set(t, x); return bt.call(this, t, x); };
+    P.texStorage2D = function (t, levels, fmt, w, h) {
+      let b = 0, ww = w, hh = h; const packed = (fmt >= 0x83f0 && fmt <= 0x83f3) || (fmt >= 0x8c4c && fmt <= 0x8c4f) || (fmt >= 0x8e8c && fmt <= 0x8e8f) || (fmt >= 0x9270 && fmt <= 0x93dd); const bpp = FMT[fmt] ?? (packed ? 1 : 4);
+      for (let i = 0; i < levels; i++) { b += Math.max(1, ww) * Math.max(1, hh) * bpp; ww >>= 1; hh >>= 1; }
+      set(cur(this, t), b * (t === 0x8513 ? 6 : 1)); return ts.apply(this, arguments);
+    };
+    P.texImage2D = function (t, level, fmt, w, h) {
+      const tex = cur(this, t); if (tex && typeof w === "number" && typeof h === "number") { const k = tex.__lv || (tex.__lv = new Map()); k.set(`${t}:${level}`, w * h * (FMT[fmt] ?? 4)); let b = 0; k.forEach((v) => b += v); set(tex, b); }
+      return ti.apply(this, arguments);
+    };
+    P.compressedTexImage2D = function (t, level, fmt, w, h, border, data) {
+      const tex = cur(this, t); if (tex) { const k = tex.__lv || (tex.__lv = new Map()); k.set(`${t}:${level}`, data?.byteLength ?? 0); let b = 0; k.forEach((v) => b += v); set(tex, b); }
+      return ci.apply(this, arguments);
+    };
+    P.deleteTexture = function (x) { bytes.delete(x); return dt.call(this, x); };
+    window.__gpuTexMB = () => { let b = 0; bytes.forEach((v) => b += v); return +(b / 1048576).toFixed(1); };
+  });
+  await page.goto(`http://localhost:3502/index.html?gov=0${off ? "&shadowcache=0&shadowbody=0&lightreach=0&ktx2=0&cullpeople=0" : ""}`);
   await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [scene, opts]);
   await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
   if (await page.evaluate(() => window.__err)) { console.log(JSON.stringify({ scene, err: await page.evaluate(() => window.__err), errs })); process.exit(1); }
@@ -81,6 +106,7 @@ for (const mode of ["before", "after"]) {
   const nf = Math.max(1, fr1[1] - fr0[1]);
   m.shadowTrisPerFrame = Math.round((fr1[0] - fr0[0]) / nf);
   m.savings = await page.evaluate(() => window.__sceneSavings ?? null);
+  m.gpuTexMB = await page.evaluate(() => window.__gpuTexMB ? window.__gpuTexMB() : null);
   const shot = `${out}/${scene}${opts.tag ? "-" + opts.tag : ""}-${mode}.png`;
   await page.screenshot({ path: shot, timeout: 240000 });
   m.still = shot;

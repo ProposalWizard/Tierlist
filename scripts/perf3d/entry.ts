@@ -117,8 +117,19 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
       keeper: { x: 34, y: 1.2, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: performance.now() / 1000 - t0, shirt: "#16a34a", shorts: "#111111", drawn: true },
       figures, aim: null, ring: null, goalSide: null, goalInView: true, orders: null,
     });
+    // M.switchChance(): a new chance (a new kind, a new framing, new men) to time the cut (window.__M.vf: ms per frame() call)
+    let chance = 0;
+    let vp = { x1: 10, x2: 58, y1: -4, y2: 44 };
+    let kind = "one_on_one";
+    M.vf = [] as { t: number; ms: number; chance: number }[];
+    M.switchChance = (k = "corner") => {
+      chance++; kind = k; vp = chance % 2 ? { x1: 30, x2: 68, y1: -4, y2: 30 } : { x1: 10, x2: 58, y1: -4, y2: 44 };
+      figures.length = 1;
+      us.forEach(([x, y], i) => figures.push(fig(`c${chance}m${i}`, x + (chance % 2) * 8, y - 6, "us")));
+      them.forEach(([x, y], i) => figures.push(fig(`c${chance}d${i}`, x + (chance % 2) * 8, y - 4, "them")));
+    };
     let on = true;
-    const tick = () => { if (!on) return; v.frame(f() as any); requestAnimationFrame(tick); };
+    const tick = () => { if (!on) return; const fr: any = f(); fr.kind = kind; fr.cam.viewport = vp; const a = performance.now(); v.frame(fr); M.vf.push({ t: a, ms: performance.now() - a, chance }); requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
     M.ready = performance.now();
     M.ctrl = { dispose() { on = false; v.dispose(); } };
