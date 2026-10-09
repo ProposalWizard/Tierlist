@@ -166,6 +166,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.add(pitch.mesh);
   const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours }) : null;
   if (arena) root.add(arena.group);
+  // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
+  arena?.group.traverse((x: any) => { if (x.name === "h-crowd" && x.material) x.material.userData.bakeNeutral = true; });
   // a far ring of trees and roofs for the training patch (no stadium)
   if (!withArena) {
     const hedge = new T.Mesh(new T.CylinderGeometry(150, 150, 9, 64, 1, true), new T.MeshStandardMaterial({ color: "#2b4a24", roughness: 1, side: T.BackSide }));

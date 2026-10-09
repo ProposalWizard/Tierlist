@@ -28,17 +28,19 @@ BENCH = {
 }
 # the game frame is cut the same way: below the stands and boards, like the benchmark crop (fractions l,t,r,b)
 FRAME_CROP = {"match": (0, 0.19, 1, 1), "freeroam": (0, 0, 1, 1)}
+if os.environ.get("LOOK_FRAME_CROP"):  # a camera that shows more stand (the real game in 3D): crop below it
+    FRAME_CROP = {k: tuple(float(v) for v in os.environ["LOOK_FRAME_CROP"].split(",")) for k in FRAME_CROP}
 W = 240
-WEIGHTS = {"hist": 1.0, "hist3": 0.3, "grass": 1.2, "tone": 1.0, "detail": 0.5, "texture": 0.8}
+WEIGHTS = {"hist": 1.0, "hist3": 0.3, "grass": 1.2, "tone": 1.0, "detail": 0.5, "texture": 0.8, "lum": 1.5}
 # The 9 Oct review (Harry's side): the reference grass READS neutral-to-cool, deep and contrasty, though its pixels
 # measure olive. So the grass is judged on lightness, colourfulness and "never yellower than a 128 degree hue",
 # not on its exact hue; contrast only counts against us when it is LOWER than the reference's.
-GRASS_HUE_MIN = 128.0
-# The second review ("darker and muddier than the reference ... flat, saturated cartoon green"): the reference
-# READS brighter in the mids and its grass less colourful than its pixels average out to, so the targets
-# carry that: +4 lightness, grass colourfulness x0.8. "texture" = fine light-dark detail inside the grass
+GRASS_HUE_MIN = 118.0
+# Reviews: the second asked for less cartoon-green grass (colour target back to x1.0 since); the third found the
+# result darker and duller than the target, so brightness gets its own term ("lum", +3 over the measured mean: the target READS brighter than its dark edges average out to) and greens may be
+# as yellow as a 118 degree hue (the target's light stripes are yellow-green). "texture" = fine light-dark detail inside the grass
 # (blades, mowing stripes), counted only when ours has LESS than the reference.
-REVIEW = {"meanL": 4.0, "grassChroma": 0.8}
+REVIEW = {"meanL": 3.0, "grassChroma": 1.0}
 
 
 def srgb_to_lab(rgb):
@@ -108,6 +110,8 @@ def compare(f, t):
     parts["grass"] = float(abs(dg[0]) / 8 + abs(cf - ct) / 8 + max(0.0, GRASS_HUE_MIN - hue) / 6 + max(0.0, np.log((t["grassStd"] + 0.5) / (f["grassStd"] + 0.5))))
     parts["tone"] = float(abs(f["meanL"] - t["meanL"] - REVIEW["meanL"]) / 8 + max(0.0, np.log((t["stdL"] + 1) / (f["stdL"] + 1))) / 0.25 + abs(np.log((f["chroma"] + 1) / (t["chroma"] + 1))) / 0.25) / 3
     parts["detail"] = float(abs(np.log((f["edge"] + 0.05) / (t["edge"] + 0.05))) / 0.4)
+    # third review: the target's overall brightness (mean lightness), matched closely in its own right
+    parts["lum"] = float(abs(f["meanL"] - t["meanL"] - REVIEW["meanL"]) / 4)
     parts["texture"] = float(max(0.0, np.log((t["texture"] + 0.05) / (f["texture"] + 0.05))) / 0.3)
     total = sum(WEIGHTS[k] * v for k, v in parts.items())
     return total, parts

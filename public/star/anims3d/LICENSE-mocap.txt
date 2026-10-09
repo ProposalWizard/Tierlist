@@ -46,3 +46,18 @@ TRIALS USED (subject_trial: what the database calls it -> our clip)
   141_23 Shake Hands                          -> handshake
   141_16 Wave Hello                           -> wave
   (* adapted: see tools/mocap3d/README.md)
+
+  Round 2 (9 Oct 2026):
+  82_09  confident walk forward               -> walk_confident
+  143_18 Sit Down And Get Up                  -> sit_down, sit_idle, stand_up
+  140_03 Get Up Laying on Side                -> get_up_side
+  18_08  conversation - explain with hand gestures -> talk
+  13_27  direct traffic, wave, point          -> point
+  82_08  stand still                          -> nod*, hug*, chest_control*, thigh_control*, celebrate_pump*
+  79_69  very happy                           -> celebrate_roar*
+  (* adapted: see tools/mocap3d/README.md)
+
+KEYED BY HAND (no free capture exists; made in tools/mocap3d/keyed.py, not motion capture)
+  dive_left, dive_right, dive_left_low, dive_right_low, dive_left_high,
+  dive_right_high (each with its own get-up), sliding_tackle, poke_tackle,
+  knee_slide. Original work for this project; no third-party data.

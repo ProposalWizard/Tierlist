@@ -105,6 +105,8 @@ export interface ClipInfo {
   plants?: { L: [number, number][]; R: [number, number][] };
   /** Mocap clips: which CMU capture it is ("CMU 11_01", "(mirrored)", and what was adapted). */
   source?: string;
+  /** Keyed keeper dives (tools/mocap3d/keyed.py): he gets back up inside the clip, from this second on. */
+  getUp?: number;
   /** Mocap loops: the travel taken out, m/s in his frame (x = his left, z = forward). */
   travel?: [number, number];
   [k: string]: unknown;

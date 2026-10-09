@@ -58,11 +58,20 @@ New: `walk`, `run`, `turn_l/_r`, `side_step_l/_r`, `shuffle_l/_r`,
 `applause` (clapping hands over a real stand), `shirt_hold` (hands holding a
 shirt up over a real stand).
 
-**Still the old hand-made clip** (CMU has nothing close enough; a bad
-adaptation would be worse): `dive_left/_right`, `header_diving`,
-`sliding_tackle`, `poke_tackle`, `chest_control`, `thigh_control`,
-`ready_shuffle`, the drill loops `juggle`, `pass`, `cone_dribble`, `stretch`.
-A knee slide is not made yet.
+**Round 2 (9 Oct 2026).** Captured: `walk_confident` (82_09), `sit_down`,
+`sit_idle`, `stand_up` (143_18), `get_up_side` (140_03), `talk` (18_08),
+`point` (13_27). Adapted from a real stand: `nod`, `hug`, `chest_control`,
+`thigh_control`, `celebrate_pump`; from 79_69: `celebrate_roar`.
+**Keyed by hand** in `keyed.py` (no free capture exists): the keeper dives
+`dive_left/_right` plus `_low` and `_high` (each lands, gathers and gets back up
+into the set inside the clip; `getUp` in the file), `sliding_tackle`,
+`poke_tackle`, `knee_slide`. They go into mocap.glb under the same names, so
+Motion: Old keeps the old ones. build.py prints FOOT SLIDE per clip (worst
+drift of a planted foot inside one planted run, cm) and writes `plants` for the
+keyed clips too.
+
+**Still the old hand-made clip**: `header_diving`, `ready_shuffle`, the drill
+loops `juggle`, `pass`, `cone_dribble`, `stretch`.
 
 ## Looking at them (`look.py`)
 
