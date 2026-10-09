@@ -500,6 +500,7 @@ Done:
 - **Spare bodies for the heads the match will really ask for** (`LIKELY_SIDS`, `engineView.ts`). Spares were dealt round the six heads in turn, so a chance whose new men shared a head built the rest on the spot. Now they are built for "you", "keeper", "follower", def0–9, mate0–9, run0… in order.
 - **Freed on leaving a match**: the sun's two kept shadow maps (`installShadowCache(...).forget(light)`, from look H's `dispose`) and the spares, which never reached the scene. The match renderer is shared, so these waited for the browser's own clean-up.
 - No garbage each frame: `?bcam`/`?shadowcache` read once, not per man per frame; scratch vectors for the ball, the camera, the shop and house cameras.
+- Test: `tests/star/bakedLightNow.mts` (patched at once, off until the pictures arrive, a missing set stays off, `forget` frees both maps).
 
 Not done / still lags:
 - **The 3D shop holds ~377 MB of pictures on this machine** (45 Higgsfield models, three 1024² maps each, all WebP, so uncompressed on the GPU). This is the biggest memory risk left on an iPhone. Fix without a softer picture: pack them as KTX2 inside the GLBs (`scripts/perf3d/ktx2-textures.mjs` only does loose pictures today), or load each model's maps only when its shelf is on screen.
