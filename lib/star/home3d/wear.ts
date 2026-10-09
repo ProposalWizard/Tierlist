@@ -7,7 +7,9 @@
  *   kit     the 3D shop's own player, exactly as the shop makes him
  *           (people3d.ts: Settings → "3D people" / "3D body" pick the body),
  *           in your club's home or away kit, your number, your boot colour.
- *   casual  the parametric human (human3d/human.ts) in one of its outfits
+ *   casual  Player style New (Style A): the same toon body and head as the
+ *           kit, in its long-sleeve "suit" paint, coloured from the set.
+ *           Player style Old: the parametric human (human3d/human.ts) in one of its outfits
  *           (tracksuit, tee and jeans, shirt, quarter-zip, coat), recoloured.
  *           Built from the human file whatever "3D body" says, because the
  *           one body has no clothes but the kit.
@@ -60,6 +62,18 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
   const SK = SkeletonUtils.default ?? SkeletonUtils;
   const model = playerModelFor(w.hairStyle);
   const anims = await loadPeople3d(loader, "anims");
+  // Style A (Player style: New): YOUR head and build for every outfit (one head file), so changing
+  // clothes never swaps his look back (Harry, 9 Oct 2026: "changing clothes changed my player's style back")
+  const toon = playerStyleLook() === "new";
+  if (w.worn.kind === "casual" && toon) {
+    const g = await loadToonHead(loader, toonYou().head);
+    const p = makePerson3d(T, SK, g, anims, { outline: w.outline, castShadow: w.castShadow, you: true });
+    const c = w.worn.set.colours(w.kits.home);
+    dressPerson3d(T, p, { skin: toonYou().skin, hair: toonYou().hair, kit: { shirt: c.main ?? "#7a7f87", trim: c.accent ?? c.main ?? "#7a7f87", shorts: c.trousers, socks: c.trousers } });
+    paintCasualToon(T, p, c);
+    relaxHands(T, p);
+    return p;
+  }
   if (w.worn.kind === "casual") {
     humanFile ??= loadGltfCached(loader, HUMAN3D_FILE).catch((e) => { humanFile = null; throw e; });
     const g = await humanFile;
@@ -71,9 +85,7 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     relaxHands(T, p);
     return p;
   }
-  // Style A (Player style: New): YOUR head and build in the kit (one head file); the casual
-  // sets above stay on the human body until Style A has clothes of its own.
-  const toon = playerStyleLook() === "new";
+  // Style A: YOUR head and build in the kit (one head file)
   const g = toon ? await loadToonHead(loader, toonYou().head) : await loadPeople3d(loader, model, people3dLook());
   const p = makePerson3d(T, SK, g, anims, { outline: w.outline, castShadow: w.castShadow, you: true });
   dressPerson3d(T, p, {
@@ -84,11 +96,33 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
   return p;
 }
 
+/**
+ * A casual set on a Style A body: its own "suit" mode (style3d/toon/shader.ts),
+ * which already draws long sleeves and trousers over the kit body's bare arms
+ * and legs. Top = the set's main colour, trousers, shoes; the open V at the
+ * neck shows the set's second colour (the coat's white shirt) with the scarf or
+ * accent as the "tie"; a plain top keeps it all one colour. No badge, no number.
+ */
+function paintCasualToon(T: any, p: Person3D, c: Partial<Record<"main" | "second" | "accent" | "trousers" | "shoes" | "scarf", string>>) {
+  const main = c.main ?? "#7a7f87";
+  const u = p.u as Record<string, { value: any }>;
+  if (!u.uSuit) return;
+  u.uSuit.value = 1;
+  u.uSuitCoat.value = new T.Color(main);
+  u.uSuitTrousers.value = new T.Color(c.trousers ?? "#2a2d34");
+  u.uShoes.value = new T.Color(c.shoes ?? "#f2f2ef");
+  u.uSuitShirt.value = new T.Color(c.second ?? main);
+  u.uSuitTie.value = new T.Color(c.scarf ?? c.second ?? main);
+  if (u.uBadgeOn) u.uBadgeOn.value = 0;
+  if (u.uNumOn) u.uNumOn.value = 0;
+}
+
 /** Repaint a kit-wearing person for another kit or boot colour without rebuilding him. */
 export function repaintKit(T: any, p: Person3D, w: WearInput) {
   if (w.worn.kind !== "kit") return;
+  const toon = !!p.toon;
   dressPerson3d(T, p, {
-    skin: w.skin, hair: w.hair, kit: w.kits[w.worn.kit], number: w.number,
+    skin: toon ? toonYou().skin : w.skin, hair: toon ? toonYou().hair : w.hair, kit: w.kits[w.worn.kit], number: w.number,
     accessories: [{ slot: "boots", color: w.worn.boots }],
   });
 }

@@ -61,7 +61,11 @@ function Garden3DTest() {
       c.ownedItems = [];
     }
     c.money = money;
+    // ?outfit=hoodie|tee|shirt|tracksuit|coat: walk the garden in that casual set (as picked at your house's wardrobe)
+    const fit = params.get("outfit");
+    if (fit) c.outfit = { wear: "casual", casual: fit, kit: "home" };
     return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [full, money]);
 
   const btn: React.CSSProperties = { height: 30, padding: "0 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 12, cursor: "pointer" };
