@@ -14,7 +14,7 @@
 import type { Quality3d } from "../../three3d/quality";
 import { envFor, type TimeOfDay } from "./assets";
 import { makeHPost, type HGrade, type HPost } from "./post";
-import { createBakedLight, type BakedLight, type BakeSet } from "../../look/bakedLight";
+import { bakedLightNow, type BakedLight, type BakeSet } from "../../look/bakedLight";
 import { lookLut } from "../../look/params";
 
 export interface HEnhance {
@@ -43,9 +43,10 @@ export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod
   let baked: BakedLight | null = null;
   let frames = 0;
   if (set) {
-    void createBakedLight(T, set, tod === "indoor" ? "indoor" : tod).then((b) => {
-      if (!b) return;
-      if (dead) { b.dispose(); return; }
+    // patched now, its pictures arriving in the background (lag pass 3, 9 Oct 2026): patched when they
+    // arrived, every lit shader in the place was built twice, the second time after the cover came down
+    const b = bakedLightNow(T, set, tod === "indoor" ? "indoor" : tod);
+    if (b) {
       baked = b;
       // the bounce is the sun's light thrown back: find the scene's strongest sun-like light
       let sun: any = null;
@@ -55,7 +56,7 @@ export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod
       // (at full strength the two sat a hand apart on the stable's front and read as a smudge, 9 Oct still)
       if (set === "garden") b.setStrength({ shade: 0.3, ao: 0.85 });
       b.apply(scene);
-    }).catch(() => { /* no bake: as before */ });
+    }
   }
   if (tod !== "indoor") {
     void lookLut(T, tod).then((t) => { if (!dead && t) { grade.lut = t; grade.lutAmt = o.lutAmt ?? 0.8; } });

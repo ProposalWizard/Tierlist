@@ -129,7 +129,7 @@ exactly today's bodies. You never pick a file yourself:
   - Lights only where they reach: `lib/star/three3d/lightReach.ts`. A dark light leaves the shader; far materials skip the lamp loop. Off: `?lightreach=0`.
   - Off-screen people are not drawn: `lib/star/three3d/cullPeople.ts` (`cullSkinned`). Off: `?cullpeople=0`.
   - Packed pictures: `lib/star/three3d/ktx2.ts` (`loadPicture3d`) tries a `.ktx2` beside the WebP and falls back on any failure. Make them with `scripts/perf3d/ktx2-textures.mjs`. Transcoder: `public/star/three/basis`. Off: `?ktx2=0`.
-  - Baked light: `lib/star/look/bakedLight.ts`, sets in `tools/bake3d/sets` (stadium, garden, shop, casino). Off: `?bake=0`.
+  - Baked light: `lib/star/look/bakedLight.ts`, sets in `tools/bake3d/sets` (stadium, garden, shop, casino). Off: `?bake=0`. **Patch it at build time with `bakedLightNow`** (lag pass 3): its pictures arrive later and switch it on by a uniform. Patching when they arrived built every lit shader twice, the second time mid-play.
   - Proof: `node scripts/perf3d/proof.mjs <garden|shop|casino|career|cut> '{...}' --split --out=DIR` gives a before and after still and the counters.
 
 ### Files must be packed small: meshopt
@@ -479,6 +479,38 @@ Next 3 steps, in order:
 3. Check KTX2 on an iPhone (GPU memory and load time); keep or trim the list.
 
 How to measure: `?fps=1` on any page shows the frame meter (fps, worst frame, draws, triangles, shadow draws, rung); the numbers are on `window.__frame3d`. `?gov=0` stops the governor stepping so one tier can be measured. Off switches for each saving are listed under "Quality, the governor and the frame meter".
+
+### 3D lag pass 3 (9 Oct, late)
+
+Harry: "pleaseee try and bug fix all lag issues otherwise we can't even test." Same rule: same picture, less work.
+
+Measured on this machine (SwiftShader, 390×844, Medium; percentages only). Harness: `scripts/perf3d` (`M.switchChance(kind)` now reuses CanvasMatch's own names, "mate0", "def3"…, and turns the camera for corners; `M.switchChance(kind, true)` is the old all-new-men worst case).
+
+| What | Before | After |
+|---|---|---|
+| Career 3D GPU memory, px 1.5 (textures + render buffers) | 149 MB (107 MB when look H loads before the first frame) | 72 MB |
+| Shaders built by the career 3D view | 45, 10 of them after 20 s of play | 35, all in the first 17 s |
+| Shaders built at the first chance start | 3 | 1 |
+
+Done:
+- **The baked light is patched when the place is built** (`bakedLightNow`, `lib/star/look/bakedLight.ts`; used by look H and `enhanceH`). Before, it patched every lit material when its pictures arrived, 3–20 s in: every shader in the stadium (or garden, shop, casino) was built a second time in the middle of play. Now it is built once, and the pictures switch it on by a uniform. A new man gets the bake in `dressPeople`, before his first draw.
+- **Style A's colour map at match size** (`matchSizedMap`, `engineView.ts`). Each head's 1024² map is 5.6 MB on the GPU; six heads = 34 MB. A man on the match camera is at most ~120 px tall, so the GPU only reads the 128 px level: a 512 copy draws the same picture. The loaded file is untouched (the garden, shop and close-ups share it). The match loads the six player heads only, not the suits.
+- **The kit's post pictures freed under look H** (`StylePost.release`, `kit.setActive(false)`). The kit draws the few seconds before look H arrives, and its full-screen 4× MSAA picture and depth (34 MB at px 1.5) stayed all match.
+- **One number texture per shirt number**, uploaded at load (`numberTex`). Each man used to paint and upload his own when he first appeared, often several at a chance start.
+- **Spare bodies for the heads the match will really ask for** (`LIKELY_SIDS`, `engineView.ts`). Spares were dealt round the six heads in turn, so a chance whose new men shared a head built the rest on the spot. Now they are built for "you", "keeper", "follower", def0–9, mate0–9, run0… in order.
+- **Freed on leaving a match**: the sun's two kept shadow maps (`installShadowCache(...).forget(light)`, from look H's `dispose`) and the spares, which never reached the scene. The match renderer is shared, so these waited for the browser's own clean-up.
+- No garbage each frame: `?bcam`/`?shadowcache` read once, not per man per frame; scratch vectors for the ball, the camera, the shop and house cameras.
+- Test: `tests/star/bakedLightNow.mts` (patched at once, off until the pictures arrive, a missing set stays off, `forget` frees both maps).
+
+Not done / still lags:
+- **The 3D shop holds ~377 MB of pictures on this machine** (45 Higgsfield models, three 1024² maps each, all WebP, so uncompressed on the GPU). This is the biggest memory risk left on an iPhone. Fix without a softer picture: pack them as KTX2 inside the GLBs (`scripts/perf3d/ktx2-textures.mjs` only does loose pictures today), or load each model's maps only when its shelf is on screen.
+- **The real game's chance start was not timed on this machine** past one run: the browser was killed by the machine's own memory limit (other sessions' servers), not by the page. One run that finished showed a 3.1 s long task at the first chance after a kick (SwiftShader). The profile of it is the next step: `/star-style-dev?scene=real`, play two chances, profile the switch.
+- One shader still builds at the first corner (the corner flag / canopy material, double-sided). `warmUp(..., { includeHidden: true })` fixes it but builds 70 more unused shaders at load: not worth it.
+
+Next 3 steps, in order:
+1. Harry: a career match on the iPhone with `?fps=1`, Player style New. Look at "worst" across 10 chances and whether the 3D still drops to 2D.
+2. Pack the shop's 45 models' maps as KTX2 (same picture; ~4× less GPU memory on iPhone).
+3. Profile a real-game chance start on a quiet machine (CanvasMatch's `loadScenario` + the first 3D frame) and fix what the profile names.
 
 ### 2D shop
 

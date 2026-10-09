@@ -26,7 +26,7 @@ import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer, warmUp } from "../three3d/perf";
+import { acquireRenderer, disposeObject3D, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
@@ -263,7 +263,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   const [model, animG, fb] = await Promise.all([
-    loadPeople3d(loader, "player", body), loadPeople3d(loader, "anims", body),
+    loadPeople3d(loader, "player", body, TOON_PLAYER_HEADS), loadPeople3d(loader, "anims", body), // a match has no suits: the six player heads only
     loadAnims3d(loader, "football").catch(() => null),
   ]);
 
@@ -426,7 +426,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   let hToken = 0;
   let visible = true;
   /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
-  const smooth = () => camMode === "tv" && realCameraLook() === "new" && !(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0");
+  // ?bcam=0 read once (this was parsed from the address bar for every man, several times a frame)
+  const bcamOff = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  const smooth = () => camMode === "tv" && realCameraLook() === "new" && !bcamOff;
   /** The current frame's clock (f.t), for the smooth playback's dwell. */
   let nowT = 0;
 
@@ -447,6 +449,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   ballShadow.rotation.x = -Math.PI / 2; root.add(ballShadow);
   let hball: { update(dt: number, v: { x: number; y: number; z: number }): void; setNight(on: boolean): void; dispose(): void } | null = null;
   const lastBall = new THREE.Vector3(NaN, 0, 0);
+  const ballV = new THREE.Vector3(), ballAx = new THREE.Vector3();
 
   // ── markers on the grass: the ring under the man on the ball, and where a lofted ball lands ──
   const ringMat = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.85, depthWrite: false });
@@ -541,9 +544,62 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const mo = motionLook() === "mocap" && !!fb;
   const fbHipsY = ((fb as any)?.scene?.userData?.hipsY as number | undefined) ?? 0;
 
+  /**
+   * Shirt numbers: ONE picture per number, shared by every man wearing it
+   * (lag pass 3, 9 Oct 2026). Each man used to paint and upload his own
+   * 256×256 number when he first appeared (often several at a chance start):
+   * the same white digits, a new texture each time, never freed.
+   */
+  const numberCache = new Map<number, any>();
   const numberTex = (n: number) => {
-    const c = newNumberCanvas(); drawShirtNumber(c, n);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    let t = numberCache.get(n);
+    if (!t) {
+      const c = newNumberCanvas(); drawShirtNumber(c, n);
+      t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+      numberCache.set(n, t);
+      renderer.initTexture(t); // uploaded now, not mid-chance on his first draw
+    }
+    return t;
+  };
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19]) numberTex(n);
+  /**
+   * Style A's skin-and-hair picture at match size (lag pass 3). Each head file
+   * carries a 1024×1024 colour map (5.6 MB on the GPU with its mipmaps; six
+   * heads in a match = 34 MB). From the match camera a man is at most ~120
+   * pixels tall, so the GPU only ever reads the 128-pixel level and below:
+   * a 512 copy draws the same picture for a quarter of the memory. The
+   * loaded file is left as it is (the garden, shop and close-ups share it).
+   */
+  const MATCH_MAP = 512;
+  const smallMaps = new Map<any, any>();
+  const matchSizedMap = (p: Person3D) => {
+    const m = p.body?.material as any;
+    if (!m || Array.isArray(m) || !m.userData?.toon || !m.map) return;
+    const src = m.map;
+    let small = smallMaps.get(src);
+    if (small === undefined) {
+      small = null;
+      const im = src.image as { width?: number; height?: number } | undefined;
+      if (im && (im.width ?? 0) > MATCH_MAP && typeof document !== "undefined") {
+        try {
+          const c = document.createElement("canvas");
+          c.width = MATCH_MAP; c.height = Math.max(1, Math.round((MATCH_MAP * (im.height ?? im.width!)) / im.width!));
+          const g = c.getContext("2d");
+          if (g) {
+            g.imageSmoothingQuality = "high";
+            g.drawImage(im as CanvasImageSource, 0, 0, c.width, c.height);
+            small = src.clone();
+            small.image = c;
+            small.needsUpdate = true;
+            small.userData = { ...src.userData, matchSized: true };
+            renderer.initTexture(small);
+          }
+        } catch { small = null; }
+      }
+      smallMaps.set(src, small);
+      if (small) smallMaps.set(small, small);
+    }
+    if (small && m.map !== small) m.map = small;
   };
   /**
    * SPARE BODIES (9 Oct 2026, Harry's phone: a 500 ms stall mid-match). A man
@@ -564,18 +620,33 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
     if (fb) addClips(THREE, p, fb as any);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
+    matchSizedMap(p);
     p.root.visible = false;
     built++;
     return p;
   };
-  for (let i = 0; i < 6; i++) spares.push(buildShell());
-  const topUpSpares = () => { if (built < SPARE_TARGET) spares.push(buildShell()); };
+  /**
+   * WHO WILL PLAY (lag pass 3, 9 Oct 2026). CanvasMatch names its men the
+   * same way every chance ("mate0", "run1", "def3" …), and Style A seeds a
+   * man's head from that name. So the spares are built for the heads the
+   * match will really ask for, in the order the men usually appear. Before,
+   * spares were dealt round the six heads in turn: a chance whose new men
+   * shared a head emptied that head's pile and built the rest on the spot
+   * (the chance-start stall), while other piles sat unused all match.
+   */
+  const LIKELY_SIDS = ["you", "keeper", "follower",
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((i) => [`def${i}`, `mate${i}`]),
+    "run0", "run1", "run2", "run3"];
+  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined);
+  const spareQueue = LIKELY_SIDS.slice(0, Math.max(6, SPARE_TARGET)).map(headOf);
+  for (let i = 0; i < 6 && spareQueue.length; i++) spares.push(buildShell(spareQueue.shift()));
+  const topUpSpares = () => { if (spareQueue.length && built < SPARE_TARGET + 6) spares.push(buildShell(spareQueue.shift())); };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
     const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
     const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
     const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
-    if (!spare) { built++; cullSkinned(THREE, p.root); }
+    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); }
     if (tb) setToonBuild(p, tb);
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
@@ -1057,6 +1128,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
+          kit?.setActive(false); // the kit drew the wait; its post pictures are freed now H draws
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
           for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
@@ -1104,7 +1176,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
   let lean = 0;
-  let down3 = new THREE.Vector3(0, 0, 1);
+  const down3 = new THREE.Vector3(0, 0, 1);
   /** The 2D canvas's own camera, exactly (every spot on the grass on the same pixel). */
   const placeExactCamera = (f: EngineFrame) => {
     const { viewport: v, facing, tilt, W, H } = f.cam;
@@ -1121,7 +1193,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const s = tilt ? tilt.s : 1;
     const D = d / (s * k);
     const cx = (v.x1 + v.x2) / 2 - CX, cz = (v.y1 + v.y2) / 2;
-    down3 = new THREE.Vector3(down[0], 0, down[1]);
+    down3.set(down[0], 0, down[1]);
     camera.position.set(cx + down3.x * D * Math.sin(th), D * Math.cos(th), cz + down3.z * D * Math.sin(th));
     camera.up.set(-down3.x, 0, -down3.z);
     if (th > 1e-3) camera.up.set(-down3.x * Math.cos(th), Math.sin(th), -down3.z * Math.cos(th));
@@ -1285,7 +1357,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       tv.th = realCameraLook() === "new" ? tv.th + (t.th - tv.th) * k : t.th;
     }
     t.th = tv.th;
-    down3 = new THREE.Vector3(0, 0, 1);
+    down3.set(0, 0, 1);
     camera.position.set(tv.x, tv.D * Math.cos(t.th), tv.z + tv.D * Math.sin(t.th));
     camera.up.set(0, Math.sin(t.th), -Math.cos(t.th));
     camera.lookAt(tv.x, 0, tv.z);
@@ -1354,7 +1426,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.near = Math.max(0.1, bc.D * 0.05);
     camera.far = bc.D + 500;
     camera.updateProjectionMatrix();
-    down3 = new THREE.Vector3(Math.sin(bc.ang), 0, Math.cos(bc.ang));
+    down3.set(Math.sin(bc.ang), 0, Math.cos(bc.ang));
     lean = 0;
     tv.init = true;
     tvFig = bc.k;
@@ -1636,10 +1708,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
         const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? Math.min(2, figNow()) : def.ballScale * 0.85;
         ball.scale.setScalar(bs);
-        const v = new THREE.Vector3(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
+        const v = ballV.set(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
         if (dd > 1e-4 && dd < 3) {
-          const ax = new THREE.Vector3().subVectors(v, lastBall).cross(Y).normalize().negate();
+          const ax = ballAx.subVectors(v, lastBall).cross(Y).normalize().negate();
           if (ax.lengthSq() > 0) ball.rotateOnWorldAxis(ax, dd / (BALL_R * bs));
         }
         lastBall.copy(v);
@@ -1703,6 +1775,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       hball?.dispose(); hball = null;
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
+      // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here
+      spareBins.forEach((l) => { for (const p of l) disposeObject3D(p.root); }); spareBins.clear();
+      numberCache.forEach((t) => t.dispose()); numberCache.clear();
+      new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
       svg.remove();
       canvas3d.removeEventListener("webglcontextlost", onLostEv);
       canvas3d.removeEventListener("webglcontextrestored", onRestoredEv);
