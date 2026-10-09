@@ -1176,6 +1176,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     return best;
   };
+  /** dev: where each orderable team-mate's chest is on the glass (client px), so a test bot can tap him as a player would. */
+  const matesOnGlass = (f: EngineFrame): Record<string, { x: number; y: number }> => {
+    const out: Record<string, { x: number; y: number }> = {};
+    const r = container.getBoundingClientRect();
+    for (const sid of f.orders?.pickable ?? []) {
+      const b = bodies.get(sid);
+      if (!b || !b.p.root.visible) continue;
+      const p = b.p.root.position;
+      tmpV.set(p.x, 1.1 * (b.p.root.scale.y || 1), p.z).project(camera);
+      out[sid] = { x: r.left + (tmpV.x + 1) / 2 * r.width, y: r.top + (1 - tmpV.y) / 2 * r.height };
+    }
+    return out;
+  };
   const onDown = (e: PointerEvent) => {
     if (!visible) return;
     // One finger at a time — but a touch that never ended here (its "up" went
@@ -1395,7 +1408,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         };
         for (const b of list) if (b.p.root.visible) feet(b.p.root.position.x, b.p.root.position.z, 0);
         if (fb0) feet(fb0.x - CX, fb0.y, 0);
-        (window as unknown as { __engineView3dFrame?: unknown }).__engineView3dFrame = { emptyBelow: on ? 1 - low : 1, onScreen: on, offScreen: off, kind: f.kind, phase: f.phase, ballTo2d: fb0 ? to2dClient(fb0) : null };
+        (window as unknown as { __engineView3dFrame?: unknown }).__engineView3dFrame = { emptyBelow: on ? 1 - low : 1, onScreen: on, offScreen: off, kind: f.kind, phase: f.phase, ballTo2d: fb0 ? to2dClient(fb0) : null, orders: f.orders ?? null, mates: matesOnGlass(f) };
       }
       // frame-stepped filming (lib/star/virtualClock.ts) draws only the frames it films
       if ((window as unknown as { __view3dSkipDraw?: boolean }).__view3dSkipDraw) { leanAll(); return; }

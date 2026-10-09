@@ -4537,6 +4537,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // a dribble run now, while a chance is waiting to be taken (test bots:
+      // the dribble chance is a roll of the hidden match, so it can take a
+      // whole match to come up). The same set-up the hidden match's request does.
+      dribble: () => {
+        if (phaseRef.current !== "aim") return false;
+        const rng = rngRef.current;
+        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) };
+        setAim(null); setOutcome(null); dragRef.current = null; draggingRef.current = false;
+        setPhase("fpDribble");
+        return true;
+      },
     };
     return () => { delete w.__starMatch; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
