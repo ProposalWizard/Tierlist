@@ -14,6 +14,8 @@ import { FIXTURES } from "@/lib/star/cutscene/fixtures";
 import { startFrameStats } from "@/lib/star/three3d/frameStats";
 import { startHome } from "@/lib/star/home3d/scene";
 import { CASUAL_SETS, BOOT_LOD } from "@/lib/star/home3d/outfits";
+import { cabinetSlots } from "@/lib/star/home3d/trophies";
+import { cabinetSize } from "@/lib/star/home3d/homes";
 import { createPlay3DScene } from "@/lib/star/play3d/scene";
 import { makeFreeRoam } from "@/lib/star/play3d/freeRoam";
 import { play3dH } from "@/lib/star/style3d/real/play3dH";
@@ -187,7 +189,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     const c = await startHome(stage(), { onNear() {} }, {
       tier: opts.tier ?? "flat", kits: { home: { shirt: KIT.shirt, trim: KIT.trim }, away: { shirt: "#ffffff", trim: "#111111" } } as any, number: 10,
       worn: { kind: "kit", kit: "home", boots: "#141416" } as any, skin: "#e0b89a", hair: "#3d2616", hairStyle: "short",
-      slots: [], cars: [], boots: [{ id: "plain", label: "Plain black", colour: "#141416", model: BOOT_LOD.starter }], casual: CASUAL_SETS,
+      slots: cabinetSlots({ trophies: [], awards: [], ballonDorWins: 0 } as any, cabinetSize(opts.tier ?? "flat")), cars: [], boots: [{ id: "plain", label: "Plain black", colour: "#141416", model: BOOT_LOD.starter }], casual: CASUAL_SETS,
     }, { quality: opts.quality ?? "medium", fixedStep: 1 / 30 });
     M.ready = performance.now();
     M.ctrl = c;
