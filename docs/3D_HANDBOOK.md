@@ -301,3 +301,37 @@ What landed today on Harry, newest first, one line each.
 - Cut-scene system: film rules, close-ups, real grass plates, the people layer (`lib/star/cutscene`), The Icon speaks.
 - Real game in 3D on the Style Testing page: "same brain, new camera" (`lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`).
 - Rescued into the repo: `tools/styletest` (look test for cel / Spider-Verse / stylised PBR), `tools/modeltest` (three generated stylised bodies, concept pictures, raw and fitted GLBs), `tools/models3d` (picture to game-ready GLB tools), this handbook and `.claude/skills/3d-building`.
+
+---
+
+## Handover (9 Oct) → Leo
+
+### Career 3D camera + size
+
+**Harry's feedback** (4 iPhone screenshots, Chelsea v Brentford, Match view 3D On): "have you even applied the camera and sizing changes to 3d? The animations are a bit wild and rough, dragging is having to be done off the pitch alot and players too big, angle too low etc. … also we need a 3d/2d toggle in game and a setting cog whilst match commentary is on."
+What the shots showed: one chance drawn straight top-down with dot men (a side-on chance copying the 2D camera); you at the very bottom edge so the drag ran off the pitch; one camera close and low with three huge men and half the frame empty grass.
+
+**Target rules**
+- One angle, 40° down from the horizon, for every chance kind. Never top-down, never at the grass. Corners and side-on chances use the same angle, turned.
+- The ball (while you aim) at 55–65% of the height, so ≥ 25% of the canvas below it is pitch to drag on.
+- Frame only the action: ball, you, up to 3 team-mates you can pass to, the 2 nearest defenders, the keeper and goal when in range.
+- A man at the ball about 10% of the canvas height (measured through the camera), not a fixed 1.6×.
+- Smooth: glide between chances, hold still while you aim, crossfaded clips, no walk/jog flicker, turns capped.
+
+**Done** (all under Settings → Look → "3D camera: New"; Old is untouched)
+- `lib/star/style3d/broadcastCam.ts`: the camera, pure (no three.js). `solveBroadcast`, `actionPoints`, `BROADCAST` numbers.
+- `lib/star/style3d/engineView.ts`: `placeBroadcast` uses it for every facing; glide (~0.4 s), held while a finger is down / the arrow is up / the strike screen shows. Smooth playback: crossfades ≥ 0.24 s, a gait kept ≥ 0.35 s, turns ≤ 540°/s, steadier speed reading, a man who appears starts in the right pose. Ball drawn at the men's scale, capped 2×.
+- `tests/star/broadcastCam.mts`: 13 kinds × 20 seeds at 390×844. Angle 40° always; room below the ball 40–45%; man 8.0–10.5% (median 10.3%), 258 of 260 in 9–11% (the 2 widest hit the size cap kMax 3.2).
+- In the match's stats bar, by the speaker: a **3D | 2D** switch (instant, the chance carries on; writes "Match view 3D") and a **⚙** that opens this phone's Settings over the match, the match held while open (`components/star/Match3DLayer.tsx`; `EngineFrameObserver.hold` / `.chrome` in `lib/star/engineFrame.ts`; CanvasMatch reads them, additive).
+- Test page: `/star-style-dev?scene=real&cam=new&man=0.08|0.10|0.12` (size candidates), `&bcam=0` (the New camera as it was before, for before stills).
+
+**Half-done**
+- The size is 10% by default; Harry has not picked yet (8 / 10 / 12% stills in the round's sheet). Change `BROADCAST.manShare` in `lib/star/style3d/broadcastCam.ts`.
+- At 10% the median man is 1.8× life size but wide chances reach the 3.2× cap (`BROADCAST.kMax`): a man can stand taller than the crossbar. Not yet judged on a phone.
+- Not seen on a phone. Stills came from the Style Testing page's Real game (same engine view), not a career match.
+- Smooth playback lives in `engineView.ts` behind `smooth()`; root motion was already pinned to the 2D record (no change); `ClipPlayer` (`lib/star/three3d/footballAnims.ts`) still drops the older clip if a new change arrives mid-fade.
+
+**Next 3 steps**
+1. Harry picks 8 / 10 / 12%; set `manShare`, and decide whether `kMax` should drop (e.g. 2.2: fewer giants, smaller men on wide chances).
+2. Play a career match on a phone with "3D camera: New": check corners and byline crosses (turned 30° behind the attack), the drag room, and the glide between chances; then make New the default in Standard (`lib/star/gameVersions.ts`).
+3. Make `ClipPlayer` blend from the current mix on an interrupted fade (no pop), and play the 3D/2D button and ⚙ with the `star-playtest` agent.

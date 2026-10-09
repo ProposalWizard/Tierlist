@@ -10,6 +10,12 @@
  *   keeper and ball 1.6× life size. Old: the camera exactly as it
  *   was (everyone in the chance on screen, men drawn 1.3–2.6×).
  *
+ *   New, round 3 (Harry, 9 Oct 2026, from his iPhone: "players too big,
+ *   angle too low … dragging is having to be done off the pitch"): the
+ *   broadcast camera (lib/star/style3d/broadcastCam.ts), one 40° angle for
+ *   every chance, ball at 60% height, men ~10% of the canvas, plus smoother
+ *   playback in engineView. Old is unchanged.
+ *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch
  *   still look slightly flat"). New: a soft key and rim light on the players
  *   only, darker undersides and feet, less flat fill, a tight shadow under
