@@ -277,8 +277,8 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         )}
         {stam && (
           // the sprint bar: small, by the stick, only while it isn't full
-          <div className="pointer-events-none absolute z-30" data-play3d-stamina={stam.v.toFixed(2)} data-tired={stam.tired ? 1 : 0}
-            style={knob ? { left: knob.x0 - 30, top: knob.y0 - STICK_R - 16 } : { left: 14, bottom: 44 }}>
+          <div className="pointer-events-none absolute z-40" data-play3d-stamina={stam.v.toFixed(2)} data-tired={stam.tired ? 1 : 0}
+            style={knob ? { left: knob.x0 - 30, top: knob.y0 - STICK_R - 16 } : { left: 14, bottom: 84 }}>
             <div className="h-[6px] w-[60px] overflow-hidden rounded-full bg-black/55 ring-1 ring-white/40">
               <div className="h-full rounded-full" style={{ width: `${Math.round(stam.v * 100)}%`, background: stam.tired ? "#f87171" : stam.v < 0.3 ? "#fbbf24" : "#4ade80", transition: "width 0.1s linear" }} />
             </div>
