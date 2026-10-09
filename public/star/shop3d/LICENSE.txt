@@ -31,3 +31,7 @@ anims.glb (≈0.3 MB)
 
 three.js itself is not in this folder or in the site's bundle: the page loads
 three@0.169.0 (MIT) from cdn.jsdelivr.net when it opens.
+
+h/ (look H only, 9 Oct 2026; made by tools/shop3d/h_room.py, about 180 KB):
+  parquet.webp, parquet-nrm.webp: Poly Haven "Herringbone Parquet" (polyhaven.com/a/herringbone_parquet), CC0
+  planks.webp, planks-nrm.webp: Poly Haven "Dark Wooden Planks" (polyhaven.com/a/dark_wooden_planks), CC0

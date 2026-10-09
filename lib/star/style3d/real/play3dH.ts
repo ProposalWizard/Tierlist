@@ -15,9 +15,13 @@ import { grassMaps, hTexture, type TimeOfDay } from "./assets";
 import type { RealLook } from "./look";
 import type { ArenaColours } from "./arena";
 
+/** Look H drills: people a touch broader than the shop model (see onBuilt). */
+export const BUILD_WIDTH = 1.1;
+
 export interface Play3dH {
   opts: {
     bare: true;
+    sharp: true;
     onBuilt: (ctx: Play3DBuilt) => void;
     draw: (renderer: any, scene: any, camera: any) => void;
   };
@@ -48,6 +52,7 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
   return {
     opts: {
       bare: true,
+      sharp: true,
       onBuilt: (ctx) => {
         built = ctx;
         ctx.camera.far = 600; ctx.camera.updateProjectionMatrix();
@@ -59,10 +64,13 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
             c.position.set(x, 0.17, z); c.castShadow = true; ctx.root.add(c); cones.push(c);
           }
         }
-        void createRealLook(T, ctx.renderer, ctx.scene, tier, { tod: o.tod ?? drillTod(), ball: ctx.ball, colours: o.colours }).then((l) => {
+        void createRealLook(T, ctx.renderer, ctx.scene, tier, { tod: o.tod ?? drillTod(), ball: ctx.ball, colours: o.colours, sharp: true }).then((l) => {
           if (dead) { l.dispose(); return; }
           look = l;
           l.dressPeople(ctx.bodies.map((b) => b.p));
+          // a broadcast footballer's build (Harry: "the player looks like a slim pixel character"): measured from behind,
+          // shoulders were 0.24 of his height; a real one with his arms is about 0.27
+          for (const b of ctx.bodies) b.p.root.scale.set(BUILD_WIDTH, 1, BUILD_WIDTH);
           for (const b of ctx.bodies) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
         }).catch((e) => console.error("look H failed to load", e));
       },

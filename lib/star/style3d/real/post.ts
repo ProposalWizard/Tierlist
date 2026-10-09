@@ -118,8 +118,8 @@ export interface HPost {
   dispose(): void;
 }
 
-export function makeHPost(T: any, renderer: any, tier: Quality3d): HPost {
-  const msaa = tier === "high" && renderer.capabilities?.isWebGL2 !== false ? 4 : 0;
+export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: number } = {}): HPost {
+  const msaa = renderer.capabilities?.isWebGL2 === false ? 0 : o.msaa ?? (tier === "high" ? 4 : 0);
   const levels = tier === "high" ? 5 : 3;
   const mk = (o: { depth?: boolean; samples?: number } = {}) => {
     const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: T.LinearFilter, magFilter: T.LinearFilter, depthBuffer: !!o.depth, samples: o.samples ?? 0 });
@@ -145,7 +145,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d): HPost {
     tColor: { value: null }, tDepth: { value: null }, tSoft: { value: null }, tBloom: { value: null },
     res: { value: new T.Vector2() }, cNear: { value: 0.1 }, cFar: { value: 300 }, exposure: { value: 1 }, bloom: { value: 0.3 },
     contrast: { value: 1 }, sat: { value: 1 }, vignette: { value: 0.2 }, grain: { value: 0.012 }, time: { value: 0 },
-    sharpen: { value: tier === "high" ? 0.22 : 0 }, fxaa: { value: tier === "medium" ? 1 : 0 },
+    sharpen: { value: tier === "high" ? 0.22 : msaa ? 0.14 : 0 }, fxaa: { value: tier === "medium" && !msaa ? 1 : 0 },
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },

@@ -70,6 +70,11 @@ hard coded in the skill and should run on every task) … add a time estimate
   Act on it in the same turn, don't just note it.
 - Keep it to the bars, the time line, the speed line and the usage block. No
   prose.
+- **Every status message uses this shape, however short (Harry, 9 Oct 2026:
+  "why have you stopped using the progress skill and reverted to the
+  explanation?").** A quick check-in, a "nothing changed" note or a reply to
+  "what are you doing" is still bars + time line + speed line + usage block.
+  Never swap it for a sentence of prose.
 - **When Harry is away or asleep (Harry, 9 Oct 2026):** *"change updates from
   every 5 mins to every 30 mins but continuously check to see that you are
   doing things the best you can every 5 so things don't drift."* The 5-minute
