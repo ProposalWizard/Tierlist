@@ -145,7 +145,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     humanBody: O("humanBody"),
-    playerStyle: N("playerStyle"),
+    playerStyle: O("playerStyle"), // Standard held on Old until the Style A glow bug is fixed (9 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
     camera3d: O("camera3d"),
