@@ -39,6 +39,20 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 9 Oct 2026 — the shop has no front page (Harry)
+- **"WHY THE HELL IS THE SHOP STILL NOT DONE????"** He liked "Showroom swipe +
+  Feed" and called the framed-card grid "horrendous"; earlier: "70% of this
+  isn't even the shop". So the shop opens straight into the Showroom (one item
+  full screen, swipe sideways for items, up/down for categories). No framed
+  tiles anywhere. Sponsors, Casino, Store and the 3D shop are small doors at the
+  end of the category rail.
+- **Every way in lands on the Showroom**: Home's Shop swipe/tab, the boots
+  warning, the cans button, the phone step, the 3D shop's Back.
+- **A hero picture must have real detail.** The flat Blender boots read as "a
+  plain white blob"; the boots are now Higgsfield product shots (one per level).
+- **Nothing may sit on a buy button.** The dev-bench eye covered "★650"; on the
+  bench the buy row now leaves the corner free.
+
 ### 8 Oct 2026 — Settings is the "hybrid" (Harry)
 - **Version on top: Classic | Standard | Preview**, one tap sets every New |
   Old switch (`lib/star/gameVersions.ts`; names in one constant). "Custom"

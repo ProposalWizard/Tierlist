@@ -405,6 +405,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   ]), []);
   // Settings → Look → "Shop: New | Old" (lib/star/shopLook.ts).
   const shopLookNow = useShopLook();
+  // New look: the Shop page has no front page any more (Harry, 9 Oct 2026: the
+  // framed-card grid was "horrendous"). Every way into the shop opens the
+  // Showroom, on the category you were last on (Cans first time).
+  const lastShowroom = useRef<"shop-kib" | "shop-boots" | "shop-lifestyle">("shop-kib");
   // v0.25 item 4: the foot you kick with, for the trial and training (they
   // mount the engine without the save). Looks only — lib/star/kickFoot.ts.
   const careerFoot = career?.player.preferredFoot;
@@ -4224,7 +4228,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         career={career}
         atDoor={shopAtDoor}
         onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
-        onBack={() => { setShopAtDoor(false); setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }}
+        onBack={() => {
+          setShopAtDoor(false); setActiveNav("home");
+          if (shopLookNow === "new") setPhase(lastShowroom.current);
+          else { setHomePage(2); setPhase("dashboard"); }
+        }}
         onGoToItem={(display, id, level) => {
           const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
           setShopFocus({ phase: to, id, level });
@@ -4236,6 +4244,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
     const kind = phase === "shop-kib" ? "kib" : phase === "shop-boots" ? "boots" : "lifestyle";
+    lastShowroom.current = phase;
     const shopHelp: HelpScreen = kind === "kib" ? "cans" : kind === "boots" ? "boots" : "style";
     return (
       <>
@@ -4243,13 +4252,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           <ShowroomShop
             career={career}
             kind={kind}
-            onBack={handleBackToDashboard}
+            onBack={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
+            links={[
+              { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => setPhase("sponsors") },
+              { id: "casino", icon: "🎰", label: "Casino", onClick: () => setPhase("casino-menu") },
+              { id: "store", icon: "🛒", label: "Store", onClick: () => setPhase("store") },
+              { id: "shop3d", icon: "🕶️", label: "3D shop", onClick: () => { setShopAtDoor(false); setPhase("shop-3d"); } },
+            ]}
             onBuyKib={handleBuyKib}
             onBuyBoot={handleBuyBoot}
             onBuyItem={handleBuyItem}
             onBuyFromBlackMarket={handleBuyFromBlackMarket}
             focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
-            onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
+            onKind={(k) => { const to = k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle"; lastShowroom.current = to; setPhase(to); }}
             onUseCan={handleUseCan}
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
           />
@@ -4412,7 +4427,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       if (id === "first-two-sessions") handleNavigate("skills");
       else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
       else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
-      else if (id === "buy-phone") { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+      else if (id === "buy-phone") {
+        if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
+        else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+      }
       else if (id === "sponsors") setPhase("sponsors");
     };
     const stepPrompt = step && !hasSeen(career, `step-${step.id}`) ? step.prompt
@@ -4925,6 +4943,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           inset
           index={homePage}
           onIndex={(i) => {
+            if (i === 2 && shopLookNow === "new" && isOpen(career, "shop")) {
+              // Straight into the Showroom; Back from it lands on Home. The
+              // phone step's pointer is answered by the Showroom itself (it
+              // opens on the phone while you have none).
+              const phoneStep = nextStep(career)?.id === "buy-phone";
+              if (phoneStep) setCareer(c => (c ? markSeen(markSeen(c, "shop-intro"), "help-shop") : c));
+              setHomePage(1);
+              setActiveNav("home");
+              setPhase(phoneStep ? "shop-lifestyle" : lastShowroom.current);
+              return;
+            }
             setHomePage(i as 0 | 1 | 2);
             setActiveNav("home");
             setPhase("dashboard");
