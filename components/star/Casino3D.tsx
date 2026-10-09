@@ -200,7 +200,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
-          ctrlRef.current?.orbit(e.clientX - d.x);
+          ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
         }}
         onPointerUp={(e) => {

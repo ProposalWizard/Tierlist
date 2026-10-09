@@ -26,6 +26,7 @@ import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./
 import { garden3dLook, setGarden3dLook } from "./garden3d/look";
 import { look3dStyle, setLook3dStyle } from "./look3dStyle";
 import { casino3dLook, setCasino3dLook } from "./casino3d/look";
+import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
 import { ovationLook, setOvationLook } from "./ovationLook";
@@ -81,6 +82,7 @@ export const LOOK_ROWS = {
   playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
   casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
+  casinoLook: row("Casino look", "new", "old", casinoRoomLook, setCasinoRoomLook),
   signing: row("Signing scene", "3d", "drawn", () => (signing3dOn() ? "3d" : "drawn"), (v) => setSigning3d(v === "3d")),
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
@@ -132,6 +134,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     playerLight3d: O("playerLight3d"),
     bossRoom: N("bossRoom"),
     casino: N("casino"),
+    casinoLook: N("casinoLook"),
     signing: N("signing"),
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),

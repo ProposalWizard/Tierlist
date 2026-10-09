@@ -33,6 +33,7 @@ import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
@@ -106,6 +107,8 @@ const PLINTH_Z = [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3];
 const PLINTH_H = 0.92;
 /** The Blender boot is 0.29 m long; on its plinth it is shown at this size. */
 const BOOT_SCALE = 2.75;
+/** Look H: the generated boots are fitted to a real 0.30 m; shown at their own size (a touch up when picked). */
+const BOOT_H_SCALE = 1;
 /** The car's turntable. */
 const CAR = { x: 2.35, z: -1.75, r: 2.85 };
 /** The counter and its light boxes on the back wall. */
@@ -507,6 +510,34 @@ async function buildShop(
    */
   const CAR_H_MODELS: Record<string, string> = { "car-1": "/star/shop3d/items/car-family-hf.glb" };
   const HF_MODEL = /-hf\.glb$/;
+  /**
+   * THE BOOTS, REPLACED (Harry, 9 Oct 2026: the boots "look too simple and
+   * smooth"). Our Blender boots are a smooth loft: no knit, no real laces,
+   * studs that melt into the sole. Look H shows three generated boots
+   * (Higgsfield: a picture of an unbranded boot, then Tripo image-to-3D;
+   * public/star/shop3d/items/boot-*-hf.glb): a knit boot, a classic leather
+   * boot and a laceless high-collar speed boot, each level painted in its
+   * colour over the white upper. And at a real size: the Blender boot stood
+   * 0.29 m × BOOT_SCALE 2.75 = 0.80 m long on its plinth (a boot the width of
+   * the plinth); a generated boot is a real boot's 0.30 m (BOOT_H_SCALE 1).
+   * Old: the Blender boots as before.
+   */
+  const BOOT_H_MODELS: Record<string, string> = {
+    starter: "/star/shop3d/items/boot-classic-hf.glb", control: "/star/shop3d/items/boot-classic-hf.glb",
+    speed: "/star/shop3d/items/boot-speed-hf.glb", curl: "/star/shop3d/items/boot-speed-hf.glb",
+    power: "/star/shop3d/items/boot-hf.glb", elite: "/star/shop3d/items/boot-hf.glb", maestro: "/star/shop3d/items/boot-hf.glb",
+  };
+  const isBootH = (url: string) => /\/boot-([a-z]+-)?hf\.glb$/.test(url);
+  /** A real football boot is about 0.30 m long: stand the generated one on its plinth at that length. */
+  const fitBoot = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(0.30 / Math.max(size.x, size.z, 1e-3));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
   /** A generated car comes at its own size and facing: stand it on the floor, centred, 4.3 m long along x like ours. */
   const fitCar = (root: any) => {
     root.updateMatrixWorld(true);
@@ -555,7 +586,8 @@ async function buildShop(
           if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
           else if (HF_MODEL.test(url) && m) { m.envMap = envTex; m.envMapIntensity = 1.0; m.needsUpdate = true; }
         });
-        if (HF_MODEL.test(url)) fitCar(g.scene);
+        if (isBootH(url)) fitBoot(g.scene);
+        else if (HF_MODEL.test(url)) fitCar(g.scene);
         return g.scene;
       }));
     }
@@ -563,6 +595,7 @@ async function buildShop(
   };
 
   // ── The boots, one on each plinth ──
+  const bootScale = hEnh ? BOOT_H_SCALE : BOOT_SCALE;
   const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
   // look H: the spot above blew the cream top into a white glow the boot floated on; a stone grey, less glossy
   if (hEnh) { plinthTopM.color.set("#9a9186"); plinthTopM.roughness = 0.55; }
@@ -590,7 +623,7 @@ async function buildShop(
     blob(0.95, 0.95, PLINTH_X, z);
     const group = new THREE.Group();
     group.position.set(PLINTH_X, PLINTH_H + 0.035, z);
-    group.scale.setScalar(BOOT_SCALE);
+    group.scale.setScalar(bootScale);
     scene.add(group);
     blob(0.32, 0.18, 0, 0, group, 0.002, 0.8);
     pickable(col, "boots", i);
@@ -598,9 +631,20 @@ async function buildShop(
     pickable(tag.sprite, "boots", i);
     bootSlots.push({ group, ring, tag, z, spin: i * 0.9 });
     if (it.model) {
-      loadModel(it.model).then((m) => {
+      const hfBoot = !!hEnh;
+      loadModel(hfBoot ? (BOOT_H_MODELS[it.id] ?? BOOT_H_MODELS.power) : it.model).then((m) => {
         if (disposed) return;
         const b = m.clone();
+        if (hfBoot) {
+          // this level's colour over the white knit (its own material: the clones share one)
+          const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(it.colour), 0.85);
+          b.traverse((o: any) => {
+            if (!o.isMesh || !o.material) return;
+            o.material = o.material.clone();
+            o.material.color.copy(tint);
+            o.material.envMapIntensity = 0.7;
+          });
+        }
         group.add(b);
         pickable(b, "boots", i);
       }).catch((e) => console.error("boot model", e));
@@ -825,6 +869,18 @@ async function buildShop(
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
   let near: DisplayId | null = null;
+  /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
+  let dwellZone: DisplayId | null = null;
+  let dwell = { timer: 0, open: false };
+  let arrivedAt: DisplayId | null = null, itemWalk: DisplayId | null = null;
+  /** The nearest item of a display: its centre and how far its front stands out from it (metres). */
+  const itemFront = (d: DisplayId): [number, number, number] => {
+    const px = player.position.x, pz = player.position.z;
+    if (d === "boots") { let bz = PLINTH_Z[0]; for (const z of PLINTH_Z) if (Math.abs(z - pz) < Math.abs(bz - pz)) bz = z; return [PLINTH_X, bz, 0.4]; }
+    if (d === "car") return [CAR.x, CAR.z, CAR.r];
+    if (d === "cans") return [FRIDGE.x, FRIDGE.z, 0.6];
+    return [Math.max(-2.8, Math.min(2.8, px)), COUNTER_Z, 0.55];
+  };
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
   let framed = false, frame = 0;
@@ -947,7 +1003,8 @@ async function buildShop(
     const path = findPath(grid, [player.position.x, player.position.z], to);
     if (!path) return false;
     faceTo = null;
-    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    itemWalk = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = itemWalk; itemWalk = null; } });
     const g = path[path.length - 1];
     marker.show(g[0], g[1], 0.02);
     orbitHold = 0;
@@ -1106,7 +1163,7 @@ async function buildShop(
     bootSlots.forEach((b, i) => {
       const on = sel.display === "boots" && sel.index === i;
       b.group.rotation.y = b.spin + gameT * (on ? 0.6 : 0.25);
-      const s = BOOT_SCALE * (on ? 1.12 : 1);
+      const s = bootScale * (on ? 1.12 : 1);
       b.group.scale.setScalar(b.group.scale.x + (s - b.group.scale.x) * Math.min(1, dt * 6));
       b.group.position.y = PLINTH_H + 0.035 + (on ? 0.04 + 0.02 * Math.sin(gameT * 2.2) : 0);
       b.ring.material.emissiveIntensity = on ? 2.6 + 0.6 * Math.sin(gameT * 4) : 0.9;
@@ -1122,10 +1179,20 @@ async function buildShop(
     }
 
     // which display is he at?
-    let now: DisplayId | null = null;
+    let zone: DisplayId | null = null;
     for (const zn of ZONES) {
-      if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
+      if (zn.inside(player.position.x, player.position.z)) { zone = zn.id; break; }
     }
+    // the card opens only when he stops at, or turns to, an item (./dwell.ts), never walking past
+    if (zone !== dwellZone) { dwellZone = zone; dwell = { timer: 0, open: false }; }
+    {
+      const [ix, iz, front] = zone ? itemFront(zone) : [0, 0, 0];
+      const dist = Math.max(0, Math.hypot(ix - player.position.x, iz - player.position.z) - front);
+      const faceOff = angDiff(yaw, Math.atan2(ix - player.position.x, iz - player.position.z));
+      dwell = stepDwell(dwell.timer, dwell.open, { inZone: !!zone, dist, speed, faceOff, arrived: !!zone && arrivedAt === zone }, dt);
+      if (arrivedAt && arrivedAt === zone) arrivedAt = null;
+    }
+    const now: DisplayId | null = dwell.open ? zone : null;
     if (now !== near) { near = now; cb.onNear(near); }
 
     if (carSpot.castShadow) {
@@ -1218,7 +1285,7 @@ async function buildShop(
       if (!hit || Math.abs(hit.x) > ROOM.x + 1 || Math.abs(hit.z) > ROOM.z + 1) return null;
       return walkTo([hit.x, hit.z], null) ? { item: null } : null;
     },
-    walkToItem: (p) => { const s0 = standFor(p); return walkTo(s0.at, s0.face); },
+    walkToItem: (p) => { const s0 = standFor(p); const ok = walkTo(s0.at, s0.face); if (ok) itemWalk = p.display; return ok; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
       stopWalk();

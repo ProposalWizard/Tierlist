@@ -119,6 +119,9 @@ for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/ite
 // The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first
 // (gltf-transform textureCompress); nothing reads its vertices, so everything may go small.
 POLICY["star/shop3d/items/car-family-hf.glb"] = { q: /.*/, webp: true };
+// The three generated football boots (Higgsfield → Tripo, 9 Oct 2026; look H: knit, classic, speed): simplified to
+// ~22k triangles and textures cut to 1024 first (gltf-transform simplify/resize); nothing reads its vertices.
+for (const f of ["boot-hf", "boot-classic-hf", "boot-speed-hf"]) POLICY[`star/shop3d/items/${f}.glb`] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

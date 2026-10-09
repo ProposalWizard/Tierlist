@@ -204,7 +204,7 @@ const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style",
 };
 
@@ -278,6 +278,7 @@ function World3dGroup() {
       <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />
       <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
       <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />
+      <LookRow id="casinoLook" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="New: the 3D casino in warm light with shadows, crystal chandeliers, woven walls and a camera that keeps out of the lamps. Old: as before." />
       <LookRow id="signing" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="3D: a live scene with your player. Drawn: the picture signing." />
     </>
   );
@@ -316,7 +317,7 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
   }, [open]);
   const groups: (ExtraGroup & { card?: boolean })[] = [
     { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 13, content: <MatchGroup />, card: true },
-    { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 10, content: <World3dGroup />, card: true },
+    { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 11, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
     ...extra,
   ];
