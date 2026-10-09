@@ -19,7 +19,7 @@ import type { CameraTrack, CutsceneScript, ShotSpec, StoryEvent, Target, Track }
 import { compose } from "./generate";
 import { VOICE_LINES } from "./voiceLines";
 import { frameTracks } from "./cinema";
-import { goalCelebration, goalStrike, contractSlide, handshake, officeSeated, shirtPhoto, signContract, trophyLift, tunnelLineUp, walkOut, pressQuestion, pressAnswer, mentorWord } from "./beats";
+import { goalCelebration, goalStrike, contractSlide, handshake, officeSeated, shirtPhoto, signContract, trophyLift, tunnelLineUp, walkOut, pressQuestion, pressAnswer, mentorWord, farewellWalk, applause } from "./beats";
 
 const Y: Target = { actor: "you" };
 const cam = (at: number, dur: number, shot: ShotSpec, name: string, cut: CameraTrack["cut"] = "cut", blend?: number): CameraTrack => ({ type: "camera", at, dur, shot, name, cut, blend });
@@ -30,6 +30,7 @@ export const FIXTURE_EVENTS: Record<string, StoryEvent> = {
   trophy: { kind: "won-trophy", stakes: 0.95, emotion: "joy", intensity: 1, detail: { trophy: "fa-cup" } },
   walkout: { kind: "walkout", stakes: 0.7, emotion: "tension", intensity: 0.6 },
   press: { kind: "press-conference", stakes: 0.4, emotion: "pride", intensity: 0.5, detail: { question: "Two goals on your debut. What's going through your head?", answer: "Honestly? I've dreamt about this since I was six." } },
+  farewell: { kind: "retired", stakes: 0.9, emotion: "gratitude", intensity: 0.8 },
   mentor: { kind: "mentor-advice", stakes: 0.5, emotion: "inspired", intensity: 0.6, where: "training-ground", detail: { answer: "Talent gets you here. Hunger keeps you here." } },
 };
 
@@ -168,8 +169,28 @@ function mentor(): CutsceneScript {
   };
 }
 
-export const FIXTURES: Record<string, () => CutsceneScript> = { signing, goal, trophy, walkout, press, mentor };
+/** The farewell: the last walk down a guard of honour, then the stadium stands for you. */
+function farewell(): CutsceneScript {
+  const ev = FIXTURE_EVENTS.farewell;
+  const mates = ["mate0", "mate1", "mate2", "mate3", "mate4", "mate5"];
+  const c = compose([farewellWalk, applause], ev, { you: "you", mates }, "pitch", 8, 0.3, { cast: [{ id: "you", role: "you", mark: [0, 0, 47] }], props: [] });
+  const [b0, b1] = c.beats;
+  const cams: CameraTrack[] = [
+    cam(0, b0.at + 1.8, { preset: "wide", subject: Y, side: 1, yaw: 160, lens: 24, rise: 1.2, move: "dolly-in", moveAmount: 0.3 }, "The stadium"),
+    cam(b0.at + 1.8, 2.0, { preset: "medium", subject: Y, side: 1, yaw: 10, move: "follow" }, "Down the guard"),
+    cam(b0.at + 3.8, 1.6, { preset: "low-hero", subject: Y, side: 1, lens: 24, move: "crane-up", moveAmount: 0.4 }, "One last look"),
+    cam(b0.at + 5.4, b1.at - b0.at - 5.4 + 1.6, { preset: "wide", subject: Y, side: -1, yaw: 190, move: "orbit-left", moveAmount: 20 }, "They stand for you"),
+    cam(b1.at + 1.6, c.duration - b1.at - 1.6, { preset: "close", subject: Y, side: 1, lens: 68, move: "push" }, "Goodbye"),
+  ];
+  return {
+    id: "fixture-farewell", title: "Farewell (hand-made)", duration: c.duration,
+    set: { location: "pitch", mood: "golden-hour" }, cast: c.cast, props: c.props, beats: c.beats,
+    tracks: [...c.tracks, ...cams, ...frameTracks(c.duration, ev.stakes)], seed: 8, source: { kind: "fixture", event: ev },
+  };
+}
+
+export const FIXTURES: Record<string, () => CutsceneScript> = { signing, goal, trophy, walkout, press, mentor, farewell };
 export const FIXTURE_LIST: { id: string; name: string }[] = [
   { id: "signing", name: "Contract signing" }, { id: "goal", name: "Goal celebration" }, { id: "trophy", name: "Trophy lift" },
-  { id: "walkout", name: "Walk-out" }, { id: "press", name: "Press conference" }, { id: "mentor", name: "The Icon" },
+  { id: "walkout", name: "Walk-out" }, { id: "press", name: "Press conference" }, { id: "mentor", name: "The Icon" }, { id: "farewell", name: "Farewell" },
 ];

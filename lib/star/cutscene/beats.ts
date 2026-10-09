@@ -733,11 +733,55 @@ export const stareDown: BeatDef = {
   },
 };
 
+/**
+ * The last walk (a farewell): your team-mates make a guard of honour from
+ * the centre circle; you walk slowly down it towards the near stand, stop,
+ * look up at the crowd and raise a hand. The stadium, never the office.
+ */
+export const farewellWalk: BeatDef = {
+  id: "farewell-walk", act: "moment", at: ["pitch"],
+  weight: (e) => (e.kind === "retired" ? 1 : 0),
+  build: (c, t) => {
+    const Y = c.ids.you;
+    const d = 6.6;
+    const walk = 3.6;
+    const mates = c.ids.mates;
+    const tr: Track[] = [
+      { type: "place", actor: Y, at: t, to: [0, 0, 47], yaw: 180 },
+      { type: "move", actor: Y, at: t + 0.2, dur: walk, path: [[0, 0, 41]], gait: "walk-proud", ease: 0.3 },
+      { type: "clip", actor: Y, at: t + 0.2 + walk, clip: "idle", blendIn: 0.4 },
+      { type: "look", actor: Y, at: t + walk - 0.6, dur: d - walk + 0.6, target: { point: [0, 10, 4] }, amount: 0.8 },
+      { type: "pose", actor: Y, at: t + walk + 0.4, dur: d - walk - 0.4, pose: "salute-crowd", amount: 0.9, blendIn: 0.4 },
+      { type: "face", actor: Y, at: t, expression: "proud", amount: 0.8 },
+      { type: "face", actor: Y, at: t + walk + 0.3, expression: "smile", amount: 1 },
+      { type: "fx", fx: "camera-flashes", at: t + walk, dur: d - walk, around: { point: [0, 1.2, 34] }, amount: 0.7 },
+      { type: "sound", at: t + walk + 0.2, cue: "applause" },
+    ];
+    mates.forEach((m, i) => {
+      const s = i % 2 ? 1 : -1, row = Math.floor(i / 2);
+      tr.push(
+        { type: "place", actor: m, at: t, to: [s * 1.5, 0, 45.5 - row * 1.6], yaw: s * -90 },
+        { type: "pose", actor: m, at: t, dur: d, pose: "applaud", amount: 0.9 },
+      );
+    });
+    return {
+      name: "The last walk", act: "moment", dur: d, tracks: tr,
+      cast: mates.map((m) => ({ id: m, role: "teammate" as const, mark: "centre" })),
+      shots: [
+        { at: t, dur: 1.8, purpose: "establish", subject: you(c), weight: 1, name: "The stadium", hint: { preset: "wide", yaw: 160, lens: 24, rise: 1.2, move: "dolly-in", moveAmount: 0.3 } },
+        { at: t + 1.8, dur: walk - 1.6, purpose: "follow", subject: you(c), weight: 0.8, name: "Down the guard", hint: { preset: "medium", move: "follow" } },
+        { at: t + walk + 0.2, dur: 1.6, purpose: "hero", subject: you(c), weight: 1, name: "One last look", hint: { preset: "low-hero", lens: 24 } },
+        { at: t + walk + 1.8, dur: d - walk - 1.8, purpose: "emotion", subject: you(c), weight: 1, name: "Goodbye" },
+      ],
+    };
+  },
+};
+
 export const BEATS: BeatDef[] = [
   officeSeated, contractSlide, signContract, handshake, shirtPhoto,
   goalStrike, goalCelebration, trophyLift, tunnelLineUp, walkOut,
-  pressQuestion, pressAnswer, walkIn, mentorWord, badNews, applause, awardReceive, injuryBeat, stareDown,
+  pressQuestion, pressAnswer, walkIn, mentorWord, badNews, applause, awardReceive, injuryBeat, stareDown, farewellWalk,
 ];
 
 /** Which events have a story (the planner's starting set). */
-export const EVENT_KINDS_COVERED: EventKind[] = ["signed", "scored", "won-trophy", "promoted", "walkout", "debut", "rivalry", "press-conference", "arrival", "award", "record-broken", "injured", "dropped", "sacked", "transfer-request", "mentor-advice"];
+export const EVENT_KINDS_COVERED: EventKind[] = ["signed", "scored", "won-trophy", "promoted", "walkout", "debut", "rivalry", "press-conference", "arrival", "award", "record-broken", "injured", "dropped", "sacked", "transfer-request", "mentor-advice", "retired"];

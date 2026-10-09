@@ -76,6 +76,12 @@ const STORIES: Partial<Record<EventKind, Story>> = {
   dropped: { loc: () => "office", other: { id: "boss", role: "manager", mark: "chair.boss" }, you: { mark: "chair.you" }, acts: [{ act: "setup", beats: ["office-seated"] }, { act: "moment", beats: ["bad-news"] }] },
   sacked: { loc: () => "office", other: { id: "boss", role: "manager", mark: "chair.boss" }, you: { mark: "chair.you" }, acts: [{ act: "setup", beats: ["office-seated"] }, { act: "moment", beats: ["bad-news"] }] },
   "transfer-request": { loc: () => "office", other: { id: "boss", role: "manager", mark: "chair.boss" }, you: { mark: "chair.you" }, acts: [{ act: "setup", beats: ["office-seated"] }, { act: "moment", beats: ["bad-news"] }] },
+  // The farewell (a retirement): the stadium and its crowd, never the office
+  // (before 9 Oct 2026 "retired" had no story and fell back to another one).
+  retired: {
+    loc: () => "pitch", mates: () => 6, you: { mark: [0, 0, 47] },
+    acts: [{ act: "moment", beats: ["farewell-walk"] }, { act: "aftermath", beats: ["applause"], optional: 0.5 }],
+  },
   "mentor-advice": {
     loc: (e) => e.where ?? "training-ground",
     other: { id: "mentor", role: "mentor", mark: [-1.4, 0, -2.2], face: "you" },

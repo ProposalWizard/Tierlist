@@ -35,6 +35,8 @@ import { applyPose, actorDir, type PoseCtx } from "./perform3d";
 import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
+import { filmPass } from "./cinema";
+import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
 
 export interface DirectorOptions {
   career?: CareerContext;
@@ -48,6 +50,8 @@ export interface DirectorOptions {
   holdAt?: number;
   /** A ready-made style (the Style Testing page passes its own); else `style`. */
   def?: StyleDef;
+  /** Settings → Look → "Cut-scene camera": New runs the film pass (cinema.ts) over the script; Old plays it as written. Default: the phone's setting. */
+  camera?: CutsceneCameraLook;
 }
 
 export interface Director {
@@ -73,7 +77,8 @@ interface Cast { id: string; role: string; body: string; actor: CutsceneActor; c
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
-export async function createDirector(container: HTMLElement, script: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
+export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
+  const script: CutsceneScript = (o.camera ?? cutsceneCameraLook()) === "new" ? filmPass(written) : written;
   const tier = o.tier ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   const T: any = await import("three");
