@@ -69,6 +69,8 @@ import { relaxIdleArms, IDLE_POSTURE_CLIPS } from "./runPosture";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./perf";
+import { FadeWeights, LocoPhase, locoWeights, type LocoLoop } from "./animBlend";
+import { footMark } from "./locomotion";
 import { withMeshopt } from "./meshopt";
 import type { Person3D } from "../people3d";
 import { motionLook } from "../motionLook";
@@ -319,52 +321,222 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
   return names;
 }
 
+/** One moving loop for ClipPlayer.loco: its name and its own ground speed at this body's size (m/s at timeScale 1). */
+export interface LocoSpec { name: string; speed: number }
+
+type Act = THREE.AnimationAction;
+const LOCO = "@loco" as const;
+type Key = Act | typeof LOCO;
+
 /**
- * Plays one clip at a time on a mixer's actions with a short crossfade.
- * Every other action is held at weight 0. Call update(dt) BEFORE mixer.update(dt).
+ * Plays clips on a mixer's actions, one in charge at a time, with crossfades
+ * that never pop (Harry, 9 Oct 2026: "the animations are a bit wild and
+ * rough"). Call update(dt) BEFORE mixer.update(dt).
+ *
+ *  - Every change fades from the pose he is in now, however many changes come
+ *    inside one fade (animBlend.ts FadeWeights); no clip drops out in one frame.
+ *  - A clip asked for again while it still shows (a second kick straight after
+ *    the first) gets a twin, so the one still fading out keeps its own frame
+ *    instead of jumping back to the start.
+ *  - loco(speed): walk / jog / run / sprint (and the idle) mixed by his real
+ *    speed on one stride clock, each loop from its own left-foot moment, the
+ *    clock at ground speed ÷ the mixed stride: no flicker, no foot slide, the
+ *    same foot down through every change. Set the loops once with setLoco.
+ *
+ * `actions[name]` always points at the action now in charge of that clip, so
+ * scenes that set `actions[name].time` or `.timeScale` keep working.
  */
 export class ClipPlayer {
   current: string | null = null;
-  private from: string | null = null;
-  private fade = 0;
-  private fadeLen = 0;
+  private fw = new FadeWeights<Key>();
   private onEnd: (() => void) | null = null;
   private once = false;
+  /** Every action this player has shown and not yet zeroed. */
+  private shown = new Set<Act>();
+  /** name → its copies (the original first). */
+  private copies = new Map<string, Act[]>();
+  // locomotion
+  private locoSpecs: LocoSpec[] = [];
+  private locoIdle: string | null = null;
+  private members: { a: Act; loop: LocoLoop }[] = [];
+  private idleAct: Act | null = null;
+  private phase = new LocoPhase();
+  private locoW: number[] = [];
+  private locoIdleW = 1;
+  private locoSpeed = 0;
+  private locoRate = 0;
+  private locoTop: number | undefined;
 
-  constructor(private T: Three, private actions: Record<string, THREE.AnimationAction>) {}
+  constructor(private T: Three, private actions: Record<string, THREE.AnimationAction>) {
+    for (const [n, a] of Object.entries(actions)) this.copies.set(n, [a]);
+  }
 
   has(name: string) { return !!this.actions[name]; }
 
-  play(name: string, o: { fade?: number; once?: boolean; onEnd?: () => void; from?: number; speed?: number } = {}) {
+  /** Is this action on screen at all just now? */
+  private visible(a: Act): boolean {
+    if (this.fw.get(a) > 0) return true;
+    if (this.fw.get(LOCO) > 0) return this.members.some((m) => m.a === a) || this.idleAct === a;
+    return false;
+  }
+
+  /** The action for `name` that is free to restart (a twin if the one in charge still shows). */
+  private free(name: string): Act {
     const a = this.actions[name];
-    if (!a) return false;
-    if (this.current && this.current !== name) { this.from = this.current; this.fadeLen = this.fade = o.fade ?? 0.2; }
-    else { this.from = null; this.fade = this.fadeLen = 0; }
+    if (!this.visible(a)) return a;
+    let list = this.copies.get(name);
+    if (!list) { list = [a]; this.copies.set(name, list); }
+    let pick = list.find((c) => !this.visible(c));
+    if (!pick && list.length < 3) {
+      const clip = a.getClip();
+      const c2 = new this.T.AnimationClip(clip.name, clip.duration, clip.tracks, clip.blendMode);
+      pick = a.getMixer().clipAction(c2, a.getRoot());
+      pick.play();
+      pick.setEffectiveWeight(0);
+      list.push(pick);
+    }
+    // every copy still shows: take the faintest
+    if (!pick) pick = list.reduce((b, c) => (this.fw.get(c) < this.fw.get(b) ? c : b));
+    this.actions[name] = pick;
+    return pick;
+  }
+
+  play(name: string, o: { fade?: number; once?: boolean; onEnd?: () => void; from?: number; speed?: number } = {}) {
+    if (!this.actions[name]) return false;
+    const cur = this.actions[name];
+    // the same loop again, already in charge and no new start point: keep it going
+    if (this.current === name && this.fw.current === cur && !o.once && o.from === undefined && cur.loop === this.T.LoopRepeat) {
+      cur.timeScale = o.speed ?? 1;
+      this.onEnd = o.onEnd ?? null;
+      return true;
+    }
+    const a = this.free(name);
     this.current = name;
     this.once = !!o.once;
     this.onEnd = o.onEnd ?? null;
-    a.reset();
+    a.enabled = true;
     a.setLoop(o.once ? this.T.LoopOnce : this.T.LoopRepeat, Infinity);
     a.clampWhenFinished = true;
+    a.paused = false;
     a.timeScale = o.speed ?? 1;
     a.time = o.from ?? 0;
     a.play();
+    this.fw.to(a, o.fade ?? 0.2);
+    this.shown.add(a);
     this.update(0);
     return true;
   }
 
   /** Seconds into the current clip. */
-  time() { return this.current ? this.actions[this.current].time : 0; }
+  time() {
+    if (this.current === "loco") return this.members[0] ? this.members[0].a.time : 0;
+    return this.current ? this.actions[this.current].time : 0;
+  }
+
+  /**
+   * The loops loco() mixes (speeds at this body's size) and the standing clip
+   * it fades to at a stop. Loops the body lacks are skipped.
+   */
+  setLoco(loops: LocoSpec[], idle: string | null = "idle") {
+    this.locoSpecs = loops.filter((l) => this.actions[l.name] && l.speed > 0).sort((x, y) => x.speed - y.speed);
+    this.locoIdle = idle && this.actions[idle] ? idle : null;
+    this.members = [];
+  }
+  /** The loops loco() mixes, slowest first (for a `top` index). */
+  locoNames() { return this.locoSpecs.map((s) => s.name); }
+
+  /**
+   * Walk / jog / run / sprint by ground speed (m/s), mixed, on one stride clock.
+   * `top`: the fastest loop allowed (index into locoNames(); e.g. no sprint
+   * loop unless sprinting). `fade`: how quickly loco takes over from a one-off.
+   */
+  loco(speed: number, o: { fade?: number; top?: number } = {}) {
+    if (!this.locoSpecs.length) return false;
+    this.locoSpeed = speed;
+    this.locoTop = o.top;
+    if (this.fw.current === LOCO) return true;
+    if (!this.fw.has(LOCO)) {
+      // take the loops as they are now; a loop playing on its own hands its stride over
+      const curA = this.fw.current && this.fw.current !== LOCO ? this.fw.current : null;
+      this.members = [];
+      let synced = false;
+      for (const s of this.locoSpecs) {
+        let a = this.actions[s.name];
+        const mine = a === curA;
+        if (!mine && this.visible(a)) a = this.free(s.name);
+        const mark = footMark(this.T, a.getClip(), a.getRoot() as THREE.Object3D) ?? 0;
+        const loop: LocoLoop = { speed: s.speed, dur: a.getClip().duration, mark };
+        this.members.push({ a, loop });
+        if (mine && curA) { this.phase.syncTo(loop, curA.time); synced = true; }
+      }
+      if (!synced) this.phase.phase = 0;
+      this.idleAct = null;
+      if (this.locoIdle) {
+        let ia = this.actions[this.locoIdle];
+        if (ia !== curA && this.visible(ia)) ia = this.free(this.locoIdle);
+        this.idleAct = ia;
+      }
+      for (const m of this.members) {
+        if (m.a !== curA) m.a.time = this.phase.timeOf(m.loop);
+        m.a.enabled = true; m.a.setLoop(this.T.LoopRepeat, Infinity); m.a.paused = false; m.a.play(); this.shown.add(m.a);
+      }
+      if (this.idleAct) {
+        const ia = this.idleAct;
+        if (ia !== curA) { ia.time = 0; ia.setLoop(this.T.LoopRepeat, Infinity); }
+        ia.timeScale = 1; ia.enabled = true; ia.paused = false; ia.play(); this.shown.add(ia);
+      }
+      // the mix starts where his speed already is
+      const lw = locoWeights(speed, this.members.map((m) => m.loop), o.top);
+      this.locoW = lw.w; this.locoIdleW = this.idleAct ? lw.idle : 0;
+      // the loop he was on hands its weight straight to loco (no dip)
+      if (curA && (this.members.some((m) => m.a === curA) || curA === this.idleAct)) this.fw.rekey(curA, LOCO);
+    }
+    this.current = "loco";
+    this.once = false;
+    this.onEnd = null;
+    this.fw.to(LOCO, o.fade ?? 0.2);
+    this.update(0);
+    return true;
+  }
 
   update(dt: number) {
-    if (this.fade > 0) this.fade = Math.max(0, this.fade - dt);
-    const k = this.fadeLen > 0 ? 1 - this.fade / this.fadeLen : 1;
-    for (const [n, a] of Object.entries(this.actions)) {
-      a.setEffectiveWeight(n === this.current ? k : n === this.from && this.fade > 0 ? 1 - k : 0);
+    const gone = this.fw.step(dt);
+    for (const k of gone) if (k !== LOCO) k.setEffectiveWeight(0);
+    const wl = this.fw.get(LOCO);
+    const weights = new Map<Act, number>();
+    if (wl > 0 && this.members.length) {
+      // the mix follows his speed smoothly; the stride clock follows the ground
+      const target = locoWeights(this.locoSpeed, this.members.map((m) => m.loop), this.locoTop);
+      const k = dt > 0 ? 1 - Math.exp(-dt / LOCO_MIX_TAU) : 0;
+      for (let i = 0; i < this.members.length; i++) this.locoW[i] = (this.locoW[i] ?? 0) + (target.w[i] - (this.locoW[i] ?? 0)) * k;
+      if (this.idleAct) this.locoIdleW += (target.idle - this.locoIdleW) * k;
+      else { const s = this.locoW.reduce((x, y) => x + y, 0); if (s > 0) this.locoW = this.locoW.map((x) => x / s); this.locoIdleW = 0; }
+      const loops = this.members.map((m) => m.loop);
+      const rate = this.phase.step(dt, this.locoSpeed, loops, this.locoW);
+      if (rate > 0) this.locoRate = rate;
+      for (let i = 0; i < this.members.length; i++) {
+        const m = this.members[i];
+        m.a.time = this.phase.timeOf(m.loop);
+        m.a.timeScale = 0;
+        weights.set(m.a, (weights.get(m.a) ?? 0) + wl * this.locoW[i]);
+      }
+      if (this.idleAct) weights.set(this.idleAct, (weights.get(this.idleAct) ?? 0) + wl * this.locoIdleW);
+    } else if (this.members.length && !this.fw.has(LOCO)) {
+      // loco has gone: its loops run on at their last stride rate while they fade (never frozen mid-stride)
+      for (const m of this.members) if (m.a.timeScale === 0) m.a.timeScale = Math.max(0.3, this.locoRate * m.loop.dur);
+      this.members = [];
     }
-    if (this.current && this.once && this.onEnd) {
+    for (const [k, w] of this.fw.entries()) if (k !== LOCO) weights.set(k, (weights.get(k) ?? 0) + w);
+    for (const a of this.shown) {
+      if (!weights.has(a)) { a.setEffectiveWeight(0); this.shown.delete(a); }
+    }
+    weights.forEach((w, a) => { a.setEffectiveWeight(w); this.shown.add(a); });
+    if (this.current && this.current !== "loco" && this.once && this.onEnd) {
       const a = this.actions[this.current];
       if (a.time + dt >= a.getClip().duration - 1e-3) { const f = this.onEnd; this.onEnd = null; f(); }
     }
   }
 }
+
+/** How quickly the walk/jog/run/sprint mix follows a change of speed, s. */
+export const LOCO_MIX_TAU = 0.09;
