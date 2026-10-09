@@ -225,6 +225,18 @@ smaller). **Every GLTFLoader must call `withMeshopt(loader)`**
 at their end; a new file needs a POLICY line in the script. Details:
 `scripts/perf3d/README.md`.
 
+## Cut scenes are scripts on one system (Harry, 9 Oct 2026)
+
+"build a foundation and system that will be translatable for any cut scenes … don't
+put limits." Every new cut scene is DATA in `lib/star/cutscene/` (read its README):
+a script (set, cast, props, timeline tracks) played by `director.ts` in any art style,
+from t alone (`window.__frameStep`). Scenes are GENERATED from a game event
+(`generateScript(event, seed)`: story.ts beats → cinema.ts film rules); hand-made
+ones (`fixtures.ts`) are the benchmark the generator must match
+(`tests/star/cutscene.mts`). Never write a new bespoke cut-scene loop. The people
+layer (faces, hands, IK) plugs in at `peopleAdapter.ts`. Watch any scene:
+/star-style-dev → "Cut-scene Director".
+
 ## Goal videos are recordings, never re-runs (Leo, 7 Oct 2026)
 
 "the goal replays should always be the same." Every goal in the real match
