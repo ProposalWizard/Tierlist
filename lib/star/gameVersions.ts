@@ -149,10 +149,14 @@ for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.p
 // 3D, 9 Oct 2026), once: if it has never stored that row and every other row
 // already reads Preview, the new row takes its Preview value. Otherwise the
 // phone would read as "Custom" and Harry would not see the new look.
+// The same goes for the real game's 3D camera and player light, added the same day.
+const LATE_PREVIEW_ROWS: readonly LookRowId[] = ["matchView3d", "camera3d", "playerLight3d"];
 if (typeof window !== "undefined" && !matchView3dStored()) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
   const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);
-  if (off.length === 1 && off[0] === "matchView3d") setMatchView3d("on");
+  if (off.length > 0 && off.every((id) => LATE_PREVIEW_ROWS.includes(id))) {
+    for (const id of off) LOOK_ROWS[id].set(VERSION_PRESETS.preview[id]);
+  }
 }
 
 // ── Reading and setting ─────────────────────────────────────────────────
