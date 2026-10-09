@@ -52,6 +52,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
@@ -411,6 +412,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.add(sun, sun.target);
   // a soft light from behind the camera, so he isn't a silhouette after dark
   const fillLight = new THREE.PointLight(night ? "#ffd9a8" : "#ffe6cc", night ? 7 : data.sky === "sunset" ? 3 : 0, 9, 1.6);
+  fillLight.userData.moves = true; // it follows you (three3d/lightReach.ts)
   scene.add(fillLight);
 
   // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
@@ -2338,6 +2340,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const gd = makeGroundDetail(THREE, nature, spots, B, 11);
     scene.add(gd.contacts, gd.tufts);
   }
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
@@ -2798,6 +2802,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();

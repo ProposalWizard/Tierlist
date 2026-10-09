@@ -6,6 +6,12 @@ import { startShop } from "@/lib/star/shop3d/scene";
 import { shopDisplays } from "@/lib/star/shop3d/catalogue";
 import { createSigningScene } from "@/lib/star/signing3dScene";
 import * as P from "@/lib/star/three3d/perf";
+import { createEngineView } from "@/lib/star/style3d/engineView";
+import { resolveStyle } from "@/lib/star/style3d/styles";
+import { createDirector } from "@/lib/star/cutscene/director";
+import { FIXTURES } from "@/lib/star/cutscene/fixtures";
+import { startFrameStats } from "@/lib/star/three3d/frameStats";
+startFrameStats();
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 (window as any).P = P;
 (window as any).mergeGeometries = mergeGeometries;
@@ -91,6 +97,39 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     });
     M.ready = performance.now();
     M.ctrl = h;
+    return true;
+  },
+  /** The real game's 3D view (career), fed one still made-up frame of a chance, 22 men. */
+  async career(opts: any = {}) {
+    M.t0 = performance.now();
+    const v = await createEngineView(stage(), { def: resolveStyle("real", "play"), tier: opts.tier ?? "medium", tod: opts.tod ?? "golden" });
+    const fig = (sid: string, x: number, y: number, team: "us" | "them") => ({ sid, x, y, team, shirt: team === "us" ? "#c8102e" : "#1d4ed8", shorts: "#ffffff", kick: false, kickFoot: 1, drawn: true });
+    const figures: any[] = [fig("you", 34, 18, "us")];
+    const us = [[20, 22], [48, 22], [26, 30], [42, 30], [34, 36], [14, 40], [54, 40], [28, 48], [40, 48], [34, 60]];
+    const them = [[30, 10], [38, 10], [24, 14], [44, 14], [34, 22], [18, 26], [50, 26], [30, 32], [38, 32], [34, 44]];
+    us.forEach(([x, y], i) => figures.push(fig(`mate${i}`, x, y, "us")));
+    them.forEach(([x, y], i) => figures.push(fig(`def${i}`, x, y, "them")));
+    const t0 = performance.now() / 1000;
+    const f = () => ({
+      t: performance.now() / 1000, phase: "aim", kind: "one_on_one",
+      cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing: "up", tilt: null, W: 390, H: 600 },
+      ball: { x: 34, y: 17.2, z: 0.11, vx: 0, vy: 0, vz: 0, live: true, inNet: false }, landing: null,
+      keeper: { x: 34, y: 1.2, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: performance.now() / 1000 - t0, shirt: "#16a34a", shorts: "#111111", drawn: true },
+      figures, aim: null, ring: null, goalSide: null, goalInView: true, orders: null,
+    });
+    let on = true;
+    const tick = () => { if (!on) return; v.frame(f() as any); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; v.dispose(); } };
+    return true;
+  },
+  /** A cut scene (a fixture), held still at `at` seconds. */
+  async cut(opts: any = {}) {
+    M.t0 = performance.now();
+    const d = await createDirector(stage(), FIXTURES[opts.fixture ?? "trophy"](), { style: "real", tier: opts.tier ?? "medium", holdAt: opts.at ?? 2 });
+    M.ready = performance.now();
+    M.ctrl = d;
     return true;
   },
   dispose() { M.ctrl?.dispose?.(); M.ctrl = null; },
