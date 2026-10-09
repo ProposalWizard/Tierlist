@@ -16,6 +16,7 @@
 //   --timeline   JSON array of scripted input for a simulation screen: [{ "t":0, "move":{"x":0,"y":-1} }, ...]
 //   --hide       extra CSS selector(s) to hide in the frames (the admin "eye" button is always hidden)
 //   --png        lossless frames (bigger, slower); default JPEG quality 92
+//   --ls         saved settings before load, "key=value,key2=value2" (star-3d-quality=medium films a phone's tier)
 //
 // Writes DIR/frame_00000.jpg … and DIR/frames.json (fps, size, count, url) for the encoder.
 import { chromium } from "playwright";
@@ -46,6 +47,9 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-webgl", "--disable-dev-shm-usage", "--hide-scrollbars"],
 });
 const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: dsf, hasTouch: true, isMobile: true });
+// --ls "key=value,key2=value2": saved settings before the page loads (e.g. star-3d-quality=medium: film a phone's tier, not the software-GPU one)
+const lsPairs = (opt("ls", "") || "").split(",").filter(Boolean).map((kv) => kv.split("="));
+if (lsPairs.length) await context.addInitScript((pairs) => { for (const [k, v] of pairs) localStorage.setItem(k, v); }, lsPairs);
 const page = await context.newPage();
 page.on("pageerror", (e) => console.error("[page error]", e.message));
 page.on("console", (m) => { if (m.type() === "error") console.error("[console]", m.text().slice(0, 200)); });

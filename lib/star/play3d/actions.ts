@@ -61,11 +61,21 @@ export function groundPassSpeed(d: number, arrive = 4.5): number {
   return Math.sqrt(arrive * arrive + 2 * GROUND_FRICTION * d);
 }
 
+/** How fast a ground pass should still be rolling when it gets there: a short one soft, a long one firmer (m/s). */
+export function passArrive(d: number): number { return clamp(3.6 + d * 0.16, 4, 8); }
+
+/** Seconds a ground pass struck for `arrive` m/s takes to roll `d` metres. */
+export function groundPassTime(d: number, arrive = 4.5): number {
+  const v0 = groundPassSpeed(d, arrive);
+  return (v0 - arrive) / GROUND_FRICTION;
+}
+
 /**
  * A pass to a point: along the grass, or lofted to drop on it. Error grows
- * as passing falls: the angle and the weight both wander.
+ * as passing falls: the angle and the weight both wander. `arrive`: how fast
+ * a ground pass is still rolling when it gets there.
  */
-export function passTo(b: Ball3, p: P3, tx: number, ty: number, lofted: boolean, rng: Rng) {
+export function passTo(b: Ball3, p: P3, tx: number, ty: number, lofted: boolean, rng: Rng, arrive = 4.5) {
   const sk = skill01(p.skills.passing ?? p.skills.technique);
   const dx = tx - b.x, dy = ty - b.y;
   const d = Math.max(0.5, Math.hypot(dx, dy));
@@ -73,7 +83,7 @@ export function passTo(b: Ball3, p: P3, tx: number, ty: number, lofted: boolean,
   const len = 1 + gauss(rng) * (0.03 + (1 - sk) * 0.12);
   const u = rot(dx / d, dy / d, ang);
   if (!lofted) {
-    const s = groundPassSpeed(d * len);
+    const s = groundPassSpeed(d * len, arrive);
     b.vx = u.x * s; b.vy = u.y * s; b.vz = 0; b.z = BALL_R;
     b.spin = 0; b.topspin = 0.3;
   } else {
