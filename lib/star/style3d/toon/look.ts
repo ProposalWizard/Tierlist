@@ -14,7 +14,7 @@ export type PlayerStyleLook = "new" | "old";
 
 const KEY = "star-look-player-style";
 const VALUES: readonly PlayerStyleLook[] = ["new", "old"];
-export const PLAYER_STYLE_DEFAULT: PlayerStyleLook = "new";
+export const PLAYER_STYLE_DEFAULT: PlayerStyleLook = "old"; // held on Old until the glow-square / speck bug is fixed (9 Oct 2026)
 let cached: PlayerStyleLook | null = null;
 const listeners = new Set<() => void>();
 
