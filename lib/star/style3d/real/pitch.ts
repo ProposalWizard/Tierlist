@@ -26,7 +26,7 @@ const FRAG_HEAD = /* glsl */ `
 varying vec2 vH;
 uniform sampler2D tGCol, tGNrm, tGOrh;
 uniform vec3 uGrassA, uGrassB, uLine, uDirt;
-uniform float uWet, uL, uHW, uStripes, uLines;
+uniform float uWet, uL, uHW, uStripes, uLines, uBlades, uStripeK;
 float hh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hh(i), hh(i + vec2(1, 0)), f.x), mix(hh(i + vec2(0, 1)), hh(i + vec2(1, 1)), f.x), f.y); }
@@ -80,6 +80,8 @@ const FRAG_MAP = /* glsl */ `
   float cross = mod(floor((P.x + uHW) / (68.0 / 10.0)), 2.0);
   float inPitch = step(-uHW - 1.2, P.x) * step(P.x, uHW + 1.2) * step(-1.2, P.y) * step(P.y, uL + 1.2);
   vec3 g = mix(uGrassA, uGrassB, mix(0.5, gStripe, uStripes * inPitch));
+  // stripe strength (the look's dial): push the two mown shades apart round their middle
+  g = mix((uGrassA + uGrassB) * 0.5, g, uStripeK);
   g *= 1.0 + (cross - 0.5) * 0.035 * inPitch * uStripes;
   // big soft patches: no pitch is one green
   float m1 = fbm3(P * 0.03), m2 = fbm3(P * 0.11 + 4.0);
@@ -98,7 +100,9 @@ const FRAG_MAP = /* glsl */ `
   float wn = fbm3(P * 1.7);
   gWear = clamp(wm * smoothstep(0.3, 0.75, wn + wm * 0.35), 0.0, 1.0) * inPitch;
   g = mix(g, uDirt, gWear * 0.75);
-  vec3 col = g * mix(vec3(1.0), det, 0.85) * (0.82 + 0.18 * orh.r);
+  // blade detail (the look's dial): the grass photo's own light and dark, stretched round its middle
+  det = max(mix(vec3(dot(det, vec3(0.3333))), det, 1.0) + (det - vec3(1.0)) * (uBlades - 1.0), vec3(0.0));
+  vec3 col = g * mix(vec3(1.0), det, 0.85) * (0.82 + 0.18 * mix(1.0, orh.r, min(uBlades, 2.0)));
   // lines, painted into the grass
   float d = pitchD(P);
   float aa = max(fwidth(d), 0.004);
@@ -131,7 +135,8 @@ const FRAG_NORMAL = /* glsl */ `
 export interface RealPitch {
   mesh: any;
   material: any;
-  setLook(o: { grass: [string, string]; wet: number }): void;
+  /** blades/stripes: Look H's dials (lib/star/look/params.ts), 1 = as built. */
+  setLook(o: { grass: [string, string]; wet: number; blades?: number; stripes?: number }): void;
   dispose(): void;
 }
 
@@ -147,6 +152,7 @@ export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: num
     uLine: { value: new T.Color("#f2f4ee") }, uDirt: { value: new T.Color("#6b5a3a") },
     uWet: { value: 0 }, uL: { value: PITCH_LEN }, uHW: { value: PITCH_HALF_W },
     uStripes: { value: o.stripes === false ? 0 : 1 }, uLines: { value: o.lines === false ? 0 : 1 },
+    uBlades: { value: 1 }, uStripeK: { value: 1 },
   };
   const mat = new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.95, metalness: 0 });
   mat.onBeforeCompile = (sh: any) => {
@@ -171,6 +177,8 @@ export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: num
     setLook(lk) {
       u.uGrassA.value.set(lk.grass[0]); u.uGrassB.value.set(lk.grass[1]);
       u.uWet.value = lk.wet;
+      if (lk.blades !== undefined) u.uBlades.value = lk.blades;
+      if (lk.stripes !== undefined) u.uStripeK.value = lk.stripes;
     },
     dispose() { mesh.geometry.dispose(); mat.dispose(); },
   };
