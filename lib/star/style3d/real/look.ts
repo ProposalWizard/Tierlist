@@ -247,6 +247,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   }
   let frameN = 0;
   let last: { scene: any; camera: any } | null = null;
+  /**
+   * Below High the sun's shadow map is redrawn every other frame (9 Oct 2026,
+   * lag): it is the people drawn a second time (their skinned bodies are most
+   * of the triangles). A shadow one frame behind at 60 a second can't be seen.
+   */
+  const shadowEvery = tier === "high" ? 1 : 2;
+  let shadowFrame = 0;
 
   const dir = new T.Vector3();
   const api: RealLook = {
@@ -291,7 +298,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
     },
     render(sc, camera, hooks) {
-      if (hooks?.beforeShadows && prof.shadows) {
+      const freshShadow = shadowFrame++ % shadowEvery === 0;
+      if (hooks?.beforeShadows && prof.shadows && !freshShadow) {
+        // keep last frame's shadow map; the picture still gets its lean
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = false;
+        hooks.afterShadows?.();
+      } else if (hooks?.beforeShadows && prof.shadows) {
         // shadows from the men standing up, then the picture with them leaned
         hooks.beforeShadows();
         renderer.shadowMap.autoUpdate = false;
@@ -302,7 +315,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         renderer.setRenderTarget(null);
         hooks.afterShadows?.();
       } else {
-        renderer.shadowMap.autoUpdate = true;
+        renderer.shadowMap.autoUpdate = freshShadow;
+        renderer.shadowMap.needsUpdate = false;
       }
       if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
       post.render(sc, camera, {
