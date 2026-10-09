@@ -212,6 +212,7 @@ import { captainMomentDue } from "@/lib/star/managerMoments";
 import Garden3D from "@/components/star/Garden3D";
 import Home3D from "@/components/star/Home3D";
 import { withOutfit } from "@/lib/star/home3d/outfits";
+import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import Casino3D from "@/components/star/Casino3D";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
 import Training3D from "@/components/star/Training3D";
@@ -4361,7 +4362,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
         onCasino={() => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
-        onHouse={() => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); }}
+        onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
       />
     );
   }

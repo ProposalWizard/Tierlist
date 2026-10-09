@@ -869,7 +869,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   };
   /** The camera's shot of a spot with its card open. */
   const shotOf = (s: HomeSpot): { cam: [number, number, number]; look: [number, number, number] } => {
-    if (s === "wardrobe") return { cam: [Math.min(W2 - 0.35, -W2 + 2.75), 1.55, Math.min(D2 - 0.35, MIRROR.z + 1.15)], look: [-W2, 1.0, MIRROR.z - 0.2] };
+    // stood back and to one side, so you see him and, beside him, him in the mirror
+    if (s === "wardrobe") return { cam: [Math.min(W2 - 0.35, -W2 + 3.4), 1.6, Math.min(D2 - 0.35, MIRROR.z + 1.75)], look: [-W2, 1.05, MIRROR.z - 0.35] };
     if (s === "cabinet") return { cam: [0.35, 1.5, Math.min(D2 - 0.35, -D2 + CAB.depth + 2.2)], look: [0, CAB.base + (cabH - CAB.base) * 0.55, -D2] };
     return { cam: [W2 - 2.1, 1.65, DRIVE.z + 0.9], look: [W2 + 4, 0.7, DRIVE.z - 0.3] };
   };

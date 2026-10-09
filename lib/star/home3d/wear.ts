@@ -64,7 +64,8 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     const set = w.worn.set;
     const spec: HumanSpec = { ...defaultHumanSpec(model), outfit: set.outfit, colours: set.colours(w.kits.home), scarf: !!set.scarf };
     const p = makeHuman(T, SK, g, anims, spec, { outline: 0, castShadow: w.castShadow });
-    dressPerson3d(T, p, { skin: w.skin, hair: w.hair });
+    // grey 0: makeHuman calls anyone out of kit a "manager", whose hair dressPerson3d greys by default
+    dressPerson3d(T, p, { skin: w.skin, hair: w.hair, grey: 0 });
     relaxHands(T, p);
     return p;
   }
