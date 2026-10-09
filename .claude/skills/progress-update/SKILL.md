@@ -14,11 +14,13 @@ piece of work, then at most one line of what is next or blocked.
 ```
 UPDATE · 14:20
 
-Camera tilt 20°        ██████████  done · pushed
-Keeper dive fix        ████████░░  built · filming to check
-Even highlight mix     ██████████  done · pushed
-Patch notes v0.28      ███░░░░░░░  writing
+Camera tilt 20°        ██████████ 100%  pushed
+Keeper dive fix        ████████░░  80%  filming to check · ~10 min left
+Even highlight mix     ██████████ 100%  pushed
+Patch notes v0.28      ███░░░░░░░  30%  writing · ~20 min left
 
+Started 14:05 · est. done ~14:50
+Speed check: started patch notes alongside filming instead of after
 Waiting on: you, to merge Harry → main
 ```
 
@@ -43,6 +45,31 @@ Waiting on: you, to merge Harry → main
   "running" — never guessed results.
 - Follow the house writing rules (CLAUDE.md "How to talk to this team"): short,
   plain English, numbers where there are numbers.
+
+## Every 5 minutes, on every task — hard rule (Harry, 9 Oct 2026)
+
+*"Give the progress every 5 mins and give estimated percents (this should be
+hard coded in the skill and should run on every task) … add a time estimate
+… with an auto run to check every 5 mins that it couldn't be done quicker."*
+
+- **Arm it at the start of every task that takes more than a few minutes.**
+  Call `send_later` (claude-code-remote) with `delay_minutes: 5` and a
+  message like "5-min progress check: post bars + speed check". When it
+  fires: post the update, then re-arm another 5 minutes. Stop re-arming when
+  the task is done or Harry says stop. (Cron triggers can't go below hourly,
+  so it is always a chain of one-shot `send_later` calls.)
+- **Every bar carries an estimated %** (the rules below say how it's worked
+  out) **and a time left**, e.g. `██████░░░░  60% · ~15 min left`.
+- **One line for the whole round:** `Started 14:05 · now 14:20 · est. done
+  ~14:50 (was ~14:45)`. If the estimate moved, say why in four words.
+- **The speed check, every 5 minutes.** Ask: could this finish sooner?
+  Look for: an agent waiting on slow browser checks, work that could run in
+  parallel, a heavier model than the job needs, a re-take that won't change
+  the outcome, an idle wait. Write one line: `Speed check: <what you
+  changed>` or `Speed check: nothing faster found (<what you checked>)`.
+  Act on it in the same turn, don't just note it.
+- Keep it to the bars, the time line, the speed line and the usage block. No
+  prose.
 
 ## When to send one
 
