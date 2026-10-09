@@ -57,6 +57,7 @@ import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
+import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -107,7 +108,8 @@ export interface GardenCallbacks {
 
 export interface GardenController {
   setStick: (x: number, y: number) => void;
-  orbit: (dxPixels: number) => void;
+  /** A drag on the view (pixels): left/right turns, up/down tilts (lib/star/three3d/orbitCam.ts). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   pick: (clientX: number, clientY: number) => GardenSpot | null;
   /** Tap to move: a tap on something you can use walks you up to it (its
    *  card then appears as you arrive); a tap on the ground walks you there.
@@ -2122,6 +2124,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = st0.yaw, camYaw = st0.yaw + Math.PI, orbitHold = 0;
+  const orb = new OrbitCam(); // the look-around drag, eased (shared with the shop)
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
@@ -2495,6 +2498,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.25; });
 
     // the camera follows behind him
+    camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     // The gazebo between him and the camera (standing south of it, looking at
@@ -2540,7 +2544,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
     const cfx = -Math.sin(camYaw + dodge), cfz = -Math.cos(camYaw + dodge);
     // lower and further back than before: more garden and sky in the frame
-    want.set(player.position.x - cfx * CAM_BACK, CAM_UP, player.position.z - cfz * CAM_BACK);
+    const [camUp, camBack] = orb.lift(CAM_UP, CAM_BACK, 1.3); // the drag's tilt, same distance from him
+    want.set(player.position.x - cfx * camBack, camUp, player.position.z - cfz * camBack);
     wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
     {
       // Things the camera must not end up inside or behind, in plan:
@@ -2567,7 +2572,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (boom < L) {
         want.x = hx + ux * boom; want.z = hz + uz * boom;
         // closer in, a little lower, so it still looks over his shoulder
-        want.y = CAM_UP - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4));
+        want.y = Math.max(CAM_MIN_Y, camUp - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4)));
       }
       fountainHide += ((hideTop ? 1 : 0) - fountainHide) * Math.min(1, dt * 9);
       const op = 1 - fountainHide;
@@ -2595,6 +2600,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const camWas = camPos.clone();
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; shadowDirty = true; }
     else { camPos.lerp(want, Math.min(1, dt * (block ? 12 : 5))); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    // the eased camera must not lag into what the boom stopped short of (a tree, a wall): never further out than the clear distance
+    if (block) {
+      const lim = Math.max(1.2, block.distance - 0.35);
+      if (camPos.distanceTo(headPos) > lim) camPos.sub(headPos).setLength(lim).add(headPos);
+    }
+    if (camPos.y < CAM_MIN_Y) camPos.y = CAM_MIN_Y;
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
@@ -2624,7 +2635,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
     // pixels; still: 30 a second at full pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap (the
@@ -2680,7 +2691,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   };
   const ctrl: GardenController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => { aim(px, py); return pickSpot(); },
     tap: (px, py) => {
       aim(px, py);
@@ -2692,7 +2703,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
-    place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true; },
+    place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true; },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), dodge: +dodge.toFixed(2), block: lastBlock }),
     stats: () => {
       // the sun's shadow pass: one draw per visible caster (renderer.info doesn't count it)

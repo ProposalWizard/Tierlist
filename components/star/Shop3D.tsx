@@ -250,7 +250,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
-          ctrlRef.current?.orbit(e.clientX - d.x);
+          ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
         }}
         onPointerUp={(e) => { const d = drag.current; drag.current = null; if (d && d.id === e.pointerId && d.moved < 10) onTap(e.clientX, e.clientY); }}
