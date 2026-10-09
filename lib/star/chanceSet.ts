@@ -32,7 +32,10 @@ export type ChanceSet = "new" | "classic";
 // the pitch out." So the team's own drawings stay the default in the new
 // zoomed-out view; the library is there to try, behind Settings → Chances.
 export const CHANCE_SET_DEFAULT: ChanceSet = "classic";
-export const CHANCE_SET_KEY = "star-chance-set";
+// Harry, 9 Oct 2026: "remove the 'new' chances from preview, the zoom and
+// scenarios is terrible." A new key puts every phone back on the team's own
+// chances, including phones that picked Preview; New can still be chosen by hand.
+export const CHANCE_SET_KEY = "star-chance-set-v2";
 
 let stored: ChanceSet | null | undefined;
 const listeners = new Set<() => void>();

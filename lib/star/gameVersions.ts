@@ -91,8 +91,9 @@ export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
-/** Rows still being tested: new in Preview, old in Standard. Today: Chances, Animations, the human 3D body and cut-scene people. */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["chances", "animations", "humanBody", "cutscenePeople"];
+/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body and cut-scene people.
+ *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
