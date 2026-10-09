@@ -210,6 +210,13 @@ export interface HiddenMatchInputs {
    */
   talisman?: boolean;
   /**
+   * Kane-style involvement (Settings → Gameplay → Chances: New; default Old while it is tested). You also
+   * drop off and get on the ball in midfield and the final third, the way a
+   * real striker does, so a match has about 9 highlights instead of 6. See
+   * DEEP_TOUCH. Absent: exactly as before, roll for roll.
+   */
+  deepTouches?: boolean;
+  /**
    * THE FAREWELL MATCH (Leo, 6 Oct 2026: "every chance is yours"). Nearly
    * every chance your side works comes to you — FAREWELL_INVOLVEMENT, not
    * every one, so a team-mate still scores now and then and it reads as a
@@ -621,6 +628,18 @@ const CHANCE_DEEP = 0.26;   // in the final third
 const CHANCE_BOX = 0.55;    // in the penalty area
 /** Minutes ignored by the match before you go looking for the ball yourself. */
 const STARVED_MIN = 20;
+/**
+ * DEEP TOUCHES (Mikey, 9 Oct 2026). Kane is on the ball 33 times a match, 16
+ * of them 35m+ from goal (StatsBomb, 12 England matches); the game gave a
+ * striker 6.1 highlights, nearly all of them chances. With `deepTouches`, a
+ * minute your side has the ball in midfield or the final third can find you
+ * there too, at most one every DEEP_TOUCH_GAP minutes. The even mix (or the
+ * real mix) still decides the kind; this only decides how often.
+ */
+export const DEEP_TOUCH = 0.24;
+const DEEP_TOUCH_GAP = 3;
+/** How often each position drops off for it. A ten lives there. */
+const DEEP_TOUCH_PULL: Record<string, number> = { ST: 1, CAM: 1.2, LW: 1.05, RW: 1.05 };
 /** How often a chance in open play is a run rather than a ball to strike. */
 const DRIBBLE_CHANCE = 0.26;
 
@@ -1064,6 +1083,24 @@ export function tick(
       }
       return { events, request: null };
     }
+  }
+
+  // ── Dropping off for it (Kane-style; only with `deepTouches`) ──
+  if (inputs.deepTouches && userHasIt && (state.zone === "middle" || state.zone === "attacking")
+      && state.sinceInvolved >= DEEP_TOUCH_GAP
+      && rng() < DEEP_TOUCH * (DEEP_TOUCH_PULL[inputs.position ?? ""] ?? 1)) {
+    state.sinceInvolved = 0;
+    const lane = state.lane ?? "centre";
+    return {
+      events,
+      request: {
+        zone: state.zone,
+        kinds: weightKinds(kindsForZone(state.zone, lane), state, inputs),
+        lane,
+        pattern: "settled",
+        reason: state.zone === "middle" ? "You drop off into midfield and get on the ball" : "You find a pocket and the ball comes to you",
+      },
+    };
   }
 
   // ── Coming to get it ──
