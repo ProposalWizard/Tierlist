@@ -216,6 +216,31 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
   },
+  "/star-real-moments-dev": {
+    title: "Real moments",
+    what: "Real match positions from StatsBomb's free data (every Premier League 2015/16 shot, every Kane touch at the 2022 World Cup and Euro 2024), each drawn as a chance in the game's camera and playable in the real match. Testing only.",
+    buttons: [
+      { group: "Loading", items: [
+        ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert). Nothing loads without it."],
+      ] },
+      { group: "Filters", items: [
+        ["Premier League 15/16 shots / Kane, every touch", "Which set to show."],
+        ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
+        ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
+        ["Goals only", "Only shots that went in for real."],
+        ["Next to the game's own", "Puts a chance the game made of the same kind beside each real one."],
+        ["More", "Shows 24 more."],
+      ] },
+      { group: "Each card", items: [
+        ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter, with the ball at his feet. Only people inside the camera are kept."],
+        ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
+        ["Amber text", "What the gallery's fault rules say about the picture. Real football breaks some of them (a defender on the line behind his keeper)."],
+      ] },
+    ],
+    saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
+    inGame: ["Nowhere. It is a test of whether real positions make better chances; the data is not used in the game."],
+    dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
+  },
   "/star-goal-clips-dev": {
     title: "Goal videos",
     what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",

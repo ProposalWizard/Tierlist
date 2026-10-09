@@ -672,6 +672,9 @@ export interface MakeChanceOptions {
   set?: ChanceSet;
   /** The deck a "new" chance is dealt from (remembered across matches). */
   deck?: ChanceDeck | null;
+  /** Deal open play from the real mix, not the even one (kindMix.ts's
+   *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
+  realMix?: boolean;
 }
 
 export interface MadeChance {
@@ -716,7 +719,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   const evenDeal = (): ScenarioKind => {
     if (!o.selection) return EVEN_KINDS[Math.floor(rng() * EVEN_KINDS.length) % EVEN_KINDS.length];
     o.selection.kindBag ??= newKindBag();
-    return nextEvenKind(o.selection.kindBag, rng);
+    return nextEvenKind(o.selection.kindBag, rng, !!o.realMix);
   };
   if (src.from === "request") {
     const offered = offeredKinds(src.request.kinds, src.request, rng);

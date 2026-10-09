@@ -38,7 +38,7 @@ import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import Dribble3D from "./Dribble3D";
 import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldClearances } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldClearances, oldChances } from "@/lib/star/gameplayVersion";
 import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
@@ -1525,6 +1525,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // Settings → Match → Chance mix: New — you drop off for the ball too,
+      // Kane-style (hiddenMatch.ts's DEEP_TOUCH).
+      deepTouches: !oldChances(),
       // The farewell match: nearly every chance is yours.
       ...(farewellRef.current ? { farewell: true } : {}),
       // v0.26: playstyle, team-mates, fans and your stats shape the chances.
@@ -6566,6 +6569,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // career's deck so a picture comes back as rarely as possible).
         set: chanceSet(),
         deck: chanceDeck(careerDeckScope(careerRef.current?.player)),
+        // Settings → Match → Chance mix: New deals the real (Kane) mix.
+        realMix: !oldChances(),
       });
       scenarioRef.current = made.sc;
       // v0.26: the match leans away from serving this kind straight back.
