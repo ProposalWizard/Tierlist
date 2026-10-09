@@ -93,6 +93,7 @@ function recorder(b: Body) {
         lastFoot = { which: low!.which, x: low!.x, z: low!.z };
       } else lastFoot = null;
     },
+    deltas: () => deltas,
     pops() {
       let n = 0;
       for (let i = 1; i < deltas.length - 1; i++) {
@@ -130,7 +131,7 @@ function clipChanges() {
     while (si < script.length && script[si][0] <= t + 1e-9) script[si++][1]();
     p.update(DT); b.mixer.update(DT); rec.frame(0);
   }
-  return { pops: rec.pops(), max: rec.maxTurn() };
+  return { pops: rec.pops(), max: rec.maxTurn(), deltas: rec.deltas() };
 }
 
 // ── 2. The drills' legs: speed up to a sprint, hover on an edge, stop ───────
@@ -237,6 +238,7 @@ function steady(sp: number) {
 
 const cc = clipChanges();
 console.log(`${tag} clip changes inside a fade: ${cc.pops} pops (biggest one-frame bone turn ${cc.max.toFixed(0)}°)`);
+if (process.env.ANIM_DUMP) (await import("node:fs")).writeFileSync(process.env.ANIM_DUMP, JSON.stringify(cc.deltas));
 const dl = drillLegs();
 console.log(`${tag} drill legs (0 → sprint → hover on the jog/run edge → stop): ${dl.pops} pops, foot slide ${dl.slide.toFixed(1)} cm per metre, ${dl.edgeFlicker} changes of the loop in charge while hovering on the edge (${OLD ? "each a 0.2 s crossfade" : "each a smooth handover on one stride clock"})`);
 const sl = strollLegs();
