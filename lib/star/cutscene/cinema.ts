@@ -352,7 +352,8 @@ export function filmPass(script: CutsceneScript): CutsceneScript {
     const who: Target = ids.has(wf.actor) ? { actor: wf.actor } : you;
     const other = "actor" in c.shot.subject && c.shot.subject.actor !== wf.actor ? c.shot.subject : c.shot.subject2 && "actor" in c.shot.subject2 && c.shot.subject2.actor !== wf.actor ? c.shot.subject2 : undefined;
     const sd = c.shot.side ?? 1;
-    const face: ShotSpec = { preset: "close", subject: who, subject2: other, side: sd, yaw: -8, lens: 62, move: "push" };
+    // head and shoulders, never a face filling the frame (a stretched face texture shows at that size; coordinator, 9 Oct 2026)
+    const face: ShotSpec = { preset: "medium-close", subject: who, subject2: other, side: sd, yaw: -8, lens: 45, move: "push" };
     const faceMid: ShotSpec = { preset: "medium-close", subject: who, subject2: other, side: sd, yaw: 14, lens: 52, move: "dolly-in", moveAmount: 0.12 };
     const prop = wf.prop && props.has(wf.prop) ? wf.prop : undefined;
     const covers: { shot: ShotSpec; name: string }[] = [];
@@ -360,8 +361,8 @@ export function filmPass(script: CutsceneScript): CutsceneScript {
       covers.push({ shot: { preset: "medium", subject: who, side: sd, yaw: 165, lens: 24, move: "follow" }, name: "Into the light" });
       covers.push({ shot: { preset: "medium-close", subject: who, side: sd, yaw: 10, lens: 50, move: "follow" }, name: "The face" });
     } else if (prop) {
-      covers.push({ shot: face, name: "The face" });
       covers.push({ shot: { preset: "insert", subject: { prop }, side: sd, yaw: 30, lens: 42, rise: wf.what.startsWith("trophy") ? -0.55 : 0.04, move: "push" }, name: wf.what === "pen" ? "The pen" : `The ${prop}` });
+      covers.push({ shot: face, name: "The face" });
     } else {
       covers.push({ shot: face, name: "The face" });
       if (other && !("actor" in other && noClose.has(other.actor))) covers.push({ shot: { preset: "close", subject: other, subject2: who, side: -sd as 1 | -1, yaw: 8, lens: 62, move: "push" }, name: "Reaction" });
