@@ -38,7 +38,8 @@ export function compose(beats: BeatDef[], ev: StoryEvent, ids: BeatCtx["ids"], l
 export function generateScript(ev: StoryEvent, seed = 1, career?: CareerContext): CutsceneScript {
   const plan = planStory(ev, seed);
   const c = compose(plan.beats, ev, plan.ids, plan.loc, seed, 0.4, { cast: plan.cast, props: plan.props });
-  const cams = cinematograph(c.shots, { ev, seed, duration: c.duration, loc: plan.loc, mainPair: ["you", plan.ids.other] });
+  const other = plan.ids.other ?? c.cast.find((m) => m.id !== "you" && OTHER_ROLES.includes(m.role))?.id;
+  const cams = cinematograph(c.shots, { ev, seed, duration: c.duration, loc: plan.loc, mainPair: ["you", other] });
   const tracks = [...c.tracks, ...cams, ...frameTracks(c.duration, ev.stakes)];
   return {
     id: `gen-${ev.kind}-${seed}`,
@@ -52,7 +53,9 @@ export function generateScript(ev: StoryEvent, seed = 1, career?: CareerContext)
   };
 }
 
+const OTHER_ROLES = ["manager", "mentor", "presenter", "agent", "journalist", "rival"];
+
 export function scoreScript(s: CutsceneScript) {
-  const other = s.cast.find((m) => m.id !== "you" && ["manager", "mentor", "presenter", "agent", "journalist"].includes(m.role))?.id;
+  const other = s.cast.find((m) => m.id !== "you" && OTHER_ROLES.includes(m.role))?.id;
   return shotQuality(s.tracks, s.duration, ["you", other]);
 }

@@ -370,9 +370,10 @@ export const trophyLift: BeatDef = {
       { type: "sound", at: t + 1.6, cue: "crowd-roar" },
     ];
     mates.forEach((m, i) => {
-      const a = ((i + 0.5) / Math.max(1, mates.length) - 0.5) * 2.4;
+      // round him and behind (he faces −z, the cameras are in front): never between him and the lens
+      const a = ((i + 0.5) / Math.max(1, mates.length) - 0.5) * 3.4;
       tr.push(
-        { type: "place", actor: m, at: t, to: [Math.sin(a) * 1.6, 0, 40 - Math.cos(a) * 1.2 + 0.4], yaw: { actor: Y } },
+        { type: "place", actor: m, at: t, to: [Math.sin(a) * 1.9, 0, 40 + Math.cos(a) * 1.3 + 0.3], yaw: { actor: Y } },
         { type: "pose", actor: m, at: t, dur: 1.5, pose: "applaud" },
         { type: "clip", actor: m, at: t + 1.5 + i * 0.07, clip: i % 2 ? "cheer" : "celebrate", loop: true, blendIn: 0.3 },
         { type: "face", actor: m, at: t + 1.5, expression: "elated" },

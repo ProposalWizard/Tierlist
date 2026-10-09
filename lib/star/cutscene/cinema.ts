@@ -94,10 +94,16 @@ export function cinematograph(intents: ShotIntent[], o: CinemaOpts): CameraTrack
       fixed: it.hint?.fixed,
       rise: it.hint?.rise,
     };
-    if (preset === "establishing" && !spec.fixed) spec.fixed = { pos: loc.establish.pos, look: loc.establish.look, lens: loc.establish.lens };
+    // establishing: indoors, the set's own view; outdoors a wide on the people that moves in (never tiny figures in a big field)
+    if (preset === "establishing" && !spec.fixed) {
+      if (loc.indoor) spec.fixed = { pos: loc.establish.pos, look: loc.establish.look, lens: loc.establish.lens };
+      else { spec.preset = "full"; spec.move = "dolly-in"; spec.moveAmount = 0.3; spec.lens = 28; }
+    }
+    // the first shot sets the place and moves: never a static close-up cold
+    if (!out.length && shotSizeRank(spec.preset) > shotSizeRank("medium-wide") && !spec.fixed) { spec.preset = "medium-wide"; spec.move = "dolly-in"; spec.moveAmount = 0.25; }
     const cut: CameraTrack["cut"] = last && sameTarget(last.subject, it.subject) && it.purpose === "follow" ? "blend" : "cut";
     out.push({ type: "camera", at, dur, shot: spec, cut, blend: cut === "blend" ? 0.5 : undefined, name: it.name ?? `${it.purpose}` });
-    last = { preset, subject: it.subject, side: sd, yaw };
+    last = { preset: spec.preset, subject: it.subject, side: sd, yaw };
   };
   for (const it of kept) {
     if (it.dur > maxLen && it.purpose !== "establish" && it.purpose !== "follow" && !it.hint?.fixed) {
@@ -105,6 +111,13 @@ export function cinematograph(intents: ShotIntent[], o: CinemaOpts): CameraTrack
       push(it, it.at, h, false);
       push(it, it.at + h, it.dur - h, true);
     } else push(it, it.at, it.dur, false);
+  }
+  // at least one close shot of a person (the feeling is in the face): the longest emotion/hero/reaction shot after the first tightens
+  const isClose = (p: ShotPreset) => ["close", "medium-close", "extreme-close"].includes(p);
+  if (!out.some((c) => isClose(c.shot.preset))) {
+    const cands = out.slice(1).filter((c) => "actor" in c.shot.subject && !c.shot.fixed && c.shot.preset !== "insert");
+    const pick = cands.sort((a, b) => b.dur - a.dur)[0];
+    if (pick) { pick.shot = { ...pick.shot, preset: "medium-close", lens: 55 + ev.stakes * 20, move: "push" }; pick.name = `${pick.name} · close`; }
   }
   void v; void A;
   return out;
@@ -143,7 +156,7 @@ export function shotQuality(tracks: Track[], duration: number, mainPair: [string
   for (const c of cams) covered += c.dur;
   add(Math.min(1, covered / duration) * (cams[0].at < 0.05 ? 1 : 0.5), "covers the whole scene");
   // opens wide
-  add(["establishing", "wide", "full"].includes(cams[0].shot.preset) || cams[0].shot.fixed ? 1 : 0.4, "opens wide");
+  add(["establishing", "wide", "full", "medium-wide", "two-shot", "low-hero"].includes(cams[0].shot.preset) || cams[0].shot.fixed ? 1 : 0.4, "opens on the place");
   // pace: 0.22 – 0.75 cuts a second
   const pace = cams.length / duration;
   add(pace < 0.22 ? pace / 0.22 : pace > 0.75 ? 0.75 / pace : 1, "pace of cuts");
@@ -152,7 +165,7 @@ export function shotQuality(tracks: Track[], duration: number, mainPair: [string
   add(1 - short / cams.length, "no shot under 0.7 s");
   // variety of sizes
   const sizes = new Set(cams.map((c) => c.shot.preset));
-  add(Math.min(1, sizes.size / 4), "variety of shot sizes");
+  add(Math.min(1, sizes.size / 3), "variety of shot sizes");
   // gets close at least once
   add(cams.some((c) => ["close", "medium-close", "extreme-close", "insert"].includes(c.shot.preset)) ? 1 : 0, "a close-up");
   // the 180° rule for the main pair

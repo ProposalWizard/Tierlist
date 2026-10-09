@@ -89,7 +89,12 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
   const camera = new T.PerspectiveCamera(40, 1, 0.03, 600);
   let styleId: StyleId = o.style ?? script.set.look ?? "golden";
   let given: StyleDef | null = o.def ?? null;
-  const resolveDef = () => structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), script.set.mood));
+  const resolveDef = () => {
+    const d = structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), script.set.mood));
+    // indoors the sky's fill is mostly walled off: the set's own lamps and the window do the lighting
+    if (C.loc.indoor) d.hemi = { ...d.hemi, intensity: d.hemi.intensity * 0.6 };
+    return d;
+  };
   let def: StyleDef = resolveDef();
   const kit: StyleKit = createStyleKit(T, renderer, scene, tier, def);
   const mood = MOODS[script.set.mood];
@@ -126,6 +131,10 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
 
   const fx = createFx(T, root, tier, script.seed ?? 1);
   const spot = new T.SpotLight("#fff1dc", 0, 18, 0.3, 0.6, 1.2); root.add(spot, spot.target);
+  // close-up lighting (a cinematographer's three points): the sun is the key; a cool fill from the
+  // other side of the lens so the shadow side of a face keeps its shape; a warm rim from behind
+  const faceFill = new T.DirectionalLight("#a9c2ff", 0), faceRim = new T.DirectionalLight("#ffd09a", 0);
+  root.add(faceFill, faceFill.target, faceRim, faceRim.target);
 
   // overlay: letterbox bars and fades, drawn after the style pass
   const ovScene = new T.Scene();
@@ -497,6 +506,26 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
       if (Math.abs(camera.fov - p.fov) > 1e-3) { camera.fov = p.fov; camera.updateProjectionMatrix(); }
     }
     const { flash } = fx.update(act, camera, def.sunDir);
+    // close shots: the face lights on, the cel bands softened (a face in hard bands reads as orange paint)
+    let closeK = 0;
+    if (cs) {
+      const pr = cs.cur.shot.preset;
+      closeK = ["close", "extreme-close", "medium-close"].includes(pr) ? 1 : ["medium", "ots", "profile"].includes(pr) ? 0.6 : 0;
+      const sub = cs.cur.shot.subject;
+      if (closeK > 0 && "actor" in sub && cast.has(sub.actor)) {
+        const head = cast.get(sub.actor)!.actor.point("head");
+        const camP = camera.position.clone();
+        const toCam = camP.clone().sub(head).setY(0).normalize();
+        const right = new T.Vector3(toCam.z, 0, -toCam.x);
+        const sunSide = Math.sign(new T.Vector3(def.sunDir[0], 0, def.sunDir[2]).dot(right)) || 1;
+        faceFill.position.copy(head).add(right.multiplyScalar(-2.2 * sunSide)).add(toCam.clone().multiplyScalar(1.6)).add(new T.Vector3(0, 0.4, 0));
+        faceFill.target.position.copy(head);
+        faceRim.position.copy(head).add(toCam.clone().multiplyScalar(-3)).add(new T.Vector3(0, 1.8, 0));
+        faceRim.target.position.copy(head);
+      }
+    }
+    faceFill.intensity = 0.9 * closeK; faceRim.intensity = 1.8 * closeK;
+    def.post.posterMix = basePoster * (1 - 0.65 * closeK);
     // lights
     let expo = 1, sunK = 1;
     spot.intensity = 0;
@@ -525,10 +554,11 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
   };
   const focus = { x: 0, y: 0, z: 0 };
   let baseExposure = def.post.exposure;
+  let basePoster = def.post.posterMix;
 
   const restyle = () => {
     def = resolveDef();
-    baseExposure = def.post.exposure;
+    baseExposure = def.post.exposure; basePoster = def.post.posterMix;
     kit.apply(def);
     root.remove(set.group); set.dispose();
     set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: script.set.mood.includes("night") });

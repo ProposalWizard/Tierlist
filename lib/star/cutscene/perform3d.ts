@@ -128,8 +128,8 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
     }
     case "trophy-overhead": {
       const lift = Math.min(1, t / 0.7);
-      const y = chest + 0.05 + (head + 0.32 - chest) * lift;
-      twoHands(a, c, w, [0.2, y, 0.12 + 0.08 * (1 - lift)], [-0.2, y, 0.12 + 0.08 * (1 - lift)], [-0.4, 1, 0.1], [-1, 0, 0], [0.4, 1, 0.1], [1, 0, 0], [0, -0.4, -1]);
+      const y = chest + 0.05 + (head + 0.5 - chest) * lift;
+      twoHands(a, c, w, [0.21, y, 0.2 - 0.14 * lift], [-0.21, y, 0.2 - 0.14 * lift], [-0.4, 1, 0.1], [-1, 0, 0], [0.4, 1, 0.1], [1, 0, 0], [0, -0.4, -1]);
       a.hand("L", "grip", w); a.hand("R", "grip", w);
       a.lean(-0.1 * w * lift);
       break;

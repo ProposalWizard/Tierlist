@@ -103,9 +103,9 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
     const mid = v3.lerp(aimPoint(A, P.aim), aimPoint(B, P.aim), 0.5);
     const sep = v3.dist([A.pos[0], 0, A.pos[2]], [B.pos[0], 0, B.pos[2]]);
     const yawOff = ((spec.yaw ?? 0) * Math.PI) / 180;
-    const perp = v3.norm(rotY(left, yawOff * side));
-    // fit both, side by side across a narrow phone: the width decides
-    const needW = sep + 1.1;
+    // not square-on: 35° round towards the subject's front, so on a narrow phone the two overlap in depth
+    const perp = v3.norm(rotY(left, (yawOff - 0.61) * side));
+    const needW = sep * 0.82 + 0.75;
     const needH = Math.max(P.size, needW / Math.max(0.3, o.aspect));
     const d = distForHeight(fov, needH);
     look = mid;
