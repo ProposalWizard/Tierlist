@@ -1198,6 +1198,7 @@ export const ADMIN_GUIDES = {
         ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
         ["Restart", "Builds the garden again from the start."],
+        ["?outfit=coat (in the address)", "He walks the garden in that casual set, as if picked at your house's wardrobe: hoodie, tee, shirt, tracksuit or coat. Without it: the club kit."],
         ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
         ["Drag the view", "Swings the camera round him."],
         ["Tap the ground", "He walks there, round anything in the way. A gold ring marks the spot and fades when he arrives. Touching the stick stops the walk. A mouse click works the same."],
