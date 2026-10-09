@@ -52,6 +52,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
@@ -61,6 +62,7 @@ import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footba
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { cullSkinned } from "../three3d/cullPeople";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -422,6 +424,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.add(sun, sun.target);
   // a soft light from behind the camera, so he isn't a silhouette after dark
   const fillLight = new THREE.PointLight(night ? "#ffd9a8" : "#ffe6cc", night ? 7 : data.sky === "sunset" ? 3 : 0, 9, 1.6);
+  fillLight.userData.moves = true; // it follows you (three3d/lightReach.ts)
   scene.add(fillLight);
 
   // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
@@ -1898,6 +1901,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
           entry.drink = { a, sit, next: 4, t: 0 };
         }
       }
+      cullSkinned(THREE, entry.root); // not drawn while the bench is off screen (three3d/cullPeople.ts)
       mates.push(entry);
     });
 
@@ -2106,6 +2110,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       root.rotation.y = man.yaw;
       scene.add(root);
       man.blob = blob(0.85, 0.85, man.x, man.z, 0.55);
+      cullSkinned(THREE, root); // the training pitch's men are not drawn while it is off screen (three3d/cullPeople.ts)
       pitchMen.push(man);
     });
     if (pitchMen.some((m) => m.role === "passB")) {
@@ -2408,6 +2413,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const gd = makeGroundDetail(THREE, nature, spots, B, 11);
     scene.add(gd.contacts, gd.tufts);
   }
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
@@ -2868,6 +2875,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();

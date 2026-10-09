@@ -38,6 +38,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -1274,6 +1275,8 @@ async function buildShop(
   };
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...counterSlots.map((c) => c.group), homeHolder, ...pickables]));
   // warm up: every shader built before the first frame, so the first steps don't stutter
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
@@ -1555,6 +1558,7 @@ async function buildShop(
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);

@@ -83,10 +83,17 @@ Use these. Do not make a second copy.
 
 - Quality tiers: `lib/star/three3d/quality.ts`. `TIER_PROFILES` has low / medium / high (pixel caps, antialias, shadows, fps cap, outlines, how many live characters). Auto picks from the device. Pick the tier BEFORE you make the renderer.
 - One renderer for all scenes, warm-up, cached loads, dynamic resolution, frame gate: `lib/star/three3d/perf.ts` (`acquireRenderer`, `warmUp`, `loadGltfCached`, `DynamicResolution`, `FrameGate`). Its header lists the steps to adopt.
-- The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s; back up after 15 s) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
+- The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s, but only to rung 2; rungs 3–4 need under 30 fps for 5 s; back up after 8 s; one-off long frames and the 1 s after `hush()` — a chance start or camera cut — are not judged) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
 - The frame meter: `lib/star/three3d/frameMeter.ts`. Shows fps, worst frame, draw calls, triangles, shadow and skinned draws, post passes, JS ms, tier and rung. Add `?fps=1` to any page (`?fps=0` hides it; admins and testers see it anyway). The numbers are also on `window.__frame3d`.
 - The build machine has NO graphics chip. Frame times here are 10 to 100 times a phone's. Read percentages, never milliseconds. A phone is the only true judge.
 - `scripts/perf3d` measures a scene without Next (read its README).
+- **Speed pass 2 (9 Oct 2026): same picture, less work.** Each saving has a switch so a before/after still can be taken:
+  - Shadow cache: `lib/star/three3d/shadowCache.ts`. Still things go into the shadow map once; only movers are drawn on top each frame. People cast from a lighter "shadow body". Off: `?shadowcache=0`, `?shadowbody=0`.
+  - Lights only where they reach: `lib/star/three3d/lightReach.ts`. A dark light leaves the shader; far materials skip the lamp loop. Off: `?lightreach=0`.
+  - Off-screen people are not drawn: `lib/star/three3d/cullPeople.ts` (`cullSkinned`). Off: `?cullpeople=0`.
+  - Packed pictures: `lib/star/three3d/ktx2.ts` (`loadPicture3d`) tries a `.ktx2` beside the WebP and falls back on any failure. Make them with `scripts/perf3d/ktx2-textures.mjs`. Transcoder: `public/star/three/basis`. Off: `?ktx2=0`.
+  - Baked light: `lib/star/look/bakedLight.ts`, sets in `tools/bake3d/sets` (stadium, garden, shop, casino). Off: `?bake=0`.
+  - Proof: `node scripts/perf3d/proof.mjs <garden|shop|casino|career|cut> '{...}' --split --out=DIR` gives a before and after still and the counters.
 
 ### Files must be packed small: meshopt
 
@@ -392,3 +399,45 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 3. When Style A lands, register its body with `setWearerBody` and refit the casual sets.
 
 **How to see it.** `/star-home3d-dev?tier=villa` (buttons switch the tier and empty/full cabinet; `?fps=1` for the meter, `?look=old` without Look H). In a career: Garden → the door at the right-hand boundary, or the phone's "Your house".
+
+### 3D speed pass 2 (lag pass 2)
+
+Harry's rule: "I don't want our solution to bad lag to just be make the game look worse, let's be more innovative than that." Same picture, less work. A still frame must look the same or better.
+
+His phone (before this pass): career 3D 43 fps, worst 516–586 ms, ~280 draws, 743–831k triangles (about 460k of them the players again in the shadow map), px 1.5, Medium. Cut scenes 160 shadow draws a frame. Garden 40 fps, 104 draws, 231k triangles, px 2.0. Shop 25 fps at px 2.0. Later on the same day: the governor fell to rung 4 at 60 fps because of one-off 500–730 ms stalls at each chance start.
+
+Measured here (SwiftShader, 390×844, Medium, before → after, `scripts/perf3d/proof.mjs --split`):
+
+| Place | Draws | Triangles | Shadow draws | Shadow triangles a frame | GPU picture MB |
+|---|---|---|---|---|---|
+| Career 3D | 98 → 80 | 946k → 512k | 17 → 11 | 232k → 46k | 56 → 58 |
+| Cut scene (trophy) | 117 → 81 | 288k → 182k | 43 → 7 | 127k → 22k | – |
+| Garden | 145 → 145 | 192k → 198k | 0 → 0 | – | 86 → 74 |
+| Shop | 70 → 78 | 56k → 55k | 0.8 → 3 | – | 292 → 288 |
+| Casino | 58 → 58 | 86k → 86k | 0 → 0 | – | 71 → 72 |
+
+Governor, a simulated 3-minute match with Harry's stall pattern: before rung 1 → 2 → 3 → 4 → back; after 1 → 2 → 1 (`tests/star/perf3d.mts` keeps it).
+
+Done:
+- Shadow cache with shadow bodies (all places through `governScene` and the real game). Test: a still frame never redraws the kept map (`tests/star/shadowCache.mts`).
+- Lights only where they reach (`lib/star/three3d/lightReach.ts`).
+- Off-screen men culled in the real game, the garden bench (both paths) and the training pitch.
+- KTX2 for 13 big colour maps, with WebP fallback.
+- Baked shade in the casino (`public/star/bake/casino`); the garden and shop already had theirs.
+- Governor: stalls and the 1 s after a chance start or cut are ignored; never below rung 2 from a stall; climbs after 8 s; re-climbs a minute after a bounce. `engineView.ts` calls `gov.hush()` on every chance cut.
+
+Half-done:
+- The shop got WORSE on draws (70 → 78) and shadow draws (0.8 → 3): the shop already drew its shadows only when something moved (`carSpot.shadow.autoUpdate = false`), and the cache's copy-back + mover overlay runs on those frames. Fix in `lib/star/three3d/shadowCache.ts`, `sm.render`: for a light with `shadow.autoUpdate === false`, skip the cache (pass straight to three) — or leave the shop out of `installShadowCache`.
+- KTX2 downloads are bigger than the WebPs (2.0 MB vs 1.1 MB for the 13 files; ETC1S quality 255). The career set showed no GPU saving on SwiftShader (it transcodes to plain RGBA there). Check on an iPhone with `?fps=1`; if no gain, lower `QUALITY` in `scripts/perf3d/ktx2-textures.mjs` or drop the skies from `KTX2_FILES` in `lib/star/three3d/ktx2.ts`.
+- The chance-start stalls themselves are hidden from the governor, not removed. Time them with `M.switchChance()` in `scripts/perf3d/entry.ts` (`window.__M.vf` holds ms per `frame()` call). Suspects: a new 256×256 number texture per new man (`numberTex` in `engineView.ts`, uploaded on first draw), `h.dressPeople` on new bodies, the shadow cache redrawing the stadium when the shadow box moves at a cut.
+
+Not done:
+- Far-tree impostors in the garden. Measured: the 82 far trees are 29k triangles in 14 draws, and they stand 23–32 m out, a few hundred pixels tall on a phone. A picture card that size would look softer, which breaks Harry's rule. Left out on purpose.
+- Dropping decorative realtime lights: none was dropped. The lamps light real things; `lightReach.ts` already removes their cost on far materials (garden: 72 of 121 lit materials skip them).
+
+Next 3 steps, in order:
+1. Fix the shop regression (above) and re-run `proof.mjs shop --split`.
+2. Kill the chance-start stall: cache number textures per shirt number and `renderer.initTexture` them while the chance plays; pre-dress the next chance's spares.
+3. Check KTX2 on an iPhone (GPU memory and load time); keep or trim the list.
+
+How to measure: `?fps=1` on any page shows the frame meter (fps, worst frame, draws, triangles, shadow draws, rung); the numbers are on `window.__frame3d`. `?gov=0` stops the governor stepping so one tier can be measured. Off switches for each saving are listed under "Quality, the governor and the frame meter".

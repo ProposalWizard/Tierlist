@@ -28,6 +28,8 @@ import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { acquireRenderer, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
+import { installShadowCache } from "../three3d/shadowCache";
+import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -251,6 +253,8 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
 
   // ── renderer: at the phone's own pixel density (2 on High), so nothing is "pixelly" ──
   const { renderer, release } = acquireRenderer(THREE, container, prof);
+  // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
+  installShadowCache(THREE, renderer);
   const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
@@ -527,6 +531,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const buildShell = () => {
     const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
     if (fb) addClips(THREE, p, fb as any);
+    cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
     p.root.visible = false;
     built++;
     return p;
@@ -536,7 +541,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
     const spare = spares.pop();
     const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
-    if (!spare) built++;
+    if (!spare) { built++; cullSkinned(THREE, p.root); }
     const look: PersonLook = {
       skin: SKINS[hashOf(sid) % SKINS.length], hair: "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
@@ -1224,6 +1229,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // a new chance (or a cut in the 2D) cuts here too
     const vp = f.cam.viewport;
     const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
+    if (tv.init && key !== tv.key) gov.hush(performance.now()); // a chance start / cut stalls once (new men): not slowness
     if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.th = t.th; tv.key = key; tv.init = true; }
     else {
       const k = Math.min(1, dt * 2.5);

@@ -15,6 +15,8 @@
  * About 1.3 MB in all, fetched only when a scene wears look H.
  */
 export type TimeOfDay = "day" | "golden" | "night";
+import { loadPicture3d } from "../../three3d/ktx2";
+
 export const H_BASE = "/star/h3d/";
 
 const cache = new Map<string, Promise<any>>();
@@ -26,13 +28,15 @@ const once = <V>(key: string, make: () => Promise<V>): Promise<V> => {
 
 /** A colour texture (sRGB), repeat-wrapped. */
 export function hTexture(T: any, file: string, o: { srgb?: boolean; repeat?: boolean; aniso?: number } = {}): Promise<any> {
-  return once(`tex:${file}:${o.srgb !== false}:${o.repeat !== false}`, () => new Promise((res, rej) => {
-    new T.TextureLoader().load(H_BASE + file, (t: any) => {
-      t.colorSpace = o.srgb === false ? T.NoColorSpace : T.SRGBColorSpace;
-      if (o.repeat !== false) t.wrapS = t.wrapT = T.RepeatWrapping;
-      t.anisotropy = o.aniso ?? 4;
-      res(t);
-    }, undefined, rej);
+  // a packed KTX2 copy when there is one and a renderer was named (three3d/ktx2.ts), else the WebP as before
+  return once(`tex:${file}:${o.srgb !== false}:${o.repeat !== false}`, () => loadPicture3d(H_BASE + file, () => new Promise((res, rej) => {
+    new T.TextureLoader().load(H_BASE + file, res, undefined, rej);
+  })).then((t: any) => {
+    t.colorSpace = o.srgb === false ? T.NoColorSpace : T.SRGBColorSpace;
+    if (o.repeat !== false) t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.anisotropy = o.aniso ?? 4;
+    t.needsUpdate = true;
+    return t;
   }));
 }
 
