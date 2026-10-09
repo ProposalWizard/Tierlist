@@ -43,7 +43,7 @@ export type MoodId =
 /** Who someone is in the scene. Casting fills each from career data. */
 export type Role =
   | "you" | "manager" | "chairman" | "teammate" | "captain" | "rival"
-  | "keeper" | "journalist" | "presenter" | "fan" | "agent" | "physio" | "family";
+  | "keeper" | "journalist" | "presenter" | "fan" | "agent" | "physio" | "family" | "mentor";
 
 /** How an actor looks. `from: "career"` means: fill it in from the save. */
 export interface ActorLook {
@@ -100,7 +100,8 @@ export interface PropSpec {
 
 /** A target an actor reaches for, looks at, a camera frames … */
 export type Target =
-  | { actor: string; part?: BodyPart }
+  /** An actor: a body part, or a point in his own frame (x = his left, y up, z = his front; from his feet). */
+  | { actor: string; part?: BodyPart; local?: Vec3 }
   | { prop: string; handle?: string }
   | { mark: string; y?: number }
   | { point: Vec3 }
@@ -126,7 +127,7 @@ export type PoseHold =
   | "sit" | "stand" | "kneel" | "knee-slide" | "arms-wide" | "arms-up" | "fist-pump"
   | "hold-shirt-up" | "trophy-overhead" | "trophy-chest" | "point-sky" | "badge-kiss"
   | "hands-on-head" | "head-down" | "applaud" | "lean-desk" | "hands-on-hips"
-  | "arms-folded" | "salute-crowd" | "kneel-pray";
+  | "arms-folded" | "salute-crowd" | "kneel-pray" | "lean-in" | "lean-back" | "nod" | "hand-on-shoulder";
 
 /** The camera's framing presets (presets/camera.ts turns these into a lens and a place). */
 export type ShotPreset =
@@ -208,7 +209,7 @@ export interface MoveTrack extends TrackBase {
   /** Points (marks or places); the actor's place at `at` is the first point unless `from` is given. */
   path: (string | Vec3)[];
   from?: string | Vec3;
-  /** The gait clip (walk, jog, sprint …); its speed is matched to the path. */
+  /** The gait clip (walk, jog, sprint …); its speed is matched to the path. "none": slide (a step while standing up). */
   gait?: string;
   /** Face along the path (default), or a fixed yaw / target. */
   facing?: "path" | number | Target;
@@ -232,6 +233,12 @@ export interface ReachTrack extends TrackBase {
   offset?: Vec3;
   /** Pump up and down (a handshake): metres, per second. */
   pump?: [number, number];
+  /** The hand's way, in the actor's own frame: fingers along, palm towards. Omitted: the clip's. */
+  along?: Vec3; palm?: Vec3;
+  /** The elbow (or knee) bends towards this, actor's frame. */
+  pole?: Vec3;
+  /** Put the held tool's grip point (not the wrist) on the target (picking up a pen). */
+  toolGrip?: boolean;
 }
 
 /**
@@ -243,6 +250,10 @@ export interface TraceTrack extends TrackBase {
   along: { prop: string; path: string }; dur: number;
   /** Lift between strokes, metres. */
   lift?: number;
+  /** The writing hand's way, actor's frame (default: a right-handed writer's). */
+  handAlong?: Vec3; handPalm?: Vec3;
+  /** Lead in from / out to the tool's resting point over this long, s. */
+  leadIn?: number; leadOut?: number;
 }
 
 /** Hand shape on its own (no reach). */
@@ -261,6 +272,8 @@ export interface PropTrack extends TrackBase {
   yaw?: number;
   /** Move to the new place over this long (else at once). */
   dur?: number;
+  /** A flight: lift this high in the middle of the move (a ball struck, a thrown shirt). */
+  arc?: number;
 }
 
 export interface FaceTrack extends TrackBase { type: "face"; actor: string; expression: Expression; dur?: number; amount?: number; blendIn?: number }
@@ -349,11 +362,11 @@ export interface CareerContext {
 export type EventKind =
   | "signed" | "scored" | "won-trophy" | "injured" | "dropped" | "sacked"
   | "record-broken" | "transfer-request" | "rivalry" | "debut" | "walkout"
-  | "press-conference" | "award" | "promoted" | "relegated" | "retired" | "arrival";
+  | "press-conference" | "award" | "promoted" | "relegated" | "retired" | "arrival" | "mentor-advice";
 
 export type Emotion =
   | "joy" | "pride" | "relief" | "defiance" | "anger" | "sadness" | "shock"
-  | "tension" | "calm" | "gratitude" | "hunger";
+  | "tension" | "calm" | "gratitude" | "hunger" | "inspired";
 
 /** A thing that happened in the game, with its context: the generator's input. */
 export interface StoryEvent {
