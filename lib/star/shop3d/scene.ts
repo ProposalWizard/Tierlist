@@ -488,10 +488,10 @@ async function buildShop(
    *     material takes the scene's, at environmentIntensity 0.32, so a car
    *     with a full clear coat read as matte plastic. Each item now has the
    *     room's reflection at full strength (boots a little less).
-   *  3. The clear coat is mirror-smooth (roughness 0.05): the turntable's
-   *     spotlights made a pin-point hot spot that the H look's bloom blew into
-   *     a white smear across the bonnet. The coat is a touch less sharp, so
-   *     the highlight is a shine, not a flare.
+   *  3. The clear coat and glass are mirror-smooth (roughness 0.05): the
+   *     turntable's spotlights made a pin-point hot spot that the H look's
+   *     bloom blew into a white smear across the roof. Coat and glass are a
+   *     touch less sharp (0.28 / 0.24), so the highlight is a shine, not a flare.
    * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
    */
   const CREASE = (38 * Math.PI) / 180;
@@ -507,8 +507,9 @@ async function buildShop(
       if (!m || !m.isMeshStandardMaterial) continue;
       m.envMap = envTex;
       m.envMapIntensity = car ? 1.0 : 0.7;
-      if (m.clearcoat > 0) m.clearcoatRoughness = Math.max(m.clearcoatRoughness ?? 0, car ? 0.14 : 0.2);
-      if (m.roughness < 0.12) m.roughness = 0.12; // glass and chrome: still glossy, no pin-point flare
+      // (0.14 still bloomed into a smear in the first after-still: 0.28 keeps the room's reflection, loses the flare)
+      if (m.clearcoat > 0) m.clearcoatRoughness = Math.max(m.clearcoatRoughness ?? 0, 0.28);
+      if (m.roughness < 0.24) m.roughness = 0.24; // glass and chrome: still glossy, no pin-point flare
       m.needsUpdate = true;
     }
   };
