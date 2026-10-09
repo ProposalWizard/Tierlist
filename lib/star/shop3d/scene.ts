@@ -530,7 +530,7 @@ async function buildShop(
     // look H also puts the motorbike and the private jet on the turntable (shopDisplays(…, { h: true }))
     bike: "/star/shop3d/items/bike-hf.glb", jet: "/star/shop3d/items/jet-hf.glb",
   };
-  const HF_TONE: Record<string, number> = { "car-hatch-hf": 0.85, "car-sports-hf": 0.62, "car-super-hf": 0.62, "jet-hf": 0.75 };
+  const HF_TONE: Record<string, number> = { "car-hatch-hf": 0.85, "car-sports-hf": 0.55, "car-super-hf": 0.55, "jet-hf": 0.6 };
   /** Each generated car at its real length (metres, nose to tail). */
   const CAR_H_LENGTH: Record<string, number> = {
     "car-family-hf": 4.3, "car-hatch-hf": 4.1, "car-suv-hf": 4.95, "car-sports-hf": 4.35, "car-classic-hf": 4.5, "car-super-hf": 4.6,
@@ -585,11 +585,11 @@ async function buildShop(
     root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
   };
   const isHomeH = (url: string) => /\/home-[a-z0-9]+-hf\.glb$/.test(url);
-  /** A home's scale model: stood on the table, centred, HOME_M across its widest side. */
+  /** A home's scale model: stood on the table, centred, HOME_M across its widest side (a tower no taller than 1.1 m). */
   const fitHome = (root: any) => {
     root.updateMatrixWorld(true);
     const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
-    root.scale.multiplyScalar(HOME_M / Math.max(size.x, size.z, 1e-3));
+    root.scale.multiplyScalar(Math.min(HOME_M / Math.max(size.x, size.z, 1e-3), 1.1 / Math.max(size.y, 1e-3)));
     root.updateMatrixWorld(true);
     const b3 = new THREE.Box3().setFromObject(root);
     const c = b3.getCenter(new THREE.Vector3());
@@ -790,8 +790,8 @@ async function buildShop(
    * The flat coloured cylinders become one generated can (Higgsfield picture of
    * an unbranded slim can → Tripo, cut to ~310 triangles: public/star/shop3d/
    * items/can-kib-hf.glb), drawn as one instanced mesh and tinted per tier
-   * (CAN_COLOURS: basic orange, premium blue, elite purple). Six a group
-   * instead of nine, so the 54 cans cost about what the 81 cylinders did.
+   * (CAN_COLOURS: basic orange, premium blue, elite purple). Four a group
+   * instead of nine (36 cans of ~310 triangles, no shadows: about 11k triangles in all).
    * Old: the cylinders as before.
    */
   if (hEnh) {
@@ -810,7 +810,7 @@ async function buildShop(
       g.scale(k, k, k);
       const cm = src.material.clone();
       cm.envMapIntensity = 1.0;
-      const PER_H = 6;
+      const PER_H = 4;
       const cans = new THREE.InstancedMesh(g, cm, 3 * 3 * PER_H);
       let n = 0;
       for (let shelf = 0; shelf < 3; shelf++) {
@@ -818,7 +818,7 @@ async function buildShop(
         for (let col = 0; col < 3; col++) {
           const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(CAN_COLOURS[col]), 0.8);
           for (let k2 = 0; k2 < PER_H; k2++) {
-            tmp.position.set(fx - 0.55 + (k2 % 3) * 0.12, y, fz - 0.95 + col * 0.75 + Math.floor(k2 / 3) * 0.13);
+            tmp.position.set(fx - 0.5 + (k2 % 2) * 0.13, y, fz - 0.9 + col * 0.75 + Math.floor(k2 / 2) * 0.13);
             tmp.rotation.set(0, 0.6 + k2 * 0.9, 0);
             tmp.updateMatrix();
             cans.setMatrixAt(n, tmp.matrix);
@@ -895,6 +895,8 @@ async function buildShop(
       loadModel(hModel).then((m) => {
         if (disposed) return;
         const c = m.clone();
+        // lit by its niche; no shadow pass for it (the counter has no shadow light anyway)
+        c.traverse((o: any) => { if (o.isMesh) o.castShadow = o.receiveShadow = false; });
         group.add(c);
         pickable(c, "counter", i);
       }).catch((e) => console.error("counter model", e));
@@ -1184,7 +1186,7 @@ async function buildShop(
       return hEnh ? { cam: [x * 0.7, 2.2, -4.3], look: [x, BOX_Y - 0.15, -ROOM.z] } : { cam: [x * 0.7, 1.75, -4.15], look: [x, BOX_Y - 0.1, -ROOM.z] };
     }
     // from his left shoulder, so he never stands between the camera and the model
-    if (display === "homes") return { cam: [HOMES.x - 1.45, 2.15, HOMES.z - 1.35], look: [HOMES.x, HOMES.h + 0.3, HOMES.z] };
+    if (display === "homes") return { cam: [HOMES.x - 1.75, 2.35, HOMES.z - 1.65], look: [HOMES.x, HOMES.h + 0.4, HOMES.z] };
     return { cam: [2.6, 1.8, FRIDGE.z + 0.9], look: [FRIDGE.x, 1.2, FRIDGE.z] };
   };
 
