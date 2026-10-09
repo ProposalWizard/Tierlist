@@ -210,7 +210,7 @@ export interface HiddenMatchInputs {
    */
   talisman?: boolean;
   /**
-   * Kane-style involvement (Settings → Gameplay → Chances: New; default Old while it is tested). You also
+   * Kane-style involvement (Settings → Match → Chance mix: New; default Old while it is tested). You also
    * drop off and get on the ball in midfield and the final third, the way a
    * real striker does, so a match has about 9 highlights instead of 6. See
    * DEEP_TOUCH. Absent: exactly as before, roll for roll.
