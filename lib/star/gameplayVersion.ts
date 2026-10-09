@@ -1,7 +1,8 @@
 /**
  * NEW vs OLD GAMEPLAY — a per-device switch for each gameplay change that
  * might not be better (Leo, 5 Oct 2026: "not risking losing anything if its
- * not better than before"). Default "new". "old" plays exactly the game from
+ * not better than before"). Default "new", unless a switch sets
+ * `defaultVersion: "old"` (a change still being tested). "old" plays exactly the game from
  * before the change, so the two can be compared on the same phone.
  *
  * Read at the moment it matters (a new chance, a new run), never cached, so
@@ -27,7 +28,10 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "Every clearance is clean (you still see the boot fly off the screen).",
   },
   chances: {
-    label: "Chances",
+    label: "Chances (testing)",
+    // Mikey, 9 Oct 2026: "the old system should still be the default and the
+    // new system … should be the thing that we are testing."
+    defaultVersion: "old",
     newText: "Built from Kane's real touches: about 9 highlights a match, half of them deeper where you pass and can get it back, and half as many one-on-ones.",
     oldText: "About 6 highlights a match, every kind equally often (from before 9 Oct 2026).",
   },
@@ -37,19 +41,26 @@ export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
 
 const KEY = (s: GameplaySwitch) => `star-gameplay-${s}`;
 
+/** A switch's default: "new" unless the switch says otherwise. */
+export function defaultVersion(s: GameplaySwitch): GameplayVersion {
+  const d = (GAMEPLAY_SWITCHES[s] as { defaultVersion?: GameplayVersion }).defaultVersion;
+  return d ?? "new";
+}
+
 export function gameplayVersion(s: GameplaySwitch): GameplayVersion {
   try {
-    if (typeof localStorage === "undefined") return "new";
-    return localStorage.getItem(KEY(s)) === "old" ? "old" : "new";
+    if (typeof localStorage === "undefined") return defaultVersion(s);
+    const v = localStorage.getItem(KEY(s));
+    return v === "old" || v === "new" ? v : defaultVersion(s);
   } catch {
-    return "new";
+    return defaultVersion(s);
   }
 }
 
 export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void {
   try {
-    if (v === "new") localStorage.removeItem(KEY(s));
-    else localStorage.setItem(KEY(s), "old");
+    if (v === defaultVersion(s)) localStorage.removeItem(KEY(s));
+    else localStorage.setItem(KEY(s), v);
   } catch { /* private window: stays on the default */ }
 }
 
