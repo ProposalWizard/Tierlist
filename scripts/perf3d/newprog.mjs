@@ -23,15 +23,22 @@ await page.addInitScript(() => {
   }
 });
 await page.goto(`http://localhost:${port}/index.html?gov=0`);
+// --visit=2: open, leave, open again, and count the second open (a revisit in the same session)
+const visit = +(process.argv.find((a) => a.startsWith("--visit="))?.slice(8) ?? 1);
+for (let i = 1; i < visit; i++) {
+  await page.evaluate(async (s) => { const M = window.__M; M.finish = false; M.frames.length = 0; M.ready = 0; await window.H[s]({}); while (!M.frames.some((f) => f.at >= M.ready)) await new Promise((r) => setTimeout(r, 16)); await new Promise((r) => setTimeout(r, 2000)); window.H.dispose(); }, scene);
+  await page.waitForTimeout(500);
+}
 const r = await page.evaluate(async (s) => {
-  const M = window.__M; M.finish = false;
+  const M = window.__M; M.finish = false; M.frames.length = 0; M.ready = 0;
   const t0 = performance.now();
+  const L0 = window.__links.length;
   await window.H[s]({});
   const ready = performance.now();
   while (!M.frames.some((f) => f.at >= M.ready)) await new Promise((r) => setTimeout(r, 16));
   const first = performance.now();
   await new Promise((r) => setTimeout(r, 2000));
-  const L = window.__links;
+  const L = window.__links.slice(L0);
   const after = L.filter((l) => l.at >= ready);
   const by = {};
   for (const l of after) { const k = `${l.name} [${l.flags}]`; by[k] = (by[k] || 0) + 1; }

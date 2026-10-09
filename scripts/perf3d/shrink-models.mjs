@@ -152,6 +152,10 @@ for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map
 // pictures that stay packed on the chip), written already meshopt-packed by tools/shop3d/ktx2_items.mjs
 // from the file above. Re-make it with that tool, never here.
 for (const f of fs.readdirSync(path.join(PUB, "star/shop3d/items")).filter((x) => x.endsWith("-hf.ktx2.glb"))) POLICY[`star/shop3d/items/${f}`] = { skip: "KTX2 twin made by tools/shop3d/ktx2_items.mjs (already meshopt)" };
+// Lag pass 4 (9 Oct 2026): the one bodies and the human have KTX2 twins too, made from
+// the files above by scripts/perf3d/ktx2-models.mjs (already meshopt). Re-make them with that tool.
+for (const n of ["player", "player-buzz", "player-long", "manager"]) POLICY[`star/onebody/${n}.ktx2.glb`] = { skip: "KTX2 twin made by scripts/perf3d/ktx2-models.mjs (already meshopt)" };
+POLICY["star/human3d/human.ktx2.glb"] = { skip: "KTX2 twin made by scripts/perf3d/ktx2-models.mjs (already meshopt)" };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

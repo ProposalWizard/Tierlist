@@ -29,6 +29,11 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
+import { loadModel3d, ktx2ModelUrl } from "./three3d/ktx2";
+
+/** A person file: its packed-picture twin when it has one and the phone reads KTX2 (three3d/ktx2.ts), else the plain file. */
+const loadPersonFile = (loader: { loadAsync(url: string): Promise<unknown> }, url: string): Promise<GLTF> =>
+  loadModel3d(loader as never, url, (u) => loadGltfCached<GLTF>(loader, u));
 import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "./human3d/human";
 import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
@@ -197,7 +202,7 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
   const url = TOON_FILES[head];
   let g = cache.get(url);
   if (!g) {
-    g = loadGltfCached<GLTF>(loader, url);
+    g = loadPersonFile(loader, url);
     g.catch(() => cache.delete(url));
     cache.set(url, g);
   }
@@ -206,6 +211,20 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
     set[TOON_HEADS.indexOf(head)] = one;
     return { ...one, toonBodies: set, toonWhich: TOON_SUIT_HEADS.includes(head) ? "manager" : "player" } as GLTF;
   });
+}
+
+/**
+ * The Style A heads these people will wear (makePerson3d's own pick), so a
+ * scene loads only those, not all eight (lag pass 4, 9 Oct 2026: a garden
+ * with you and a few team-mates fetched and unpacked every head, suits too).
+ * Pass the same `who` / `you` / `suit` the scene gives makePerson3d. A head
+ * left out still works: makePerson3d falls back to the nearest loaded one.
+ * The files are cached per page, so the next scene reuses what this one loaded.
+ */
+export function toonHeadsFor(people: readonly { who?: string; you?: boolean; suit?: boolean }[]): ToonHead[] {
+  const out = new Set<ToonHead>();
+  for (const p of people) out.add(p.you && !p.suit ? toonYou().head : toonHeadFor(p.who ?? "", !!p.suit));
+  return Array.from(out);
 }
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
@@ -220,7 +239,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
       const url = TOON_FILES[b];
       let g = cache.get(url);
       if (!g) {
-        g = loadGltfCached<GLTF>(loader, url);
+        g = loadPersonFile(loader, url);
         g.catch(() => cache.delete(url));
         cache.set(url, g);
       }
@@ -233,7 +252,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   if (body === "new" && which !== "anims" && humanBodyLook() === "human") {
     let h = cache.get(HUMAN3D_FILE);
     if (!h) {
-      h = loadGltfCached<GLTF>(loader, HUMAN3D_FILE);
+      h = loadPersonFile(loader, HUMAN3D_FILE);
       h.catch(() => cache.delete(HUMAN3D_FILE));
       cache.set(HUMAN3D_FILE, h);
     }
@@ -245,7 +264,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   const key = mocap ? `${url}#mocap` : url;
   let p = cache.get(key);
   if (!p) {
-    p = loadGltfCached<GLTF>(loader, url); // from the early download when it got there first
+    p = loadPersonFile(loader, url); // from the early download when it got there first
     if (mocap) p = p.then((g) => withMocapOwn(loader as never, g, "people"));
     p.catch(() => cache.delete(key));
     cache.set(key, p);
@@ -262,6 +281,10 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
  */
 /** The files loadPeople3d(…, "player") and (…, "anims") fetch under the current Settings (for the early download). */
 export function people3dFiles(): string[] {
+  // the packed twin where the scenes will ask for it (three3d/ktx2.ts)
+  return people3dPlainFiles().map((u) => ktx2ModelUrl(u) ?? u);
+}
+function people3dPlainFiles(): string[] {
   const body: PeopleBody = (() => {
     try { return localStorage.getItem("star-look-3d-people") === "old" /* look3d.ts people3dLook (its key; not imported: it pulls in React) */ ? "old" : "new"; } catch { return "new"; }
   })();
