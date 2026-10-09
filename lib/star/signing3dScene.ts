@@ -29,6 +29,7 @@
  * three.js is imported only when this scene starts (the page lazy-loads it).
  * No shadow maps; a soft dark patch under each person and object instead.
  */
+import { toonYou } from "./style3d/toon/bodies";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "./signing3dRig";
@@ -268,7 +269,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   // first frame, or a held still, showed a black pane where the stadium is).
   const winTexP = texLoader.loadAsync(SIGNING3D_FILES.window).catch(() => new T.Texture());
   const [anims, bossGltf, youGltf0] = await Promise.all([
-    loadPeople3d(loader, "anims"), loadPeople3d(loader, "manager", BODY), loadPeople3d(loader, youModel0, BODY),
+    loadPeople3d(loader, "anims"), loadPeople3d(loader, "manager", BODY), loadPeople3d(loader, youModel0, BODY, [toonYou().head]),
   ]);
   let aviatorsGltf: GLTF | null = null;
   const loadAviators = async () => {
@@ -313,7 +314,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     const id = ++youBuildId;
     const model = playerModelFor(y.hairStyle);
     if (model !== you.model) {
-      const g = await loadPeople3d(loader, model, BODY);
+      const g = await loadPeople3d(loader, model, BODY, [toonYou().head]);
       if (id !== youBuildId) return;
       const old = you;
       you = makePerson(g, model, -1);

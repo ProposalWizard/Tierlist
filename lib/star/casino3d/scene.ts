@@ -48,6 +48,7 @@
  * bartender, one slot punter and the leaner; High all six. Off screen they
  * are not worked out.
  */
+import { toonYou, TOON_SUIT_HEADS } from "../style3d/toon/bodies";
 import { neonCanvas, numberCanvas, blobCanvas } from "../shop3d/textures";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
@@ -543,7 +544,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
     const [g, a, cas] = await Promise.all([
-      loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims"),
+      loadPeople3d(loader, model, people3dLook(), [toonYou().head, ...TOON_SUIT_HEADS]), loadPeople3d(loader, "anims"),
       loadAnims3d(loader, "casino").catch((e) => { console.error("casino clips", e); return null; }),
     ]);
     // ── The casino's people: the same body, on the casino clips. The tables

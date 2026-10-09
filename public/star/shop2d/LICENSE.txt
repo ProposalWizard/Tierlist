@@ -23,3 +23,5 @@ backed effects into transparency, resize).
 
 The item pictures themselves are NOT here: the shop keeps the existing ones
 (public/shop/*.webp, the KIB can art and the drawn fallbacks).
+
+  wall.webp            shop back wall for the layout concepts (1 credit, 9 Oct 2026)

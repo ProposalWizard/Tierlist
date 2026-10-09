@@ -12,7 +12,7 @@
 import type { StarPlayer } from "@/lib/star/types";
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone, type SkinTone, type HairColour } from "@/lib/star/playerIdentity";
 import {
-  TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, resolveToonBody, resolveToonHead, toonHeadPicture,
+  TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourToonBody, yourToonHead, toonHeadPicture,
   type ToonBody, type ToonHead,
 } from "@/lib/star/style3d/toon/bodies";
 
@@ -23,8 +23,8 @@ const BUILD_W: Record<ToonBody, number> = { c1: 14, c2: 20, c3: 16 };
 const BUILD_H: Record<ToonBody, number> = { c1: 40, c2: 40, c3: 46 };
 
 export default function YourLookPanel({ player, onChange }: { player: StarPlayer; onChange: (look: YourLook) => void }) {
-  const body = resolveToonBody(player.body3d);
-  const head = resolveToonHead(player.head3d);
+  const body = yourToonBody(player);
+  const head = yourToonHead(player);
   const skin = resolveSkinTone(player.skinTone);
   const hair = player.hairColour ?? "brown";
   return (

@@ -7,7 +7,7 @@ import "@/components/star/ui/pitchLook.css";
 import "@/components/star/ui/flat.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { setToonYou, resolveToonBody, resolveToonHead } from "@/lib/star/style3d/toon/bodies";
+import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -162,7 +162,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import StoreShop from "@/components/star/shop2d/StoreShop";
+import ShowroomShop from "@/components/star/shop2d/ShowroomShop";
 import StoreLanding from "@/components/star/shop2d/StoreLanding";
 import { useShopLook } from "@/lib/star/shopLook";
 import Shop3D from "@/components/star/Shop3D";
@@ -1067,9 +1067,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setCareer(c => (c ? { ...c, player: { ...c.player, ...look } } : c));
   }, []);
   // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
-  const yourBody3d = career?.player.body3d, yourHead3d = career?.player.head3d, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
+  const yourHead3d = career ? yourToonHead(career.player) : undefined, yourBody3d = career ? yourToonBody(career.player) : undefined, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
   useEffect(() => {
-    setToonYou({ body: resolveToonBody(yourBody3d), head: resolveToonHead(yourHead3d), skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
+    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d) });
   }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
@@ -4195,7 +4195,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <>
         {shopLookNow === "new" ? (
-          <StoreShop
+          <ShowroomShop
             career={career}
             kind={kind}
             onBack={handleBackToDashboard}
@@ -4203,8 +4203,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onBuyBoot={handleBuyBoot}
             onBuyItem={handleBuyItem}
             onBuyFromBlackMarket={handleBuyFromBlackMarket}
-            hud={screenHud(kind === "lifestyle" ? "style" : "shop", shopHelp)}
-            onHome={() => { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
             onKind={(k) => setPhase(k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle")}
             onUseCan={handleUseCan}

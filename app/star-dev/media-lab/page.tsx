@@ -1,6 +1,8 @@
 "use client";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import ShopLabPreview from "@/components/star/shop2d/ShopLabPreview";
+import ShopConcepts, { type MockId } from "@/components/star/shop2d/ShopConcepts";
+import { SHOWROOM_CATS, type CatId } from "@/components/star/shop2d/ShowroomShop";
 import ContactBall, { type BallMotion } from "@/components/star/ContactBall";
 import type { Skills } from "@/lib/star/types";
 import { useCallback, useEffect, useState } from "react";
@@ -57,7 +59,10 @@ export default function MediaLab() {
   const [contactPreview, setContactPreview] = useState<BallMotion | null>(null);
   const [contactRun, setContactRun] = useState(0);
   const [shopPreview, setShopPreview] = useState<"kib" | "boots" | "lifestyle" | "landing" | null>(null);
-  const [shopLookLab, setShopLookLab] = useState<"new" | "old">("new");
+  const [shopLookLab, setShopLookLab] = useState<"new" | "old" | "grid">("new");
+  const [shopCat, setShopCat] = useState<CatId | undefined>(undefined);
+  // `?shopmock=A|B|C|D` (+ `&at=` a start state): the shop layout concepts (throwaway, 9 Oct 2026).
+  const [shopMock, setShopMock] = useState<{ id: MockId; at?: string } | null>(null);
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -67,7 +72,11 @@ export default function MediaLab() {
     if (cm === "still" || cm === "float" || cm === "bounce" || cm === "bobble") setContactPreview(cm);
     const sk = q.get("shop");
     if (sk === "kib" || sk === "boots" || sk === "lifestyle" || sk === "landing") setShopPreview(sk);
-    if (q.get("look") === "old") setShopLookLab("old");
+    if (q.get("look") === "old" || q.get("look") === "grid") setShopLookLab(q.get("look") as "old" | "grid");
+    const scat = q.get("cat");
+    if (scat && SHOWROOM_CATS.some((x) => x.id === scat)) setShopCat(scat as CatId);
+    const sm = q.get("shopmock");
+    if (sm === "A" || sm === "B" || sm === "C" || sm === "D") setShopMock({ id: sm, at: q.get("at") ?? undefined });
     const t = q.get("training") as keyof Skills | null;
     if (t && ["pace", "power", "technique", "vision", "freeKick"].includes(t)) {
       setTrainingPreview({ skill: t, level: Math.max(1, Math.min(30, Number(q.get("level") ?? 1) || 1)) });
@@ -114,9 +123,10 @@ export default function MediaLab() {
       <PageGuide page="/star-dev/media-lab" />
     </>;
   }
+  if (shopMock) return <><ShopConcepts id={shopMock.id} initial={shopMock.at} /><PageGuide page="/star-dev/media-lab" /></>;
   if (shopPreview) {
     return <>
-      <ShopLabPreview kind={shopPreview} look={shopLookLab} onBack={() => setShopPreview(null)} />
+      <ShopLabPreview kind={shopPreview} look={shopLookLab} cat={shopCat} onBack={() => setShopPreview(null)} />
       <PageGuide page="/star-dev/media-lab" />
     </>;
   }

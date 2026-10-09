@@ -145,7 +145,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     humanBody: O("humanBody"),
-    playerStyle: O("playerStyle"), // Standard held on Old until the Style A glow bug is fixed (9 Oct 2026)
+    playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
     camera3d: O("camera3d"),
@@ -158,7 +158,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     badges: N("badges"),
     allSeasons: N("allSeasons"),
     homeScreen: N("homeScreen"),
-    shop2d: O("shop2d"), // held on Old until Showroom + Feed lands (9 Oct 2026)
+    shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,

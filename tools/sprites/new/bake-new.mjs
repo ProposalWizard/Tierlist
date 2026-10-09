@@ -15,6 +15,8 @@
  * Run:   node tools/sprites/new/bake-new.mjs            bake + install
  *        node tools/sprites/new/bake-new.mjs sheet player:shotKick,volley:2,0   a look sheet (to tools/sprites/new/preview/)
  *        node tools/sprites/new/bake-new.mjs spike       compare with atlas-0 (idle, jog, celebrate; keeper)
+ *        node tools/sprites/new/bake-new.mjs reskin      Style A: every cell again on toon-p1, same rects and anchors
+ *                                                         → atlas-0a/mask-0a/atlas-1a/mask-1a (index.json untouched)
  * Needs: three (site package) and Playwright's Chromium (swiftshader, no GPU).
  * Writes public/star/sprites/{atlas-1.webp,mask-1.png} and merges only the new
  * clips (and atlases["1"]) into index.json. atlas-0, mask-0 and every old
@@ -59,10 +61,30 @@ const dataOf = (url) => Buffer.from(url.slice(url.indexOf(",") + 1), "base64");
 try {
   const page = await browser.newPage({ viewport: { width: 800, height: 800 } });
   page.on("pageerror", (e) => console.log("PAGE ERROR", e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/bake-new.html${FIT}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/bake-new.html${mode === "reskin" || mode === "probe" ? "?file=/star/people3d/toon-p1.glb" : FIT}`);
   await page.waitForFunction(() => window.bakerReady === true, null, { timeout: 120000 });
   const t0 = Date.now();
-  if (mode === "bake") {
+  if (mode === "probe") {
+    fs.mkdirSync(previewDir, { recursive: true });
+    await page.evaluate((h) => window.fitHeight(h), JSON.parse(fs.readFileSync(path.join(outDir, "index.json"), "utf8")).standH);
+    for (const spec of arg.split(";")) {
+      const [file, frac, fac] = spec.split(",");
+      const r = await page.evaluate(([f, a, b]) => window.probe(f, +a, +b), [file, frac, fac]);
+      const name = `probe-${file.replace(/\W/g, "_")}-${frac}-${fac}.png`;
+      fs.writeFileSync(path.join(previewDir, name), dataOf(r.url));
+      console.log(name, JSON.stringify(r.b), r.ax, r.ay);
+    }
+  } else if (mode === "reskin") {
+    const idx = JSON.parse(fs.readFileSync(path.join(outDir, "index.json"), "utf8"));
+    const s = await page.evaluate((h) => window.fitHeight(h), idx.standH);
+    console.log("fit scale", s.toFixed(3));
+    for (const which of [0, 1]) {
+      const r = await page.evaluate(([i, w]) => window.reskin(i, w), [idx, which]);
+      fs.writeFileSync(path.join(outDir, `atlas-${which}a.webp`), dataOf(r.color));
+      fs.writeFileSync(path.join(outDir, `mask-${which}a.png`), dataOf(r.mask));
+      console.log(`atlas-${which}a: ${r.cells} cells · drawn smaller to fit (least scale):`, JSON.stringify(r.shrunk), "·", ((Date.now() - t0) / 1000).toFixed(0), "s");
+    }
+  } else if (mode === "bake") {
     const res = await page.evaluate(() => window.bakeNew());
     let total = 0;
     for (const name of ["atlas-1.webp", "mask-1.png"]) {

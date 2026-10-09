@@ -34,7 +34,7 @@ import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook } from "./style3d/toon/look";
-import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms } from "./style3d/toon/shader";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
@@ -204,11 +204,14 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
 }
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
-export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
+export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old", heads?: readonly ToonHead[]): Promise<GLTF> {
   // Style A (Settings → Look → "Player style: New", the default): every head
   // (players' and the suits'); makePerson3d picks one per person.
   if (which !== "anims" && playerStyleLook() === "new") {
+    // only the heads this scene needs (a manager: the suits); a head not loaded falls back (makePerson3d)
+    const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
     const all = Promise.all(TOON_HEADS.map((b) => {
+      if (!want.includes(b)) return Promise.resolve(undefined as unknown as GLTF);
       const url = TOON_FILES[b];
       let g = cache.get(url);
       if (!g) {
@@ -218,7 +221,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
       }
       return g;
     }));
-    return all.then((gs) => ({ ...gs[0], toonBodies: gs, toonWhich: which }) as GLTF);
+    return all.then((gs) => ({ ...gs.find(Boolean), toonBodies: gs, toonWhich: which }) as GLTF);
   }
   // The human (Settings → Look → "3D body: Human", the default with "3D people: New"):
   // one file for every person; makePerson3d builds the one asked for by name.
@@ -539,6 +542,13 @@ export function makePerson3d(
     const suitWanted = opts.suit ?? toonWearsSuit(role, opts.human?.outfit);
     toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(id));
     toonHead = opts.toonHead ?? (opts.you && !suitWanted ? toonYou().head : toonHeadFor(id, suitWanted));
+    if (!tg.toonBodies[TOON_HEADS.indexOf(toonHead)]) {
+      // that head was not loaded for this scene: the nearest loaded one of the same kind (kit or suit)
+      const same = (h: ToonHead) => TOON_SUIT_HEADS.includes(h) === suitWanted;
+      const loaded = TOON_HEADS.filter((h) => tg.toonBodies![TOON_HEADS.indexOf(h)]);
+      const pool = loaded.filter(same).length ? loaded.filter(same) : loaded;
+      toonHead = pool[hashId(`${id}#head`) % pool.length];
+    }
     model = tg.toonBodies[TOON_HEADS.indexOf(toonHead)];
   } else {
     const which = (model as GLTF & { humanWhich?: string }).humanWhich;

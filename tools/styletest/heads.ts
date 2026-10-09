@@ -73,7 +73,7 @@ const oldArms = q.get("arms") === "old";
   const fist = q.get("fist");
   if (fist) { const d = Number(fist); const f = fingersDeg({ thumb: [d / 3, d / 3, d / 3], index: [d, d, d], middle: [d, d, d], ring: [d, d, d], little: [d, d, d], thumbSwing: d / 2 }); poseFingers(THREE, p, "L", f); poseFingers(THREE, p, "R", f); }
   if (oldArms && variant !== "current") relaxToonArms(THREE, p);
-  p.root.rotation.y = view === "front" ? 0 : view === "side" ? -Math.PI / 2 : -0.75;
+  p.root.rotation.y = view === "front" ? 0 : view === "side" ? -Math.PI / 2 : view === "back" ? Math.PI : -0.75;
   scene.add(p.root);
   p.root.updateMatrixWorld(true);
   const P = (n: string) => { const v = new THREE.Vector3(); p.bones[n]?.getWorldPosition(v); return v; };
