@@ -1188,13 +1188,14 @@ export const ADMIN_GUIDES = {
   },
   "/star-style-dev": {
     title: "Style Testing",
-    what: "Try the five shortlisted art styles (and Mix) on real 3D gameplay, the 2D look and cut scenes, switching live. A test area: nothing here changes the game.",
+    what: "Try the shortlisted art styles (and Mix) on real 3D gameplay, the 2D look and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
       { group: "Style (top row)", items: [
         ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
         ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
         ["D", "Pixel: drawn small and blown up with square pixels, a limited palette with dither."],
-        ["E", "Low-Poly: faceted flat shading, pastel colours, hills behind, no lines."],
+        ["S", "Strikers: toy-like glossy chunky men, a rusted steel arena with an electric cage, smoky orange-and-teal light, lightning, glowing goal frames. Our own take: no game's characters, names or logos."],
+        ["Anime", "A normal daytime match; only the players are anime: cel-shaded with clean outlines. In cut scenes: poses on twos, a close-up of the eyes before the strike, an impact frame, speed lines and an aura."],
         ["H", "Console Real: realistic lighting, mown stripes, a glow on bright things."],
         ["Mix", "H for gameplay, A for cut scenes, the same warm evening sky and colour grade on both."],
       ] },
