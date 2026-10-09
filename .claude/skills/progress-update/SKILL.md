@@ -142,6 +142,15 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
     two drills 0.47M + animations 0.42M) plus the coordinator's own turns.
     **So 1% of the week ≈ 1.5–2M builder tokens.** Use this until a second
     reading refines it.
+- **Tokens are not equal across models (Harry, 9 Oct 2026).** The weekly
+  limit is spent faster by the top model than by the everyday model for the
+  same number of tokens. So: count tokens **per model** (top / everyday /
+  small), and convert each with its own figure. The 8 Oct reading above was
+  almost all top-model builders, so "1% ≈ 1.5–2M" is a **top-model** figure.
+  There is no everyday-model figure yet: take one the same way (one
+  everyday-model-only task, % before and after) and log it here. Until then,
+  say the everyday-model part is a guess. Usage block then reads e.g.
+  `Tokens so far   ~1.2M top · ~0.4M everyday`.
 - Always say it's an estimate. Never present a guess as measured.
 
 ## Timed updates
