@@ -27,17 +27,54 @@ export const SHOULDER_DROP_TO = 0.012;
 /** The head itself (base → top) leans no more than this forward of upright, degrees (standing still it is about 13°). */
 export const HEAD_LEAN_MAX = 16;
 
-/** Bone names on each skeleton: chest, neck, head, the two clavicles, the two upper arms. */
-export interface PostureBones { hips: string; chest: string; neck: string; head: string; clavL: string; clavR: string; armL: string; armR: string }
-export const PEOPLE_POSTURE: PostureBones = { hips: "Hips", chest: "Spine02", neck: "neck", head: "Head", clavL: "LeftShoulder", clavR: "RightShoulder", armL: "LeftArm", armR: "RightArm" };
-export const UAL_POSTURE: PostureBones = { hips: "pelvis", chest: "spine_03", neck: "neck_01", head: "Head", clavL: "clavicle_l", clavR: "clavicle_r", armL: "upperarm_l", armR: "upperarm_r" };
+/** Bone names on each skeleton: chest, neck, head, the two clavicles, upper arms, forearms and hands. */
+export interface PostureBones {
+  hips: string; chest: string; neck: string; head: string; clavL: string; clavR: string; armL: string; armR: string;
+  foreL: string; foreR: string; handL: string; handR: string;
+}
+export const PEOPLE_POSTURE: PostureBones = {
+  hips: "Hips", chest: "Spine02", neck: "neck", head: "Head", clavL: "LeftShoulder", clavR: "RightShoulder", armL: "LeftArm", armR: "RightArm",
+  foreL: "LeftForeArm", foreR: "RightForeArm", handL: "LeftHand", handR: "RightHand",
+};
+export const UAL_POSTURE: PostureBones = {
+  hips: "pelvis", chest: "spine_03", neck: "neck_01", head: "Head", clavL: "clavicle_l", clavR: "clavicle_r", armL: "upperarm_l", armR: "upperarm_r",
+  foreL: "lowerarm_l", foreR: "lowerarm_r", handL: "hand_l", handR: "hand_r",
+};
+
+/**
+ * THE RUNNING ARMS (Harry, 9 Oct 2026, on the sprint still: "what's this hand
+ * being back sprinting?"). The capture's back hand folds onto the lower back,
+ * behind the spine and across it; the front hand pokes forward flat. Each
+ * arm, on the run loops, at every key:
+ *   - the wrist goes most of the way back to straight (WRIST_KEEP of its bend kept);
+ *   - a forward arm swings up until the hand is near FRONT_HAND_HIGH above
+ *     the pelvis (chest to chin), less on the run and jog;
+ *   - the elbow is held between ELBOW_MIN and ELBOW_MAX degrees;
+ *   - the back hand never goes more than HAND_BEHIND_MAX behind the pelvis,
+ *     and always stays HAND_OUT_MIN out from the middle (beside the hip,
+ *     never behind the back or across the spine).
+ * The sprint gets all of it; the run and the jog a smaller swing (ARM_SWING).
+ */
+export const ARM_SWING: Record<string, number> = { sprint: 1, run: 0.6, jog: 0.35, Jog_Fwd_Loop: 0.35 };
+export const WRIST_KEEP = 0.15;
+/** The front hand at full swing this high above the pelvis, metres (about chest to chin); the run and jog less. */
+export const FRONT_HAND_HIGH = 0.4;
+export const ELBOW_MIN = 80;
+export const ELBOW_MAX = 100;
+export const HAND_BEHIND_MAX = 0.05;
+export const HAND_OUT_MIN = 0.17;
 
 /** The loops it is applied to (the capture's moving loops, both skeletons). */
 export const RUN_POSTURE_CLIPS = new Set(["walk", "jog", "run", "sprint", "dribble_run", "Jog_Fwd_Loop", "Walk_Loop"]);
 
 const done = new WeakSet<object>();
 
-export interface PostureReport { clip: string; neckBefore: number; neckAfter: number; headBefore: number; headAfter: number; gapBefore: number; gapAfter: number }
+export interface PostureReport {
+  clip: string; neckBefore: number; neckAfter: number; headBefore: number; headAfter: number; gapBefore: number; gapAfter: number;
+  /** Arms (run loops only): furthest a hand goes behind the pelvis (m), the least it is out from the middle (m), the highest hand above the pelvis (m), the most the wrist bends (deg), the elbow's range (deg). */
+  arms?: { before: ArmStats; after: ArmStats };
+}
+export interface ArmStats { behind: number; out: number; high: number; wrist: number; elbowMin: number; elbowMax: number }
 
 /**
  * Rewrite the moving loops' neck, head and clavicle tracks (see top). `g`: a
@@ -48,7 +85,10 @@ export interface PostureReport { clip: string; neckBefore: number; neckAfter: nu
 export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animations: THREE.AnimationClip[] }, bones: PostureBones): PostureReport[] {
   const scene = g.scene;
   const get = (n: string) => scene.getObjectByName(n) as THREE.Object3D | undefined;
-  const B = { hips: get(bones.hips), chest: get(bones.chest), neck: get(bones.neck), head: get(bones.head), clavL: get(bones.clavL), clavR: get(bones.clavR), armL: get(bones.armL), armR: get(bones.armR) };
+  const B = {
+    hips: get(bones.hips), chest: get(bones.chest), neck: get(bones.neck), head: get(bones.head), clavL: get(bones.clavL), clavR: get(bones.clavR), armL: get(bones.armL), armR: get(bones.armR),
+    foreL: get(bones.foreL), foreR: get(bones.foreR), handL: get(bones.handL), handR: get(bones.handR),
+  };
   if (Object.values(B).some((b) => !b)) return [];
   const out: PostureReport[] = [];
   const allRest: [THREE.Object3D, THREE.Vector3, THREE.Quaternion, THREE.Vector3][] = [];
@@ -75,7 +115,32 @@ export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animatio
   };
   const gap = () => P(B.neck!).y - (P(B.armL!).y + P(B.armR!).y) / 2;
   const lim = (NECK_LEAN_MAX * Math.PI) / 180;
-  const rest = new Map([B.neck!, B.head!, B.clavL!, B.clavR!].map((o) => [o, o.quaternion.clone()] as const));
+  const WRITE = [["neck", B.neck!], ["head", B.head!], ["clavL", B.clavL!], ["clavR", B.clavR!], ["armL", B.armL!], ["armR", B.armR!], ["foreL", B.foreL!], ["foreR", B.foreR!], ["handL", B.handL!], ["handR", B.handR!]] as const;
+  const rest = new Map(WRITE.map(([, o]) => [o, o.quaternion.clone()] as const));
+  const d2r = Math.PI / 180;
+  /** Turn `o` about `axis` by ±ang, whichever way makes `score` bigger. */
+  const turnFor = (o: THREE.Object3D, axis: THREE.Vector3, ang: number, score: () => number) => {
+    if (Math.abs(ang) < 1e-5) return;
+    const s0 = score();
+    turnWorld(o, axis, ang);
+    if (score() < s0) turnWorld(o, axis, -2 * ang);
+  };
+  const elbowOf = (a: THREE.Object3D, f: THREE.Object3D, h: THREE.Object3D) => { const e = P(f); return P(a).sub(e).angleTo(P(h).sub(e)); };
+  /** Wrist bend: the hand's turn against its forearm, compared with the rest pose's, degrees. */
+  const wristOf = (h: THREE.Object3D) => h.quaternion.angleTo(rest.get(h)!) / d2r;
+  const armStats = (fwd: THREE.Vector3, across: THREE.Vector3, st: ArmStats) => {
+    const hp = P(B.hips!);
+    for (const [a, f, h, sg] of [[B.armL!, B.foreL!, B.handL!, -1], [B.armR!, B.foreR!, B.handR!, 1]] as const) {
+      const rel = P(h).sub(hp);
+      st.behind = Math.max(st.behind, -rel.dot(fwd));
+      st.out = Math.min(st.out, rel.dot(across) * sg);
+      st.high = Math.max(st.high, rel.y);
+      st.wrist = Math.max(st.wrist, wristOf(h));
+      const el = elbowOf(a, f, h) / d2r;
+      st.elbowMin = Math.min(st.elbowMin, el); st.elbowMax = Math.max(st.elbowMax, el);
+    }
+  };
+  const freshStats = (): ArmStats => ({ behind: -9, out: 9, high: -9, wrist: 0, elbowMin: 999, elbowMax: 0 });
 
   for (const clip of g.animations) {
     if (!RUN_POSTURE_CLIPS.has(clip.name) || done.has(clip)) continue;
@@ -84,14 +149,16 @@ export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animatio
     if (!nt) continue;
     done.add(clip);
     const times = Array.from(nt.times);
-    const vals: Record<string, number[]> = { neck: [], head: [], clavL: [], clavR: [] };
+    const vals: Record<string, number[]> = Object.fromEntries(WRITE.map(([k]) => [k, [] as number[]]));
+    const swing = ARM_SWING[clip.name] ?? 0;
+    const before = freshStats(), after = freshStats();
     const rep = { clip: clip.name, neckBefore: 0, neckAfter: 0, headBefore: 0, headAfter: 0, gapBefore: 0, gapAfter: 0 };
     mixer.stopAllAction();
     const act = mixer.clipAction(clip);
     act.reset().play();
     for (const t of times) {
       // a bone the clip has no track for starts every key from its rest (not from the last key's fix)
-      for (const o of [B.neck!, B.head!, B.clavL!, B.clavR!]) { const r = rest.get(o); if (r) o.quaternion.copy(r); }
+      for (const [, o] of WRITE) { const r = rest.get(o); if (r) o.quaternion.copy(r); }
       mixer.setTime(t);
       scene.updateMatrixWorld(true);
       const { across, fwd } = frame();
@@ -138,20 +205,52 @@ export function uprightRunPosture(T: Three, g: { scene: THREE.Object3D; animatio
         if (P(arm).y > y0) turnWorld(cl, fwd, -2 * a);
       }
       rep.gapAfter += gap() / times.length;
+      // the arms (run loops)
+      if (swing > 0) {
+        armStats(fwd, across, before);
+        const hp = () => P(B.hips!);
+        for (const [a, f, h, sg] of [[B.armL!, B.foreL!, B.handL!, -1], [B.armR!, B.foreR!, B.handR!, 1]] as const) {
+          // the wrist nearly straight
+          h.quaternion.slerp(rest.get(h)!, 1 - WRIST_KEEP);
+          h.updateMatrixWorld(true);
+          const fwdOf = () => P(h).sub(hp()).dot(fwd);
+          const outOf = () => P(h).sub(hp()).dot(across) * sg;
+          const armLen = Math.max(0.2, P(a).distanceTo(P(h)));
+          // the elbow held bent
+          const el = elbowOf(a, f, h), want = Math.max(ELBOW_MIN * d2r, Math.min(ELBOW_MAX * d2r, el));
+          if (Math.abs(el - want) > 1e-3) {
+            const e = P(f), n = P(a).sub(e).cross(P(h).sub(e)).normalize();
+            turnFor(f, n, el - want, () => -Math.abs(elbowOf(a, f, h) - want));
+          }
+          // a few small passes: the front hand up towards the chest, the back hand beside the hip
+          const fo0 = fwdOf();
+          const wantHigh = FRONT_HAND_HIGH * (0.6 + 0.4 * swing) * Math.min(1, Math.max(0, fo0) / 0.2);
+          for (let it = 0; it < 4; it++) {
+            const hy = P(h).y - hp().y;
+            if (fo0 > 0 && hy < wantHigh) turnFor(a, across, Math.min(0.5, (wantHigh - hy) / armLen), () => P(h).y);
+            const be = -fwdOf() - HAND_BEHIND_MAX;
+            if (be > 0) turnFor(a, across, Math.min(0.6, be / armLen), fwdOf);
+            const inn = HAND_OUT_MIN - outOf();
+            if (inn > 0) turnFor(a, fwd, Math.min(0.5, inn / armLen), outOf);
+          }
+        }
+        armStats(fwd, across, after);
+      }
       rep.neckAfter += (lean(B.neck!, P(B.head!), fwd) - chestLean) / times.length;
       rep.headAfter += (tip ? lean(B.head!, P(tip), fwd) : 0) / times.length;
-      for (const [k, o] of [["neck", B.neck!], ["head", B.head!], ["clavL", B.clavL!], ["clavR", B.clavR!]] as const) vals[k].push(o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w);
+      for (const [k, o] of WRITE) vals[k].push(o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w);
     }
     act.stop();
     // write the tracks back on the neck's key times
-    for (const [k, o] of [["neck", B.neck!], ["head", B.head!], ["clavL", B.clavL!], ["clavR", B.clavR!]] as const) {
+    for (const [k, o] of WRITE) {
+      if (swing <= 0 && /^(arm|fore|hand)/.test(k)) continue;
       const name = `${o.name}.quaternion`;
       const i = clip.tracks.findIndex((t) => t.name === name);
       const nt2 = new T.QuaternionKeyframeTrack(name, times, vals[k]);
       if (i >= 0) clip.tracks[i] = nt2; else clip.tracks.push(nt2);
     }
     const r2d = (x: number) => (x * 180) / Math.PI;
-    out.push({ ...rep, neckBefore: r2d(rep.neckBefore), neckAfter: r2d(rep.neckAfter), headBefore: r2d(rep.headBefore), headAfter: r2d(rep.headAfter) });
+    out.push({ ...rep, ...(swing > 0 ? { arms: { before, after } } : {}), neckBefore: r2d(rep.neckBefore), neckAfter: r2d(rep.neckAfter), headBefore: r2d(rep.headBefore), headAfter: r2d(rep.headAfter) });
   }
   mixer.uncacheRoot(scene);
   // the file's skeleton back as it was
