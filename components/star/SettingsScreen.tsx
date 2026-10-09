@@ -14,6 +14,7 @@ import DevSquadPanel from "./DevSquadPanel";
 import type { CareerDivision } from "@/lib/star/calendar";
 import type { PlayerSearchHit } from "@/lib/star/devTeam";
 import PortraitPicker from "./PortraitPicker";
+import YourLookPanel from "./YourLookPanel";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
 import MoveSavesPanel from "./MoveSavesPanel";
@@ -67,6 +68,8 @@ interface Props {
     onSetPlayerStart: (id: string, start: boolean) => void;
   };
   onSetPortrait: (portrait: string | undefined) => void;
+  /** Settings → Your look: your 3D player's body, skin tone and hair colour (Style A). */
+  onSetLook3d?: (look: Partial<Pick<CareerState["player"], "body3d" | "head3d" | "skinTone" | "hairColour">>) => void;
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
   onDeleteSavedReplay: (id: string) => void;
@@ -106,7 +109,7 @@ const DEV = "#f59e0b";
 export default function SettingsScreen({
   career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub, devTeam,
-  onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
+  onSetPortrait, onSetLook3d, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave, moveSaves,
   immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
@@ -140,6 +143,14 @@ export default function SettingsScreen({
           />
         </div>
       </SetCard>
+
+      {onSetLook3d && (
+        <SetCard tone={glow}>
+          <SetHead>Your look</SetHead>
+          <SetNote>How you look in every 3D scene (Player style: New).</SetNote>
+          <YourLookPanel player={career.player} onChange={onSetLook3d} />
+        </SetCard>
+      )}
 
       {(onSetPenaltyRunup || onSetFreeKickRunup) && (
         <SetCard tone={glow}>

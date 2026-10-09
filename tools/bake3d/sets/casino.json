@@ -1,0 +1,12 @@
+{
+  "about": "The 3D casino (lib/star/casino3d/scene.ts), indoors like the shop: only things within aoRadius metres shade (under the tables, round the slot banks, the corners). Nothing in it moves but the people, the wheel and the screen (left out: they are thin or spin).",
+  "url": "scripts/perf3d harness: index.html?gov=0&auto=casino&q=high",
+  "workers": 4,
+  "groundAlbedo": 0.2,
+  "sunRays": 1,
+  "aoRadius": 2.5,
+  "drop": [],
+  "tods": [{ "id": "indoor", "sun": [0, 1, 0], "sky": 1.0, "soft": 0 }],
+  "floor": { "min": [-7.2, 0, -8.2], "max": [7.2, 0, 8.2], "res": [0.05, 1, 0.05], "y": 0.02, "rays": 64 },
+  "volume": { "min": [-7.4, 0, -8.4], "max": [7.4, 4.4, 8.4], "res": [0.25, 0.25, 0.25], "rays": 64 }
+}

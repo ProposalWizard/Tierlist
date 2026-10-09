@@ -72,7 +72,11 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       const [a, fb, cs] = await anims();
       const body = (spec.look.body ?? "player") as PersonModel;
       const model = await loadPeople3d(loader, body, init.body);
-      const p = makePerson3d(T, init.SkeletonUtils, model, a, { outline: spec.outline, castShadow: spec.castShadow, outlineNear: 2.5 });
+      const out = spec.look.outfit ?? (body === "manager" ? "suit" : "kit");
+      const p = makePerson3d(T, init.SkeletonUtils, model, a, {
+        outline: spec.outline, castShadow: spec.castShadow, outlineNear: 2.5,
+        who: spec.id, you: spec.role === "you", suit: out === "suit",
+      });
       if (fb) addClips(T, p, fb);
       if (cs) addClips(T, p, cs);
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }

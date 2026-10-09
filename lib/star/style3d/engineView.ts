@@ -26,11 +26,15 @@ import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer, warmUp } from "../three3d/perf";
+import { acquireRenderer, disposeObject3D, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
+import { installShadowCache } from "../three3d/shadowCache";
+import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
-import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D, type PersonLook } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
+import { playerStyleLook } from "./toon/look";
+import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
 import { motionLook } from "../motionLook";
@@ -44,6 +48,7 @@ import type { TimeOfDay } from "./real/assets";
 import { realCameraLook, playerLightLook } from "./realGameLook";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
+import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -79,6 +84,17 @@ const MO = {
   /** … below this speed (m/s on the pitch), played this much quicker. */
   turnClipBelow: 1,
   turnSpeed: 1.35,
+  /**
+   * SMOOTH PLAYBACK (3D camera: New; Harry, 9 Oct 2026: "the animations are a
+   * bit wild and rough"): every clip change crossfades at least this long (s) …
+   */
+  smoothFade: 0.24,
+  /** … a loop is kept at least this long before the next change (no flicker between walk and jog) … */
+  smoothDwell: 0.35,
+  /** … a turn is never faster than this (rad/s, ~540°/s), eased in by the share-per-second rate … */
+  smoothTurn: 9.4,
+  /** … and his speed is read through this much smoothing (per second; Old: 8). */
+  smoothVel: 5,
   /** Standing still below this (m/s on the pitch). */
   idleBelow: 0.35,
   /** A man's own pace (m/s at his drawn size) → which loop: walk, jog, run, sprint. */
@@ -166,6 +182,8 @@ type Body = {
   alert?: number;
   /** The tight shadow under his feet ("3D player light: New"). */
   foot?: any;
+  /** Smooth playback (3D camera: New): when his loop last changed (f.t). */
+  sw?: number;
 };
 
 /**
@@ -226,7 +244,7 @@ export const TV_CAMERA_NEW = {
   goalLineMax: 0.24,
 };
 
-export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement }): Promise<EngineView> {
+export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
   let tvTilt = o.tilt ?? 40;
   const camMode = o.camera ?? "tv";
@@ -245,12 +263,14 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   const [model, animG, fb] = await Promise.all([
-    loadPeople3d(loader, "player", body), loadPeople3d(loader, "anims", body),
+    loadPeople3d(loader, "player", body, TOON_PLAYER_HEADS), loadPeople3d(loader, "anims", body), // a match has no suits: the six player heads only
     loadAnims3d(loader, "football").catch(() => null),
   ]);
 
   // ── renderer: at the phone's own pixel density (2 on High), so nothing is "pixelly" ──
   const { renderer, release } = acquireRenderer(THREE, container, prof);
+  // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
+  installShadowCache(THREE, renderer);
   const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
@@ -268,6 +288,13 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const canvas3d = renderer.domElement as HTMLCanvasElement;
   canvas3d.style.pointerEvents = "none";
+  // iPhone Safari takes the 3D away when memory runs short (Harry, 9 Oct 2026:
+  // "3D just stopped working mid game"). Say so, so the screen can show the 2D
+  // match again; preventDefault lets the browser offer the context back.
+  const onLostEv = (e: Event) => { e.preventDefault(); o.onContextLost?.(); };
+  const onRestoredEv = () => { o.onContextRestored?.(); };
+  canvas3d.addEventListener("webglcontextlost", onLostEv);
+  canvas3d.addEventListener("webglcontextrestored", onRestoredEv);
 
   const scene = new THREE.Scene();
   const root = new THREE.Group();
@@ -288,7 +315,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     // The human body (Settings → Look "3D body: Human") has its own face and a
     // different material (no userData/uFaceF): it needs no plain head. Without
     // this guard the career match's 3D view crashed on Preview (9 Oct 2026).
-    if (!m || Array.isArray(m) || !m.userData || humanBodyLook() === "human") return;
+    if (!m || Array.isArray(m) || !m.userData || m.userData.toon || humanBodyLook() === "human") return;
     const u = { uHeadSkin: { value: new THREE.Color(skin) }, uHeadHair: { value: new THREE.Color(hair) } };
     if (!m.userData.plainHead) {
       const inner = m.onBeforeCompile;
@@ -336,7 +363,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const solidBody = (m: any, on: boolean): void => {
     // the human body has a list of materials
     if (Array.isArray(m)) { for (const x of m) solidBody(x, on); return; }
-    if (!m?.userData) return;
+    if (!m?.userData || m.userData.toon) return; // Style A lights itself (cel bands + rim)
     if (!m.userData.solidWrapped) {
       const inner = m.onBeforeCompile;
       const innerKey = m.customProgramCacheKey?.bind(m);
@@ -398,6 +425,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   let hTod: TimeOfDay | null = o.tod ?? null;
   let hToken = 0;
   let visible = true;
+  /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
+  // ?bcam=0 read once (this was parsed from the address bar for every man, several times a frame)
+  const bcamOff = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  const smooth = () => camMode === "tv" && realCameraLook() === "new" && !bcamOff;
+  /** The current frame's clock (f.t), for the smooth playback's dwell. */
+  let nowT = 0;
 
   // ── the ball (play3d's, dressed in look H when H is on) ──
   const ball = new THREE.Group();
@@ -416,6 +449,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   ballShadow.rotation.x = -Math.PI / 2; root.add(ballShadow);
   let hball: { update(dt: number, v: { x: number; y: number; z: number }): void; setNight(on: boolean): void; dispose(): void } | null = null;
   const lastBall = new THREE.Vector3(NaN, 0, 0);
+  const ballV = new THREE.Vector3(), ballAx = new THREE.Vector3();
 
   // ── markers on the grass: the ring under the man on the ball, and where a lofted ball lands ──
   const ringMat = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.85, depthWrite: false });
@@ -510,9 +544,62 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const mo = motionLook() === "mocap" && !!fb;
   const fbHipsY = ((fb as any)?.scene?.userData?.hipsY as number | undefined) ?? 0;
 
+  /**
+   * Shirt numbers: ONE picture per number, shared by every man wearing it
+   * (lag pass 3, 9 Oct 2026). Each man used to paint and upload his own
+   * 256×256 number when he first appeared (often several at a chance start):
+   * the same white digits, a new texture each time, never freed.
+   */
+  const numberCache = new Map<number, any>();
   const numberTex = (n: number) => {
-    const c = newNumberCanvas(); drawShirtNumber(c, n);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    let t = numberCache.get(n);
+    if (!t) {
+      const c = newNumberCanvas(); drawShirtNumber(c, n);
+      t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+      numberCache.set(n, t);
+      renderer.initTexture(t); // uploaded now, not mid-chance on his first draw
+    }
+    return t;
+  };
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19]) numberTex(n);
+  /**
+   * Style A's skin-and-hair picture at match size (lag pass 3). Each head file
+   * carries a 1024×1024 colour map (5.6 MB on the GPU with its mipmaps; six
+   * heads in a match = 34 MB). From the match camera a man is at most ~120
+   * pixels tall, so the GPU only ever reads the 128-pixel level and below:
+   * a 512 copy draws the same picture for a quarter of the memory. The
+   * loaded file is left as it is (the garden, shop and close-ups share it).
+   */
+  const MATCH_MAP = 512;
+  const smallMaps = new Map<any, any>();
+  const matchSizedMap = (p: Person3D) => {
+    const m = p.body?.material as any;
+    if (!m || Array.isArray(m) || !m.userData?.toon || !m.map) return;
+    const src = m.map;
+    let small = smallMaps.get(src);
+    if (small === undefined) {
+      small = null;
+      const im = src.image as { width?: number; height?: number } | undefined;
+      if (im && (im.width ?? 0) > MATCH_MAP && typeof document !== "undefined") {
+        try {
+          const c = document.createElement("canvas");
+          c.width = MATCH_MAP; c.height = Math.max(1, Math.round((MATCH_MAP * (im.height ?? im.width!)) / im.width!));
+          const g = c.getContext("2d");
+          if (g) {
+            g.imageSmoothingQuality = "high";
+            g.drawImage(im as CanvasImageSource, 0, 0, c.width, c.height);
+            small = src.clone();
+            small.image = c;
+            small.needsUpdate = true;
+            small.userData = { ...src.userData, matchSized: true };
+            renderer.initTexture(small);
+          }
+        } catch { small = null; }
+      }
+      smallMaps.set(src, small);
+      if (small) smallMaps.set(small, small);
+    }
+    if (small && m.map !== small) m.map = small;
   };
   /**
    * SPARE BODIES (9 Oct 2026, Harry's phone: a 500 ms stall mid-match). A man
@@ -522,23 +609,48 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * and a new man just takes one and is dressed (cheap: colours and a number).
    */
   const SPARE_TARGET = 24;
-  const spares: Person3D[] = [];
+  // Style A (Player style: New): a man's head is seeded by who he is, so spares are kept per head
+  // (his build is a scale, set again when a spare is used).
+  const toonOn = playerStyleLook() === "new";
+  const spareBins = new Map<string, Person3D[]>();
+  const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
+  const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
-  const buildShell = () => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
+  const buildShell = (th?: ToonHead) => {
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
     if (fb) addClips(THREE, p, fb as any);
+    cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
+    matchSizedMap(p);
     p.root.visible = false;
     built++;
     return p;
   };
-  for (let i = 0; i < 6; i++) spares.push(buildShell());
-  const topUpSpares = () => { if (built < SPARE_TARGET) spares.push(buildShell()); };
+  /**
+   * WHO WILL PLAY (lag pass 3, 9 Oct 2026). CanvasMatch names its men the
+   * same way every chance ("mate0", "run1", "def3" …), and Style A seeds a
+   * man's head from that name. So the spares are built for the heads the
+   * match will really ask for, in the order the men usually appear. Before,
+   * spares were dealt round the six heads in turn: a chance whose new men
+   * shared a head emptied that head's pile and built the rest on the spot
+   * (the chance-start stall), while other piles sat unused all match.
+   */
+  const LIKELY_SIDS = ["you", "keeper", "follower",
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((i) => [`def${i}`, `mate${i}`]),
+    "run0", "run1", "run2", "run3"];
+  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined);
+  const spareQueue = LIKELY_SIDS.slice(0, Math.max(6, SPARE_TARGET)).map(headOf);
+  for (let i = 0; i < 6 && spareQueue.length; i++) spares.push(buildShell(spareQueue.shift()));
+  const topUpSpares = () => { if (spareQueue.length && built < SPARE_TARGET + 6) spares.push(buildShell(spareQueue.shift())); };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
-    const spare = spares.pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows });
-    if (!spare) built++;
+    const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
+    const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
+    const spare = bin(th).pop();
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
+    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); }
+    if (tb) setToonBuild(p, tb);
     const look: PersonLook = {
-      skin: SKINS[hashOf(sid) % SKINS.length], hair: "#1b120c",
+      skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
+      hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
       accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],
     };
@@ -585,13 +697,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     while (d < -Math.PI) d += 2 * Math.PI;
     const step = d * Math.min(1, dt * rate);
     // Mocap: never faster than a man can turn (a fixed share per frame spun him on planted feet)
-    b.yaw += mo ? Math.sign(step) * Math.min(Math.abs(step), MO.maxTurn * dt) : step;
+    const cap = mo ? MO.maxTurn : smooth() ? MO.smoothTurn : Infinity;
+    b.yaw += Math.sign(step) * Math.min(Math.abs(step), cap * dt);
   };
   const startLoop = (b: Body, name: string) => {
     const n = b.play.has(name) ? name : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
     if (b.state === n) return;
-    b.play.play(n, { fade: 0.22 });
-    b.state = n;
+    if (smooth() && b.sw !== undefined && LOCO.has(b.state) && LOCO.has(n) && nowT - b.sw < MO.smoothDwell) return;
+    b.play.play(n, { fade: smooth() ? Math.max(0.22, MO.smoothFade) : 0.22 });
+    b.state = n; b.sw = nowT;
   };
   const startOnce = (b: Body, clip: string, ago: number, speed = 1) => {
     if (!b.play.has(clip)) return false;
@@ -600,7 +714,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const dur = ci?.duration ?? b.p.actions[clip].getClip().duration;
     const from = Math.min(dur, contact + ago * speed);
     if (from >= dur - 0.05) return false;
-    b.play.play(clip, { fade: mo ? 0.12 : 0.06, from, speed, once: true });
+    b.play.play(clip, { fade: smooth() ? MO.smoothFade * 0.75 : mo ? 0.12 : 0.06, from, speed, once: true });
     b.state = `once:${clip}`;
     b.onceLeft = (dur - from) / speed;
     return true;
@@ -633,6 +747,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const startLoopM = (b: Body, name: string, fade = 0.25) => {
     const n = b.play.has(name) ? name : name === "run" ? "jog" : name === "walk" ? "jog" : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
     if (b.state === n) return;
+    if (smooth()) {
+      // a gait change waits out the last one (no walk/jog/walk flicker); every other change still crossfades
+      if (b.sw !== undefined && (LOCO.has(b.state) || b.state === "idle") && (LOCO.has(n) || n === "idle") && nowT - b.sw < MO.smoothDwell) return;
+      if (fade > 0) fade = Math.max(fade, MO.smoothFade);
+      b.sw = nowT;
+    }
     const dur = clipDur(b, n);
     let from = b.idleOff * dur;
     const pa = b.p.actions[b.state];
@@ -874,17 +994,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const b = bodyFor(fig.sid, fig.shirt, fig.shorts, faces ? fig.face : undefined);
     b.seen = frameNo;
     const jump = Math.hypot(at.x - b.x, at.y - b.y);
-    if (!b.init || jump > 4) { b.x = at.x; b.y = at.y; b.vx = 0; b.vy = 0; b.init = true; }
+    const fresh = !b.init || jump > 4;
+    if (fresh) { b.x = at.x; b.y = at.y; b.vx = 0; b.vy = 0; b.init = true; }
     else if (dt > 0) {
-      const k = Math.min(1, dt * 8);
+      const k = Math.min(1, dt * (smooth() ? MO.smoothVel : 8));
       b.vx += ((at.x - b.x) / dt - b.vx) * k; b.vy += ((at.y - b.y) / dt - b.vy) * k;
       b.x = at.x; b.y = at.y;
     }
     const sp = Math.hypot(b.vx, b.vy);
+    // smooth playback: a man who has just (re)appeared starts in his pose for this pace, not a fade from a stale one
+    if (fresh && smooth() && mo) { b.state = ""; b.sw = undefined; startLoopM(b, sp < MO.idleBelow ? "idle" : "jog", 0); b.sw = undefined; }
     // facing: where he runs, else the ball, else up the pitch
     const bl = f.ball;
     let want: number | null = null;
-    if (sp > 0.7) want = yawOf(Math.atan2(b.vy, b.vx));
+    if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
     else if (fig.sid === "you" && f.aim) want = yawOf(Math.atan2(f.aim.to.y - f.aim.from.y, f.aim.to.x - f.aim.from.x));
     else if (fig.sid === "you" && (f.phase === "aim" || f.phase === "runup")) want = yawOf(Math.atan2(0 - b.y, CX - b.x));
     else if (bl && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.4) want = yawOf(Math.atan2(bl.y - b.y, bl.x - b.x));
@@ -1005,6 +1128,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
+          kit?.setActive(false); // the kit drew the wait; its post pictures are freed now H draws
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
           for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
@@ -1052,7 +1176,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
   let lean = 0;
-  let down3 = new THREE.Vector3(0, 0, 1);
+  const down3 = new THREE.Vector3(0, 0, 1);
   /** The 2D canvas's own camera, exactly (every spot on the grass on the same pixel). */
   const placeExactCamera = (f: EngineFrame) => {
     const { viewport: v, facing, tilt, W, H } = f.cam;
@@ -1069,7 +1193,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const s = tilt ? tilt.s : 1;
     const D = d / (s * k);
     const cx = (v.x1 + v.x2) / 2 - CX, cz = (v.y1 + v.y2) / 2;
-    down3 = new THREE.Vector3(down[0], 0, down[1]);
+    down3.set(down[0], 0, down[1]);
     camera.position.set(cx + down3.x * D * Math.sin(th), D * Math.cos(th), cz + down3.z * D * Math.sin(th));
     camera.up.set(-down3.x, 0, -down3.z);
     if (th > 1e-3) camera.up.set(-down3.x * Math.cos(th), Math.sin(th), -down3.z * Math.cos(th));
@@ -1224,6 +1348,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // a new chance (or a cut in the 2D) cuts here too
     const vp = f.cam.viewport;
     const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
+    if (tv.init && key !== tv.key) gov.hush(performance.now()); // a chance start / cut stalls once (new men): not slowness
     if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.th = t.th; tv.key = key; tv.init = true; }
     else {
       const k = Math.min(1, dt * 2.5);
@@ -1232,7 +1357,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       tv.th = realCameraLook() === "new" ? tv.th + (t.th - tv.th) * k : t.th;
     }
     t.th = tv.th;
-    down3 = new THREE.Vector3(0, 0, 1);
+    down3.set(0, 0, 1);
     camera.position.set(tv.x, tv.D * Math.cos(t.th), tv.z + tv.D * Math.sin(t.th));
     camera.up.set(0, Math.sin(t.th), -Math.cos(t.th));
     camera.lookAt(tv.x, 0, tv.z);
@@ -1253,8 +1378,65 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // 1.3–2.6× → 2.3–4.7 m, the keeper 0.85 of that).
     if (realCameraLook() === "new") tvFig = FIG_NEW;
   };
+  /**
+   * THE BROADCAST CAMERA (3D camera: New, lib/star/style3d/broadcastCam.ts):
+   * one 48–50° angle for every chance kind (side-on ones turned, never top-down),
+   * the ball at 60% of the height so the drag has pitch under it, men sized to
+   * ~6% of the canvas (BROADCAST.manShare). It glides between chances and is held still while you
+   * aim (a finger down, the arrow up, or the strike screen).
+   */
+  const bc = { tx: 0, tz: 0, D: 40, ang: 0, k: 1.6, init: false, key: "", anchor: { x: CX, y: 20 } };
+  /** Test page / candidates sheet: ?man=0.08 sets the man's share of the height. */
+  const BC = (() => {
+    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("man"));
+    return q >= 0.05 && q <= 0.2 ? { ...BROADCAST, manShare: q } : BROADCAST;
+  })();
+  const placeBroadcast = (f: EngineFrame, dt: number) => {
+    const vp = f.cam.viewport;
+    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2, z: 0 };
+    const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
+    const aiming = f.phase === "aim" || f.phase === "runup" || f.phase === "contact";
+    if (aiming || key !== bc.key) bc.anchor = { x: ball.x, y: ball.y };
+    bc.key = key;
+    const figs: BcFigure[] = f.figures.map((g) => ({ sid: g.sid, x: g.x, y: g.y, team: g.team }));
+    const pts = actionPoints({ x: ball.x, y: ball.y, z: (ball as { z?: number }).z ?? 0 }, figs, f.keeper, f.goalInView, BC);
+    const vis = (() => {
+      const r = container.getBoundingClientRect();
+      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
+      return { a: Math.max(0, Math.min(0.5, -r.top / r.height)), b: Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height)) };
+    })();
+    const c = solveBroadcast({ anchor: bc.anchor, points: pts, facing: f.cam.facing, W: f.cam.W, H: f.cam.H, vis }, BC);
+    const ang = Math.atan2(c.ax, c.az);
+    // held still while you aim: a finger on the glass, the arrow up, or the strike screen
+    const hold = bc.init && (touch.id !== -1 || !!f.aim || f.phase === "contact" || f.phase === "runup");
+    if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.k = c.k; bc.init = true; }
+    else if (!hold) {
+      // a glide, never a cut (about 0.4 s to settle)
+      const e = 1 - Math.exp(-dt * (f.phase === "aim" ? 6 : 3));
+      bc.tx += (c.tx - bc.tx) * e; bc.tz += (c.tz - bc.tz) * e; bc.D += (c.D - bc.D) * e;
+      let da = ang - bc.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      bc.ang += da * e; bc.k += (c.k - bc.k) * e;
+    }
+    const pose = bcPose({ ...c, tx: bc.tx, tz: bc.tz, D: bc.D, ax: Math.sin(bc.ang), az: Math.cos(bc.ang) });
+    camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(pose.look[0], 0, pose.look[2]);
+    camera.fov = c.fov;
+    camera.aspect = f.cam.W / f.cam.H;
+    camera.near = Math.max(0.1, bc.D * 0.05);
+    camera.far = bc.D + 500;
+    camera.updateProjectionMatrix();
+    down3.set(Math.sin(bc.ang), 0, Math.cos(bc.ang));
+    lean = 0;
+    tv.init = true;
+    tvFig = bc.k;
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, k: bc.k, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
+  };
+  /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
+  const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   const placeCamera = (f: EngineFrame, dt: number) => {
-    if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
+    else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
     else { tv.init = false; placeExactCamera(f); }
   };
 
@@ -1463,6 +1645,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   return {
     frame(f) {
       frameNo++;
+      nowT = f.t;
       const dt = lastT === null ? 0 : Math.max(0, Math.min(0.1, f.t - lastT));
       lastT = f.t;
       if (!visible) return;
@@ -1523,12 +1706,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ball.visible = !!fb0;
       if (fb0) {
         // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
-        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? figNow() : def.ballScale * 0.85;
+        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? Math.min(2, figNow()) : def.ballScale * 0.85;
         ball.scale.setScalar(bs);
-        const v = new THREE.Vector3(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
+        const v = ballV.set(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
         if (dd > 1e-4 && dd < 3) {
-          const ax = new THREE.Vector3().subVectors(v, lastBall).cross(Y).normalize().negate();
+          const ax = ballAx.subVectors(v, lastBall).cross(Y).normalize().negate();
           if (ax.lengthSq() > 0) ball.rotateOnWorldAxis(ax, dd / (BALL_R * bs));
         }
         lastBall.copy(v);
@@ -1592,7 +1775,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       hball?.dispose(); hball = null;
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
+      // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here
+      spareBins.forEach((l) => { for (const p of l) disposeObject3D(p.root); }); spareBins.clear();
+      numberCache.forEach((t) => t.dispose()); numberCache.clear();
+      new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
       svg.remove();
+      canvas3d.removeEventListener("webglcontextlost", onLostEv);
+      canvas3d.removeEventListener("webglcontextrestored", onRestoredEv);
       container.removeEventListener("pointerdown", onDown);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerup", onUp);

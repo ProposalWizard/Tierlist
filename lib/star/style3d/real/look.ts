@@ -27,8 +27,10 @@ import { buildArena, type Arena, type ArenaColours } from "./arena";
 import { makeHPost, type HPost } from "./post";
 import { currentGovernor, type GovRung } from "../../three3d/governor";
 import { dressHBall, type HBall } from "./ball";
-import { createBakedLight, type BakedLight } from "../../look/bakedLight";
+import { bakedLightNow, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
+import { shadowCacheOff } from "../../three3d/shadowCache";
+import { lightReachOff } from "../../three3d/lightReach";
 
 /** Each of the three extra floodlight banks, as a share of the night "sun" (the fourth bank). */
 const FLOOD_BANK = 1.0;
@@ -84,7 +86,7 @@ export interface RealLook {
 function fabric(m: any, on: boolean): void {
   // the human body has a list of materials
   if (Array.isArray(m)) { for (const x of m) fabric(x, on); return; }
-  if (!m?.userData) return;
+  if (!m?.userData || m.userData.toon) return; // Style A's kit is its own
   if (!m.userData.fabricWrapped) {
     const inner = m.onBeforeCompile;
     const innerKey = m.customProgramCacheKey?.bind(m);
@@ -237,6 +239,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   }
   // the shadow-only pass: a 1-pixel target and a camera that sees nothing
   const shadowOnly = new T.WebGLRenderTarget(1, 1);
+  const BLIND_LAYER = 31;
   const blindCam = new T.PerspectiveCamera(1, 1, 0.001, 0.002);
   blindCam.position.set(0, -500, 0); blindCam.lookAt(0, -1000, 0);
   const prevEnv = scene.environment, prevFog = scene.fog, prevBg = scene.background;
@@ -246,6 +249,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     p = lookParams(tod);
     sun.intensity = look.sunIntensity * p.sun;
     for (const f of floods) f.intensity = look.floods ? sun.intensity * FLOOD_BANK : 0;
+    // a bank at nothing (by day) leaves the lighting altogether: same picture, three fewer lights for every pixel
+    for (const f of floods) f.visible = f.intensity > 0 || lightReachOff();
     hemi.intensity = look.hemi.intensity * p.hemi;
     scene.environmentIntensity = look.env * p.env;
     pitch.setLook({ grass: [tuneGrass(look.grass[0], p), tuneGrass(look.grass[1], p)], wet: look.wet, blades: p.blades, stripes: p.stripes });
@@ -279,14 +284,10 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   await applyTod();
   // the stadium's baked light (the training patch has no stadium to bake)
   if (withArena) {
-    void createBakedLight(T, "stadium", tod).then((b) => {
-      if (!b) return;
-      if (dead) { b.dispose(); return; }
-      baked = b;
-      void b.setTod(tod);
-      b.apply(scene);
-      applyDials();
-    }).catch(() => { /* no bake: the live light alone, as before */ });
+    // Patched NOW, its pictures arriving in the background (lag pass 3, 9 Oct 2026): patched
+    // after the first frames, every shader in the stadium was built twice, the second time mid-play.
+    baked = bakedLightNow(T, "stadium", tod);
+    if (baked) { baked.apply(scene); applyDials(); }
   }
   let frameN = 0;
   let last: { scene: any; camera: any } | null = null;
@@ -330,6 +331,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     dressPeople(people) {
       for (const p of people) {
         fabric(p.body.material as any, true);
+        // the baked light now, not up to 45 frames later in update(): each new man's shader was
+        // built twice, once plain and again with the bake (a mid-chance compile; lag pass 3)
+        baked?.apply(p.root);
         if (!contacts.some((c) => c.p === p)) contacts.push({ p });
         // people cast on the full rung; on the emergency rungs the contact shadow stands in
         p.root.traverse((x: any) => { if (x.isSkinnedMesh) { if (x.userData.castOrig === undefined) x.userData.castOrig = !!x.castShadow; x.castShadow = peopleCast && x.userData.castOrig; } });
@@ -383,6 +387,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         renderer.shadowMap.autoUpdate = false;
         renderer.shadowMap.needsUpdate = true;
         // a draw that sees nothing, just to refresh the shadow map
+        // With the shadow cache on this renderer (three3d/shadowCache.ts) the blind camera sees
+        // a layer nothing is on, so the men (never frustum-culled) are not drawn a third time
+        // into the 1-pixel target; the cache reads the casters on the real camera's layers.
+        const blind = !!(renderer as any).__shadowCache && !shadowCacheOff();
+        blindCam.layers.set(blind ? BLIND_LAYER : 0);
+        blindCam.userData.shadowLayers = blind ? camera.layers.mask : undefined;
+        for (const l of [sun, ...floods]) { if (blind) l.layers.enable(BLIND_LAYER); else l.layers.disable(BLIND_LAYER); }
         renderer.setRenderTarget(shadowOnly);
         renderer.render(sc, blindCam);
         renderer.setRenderTarget(null);
@@ -407,6 +418,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     },
     dispose() {
       dead = true;
+      // the lights' kept shadow maps (two a light, 8 MB each at 1024 on Medium) freed now: the match's
+      // renderer is shared, so they used to wait for the browser's own clean-up (lag pass 3)
+      for (const l of [sun, ...floods]) { (renderer as any).__shadowCache?.forget?.(l); l.shadow?.map?.dispose?.(); }
       baked?.dispose(); baked = null;
       post.dispose();
       hball?.dispose();

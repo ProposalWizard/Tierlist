@@ -17,6 +17,7 @@
  * 3D quality, skip the line-up, faces, names, reactions and "your player in
  * open play". Those are not in this list on purpose.
  */
+import { sprites2dLook, setSprites2dLook } from "./sprites2dLook";
 import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { storedFigureSkin, setStoredFigureSkin, FIGURE_SKIN_DEFAULT } from "./figureSkin";
@@ -29,6 +30,8 @@ import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
+import { homeLook, setHomeLook } from "./homeLook";
+import { shopLook, setShopLook } from "./shopLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
@@ -37,6 +40,7 @@ import { animationsLook, setAnimationsLook } from "./animLook";
 import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
 import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
+import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
 import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
@@ -85,6 +89,7 @@ export const LOOK_ROWS = {
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
+  playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
   camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
@@ -96,9 +101,13 @@ export const LOOK_ROWS = {
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
   allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
+  homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
+  shop2d: row("Shop", "new", "old", shopLook, setShopLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
   ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
   drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
+  // Harry, 9 Oct 2026: the current 2D first; Style A only when chosen (Current in every preset).
+  sprites2d: row("2D players", "stylea", "current", sprites2dLook, setSprites2dLook),
 } as const satisfies Record<string, LookRow>;
 
 export type LookRowId = keyof typeof LOOK_ROWS;
@@ -110,7 +119,8 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 /** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
  *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "chanceMix"];
+// Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -142,6 +152,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
     humanBody: O("humanBody"),
+    playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
     motion: N("motion"),
     camera3d: O("camera3d"),
@@ -153,9 +164,12 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),
     allSeasons: N("allSeasons"),
+    homeScreen: N("homeScreen"),
+    shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,
+    sprites2d: N("sprites2d"), // Style A 2D is the default (Harry, 9 Oct 2026)
   },
   preview: build((id) => (PREVIEW_ROWS.includes(id) ? N(id) : "")),
 };
@@ -175,6 +189,12 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   // The chance mix (Mikey, 9 Oct 2026), the same way.
   ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
 ];
+// Player style arrived on New (its default) for every phone; a phone already on
+// Classic (every row Old) takes its Old once, so Classic stays Classic.
+if (typeof window !== "undefined" && !playerStyleStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
+}
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
   const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);

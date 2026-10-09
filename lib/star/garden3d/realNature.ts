@@ -17,19 +17,24 @@
  * and their light comes from the crown's middle so a crown reads round, not
  * as a pile of flat planes.
  */
+import { loadPicture3d, useKtx2With } from "../three3d/ktx2";
+
 export const NATURE_BASE = "/star/garden3d/h/";
 
 export interface NatureMaps { leaves: any; needles: any; bark: any; barkN: any; paving: any; pavingN: any; straw: any; strawN: any; blooms: any; tuft: any }
 
 export async function loadRealNature(T: any, renderer: any): Promise<NatureMaps> {
   const an = Math.min(8, renderer?.capabilities?.getMaxAnisotropy?.() ?? 4);
-  const load = (f: string, srgb = true, repeat = true) => new Promise<any>((res, rej) => {
-    new T.TextureLoader().load(NATURE_BASE + f, (t: any) => {
-      t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;
-      if (repeat) t.wrapS = t.wrapT = T.RepeatWrapping;
-      t.anisotropy = an;
-      res(t);
-    }, undefined, rej);
+  // a packed KTX2 copy when there is one (three3d/ktx2.ts), else the WebP exactly as before
+  if (renderer) useKtx2With(renderer);
+  const load = (f: string, srgb = true, repeat = true) => loadPicture3d(NATURE_BASE + f, () => new Promise<any>((res, rej) => {
+    new T.TextureLoader().load(NATURE_BASE + f, res, undefined, rej);
+  })).then((t: any) => {
+    t.colorSpace = srgb ? T.SRGBColorSpace : T.NoColorSpace;
+    if (repeat) t.wrapS = t.wrapT = T.RepeatWrapping;
+    t.anisotropy = an;
+    t.needsUpdate = true;
+    return t;
   });
   const [leaves, needles, bark, barkN, paving, pavingN, straw, strawN, blooms, tuft] = await Promise.all([
     load("leaves.webp", true, false), load("needles.webp", true, false), load("bark.webp"), load("bark-nrm.webp", false),

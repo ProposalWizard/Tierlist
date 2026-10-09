@@ -14,6 +14,7 @@
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal
  * line). The goal mouth is at Z = 0, the D at Z ≈ 18.
  */
+import { toonYou, toonHeadFor } from "../style3d/toon/bodies";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y } from "../pitch";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -87,8 +88,8 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   const youModel: PlayerModel = playerModelFor(data.you.hairStyle);
   const mateModel: PlayerModel = playerModelFor(data.mate.hairStyle);
   const [youG, mateG, animG] = await Promise.all([
-    loadPeople3d(loader, youModel, body),
-    loadPeople3d(loader, mateModel, body),
+    loadPeople3d(loader, youModel, body, [toonYou().head]),
+    loadPeople3d(loader, mateModel, body, [toonHeadFor("training-mate")]),
     loadPeople3d(loader, "anims", body),
   ]);
   // the kick, reactions and keepy-uppies (a failed load just leaves them standing)
@@ -285,8 +286,8 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   const SIDE = new THREE.Vector3(SPOT.x - 3.4, 0, SPOT.z + 2.4);
   const kickInfo = clipInfo(fb, "kick_r") ?? KICK_FALLBACK;
   const contactS = kickInfo.contact ?? KICK_FALLBACK.contact!;
-  const make = (g: any, look: TrainingPerson) => {
-    const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
+  const make = (g: any, look: TrainingPerson, who: string) => {
+    const p: Person3D = makePerson3d(THREE, SK, g, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows, who, you: who === "you" });
     dressPerson3d(THREE, p, { skin: look.skin, hair: look.hair, kit: data.kit, number: null, face: look.face ?? null });
     relaxHands(THREE, p);
     if (fb) addClips(THREE, p, fb);
@@ -294,11 +295,11 @@ export async function createTrainingScene(container: HTMLElement, data: Training
     return p;
   };
   type Body = { p: Person3D; player: ClipPlayer; move: Move; at: any; yaw: number };
-  const person = (g: any, look: TrainingPerson): Body => {
-    const p = make(g, look);
+  const person = (g: any, look: TrainingPerson, who: string): Body => {
+    const p = make(g, look, who);
     return { p, player: new ClipPlayer(THREE, p.actions), move: "idle", at: new THREE.Vector3(), yaw: Math.PI };
   };
-  const people: Record<Who, Body> = { you: person(youG, data.you), mate: person(mateG, data.mate) };
+  const people: Record<Who, Body> = { you: person(youG, data.you, "you"), mate: person(mateG, data.mate, "training-mate") };
   let shooter: Who = "you";
   /** Turn a point in a man's own frame (x = his left, z = forward) by his facing. */
   const toWorld = (x: number, z: number, yaw: number) => new THREE.Vector3(x * Math.cos(yaw) + z * Math.sin(yaw), 0, -x * Math.sin(yaw) + z * Math.cos(yaw));

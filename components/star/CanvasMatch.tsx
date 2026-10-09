@@ -916,6 +916,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const frameObs = useContext(EngineFrameContext);
   const frameObsRef = useRef(frameObs);
   frameObsRef.current = frameObs;
+  /** The screen holds the match (its Settings is open): see EngineFrameObserver.hold. */
+  const heldByScreen = !!frameObs?.hold;
+  /** A frame reader has thrown once already (logged once, not every frame). */
+  const frameReaderErrRef = useRef(false);
   /**
    * The match view (lib/star/matchView.ts): Settings → Match view, read once
    * when the match opens. "classic" draws, frames and plays exactly as before.
@@ -2050,7 +2054,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** v0.25: the first stretch of a match you start skips the clock walk. */
   const quickStartRef = useRef(false);
   useEffect(() => {
-    if (pause || queue.length === 0) return;
+    if (pause || heldByScreen || queue.length === 0) return;
     const next = queue[0];
     const cur = matchMinuteRef.current;
     if (next.minute !== undefined && next.minute > cur) {
@@ -2075,7 +2079,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
     }, dwellFor(next.tone, speed));
     return () => clearTimeout(t);
-  }, [queue, pause, speed, matchMinute]);
+  }, [queue, pause, heldByScreen, speed, matchMinute]);
 
   // ── Other scores, revealed as the clock passes each goal (item 35) ──
   // Only clubs you have ticked get a commentary line and a card, and only
@@ -2118,7 +2122,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * finds the same continuation still sitting there next time.
    */
   useEffect(() => {
-    if (pause || queue.length > 0 || phase !== "feed") return;
+    if (pause || heldByScreen || queue.length > 0 || phase !== "feed") return;
     const go = simContinueRef.current;
     if (!go) return;
     // Walk the clock up to the minute the next chance happens, rather than
@@ -2146,7 +2150,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       go();
     }, Math.round(700 / Math.max(1, speed)));
     return () => clearTimeout(t);
-  }, [queue, pause, phase, speed, matchMinute]);
+  }, [queue, pause, heldByScreen, phase, speed, matchMinute]);
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
@@ -4404,6 +4408,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // What was just drawn, in pitch metres, and the camera it was drawn with.
     // Read only: nothing a reader does reaches the match.
     const obs = frameObsRef.current;
+    // Never let a reader stop the match: this runs inside the match's own
+    // frame loop, so a throw here would end the loop and freeze both pictures
+    // (Harry, 9 Oct 2026: "3D just stopped working mid game").
+    try {
     // The keeper the 2D didn't draw (no goal in its frame): still in his goal
     // for a 3D camera that shows it (Harry, 9 Oct 2026: "no goalie in the goal on some").
     if (rec && !rec.keeper && frameHasKeeper(sceneRef.current?.keeper)) {
@@ -4432,6 +4440,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
       });
+    }
+    } catch (e) {
+      if (!frameReaderErrRef.current) { frameReaderErrRef.current = true; console.error("Match frame reader failed (the match carries on)", e); }
     }
   }, [toPx]);
 
@@ -4593,6 +4604,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // --- Main animation loop ---
   useEffect(() => {
     const loop = (ts: number) => {
+      // held by the screen (its Settings open): nothing moves, and no jump on return
+      if (frameObsRef.current?.hold) { lastTsRef.current = ts; rafRef.current = requestAnimationFrame(loop); return; }
       const last = lastTsRef.current ?? ts;
       let dt = (ts - last) / 1000;
       lastTsRef.current = ts;
@@ -7372,6 +7385,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             <FigureSkinToggle compact />
           </div>
           )}
+          {frameObs?.chrome}
           <button
             onClick={toggleMuted}
             aria-label={muted ? "Unmute sound" : "Mute sound"}

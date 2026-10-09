@@ -263,7 +263,7 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
   const person = (kit: OvationKit, model?: PlayerModel): Person3D => {
     const k = made++;
     const m = model ?? models[Math.floor(guardRand(opts.seed, k, 11) * models.length)];
-    const p = makePerson3d(T, SkeletonUtils, bodyOf(m), anims, { outline, castShadow: prof.shadows, outlineNear });
+    const p = makePerson3d(T, SkeletonUtils, bodyOf(m), anims, { outline, castShadow: prof.shadows, outlineNear, who: `ovation-${opts.seed}-${k}` });
     dressPerson3d(T, p, {
       skin: SKIN_TONES[Math.floor(guardRand(opts.seed, k, 12) * SKIN_TONES.length)].hex,
       hair: HAIR_COLOURS[Math.floor(guardRand(opts.seed, k, 13) * HAIR_COLOURS.length)].hex,
@@ -284,7 +284,7 @@ export async function createOvationScene(container: HTMLElement, opts: OvationSc
   const face = (p: Person3D, dx: number, dz: number) => { p.root.rotation.y = Math.atan2(dx, dz); };
 
   // You.
-  const you = makePerson3d(T, SkeletonUtils, bodyOf(playerModelFor(opts.you.hairStyle)), anims, { outline, castShadow: prof.shadows, outlineNear });
+  const you = makePerson3d(T, SkeletonUtils, bodyOf(playerModelFor(opts.you.hairStyle)), anims, { outline, castShadow: prof.shadows, outlineNear, you: true });
   dressPerson3d(T, you, {
     skin: opts.you.skin, hair: opts.you.hair, kit: opts.you.kit, number: null,
     face: opts.you.face ?? null, faceSkin: opts.you.face?.skin, accessories: opts.you.accessories,

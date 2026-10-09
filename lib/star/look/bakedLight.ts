@@ -27,7 +27,7 @@
  * pixel; kept on Low quality too). Files: public/star/bake/<set>/.
  */
 
-export type BakeSet = "stadium" | "garden" | "shop";
+export type BakeSet = "stadium" | "garden" | "shop" | "casino";
 export type BakeTod = "day" | "golden" | "night" | "indoor";
 
 interface GridMeta { min: [number, number, number]; max: [number, number, number]; dims: [number, number, number]; y?: number }
@@ -147,10 +147,28 @@ if (uBkOn > 0.5) {
 const LIT = (m: any) => m && (m.isMeshStandardMaterial || m.isMeshLambertMaterial || m.isMeshPhongMaterial) && !m.isShaderMaterial;
 
 export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, strength: Partial<BakeStrength> = {}): Promise<BakedLight | null> {
-  // ?bake=0 on any page: the live light alone (for before/after stills)
-  if (typeof location !== "undefined" && new URLSearchParams(location.search).get("bake") === "0") return null;
+  if (bakeOff()) return null;
   const meta = await loadMeta(set);
   if (!meta) return null;
+  const b = bakedLightNow(T, set, tod, strength);
+  await b?.ready;
+  return b;
+}
+
+// ?bake=0 on any page: the live light alone (for before/after stills)
+const bakeOff = () => typeof location !== "undefined" && new URLSearchParams(location.search).get("bake") === "0";
+
+/**
+ * The baked light, ready to patch materials NOW (lag pass 3, 9 Oct 2026).
+ * Its pictures load in the background; until they arrive the patched shaders
+ * draw exactly as unpatched (uBkOn = 0). Patching after the first frames, as
+ * the scenes did, built every lit shader in the place twice — the second time
+ * in the middle of play (a stall of seconds on a phone). Patch at build time
+ * with this, and the shaders are built once, behind the loading cover.
+ */
+export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Partial<BakeStrength> = {}): (BakedLight & { ready: Promise<void> }) | null {
+  if (bakeOff()) return null;
+  let meta: BakeMeta | null = null;
   const U: Record<string, { value: any }> = {
     uBkVol: { value: null }, uBkFloor: { value: null },
     uBkVMin: { value: new T.Vector3() }, uBkVSize: { value: new T.Vector3(1, 1, 1) },
@@ -162,20 +180,23 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
   const st: BakeStrength = { ao: 1, shade: 1, bounce: 1, ...strength };
   const light = { color: new T.Color(1, 1, 1), intensity: 1 };
   let bounceScale = { v: 0, f: 0 };
-  if (meta.volume) {
-    const v = meta.volume;
-    U.uBkVMin.value.set(...v.min);
-    U.uBkVSize.value.set(v.max[0] - v.min[0], v.max[1] - v.min[1], v.max[2] - v.min[2]);
-    // sample half a cell out from the surface, so a wall does not read the inside of itself
-    const cell = Math.min((v.max[0] - v.min[0]) / (v.dims[0] - 1), (v.max[2] - v.min[2]) / (v.dims[2] - 1));
-    U.uBkOff.value = cell * 0.6;
-  }
-  if (meta.floor) {
-    const f = meta.floor;
-    U.uBkFMin.value.set(f.min[0], f.min[2]);
-    U.uBkFSize.value.set(f.max[0] - f.min[0], f.max[2] - f.min[2]);
-    U.uBkFloorY.value = (f.y ?? 0) + 0.15;
-  }
+  const setMeta = (m: BakeMeta) => {
+    meta = m;
+    if (m.volume) {
+      const v = m.volume;
+      U.uBkVMin.value.set(...v.min);
+      U.uBkVSize.value.set(v.max[0] - v.min[0], v.max[1] - v.min[1], v.max[2] - v.min[2]);
+      // sample half a cell out from the surface, so a wall does not read the inside of itself
+      const cell = Math.min((v.max[0] - v.min[0]) / (v.dims[0] - 1), (v.max[2] - v.min[2]) / (v.dims[2] - 1));
+      U.uBkOff.value = cell * 0.6;
+    }
+    if (m.floor) {
+      const f = m.floor;
+      U.uBkFMin.value.set(f.min[0], f.min[2]);
+      U.uBkFSize.value.set(f.max[0] - f.min[0], f.max[2] - f.min[2]);
+      U.uBkFloorY.value = (f.y ?? 0) + 0.15;
+    }
+  };
   const textures: any[] = [];
   const patched = new Set<any>();
   const refresh = () => {
@@ -186,16 +207,19 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
   };
   let token = 0;
   const load = async (t: BakeTod) => {
-    const id = meta.tods.includes(t) ? t : meta.tods[0];
     const my = ++token;
+    if (!meta) { const m = await loadMeta(set); if (!m || my !== token) return; setMeta(m); }
+    const meta0 = meta;
+    if (!meta0) return;
+    const id = meta0.tods.includes(t) ? t : meta0.tods[0];
     const [vol, flo] = await Promise.all([
-      meta.volume ? pixels(`${BAKE_BASE}${set}/${id}-vol.webp`) : Promise.resolve(null),
-      meta.floor ? pixels(`${BAKE_BASE}${set}/${id}-floor.webp`) : Promise.resolve(null),
+      meta0.volume ? pixels(`${BAKE_BASE}${set}/${id}-vol.webp`) : Promise.resolve(null),
+      meta0.floor ? pixels(`${BAKE_BASE}${set}/${id}-floor.webp`) : Promise.resolve(null),
     ]);
     if (my !== token) return;
     for (const tx of textures.splice(0)) tx.dispose();
-    if (vol && meta.volume) {
-      const [nx, ny, nz] = meta.volume.dims;
+    if (vol && meta0.volume) {
+      const [nx, ny, nz] = meta0.volume.dims;
       // the picture is slices stacked down the page (y = 0 first), each nz rows of nx: that IS x-fastest, then z, then y
       // — so read as a 3D texture whose axes are (x, z, y), and swap y/z in the lookup
       const tex = new T.Data3DTexture(vol.data, nx, nz, ny);
@@ -206,7 +230,7 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
       textures.push(tex);
       U.uBkVol.value = tex; U.uBkHasV.value = 1;
     }
-    if (flo && meta.floor) {
+    if (flo && meta0.floor) {
       const tex = new T.DataTexture(flo.data, flo.w, flo.h, T.RGBAFormat, T.UnsignedByteType);
       tex.minFilter = tex.magFilter = T.LinearFilter;
       tex.wrapS = tex.wrapT = T.ClampToEdgeWrapping;
@@ -214,11 +238,11 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
       textures.push(tex);
       U.uBkFloor.value = tex; U.uBkHasF.value = 1;
     }
-    bounceScale = { v: meta.bounce.volume?.[id] ?? 0, f: meta.bounce.floor?.[id] ?? 0 };
+    bounceScale = { v: meta0.bounce.volume?.[id] ?? 0, f: meta0.bounce.floor?.[id] ?? 0 };
     refresh();
     U.uBkOn.value = U.uBkHasV.value || U.uBkHasF.value ? 1 : 0;
   };
-  await load(tod);
+  const ready = load(tod).catch(() => { /* no pictures: the live light alone, as before */ });
 
   const patch = (m: any) => {
     if (patched.has(m) || !LIT(m) || m.userData.noBake) return;
@@ -244,7 +268,7 @@ export async function createBakedLight(T: any, set: BakeSet, tod: BakeTod, stren
   };
 
   return {
-    set,
+    set, ready,
     apply(root) {
       root.traverse((o: any) => {
         if (!o.isMesh && !o.isSkinnedMesh) return;

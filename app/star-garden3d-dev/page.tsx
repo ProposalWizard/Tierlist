@@ -33,7 +33,7 @@ function Garden3DTest() {
   const router = useRouter();
   const params = useSearchParams();
   const a0 = params.get("arrive");
-  const [arrive, setArrive] = useState<"shop" | "gate" | "casino" | "training">(a0 === "shop" || a0 === "casino" || a0 === "training" ? a0 : "gate");
+  const [arrive, setArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">(a0 === "shop" || a0 === "casino" || a0 === "training" || a0 === "house" ? a0 : "gate");
   // the 3D casino and the training pitch open here too (?place=casino)
   const [place, setPlace] = useState<"garden" | "casino" | "training">(params.get("place") === "casino" ? "casino" : "garden");
   const [money, setMoney] = useState(250000);
@@ -61,7 +61,11 @@ function Garden3DTest() {
       c.ownedItems = [];
     }
     c.money = money;
+    // ?outfit=hoodie|tee|shirt|tracksuit|coat: walk the garden in that casual set (as picked at your house's wardrobe)
+    const fit = params.get("outfit");
+    if (fit) c.outfit = { wear: "casual", casual: fit, kit: "home" };
     return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [full, money]);
 
   const btn: React.CSSProperties = { height: 30, padding: "0 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 12, cursor: "pointer" };
@@ -87,7 +91,7 @@ function Garden3DTest() {
 
   return (
     <>
-      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} />
+      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} />
       <div style={{ position: "fixed", top: 58, left: 12, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {(["day", "sunset", "night"] as Sky[]).map((s) => (
           <button key={s} onClick={() => setSky(s)} style={{ ...btn, background: sky === s ? "#facc15" : btn.background, color: sky === s ? "#111" : "#fff" }}>{s}</button>

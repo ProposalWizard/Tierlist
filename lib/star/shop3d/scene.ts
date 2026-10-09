@@ -25,6 +25,8 @@
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
+import { toonYou } from "../style3d/toon/bodies";
+import { turnTo } from "../three3d/animBlend";
 import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
@@ -38,6 +40,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -172,6 +175,9 @@ export interface ShopPlayer {
   skin?: string;
   hair?: string;
   hairStyle?: "short" | "long" | "buzz" | "none";
+  /** What you wear (lib/star/home3d/outfits.ts wornAt): a casual set from your
+   *  home's wardrobe; absent or a kit: the club kit as before. New player only. */
+  worn?: import("../home3d/outfits").Worn;
 }
 
 /** The doorway in the front (south) wall: x between ±DOOR_HALF. */
@@ -1014,8 +1020,10 @@ async function buildShop(
     uRight: { value: new THREE.Vector3(1, 0, 0) },
     uFwd: { value: new THREE.Vector3(0, 0, 1) },
   };
+  // the casual set from your home's wardrobe (9 Oct 2026, lib/star/home3d): not repainted in a kit
+  const casual = opts.player?.worn?.kind === "casual" ? opts.player.worn : null;
   const dressNew = (k: KitColours) => {
-    if (!person) return;
+    if (!person || casual) return;
     dressPerson3d(THREE, person, {
       skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12",
       kit: k, number: kitU.uNum.value,
@@ -1028,8 +1036,14 @@ async function buildShop(
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
     // The body: the one body (Settings → Look → "3D people: New") or the old one.
-    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims")]);
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    const [g, a] = await Promise.all([loadPeople3d(loader, model, people3dLook(), [toonYou().head]), loadPeople3d(loader, "anims")]);
+    person = casual
+      ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
+        worn: casual, kits: { home: kit0, away: kit0 }, number: null,
+        skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", hairStyle: opts.player?.hairStyle,
+        outline: 0, castShadow: true,
+      })
+      : makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: true, you: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
@@ -1089,6 +1103,8 @@ async function buildShop(
   const keys = new Set<string>();
   let speed = 0;
   let yaw = Math.PI; // facing
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
@@ -1263,9 +1279,12 @@ async function buildShop(
   };
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, table, ...bootSlots.map((b) => b.group), ...bootSlots.map((b) => b.ring), ...counterSlots.map((c) => c.group), homeHolder, ...pickables]));
   // warm up: every shader built before the first frame, so the first steps don't stutter
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
+  const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
@@ -1316,7 +1335,7 @@ async function buildShop(
       speed += (target - speed) * Math.min(1, dt * 8);
     }
     if (buying > 0) speed *= 0.8;
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
       yaw += d * Math.min(1, dt * 5);
@@ -1367,14 +1386,14 @@ async function buildShop(
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
-    const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
-    const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
+    const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+    const cr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
     want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
     if (shot) {
-      want.lerp(new THREE.Vector3(...shot.cam), frame);
-      wantLook.lerp(new THREE.Vector3(...shot.look), frame);
+      want.lerp(scratchShot.set(...shot.cam), frame);
+      wantLook.lerp(scratchShot.set(...shot.look), frame);
     }
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
@@ -1544,6 +1563,7 @@ async function buildShop(
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);

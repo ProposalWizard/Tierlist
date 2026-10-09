@@ -573,7 +573,7 @@ export class Cast {
   async actor(spec: ActorSpec, opts: { outline?: number } = {}): Promise<Actor> {
     const T = this.T;
     const model = await loadPeople3d(this.loader, spec.model, "new");
-    const p = makePerson3d(T, this.SkeletonUtils, model, this.anims, { outline: opts.outline ?? 0.003, outlineNear: 1.6, human: spec.human });
+    const p = makePerson3d(T, this.SkeletonUtils, model, this.anims, { outline: opts.outline ?? 0.003, outlineNear: 1.6, human: spec.human, who: spec.name, you: spec.name === "you" });
     const isNew = this.look === "new";
     // The human body in a kit wears real football boots (the shop's model), in the kit colour.
     if (Array.isArray(p.body.material) && spec.kit) {
@@ -586,7 +586,8 @@ export class Cast {
     });
     let face: FaceRig | null = null;
     // The human body has its own head (eyes, brows, painted lips); the old heads get the cut-scene face.
-    if (isNew && !Array.isArray(p.body.material)) {
+    // Style A bodies have their own painted face: no cut-scene face on top.
+    if (isNew && !Array.isArray(p.body.material) && !p.toon) {
       const hair = spec.model === "manager"
         ? "#" + new T.Color(spec.hair ?? "#3a2a20").lerp(new T.Color("#c9c9c9"), spec.grey ?? 0.6).getHexString()
         : spec.hair;

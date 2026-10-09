@@ -44,6 +44,7 @@
  * detail costs few draw calls.
  */
 import { dressInKit, type KitColours } from "../shop3d/scene";
+import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
@@ -52,6 +53,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
@@ -61,12 +63,13 @@ import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footba
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { cullSkinned } from "../three3d/cullPeople";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
 } from "./textures";
 
-export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training";
+export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house";
 export type GardenSky = "day" | "sunset" | "night";
 
 export interface GardenTrophy { name: string; count: number; art: string | null }
@@ -88,11 +91,15 @@ export interface GardenData {
   mates: number[];
   /** Where you appear: at the shop's doors (coming out of it), the casino's
    *  doors, the training pitch's gate, or the garden gate. */
-  arrive: "shop" | "gate" | "casino" | "training";
+  arrive: "shop" | "gate" | "casino" | "training" | "house";
   /** Who you are: the 3D shop's own player (its Settings → "3D shop player"
    *  switch and your saved skin, hair and hair style). Absent → the shop's
    *  default, the new player. */
   player?: { look: "new" | "old"; skin?: string; hair?: string; hairStyle?: "short" | "long" | "buzz" | "none" };
+  /** What you wear (lib/star/home3d/outfits.ts wornAt): a casual set from your
+   *  home's wardrobe, or absent / a kit for the club kit as before. The casual
+   *  set needs the new player (player.look "new"); the old one stays in kit. */
+  worn?: import("../home3d/outfits").Worn;
 }
 
 export interface GardenCallbacks {
@@ -104,6 +111,8 @@ export interface GardenCallbacks {
   onCasinoDoor?: () => void;
   /** He walked through the training pitch's gate (8 Oct 2026). */
   onTrainingGate?: () => void;
+  /** He walked through your house's back door (9 Oct 2026). Absent: the door stays shut. */
+  onHouseDoor?: () => void;
   /** The phone took the 3D away (iPhone Safari does this when memory runs
    *  short): the screen should restart the garden or fall back. */
   onContextLost?: () => void;
@@ -170,6 +179,11 @@ const START_SHOP = { x: 0, z: -5.3, yaw: 0 };
 const START_CASINO = { x: CASINO.door, z: CASINO.z1 + 2.2, yaw: 0 };
 const START_TRAINING = { x: PITCH.gate, z: PITCH.z1 + 2.0, yaw: 0 };
 const START_GATE = { x: 0, z: 15.5, yaw: Math.PI };
+/** Your house's back door (9 Oct 2026): on the east boundary, between the
+ *  gazebo and the parked cars, facing the garden; a path to it from the main path. */
+const HOUSE = { x: 17.95, z: 6.6 };
+const HOUSE_DOOR = { half: 0.65, h: 2.3 };
+const START_HOUSE = { x: HOUSE.x - 1.6, z: HOUSE.z, yaw: -Math.PI / 2 };
 /** The follow camera: how far behind him, and how high. */
 const CAM_BACK = 6.3;
 const CAM_UP = 2.75;
@@ -411,6 +425,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.add(sun, sun.target);
   // a soft light from behind the camera, so he isn't a silhouette after dark
   const fillLight = new THREE.PointLight(night ? "#ffd9a8" : "#ffe6cc", night ? 7 : data.sky === "sunset" ? 3 : 0, 9, 1.6);
+  fillLight.userData.moves = true; // it follows you (three3d/lightReach.ts)
   scene.add(fillLight);
 
   // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
@@ -1170,6 +1185,50 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   sidePave(CASINO.door + 1.0 - 4.2, 1.4, (4.2 + CASINO.door + 1.0) / 2, -6.0, 0.0155);
   sidePave(2.0, -6.7 - CASINO.z1, CASINO.door, (CASINO.z1 - 6.7) / 2, 0.016);
 
+  // ── Your house (9 Oct 2026, Harry: "imagine you actually had your current
+  // house with all your stuff and that's where you change clothes"): its back
+  // door on the east boundary, a path to it from the main path. Walk through
+  // the door and your 3D home opens (cb.onHouseDoor, lib/star/home3d). ──
+  const houseG = new THREE.Group();
+  scene.add(houseG);
+  {
+    const X = HOUSE.x, Z = HOUSE.z, hb = batch(houseG);
+    const brickM = mat("#b98a6a", { roughness: 0.9 });
+    const trimM2 = mat("#f3ede2", { roughness: 0.6 });
+    const roofM = mat("#4a4f57", { roughness: 0.8 });
+    const doorM = mat("#1f3b2e", { roughness: 0.5 });
+    // the back of the house: a gable wall standing just inside the boundary, facing the garden
+    hb.box(0.5, 3.4, 5.2, brickM, X + 0.25, 1.7, Z);
+    for (const s of [-1, 1]) hb.box(0.75, 0.12, 3.05, roofM, X + 0.25, 3.4 + 0.62, Z + s * 1.3, 0, s * 0.45);
+    hb.box(0.5, 0.9, 2.6, brickM, X + 0.25, 3.8, Z);
+    hb.box(0.5, 0.45, 1.2, brickM, X + 0.25, 4.45, Z);
+    // the open back door (a warm hall beyond), its frame and step, a lamp each side
+    hb.box(0.06, HOUSE_DOOR.h + 0.12, 0.12, trimM2, X - 0.02, (HOUSE_DOOR.h + 0.12) / 2, Z - HOUSE_DOOR.half - 0.06);
+    hb.box(0.06, HOUSE_DOOR.h + 0.12, 0.12, trimM2, X - 0.02, (HOUSE_DOOR.h + 0.12) / 2, Z + HOUSE_DOOR.half + 0.06);
+    hb.box(0.06, 0.12, HOUSE_DOOR.half * 2 + 0.24, trimM2, X - 0.02, HOUSE_DOOR.h + 0.06, Z);
+    hb.box(0.5, 0.12, HOUSE_DOOR.half * 2 + 0.4, trimM2, X - 0.25, 0.06, Z);
+    hb.box(0.06, HOUSE_DOOR.h, 0.9, doorM, X - 0.35, HOUSE_DOOR.h / 2, Z - HOUSE_DOOR.half - 0.42);
+    const hall = new THREE.Mesh(new THREE.PlaneGeometry(HOUSE_DOOR.half * 2, HOUSE_DOOR.h), new THREE.MeshBasicMaterial({ color: night ? "#ffcf8a" : "#e9c79a" }));
+    hall.rotation.y = -Math.PI / 2;
+    hall.position.set(X + 0.01, HOUSE_DOOR.h / 2, Z);
+    houseG.add(hall);
+    // two windows either side, lit after dark
+    const winM = new THREE.MeshStandardMaterial({ color: "#2a3646", emissive: "#ffcf8a", emissiveIntensity: night ? 1.2 : 0.05, roughness: 0.1, metalness: 0.4 });
+    for (const s of [-1, 1]) {
+      hb.box(0.05, 1.1, 0.8, winM, X - 0.01, 1.6, Z + s * 1.7);
+      hb.box(0.08, 0.08, 0.95, trimM2, X - 0.03, 1.05, Z + s * 1.7);
+    }
+    hb.done();
+    const doorGlow2 = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.2), new THREE.MeshBasicMaterial({ map: canvasTex(glowCanvas()), transparent: true, depthWrite: false, opacity: night ? 0.7 : 0.22 }));
+    doorGlow2.rotation.x = -Math.PI / 2;
+    doorGlow2.position.set(X - 1.1, 0.03, Z);
+    scene.add(doorGlow2);
+    solid(X, X + 0.6, Z - 2.7, Z - HOUSE_DOOR.half);
+    solid(X, X + 0.6, Z + HOUSE_DOOR.half, Z + 2.7);
+    // the path to it from the main path
+    sidePave(X - 1.37, 1.4, (X + 1.37) / 2, Z, 0.0155);
+  }
+
   // ── The training pitch (8 Oct 2026): a small fenced pitch, a goal at the
   // far end, cones, a gate. Walk through the gate and the 3D training opens
   // (cb.onTrainingGate; the training itself is built separately). ──
@@ -1673,7 +1732,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   /** Motion: Mocap: walk → jog → run → sprint (three3d/gait.ts). Null: Motion: Old, the walk/jog blend. */
   let gaitBlend: GaitBlend | null = null;
   let personRef: Person3D | null = null;
-  const st0 = data.arrive === "shop" ? START_SHOP : data.arrive === "casino" ? START_CASINO : data.arrive === "training" ? START_TRAINING : START_GATE;
+  const st0 = data.arrive === "shop" ? START_SHOP : data.arrive === "casino" ? START_CASINO : data.arrive === "training" ? START_TRAINING : data.arrive === "house" ? START_HOUSE : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
   /** The people's outlines (hidden if the scene steps down to Low). */
@@ -1684,9 +1743,17 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // exactly as the 3D shop builds him (shop3d/scene.ts): the same body,
     // the same outline, his own skin, hair and the club kit with his number
     const SK = SkeletonUtils.default ?? SkeletonUtils;
-    const person: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+    // the casual set from your home's wardrobe (9 Oct 2026: lib/star/home3d/wear.ts), else the kit as before
+    const casual = data.worn?.kind === "casual" ? data.worn : null;
+    const person: Person3D = casual
+      ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
+        worn: casual, kits: { home: data.kit, away: data.kit }, number: null,
+        skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12", hairStyle: data.player?.hairStyle,
+        outline: 0, castShadow: true,
+      })
+      : makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, you: true });
     outlines.push(person.outline);
-    dressPerson3d(THREE, person, {
+    if (!casual) dressPerson3d(THREE, person, {
       skin: data.player?.skin ?? "#c68642", hair: data.player?.hair ?? "#2b1b12",
       kit: data.kit, number: canvasTex(numberCanvas(data.number, "#ffffff")),
     });
@@ -1708,7 +1775,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
     data.mates.slice(0, 3).forEach((num, i) => {
-      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true });
+      const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, who: `garden-mate-${num}` });
       outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
       relaxHands(THREE, m);
@@ -1835,6 +1902,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
           entry.drink = { a, sit, next: 4, t: 0 };
         }
       }
+      cullSkinned(THREE, entry.root); // not drawn while the bench is off screen (three3d/cullPeople.ts)
       mates.push(entry);
     });
 
@@ -1993,7 +2061,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const acts: Record<string, any> = {};
       if (newPerson) {
         const SK = SkeletonUtils.default ?? SkeletonUtils;
-        const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+        const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: false, who: `garden-bench-${i}` });
         outlines.push(m.outline);
         dressPerson3d(THREE, m, { skin: SKINS[i], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(NUMS[i], "#ffffff")) });
         relaxHands(THREE, m);
@@ -2043,6 +2111,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       root.rotation.y = man.yaw;
       scene.add(root);
       man.blob = blob(0.85, 0.85, man.x, man.z, 0.55);
+      cullSkinned(THREE, root); // the training pitch's men are not drawn while it is off screen (three3d/cullPeople.ts)
       pitchMen.push(man);
     });
     if (pitchMen.some((m) => m.role === "passB")) {
@@ -2151,6 +2220,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = st0.yaw, camYaw = st0.yaw + Math.PI, orbitHold = 0;
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the shop)
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
@@ -2195,6 +2266,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!doorFired && z < CASINO.z1 - 0.1) { doorFired = true; cb.onCasinoDoor(); }
       return [x, Math.max(z, CASINO.z1 - 0.6)];
     }
+    // your house's back door (9 Oct 2026)
+    if (cb.onHouseDoor && Math.abs(z - HOUSE.z) < HOUSE_DOOR.half - 0.2 && x > HOUSE.x - 1.0) {
+      if (!doorFired && x > HOUSE.x + 0.1) { doorFired = true; cb.onHouseDoor(); }
+      return [Math.min(x, HOUSE.x + 0.5), z];
+    }
     // the training pitch's gate
     if (cb.onTrainingGate && Math.abs(x - PITCH.gate) < PITCH.gateHalf - 0.2 && z < PITCH.z1 + 0.7 && z > PITCH.z1 - 1.0) {
       if (!doorFired && z < PITCH.z1 - 0.1) { doorFired = true; cb.onTrainingGate(); }
@@ -2227,6 +2303,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     { id: "shop", inside: (x, z) => Math.abs(x) < 3 && z < SHOP.z1 + 2.6 },
     { id: "casino", inside: (x, z) => Math.abs(x - CASINO.door) < 2.4 && z < CASINO.z1 + 3.0 },
     { id: "training", inside: (x, z) => Math.abs(x - PITCH.gate) < 2.0 && z < PITCH.z1 + 2.6 },
+    { id: "house", inside: (x, z) => x > HOUSE.x - 2.6 && Math.abs(z - HOUSE.z) < 1.6 },
     { id: "trophies", inside: (x, z) => Math.hypot(x - CABINET.x, z - CABINET.z) < 3.4 },
     { id: "teqball", inside: (x, z) => Math.hypot(x - TEQ.x, z - TEQ.z) < 2.6 },
     { id: "mates", inside: (x, z) => x > gz.x - gz.w / 2 - 1.0 && x < gz.x + gz.w / 2 + 0.5 && Math.abs(z - gz.z) < gz.d / 2 + 0.4 },
@@ -2239,6 +2316,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     shop: { at: [0, SHOP.z1 + 1.7], face: [0, SHOP.z1] },
     casino: { at: [CASINO.door, CASINO.z1 + 1.9], face: [CASINO.door, CASINO.z1] },
     training: { at: [PITCH.gate, PITCH.z1 + 1.6], face: [PITCH.gate, PITCH.z1] },
+    house: { at: [HOUSE.x - 1.5, HOUSE.z], face: [HOUSE.x, HOUSE.z] },
     trophies: { at: [CABINET.x + 2.55, CABINET.z], face: [CABINET.x, CABINET.z] },
     teqball: { at: [TEQ.x - 1.75, TEQ.z + 0.3], face: [TEQ.x, TEQ.z] },
     mates: { at: [gz.x - 0.9, gz.z], face: [BENCH_X, gz.z] },
@@ -2338,6 +2416,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const gd = makeGroundDetail(THREE, nature, spots, B, 11);
     scene.add(gd.contacts, gd.tufts);
   }
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
@@ -2389,7 +2469,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
       speed += (target - speed) * Math.min(1, dt * 8);
     }
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       // arrived at something: turn to it
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
@@ -2701,7 +2781,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   ray.layers.enableAll();
   const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const targets: { obj: any; spot: GardenSpot }[] = [
-    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: casG, spot: "casino" }, { obj: pitchG, spot: "training" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" }, { obj: gzG, spot: "mates" },
+    { obj: cab, spot: "trophies" }, { obj: shopG, spot: "shop" }, { obj: casG, spot: "casino" }, { obj: pitchG, spot: "training" }, { obj: houseG, spot: "house" }, { obj: teq, spot: "teqball" }, { obj: sg, spot: "horse" }, { obj: gzG, spot: "mates" },
   ];
   const aim = (px: number, py: number) => {
     const rct = renderer.domElement.getBoundingClientRect();
@@ -2798,6 +2878,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     dispose: () => {
       disposed = true;
       gov.dispose();
+      savings.dispose();
       hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();

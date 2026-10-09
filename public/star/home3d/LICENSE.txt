@@ -1,0 +1,16 @@
+3D home (lib/star/home3d, components/star/Home3D.tsx) — files in this folder
+
+car-*-lod.glb, boot-*-lod.glb
+  Light copies (about 4,000 triangles a car, 2,500 a boot, 512 px textures)
+  of the shop's own Higgsfield-generated models in public/star/shop3d/items/
+  (see public/star/shop3d/LICENSE.txt for how those were made: Higgsfield
+  gpt_image_2_5 picture, then Tripo H3.1 image-to-3D). Made by
+  tools/home3d/make_lods.mjs and packed by scripts/perf3d/shrink-models.mjs.
+  No new models were generated for the home and no Higgsfield credits were
+  spent on it. Invented, unbranded designs: no real logos, badges or plates.
+
+Everything else in the home (the room, wardrobe, rails, garments on the
+rails, mirror, trophy cabinet and the trophies themselves, the window views)
+is built in code (lib/star/home3d/scene.ts, textures.ts). The trophies are
+stylised shapes, not copies of any real trophy. The body is the game's own
+(public/star/people3d, public/star/human3d; see their LICENSE files).

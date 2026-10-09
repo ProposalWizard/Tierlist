@@ -48,6 +48,9 @@
  * bartender, one slot punter and the leaner; High all six. Off screen they
  * are not worked out.
  */
+import { toonYou, TOON_SUIT_HEADS } from "../style3d/toon/bodies";
+import { turnTo } from "../three3d/animBlend";
+import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { neonCanvas, numberCanvas, blobCanvas } from "../shop3d/textures";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
@@ -57,6 +60,7 @@ import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
+import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
@@ -221,7 +225,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
   // New: the broadcast picture indoors (bloom, grade), with real 4x antialias on Medium and High
-  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: null, msaa: tier === "low" ? 0 : 4 }) : null;
+  const hEnh = H ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.12, bake: "casino", msaa: tier === "low" ? 0 : 4 }) : null;
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 50);
 
   // ── Light: warm, low, rich (New: less flat fill; ./hRoom.ts adds a key light with shadows) ──
@@ -542,7 +546,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
     const model = playerModelFor(opts.player?.hairStyle);
     const [g, a, cas] = await Promise.all([
-      loadPeople3d(loader, model, people3dLook()), loadPeople3d(loader, "anims"),
+      loadPeople3d(loader, model, people3dLook(), [toonYou().head, ...TOON_SUIT_HEADS]), loadPeople3d(loader, "anims"),
       loadAnims3d(loader, "casino").catch((e) => { console.error("casino clips", e); return null; }),
     ]);
     // ── The casino's people: the same body, on the casino clips. The tables
@@ -567,7 +571,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     const budget = !cas ? 2 : tier === "low" ? 2 : tier === "medium" ? 5 : 6;
     for (const sp of SPOTS.slice(0, budget)) {
-      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+      // staff and guests wear smart clothes (Style A), never a kit
+      const d = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, who: `casino-${sp.role}-${dealers.length}`, suit: true });
       dressPerson3d(THREE, d, { skin: sp.skin, hair: sp.hair, kit: { shirt: sp.shirt, trim: sp.trim }, number: null });
       relaxHands(THREE, d);
       if (cas) addClips(THREE, d, cas);
@@ -583,7 +588,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       if (!pl.play(base, { from: Math.random() * 3 })) pl.play("idle");
       npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z });
     }
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false });
+    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
@@ -630,6 +635,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     pullA = take("slot_pull");
   }
   if (disposed) throw new Error("disposed");
+  // your legs walk / jog on the shared stride clock, as in the garden and the shop (Motion: Mocap; Old keeps the blend below)
+  let gaitBlend: GaitBlend | null = null;
+  strideFor(THREE, person, mixer, { idle: idleA, walk: walkA, jog: jogA })
+    .then((gb) => { if (!disposed) gaitBlend = gb; })
+    .catch((e) => console.error("casino: gait clips", e));
   player.position.set(START.x, 0, START.z);
   player.rotation.y = Math.PI;
   scene.add(player);
@@ -640,6 +650,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
   let speed = 0, yaw = Math.PI, camYaw = 0, orbitHold = 0;
+  /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
+  const yawTurn = { yaw: 0, vel: 0 };
   let near: CasinoStation | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0, drawn = 0;
   let paused = false;
@@ -760,6 +772,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   }
   const frozen = freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, screenMesh, ...games.keep, ...toppers, ...dealers.map((d) => d.root), ...(hRoom?.keep ?? []), ...(H ? tableSigns : [])]));
   if (H && renderer.shadowMap.enabled) freezeStaticShadows(renderer, scene); // nothing that casts moves: drawn once
+  // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
+  const savings = sceneSavings(THREE, renderer, scene);
   try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
   hRoom?.bakeReflections();
@@ -847,7 +861,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
     speed += (target - speed) * Math.min(1, dt * 8);
-    if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
+    if (wantYaw !== null) yaw = turnTo(yawTurn, yaw, wantYaw, dt);
     else if (faceTo && speed < 0.4) {
       const d = angDiff(yaw, Math.atan2(faceTo[0] - player.position.x, faceTo[1] - player.position.z));
       yaw += d * Math.min(1, dt * 5);
@@ -881,10 +895,14 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     }
     if (sitA) sitA.setEffectiveWeight(seat * (1 - pullW));
     const keep = (1 - (react?.w ?? 0)) * (sitA ? 1 - seat : 1);
+    if (gaitBlend) gaitBlend.update(speed, dt, keep);
+    else {
     idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK) * keep);
     walkA.setEffectiveWeight(wWalk * keep);
     jogA.setEffectiveWeight(wJog * keep);
-    if (newLook) { const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog)); walkA.timeScale = ts; jogA.timeScale = ts; }
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) { const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog)); walkA.timeScale = ts; jogA.timeScale = ts; }
     else { walkA.timeScale = Math.max(0.6, speed / 1.45); jogA.timeScale = Math.max(0.8, speed / 3.2); }
     mixer.update(dt);
     stepNpcs(dt);
@@ -1053,6 +1071,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       disposed = true;
       gov.dispose();
       games.dispose();
+      savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
       renderer.setAnimationLoop(null);

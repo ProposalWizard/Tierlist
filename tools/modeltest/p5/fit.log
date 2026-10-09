@@ -1,0 +1,8 @@
+FIT crotch mh 0.919 cand 0.919 scale 2.118 height 2.07 tris 14392
+LM mh {'top': 1.817, 'crotch': 0.919, 'neck': 1.601} cand {'top': 2.07, 'crotch': 0.919, 'neck': 1.758}
+ARMJ Left [(0.234, -0.013, 1.608), (0.337, -0.039, 1.344), (0.457, -0.097, 1.075), (0.523, -0.133, 0.863)]
+ARMJ Right [(-0.238, -0.013, 1.609), (-0.337, -0.039, 1.341), (-0.459, -0.098, 1.076), (-0.521, -0.129, 0.864)]
+WEIGHTS unweighted verts 0 of 7190
+WEIGHTS pruned verts 1344
+POSE max limb turn to MakeHuman rest (deg) 20.8
+WROTE /tmp/claude-0/-home-user-Tierlist/36643638-fd75-5950-83da-ee5f6b43df22/scratchpad/gen2/p5/fit.glb tris 14392

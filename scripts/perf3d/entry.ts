@@ -3,9 +3,16 @@
 import * as THREE from "three";
 import { startGarden } from "@/lib/star/garden3d/scene";
 import { startShop } from "@/lib/star/shop3d/scene";
+import { startCasino } from "@/lib/star/casino3d/scene";
 import { shopDisplays } from "@/lib/star/shop3d/catalogue";
 import { createSigningScene } from "@/lib/star/signing3dScene";
 import * as P from "@/lib/star/three3d/perf";
+import { createEngineView } from "@/lib/star/style3d/engineView";
+import { resolveStyle } from "@/lib/star/style3d/styles";
+import { createDirector } from "@/lib/star/cutscene/director";
+import { FIXTURES } from "@/lib/star/cutscene/fixtures";
+import { startFrameStats } from "@/lib/star/three3d/frameStats";
+startFrameStats();
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 (window as any).P = P;
 (window as any).mergeGeometries = mergeGeometries;
@@ -41,6 +48,7 @@ S.onBeforeRender = function (r: any, _s: any, _c: any, rt: any) {
     };
   }
   M.renderer = r; M.scene = this; M.camera = _c;
+  (M.scenes ||= new Set()).add(this);
   tA = performance.now();
 };
 S.onAfterRender = function (r: any) {
@@ -93,5 +101,82 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = h;
     return true;
   },
+  async casino(opts: any = {}) {
+    M.t0 = performance.now();
+    const c = await startCasino(stage(), { onNear() {}, onFps() {}, onArrive() {} } as any, {
+      quality: opts.quality ?? "high", fixedStep: 1 / 30, kit: KIT, number: 10, player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" } as any,
+    });
+    M.ready = performance.now();
+    M.ctrl = c;
+    return true;
+  },
+  /** The real game's 3D view (career), fed one still made-up frame of a chance, 22 men. */
+  async career(opts: any = {}) {
+    M.t0 = performance.now();
+    const v = await createEngineView(stage(), { def: resolveStyle("real", "play"), tier: opts.tier ?? "medium", tod: opts.tod ?? "golden" });
+    const fig = (sid: string, x: number, y: number, team: "us" | "them") => ({ sid, x, y, team, shirt: team === "us" ? "#c8102e" : "#1d4ed8", shorts: "#ffffff", kick: false, kickFoot: 1, drawn: true });
+    const figures: any[] = [fig("you", 34, 18, "us")];
+    const us = [[20, 22], [48, 22], [26, 30], [42, 30], [34, 36], [14, 40], [54, 40], [28, 48], [40, 48], [34, 60]];
+    const them = [[30, 10], [38, 10], [24, 14], [44, 14], [34, 22], [18, 26], [50, 26], [30, 32], [38, 32], [34, 44]];
+    us.forEach(([x, y], i) => figures.push(fig(`mate${i}`, x, y, "us")));
+    them.forEach(([x, y], i) => figures.push(fig(`def${i}`, x, y, "them")));
+    const t0 = performance.now() / 1000;
+    let facing = "up";
+    const bp = { x: 34, y: 17.2 };
+    const f = () => ({
+      t: performance.now() / 1000, phase: "aim", kind: "one_on_one",
+      cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing, tilt: null, W: 390, H: 600 },
+      ball: { x: bp.x, y: bp.y, z: 0.11, vx: 0, vy: 0, vz: 0, live: true, inNet: false }, landing: null,
+      keeper: { x: 34, y: 1.2, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: performance.now() / 1000 - t0, shirt: "#16a34a", shorts: "#111111", drawn: true },
+      figures, aim: null, ring: null, goalSide: null, goalInView: true, orders: null,
+    });
+    // M.switchChance(): a new chance (a new kind, a new framing, new men) to time the cut (window.__M.vf: ms per frame() call)
+    let chance = 0;
+    let vp = { x1: 10, x2: 58, y1: -4, y2: 44 };
+    let kind = "one_on_one";
+    M.vf = [] as { t: number; ms: number; chance: number }[];
+    // fresh=true: every man a new sid (the worst case: 20 new bodies at once). Default: the real game's
+    // way (CanvasMatch reuses "mate0", "run1", "def3" …), a different number of each per kind.
+    const COUNTS: Record<string, [number, number, number]> = { corner: [6, 3, 9], one_on_one: [1, 1, 2], cutback: [3, 2, 5], through_ball: [2, 2, 4], long_range: [3, 1, 6] };
+    M.switchChance = (k = "corner", fresh = false) => {
+      chance++; kind = k; vp = chance % 2 ? { x1: 30, x2: 68, y1: -4, y2: 30 } : { x1: 10, x2: 58, y1: -4, y2: 44 };
+      figures.length = 1;
+      const sh = (chance % 2) * 8;
+      // a corner is the side-on picture (the 2D's turned facing), the camera swung to the corner flag's side
+      facing = k === "corner" ? (chance % 4 < 2 ? "left" : "right") : "up";
+      const you0 = figures[0];
+      if (k === "corner") { you0.x = facing === "left" ? 66 : 2; you0.y = 1; } else { you0.x = 34 + sh - 4; you0.y = k === "long_range" ? 26 : 16; }
+      bp.x = you0.x + 0.6; bp.y = you0.y - 0.6;
+      if (fresh) {
+        us.forEach(([x, y], i) => figures.push(fig(`c${chance}m${i}`, x + sh, y - 6, "us")));
+        them.forEach(([x, y], i) => figures.push(fig(`c${chance}d${i}`, x + sh, y - 4, "them")));
+        return;
+      }
+      const [nm, nr, nd] = COUNTS[k] ?? [4, 2, 6];
+      for (let i = 0; i < nm; i++) figures.push(fig(`mate${i}`, us[i][0] + sh, us[i][1] - 6, "us"));
+      for (let i = 0; i < nr; i++) figures.push(fig(`run${i}`, us[9 - i][0] + sh, us[9 - i][1] - 10, "us"));
+      for (let i = 0; i < nd; i++) figures.push(fig(`def${i}`, them[i][0] + sh, them[i][1] - 4, "them"));
+    };
+    let on = true;
+    const tick = () => { if (!on) return; const fr: any = f(); fr.kind = kind; fr.cam.viewport = vp; const a = performance.now(); v.frame(fr); M.vf.push({ t: a, ms: performance.now() - a, chance }); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; v.dispose(); } };
+    return true;
+  },
+  /** A cut scene (a fixture), held still at `at` seconds. */
+  async cut(opts: any = {}) {
+    M.t0 = performance.now();
+    const d = await createDirector(stage(), FIXTURES[opts.fixture ?? "trophy"](), { style: "real", tier: opts.tier ?? "medium", holdAt: opts.at ?? 2 });
+    M.ready = performance.now();
+    M.ctrl = d;
+    return true;
+  },
   dispose() { M.ctrl?.dispose?.(); M.ctrl = null; },
 };
+
+// ?auto=<scene>: start a scene on load (tools/bake3d/capture.mjs opens the page and waits for window.__M.ready)
+{
+  const auto = new URLSearchParams(location.search).get("auto");
+  if (auto && (window as any).H[auto]) void (window as any).H[auto]({ quality: new URLSearchParams(location.search).get("q") ?? "high" });
+}

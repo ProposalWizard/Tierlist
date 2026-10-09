@@ -32,7 +32,29 @@ export type Action3 =
   | { kind: "tap"; /** The man tapped on screen, if the tap landed on one (a pass goes to him). */ to?: string }
   /** Drag and release: the 2D game's shot (`pull` = fraction of the real match's canvas height). */
   | { kind: "shoot"; dir: { x: number; y: number }; pull: number; contact?: Contact3 }
-  | { kind: "pass"; lofted?: boolean; to?: string };
+  | { kind: "pass"; lofted?: boolean; to?: string }
+  /** Call for it (Free Roam): the team-mate on the ball plays you in if a lane is open (World.callForBall). */
+  | { kind: "call" };
+
+/**
+ * CALL FOR IT (Harry, 9 Oct 2026: "u need to be able to ask for the ball").
+ * You shout; the team-mate with the ball (or the one who'll get to a loose
+ * ball first, or the one a pass is going to) looks up. If the lane from the
+ * ball to where your run takes you is open and you're in range, he plays you
+ * in: his own pass (World.passBall, into your stride), from the support
+ * brain. Else he shakes his head and keeps it, and the call says why.
+ */
+export const CALL_COOLDOWN = 2.5;
+/** Further than this (m) from the ball and he won't try it. */
+export const CALL_RANGE = 36;
+/** An opponent this close (m) to the line from the ball to your run blocks the lane. */
+export const CALL_LANE = 1.5;
+/** Where your run takes you: this many seconds ahead (the pass is weighted to it). */
+export const CALL_LEAD_S = 0.9;
+/** A call answered "yes" stands this long (s): a loose ball or one on its way to him gets played on to you when he has it. */
+export const CALL_HOLD = 2.5;
+/** A call's answer: who, yes or no, and why (shown on screen as a tick or a cross). */
+export interface CallAnswer { at: number; mate: string | null; ok: boolean; why: string }
 
 export type WorldEventKind =
   | "goal" | "save" | "catch" | "post" | "bar" | "byline" | "out" | "bounce"
@@ -135,6 +157,10 @@ export class World {
   timeScale = 1;
   /** Rings on the grass the picture draws (a cross's landing spot …). A drill sets and clears them. */
   markers: { x: number; y: number; r?: number; color?: string }[] = [];
+  /** The last call for the ball (CALL FOR IT above), for the screen's tick / cross. */
+  call: CallAnswer | null = null;
+  /** Seconds until you can call again. */
+  callReady(): number { return this.call ? Math.max(0, this.call.at + CALL_COOLDOWN - this.t) : 0; }
   /** Who a tap would pass to right now (you have the ball and a team-mate is on): the picture rings him. */
   aimMate: string | null = null;
 
@@ -478,9 +504,53 @@ export class World {
     return best;
   }
 
+  /** Call for it (see CALL FOR IT above). Returns the answer, or null if it did nothing (you have it, or still cooling down). */
+  callForBall(you: P3): CallAnswer | null {
+    if (this.owner === you.id || this.callReady() > 0) return null;
+    const b = this.ball;
+    const mates = this.players.filter((q) => q.active && !q.human && !q.keeper && !this.hostile(you, q));
+    const o = this.get(this.owner);
+    let mate: P3 | null = null;
+    if (o && mates.includes(o)) mate = o;
+    else if (!o) {
+      const meant = this.get(this.passTarget);
+      if (meant && mates.includes(meant)) mate = meant;
+      else {
+        // a loose ball: the team-mate who'll get there first
+        let best = Infinity;
+        for (const q of mates) { const i = this.intercept(q); if (i && i.t < best) { best = i.t; mate = q; } }
+      }
+    }
+    const answer = (ok: boolean, why: string): CallAnswer => {
+      const c = { at: this.t, mate: mate?.id ?? null, ok, why };
+      this.call = c;
+      if (mate) {
+        if (ok) mate.mind.callUntil = this.t + CALL_HOLD;
+        else { mate.mind.callUntil = undefined; mate.mind.shakeUntil = this.t + 0.9; }
+      }
+      this.emit({ kind: "info", who: you.id, to: mate?.id, text: ok ? "call-yes" : "call-no" });
+      return c;
+    };
+    if (!mate) return answer(false, o?.keeper ? "Keeper's ball" : o ? "Their ball" : "Nobody near it");
+    // from the ball (at his feet, or where he'll take it) to where your run takes you
+    const from = o === mate ? { x: b.x, y: b.y } : (this.intercept(mate) ?? { x: b.x, y: b.y });
+    const to = { x: you.x + you.vx * CALL_LEAD_S, y: you.y + you.vy * CALL_LEAD_S };
+    const len = Math.hypot(to.x - from.x, to.y - from.y);
+    if (len > CALL_RANGE) return answer(false, "Too far");
+    for (const q of this.players) {
+      if (!q.active || !this.hostile(you, q)) continue;
+      // the nearest point on the lane, past his first stride and short of you
+      const t = len > 0.01 ? Math.max(0, Math.min(1, ((q.x - from.x) * (to.x - from.x) + (q.y - from.y) * (to.y - from.y)) / (len * len))) : 0;
+      if (t < 0.08 || t > 0.94) continue;
+      if (Math.hypot(from.x + (to.x - from.x) * t - q.x, from.y + (to.y - from.y) * t - q.y) < CALL_LANE) return answer(false, "No lane");
+    }
+    return answer(true, o === mate ? "Playing you in" : "He'll find you");
+  }
+
   private doAction(p: P3, a: Action3) {
     const b = this.ball;
     const dBall = Math.hypot(b.x - p.x, b.y - p.y);
+    if (a.kind === "call") { this.callForBall(p); return; }
     if (a.kind === "shoot") {
       if ((this.owner === p.id || (!this.owner && dBall < 1.6)) && b.z < REACH_JUMP_Z) this.shoot(p, a.dir, a.pull, a.contact);
       return;
@@ -498,7 +568,7 @@ export class World {
     const o = this.get(this.owner);
     if (o && !o.keeper && this.hostile(p, o) && dBall < 1.5) { this.tackleBy(p, o); return; }
     if (!this.owner && dBall < 1.3 && b.z < 1.8) { this.receive(p); return; }
-    if (o && !this.hostile(p, o) && !o.human) { o.mind.call = this.t; this.emit({ kind: "info", who: p.id, text: "call" }); }
+    if (o && !this.hostile(p, o) && !o.human) { o.mind.callUntil = this.t + 1.5; this.emit({ kind: "info", who: p.id, text: "call" }); }
   }
 }
 

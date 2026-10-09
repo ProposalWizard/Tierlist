@@ -1,0 +1,17 @@
+3D PEOPLE — where these files come from
+
+player.glb, player-buzz.glb, player-long.glb, manager.glb, anims.glb
+  The approved 3D characters (Oct 2026), generated with Higgsfield for
+  Knowitball and made small by scripts/people3d/build_people3d.py.
+
+toon-p1.glb .. toon-p6.glb, toon-mgr.glb, toon-mgr2.glb (+ toon-h1..h6.webp, the Settings pictures)
+  "Style A" people (9 Oct 2026): six footballers and two managers in suits.
+  Concept pictures made with Higgsfield's image model and turned into 3D
+  with Higgsfield (Tripo H3.1 image to 3D) for Knowitball, rigged to the
+  MakeHuman skeleton the game already uses (tools/modeltest/fit.py), then
+  scaled to 1.83 m, fingers weighted, given a grey kit texture and a
+  kit/skin/hair mask by scripts/people3d/build_toon_bodies.py. Packed by
+  scripts/perf3d/shrink-models.mjs. Sources: tools/modeltest/p1..p6, mgr,
+  mgr2. Invented people: no real player's likeness, no real kit or brand.
+  (The earlier C1-C3 bodies were replaced by these; their sources stay in
+  tools/modeltest/c1..c3.)

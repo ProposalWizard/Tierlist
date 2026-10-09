@@ -18,7 +18,7 @@
  * Pitch metres, the engine's own frame: x across (0..68, goal centre 34),
  * y out from the goal line (goal line at 0), z up.
  */
-import { createContext } from "react";
+import { createContext, type ReactNode } from "react";
 import type { Facing, ScenarioKind, Vec2, Viewport, SaveKind } from "./canvasEngine";
 import type { Tilt } from "./cameraTilt";
 
@@ -157,6 +157,13 @@ export interface EngineFrameObserver {
   attach?: (wrap: HTMLDivElement, canvas: HTMLCanvasElement) => void | (() => void);
   /** Called after every frame the 2D picture draws. Read only: never change what it hands you. */
   onFrame: (f: EngineFrame) => void;
+  /**
+   * Hold the match (the in-match Settings is open): no step, no draw, the
+   * commentary waits. Lifting it carries on exactly where it stopped.
+   */
+  hold?: boolean;
+  /** Small buttons the screen puts in the match's stats bar, by the speaker (the 3D/2D switch, the cog). */
+  chrome?: ReactNode;
 }
 
 export const EngineFrameContext = createContext<EngineFrameObserver | null>(null);

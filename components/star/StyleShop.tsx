@@ -354,7 +354,7 @@ const PHONE_APPS: { icon: string; name: string; what: string; bg: [string, strin
   { icon: "🛒", name: "App Store", what: "More apps as you go up", bg: ["#60a5fa", "#1d4ed8"] },
 ];
 
-function PhoneOpens() {
+export function PhoneOpens() {
   return (
     <div className="mt-2 rounded-xl bg-white/[0.05] p-2 ring-1 ring-white/10">
       <div className="mb-1.5 px-0.5 text-[10px] font-black uppercase tracking-widest text-fuchsia-300">What you get</div>
@@ -379,7 +379,7 @@ function PhoneOpens() {
 }
 
 /** How far you are from affording it: a bar, what is missing, and how long. */
-function SaveUp({ have, need, wage }: { have: number; need: number; wage: number }) {
+export function SaveUp({ have, need, wage }: { have: number; need: number; wage: number }) {
   const short = Math.max(0, need - have);
   const pct = Math.max(3, Math.min(100, (have / need) * 100));
   const weeks = weeksOfWallet(short, wage);

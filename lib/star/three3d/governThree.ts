@@ -17,6 +17,7 @@
 import type * as THREE from "three";
 import { Governor, governedPixelRatio, type GovRung } from "./governor";
 import type { Quality3d } from "./quality";
+import { installShadowCache } from "./shadowCache";
 
 /** People further than this from the camera stop casting on the lite rung (metres; 0 = none cast). */
 export const LITE_CAST_M = 0;
@@ -101,6 +102,8 @@ export function governScene(T: typeof import("three"), o: {
   onTier?: (t: Quality3d, why: "down" | "up" | "start") => void;
 }): GovernedScene {
   if (!TMP) TMP = new T.Vector3();
+  // the still things' shadows drawn once and kept; people from a lighter shadow body (shadowCache.ts)
+  installShadowCache(T, o.renderer);
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
   let base = o.basePR ?? o.renderer.getPixelRatio();
   let people = collectPeople(o.scene);

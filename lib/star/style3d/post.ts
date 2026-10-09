@@ -134,6 +134,8 @@ void main() {
 
 export interface StylePost {
   render(scene: any, camera: any, look: PostLook, full: boolean, burst?: number, burstColor?: string, impact?: number, lite?: boolean): void;
+  /** Free the GPU pictures (they come back by themselves on the next render). */
+  release(): void;
   dispose(): void;
 }
 
@@ -207,6 +209,10 @@ export function makeStylePost(T: any, renderer: any): StylePost {
       u.burst.value = burst * on; u.impact.value = impact; u.burstColor.value.set(burstColor).convertLinearToSRGB();
       u.tint.value.set(...look.tint); u.lift.value.set(...look.lift);
       renderer.render(qs, qc);
+    },
+    release() {
+      rts.lin.dispose(); rts.near.dispose();
+      rts.lin.depthTexture?.dispose(); rts.near.depthTexture?.dispose();
     },
     dispose() {
       rts.lin.dispose(); rts.near.dispose();

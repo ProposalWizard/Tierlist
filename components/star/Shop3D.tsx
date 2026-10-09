@@ -30,6 +30,7 @@ import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
+import { wornAt } from "@/lib/star/home3d/outfits";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -143,6 +144,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             skin: career ? skinToneHex(career.player.skinTone) : undefined,
             hair: career ? hairColourHex(career.player.hairColour) : undefined,
             hairStyle: career ? resolveHairStyle(career.player.hairStyle) : undefined,
+            // the clothes from your home's wardrobe (lib/star/home3d/outfits.ts)
+            worn: career ? wornAt(career, "shop") : undefined,
           },
         });
         let c: ShopController;
@@ -330,7 +333,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                 <div style={{ fontSize: 21, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
               </div>
               <div style={{ fontSize: 11, fontWeight: 800, color: MUTED, marginTop: 1 }}>
-                {isModel ? `3D model · level ${item.modelLevel} shown` : item.picture ? `Picture of level ${levelNo}` : `${open.items.length > 1 ? "" : "Three cans"}`}
+                {isModel ? (item.modelLevel != null ? `3D model · level ${item.modelLevel} shown` : "3D model") : item.picture ? `Picture of level ${levelNo}` : `${open.items.length > 1 ? "" : "Three cans"}`}
                 {open.items.length > 1 ? ` · ${Math.min(itemIx, open.items.length - 1) + 1} of ${open.items.length}` : ""}
               </div>
             </div>

@@ -56,7 +56,7 @@ function stripToAnimation(buf) {
   return out.buffer;
 }
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
-const QS = new URLSearchParams(location.search); const BODY = QS.get("body") || "people3d"; const FIT = { s: +(QS.get("s") || 1), dy: +(QS.get("dy") || 0) };
+const QS = new URLSearchParams(location.search); const BODY = QS.get("body") || "people3d"; const FILE = QS.get("file"); const FIT = { s: +(QS.get("s") || 1), dy: +(QS.get("dy") || 0) };
 const parse = (buf) => new Promise((res, rej) => loader.parse(buf, "/assets/", res, rej));
 
 // ── Renderer ──
@@ -85,8 +85,27 @@ function setCamera(tiltDeg) {
 
 // ── Characters ──
 const chars = {};
+/** A packed Style A body: positions come quantized with extras.quant (as people3d.ts dequantize). */
+function dequantizeBody(gltf) {
+  const q = gltf.scene.userData.quant; if (!q) return;
+  let body = null; gltf.scene.traverse((o) => { if (o.isSkinnedMesh) body = o; });
+  const g = body.geometry, pos = g.getAttribute("position"), n = pos.count;
+  const P = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { P[i * 3] = pos.getX(i) * q.scale + q.offset[0]; P[i * 3 + 1] = pos.getY(i) * q.scale + q.offset[1]; P[i * 3 + 2] = pos.getZ(i) * q.scale + q.offset[2]; }
+  g.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  const nor = g.getAttribute("normal");
+  if (nor) { const N = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const x = nor.getX(i), y = nor.getY(i), z = nor.getZ(i), l = Math.hypot(x, y, z) || 1; N[i * 3] = x / l; N[i * 3 + 1] = y / l; N[i * 3 + 2] = z / l; } g.setAttribute("normal", new THREE.BufferAttribute(N, 3)); }
+  const uv = g.getAttribute("uv");
+  if (uv) { const U = new Float32Array(n * 2); for (let i = 0; i < n; i++) { U[i * 2] = uv.getX(i); U[i * 2 + 1] = uv.getY(i); } g.setAttribute("uv", new THREE.BufferAttribute(U, 2)); }
+  g.computeBoundingBox(); g.computeBoundingSphere();
+  const D = new THREE.Matrix4().makeScale(q.scale, q.scale, q.scale).setPosition(q.offset[0], q.offset[1], q.offset[2]);
+  const Dinv = D.clone().invert();
+  for (const m of body.skeleton.boneInverses) m.multiply(Dinv);
+}
 async function loadChar(name, file, kitTest, keeper = false) {
   const gltf = await parse(await fetchBuf(file));
+  dequantizeBody(gltf);
+  const toonMask = gltf.scene.userData.toon ? (() => { let m = null; gltf.scene.traverse((o) => { if (o.isSkinnedMesh) m = o.material.aoMap; }); return m; })() : null;
   const holder = new THREE.Group();   // facing + dive roll live here
   const inner = gltf.scene;           // mirroring lives here
   holder.add(inner);
@@ -124,15 +143,18 @@ async function loadChar(name, file, kitTest, keeper = false) {
   }
   g.setAttribute("aRegion", new THREE.BufferAttribute(region, 1));
   const mat = skinned.material;
+  // Style A: the kit is the mask's red channel (build_toon_bodies.py), not a colour guess
+  if (toonMask) { mat.aoMap = null; mat.userData.toonMask = { value: toonMask }; }
   mat.emissiveMap = null; mat.emissive = new THREE.Color(0);
   mat.metalnessMap = null; mat.roughnessMap = null; mat.metalness = 0; mat.roughness = 0.78;
   const uniforms = { uMode: { value: 0 } };
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uMode = uniforms.uMode;
+    if (mat.userData.toonMask) sh.uniforms.uToonMask = mat.userData.toonMask;
     sh.vertexShader = sh.vertexShader
       .replace("void main() {", "attribute float aRegion;\nvarying float vRegion;\nvoid main() {\n vRegion = aRegion;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("void main() {", "uniform float uMode;\nvarying float vRegion;\nfloat gKit = 0.0; float gReg = 0.0;\nvoid main() {")
+      .replace("void main() {", (mat.userData.toonMask ? "uniform sampler2D uToonMask;\n" : "") + "uniform float uMode;\nvarying float vRegion;\nfloat gKit = 0.0; float gReg = 0.0;\nvoid main() {")
       .replace("#include <map_fragment>", `#include <map_fragment>
         {
           vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0/2.2));
@@ -141,7 +163,7 @@ async function loadChar(name, file, kitTest, keeper = false) {
           gReg = floor(vRegion + 0.5);
           if (gReg > 5.5 && gReg < 6.5) { gReg = 1.0; diffuseColor.rgb = vec3(0.86); gKit = 1.0; } // keeper: long sleeves
           else if (gReg > 6.5) { gReg = 9.0; diffuseColor.rgb = vec3(0.72); } // keeper: light gloves
-          bool kitLike = sat < ${kitTest.sat.toFixed(3)} && mx > ${kitTest.v.toFixed(3)};
+          bool kitLike = ${toonMask ? "texture2D(uToonMask, vMapUv).r > 0.5" : `sat < ${kitTest.sat.toFixed(3)} && mx > ${kitTest.v.toFixed(3)}`};
           if (gReg > 0.5 && gReg < 3.5 && kitLike) { gKit = 1.0; diffuseColor.rgb = vec3(0.86); }
           else if (gReg > 3.5 && gReg < 4.5) { diffuseColor.rgb = vec3(0.022, 0.024, 0.028); }
           else if (gReg > 4.5 && kitLike) { diffuseColor.rgb = vec3(0.72); }
@@ -326,9 +348,9 @@ function timesFor(c, clip) {
 window.bakerReady = false;
 let ready = (async () => {
   setCamera(CFG.tilt);
-  const p = await loadChar("player", "/star/" + BODY + "/player.glb", { sat: 0.16, v: 0.62 });
+  const p = await loadChar("player", FILE || "/star/" + BODY + "/player.glb", { sat: 0.16, v: 0.62 });
   restBones(p);
-  const k = await loadChar("keeper", "/star/" + BODY + "/player.glb", { sat: 0.16, v: 0.62 }, true);
+  const k = await loadChar("keeper", FILE || "/star/" + BODY + "/player.glb", { sat: 0.16, v: 0.62 }, true);
   restBones(k);
   scene.add(p.holder);
   window.__anims = (await parse(await fetchBuf("/star/people3d/anims.glb"))).animations; installClips(THREE, chars, window); window.bakerReady = true;
@@ -592,6 +614,177 @@ window.bakeNew = async () => {
     mc.putImageData(im, 0, 0); }
   return { "atlas-1.webp": atl.col.toDataURL("image/webp", 0.86), "mask-1.png": atl.mask.toDataURL("image/png"), "frag.json": JSON.stringify(frag) };
 };
+/**
+ * STYLE A RE-SKIN (Harry, 9 Oct 2026: "adjust the current 2D to the new Style A
+ * without changing gameplay/animations at all"). Every cell in index.json is
+ * baked again on the Style A body and drawn into the SAME rectangle of a
+ * same-size atlas, cropped at the SAME anchor. index.json is not written, so
+ * frames, cell sizes, anchors, fps and facings stay exactly as they are.
+ * Poses: idle/ready, jog and celebrate from people3d/anims.glb (atlas-0's own,
+ * checked by spike); atlas-1's keyframed clips (defs.js) as baked; sprint, kick
+ * and the keeper's dives from the nearest capture (anims3d/mocap.glb), because
+ * atlas-0's own clip files were never committed.
+ */
+const RESKIN0 = {
+  player: {
+    idle: { file: "anim:idle", from: 0, to: 2.4 }, jog: { file: "anim:jog", inPlace: true },
+    sprint: { file: "mocap:sprint", inPlace: true }, kick: { file: "mocap:kick_r", fromF: 0.25, toF: 0.75 },
+    celebrate: { file: "anim:celebrate" },
+  },
+  keeper: {
+    ready: { file: "anim:idle", from: 0, to: 2.4 }, jog: { file: "anim:jog", inPlace: true },
+    diveR: { file: "mocap:dive_right", fromF: 0.15, toF: 0.65 }, diveL: { file: "mocap:dive_left", fromF: 0.15, toF: 0.65 },
+  },
+};
+async function reskinClip(c) {
+  if (c.file.startsWith("mocap:")) {
+    if (!window.__mocap) window.__mocap = (await parse(stripToAnimation(await fetchBuf("/star/anims3d/mocap.glb")))).animations;
+    const clip = window.__mocap.find((a) => a.name === c.file.slice(6)).clone();
+    // the capture travels; a sprite stands on its anchor: the hips' ground position pinned to the rest one
+    for (const tr of clip.tracks) { if (!/Hips\.position$/.test(tr.name)) continue; const v = tr.values, n = tr.times.length; for (let i = 0; i < n; i++) { v[i * 3] = 0; v[i * 3 + 2] = 0; } }
+    return clip;
+  }
+  return loadClip(c.file, c);
+}
+/** One cell, cropped to a given rectangle at the given anchor. */
+function bakeFixed(ch, clip, time, facing, dive, w, h, ax, ay) {
+  pose(ch, clip, time, facing, dive);
+  const col = outlined(renderPass(ch, 0));
+  const mask = renderPass(ch, 1);
+  const b = { x: Math.round(anchorX - ax), y: Math.round(anchorY - ay), w, h };
+  // A pose that would spill out of the Old rectangle is drawn a little smaller about
+  // the foot point (never moved), so nothing is ever cut by the cell's edge.
+  const t = trimBox(col);
+  const ext = (lo, hi, a, rlo, rhi) => Math.min(lo < rlo ? (a - rlo) / Math.max(1e-6, a - lo) : 1, hi > rhi ? (rhi - a) / Math.max(1e-6, hi - a) : 1);
+  const k = Math.min(1, ext(t.x, t.x + t.w, anchorX, b.x + 1, b.x + w - 1), ext(t.y, t.y + t.h, anchorY, b.y + 1, b.y + h - 1));
+  const fit = (img) => {
+    if (k >= 0.999) return crop(img, b);
+    const src = small(img.width, img.height); src.getContext("2d").putImageData(img, 0, 0);
+    const o = small(w, h); const g = o.getContext("2d");
+    g.translate(anchorX - b.x, anchorY - b.y); g.scale(k, k); g.translate(-anchorX, -anchorY);
+    g.drawImage(src, 0, 0);
+    return o;
+  };
+  return { color: fit(col), mask: fit(mask), k };
+}
+/** A look at one pose, uncropped (for checking a substitute clip's facing and travel). */
+window.probe = async (file, frac, facing) => {
+  await ready; show("player");
+  const clip = await reskinClip({ file });
+  pose(chars.player, clip, frac * clip.duration, facing, null);
+  const col = outlined(renderPass(chars.player, 0));
+  const b = trimBox(col);
+  const c = small(col.width, col.height); c.getContext("2d").putImageData(col, 0, 0);
+  const g = c.getContext("2d"); g.fillStyle = "#f00"; g.fillRect(anchorX - 2, anchorY - 2, 4, 4);
+  return { url: c.toDataURL(), b, ax: anchorX, ay: anchorY };
+};
+window.fitHeight = async (standH) => {
+  // scale the body so a standing man (idle, facing down) is as tall as atlas-0's
+  await ready;
+  show("player");
+  const clip = await reskinClip(RESKIN0.player.idle);
+  for (let k = 0; k < 3; k++) {
+    pose(chars.player, clip, 0, Math.PI / 2, null);
+    const b = trimBox(outlined(renderPass(chars.player, 0)));
+    const ay = anchorY - b.y;
+    FIT.s *= standH / ay;
+  }
+  return FIT.s;
+};
+window.reskin = async (index, which) => {
+  await ready;
+  const atl = which === 0 ? index.atlas : index.atlases[String(which)];
+  const col = small(atl.w, atl.h), msk = small(atl.w, atl.h);
+  const cc = col.getContext("2d"), mc = msk.getContext("2d");
+  mc.fillStyle = "#000"; mc.fillRect(0, 0, atl.w, atl.h);
+  let cells = 0; const shrunk = {};
+  for (const [cn, cv] of Object.entries(index.chars)) {
+    show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
+    for (const [nm, cl] of Object.entries(cv.clips)) {
+      if ((cl.atlas ?? 0) !== which || !cl.cells) continue;
+      const dirs = cl.dirs === 8 ? DIRS8 : DIRS4;
+      let clip, times, dives;
+      if (which === 0) {
+        const c = RESKIN0[cn][nm]; clip = await reskinClip(c);
+        const from = c.fromF != null ? c.fromF * clip.duration : (c.from ?? 0), to = c.toF != null ? c.toF * clip.duration : (c.to ?? clip.duration);
+        times = timesFor({ ...c, frames: cl.frames, loop: cl.loop, from, to }, clip);
+        dives = (i) => (nm === "diveR" || nm === "diveL") ? null : null;
+      } else {
+        const def = window.CLIPS[nm]; clip = await loadClip("js:" + nm, {});
+        times = Array.from({ length: cl.frames }, (_, i) => i);
+        dives = (i) => diveFor(def, i, cl.frames);
+      }
+      dirs.forEach((fac, di) => { for (let i = 0; i < cl.frames; i++) {
+        const [x, y, w, h, ax, ay] = cl.cells[di * cl.frames + i];
+        const f = bakeFixed(chars[cn], clip, times[i], fac, dives(i), w, h, ax, ay);
+        cc.drawImage(f.color, x, y); mc.drawImage(f.mask, x, y); cells++;
+        if (f.k < 0.999) shrunk[`${cn}.${nm}`] = Math.min(shrunk[`${cn}.${nm}`] ?? 1, +f.k.toFixed(2));
+      } });
+    }
+  }
+  { const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  return { color: col.toDataURL("image/webp", 0.88), mask: msk.toDataURL("image/png"), cells, shrunk };
+};
+
+/**
+ * STYLE A 2D PLAYERS (Harry, 9 Oct 2026: "remake the 2D frames but have it as an
+ * option in settings with the current 2D as the priority"). Every clip in the
+ * current index.json is baked again on the Style A body with its OWN cell sizes
+ * (trimmed to the new silhouette), the same clip names, frame counts, fps, loop,
+ * facings, strike frames and mirrors, into atlas-0a/mask-0a, atlas-1a/mask-1a
+ * and index-a.json. The current files are never written.
+ */
+window.rebakeA = async (index) => {
+  await ready;
+  const out = { 0: [], 1: [] };
+  const metas = {};
+  for (const [cn, cv] of Object.entries(index.chars)) {
+    show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
+    for (const [nm, cl] of Object.entries(cv.clips)) {
+      if (!cl.cells) continue;
+      const which = cl.atlas ?? 0;
+      const dirs = cl.dirs === 8 ? DIRS8 : DIRS4;
+      let clip, times, dives = () => null;
+      if (which === 0) {
+        const c = RESKIN0[cn][nm]; clip = await reskinClip(c);
+        const from = c.fromF != null ? c.fromF * clip.duration : (c.from ?? 0), to = c.toF != null ? c.toF * clip.duration : (c.to ?? clip.duration);
+        times = timesFor({ ...c, frames: cl.frames, loop: cl.loop, from, to }, clip);
+      } else {
+        const def = window.CLIPS[nm]; clip = await loadClip("js:" + nm, {});
+        times = Array.from({ length: cl.frames }, (_, i) => i);
+        dives = (i) => diveFor(def, i, cl.frames);
+      }
+      const cells = [];
+      for (const fac of dirs) for (let i = 0; i < cl.frames; i++) cells.push(bakeFrame(chars[cn], clip, times[i], fac, dives(i)));
+      out[which].push({ cn, nm, cells });
+    }
+  }
+  const files = {}, atlases = {};
+  for (const which of [0, 1]) {
+    const groups = out[which].map((g) => ({ clips: [{ cells: g.cells }] }));
+    const atl = pack(groups);
+    { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+      for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+      mc.putImageData(im, 0, 0); }
+    files[`atlas-${which}a.webp`] = atl.col.toDataURL("image/webp", 0.88);
+    files[`mask-${which}a.png`] = atl.mask.toDataURL("image/png");
+    atlases[which] = { color: `atlas-${which}a.webp`, mask: `mask-${which}a.png`, w: atl.w, h: atl.h };
+  }
+  // the same index, cells swapped for the new ones
+  const idx = JSON.parse(JSON.stringify(index));
+  idx.atlas = atlases[0];
+  idx.atlases = { ...(idx.atlases ?? {}), 1: atlases[1] };
+  for (const which of [0, 1]) for (const g of out[which]) {
+    idx.chars[g.cn].clips[g.nm].cells = g.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]);
+  }
+  const standing = idx.chars.player.clips.idle.cells[2 * idx.chars.player.clips.idle.frames];
+  idx.standH = standing[5];
+  idx.style = "styleA";
+  return { files, index: idx };
+};
+
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */
 function pairSheet(a, b, labels) {
   const n = a.length, cw = 130, rh = 330;

@@ -26,6 +26,8 @@
  * Facing is a SCREEN angle, canvas style: 0 = right, PI/2 = down the screen.
  */
 
+import { spriteIndexFile } from "./sprites2dLook";
+
 export type SpriteChar = "player" | "keeper";
 export type SpriteClip =
   | "idle" | "jog" | "sprint" | "kick" | "celebrate" // player
@@ -108,7 +110,8 @@ export function loadSprites(base: string = SPRITE_BASE): Promise<boolean> {
   if (loading) return loading;
   loading = (async () => {
     try {
-      const r = await fetch(base + "index.json");
+      // Settings → Look → "2D players": Current reads index.json, Style A its own index (sprites2dLook.ts)
+      const r = await fetch(base + spriteIndexFile());
       if (!r.ok) return false;
       const idx = (await r.json()) as SpriteIndex;
       const [ci, mi] = await Promise.all([loadImage(base + idx.atlas.color), loadImage(base + idx.atlas.mask)]);
