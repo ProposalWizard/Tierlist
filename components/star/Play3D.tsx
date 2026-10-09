@@ -27,20 +27,22 @@ import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerI
 import { faceFromUrl } from "@/lib/star/three3d/faceFromUrl";
 import { makeRng } from "@/lib/star/play3d/rng";
 import { skillsOf, type Skills3 } from "@/lib/star/play3d/player";
-import type { DrillDef, DrillSession } from "@/lib/star/play3d/drills";
+import type { DrillDef, DrillSession, DrillTrain } from "@/lib/star/play3d/drills";
+import { applyLevelResult, highestUnlocked, starsOf } from "@/lib/star/trainingLevels";
 import type { Person3 } from "@/lib/star/play3d/freeRoam";
 import type { Play3DController, Play3DPerson } from "@/lib/star/play3d/scene";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
+import BackPill3D from "./BackPill3D";
 
 const SKINS = ["#8d5524", "#c68642", "#e0ac69", "#5c3a1e", "#f1c27d"];
 const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
 
-export interface Play3DResult extends GameResult { drill: string }
+export interface Play3DResult extends GameResult { drill: string; /** A training drill (Pace Sprint): the level and stars for the career to bank. */ train?: DrillTrain }
 
 /** A squad player as a 3D man: his real numbers (missing ones from his overall), his photo, his position. */
 function personOf(p: NonNullable<CareerState["squad"]>[number], i: number): Person3 {
   const ov = p.overall ?? 65;
-  const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending };
+  const sk: Skills3 = { overall: ov, pace: p.pace ?? ov, power: p.shooting ?? ov, technique: p.dribbling ?? ov, passing: p.passing, shooting: p.shooting, dribbling: p.dribbling, defending: p.defending, physical: p.physical };
   return { id: p.id ?? `mate${i}`, name: p.name.split(" ").slice(-1)[0], skills: sk, photo: p.imageUrl ?? fakeFaceFor(p.id ?? `mate${i}`), position: p.position };
 }
 
@@ -63,7 +65,9 @@ function castFrom(career: CareerState, seed: number): { you: Person3; mates: Per
   const s = career.skills;
   const you: Person3 = {
     id: "you", name: career.player.lastName || "You",
-    skills: { overall: Math.round((s.pace + s.power + s.technique) / 3), pace: s.pace, power: s.power, technique: s.technique, passing: s.vision, shooting: Math.round((s.power + s.technique) / 2), dribbling: s.technique },
+    skills: { overall: Math.round((s.pace + s.power + s.technique) / 3), pace: s.pace, power: s.power, technique: s.technique, passing: s.vision, shooting: Math.round((s.power + s.technique) / 2), dribbling: s.technique,
+      // the career has no physical/stamina stat for you: your strength (power) stands in for fitness (the sprint bar)
+      physical: s.power },
     photo: career.player.portrait,
   };
   const rng = makeRng(seed);
@@ -91,7 +95,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 }) {
   const team = career.relationships.team;
   const cast = useMemo(() => castFrom(career, seed), [career, seed]);
-  const session = useMemo<DrillSession>(() => drill.start!({ seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options }), [drill, seed, cast, mode, options]);
+  const session = useMemo<DrillSession>(() => drill.start!({
+    seed, you: cast.you, mates: cast.mates, squad: cast.squad, mode, options,
+    paceLevel: highestUnlocked(starsOf(career, "pace")),
+    previewTrain: (t) => applyLevelResult(career, t.skill, t.level, t.stars).gained,
+  }), [drill, seed, cast, mode, options]);
   const [hud, setHud] = useState(() => session.hud());
   // team-mates for the pass: a name over the one a tap passes to, and an edge marker for any out of the picture
   const [marks, setMarks] = useState<{ id: string; name: string; x: number; y: number; off: boolean; aim: boolean }[]>([]);
@@ -248,6 +256,9 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [w]);
 
+  // the controls' hint by pointer type (Harry: "designed for both PC and phone"): a mouse means a keyboard, a finger means the stick
+  const [fine, setFine] = useState(false);
+  useEffect(() => { try { setFine(window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches); } catch { /* no matchMedia: the phone hint */ } }, []);
   const [vw, setVw] = useState(0);
   useEffect(() => { setVw(window.innerWidth); }, []);
   const [vh, setVh] = useState(0);
@@ -256,7 +267,8 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   const mins = hud.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : null;
 
   return (
-    <GameShell title={drill.name} who="Team" current={team} tone="#38bdf8" onBack={!result ? onExit : undefined}>
+    <GameShell title={drill.name} who="Team" current={team} tone="#38bdf8">
+      <BackPill3D onBack={onExit} />
       <div className="mb-2 flex items-end justify-between gap-2" data-play3d-hud={drill.id}>
         <div>
           <div className="text-[34px] font-black leading-none" data-play3d-score>{hud.big}</div>
@@ -316,7 +328,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         ))}
         {three === "loading" &&<div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint>{session.hint}</div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-black/45 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-white" style={{ textShadow: "0 1px 4px #000" }} data-play3d-hint data-pointer={fine ? "fine" : "coarse"}>{fine && session.hintKeys ? session.hintKeys : session.hint}</div>
       </div>
       {!!session.buttons?.length && !result && (
         <div className="mt-2 flex gap-2">

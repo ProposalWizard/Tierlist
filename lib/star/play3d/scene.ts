@@ -22,7 +22,7 @@ import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { motionLook } from "../motionLook";
-import { GAIT_BLEND, gaitEdges, loopRate, pickGait, sameFootTime, speedsForPace } from "../three3d/gait";
+import { GAIT_BLEND, MAX_LOOP_RATE, gaitEdges, loopRate, pickGait, sameFootTime, speedsForPace, strideLoop, type Gait } from "../three3d/gait";
 import type { KitColours } from "../shop3d/scene";
 import { makeWorldSeek } from "../frameStep";
 
@@ -397,11 +397,14 @@ export async function createPlay3DScene(
     }
     if (gaitsOn) {
       // you: the gait edges are your own speeds, and the sprint loop only while you really sprint
-      const edges = w.human && world.newFeel ? gaitEdges(speedsForPace(w.skills.pace)) : AI_EDGES;
+      // new feel: everyone's edges are his own pace's speeds (the computer players move on your rules)
+      const edges = world.newFeel ? gaitEdges(speedsForPace(w.skills.pace)) : AI_EDGES;
       let g: string = pickGait(b.state, sp / b.k, edges);
       if (w.human && world.newFeel && g === "sprint" && !w.sprinting) g = "run";
       if (w.human && world.newFeel && w.sprinting && (g === "run" || b.state === "sprint") && sp / b.k > edges[2]) g = "sprint";
       if (world.owner === w.id && sp > 1.2 && g === "jog") return "dribble_run";
+      // never past 1.3× a loop's own speed: faster than that, the longer stride of the next loop up
+      if (g !== "idle") g = strideLoop(g as Gait, sp, (n) => info(n)?.speed as number | undefined, b.k).loop;
       return g;
     }
     if (sp < 0.35) return "idle";
@@ -552,7 +555,7 @@ export async function createPlay3DScene(
     }
     // loops at the speed he's really going
     const ls = gaitsOn && LOCO.has(b.state) ? null : loopSpeed[b.state];
-    if (gaitsOn && LOCO.has(b.state)) { const a = b.p.actions[b.state]; if (a) a.timeScale = loopRate(sp, info(b.state)?.speed as number | undefined, b.k, 0.5, 1.7); }
+    if (gaitsOn && LOCO.has(b.state)) { const a = b.p.actions[b.state]; if (a) a.timeScale = loopRate(sp, info(b.state)?.speed as number | undefined, b.k, 0.5, b.state === "dribble_run" ? 1.7 : MAX_LOOP_RATE); }
     if (ls) { const a = b.p.actions[b.state]; if (a) a.timeScale = Math.max(0.6, Math.min(b.state === "sprint" ? 1.35 : 1.9, sp / ls)); }
     // dribbling: keep the clip's touch on the World's touch (each touch nudges the stride into step)
     if (b.state === "dribble_run" && fresh && w.act === "touch") {
