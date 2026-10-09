@@ -49,3 +49,40 @@ items/boot-hf.glb, items/boot-classic-hf.glb, items/boot-speed-hf.glb (9 Oct 202
   with Higgsfield's Tripo H3.1 image-to-3D, simplified to about 22-30k
   triangles with textures at 1024 px, then packed by
   scripts/perf3d/shrink-models.mjs. No logos, stripes or text.
+
+items/car-hatch-hf.glb, items/car-suv-hf.glb, items/car-sports-hf.glb, items/car-classic-hf.glb, items/car-super-hf.glb (9 Oct 2026, 3D look H only)
+  The other five cars shown in the 3D shop (Hatchback, Luxury SUV, Sports Car,
+  Classic Car, Supercar). Made for this game: a picture of each unbranded car,
+  painted in its shop colour, generated with Higgsfield (gpt_image_2_5), turned
+  into a 3D model with Higgsfield's Tripo H3.1 image-to-3D, simplified to about
+  23k triangles with textures at 1024 px, then packed by
+  scripts/perf3d/shrink-models.mjs. No logos, badges or plates.
+
+items/watch-smart-hf.glb, items/watch-gold-hf.glb, items/watch-rolex-hf.glb, items/jewel-silver-hf.glb, items/jewel-diamond-hf.glb (9 Oct 2026, 3D look H only)
+  The counter's watches and jewellery (Smartwatch, Gold Watch, Diamond Rolex,
+  Silver Chain, Diamond Necklace). Made for this game the same way (Higgsfield
+  picture, Tripo H3.1, simplified to about 3-4.5k triangles, textures 1024 px,
+  packed). The watches stand on a display cushion, the necklaces on a velvet
+  bust. No logos, names or text on any dial.
+
+items/boot-starter-hf.glb, items/boot-control-hf.glb, items/boot-elite-hf.glb, items/boot-maestro-hf.glb (9 Oct 2026, 3D look H only)
+  Four more unbranded football boots (a plain budget boot, a padded boot with a
+  fold-over tongue, a sock-collar boot, a laceless ridged boot), made the same
+  way (about 21k triangles, textures 1024 px). No logos, stripes or text.
+
+items/bike-hf.glb, items/jet-hf.glb (9 Oct 2026, 3D look H only)
+  The Motorbike and the Private Jet, shown on the turntable. Made for this game
+  the same way (Higgsfield picture of an unbranded sports bike / business jet,
+  Tripo H3.1, about 17-21k triangles, textures 1024 px, packed). The jet is
+  shown as a 1:4 display model. No logos, registrations or text.
+
+items/home-flat1-hf.glb, home-flat2-hf.glb, home-penthouse-hf.glb, home-stable-hf.glb, home-house1-hf.glb, home-villa-hf.glb, home-house2-hf.glb, home-estate-hf.glb, home-island-hf.glb (9 Oct 2026, 3D look H only)
+  Scale models of the nine homes (Studio Flat … Private Island) on the homes'
+  model table. Made for this game the same way (Higgsfield picture of an
+  architectural scale model, Tripo H3.1, about 12k triangles, textures
+  768-1024 px, packed). No text or signs.
+
+items/can-kib-hf.glb (9 Oct 2026, 3D look H only)
+  The KIB can in the fridge: a picture of an unbranded slim drink can generated
+  with Higgsfield, Tripo H3.1, cut to about 310 triangles with 512 px textures,
+  tinted per tier in the game. No logos or words.
