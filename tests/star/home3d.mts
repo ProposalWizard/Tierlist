@@ -139,7 +139,7 @@ check(STARTER_APPS.includes("home-3d") && appInstalled({ unlocks: { apps: [] } }
 
 // ── Rooms (Harry, 9 Oct 2026: "the bigger the house the bigger the space/rooms") ──
 check(roomsFor("starter").length === 1 && roomsFor("starter")[0] === "main", "the starter flat stays one room");
-check(roomsFor("flat").length === 1, "the flat is one room");
+check(JSON.stringify(roomsFor("flat")) === JSON.stringify(["nook", "main"]), "the flat: a hallway nook by the front door, then its one room");
 check(roomsFor("penthouse").length === 3 && roomsFor("house").length === 4, "penthouse 3 rooms, house 4");
 check(JSON.stringify(roomsFor("house")) === JSON.stringify(["hallway", "lounge", "dressing", "trophy"]), "the house: hallway, lounge, dressing room, trophy room");
 for (const t of HOME_TIERS) check(JSON.stringify(roomsFor(t, "old")) === JSON.stringify(["main"]), `Old look: ${t} is the one room`);
@@ -309,6 +309,27 @@ check(homeStuffOf({ ownedItems: [] } as unknown as CareerState).cans === 0, "not
     check(!room.mirror, "Low: no live mirror in the dressing room");
     room.dispose();
   }
+  // every room of every tier has something built in it (no bare plinth-only room left)
+  for (const t of HOME_TIERS) for (const id of roomsFor(t)) {
+    const inp = { tier: t, rooms: roomsFor(t), kits: kit, slots: cabinetSlots(career, cabinetSize(t)), cars: carsOnDrive(career, 4), boots: bootChoices(career), casual: CASUAL_SETS, stuff: homeStuffOf(career) };
+    const room = buildRoom(env("medium"), inp, id);
+    check(stats(room.group).tris > 1000, `${t} ${id}: the room is furnished (${stats(room.group).tris} triangles)`);
+    room.dispose();
+  }
+  // the room camera: the boom stops at the wall along its own line, never through it
+  const { roomCamBoom, ROOM_CAM, openCamYaw } = await import("../../lib/star/home3d/scene");
+  { // just through a doorway on the south wall, facing in: the camera swings off the wall behind him
+    const y0 = 0; // straight behind him is +z, into the wall 1.2 m away
+    const y = openCamYaw(0, 1.5, y0, ROOM_CAM.back, 3, 2.7);
+    const boom = (yy: number) => roomCamBoom(0, 1.5, Math.sin(yy), Math.cos(yy), ROOM_CAM.back, 3, 2.7);
+    check(boom(y) > boom(y0) + 0.5 && Math.abs(y - y0) <= 1.21, `camera: backed onto a wall it swings round for room (${boom(y0).toFixed(2)} → ${boom(y).toFixed(2)} m)`);
+    check(openCamYaw(0, 0, 0, 3, 7, 7) === 0, "camera: with room behind him it stays straight behind");
+  }
+  check(Math.abs(roomCamBoom(0, 0, 0, 1, ROOM_CAM.back, 3, 3) - 3) < 1e-9, "camera: a wall 3 m behind cuts the boom to 3 m");
+  check(roomCamBoom(0, 0, 0, 1, 2, 3, 3) === 2, "camera: no wall in reach, the full boom");
+  check(roomCamBoom(0, 2.9, 0, 1, 4, 3, 3) === 0.6, "camera: backed onto a wall, the boom never goes under 0.6 m");
+  { const t = roomCamBoom(1, 1, Math.SQRT1_2, Math.SQRT1_2, 9, 3, 3); check(Math.abs(1 + t * Math.SQRT1_2 - 3) < 1e-9, "camera: on a slant, it stops where its own line meets the wall"); }
+  check(ROOM_CAM.back > 3.3 && ROOM_CAM.height > 2.35, "camera: further back and higher than before (3.3 m, 2.35 m)");
   if (process.env.HOME3D_TABLE || problems.length) console.log(table.join("\n"));
 }
 
