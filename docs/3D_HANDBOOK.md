@@ -569,13 +569,16 @@ head and build (`yourToonHead`); scenes load only their heads
 (`loadPeople3d(..., heads)`); the house wardrobe in a kit is your Style A player.
 
 **Not done (next):**
-- 2D match sprites. `node tools/sprites/new/bake-new.mjs reskin` re-bakes every
-  cell on a Style A body into the same rects and anchors, but it is not
-  shippable yet: atlas-0's sprint, kick and keeper dives came from GLB clips
-  that were never committed, and the Old cells are cropped tight to the Old
-  silhouette, so the Style A body overflows them (shrinking to fit gave scales
-  down to 0.3). Needs a decision: re-bake with a fresh index (new rects,
-  same frame counts and timings) or keep 2D Old.
+- 2D match players: DONE as an option (Harry: "remake the 2D frames but have
+  it as an option in settings with the current 2D as the priority"). Settings →
+  Look → "2D players: Current | Style A" (`lib/star/sprites2dLook.ts`), Current in
+  every preset. Style A reads `public/star/sprites/index-a.json` + `atlas-0a.webp`,
+  `atlas-1a.webp` and their masks, made by `node tools/sprites/new/bake-new.mjs styleA`:
+  own cell sizes, the same clips, frame counts, fps, facings and strike frames, a
+  standing man 45.3 px as today (`tests/star/spritesStyleA.mts`). The current
+  files are untouched. Sprint, kick and the keeper's dives are posed from the
+  nearest capture (`public/star/anims3d/mocap.glb`): their old clip files were
+  never committed. Next: judge those three on a phone.
 - Kit decals on the Style A shirt: the back number sits low (`uNumBox` comes
   from the kit lines; place it between the shoulder blades per head) and the
   shirt is flat colour (add the textured kit: weave, seams, collar trim).
