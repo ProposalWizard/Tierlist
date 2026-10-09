@@ -18,6 +18,7 @@ import type { Overlay } from "@/lib/star/cutscene/timeline";
 import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "@/lib/star/cutscene/beats";
+import { VOICE_LINES } from "@/lib/star/cutscene/voiceLines";
 
 const EMOTIONS: Emotion[] = ["joy", "pride", "relief", "defiance", "anger", "sadness", "shock", "tension", "calm", "gratitude", "hunger", "inspired"];
 
@@ -64,7 +65,11 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
     (async () => {
       try {
         const { createDirector } = await import("@/lib/star/cutscene/director");
-        const d = await createDirector(el, script, { style: styleRef.current, onOverlay: (o) => { setOv(o); setTime(o.t); } });
+        const d = await createDirector(el, script, {
+          style: styleRef.current, onOverlay: (o) => { setOv(o); setTime(o.t); },
+          // recorded lines play (scripts/cutscene/voice.py); other cues have no sound file yet
+          onSound: (cue, vol) => { if (!VOICE_LINES[cue]) return; try { const au = new Audio(`/sfx/cut-${cue}.mp3`); au.volume = Math.min(1, vol); void au.play().catch(() => {}); } catch { /* no sound */ } },
+        });
         if (dead) { d.dispose(); return; }
         dir.current = d;
         const t = new URLSearchParams(window.location.search).get("t");

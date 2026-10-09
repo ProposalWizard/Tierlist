@@ -15,6 +15,7 @@
  */
 import type { Act, CastMember, Emotion, EventKind, Expression, LocationId, PoseHold, PropSpec, ShotSpec, StoryEvent, Target, Track, Vec3 } from "./types";
 import type { Rng } from "./math";
+import { VOICE_LINES } from "./voiceLines";
 
 export type ShotPurpose = "establish" | "action" | "detail" | "emotion" | "reaction" | "hero" | "two" | "pov" | "crowd" | "follow";
 
@@ -559,8 +560,9 @@ export const mentorWord: BeatDef = {
   weight: (e) => (e.kind === "mentor-advice" ? 1 : 0),
   build: (c, t) => {
     const Y = c.ids.you, M = c.ids.other ?? "mentor";
-    const line = c.ev.detail?.answer ?? "Talent gets you here. Hunger keeps you here.";
-    const talk = Math.max(2.4, 0.8 + line.length * 0.06);
+    const line = c.ev.detail?.answer ?? VOICE_LINES["mentor-line"].text;
+    const rec = Object.entries(VOICE_LINES).find(([, v]) => v.text === line);
+    const talk = rec ? rec[1].duration + 0.3 : Math.max(2.4, 0.8 + line.length * 0.06);
     const d = 1.6 + talk + 1.4 + 2.6;
     const tS = t + 1.6, tN = tS + talk, tH = tN + 0.2, tW = tN + 1.4;
     return {
@@ -570,9 +572,9 @@ export const mentorWord: BeatDef = {
         { type: "turn", actor: Y, at: t + 0.6, dur: 0.8, to: { actor: M } },
         { type: "look", actor: Y, at: t + 0.4, dur: d - 0.4, target: { actor: M, part: "eyes" }, amount: 0.95 },
         { type: "look", actor: M, at: t + 0.8, dur: tW - t, target: { actor: Y, part: "eyes" }, amount: 1 },
-        { type: "speak", actor: M, at: tS, dur: talk, line },
+        { type: "speak", actor: M, at: tS, dur: talk, line, cue: rec?.[0] },
         { type: "caption", at: tS, dur: talk + 0.3, text: line, style: "subtitle", speaker: "The Icon" },
-        { type: "sound", at: tS, cue: "mentor-line" },
+        ...(rec ? [{ type: "sound", at: tS, cue: rec[0] } as Track] : []),
         { type: "face", actor: M, at: t, expression: "focused", amount: 0.8 },
         { type: "face", actor: Y, at: tS, expression: "focused", amount: 0.9 },
         { type: "pose", actor: Y, at: tN - 0.1, dur: 1.6, pose: "nod", blendIn: 0.1 },

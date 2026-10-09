@@ -278,7 +278,7 @@ export interface PropTrack extends TrackBase {
 
 export interface FaceTrack extends TrackBase { type: "face"; actor: string; expression: Expression; dur?: number; amount?: number; blendIn?: number }
 export interface LookTrack extends TrackBase { type: "look"; actor: string; target: Target; dur: number; amount?: number; blendIn?: number; blendOut?: number }
-export interface SpeakTrack extends TrackBase { type: "speak"; actor: string; dur: number; line?: string }
+export interface SpeakTrack extends TrackBase { type: "speak"; actor: string; dur: number; line?: string; /** A recorded line (voiceLines.ts): the mouth and head move with its loudness. */ cue?: string }
 
 export interface CameraTrack extends TrackBase {
   type: "camera"; shot: ShotSpec; dur: number;

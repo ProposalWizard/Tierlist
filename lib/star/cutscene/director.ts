@@ -32,6 +32,7 @@ import { buildProp, type PropObj, type PropText } from "./props3d";
 import { createFx, type FxActive } from "./fx3d";
 import { applyPose, actorDir, type PoseCtx } from "./perform3d";
 import { makeSignature, signatureAt } from "./signature";
+import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
 
 export interface DirectorOptions {
@@ -280,8 +281,10 @@ export async function createDirector(container: HTMLElement, script: CutsceneScr
         const w = trackWeight({ at: ft.at, dur: ft.dur ?? 999, blendIn: ft.blendIn ?? 0.25, blendOut: 0.25 }, t);
         if (w > 0) a.setExpression(ft.expression, (ft.amount ?? 1) * w);
       }
-      const talking = (tracksOf(c.id, "speak") as SpeakTrack[]).some((s) => t >= s.at && t <= s.at + s.dur);
-      a.setMouth(talking ? 0.5 + 0.5 * noise1(t * 9, c.id.length) : 0);
+      const sp = (tracksOf(c.id, "speak") as SpeakTrack[]).find((s) => t >= s.at && t <= s.at + s.dur);
+      const vl = sp?.cue ? VOICE_LINES[sp.cue] : null;
+      // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
+      a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
       const bp = (t + c.id.length * 0.77) % 3.6;
       a.setBlink(bp < 0.12 ? Math.sin((bp / 0.12) * Math.PI) : 0);
       a.endFrame();

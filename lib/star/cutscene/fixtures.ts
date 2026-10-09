@@ -17,6 +17,7 @@
  */
 import type { CameraTrack, CutsceneScript, ShotSpec, StoryEvent, Target, Track } from "./types";
 import { compose } from "./generate";
+import { VOICE_LINES } from "./voiceLines";
 import { frameTracks } from "./cinema";
 import { goalCelebration, goalStrike, contractSlide, handshake, officeSeated, shirtPhoto, signContract, trophyLift, tunnelLineUp, walkOut, pressQuestion, pressAnswer, mentorWord } from "./beats";
 
@@ -152,7 +153,7 @@ function mentor(): CutsceneScript {
   });
   const [b0] = c.beats;
   const M: Target = { actor: "mentor" };
-  const tS = b0.at + 1.6, talk = Math.max(2.4, 0.8 + (ev.detail?.answer ?? "").length * 0.06), tN = tS + talk, tW = tN + 1.4;
+  const tS = b0.at + 1.6, talk = VOICE_LINES["mentor-line"].duration + 0.3, tN = tS + talk, tW = tN + 1.4;
   const cams: CameraTrack[] = [
     cam(0, tS, { preset: "two-shot", subject: Y, subject2: M, side: 1, move: "push" }, "He stops you"),
     cam(tS, talk * 0.6, { preset: "close", subject: M, subject2: Y, side: -1, lens: 70, move: "push" }, "His word"),

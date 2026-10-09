@@ -329,7 +329,8 @@ class StubActor implements CutsceneActor {
     this.exprTilt += (EXPR_HEAD[expr] ?? 0) * amount;
   }
   setBlink(c: number) { void c; }
-  setMouth(o: number) { void o; }
+  /** No jaw on these bodies: the head moves a touch with the voice (lifts on the stresses). */
+  setMouth(o: number) { this.exprTilt -= o * 0.045; }
 
   endFrame() {
     this.applyFingers();
