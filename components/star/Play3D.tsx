@@ -497,10 +497,10 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
           </>
         )}
         {session.call && scheme === "touch" && three === "ready" && !result && (
-          // Call for it: right edge, above the swipe's usual ground, its own button (a press on it never starts a swipe)
+          // Call for it: top-right, above the edge markers and the swipe's usual ground; its own button (a press on it never starts a swipe)
           <button
             className="absolute right-2 z-40 grid h-[58px] w-[58px] place-items-center rounded-full text-[11px] font-black uppercase leading-none text-white ring-2 ring-white/60"
-            style={{ top: "34%", background: callUi.cd > 0 ? "rgba(0,0,0,0.35)" : "rgba(14,165,233,0.75)", touchAction: "none" }}
+            style={{ top: "15%", background: callUi.cd > 0 ? "rgba(0,0,0,0.35)" : "rgba(14,165,233,0.75)", touchAction: "none" }}
             data-play3d-call={callUi.cd > 0 ? "cooling" : "ready"}
             onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); w.act({ kind: "call" }); setCallUi(callView()); }}
           >

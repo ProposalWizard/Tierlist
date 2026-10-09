@@ -96,7 +96,7 @@ Use these. Do not make a second copy.
 ### Cameras
 
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
-- `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek. Test: `tests/star/practiceCam.mts`.
+- `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
 
 ### Movement and animation helpers
@@ -285,6 +285,8 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
+
 - Merge: running arms. Elbows bent 80 to 100 degrees, back hand beside the hip, front hand up to the chest, relaxed hands.
 - 3D drill cameras: the practice-arena camera, phone and PC control schemes, the Two Touch skill.
 - 3D pace: speeds scale with the pace stat (sprint 5.6 to 8.2 m/s), stamina from fitness, a Pace Sprint drill, an upright running neck, a Back pill.
@@ -301,3 +303,39 @@ What landed today on Harry, newest first, one line each.
 - Cut-scene system: film rules, close-ups, real grass plates, the people layer (`lib/star/cutscene`), The Icon speaks.
 - Real game in 3D on the Style Testing page: "same brain, new camera" (`lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`).
 - Rescued into the repo: `tools/styletest` (look test for cel / Spider-Verse / stylised PBR), `tools/modeltest` (three generated stylised bodies, concept pictures, raw and fitted GLBs), `tools/models3d` (picture to game-ready GLB tools), this handbook and `.claude/skills/3d-building`.
+
+## Handover (9 Oct) → Leo
+
+### Drill cameras / Free Roam
+
+Harry, after playing it on his phone: "Free Roam camera is still bad, Headers & Volleys is amazing, make it more dynamic, ask for the ball, the joystick gets in the way in Two Touch".
+
+**Done (built, tested headless, seen in stills at 390×844; not yet judged on a real phone):**
+
+- **Free Roam camera = PLAY mode** (`lib/star/three3d/practiceCam.ts`, `PLAY` constants; turned on by Free Roam's `frame` returning `play` in `lib/star/play3d/drills.ts`; passed through `lib/star/play3d/scene.ts`).
+  - With the ball: tight behind your shoulder (1.9 m up, 3.7 m back), swings fully to goal.
+  - Ball away (pass, loose ball, shot): turns towards the ball, aiming between ball and goal when both fit, never more than 70° off the goal; pulls back and rises with distance (up to 6 m up, 9 m back at 30 m).
+  - Leads your run by sliding ahead (0.5 s of your run, max 3.2 m), never by turning, so the stick still never turns it.
+  - All blends eased and rate-capped (`PLAY_EASE`, `PLAY_RATE`); turn still capped at 60°/s.
+  - Measured (bot playing Free Roam, 6 × 60 s, phone frustum): ball in frame 61% → 83%; ball in frame while away from you 50% → 82%; goal in frame 97% → 58% overall, 97% → 93% once you have had the ball 1.5 s.
+- **Call for it** (`World.callForBall` in `lib/star/play3d/world.ts`, action `{ kind: "call" }`; support brain in `brains.ts` reads `mind.callUntil`).
+  - Phone: round CALL button top-right of the picture. PC: F (E is peek, Space is tap). In the hints.
+  - The mate on the ball (or the one a pass is going to, or the first to a loose ball) plays you a pass weighted to your run (`World.passBall`) if the lane is open and you are within 36 m. Else ✗ with a reason ("No lane", "Too far", "Keeper's ball", "Their ball") and he shakes his head (`scene.ts`, head bone).
+  - Bubble "HERE! ✓/✗" over you, ✓/✗ + reason over him. Cooldown 2.5 s, drawn on the button.
+  - Not in Two Touch: there he always sends it back on his second touch, so a call changes nothing.
+- **Two Touch stick** (`components/star/Play3D.tsx`, session `stick: "corner"`): on a phone no stick appears under the thumb. Whole screen = tap/swipe. A small nudge stick (60% size, 40% opacity) sits bottom-left only (`CORNER_STICK`). A tap within 70 px of the ball is always the touch (`BALL_GUARD_PX`, uses the new `ballScreen()` on the scene controller); a quick tap on the corner stick is also a touch.
+- Tests: `tests/star/practiceCam.mts` sections 11 (Free Roam framing, before vs after) and 12 (call: open lane 30/30 yes and passed; keeper in the lane = "No lane" and he keeps it; cooldown).
+
+**Half-done / not checked:**
+
+- Look and feel on a phone: this machine draws at 0–1 fps, so the stills could not catch the camera mid-turn to a team-mate or a shot in flight (still 2 shows the ball still off to the left). Harry has to judge it on his phone.
+- Goal in frame drops while the ball is away (58% overall). That is the trade for following the ball; tune `PLAY.ballTurn`, `PLAY.bothFit`, `PLAY.maxDev` in `lib/star/three3d/practiceCam.ts` if he wants more goal.
+- The call answer label over an off-screen mate is clamped to the edge and can sit next to "HERE!" (`Play3D.tsx`, call bubbles).
+
+**Next 3 steps, in order:**
+
+1. Harry plays Free Roam on his phone; tune the `PLAY` numbers from what he says (re-run `node scripts/run-star-tests.mjs practiceCam` for the before/after numbers).
+2. If he likes it, give Wembley's chase camera the same play mode (`camera: "practice"` + `play` in its `frame`), or keep its chase camera.
+3. Two Touch: if the corner nudge stick is never used, drop it (set `stick` to a new "none" option in `Play3D.tsx`).
+
+Stills from this round: the session scratchpad `r3fr/` (sheet.jpg).
