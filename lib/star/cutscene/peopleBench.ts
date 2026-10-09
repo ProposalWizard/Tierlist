@@ -135,7 +135,9 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
       const ld = new GLTFLoader();
       extras.forEach((o) => o.removeFromParent()); extras = [];
       for (const [url, x] of [["/star/_bakeoff/higgs.glb", -0.85], ["/star/_bakeoff/mhbase.glb", 0]] as [string, number][]) {
-        const g = await ld.loadAsync(url);
+        // The benchmark files are not in the repo (scratch copies only): without them, C stands alone.
+        const g = await ld.loadAsync(url).catch(() => null);
+        if (!g) continue;
         const o = g.scene;
         const box = new T.Box3().setFromObject(o);
         const k = 1.8 / (box.max.y - box.min.y);
