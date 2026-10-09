@@ -21,6 +21,7 @@ import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
+import { makeWorldSeek } from "../frameStep";
 
 export interface Play3DPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
 export interface Play3DLook {
@@ -53,6 +54,8 @@ export interface Play3DController {
   /** Which way the camera looks, as a pitch-plane angle (0 = +x): the screen maps the stick and the drag with it. */
   heading(): number;
   setActive(on: boolean): void;
+  /** Frame stepping (dev, lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
+  step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
@@ -569,10 +572,8 @@ export async function createPlay3DScene(
 
   let active = true;
   let last = performance.now();
-  const frame = () => {
-    const now = performance.now();
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
+  /** One frame of the picture: `dt` seconds of world, animation and camera; `draw` false skips only the (slow) render. */
+  const tick = (dt: number, draw: boolean) => {
     const prevBall = { x: world.ball.x, y: world.ball.y, z: world.ball.z };
     world.advance(dt);
     for (const b of bodies) animate(b, dt, prevBall);
@@ -584,16 +585,35 @@ export async function createPlay3DScene(
     camLook.lerp(t.look, Math.min(1, dt * 5));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
-    if (opts.draw) opts.draw(renderer, scene, camera); else renderer.render(scene, camera);
+    if (draw) { if (opts.draw) opts.draw(renderer, scene, camera); else renderer.render(scene, camera); }
     opts.onFrame?.(dt);
+  };
+  const frame = () => {
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    tick(dt, true);
   };
   opts.onBuilt?.({ THREE, scene, root, renderer, camera, bodies: bodies.map((b) => ({ p: b.p, who: b.who })), ball });
   renderer.setAnimationLoop(frame);
   // dev/test hook: the World, the camera, the people, and a one-off draw (stills from a frozen frame)
   (window as any).__play3d = { world, camera, bodies, render: () => renderer.render(scene, camera) };
+  // FRAME STEPPING (dev, lib/star/frameStep.ts): a filming tool freezes the real-time loop and asks for exact times.
+  // Published only if the page has not published its own stepper; the page's own can call `__play3d.step`.
+  const stepperApi = {
+    /** Stop the real-time loop (once; later calls do nothing). */
+    freeze() { renderer.setAnimationLoop(null); },
+    step: (dt: number, draw: boolean) => { renderer.setAnimationLoop(null); tick(dt, draw); },
+  };
+  (window as any).__play3d.stepper = stepperApi;
+  if (!(window as any).__frameStep) {
+    const seek = makeWorldSeek(world, stepperApi.step, () => (window as any).__frameStep?.timeline);
+    (window as any).__frameStep = { duration: 0, seek, timeline: undefined, byScene: true };
+  }
 
   return {
     heading: () => heading,
+    step: stepperApi.step,
     setActive(on) {
       if (on === active) return;
       active = on;
@@ -605,6 +625,7 @@ export async function createPlay3DScene(
       renderer.setAnimationLoop(null);
       release(root);
       if ((window as any).__play3d?.world === world) delete (window as any).__play3d;
+      if ((window as any).__frameStep?.byScene) delete (window as any).__frameStep;
     },
   };
 }
