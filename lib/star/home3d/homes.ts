@@ -149,3 +149,34 @@ export function cabinetSize(tier: HomeTier): number {
   const c = roomPreset(tier).cabinet;
   return c.cols * c.rows;
 }
+
+// ── The rooms of each home (Harry, 9 Oct 2026: "the house being 1 room is a
+// bit dead, the bigger the house the bigger the space/rooms etc.") ──────────
+
+/**
+ * One room of a home. "main" is the one-room home: the starter flat, the flat,
+ * and every tier on the Old look (Settings → Look → "House: Old").
+ */
+export type RoomId =
+  | "main" | "hallway" | "lounge" | "dressing" | "trophy" | "terrace"
+  | "garage" | "games" | "cinema" | "gym" | "gardenTerrace";
+
+/**
+ * The rooms of each tier, in the order the dots show them (the first is where
+ * you arrive). From the house up each tier holds every room of the one below.
+ * The penthouse is the odd one: no hallway or trophy room, so its lounge keeps
+ * the cabinet, and the glass terrace is its own.
+ */
+export const TIER_ROOMS: Record<HomeTier, RoomId[]> = {
+  starter: ["main"],
+  flat: ["main"],
+  penthouse: ["lounge", "dressing", "terrace"],
+  house: ["hallway", "lounge", "dressing", "trophy"],
+  villa: ["hallway", "lounge", "dressing", "trophy", "garage", "games"],
+  estate: ["hallway", "lounge", "dressing", "trophy", "garage", "games", "cinema", "gym", "gardenTerrace"],
+};
+
+/** The rooms you walk through: the tier's rooms on the New look, the one room on Old. */
+export function roomsFor(tier: HomeTier, look: "new" | "old" = "new"): RoomId[] {
+  return look === "old" ? ["main"] : [...(TIER_ROOMS[tier] ?? TIER_ROOMS.starter)];
+}
