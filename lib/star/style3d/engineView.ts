@@ -125,7 +125,10 @@ export const TV_CAMERA = {
 /**
  * THE NEW TV CAMERA (Settings → Look → "3D camera: New", lib/star/style3d/realGameLook.ts).
  * Harry, 9 Oct 2026: "a mix of A and B … less of it was empty grass".
- *   A: the camera a little lower (more like a TV picture): the angle dial plus `tiltAdd`.
+ *   A: the camera's angle is the dial's (`tiltAdd` 0: a lower camera was tried, +5°, and
+ *      it left MORE empty grass under the men on a tall phone, measured); with the goal
+ *      in the chance it tips further down towards the play, up to `tiltDown`°, until the
+ *      nearest man is near the bottom.
  *   B: it frames only the ACTION (the ball, you, the nearest defenders, the keeper and
  *      goal when the goal is in the chance), so men at the edges may go off screen and
  *      the camera sits tighter. The nearest man's feet sit near `bottom`.
@@ -133,17 +136,22 @@ export const TV_CAMERA = {
  */
 export const TV_CAMERA_NEW = {
   ...TV_CAMERA,
-  tiltAdd: 5,
-  minViewW: 12,
-  marginPx: 10,
-  goalLineAt: 0.12,
+  tiltAdd: 0,
+  minViewW: 7,
+  marginPx: 6,
+  /** Goal in the chance: the goal line sits this far down (the stand above it cropped to a strip). */
+  goalLineAt: 0.05,
+  /** The goal mouth kept on screen: the posts (7.32 m apart) plus a hand's width. */
+  postX: 3.9,
+  tiltDown: 12,
+  tiltMin: 22,
   bottom: 0.86,
   /** The defenders (them) kept on screen: this many nearest the ball, within `nearR` m. */
   nearDefenders: 2,
   nearR: 8,
   /** Any man this near the ball stays on screen too (a team-mate in the move). */
   closeR: 6,
-  /** Our men this near the ball stay on screen (the ones you can pass to). */
+  /** No goal in the chance: our men this near the ball stay on screen (the ones you can pass to). */
   mateR: 22,
   /** The men, the keeper and the ball, this many times life size (1 = true size). */
   fig: 1.15,
@@ -151,8 +159,8 @@ export const TV_CAMERA_NEW = {
   pinBottom: 0.82,
   /** Goal in the chance: the nearest man's feet are wanted at least this far down the screen … */
   fillTo: 0.8,
-  /** … by bringing the goal line down, never lower than this. */
-  goalLineMax: 0.24,
+  /** … then by bringing the goal line down, never lower than this. */
+  goalLineMax: 0.16,
 };
 
 export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement }): Promise<EngineView> {
@@ -675,7 +683,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
       return true;
     };
-    let lo = Math.min(Dmin, dFor(10)), hi = Dmax;
+    let lo = nu ? Dmin : Math.min(Dmin, dFor(10)), hi = Dmax;
     if (fitsAll(lo)) hi = lo;
     else if (!fitsAll(hi)) lo = hi;
     else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fitsAll(m)) hi = m; else lo = m; }
@@ -693,7 +701,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const vp = f.cam.viewport;
     const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
     const extra: { x: number; y: number }[] = [];
-    if (f.goalInView) extra.push({ x: CX - 4.5, y: -0.5 }, { x: CX + 4.5, y: -0.5 });
+    const px = nu ? TV_CAMERA_NEW.postX : 4.5;
+    if (f.goalInView) extra.push({ x: CX - px, y: -0.5 }, { x: CX + px, y: -0.5 });
     if (f.keeper) extra.push({ x: f.keeper.x, y: f.keeper.y });
     if (!nu) {
       // Old: everyone in the chance, the ball, and the goal mouth when the goal is in it:
@@ -718,9 +727,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const near = (g: { x: number; y: number }) => Math.hypot(g.x - ball.x, g.y - ball.y);
     const them = f.figures.filter((g) => g.team === "them" && near(g) <= N.nearR)
       .sort((a, b) => near(a) - near(b)).slice(0, N.nearDefenders);
-    // our men in the move (the pass is to them) stay on; their far men may go
+    // no goal in the chance (a build-up, a pass): our men in the move stay on (the pass is to them)
     const action = f.figures.filter((g) => g.sid === "you" || them.includes(g) || near(g) <= N.closeR
-      || (g.team === "us" && near(g) <= N.mateR));
+      || (!f.goalInView && g.team === "us" && near(g) <= N.mateR));
     const pts = [{ x: ball.x, y: ball.y }, ...action.map((g) => ({ x: g.x, y: g.y })), ...extra];
     const base = tvTilt + N.tiltAdd;
     // No goal: the nearest man is pinned near the bottom (no grass under him).
@@ -729,9 +738,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // bottom. Then the goal line comes down a little (more crowd above the net,
     // less grass under the men), never past `goalLineMax`.
     let t = tvSolveAt(f, N, base, pts, true);
+    if (f.goalInView) {
+      for (let d = 3; d <= N.tiltDown && t.low < N.fillTo && base - d >= N.tiltMin; d += 3) {
+        const t2 = tvSolveAt(f, N, base - d, pts, true);
+        if (t2.low <= t.low) break;
+        t = t2;
+      }
+    }
     if (f.goalInView && t.low < N.fillTo) {
       const g = Math.min(N.goalLineMax, N.goalLineAt + (N.fillTo - t.low));
-      t = tvSolveAt(f, { ...N, goalLineAt: g }, base, pts, true);
+      t = tvSolveAt(f, { ...N, goalLineAt: g }, (t.th * 180) / Math.PI, pts, true);
     }
     return t;
   };
