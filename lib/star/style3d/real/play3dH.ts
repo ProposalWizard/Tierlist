@@ -30,12 +30,16 @@ export interface Play3dH {
   dispose(): void;
 }
 
-/** The time of day for a drill: a phone's clock (evening → golden hour, late → floodlights). */
-export function drillTod(now = new Date()): TimeOfDay {
+/**
+ * The time of day for a drill: Golden hour (Harry, 9 Oct 2026: "Golden hour
+ * has by far the best textures and everything has to match"). It used to
+ * follow the phone's clock (day / golden / night). ?tod=day|golden|night still
+ * picks one on a test page.
+ */
+export function drillTod(_now = new Date()): TimeOfDay {
   const q = typeof location !== "undefined" ? new URLSearchParams(location.search).get("tod") : null;
   if (q === "day" || q === "golden" || q === "night") return q;
-  const h = now.getHours();
-  return h >= 20 || h < 6 ? "night" : h >= 17 ? "golden" : "day";
+  return "golden";
 }
 
 export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: ArenaColours } = {}): Promise<Play3dH> {

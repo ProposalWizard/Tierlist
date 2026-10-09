@@ -119,10 +119,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.name = "h-look";
   scene.add(root);
   const withArena = o.arena !== false;
-  const [maps, crowdTex, ledTex] = await Promise.all([
+  const [maps, crowdTex, ledTex, bgu] = await Promise.all([
     grassMaps(T),
     withArena ? hTexture(T, "crowd.webp") : Promise.resolve(null),
     withArena ? hTexture(T, "led.webp") : Promise.resolve(null),
+    withArena ? import("three/examples/jsm/utils/BufferGeometryUtils.js").catch(() => null) : Promise.resolve(null),
   ]);
   let tod: TimeOfDay = o.tod;
   let look: TodLook = TODS[tod];
@@ -164,7 +165,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   // ── pitch, stadium, ball ──
   const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
   root.add(pitch.mesh);
-  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours }) : null;
+  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours, merge: (bgu as any)?.mergeGeometries }) : null;
   if (arena) root.add(arena.group);
   // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
   arena?.group.traverse((x: any) => { if (x.name === "h-crowd" && x.material) x.material.userData.bakeNeutral = true; });
@@ -246,6 +247,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   }
   let frameN = 0;
   let last: { scene: any; camera: any } | null = null;
+  /**
+   * Below High the sun's shadow map is redrawn every other frame (9 Oct 2026,
+   * lag): it is the people drawn a second time (their skinned bodies are most
+   * of the triangles). A shadow one frame behind at 60 a second can't be seen.
+   */
+  const shadowEvery = tier === "high" ? 1 : 2;
+  let shadowFrame = 0;
 
   const dir = new T.Vector3();
   const api: RealLook = {
@@ -290,7 +298,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
     },
     render(sc, camera, hooks) {
-      if (hooks?.beforeShadows && prof.shadows) {
+      const freshShadow = shadowFrame++ % shadowEvery === 0;
+      if (hooks?.beforeShadows && prof.shadows && !freshShadow) {
+        // keep last frame's shadow map; the picture still gets its lean
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = false;
+        hooks.afterShadows?.();
+      } else if (hooks?.beforeShadows && prof.shadows) {
         // shadows from the men standing up, then the picture with them leaned
         hooks.beforeShadows();
         renderer.shadowMap.autoUpdate = false;
@@ -301,7 +315,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         renderer.setRenderTarget(null);
         hooks.afterShadows?.();
       } else {
-        renderer.shadowMap.autoUpdate = true;
+        renderer.shadowMap.autoUpdate = freshShadow;
+        renderer.shadowMap.needsUpdate = false;
       }
       if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
       post.render(sc, camera, {

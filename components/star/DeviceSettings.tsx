@@ -201,7 +201,7 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  matchView: "Match view", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", clearances: "Clearances",
   garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page",
@@ -244,6 +244,7 @@ function MatchGroup() {
       <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
         <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
       </PrefRow>
+      <LookRow id="matchView3d" look={look} tabs={[["on", "On"], ["off", "Off"]]} note="Being tested. On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes." />
       <LookRow id="matchPlayers" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="New view only." />
       <LookRow id="ball" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New view only." />
       <PrefRow label="Your player in open play" note="New view only. Hidden: the ball is you; you still take penalties, free kicks and corners.">

@@ -158,12 +158,13 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 
   // ── thumbs ──
   const w = session.world;
-  const stick = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
+  /** h: the camera's heading when the thumb went down. The stick keeps that frame while held, so a turning camera never turns your run (9 Oct 2026). */
+  const stick = useRef<{ id: number; x0: number; y0: number; t0: number; h: number } | null>(null);
   const aim = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
   const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
-  const toWorld = (sx: number, sy: number) => {
-    const h = ctrl.current?.heading() ?? -Math.PI / 2;
+  const toWorld = (sx: number, sy: number, held?: number) => {
+    const h = held ?? ctrl.current?.heading() ?? -Math.PI / 2;
     const f = { x: Math.cos(h), y: Math.sin(h) }, r = { x: -Math.sin(h), y: Math.cos(h) };
     return { x: r.x * sx + f.x * -sy, y: r.y * sx + f.y * -sy };
   };
@@ -178,7 +179,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setKnob({ x0: x, y0: y, x, y }); }
+    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now(), h: ctrl.current?.heading() ?? -Math.PI / 2 }; setKnob({ x0: x, y0: y, x, y }); }
     else if (!aim.current) { aim.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setDrag({ x0: x, y0: y, x, y }); }
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -187,7 +188,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     if (stick.current?.id === e.pointerId) {
       const dx = x - stick.current.x0, dy = y - stick.current.y0, d = Math.hypot(dx, dy);
       const k = Math.min(1, d / STICK_R);
-      const m = d > 1 ? toWorld(dx / d * k, dy / d * k) : { x: 0, y: 0 };
+      const m = d > 1 ? toWorld(dx / d * k, dy / d * k, stick.current.h) : { x: 0, y: 0 };
       w.input = { move: m, sprint: d > STICK_R * 0.92 };
       setKnob({ x0: stick.current.x0, y0: stick.current.y0, x, y });
     } else if (aim.current?.id === e.pointerId) setDrag({ x0: aim.current.x0, y0: aim.current.y0, x, y });

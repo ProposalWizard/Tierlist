@@ -74,7 +74,8 @@ export default function StyleTest3D() {
   const [tilt, setTilt] = useState(40);
   /** The real game's camera angle (the dial Harry already has). 45° by default: measured against 55° on the same chance (round 3), 45° gives the bigger men (about 50 px) and a slimmer stand strip; 55° shows more empty pitch on a tall phone. */
   const [rtilt, setRtilt] = useState(45);
-  const [tod, setTod] = useState<"day" | "golden" | "night" | null>(null);
+  // Golden hour by default (Harry, 9 Oct 2026: "by far the best textures and everything has to match")
+  const [tod, setTod] = useState<"day" | "golden" | "night" | null>("golden");
   const todRef = useRef(tod); todRef.current = tod;
   const [seek, setSeek] = useState<number | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "off">("loading");

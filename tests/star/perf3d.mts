@@ -20,17 +20,17 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   const fake = { setPixelRatio: (v: number) => { pr = v; } } as unknown as T.WebGLRenderer;
   const prof = TIER_PROFILES.medium;
   const dyn = new DynamicResolution(fake, prof, { devicePixelRatio: 3 });
-  check(pr === 1.25, `starts at the tier ceiling (1.25), got ${pr}`);
+  check(pr === prof.maxPixelRatio, `starts at the tier ceiling (${prof.maxPixelRatio}), got ${pr}`);
   let t = 1000;
   for (let i = 0; i < 40; i++) { t += 60; dyn.frame(t); } // 16 fps for 2.4 s
-  check(pr < 1.25 && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
+  check(pr < prof.maxPixelRatio && pr >= prof.minPixelRatio, `slow frames lower the scale (got ${pr})`);
   for (let i = 0; i < 400; i++) { t += 60; dyn.frame(t); }
   check(pr === prof.minPixelRatio, `never below the floor ${prof.minPixelRatio} (got ${pr})`);
   const low = pr;
   for (let i = 0; i < 150; i++) { t += 16.7; dyn.frame(t); } // 2.5 s of fast frames
   check(pr === low, `does not climb back within 4 s (got ${pr})`);
   for (let i = 0; i < 2000; i++) { t += 16.7; dyn.frame(t); }
-  check(pr === 1.25, `fast frames climb back to the ceiling (got ${pr})`);
+  check(pr === prof.maxPixelRatio, `fast frames climb back to the ceiling (got ${pr})`);
 }
 
 // ── an up-step that has to come straight back down is not retried for 15 s ──
@@ -92,13 +92,14 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
 // ── each tier's caps (High must stay exactly the 5 Oct New look) ──
 {
   const H = TIER_PROFILES.high, M = TIER_PROFILES.medium, L = TIER_PROFILES.low;
-  check(H.maxPixelRatio === 1.5 && H.movePixelRatio === 1 && H.antialias && H.shadows && H.fpsCap === 60 && H.stillFps === 30 && H.outlines,
-    "High = today's New look: 1.5 still / 1 moving, antialias, shadows, 60 moving / 30 still, outlines");
+  // 9 Oct 2026: smooth edges on a 3x phone on every tier (antialias, never under 1.25 px/pt on Medium and High)
+  check(H.maxPixelRatio === 2 && H.movePixelRatio === 1.5 && H.minPixelRatio >= 1.25 && H.antialias && H.shadows && H.fpsCap === 60 && H.stillFps === 30 && H.outlines,
+    "High: 2 still / 1.5 moving, antialias, shadows, 60 moving / 30 still, outlines");
   check(shadowSizeFor(H, 2048) === 2048 && shadowSizeFor(H, 1024) === 1024, "High keeps each scene's own shadow map (garden 2048, shop 1024)");
-  check(M.maxPixelRatio === 1.25 && !M.antialias && M.shadows && shadowSizeFor(M, 2048) === 1024 && shadowSizeFor(M, 1024) === 512 && M.fpsCap === 60 && M.outlines,
-    "Medium: 1.25 still, no antialias, half-size shadows, 60 moving, outlines");
-  check(L.maxPixelRatio === 1 && !L.antialias && !L.shadows && shadowSizeFor(L, 2048) === 0 && L.fpsCap === 30 && L.stillFps === 30 && !L.outlines,
-    "Low: 1 still, no antialias, no shadows, 30 always, no outlines");
+  check(M.maxPixelRatio === 1.5 && M.minPixelRatio >= 1.25 && M.antialias && M.shadows && shadowSizeFor(M, 2048) === 1024 && shadowSizeFor(M, 1024) === 512 && M.fpsCap === 60 && !M.outlines,
+    "Medium: 1.5 still and moving, antialias, half-size shadows, 60 moving, no outlines");
+  check(L.maxPixelRatio === 1.25 && L.antialias && !L.shadows && shadowSizeFor(L, 2048) === 0 && L.fpsCap === 30 && L.stillFps === 30 && !L.outlines,
+    "Low: 1.25, antialias, no shadows, 30 always, no outlines");
   for (const p of [H, M, L]) check(p.minPixelRatio <= p.movePixelRatio && p.movePixelRatio <= p.maxPixelRatio, `${p.tier}: floor <= moving <= still`);
   check(H.maxPixelRatio > M.maxPixelRatio && M.maxPixelRatio > L.maxPixelRatio, "each tier down draws fewer pixels standing still");
   check(stepDownTier("high") === "medium" && stepDownTier("medium") === "low" && stepDownTier("low") === null, "a slow scene steps down one tier at a time");

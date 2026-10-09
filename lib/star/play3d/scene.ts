@@ -69,10 +69,14 @@ const PICK_PX = 46;
 /** A team-mate out of the picture gets a marker this far (px) inside the edge. */
 const EDGE_PX = 26;
 /** Look H's pixel ratio cap per tier (the tier's own cap is for the garden and shop's busier scenes). */
-const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2.5 };
+const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2 }; // High was 2.5: no sharper to the eye, 1.56× the pixels (9 Oct 2026)
 /** Look H's chase camera: metres behind and up, where it looks (metres ahead, height), field of view tall / wide. Old: 7.5 back, 3.6 up, 6 ahead at 0.9, 58° / 48°. */
 const CHASE_SHARP = { back: 6.2, up: 2.7, ahead: 10, lookUp: 0.9, fovTall: 56, fovWide: 44, lean: 0.32 };
 const yawOf = (facing: number) => Math.PI / 2 - facing;
+/** The chase camera's turn: at most this fast (rad/s; 75°/s), easing in at this rate (1/s), ignoring a turn smaller than the dead zone (rad; 4°). */
+export const CAM_TURN_MAX = (75 * Math.PI) / 180;
+export const CAM_TURN_EASE = 1.6;
+export const CAM_DEADZONE = (4 * Math.PI) / 180;
 
 export async function createPlay3DScene(
   container: HTMLElement, world: World, look: Play3DLook,
@@ -557,6 +561,8 @@ export async function createPlay3DScene(
 
   // ── Camera ──
   let heading = -Math.PI / 2;
+  /** This frame's seconds, for the chase camera's turn (set in tick). */
+  let camDt = 1 / 60;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let snap = true;
   const camTarget = () => {
@@ -586,12 +592,19 @@ export async function createPlay3DScene(
       return { pos, look: mid };
     }
     const sp = Math.hypot(you.vx, you.vy);
-    // swing round behind him while he runs; hold still while he stands
+    // swing round behind him while he runs; hold still while he stands.
+    // Harry, 9 Oct 2026: "the camera is super sensitive". It used to turn a
+    // share of the gap EVERY FRAME (0.025 × speed), so at a sprint it swung
+    // up to ~10° a frame (~600°/s at 60 fps) and faster on faster phones.
+    // Now it eases by time, never faster than CAM_TURN_MAX, and waits until
+    // he has kept a new direction for a moment (small wiggles don't turn it).
     if (sp > 1) {
       let d = you.facing - heading;
       while (d > Math.PI) d -= 2 * Math.PI;
       while (d < -Math.PI) d += 2 * Math.PI;
-      heading += Math.max(-1, Math.min(1, d)) * Math.min(1, 0.025 * sp);
+      const want = Math.abs(d) < CAM_DEADZONE ? 0 : d - Math.sign(d) * CAM_DEADZONE;
+      const step = want * Math.min(1, camDt * CAM_TURN_EASE * Math.min(1, sp / 5));
+      heading += Math.max(-CAM_TURN_MAX * camDt, Math.min(CAM_TURN_MAX * camDt, step));
     }
     const fx = Math.cos(heading), fy = Math.sin(heading);
     // sharp (look H): the broadcast "behind the player" shot, close and low, so he fills the picture
@@ -625,6 +638,7 @@ export async function createPlay3DScene(
     placeBall();
     syncMarkers();
     syncAim(dt);
+    camDt = dt;
     const t = camTarget();
     if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));
