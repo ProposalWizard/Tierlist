@@ -427,8 +427,9 @@ export function styleLock(c: Pick<CareerState, "unlocks">, base: string, stars: 
 // ── The phone ──────────────────────────────────────────────────────────────
 
 /** On the phone from the start (P39: "league and settings to start, plus
- *  your messages ... kickabout, social"). */
-export const STARTER_APPS = ["league", "settings", "social", "kickabout", "fixtures", "messages"];
+ *  your messages ... kickabout, social"). "Your house" (the 3D home, 9 Oct
+ *  2026) is yours from day one: it is where you live, not a thing to buy. */
+export const STARTER_APPS = ["league", "settings", "social", "kickabout", "fixtures", "messages", "home-3d"];
 
 /** In the App Store, to install. Apps are shortcuts, so they cost real money
  *  (Harry, 1 Oct 2026, P71: "paying to get these apps. These are essentially

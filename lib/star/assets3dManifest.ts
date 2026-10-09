@@ -1143,6 +1143,18 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "note": "The shop's own Blender boots (level 3) and cars, cut down for a phone and Draco-compressed. Shown on plinths and the turntable in the 3D shop.",
     "files": [
       {
+        "path": "/star/shop3d/items/bike-hf.glb",
+        "bytes": 392612
+      },
+      {
+        "path": "/star/shop3d/items/boot-classic-hf.glb",
+        "bytes": 348916
+      },
+      {
+        "path": "/star/shop3d/items/boot-control-hf.glb",
+        "bytes": 275836
+      },
+      {
         "path": "/star/shop3d/items/boot-control.glb",
         "bytes": 68120
       },
@@ -1151,8 +1163,20 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 69376
       },
       {
+        "path": "/star/shop3d/items/boot-elite-hf.glb",
+        "bytes": 240664
+      },
+      {
         "path": "/star/shop3d/items/boot-elite.glb",
         "bytes": 67056
+      },
+      {
+        "path": "/star/shop3d/items/boot-hf.glb",
+        "bytes": 276272
+      },
+      {
+        "path": "/star/shop3d/items/boot-maestro-hf.glb",
+        "bytes": 229828
       },
       {
         "path": "/star/shop3d/items/boot-maestro.glb",
@@ -1163,12 +1187,24 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 68060
       },
       {
+        "path": "/star/shop3d/items/boot-speed-hf.glb",
+        "bytes": 293452
+      },
+      {
         "path": "/star/shop3d/items/boot-speed.glb",
         "bytes": 69144
       },
       {
+        "path": "/star/shop3d/items/boot-starter-hf.glb",
+        "bytes": 186676
+      },
+      {
         "path": "/star/shop3d/items/boot-starter.glb",
         "bytes": 66808
+      },
+      {
+        "path": "/star/shop3d/items/can-kib-hf.glb",
+        "bytes": 53604
       },
       {
         "path": "/star/shop3d/items/car-1.glb",
@@ -1187,12 +1223,96 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 168800
       },
       {
+        "path": "/star/shop3d/items/car-classic-hf.glb",
+        "bytes": 415152
+      },
+      {
         "path": "/star/shop3d/items/car-classic.glb",
         "bytes": 200612
       },
       {
+        "path": "/star/shop3d/items/car-family-hf.glb",
+        "bytes": 463340
+      },
+      {
+        "path": "/star/shop3d/items/car-hatch-hf.glb",
+        "bytes": 362244
+      },
+      {
+        "path": "/star/shop3d/items/car-sports-hf.glb",
+        "bytes": 340276
+      },
+      {
+        "path": "/star/shop3d/items/car-super-hf.glb",
+        "bytes": 360320
+      },
+      {
+        "path": "/star/shop3d/items/car-suv-hf.glb",
+        "bytes": 394252
+      },
+      {
         "path": "/star/shop3d/items/car-suv.glb",
         "bytes": 167936
+      },
+      {
+        "path": "/star/shop3d/items/home-estate-hf.glb",
+        "bytes": 327948
+      },
+      {
+        "path": "/star/shop3d/items/home-flat1-hf.glb",
+        "bytes": 264944
+      },
+      {
+        "path": "/star/shop3d/items/home-flat2-hf.glb",
+        "bytes": 338452
+      },
+      {
+        "path": "/star/shop3d/items/home-house1-hf.glb",
+        "bytes": 352200
+      },
+      {
+        "path": "/star/shop3d/items/home-house2-hf.glb",
+        "bytes": 329244
+      },
+      {
+        "path": "/star/shop3d/items/home-island-hf.glb",
+        "bytes": 293764
+      },
+      {
+        "path": "/star/shop3d/items/home-penthouse-hf.glb",
+        "bytes": 365696
+      },
+      {
+        "path": "/star/shop3d/items/home-stable-hf.glb",
+        "bytes": 362088
+      },
+      {
+        "path": "/star/shop3d/items/home-villa-hf.glb",
+        "bytes": 272804
+      },
+      {
+        "path": "/star/shop3d/items/jet-hf.glb",
+        "bytes": 305708
+      },
+      {
+        "path": "/star/shop3d/items/jewel-diamond-hf.glb",
+        "bytes": 198328
+      },
+      {
+        "path": "/star/shop3d/items/jewel-silver-hf.glb",
+        "bytes": 280608
+      },
+      {
+        "path": "/star/shop3d/items/watch-gold-hf.glb",
+        "bytes": 217824
+      },
+      {
+        "path": "/star/shop3d/items/watch-luxury-hf.glb",
+        "bytes": 343680
+      },
+      {
+        "path": "/star/shop3d/items/watch-smart-hf.glb",
+        "bytes": 165496
       }
     ]
   }
