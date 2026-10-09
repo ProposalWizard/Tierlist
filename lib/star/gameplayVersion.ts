@@ -35,6 +35,14 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Built from Kane's real touches: about 9 highlights a match, half of them deeper where you pass and can get it back, and half as many one-on-ones.",
     oldText: "About 6 highlights a match, every kind equally often (from before 9 Oct 2026).",
   },
+  kaneDrawings: {
+    label: "Kane drawings (testing)",
+    // Mikey, 9 Oct 2026: "make this a setting you can switch into, don't
+    // apply to the current scenarios yet."
+    defaultVersion: "old",
+    newText: "Chances drawn from 376 real Harry Kane passes and shots (21 matches, 2021–2024): team-mates and opponents stand where they really stood.",
+    oldText: "The game's own drawings.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -72,3 +80,4 @@ export const oldChances = () => gameplayVersion("chanceMix") === "old";
 export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
+export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";

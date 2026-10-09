@@ -38,7 +38,11 @@ import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import Dribble3D from "./Dribble3D";
 import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldClearances, oldChances } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldClearances, oldChances, oldKaneDrawings } from "@/lib/star/gameplayVersion";
+import { kaneMomentsReady, loadKaneMoments } from "@/lib/star/kaneMoments";
+// Kane drawings (testing): start fetching as the match code loads, so the
+// first chance of a match can already be one.
+if (typeof window !== "undefined" && !oldKaneDrawings()) void loadKaneMoments();
 import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
@@ -736,6 +740,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     });
   };
   useEffect(() => { applyClearanceRules(); }, []);
+  // Kane drawings (testing): fetch them in good time for the first chance.
+  useEffect(() => { if (!oldKaneDrawings()) void loadKaneMoments(); }, []);
 
   // ── Who else is actually out there ──
   //
@@ -6567,6 +6573,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         deck: chanceDeck(careerDeckScope(careerRef.current?.player)),
         // Settings → Match → Chance mix: New deals the real (Kane) mix.
         realMix: !oldChances(),
+        // Settings → Match → Kane drawings (testing): New deals Kane's real moments.
+        kaneDrawings: oldKaneDrawings() ? null : kaneMomentsReady(),
       });
       scenarioRef.current = made.sc;
       // v0.26: the match leans away from serving this kind straight back.

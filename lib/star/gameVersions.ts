@@ -77,6 +77,9 @@ export const LOOK_ROWS = {
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
   chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
+  // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
+  // (Standard and Preview) until it is switched on by hand.
+  kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
@@ -133,6 +136,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),
     chanceMix: O("chanceMix"),
+    kaneDrawings: O("kaneDrawings"),
     garden: N("garden"),
     look3d: N("look3d"),
     shopPlayer: N("shopPlayer"),
