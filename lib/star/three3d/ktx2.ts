@@ -103,3 +103,16 @@ export async function loadPicture3d<Tex>(url: string, fallback: () => Promise<Te
     return fallback();
   }
 }
+
+/**
+ * The shared KTX2 loader for a GLTFLoader's packed models (the shop's items:
+ * tools/shop3d/ktx2_items.mjs), or null when the phone can't read them or
+ * KTX2 is off (?ktx2=0) — the caller then loads the plain model. Speed job B.
+ */
+export async function ktx2LoaderForModels(r: THREE.WebGLRenderer): Promise<any | null> {
+  if (ktx2Off()) return null;
+  useKtx2With(r);
+  const lp = getLoader();
+  if (!lp) return null;
+  try { return await lp; } catch { return null; }
+}

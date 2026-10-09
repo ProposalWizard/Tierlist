@@ -73,9 +73,9 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
   // Owners, 23 Sep 2026: Basic gives +65 energy. Premium gives the NS-Swerve
   // boots' curve and Elite the NS-Maestro boots' Touch Mode, for the next
   // match you play — no energy.
-  { id: "basic", name: "Basic KIB Can", price: canPrice("energy", 0), restore: 65, color: "bg-orange-400", image: "/star/kib-basic.png" },
-  { id: "premium", name: "Premium KIB Can", price: canPrice("energy", 1), restore: 30, effect: "curve", color: "bg-blue-400", image: "/star/kib-premium.png" },
-  { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 40, effect: "extraTouch", color: "bg-purple-400", image: "/star/kib-elite.png" },
+  { id: "basic", name: "Basic KIB Can", price: canPrice("energy", 0), restore: 65, color: "bg-orange-400", image: "/star/kib-basic.webp" },
+  { id: "premium", name: "Premium KIB Can", price: canPrice("energy", 1), restore: 30, effect: "curve", color: "bg-blue-400", image: "/star/kib-premium.webp" },
+  { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 40, effect: "extraTouch", color: "bg-purple-400", image: "/star/kib-elite.webp" },
 ];
 
 

@@ -7,6 +7,7 @@
  *
  * Usage: const h = await play3dH(world); createPlay3DScene(..., { bare: true, ...h.opts });
  */
+import { installAssetVersions } from "../../three3d/assetUrl";
 import { CX } from "../../play3d/constants";
 import type { World } from "../../play3d/world";
 import type { Play3DBuilt } from "../../play3d/scene";
@@ -44,6 +45,7 @@ export function drillTod(_now = new Date()): TimeOfDay {
 
 export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: ArenaColours } = {}): Promise<Play3dH> {
   const T: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   // the files first, so the stadium is there on the first frame
   await Promise.all([grassMaps(T), hTexture(T, "crowd.webp"), hTexture(T, "led.webp")]);
   const { createRealLook } = await import("./look");

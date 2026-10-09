@@ -43,6 +43,7 @@
  * Static pieces are merged by material (one draw call each), so the extra
  * detail costs few draw calls.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
@@ -54,7 +55,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -207,6 +208,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
@@ -2419,7 +2421,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await safeCompileAsync(renderer, scene, camera); } catch { /* older browsers: compiled on first use */ }
+  // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
+  try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   renderer.setAnimationLoop(() => {
@@ -2914,7 +2917,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildGarden(container, cb, data, opts, own);
+    const t0 = performance.now();
+    const c = await buildGarden(container, cb, data, opts, own);
+    noteSceneFiles("garden", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) {

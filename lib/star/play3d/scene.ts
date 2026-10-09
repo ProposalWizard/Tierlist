@@ -11,6 +11,7 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import { CX, GOAL_H, GOAL_W, PEN_SPOT_Y, HALF_LEN } from "./constants";
 import type { World } from "./world";
 import type { P3, Act3 } from "./player";
@@ -112,6 +113,7 @@ export async function createPlay3DScene(
   const tier = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
   const SK = SkeletonUtils.default ?? SkeletonUtils;

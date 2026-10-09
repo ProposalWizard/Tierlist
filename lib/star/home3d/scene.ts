@@ -28,11 +28,12 @@
  * (a layer of its own) at a small size, and only while you are near it.
  * The governor (three3d/governor.ts) and the quality tier work as in the shop.
  */
+import { installAssetVersions } from "../three3d/assetUrl";
 import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
-import { DynamicResolution, rememberGpu } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -121,7 +122,10 @@ const MIRROR_LAYER = 5;
 export async function startHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions = {}): Promise<HomeController> {
   const own: { renderer?: any } = {};
   try {
-    return await buildHome(container, cb, data, opts, own);
+    const t0 = performance.now();
+    const c = await buildHome(container, cb, data, opts, own);
+    noteSceneFiles("home", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
+    return c;
   } catch (e) {
     const r = own.renderer;
     if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* gone */ } }
@@ -135,6 +139,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const R = roomPreset(data.tier);
   const W2 = R.w / 2, D2 = R.d / 2, H = R.h;
   const THREE: any = await import("three");
+  await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
@@ -773,7 +778,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const keep = new Set<any>([me.person.root, props, garments, trophies.gold, trophies.silver, trophies.ghost, trophies.plates, meBlob, ...pickables, mirror].filter(Boolean));
   // the mirror's own layer must survive joining: pieces it sees join only with each other
   const frozen = freezeStatic(THREE, mergeGeometries, scene, keep);
-  try { await safeCompileAsync(renderer, scene, camera); } catch { /* compiled on first use */ }
+  // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
+  try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   // ── State ──
@@ -908,7 +914,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
         scene.add(next.person.root);
         me = next;
         disposePerson(old.person, old.worn.kind === "casual");
-        try { await safeCompileAsync(renderer, scene, camera); } catch { /* first use */ }
+        try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
         shadowDirty = true;
       } finally { changing = false; }
     });

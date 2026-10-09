@@ -482,7 +482,7 @@ export function StatTiles({ career }: { career: CareerState }) {
   const tiles: Tile[] = [
     { key: "rep", label: "Rep", value: Math.round(career.reputation), icon: "/icons3d/world.png", color: "#0ea5e9", bar: career.reputation },
     { key: "fame", label: "Fame", value: fame, icon: "/icons3d/fame.png", color: "#d946ef", bar: Math.min(100, fame) },
-    { key: "goals", label: "Goals", value: ps.goals, icon: "/star/ball.png", color: "#22c55e" },
+    { key: "goals", label: "Goals", value: ps.goals, icon: "/star/ball.webp", color: "#22c55e" },
     { key: "assists", label: "Assists", value: ps.assists, icon: "/shop/boot-control-L1.webp", color: "#f59e0b" },
   ];
   return (

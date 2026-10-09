@@ -1,4 +1,11 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { writeAssetVersions } from "./scripts/perf3d/asset-versions.mjs";
+
+// The 3D files' content hashes (lib/star/three3d/assetVersions.ts), refreshed
+// at every build and dev start so the deployed list always matches the
+// deployed files: the 3D loaders ask for /star/x?v=<hash>, served below as
+// immutable (lib/star/three3d/assetUrl.ts). Never fails the build.
+try { writeAssetVersions(); } catch (e) { console.warn("asset versions not refreshed:", e?.message ?? e); }
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -74,6 +81,14 @@ const nextConfig = {
       { source: "/home/:path*", headers: gameAssetCache },
       { source: "/icons3d/:path*", headers: gameAssetCache },
       { source: "/matchday/:path*", headers: gameAssetCache },
+      {
+        // A 3D file asked for by its content hash (/star/x.glb?v=1a2b3c4d,
+        // lib/star/three3d/assetUrl.ts) never changes: keep it a year, never
+        // ask again. Without ?v= it keeps the default (ask every time).
+        source: "/star/:path*",
+        has: [{ type: "query", key: "v" }],
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
       {
         source: "/play/:id*",
         headers: [

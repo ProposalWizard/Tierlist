@@ -159,7 +159,7 @@ export default function FirstPersonRoam({
 
   useEffect(() => {
     const img = new Image();
-    img.src = "/star/ball.png";
+    img.src = "/star/ball.webp";
     ballImgRef.current = img;
   }, []);
 

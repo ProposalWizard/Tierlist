@@ -26,6 +26,7 @@
  * Applied by patching each lit material's shader (one more texture read per
  * pixel; kept on Low quality too). Files: public/star/bake/<set>/.
  */
+import { versionedUrl } from "../three3d/assetUrl";
 
 export type BakeSet = "stadium" | "garden" | "shop" | "casino";
 export type BakeTod = "day" | "golden" | "night" | "indoor";
@@ -66,7 +67,7 @@ const metaCache = new Map<BakeSet, Promise<BakeMeta | null>>();
 function loadMeta(set: BakeSet): Promise<BakeMeta | null> {
   let p = metaCache.get(set);
   if (!p) {
-    p = fetch(`${BAKE_BASE}${set}/meta.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    p = fetch(versionedUrl(`${BAKE_BASE}${set}/meta.json`)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
     metaCache.set(set, p);
   }
   return p;
@@ -75,7 +76,7 @@ function loadMeta(set: BakeSet): Promise<BakeMeta | null> {
 /** The raw bytes of a picture (no colour management, no premultiplying: the numbers are data). */
 async function pixels(url: string): Promise<{ data: Uint8Array; w: number; h: number } | null> {
   try {
-    const r = await fetch(url);
+    const r = await fetch(versionedUrl(url)); // kept by the browser for good (three3d/assetUrl.ts)
     if (!r.ok) return null;
     const bmp = await createImageBitmap(await r.blob(), { colorSpaceConversion: "none", premultiplyAlpha: "none" } as any);
     const c: any = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(bmp.width, bmp.height) : Object.assign(document.createElement("canvas"), { width: bmp.width, height: bmp.height });

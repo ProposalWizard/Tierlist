@@ -2588,6 +2588,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     preloadScene("garden");
     preloadScene("shop");
     preloadScene("casino");
+    preloadScene("home"); // your house (speed job B: also unpacks the shared people once)
   }, [phase]);
   const handleTitleTutorial = useCallback(() => {
     if (!career) { handleTitleNewGame(activeSlotRef.current); return; }

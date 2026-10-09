@@ -264,7 +264,7 @@ export default function MatchCommentary({
                   aria-label={`Use a Basic KIB can, ${kibCans} left`}
                   className="flex basis-1/3 items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-1.5 py-1 text-gray-950 transition hover:bg-orange-400 active:scale-[0.98] disabled:bg-gray-700 disabled:text-white"
                 >
-                  <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-8 w-5 shrink-0" />
+                  <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.webp" }} className="h-8 w-5 shrink-0" />
                   <span className="flex flex-col items-start leading-none">
                     <span className="text-[10px] font-black uppercase tracking-wide">Use KIB can</span>
                     <span className="mt-0.5 text-sm font-black tabular-nums">&times;{kibCans}</span>

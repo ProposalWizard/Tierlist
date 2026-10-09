@@ -148,6 +148,10 @@ for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable
 // The 3D home (9 Oct 2026): light copies of the shop's cars (drive window, ~3.9k) and boots (shelf, ~2.4k),
 // made by tools/home3d/make_lods.mjs; fitted at load, nothing reads their vertices.
 for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map((c) => `car-${c}-lod`), ...["starter", "speed", "control", "elite", "classic", "maestro", "power"].map((b) => `boot-${b}-lod`)]) POLICY[`star/home3d/${f}.glb`] = { q: /.*/, webp: true };
+// Speed job B (9 Oct 2026): every generated shop item has a KTX2 twin (*-hf.ktx2.glb, packed
+// pictures that stay packed on the chip), written already meshopt-packed by tools/shop3d/ktx2_items.mjs
+// from the file above. Re-make it with that tool, never here.
+for (const f of fs.readdirSync(path.join(PUB, "star/shop3d/items")).filter((x) => x.endsWith("-hf.ktx2.glb"))) POLICY[`star/shop3d/items/${f}`] = { skip: "KTX2 twin made by tools/shop3d/ktx2_items.mjs (already meshopt)" };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

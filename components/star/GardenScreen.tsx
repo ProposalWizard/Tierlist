@@ -343,8 +343,8 @@ function BenchScene({ look, tier, visitors, kit, faces }: {
         <rect x="-3" y="0" width="6" height="34" fill="#2a2a2e" />
         <ellipse cx="0" cy="0" rx="28" ry="7" fill="#3a3a40" />
         <ellipse cx="0" cy="-1.5" rx="26" ry="5.6" fill="#52525a" />
-        <image href="/star/kib-premium.png" x="-20" y="-30" width="18" height="30" preserveAspectRatio="xMidYMax meet" />
-        <image href="/star/kib-basic.png" x="2" y="-27" width="16" height="27" preserveAspectRatio="xMidYMax meet" />
+        <image href="/star/kib-premium.webp" x="-20" y="-30" width="18" height="30" preserveAspectRatio="xMidYMax meet" />
+        <image href="/star/kib-basic.webp" x="2" y="-27" width="16" height="27" preserveAspectRatio="xMidYMax meet" />
       </g>
       <g transform="translate(38 744)">
         <ellipse cx="4" cy="2" rx="34" ry="6" fill={look.shadow} />

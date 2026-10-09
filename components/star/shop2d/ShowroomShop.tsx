@@ -106,15 +106,22 @@ const bigName = (kind: "boot" | "style", base: string, lv: number) =>
 function BigPic({ kind, base, level, className = "", grey = false }: { kind: "boot" | "style"; base: string; level: number; className?: string; grey?: boolean }) {
   const name = bigName(kind, base, level);
   const [bad, setBad] = useState<string | null>(null);
+  const [shown, setShown] = useState<string | null>(null);
   if (bad === name) {
     return kind === "boot"
       ? <BootPicture base={base} level={level} className={`${className} ${grey ? "opacity-30 grayscale" : ""}`} />
       : <StylePicture base={base} level={level} className={`${className} ${grey ? "opacity-30 grayscale" : ""}`} />;
   }
+  // Until the big still has arrived, the small render of the same item (most often already in the
+  // browser's cache from the shop's other screens) sits in its place, so a slow phone sees the item,
+  // never an empty glow (speed job B, 9 Oct 2026: Boots showed a dark-green blob for 8 s+).
+  const small = kind === "boot" ? `/shop/boot-${base}-L${Math.max(1, Math.min(5, level))}.webp` : `/shop/${base}-L${base === "phone" ? 1 : Math.max(1, Math.min(5, level))}.webp`;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`/star/shop2d/items/${name}.webp`} alt="" draggable={false} decoding="async" onError={() => setBad(name)}
-      data-big-pic={name} className={`select-none object-contain ${grey ? "opacity-30 grayscale" : ""} ${className}`} />
+      onLoad={() => setShown(name)}
+      style={shown === name ? undefined : { backgroundImage: `url(${small})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}
+      data-big-pic={name} data-big-loaded={shown === name ? "1" : "0"} className={`select-none object-contain ${grey ? "opacity-30 grayscale" : ""} ${className}`} />
   );
 }
 

@@ -323,7 +323,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           {/* The real thing — a photograph, not a diagram. CSS/SVG cannot fake
               leather grain or an actual reflection, so this is the club's own
               ball, pre-cropped to a circle with a transparent surround (see
-              public/star/ball.png) and dropped straight in. */}
+              public/star/ball.webp) and dropped straight in. */}
           {/* The ball's own shadow, as a plain round shadow behind it. It was
               a CSS drop-shadow filter on the picture, which iOS Safari can
               draw as a see-through box round a moving or layered picture. */}
@@ -332,7 +332,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             style={{ boxShadow: "0 10px 14px rgba(0,0,0,0.55)" }}
           />
           <img
-            src="/star/ball.png"
+            src="/star/ball.webp"
             alt=""
             draggable={false}
             className="relative w-full h-full object-cover rounded-full select-none pointer-events-none"

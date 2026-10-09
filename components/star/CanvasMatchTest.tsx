@@ -713,7 +713,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   const ballImgRef = useRef<HTMLImageElement | null>(null);
   useEffect(() => {
     const img = new Image();
-    img.src = "/star/ball.png";
+    img.src = "/star/ball.webp";
     ballImgRef.current = img;
   }, []);
 
