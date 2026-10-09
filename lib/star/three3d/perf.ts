@@ -99,6 +99,7 @@
 import type * as THREE from "three";
 import { installFrameMeter } from "./frameMeter";
 import { installAssetVersions, versionedUrl } from "./assetUrl";
+import { safeCompileAsync } from "./safeCompile";
 import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
 export type { Quality3d, TierProfile } from "./quality";
@@ -386,8 +387,11 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
         if (v && (v as THREE.Texture).isTexture && !seen.has(v as THREE.Texture)) { seen.add(v as THREE.Texture); renderer.initTexture(v as THREE.Texture); }
       }
     });
-    const job = typeof renderer.compileAsync === "function" ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera));
+    // safeCompileAsync, not renderer.compileAsync: three's own can throw on
+    // a timer and never settle (a material that lost its program), which left
+    // the garden on its spinner (safeCompile.ts).
     const t = opts.timeoutMs ?? 8000;
+    const job = safeCompileAsync(renderer, scene, camera, t);
     await Promise.race([job, new Promise((r) => setTimeout(r, t))]);
     // One real draw of a single pixel: links the programs, builds the
     // shadow-map shaders (compile() skips those), uploads the skinning
@@ -415,14 +419,13 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
  * (scripts/perf3d/prof.mjs casino). Same picture, the work moved off the wait.
  */
 export async function compileForBake(T: Three, renderer: THREE.WebGLRenderer, scene: THREE.Object3D, camera: THREE.Camera, timeoutMs = 8000) {
-  if (typeof renderer.compileAsync !== "function") return;
   const rt = new T.WebGLRenderTarget(1, 1, { type: T.HalfFloatType });
   const prev = renderer.getRenderTarget();
   renderer.setRenderTarget(rt);
   let job: Promise<unknown> = Promise.resolve();
   // compileAsync picks every shader's variant now (synchronously, from the
   // target set); only the waiting is async, so the target goes straight back
-  try { job = renderer.compileAsync(scene, camera); } catch { /* built by fromScene instead */ }
+  try { job = safeCompileAsync(renderer, scene, camera); } catch { /* built by fromScene instead */ }
   renderer.setRenderTarget(prev);
   try { await Promise.race([job, new Promise((r) => setTimeout(r, timeoutMs))]); } catch { /* fine */ }
   rt.dispose();

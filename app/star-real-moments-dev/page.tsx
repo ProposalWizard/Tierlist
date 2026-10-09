@@ -20,6 +20,7 @@ import { buildScenario, type Scenario, type ScenarioKind } from "@/lib/star/canv
 import { frameFromScenario, paint } from "@/lib/star/scenarioFrame";
 import { mulberry32 } from "@/lib/star/season";
 import { buildRealMoment, parseRealMoments, type RealMoment } from "@/lib/star/realMoments";
+import { buildKaneMoment, KANE_MOMENTS_URL, type KaneMoment } from "@/lib/star/kaneMoments";
 
 const CARD_W = 170;
 /** Played bigger than the card's picture: at 170px the match's figures are
@@ -29,7 +30,18 @@ const PAGE = 24;
 const KIND_LABEL: Partial<Record<ScenarioKind, string>> = {
   one_on_one: "One-on-one", volley: "In the box", tight_angle: "Tight angle",
   long_range: "Long range", midfield_pass: "Midfield",
+  through_ball: "Through ball", buildup: "Build-up", cutback: "Pass in the box",
 };
+
+/** The game's Kane drawings, shown as cards (they carry their own target run). */
+const kaneById = new Map<string, KaneMoment>();
+function fromKane(k: KaneMoment): RealMoment {
+  kaneById.set(k.id, k);
+  return {
+    id: k.id, source: "kane", kind: k.kind, seed: k.seed, override: k.override, faults: k.faults,
+    meta: { player: "Harry Kane", match: `${k.meta.comp} · ${k.meta.match}`, minute: k.meta.minute, what: k.meta.what, xg: k.meta.xg },
+  };
+}
 const BANDS: { label: string; lo: number; hi: number }[] = [
   { label: "All", lo: 0, hi: 1.01 },
   { label: "xG under 8%", lo: 0, hi: 0.08 },
@@ -58,7 +70,7 @@ function Picture({ build, label }: { build: () => Scenario; label?: string }) {
 }
 
 function Card({ m, index, withGame }: { m: RealMoment; index: number; withGame: boolean }) {
-  const real = useMemo(() => () => buildRealMoment(m), [m]);
+  const real = useMemo(() => () => { const k = kaneById.get(m.id); return k ? buildKaneMoment(k) : buildRealMoment(m); }, [m]);
   const game = useMemo(() => () => buildScenario(m.kind, mulberry32(50_000 + index)), [m.kind, index]);
   const faults = m.faults.filter((f) => f !== "attacker offside");
   return (
@@ -71,7 +83,7 @@ function Card({ m, index, withGame }: { m: RealMoment; index: number; withGame: 
         <br />
         {KIND_LABEL[m.kind] ?? m.kind} · {m.meta.what === "shot"
           ? <>xG {Math.round((m.meta.xg ?? 0) * 100)}% · <span className={m.meta.outcome === "Goal" ? "text-emerald-300" : ""}>{m.meta.outcome}</span></>
-          : "a touch"}
+          : m.meta.what === "touch" ? "a touch" : m.meta.what}
       </div>
       <div className="flex flex-wrap gap-2">
         <Picture build={real} label={withGame ? "Real" : undefined} />
@@ -105,6 +117,15 @@ export default function RealMomentsDev() {
   const kinds = useMemo(() => Array.from(new Set((all ?? []).filter((m) => m.source === source).map((m) => m.kind))), [all, source]);
   const chip = (on: boolean) => `rounded-full px-3 py-1 text-xs font-black ${on ? "bg-white text-black" : "bg-white/10 text-white"}`;
 
+  async function loadKane() {
+    try {
+      const j = await (await fetch(KANE_MOMENTS_URL)).json() as { moments?: KaneMoment[] };
+      const got = (j.moments ?? []).map(fromKane);
+      if (!got.length) { setError("No Kane drawings found."); return; }
+      setError(""); setAll(got); setSource("kane"); setKind("all"); setBand(0);
+    } catch { setError("Couldn't load the Kane drawings."); }
+  }
+
   async function load(file: File) {
     const got = parseRealMoments(await file.text());
     if (!got || !got.length) { setError("That file has no moments in it. Pick real-moments.json."); return; }
@@ -123,6 +144,9 @@ export default function RealMomentsDev() {
         <input type="file" accept=".json,application/json" className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void load(f); }} />
       </label>
+      <button className="ml-2 mt-4 inline-block rounded bg-amber-500 px-4 py-2 text-sm font-black text-black" onClick={() => void loadKane()}>
+        Kane drawings (in the game)
+      </button>
       {error && <div className="mt-2 text-sm font-bold text-red-300">{error}</div>}
 
       {all && (

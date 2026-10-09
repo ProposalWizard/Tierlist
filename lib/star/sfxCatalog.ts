@@ -22,7 +22,7 @@ export interface SfxCatalogEntry {
   /** What the sound is, as it is named on the Sound Board. */
   label: string;
   /** Section on the page. */
-  group: "The match" | "The crowd" | "The referee" | "Goal video commentator" | "Rewards" | "Menus, phone and news";
+  group: "The match" | "The crowd" | "The referee" | "Goal video commentator" | "Cut-scene music" | "Rewards" | "Menus, phone and news";
   /** Where the player hears it. Plain English. */
   where: string;
   /** True when the game plays it today. */
@@ -51,6 +51,12 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
       ? "In TV, highlights and TikTok goal videos, as the goal goes in (or just after, for what it means for the score)."
       : "In TV and highlights goal videos, over the slow-motion replay.",
   })),
+  // The cut-scene music beds (lib/star/cutscene/music.ts, made by tools/cutscene-music/make_beds.py).
+  { name: "cut-music-signing", label: "Music: signing a contract (warm, hopeful)", group: "Cut-scene music", wired: true, where: "Under the contract-signing cut scene (Settings → Look → Cut-scene camera: New)." },
+  { name: "cut-music-trophy", label: "Music: a trophy, a goal, an award (triumphant)", group: "Cut-scene music", wired: true, where: "Under the trophy lift, goal, award and promotion cut scenes (Cut-scene camera: New)." },
+  { name: "cut-music-walkout", label: "Music: the walk-out (building tension)", group: "Cut-scene music", wired: true, where: "Under the tunnel walk-out, debut and rivalry cut scenes (Cut-scene camera: New)." },
+  { name: "cut-music-press", label: "Music: press room and bad news (low tension)", group: "Cut-scene music", wired: true, where: "Under the press conference, the manager's office with bad news, injuries and the mentor (Cut-scene camera: New)." },
+  { name: "cut-music-farewell", label: "Music: the farewell (emotional)", group: "Cut-scene music", wired: true, where: "Under the farewell cut scene at the end of a career (Cut-scene camera: New)." },
   { name: "coin-in", label: "Money paid in", group: "Rewards", wired: true, where: "After a match when your pay comes in. Also when you sell a stake in a club or sell a player." },
   { name: "star-tick", label: "Star bar filling, one tick", group: "Rewards", wired: true, where: "After a match, as the star bar starts to fill." },
   { name: "level-up", label: "Star rating goes up", group: "Rewards", wired: true, where: "After a match when your star rating goes up. Also when a new star banner shows." },
@@ -62,7 +68,7 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "can-open", label: "Opening an energy drink", group: "Menus, phone and news", wired: true, where: "When you use an energy can." },
 ];
 
-export const SFX_GROUPS: SfxCatalogEntry["group"][] = ["The match", "The crowd", "The referee", "Goal video commentator", "Rewards", "Menus, phone and news"];
+export const SFX_GROUPS: SfxCatalogEntry["group"][] = ["The match", "The crowd", "The referee", "Goal video commentator", "Cut-scene music", "Rewards", "Menus, phone and news"];
 
 export const SFX_NAMES: string[] = SFX_CATALOG.map((s) => s.name);
 

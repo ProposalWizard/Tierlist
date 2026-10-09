@@ -1,0 +1,7 @@
+The cut-music-*.mp3 files (signing, trophy, walkout, press, farewell) are the
+cut-scene music beds. They were written for Knowitball from scratch, as notes
+in code, and played by a small synthesiser in
+tools/cutscene-music/make_beds.py (numpy, scipy, PyAV). No samples, no
+recordings and no other people's music were used; no vocals, no real artists
+or brands. They are Knowitball's own and may be used, changed and shipped
+freely. Any of them can be replaced on the Sound Board (/admin/sound-board).

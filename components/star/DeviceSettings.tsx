@@ -203,8 +203,8 @@ function LookRow({ id, tabs, note, look }: {
 
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", chanceMix: "Chance mix (testing)",
-  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
+  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)",
+  garden: "3D garden", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
 };
@@ -260,6 +260,7 @@ function MatchGroup() {
       <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
       <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
       <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
+      <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
       <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
       <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
       <SetToggle label="Post-match reactions" on={postMatch} onClick={flipPostMatch} last />
@@ -283,6 +284,7 @@ function World3dGroup() {
       <LookRow id="playerStyle" look={look} tabs={NEW_OLD} note="New: the Knowitball look on every 3D person: painted (cel) shading, a warm rim of light, an ink outline, three new bodies, real kits with the number, trims and a badge; managers in suits. Old: the bodies and shading as before." />
       <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
       <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
+      <LookRow id="cutsceneCamera" look={look} tabs={NEW_OLD} note="New: opens on a wide of the place, the camera always moving a little, stiff moves hidden behind faces and close-ups, and music. Old: the shots as they were, no music." />
       <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: one broadcast camera, about 48° down, for every chance (corners too); the ball at 55–60% of the height so you drag on the pitch; men and keeper about 6% of the screen tall; smoother moves. Old: everyone in the chance on screen, men drawn big; side-on chances top-down." />
       <LookRow id="playerLight3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the players lit from the side and behind, darker underneath, a shadow under each man. Old: the light as it was." />
       <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />

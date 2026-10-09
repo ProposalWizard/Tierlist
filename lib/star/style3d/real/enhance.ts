@@ -14,6 +14,7 @@
 import type { Quality3d } from "../../three3d/quality";
 import { envFor, type TimeOfDay } from "./assets";
 import { makeHPost, type HGrade, type HPost } from "./post";
+import { safeCompileAsync } from "../../three3d/safeCompile";
 import { bakedLightNow, type BakedLight, type BakeSet } from "../../look/bakedLight";
 import { lookLut } from "../../look/params";
 
@@ -90,13 +91,13 @@ export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod
       await Promise.race([Promise.all(waits), new Promise((r) => setTimeout(r, 6000))]);
       if (dead) return;
       if (baked) baked.apply(sc); // everything built so far wears the bake before its shader is built
-      if (typeof renderer.compileAsync !== "function") return;
       const rt = post.sceneTarget();
       const prevT = renderer.getRenderTarget(), tm = renderer.toneMapping;
       if (rt) { renderer.toneMapping = T.NoToneMapping; renderer.setRenderTarget(rt); }
       let job: Promise<unknown> = Promise.resolve();
       // compileAsync picks each shader's variant now, from the target set; only the waiting is async
-      try { job = renderer.compileAsync(sc, camera); } catch { /* built on first use */ }
+      // three3d/safeCompile.ts: compiles now (synchronously, from the target set) and only waits async
+      try { job = safeCompileAsync(renderer, sc, camera); } catch { /* built on first use */ }
       renderer.setRenderTarget(prevT); renderer.toneMapping = tm;
       await Promise.race([job.catch(() => {}), new Promise((r) => setTimeout(r, 8000))]);
     },

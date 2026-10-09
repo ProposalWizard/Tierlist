@@ -51,6 +51,7 @@ import {
   floorCanvas, wallCanvas, floorShadeCanvas, glowCanvas, patchCanvas, viewCanvas,
   driveBackCanvas, driveCanvas, platesCanvas, signCanvas,
 } from "./textures";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 export type HomeSpot = "wardrobe" | "cabinet" | "drive";
 
@@ -778,7 +779,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // the mirror's own layer must survive joining: pieces it sees join only with each other
   const frozen = freezeStatic(THREE, mergeGeometries, scene, keep);
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
-  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use */ }
+  try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
   // ── State ──
@@ -913,7 +914,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
         scene.add(next.person.root);
         me = next;
         disposePerson(old.person, old.worn.kind === "casual");
-        try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* first use */ }
+        try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
         shadowDirty = true;
       } finally { changing = false; }
     });

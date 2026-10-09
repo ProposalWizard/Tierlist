@@ -82,6 +82,17 @@ exactly today's bodies. You never pick a file yourself:
   `toonKitColours` maps it onto the textured kit (base, trim on collar/cuffs/sock
   tops, number on the back, badge, socks, boots). Settle clashes first with
   `kitsFor` (`lib/star/kits.ts`); Style A paints what it is given.
+- Shirt lettering and cloth (9 Oct 2026): the number sits between the shoulder
+  blades, your name (`setToonYou({ name })`, or `look.name`) arched above it,
+  a small number on his right chest by the badge. Placed from each head's own
+  shoulder joint and collar (`toonShirtLayout`, `lib/star/style3d/toon/shader.ts`),
+  so every head and build is right. The cloth is drawn in the shader, no
+  texture or draw call added: a fine weave, stitched seams (sides, shoulders,
+  sleeves, hem, waistband), a ring collar, cuff band and line, a shorts side
+  stripe. Stripes, hoops, halves and contrast sleeves come from the club
+  sheets (`lib/star/style3d/toon/kitPattern.ts`, found from the kit's colours;
+  pass `kit.pattern` to set one, `null` for plain). `TOON_HEM_FIX` (bodies.ts)
+  corrects the Quiff's and Fringe's hem line (they painted the shorts top as shirt).
 - Hands: the standing idles get relaxed arms baked per person
   (`relaxIdleArms` in `lib/star/three3d/runPosture.ts`, the same file as the
   running arms' wrist step `relaxWrist`), and the fingers rest curled
@@ -211,7 +222,7 @@ When `lib/star/three3d/footballAnims.ts` loads the mocap file it fixes it once: 
 6. **Play it** (next sections).
 7. **Check it** frame by frame (below).
 
-For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set.
+For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper dives are the model) or in `tools/anims3d/clips.py` for the old set. Keyed clips pass through `steady()` there (no knee/elbow flips); `tests/star/animSmooth.mts` checks no bone turns over 60° in one 60 fps frame.
 
 ### Play a clip in a scene
 
@@ -336,6 +347,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 What landed today on Harry, newest first, one line each.
 
 - Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
+- Cut-scene camera + music: a film pass over every cut scene (wide first, weak moves hidden, always moving), a farewell in the stadium, five music beds; Settings → Look → Cut-scene camera (handover below).
 
 - 3D drill controls round 3: Free Roam play camera, Call for it (phone button, PC F), Two Touch's stick moved to a small corner nudge stick on phones.
 
@@ -434,7 +446,7 @@ Harry's idea, in his words: *"imagine you actually had your current house with a
 - Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
 
 **Half-done or not seen.**
-- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges: the forearms read a shade darker than the top, a little skin shows at the elbows, and a thin red line sits at the collar. Player style Old keeps the human outfits.
+- Style A (Player style New, 9 Oct, later): casual outfits now use your own toon head and body too (`lib/star/home3d/wear.ts` `paintCasualToon`: the toon shader's long-sleeve "suit" paint, coloured from the set). Seen in the mirror (hoodie, coat) and the garden (`/star-garden3d-dev?outfit=tracksuit`). Rough edges fixed (9 Oct, later): forearms now shade like the top, no skin at the elbows or knees, and the model's own red shirt no longer shows as a line at the collar or hem. Player style Old keeps the human outfits.
 - The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
 - Seen on the test page (390×844, software GL): the house room, the wardrobe card, the coat and the tee in the mirror, the full cabinet, the drive window. Not seen: the starter, villa and estate rooms and the empty cabinet on screen (stills were cut short; `tests/star/home3d.mts` checks their presets); the house opened from a real career; a phone; the casual set in the garden and shop on screen.
 
@@ -518,6 +530,44 @@ Next 3 steps, in order:
 1. Harry: a career match on the iPhone with `?fps=1`, Player style New. Look at "worst" across 10 chances and whether the 3D still drops to 2D.
 2. Pack the shop's 45 models' maps as KTX2 (same picture; ~4× less GPU memory on iPhone).
 3. Profile a real-game chance start on a quiet machine (CanvasMatch's `loadScenario` + the first 3D frame) and fix what the profile names.
+
+### 3D loading (speed job B)
+
+Harry: "I want loading times eradicated … there has to be ways." Same picture, less work.
+
+Measured with `scripts/perf3d/load.mjs` (the real scenes, 390×844, Chrome's Fast 4G, page thread slowed 4×, SwiftShader: no graphics chip). "first" = ms from open to the first frame handed over (CPU side, shader builds included). Trips = requests that reached the server (downloads and "still the same?" checks). The machine was shared by six builders; times moved ±20% run to run, so trust the trips, KB and shader counts more than the ms. The "after" also holds lag pass 3 from main.
+
+| Place | Cold first (s) | Warm first (s) / trips | Revisit first (s) | Home preload, then open (s) |
+|---|---|---|---|---|
+| Casino | 9.6 → 7.3 | 7.1 → 8.1 / 12 → 3 | 3.8 → 4.5 | 6.2 |
+| Garden | 19.5 → 17.8 | 11.7 → 10.9 / 37 → 20 (now 2: bake files fixed later) | 12.0 → 5.8–8.0 | 12.0 |
+| 3D shop | 14.5 → 12.6 | 11.6 → 7.4 / 25 → 9 | 3.6 → 4.9 | 7.1 |
+| House | 5.5 → 4.7 | 3.8 → 2.8 / 3 → 0 | 1.3 → 1.3 | 2.7 |
+| Home/title Style A player | 2.3 → 2.4 | 1.5 → 1.2 / 3 → 0 | 0.3 → 0.3 | 0.6 |
+| 3D drill (Free Roam) | 9.5 → 9.5 | 5.5 → 5.4 / 21 → 7 | 2.5 → 2.7 | – |
+| Office (signing scene) | 4.2 → 4.8 | 3.5 → 2.8 / 6 → 0 | 1.3 → 1.3 | – |
+| Career match 3D | 10.7 → 12.0 | 3.9 → 3.9 / 21 → 8 | 5.0–6.0 → 7.7–7.9 | – |
+| Cut scene (trophy) | 7.0 → 6.6 | 4.4 → 4.6 / 12 → 0 | 1.0 → 0.8 | – |
+
+Shader programs built AFTER the loading cover came down (each one a page-thread stall on the first frames; `scripts/perf3d/newprog.mjs`): garden 57 → 22, house 14 → 6, shop 8 → 4, casino 6 → 3; casino builds 52 → 29 in all. Unthrottled, the casino opened in 20.3 s → 7.2 s and the garden 19.1 s → 12.3 s (`scripts/perf3d/prof.mjs`). 3D shop picture memory on the chip: 288 → 103 MB (`proof.mjs shop --split --beforeq=&ktx2=0`).
+
+Done:
+- `hEnh.compile` (look H scenes): shaders built once, for the pass's picture target (`lib/star/style3d/real/enhance.ts`, `post.ts` `sceneTarget`). Casino: the room's reflection bake reuses them.
+- Versioned addresses + immutable cache: `lib/star/three3d/assetUrl.ts`, `lib/star/three3d/assetVersions.ts` (regenerated by `next.config.mjs` at every build), the header in `next.config.mjs`. The baked light's own fetches too (`lib/star/look/bakedLight.ts`).
+- Home's early download (`preloadScene`, `lib/star/three3d/perf.ts`): one file at a time (a place that opens jumps the queue), the people files the current Settings really use (`people3dFiles`), then unpacked once (`warmPeople3d`, `lib/star/people3d.ts`); each place's real file list is learned after its first visit (`noteSceneFiles`); the house added.
+- 3D shop: KTX2 twins of the 30 generated items (`tools/shop3d/ktx2_items.mjs`, ETC1S; files 8.6 → 14.5 MB, memory a quarter); the car stand and the homes table keep the last two models and free older ones.
+- Home/title Style A player: the kept picture of him (or a grey shape) while he loads, never the old figure (`components/star/ToonHomePlayer.tsx`).
+- Showroom shop: the small render under the big still until it arrives (`components/star/shop2d/ShowroomShop.tsx`).
+- 2D pictures: 20 big PNGs as WebP, 20.6 → 1.4 MB (`scripts/perf3d/pictures-webp.mjs`; the PNGs are kept). Face scanner: a photo it can't read is remembered, so its 15 MB is not fetched again (`lib/star/faceScan.ts`).
+
+Not done:
+- Scenes still load all 8 Style A heads (1.7 MB, ~54 MB on the chip) when they show 1–4 people. Pass the heads up front.
+- KTX2 for the people and heads (toon heads 6.7 MB each on the chip, `star-pass/3d/reward-glasses.glb` 51 MB, `human3d/human.glb` 50 MB): check first that nothing reads their pixels.
+- Load the shop's items only near/in view: the room is 12 × 16 m, everything is in view from the door, so it saves little; not built.
+- Career 3D (engineView, job A's file) and cut scenes (the cut-scene builder's) were measured, not changed.
+- Not seen on a phone. The look of the KTX2 shop items was checked on one still pair only (near-identical; the smart-watch band a shade lighter).
+
+Tools: `scripts/perf3d/load.mjs` (`--files` lists every trip), `prof.mjs` (top costs and who calls them), `newprog.mjs` (shaders built after ready), `png-refs.mjs` (which PNGs the code uses), `serve.mjs --cache=vercel` (the live site's cache headers).
 
 ### 2D shop
 
@@ -621,6 +671,14 @@ head and build (`yourToonHead`); scenes load only their heads
 - Kit decals on the Style A shirt: the back number sits low (`uNumBox` comes
   from the kit lines; place it between the shoulder blades per head) and the
   shirt is flat colour (add the textured kit: weave, seams, collar trim).
+- 2D match sprites. `node tools/sprites/new/bake-new.mjs reskin` re-bakes every
+  cell on a Style A body into the same rects and anchors, but it is not
+  shippable yet: atlas-0's sprint, kick and keeper dives came from GLB clips
+  that were never committed, and the Old cells are cropped tight to the Old
+  silhouette, so the Style A body overflows them (shrinking to fit gave scales
+  down to 0.3). Needs a decision: re-bake with a fresh index (new rects,
+  same frame counts and timings) or keep 2D Old.
+- (Done 9 Oct: the back number between the shoulder blades, name, front number, cloth and patterns.)
 - Garden's casual sets still use the human body.
 
 **Half-done / not seen:**
@@ -655,3 +713,51 @@ outline and shadow, as Old); every new look behind New | Old.
 **See it:** `/star-look-dev?head=h4&body=c2` (your player, a mate, a manager;
 `?pstyle=old` for Old). Stand-alone stills without Next.js:
 `tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
+
+### Cut-scene camera + music (9 Oct 2026)
+
+Harry: "do a pass of camera angles in the cut scenes, hide bad animations with
+good zooms and angles, wide angles, music."
+
+**What it is:** Settings → Look → "Cut-scene camera: New | Old" (`lib/star/cutscene/look.ts`,
+row `cutsceneCamera` in `lib/star/gameVersions.ts`, default New). New runs the
+film pass (`filmPass` in `lib/star/cutscene/cinema.ts`) over every script before
+`director.ts` plays it, hand-made or generated. Old plays the script as written.
+The pass, in order: opens on a wide of the place; a plain medium in a two-person
+talk becomes an over-the-shoulder; no close shot on a journalist (his stand-in
+head smears); a wide never stays on a weak move longer than 1 s (`WEAK_WIDE_MAX`):
+it cuts to the prop (pen, trophy, shirt), the face or the other person's
+reaction, 1.2–2.4 s each; a walk is covered from behind into the light or a
+head-and-shoulders from the front; no face ever fills the frame (close-ups
+become head and shoulders: the face texture goes soft and orange that close);
+an insert of hands on the desk or the handshake becomes an over-the-shoulder
+(floating hands); every shot moves a little; cuts snap onto the start of a
+move; no fade up from black; an over-the-shoulder behind a seated man looks
+over his chair. With New the director also softens the bloom (×0.35) and the
+close-up rim light (1.8 → 0.5): they drew a red-orange halo round every body.
+
+**Move quality tags:** `CLIP_QUALITY`, `POSE_QUALITY`, `GAIT_QUALITY` in
+`lib/star/cutscene/presets/clips.ts` (good / ok / weak). `weakWindows(script)`
+reads them plus the pen, handshake and prop grabs. Tag a new clip there when you
+add it; a clip that improves goes from weak to ok and the camera stops hiding it.
+
+**Farewell:** `retired` has its own story now (stadium, `farewell-walk` beat:
+guard of honour, last walk, salute) and a hand-made fixture `farewell`. Before,
+it had no story and fell back to another scene's room.
+
+**Music:** `lib/star/cutscene/music.ts`: five beds (signing, trophy, walkout,
+press, farewell) in `public/sfx/cut-music-*.mp3`, 20–24 s loops, 240–280 KB,
+made from code by `tools/cutscene-music/make_beds.py` (no samples; licence in
+`public/sfx/CUTSCENE-MUSIC-LICENSE.txt`). Fades in and out, drops to a third
+under talk, silent when Sound effects is off. On the Sound Board under
+"Cut-scene music", so a better take can replace any of them. Higgsfield's audio
+tool makes speech only and refuses music, so no credits were spent.
+Only the director page plays cut scenes today; a host plays music with
+`createCutsceneMusic(script, sfxUrl(musicCue(musicBedFor(script))), sfxOn)`.
+
+**See it:** `/star-style-dev?scene=director&fixture=farewell&clean=1` (`&cam=old` for Old).
+**Tests:** `tests/star/cutscene.mts` (film pass on every fixture and event; music bed and ducking).
+
+**Next:** shallow depth of field is not done (the cel style has no depth pass);
+nobody has listened to the music yet (levels measured only); the real game does
+not play these cut scenes yet.

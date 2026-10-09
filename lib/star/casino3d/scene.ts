@@ -78,6 +78,7 @@ import {
   STAND, FOCUS, stationAt,
 } from "./plan";
 import { buildGames, type Games3D } from "./games3d";
+import { safeCompileAsync } from "../three3d/safeCompile";
 export type { CasinoStation } from "./plan";
 
 
@@ -785,14 +786,14 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // reflections then reuses those same shaders (a picture target, no tone
   // mapping), where it used to build them all again on the page thread, and
   // the first frame a third time. Same picture.
-  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use */ }
+  try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
   if (hRoom) {
     if (!hEnh) await compileForBake(THREE, renderer, scene, camera);
     if (disposed) throw new Error("disposed");
     hRoom.bakeReflections();
     // the reflections are a new light on every shiny material: anything it changed is built now, not on the first frame
-    try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* first use */ }
+    try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     if (disposed) throw new Error("disposed");
   }
   /** New: the shared look-around camera (eased drag, a tilt) with the boom kept out of lamps and walls. */

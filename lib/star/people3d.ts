@@ -34,8 +34,9 @@ import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook } from "./style3d/toon/look";
-import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
-import { patchToonBody, toonUniforms } from "./style3d/toon/shader";
+import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
+import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
 type Three = typeof import("three");
@@ -152,6 +153,8 @@ export interface Person3D {
   toonHead?: ToonHead;
   /** Style A: head + build, for scenes that keep spare bodies (toonKey). */
   toonKey?: string;
+  /** Your own player (makePerson3d's `you`): Style A puts your name on the back. */
+  you?: boolean;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -167,7 +170,9 @@ export interface PersonLook {
   hair?: string;
   /** Club colours (players only). Shorts in the trim, socks in the shirt colour. */
   /** shorts: their own colour (most kits: the trim, which is the default). */
-  kit?: { shirt: string; trim: string; shorts?: string; socks?: string };
+  kit?: { shirt: string; trim: string; shorts?: string; socks?: string; pattern?: KitPattern | null };
+  /** Style A: the name arched over the back number (your own player: your surname, by default). */
+  name?: string | null;
   /** Style A bodies: a crest picture for the chest (else a shield in the kit's colours). */
   badge?: THREE.Texture | null;
   /** The back of the shirt (a canvas texture of the number), or none. */
@@ -592,6 +597,7 @@ export function makePerson3d(
   // the suit heads are modelled in their suits; a player head is in a kit
   const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
   if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
+  if (toon && toonHead && TOON_HEM_FIX[toonHead]) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
@@ -610,6 +616,15 @@ export function makePerson3d(
     const mask = mat.aoMap as THREE.Texture;
     mat.aoMap = null;
     Object.assign(u, toonUniforms(T, mask, meta.kit, meta.joints.neck?.[1] ?? 1.5));
+    // the lettering placed from this head's own shoulders and collar (the old body's spot sat at the waist)
+    const tk = meta.kit as PersonMeta["kit"] & { collarY?: number };
+    const lay = toonShirtLayout({ shoulderY: meta.joints.LeftArm?.[1] ?? 1.4, collarY: tk.collarY ?? (meta.joints.neck?.[1] ?? 1.5) - 0.03 });
+    const tu = u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    tu.uNumBox.value.set(lay.number.x, lay.number.y, lay.number.size, lay.number.size);
+    tu.uNameBox.value.set(lay.name.x, lay.name.y, lay.name.w, lay.name.h);
+    tu.uFrontNum.value.set(lay.front.x, lay.front.y, lay.front.size, 1);
+    // the skin's own shading, so long sleeves over the arms shade like the cloth (casual sets)
+    tu.uCloth.value.z = Math.min(1.4, Math.max(0.25, Math.pow(Math.max(meta.skinAvg[1], 1e-4), 1 / 2.2) / 0.7));
     u.uKit.value = 1;
     (u as Record<string, { value: unknown }>).uSuit.value = suit ? 1 : 0;
     const tl = { ...TOON_LOOK_DEFAULT, ...opts.toonLook };
@@ -704,7 +719,7 @@ export function makePerson3d(
       fingers[side] = out;
     }
   }
-  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined };
+  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined, you: !!opts.you };
   if (toonHead && fingers) {
     // Style A: relaxed hands from the start (the clips never move a finger); poseClips keeps them
     const relaxed = fingersDeg(RELAXED_FINGERS_DEG);
@@ -900,6 +915,16 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   }
   u.uNumOn.value = look.number ? 1 : 0;
   if (look.number) u.uNum.value = look.number;
+  if (u.uPattern) {
+    // Style A: the club's stripes/hoops (the shirt and trim of a club kit that has them), and the name
+    const pat = look.kit ? (look.kit.pattern !== undefined ? look.kit.pattern : kitPatternFor(look.kit.shirt, look.kit.trim)) : null;
+    u.uPattern.value.set(pat ? KIT_PATTERN_CODE[pat.kind] : 0, pat?.kind === "hoops" ? 0.11 : 0.1, 0, 0);
+    if (pat) u.uPat2.value = lin(T, pat.colour);
+    const name = look.name !== undefined ? look.name : p.you ? toonYou().name : null;
+    const nt = look.number && name ? shirtNameTexture(T, name) : null;
+    u.uNameOn.value = nt ? 1 : 0;
+    if (nt) u.uName.value = nt;
+  }
   const acc = (slot: string) => look.accessories?.find((a) => a.slot === slot);
   const on4 = (hex: string | undefined) => (hex ? new T.Vector4(...lin(T, hex).toArray(), 1) : new T.Vector4(0, 0, 0, 0));
   const boots = acc("boots");
@@ -945,6 +970,45 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   } else {
     u.uFaceOn.value = 0;
   }
+}
+
+const nameTex = new Map<string, THREE.Texture>();
+/** The name for the back of a Style A shirt: capitals, arched, white on clear (the shader inks it in the trim). */
+function shirtNameTexture(T: Three, name: string): THREE.Texture | null {
+  if (typeof document === "undefined") return null;
+  const text = name.trim().toUpperCase().slice(0, 14);
+  if (!text) return null;
+  let t = nameTex.get(text);
+  if (t) return t;
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 128;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#fff";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  let size = 78;
+  g.font = `800 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+  const spacing = 6;
+  const widthOf = () => Array.from(text).reduce((a, ch) => a + g.measureText(ch).width + spacing, -spacing);
+  while (widthOf() > 470 && size > 30) { size -= 4; g.font = `800 ${size}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`; }
+  // a gentle arch: each letter on a circle whose top is the canvas middle
+  const total = widthOf();
+  const R = 900;
+  let x = -total / 2;
+  for (const ch of Array.from(text)) {
+    const w = g.measureText(ch).width;
+    const a = (x + w / 2) / R;
+    g.save();
+    g.translate(256 + Math.sin(a) * R, 64 + 8 + R - Math.cos(a) * R);
+    g.rotate(a);
+    g.fillText(ch, 0, 0);
+    g.restore();
+    x += w + spacing;
+  }
+  t = new T.CanvasTexture(c);
+  t.colorSpace = T.SRGBColorSpace;
+  t.anisotropy = 4;
+  nameTex.set(text, t);
+  return t;
 }
 
 /** World position of a bone. */

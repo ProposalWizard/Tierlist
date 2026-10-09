@@ -51,6 +51,7 @@ import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -1328,7 +1329,7 @@ async function buildShop(
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
-  try { await (hEnh ? hEnh.compile(scene, camera) : renderer.compileAsync(scene, camera)); } catch { /* compiled on first use instead */ }
+  try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
