@@ -37,6 +37,8 @@ export interface StyleGameplay {
   setStyle(def: StyleDef): void;
   setFlat(on: boolean): void;
   setTilt(deg: number): void;
+  /** Frame stepping (lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
+  step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
@@ -271,6 +273,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     setStyle(d) { def = d; restyle(); },
     setFlat(on) { flat = on; applyBodies(); },
     setTilt(deg) { tilt = deg; },
+    step: (dt, draw) => ctrl.step(dt, draw),
     dispose() {
       for (const f of flats) f.fig.dispose();
       kit?.dispose();
