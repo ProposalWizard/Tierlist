@@ -4,7 +4,7 @@ import { isSwitchedOff, playableKind } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { giveAndGoChance } from "@/lib/star/giveAndGo";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, useContext } from "react";
-import { EngineFrameContext, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct } from "@/lib/star/engineFrame";
+import { EngineFrameContext, type EngineFrameFigure, type EngineFrameKeeper, type EngineFrameAct, type EngineFrameOrders } from "@/lib/star/engineFrame";
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
@@ -35,6 +35,8 @@ import {
 } from "@/lib/star/dribble";
 import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
+import Dribble3D from "./Dribble3D";
+import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
 import { oldDribble, oldClearances } from "@/lib/star/gameplayVersion";
 import { getTuning } from "@/lib/star/tuningStore";
@@ -1265,6 +1267,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // fixed for the run's whole lifetime so re-renders while phase ===
   // "fpDribble" never reroll the waves out from under an in-progress run.
   const fpDribbleRef = useRef<{ waveSizes: number[]; seed: number } | null>(null);
+  /** Settings → Look → "Dribble runs 3D", read once per match (switching mid-run would remount it). */
+  const dribble3dRef = useRef(dribble3dLook());
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
   // Curve boots: a swipe captured in screen pixels (not pitch metres — the
   // ball is in flight, moving through 3D space the aim gesture never has to
@@ -3567,6 +3571,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
      * this pitch is — a defender is never gold and neither is the ball, so an
      * order can never be mistaken for a thing that is about to happen to you.
      */
+    // The same orders, for a frame reader (a 3D view draws them on its own
+    // pitch): read only, built from what drawCaptainOrders below draws.
+    const captainOrdersFrame = (s: Scenario): EngineFrameOrders | null => {
+      if (!isCaptainRef.current || phaseRef.current !== "aim" || !acceptsCaptainOrders(s.kind)) return null;
+      const runners = orderableRunners(s);
+      const all = [s.runner, ...s.secondaryRunners].filter(Boolean) as Runner[];
+      const pickable = runners.map((r) => `run${all.indexOf(r)}`).filter((id) => id !== "run-1");
+      if (goalInView(s.kind)) pickable.push("follower");
+      const runs: { from: { x: number; y: number }; to: { x: number; y: number } }[] = [];
+      for (const r of runners) if (r.commandedTo) runs.push({ from: { x: r.pos.x, y: r.pos.y }, to: { x: r.commandedTo.x, y: r.commandedTo.y } });
+      if (s.follower.commandedTo) runs.push({ from: { x: s.follower.x, y: s.follower.y }, to: { x: s.follower.commandedTo.x, y: s.follower.commandedTo.y } });
+      const relay = s.relayTo ? { x: s.relayTo.pos.x, y: s.relayTo.pos.y } : s.relayToFollower ? { x: s.follower.x, y: s.follower.y } : null;
+      const d = captainDragRef.current;
+      const drag = d && Math.hypot(d.to.x - d.from.x, d.to.y - d.from.y) >= CAPTAIN_DRAG_MIN
+        ? { from: d.target === "follower" ? { x: s.follower.x, y: s.follower.y } : { x: d.target.pos.x, y: d.target.pos.y }, to: { x: d.to.x, y: d.to.y } }
+        : null;
+      return { pickable, runs, relay, drag };
+    };
+
     const drawCaptainOrders = (s: Scenario) => {
       const GOLD = "#fbbf24";
 
@@ -4370,6 +4393,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
         goalInView: goalInView(sc.kind) || goalOnCamera,
+        orders: captainOrdersFrame(sc),
       });
     }
   }, [toPx]);
@@ -7390,23 +7414,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             entirely), not something drawn onto it the way the old top-down
             dribble is. `waveSizes`/`seed` are rolled once at trigger time
             (fpDribbleRef) and held fixed so this never remounts mid-run. */}
-        {phase === "fpDribble" && fpDribbleRef.current && (
-          <FirstPersonDribble
-            embedded
-            pace={100}
-            oppStrength={100}
-            waveSizes={fpDribbleRef.current.waveSizes}
-            roster={fpRoster}
-            seed={fpDribbleRef.current.seed}
-            chaseEye={5}
-            chasePitchDeg={5}
-            chaseOffset={4}
-            cameraFollowRate={10}
-            passOptions={oldDribble() ? 0 : Math.round(getTuning("dribble.mates"))}
-            vision={visionRef.current}
-            onComplete={finishFpDribble}
-          />
-        )}
+        {phase === "fpDribble" && fpDribbleRef.current && (() => {
+          // The duel's own props, exactly as before. Settings → Look →
+          // "Dribble runs 3D": 3D plays the SAME run (these waves, this
+          // roster, this onComplete) in the Free Roam look instead
+          // (Dribble3D.tsx); Old is this duel, untouched.
+          const duel = {
+            pace: 100,
+            oppStrength: 100,
+            waveSizes: fpDribbleRef.current.waveSizes,
+            roster: fpRoster,
+            seed: fpDribbleRef.current.seed,
+            chaseEye: 5,
+            chasePitchDeg: 5,
+            chaseOffset: 4,
+            cameraFollowRate: 10,
+            passOptions: oldDribble() ? 0 : Math.round(getTuning("dribble.mates")),
+            vision: visionRef.current,
+            onComplete: finishFpDribble,
+          };
+          if (dribble3dRef.current !== "3d") return <FirstPersonDribble embedded {...duel} />;
+          const car = careerRef.current;
+          return (
+            <Dribble3D
+              {...duel}
+              // a fair run in 3D: the career's real numbers, not the duel's fixed 100
+              oppStrength={Math.round(oppStrength ?? 70)}
+              skills={car ? { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision } : undefined}
+              you={{ name: car?.player.lastName, photo: car?.player.portrait }}
+              kits={{ us: ourKit(), them: theirKit() }}
+              fallback={{ ...duel, embedded: true }}
+            />
+          );
+        })()}
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}

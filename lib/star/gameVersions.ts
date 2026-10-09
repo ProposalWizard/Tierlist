@@ -39,6 +39,7 @@ import { cutscenePeopleLook, setCutscenePeopleLook } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
+import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -69,6 +70,7 @@ export const LOOK_ROWS = {
   animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
   keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
+  dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
@@ -96,9 +98,9 @@ export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
 const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
 
-/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, and Match view 3D (9 Oct 2026).
+/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -120,6 +122,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     animations: O("animations"),
     keepers: N("keepers"),
     dribble: N("dribble"),
+    dribble3d: O("dribble3d"),
     clearances: N("clearances"),
     garden: N("garden"),
     look3d: N("look3d"),
@@ -150,8 +153,13 @@ for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.p
 // already reads Preview, the new row takes its Preview value. Otherwise the
 // phone would read as "Custom" and Harry would not see the new look.
 // The same goes for the real game's 3D camera and player light, added the same day.
-const LATE_PREVIEW_ROWS: readonly LookRowId[] = ["matchView3d", "camera3d", "playerLight3d"];
-if (typeof window !== "undefined" && !matchView3dStored()) {
+// Dribble runs 3D (9 Oct 2026, later the same day) the same way, keyed on its
+// own stored choice, so a row someone already set by hand is never changed.
+const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
+  ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
+  ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
+];
+if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
   const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);
   if (off.length > 0 && off.every((id) => LATE_PREVIEW_ROWS.includes(id))) {

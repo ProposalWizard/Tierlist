@@ -99,6 +99,23 @@ export interface EngineFrame {
   goalSide: "us" | "them" | null;
   /** The goal is part of this picture (a keeper may stand in it). */
   goalInView: boolean;
+  /**
+   * The captain's orders, while you are the captain, the ball is at your feet
+   * and the chance takes orders (null otherwise). A 3D view draws them on its
+   * pitch and lets a tap on one of `pickable` reach the 2D canvas at his feet.
+   */
+  orders?: EngineFrameOrders | null;
+}
+
+export interface EngineFrameOrders {
+  /** The team-mates a tap can pick (figure sids: "run0", "follower" …). */
+  pickable: string[];
+  /** Runs already given: from where he stands to where he was sent. */
+  runs: { from: Vec2; to: Vec2 }[];
+  /** The man it gets laid off to (where he stands), or null. */
+  relay: Vec2 | null;
+  /** The drag in the thumb right now (a run being given), or null. */
+  drag: { from: Vec2; to: Vec2 } | null;
 }
 
 export interface EngineFrameObserver {

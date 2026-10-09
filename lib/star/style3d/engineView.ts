@@ -377,6 +377,64 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   }
   cross.position.y = 0.02; cross.renderOrder = 4; root.add(cross);
 
+  // ── the captain's orders on the grass (EngineFrame.orders), in the Free
+  // Roam style: flat gold marks on the pitch, as the 3D drills' rings. A run
+  // is an arrow from the man to where he was sent (the one being dragged
+  // now solid, the ones already given softer); the lay-off is a double ring
+  // round the man it goes to. Gold is the armband's colour (the 2D game's too).
+  const ORDER_GOLD = "#fbbf24";
+  const orderMat = (o: number) => new THREE.MeshBasicMaterial({ color: ORDER_GOLD, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide });
+  const shaftGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0, 0, 0.5);
+  const headGeo = (() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(0, 0); sh.lineTo(-0.5, -1); sh.lineTo(0.5, -1); sh.closePath();
+    return new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2);
+  })();
+  type OrderArrow = { g: any; shaft: any; head: any };
+  const arrows: OrderArrow[] = [];
+  const arrowMats = { given: orderMat(0.72), live: orderMat(0.95) };
+  const arrowAt = (i: number): OrderArrow => {
+    while (arrows.length <= i) {
+      const g = new THREE.Group();
+      const shaft = new THREE.Mesh(shaftGeo, arrowMats.given), head = new THREE.Mesh(headGeo, arrowMats.given);
+      shaft.renderOrder = 5; head.renderOrder = 5;
+      g.add(shaft, head); g.position.y = 0.03; g.visible = false;
+      root.add(g);
+      arrows.push({ g, shaft, head });
+    }
+    return arrows[i];
+  };
+  const relayRings = new THREE.Group();
+  for (const [r0, r1, o] of [[0.95, 1.12, 0.95], [1.3, 1.4, 0.4]] as const) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 48), orderMat(o));
+    m.rotation.x = -Math.PI / 2; m.renderOrder = 5; relayRings.add(m);
+  }
+  relayRings.position.y = 0.03; relayRings.visible = false; root.add(relayRings);
+  const placeOrders = (f: EngineFrame) => {
+    const o = f.orders;
+    const k = figNow();
+    const list2 = o ? [...o.runs.map((r) => ({ ...r, live: false })), ...(o.drag ? [{ ...o.drag, live: true }] : [])] : [];
+    list2.forEach((r, i) => {
+      const a = arrowAt(i);
+      const dx = r.to.x - r.from.x, dz = r.to.y - r.from.y, len = Math.hypot(dx, dz);
+      const head = Math.min(len * 0.5, 0.9 * k);
+      a.g.visible = len > 0.3;
+      a.g.position.set(r.from.x - CX, 0.03, r.from.y);
+      a.g.rotation.set(0, Math.atan2(dx, dz), 0);
+      const mat = r.live ? arrowMats.live : arrowMats.given;
+      a.shaft.material = mat; a.head.material = mat;
+      // the shaft starts clear of his feet and stops at the head
+      const start = Math.min(len * 0.25, 0.55 * k);
+      a.shaft.position.z = start;
+      a.shaft.scale.set(0.24 * k, 1, Math.max(0.01, len - head - start));
+      a.head.position.z = len;
+      a.head.scale.set(0.75 * k, 1, head);
+    });
+    for (let i = list2.length; i < arrows.length; i++) arrows[i].g.visible = false;
+    relayRings.visible = !!o?.relay;
+    if (o?.relay) { relayRings.position.set(o.relay.x - CX, 0.03, o.relay.y); relayRings.scale.setScalar(k); }
+  };
+
   // ── the aim arrow: the 2D game's own arrow, drawn on the glass over the 3D picture ──
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg") as SVGSVGElement;
@@ -1072,7 +1130,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, last: 0 };
+  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0 };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -1090,6 +1148,34 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const v = ball.position.clone().project(camera);
     return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
   };
+  /**
+   * A team-mate the captain can order, under a press on the glass (client px),
+   * or null. A man here is drawn standing up and big, so a finger on his body
+   * is on grass well behind his feet: the 2D game would never find him there.
+   * So a press near his body AS SEEN (feet to head) picks him, and the 2D game
+   * is pressed at his feet (Harry, 9 Oct 2026: captain orders in 3D).
+   */
+  const PICK_PX = 30;
+  const mateOnGlass = (cx: number, cy: number): { x: number; y: number } | null => {
+    const f = lastFrame;
+    if (!f?.orders?.pickable.length) return null;
+    const r = container.getBoundingClientRect();
+    const toPx = (v: any) => ({ x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height });
+    let best: { x: number; y: number } | null = null, bd = PICK_PX;
+    for (const sid of f.orders.pickable) {
+      const fig = f.figures.find((g) => g.sid === sid);
+      const b = bodies.get(sid);
+      if (!fig || !b || !b.p.root.visible) continue;
+      const pos = b.p.root.position, h = 1.75 * (b.p.root.scale.y || 1);
+      const a = toPx(tmpV.set(pos.x, 0, pos.z).project(camera)), c = toPx(tmpV.set(pos.x, h, pos.z).project(camera));
+      // distance from the press to the line feet → head
+      const vx = c.x - a.x, vy = c.y - a.y, l2 = vx * vx + vy * vy || 1;
+      const t = Math.max(0, Math.min(1, ((cx - a.x) * vx + (cy - a.y) * vy) / l2));
+      const d = Math.hypot(cx - (a.x + vx * t), cy - (a.y + vy * t));
+      if (d < bd) { bd = d; best = { x: fig.x, y: fig.y }; }
+    }
+    return best;
+  };
   const onDown = (e: PointerEvent) => {
     if (!visible) return;
     // One finger at a time — but a touch that never ended here (its "up" went
@@ -1105,6 +1191,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
     const f = lastFrame;
     touch.id = e.pointerId; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
+    // a team-mate first (as the 2D game does: he takes priority over the ball)
+    const mate = f?.phase === "aim" ? mateOnGlass(e.clientX, e.clientY) : null;
+    const m2 = mate && to2dClient(mate);
+    touch.mate = !!m2;
+    if (m2 && mate) {
+      touch.shot = false; touch.start2 = m2; touch.g0 = mate;
+      touch.last = performance.now();
+      send("pointerdown", e, m2);
+      try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
+      return;
+    }
     // A press on or near the ball AS SEEN (its 3D picture, lifted off the grass
     // and drawn big) grabs the ball: the 2D game is pressed exactly on its own
     // ball, so the aim starts as surely as a press on the 2D ball does.
@@ -1124,6 +1221,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   const moveTarget = (e: PointerEvent) => {
     const g = groundAt(e.clientX, e.clientY);
+    // a team-mate picked: a tap stays on him (a lay-off); a drag sends him to the grass under the finger (a run)
+    if (touch.mate && Math.hypot(e.clientX - touch.start3.x, e.clientY - touch.start3.y) < 14) return touch.start2;
     if (!touch.shot) return g ? to2dClient(g) : null;
     const len = Math.hypot(e.clientX - touch.start3.x, e.clientY - touch.start3.y);
     const a = to2dClient(touch.g0), b = g ? to2dClient(g) : null;
@@ -1272,6 +1371,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ballShadow.visible = !!fb0 && !h;
       ring.visible = !!f.ring;
       if (f.ring) { ring.position.set(f.ring.x - CX, 0.02, f.ring.y); ring.scale.setScalar(figNow() * 0.8); }
+      placeOrders(f);
       cross.visible = !!f.landing;
       if (f.landing) { cross.position.set(f.landing.x - CX, 0.02, f.landing.y); cross.scale.setScalar(figNow() * 0.6); }
       // the crowd goes up for a goal
@@ -1299,7 +1399,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
       // frame-stepped filming (lib/star/virtualClock.ts) draws only the frames it films
       if ((window as unknown as { __view3dSkipDraw?: boolean }).__view3dSkipDraw) { leanAll(); return; }
-      if (f.phase === "contact") return; // the strike screen covers the pitch
+      if (f.phase === "contact" || f.phase === "fpDribble") return; // the strike screen (or the dribble run, its own picture) covers the pitch
       if (h) h.render(scene, camera, { beforeShadows: () => {}, afterShadows: leanAll });
       else { leanAll(); kit?.render(scene, camera); }
     },
