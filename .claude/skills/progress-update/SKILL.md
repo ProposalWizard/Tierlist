@@ -70,6 +70,12 @@ hard coded in the skill and should run on every task) … add a time estimate
   Act on it in the same turn, don't just note it.
 - Keep it to the bars, the time line, the speed line and the usage block. No
   prose.
+- **When Harry is away or asleep (Harry, 9 Oct 2026):** *"change updates from
+  every 5 mins to every 30 mins but continuously check to see that you are
+  doing things the best you can every 5 so things don't drift."* The 5-minute
+  timer keeps running and the speed/quality check still happens every time
+  (act on it), but the posted update only goes out every 30 minutes. Between
+  them, say nothing unless something is blocked or broken.
 
 ## Auto-deploy at every major update (Harry, 9 Oct 2026)
 

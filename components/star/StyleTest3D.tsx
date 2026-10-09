@@ -11,6 +11,7 @@ import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
 import type { CutScene } from "@/lib/star/style3d/cutscenes";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { quality3dTier } from "@/lib/star/three3d/quality";
+import { DEMOS, makeWorldSeek, publishFrameStep, type TimelineEvent } from "@/lib/star/frameStep";
 
 export type StyleScene = "play3d" | "play2d" | "goal" | "signing" | "walkout";
 const SCENES: { id: StyleScene; label: string }[] = [
@@ -68,6 +69,9 @@ export default function StyleTest3D() {
   const [dots, setDots] = useState<Dot[]>([]);
   const [run, setRun] = useState(0);
   const [inited, setInited] = useState(false);
+  /** ?clean=1 hides the test controls and labels (for frame-by-frame filming, scripts/film/frames3d.mjs). */
+  const [clean, setClean] = useState(false);
+  const demoRef = useRef<string | null>(null);
   const holder = useRef<HTMLDivElement>(null);
   const play = useRef<StyleGameplay | null>(null);
   const cut = useRef<CutScene | null>(null);
@@ -90,6 +94,8 @@ export default function StyleTest3D() {
     const ti = Number(q.get("tilt")); if (ti > 0) setTilt(ti);
     const td = q.get("tod"); if (td === "day" || td === "golden" || td === "night") setTod(td);
     const t = q.get("t"); if (t !== null && !Number.isNaN(Number(t))) setSeek(Number(t));
+    if (q.get("clean") === "1") setClean(true);
+    const demo = q.get("demo"); if (demo && DEMOS[demo]) demoRef.current = demo;
     setInited(true);
   }, []);
 
@@ -101,6 +107,7 @@ export default function StyleTest3D() {
     if (!el) return;
     let dead = false;
     let guard: { dispose(): void } | null = null;
+    let unpublish: () => void = () => {};
     setStatus("loading"); setShot(""); setHud(null);
     (window as unknown as { __styleReady?: boolean }).__styleReady = false;
     (async () => {
@@ -111,6 +118,11 @@ export default function StyleTest3D() {
           if (dead) { g.dispose(); return; }
           play.current = g;
           worn.current = styleRef.current;
+          // frame stepping: a scripted demo (?demo=) or whatever timeline the filming tool sets
+          const demo = demoRef.current ? DEMOS[demoRef.current] : null;
+          const fs = { duration: demo?.duration ?? 0, timeline: demo?.timeline as TimelineEvent[] | undefined, seek: (t: number) => seekGame(t) };
+          const seekGame = makeWorldSeek(g.session.world, g.step, () => fs.timeline);
+          unpublish = publishFrameStep(fs);
         } else if (family === "walkout") {
           const { createGuardScene } = await import("@/lib/star/farewell3d");
           const h = await createGuardScene(el, {
@@ -126,6 +138,7 @@ export default function StyleTest3D() {
           cut.current = c;
           worn.current = styleRef.current;
           if (seek !== null) c.seek(seek);
+          unpublish = publishFrameStep({ duration: c.duration, seek: (t) => c.frameSeek(t) });
         }
         setStatus("ready");
         (window as unknown as { __styleReady?: boolean }).__styleReady = true;
@@ -136,6 +149,7 @@ export default function StyleTest3D() {
     })();
     return () => {
       dead = true;
+      unpublish();
       play.current?.dispose(); play.current = null;
       cut.current?.dispose(); cut.current = null;
       guard?.dispose();
@@ -234,7 +248,7 @@ export default function StyleTest3D() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-black text-white" data-style-test={`${style}-${scene}`}>
-      <div className="z-20 flex flex-col gap-1.5 bg-gray-950/95 px-2 pb-2 pt-2">
+      <div className={`z-20 flex-col gap-1.5 bg-gray-950/95 px-2 pb-2 pt-2 ${clean ? "hidden" : "flex"}`}>
         <div className="flex items-center gap-1.5 overflow-x-auto" data-style-chips>
           <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Style</span>
           {STYLE_CHIPS.map((c) => (
@@ -270,12 +284,12 @@ export default function StyleTest3D() {
         )}
         {isPlay(scene) && hud && isH && <HScorebug hud={hud} mins={mins} />}
         {isPlay(scene) && isH && status === "ready" && <HMinimap dots={dots} />}
-        {isPlay(scene) && hud && !isH && (
+        {!clean && isPlay(scene) && hud && !isH && (
           <div className="pointer-events-none absolute left-2 top-2 z-20 flex items-center gap-2 rounded bg-black/55 px-2 py-1 text-[13px] font-black">
             <span>{hud.big}</span><span className="text-[11px] font-bold text-white/80">{hud.small}</span><span className="tabular-nums">{mins}</span>
           </div>
         )}
-        {isPlay(scene) && hud?.flash && <div className="pointer-events-none absolute inset-x-0 top-12 z-20 text-center text-[20px] font-black uppercase" style={{ textShadow: "0 2px 8px #000" }}>{hud.flash}</div>}
+        {!clean && isPlay(scene) && hud?.flash && <div className="pointer-events-none absolute inset-x-0 top-12 z-20 text-center text-[20px] font-black uppercase" style={{ textShadow: "0 2px 8px #000" }}>{hud.flash}</div>}
         {knob && (
           <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" style={{ left: knob.x0 - STICK_R, top: knob.y0 - STICK_R, width: STICK_R * 2, height: STICK_R * 2, background: "rgba(0,0,0,0.18)" }}>
             <div className="absolute h-[36px] w-[36px] rounded-full bg-white/80" style={{ left: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.x - knob.x0)), top: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.y - knob.y0)) }} />
@@ -290,21 +304,21 @@ export default function StyleTest3D() {
           <>
             <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[9%] bg-black" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[9%] bg-black" />
-            {shot && <div className="pointer-events-none absolute left-2 top-[10%] z-20 text-[11px] font-bold uppercase text-white/70" data-shot>{shot}</div>}
+            {shot && !clean && <div className="pointer-events-none absolute left-2 top-[10%] z-20 text-[11px] font-bold uppercase text-white/70" data-shot>{shot}</div>}
           </>
         )}
-        {cutScene && status === "ready" && (
+        {!clean && cutScene && status === "ready" && (
           <button onClick={() => { if (scene === "walkout") setRun((r) => r + 1); else { setSeek(null); cut.current?.replay(); } }} className="absolute bottom-[11%] right-3 z-30 h-[34px] rounded-full bg-amber-400 px-4 text-[13px] font-black text-black" data-replay>
             ↺ Replay
           </button>
         )}
         {scene === "walkout" && status === "ready" && <div className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-black/55 px-2 py-1 text-[11px] font-bold">The farewell walk-out in its own look: styles don&apos;t reach it yet.</div>}
-        {isPlay(scene) && status === "ready" && (
+        {!clean && isPlay(scene) && status === "ready" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-black/45 px-3 py-1 text-center text-[11px] font-bold">Left thumb: move · Tap: pass · Drag back, let go: shoot</div>
         )}
-        {status === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
+        {!clean && status === "loading" && <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading {styleName}…</div>}
         {status === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This device can&apos;t show the 3D test.</div>}
-        <div className="pointer-events-none absolute bottom-7 left-2 z-20 text-[10px] font-bold text-white/50">3D quality: {quality3dTier()}</div>
+        {!clean && <div className="pointer-events-none absolute bottom-7 left-2 z-20 text-[10px] font-bold text-white/50">3D quality: {quality3dTier()}</div>}
       </div>
     </div>
   );

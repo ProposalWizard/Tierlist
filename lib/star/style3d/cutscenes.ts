@@ -31,6 +31,8 @@ export interface CutScene {
   replay(): void;
   /** Hold still at t seconds (stills). */
   seek(t: number): void;
+  /** Frame stepping: stop the real-time loop and draw exactly t (forward in small steps, so repeatable). */
+  frameSeek(t: number): void;
   /** The shot on screen now (for the page's label). */
   onShot?: (name: string) => void;
   dispose(): void;
@@ -449,25 +451,44 @@ export async function createCutScene(container: HTMLElement, kind: CutKind, firs
 
   let t = 0, held: number | null = null;
   let last = performance.now();
+  /** One picture at scene time `tt`; `dt` moves the crowd, sparks and so on. `draw` false skips only the (slow) render. */
+  const tick = (dt: number, tt: number, draw: boolean) => {
+    update(tt);
+    stadium?.update(dt, tt);
+    kit.update(dt, camera, focus);
+    if (draw) kit.render(scene, camera);
+  };
   const frame = () => {
     const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (held === null) t = Math.min(duration + 1.5, t + dt);
-    const tt = held ?? Math.min(t, duration);
-    update(tt);
-    stadium?.update(dt, tt);
-    kit.update(dt, camera, focus);
-    kit.render(scene, camera);
+    tick(dt, held ?? Math.min(t, duration), true);
   };
   renderer.setAnimationLoop(frame);
   (window as any).__styleCut = { seek: (s: number) => { held = s; }, play: () => { held = null; }, actors, camera };
+
+  // FRAME STEPPING (lib/star/frameStep.ts): stop the real-time loop, then walk the clock to exactly `s` in
+  // 1/60 s steps (so the crowd and sparks move the same every time), drawing only the last.
+  let fsNow = 0;
+  const frameSeek = (s: number) => {
+    renderer.setAnimationLoop(null);
+    held = s;
+    if (s < fsNow) fsNow = 0;
+    if (s - fsNow < 1e-6) { tick(0, s, true); return; }
+    while (s - fsNow > 1e-6) {
+      const dt = Math.min(1 / 60, s - fsNow);
+      fsNow += dt;
+      tick(dt, fsNow, s - fsNow <= 1e-6);
+    }
+  };
 
   return {
     duration,
     setStyle(d) { def = d; restyle(); },
     replay() { t = 0; held = null; },
     seek(s) { held = s; },
+    frameSeek,
     dispose() {
       ro?.disconnect();
       renderer.setAnimationLoop(null);

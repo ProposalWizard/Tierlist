@@ -43,6 +43,8 @@ export interface StyleGameplay {
   dots(): { x: number; z: number; team: number; you?: boolean; ball?: boolean }[];
   /** Look H only: day, golden or night. */
   setTod(tod: TimeOfDay): void;
+  /** Frame stepping (lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
+  step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
@@ -334,6 +336,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
       out.push({ x: world.ball.x - CX, z: world.ball.y, team: 0, ball: true });
       return out;
     },
+    step: (dt, draw) => ctrl.step(dt, draw),
     dispose() {
       for (const f of flats) f.fig.dispose();
       hToken++;
