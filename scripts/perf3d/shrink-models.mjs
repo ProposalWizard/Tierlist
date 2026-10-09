@@ -116,6 +116,9 @@ const POLICY = {
 };
 for (const id of ["control", "curl", "elite", "maestro", "power", "speed", "starter"]) POLICY[`star/shop3d/items/boot-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/items/car-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
+// The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first
+// (gltf-transform textureCompress); nothing reads its vertices, so everything may go small.
+POLICY["star/shop3d/items/car-family-hf.glb"] = { q: /.*/, webp: true };
 
 // ── Run ──────────────────────────────────────────────────────────────────
 await MeshoptEncoder.ready;

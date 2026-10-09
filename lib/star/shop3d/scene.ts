@@ -495,6 +495,34 @@ async function buildShop(
    * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
    */
   const CREASE = (38 * Math.PI) / 180;
+  /**
+   * THE FAMILY CAR, REPLACED (Harry, 9 Oct 2026: "the problem with the car
+   * isn't the reflection, it just looks weird"). Our Blender family car is a
+   * lofted, rounded body: no shoulder line, the cabin glass the same light
+   * colour as the paint, small wheels sunk in the arches, a flat grid on the
+   * roof: it reads as an inflated toy. The free CC0 car packs (Kenney Car Kit,
+   * Quaternius Car Pack) are toy cars, further from real. So look H shows a
+   * generated one (Higgsfield: a picture of an unbranded hatchback, then
+   * Tripo image-to-3D; public/star/shop3d/items/car-family-hf.glb). Old: as before.
+   */
+  const CAR_H_MODELS: Record<string, string> = { "car-1": "/star/shop3d/items/car-family-hf.glb" };
+  const HF_MODEL = /-hf\.glb$/;
+  /** A generated car comes at its own size and facing: stand it on the floor, centred, 4.3 m long along x like ours. */
+  const fitCar = (root: any) => {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    if (size.z > size.x) root.rotation.y = Math.PI / 2; // long side along x, like the Blender cars
+    root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(root);
+    const len = Math.max(b2.max.x - b2.min.x, 1e-3);
+    const k = 4.3 / len;
+    root.scale.multiplyScalar(k);
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
   const showroomFinish = (o: any, car: boolean) => {
     if (o.geometry && !o.geometry.userData.creased) {
       const g2 = toCreasedNormals(o.geometry, CREASE);
@@ -524,8 +552,10 @@ async function buildShop(
           o.receiveShadow = true;
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
-          if (hEnh) showroomFinish(o, /\/car-/.test(url));
+          if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
+          else if (HF_MODEL.test(url) && m) { m.envMap = envTex; m.envMapIntensity = 1.0; m.needsUpdate = true; }
         });
+        if (HF_MODEL.test(url)) fitCar(g.scene);
         return g.scene;
       }));
     }
@@ -608,7 +638,7 @@ async function buildShop(
     carWant = i;
     const it = displays.car.items[i];
     if (!it?.model) return;
-    loadModel(it.model).then((m) => {
+    loadModel(hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model).then((m) => {
       if (disposed || carWant !== i || carIndex === i) return;
       carIndex = i;
       for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
