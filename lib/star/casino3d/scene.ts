@@ -77,6 +77,7 @@ import {
   STAND, FOCUS, stationAt,
 } from "./plan";
 import { buildGames, type Games3D } from "./games3d";
+import { safeCompileAsync } from "../three3d/safeCompile";
 export type { CasinoStation } from "./plan";
 
 
@@ -774,7 +775,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   if (H && renderer.shadowMap.enabled) freezeStaticShadows(renderer, scene); // nothing that casts moves: drawn once
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use */ }
+  try { await safeCompileAsync(renderer, scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
   hRoom?.bakeReflections();
   /** New: the shared look-around camera (eased drag, a tilt) with the boom kept out of lamps and walls. */

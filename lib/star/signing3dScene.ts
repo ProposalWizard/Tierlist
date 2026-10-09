@@ -46,6 +46,7 @@ import { people3dLook } from "./look3d";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
 import { rememberGpu } from "./three3d/perf";
 import { withMeshopt } from "./three3d/meshopt";
+import { safeCompileAsync } from "./three3d/safeCompile";
 
 type Three = typeof import("three");
 
@@ -1127,7 +1128,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     // Every shader built now, not in the first frames on screen (a hitch on
     // the way in).
     const c0 = performance.now();
-    try { await renderer.compileAsync(scene, camera); } catch { /* built on the first draw instead */ }
+    try { await safeCompileAsync(renderer, scene, camera); } catch { /* built on the first draw instead */ }
     // And every picture sent to the GPU now (the bodies' skin and cloth, the
     // window, the wood, the face photo), not during the first frame.
     const texs = new Set<THREE.Texture>();

@@ -49,6 +49,7 @@ import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -1281,7 +1282,7 @@ async function buildShop(
   // warm up: every shader built before the first frame, so the first steps don't stutter
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
-  try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first use instead */ }
+  try { await safeCompileAsync(renderer, scene, camera); } catch { /* compiled on first use instead */ }
   if (disposed) throw new Error("disposed");
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
