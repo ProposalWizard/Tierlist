@@ -17,6 +17,7 @@
  * 3D quality, skip the line-up, faces, names, reactions and "your player in
  * open play". Those are not in this list on purpose.
  */
+import { sprites2dLook, setSprites2dLook } from "./sprites2dLook";
 import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { storedFigureSkin, setStoredFigureSkin, FIGURE_SKIN_DEFAULT } from "./figureSkin";
@@ -102,6 +103,8 @@ export const LOOK_ROWS = {
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
   ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
   drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
+  // Harry, 9 Oct 2026: the current 2D first; Style A only when chosen (Current in every preset).
+  sprites2d: row("2D players", "stylea", "current", sprites2dLook, setSprites2dLook),
 } as const satisfies Record<string, LookRow>;
 
 export type LookRowId = keyof typeof LOOK_ROWS;
@@ -162,6 +165,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,
+    sprites2d: O("sprites2d"),
   },
   preview: build((id) => (PREVIEW_ROWS.includes(id) ? N(id) : "")),
 };

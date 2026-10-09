@@ -728,6 +728,63 @@ window.reskin = async (index, which) => {
   return { color: col.toDataURL("image/webp", 0.88), mask: msk.toDataURL("image/png"), cells, shrunk };
 };
 
+/**
+ * STYLE A 2D PLAYERS (Harry, 9 Oct 2026: "remake the 2D frames but have it as an
+ * option in settings with the current 2D as the priority"). Every clip in the
+ * current index.json is baked again on the Style A body with its OWN cell sizes
+ * (trimmed to the new silhouette), the same clip names, frame counts, fps, loop,
+ * facings, strike frames and mirrors, into atlas-0a/mask-0a, atlas-1a/mask-1a
+ * and index-a.json. The current files are never written.
+ */
+window.rebakeA = async (index) => {
+  await ready;
+  const out = { 0: [], 1: [] };
+  const metas = {};
+  for (const [cn, cv] of Object.entries(index.chars)) {
+    show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
+    for (const [nm, cl] of Object.entries(cv.clips)) {
+      if (!cl.cells) continue;
+      const which = cl.atlas ?? 0;
+      const dirs = cl.dirs === 8 ? DIRS8 : DIRS4;
+      let clip, times, dives = () => null;
+      if (which === 0) {
+        const c = RESKIN0[cn][nm]; clip = await reskinClip(c);
+        const from = c.fromF != null ? c.fromF * clip.duration : (c.from ?? 0), to = c.toF != null ? c.toF * clip.duration : (c.to ?? clip.duration);
+        times = timesFor({ ...c, frames: cl.frames, loop: cl.loop, from, to }, clip);
+      } else {
+        const def = window.CLIPS[nm]; clip = await loadClip("js:" + nm, {});
+        times = Array.from({ length: cl.frames }, (_, i) => i);
+        dives = (i) => diveFor(def, i, cl.frames);
+      }
+      const cells = [];
+      for (const fac of dirs) for (let i = 0; i < cl.frames; i++) cells.push(bakeFrame(chars[cn], clip, times[i], fac, dives(i)));
+      out[which].push({ cn, nm, cells });
+    }
+  }
+  const files = {}, atlases = {};
+  for (const which of [0, 1]) {
+    const groups = out[which].map((g) => ({ clips: [{ cells: g.cells }] }));
+    const atl = pack(groups);
+    { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+      for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+      mc.putImageData(im, 0, 0); }
+    files[`atlas-${which}a.webp`] = atl.col.toDataURL("image/webp", 0.88);
+    files[`mask-${which}a.png`] = atl.mask.toDataURL("image/png");
+    atlases[which] = { color: `atlas-${which}a.webp`, mask: `mask-${which}a.png`, w: atl.w, h: atl.h };
+  }
+  // the same index, cells swapped for the new ones
+  const idx = JSON.parse(JSON.stringify(index));
+  idx.atlas = atlases[0];
+  idx.atlases = { ...(idx.atlases ?? {}), 1: atlases[1] };
+  for (const which of [0, 1]) for (const g of out[which]) {
+    idx.chars[g.cn].clips[g.nm].cells = g.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]);
+  }
+  const standing = idx.chars.player.clips.idle.cells[2 * idx.chars.player.clips.idle.frames];
+  idx.standH = standing[5];
+  idx.style = "styleA";
+  return { files, index: idx };
+};
+
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */
 function pairSheet(a, b, labels) {
   const n = a.length, cw = 130, rh = 330;
