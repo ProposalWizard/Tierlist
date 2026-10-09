@@ -26,6 +26,8 @@ import { createStyleKit, glowTexture, glowSprite, type StyleKit } from "./kit";
 import { buildStadium, type Stadium } from "./stadium";
 import { FlatFigure, type FlatKit } from "./flatFigure";
 import type { StyleDef } from "./styles";
+import type { RealLook } from "./real/look";
+import type { TimeOfDay } from "./real/assets";
 
 export const HOME = { shirt: "#d62828", trim: "#ffffff" };
 export const AWAY = { shirt: "#1d4ed8", trim: "#ffffff" };
@@ -37,6 +39,12 @@ export interface StyleGameplay {
   setStyle(def: StyleDef): void;
   setFlat(on: boolean): void;
   setTilt(deg: number): void;
+  /** Everyone and the ball in pitch metres (x across −34..34, z out from the goal line), for a minimap. */
+  dots(): { x: number; z: number; team: number; you?: boolean; ball?: boolean }[];
+  /** Look H only: day, golden or night. */
+  setTod(tod: TimeOfDay): void;
+  /** Frame stepping (lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
+  step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
@@ -50,9 +58,11 @@ export function numberTexture(T: any, n: number) {
 
 /** Players drawn this much bigger than life on the fixed camera (a top-down man is mostly head and shoulders). */
 const FIG_SCALE = 2.0;
+/** Look H: a closer camera and men nearer life size (a man stands just above the crossbar, not twice its height). */
+const H_FIG_SCALE = 1.45, H_VIEW_W = 18;
 const SKINS = ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e", "#f1c27d"];
 
-export async function createStyleGameplay(container: HTMLElement, o: { def: StyleDef; flat: boolean; tilt: number; seed?: number; tier?: Quality3d }): Promise<StyleGameplay> {
+export async function createStyleGameplay(container: HTMLElement, o: { def: StyleDef; flat: boolean; tilt: number; seed?: number; tier?: Quality3d; tod?: TimeOfDay }): Promise<StyleGameplay> {
   const tier = o.tier ?? quality3dTier();
   const seed = o.seed ?? 7;
   const you: Person3 = { id: "you", name: "You", skills: skillsOf(78) };
@@ -81,6 +91,11 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   let kit: StyleKit | null = null;
   let stadium: Stadium | null = null;
   let built: Play3DBuilt | null = null;
+  /** Look H (style3d/real), while the style wears it. */
+  let h: RealLook | null = null;
+  let hTod: TimeOfDay | null = o.tod ?? null;
+  let hToken = 0;
+  let goals = 0;
   const numbers: Record<string, number> = { you: 9, m1: 7, m2: 10, keeper: 1 };
 
   // scenery opponents
@@ -94,6 +109,7 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   const shadowMat = new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.3, depthWrite: false });
 
   const focus = { x: 0, z: 18 };
+  let camInit = false;
   let aspect = 0.55;
   /**
    * The fixed camera: `tilt` from straight down, never turning. Framed like
@@ -101,21 +117,29 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
    * the attacking third the goal, the keeper and a strip of advert boards and
    * stand sit at the top; further out it follows the ball.
    */
-  const VIEW_W = 22, VFOV = 36;
+  const VFOV = 36;
+  const figS = () => (def.real ? H_FIG_SCALE : FIG_SCALE);
   const rig = () => {
     const b = world.ball;
     const th = (Math.max(3, Math.min(75, tilt)) * Math.PI) / 180;
     const hv = (VFOV * Math.PI) / 360;
     const hh = Math.atan(Math.tan(hv) * aspect);
+    const VIEW_W = def.real ? H_VIEW_W : 22;
     const D = Math.min(130, Math.max(20, VIEW_W / 2 / Math.tan(hh)));
     // the look point that puts the top of the screen at Z = -12 (boards and the first rows behind the goal)
     const k = Math.sin(th) - Math.cos(th) * Math.tan(th + hv);
-    const goalTop = -12 - D * k;
+    const goalTop = (def.real ? -33 : -12) - D * k;
     // the bottom of the screen, as a distance below the look point
     const below = D * (Math.cos(th) * Math.tan(th) - Math.cos(th) * Math.tan(Math.max(0, th - hv))) ;
-    const fz = Math.max(goalTop, b.y - below * 0.45);
+    const fz = Math.max(goalTop, b.y - below * (def.real ? 0.68 : 0.45));
     const fx = Math.max(-34 + VIEW_W / 2 - 2, Math.min(34 - VIEW_W / 2 + 2, (b.x - CX) * 0.85));
-    focus.x += (fx - focus.x) * 0.06; focus.z += (fz - focus.z) * 0.06;
+    // test pages (stills from a frozen frame) can ask for the camera to arrive at once
+    const w = window as unknown as { __styleSnapCam?: number };
+    // the first frame starts on the player (no glide in from a default spot)
+    const snapK = w.__styleSnapCam || !camInit ? 1 : 0.06;
+    camInit = true;
+    if (w.__styleSnapCam) w.__styleSnapCam--;
+    focus.x += (fx - focus.x) * snapK; focus.z += (fz - focus.z) * snapK;
     const look: [number, number, number] = [focus.x, 0, focus.z];
     return { pos: [look[0], D * Math.cos(th), look[2] + D * Math.sin(th)] as [number, number, number], look, heading: -Math.PI / 2, fov: VFOV };
   };
@@ -142,13 +166,13 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     const outline = def.personOutline ? def.outlineColor : "#1b1b22";
     world.players.forEach((p, i) => {
       const fig = new FlatFigure(THREE, flatKitFor(p.team, p.keeper, numbers[p.id] ?? 8, i), pixel, outline, shadowMat);
-      fig.sprite.scale.multiplyScalar(FIG_SCALE);
+      fig.sprite.scale.multiplyScalar(figS());
       built!.root.add(fig.sprite, fig.shadow);
       flats.push({ fig, get: () => ({ x: p.x - CX, z: p.y, vx: p.vx, vz: p.vy, fz: Math.sin(p.facing) }) });
     });
     extras.forEach((e, i) => {
       const fig = new FlatFigure(THREE, flatKitFor(1, false, e.num, i + 2), pixel, outline, shadowMat);
-      fig.sprite.scale.multiplyScalar(FIG_SCALE);
+      fig.sprite.scale.multiplyScalar(figS());
       built!.root.add(fig.sprite, fig.shadow);
       flats.push({ fig, get: () => ({ x: e.x, z: e.z, vx: e.vx, vz: e.vz, fz: 1 }) });
     });
@@ -158,10 +182,11 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     if (!built || !kit) return;
     const all = [...built.bodies.map((b) => b.p), ...extras.map((e) => e.p)];
     kit.stylePeople(all);
+    if (h) h.dressPeople(all);
     const ch = def.chunky ?? 1;
     for (const p of all) {
       p.body.visible = !flat; if (flat) p.outline.visible = false;
-      p.root.scale.set(FIG_SCALE * ch, FIG_SCALE, FIG_SCALE * ch);
+      p.root.scale.set(figS() * ch, figS(), figS() * ch);
     }
     built.ball.scale.setScalar(def.ballScale);
     sparks.material.color.set(def.ballSparks ?? "#ffffff");
@@ -172,7 +197,27 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
   const restyle = () => {
     if (!built || !kit) return;
     kit.apply(def);
-    if (stadium) { built.root.remove(stadium.group); disposeObject3D(stadium.group); }
+    if (stadium) { built.root.remove(stadium.group); disposeObject3D(stadium.group); stadium = null; }
+    const tk = ++hToken;
+    if (def.real) {
+      // look H: its own sky, light, pitch, stadium, ball and broadcast pass
+      kit.setActive(false);
+      const tod = hTod ?? def.real;
+      if (h) { h.setTod(tod); applyBodies(); return; }
+      const ctx = built;
+      void import("./real/look").then(({ createRealLook }) => createRealLook(THREE, ctx.renderer, ctx.scene, tier, { tod, ball: ctx.ball, colours: { home: HOME.shirt, home2: "#f4f4f4", away: AWAY.shirt } }))
+        .then((made) => {
+          if (tk !== hToken || !def.real) { made.dispose(); return; }
+          h = made;
+          applyBodies();
+          (window as unknown as { __styleHReady?: boolean }).__styleHReady = true;
+        })
+        .catch((e) => console.error("look H failed to load", e));
+      applyBodies();
+      return;
+    }
+    if (h) { h.dispose(); h = null; }
+    kit.setActive(true);
     stadium = buildStadium(THREE, kit, tier);
     built.root.add(stadium.group);
     applyBodies();
@@ -183,10 +228,15 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     camera: "chase", quality: tier, bare: true,
     rig: () => rig(),
     draw: (_r, scene, camera) => {
-      if (!flat && built) {
+      const leanAll = () => {
+        if (flat || !built) return;
         for (const b of built.bodies) lean(b.p.root);
-        for (const e of extras) { e.p.root.rotation.set(0, e.yaw, 0); lean(e.p.root); }
-      }
+        for (const e of extras) lean(e.p.root);
+      };
+      for (const e of extras) e.p.root.rotation.set(0, e.yaw, 0);
+      // look H draws the shadows from the men standing, then leans them for the picture
+      if (h) { h.render(scene, camera, { beforeShadows: () => {}, afterShadows: leanAll }); return; }
+      leanAll();
       kit?.render(scene, camera);
     },
     onBuilt: (ctx) => {
@@ -258,10 +308,19 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
       const shooting = !!def.aura && !!yu && (yu.act === "shot" || yu.act === "volley" || yu.act === "header") && yu.actT < 0.9;
       aura.visible = shooting;
       if (shooting && yu) { aura.position.set(yu.x - CX, 0.9, yu.y - 0.7); const k = 2.6 + Math.sin(yu.actT * 20) * 0.25; aura.scale.set(k * 0.8, k * 1.2, 1); aura.material.opacity = 0.75 * (1 - yu.actT / 0.9); }
-      if (ring && yu) { ring.position.set(yu.x - CX, 0.03, yu.y); ring.visible = true; }
+      if (ring && yu) {
+        ring.position.set(yu.x - CX, 0.03, yu.y); ring.visible = true;
+        // look H: a thinner, softer broadcast marker
+        const hk = def.real ? 0.75 : 1;
+        ring.scale.setScalar(hk); ring.material.opacity = def.real ? 0.6 : 0.9;
+      }
       for (const f of flats) { const s = f.get(); f.fig.set(s.x, s.z, s.vx, s.vz, s.fz, dt); }
       stadium?.update(dt, 0);
-      kit.update(dt, built.camera, { x: focus.x, y: 0, z: focus.z });
+      if (h) {
+        // a goal: the crowd goes up
+        if (b.y < -0.3 && Math.abs(b.x - CX) < 3.7 && b.z < 2.44) { if (goals === 0) h.cheer(1); goals = 1; } else if (b.y > 2) goals = 0;
+        h.update(dt, built.camera, focus, { x: b.x - CX, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz });
+      } else kit.update(dt, built.camera, { x: focus.x, y: 0, z: focus.z });
     },
   });
 
@@ -271,8 +330,20 @@ export async function createStyleGameplay(container: HTMLElement, o: { def: Styl
     setStyle(d) { def = d; restyle(); },
     setFlat(on) { flat = on; applyBodies(); },
     setTilt(deg) { tilt = deg; },
+    setTod(t) { hTod = t; if (h) h.setTod(t); },
+    dots() {
+      const out: { x: number; z: number; team: number; you?: boolean; ball?: boolean }[] = [];
+      const yu = world.you();
+      for (const p of world.players) if (p.active) out.push({ x: p.x - CX, z: p.y, team: p.keeper ? 2 : p.team, you: p === yu });
+      for (const e of extras) out.push({ x: e.x, z: e.z, team: 1 });
+      out.push({ x: world.ball.x - CX, z: world.ball.y, team: 0, ball: true });
+      return out;
+    },
+    step: (dt, draw) => ctrl.step(dt, draw),
     dispose() {
       for (const f of flats) f.fig.dispose();
+      hToken++;
+      h?.dispose(); h = null;
       kit?.dispose();
       ctrl.dispose();
     },

@@ -29,6 +29,8 @@
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
+import { withMocapOwn } from "./three3d/footballAnims";
+import { motionLook } from "./motionLook";
 
 type Three = typeof import("three");
 
@@ -168,11 +170,15 @@ const cache = new Map<string, Promise<GLTF>>();
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
 export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old"): Promise<GLTF> {
   const url = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES)[which];
-  let p = cache.get(url);
+  // Settings → Look → "Motion: Mocap": the clips come with the motion-capture idle and jog in
+  const mocap = which === "anims" && motionLook() === "mocap";
+  const key = mocap ? `${url}#mocap` : url;
+  let p = cache.get(key);
   if (!p) {
     p = loadGltfCached<GLTF>(loader, url); // from the early download when it got there first
-    p.catch(() => cache.delete(url));
-    cache.set(url, p);
+    if (mocap) p = p.then((g) => withMocapOwn(loader as never, g, "people"));
+    p.catch(() => cache.delete(key));
+    cache.set(key, p);
   }
   return p;
 }

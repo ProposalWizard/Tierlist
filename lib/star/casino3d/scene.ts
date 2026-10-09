@@ -58,7 +58,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
-import { addClips, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
+import { addClips, ClipPlayer, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
   carpetCanvas, panelCanvas, feltCanvas, layoutCanvas, slotScreenCanvas, marqueeCanvas,
   oddsBoardCanvas, drawRaceScreen, goalieScreenCanvas,
@@ -571,7 +571,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   } else {
     const [charGltf, animGltf]: any[] = await Promise.all([
       loadGltfCached(loader, "/star/shop3d/character.glb"),
-      loadGltfCached(loader, "/star/shop3d/anims.glb"),
+      loadGltfCached(loader, "/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     ]);
     const kitU = {
       uShirt: { value: new THREE.Color(opts.kit.shirt) }, uTrim: { value: new THREE.Color(opts.kit.trim) },

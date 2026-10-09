@@ -38,6 +38,8 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { withMocapOwn } from "../three3d/footballAnims";
+import { look3dStyle } from "../look3dStyle";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -234,6 +236,8 @@ async function buildShop(
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
   scene.environmentIntensity = 0.32;
+  // Settings → Look → "3D look: H": the broadcast pass indoors (Old: exactly as before)
+  const hEnh = look3dStyle() === "h" ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.1 }) : null;
 
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 60);
   let disposed = false;
@@ -698,7 +702,7 @@ async function buildShop(
   } else {
     const [charGltf, animGltf] = await Promise.all([
       loader.loadAsync("/star/shop3d/character.glb"),
-      loader.loadAsync("/star/shop3d/anims.glb"),
+      loader.loadAsync("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     ]);
     player = charGltf.scene;
     player.traverse((o: any) => {
@@ -1048,7 +1052,7 @@ async function buildShop(
         shadowRenders++;
       }
     }
-    renderer.render(scene, camera);
+    if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
     busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
@@ -1140,6 +1144,7 @@ async function buildShop(
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);

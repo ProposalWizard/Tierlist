@@ -101,6 +101,8 @@ export interface StyleKit {
   setBurst(v: number): void;
   /** An impact frame (Anime), 0..1. */
   setImpact(v: number): void;
+  /** Off while another look (H, style3d/real) dresses the scene: its sky and lights hide. */
+  setActive(on: boolean): void;
   dispose(): void;
 }
 
@@ -233,6 +235,7 @@ export function createStyleKit(T: any, renderer: any, scene: any, tier: Quality3
     render(sc, camera) { post.render(sc, camera, def.post, full, burst, def.burst ?? "#ffffff", impact); },
     setBurst(v) { burst = v; },
     setImpact(v) { impact = v; },
+    setActive(on) { root.visible = on; },
     stylePeople(people) {
       for (const p of people) {
         p.outline.visible = def.personOutline && prof.outlines;

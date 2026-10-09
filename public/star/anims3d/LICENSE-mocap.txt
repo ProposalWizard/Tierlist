@@ -1,0 +1,48 @@
+public/star/anims3d/mocap.glb, mocap-ual.glb — real motion capture for the 3D people
+
+SOURCE
+  Carnegie Mellon University Graphics Lab Motion Capture Database
+  http://mocap.cs.cmu.edu
+  "This dataset of motions is free for all uses." (home page)
+  "The motion capture data may be copied, modified, or redistributed without
+  permission." (FAQ, "How can I use this data?")
+  Acknowledgement the database asks for: "The data used in this project was
+  obtained from mocap.cs.cmu.edu. The database was created with funding from
+  NSF EIA-0196217."
+
+WHAT IS IN THE FILES
+  Only bone turns and the hips' position, retargeted from the captures onto
+  our two skeletons by tools/mocap3d (CC0 skeletons: see LICENSE.txt here and
+  public/star/shop3d/LICENSE.txt). No CMU file is shipped as-is. Each clip
+  names its capture in the file (scene extras clips[name].source), e.g.
+  "CMU 11_01" = subject 11, trial 1. A few clips are ADAPTED: the capture with
+  a small hand-made change on top (the source says what was changed).
+
+TRIALS USED (subject_trial: what the database calls it -> our clip)
+  82_08  stand still; casual walk forward     -> idle, applause*, shirt_hold*
+  16_15  walk                                 -> walk
+  35_17  run/jog                              -> jog, celebrate_safe*
+  09_01  run                                  -> run
+  143_01 Run                                  -> sprint
+  16_35  run/jog                              -> dribble_run
+  141_33 Walk Sideways, Foot to Foot          -> side_step_l, side_step_r
+  78_29  DefensiveMoveSideToSide              -> shuffle_l, shuffle_r
+  16_41 / 16_43 run/jog, 90-degree turn       -> turn_l / turn_r
+  11_01  soccer - kick ball                   -> kick_r, kick_l, shot_r
+  10_05  soccer - kick ball                   -> shot_low
+  10_03  soccer - kick ball                   -> chip
+  10_02  soccer - kick ball                   -> pass_lofted
+  10_01  soccer - kick ball                   -> pass_inside*
+  143_24 Kicking                              -> volley*, first_touch
+  13_39  jump                                 -> header_stand*
+  14_07  jump up to grab, reach for           -> high_claim*
+  141_11 Throw and Catch                      -> catch_chest, throw_out
+  79_69  very happy                           -> celebrate_fist
+  16_01  jump                                 -> celebrate_jump*
+  143_36 Airplane                             -> celebrate_airplane
+  79_74  upset                                -> frustrated
+  79_71  sad                                  -> dejected
+  82_10  sad walk forward                     -> slump_walk
+  141_23 Shake Hands                          -> handshake
+  141_16 Wave Hello                           -> wave
+  (* adapted: see tools/mocap3d/README.md)

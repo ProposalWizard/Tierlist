@@ -53,7 +53,8 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
-import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
+import { look3dStyle } from "../look3dStyle";
+import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -243,6 +244,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   pmrem.dispose();
   scene.environment = envTex;
   scene.environmentIntensity = look.env;
+  // Settings → Look → "3D look: H": light from a real sky and the broadcast pass (Old: exactly as before)
+  const hEnh = look3dStyle() === "h"
+    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
+    : null;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   camera.layers.enable(MATE_LAYER);
   for (let k = 0; k < 3; k++) camera.layers.enable(CAR_LAYER + k);
@@ -462,7 +467,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   ] : [
     load("/star/garden3d/props.glb"),
     load("/star/shop3d/character.glb"),
-    load("/star/shop3d/anims.glb"),
+    load("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     load("/star/garden3d/anims.glb"),
   ]);
   if (disposed) throw new Error("disposed");
@@ -2560,7 +2565,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         shadowRenders++;
       }
     }
-    renderer.render(scene, camera);
+    if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
@@ -2694,6 +2699,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     dispose: () => {
       disposed = true;
+      hEnh?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
