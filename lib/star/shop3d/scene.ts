@@ -38,6 +38,9 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { withMocapOwn } from "../three3d/footballAnims";
+import { look3dStyle } from "../look3dStyle";
+import { dressShopH } from "./hRoom";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -202,7 +205,9 @@ async function buildShop(
   // while the picture moves), and dynamic resolution a little below that
   // while walking if frames are slow.
   const dpr = window.devicePixelRatio || 1;
-  const stillPR = () => Math.min(dpr, prof.maxPixelRatio);
+  // look H standing still: the screen's real pixels, capped per tier; moving stays the tier's cap (lag)
+  const STILL_H: Record<string, number> = { low: 1.25, medium: 2, high: 2.5 };
+  const stillPR = () => Math.min(dpr, look3dStyle() === "h" ? Math.max(prof.maxPixelRatio, STILL_H[tier] ?? 1.5) : prof.maxPixelRatio);
   let dynPR = Math.min(dpr, prof.movePixelRatio);
   const makeDyn = () => new DynamicResolution(
     { setPixelRatio: (v: number) => { dynPR = v; } },
@@ -234,6 +239,8 @@ async function buildShop(
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
   scene.environmentIntensity = 0.32;
+  // Settings → Look → "3D look: H": the broadcast pass indoors (Old: exactly as before)
+  const hEnh = look3dStyle() === "h" ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.1 }) : null;
 
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 60);
   let disposed = false;
@@ -415,6 +422,8 @@ async function buildShop(
   };
   plant(-5.5, 6.1);
   plant(5.5, -7.1);
+  // Look H: parquet, panelling, coffers, practical lights, lit wall units (./hRoom.ts); Old: as before
+  const hRoom = hEnh ? await dressShopH(THREE, scene, renderer, ROOM, { floor, wallM, panelM, tier }).catch((e) => { console.error("shop look H room failed", e); return null; }) : null;
 
   // ── Floating price tags ──
   type Tag = { sprite: any; tex: any; key: string; base: [number, number, number]; display: DisplayId; index: number };
@@ -698,7 +707,7 @@ async function buildShop(
   } else {
     const [charGltf, animGltf] = await Promise.all([
       loader.loadAsync("/star/shop3d/character.glb"),
-      loader.loadAsync("/star/shop3d/anims.glb"),
+      loader.loadAsync("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     ]);
     player = charGltf.scene;
     player.traverse((o: any) => {
@@ -733,6 +742,8 @@ async function buildShop(
   buyA.setLoop(THREE.LoopOnce, 1);
   buyA.clampWhenFinished = false;
   let buying = 0; // seconds left of the buy gesture
+
+  hRoom?.bakeReflections();
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -1048,7 +1059,7 @@ async function buildShop(
         shadowRenders++;
       }
     }
-    renderer.render(scene, camera);
+    if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
     busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
@@ -1140,6 +1151,8 @@ async function buildShop(
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      hEnh?.dispose();
+      hRoom?.dispose();
       renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);

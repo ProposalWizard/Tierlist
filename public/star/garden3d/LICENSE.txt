@@ -46,3 +46,10 @@ The 5 Oct 2026 look (scene.ts; the old garden is sceneOld.ts) adds no files:
 its brick, slate, hedge, meadow, lawn and awning pictures are canvas drawings
 (lib/star/garden3d/textures.ts), and in it you and the team-mates are the 3D
 shop's own player, public/star/people3d/ (see lib/star/people3d.ts).
+
+h/ (look H only, 9 Oct 2026; made by tools/garden3d/h_nature.py, about 0.4 MB):
+  leaves.webp, bark.webp, bark-nrm.webp: Poly Haven "Island Tree 02" (polyhaven.com/a/island_tree_02), CC0
+  needles.webp: Poly Haven "Fir Tree 01" (polyhaven.com/a/fir_tree_01), CC0
+  paving.webp, paving-nrm.webp: Poly Haven "Concrete Pavers 02" (polyhaven.com/a/concrete_pavers_02), CC0
+  straw.webp, straw-nrm.webp: ambientCG "Thatched Roof 001 A" (ambientcg.com/a/ThatchedRoof001A), CC0
+  blooms.webp: drawn by the script (ours)

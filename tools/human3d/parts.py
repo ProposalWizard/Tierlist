@@ -281,16 +281,28 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
             out.append({"name": "teeth", "V": VB[used], "T": Tn, "src": used, "zone": np.zeros(len(used))})
 
     # ── Garments from the tights (a close shell over the whole body).
-    def boundary(Tn, n):
+    def weld(V):
+        """One index per position: a garment split at its UV seams has two points in
+        one place, and a seam must not count as an open edge (it would be torn open
+        by the hem straightening and get a hem lip of its own)."""
+        _, rep = np.unique(np.round(np.asarray(V) * 1e5).astype(np.int64), axis=0, return_inverse=True)
+        return rep.reshape(-1)
+
+    def boundary(Tn, n, V=None):
         from collections import Counter
+        rep = weld(V) if V is not None else np.arange(n)
         e = Counter()
         for a, b, c in Tn:
             for x, y in ((a, b), (b, c), (c, a)):
-                e[(min(x, y), max(x, y))] += 1
+                e[(min(rep[x], rep[y]), max(rep[x], rep[y]))] += 1
         nb = [[] for _ in range(n)]
-        for (x, y), k in e.items():
-            if k == 1:
-                nb[x].append(y); nb[y].append(x)
+        seen = set()
+        for a, b, c in Tn:
+            for x, y in ((a, b), (b, c), (c, a)):
+                key = (min(rep[x], rep[y]), max(rep[x], rep[y]))
+                if e[key] == 1 and (min(x, y), max(x, y)) not in seen:
+                    seen.add((min(x, y), max(x, y)))
+                    nb[x].append(y); nb[y].append(x)
         return nb
 
     def bone_axis(b):
@@ -304,7 +316,7 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
     def clean_edges(V, Tn, dv, hem):
         """Straight hems: each edge vertex goes onto its cut (a height, or a share
         of a limb's length), then the edge loops are smoothed."""
-        nb = boundary(Tn, len(V))
+        nb = boundary(Tn, len(V), V)
         bv = np.array([i for i in range(len(V)) if nb[i]])
         if not len(bv):
             return V
@@ -375,8 +387,11 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
     def add_lip(V, Tn, src, z, depth):
         """A turned-back hem on every open edge: the cloth has a thickness at the
         sleeve ends, the hem and the collar."""
-        nb = boundary(Tn, len(V))
+        nb = boundary(Tn, len(V), V)
+        rep = weld(V)
         N = vnormals(V, Tn)
+        # normals over the welded surface (a seam's two copies share one)
+        NW = np.zeros((rep.max() + 1, 3)); np.add.at(NW, rep, N); N = unit(NW[rep])
         nbr = [[] for _ in range(len(V))]
         for a, b, c in Tn:
             nbr[a] += [b, c]; nbr[b] += [a, c]; nbr[c] += [a, b]
@@ -453,25 +468,24 @@ def build_parts(VB, BODY, FACES, FGROUP, FTEX, VT, VGROUPS, BONE_W, PB, SHAPES, 
         return V
 
     def smooth_cloth(V, T):
-        """Irons the crumples out of a snug fit (its open edges stay where they are)."""
-        from collections import Counter
-        e = Counter()
-        for a_, b_, c_ in T:
-            for x_, y_ in ((a_, b_), (b_, c_), (c_, a_)):
-                e[(min(x_, y_), max(x_, y_))] += 1
-        edge = np.zeros(len(V), bool)
-        enb = [[] for _ in range(len(V))]
-        for (x_, y_), k_ in e.items():
-            if k_ == 1:
-                edge[x_] = edge[y_] = True
-                enb[x_].append(y_); enb[y_].append(x_)
-        # the open edges (collar, sleeve ends, hems) straightened along themselves first
-        V = V.copy()
-        ei = np.nonzero(edge)[0]
+        """Irons the crumples out of a snug fit, on the welded surface (seams stay
+        closed); the open edges (collar, sleeve ends, hems) are first straightened
+        along themselves, then held."""
+        rep = weld(V)
+        m = rep.max() + 1
+        first = np.zeros(m, dtype=np.int64); first[rep[::-1]] = np.arange(len(V))[::-1]
+        VW = V[first].copy()
+        TW = rep[T]
+        TW = TW[(TW[:, 0] != TW[:, 1]) & (TW[:, 1] != TW[:, 2]) & (TW[:, 0] != TW[:, 2])]
+        nb = boundary(TW, m)
+        ei = np.array([i for i in range(m) if nb[i]], dtype=np.int64)
         for _ in range(8):
-            avg = np.array([V[enb[i]].mean(0) if enb[i] else V[i] for i in ei])
-            V[ei] = V[ei] + 0.5 * (avg - V[ei])
-        return smooth(V, T, it=5, lam=0.45, fixed=ei)
+            if not len(ei):
+                break
+            avg = np.array([VW[nb[i]].mean(0) for i in ei])
+            VW[ei] = VW[ei] + 0.5 * (avg - VW[ei])
+        VW = smooth(VW, TW, it=5, lam=0.45, fixed=ei if len(ei) else None)
+        return VW[rep]
 
     def drape_sleeves(V, dv, tv):
         V = V.copy()

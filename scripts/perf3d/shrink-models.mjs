@@ -76,6 +76,9 @@ const POLICY = {
   "star/anims3d/casino.glb": ANIM,
   "star/anims3d/football-ual.glb": ANIM,
   "star/anims3d/casino-ual.glb": ANIM,
+  // Motion capture (CMU) on both skeletons (tools/mocap3d/build.py), Settings → Look → Motion: Mocap.
+  "star/anims3d/mocap.glb": ANIM,
+  "star/anims3d/mocap-ual.glb": ANIM,
   // The ovation's hugs, dap-ups, pats and claps (tools/ovation3d/author_greetings.py).
   "star/ovation3d/greetings.glb": ANIM,
   // The human body (tools/human3d/build_human.py): float positions on purpose — the game

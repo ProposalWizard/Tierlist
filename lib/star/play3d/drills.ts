@@ -105,7 +105,7 @@ export const DRILLS: DrillDef[] = [
       const { world, state } = makeFreeRoam({ seed: ctx.seed, you: ctx.you, mates: ctx.mates.slice(0, 2), keeperOverall: ctx.keeperOverall });
       return {
         world, camera: "chase",
-        hint: "Left thumb: move. Tap: pass (or call for it). Drag back and let go: shoot.",
+        hint: "Left thumb: move. Tap a team-mate to pass to him (or tap anywhere: the white ring shows who). Drag back and let go: shoot.",
         hud: () => ({ big: `${freeRoamScore(state)}`, small: `${state.goals} goals · ${state.cleanPasses} clean passes`, timeLeft: state.timeLeft, flash: state.last }),
         done: () => state.over,
         result(team, roll) {

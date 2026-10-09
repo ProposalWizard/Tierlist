@@ -21,6 +21,7 @@ import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
+import { makeWorldSeek } from "../frameStep";
 
 export interface Play3DPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
 export interface Play3DLook {
@@ -35,19 +36,59 @@ export interface Play3DLook {
 }
 export type CameraMode = "chase" | "pair";
 
+/** A camera set from outside (the Style Testing page's fixed tilt): three.js coordinates. */
+export type Play3DRig = (world: World) => { pos: [number, number, number]; look: [number, number, number]; heading: number; fov?: number };
+
+/** What onBuilt hands a caller that dresses the picture itself (Style Testing). */
+export interface Play3DBuilt {
+  THREE: any;
+  scene: any;
+  root: any;
+  renderer: any;
+  camera: any;
+  bodies: { p: Person3D; who: P3 }[];
+  ball: any;
+}
+
 export interface Play3DController {
   /** Which way the camera looks, as a pitch-plane angle (0 = +x): the screen maps the stick and the drag with it. */
   heading(): number;
   setActive(on: boolean): void;
+  /** The man drawn under a tap at (x, y) px inside the picture (nearest within a thumb's width), or null. */
+  pick(x: number, y: number): string | null;
+  /** Where a man is on screen (px in the picture); off = out of the picture, x/y then clamped to its edge (his marker). null if he is off the pitch. */
+  screen(id: string): { x: number; y: number; off: boolean } | null;
+  /** Frame stepping (dev, lib/star/frameStep.ts): stop the real-time loop and run exactly `dt` seconds, drawing if asked. */
+  step(dt: number, draw: boolean): void;
   dispose(): void;
 }
 
 const P = (x: number, y: number, z: number): [number, number, number] => [x - CX, z, y];
+/** A tap this close (px) to a man's drawn body picks him (a pass to him). */
+const PICK_PX = 46;
+/** A team-mate out of the picture gets a marker this far (px) inside the edge. */
+const EDGE_PX = 26;
+/** Look H's pixel ratio cap per tier (the tier's own cap is for the garden and shop's busier scenes). */
+const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2.5 };
+/** Look H's chase camera: metres behind and up, where it looks (metres ahead, height), field of view tall / wide. Old: 7.5 back, 3.6 up, 6 ahead at 0.9, 58° / 48°. */
+const CHASE_SHARP = { back: 6.2, up: 2.7, ahead: 10, lookUp: 0.9, fovTall: 56, fovWide: 44, lean: 0.32 };
 const yawOf = (facing: number) => Math.PI / 2 - facing;
 
 export async function createPlay3DScene(
   container: HTMLElement, world: World, look: Play3DLook,
-  opts: { camera: CameraMode; quality?: Quality3d; onFrame?: (dt: number) => void },
+  opts: {
+    camera: CameraMode; quality?: Quality3d; onFrame?: (dt: number) => void;
+    /** Optional (Style Testing only): a fixed camera instead of `camera`. */
+    rig?: Play3DRig;
+    /** Optional: no sky, lights, grass, lines, goal or hedge — the caller builds its own world round the people and the ball. */
+    bare?: boolean;
+    /** Optional (look H): draw at the screen's real pixel ratio (capped per tier) and use the close behind-the-player camera. */
+    sharp?: boolean;
+    /** Optional: draw the frame yourself (post-processing). Default renderer.render. */
+    draw?: (renderer: any, scene: any, camera: any) => void;
+    /** Optional: called once everything is made, before the first frame. */
+    onBuilt?: (ctx: Play3DBuilt) => void;
+  },
 ): Promise<Play3DController> {
   const tier = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
@@ -67,7 +108,8 @@ export async function createPlay3DScene(
   ]);
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  // sharp (look H): the full screen's pixels, capped per tier (a 3x phone at Medium draws 2x, not 1.25x)
+  const { renderer, release } = acquireRenderer(THREE, container, opts.sharp ? { ...prof, maxPixelRatio: SHARP_PIXEL_RATIO[tier] } : prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -76,9 +118,10 @@ export async function createPlay3DScene(
   const scene = new THREE.Scene();
   const root = new THREE.Group();
   scene.add(root);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 260);
+  if (!opts.bare) {
   scene.background = new THREE.Color("#a9d4ef");
   scene.fog = new THREE.Fog("#a9d4ef", 60, 140);
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 260);
 
   root.add(new THREE.HemisphereLight("#e8f4ff", "#3f6b2a", 1.15));
   const sun = new THREE.DirectionalLight("#fff4df", 2.1);
@@ -165,6 +208,7 @@ export async function createPlay3DScene(
   const hedge = new THREE.Mesh(new THREE.BoxGeometry(140, 3.5, 1.5), hedgeMat);
   hedge.position.set(0, 1.75, -14); root.add(hedge);
   for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.5, 90), hedgeMat); h.position.set(sx * 44, 1.75, 30); root.add(h); }
+  }
 
   // ── The ball ──
   const ballMat = new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.45 });
@@ -199,6 +243,21 @@ export async function createPlay3DScene(
       r.material.color.set(m.color && !m.color.startsWith("rgba") ? m.color : "#facc15");
       r.material.opacity = m.color?.startsWith("rgba") ? 0.45 : 0.9;
     });
+  };
+  // ── The pass ring: under the team-mate a tap would pass to (World.aimMate) ──
+  const aimRing = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 40), new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.8, depthWrite: false }));
+  aimRing.rotation.x = -Math.PI / 2;
+  aimRing.renderOrder = 2;
+  aimRing.visible = false;
+  root.add(aimRing);
+  let aimT = 0;
+  const syncAim = (dt: number) => {
+    const m = world.get(world.aimMate);
+    aimRing.visible = !!m && m.active;
+    if (!m) return;
+    aimT += dt;
+    aimRing.position.set(m.x - CX, 0.014, m.y);
+    aimRing.scale.setScalar(1 + 0.08 * Math.sin(aimT * 6));
   };
   let lastBall = new THREE.Vector3(...P(world.ball.x, world.ball.y, world.ball.z));
   const placeBall = () => {
@@ -266,7 +325,7 @@ export async function createPlay3DScene(
    */
   type Once = { clip: string; lead: number; speed?: number; align?: "flat" | "full"; from?: number };
   /** Strikes and touches are pinned to the contact; the rest (celebrations, keepy-ups' old clip) start where `lead` says. */
-  const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
+  const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_inside", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
   const info = (n: string) => clipInfo(fb, n);
   const loopSpeed: Record<string, number> = { jog: 3.2, sprint: 7.4, dribble_run: 4.6, celebrate_safe: 3.4, slump_walk: 1.15 };
   for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
@@ -281,7 +340,8 @@ export async function createPlay3DScene(
       case "header":
         // flying in at a ball not far above the ground: a diving header; else up for it
         return sp > 3.2 && ballZ < 1.7 ? { clip: "header_diving", lead: 0.06, align: "full" } : { clip: "header_stand", lead: 0.06, align: "full" };
-      case "pass": return { clip: "pass", lead: 0.05, speed: 1.2, align: "flat" };
+      // the mocap set has a real side-foot pass; the old set has its drill clip
+      case "pass": return b.play.has("pass_inside") ? { clip: "pass_inside", lead: 0.05, align: "flat" } : { clip: "pass", lead: 0.05, speed: 1.2, align: "flat" };
       case "loft": return { clip: "pass_lofted", lead: 0.05, align: "flat" };
       case "touch": {
         // a touch while running with it is the dribble's own (dribble_run has it)
@@ -491,6 +551,12 @@ export async function createPlay3DScene(
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let snap = true;
   const camTarget = () => {
+    if (opts.rig) {
+      const r = opts.rig(world);
+      heading = r.heading;
+      if (r.fov && camera.fov !== r.fov) { camera.fov = r.fov; camera.updateProjectionMatrix(); }
+      return { pos: new THREE.Vector3(...r.pos), look: new THREE.Vector3(...r.look) };
+    }
     const you = world.you() ?? world.players[0];
     if (opts.camera === "chase" && !you.active) {
       // you're off (safe, or out and watching): a high view of the ball and the goal
@@ -519,8 +585,13 @@ export async function createPlay3DScene(
       heading += Math.max(-1, Math.min(1, d)) * Math.min(1, 0.025 * sp);
     }
     const fx = Math.cos(heading), fy = Math.sin(heading);
-    const pos = new THREE.Vector3(you.x - CX - fx * 7.5, 3.6, you.y - fy * 7.5);
-    const look2 = new THREE.Vector3(you.x - CX + fx * 6, 0.9, you.y + fy * 6);
+    // sharp (look H): the broadcast "behind the player" shot, close and low, so he fills the picture
+    const back = opts.sharp ? CHASE_SHARP.back : 7.5, up = opts.sharp ? CHASE_SHARP.up : 3.6;
+    const pos = new THREE.Vector3(you.x - CX - fx * back, up, you.y - fy * back);
+    const look2 = opts.sharp ? new THREE.Vector3(you.x - CX + fx * CHASE_SHARP.ahead, CHASE_SHARP.lookUp, you.y + fy * CHASE_SHARP.ahead) : new THREE.Vector3(you.x - CX + fx * 6, 0.9, you.y + fy * 6);
+    // sharp: lean the view a little towards the man a tap would pass to, so he is in the picture
+    const aim = opts.sharp ? world.get(world.aimMate) : undefined;
+    if (aim && Math.hypot(aim.x - you.x, aim.y - you.y) < 28) look2.lerp(new THREE.Vector3(aim.x - CX, CHASE_SHARP.lookUp, aim.y), CHASE_SHARP.lean);
     return { pos, look: look2 };
   };
 
@@ -528,7 +599,7 @@ export async function createPlay3DScene(
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.8 ? 58 : 48;
+    if (!opts.rig) camera.fov = opts.sharp ? (w / h < 0.8 ? CHASE_SHARP.fovTall : CHASE_SHARP.fovWide) : w / h < 0.8 ? 58 : 48;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -537,30 +608,91 @@ export async function createPlay3DScene(
 
   let active = true;
   let last = performance.now();
-  const frame = () => {
-    const now = performance.now();
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
+  /** One frame of the picture: `dt` seconds of world, animation and camera; `draw` false skips only the (slow) render. */
+  const tick = (dt: number, draw: boolean) => {
     const prevBall = { x: world.ball.x, y: world.ball.y, z: world.ball.z };
     world.advance(dt);
     for (const b of bodies) animate(b, dt, prevBall);
     placeBall();
     syncMarkers();
+    syncAim(dt);
     const t = camTarget();
     if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));
     camLook.lerp(t.look, Math.min(1, dt * 5));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
-    renderer.render(scene, camera);
+    if (draw) { if (opts.draw) opts.draw(renderer, scene, camera); else renderer.render(scene, camera); }
     opts.onFrame?.(dt);
   };
+  const frame = () => {
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    tick(dt, true);
+  };
+  opts.onBuilt?.({ THREE, scene, root, renderer, camera, bodies: bodies.map((b) => ({ p: b.p, who: b.who })), ball });
   renderer.setAnimationLoop(frame);
   // dev/test hook: the World, the camera, the people, and a one-off draw (stills from a frozen frame)
   (window as any).__play3d = { world, camera, bodies, render: () => renderer.render(scene, camera) };
+  // FRAME STEPPING (dev, lib/star/frameStep.ts): a filming tool freezes the real-time loop and asks for exact times.
+  // Published only if the page has not published its own stepper; the page's own can call `__play3d.step`.
+  const stepperApi = {
+    /** Stop the real-time loop (once; later calls do nothing). */
+    freeze() { renderer.setAnimationLoop(null); },
+    step: (dt: number, draw: boolean) => { renderer.setAnimationLoop(null); tick(dt, draw); },
+  };
+  (window as any).__play3d.stepper = stepperApi;
+  if (!(window as any).__frameStep) {
+    const seek = makeWorldSeek(world, stepperApi.step, () => (window as any).__frameStep?.timeline);
+    (window as any).__frameStep = { duration: 0, seek, timeline: undefined, byScene: true };
+  }
 
+  const PV = new THREE.Vector3();
+  /** Where a man's chest is on screen (px), clamped inside the edge when he is out of the picture. */
+  const screenOf = (p: P3) => {
+    const w = container.clientWidth || 1, h = container.clientHeight || 1;
+    PV.set(p.x - CX, 1.2, p.y).project(camera);
+    let x = (PV.x + 1) / 2 * w, y = (1 - PV.y) / 2 * h;
+    const behind = PV.z > 1;
+    if (behind) { x = w - x; y = h; }
+    const off = behind || x < 0 || x > w || y < 0 || y > h;
+    const m = EDGE_PX;
+    if (off) {
+      // along the line from the middle of the picture towards him, to the edge
+      const cx = w / 2, cy = h / 2, dx = x - cx, dy = y - cy;
+      const k = Math.min((w / 2 - m) / Math.max(1e-6, Math.abs(dx)), (h / 2 - m) / Math.max(1e-6, Math.abs(dy)));
+      x = cx + dx * k; y = cy + dy * k;
+    }
+    return { x, y, off };
+  };
   return {
     heading: () => heading,
+    step: stepperApi.step,
+    screen(id) { const p = world.get(id); return p && p.active ? screenOf(p) : null; },
+    pick(sx, sy) {
+      // the man whose body (feet to head) is nearest the tap, within a thumb's width;
+      // a team-mate out of the picture is picked by his marker on the edge
+      const w = container.clientWidth || 1, h = container.clientHeight || 1;
+      const you = world.you();
+      let best: string | null = null, bd = PICK_PX;
+      for (const b of bodies) {
+        const p = b.who;
+        if (!p.active) continue;
+        let d = Infinity;
+        for (const z of [0.2, 0.9, 1.6]) {
+          PV.set(p.x - CX, z, p.y).project(camera);
+          if (PV.z > 1) continue;
+          d = Math.min(d, Math.hypot((PV.x + 1) / 2 * w - sx, (1 - PV.y) / 2 * h - sy));
+        }
+        if (you && p !== you && !p.keeper && p.team === you.team) {
+          const s = screenOf(p);
+          if (s.off) d = Math.min(d, Math.hypot(s.x - sx, s.y - sy));
+        }
+        if (d < bd) { bd = d; best = p.id; }
+      }
+      return best;
+    },
     setActive(on) {
       if (on === active) return;
       active = on;
@@ -572,6 +704,7 @@ export async function createPlay3DScene(
       renderer.setAnimationLoop(null);
       release(root);
       if ((window as any).__play3d?.world === world) delete (window as any).__play3d;
+      if ((window as any).__frameStep?.byScene) delete (window as any).__frameStep;
     },
   };
 }

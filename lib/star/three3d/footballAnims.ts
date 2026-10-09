@@ -70,6 +70,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./perf";
 import { withMeshopt } from "./meshopt";
 import type { Person3D } from "../people3d";
+import { motionLook } from "../motionLook";
 
 type Three = typeof import("three");
 
@@ -100,20 +101,123 @@ export interface ClipInfo {
   speed?: number;
   /** Juggling / dribbling touches: [time s, foot, ball point [x, y, z] his frame]. */
   touches?: [number, "L" | "R", [number, number, number]][];
+  /** Mocap clips: when each foot is planted, [from, to] seconds (contact markers, measured off the capture). */
+  plants?: { L: [number, number][]; R: [number, number][] };
+  /** Mocap clips: which CMU capture it is ("CMU 11_01", "(mirrored)", and what was adapted). */
+  source?: string;
+  /** Mocap loops: the travel taken out, m/s in his frame (x = his left, z = forward). */
+  travel?: [number, number];
   [k: string]: unknown;
+}
+
+/**
+ * Is that foot planted `t` seconds into the clip (looping clips wrap)? For a
+ * runtime ground lock: while it is, keep that foot where it first landed
+ * (two-bone IK on thigh + shin) and it can never slide or float, on any body.
+ */
+export function plantedAt(info: ClipInfo | null | undefined, foot: "L" | "R", t: number): boolean {
+  const runs = info?.plants?.[foot];
+  if (!runs?.length) return false;
+  const tt = info!.loop && info!.duration > 0 ? ((t % info!.duration) + info!.duration) % info!.duration : t;
+  return runs.some(([a, b]) => tt >= a && tt <= b);
+}
+
+/**
+ * A body taller or shorter than the one the clips were cut for: addClips /
+ * makePerson3d already scale the hips' motion by k = this body's hips height
+ * over the clips' (so a longer leg takes a longer stride). Everything measured
+ * in metres must be scaled by the same k: where the ball sits, the contact
+ * point, the root motion, a loop's speed. Times stay as they are.
+ */
+export function scaleInfo(info: ClipInfo, k: number): ClipInfo {
+  const s2 = (v?: [number, number]) => (v ? ([v[0] * k, v[1] * k] as [number, number]) : v);
+  const s3 = (v?: [number, number, number]) => (v ? ([v[0] * k, v[1] * k, v[2] * k] as [number, number, number]) : v);
+  return {
+    ...info,
+    ball: s2(info.ball), end: s2(info.end), travel: s2(info.travel), contactPoint: s3(info.contactPoint),
+    speed: info.speed === undefined ? undefined : info.speed * k,
+    touches: info.touches?.map(([t, f, p]) => [t, f, s3(p)!] as [number, "L" | "R", [number, number, number]]),
+  };
 }
 
 /** If the file can't say (it always should), the numbers it was built with. */
 export const KICK_FALLBACK: ClipInfo = { duration: 2.3, loop: false, contact: 1.26, foot: "R", ball: [-0.187, 3.453], end: [0, 3.95] };
 
-/** Load (once per page) a clip set for a body. */
+/**
+ * THE MOTION-CAPTURE CLIPS (Settings → Look → "Motion: Mocap | Old",
+ * lib/star/motionLook.ts). Real human motion capture (CMU Graphics Lab
+ * database) put onto the same two skeletons by tools/mocap3d/build.py.
+ * Same clip names as above, plus new ones (walk, run, turn_l/_r,
+ * side_step_l/_r, shuffle_l/_r, shot_low, chip, pass_inside, celebrate_jump,
+ * celebrate_airplane, dejected, handshake, wave, applause, shirt_hold).
+ * Its clips go in over the old ones by name; anything it does not have stays
+ * the old hand-made clip. scene extras clips[name].source names the capture.
+ */
+export const MOCAP_FILES = { people: "/star/anims3d/mocap.glb", ual: "/star/anims3d/mocap-ual.glb" } as const;
+
+type Loader = { loadAsync(url: string): Promise<unknown>; setMeshoptDecoder(d: never): unknown };
+
+/**
+ * `base` with `extra`'s clips in over it by name (only those `keep` allows),
+ * the measured moments (scene extras "clips") merged the same way. Both files
+ * must be cut for the same skeleton (same hipsY). Neither input is changed.
+ */
+export function mergeClips(base: GLTF, extra: GLTF | null, keep: (name: string) => boolean = () => true): GLTF {
+  if (!extra) return base;
+  const take = extra.animations.filter((a) => keep(a.name));
+  if (!take.length) return base;
+  const names = new Set(take.map((a) => a.name));
+  const bu = (base.scene?.userData ?? {}) as { clips?: Record<string, ClipInfo> };
+  const eu = (extra.scene?.userData ?? {}) as { clips?: Record<string, ClipInfo> };
+  const clips = { ...(bu.clips ?? {}) };
+  names.forEach((n) => { if (eu.clips?.[n]) clips[n] = eu.clips[n]; });
+  const scene = Object.assign(Object.create(base.scene), { userData: { ...bu, clips } });
+  return { ...base, animations: [...base.animations.filter((a) => !names.has(a.name)), ...take], scene } as GLTF;
+}
+
+const mocapCache = new Map<string, Promise<GLTF | null>>();
+/** The motion-capture clips for a body, or null (Motion: Old, or the file failed: the old clips play). */
+export async function loadMocap(loader: Loader, body: Anims3dBody = "people"): Promise<GLTF | null> {
+  if (motionLook() !== "mocap") return null;
+  await withMeshopt(loader as never);
+  const url = MOCAP_FILES[body];
+  let p = mocapCache.get(url);
+  if (!p) {
+    p = loadGltfCached<GLTF>(loader, url).catch((e) => { console.error("mocap clips failed to load; the old clips play", e); mocapCache.delete(url); return null; });
+    mocapCache.set(url, p);
+  }
+  return p;
+}
+
+/** The bodies' own clips that the mocap set replaces (people3d anims.glb / shop3d anims.glb). */
+export const MOCAP_PEOPLE_OWN = new Set(["idle", "jog"]);
+export const MOCAP_UAL_OWN = new Set(["Idle_Loop", "Jog_Fwd_Loop", "Walk_Loop"]);
+
+/** A body's own clip file (people3d anims.glb or shop3d anims.glb) with the mocap idle/jog/walk in, when Motion is Mocap. */
+export async function withMocapOwn(loader: Loader, own: GLTF, body: Anims3dBody = "people"): Promise<GLTF> {
+  const m = await loadMocap(loader, body).catch((e) => { console.error("mocap clips", e); return null; });
+  return mergeClips(own, m, (n) => (body === "people" ? MOCAP_PEOPLE_OWN : MOCAP_UAL_OWN).has(n));
+}
+
+/** Load (once per page) a clip set for a body. The football set comes with the mocap clips in when Motion is Mocap. */
 export async function loadAnims3d(
-  loader: { loadAsync(url: string): Promise<unknown>; setMeshoptDecoder(d: never): unknown },
+  loader: Loader,
   set: Anims3dSet, body: Anims3dBody = "people",
 ): Promise<GLTF> {
   await withMeshopt(loader as never);
-  return loadGltfCached<GLTF>(loader, ANIMS3D_FILES[set][body]);
+  const base = await loadGltfCached<GLTF>(loader, ANIMS3D_FILES[set][body]);
+  if (set !== "football") return base;
+  const m = await loadMocap(loader, body).catch((e) => { console.error("mocap clips", e); return null; });
+  if (!m) return base;
+  const key = `${body}`;
+  let merged = mergedCache.get(key);
+  if (!merged || merged.base !== base || merged.extra !== m) {
+    merged = { base, extra: m, out: mergeClips(base, m, (n) => !MOCAP_UAL_OWN.has(n)) };
+    mergedCache.set(key, merged);
+  }
+  return merged.out;
 }
+const mergedCache = new Map<string, { base: GLTF; extra: GLTF; out: GLTF }>();
 
 /** The measured moments of one clip (contact, ball spot, root motion, touches). */
 export function clipInfo(g: GLTF | null | undefined, name: string): ClipInfo | null {
