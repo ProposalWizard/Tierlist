@@ -295,7 +295,7 @@ export async function createPlay3DScene(
    */
   type Once = { clip: string; lead: number; speed?: number; align?: "flat" | "full"; from?: number };
   /** Strikes and touches are pinned to the contact; the rest (celebrations, keepy-ups' old clip) start where `lead` says. */
-  const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
+  const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_inside", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
   const info = (n: string) => clipInfo(fb, n);
   const loopSpeed: Record<string, number> = { jog: 3.2, sprint: 7.4, dribble_run: 4.6, celebrate_safe: 3.4, slump_walk: 1.15 };
   for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
@@ -310,7 +310,8 @@ export async function createPlay3DScene(
       case "header":
         // flying in at a ball not far above the ground: a diving header; else up for it
         return sp > 3.2 && ballZ < 1.7 ? { clip: "header_diving", lead: 0.06, align: "full" } : { clip: "header_stand", lead: 0.06, align: "full" };
-      case "pass": return { clip: "pass", lead: 0.05, speed: 1.2, align: "flat" };
+      // the mocap set has a real side-foot pass; the old set has its drill clip
+      case "pass": return b.play.has("pass_inside") ? { clip: "pass_inside", lead: 0.05, align: "flat" } : { clip: "pass", lead: 0.05, speed: 1.2, align: "flat" };
       case "loft": return { clip: "pass_lofted", lead: 0.05, align: "flat" };
       case "touch": {
         // a touch while running with it is the dribble's own (dribble_run has it)

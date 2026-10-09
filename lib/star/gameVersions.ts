@@ -33,6 +33,7 @@ import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
 import { animationsLook, setAnimationsLook } from "./animLook";
 import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
 import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
+import { motionLook, setMotionLook } from "./motionLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -66,6 +67,7 @@ export const LOOK_ROWS = {
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
   people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
+  motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
   casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
   signing: row("Signing scene", "3d", "drawn", () => (signing3dOn() ? "3d" : "drawn"), (v) => setSigning3d(v === "3d")),
@@ -109,6 +111,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     garden: N("garden"),
     shopPlayer: N("shopPlayer"),
     people3d: N("people3d"),
+    motion: N("motion"),
     bossRoom: N("bossRoom"),
     casino: N("casino"),
     signing: N("signing"),

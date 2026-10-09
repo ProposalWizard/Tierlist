@@ -38,6 +38,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
+import { withMocapOwn } from "../three3d/footballAnims";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -698,7 +699,7 @@ async function buildShop(
   } else {
     const [charGltf, animGltf] = await Promise.all([
       loader.loadAsync("/star/shop3d/character.glb"),
-      loader.loadAsync("/star/shop3d/anims.glb"),
+      loader.loadAsync("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     ]);
     player = charGltf.scene;
     player.traverse((o: any) => {

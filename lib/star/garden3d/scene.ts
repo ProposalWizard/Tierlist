@@ -53,7 +53,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu, loadGltfCached } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
-import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
+import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
@@ -462,7 +462,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   ] : [
     load("/star/garden3d/props.glb"),
     load("/star/shop3d/character.glb"),
-    load("/star/shop3d/anims.glb"),
+    load("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     load("/star/garden3d/anims.glb"),
   ]);
   if (disposed) throw new Error("disposed");
