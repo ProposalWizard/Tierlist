@@ -22,6 +22,7 @@ import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
 import { makeWorldSeek } from "../frameStep";
+import { makePracticeCam, setPeek, stepPracticeCam } from "../three3d/orbitCam";
 
 export interface Play3DPerson { skin: string; hair: string; hairStyle?: "short" | "long" | "buzz" | "none"; face?: FacePic | null }
 export interface Play3DLook {
@@ -34,7 +35,9 @@ export interface Play3DLook {
   teamKits?: Record<number, KitColours>;
   people: Record<string, Play3DPerson>;
 }
-export type CameraMode = "chase" | "pair";
+export type CameraMode = "chase" | "pair" | "practice";
+/** The practice-arena camera's brief, per frame (../three3d/orbitCam.ts): what to keep in shot with you, and whether a cross in the air is to be tracked. */
+export type PracticeFraming = (world: World) => { target: { x: number; y: number }; trackBall?: boolean };
 
 /** A camera set from outside (the Style Testing page's fixed tilt): three.js coordinates. */
 export type Play3DRig = (world: World) => { pos: [number, number, number]; look: [number, number, number]; heading: number; fov?: number };
@@ -53,6 +56,10 @@ export interface Play3DBuilt {
 export interface Play3DController {
   /** Which way the camera looks, as a pitch-plane angle (0 = +x): the screen maps the stick and the drag with it. */
   heading(): number;
+  /** Look round (practice camera): radians, ±40° at most; 0 springs back. */
+  peek(a: number): void;
+  /** The pitch point under a screen point (px inside the picture), or null if it is above the horizon. */
+  ground(x: number, y: number): { x: number; y: number } | null;
   setActive(on: boolean): void;
   /** The man drawn under a tap at (x, y) px inside the picture (nearest within a thumb's width), or null. */
   pick(x: number, y: number): string | null;
@@ -78,6 +85,8 @@ export async function createPlay3DScene(
   container: HTMLElement, world: World, look: Play3DLook,
   opts: {
     camera: CameraMode; quality?: Quality3d; onFrame?: (dt: number) => void;
+    /** The practice camera's framing (camera "practice"). Default: you and the goal. */
+    practice?: PracticeFraming;
     /** Optional (Style Testing only): a fixed camera instead of `camera`. */
     rig?: Play3DRig;
     /** Optional: no sky, lights, grass, lines, goal or hedge — the caller builds its own world round the people and the ball. */
@@ -559,7 +568,9 @@ export async function createPlay3DScene(
   let heading = -Math.PI / 2;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let snap = true;
-  const camTarget = () => {
+  const pcam = makePracticeCam();
+  let camDt = 0;
+  const camTarget = (): { pos: any; look: any; own?: boolean } => {
     if (opts.rig) {
       const r = opts.rig(world);
       heading = r.heading;
@@ -573,6 +584,14 @@ export async function createPlay3DScene(
       heading = -Math.PI / 2;
       const bx = b.x - CX;
       return { pos: new THREE.Vector3(bx * 0.6, 9.5, Math.max(14, b.y + 13)), look: new THREE.Vector3(bx * 0.7, 0.5, Math.max(4, b.y * 0.55)) };
+    }
+    if (opts.camera === "practice") {
+      // FIFA's practice arena: behind and above your shoulder, turning on its own (never with the stick)
+      const fr = opts.practice ? opts.practice(world) : { target: { x: CX, y: 0 } };
+      const b = world.ball;
+      const c = stepPracticeCam(pcam, { you: { x: you.x, y: you.y }, target: fr.target, ball: { x: b.x, y: b.y, z: b.z }, trackBall: fr.trackBall }, camDt);
+      heading = c.heading;
+      return { pos: new THREE.Vector3(c.pos.x - CX, c.pos.z, c.pos.y), look: new THREE.Vector3(c.look.x - CX, c.look.z, c.look.y), own: true };
     }
     if (opts.camera === "pair") {
       const mate = world.players.find((p) => p !== you) ?? you;
@@ -608,7 +627,7 @@ export async function createPlay3DScene(
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    if (!opts.rig) camera.fov = opts.sharp ? (w / h < 0.8 ? CHASE_SHARP.fovTall : CHASE_SHARP.fovWide) : w / h < 0.8 ? 58 : 48;
+    if (!opts.rig) camera.fov = opts.camera === "practice" ? (w / h < 0.8 ? 62 : 50) : opts.sharp ? (w / h < 0.8 ? CHASE_SHARP.fovTall : CHASE_SHARP.fovWide) : w / h < 0.8 ? 58 : 48;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -625,8 +644,10 @@ export async function createPlay3DScene(
     placeBall();
     syncMarkers();
     syncAim(dt);
+    camDt = dt;
     const t = camTarget();
-    if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
+    // the practice camera does its own smoothing
+    if (snap || t.own) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));
     camLook.lerp(t.look, Math.min(1, dt * 5));
     camera.position.copy(camPos);
@@ -677,6 +698,17 @@ export async function createPlay3DScene(
   };
   return {
     heading: () => heading,
+    peek: (a) => setPeek(pcam, a),
+    ground(sx, sy) {
+      const w = container.clientWidth || 1, h = container.clientHeight || 1;
+      const nx = (sx / w) * 2 - 1, ny = 1 - (sy / h) * 2;
+      const near = new THREE.Vector3(nx, ny, -1).unproject(camera);
+      const far = new THREE.Vector3(nx, ny, 1).unproject(camera);
+      const dy = far.y - near.y;
+      if (dy >= -1e-6) return null;
+      const k = -near.y / dy;
+      return { x: near.x + (far.x - near.x) * k + CX, y: near.z + (far.z - near.z) * k };
+    },
     step: stepperApi.step,
     screen(id) { const p = world.get(id); return p && p.active ? screenOf(p) : null; },
     pick(sx, sy) {
