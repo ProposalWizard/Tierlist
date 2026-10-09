@@ -29,6 +29,7 @@ Preview) sets them all at once.
 | 3D drills (Two Touch, Free Roam, Headers & Volleys, Wembley, Pace Sprint) | `components/star/Play3D.tsx`, opened from `components/star/Training3D.tsx` | `lib/star/play3d/scene.ts` (picture) and `lib/star/play3d/world.ts` (rules, own physics). Drill list: `lib/star/play3d/drills.ts` | `/star-training3d-dev`; Free Roam also at `/star-style-dev?scene=play3d` | 3D look: H / Old (`lib/star/look3dStyle.ts`) |
 | Crossbar Challenge | `components/star/Training3D.tsx` | `lib/star/training3d/scene.ts` (your shot is the 2D engine; the 3D pitch draws it) | `/star-training3d-dev` | none |
 | Garden | `components/star/Garden3D.tsx` | `lib/star/garden3d/scene.ts` (old: `lib/star/garden3d/sceneOld.ts`, frozen) | `/star-garden3d-dev` | 3D garden: New / Old (`lib/star/garden3d/look.ts`) |
+| Your house (wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
 | Shop | `components/star/Shop3D.tsx` | `lib/star/shop3d/scene.ts`, items in `lib/star/shop3d/catalogue.ts` | `/star-shop3d-dev` | 3D shop player (`lib/star/signing3d.ts`); 3D look H |
 | Casino | `components/star/Casino3D.tsx`, tables in `components/star/Casino3DTable.tsx` | `lib/star/casino3d/scene.ts` | `/star-garden3d-dev` (has a Casino tab) | Casino: 3D / Classic (`lib/star/casino3d/look.ts`); Casino look: New / Old (`lib/star/casino3d/roomLook.ts`) |
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
@@ -285,6 +286,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- Your house in 3D: one parametric room in six presets from the home you own (starter flat → estate), a wardrobe with a full-length mirror (casual sets, home/away kit, boots; saved as `CareerState.outfit`; the garden and shop show the casual set, training always the kit), a trophy cabinet from your real trophies and awards ("Win it to fill this"), your cars on the drive (light copies in `public/star/home3d`, `tools/home3d/make_lods.mjs`). Ways in: the garden's house door and the phone's "Your house" app.
 - Merge: running arms. Elbows bent 80 to 100 degrees, back hand beside the hip, front hand up to the chest, relaxed hands.
 - 3D drill cameras: the practice-arena camera, phone and PC control schemes, the Two Touch skill.
 - 3D pace: speeds scale with the pace stat (sprint 5.6 to 8.2 m/s), stamina from fitness, a Pace Sprint drill, an upright running neck, a Back pill.
@@ -301,3 +303,31 @@ What landed today on Harry, newest first, one line each.
 - Cut-scene system: film rules, close-ups, real grass plates, the people layer (`lib/star/cutscene`), The Icon speaks.
 - Real game in 3D on the Style Testing page: "same brain, new camera" (`lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`).
 - Rescued into the repo: `tools/styletest` (look test for cel / Spider-Verse / stylised PBR), `tools/modeltest` (three generated stylised bodies, concept pictures, raw and fitted GLBs), `tools/models3d` (picture to game-ready GLB tools), this handbook and `.claude/skills/3d-building`.
+
+---
+
+## Handover (9 Oct) → Leo
+
+### Your house (the 3D home)
+
+Harry's idea, in his words: *"imagine you actually had your current house with all your stuff and that's where you change clothes."*
+
+**Done.**
+- The room: `lib/star/home3d/scene.ts`, one parametric room. Six presets in `lib/star/home3d/homes.ts`, picked by the best home you own in the shop (`homeTierOf`): starter flat (nothing bought), flat, penthouse, house, villa, estate. Size, floor, panelling, metal trim, chandelier, plants, cabinet size, drive size and the window view grow with the tier.
+- The wardrobe and mirror: rails of casual sets (hoodie and joggers, tee and jeans, shirt and chinos, club tracksuit, smart coat), your home and away kits, plain or your own boots. Tap it, pick, he changes and you see him in a live full-length mirror (a `Reflector` on its own layer, on only near the wardrobe; off on Low). Saved as `CareerState.outfit` (`lib/star/types.ts`, optional). `wornAt` (`lib/star/home3d/outfits.ts`) says what to wear where: the garden and the 3D shop show the casual set, training always the kit.
+- The trophy cabinet: `lib/star/home3d/trophies.ts` reads `trophies`, `awards` and `ballonDorWins`, counts each win once, and fills the empty spots with the big targets ("Win it to fill this"). Trophies are stylised shapes made in code, no real ones.
+- The drive window: your cars (best first, as many as the preset's drive holds) from light copies of the shop's generated models (`public/star/home3d/*-lod.glb`, made by `tools/home3d/make_lods.mjs`, packed by `scripts/perf3d/shrink-models.mjs`). No Higgsfield credits spent.
+- Ways in: the garden's house door on the east boundary (`lib/star/garden3d/scene.ts`, `HOUSE`), the phone's "Your house" app (on the phone from day one, `STARTER_APPS`), phase `home-3d` in `app/star-dev/page.tsx`. Both are behind one switch, `lib/star/home3d/flag.ts` (`HOME3D_IN_CAREER`, now true).
+- Speed at Medium on this machine: 37 to 63 draws, 30k to 92k triangles (limit 120 draws, 150k). No baked light file for the room yet (`enhanceH(..., { bake: null })`): one hemisphere and one sun, as the shop has, no extra lights; the sun's shadow is redrawn only when something moves.
+- Tests: `tests/star/home3d.mts` (tier to preset, trophies from a career, outfit saving, the drive).
+
+**Half-done or not seen.**
+- The Style A hook: `setWearerBody(fn)` in `lib/star/home3d/wear.ts`. Style A's bodies drop in there and only there. The casual clothes are the human body's own outfits (`lib/star/human3d/human.ts`); a Style A body needs the same outfit parts or paints its clothes from each set's `colours`.
+- Not seen: the house opened from a real career (garden door and phone app), on a phone, or the casual set in the garden and shop on screen (reasoned from the code; the test page works).
+
+**Next 3 steps, in order.**
+1. Play a career to the garden, walk through the house door, change into the coat, walk back out: check the garden and the shop show the coat and the save keeps it.
+2. Judge it on a phone: the mirror's frame rate and the wardrobe camera (`shotOf` in `scene.ts`).
+3. When Style A lands, register its body with `setWearerBody` and refit the casual sets.
+
+**How to see it.** `/star-home3d-dev?tier=villa` (buttons switch the tier and empty/full cabinet; `?fps=1` for the meter, `?look=old` without Look H). In a career: Garden → the door at the right-hand boundary, or the phone's "Your house".
