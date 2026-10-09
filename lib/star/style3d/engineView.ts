@@ -44,6 +44,7 @@ import type { TimeOfDay } from "./real/assets";
 import { realCameraLook, playerLightLook } from "./realGameLook";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
+import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -79,6 +80,17 @@ const MO = {
   /** … below this speed (m/s on the pitch), played this much quicker. */
   turnClipBelow: 1,
   turnSpeed: 1.35,
+  /**
+   * SMOOTH PLAYBACK (3D camera: New; Harry, 9 Oct 2026: "the animations are a
+   * bit wild and rough"): every clip change crossfades at least this long (s) …
+   */
+  smoothFade: 0.24,
+  /** … a loop is kept at least this long before the next change (no flicker between walk and jog) … */
+  smoothDwell: 0.35,
+  /** … a turn is never faster than this (rad/s, ~540°/s), eased in by the share-per-second rate … */
+  smoothTurn: 9.4,
+  /** … and his speed is read through this much smoothing (per second; Old: 8). */
+  smoothVel: 5,
   /** Standing still below this (m/s on the pitch). */
   idleBelow: 0.35,
   /** A man's own pace (m/s at his drawn size) → which loop: walk, jog, run, sprint. */
@@ -166,6 +178,8 @@ type Body = {
   alert?: number;
   /** The tight shadow under his feet ("3D player light: New"). */
   foot?: any;
+  /** Smooth playback (3D camera: New): when his loop last changed (f.t). */
+  sw?: number;
 };
 
 /**
@@ -398,6 +412,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   let hTod: TimeOfDay | null = o.tod ?? null;
   let hToken = 0;
   let visible = true;
+  /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
+  const smooth = () => camMode === "tv" && realCameraLook() === "new" && !(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0");
+  /** The current frame's clock (f.t), for the smooth playback's dwell. */
+  let nowT = 0;
 
   // ── the ball (play3d's, dressed in look H when H is on) ──
   const ball = new THREE.Group();
@@ -585,13 +603,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     while (d < -Math.PI) d += 2 * Math.PI;
     const step = d * Math.min(1, dt * rate);
     // Mocap: never faster than a man can turn (a fixed share per frame spun him on planted feet)
-    b.yaw += mo ? Math.sign(step) * Math.min(Math.abs(step), MO.maxTurn * dt) : step;
+    const cap = mo ? MO.maxTurn : smooth() ? MO.smoothTurn : Infinity;
+    b.yaw += Math.sign(step) * Math.min(Math.abs(step), cap * dt);
   };
   const startLoop = (b: Body, name: string) => {
     const n = b.play.has(name) ? name : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
     if (b.state === n) return;
-    b.play.play(n, { fade: 0.22 });
-    b.state = n;
+    if (smooth() && b.sw !== undefined && LOCO.has(b.state) && LOCO.has(n) && nowT - b.sw < MO.smoothDwell) return;
+    b.play.play(n, { fade: smooth() ? Math.max(0.22, MO.smoothFade) : 0.22 });
+    b.state = n; b.sw = nowT;
   };
   const startOnce = (b: Body, clip: string, ago: number, speed = 1) => {
     if (!b.play.has(clip)) return false;
@@ -600,7 +620,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const dur = ci?.duration ?? b.p.actions[clip].getClip().duration;
     const from = Math.min(dur, contact + ago * speed);
     if (from >= dur - 0.05) return false;
-    b.play.play(clip, { fade: mo ? 0.12 : 0.06, from, speed, once: true });
+    b.play.play(clip, { fade: smooth() ? MO.smoothFade * 0.75 : mo ? 0.12 : 0.06, from, speed, once: true });
     b.state = `once:${clip}`;
     b.onceLeft = (dur - from) / speed;
     return true;
@@ -633,6 +653,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const startLoopM = (b: Body, name: string, fade = 0.25) => {
     const n = b.play.has(name) ? name : name === "run" ? "jog" : name === "walk" ? "jog" : name === "ready_shuffle" ? "idle" : name === "sprint" ? "jog" : "idle";
     if (b.state === n) return;
+    if (smooth()) {
+      // a gait change waits out the last one (no walk/jog/walk flicker); every other change still crossfades
+      if (b.sw !== undefined && (LOCO.has(b.state) || b.state === "idle") && (LOCO.has(n) || n === "idle") && nowT - b.sw < MO.smoothDwell) return;
+      if (fade > 0) fade = Math.max(fade, MO.smoothFade);
+      b.sw = nowT;
+    }
     const dur = clipDur(b, n);
     let from = b.idleOff * dur;
     const pa = b.p.actions[b.state];
@@ -874,17 +900,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const b = bodyFor(fig.sid, fig.shirt, fig.shorts, faces ? fig.face : undefined);
     b.seen = frameNo;
     const jump = Math.hypot(at.x - b.x, at.y - b.y);
-    if (!b.init || jump > 4) { b.x = at.x; b.y = at.y; b.vx = 0; b.vy = 0; b.init = true; }
+    const fresh = !b.init || jump > 4;
+    if (fresh) { b.x = at.x; b.y = at.y; b.vx = 0; b.vy = 0; b.init = true; }
     else if (dt > 0) {
-      const k = Math.min(1, dt * 8);
+      const k = Math.min(1, dt * (smooth() ? MO.smoothVel : 8));
       b.vx += ((at.x - b.x) / dt - b.vx) * k; b.vy += ((at.y - b.y) / dt - b.vy) * k;
       b.x = at.x; b.y = at.y;
     }
     const sp = Math.hypot(b.vx, b.vy);
+    // smooth playback: a man who has just (re)appeared starts in his pose for this pace, not a fade from a stale one
+    if (fresh && smooth() && mo) { b.state = ""; b.sw = undefined; startLoopM(b, sp < MO.idleBelow ? "idle" : "jog", 0); b.sw = undefined; }
     // facing: where he runs, else the ball, else up the pitch
     const bl = f.ball;
     let want: number | null = null;
-    if (sp > 0.7) want = yawOf(Math.atan2(b.vy, b.vx));
+    if (sp > (smooth() ? (LOCO.has(b.state) ? 0.5 : 0.9) : 0.7)) want = yawOf(Math.atan2(b.vy, b.vx));
     else if (fig.sid === "you" && f.aim) want = yawOf(Math.atan2(f.aim.to.y - f.aim.from.y, f.aim.to.x - f.aim.from.x));
     else if (fig.sid === "you" && (f.phase === "aim" || f.phase === "runup")) want = yawOf(Math.atan2(0 - b.y, CX - b.x));
     else if (bl && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.4) want = yawOf(Math.atan2(bl.y - b.y, bl.x - b.x));
@@ -1253,8 +1282,65 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // 1.3–2.6× → 2.3–4.7 m, the keeper 0.85 of that).
     if (realCameraLook() === "new") tvFig = FIG_NEW;
   };
+  /**
+   * THE BROADCAST CAMERA (3D camera: New, lib/star/style3d/broadcastCam.ts):
+   * one 40° angle for every chance kind (side-on ones turned, never top-down),
+   * the ball at 60% of the height so the drag has pitch under it, men sized to
+   * ~10% of the canvas. It glides between chances and is held still while you
+   * aim (a finger down, the arrow up, or the strike screen).
+   */
+  const bc = { tx: 0, tz: 0, D: 40, ang: 0, k: 1.6, init: false, key: "", anchor: { x: CX, y: 20 } };
+  /** Test page / candidates sheet: ?man=0.08 sets the man's share of the height. */
+  const BC = (() => {
+    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("man"));
+    return q >= 0.05 && q <= 0.2 ? { ...BROADCAST, manShare: q } : BROADCAST;
+  })();
+  const placeBroadcast = (f: EngineFrame, dt: number) => {
+    const vp = f.cam.viewport;
+    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2, z: 0 };
+    const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
+    const aiming = f.phase === "aim" || f.phase === "runup" || f.phase === "contact";
+    if (aiming || key !== bc.key) bc.anchor = { x: ball.x, y: ball.y };
+    bc.key = key;
+    const figs: BcFigure[] = f.figures.map((g) => ({ sid: g.sid, x: g.x, y: g.y, team: g.team }));
+    const pts = actionPoints({ x: ball.x, y: ball.y, z: (ball as { z?: number }).z ?? 0 }, figs, f.keeper, f.goalInView, BC);
+    const vis = (() => {
+      const r = container.getBoundingClientRect();
+      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
+      return { a: Math.max(0, Math.min(0.5, -r.top / r.height)), b: Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height)) };
+    })();
+    const c = solveBroadcast({ anchor: bc.anchor, points: pts, facing: f.cam.facing, W: f.cam.W, H: f.cam.H, vis }, BC);
+    const ang = Math.atan2(c.ax, c.az);
+    // held still while you aim: a finger on the glass, the arrow up, or the strike screen
+    const hold = bc.init && (touch.id !== -1 || !!f.aim || f.phase === "contact" || f.phase === "runup");
+    if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.k = c.k; bc.init = true; }
+    else if (!hold) {
+      // a glide, never a cut (about 0.4 s to settle)
+      const e = 1 - Math.exp(-dt * (f.phase === "aim" ? 6 : 3));
+      bc.tx += (c.tx - bc.tx) * e; bc.tz += (c.tz - bc.tz) * e; bc.D += (c.D - bc.D) * e;
+      let da = ang - bc.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      bc.ang += da * e; bc.k += (c.k - bc.k) * e;
+    }
+    const pose = bcPose({ ...c, tx: bc.tx, tz: bc.tz, D: bc.D, ax: Math.sin(bc.ang), az: Math.cos(bc.ang) });
+    camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(pose.look[0], 0, pose.look[2]);
+    camera.fov = c.fov;
+    camera.aspect = f.cam.W / f.cam.H;
+    camera.near = Math.max(0.1, bc.D * 0.05);
+    camera.far = bc.D + 500;
+    camera.updateProjectionMatrix();
+    down3 = new THREE.Vector3(Math.sin(bc.ang), 0, Math.cos(bc.ang));
+    lean = 0;
+    tv.init = true;
+    tvFig = bc.k;
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, k: bc.k, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
+  };
+  /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
+  const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   const placeCamera = (f: EngineFrame, dt: number) => {
-    if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
+    else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
     else { tv.init = false; placeExactCamera(f); }
   };
 
@@ -1463,6 +1549,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   return {
     frame(f) {
       frameNo++;
+      nowT = f.t;
       const dt = lastT === null ? 0 : Math.max(0, Math.min(0.1, f.t - lastT));
       lastT = f.t;
       if (!visible) return;
@@ -1523,7 +1610,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ball.visible = !!fb0;
       if (fb0) {
         // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
-        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? figNow() : def.ballScale * 0.85;
+        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? Math.min(2, figNow()) : def.ballScale * 0.85;
         ball.scale.setScalar(bs);
         const v = new THREE.Vector3(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
