@@ -137,7 +137,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
 
   // ── renderer: at the phone's own pixel density (2 on High), so nothing is "pixelly" ──
   const { renderer, release } = acquireRenderer(THREE, container, prof);
-  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1;
+  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;

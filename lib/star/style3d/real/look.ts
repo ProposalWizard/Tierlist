@@ -119,10 +119,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.name = "h-look";
   scene.add(root);
   const withArena = o.arena !== false;
-  const [maps, crowdTex, ledTex] = await Promise.all([
+  const [maps, crowdTex, ledTex, bgu] = await Promise.all([
     grassMaps(T),
     withArena ? hTexture(T, "crowd.webp") : Promise.resolve(null),
     withArena ? hTexture(T, "led.webp") : Promise.resolve(null),
+    withArena ? import("three/examples/jsm/utils/BufferGeometryUtils.js").catch(() => null) : Promise.resolve(null),
   ]);
   let tod: TimeOfDay = o.tod;
   let look: TodLook = TODS[tod];
@@ -164,7 +165,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   // ── pitch, stadium, ball ──
   const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
   root.add(pitch.mesh);
-  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours }) : null;
+  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours, merge: (bgu as any)?.mergeGeometries }) : null;
   if (arena) root.add(arena.group);
   // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
   arena?.group.traverse((x: any) => { if (x.name === "h-crowd" && x.material) x.material.userData.bakeNeutral = true; });

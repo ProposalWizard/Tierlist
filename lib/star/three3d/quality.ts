@@ -59,10 +59,20 @@ export interface TierProfile {
   maxLiveCharacters: number;
 }
 
+/**
+ * 9 Oct 2026 (Harry's iPhone screenshots: "every edge is jagged and
+ * pixel-stepped"): Medium (every iPhone's Auto) drew 1.25 pixels per point
+ * standing still and 1 (as low as 0.7) moving, with no antialias, on a 3×
+ * screen. Every tier now keeps edges smooth — antialias on, never under 1.25
+ * pixels on Medium and High — and wins the time back elsewhere: Medium drops
+ * the outline (one more skinned draw per person), the stadium is merged into
+ * a few draws, and dynamic resolution only trims down to a floor that still
+ * looks smooth.
+ */
 export const TIER_PROFILES: Record<Quality3d, TierProfile> = {
-  low: { tier: "low", maxPixelRatio: 1, movePixelRatio: 0.85, minPixelRatio: 0.6, antialias: false, shadows: false, shadowScale: 0, shadowMapSize: 0, fpsCap: 30, stillFps: 30, outlines: false, anisotropy: 1, maxLiveCharacters: 2 },
-  medium: { tier: "medium", maxPixelRatio: 1.25, movePixelRatio: 1, minPixelRatio: 0.7, antialias: false, shadows: true, shadowScale: 0.5, shadowMapSize: 1024, fpsCap: 60, stillFps: 30, outlines: true, anisotropy: 2, maxLiveCharacters: 4 },
-  high: { tier: "high", maxPixelRatio: 1.5, movePixelRatio: 1, minPixelRatio: 0.75, antialias: true, shadows: true, shadowScale: 1, shadowMapSize: 2048, fpsCap: 60, stillFps: 30, outlines: true, anisotropy: 4, maxLiveCharacters: 8 },
+  low: { tier: "low", maxPixelRatio: 1.25, movePixelRatio: 1.25, minPixelRatio: 1, antialias: true, shadows: false, shadowScale: 0, shadowMapSize: 0, fpsCap: 30, stillFps: 30, outlines: false, anisotropy: 1, maxLiveCharacters: 2 },
+  medium: { tier: "medium", maxPixelRatio: 1.5, movePixelRatio: 1.5, minPixelRatio: 1.25, antialias: true, shadows: true, shadowScale: 0.5, shadowMapSize: 1024, fpsCap: 60, stillFps: 30, outlines: false, anisotropy: 2, maxLiveCharacters: 4 },
+  high: { tier: "high", maxPixelRatio: 2, movePixelRatio: 1.5, minPixelRatio: 1.25, antialias: true, shadows: true, shadowScale: 1, shadowMapSize: 2048, fpsCap: 60, stillFps: 30, outlines: true, anisotropy: 4, maxLiveCharacters: 8 },
 };
 
 /** One tier down (null at Low). A scene too slow for three seconds takes this step. */
