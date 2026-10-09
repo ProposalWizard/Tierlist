@@ -41,6 +41,7 @@ import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
+import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -73,8 +74,8 @@ export interface ShopController {
   setCardOpen: (open: boolean) => void;
   /** The "Owned" chip on each item's floating tag (item id → text, e.g. "Owned L2"). */
   setOwned: (owned: Record<string, string>) => void;
-  /** Drag on the view to swing the camera round. */
-  orbit: (dxPixels: number) => void;
+  /** Drag on the view: left/right swings the camera round, up/down tilts it (lib/star/three3d/orbitCam.ts). */
+  orbit: (dxPixels: number, dyPixels?: number) => void;
   /** What is under a tap at (x, y) in page pixels, if anything. */
   pick: (clientX: number, clientY: number) => Picked | null;
   /** Tap to move: a tap on a display walks you up to it (its card opens as
@@ -194,7 +195,7 @@ async function buildShop(
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
-  const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+  const { mergeGeometries, toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
@@ -475,6 +476,42 @@ async function buildShop(
   loader.setDRACOLoader(draco); // boots and cars
   await withMeshopt(loader); // people, clips, the old player (scripts/perf3d/shrink-models.mjs)
   let loaded = 0;
+  /**
+   * THE CARS AND BOOTS LOOKED ODD (Harry, 9 Oct 2026: "the cars and boots still
+   * look odd in the shop"). Three causes, all in how the files are drawn:
+   *  1. Every face was exported smooth (tools/shop3d/export_items.py sets
+   *     use_smooth on all of them after cutting the triangle count down), so
+   *     the panel lines, wheel arches, sole edge and studs melt into one soft
+   *     blob, like clay. Normals are worked out again with a crease: faces
+   *     meeting at more than CREASE stay sharp, curved panels stay smooth.
+   *  2. The paint never reflected the room: without its own environment a
+   *     material takes the scene's, at environmentIntensity 0.32, so a car
+   *     with a full clear coat read as matte plastic. Each item now has the
+   *     room's reflection at full strength (boots a little less).
+   *  3. The clear coat is mirror-smooth (roughness 0.05): the turntable's
+   *     spotlights made a pin-point hot spot that the H look's bloom blew into
+   *     a white smear across the bonnet. The coat is a touch less sharp, so
+   *     the highlight is a shine, not a flare.
+   * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
+   */
+  const CREASE = (38 * Math.PI) / 180;
+  const showroomFinish = (o: any, car: boolean) => {
+    if (o.geometry && !o.geometry.userData.creased) {
+      const g2 = toCreasedNormals(o.geometry, CREASE);
+      g2.userData.creased = true;
+      o.geometry.dispose();
+      o.geometry = g2;
+    }
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (!m || !m.isMeshStandardMaterial) continue;
+      m.envMap = envTex;
+      m.envMapIntensity = car ? 1.0 : 0.7;
+      if (m.clearcoat > 0) m.clearcoatRoughness = Math.max(m.clearcoatRoughness ?? 0, car ? 0.14 : 0.2);
+      if (m.roughness < 0.12) m.roughness = 0.12; // glass and chrome: still glossy, no pin-point flare
+      m.needsUpdate = true;
+    }
+  };
   const models = new Map<string, Promise<any>>();
   const loadModel = (url: string) => {
     if (!models.has(url)) {
@@ -486,6 +523,7 @@ async function buildShop(
           o.receiveShadow = true;
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
+          if (hEnh) showroomFinish(o, /\/car-/.test(url));
         });
         return g.scene;
       }));
@@ -495,6 +533,8 @@ async function buildShop(
 
   // ── The boots, one on each plinth ──
   const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
+  // look H: the spot above blew the cream top into a white glow the boot floated on; a stone grey, less glossy
+  if (hEnh) { plinthTopM.color.set("#9a9186"); plinthTopM.roughness = 0.55; }
   const plinthM = mat("#1c1714", { roughness: 0.32, metalness: 0.25 });
   box(1.1, 0.04, 8.0, mat("#100c0a", { roughness: 0.25, metalness: 0.3 }), PLINTH_X, 0.02, 0); // a dark stage under the row
   box(0.06, 2.6, 8.2, mat("#211915", { roughness: 0.55 }), -ROOM.x + 0.14, 1.85, 0); // a dark wall panel behind
@@ -752,6 +792,7 @@ async function buildShop(
   let yaw = Math.PI; // facing
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
+  const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
   let near: DisplayId | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
@@ -994,12 +1035,14 @@ async function buildShop(
     }
 
     // camera: follows behind him; with a card open it moves in on the item
+    camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    want.set(player.position.x, 2.85, player.position.z).addScaledVector(cf, -4.6).addScaledVector(cr, 0.3);
+    const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
+    want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
     if (shot) {
       want.lerp(new THREE.Vector3(...shot.cam), frame);
@@ -1010,6 +1053,10 @@ async function buildShop(
     // walking out of the door: the camera stays inside, looking out
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up)
+    camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
+    camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
+    camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // with a card open, slide the picture up so the item sits above the card
@@ -1062,7 +1109,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1122,7 +1169,7 @@ async function buildShop(
       buyA.play();
       buying = buyA.getClip().duration;
     },
-    orbit: (dx) => { camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => {
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);
@@ -1144,7 +1191,7 @@ async function buildShop(
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
       stopWalk();
-      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; first = true;
+      player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true;
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
