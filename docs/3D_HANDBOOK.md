@@ -375,7 +375,6 @@ Stills from this round: the session scratchpad `r3fr/` (sheet.jpg).
 
 ---
 
-## Handover (9 Oct) → Leo
 
 ### Your house (the 3D home)
 
