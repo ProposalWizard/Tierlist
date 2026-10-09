@@ -173,6 +173,8 @@ import { changeDealHappiness } from "@/lib/star/sponsorDeals";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 import { setActiveFoot } from "@/lib/star/kickFoot";
 import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
+import { loadSprites } from "@/lib/star/sprites";
+import { matchPlayersLook } from "@/lib/star/newLook";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -394,7 +396,13 @@ function NewUiStarDevPage() {
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
   // Fetch the other screens quietly once Home is up (lib/star/lazyScreen.ts).
-  useEffect(() => preloadScreens(LAZY_PRELOAD), []);
+  useEffect(() => preloadScreens([
+    // The match's player sprite sheet, read and unpacked before kick-off
+    // rather than on the first frame of the match (only with the 3D
+    // players look, the only one that draws them).
+    { preload: () => (matchPlayersLook() === "3d" ? loadSprites().then(() => {}) : Promise.resolve()) },
+    ...LAZY_PRELOAD,
+  ]), []);
   // Settings → Look → "Shop: New | Old" (lib/star/shopLook.ts).
   const shopLookNow = useShopLook();
   // v0.25 item 4: the foot you kick with, for the trial and training (they
