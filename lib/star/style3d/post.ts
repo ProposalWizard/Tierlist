@@ -139,7 +139,10 @@ export interface StylePost {
 export function makeStylePost(T: any, renderer: any): StylePost {
   const mkRT = (nearest: boolean) => {
     const f = nearest ? T.NearestFilter : T.LinearFilter;
-    const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: f, magFilter: f, depthBuffer: true });
+    // the scene is drawn into this target, so the screen's own antialias never reaches it:
+    // 4× MSAA here (WebGL2) keeps edges smooth (9 Oct 2026); the pixel style stays crisp on purpose
+    const samples = !nearest && renderer.capabilities?.isWebGL2 !== false ? 4 : 0;
+    const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: f, magFilter: f, depthBuffer: true, samples });
     rt.depthTexture = new T.DepthTexture(4, 4);
     rt.depthTexture.type = T.UnsignedIntType;
     rt.depthTexture.minFilter = T.NearestFilter;

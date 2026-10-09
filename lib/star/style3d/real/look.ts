@@ -29,6 +29,9 @@ import { dressHBall, type HBall } from "./ball";
 import { createBakedLight, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
 
+/** Each of the three extra floodlight banks, as a share of the night "sun" (the fourth bank). */
+const FLOOD_BANK = 1.0;
+
 const SKY_VERT = /* glsl */ `
 varying vec3 vDir;
 void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position.z = gl_Position.w; }`;
@@ -77,7 +80,10 @@ export interface RealLook {
 }
 
 /** Fabric and per-part sheen on a people3d body: rest-space knit bumps on the kit, shinier boots and skin. */
-function fabric(m: any, on: boolean) {
+function fabric(m: any, on: boolean): void {
+  // the human body has a list of materials
+  if (Array.isArray(m)) { for (const x of m) fabric(x, on); return; }
+  if (!m?.userData) return;
   if (!m.userData.fabricWrapped) {
     const inner = m.onBeforeCompile;
     const innerKey = m.customProgramCacheKey?.bind(m);
@@ -119,10 +125,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.name = "h-look";
   scene.add(root);
   const withArena = o.arena !== false;
-  const [maps, crowdTex, ledTex] = await Promise.all([
+  const [maps, crowdTex, ledTex, bgu] = await Promise.all([
     grassMaps(T),
     withArena ? hTexture(T, "crowd.webp") : Promise.resolve(null),
     withArena ? hTexture(T, "led.webp") : Promise.resolve(null),
+    withArena ? import("three/examples/jsm/utils/BufferGeometryUtils.js").catch(() => null) : Promise.resolve(null),
   ]);
   let tod: TimeOfDay = o.tod;
   let look: TodLook = TODS[tod];
@@ -154,9 +161,21 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     sun.shadow.normalBias = 0.03;
     sun.shadow.radius = 3;
   }
-  // night: three more lamp banks (no shadows) round the bowl
+  // night: three more lamp banks round the bowl, one per roof corner (the "sun" is the fourth). Each casts its
+  // own soft shadow, so a player at night stands on the four-way shadow star of a floodlit pitch, not on flat
+  // grass (Harry, 9 Oct 2026: night to golden hour's quality). Their maps are half the sun's.
   const floods = [new T.DirectionalLight("#dfe8ff", 0), new T.DirectionalLight("#dfe8ff", 0), new T.DirectionalLight("#dfe8ff", 0)];
-  for (const f of floods) root.add(f, f.target);
+  for (const f of floods) {
+    root.add(f, f.target);
+    if (prof.shadows) {
+      const s = prof.shadowScale >= 1 ? 1024 : 512;
+      f.shadow.mapSize.set(s, s);
+      Object.assign(f.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: 1, far: 320 });
+      f.shadow.bias = -0.0003;
+      f.shadow.normalBias = 0.03;
+      f.shadow.radius = 4;
+    }
+  }
   // a rim light from beyond the action, towards the camera: lifts players off the grass (a TV picture's edge light)
   const rim = new T.DirectionalLight("#fff6ea", 0.7);
   root.add(rim, rim.target);
@@ -164,7 +183,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   // ── pitch, stadium, ball ──
   const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
   root.add(pitch.mesh);
-  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours }) : null;
+  const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours, merge: (bgu as any)?.mergeGeometries }) : null;
   if (arena) root.add(arena.group);
   // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
   arena?.group.traverse((x: any) => { if (x.name === "h-crowd" && x.material) x.material.userData.bakeNeutral = true; });
@@ -202,6 +221,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const applyDials = () => {
     p = lookParams(tod);
     sun.intensity = look.sunIntensity * p.sun;
+    for (const f of floods) f.intensity = look.floods ? sun.intensity * FLOOD_BANK : 0;
     hemi.intensity = look.hemi.intensity * p.hemi;
     scene.environmentIntensity = look.env * p.env;
     pitch.setLook({ grass: [tuneGrass(look.grass[0], p), tuneGrass(look.grass[1], p)], wet: look.wet, blades: p.blades, stripes: p.stripes });
@@ -218,7 +238,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     su.sunDir.value.set(...look.sunDir).normalize(); su.sunCol.value.set(look.sunColor); su.sunDisc.value = look.sunDisc;
     su.gain.value = look.sky; su.scale.value = SKY_SCALE[tod];
     su.below.value.set(look.fog.color).multiplyScalar(0.4);
-    for (const f of floods) f.intensity = look.floods ? 0.9 : 0;
+    for (const f of floods) { f.castShadow = prof.shadows && look.floods; }
     pitch.setLook({ grass: look.grass, wet: look.wet });
     arena?.setNight(look.floods);
     hball?.setNight(look.floods);
@@ -246,6 +266,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   }
   let frameN = 0;
   let last: { scene: any; camera: any } | null = null;
+  /**
+   * Below High the sun's shadow map is redrawn every other frame (9 Oct 2026,
+   * lag): it is the people drawn a second time (their skinned bodies are most
+   * of the triangles). A shadow one frame behind at 60 a second can't be seen.
+   */
+  const shadowEvery = tier === "high" ? 1 : 2;
+  let shadowFrame = 0;
 
   const dir = new T.Vector3();
   const api: RealLook = {
@@ -274,8 +301,12 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       const fx = Math.round(focus.x / 4) * 4, fz = Math.round(focus.z / 4) * 4;
       sun.target.position.set(fx, 0, fz);
       sun.position.set(fx + dir.x * 150, dir.y * 150, fz + dir.z * 150);
-      const fl = [[-70, 60, -40], [70, 60, -40], [0, 55, 150]];
-      floods.forEach((f, i) => { f.position.set(fl[i][0], fl[i][1], fl[i][2]); f.target.position.set(fx, 0, fz); });
+      // the other three roof corners: the main bank's direction mirrored across the pitch's two axes
+      floods.forEach((f, i) => {
+        const mx = i === 1 ? 1 : -1, mz = i === 0 ? 1 : -1;
+        f.position.set(fx + dir.x * mx * 150, dir.y * 150, fz + dir.z * mz * 150);
+        f.target.position.set(fx, 0, fz);
+      });
       const cx = camera.position.x - fx, cz = camera.position.z - fz, cl = Math.hypot(cx, cz) || 1;
       rim.position.set(fx - (cx / cl) * 60, 14, fz - (cz / cl) * 60); rim.target.position.set(fx, 1, fz);
       rim.intensity = (look.floods ? 1.1 : 0.7) * p.rim;
@@ -290,7 +321,13 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
     },
     render(sc, camera, hooks) {
-      if (hooks?.beforeShadows && prof.shadows) {
+      const freshShadow = shadowFrame++ % shadowEvery === 0;
+      if (hooks?.beforeShadows && prof.shadows && !freshShadow) {
+        // keep last frame's shadow map; the picture still gets its lean
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = false;
+        hooks.afterShadows?.();
+      } else if (hooks?.beforeShadows && prof.shadows) {
         // shadows from the men standing up, then the picture with them leaned
         hooks.beforeShadows();
         renderer.shadowMap.autoUpdate = false;
@@ -301,7 +338,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         renderer.setRenderTarget(null);
         hooks.afterShadows?.();
       } else {
-        renderer.shadowMap.autoUpdate = true;
+        renderer.shadowMap.autoUpdate = freshShadow;
+        renderer.shadowMap.needsUpdate = false;
       }
       if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
       post.render(sc, camera, {

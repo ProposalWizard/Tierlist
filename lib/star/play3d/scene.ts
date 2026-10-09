@@ -20,6 +20,8 @@ import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality
 import { acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
+import { motionLook } from "../motionLook";
+import { GAIT_BLEND, gaitEdges, loopRate, pickGait, sameFootTime, speedsForPace } from "../three3d/gait";
 import type { KitColours } from "../shop3d/scene";
 import { makeWorldSeek } from "../frameStep";
 
@@ -69,10 +71,14 @@ const PICK_PX = 46;
 /** A team-mate out of the picture gets a marker this far (px) inside the edge. */
 const EDGE_PX = 26;
 /** Look H's pixel ratio cap per tier (the tier's own cap is for the garden and shop's busier scenes). */
-const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2.5 };
+const SHARP_PIXEL_RATIO: Record<Quality3d, number> = { low: 1.25, medium: 2, high: 2 }; // High was 2.5: no sharper to the eye, 1.56× the pixels (9 Oct 2026)
 /** Look H's chase camera: metres behind and up, where it looks (metres ahead, height), field of view tall / wide. Old: 7.5 back, 3.6 up, 6 ahead at 0.9, 58° / 48°. */
 const CHASE_SHARP = { back: 6.2, up: 2.7, ahead: 10, lookUp: 0.9, fovTall: 56, fovWide: 44, lean: 0.32 };
 const yawOf = (facing: number) => Math.PI / 2 - facing;
+/** The chase camera's turn: at most this fast (rad/s; 75°/s), easing in at this rate (1/s), ignoring a turn smaller than the dead zone (rad; 4°). */
+export const CAM_TURN_MAX = (75 * Math.PI) / 180;
+export const CAM_TURN_EASE = 1.6;
+export const CAM_DEADZONE = (4 * Math.PI) / 180;
 
 export async function createPlay3DScene(
   container: HTMLElement, world: World, look: Play3DLook,
@@ -288,6 +294,8 @@ export async function createPlay3DScene(
     /** The one-off playing was started early, for a ball seen coming. */
     antic?: boolean;
     offRamp: number;
+    /** Body size against the clips' capture actor (hips over hips): a loop's own speed × this. */
+    k: number;
   };
   const bodies: Body[] = [];
   for (const who of world.players) {
@@ -303,7 +311,9 @@ export async function createPlay3DScene(
     root.add(p.root);
     const play = new ClipPlayer(THREE, p.actions);
     play.play("idle", { fade: 0 });
-    bodies.push({ p, play, who, state: "idle", lastActT: 9, onceLeft: 0, off: new THREE.Vector3(), offHold: 0, offFade: 0, offRamp: 0 });
+    const hipsRest = p.rest.get(p.bones.Hips)?.[0].y ?? p.bones.Hips.position.y;
+    const fbHipsY = (fb?.scene?.userData?.hipsY as number | undefined) ?? 0;
+    bodies.push({ p, play, who, state: "idle", lastActT: 9, onceLeft: 0, off: new THREE.Vector3(), offHold: 0, offFade: 0, offRamp: 0, k: fbHipsY > 0 ? hipsRest / fbHipsY : 1 });
   }
 
   /**
@@ -328,6 +338,15 @@ export async function createPlay3DScene(
   const PINNED = new Set(["shot_r", "volley", "header_stand", "header_diving", "pass", "pass_inside", "pass_lofted", "first_touch", "thigh_control", "chest_control", "poke_tackle", "sliding_tackle", "high_claim", "throw_out"]);
   const info = (n: string) => clipInfo(fb, n);
   const loopSpeed: Record<string, number> = { jog: 3.2, sprint: 7.4, dribble_run: 4.6, celebrate_safe: 3.4, slump_walk: 1.15 };
+  /**
+   * Motion: Mocap (Settings → Look): walk → jog → run → sprint by speed
+   * (three3d/gait.ts), each loop at the speed its own feet go, the new loop
+   * on the same foot. Old: jog and sprint only, exactly as before.
+   */
+  const gaitsOn = motionLook() === "mocap" && !!fb && ["walk", "jog", "run", "sprint"].every((n) => fb.animations?.some((a: any) => a.name === n));
+  const LOCO = new Set(["walk", "jog", "run", "sprint", "dribble_run"]);
+  /** Team-mates and opponents (the old speeds: jog 4.2, sprint 7–9 m/s). */
+  const AI_EDGES: [number, number, number, number] = [0.35, 1.9, 4.0, 5.6];
   for (const n of Object.keys(loopSpeed)) { const s = info(n)?.speed; if (typeof s === "number") loopSpeed[n] = s; }
   const partOf = (z: number) => (z < 0.6 ? "foot" : z < 1.0 ? "thigh" : z < 1.55 ? "chest" : "head");
 
@@ -374,6 +393,15 @@ export async function createPlay3DScene(
     if (w.keeper) {
       if (world.owner === w.id) return "hold";
       return sp > 2.5 ? "jog" : "ready_shuffle";
+    }
+    if (gaitsOn) {
+      // you: the gait edges are your own speeds, and the sprint loop only while you really sprint
+      const edges = w.human && world.newFeel ? gaitEdges(speedsForPace(w.skills.pace)) : AI_EDGES;
+      let g: string = pickGait(b.state, sp / b.k, edges);
+      if (w.human && world.newFeel && g === "sprint" && !w.sprinting) g = "run";
+      if (w.human && world.newFeel && w.sprinting && (g === "run" || b.state === "sprint") && sp / b.k > edges[2]) g = "sprint";
+      if (world.owner === w.id && sp > 1.2 && g === "jog") return "dribble_run";
+      return g;
     }
     if (sp < 0.35) return "idle";
     if (world.owner === w.id && sp > 1.2) return "dribble_run";
@@ -469,8 +497,18 @@ export async function createPlay3DScene(
 
   const startLoop = (b: Body, name: string) => {
     const wasDown = b.state === "" && !!b.play.current?.startsWith("dive_");
+    const was = b.state;
     b.state = name;
     if (name === "hold") { b.play.play("throw_out", { fade: 0.2, from: 0.1, speed: 0 }); return; }
+    if (gaitsOn && LOCO.has(name) && b.play.has(name)) {
+      // a stride carries on: the new loop starts with the same foot down
+      const pa = LOCO.has(was) ? b.p.actions[was] : null;
+      const plant = (c: string) => (info(c)?.plants?.L?.[0]?.[0] as number | undefined) ?? 0;
+      const dur = (c: string) => b.p.actions[c].getClip().duration;
+      const from = pa ? sameFootTime(pa.time, dur(was), plant(was), dur(name), plant(name)) : 0;
+      b.play.play(name, { fade: GAIT_BLEND, from });
+      return;
+    }
     b.play.play(b.play.has(name) ? name : name === "ready_shuffle" ? "idle" : "jog", { fade: wasDown ? 0.5 : name === "idle" ? 0.25 : 0.2 });
   };
 
@@ -512,7 +550,8 @@ export async function createPlay3DScene(
       }
     }
     // loops at the speed he's really going
-    const ls = loopSpeed[b.state];
+    const ls = gaitsOn && LOCO.has(b.state) ? null : loopSpeed[b.state];
+    if (gaitsOn && LOCO.has(b.state)) { const a = b.p.actions[b.state]; if (a) a.timeScale = loopRate(sp, info(b.state)?.speed as number | undefined, b.k, 0.5, 1.7); }
     if (ls) { const a = b.p.actions[b.state]; if (a) a.timeScale = Math.max(0.6, Math.min(b.state === "sprint" ? 1.35 : 1.9, sp / ls)); }
     // dribbling: keep the clip's touch on the World's touch (each touch nudges the stride into step)
     if (b.state === "dribble_run" && fresh && w.act === "touch") {
@@ -557,6 +596,8 @@ export async function createPlay3DScene(
 
   // ── Camera ──
   let heading = -Math.PI / 2;
+  /** This frame's seconds, for the chase camera's turn (set in tick). */
+  let camDt = 1 / 60;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let snap = true;
   const camTarget = () => {
@@ -586,12 +627,19 @@ export async function createPlay3DScene(
       return { pos, look: mid };
     }
     const sp = Math.hypot(you.vx, you.vy);
-    // swing round behind him while he runs; hold still while he stands
+    // swing round behind him while he runs; hold still while he stands.
+    // Harry, 9 Oct 2026: "the camera is super sensitive". It used to turn a
+    // share of the gap EVERY FRAME (0.025 × speed), so at a sprint it swung
+    // up to ~10° a frame (~600°/s at 60 fps) and faster on faster phones.
+    // Now it eases by time, never faster than CAM_TURN_MAX, and waits until
+    // he has kept a new direction for a moment (small wiggles don't turn it).
     if (sp > 1) {
       let d = you.facing - heading;
       while (d > Math.PI) d -= 2 * Math.PI;
       while (d < -Math.PI) d += 2 * Math.PI;
-      heading += Math.max(-1, Math.min(1, d)) * Math.min(1, 0.025 * sp);
+      const want = Math.abs(d) < CAM_DEADZONE ? 0 : d - Math.sign(d) * CAM_DEADZONE;
+      const step = want * Math.min(1, camDt * CAM_TURN_EASE * Math.min(1, sp / 5));
+      heading += Math.max(-CAM_TURN_MAX * camDt, Math.min(CAM_TURN_MAX * camDt, step));
     }
     const fx = Math.cos(heading), fy = Math.sin(heading);
     // sharp (look H): the broadcast "behind the player" shot, close and low, so he fills the picture
@@ -625,6 +673,7 @@ export async function createPlay3DScene(
     placeBall();
     syncMarkers();
     syncAim(dt);
+    camDt = dt;
     const t = camTarget();
     if (snap) { camPos.copy(t.pos); camLook.copy(t.look); snap = false; }
     camPos.lerp(t.pos, Math.min(1, dt * 4));

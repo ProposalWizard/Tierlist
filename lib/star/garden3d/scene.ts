@@ -57,6 +57,8 @@ import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
+import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -192,7 +194,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const { DRACOLoader }: any = await import("three/examples/jsm/loaders/DRACOLoader.js");
   const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
-  const look = SKY[data.sky];
+  // Look H by day: real golden hour, as the match's H look has it (Harry, 9 Oct 2026:
+  // "make the light golden-hour quality"). The day sky's sun was high and near white
+  // and the H pass graded it as plain day; now the sun sits lower and warmer (longer
+  // shadows, warm fronts) and the H pass uses its golden grade. Old look: as before.
+  const goldenDay = data.sky === "day" && look3dStyle() === "h";
+  const look = goldenDay
+    ? { ...SKY.day, sun: "#ffc98c", sunI: 3.3, dir: [0.75, 0.26, 0.6] as [number, number, number] /* the golden bake's own sun (tools/bake3d), so baked and live shadows agree */, low: "#f7d39c", fog: "#e8cfa8", hemi: ["#d6e2f0", "#5a4a2a", 0.5] as [string, string, number] }
+    : SKY[data.sky];
   // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
   const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
@@ -252,7 +261,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.environmentIntensity = look.env;
   // Settings → Look → "3D look: H": light from a real sky and the broadcast pass (Old: exactly as before)
   const hEnh = look3dStyle() === "h"
-    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
+    ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, data.sky === "sunset" || goldenDay ? "golden" : data.sky, { exposure: look.exp, envIntensity: look.env })
     : null;
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 160);
   camera.layers.enable(MATE_LAYER);
@@ -1651,6 +1660,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
   let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
+  /** Motion: Mocap: walk → jog → run → sprint (three3d/gait.ts). Null: Motion: Old, the walk/jog blend. */
+  let gaitBlend: GaitBlend | null = null;
+  let personRef: Person3D | null = null;
   const st0 = data.arrive === "shop" ? START_SHOP : data.arrive === "casino" ? START_CASINO : data.arrive === "training" ? START_TRAINING : START_GATE;
   // three team-mates, sitting and chatting; one has a can and drinks from it
   const HAIR = ["#1b120c", "#4a2e1c", "#2b1b10"];
@@ -1670,6 +1682,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     });
     relaxHands(THREE, person); // the one body's fingers in a natural curl
     player = person.root;
+    personRef = person;
     mixer = person.mixer;
     idleA = person.actions.idle;
     // a real walk (made from the jog, pulled back towards standing), and the jog
@@ -1817,6 +1830,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
 
   }
+  // Motion: Mocap: your walk → jog → run → sprint, the same foot down through each change
+  strideFor(THREE, personRef, mixer, { idle: idleA, walk: walkA, jog: jogA })
+    .then((g) => { if (!disposed) gaitBlend = g; })
+    .catch((e) => console.error("gait clips", e));
   // ── Your horse, grazing and wandering the paddock ──
   // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
   // either grazes (head down, nose at knee height, chewing) or stands and looks
@@ -2335,7 +2352,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const runK = keys.has("shift") ? 1 : 0.6;
+      const runK = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * runK; iy = (iy / m) * runK;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -2353,8 +2370,13 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         mag = s.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, s.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the garden)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
       // arrived at something: turn to it
@@ -2369,10 +2391,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     marker.update(dt);
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));
-    idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
-    walkA.setEffectiveWeight(wWalk);
-    jogA.setEffectiveWeight(wJog);
-    if (newPerson) {
+    if (gaitBlend) gaitBlend.update(speed, dt);
+    else {
+      idleA.setEffectiveWeight(Math.max(0, 1 - speed / WALK));
+      walkA.setEffectiveWeight(wWalk);
+      jogA.setEffectiveWeight(wJog);
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newPerson) {
       // the walk and the jog are the same stride timing, so they share one
       // pace and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));

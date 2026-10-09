@@ -97,6 +97,7 @@
  *                                                    to be shorter on phones that have KHR_parallel_shader_compile)
  */
 import type * as THREE from "three";
+import { installFrameMeter } from "./frameMeter";
 import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
 
 export type { Quality3d, TierProfile } from "./quality";
@@ -262,6 +263,7 @@ let ownerSeq = 0;
  * compiled when the next scene asks for them.
  */
 export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null) => void } {
+  installFrameMeter();
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
     const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });

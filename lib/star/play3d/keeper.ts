@@ -34,6 +34,17 @@ export const BLOCK_X = 0.75;
 export const RUSH_Y = 7, RUSH_X = 9, RUSH_R = 4.5;
 /** A shot reaching him in under READ_TIME s is read worse, up to READ_RUSH m more error (a close-range strike is half a guess). */
 export const READ_TIME = 0.75, READ_RUSH = 0.7;
+/**
+ * How good he is (Harry, 9 Oct 2026: "why is the goalie unstoppable in free roam").
+ * The old numbers (react 0.24 s, read error 0.35 m, reach 1.1 + 1.6, dive 4.5 + 3.5 m/s,
+ * grab 0.42 + 0.22) let him cover the whole goal: 86–100% of on-target shots saved,
+ * corners included. Real keepers move about 3–5 m/s across the goal and save roughly
+ * 70% of on-target shots, far fewer into the corners. tests/star/play3dKeeperRate.mts pins it.
+ */
+export const KEEPER_REACT = 0.3, KEEPER_READ_ERR = 0.55;
+export const KEEPER_REACH = 0.7, KEEPER_REACH_SKILL = 1.0;
+export const KEEPER_DIVE_SPEED = 3.2, KEEPER_DIVE_SKILL = 1.8;
+export const KEEPER_GRAB = 0.34;
 
 /** Where he stands: on the line from goal centre to the ball, a little off his line. */
 export function keeperSpot(b: Ball3): { x: number; y: number } {
@@ -74,13 +85,15 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
     const line = shotLine(k, b);
     m.shot = shot; // one read per shot: wide now is wide later
     if (line && onTarget(line)) {
-      m.react = 0.24 - r * 0.12 + Math.abs(gauss(rng)) * 0.04;
+      m.react = KEEPER_REACT - r * 0.1 + Math.abs(gauss(rng)) * 0.05;
       // his read: worse the less time he has (a close-range header or volley is a guess)
       const rush = clamp(1 - line.t / READ_TIME, 0, 1);
-      m.tx = clamp(line.x + gauss(rng) * (0.35 - r * 0.25 + rush * READ_RUSH), POST_L - 0.6, POST_R + 0.6);
+      m.tx = clamp(line.x + gauss(rng) * (KEEPER_READ_ERR - r * 0.25 + rush * READ_RUSH), POST_L - 0.6, POST_R + 0.6);
       m.tz = clamp(line.z, 0.2, GOAL_H + 0.2);
       m.x0 = k.x; m.dt = 0;
-      m.mode = Math.abs((m.tx as number) - k.x) < BLOCK_X && (m.tz as number) < 1.9 ? "block" : "dive";
+      // a ball coming straight at him he reads well (it doesn't move across his eyes): block it standing
+      if (Math.abs(line.x - k.x) < BLOCK_X && (m.tz as number) < 1.9) { m.mode = "block"; m.tx = line.x + gauss(rng) * 0.1; }
+      else m.mode = Math.abs((m.tx as number) - k.x) < BLOCK_X && (m.tz as number) < 1.9 ? "block" : "dive";
     }
   }
   if (m.mode === "block") {
@@ -104,8 +117,8 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
     } else {
       const tx = m.tx as number, tz = m.tz as number, x0 = m.x0 as number;
       const side = Math.sign(tx - x0) || 1;
-      const reach = 1.1 + r * 1.6; // how far his body can go sideways
-      const speed = 4.5 + r * 3.5;
+      const reach = KEEPER_REACH + r * KEEPER_REACH_SKILL; // how far his body can go sideways
+      const speed = KEEPER_DIVE_SPEED + r * KEEPER_DIVE_SKILL; // m/s across his goal
       const wantX = clamp(tx - side * 0.75, x0 - reach, x0 + reach);
       const step = clamp(wantX - k.x, -speed * dt, speed * dt);
       k.x += step;
@@ -114,10 +127,13 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
       k.dive = { side, up: clamp((tz - 0.4) / 2, 0, 1), t: prog };
       k.act = "dive";
       // his hands and body
-      const hx = k.x + side * 0.8 * prog, hz = 0.6 + (tz - 0.6) * prog;
+      // high AND wide is the hardest save: a full stretch can't also go all the way up
+      const stretch = clamp(Math.abs(wantX - x0) / Math.max(0.1, reach), 0, 1);
+      const topZ = 2.45 - stretch * (0.55 - r * 0.25);
+      const hx = k.x + side * 0.8 * prog, hz = 0.6 + (Math.min(tz, topZ) - 0.6) * prog;
       const dHands = Math.hypot(b.x - hx, b.y - k.y, b.z - hz);
       const dBody = Math.hypot(b.x - k.x, b.y - k.y, Math.max(0, b.z - 1.8));
-      const grab = 0.42 + r * 0.22;
+      const grab = KEEPER_GRAB + r * 0.16;
       if (b.vy < 0 && (dHands < grab || dBody < 0.42)) return meetBall(k, b, rng, r, dHands < grab * 0.8, side);
       if ((m.dt as number) > react + 1.4 || (prog >= 1 && b.y < k.y - 1)) { m.mode = "down"; m.dt = 0; }
     }

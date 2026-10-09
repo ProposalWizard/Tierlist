@@ -30,12 +30,16 @@ export interface Play3dH {
   dispose(): void;
 }
 
-/** The time of day for a drill: a phone's clock (evening → golden hour, late → floodlights). */
-export function drillTod(now = new Date()): TimeOfDay {
+/**
+ * The time of day for a drill: Golden hour (Harry, 9 Oct 2026: "Golden hour
+ * has by far the best textures and everything has to match"). It used to
+ * follow the phone's clock (day / golden / night). ?tod=day|golden|night still
+ * picks one on a test page.
+ */
+export function drillTod(_now = new Date()): TimeOfDay {
   const q = typeof location !== "undefined" ? new URLSearchParams(location.search).get("tod") : null;
   if (q === "day" || q === "golden" || q === "night") return q;
-  const h = now.getHours();
-  return h >= 20 || h < 6 ? "night" : h >= 17 ? "golden" : "day";
+  return "golden";
 }
 
 export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: ArenaColours } = {}): Promise<Play3dH> {
@@ -71,7 +75,7 @@ export async function play3dH(world: World, o: { tod?: TimeOfDay; colours?: Aren
           // a broadcast footballer's build (Harry: "the player looks like a slim pixel character"): measured from behind,
           // shoulders were 0.24 of his height; a real one with his arms is about 0.27
           for (const b of ctx.bodies) b.p.root.scale.set(BUILD_WIDTH, 1, BUILD_WIDTH);
-          for (const b of ctx.bodies) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
+          for (const b of ctx.bodies) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
         }).catch((e) => console.error("look H failed to load", e));
       },
       draw: (renderer, scene, camera) => {

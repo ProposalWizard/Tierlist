@@ -143,6 +143,7 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import Match3DLayer from "@/components/star/Match3DLayer";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
@@ -3756,6 +3757,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <PitchScope>
        <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
+          <Match3DLayer>
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
@@ -3777,6 +3779,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             penaltyRunup={careerPenaltyRunup(career)}
             freeKickRunup={careerFreeKickRunup(career)}
           />
+          </Match3DLayer>
         </div>
        </div>
       </PitchScope>

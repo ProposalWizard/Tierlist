@@ -33,12 +33,15 @@ import { formatMoney } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
+import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { DynamicResolution, rememberGpu } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
+import { strideFor } from "../three3d/gaitBlend";
+import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
@@ -106,6 +109,8 @@ const PLINTH_Z = [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3];
 const PLINTH_H = 0.92;
 /** The Blender boot is 0.29 m long; on its plinth it is shown at this size. */
 const BOOT_SCALE = 2.75;
+/** Look H: the generated boots are fitted to a real 0.30 m; shown at their own size (a touch up when picked). */
+const BOOT_H_SCALE = 1;
 /** The car's turntable. */
 const CAR = { x: 2.35, z: -1.75, r: 2.85 };
 /** The counter and its light boxes on the back wall. */
@@ -495,6 +500,62 @@ async function buildShop(
    * Look H only (Settings → Look → "3D look"); Old draws them exactly as before.
    */
   const CREASE = (38 * Math.PI) / 180;
+  /**
+   * THE FAMILY CAR, REPLACED (Harry, 9 Oct 2026: "the problem with the car
+   * isn't the reflection, it just looks weird"). Our Blender family car is a
+   * lofted, rounded body: no shoulder line, the cabin glass the same light
+   * colour as the paint, small wheels sunk in the arches, a flat grid on the
+   * roof: it reads as an inflated toy. The free CC0 car packs (Kenney Car Kit,
+   * Quaternius Car Pack) are toy cars, further from real. So look H shows a
+   * generated one (Higgsfield: a picture of an unbranded hatchback, then
+   * Tripo image-to-3D; public/star/shop3d/items/car-family-hf.glb). Old: as before.
+   */
+  const CAR_H_MODELS: Record<string, string> = { "car-1": "/star/shop3d/items/car-family-hf.glb" };
+  const HF_MODEL = /-hf\.glb$/;
+  /**
+   * THE BOOTS, REPLACED (Harry, 9 Oct 2026: the boots "look too simple and
+   * smooth"). Our Blender boots are a smooth loft: no knit, no real laces,
+   * studs that melt into the sole. Look H shows three generated boots
+   * (Higgsfield: a picture of an unbranded boot, then Tripo image-to-3D;
+   * public/star/shop3d/items/boot-*-hf.glb): a knit boot, a classic leather
+   * boot and a laceless high-collar speed boot, each level painted in its
+   * colour over the white upper. And at a real size: the Blender boot stood
+   * 0.29 m × BOOT_SCALE 2.75 = 0.80 m long on its plinth (a boot the width of
+   * the plinth); a generated boot is a real boot's 0.30 m (BOOT_H_SCALE 1).
+   * Old: the Blender boots as before.
+   */
+  const BOOT_H_MODELS: Record<string, string> = {
+    starter: "/star/shop3d/items/boot-classic-hf.glb", control: "/star/shop3d/items/boot-classic-hf.glb",
+    speed: "/star/shop3d/items/boot-speed-hf.glb", curl: "/star/shop3d/items/boot-speed-hf.glb",
+    power: "/star/shop3d/items/boot-hf.glb", elite: "/star/shop3d/items/boot-hf.glb", maestro: "/star/shop3d/items/boot-hf.glb",
+  };
+  const isBootH = (url: string) => /\/boot-([a-z]+-)?hf\.glb$/.test(url);
+  /** A real football boot is about 0.30 m long: stand the generated one on its plinth at that length. */
+  const fitBoot = (root: any) => {
+    root.updateMatrixWorld(true);
+    const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+    root.scale.multiplyScalar(0.30 / Math.max(size.x, size.z, 1e-3));
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
+  /** A generated car comes at its own size and facing: stand it on the floor, centred, 4.3 m long along x like ours. */
+  const fitCar = (root: any) => {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    if (size.z > size.x) root.rotation.y = Math.PI / 2; // long side along x, like the Blender cars
+    root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(root);
+    const len = Math.max(b2.max.x - b2.min.x, 1e-3);
+    const k = 4.3 / len;
+    root.scale.multiplyScalar(k);
+    root.updateMatrixWorld(true);
+    const b3 = new THREE.Box3().setFromObject(root);
+    const c = b3.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= b3.min.y;
+  };
   const showroomFinish = (o: any, car: boolean) => {
     if (o.geometry && !o.geometry.userData.creased) {
       const g2 = toCreasedNormals(o.geometry, CREASE);
@@ -524,8 +585,11 @@ async function buildShop(
           o.receiveShadow = true;
           const m = o.material;
           if (m) { m.envMapIntensity = 1.4; if (m.map) m.map.anisotropy = 4; }
-          if (hEnh) showroomFinish(o, /\/car-/.test(url));
+          if (hEnh && !HF_MODEL.test(url)) showroomFinish(o, /\/car-/.test(url));
+          else if (HF_MODEL.test(url) && m) { m.envMap = envTex; m.envMapIntensity = 1.0; m.needsUpdate = true; }
         });
+        if (isBootH(url)) fitBoot(g.scene);
+        else if (HF_MODEL.test(url)) fitCar(g.scene);
         return g.scene;
       }));
     }
@@ -533,6 +597,7 @@ async function buildShop(
   };
 
   // ── The boots, one on each plinth ──
+  const bootScale = hEnh ? BOOT_H_SCALE : BOOT_SCALE;
   const plinthTopM = mat("#e9e1d3", { roughness: 0.25, metalness: 0.0 });
   // look H: the spot above blew the cream top into a white glow the boot floated on; a stone grey, less glossy
   if (hEnh) { plinthTopM.color.set("#9a9186"); plinthTopM.roughness = 0.55; }
@@ -560,7 +625,7 @@ async function buildShop(
     blob(0.95, 0.95, PLINTH_X, z);
     const group = new THREE.Group();
     group.position.set(PLINTH_X, PLINTH_H + 0.035, z);
-    group.scale.setScalar(BOOT_SCALE);
+    group.scale.setScalar(bootScale);
     scene.add(group);
     blob(0.32, 0.18, 0, 0, group, 0.002, 0.8);
     pickable(col, "boots", i);
@@ -568,9 +633,20 @@ async function buildShop(
     pickable(tag.sprite, "boots", i);
     bootSlots.push({ group, ring, tag, z, spin: i * 0.9 });
     if (it.model) {
-      loadModel(it.model).then((m) => {
+      const hfBoot = !!hEnh;
+      loadModel(hfBoot ? (BOOT_H_MODELS[it.id] ?? BOOT_H_MODELS.power) : it.model).then((m) => {
         if (disposed) return;
         const b = m.clone();
+        if (hfBoot) {
+          // this level's colour over the white knit (its own material: the clones share one)
+          const tint = new THREE.Color("#ffffff").lerp(new THREE.Color(it.colour), 0.85);
+          b.traverse((o: any) => {
+            if (!o.isMesh || !o.material) return;
+            o.material = o.material.clone();
+            o.material.color.copy(tint);
+            o.material.envMapIntensity = 0.7;
+          });
+        }
         group.add(b);
         pickable(b, "boots", i);
       }).catch((e) => console.error("boot model", e));
@@ -608,7 +684,7 @@ async function buildShop(
     carWant = i;
     const it = displays.car.items[i];
     if (!it?.model) return;
-    loadModel(it.model).then((m) => {
+    loadModel(hEnh ? (CAR_H_MODELS[it.id] ?? it.model) : it.model).then((m) => {
       if (disposed || carWant !== i || carIndex === i) return;
       carIndex = i;
       for (const c of [...carHolder.children]) if (c.userData.car) carHolder.remove(c);
@@ -772,6 +848,9 @@ async function buildShop(
     jogA = act("Jog_Fwd_Loop");
     buyA = mixer.clipAction(clip("Interact"));
   }
+  // Motion: Mocap (Settings → Look): walk → jog → run → sprint, on the same
+  // foot, at the speed his feet go (three3d/gait.ts). Old: the walk/jog blend below.
+  const gaitBlend = await strideFor(THREE, newLook ? person : null, mixer, { idle: idleA, walk: walkA, jog: jogA }).catch((e) => { console.error("gait clips", e); return null; });
   // from the garden: a few steps in from the doors, so the camera fits behind
   const start = opts.atDoor ? { x: 0, z: ROOM.z - 3.4 } : START;
   player.position.set(start.x, 0, start.z);
@@ -795,6 +874,18 @@ async function buildShop(
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
   let near: DisplayId | null = null;
+  /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
+  let dwellZone: DisplayId | null = null;
+  let dwell = { timer: 0, open: false };
+  let arrivedAt: DisplayId | null = null, itemWalk: DisplayId | null = null;
+  /** The nearest item of a display: its centre and how far its front stands out from it (metres). */
+  const itemFront = (d: DisplayId): [number, number, number] => {
+    const px = player.position.x, pz = player.position.z;
+    if (d === "boots") { let bz = PLINTH_Z[0]; for (const z of PLINTH_Z) if (Math.abs(z - pz) < Math.abs(bz - pz)) bz = z; return [PLINTH_X, bz, 0.4]; }
+    if (d === "car") return [CAR.x, CAR.z, CAR.r];
+    if (d === "cans") return [FRIDGE.x, FRIDGE.z, 0.6];
+    return [Math.max(-2.8, Math.min(2.8, px)), COUNTER_Z, 0.55];
+  };
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0;
   let gameT = 0;
   let framed = false, frame = 0;
@@ -917,7 +1008,8 @@ async function buildShop(
     const path = findPath(grid, [player.position.x, player.position.z], to);
     if (!path) return false;
     faceTo = null;
-    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; } });
+    itemWalk = null;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = itemWalk; itemWalk = null; } });
     const g = path[path.length - 1];
     marker.show(g[0], g[1], 0.02);
     orbitHold = 0;
@@ -971,7 +1063,7 @@ async function buildShop(
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
-      const run = keys.has("shift") ? 1 : 0.6;
+      const run = keys.has("shift") ? 1 : gaitBlend ? 0.4 : 0.6;
       ix = (ix / m) * run; iy = (iy / m) * run;
     }
     let mag = Math.min(1, Math.hypot(ix, iy));
@@ -990,8 +1082,13 @@ async function buildShop(
         mag = st.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, st.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
-    const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
-    speed += (target - speed) * Math.min(1, dt * 8);
+    if (gaitBlend) {
+      // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the shop)
+      speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
+    } else {
+      const target = mag < 0.08 ? 0 : mag < 0.75 ? WALK * (mag / 0.75) : WALK + (JOG - WALK) * ((mag - 0.75) / 0.25);
+      speed += (target - speed) * Math.min(1, dt * 8);
+    }
     if (buying > 0) speed *= 0.8;
     if (wantYaw !== null) yaw += angDiff(yaw, wantYaw) * Math.min(1, dt * 10);
     else if (faceTo && speed < 0.4) {
@@ -1011,11 +1108,15 @@ async function buildShop(
     const wIdle = Math.max(0, 1 - speed / WALK);
     const dur = buyA.getClip().duration;
     const gesture = buying > 0 ? Math.min(1, buying / 0.3, (dur - buying) / 0.3) : 0;
-    idleA.setEffectiveWeight(wIdle * (1 - gesture));
-    walkA.setEffectiveWeight(wWalk * (1 - gesture));
-    jogA.setEffectiveWeight(wJog * (1 - gesture));
     buyA.setEffectiveWeight(gesture);
-    if (newLook) {
+    if (gaitBlend) gaitBlend.update(speed, dt, 1 - gesture);
+    else {
+      idleA.setEffectiveWeight(wIdle * (1 - gesture));
+      walkA.setEffectiveWeight(wWalk * (1 - gesture));
+      jogA.setEffectiveWeight(wJog * (1 - gesture));
+    }
+    if (gaitBlend) { /* GaitBlend sets each loop's pace */ }
+    else if (newLook) {
       // the walk and the jog share one stride timing, so they share one pace
       // and the feet stay together while one blends into the other
       const ts = Math.max(0.5, speed / (1.7 + 1.3 * wJog));
@@ -1076,7 +1177,7 @@ async function buildShop(
     bootSlots.forEach((b, i) => {
       const on = sel.display === "boots" && sel.index === i;
       b.group.rotation.y = b.spin + gameT * (on ? 0.6 : 0.25);
-      const s = BOOT_SCALE * (on ? 1.12 : 1);
+      const s = bootScale * (on ? 1.12 : 1);
       b.group.scale.setScalar(b.group.scale.x + (s - b.group.scale.x) * Math.min(1, dt * 6));
       b.group.position.y = PLINTH_H + 0.035 + (on ? 0.04 + 0.02 * Math.sin(gameT * 2.2) : 0);
       b.ring.material.emissiveIntensity = on ? 2.6 + 0.6 * Math.sin(gameT * 4) : 0.9;
@@ -1092,10 +1193,20 @@ async function buildShop(
     }
 
     // which display is he at?
-    let now: DisplayId | null = null;
+    let zone: DisplayId | null = null;
     for (const zn of ZONES) {
-      if (zn.inside(player.position.x, player.position.z)) { now = zn.id; break; }
+      if (zn.inside(player.position.x, player.position.z)) { zone = zn.id; break; }
     }
+    // the card opens only when he stops at, or turns to, an item (./dwell.ts), never walking past
+    if (zone !== dwellZone) { dwellZone = zone; dwell = { timer: 0, open: false }; }
+    {
+      const [ix, iz, front] = zone ? itemFront(zone) : [0, 0, 0];
+      const dist = Math.max(0, Math.hypot(ix - player.position.x, iz - player.position.z) - front);
+      const faceOff = angDiff(yaw, Math.atan2(ix - player.position.x, iz - player.position.z));
+      dwell = stepDwell(dwell.timer, dwell.open, { inZone: !!zone, dist, speed, faceOff, arrived: !!zone && arrivedAt === zone }, dt);
+      if (arrivedAt && arrivedAt === zone) arrivedAt = null;
+    }
+    const now: DisplayId | null = dwell.open ? zone : null;
     if (now !== near) { near = now; cb.onNear(near); }
 
     if (carSpot.castShadow) {
@@ -1188,7 +1299,7 @@ async function buildShop(
       if (!hit || Math.abs(hit.x) > ROOM.x + 1 || Math.abs(hit.z) > ROOM.z + 1) return null;
       return walkTo([hit.x, hit.z], null) ? { item: null } : null;
     },
-    walkToItem: (p) => { const s0 = standFor(p); return walkTo(s0.at, s0.face); },
+    walkToItem: (p) => { const s0 = standFor(p); const ok = walkTo(s0.at, s0.face); if (ok) itemWalk = p.display; return ok; },
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => {
       stopWalk();
@@ -1314,3 +1425,4 @@ float kitKitAmt = 0.0; float kitRough = 0.8;`)
   m.customProgramCacheKey = () => cacheKey;
   m.needsUpdate = true;
 }
+

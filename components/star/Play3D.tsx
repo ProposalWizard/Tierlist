@@ -10,11 +10,14 @@
  * (lib/star/play3d/scene.ts), feeds it your thumbs, and shows the score.
  *
  * Controls (phone first; mouse works the same; WASD/arrows + space on a keyboard):
- *   left thumb anywhere on the left 40% → a stick: move (push far to sprint)
+ *   left thumb anywhere on the left 40% → a stick: a small push walks, a medium
+ *   push jogs, a near-full push runs, a full push sprints (Motion: Mocap;
+ *   Free Roam's sprint uses the stamina bar). Motion: Old moves as before.
  *   tap on the right → pass / touch / keepy-up touch
  *   drag back on the right and let go → shoot (the 2D game's drag: same power for the same thumb movement)
  */
 import { look3dStyle } from "@/lib/star/look3dStyle";
+import { motionLook } from "@/lib/star/motionLook";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
@@ -101,6 +104,10 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     }).filter((m) => m.off || m.aim);
   };
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
+  /** Your sprint bar (Free Roam, new feel): null while it isn't in use. */
+  const [stam, setStam] = useState<{ v: number; tired: boolean } | null>(null);
+  // Settings → Look → Motion: Mocap = the new walk/jog/run/sprint feel; Old = as before
+  useEffect(() => { session.world.newFeel = motionLook() === "mocap"; }, [session.world]);
   const [result, setResult] = useState<Play3DResult | null>(null);
   const holder = useRef<HTMLDivElement>(null);
   const ctrl = useRef<Play3DController | null>(null);
@@ -138,7 +145,11 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
           onFrame: (dt) => {
             hLook?.frame(dt);
             acc += dt;
-            if (acc > 0.1) { acc = 0; setHud(session.hud()); setMarks(mateMarks()); }
+            if (acc > 0.1) {
+              acc = 0; setHud(session.hud()); setMarks(mateMarks());
+              const sw = session.world;
+              setStam(sw.newFeel && sw.rules.stamina && (sw.stamina.v < 0.995 || sw.stamina.tired) ? { v: sw.stamina.v, tired: sw.stamina.tired } : null);
+            }
             if (session.done()) setResult((r) => r ?? { ...session.result(team, Math.random()), drill: drill.id });
           },
         });
@@ -158,12 +169,13 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
 
   // ── thumbs ──
   const w = session.world;
-  const stick = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
+  /** h: the camera's heading when the thumb went down. The stick keeps that frame while held, so a turning camera never turns your run (9 Oct 2026). */
+  const stick = useRef<{ id: number; x0: number; y0: number; t0: number; h: number } | null>(null);
   const aim = useRef<{ id: number; x0: number; y0: number; t0: number } | null>(null);
   const [knob, setKnob] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
   const [drag, setDrag] = useState<{ x0: number; y0: number; x: number; y: number } | null>(null);
-  const toWorld = (sx: number, sy: number) => {
-    const h = ctrl.current?.heading() ?? -Math.PI / 2;
+  const toWorld = (sx: number, sy: number, held?: number) => {
+    const h = held ?? ctrl.current?.heading() ?? -Math.PI / 2;
     const f = { x: Math.cos(h), y: Math.sin(h) }, r = { x: -Math.sin(h), y: Math.cos(h) };
     return { x: r.x * sx + f.x * -sy, y: r.y * sx + f.y * -sy };
   };
@@ -178,7 +190,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - box.left, y = e.clientY - box.top;
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setKnob({ x0: x, y0: y, x, y }); }
+    if (x < box.width * 0.4 && !stick.current) { stick.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now(), h: ctrl.current?.heading() ?? -Math.PI / 2 }; setKnob({ x0: x, y0: y, x, y }); }
     else if (!aim.current) { aim.current = { id: e.pointerId, x0: x, y0: y, t0: performance.now() }; setDrag({ x0: x, y0: y, x, y }); }
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -187,7 +199,7 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
     if (stick.current?.id === e.pointerId) {
       const dx = x - stick.current.x0, dy = y - stick.current.y0, d = Math.hypot(dx, dy);
       const k = Math.min(1, d / STICK_R);
-      const m = d > 1 ? toWorld(dx / d * k, dy / d * k) : { x: 0, y: 0 };
+      const m = d > 1 ? toWorld(dx / d * k, dy / d * k, stick.current.h) : { x: 0, y: 0 };
       w.input = { move: m, sprint: d > STICK_R * 0.92 };
       setKnob({ x0: stick.current.x0, y0: stick.current.y0, x, y });
     } else if (aim.current?.id === e.pointerId) setDrag({ x0: aim.current.x0, y0: aim.current.y0, x, y });
@@ -220,7 +232,9 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
       const sy = (keys.has("s") || keys.has("arrowdown") ? 1 : 0) - (keys.has("w") || keys.has("arrowup") ? 1 : 0);
       if (stick.current) return;
       const d = Math.hypot(sx, sy);
-      w.input = { move: d ? toWorld(sx / d, sy / d) : { x: 0, y: 0 }, sprint: keys.has("shift") };
+      // new feel: arrows alone run, shift sprints (a full stick push would sprint)
+      const k = w.newFeel && !keys.has("shift") ? 0.85 : 1;
+      w.input = { move: d ? toWorld(sx / d * k, sy / d * k) : { x: 0, y: 0 }, sprint: keys.has("shift") };
     };
     const down = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
@@ -260,6 +274,15 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         {knob && (
           <div className="pointer-events-none absolute z-30 rounded-full ring-2 ring-white/50" style={{ left: knob.x0 - STICK_R, top: knob.y0 - STICK_R, width: STICK_R * 2, height: STICK_R * 2, background: "rgba(0,0,0,0.18)" }}>
             <div className="absolute h-[36px] w-[36px] rounded-full bg-white/80" style={{ left: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.x - knob.x0)), top: STICK_R - 18 + Math.max(-STICK_R, Math.min(STICK_R, knob.y - knob.y0)) }} />
+          </div>
+        )}
+        {stam && (
+          // the sprint bar: small, by the stick, only while it isn't full
+          <div className="pointer-events-none absolute z-40" data-play3d-stamina={stam.v.toFixed(2)} data-tired={stam.tired ? 1 : 0}
+            style={knob ? { left: knob.x0 - 30, top: knob.y0 - STICK_R - 16 } : { left: 14, bottom: 84 }}>
+            <div className="h-[6px] w-[60px] overflow-hidden rounded-full bg-black/55 ring-1 ring-white/40">
+              <div className="h-full rounded-full" style={{ width: `${Math.round(stam.v * 100)}%`, background: stam.tired ? "#f87171" : stam.v < 0.3 ? "#fbbf24" : "#4ade80", transition: "width 0.1s linear" }} />
+            </div>
           </div>
         )}
         {drag && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 14 && (

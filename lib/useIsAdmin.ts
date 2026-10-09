@@ -53,6 +53,11 @@ function useAnswer(): Answer {
   return a;
 }
 
+/** Testers and admins, outside React (the 3D frame meter, lib/star/three3d/frameMeter.ts). */
+export function isTesterNow(): Promise<boolean> {
+  return ask().then(a => a.isTester);
+}
+
 /** False until the server says yes. */
 export function useIsAdmin(): boolean {
   return useAnswer().isAdmin;

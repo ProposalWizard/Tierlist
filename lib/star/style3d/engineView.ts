@@ -22,6 +22,7 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
@@ -39,6 +40,8 @@ import { buildStadium, type Stadium } from "./stadium";
 import type { StyleDef } from "./styles";
 import type { RealLook } from "./real/look";
 import type { TimeOfDay } from "./real/assets";
+import { realCameraLook, playerLightLook } from "./realGameLook";
+import { TODS } from "./real/tod";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -137,6 +140,8 @@ type Body = {
   kickOff?: [number, number];
   /** Keeper: walking sideways along his line. */
   side?: boolean;
+  /** The tight shadow under his feet ("3D player light: New"). */
+  foot?: any;
 };
 
 /**
@@ -164,6 +169,39 @@ export const TV_CAMERA = {
   centre: 0.47,
 }
 
+/**
+ * THE NEW TV CAMERA (Settings → Look → "3D camera: New", lib/star/style3d/realGameLook.ts).
+ * Harry, 9 Oct 2026: "a mix of A and B … less of it was empty grass".
+ *   A: the camera a little lower (more like a TV picture): the angle dial plus `tiltAdd`.
+ *   B: it frames only the ACTION (the ball, you, the nearest defenders, the keeper and
+ *      goal when the goal is in the chance), so men at the edges may go off screen and
+ *      the camera sits tighter. The nearest man's feet sit near `bottom`.
+ * Every other number as TV_CAMERA.
+ */
+export const TV_CAMERA_NEW = {
+  ...TV_CAMERA,
+  tiltAdd: 5,
+  minViewW: 12,
+  marginPx: 10,
+  goalLineAt: 0.12,
+  bottom: 0.86,
+  /** The defenders (them) kept on screen: this many nearest the ball, within `nearR` m. */
+  nearDefenders: 2,
+  nearR: 8,
+  /** Any man this near the ball stays on screen too (a team-mate in the move). */
+  closeR: 6,
+  /** Our men this near the ball stay on screen (the ones you can pass to). */
+  mateR: 22,
+  /** The men, the keeper and the ball, this many times life size (1 = true size). */
+  fig: 1.6,
+  /** No goal in the chance: the nearest man's feet are pinned this far down the screen. */
+  pinBottom: 0.82,
+  /** Goal in the chance: the nearest man's feet are wanted at least this far down the screen … */
+  fillTo: 0.8,
+  /** … by bringing the goal line down, never lower than this. */
+  goalLineMax: 0.24,
+};
+
 export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement }): Promise<EngineView> {
   const faces = !!o.faces;
   let tvTilt = o.tilt ?? 40;
@@ -183,7 +221,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
 
   // ── renderer: at the phone's own pixel density (2 on High), so nothing is "pixelly" ──
   const { renderer, release } = acquireRenderer(THREE, container, prof);
-  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1;
+  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -207,7 +245,11 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
    * skin on the face — on these men only (their own material copy).
    */
   const plainHead = (p: Person3D, skin: string, hair: string) => {
-    const m = p.body.material as any;
+    const m = p.body?.material as any;
+    // The human body (Settings → Look "3D body: Human") has its own face and a
+    // different material (no userData/uFaceF): it needs no plain head. Without
+    // this guard the career match's 3D view crashed on Preview (9 Oct 2026).
+    if (!m || Array.isArray(m) || !m.userData || humanBodyLook() === "human") return;
     const u = { uHeadSkin: { value: new THREE.Color(skin) }, uHeadHair: { value: new THREE.Color(hair) } };
     if (!m.userData.plainHead) {
       const inner = m.onBeforeCompile;
@@ -234,6 +276,74 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       m.userData.plainHead.uHeadHair.value.set(hair);
     }
   };
+  /**
+   * SOLID PLAYERS (Settings → Look → "3D player light: New", lib/star/style3d/realGameLook.ts).
+   * Harry, 9 Oct 2026: "the players on the pitch still look slightly flat". On the
+   * players only (their own material copy), never the grass or crowd:
+   *   - a soft key light from the camera's upper left, so a body has a lit and a shaded side;
+   *   - a rim on the edges facing the sun (the light from behind on a TV picture);
+   *   - less flat fill (sky/bounce light), and darker under the arms, the chin and the feet.
+   * The key is white and only adds brightness, so the kits keep their true colours.
+   * Off ("Old"): the shader is exactly as before (nothing is added to it).
+   */
+  const SOLID = { key: 0.9, rim: 0.85, fill: 0.6 };
+  const solidU = {
+    uSolidKeyDir: { value: new THREE.Vector3(-0.55, 0.55, 0.63).normalize() },
+    uSolidRimDir: { value: new THREE.Vector3(0, 0.5, -1).normalize() },
+    uSolidKeyCol: { value: new THREE.Color("#ffffff") },
+    uSolidRimCol: { value: new THREE.Color("#fff4e2") },
+    uSolidKey: { value: SOLID.key }, uSolidRim: { value: SOLID.rim }, uSolidFill: { value: SOLID.fill },
+  };
+  const solidBody = (m: any, on: boolean): void => {
+    // the human body has a list of materials
+    if (Array.isArray(m)) { for (const x of m) solidBody(x, on); return; }
+    if (!m?.userData) return;
+    if (!m.userData.solidWrapped) {
+      const inner = m.onBeforeCompile;
+      const innerKey = m.customProgramCacheKey?.bind(m);
+      const own = { uSolidBase: { value: 0 }, uSolidScale: { value: 1 } };
+      m.userData.solidOwn = own;
+      m.onBeforeCompile = (sh: any, r: any) => {
+        inner?.call(m, sh, r);
+        if (!m.userData.solid) return;
+        Object.assign(sh.uniforms, solidU, own);
+        sh.vertexShader = sh.vertexShader
+          .replace("#include <common>", "#include <common>\nuniform float uSolidBase, uSolidScale;\nvarying float vSolidH, vSolidNy;")
+          .replace("#include <project_vertex>", `#include <project_vertex>
+vSolidH = ((modelMatrix * vec4(transformed, 1.0)).y - uSolidBase) / max(uSolidScale, 0.01);
+vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
+        sh.fragmentShader = sh.fragmentShader
+          .replace("#include <common>", "#include <common>\nuniform vec3 uSolidKeyDir, uSolidRimDir, uSolidKeyCol, uSolidRimCol;\nuniform float uSolidKey, uSolidRim, uSolidFill;\nvarying float vSolidH, vSolidNy;")
+          .replace("#include <aomap_fragment>", `#include <aomap_fragment>
+{
+  float sH = clamp(vSolidH / 1.8, 0.0, 1.0);
+  float sUnder = clamp(vSolidNy * 0.5 + 0.5, 0.0, 1.0);
+  float sOcc = mix(0.45, 1.0, smoothstep(0.0, 0.5, sH)) * mix(0.5, 1.0, sUnder);
+  reflectedLight.indirectDiffuse *= sOcc * uSolidFill;
+  reflectedLight.indirectSpecular *= sOcc * uSolidFill;
+  reflectedLight.directDiffuse *= mix(0.72, 1.0, smoothstep(0.0, 0.3, sH));
+  float sKey = max(dot(normal, uSolidKeyDir), 0.0);
+  reflectedLight.directDiffuse += diffuseColor.rgb * uSolidKeyCol * sKey * uSolidKey * mix(0.55, 1.0, sH);
+  float sFres = pow(1.0 - saturate(dot(normal, geometryViewDir)), 2.5);
+  float sSide = smoothstep(-0.25, 0.65, dot(normal, uSolidRimDir));
+  reflectedLight.directSpecular += uSolidRimCol * sFres * sSide * uSolidRim * smoothstep(0.05, 0.3, sH);
+}`);
+      };
+      m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-solid${m.userData.solid ? 1 : 0}`;
+      m.userData.solidWrapped = true;
+    }
+    if (!!m.userData.solid !== on) { m.userData.solid = on; m.needsUpdate = true; }
+  };
+  // a tight dark patch right under each man's feet (with "3D player light: New")
+  const footTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(0,0,0,0.85)"); gr.addColorStop(0.5, "rgba(0,0,0,0.45)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const footMat = new THREE.MeshBasicMaterial({ map: footTex, transparent: true, depthWrite: false, opacity: 0.6 });
+  const footGeo = new THREE.PlaneGeometry(1, 1);
   const camera = new THREE.PerspectiveCamera(39, 0.5, 0.1, 700);
 
   let def = o.def;
@@ -274,6 +384,64 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     bar.rotation.set(-Math.PI / 2, 0, r); cross.add(bar);
   }
   cross.position.y = 0.02; cross.renderOrder = 4; root.add(cross);
+
+  // ── the captain's orders on the grass (EngineFrame.orders), in the Free
+  // Roam style: flat gold marks on the pitch, as the 3D drills' rings. A run
+  // is an arrow from the man to where he was sent (the one being dragged
+  // now solid, the ones already given softer); the lay-off is a double ring
+  // round the man it goes to. Gold is the armband's colour (the 2D game's too).
+  const ORDER_GOLD = "#fbbf24";
+  const orderMat = (o: number) => new THREE.MeshBasicMaterial({ color: ORDER_GOLD, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide });
+  const shaftGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0, 0, 0.5);
+  const headGeo = (() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(0, 0); sh.lineTo(-0.5, -1); sh.lineTo(0.5, -1); sh.closePath();
+    return new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2);
+  })();
+  type OrderArrow = { g: any; shaft: any; head: any };
+  const arrows: OrderArrow[] = [];
+  const arrowMats = { given: orderMat(0.72), live: orderMat(0.95) };
+  const arrowAt = (i: number): OrderArrow => {
+    while (arrows.length <= i) {
+      const g = new THREE.Group();
+      const shaft = new THREE.Mesh(shaftGeo, arrowMats.given), head = new THREE.Mesh(headGeo, arrowMats.given);
+      shaft.renderOrder = 5; head.renderOrder = 5;
+      g.add(shaft, head); g.position.y = 0.03; g.visible = false;
+      root.add(g);
+      arrows.push({ g, shaft, head });
+    }
+    return arrows[i];
+  };
+  const relayRings = new THREE.Group();
+  for (const [r0, r1, o] of [[0.95, 1.12, 0.95], [1.3, 1.4, 0.4]] as const) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 48), orderMat(o));
+    m.rotation.x = -Math.PI / 2; m.renderOrder = 5; relayRings.add(m);
+  }
+  relayRings.position.y = 0.03; relayRings.visible = false; root.add(relayRings);
+  const placeOrders = (f: EngineFrame) => {
+    const o = f.orders;
+    const k = figNow();
+    const list2 = o ? [...o.runs.map((r) => ({ ...r, live: false })), ...(o.drag ? [{ ...o.drag, live: true }] : [])] : [];
+    list2.forEach((r, i) => {
+      const a = arrowAt(i);
+      const dx = r.to.x - r.from.x, dz = r.to.y - r.from.y, len = Math.hypot(dx, dz);
+      const head = Math.min(len * 0.5, 0.9 * k);
+      a.g.visible = len > 0.3;
+      a.g.position.set(r.from.x - CX, 0.03, r.from.y);
+      a.g.rotation.set(0, Math.atan2(dx, dz), 0);
+      const mat = r.live ? arrowMats.live : arrowMats.given;
+      a.shaft.material = mat; a.head.material = mat;
+      // the shaft starts clear of his feet and stops at the head
+      const start = Math.min(len * 0.25, 0.55 * k);
+      a.shaft.position.z = start;
+      a.shaft.scale.set(0.24 * k, 1, Math.max(0.01, len - head - start));
+      a.head.position.z = len;
+      a.head.scale.set(0.75 * k, 1, head);
+    });
+    for (let i = list2.length; i < arrows.length; i++) arrows[i].g.visible = false;
+    relayRings.visible = !!o?.relay;
+    if (o?.relay) { relayRings.position.set(o.relay.x - CX, 0.03, o.relay.y); relayRings.scale.setScalar(k); }
+  };
 
   // ── the aim arrow: the 2D game's own arrow, drawn on the glass over the 3D picture ──
   const NS = "http://www.w3.org/2000/svg";
@@ -696,7 +864,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     }
     b.p.root.position.set(b.x - CX, lift, b.y);
     b.p.root.rotation.set(0, b.yaw, 0);
-    b.p.root.scale.setScalar(figNow() * KEEPER_SHARE);
+    b.p.root.scale.setScalar(figNow() * (camMode === "tv" && tv.init && realCameraLook() === "new" ? 1 : KEEPER_SHARE));
     b.p.root.visible = true;
   };
 
@@ -717,7 +885,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
           h = made;
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
-          for (const b of list) { const m = b.p.body.material as any; m.roughness = 0.62; m.metalness = 0; }
+          for (const b of list) { const raw = b.p.body.material as any; for (const m of Array.isArray(raw) ? raw : [raw]) if (m) { m.roughness = 0.62; m.metalness = 0; } }
           (window as unknown as { __engineView3dReady?: boolean }).__engineView3dReady = true;
         })
         .catch((e) => console.error("look H failed to load", e));
@@ -775,22 +943,24 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
    * play smoothly and cuts on a new chance. Side-on chances (corners, byline
    * crosses) keep the 2D's own side-on camera.
    */
-  const tv = { x: 0, z: 0, D: 60, key: "", init: false };
+  const tv = { x: 0, z: 0, D: 60, th: 0.7, key: "", init: false };
+  /** The new camera's men, keeper and ball (× life size). Test page: ?fig=1 (true size) to compare. */
+  const FIG_NEW = (() => {
+    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("fig"));
+    return q >= 0.8 && q <= 2.6 ? q : TV_CAMERA_NEW.fig;
+  })();
   /** The TV camera's figure scale this frame (see TARGET_PX). */
   let tvFig = ENGINE_VIEW_FIG_SCALE;
   const figNow = () => (camMode === "tv" && tv.init ? tvFig : figScale);
-  const tvSolve = (f: EngineFrame) => {
+  type TvCam = typeof TV_CAMERA & { pinBottom?: number };
+  /** The TV camera for this frame at angle `thDeg`, framing `pts` with the numbers in C. */
+  const tvSolveAt = (f: EngineFrame, C: TvCam, thDeg: number, pts: { x: number; y: number }[], nu: boolean) => {
     const { W, H } = f.cam;
-    const th = (Math.max(5, Math.min(70, tvTilt)) * Math.PI) / 180;
+    const th = (Math.max(5, Math.min(70, thDeg)) * Math.PI) / 180;
     const hv = (TV_CAMERA.fov * Math.PI) / 360;
     const hh = Math.atan(Math.tan(hv) * (W / H));
     const vp = f.cam.viewport;
     const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
-    // Everyone in the chance, the ball, and the goal mouth when the goal is in it:
-    // all of it on the screen, centred, as close as that allows.
-    const pts: { x: number; y: number }[] = [{ x: ball.x, y: ball.y }, ...f.figures.map((g) => ({ x: g.x, y: g.y }))];
-    if (f.goalInView) pts.push({ x: CX - 4.5, y: -0.5 }, { x: CX + 4.5, y: -0.5 });
-    if (f.keeper) pts.push({ x: f.keeper.x, y: f.keeper.y });
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const q of pts) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
     const lx = Math.max(-34 + 6, Math.min(34 - 6, (x0 + x1) / 2 - CX));
@@ -806,17 +976,18 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       return zg + hc * Math.tan(phi) - D * Math.sin(th);
     };
     const dFor = (w: number) => w / 2 / Math.tan(hh);
-    const Dmin = dFor(TV_CAMERA.minViewW), Dmax = dFor(TV_CAMERA.maxViewW);
-    const topAt = f.goalInView ? TV_CAMERA.goalLineAt : TV_CAMERA.top;
+    const Dmin = dFor(C.minViewW), Dmax = dFor(C.maxViewW);
+    const topAt = f.goalInView ? C.goalLineAt : C.top;
     // where the camera looks for distance D: the goal end pinned near the top,
-    // or (no goal) the group centred
+    // or (no goal) the group centred — or, new camera, the nearest man pinned near the bottom
     const lzFor = (D: number) => {
       if (f.goalInView) return lookFor(y0, topAt, D);
-      let fr = TV_CAMERA.top;
+      if (nu && C.pinBottom) return lookFor(y1, C.pinBottom, D);
+      let fr = C.top;
       for (let i = 0; i < 3; i++) {
         const lzi = lookFor(y0, fr, D);
         const mid = (shareOf(y0, lzi, D) + shareOf(y1, lzi, D)) / 2;
-        fr = Math.max(0.04, Math.min(0.5, fr + (TV_CAMERA.centre - mid)));
+        fr = Math.max(0.04, Math.min(0.5, fr + (C.centre - mid)));
       }
       return lookFor(y0, fr, D);
     };
@@ -824,17 +995,21 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     // estimated at the look point: the action is beyond it, where the
     // picture is wider). Closest camera that fits, so the men are big.
     const tH = Math.tan(hv), tW = Math.tan(hh), sn = Math.sin(th), cs = Math.cos(th);
-    const xMargin = 1 - (2 * TV_CAMERA.marginPx) / Math.max(1, W);
+    const xMargin = 1 - (2 * C.marginPx) / Math.max(1, W);
+    const shareAt = (q: { x: number; y: number }, D: number, lz: number) => {
+      const cy = D * cs, cz = lz + D * sn;
+      const vx = q.x - CX - lx, vy = -cy, vz = q.y - cz;
+      const depth = -cs * vy - sn * vz;
+      if (depth <= 0.1) return null;
+      return { nx: vx / (depth * tW), fr: (1 - (sn * vy - cs * vz) / (depth * tH)) / 2 };
+    };
     const fitsAll = (D: number) => {
       const lz = lzFor(D);
-      const cy = D * cs, cz = lz + D * sn;
       for (const q of pts) {
-        const vx = q.x - CX - lx, vy = -cy, vz = q.y - cz;
-        const depth = -cs * vy - sn * vz;
-        if (depth <= 0.1) return false;
-        const nx = vx / (depth * tW);
-        const ny = (sn * vy - cs * vz) / (depth * tH);
-        if (Math.abs(nx) > xMargin || (1 - ny) / 2 > TV_CAMERA.bottom) return false;
+        const s = shareAt(q, D, lz);
+        if (!s) return false;
+        if (Math.abs(s.nx) > xMargin || s.fr > C.bottom) return false;
+        if (nu && !f.goalInView && s.fr < C.top) return false;
       }
       return true;
     };
@@ -846,18 +1021,72 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const lz = lzFor(D);
     // how far the action is from the camera (the men are sized there, not at the look point)
     const ballDepth = (() => { const cy = D * cs, cz = lz + D * sn; return Math.max(1, cs * cy - sn * (ball.y - cz)); })();
-    return { x: lx, z: lz, D, th, fov: TV_CAMERA.fov, W, H, ballDepth };
+    // the lowest point of the framed action on the screen (share of the height)
+    let low = 0;
+    for (const q of pts) { const s = shareAt(q, D, lz); if (s) low = Math.max(low, s.fr); }
+    return { x: lx, z: lz, D, th, fov: TV_CAMERA.fov, W, H, ballDepth, low };
+  };
+  const tvSolve = (f: EngineFrame) => {
+    const nu = realCameraLook() === "new";
+    const vp = f.cam.viewport;
+    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
+    const extra: { x: number; y: number }[] = [];
+    if (f.goalInView) extra.push({ x: CX - 4.5, y: -0.5 }, { x: CX + 4.5, y: -0.5 });
+    if (f.keeper) extra.push({ x: f.keeper.x, y: f.keeper.y });
+    if (!nu) {
+      // Old: everyone in the chance, the ball, and the goal mouth when the goal is in it:
+      // all of it on the screen, centred, as close as that allows.
+      const pts = [{ x: ball.x, y: ball.y }, ...f.figures.map((g) => ({ x: g.x, y: g.y })), ...extra];
+      return tvSolveAt(f, TV_CAMERA, tvTilt, pts, false);
+    }
+    // New: the action only (see TV_CAMERA_NEW); the rest may go off screen.
+    // Framed inside the part of the pitch box the phone actually shows, so the
+    // play is never under the fold (Harry, 9 Oct 2026: "you can't see the full
+    // pitch at once" — the box is taller than the screen under the test page's
+    // controls, and a touch on the pitch cannot scroll the page).
+    const vis = (() => {
+      const r = container.getBoundingClientRect();
+      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
+      const a = Math.max(0, Math.min(0.5, -r.top / r.height));
+      const b = Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height));
+      return { a, b };
+    })();
+    const sh = (v: number) => vis.a + v * (vis.b - vis.a);
+    const N = { ...TV_CAMERA_NEW, top: sh(TV_CAMERA_NEW.top), bottom: sh(TV_CAMERA_NEW.bottom), goalLineAt: sh(TV_CAMERA_NEW.goalLineAt), goalLineMax: sh(TV_CAMERA_NEW.goalLineMax), pinBottom: sh(TV_CAMERA_NEW.pinBottom), fillTo: sh(TV_CAMERA_NEW.fillTo) };
+    const near = (g: { x: number; y: number }) => Math.hypot(g.x - ball.x, g.y - ball.y);
+    const them = f.figures.filter((g) => g.team === "them" && near(g) <= N.nearR)
+      .sort((a, b) => near(a) - near(b)).slice(0, N.nearDefenders);
+    // our men in the move (the pass is to them) stay on; their far men may go
+    const action = f.figures.filter((g) => g.sid === "you" || them.includes(g) || near(g) <= N.closeR
+      || (g.team === "us" && near(g) <= N.mateR));
+    const pts = [{ x: ball.x, y: ball.y }, ...action.map((g) => ({ x: g.x, y: g.y })), ...extra];
+    const base = tvTilt + N.tiltAdd;
+    // No goal: the nearest man is pinned near the bottom (no grass under him).
+    // Goal in view: the goal line is pinned near the top and the whole goal mouth
+    // must fit across, so on a tall phone a chance 11–12 m out cannot reach the
+    // bottom. Then the goal line comes down a little (more crowd above the net,
+    // less grass under the men), never past `goalLineMax`.
+    let t = tvSolveAt(f, N, base, pts, true);
+    if (f.goalInView && t.low < N.fillTo) {
+      const g = Math.min(N.goalLineMax, N.goalLineAt + (N.fillTo - t.low));
+      t = tvSolveAt(f, { ...N, goalLineAt: g }, base, pts, true);
+    }
+    return t;
   };
   const placeTvCamera = (f: EngineFrame, dt: number) => {
     const t = tvSolve(f);
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: t.D, thDeg: (t.th * 180) / Math.PI, low: t.low, goal: f.goalInView };
     // a new chance (or a cut in the 2D) cuts here too
     const vp = f.cam.viewport;
     const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
-    if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.key = key; tv.init = true; }
+    if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.th = t.th; tv.key = key; tv.init = true; }
     else {
       const k = Math.min(1, dt * 2.5);
       tv.x += (t.x - tv.x) * k; tv.z += (t.z - tv.z) * k; tv.D += (t.D - tv.D) * k;
+      // the new camera's angle moves with the play (smoothly); the old one is the dial's
+      tv.th = realCameraLook() === "new" ? tv.th + (t.th - tv.th) * k : t.th;
     }
+    t.th = tv.th;
     down3 = new THREE.Vector3(0, 0, 1);
     camera.position.set(tv.x, tv.D * Math.cos(t.th), tv.z + tv.D * Math.sin(t.th));
     camera.up.set(0, Math.sin(t.th), -Math.cos(t.th));
@@ -872,6 +1101,12 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
     // an upright man is foreshortened by sin(tilt) from this camera
     tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
+    // New camera: men, keeper and ball near TRUE size against the goal (Harry, 9 Oct 2026:
+    // "the players and goalie should be a lot smaller in game, with the ball as well").
+    // One fixed size: 1.6 → a 2.9 m man (Harry: 1.15 was "a bit TOO small", a third of the way
+    // back towards the old size; the old camera drew him
+    // 1.3–2.6× → 2.3–4.7 m, the keeper 0.85 of that).
+    if (realCameraLook() === "new") tvFig = FIG_NEW;
   };
   const placeCamera = (f: EngineFrame, dt: number) => {
     if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
@@ -903,7 +1138,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false };
+  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0 };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -921,8 +1156,55 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     const v = ball.position.clone().project(camera);
     return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
   };
+  /**
+   * A team-mate the captain can order, under a press on the glass (client px),
+   * or null. A man here is drawn standing up and big, so a finger on his body
+   * is on grass well behind his feet: the 2D game would never find him there.
+   * So a press near his body AS SEEN (feet to head) picks him, and the 2D game
+   * is pressed at his feet (Harry, 9 Oct 2026: captain orders in 3D).
+   */
+  const PICK_PX = 30;
+  const mateOnGlass = (cx: number, cy: number): { x: number; y: number } | null => {
+    const f = lastFrame;
+    if (!f?.orders?.pickable.length) return null;
+    const r = container.getBoundingClientRect();
+    const toPx = (v: any) => ({ x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height });
+    let best: { x: number; y: number } | null = null, bd = PICK_PX;
+    for (const sid of f.orders.pickable) {
+      const fig = f.figures.find((g) => g.sid === sid);
+      const b = bodies.get(sid);
+      if (!fig || !b || !b.p.root.visible) continue;
+      const pos = b.p.root.position, h = 1.75 * (b.p.root.scale.y || 1);
+      const a = toPx(tmpV.set(pos.x, 0, pos.z).project(camera)), c = toPx(tmpV.set(pos.x, h, pos.z).project(camera));
+      // distance from the press to the line feet → head
+      const vx = c.x - a.x, vy = c.y - a.y, l2 = vx * vx + vy * vy || 1;
+      const t = Math.max(0, Math.min(1, ((cx - a.x) * vx + (cy - a.y) * vy) / l2));
+      const d = Math.hypot(cx - (a.x + vx * t), cy - (a.y + vy * t));
+      if (d < bd) { bd = d; best = { x: fig.x, y: fig.y }; }
+    }
+    return best;
+  };
+  /** dev: where each orderable team-mate's chest is on the glass (client px), so a test bot can tap him as a player would. */
+  const matesOnGlass = (f: EngineFrame): Record<string, { x: number; y: number }> => {
+    const out: Record<string, { x: number; y: number }> = {};
+    const r = container.getBoundingClientRect();
+    for (const sid of f.orders?.pickable ?? []) {
+      const b = bodies.get(sid);
+      if (!b || !b.p.root.visible) continue;
+      const p = b.p.root.position;
+      tmpV.set(p.x, 1.1 * (b.p.root.scale.y || 1), p.z).project(camera);
+      out[sid] = { x: r.left + (tmpV.x + 1) / 2 * r.width, y: r.top + (1 - tmpV.y) / 2 * r.height };
+    }
+    return out;
+  };
   const onDown = (e: PointerEvent) => {
-    if (!visible || touch.id !== -1) return;
+    if (!visible) return;
+    // One finger at a time — but a touch that never ended here (its "up" went
+    // elsewhere) must never lock the pitch: the same pointer pressing again, or
+    // a touch silent for a second, starts afresh. (The bug behind "stuck on
+    // round 2", 9 Oct 2026: the 2D canvas took the first touch's capture, its
+    // "up" never came back here, and every later press was ignored.)
+    if (touch.id !== -1 && touch.id !== e.pointerId && performance.now() - touch.last < 1000) return;
     const g = groundAt(e.clientX, e.clientY);
     const at = g && to2dClient(g);
     if (!g || !at) return;
@@ -930,6 +1212,17 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
     try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
     const f = lastFrame;
     touch.id = e.pointerId; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
+    // a team-mate first (as the 2D game does: he takes priority over the ball)
+    const mate = f?.phase === "aim" ? mateOnGlass(e.clientX, e.clientY) : null;
+    const m2 = mate && to2dClient(mate);
+    touch.mate = !!m2;
+    if (m2 && mate) {
+      touch.shot = false; touch.start2 = m2; touch.g0 = mate;
+      touch.last = performance.now();
+      send("pointerdown", e, m2);
+      try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
+      return;
+    }
     // A press on or near the ball AS SEEN (its 3D picture, lifted off the grass
     // and drawn big) grabs the ball: the 2D game is pressed exactly on its own
     // ball, so the aim starts as surely as a press on the 2D ball does.
@@ -940,10 +1233,17 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
     }
+    touch.last = performance.now();
     send("pointerdown", e, touch.start2);
+    // The 2D canvas captures the pointer on its own pointerdown, which would
+    // send the rest of this touch to it at the raw finger spot (not the
+    // matching grass) and never back here. Take the capture back.
+    try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
   };
   const moveTarget = (e: PointerEvent) => {
     const g = groundAt(e.clientX, e.clientY);
+    // a team-mate picked: a tap stays on him (a lay-off); a drag sends him to the grass under the finger (a run)
+    if (touch.mate && Math.hypot(e.clientX - touch.start3.x, e.clientY - touch.start3.y) < 14) return touch.start2;
     if (!touch.shot) return g ? to2dClient(g) : null;
     const len = Math.hypot(e.clientX - touch.start3.x, e.clientY - touch.start3.y);
     const a = to2dClient(touch.g0), b = g ? to2dClient(g) : null;
@@ -954,6 +1254,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   };
   const onMove = (e: PointerEvent) => {
     if (e.pointerId !== touch.id) return;
+    touch.last = performance.now();
     const at = moveTarget(e);
     if (at) send("pointermove", e, at);
   };
@@ -1047,11 +1348,33 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       }
       if (f.keeper) placeKeeper(f.keeper, f, dt, frameNo);
       for (const b of list) if (b.seen !== frameNo) { b.p.root.visible = false; b.init = false; b.dive = undefined; }
+      {
+        // "3D player light": the players' own key, rim and shade (see solidBody)
+        const solidOn = playerLightLook() === "new";
+        const sd = TODS[h?.tod ?? hTod ?? (def.real || "day")]?.sunDir ?? TODS.day.sunDir;
+        camera.updateMatrixWorld();
+        solidU.uSolidRimDir.value.set(sd[0], sd[1], sd[2]).normalize().transformDirection(camera.matrixWorldInverse);
+        for (const b of list) {
+          const m = b.p.body.material as any;
+          solidBody(m, solidOn);
+          const own = Array.isArray(m) ? undefined : m?.userData?.solidOwn;
+          if (own) { own.uSolidBase.value = b.p.root.position.y; own.uSolidScale.value = b.p.root.scale.x || 1; }
+          if (solidOn && !b.foot) { b.foot = new THREE.Mesh(footGeo, footMat); b.foot.rotation.x = -Math.PI / 2; b.foot.renderOrder = 2; root.add(b.foot); }
+          if (b.foot) {
+            b.foot.visible = solidOn && b.p.root.visible;
+            const sc = b.p.root.scale.x || 1;
+            b.foot.position.set(b.p.root.position.x, 0.02, b.p.root.position.z);
+            b.foot.scale.set(0.52 * sc, 0.4 * sc, 1);
+            b.foot.rotation.z = -b.yaw;
+          }
+        }
+      }
       // the ball
       const fb0 = f.ball;
       ball.visible = !!fb0;
       if (fb0) {
-        const bs = def.ballScale * 0.85;
+        // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
+        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? figNow() : def.ballScale * 0.85;
         ball.scale.setScalar(bs);
         const v = new THREE.Vector3(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
@@ -1069,6 +1392,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       ballShadow.visible = !!fb0 && !h;
       ring.visible = !!f.ring;
       if (f.ring) { ring.position.set(f.ring.x - CX, 0.02, f.ring.y); ring.scale.setScalar(figNow() * 0.8); }
+      placeOrders(f);
       cross.visible = !!f.landing;
       if (f.landing) { cross.position.set(f.landing.x - CX, 0.02, f.landing.y); cross.scale.setScalar(figNow() * 0.6); }
       // the crowd goes up for a goal
@@ -1081,9 +1405,22 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
       drawArrow(f);
       // dev: where the 3D ball is on the glass (the filming tool drags from it)
       (window as unknown as { __engineView3dBall?: { x: number; y: number } | null }).__engineView3dBall = visible ? ballOnGlass() : null;
+      // dev: how much of the screen below the lowest man (or ball) on it is empty grass (a share of the height)
+      {
+        let low = 0, on = 0, off = 0;
+        const feet = (x: number, y: number, z: number) => {
+          tmpV.set(x, z, y).project(camera);
+          const sx = (tmpV.x + 1) / 2, sy = (1 - tmpV.y) / 2;
+          if (sx < 0 || sx > 1 || sy < 0 || sy > 1) { off++; return; }
+          on++; low = Math.max(low, sy);
+        };
+        for (const b of list) if (b.p.root.visible) feet(b.p.root.position.x, b.p.root.position.z, 0);
+        if (fb0) feet(fb0.x - CX, fb0.y, 0);
+        (window as unknown as { __engineView3dFrame?: unknown }).__engineView3dFrame = { emptyBelow: on ? 1 - low : 1, onScreen: on, offScreen: off, kind: f.kind, phase: f.phase, ballTo2d: fb0 ? to2dClient(fb0) : null, orders: f.orders ?? null, mates: matesOnGlass(f) };
+      }
       // frame-stepped filming (lib/star/virtualClock.ts) draws only the frames it films
       if ((window as unknown as { __view3dSkipDraw?: boolean }).__view3dSkipDraw) { leanAll(); return; }
-      if (f.phase === "contact") return; // the strike screen covers the pitch
+      if (f.phase === "contact" || f.phase === "fpDribble") return; // the strike screen (or the dribble run, its own picture) covers the pitch
       if (h) h.render(scene, camera, { beforeShadows: () => {}, afterShadows: leanAll });
       else { leanAll(); kit?.render(scene, camera); }
     },
