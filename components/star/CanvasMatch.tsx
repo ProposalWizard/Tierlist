@@ -19,7 +19,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
-  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
+  type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode } from "@/lib/star/chanceMaker";
 import { chanceSet } from "@/lib/star/chanceSet";
@@ -42,7 +42,7 @@ import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import Dribble3D from "./Dribble3D";
 import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldDribbleDuels, oldClearances, oldChances, oldKaneDrawings, oldBallPhysics } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldDribbleDuels, oldClearances, oldChances, oldKaneDrawings, oldBallPhysics, oldMatchFlow } from "@/lib/star/gameplayVersion";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 import { kaneMomentsReady, loadKaneMoments } from "@/lib/star/kaneMoments";
 // Kane drawings (testing): start fetching as the match code loads, so the
@@ -155,6 +155,10 @@ import {
 } from "@/lib/star/shotModel";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
+import { LiveRadar } from "./MatchRadar";
+import { useMatchRadarLook } from "@/lib/star/matchRadarLook";
+import { kitLabelOnDark } from "@/lib/star/kits";
+import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
 import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
@@ -248,6 +252,11 @@ const USE_FIRST_PERSON_DRIBBLE = true;
 // local `MATCH_DURATION` shadow inside the component, which reads it off
 // `career.ruleBook`'s FA entry when a real career is attached.
 const DEFAULT_MATCH_DURATION = 90;
+/** A club's name short enough for the live radar's corner labels. */
+const radarShort = (club: string) => {
+  const n = CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+  return n.length > 12 ? n.slice(0, 11) + "…" : n;
+};
 
 // The figures' anatomy, their height and the keeper's lean cap all live in
 // lib/star/fiveASide/render.ts, which is the one place this game draws a
@@ -1270,6 +1279,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // your chances are what it hands you, and their kind is decided by where the
   // ball actually was when it found you.
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  /** The live radar (Settings → Look → Match radar): every minute the unseen
+   *  match plays, by minute (hiddenMatch.ts's radarTrace). */
+  const radarTraceRef = useRef(new Map<number, RadarTick>());
+  const radarLook = useMatchRadarLook();
   const startMinuteRef = useRef(startMinute);
   startMinuteRef.current = startMinute;
   /** The minute you actually came on. For a substitute this follows the game
@@ -1580,6 +1593,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Settings → Match → Chance mix: New — you drop off for the ball too,
       // Kane-style (hiddenMatch.ts's DEEP_TOUCH).
       deepTouches: !oldChances(),
+      // Settings → Look → Gameplay → Match flow: New — the unseen match
+      // against real numbers (shots, corners, possession; hiddenMatch.ts).
+      matchFlow: !oldMatchFlow(),
       // The farewell match: nearly every chance is yours.
       ...(farewellRef.current ? { farewell: true } : {}),
       // v0.26: playstyle, team-mates, fans and your stats shape the chances.
@@ -6158,6 +6174,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const st = matchStateRef.current;
     st.userScore = userScoreRef.current;
     st.oppScore = oppScoreRef.current;
+    // The live radar reads every minute played from here on (read-only).
+    st.radarTrace = radarTraceRef.current;
 
     if (!prior) playstyleChangesRef.current = [];
     const baseInputs: HiddenMatchInputs = prior
@@ -7150,6 +7168,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     kibUsedRef.current = 0;
     setKibUsed(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
+    radarTraceRef.current = new Map();
     simContinueRef.current = null;
     stretchRef.current = null;
     pendingRequestRef.current = null;
@@ -8166,6 +8185,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onOpenScores={liveWeekRef.current && liveWeekRef.current.fixtures.length ? () => setScoresOpen(true) : undefined}
             homeTeam={homeTeam}
             userIsHome={fixture ? !!fixture.home : true}
+            radar={radarLook === "new" && matchMode ? (
+              <LiveRadar
+                trace={radarTraceRef.current}
+                minute={matchMinute}
+                stepMs={Math.round(MINUTE_TICK_MS / Math.max(1, speed))}
+                fullTime={MATCH_DURATION}
+                us={{ short: radarShort(career?.player.club ?? "You"), colour: kitLabelOnDark(ourKit().shirt, ourKit().trim) }}
+                them={{ short: radarShort(fixture?.opponent ?? "Them"), colour: kitLabelOnDark(theirKit().shirt, theirKit().trim) }}
+              />
+            ) : undefined}
             awayTeam={awayTeam}
             homeScore={homeScore}
             awayScore={awayScore}

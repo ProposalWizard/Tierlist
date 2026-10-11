@@ -78,6 +78,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "The camera frames the men the chance is about, so less empty grass. Nobody else is ever cut in half.",
     oldText: "The camera keeps every man on screen (from before 12 Oct 2026).",
   },
+  matchFlow: {
+    label: "Match flow",
+    newText: "The match around you plays like a real one: about 25 shots, 10 corners and 2.8 goals a game, much less of the ball against a far better side, the side behind pushing after a goal, and more happening late.",
+    oldText: "The unseen match from before 11 Oct 2026: about 13 shots a game, no corners but yours.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -119,5 +124,6 @@ export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
 export const oldShots = () => gameplayVersion("shotsPro") === "old";
+export const oldMatchFlow = () => gameplayVersion("matchFlow") === "old";
 export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";
 export const oldActionCamera = () => gameplayVersion("actionCamera") === "old";

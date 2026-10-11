@@ -30,7 +30,7 @@ import { injuryRiskFor, rollInjury } from "./careerFlow";
 
 export type RadarEventKind =
   | "goal-us" | "goal-them" | "chance-us" | "chance-them" | "quiet" | "highlight" | "highlight-goal" | "highlight-miss"
-  | "injury";
+  | "injury" | "corner-us" | "corner-them";
 
 export interface RadarEvent {
   minute: number;
@@ -234,6 +234,8 @@ function fromRequest(minute: number, r: ScenarioRequest): RadarHighlight {
 
 function classify(e: HiddenMatchEvent): RadarEvent {
   if (e.isGoal) return { minute: e.minute, kind: e.teammateGoal ? "goal-us" : "goal-them", text: e.text };
-  if (CHANCE_LINES.has(e.text)) return { minute: e.minute, kind: e.isOpponent ? "chance-them" : "chance-us", text: e.text };
+  // Match flow (Leo v0.15) marks its own shots and corners.
+  if (e.corner) return { minute: e.minute, kind: e.isOpponent ? "corner-them" : "corner-us", text: e.text };
+  if (CHANCE_LINES.has(e.text) || e.shot) return { minute: e.minute, kind: e.isOpponent ? "chance-them" : "chance-us", text: e.text };
   return { minute: e.minute, kind: "quiet", text: e.text };
 }

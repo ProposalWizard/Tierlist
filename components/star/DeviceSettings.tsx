@@ -203,7 +203,7 @@ function LookRow({ id, tabs, note, look }: {
 
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels", clearances: "Clearances", shotsPro: "Shots", knucklePower: "Knuckleball & power shot", ballPhysics: "Ball physics", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera",
+  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels", clearances: "Clearances", shotsPro: "Shots", knucklePower: "Knuckleball & power shot", ballPhysics: "Ball physics", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow", matchRadar: "Match radar",
   garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
@@ -269,6 +269,8 @@ function MatchGroup() {
       <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
       <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
       <LookRow id="actionCamera" look={look} tabs={NEW_OLD} note={gp("actionCamera")} />
+      <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
+      <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
       <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
       <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
       <SetToggle label="Post-match reactions" on={postMatch} onClick={flipPostMatch} last />
