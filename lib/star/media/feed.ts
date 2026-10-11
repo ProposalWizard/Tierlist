@@ -240,7 +240,9 @@ export function generateForCallUp(career: CareerState, nation: string, callUps: 
   const cooled = coolThreads(state.memory);
   const scored = scoreCareerEvents([event], cooled, fameOf(career));
   const { memory, events } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
-  const allowed = new Set<Archetype>(["club", "stats", "fan", "tabloid", "aggregator", "teammate", "insider"]);
+  // No insiders: with two of them, the second fell back to the generic
+  // "Keeping an eye on the situation at {club}" (seen in the real game).
+  const allowed = new Set<Archetype>(["club", "stats", "fan", "tabloid", "aggregator", "teammate"]);
   return commit(career, state, null, events, memory, id, clockAt(career.season, career.week, 0), "club", allowed);
 }
 
