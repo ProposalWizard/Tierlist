@@ -27,6 +27,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Team-mates to pass to, 3–4 waves, tighter defenders, and a better chance the further you get.",
     oldText: "The dribble run from before 5 Oct 2026: no passes, 2–4 waves.",
   },
+  dribbleDuels: {
+    label: "Dribble duels",
+    newText: "Defenders back off and show you one way. Sell a step-over or a drop of the shoulder, then go the other way; or knock it past the moment he plants to tackle. Too early or too late and he takes it (or fouls you). Your dribbling and pace count.",
+    oldText: "The duel from before 11 Oct 2026: flick away from the side he dips to.",
+  },
   clearances: {
     label: "Clearances",
     newText: "Defenders sometimes miscue, a boot can hit a body and come off loose, and anyone can win that second ball.",
@@ -105,6 +110,7 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
+export const oldDribbleDuels = () => gameplayVersion("dribbleDuels") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
 export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldChances = () => gameplayVersion("chanceMix") === "old";

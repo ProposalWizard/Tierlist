@@ -49,6 +49,7 @@ import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
 import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
+import { dribbleStyle, setDribbleStyle } from "./dribbleStyleLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -85,6 +86,9 @@ export const LOOK_ROWS = {
   keeperPro: row("Keeper pro", "new", "old", () => gameplayVersion("keeperPro"), (v) => setGameplayVersion("keeperPro", v)),
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
+  // Leo, 11 Oct 2026: the duel in the match view (Top-down) or the chase camera (First-person); his call.
+  dribbleStyle: row("Dribble style", "topdown", "firstperson", dribbleStyle, setDribbleStyle),
+  dribbleDuels: row("Dribble duels", "new", "old", () => gameplayVersion("dribbleDuels"), (v) => setGameplayVersion("dribbleDuels", v)),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   shotsPro: row("Shots", "new", "old", () => gameplayVersion("shotsPro"), (v) => setGameplayVersion("shotsPro", v)),
   knucklePower: row("Knuckleball & power shot", "new", "old", () => gameplayVersion("knucklePower"), (v) => setGameplayVersion("knucklePower", v)),
@@ -163,6 +167,8 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     keeperPro: N("keeperPro"),
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
+    dribbleStyle: O("dribbleStyle"),
+    dribbleDuels: N("dribbleDuels"),
     clearances: N("clearances"),
     shotsPro: N("shotsPro"),
     knucklePower: N("knucklePower"),
