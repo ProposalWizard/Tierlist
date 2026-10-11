@@ -2518,9 +2518,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // which does not exist yet at this point in the match; it all goes
         // straight into the permanent log below instead.
         const named = nameTeamGoals(before, onPitch(careerRef.current?.squad ?? []), rng, false);
+        // Every goal stays in, even from before the last 14 lines: the
+        // scoreboard counts goal lines in the log (displayScore), so a goal
+        // trimmed off here vanished from it — a sub came on at 1-1 on the
+        // board in a match the stats screen then called 2-1.
+        const early = named.slice(0, Math.max(0, named.length - 14)).filter(e => e.isGoal);
         setLog([
           logLine("Kick Off", "period", 0),
-          ...linesFrom(named.slice(-14)),
+          ...linesFrom([...early, ...named.slice(-14)]),
           logLine("You are coming on.", "you", st.minute),
         ]);
         setPhase("feed");
@@ -4609,6 +4614,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // the camera and everyone in the chance, on the glass (camera tests)
+      frame: () => {
+        const sc = scenarioRef.current, c = canvasRef.current;
+        const r = c?.getBoundingClientRect();
+        const men: { role: string; x: number; y: number; cx: number; cy: number }[] = [];
+        const add = (role: string, p: { x: number; y: number } | null | undefined) => {
+          if (!p) return;
+          const q = pitchToClient(p);
+          men.push({ role, x: p.x, y: p.y, cx: q.x, cy: q.y });
+        };
+        add("ball", sc.ball); add("you", sc.player); add("keeper", sc.keeper);
+        sc.defenders.forEach((d) => add("def", d));
+        sc.teammates.forEach((t) => add("mate", t));
+        if (sc.runner) add("runner", sc.runner.pos);
+        (sc.secondaryRunners ?? []).forEach((s) => add("runner2", s.pos));
+        if (sc.follower) add("follower", sc.follower);
+        add("postL", { x: CX - 3.66, y: 0 }); add("postR", { x: CX + 3.66, y: 0 });
+        return {
+          kind: sc.kind, facing: facingRef.current, cam: { ...viewportRef.current }, tilt: tiltDegRef.current,
+          zoom: playZoomRef.current, canvas: r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null,
+          box: (() => { const b = canvasBox(); return { x: b.left, y: b.top, w: b.width, h: b.height }; })(),
+          men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
+        };
+      },
       // a dribble run now, while a chance is waiting to be taken (test bots:
       // the dribble chance is a roll of the hidden match, so it can take a
       // whole match to come up). The same set-up the hidden match's request does.

@@ -1183,7 +1183,7 @@ export function creditMatchResult(
     // numbers the manager/dressing-room/fanbase systems are built to track
     // honestly.
     // Scaled, kept as fractions and drifting to the middle (relationships.ts).
-    ...(alreadyPlayed ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
+    ...(alreadyPlayed || isInternational ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
       // Capped again after the derby scaling: one match never moves a bar more than MATCH_REL_CAP.
       const raw = { boss: capRel(stats.bossChange * derbyScale.boss), team: capRel(stats.teamChange * derbyScale.team), fans: capRel(stats.fansChange * derbyScale.fans) };
       const rel = { ...career.relationships, sponsors: newSponsorRel };
@@ -1211,10 +1211,10 @@ export function creditMatchResult(
     currentBoot,
     horse,
     squad: updatedSquad,
-    form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
+    form: alreadyPlayed || isInternational ? career.form : [stats.rating, ...career.form].slice(0, 5),
     // Item 24: the real ratings, never pulled toward 6.5 for a cameo — what
     // the shirt is judged on. Seeded from `form` on a save that predates it.
-    rawForm: alreadyPlayed ? career.rawForm
+    rawForm: alreadyPlayed || isInternational ? career.rawForm
       : [stats.rawRating ?? stats.rating, ...(career.rawForm ?? career.form)].slice(0, 5),
   };
   // Appearances at THIS club, which is what the armband is judged on — career
@@ -1270,20 +1270,20 @@ export function creditMatchResult(
   }
   // Being hooked for your form is a message from the manager as well as a
   // scoreline — it costs you a little more of him than the rating alone.
-  if (stats.hooked === "form" && !alreadyPlayed) {
+  if (stats.hooked === "form" && !alreadyPlayed && !isInternational) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
   }
   // Item 24 (v0.15): a substitute who changes the game moves up the ladder.
   // +5 with the manager per goal or assist off the bench (at most +10), on
   // top of what the rating itself earns — about +2 standing each, so two
   // cameo goals are roughly one rung (80' → 70').
-  if (stats.cameo && !alreadyPlayed) {
+  if (stats.cameo && !alreadyPlayed && !isInternational) {
     const boost = Math.min(10, 5 * (stats.goals + stats.assists));
     if (boost > 0) next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss + boost) };
   }
   // One more appearance at this club, and whether that has won you your shirt
   // (selection.ts). Only for a match you actually played in.
-  if (!alreadyPlayed && (stats.minutes ?? 0) > 0) {
+  if (!alreadyPlayed && !isInternational && (stats.minutes ?? 0) > 0) {
     next.shirt = recordAppearance(next);
   }
   // The manager's view going into next week, so the dashboard's status is live

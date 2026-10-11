@@ -65,7 +65,7 @@ import { canMoveNow, completeJanuaryMove } from "@/lib/star/januaryTransfer";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -180,7 +180,7 @@ import { setActiveFoot } from "@/lib/star/kickFoot";
 import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
 import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
-import { windowDue, decideCallUp, applyCallUp, internationalCareer } from "@/lib/star/international";
+import { windowDue, decideCallUp, applyCallUp, internationalCareer, nationKits, nationStrength } from "@/lib/star/international";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
@@ -1468,7 +1468,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastRatingChange(starsNow(career), starNext.stars, false);
     // The world reacts. Generated once, here, from the career on both sides of
     // the match — "went top" is a comparison and the after state cannot make it.
-    next.media = generateForMatch(career, next, nextFixture, stats);
+    // An international has its own cast and lines (feed.ts generateForInternational):
+    // the nation's account, the press, you — never the club's accounts or storylines.
+    next.media = nextFixture.kind === "international"
+      ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
+      : generateForMatch(career, next, nextFixture, stats);
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
@@ -4008,7 +4012,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         decision={decision}
         dateLabel={fixtureDateLabel(career.player.startYear, career.season, decision.fixture.week, "international", divisionOf(career))}
         onContinue={() => {
-          setCareer(applyCallUp(career, decision));
+          let next = applyCallUp(career, decision);
+          // Named in the squad: the club, the press and you post about it,
+          // once (the cycle id carries the window).
+          if (decision.called) {
+            next = { ...next, media: generateForCallUp(next, decision.nation, next.international?.callUps ?? 1,
+              decision.monthName, `callup-${decision.season}-${decision.window}`) };
+          }
+          setCareer(next);
           setActiveNav("home");
           setPhase("dashboard");
         }}
@@ -4886,6 +4897,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // A word from the manager about set pieces: once, after your first match,
   // never on top of a tutorial or a news pop-up (lib/star/setPieceTalk.ts).
   const setPieceChat = swipeActive && homePage === 1 && quiet && !potmWin && !pendingSignOffer && !energyToast
+    // Your club manager does not stop you on the way to an England game.
+    && nextFixture?.kind !== "international"
     ? setPieceTalkDue(career) : null;
   const step = nextStep(career);
   const onTraining = phase === "skills" && trainingTab === "training";

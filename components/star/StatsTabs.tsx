@@ -23,6 +23,9 @@ import DashboardStats from "./DashboardStats";
 import AllSeasonsNew from "./AllSeasonsNew";
 import { useAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import ClubBadge from "./ClubBadge";
+import NationFlag from "./NationFlag";
+import { nationOf } from "@/lib/star/competitions";
+import { callUpChance, whatHoldsYouBack } from "@/lib/star/international";
 import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
 
@@ -188,43 +191,79 @@ function AllSeasons({ career, glow }: { career: CareerState; glow: string }) {
 /** The international record (lib/star/international.ts): caps, goals, the last call-up. */
 function Country({ career, glow }: { career: CareerState; glow: string }) {
   const rec = career.international;
-  const nation = career.player.nationality || "England";
+  const nation = nationOf(career);
   const last = rec?.last;
-  const lastLine = !last ? "No international break yet this career."
+  const lastLine = !last ? "No international break yet this career. The first is in September."
     : last.called ? `Called up · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`
     : `Left out · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`;
+  // The next squad: the same odds and the same one line as the call-up page.
+  const chance = callUpChance(career);
+  const { closeLine } = whatHoldsYouBack(career, nation);
+  const honours = career.trophies.filter((t) => t.club === nation);
+  const t = career.tournament;
+  const tournLine = t && t.season === career.season
+    ? !t.entered ? `${nation} did not qualify for the ${t.competition}.`
+      : !t.selected ? `Left out of the ${t.competition} squad.`
+      : t.yourExit === "Winners" ? `${t.competition} winners! 🏆`
+      : t.yourExit ? `${t.competition}: out in the ${t.yourExit}.`
+      : `${t.competition}: still in it.`
+    : null;
+  const assists = (rec?.matches ?? []).reduce((s, m) => s + m.assists, 0);
   return (
     <>
-      <Card glow={glow} title={nation}>
-        <div data-intl-record className="grid grid-cols-4 gap-1">
+      <ClubCard glow={glow} className="mt-2 p-2.5">
+        <div data-intl-record className="flex items-center gap-2.5">
+          <div className="rounded-[4px] shadow-md ring-1 ring-white/20"><NationFlag nation={nation} width={54} rounded={4} /></div>
+          <div className="min-w-0">
+            <div className="truncate text-[18px] font-black uppercase leading-none text-white">{nation}</div>
+            <div className="mt-1 truncate text-[10px] font-bold text-white/65">{lastLine}</div>
+          </div>
+        </div>
+        <div className="mt-2.5 grid grid-cols-4 gap-1">
           <Big label="Caps" value={career.caps ?? 0} />
           <Big label="Goals" value={career.internationalGoals ?? 0} />
+          <Big label="Assists" value={assists} />
           <Big label="Call-ups" value={rec?.callUps ?? 0} />
-          <Big label="Left out" value={rec?.snubs ?? 0} />
         </div>
-        <div className="mt-2 text-[11px] font-bold text-white/80">{lastLine}</div>
+        {tournLine && <div className="mt-2 text-[11px] font-black text-amber-200">{tournLine}</div>}
+      </ClubCard>
+      <Card glow={glow} title="Next squad">
+        <div data-intl-next>
+          <StatBar value={Math.round(chance * 100)} className="h-2.5" />
+          <div className="mt-1.5 text-[11px] font-bold text-white/80">{closeLine}</div>
+        </div>
       </Card>
       <Card glow={glow} title="Last internationals">
         {!rec?.matches.length ? (
-          <div className="text-[11px] font-bold text-white/50">No internationals played yet.</div>
+          <div className="text-[11px] font-bold text-white/60">No caps yet. Get picked at an international break to play for {nation}.</div>
         ) : (
-          <table className="w-full text-[11px] font-bold text-white">
-            <tbody>
-              {rec.matches.map((m, i) => (
-                <tr key={i} className="border-t border-white/5 first:border-t-0">
-                  <td className="py-1.5">
-                    <div className="truncate">v {m.opponent}</div>
-                    <div className="truncate text-[9px] text-white/50">{m.competition}</div>
-                  </td>
-                  <td className={`text-center tabular-nums ${m.us > m.them ? "text-emerald-300" : m.us < m.them ? "text-rose-300" : "text-white"}`}>{m.us}–{m.them}</td>
-                  <td className="text-center tabular-nums">{m.goals ? `⚽${m.goals}` : ""}</td>
-                  <td className="text-center tabular-nums text-amber-300">{m.rating.toFixed(1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div data-intl-matches>
+            {rec.matches.map((m, i) => {
+              const res = m.us > m.them ? "W" : m.us < m.them ? "L" : "D";
+              return (
+                <div key={i} className="flex items-center gap-2 border-t border-white/5 py-1.5 first:border-t-0">
+                  <NationFlag nation={m.opponent} width={24} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-black text-white">v {m.opponent}</div>
+                    <div className="truncate text-[9.5px] font-bold text-white/55">{m.competition} · {seasonLabel(career, m.season)}</div>
+                  </div>
+                  <span className={`grid h-[18px] w-[18px] place-items-center text-[10px] font-black text-white ${res === "W" ? "bg-emerald-500" : res === "L" ? "bg-red-600" : "bg-gray-500"}`}>{res}</span>
+                  <span className="w-9 text-center text-[12px] font-black tabular-nums text-white">{m.us}–{m.them}</span>
+                  <span className="w-8 text-center text-[11px] font-black">{m.goals ? `⚽${m.goals}` : m.assists ? `🅰️${m.assists}` : ""}</span>
+                  <span className="w-8 text-right text-[12px] font-black tabular-nums text-amber-300">{m.rating.toFixed(1)}</span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </Card>
+      {honours.length > 0 && (
+        <Card glow={glow} title="Honours">
+          {honours.map((h, i) => (
+            <div key={i} className="flex items-center gap-2 py-1 text-[12px] font-black text-white">🏆 {h.competition} <span className="ml-auto text-[10px] text-white/55">{seasonLabel(career, h.season)}</span></div>
+          ))}
+        </Card>
+      )}
     </>
   );
 }

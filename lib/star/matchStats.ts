@@ -225,9 +225,14 @@ export function finaliseMatch(
   const starMan = rating >= 8.5 || goals >= 2;
   // A week's wage, not a match's — see wages.ts. Without a fixture there is
   // no week to divide, so the full wage is the honest answer.
-  const wage = fixture ? wageForFixture(career, fixture) : career.contract.wage;
-  const goalBonus = goals * career.contract.goalBonus;
-  const assistBonusPay = assists * career.contract.assistBonus;
+  // An international is not your club's match: the club pays no wage share
+  // (a summer tournament match sits alone in its week, so it used to draw a
+  // whole week's club wage), no goal or assist bonus, and your manager, team-mates and fans at the club
+  // do not move on it (the relationship deltas below are zeroed too).
+  const intl = fixture?.kind === "international";
+  const wage = intl ? 0 : fixture ? wageForFixture(career, fixture) : career.contract.wage;
+  const goalBonus = intl ? 0 : goals * career.contract.goalBonus;
+  const assistBonusPay = intl ? 0 : assists * career.contract.assistBonus;
   // Image-rights money from how well your sponsors are being served.
   //
   // WAGE-RELATIVE, not a flat figure — see `sponsorPayPerMatch` (economy.ts)
@@ -259,6 +264,7 @@ export function finaliseMatch(
   if (assists > 0) { team += assists * 3; fans += assists; }
   if (starMan) { boss += 4; fans += 5; team += 2; }
   boss = capRel(boss); team = capRel(team); fans = capRel(fans);
+  if (intl) { boss = 0; team = 0; fans = 0; }
 
   return {
     chances,

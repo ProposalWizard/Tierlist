@@ -156,6 +156,72 @@ const at = (stars: number, nation: string, form = 6.8) =>
   check(stand.league.some(t => t.name === "Brazil" && t.strength === 90), "…and Brazil at their strength");
 }
 
+// ── 11 Oct 2026 fixes, from playing the whole path ─────────────────────────
+{
+  // Every nation the game can name has a drawn flag (no network, no globe).
+  const { hasDrawnFlag, flagMarkup } = await import("../../lib/star/nationFlags");
+  const { NATION_STRENGTH, EUROPEAN } = await import("../../lib/star/international");
+  const all = Array.from(new Set([...Object.keys(NATION_STRENGTH), ...Array.from(EUROPEAN)]));
+  const missing = all.filter(n => !hasDrawnFlag(n));
+  check(missing.length === 0, `every nation has a drawn flag (missing: ${missing.join(", ")})`);
+  check(/<rect/.test(flagMarkup("England")) && /<rect/.test(flagMarkup("Atlantis", ["#ff0000", "#0000ff"])), "a flag, or two kit bands for an unknown nation");
+  // …and no club is mistaken for a nation (ClubBadge draws a flag for those).
+  const clubs = await import("../../lib/star/clubs");
+  const clubNames = new Set<string>();
+  for (const v of Object.values(clubs)) if (Array.isArray(v)) for (const c of v) if (typeof c === "string") clubNames.add(c);
+  check(Array.from(clubNames).every(c => !hasDrawnFlag(c)), "no club name draws as a flag");
+
+  // Made-up squads: no repeated surnames while the pool has any left (a France
+  // XI had two Laurents, two Rousseaus and two Garniers).
+  const { madeUpNames } = await import("../../lib/star/nationNames");
+  for (const n of ["France", "England", "Brazil", "Japan", "Scotland"]) {
+    const sur = madeUpNames(n, 20).map(x => x.split(" ").slice(-1)[0]);
+    check(new Set(sur).size === sur.length, `${n}: 20 made-up men, 20 different surnames`);
+  }
+
+  // The "How close you are" line names what is holding you back.
+  const { whatHoldsYouBack } = await import("../../lib/star/international");
+  check(whatHoldsYouBack({ starRating: 1.5, form: [7.5], injury: null }, "England").holdingBack === "rating", "a low rating is named as the gap");
+  check(whatHoldsYouBack({ starRating: 5, form: [5.5, 5.5], injury: null }, "San Marino").holdingBack === "form", "poor form is named as the gap");
+  check(whatHoldsYouBack({ starRating: 3, form: [7], injury: { weeks: 2 } as never }, "England").holdingBack === "injury", "an injury is named");
+  const d = decideCallUp({ ...base(), starRating: 1.5, form: [6] }, 0);
+  check(!!d.closeLine && !/\d/.test(d.closeLine), "the call-up decision carries a line, with no numbers in it");
+
+  // An international is not the club's match: no club wage, no goal bonus,
+  // no boss/team/fans movement, no club form.
+  const { finaliseMatch } = await import("../../lib/star/matchStats");
+  const c0 = base();
+  const intlFix = { week: 4, opponent: "France", home: false, played: false, kind: "international" as const, competition: "Euro Qualifier", opponentStrength: 90 };
+  const fs = finaliseMatch(4, 2, 1, 10, 90, 2, 0, { ...c0, contract: { ...c0.contract, wage: 500, goalBonus: 100, assistBonus: 50 } }, [], null, [], intlFix);
+  check(fs.wage === 0 && fs.goalBonus === 0 && fs.bossChange === 0 && fs.teamChange === 0 && fs.fansChange === 0,
+    `an international pays no club money and moves no club bar (wage ${fs.wage}, bonus ${fs.goalBonus}, boss ${fs.bossChange})`);
+  const withIntl = { ...c0, fixtures: [...c0.fixtures, intlFix] };
+  const after = creditMatchResult(withIntl, intlFix, stats({ rating: 4.2, hooked: "form", homeScore: 0, awayScore: 3, bossChange: -6, teamChange: -3, fansChange: -8 })).career;
+  check(after.relationships.boss === withIntl.relationships.boss && after.relationships.team === withIntl.relationships.team
+    && after.relationships.fans === withIntl.relationships.fans, "a bad England game (even hooked) leaves the club's boss, team and fans where they were");
+  check(JSON.stringify(after.form) === JSON.stringify(withIntl.form), "…and the club's form");
+  check(after.caps === 1, "…but the cap counts");
+
+  // The feed: the nation's own account posts, never the club's.
+  const { generateForInternational, generateForCallUp } = await import("../../lib/star/media/feed");
+  const { nationKits } = await import("../../lib/star/international");
+  const scored = creditMatchResult(withIntl, intlFix, stats({ goals: 1, homeScore: 2, awayScore: 1, rating: 8 })).career;
+  const media = generateForInternational(withIntl, scored, intlFix, stats({ goals: 1, homeScore: 2, awayScore: 1, rating: 8 }), "England", nationKits("England").home, 86);
+  const posts = media.posts;
+  check(posts.length >= 3, `an international gets posts (${posts.length})`);
+  check(posts.some(p => p.author.name === "England"), "the England account posts");
+  check(posts.every(p => !/Arsenal/.test(p.author.name) && !/Arsenal/.test(p.text)), `no club account or club name in an England game's posts: ${posts.filter(p => /Arsenal/.test(p.author.name + p.text)).map(p => p.text).join(" | ")}`);
+  check(posts.some(p => /England 2-1 France|France 1-2 England/.test(p.text)), "the scoreline names both nations");
+  check(posts.some(p => /first (England )?cap|England debut/i.test(p.text)), "a first cap is marked");
+  check(posts.some(p => /first England goal|first goal for/i.test(p.text)), "a first international goal is marked");
+  check(posts.every(p => !/\{|\}|undefined|NaN/.test(p.text)), "no holes in the posts");
+  const again = generateForInternational({ ...withIntl, media }, scored, intlFix, stats({ goals: 1, homeScore: 2, awayScore: 1 }), "England", nationKits("England").home, 86);
+  check(again.posts.length === posts.length, "credited once: a replay posts nothing new");
+  const cu = generateForCallUp(withIntl, "England", 1, "September", "callup-1-0").posts;
+  check(cu.length >= 2 && cu.some(p => /England/.test(p.text)) && cu.every(p => !/\{|\}|undefined/.test(p.text)), `a first call-up is announced (${cu.map(p => p.text).join(" | ")})`);
+  check(cu.every(p => !/Keeping an eye/.test(p.text)), "no generic insider filler on a call-up");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems) console.error("  ✗ " + p);
