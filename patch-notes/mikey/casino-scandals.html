@@ -1,0 +1,269 @@
+<title>Casino Scandals</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#c3d4cb;--ink3:#93aa9e;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3b5248;--ink3:#566c62;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3b5248;--ink3:#566c62;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+  header{padding:34px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--amber);color:#1a1100;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:0 0 26px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(20px,4.6vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--amber);line-height:1.1;font-variant-numeric:tabular-nums}
+  .s span{display:block;font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.35}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .k-blue{color:var(--blue)} .k-blue i{background:var(--blue)}
+  .k-red{color:var(--red)} .k-red i{background:var(--red)}
+  .k-amb{color:var(--amber)} .k-amb i{background:var(--amber)}
+  .k-vio{color:var(--violet)} .k-vio i{background:var(--violet)}
+  .k-grn{color:var(--green)} .k-grn i{background:var(--green)}
+  .k-mut{color:var(--ink3)} .k-mut i{background:var(--ink3)}
+  .head{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:15px 16px}
+  .head .big{font-size:19px;font-weight:800;line-height:1.3;margin:0 0 6px}
+  .head p{margin:0;color:var(--ink2);font-size:14.5px}
+  /* flow */
+  .flow{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+  .flow li{position:relative;padding:9px 0 9px 30px;border-left:2px solid var(--line);margin-left:9px}
+  .flow li:last-child{border-left-color:transparent}
+  .flow li::before{content:"";position:absolute;left:-7px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--amber)}
+  .flow b{display:block}
+  .flow span{color:var(--ink2);font-size:14px}
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .bars{margin:8px 0 2px;display:flex;flex-direction:column;gap:2px}
+  .bar{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:13px;padding:5px 0}
+  .bar .lb{color:var(--ink2);grid-column:1 / -1;line-height:1.3}
+  .track{position:relative;height:14px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--amber)}
+  .fill.g{background:var(--green)} .fill.r{background:var(--red)} .fill.b{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:13px;min-width:56px;text-align:right}
+  .cap{font-size:12px;color:var(--ink3);margin-top:6px}
+  .tbl{overflow-x:auto;margin-top:8px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  td.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .neg{color:var(--red)} .pos{color:var(--green)}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin:0 0 9px}
+  .step .t{font-weight:800}
+  .step .w{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-bottom:3px}
+  .step ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13.5px;font-weight:700;color:var(--ink2);display:flex;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  details p,details li{color:var(--ink2);font-size:14px}
+  details p{margin:0 0 9px}
+  details ul{margin:0 0 6px;padding-left:18px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-word}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin:0 0 9px}
+  .q .t{font-weight:800;margin-bottom:6px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--ink2)}
+  .opt.rec{border-color:var(--green);color:var(--green)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;background:var(--card2);color:var(--amber)}
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">PROPOSAL · NOT BUILT</span>
+  <h1>Casino scandals</h1>
+  <p class="sub">Star Career · Mikey's idea, 11 Oct 2026 · every number below is worked out from the proposed rule, not played</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>1.5%</b><span>one bet, then leave (a Rising Star)</span></div>
+  <div class="s"><b>25%</b><span>the most any one visit can reach</span></div>
+  <div class="s"><b>0.5</b><span>stories a season for a once-a-month player</span></div>
+  <div class="s"><b>4.5</b><span>stories a season for a once-a-week player</span></div>
+</div>
+
+<div class="head">
+  <p class="big">A mix of all of them, and never guaranteed.</p>
+  <p>One bet opens a small chance. More bets, bigger losses, a huge win and coming back often each add to it. The more famous you are, the more the press watch. The chance stops at 25%, so no single visit is ever a sure story.</p>
+  <ol class="flow">
+    <li><b>You place at least one bet</b><span>No bet, no risk. Walking in and out is safe.</span></li>
+    <li><b>Start at 2%</b><span>Somebody might see you there.</span></li>
+    <li><b>Add what you did that visit</b><span>Bets, money lost, a huge win, other visits this month.</span></li>
+    <li><b>Multiply by your fame</b><span>An Unknown is barely noticed. An Icon is followed everywhere.</span></li>
+    <li><b>Stop at 25%</b><span>The cap. Never a certainty.</span></li>
+    <li><b>Roll once when you leave</b><span>At most one story a week.</span></li>
+    <li><b>The story breaks on Monday</b><span>It lands in the post-match feed, so you half-expect it all week.</span></li>
+  </ol>
+</div>
+
+<h2 class="k-blue"><i></i>What adds to the chance</h2>
+<div class="bars">
+  <div class="bar"><span class="lb">Placing any bet (the starting chance)</span><div class="track"><div class="fill b" style="width:8%"></div></div><span class="vv">2%</span></div>
+  <div class="bar"><span class="lb">Each bet after the first: +0.25%</span><div class="track"><div class="fill b" style="width:24%"></div></div><span class="vv">up to +6%</span></div>
+  <div class="bar"><span class="lb">Money lost: +1.5% for each week's wages lost</span><div class="track"><div class="fill r" style="width:48%"></div></div><span class="vv">up to +12%</span></div>
+  <div class="bar"><span class="lb">A huge win (10+ weeks' wages)</span><div class="track"><div class="fill g" style="width:12%"></div></div><span class="vv">+3%</span></div>
+  <div class="bar"><span class="lb">Other visits in the last 4 weeks: +2% each</span><div class="track"><div class="fill b" style="width:24%"></div></div><span class="vv">up to +6%</span></div>
+</div>
+<p class="cap">Bar length shows how much each one can add, out of the 25% cap. Losing money matters most, because a big loss is the story the press want.</p>
+
+<div class="tbl" style="margin-top:14px">
+<table>
+  <thead><tr><th>Your fame</th><th>Multiply by</th></tr></thead>
+  <tbody>
+    <tr><td>Unknown</td><td class="num">× 0.25</td></tr>
+    <tr><td>Local Name</td><td class="num">× 0.5</td></tr>
+    <tr><td>Rising Star</td><td class="num">× 0.75</td></tr>
+    <tr><td>National Name</td><td class="num">× 1</td></tr>
+    <tr><td>Global Star</td><td class="num">× 1.25</td></tr>
+    <tr><td>Icon</td><td class="num">× 1.5</td></tr>
+  </tbody>
+</table>
+</div>
+
+<details><summary>Why not time spent, or money spent?</summary>
+  <ul>
+    <li><b>Time spent:</b> a phone left open on the casino screen is not gambling. Counting time would punish someone who walked away from their phone. The number of bets measures the same thing fairly.</li>
+    <li><b>Money spent (total staked):</b> this mostly repeats the number of bets. The money you lose is what makes a story, so that is what counts.</li>
+    <li><b>Money won:</b> only a huge win counts, and it adds less than a loss. "Star wins big" is a story, but a milder one.</li>
+  </ul>
+</details>
+
+<h2 class="k-amb"><i></i>Example visits</h2>
+<div class="bars">
+  <div class="bar"><span class="lb">One bet, then leave · Rising Star</span><div class="track"><div class="fill" style="width:6%"></div></div><span class="vv">1.5%</span></div>
+  <div class="bar"><span class="lb">One bet, then leave · Icon</span><div class="track"><div class="fill" style="width:12%"></div></div><span class="vv">3%</span></div>
+  <div class="bar"><span class="lb">10 bets, broke even · National Name</span><div class="track"><div class="fill" style="width:17%"></div></div><span class="vv">4.3%</span></div>
+  <div class="bar"><span class="lb">5 bets, won 15 weeks' wages · National Name</span><div class="track"><div class="fill g" style="width:24%"></div></div><span class="vv">6%</span></div>
+  <div class="bar"><span class="lb">20 bets, lost 3 weeks' wages · National Name</span><div class="track"><div class="fill r" style="width:45%"></div></div><span class="vv">11.3%</span></div>
+  <div class="bar"><span class="lb">40 bets, lost 10 weeks' wages, 3rd visit this month · Global Star</span><div class="track"><div class="fill r" style="width:100%"></div></div><span class="vv">25% (cap)</span></div>
+</div>
+<p class="cap">Full bar = 25%, the cap.</p>
+
+<h2 class="k-amb"><i></i>Stories in a season (38 weeks)</h2>
+<div class="bars">
+  <div class="bar"><span class="lb">Casual: one visit a month, 5 bets · National Name</span><div class="track"><div class="fill g" style="width:3%"></div></div><span class="vv">0.5</span></div>
+  <div class="bar"><span class="lb">Regular: one visit a week, 15 bets · Rising Star</span><div class="track"><div class="fill" style="width:24%"></div></div><span class="vv">3.5</span></div>
+  <div class="bar"><span class="lb">Regular: one visit a week, 15 bets · National Name</span><div class="track"><div class="fill" style="width:31%"></div></div><span class="vv">4.5</span></div>
+  <div class="bar"><span class="lb">Heavy: 3 visits a week, 30 bets · National Name</span><div class="track"><div class="fill r" style="width:86%"></div></div><span class="vv">12.6</span></div>
+  <div class="bar"><span class="lb">Heavy: 3 visits a week, 30 bets · Icon</span><div class="track"><div class="fill r" style="width:100%"></div></div><span class="vv">14.6</span></div>
+</div>
+<p class="cap">Measured by running 20,000 made-up seasons through the rule. After a story, the chance is halved for 4 weeks (the press have moved on). In practice the heavy player stops sooner, because the club bans them (step 4 below).</p>
+
+<h2 class="k-red"><i></i>What a story costs you</h2>
+<p class="dt" style="margin:0 0 10px">Each story in the same season is worse than the last. Reputation, boss and fans are the 0–100 bars you already have.</p>
+
+<div class="step">
+  <div class="w">1st story</div>
+  <div class="t">"Spotted at the casino"</div>
+  <ul>
+    <li class="neg">Reputation −3 · Fans −2</li>
+    <li class="pos">Fame +1 (a news story makes you better known)</li>
+    <li>A post in the media feed with a photo-style card.</li>
+  </ul>
+</div>
+<div class="step">
+  <div class="w">2nd story, or any night you lost 8+ weeks' wages</div>
+  <div class="t">"Heavy night at the tables"</div>
+  <ul>
+    <li class="neg">Reputation −8 · Boss −6 · Fans −5</li>
+    <li class="neg">Sponsors: deals with a behaviour clause end, and the others become unhappy</li>
+    <li class="neg">The season is no longer "clean", so you lose the end-of-season reputation bonus</li>
+    <li class="pos">Fame +2</li>
+  </ul>
+</div>
+<div class="step">
+  <div class="w">3rd story</div>
+  <div class="t">"Problem gambler" exposé</div>
+  <ul>
+    <li class="neg">Reputation −15 · Boss −12 · Team-mates −6</li>
+    <li class="neg">The club fines you 2 weeks' wages</li>
+    <li class="neg">You lose the captaincy, if you have it</li>
+    <li class="pos">Fame +3</li>
+  </ul>
+</div>
+<div class="step">
+  <div class="w">4th story and after</div>
+  <div class="t">The club steps in</div>
+  <ul>
+    <li class="neg">All of step 3 again</li>
+    <li class="neg">The club bans you from the casino for 8 weeks (the doors are locked)</li>
+  </ul>
+</div>
+<div class="step">
+  <div class="w">A huge-win story</div>
+  <div class="t">"Lucky night for…"</div>
+  <ul>
+    <li class="neg">Reputation −2</li>
+    <li class="pos">Fame +2</li>
+    <li>It still counts as a story, so the next one is a step worse.</li>
+  </ul>
+</div>
+<p class="cap">The ladder starts again each season. The numbers match how the game already scores a scandal: getting caught in corruption costs reputation −15, boss −10 and fans −8.</p>
+
+<h2 class="k-vio"><i></i>One extra idea: betting on football</h2>
+<ul class="n">
+  <li><div class="hd">Bets on who wins a competition are a real rule break</div>
+    <div class="dt">The casino already takes bets on who wins the league and the cups. Real players are banned for this: Ivan Toney got 8 months in 2023. These bets could carry their own risk. For example, each bet has a 10% chance of an FA charge: a fine of 10 weeks' wages and a ban of 4–8 matches.</div></li>
+  <li><div class="hd">Betting against your own club</div>
+    <div class="dt">This would be the worst case: double the chance, and a longer ban.</div></li>
+</ul>
+
+<h2 class="k-grn"><i></i>Ways to lower the risk (optional)</h2>
+<ul class="n">
+  <li><div class="hd">A private room</div><div class="dt">A shop item that halves the chance. It costs a lot.</div></li>
+  <li><div class="hd">Lawyers</div><div class="dt">The game already has lawyers for corruption. They could cut the cost of a story, but not stop it.</div></li>
+</ul>
+
+<h2 class="k-mut"><i></i>Already in the game today</h2>
+<ul class="n">
+  <li><div class="hd">A hidden version of this already exists</div>
+    <div class="dt">Today, if you lose more than 8 weeks' wages in one visit, there is a 1 in 4 chance of a story. That story only upsets sponsors. There is no post, and no reputation, boss or fan cost. Nobody can see that it happened. This proposal would replace it.</div></li>
+</ul>
+
+<h2 class="k-amb"><i></i>Decisions needed (a word each)</h2>
+<div class="q"><div class="t">1. How often should stories happen?</div>
+  <div class="opts"><span class="opt">Gentle (half these numbers)</span><span class="opt rec">Middle (this page) · recommended</span><span class="opt">Harsh (double)</span></div></div>
+<div class="q"><div class="t">2. Can a huge win make a story?</div>
+  <div class="opts"><span class="opt rec">Yes, a mild one · recommended</span><span class="opt">No, only losses</span></div></div>
+<div class="q"><div class="t">3. Betting on football: a real FA ban?</div>
+  <div class="opts"><span class="opt rec">Yes · recommended</span><span class="opt">No</span><span class="opt">Later</span></div></div>
+<div class="q"><div class="t">4. Can the club ban you from the casino (step 4)?</div>
+  <div class="opts"><span class="opt rec">Yes · recommended</span><span class="opt">No, just the costs</span></div></div>
+<div class="q"><div class="t">5. Add the private room and lawyers now?</div>
+  <div class="opts"><span class="opt">Yes</span><span class="opt rec">Later · recommended</span></div></div>
+
+<details><summary>Where it goes in the game (for the builder)</summary>
+  <ul>
+    <li>The roll happens when you leave the casino: <code>handleCasinoExit</code> and <code>handleCasinoBank</code> in <code>app/star-dev/page.tsx</code>. That is where the hidden rule lives today.</li>
+    <li>The casino needs to count bets in each visit. It already knows money in and money out.</li>
+    <li>The costs reuse what exists: <code>brandScandal</code> (sponsors), <code>lastScandalSeason</code> (clean season), <code>REPUTATION_EVENTS</code>, <code>scandalFame</code>.</li>
+    <li>The story is a new media moment, so it shows in the post-match feed.</li>
+    <li>The Old UI's casino would get the same rule. Its screens stay frozen.</li>
+  </ul>
+</details>
+
+<footer>A proposal, not built. Nothing on this page has been played. The season numbers come from a simulation of the rule itself.</footer>
+</div>
