@@ -20,7 +20,11 @@
  *  1. A parked man is not a body to frame (bodiesOf / keyPointsOf).
  *  2. A one-on-one with a parked follower still zooms in.
  *  3. Kane drawings: the people fill the screen (fails 100% on the old code).
- *  4. The extra glass fit (fitToPlay) never cuts anybody off the glass.
+ *  4. The extra glass fit (fitToPlay) never cuts anybody off the glass
+ *     (Match camera Old); with Match camera New (camera round 3) the action
+ *     is never cut off and nobody else is cut in half.
+ *  6. Match camera New vs Old: the empty grass below the lowest man on the
+ *     glass, per kind, upright, 20°.
  */
 import { readFileSync } from "node:fs";
 import { buildScenario, goalInView, type Scenario, type Viewport } from "../../lib/star/canvasEngine";
@@ -30,7 +34,7 @@ import { makeChance } from "../../lib/star/chanceMaker";
 import { setKaneMoments, kaneMomentsReady } from "../../lib/star/kaneMoments";
 import {
   frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, keyPointsOf, onThePitch,
-  WIDE_TURN_KINDS, turnWideChance, setWideChancesOverride,
+  WIDE_TURN_KINDS, turnWideChance, setWideChancesOverride, setActionFit, framingFaults,
 } from "../../lib/star/matchView";
 import { tiltFor, canvasToScreen, visibleOnScreen } from "../../lib/star/cameraTilt";
 
@@ -102,13 +106,19 @@ for (const kind of ["one_on_one", "long_range", "through_ball", "tight_angle"] a
 }
 
 console.log("\n4. THE GLASS FIT CUTS NOBODY OFF");
-{
+for (const camMode of ["old", "new"] as const) {
+  setActionFit(camMode === "new");
   const t = tiltFor(TILT, 1, HW);
   let cut = 0, n = 0;
   for (const kind of ["one_on_one", "tight_angle", "cutback", "through_ball", "long_range", "free_kick", "penalty"] as const) {
     for (let i = 0; i < 40; i++) {
       const sc = makeChance({ source: { from: "kind", kind }, rng: mulberry32(5000 + i * 7919), memory: null, kaneDrawings: null }).sc;
       const cam = frameForNewView(sc, HW, false, TILT);
+      if (camMode === "new") {
+        n++;
+        if (framingFaults(sc, cam, HW, TILT).length) cut++;
+        continue;
+      }
       if (playZoomOf(sc) <= 1.001) continue;
       n++;
       for (const p of keyPointsOf(sc)) {
@@ -117,8 +127,11 @@ console.log("\n4. THE GLASS FIT CUTS NOBODY OFF");
       }
     }
   }
-  ok(n > 100 && cut === 0, `zoomed chances with a man, post or keeper off the glass: ${cut} of ${n}`);
+  ok(n > 100 && cut === 0, camMode === "old"
+    ? `Old: zoomed chances with a man, post or keeper off the glass: ${cut} of ${n}`
+    : `New: chances with the action off the glass or a man cut in half: ${cut} of ${n}`);
 }
+setActionFit(null);
 console.log("\n5. WIDE CHANCES SIDE-ON (Settings → Look → Wide chances: New)");
 // Leo, 11 Oct 2026. Tight angles, cutbacks and penalties: upright, even the
 // glass fit left a block of empty grass under the people (150 a kind, 390 px,
@@ -177,6 +190,45 @@ console.log("\n5. WIDE CHANCES SIDE-ON (Settings → Look → Wide chances: New)
   ok(Math.abs(twice.player.y - twice.ball.y) > 1 && Math.abs(twice.player.x - twice.ball.x) < 0.5,
     `side-on you stand beside the ball on the screen (Δx ${(twice.player.x - twice.ball.x).toFixed(2)}, Δy ${(twice.player.y - twice.ball.y).toFixed(2)})`);
   setWideChancesOverride(null);
+}
+
+console.log("\n6. MATCH CAMERA NEW vs OLD: EMPTY GRASS BELOW THE LOWEST MAN ON THE GLASS (upright, 20°)");
+{
+  const t = tiltFor(TILT, 1, HW);
+  /** Share of the glass under the lowest man, keeper or post that is on it. */
+  const belowOnGlass = (sc: Scenario, cam: Viewport) => {
+    const pts = [...bodiesOf(sc)];
+    if (goalInView(sc.kind)) pts.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 });
+    let low = 0;
+    for (const p of pts) {
+      const sx = (p.x - cam.x1) / (cam.x2 - cam.x1), sy = (p.y - cam.y1) / (cam.y2 - cam.y1);
+      if (!visibleOnScreen(t, sx, sy, 0)) continue;
+      low = Math.max(low, canvasToScreen(t, sx, sy, 1, HW).Y / HW);
+    }
+    return 1 - low;
+  };
+  setWideChancesOverride("old");
+  const rows: string[] = [];
+  let sumOld = 0, sumNew = 0, worse = 0;
+  for (const kind of ["one_on_one", "long_range", "cutback", "through_ball", "tight_angle", "free_kick", "penalty", "volley", "midfield_pass", "buildup"] as const) {
+    const m = { old: 0, new: 0 };
+    const N = 150;
+    for (const camMode of ["old", "new"] as const) {
+      setActionFit(camMode === "new");
+      for (let i = 0; i < N; i++) {
+        const sc = makeChance({ source: { from: "kind", kind }, rng: mulberry32(20000 + i * 7919), memory: null, kaneDrawings: null }).sc;
+        m[camMode] += belowOnGlass(sc, frameForNewView(sc, HW, false, TILT)) / N;
+      }
+    }
+    sumOld += m.old; sumNew += m.new;
+    if (m.new > m.old + 0.005) worse++;
+    rows.push(`${kind} ${(m.old * 100).toFixed(0)}% → ${(m.new * 100).toFixed(0)}%`);
+  }
+  setActionFit(null);
+  setWideChancesOverride(null);
+  console.log("  " + rows.join(", "));
+  ok(worse === 0, `New is never emptier than Old on any kind (${worse} worse)`);
+  ok(sumNew < sumOld * 0.85, `New cuts the empty grass by at least 15% overall (${(sumOld / 10 * 100).toFixed(0)}% → ${(sumNew / 10 * 100).toFixed(0)}%)`);
 }
 setPlayZoomOverride(null);
 

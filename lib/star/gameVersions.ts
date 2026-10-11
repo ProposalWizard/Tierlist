@@ -89,6 +89,7 @@ export const LOOK_ROWS = {
   // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
   // (Standard and Preview) until it is switched on by hand.
   kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
+  actionCamera: row("Match camera", "new", "old", () => gameplayVersion("actionCamera"), (v) => setGameplayVersion("actionCamera", v)),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   // Harry, 9 Oct 2026: a home of rooms you walk through (New by default).
   house: row("House", "new", "old", houseLook, setHouseLook),
@@ -159,6 +160,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     clearances: N("clearances"),
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
+    actionCamera: N("actionCamera"),
     garden: N("garden"),
     house: N("house"),
     look3d: N("look3d"),

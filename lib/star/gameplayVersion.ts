@@ -43,6 +43,13 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Chances drawn from real strikers' passes and shots (Harry Kane's dealt most often): everyone near the play stands where they really stood. Mostly easy and normal, a few hard.",
     oldText: "The game's own drawings.",
   },
+  actionCamera: {
+    label: "Match camera",
+    // Harry, 11 Oct 2026: "the camera view shows a huge area of the pitch
+    // where no one's at". Camera round 3 (lib/star/matchView.ts fitAction).
+    newText: "The camera frames the men the chance is about, so less empty grass. Nobody else is ever cut in half.",
+    oldText: "The camera keeps every man on screen (from before 12 Oct 2026).",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -81,3 +88,4 @@ export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
 export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";
+export const oldActionCamera = () => gameplayVersion("actionCamera") === "old";
