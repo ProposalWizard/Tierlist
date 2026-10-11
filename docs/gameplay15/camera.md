@@ -95,7 +95,24 @@ shapes; camera, play area and zoom compared).
 
 The drag is read in screen pixels against a fixed reference height
 (`screenPull`), never in pitch metres, so the camera cannot change it.
-Measured in the real game: see "Stills".
+Measured in the real game (390 × 844, signed-out dev), the same drag on the
+same chances, through the dev probe `window.__starMatch.power(dx, dy)`:
+12 px → 0.212, 25 px → 0.442, 18 px diagonal → 0.450, 60 px → 1.000, on every
+one of the 7 chances with Old (zoom 1.00 to 1.62) and the 8 with New (zoom
+1.00 to 2.29). Identical: the drag does not change.
+
+### Stills (real game, same save, so the same chances in the same order)
+
+Scratchpad `g15/camera-stills/`:
+- `before-penalty.png` (Old, zoom 1.04): the taker and keeper in the top
+  third, the men waiting at the arc cut by both edges, 60% empty grass below.
+- `after-penalty.png` (New, zoom 2.29): goal, keeper, ball and taker fill the
+  screen; the men at the arc are clearly off it.
+- `before-one_on_one.png` (Old, 1.62) / `after-one_on_one.png` (New, 2.00).
+  The New one was taken before the "wholly on" fix and shows the reason for
+  it: a man at the right edge sliced in half. Not re-filmed after the fix (the
+  browser kept crashing for lack of memory on the shared machine); the fix is
+  covered by `framingFaults` in the tests instead.
 
 ## B. The score mismatch (bug fix, no switch)
 
@@ -118,4 +135,11 @@ short of the score in 88 of 1,500 (5.9%); the new one in 0.
 
 ## C. International tournament on screen
 
-See "Tournament playthrough" below.
+Not finished. A driver that seeds a tournament summer and plays it
+(`g15/camera/tourn.mjs`, save from `g15/camera/mksave.mts ... tournament`) is
+written but was never run: the dev server was killed twice by the memory
+limit and the browser crashed on load. One bug fixed from the earlier
+tournament still (jobs/tournament/3-group.png): the Tournament screen showed a
+grey globe instead of the nation's flag, because it loaded flags from the
+network (blocked/slow). It now draws them (`NationFlag`), like the call-up
+screen. Still to see: knockout, extra time, penalties, final, trophy.
