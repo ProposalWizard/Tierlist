@@ -2518,9 +2518,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // which does not exist yet at this point in the match; it all goes
         // straight into the permanent log below instead.
         const named = nameTeamGoals(before, onPitch(careerRef.current?.squad ?? []), rng, false);
+        // Every goal stays in, even from before the last 14 lines: the
+        // scoreboard counts goal lines in the log (displayScore), so a goal
+        // trimmed off here vanished from it — a sub came on at 1-1 on the
+        // board in a match the stats screen then called 2-1.
+        const early = named.slice(0, Math.max(0, named.length - 14)).filter(e => e.isGoal);
         setLog([
           logLine("Kick Off", "period", 0),
-          ...linesFrom(named.slice(-14)),
+          ...linesFrom([...early, ...named.slice(-14)]),
           logLine("You are coming on.", "you", st.minute),
         ]);
         setPhase("feed");

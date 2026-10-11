@@ -195,6 +195,42 @@ export interface CallUpDecision {
   fixture: Fixture;
   /** One plain line for the screen. */
   reason: string;
+  /**
+   * What holds the bar back most, for the "How close you are" line: your
+   * rating against the nation's usual level, your recent form, or an injury.
+   * Null when both already count in your favour.
+   */
+  holdingBack: "rating" | "form" | "injury" | null;
+  /** One line under the bar: what would move it. No numbers (house style). */
+  closeLine: string;
+}
+
+/** The weaker of the two things a national manager weighs, as one line. */
+export function whatHoldsYouBack(
+  career: Pick<CareerState, "starRating" | "form" | "injury">,
+  nation: string,
+): { holdingBack: CallUpDecision["holdingBack"]; closeLine: string } {
+  if (career.injury) return { holdingBack: "injury", closeLine: "Get fit first. An injured player is never picked." };
+  const overall = displayOverall(career.starRating ?? 2.5);
+  const ratingPart = (overall - callUpBar(nation)) / 3.5;
+  const formPart = (recentForm(career) - 6.8) * 0.9;
+  if (ratingPart >= 0 && formPart >= 0) {
+    return { holdingBack: null, closeLine: `Your rating and your form both say ${nation}. Keep it going.` };
+  }
+  if (ratingPart < formPart) {
+    return {
+      holdingBack: "rating",
+      closeLine: ratingPart < -2
+        ? `Your rating is the gap. ${nation}'s regulars are a level above you — train to close it.`
+        : "Your rating is nearly there. A little more training tips it.",
+    };
+  }
+  return {
+    holdingBack: "form",
+    closeLine: formPart < -1
+      ? "Your form is the gap. A few good games for your club will change his mind."
+      : "Your form is nearly there. Keep the match ratings up.",
+  };
 }
 
 function competitionFor(season: number, window: number, nation: string): Competition {
@@ -229,7 +265,7 @@ export function decideCallUp(career: CareerState, i: number): CallUpDecision {
     : called ? (overall >= bar ? "Your level earned it." : "Your form forced his hand.")
     : overall < bar - 6 ? `${nation} have better players in your position for now.`
     : "Close, but not this time. Keep playing well.";
-  return { season: career.season, window: i, monthName: INTL_WINDOW_NAMES[i], called, chance, nation, fixture, reason };
+  return { season: career.season, window: i, monthName: INTL_WINDOW_NAMES[i], called, chance, nation, fixture, reason, ...whatHoldsYouBack(career, nation) };
 }
 
 /**
