@@ -31,8 +31,10 @@ cut in half by an edge; as little grass below the lowest man as that allows.
   team-mates within 15 m of the ball, defenders within 9 m of the ball, marking
   one of those team-mates, or goal-side in the lane to the posts; plus the
   keeper and both posts. Always on the glass (tilt included).
-- **Everyone else**: wholly on (1.5% of a screen width inside an edge) or
-  clearly off (4% outside). Never cut in half.
+- **Everyone else**: wholly on (his centre 3.5% of a screen width inside an
+  edge; a drawn figure is about 6% of a screen width across at any zoom) or
+  clearly off (4% outside). Never cut in half. The first version used 1.5% and
+  a real-game still showed a man sliced by the right edge; fixed.
 - **Build-up / midfield pass**: the action is the passers (`passersOf`).
 
 Every candidate camera (today's, the zoom, the glass fit, the action fit) is
@@ -65,23 +67,25 @@ Empty grass below the lowest man on the glass (`tests/star/emptyGrass.mts` §6):
 |---|---|---|
 | one-on-one | 31% | 26% |
 | long range | 32% | 19% |
-| cutback | 48% | 39% |
-| through ball | 37% | 19% |
-| tight angle | 56% | 52% |
-| free kick | 24% | 18% |
+| cutback | 48% | 40% |
+| through ball | 37% | 20% |
+| tight angle | 56% | 53% |
+| free kick | 24% | 19% |
 | penalty | 55% | 22% |
-| volley | 42% | 38% |
-| midfield pass | 34% | 27% |
-| build-up | 29% | 18% |
+| volley | 42% | 39% |
+| midfield pass | 34% | 28% |
+| build-up | 29% | 19% |
 | **average** | **39%** | **28%** |
 
 New is never emptier than Old on any kind. Cutbacks and tight angles stay
 39–52% upright: as the plan said, side-on (Wide chances: New) is the answer
 there (16–27% side-on, already measured), and that is Harry's call.
 
-Mean zoom with New (`chanceFraming.mts`): penalty 2.38, free kick 2.02,
-one-on-one 1.79, long range 1.68, through ball 1.36, cutback 1.25, tight
-angle 1.25, build-up 1.13, midfield pass 1.31.
+Mean zoom with New (`chanceFraming.mts`, 40 a kind, flat and 20°): penalty
+2.38, free kick 2.01, one-on-one 1.80, long range 1.78, volley 1.77, header
+1.72, through ball 1.40, midfield pass 1.29, cutback 1.28, tight angle 1.25,
+build-up 1.12. New may pull back up to 1.45× past today's camera when that is
+the only way to keep the action whole (a tilted corner).
 
 **Old is exactly today:** 0 of 21,060 framings differ from `main`'s
 matchView.ts (3 zoom settings × 13 kinds × 60 chances × 3 tilts × 3 phone
