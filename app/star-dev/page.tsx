@@ -65,7 +65,7 @@ import { canMoveNow, completeJanuaryMove } from "@/lib/star/januaryTransfer";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -1923,6 +1923,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         { kind: "season-end", position: leaguePosition(from),
           headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
     }
+    // Team-mates and famous names retiring, and the boys worth watching
+    // (lib/star/retirementNews.ts → media/detect/retirements.ts).
+    next.media = generateForRollover({ ...next, media: next.media });
     setCareer(next);
     // The Golden Boot, the trophy cabinet, a Team of the Season — shown
     // once, right here, before whatever the rollover itself has to say

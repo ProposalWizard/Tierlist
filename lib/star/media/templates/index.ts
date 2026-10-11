@@ -6,6 +6,7 @@ import { SOCIAL_TEMPLATES } from "./social";
 import { DATA_TEMPLATES } from "./data";
 import { CHANT_TEMPLATES } from "./chants";
 import { CHEEKY_TEMPLATES } from "./cheeky";
+import { RETIREMENT_TEMPLATES } from "./retirements";
 
 /**
  * A scorer's name against a chant's, ignoring accents, hyphens and case, so
@@ -106,6 +107,7 @@ const ALL: Template[] = [
   ...DATA_TEMPLATES,
   ...CHANT_TEMPLATES,
   ...CHEEKY_TEMPLATES,
+  ...RETIREMENT_TEMPLATES,
 ];
 
 const BY_ARCHETYPE = new Map<Archetype, Template[]>();

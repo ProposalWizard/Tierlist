@@ -29,7 +29,10 @@ import { faceOrFake, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { playCrowdSwell } from "@/lib/star/matchSound";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import BallonDor from "./BallonDor";
-import ClubBadge from "./ClubBadge";
+import ClubBadge, { drawnBadgeUrl } from "./ClubBadge";
+import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
+import { useBadgeLook } from "@/lib/star/badgeLook";
+import { useBadgeOverrides } from "@/lib/star/badgeOverrides";
 import TrophyImage from "./TrophyImage";
 import { signing3dBlocker } from "./SigningScene3D";
 import { useYouLook } from "./Farewell";
@@ -178,7 +181,13 @@ function Captions({ career, plan, t, loading }: { career: CareerState; plan: Nig
         .kib-bd-in { animation: kibBdIn .45s ease-out both; }
         .kib-bd-name { animation: kibBdName .8s cubic-bezier(.2,.9,.3,1.2) both; }
         .kib-bd-dots { animation: kibBdDots .9s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) { .kib-bd-in, .kib-bd-name, .kib-bd-dots { animation: none; } }
+        .kib-bd-arm { animation: kibBdArm .5s ease-in-out infinite alternate; }
+        @keyframes kibBdArm { from { margin-top: 0; } to { margin-top: -4px; } }
+        .kib-bd-guest { animation: kibBdGuest 2.6s ease-in-out infinite alternate; }
+        .kib-bd-cheer .kib-bd-guest { animation: kibBdCheer .32s ease-in-out infinite alternate; }
+        @keyframes kibBdGuest { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-1px) rotate(2deg); } }
+        @keyframes kibBdCheer { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+        @media (prefers-reduced-motion: reduce) { .kib-bd-in, .kib-bd-name, .kib-bd-dots, .kib-bd-arm, .kib-bd-guest { animation: none !important; } }
       `}</style>
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex flex-col items-center gap-3 px-4">
         <div key={`${beat}-${calling?.rank ?? 0}`} className="kib-bd-in">{line}</div>
@@ -209,6 +218,8 @@ function Stage3D({ career, plan, kit, clock, handleRef, onReady, onFail }: {
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const you = useYouLook(career, kit);
+  const badgeLook = useBadgeLook();
+  const badgeOverrides = useBadgeOverrides();
   const cb = useRef({ onReady, onFail });
   cb.current = { onReady, onFail };
   useEffect(() => {
@@ -225,7 +236,22 @@ function Stage3D({ career, plan, kit, clock, handleRef, onReady, onFail }: {
           const k = f.entry.isPlayer ? kit : kitsOf(f.entry.club, career.clubKits?.[f.entry.club]).home;
           kits[f.rank] = { shirt: k.shirt, trim: k.trim };
         }
-        const h = await createNightScene(el, { plan, you, kits, seed: (career.player.startYear ?? 0) * 31 + career.season, clock });
+        // The crest on each shirt: the same picture ClubBadge shows (New: the
+        // drawn badge; Old: the real crest when there is one, else drawn).
+        let logos: Map<string, string> | null = null;
+        if (badgeLook !== "new") {
+          logos = await Promise.race([
+            getClubLogoMap().catch(() => null),
+            new Promise<null>((r) => window.setTimeout(() => r(null), 2500)),
+          ]);
+        }
+        const crests: Record<number, string> = {};
+        for (const f of plan.finalists) {
+          const club = f.entry.isPlayer ? career.player.club : f.entry.club;
+          if (!club) continue;
+          crests[f.rank] = (logos && lookupClubLogo(logos, club)) || drawnBadgeUrl(club, badgeOverrides[club]);
+        }
+        const h = await createNightScene(el, { plan, you, kits, crests, seed: (career.player.startYear ?? 0) * 31 + career.season, clock });
         if (disposed) { h.dispose(); return; }
         handle = h;
         handleRef.current = h;
@@ -281,6 +307,21 @@ function StageDrawn({ career, plan, t }: { career: CareerState; plan: NightPlan;
       <div className="absolute bottom-[34%] w-[64px] -translate-x-1/2" style={{ left: `${Math.min(90, xPct(PODIUM.hostX))}%` }} data-bdor-host>
         <HostFigure talking={hostTalking} waving={revealed && t < plan.revealAt + 2.2} />
       </div>
+      {/* The audience: two rows of heads and shoulders along the bottom, up and cheering at the reveal. */}
+      <div className={`pointer-events-none absolute inset-x-0 bottom-0 h-[13%] overflow-hidden ${revealed ? "kib-bd-cheer" : ""}`} style={{ zIndex: 7 }} data-bdor-audience>
+        {Array.from({ length: 34 }, (_, i) => {
+          const row = i % 2;
+          const x = ((i * 37) % 100) + (row ? 1.5 : 0);
+          const gown = (i * 7) % 9 === 0;
+          const s = 0.85 + ((i * 13) % 7) / 20;
+          return (
+            <div key={i} className="kib-bd-guest absolute" style={{ left: `${x}%`, bottom: row ? 2 : -10, transformOrigin: "bottom center", animationDelay: `${-(i % 11) * 0.23}s`, opacity: row ? 0.75 : 1 }}>
+              <div style={{ width: 13 * s, height: 13 * s, margin: "0 auto", borderRadius: "50%", background: "#1d1712" }} />
+              <div style={{ width: 30 * s, height: 26 * s, marginTop: -2, borderRadius: "14px 14px 3px 3px", background: gown ? "#3b0d16" : "#0b0d14" }} />
+            </div>
+          );
+        })}
+      </div>
       {/* The golden ball. */}
       <div className="absolute -translate-x-1/2" style={{ left: `${ballX}%`, bottom: `calc(34% + ${ballUp}px)`, zIndex: 6,filter: `drop-shadow(0 0 ${8 + 22 * e}px rgba(253,224,71,${0.4 + 0.5 * e}))` }} data-bdor-ball>
         <TrophyImage name="Ballon d'Or" height={34 + 16 * e} fallback="🏅" />
@@ -311,7 +352,17 @@ function DrawnFinalist({ career, plan, f, t }: { career: CareerState; plan: Nigh
         <div className="absolute w-[76px] -translate-x-1/2 text-center" style={{ left: `${xPct(at.x)}%`, bottom: `calc(34% + ${standPx}px)`, zIndex: at.walking ? 5 : 3 }} data-bdor-finalist={f.rank}>
           <div className={win ? "kib-bd-name" : ""}>
             <ImageWithFallback src={face} fallbackSrc={faceOrFake(null, f.entry.name)} alt="" className="mx-auto rounded-full object-cover" style={{ width: 54, height: 54, border: `3px solid ${win ? GOLD : kit.trim}`, background: kit.shirt, boxShadow: win ? "0 0 22px rgba(251,191,36,.8)" : "0 2px 6px rgba(0,0,0,.6)" }} />
-            <div className="mx-auto -mt-1 h-[34px] w-[46px]" style={{ background: kit.shirt, borderTop: `4px solid ${kit.trim}`, borderRadius: "10px 10px 2px 2px" }} />
+            <div className="relative mx-auto -mt-1 h-[34px] w-[46px]" style={{ background: kit.shirt, borderTop: `4px solid ${kit.trim}`, borderRadius: "10px 10px 2px 2px" }}>
+              {/* The club crest on the left chest. */}
+              <div className="absolute right-[7px] top-[3px]"><ClubBadge club={f.entry.isPlayer ? career.player.club : f.entry.club} size={12} /></div>
+              {/* The winner: both arms up. */}
+              {win && (
+                <>
+                  <div className="kib-bd-arm absolute -left-[7px] -top-[30px] h-[30px] w-[8px] rounded-full" style={{ background: kit.shirt, border: `2px solid ${kit.trim}`, transform: "rotate(-14deg)" }} />
+                  <div className="kib-bd-arm absolute -right-[7px] -top-[30px] h-[30px] w-[8px] rounded-full" style={{ background: kit.shirt, border: `2px solid ${kit.trim}`, transform: "rotate(14deg)", animationDelay: ".15s" }} />
+                </>
+              )}
+            </div>
           </div>
           <div className="mt-0.5 truncate text-[11px] font-black uppercase leading-tight" style={{ color: f.entry.isPlayer ? GOLD : "#fff", textShadow: "0 1px 2px #000" }}>
             {f.entry.isPlayer ? "You" : f.entry.name.split(" ").slice(-1)[0]}
