@@ -60,6 +60,7 @@ import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome }
 import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
+import { ageLeagueSquads, ageOwnSquad, clubLevelOf } from "./worldAgeing";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
@@ -1798,18 +1799,35 @@ export function advanceSeason(
     // after 19 seasons Man United and Wolves lined up exactly as on day one,
     // while their real players had long moved on (Mikey's playtest, 8 Oct
     // 2026). See moveSquadsWithLadder.
+    // Then the whole world gets a year older (worldAgeing.ts): ratings move
+    // along the age curve, men from 33 retire and a boy replaces each one.
+    // Your own team-mates (`squad`) get the same rolls, so a man retires
+    // from both copies of your club at once.
     ...(() => {
       const moved = moveSquadsWithLadder(career.leagueSquads ?? [], career.externalSquads ?? [], clubs);
+      const tier = (club: string) => facilitiesFor(career, club).trainingGroundTier;
+      const grownLeague = growWonderkids(
+        resetLeagueSquads(moved.leagueSquads), mulberry32(career.season * 71923 + 5), tier,
+      );
+      const grownExternal = growWonderkids(moved.externalSquads, mulberry32(career.season * 71923 + 7), tier);
+      const agedLeague = ageLeagueSquads(grownLeague, career.season, tier, career.clubLevels ?? {});
+      const agedExternal = ageLeagueSquads(grownExternal, career.season, tier, agedLeague.clubLevels);
+      const levels = agedExternal.clubLevels;
+      const own = career.player.club;
+      const ownCopy = (career.leagueSquads ?? []).find(s => s.club === own)
+        ?? (career.externalSquads ?? []).find(s => s.club === own);
+      const ownLevel = levels[own] ?? (ownCopy ? clubLevelOf(levels, ownCopy) : undefined)
+        ?? career.league.find(t => t.name === own)?.strength ?? 65;
+      const squad = ageOwnSquad(
+        (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+        own, career.season, ownLevel, tier(own),
+      ).squad;
       return {
-        leagueSquads: growWonderkids(
-          resetLeagueSquads(moved.leagueSquads),
-          mulberry32(career.season * 71923 + 5),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
-        externalSquads: growWonderkids(
-          moved.externalSquads, mulberry32(career.season * 71923 + 7),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
+        leagueSquads: agedLeague.squads,
+        externalSquads: agedExternal.squads,
+        squad,
+        clubLevels: levels,
+        worldAgedSince: career.worldAgedSince ?? career.season,
       };
     })(),
     // A fresh season — a rivalry's grace tracking is keyed off cumulative
@@ -1835,7 +1853,7 @@ export function advanceSeason(
       seasonsRemaining: career.contract.seasonsRemaining - 1,
     },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
-    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+    // `squad` (season tallies reset, a year older) is set with the squads above.
     europeanQualification: qualification,
     // Kept because the European draw seeds you into a pot off it, and by the
     // time that draw happens the table below has already been wiped.
