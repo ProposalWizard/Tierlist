@@ -30,6 +30,7 @@ import { makeChance } from "../../lib/star/chanceMaker";
 import { setKaneMoments, kaneMomentsReady } from "../../lib/star/kaneMoments";
 import {
   frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, keyPointsOf, onThePitch,
+  WIDE_TURN_KINDS, turnWideChance, setWideChancesOverride,
 } from "../../lib/star/matchView";
 import { tiltFor, canvasToScreen, visibleOnScreen } from "../../lib/star/cameraTilt";
 
@@ -117,6 +118,65 @@ console.log("\n4. THE GLASS FIT CUTS NOBODY OFF");
     }
   }
   ok(n > 100 && cut === 0, `zoomed chances with a man, post or keeper off the glass: ${cut} of ${n}`);
+}
+console.log("\n5. WIDE CHANCES SIDE-ON (Settings → Look → Wide chances: New)");
+// Leo, 11 Oct 2026. Tight angles, cutbacks and penalties: upright, even the
+// glass fit left a block of empty grass under the people (150 a kind, 390 px,
+// 20°): 58% / 51% / 55% below the lowest man. Side-on, flat, fitted:
+// 24% / 24% / 27%, nobody cut off (upright cut a man off in 2–3%).
+{
+  setWideChancesOverride("new");
+  /** Flat, any facing: share below the lowest man, and is everyone on the screen? */
+  const turnedOnScreen = (sc: Scenario, cam: Viewport) => {
+    const f = sc.facing ?? "up";
+    const frac = (p: { x: number; y: number }) => {
+      const fx = (p.x - cam.x1) / (cam.x2 - cam.x1), fy = (p.y - cam.y1) / (cam.y2 - cam.y1);
+      return f === "right" ? { sx: 1 - fy, sy: fx } : f === "left" ? { sx: fy, sy: 1 - fx } : { sx: fx, sy: fy };
+    };
+    const pts = [...bodiesOf(sc), { x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].map(frac);
+    const inside = pts.every((c) => c.sx >= 0 && c.sx <= 1 && c.sy >= 0 && c.sy <= 1);
+    return { below: 1 - Math.max(...pts.map((c) => c.sy)), inside, ball: frac(sc.ball) };
+  };
+  const limits: Record<string, number> = { tight_angle: 0.32, cutback: 0.36, penalty: 0.34 };
+  const turnedAtLeast: Record<string, number> = { tight_angle: 0.9, cutback: 0.5, penalty: 0.9 };
+  for (const kind of WIDE_TURN_KINDS) {
+    const below: number[] = [];
+    let turned = 0, cut = 0, n = 0, shrink = 0;
+    for (let i = 0; i < 80; i++) {
+      const sc = makeChance({ source: { from: "kind", kind }, rng: mulberry32(9000 + i * 7919), memory: null, kaneDrawings: null }).sc;
+      n++;
+      const t = turnWideChance(sc, kind !== "penalty", HW) && (sc.facing === "left" || sc.facing === "right");
+      if (t) turned++;
+      const cam = frameForNewView(sc, HW, false, t ? 0 : TILT);
+      const m = t ? turnedOnScreen(sc, cam) : { ...onGlass(sc, cam), inside: true };
+      below.push(m.below);
+      if (!m.inside) cut++;
+      // The men stay today's size: the figure divisor matches the zoom.
+      if (playZoomOf(sc) < 1) shrink++;
+    }
+    const mean = below.reduce((s, x) => s + x, 0) / below.length;
+    // A cutback whose runners come from deep stays upright (side-on would be wider).
+    ok(turned >= n * turnedAtLeast[kind], `${kind}: turned side-on ${turned}/${n} (≥ ${(turnedAtLeast[kind] * 100).toFixed(0)}%)`);
+    ok(cut === 0, `${kind}: a man, post or keeper off the screen: ${cut} of ${n}`);
+    ok(mean <= limits[kind], `${kind}: grass below the lowest man ${(mean * 100).toFixed(0)}% (≤ ${(limits[kind] * 100).toFixed(0)}%; upright ≈ 50–58%)`);
+    ok(shrink === 0, `${kind}: never a wider camera than upright: ${shrink}`);
+  }
+  // Old leaves them upright, and other kinds are never turned.
+  setWideChancesOverride("old");
+  const old = makeChance({ source: { from: "kind", kind: "tight_angle" }, rng: mulberry32(3), memory: null, kaneDrawings: null }).sc;
+  ok(!turnWideChance(old) && (old.facing ?? "up") === "up", "Wide chances Old: a tight angle stays upright");
+  setWideChancesOverride("new");
+  const oneOnOne = makeChance({ source: { from: "kind", kind: "one_on_one" }, rng: mulberry32(3), memory: null, kaneDrawings: null }).sc;
+  ok(!turnWideChance(oneOnOne) && (oneOnOne.facing ?? "up") === "up", "Wide chances New: a one-on-one stays upright");
+  // Turned twice is turned once (a resize re-frames the same chance).
+  const twice = makeChance({ source: { from: "kind", kind: "tight_angle" }, rng: mulberry32(4), memory: null, kaneDrawings: null }).sc;
+  ok(turnWideChance(twice), "a tight angle turns");
+  const f1 = twice.facing, p1 = { ...twice.player };
+  ok(!turnWideChance(twice) && twice.facing === f1 && twice.player.x === p1.x && twice.player.y === p1.y, "turning an already-turned chance does nothing");
+  // Side-on you stand BESIDE the ball on the screen (pitch y), not on it.
+  ok(Math.abs(twice.player.y - twice.ball.y) > 1 && Math.abs(twice.player.x - twice.ball.x) < 0.5,
+    `side-on you stand beside the ball on the screen (Δx ${(twice.player.x - twice.ball.x).toFixed(2)}, Δy ${(twice.player.y - twice.ball.y).toFixed(2)})`);
+  setWideChancesOverride(null);
 }
 setPlayZoomOverride(null);
 

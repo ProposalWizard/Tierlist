@@ -23,7 +23,10 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Facing, Scenario, ScenarioKind, Vec2, Viewport } from "./canvasEngine";
-import { goalInView } from "./canvasEngine";
+import { goalInView, standOff } from "./canvasEngine";
+import { wideChances } from "./wideChances";
+/** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
+export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
@@ -290,7 +293,7 @@ export function newViewCamera(
 }
 
 /** The scenario as CanvasMatch frames it: the engine's own frame, kept. */
-type Framed = Scenario & { engineFrame?: Viewport; playZoom?: number };
+type Framed = Scenario & { engineFrame?: Viewport; playZoom?: number; wideChecked?: boolean };
 
 /** The frame the engine built this chance in (today's camera). */
 export function engineFrameOf(sc: Scenario): Viewport {
@@ -313,6 +316,14 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   const today = fitCameraToTilt(base, facing, hw, tiltDeg, keyPointsOf(sc));
   let cam = today;
   f.playZoom = 1;
+  // A wide chance turned side-on (Wide chances: New): the men and the ball
+  // stay the size they are upright, as the Zoom keeps them — only the pitch
+  // zooms. Upright the screen is the kind's width across; side-on, `across`.
+  if (facing !== "up" && WIDE_TURN_KINDS.includes(sc.kind)) {
+    const upright = acrossFor(sc.kind, f.engineFrame, "up");
+    const across = cam.y2 - cam.y1;
+    if (typeof upright === "number" && across > 0) f.playZoom = upright / across;
+  }
   // Chance framing "Zoom" (lib/star/chanceFraming.ts): only up the pitch with
   // the goal in the picture. Side-on chances (corners, byline crosses) and
   // build-up stay exactly as they were.
@@ -548,9 +559,106 @@ export function fitToPlay(base: Viewport, sc: Scenario, hw: number, tiltDeg = 0)
   return null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WIDE CHANCES SIDE-ON — Settings → Look → "Wide chances: New | Old"
+// (lib/star/wideChances.ts). Old by default.
+//
+// A tight angle, a cutback and a penalty put their people in a strip about
+// 20–25 m wide near the goal line. Upright, a phone-shaped camera that wide is
+// about twice as tall, so even after fitToPlay the grass below the lowest man
+// was 58% / 50% / 55% of the screen (390 px phone, 20° tilt). Turned a quarter
+// turn — the camera corners and byline crosses already use — the strip's
+// width runs DOWN the tall screen, and the camera is fitted to the people.
+// Measured (150 a kind): grass below 58→23%, 50→21%, 55→24%; nobody cut off.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The kinds New turns side-on. */
+export const WIDE_TURN_KINDS: readonly ScenarioKind[] = ["tight_angle", "cutback", "penalty"];
+/** Side-on: pitch behind the goal line (the net plus a little). */
+const SIDE_BEHIND_M = NET_DEPTH + 1.8;
+/** Side-on: grass past the deepest man, and past the outermost man up and down. */
+const SIDE_DEPTH_ROOM_M = 2;
+const SIDE_EDGE_ROOM_M = 2;
+/** Side-on: room behind the ball to pull back into, as a share of the screen's width. */
+const SIDE_PULL_SHARE = 0.24;
+/** Side-on: never tighter than this across (pitch depth), never wider than the full zoom. */
+const SIDE_MIN_ACROSS_M = 16;
+
+/** Would New turn this chance side-on? (The setting is read by the caller.) */
+export function turnsSideOn(sc: Scenario): boolean {
+  return WIDE_TURN_KINDS.includes(sc.kind) && (sc.facing ?? "up") === "up";
+}
+
+/**
+ * Turn a freshly built wide chance side-on, when Wide chances is New. Turns
+ * the scenario (its `facing`) and stands you beside the ball on the turned
+ * screen (canvasEngine's own standOff), so the ball is not on your chest.
+ * Call before the chance is framed; does nothing to a chance already turned,
+ * to any other kind, or with the setting on Old. Returns whether it turned.
+ */
+export function turnWideChance(sc: Scenario, restand = true, hw = NEW_VIEW_MAX_HW): boolean {
+  const f = sc as Framed;
+  if (wideChances() !== "new" || !turnsSideOn(sc) || f.wideChecked) return false;
+  // Decided once per chance: a resize re-frames it but never flips it.
+  f.wideChecked = true;
+  // Turn only when side-on is the tighter picture. A cutback with runners
+  // arriving from 30 m out is deep as well as wide; side-on it needed a
+  // wider camera than upright (pitch above and below everyone), so it stays.
+  const upright = acrossFor(sc.kind, engineFrameOf(sc), "up");
+  const was = sc.facing;
+  sc.facing = sideOnFacing(sc);
+  const cam = sideOnCamera(sc, hw);
+  if (typeof upright === "number" && cam.y2 - cam.y1 > upright + 1e-6) { sc.facing = was; return false; }
+  // A penalty's taker already stands back for his run-up (pitch geometry,
+  // which reads the same side-on), so he is left where he is.
+  if (restand) standOff(sc);
+  return true;
+}
+
+/** Which way a turned wide chance faces: the ball's own side, as a corner does. */
+export function sideOnFacing(sc: Scenario): Facing {
+  return sc.ball.x >= PITCH_W / 2 ? "right" : "left";
+}
+
+/**
+ * The side-on camera for a wide chance: the tightest turned frame (the
+ * screen's width is pitch depth from just behind the goal; its height pitch
+ * width) that holds every man, the keeper and both posts with room round
+ * them, and room behind the ball to pull back into.
+ */
+export function sideOnCamera(sc: Scenario, hw: number): Viewport {
+  const facing = sc.facing === "left" ? "left" : "right";
+  const H = Math.max(NEW_VIEW_MIN_HW, hw);
+  const goal = [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].filter(onThePitch);
+  const pts = [...bodiesOf(sc), ...goal];
+  const y1 = -SIDE_BEHIND_M;
+  const maxY = Math.max(...pts.map((p) => p.y));
+  const xLo = Math.min(...pts.map((p) => p.x)) - SIDE_EDGE_ROOM_M;
+  const xHi = Math.max(...pts.map((p) => p.x)) + SIDE_EDGE_ROOM_M;
+  // Where the ball goes next: a cutback to the man it is pulled back to, anything else at goal.
+  const target = sc.kind === "cutback" && sc.runner ? sc.runner.pos : { x: PITCH_W / 2, y: 0 };
+  const dx = target.x - sc.ball.x, dy = target.y - sc.ball.y, L = Math.hypot(dx, dy) || 1;
+  const lo = Math.max(SIDE_MIN_ACROSS_M, maxY + SIDE_DEPTH_ROOM_M - y1, (xHi - xLo) / H);
+  for (let across = lo; ; across += 0.25) {
+    const down = across * H;
+    const y2 = y1 + across;
+    const pull = SIDE_PULL_SHARE * across;
+    const px = sc.ball.x - (dx / L) * pull, py = sc.ball.y - (dy / L) * pull;
+    if (py > y2 && across < NEW_VIEW_WIDTH_M) continue;
+    // Pan down the screen: centred on the people, then nearer the pull room.
+    const need = [xLo, xHi, px - 0.5, px + 0.5];
+    const nLo = Math.min(...need), nHi = Math.max(...need);
+    if (nHi - nLo > down && across < NEW_VIEW_WIDTH_M) continue;
+    let x1 = (xLo + xHi) / 2 - down / 2;
+    x1 = Math.min(nLo, Math.max(nHi - down, x1));
+    return { x1, x2: x1 + down, y1, y2 };
+  }
+}
+
 /** The camera for this chance: its kind's zoom (NEW_VIEW_KIND_WIDTH_M). */
 export function cameraFor(sc: Scenario, engineFrame: Viewport, hw: number): Viewport {
   const facing = sc.facing ?? "up";
+  if (facing !== "up" && WIDE_TURN_KINDS.includes(sc.kind)) return sideOnCamera(sc, hw);
   const across = acrossFor(sc.kind, engineFrame, facing);
   if (across === "passers") return passersCameraFor(sc, engineFrame, facing, hw);
   return newViewCamera(engineFrame, facing, hw, sc.ball, across);
