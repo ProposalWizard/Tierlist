@@ -347,6 +347,8 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- Ballon d'Or night polish (11 Oct 2026, Leo's branch): the golden ball is a trophy (panelled gold ball, cup, slim neck, black-banded foot; metal lit by a RoomEnvironment map, not a light; none on Low), each finalist's club crest on his chest (the badge ClubBadge would show; `lib/star/crestTexture.ts` turns a crest picture into a chest texture — a 2D canvas must stay out of the scene files, the one-engine guard reads it as a game loop), an instanced seated audience that shifts and turns and bounces at the reveal with camera flashes, and the winner's arms up and held (IK over the celebrate clip). The drawn stage got the crest, raised arms and a row of heads too.
+
 - Ballon d'Or night (11 Oct 2026, Leo's branch): a 3D stage at the end of every season — a generic host at a lectern, the final three walk onto podiums that stay level until the winner is named, the golden ball floats over him, see-through beams (no new lights), under the governor. Same people and clap as the guard of honour. Settings → Look → Ballon d'Or night: New | Old.
 - Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
 - Cut-scene camera + music: a film pass over every cut scene (wide first, weak moves hidden, always moving), a farewell in the stadium, five music beds; Settings → Look → Cut-scene camera (handover below).
