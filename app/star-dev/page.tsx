@@ -58,6 +58,9 @@ import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
+import {
+  askForMove, askSeed, agreeMove, callOffMove, clearAfterWindow, summerWindowOffers, talksFailed, requestOf,
+} from "@/lib/star/transferRequest";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
@@ -193,6 +196,7 @@ const LoanBrief = lazyScreen(() => import("@/components/star/LoanBrief"));
 const SponsorsScreen = lazyScreen(() => import("@/components/star/SponsorsScreen"));
 const PressConference = lazyScreen(() => import("@/components/star/PressConference"));
 const TransferWindow = lazyScreen(() => import("@/components/star/TransferWindow"));
+const TransferRequest = lazyScreen(() => import("@/components/star/TransferRequest"));
 const RelegationMove = lazyScreen(() => import("@/components/star/RelegationMove"));
 const TransferSigning = lazyScreen(() => import("@/components/star/TransferSigning"));
 const VersusScreen = lazyScreen(() => import("@/components/star/VersusScreen"));
@@ -264,7 +268,7 @@ const LAZY_PRELOAD = [
   CareerOverview, SaveClashPrompt, FaceEditorScreen, FakeFaceEditorScreen, Match3DLayer, Home3D, Garden3D,
   Shop3D, Casino3D, Training3D, ProfileSetup, TrialSequence, FreeAgentShell, TrialReward, ManagerTalk,
   ScoutOffers, FinalSeasonNotice, FinalWhistle, FarewellInvite, FarewellResult, GuardOfHonour,
-  StandingOvation, ShareLinkSheet,
+  StandingOvation, ShareLinkSheet, TransferRequest,
 ];
 
 /**
@@ -559,6 +563,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     | null
   >(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
+  // A club that said yes to a transfer request, while you talk terms with it.
+  const [talkOffer, setTalkOffer] = useState<TransferOffer | null>(null);
   /** The week the loan brief was last read. A loan target shown before
    *  every single fixture would be a toll gate; shown once a week it is a
    *  reminder. See the LoanBrief block further down. */
@@ -1919,7 +1925,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       && sortLeague(from.league).slice(-4).some(t => t.name === from.player.club)) {
       const forced = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
       if (forced.length > 0) {
-        setTransferOffers(forced);
+        // A move you asked for and agreed still stands (transferRequest.ts).
+        const agreed = requestOf(from).agreed;
+        setTransferOffers(agreed ? [agreed, ...forced.filter(o => o.club !== agreed.club)] : forced);
         setPhase("relegation-move");
         return;
       }
@@ -1932,10 +1940,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // still turn it down and stay where you are playing every week. Miss
     // the number and nothing arrives — see `loanRecallOffer` (youth.ts).
     const recall = loanRecallOffer(from);
-    const offers = [
+    // The deal you asked for and agreed goes first; a good season brings
+    // extra clubs on top (summerWindowOffers, transferRequest.ts).
+    const offers = summerWindowOffers(from, [
       ...(recall ? [recall] : []),
       ...generateOffers(from, mulberry32(from.season * 7717 + from.fame)),
-    ];
+    ], mulberry32(from.season * 6151 + from.fame));
     if (offers.length > 0) {
       setTransferOffers(offers);
       setPhase("season-transfer");
@@ -2033,7 +2043,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
-    const moved = acceptOffer(career, offer);
+    // The summer window has happened: any deal from a transfer request is done with.
+    const moved = clearAfterWindow(acceptOffer(career, offer));
+    // A club from another division (a request, or a good season's extra
+    // offer) is a signing, not a promotion: same banner rule as a forced move.
+    const crossDivision = !!offer.division && offer.division !== divisionOf(career);
     // New club, new team-mates. Same best-effort rule as career creation: the
     // move completes immediately with the generated squad acceptOffer gives it,
     // and the real one lands a moment later.
@@ -2052,14 +2066,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // `justTransferred: true` — `moved.contract` is the new club's deal, not
     // one stayed on for the season; see advanceSeason's own doc on why this
     // has to be told rather than inferred from `moved` alone.
-    rollOverSeason(moved, wonBallonDor, wasRelegationMove, true);
+    rollOverSeason(moved, wonBallonDor, wasRelegationMove || crossDivision, true);
   }, [career, pendingSignOffer, wonBallonDor, rollOverSeason, pushNews]);
 
   const handleStayPut = useCallback(() => {
     if (!career) return;
     setTransferOffers([]);
-    rollOverSeason(career, wonBallonDor);
+    rollOverSeason(clearAfterWindow(career), wonBallonDor);
   }, [career, wonBallonDor, rollOverSeason]);
+
+  // ── Asking for a move (Stats → Contract → Find a new club) ──
+  const handleTransferAsk = useCallback((league: CareerDivision, club?: string) => {
+    setCareer(c => (c ? askForMove(c, league, club, mulberry32(askSeed(c))) : c));
+  }, []);
+  const handleTransferAgree = useCallback((offer: TransferOffer, wage?: number) => {
+    setCareer(c => (c ? agreeMove(c, offer, wage) : c));
+    setTalkOffer(null);
+    setPhase("transfer-request");
+  }, []);
+  const handleTransferTalk = useCallback((offer: TransferOffer) => {
+    setTalkOffer(offer);
+    setPhase("transfer-request-talk");
+  }, []);
+  const handleTransferCallOff = useCallback(() => {
+    setCareer(c => (c ? callOffMove(c) : c));
+  }, []);
 
   // Testing tool only — see lib/star/devSkip.ts. Runs the fast-forward and
   // drops the result straight on the dashboard; a season boundary crossed
@@ -2461,7 +2492,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (pending?.phase === "season-transfer") {
       // Regenerated rather than stored: the seed is the season and the player's
       // fame, neither of which has moved, so these are the same offers.
-      const offers = generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame));
+      const offers = summerWindowOffers(saved,
+        generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame)),
+        mulberry32(saved.season * 6151 + saved.fame));
       if (offers.length > 0) {
         setWonBallonDor(!!pending.wonBallonDor);
         setTransferOffers(offers);
@@ -3241,6 +3274,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       || (phase === "dilemma" && !currentDilemma)
       || (phase === "season-transfer" && transferOffers.length === 0)
       || (phase === "transfer-signing" && !pendingSignOffer)
+      || (phase === "transfer-request-talk" && !talkOffer)
       || (phase === "relationship-game" && !relationshipGameKind)
       || (phase === "retirement" && !retirementCheck(career).mustRetire)
       || (phase === "final-season" && !retirementCheck(career).finalSeasonNext);
@@ -3249,7 +3283,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("dashboard");
     }
   }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
-      pressQuestion, currentDilemma, transferOffers, pendingSignOffer, relationshipGameKind, pendingDraw]);
+      pressQuestion, currentDilemma, transferOffers, pendingSignOffer, relationshipGameKind, pendingDraw, talkOffer]);
 
   // The farewell lives only in this page's memory: a farewell phase without
   // it (or full time without a result) goes back to the final whistle.
@@ -4141,6 +4175,44 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "transfer-request") {
+    return (
+      <TransferRequest
+        career={career}
+        onAsk={handleTransferAsk}
+        onAccept={(o) => handleTransferAgree(o)}
+        onTalk={handleTransferTalk}
+        onCallOff={handleTransferCallOff}
+        onBack={() => setPhase("dashboard")}
+      />
+    );
+  }
+
+  // Talking a yes up (or down): the same negotiation as a first contract,
+  // in a season's wages (see signingTalk.ts). Walk away and the club withdraws.
+  if (phase === "transfer-request-talk" && talkOffer) {
+    const talkDivision = talkOffer.division ?? divisionOf(career);
+    return (
+      <NegotiationScreen
+        mode="selling"
+        playerName={`${career.player.firstName} ${career.player.lastName} — terms with ${talkOffer.club}`}
+        marketValue={weeklyToSeason(talkOffer.wage, talkDivision)}
+        counterpartLabel={talkOffer.club}
+        onDone={(finalSeasonPrice) => {
+          const weekly = agreedWeeklyWage(finalSeasonPrice, talkOffer.club, talkDivision);
+          if (weekly === null) {
+            setCareer(talksFailed(career, talkOffer.club));
+            setTalkOffer(null);
+            setPhase("transfer-request");
+            return;
+          }
+          handleTransferAgree(talkOffer, weekly);
+        }}
+        onSettings={() => setPhase("settings")}
+      />
+    );
+  }
+
   if (phase === "relegation-move" && transferOffers.length > 0) {
     return (
       <RelegationMove
@@ -4973,7 +5045,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} hallRecords={hallRecords} />
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onFindClub={() => setPhase("transfer-request")} onOpen={(ph) => setPhase(ph)} hallRecords={hallRecords} />
               : <LockedPage key="stats" title="Stats" feature="stats" />,
             <HomeHub
               key="home"

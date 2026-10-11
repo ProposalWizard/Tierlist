@@ -51,8 +51,10 @@ let lastView: View = "season";
  * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
  * has it, and the League screen has the full table.
  */
-export default function StatsTabs({ career, onRenew, onOpen, hallRecords }: {
+export default function StatsTabs({ career, onRenew, onFindClub, onOpen, hallRecords }: {
   career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void;
+  /** Contract view: "Find a new club" (TransferRequest.tsx). */
+  onFindClub?: () => void;
   /** Your own retired careers' records (lib/star/hallRecords.ts). */
   hallRecords?: HallRecord[];
 }) {
@@ -73,7 +75,7 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords }: {
         </div>
       </div>
       <RiseIn key={view}>
-        {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}
+        {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} onFindClub={onFindClub} view={view === "season" ? "stats" : view} />}
         {view === "all" && (allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />)}
         {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
         {view === "records" && onOpen && (
