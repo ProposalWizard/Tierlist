@@ -11,6 +11,7 @@ import type { CareerState, Trophy } from "@/lib/star/types";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import { RECORDS, recordBeaten } from "@/lib/star/records";
 import { formatMoney } from "@/lib/star/money";
+import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
 import { Screen, ScreenHeader, Rays, useLater } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
@@ -463,17 +464,18 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
   // wage lives on the real-money scale. Same idea as every other wage-offer
   // formula in the game (see transfers.ts) — a good negotiation compounds
   // off your current terms, not off a fixed placeholder amount.
-  const RAISE_PCT_PER_WIN = 0.08;
-  // A single wrong guess costs a real, noticeable chunk of whatever you'd
-  // already banked — applied ONCE, on top of the wins already earned, not
-  // instead of them, so a strong run that ends in one slip still lands
-  // somewhere between "nothing gained" and "the peak you reached."
-  const LOSS_PENALTY_PCT = 0.15;
-  const offerMultiplier = (1 + RAISE_PCT_PER_WIN * wins) * (locked ? (1 - LOSS_PENALTY_PCT) : 1);
-  const currentOffer = (base: number) => Math.round(base * offerMultiplier);
+  // +8% a right guess; a single wrong guess costs 15% — applied ONCE, on top
+  // of the wins already earned, not instead of them, so a strong run that
+  // ends in one slip still lands somewhere between "nothing gained" and "the
+  // peak you reached." The numbers and the wage cap live in economy.ts
+  // (`renewalWage`): a renewal never takes a wage past PREMIER_WAGE_CAP.
+  const offeredWage = renewalWage(career.contract.wage, wins, locked);
+  // The bonuses move by the same factor the wage actually moved.
+  const factor = career.contract.wage > 0 ? offeredWage / career.contract.wage : renewalMultiplier(wins, locked);
+  const currentOffer = (base: number) => Math.round(base * factor);
 
   const finalise = () => {
-    const wage = currentOffer(career.contract.wage);
+    const wage = offeredWage;
     // The better the negotiation went, the more of the deal they will write in.
     // Seeded off the outcome so the same negotiation produces the same offer.
     const newContract: CareerState["contract"] = {
@@ -537,7 +539,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               </div>
             )}
             <div className="text-xs text-white/85 mb-3 leading-snug">
-              Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RAISE_PCT_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
+              Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RENEWAL_RAISE_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
             </div>
             <div className="kit-row rounded-xl p-3 text-xs mb-3 space-y-1">
               <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/week</span></div>
@@ -571,12 +573,12 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
                 with real, current numbers in front of you, not a guess. */}
             <div key={lostAt} className={`relative kit-row rounded-xl p-3 text-xs mb-3 space-y-1 text-left ${lostAt ? "kit-shake-x" : ""}`} style={locked ? { boxShadow: "inset 0 0 0 1px rgba(248,113,113,.45)" } : undefined}>
               <Burst trigger={wonAt} colors={["#34d399", "#fde047", "#ffffff"]} count={16} spread={0.7} className="left-3/4 top-1/2" round />
-              <FloatText trigger={wonAt} text={`+${Math.round(RAISE_PCT_PER_WIN * 100)}%`} color="#34d399" className="left-3/4 top-2" size={15} />
-              <FloatText trigger={lostAt} text={`−${Math.round(LOSS_PENALTY_PCT * 100)}%`} color="#f87171" className="left-3/4 top-2" size={15} />
+              <FloatText trigger={wonAt} text={`+${Math.round(RENEWAL_RAISE_PER_WIN * 100)}%`} color="#34d399" className="left-3/4 top-2" size={15} />
+              <FloatText trigger={lostAt} text={`−${Math.round(RENEWAL_SOURED_CUT * 100)}%`} color="#f87171" className="left-3/4 top-2" size={15} />
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">
                 {locked ? "Final offer" : "Current offer"}
               </div>
-              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.wage))}/week</span></div>
+              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(offeredWage)}/week</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
             </div>

@@ -728,6 +728,35 @@ export function offerWageFor(
   return Math.max(1, Math.round(Math.max(theirs, currentWage || 0)));
 }
 
+/**
+ * A RENEWAL AT YOUR OWN CLUB — the higher-or-lower talks (ContractRenewal,
+ * SecondaryScreens.tsx). Each right guess adds 8% to what you earn now; the
+ * first wrong one takes 15% off where you had got to.
+ *
+ * ── The cap it ignored (found 11 Oct 2026, docs/money-balance-oct2026.md) ──
+ *
+ * A renewal raises the wage you ALREADY have, so it compounds, and it never
+ * read `PREMIER_WAGE_CAP`. Measured over a 20-season star career with a
+ * modest two right guesses a renewal (+16%): ★29k a week at Liverpool in
+ * season 7, ★271k by season 20 — 2.7 times the ★100,000 the owners set as
+ * the most anyone earns. saveGuard.ts treats that same cap as the hard limit
+ * of a legal save, so honest play produced a save the guard calls edited.
+ *
+ * Now a renewal stops at the cap. A wage already above it (a save from
+ * before this fix) is kept, never cut.
+ */
+export const RENEWAL_RAISE_PER_WIN = 0.08;
+export const RENEWAL_SOURED_CUT = 0.15;
+
+export function renewalMultiplier(wins: number, soured: boolean): number {
+  return (1 + RENEWAL_RAISE_PER_WIN * Math.max(0, wins)) * (soured ? 1 - RENEWAL_SOURED_CUT : 1);
+}
+
+export function renewalWage(currentWage: number, wins: number, soured: boolean): number {
+  const raw = Math.round(currentWage * renewalMultiplier(wins, soured));
+  return Math.min(raw, Math.max(currentWage, PREMIER_WAGE_CAP));
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  PART 2 — THE SIGNING-ON FEE
 // ═══════════════════════════════════════════════════════════════════════
