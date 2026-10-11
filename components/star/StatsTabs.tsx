@@ -255,6 +255,11 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
         <Row icon="⚽" label="Most goals in a game" value={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `v ${short(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
         <Row icon="📈" label="Most goals in a season" value={b.mostGoalsSeason ? String(b.mostGoalsSeason.goals) : "—"} sub={b.mostGoalsSeason ? s(b.mostGoalsSeason.season) : undefined} />
         <Row icon="🅰️" label="Most assists in a season" value={b.mostAssistsSeason ? String(b.mostAssistsSeason.assists) : "—"} sub={b.mostAssistsSeason ? s(b.mostAssistsSeason.season) : undefined} />
+        <Row icon="🎁" label="Most assists in a game" value={b.mostAssistsMatch ? String(b.mostAssistsMatch.assists) : "—"} sub={b.mostAssistsMatch ? `v ${short(b.mostAssistsMatch.opponent)} · ${s(b.mostAssistsMatch.season)}` : undefined} />
+        <Row icon="⏱️" label="Fastest goal" value={b.fastestGoal ? `${b.fastestGoal.minute}'` : "—"} sub={b.fastestGoal ? `v ${short(b.fastestGoal.opponent)} · ${s(b.fastestGoal.season)}` : undefined} />
+        <Row icon="💥" label="Biggest win" value={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `v ${short(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
+        <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} games` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
+        <Row icon="🧢" label="Caps" value={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
       </Card>
       {hallRecords && <HallRecordsCard career={career} glow={glow} book={hallRecords} />}
       <Card glow={glow} title="Awards">
@@ -269,7 +274,7 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
           <Row key={t.competition} icon="🏆" label={t.competition} value={`×${t.seasons.length}`} sub={t.seasons.map((n) => seasonLabel(career, n)).join(" · ")} />
         ))}
       </Card>
-      <Card glow={glow} title="Premier League records">
+      <Card glow={glow} title="Real-world records">
         {RECORDS.map((r) => {
           const p = r.progress(career);
           const pct = Math.min(100, Math.round((p / r.value) * 100));
