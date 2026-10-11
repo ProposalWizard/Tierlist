@@ -242,6 +242,9 @@ export function windowDue(career: CareerState): number | null {
   if (career.fixtures.some(f => !f.played && f.kind === "international" && !f.round)) return null;
   const next = nextFixtureFor(career);
   if (!next) return null;
+  // The summer tournament (tournament.ts) is after every break; a window
+  // left undecided by then has passed.
+  if (next.kind === "international" && next.round) return null;
   const division = divisionOf(career);
   const nextT = fixtureTimestamp(career.player.startYear, career.season, next.week, next.kind, division);
   const decided = new Set(career.international?.decided ?? []);
@@ -324,6 +327,7 @@ export function nationalSquad(career: CareerState): { players: SquadPlayer[]; re
   const sorted = Array.from(pool.values()).sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
   const used = new Set<string>();
   const filler = generateSquad(clubNameSeed(`nation|${nation}`));
+  const names = madeUpNames(nation, SLOTS.length + 1).filter(n => n !== youName && !pool.has(n));
   const strength = nationStrength(nation);
   const out: SquadPlayer[] = [];
   let real = 0;
@@ -332,8 +336,10 @@ export function nationalSquad(career: CareerState): { players: SquadPlayer[]; re
     if (pick) { used.add(pick.name); out.push(pick); real++; return; }
     const g = filler[i % filler.length];
     const id = `intl_gen_${i}`;
+    // A name that sounds like the nation (nationNames.ts), not a club squad's.
+    const name = names[i] ?? g.name;
     out.push({
-      ...g, id, position: pos, nationality: nation,
+      ...g, id, name, shortName: name.split(" ").slice(-1)[0], position: pos, nationality: nation,
       overall: Math.max(40, Math.min(92, strength - 6 + ((i * 7) % 9) - 4)),
       imageUrl: fakeFaceFor(`${nation}:${id}`),
     });

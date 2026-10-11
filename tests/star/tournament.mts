@@ -4,7 +4,7 @@ import {
   tournamentField, openTournament, applyTournament, tournamentDue, tournamentSquadChance, groupTable,
   qualifiers, finishTournament, settleTournamentMatch, isTournamentFixture, yourGroup,
 } from "../../lib/star/tournament";
-import { opponentNationSquad, internationalCareer, recordIntlMatch } from "../../lib/star/international";
+import { opponentNationSquad, internationalCareer, recordIntlMatch, nationalSquad as nationalSquadOf, windowDue } from "../../lib/star/international";
 import { opponentStartingXI, matchdayFor } from "../../lib/star/teamsheet";
 import { nextFixtureFor, seedSeasonKnockouts } from "../../lib/star/competitions";
 import { mulberry32 } from "../../lib/star/season";
@@ -121,6 +121,7 @@ function stats(over: Partial<MatchStats>): MatchStats {
   let s = applyTournament(c, openTournament(c)!);
   check(!tournamentDue(s), "decided once");
   check(s.tournament!.selected, "a 4.8-star player is picked");
+  check(windowDue(s) === null, "an undecided break never pops up in the summer");
   let played = 0, guard = 0, group = 0;
   while (guard++ < 10) {
     const next = nextFixtureFor(s);
@@ -198,6 +199,10 @@ function stats(over: Partial<MatchStats>): MatchStats {
   check(new Set(sq.map(p => p.name)).size === 20, "no name twice");
   check(JSON.stringify(opponentNationSquad(c, "Japan").map(p => p.name)) === JSON.stringify(opponentNationSquad(c, "Japan").map(p => p.name)), "seeded");
   console.log(`Japan's made-up XI: ${opponentNationSquad(c, "Japan").slice(0, 4).map(p => p.name).join(", ")}…`);
+
+  const own = nationalSquadOf(c).players.filter(p => p.id.startsWith("intl_gen_"));
+  check(own.every(p => namePoolFor("England").first.includes(p.name.split(" ")[0])), `your own made-up team-mates sound English (${own[0]?.name})`);
+  check(new Set(nationalSquadOf(c).players.map(p => p.name)).size === 20, "no team-mate's name twice");
 
   const fx: Fixture = { week: 4, opponent: "Brazil", home: true, played: false, kind: "international", competition: "World Cup", round: "Group A · Match 1", opponentStrength: 90 };
   const stand = internationalCareer(real, fx);
