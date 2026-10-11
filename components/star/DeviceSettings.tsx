@@ -203,7 +203,7 @@ function LookRow({ id, tabs, note, look }: {
 
 const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", ballPhysics: "Ball physics", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera",
+  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", shotsPro: "Shots", knucklePower: "Knuckleball & power shot", ballPhysics: "Ball physics", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera",
   garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
@@ -261,6 +261,8 @@ function MatchGroup() {
       <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
       <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
       <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
+      <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
+      <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
       <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
       <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
       <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
