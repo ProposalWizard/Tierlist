@@ -3,14 +3,16 @@
 /**
  * PROTOTYPE (show-options, 9 Oct 2026): zoom to the play. One chance, built
  * from ?kind=&seed=, played in the real match through EnginePlay, with the
- * camera zoom set by ?zoom=off|z1|z2 (lib/star/matchView.ts). Reads the
- * camera through window.__zg. Not linked anywhere.
+ * camera zoom set by ?zoom=off|z1|z2 (lib/star/matchView.ts) and Wide
+ * chances by ?wide=new|old (lib/star/wideChances.ts). Reads the camera
+ * through window.__zg. Not linked anywhere.
  */
 import { useEffect, useState } from "react";
 import EnginePlay from "@/components/star/EnginePlay";
 import { buildScenario, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { setMatchViewOverride, setPlayZoomOverride, type PlayZoom } from "@/lib/star/matchView";
+import { setWideChancesOverride } from "@/lib/star/wideChances";
 
 export default function ZoomGrassDev() {
   const [q, setQ] = useState<{ kind: ScenarioKind; seed: number; zoom: PlayZoom } | null>(null);
@@ -19,6 +21,8 @@ export default function ZoomGrassDev() {
     const zoom = (p.get("zoom") as PlayZoom) || "off";
     setMatchViewOverride("new");
     setPlayZoomOverride(zoom);
+    const wide = p.get("wide");
+    setWideChancesOverride(wide === "new" || wide === "old" ? wide : null);
     setQ({ kind: (p.get("kind") as ScenarioKind) || "one_on_one", seed: Number(p.get("seed") || 1), zoom });
   }, []);
   if (!q) return null;

@@ -156,7 +156,7 @@ import {
 } from "@/lib/star/penaltyRunup";
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
-  matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
+  matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
@@ -1775,7 +1775,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     auto?: { contact: { cx: number; cy: number }; skills: KickSkills };
   } | null>(null);
   /** A sideways drag during the run-up: where it started, and the swing then. */
-  const nudgeDragRef = useRef<{ x0: number; base: number } | null>(null);
+  const nudgeDragRef = useRef<{ x0: number; y0: number; base: number } | null>(null);
   /** Your two run-up styles, read live (a prop can change between chances). */
   const runupStyleRef = useRef({ pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) });
   runupStyleRef.current = { pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) };
@@ -2583,6 +2583,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * play area it was recorded with, so it replays exactly.
    */
   function frameScenario(sc: Scenario, replay = false) {
+    // Wide chances: New (lib/star/wideChances.ts) — a tight angle, a cutback
+    // or a penalty is watched side-on, like a corner. The real match and plain
+    // EnginePlay only: a feature with its own scene keeps its picture, and a
+    // goal replay keeps the facing it was recorded in.
+    if (newViewRef.current && !replay && !sceneRef.current) turnWideChance(sc, !hasRunup(sc.kind), canvasHW());
     facingRef.current = sc.facing ?? "up";
     // A feature that asks for its own close camera keeps it (scene.ownFrame).
     if (!newViewRef.current || sceneRef.current?.ownFrame) {
@@ -6807,7 +6812,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (phaseRef.current === "runup") {
       const ru = runupRef.current;
       if (!ru || ru.arrived || !ru.nudge) return;
-      nudgeDragRef.current = { x0: e.clientX, base: ru.nudgeM };
+      nudgeDragRef.current = { x0: e.clientX, y0: e.clientY, base: ru.nudgeM };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
@@ -6878,10 +6883,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const ru = runupRef.current;
       const canvas = canvasRef.current;
       if (ru && !ru.arrived && canvas) {
-        // A penalty is always watched straight on ("up"), so sideways on the
-        // screen is sideways along the goal line.
+        // Watched straight on ("up"), sideways on the screen is sideways along
+        // the goal line. Watched side-on (Wide chances: New) the goal line runs
+        // down the screen: "right" has pitch x going down, "left" going up.
         const vp = viewportRef.current;
-        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvasBox().width,
+        const f = facingRef.current;
+        const along = f === "right" ? e.clientY - nudgeDragRef.current.y0
+          : f === "left" ? nudgeDragRef.current.y0 - e.clientY
+          : e.clientX - nudgeDragRef.current.x0;
+        const m = nudgeFromDrag(along, canvasBox().width,
           // New view: the same finger nudges as far as it does in the classic frame.
           newViewRef.current ? engineFrameOf(scenarioRef.current).x2 - engineFrameOf(scenarioRef.current).x1 : vp.x2 - vp.x1);
         ru.nudgeM = Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeDragRef.current.base + m));
