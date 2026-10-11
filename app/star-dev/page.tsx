@@ -216,6 +216,8 @@ const FaceEditorScreen = lazyScreen(() => import("@/components/star/FaceEditorSc
 const FakeFaceEditorScreen = lazyScreen(() => import("@/components/star/FakeFaceEditorScreen"));
 const MediaFeed = lazyScreen(() => import("@/components/star/MediaFeed"));
 const BallonDor = lazyScreen(() => import("@/components/star/BallonDor"));
+// The Ballon d'Or night: the ceremony (New) or the screen above (Old) — Settings → Look.
+const BallonDorNight = lazyScreen(() => import("@/components/star/BallonDorNight"));
 const Shop = lazyScreen(() => import("@/components/star/Shop"));
 const ShowroomShop = lazyScreen(() => import("@/components/star/shop2d/ShowroomShop"));
 const Shop3D = lazyScreen(() => import("@/components/star/Shop3D"));
@@ -254,7 +256,7 @@ const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoment
 const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
-  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, PotmWinModal, DilemmaModal,
+  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
   ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferWindow, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
@@ -4154,7 +4156,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "ballon-dor") {
-    return <BallonDor career={career} onContinue={handleBallonDorContinue} />;
+    return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
   }
 
   if (phase === "dilemma" && currentDilemma) {

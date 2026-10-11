@@ -40,11 +40,15 @@ import { retire, CAREER_SEASONS } from "@/lib/star/retirement";
 import { hallEntryFor } from "@/lib/star/hallOfFame";
 import { peekDeviceSaves } from "@/lib/star/storage";
 import type { CareerState } from "@/lib/star/types";
+import BallonDor from "@/components/star/BallonDor";
+import { BallonDorCeremony } from "@/components/star/BallonDorNight";
+import { computeBallonDorShortlist, type BallonDorEntry, type BallonDorResult } from "@/lib/star/ballonDor";
 
 type Source = { kind: "shape"; shape: PreviewShape } | { kind: "save"; key: string };
 type View = "menu" | "notice" | "whistle" | "overview" | "hall" | "hall-entry" | "seasons" | "card"
   | "fw-invite" | "fw-sheets" | "fw-walkout" | "fw-walkout-drawn" | "fw-ovation" | "fw-ovation-drawn" | "fw-result" | "fw-overview"
-  | "compare" | "compare-flow" | "share-link";
+  | "compare" | "compare-flow" | "share-link"
+  | "bd-win" | "bd-second" | "bd-out" | "bd-second-drawn" | "bd-out-drawn" | "bd-old" | "bd-result";
 
 /** A made-up full time for the test page: 4–3, two goals and an assist. */
 const SAMPLE_FAREWELL: MatchStats = {
@@ -65,6 +69,34 @@ const SAMPLE_FAREWELL: MatchStats = {
 };
 
 const LAST = CAREER_SEASONS ?? 20;
+
+/** Made-up rivals to fill a short list (nobody real). */
+const SAMPLE_RIVALS: [string, string][] = [
+  ["Marco Velasco", "Real Madrid"], ["Tomás Ferreira", "FC Barcelona"], ["Jonas Albrecht", "FC Bayern München"],
+  ["Luca Moretti", "Inter"], ["Kenji Arai", "Liverpool"], ["Adrien Lacroix", "Paris Saint-Germain"],
+  ["Rui Saldanha", "Manchester City"], ["Emre Kaya", "Arsenal"], ["Diego Ríos", "Atlético Madrid"], ["Sam Okafor", "Chelsea"],
+];
+
+/**
+ * The Ballon d'Or night on the test page: the career's real shortlist, with
+ * you put at `place` (1 = you win, 0 = not on the list). Padded with made-up
+ * rivals when the made-up career has fewer than ten.
+ */
+function madeUpNight(career: CareerState, place: number): BallonDorResult {
+  const real = computeBallonDorShortlist(career).entries;
+  const rivals = real.filter(e => !e.isPlayer);
+  for (const [name, club] of SAMPLE_RIVALS) {
+    if (rivals.length >= 10) break;
+    if (!rivals.some(r => r.name === name)) rivals.push({ rank: 0, isPlayer: false, name, club, goals: 30 - rivals.length * 2, assists: 12 - rivals.length, rating: 7.6, ratingIsReal: false, trophies: [], score: 0 });
+  }
+  const me: BallonDorEntry = real.find(e => e.isPlayer) ?? {
+    rank: 0, isPlayer: true, name: `${career.player.firstName} ${career.player.lastName}`, club: career.player.club,
+    goals: 31, assists: 14, rating: 7.9, ratingIsReal: true, trophies: ["Premier League"], score: 0,
+  };
+  const list = place > 0 ? [...rivals.slice(0, place - 1), me, ...rivals.slice(place - 1)] : rivals;
+  const entries = list.slice(0, 10).map((e, i) => ({ ...e, rank: i + 1 }));
+  return { entries, playerRank: place, playerNominated: place > 0 };
+}
 
 /** The career at a point: after `upTo` seasons (not retired), or the end. */
 function careerAt(source: Source, seed: number, save: CareerState | null, upTo?: number): CareerState | null {
@@ -186,6 +218,14 @@ export default function RetirementPreviewPage() {
       );
     }
   }
+  if (view.startsWith("bd-") && lastSeason) {
+    // The Ballon d'Or night (STAR_ROADMAP #7) on the career's last season.
+    const place = view === "bd-win" ? 1 : view === "bd-out" || view === "bd-out-drawn" ? 7 : 2;
+    const night = madeUpNight(lastSeason, place);
+    if (view === "bd-old") return wrap(<BallonDor key={view} career={lastSeason} result={night} onContinue={toMenu} />);
+    if (view === "bd-result") return wrap(<BallonDor key={view} career={lastSeason} result={night} startAt="result" onContinue={toMenu} />);
+    return wrap(<BallonDorCeremony key={view} career={lastSeason} result={night} drawn={view.endsWith("-drawn")} onDone={() => go("bd-result")} />);
+  }
   if (view === "compare" && finished) {
     // This career (the friend's, on the right) against the made-up legend (yours).
     const yours = hallEntryFor(previewCareer("legend", seed), 2);
@@ -284,6 +324,18 @@ export default function RetirementPreviewPage() {
           {button("▶ Full time (made-up 4–3)", "fw-result", !!farewell, "rgba(255,255,255,.1)")}
           {button("▶ The overview after it", "fw-overview", !!farewell && !!finished, "rgba(255,255,255,.1)")}
           <div className="text-[12px] font-bold text-white/60">The match itself: in the game, Dev Skip to the end of season {LAST}, then Hang them up.</div>
+        </div>
+
+        <div className="space-y-2" data-ballon-dor-tests>
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The Ballon d&apos;Or night</div>
+          {button("▶ You win · 3D", "bd-win", !!lastSeason, "#fbbf24", true)}
+          {button("▶ You come 2nd · 3D", "bd-second", !!lastSeason, "rgba(251,191,36,.25)")}
+          {button("▶ Not in the top three (7th) · 3D", "bd-out", !!lastSeason, "rgba(251,191,36,.25)")}
+          {button("▶ You come 2nd · drawn", "bd-second-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ Not in the top three · drawn", "bd-out-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ The result page after it", "bd-result", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ Old (the countdown cards)", "bd-old", !!lastSeason, "rgba(255,255,255,.1)")}
+          <div className="text-[12px] font-bold text-white/60">In the game: Settings → Look → Ballon d&apos;Or night. Made-up rivals fill the list where this career has fewer than ten.</div>
         </div>
 
         <div className="space-y-2" data-online-tests>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { computeBallonDorShortlist, type BallonDorEntry } from "@/lib/star/ballonDor";
+import { computeBallonDorShortlist, type BallonDorEntry, type BallonDorResult } from "@/lib/star/ballonDor";
 import { retirementCheck } from "@/lib/star/retirement";
 import { shortClub } from "@/lib/star/media/grammar";
 import { faceOrFake } from "@/lib/star/fakeFaces";
@@ -44,6 +44,11 @@ const GOLD = "#d4a017";
 interface Props {
   career: CareerState;
   onContinue: (userWon: boolean) => void;
+  /** Open straight on the result page (the New Ballon d'Or night shows its
+   *  ceremony first: components/star/BallonDorNight.tsx). Unset: as always. */
+  startAt?: "result";
+  /** The shortlist, when the caller already has it (the test page's made-up nights). Unset: worked out here. */
+  result?: BallonDorResult;
 }
 
 // One shared style tag, rendered into every phase's own tree below —
@@ -90,13 +95,13 @@ function Face({ image, name, size, ring }: { image?: string; name: string; size:
   );
 }
 
-export default function BallonDor({ career, onContinue }: Props) {
-  const { entries, playerRank, playerNominated } = useMemo(() => computeBallonDorShortlist(career), [career]);
+export default function BallonDor({ career, onContinue, startAt, result }: Props) {
+  const { entries, playerRank, playerNominated } = useMemo(() => result ?? computeBallonDorShortlist(career), [career, result]);
   const winner = entries[0];
   const runnerUp = entries[1];
   const playerWon = playerRank === 1;
 
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>(startAt ?? "intro");
   // Countdown goes 10 -> 3, i.e. entries[9] first, entries[2] last.
   const [countRevealed, setCountRevealed] = useState(0);
   const [revealStep, setRevealStep] = useState(0); // 0 envelope, 1 winner, 2 runner-up
