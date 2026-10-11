@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { POWER_SHOT_PERFECT_S, POWER_SHOT_SLOW_S, powerShotQuality } from "@/lib/star/canvasEngineTest";
+import { POWER_SHOT_PERFECT_S, POWER_SHOT_SLOW_S, powerShotQuality } from "@/lib/star/shotModel";
 
 /**
  * SANDBOX PROTOTYPE (Leo, 5 Oct 2026) — the power shot's strike screen, used

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { gradeContact } from "@/lib/star/shotModel";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -58,6 +59,12 @@ interface Props {
   /** A feature's teaching pause (CanvasMatch `holdAt`): the clock waits
    *  until this goes false. Absent in the real match. */
   hold?: boolean;
+  /** Shots: New (lib/star/shotModel.ts) — say how the strike came off the
+   *  boot (CLEAN, SLICED, TOPPED, SCUFFED, KNUCKLEBALL) where it was hit.
+   *  Absent: exactly the old screen. */
+  grades?: boolean;
+  /** A hard strike through the dead centre knuckles (only with `grades`). */
+  knuckles?: boolean;
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
@@ -68,7 +75,7 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -90,6 +97,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     return () => cancelAnimationFrame(raf);
   }, [motion, period]);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
+  const [graded, setGraded] = useState<{ label: string; good: boolean } | null>(null);
   const [timedOut, setTimedOut] = useState(false);
   const locked = useRef(false);
   const onTimeoutRef = useRef(onTimeout);
@@ -158,7 +166,12 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
     locked.current = true;
     setSpark({ left: r + cx * r, top: r + cy * r });
-    setTimeout(() => onContact({ cx, cy }), 200);
+    if (grades) {
+      const g = gradeContact({ cx, cy }, power, knuckles);
+      if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" });
+    }
+    // A graded strike holds a beat longer so the verdict can be read.
+    setTimeout(() => onContact({ cx, cy }), grades ? 420 : 200);
   };
 
   const powerPct = Math.round(power * 100);
@@ -370,6 +383,16 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               style={{ left: spark.left, top: spark.top }}
             >
               ⚡
+            </div>
+          )}
+          {spark && graded && (
+            <div
+              data-contact-grade={graded.label}
+              className={`kib-pop absolute left-1/2 -translate-x-1/2 -top-[22%] whitespace-nowrap rounded-lg px-3 py-1 text-lg font-black italic tracking-wider pointer-events-none select-none ${
+                graded.good ? "bg-emerald-500/90 text-white" : "bg-red-600/90 text-white"}`}
+              style={{ textShadow: "0 2px 4px rgba(0,0,0,0.6)" }}
+            >
+              {graded.label}
             </div>
           )}
         </div>

@@ -40,6 +40,16 @@ export const GAMEPLAY_SWITCHES = {
     newText: "A real football: air drag that grows with speed, a bounce and roll like cut grass, spin that dies away, round posts and a bar that send it off at the true angle (sometimes in), a net that catches it, and the same result at every frame rate.",
     oldText: "The ball from before 11 Oct 2026.",
   },
+  shotsPro: {
+    label: "Shots",
+    newText: "Where you hit the ball sets how high it arrives (top = low, middle = hip height, below = top corner). Real spread off your aim, shown as a cone on the arrow; harder, volleys, headers, long shots and a man in your face spread more. Clean contact is truer, a sliced or scuffed one is punished.",
+    oldText: "Shots from before 11 Oct 2026: a tap in the middle of the ball often flies at the bar, and almost no spread off the arrow.",
+  },
+  knucklePower: {
+    label: "Knuckleball & power shot",
+    newText: "Hit a hard shot through the dead centre of the ball and it knuckles (wobbles late). A ⚡ Power shot button on the aim screen: wind up, then hit the green circle fast for up to 1.5x pace.",
+    oldText: "No knuckleball and no power shot (test match only).",
+  },
   chanceMix: {
     label: "Chance mix (testing)",
     // Mikey, 9 Oct 2026: "the old system should still be the default and the
@@ -102,5 +112,6 @@ export const oldChances = () => gameplayVersion("chanceMix") === "old";
 export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
+export const oldShots = () => gameplayVersion("shotsPro") === "old";
 export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";
 export const oldActionCamera = () => gameplayVersion("actionCamera") === "old";
