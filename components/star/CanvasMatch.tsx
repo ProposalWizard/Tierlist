@@ -4643,6 +4643,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
         };
       },
+      // the ball in flight, and a way to set it (ball-physics stills: send a
+      // real strike at the post, the bar or the net). Dev only, like the rest.
+      ballState: () => (ballRef.current ? { ...ballRef.current, pos: { ...ballRef.current.pos }, vel: { ...ballRef.current.vel } } : null),
+      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number }) => {
+        const bl = ballRef.current;
+        if (!bl || phaseRef.current !== "flight") return false;
+        bl.pos = { x: b.x, y: b.y }; bl.z = b.z; bl.vel = { x: b.vx, y: b.vy }; bl.vz = b.vz; bl.spin = b.spin ?? 0;
+        bl.landAt = undefined;
+        return true;
+      },
       // a dribble run now, while a chance is waiting to be taken (test bots:
       // the dribble chance is a roll of the hidden match, so it can take a
       // whole match to come up). The same set-up the hidden match's request does.

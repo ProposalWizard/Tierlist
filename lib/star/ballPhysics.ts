@@ -72,7 +72,7 @@ export const ROLL_ON = 0.4;
 const MIN_BOUNCE_VZ = 0.5;        // same as the Old ball: below this it rolls
 
 // ── Spin ─────────────────────────────────────────────────────────────────────
-export const SPIN_TAU_AIR = 5;     // s
+export const SPIN_TAU_AIR = 10;     // s
 export const SPIN_TAU_GROUND = 0.7;// s
 const CURL_K = 0.48;               // the Old curl strength, unchanged
 const BOUNCE_SPIN_KEEP = 0.82;

@@ -284,6 +284,54 @@ for (const mode of ["old", "new"] as const) {
 }
 setBallPhysics("old");
 
+// ── 7. What it does to the game ──────────────────────────────────────────────
+// 1,500 chances of every shooting kind, struck the way a decent player would,
+// each played with the Old and the New ball from the same seed.
+console.log("\n7. THE GAME — 1,500 shots (7 kinds), Old ball vs New ball, same seeds");
+{
+  const SHOOT = ["one_on_one", "tight_angle", "long_range", "volley", "header", "penalty", "free_kick"] as const;
+  const tally = { old: {} as Record<string, number>, new: {} as Record<string, number> };
+  const frame = { old: { hits: 0, inOff: 0 }, new: { hits: 0, inOff: 0 } };
+  const N = 1500;
+  for (const mode of ["old", "new"] as const) {
+    setBallPhysics(mode);
+    for (let s = 0; s < N; s++) {
+      const kind = SHOOT[s % SHOOT.length];
+      const rng = mulberry32(s * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const side = rng() < 0.5 ? -1 : 1;
+      const cx = (POST_L + POST_R) / 2;
+      const tx = cx + side * ((POST_R - POST_L) / 2 - 0.6) * (0.55 + rng() * 0.45);
+      const dir = { x: tx - sc.ball.x + (rng() - 0.5) * 1.2, y: -Math.max(sc.ball.y, 1) };
+      const power = Math.min(1, 0.42 + Math.hypot(sc.ball.x - cx, sc.ball.y) / 40) * (0.85 + rng() * 0.3);
+      const ball = launch(sc, dir, power, { cx: (rng() - 0.5) * 0.8, cy: -0.1 - rng() * 0.6 },
+        { power: 55 + rng() * 25, technique: 55 + rng() * 25 }, rng);
+      let out: Outcome | null = null;
+      const h = 1 / 180;
+      for (let i = 0; i < 180 * 12 && !out; i++) {
+        stepDefenders(sc, h, ball.pos, false, ball);
+        stepKeeper(sc, h);
+        stepReactions(sc, ball, h, rng);
+        out = stepBall(ball, sc, rng, h);
+      }
+      const k = out ?? "none";
+      tally[mode][k] = (tally[mode][k] ?? 0) + 1;
+      if ((ball.postHits ?? 0) > 0) { frame[mode].hits++; if (out === "goal" || out === "rebound") frame[mode].inOff++; }
+    }
+  }
+  const keys = [...new Set([...Object.keys(tally.old), ...Object.keys(tally.new)])].sort();
+  for (const k of keys) {
+    const o = tally.old[k] ?? 0, n = tally.new[k] ?? 0;
+    console.log(`  ${k.padEnd(9)} ${String(o).padStart(4)} → ${String(n).padStart(4)}   (${(o / N * 100).toFixed(1)}% → ${(n / N * 100).toFixed(1)}%)`);
+  }
+  const goals = (m: "old" | "new") => (tally[m].goal ?? 0) + (tally[m].rebound ?? 0);
+  console.log(`  goals ${goals("old")} → ${goals("new")} · touched the woodwork ${frame.old.hits} → ${frame.new.hits}, of which went in ${frame.old.inOff} → ${frame.new.inOff}`);
+  // Realism must not turn the game upside down: conversion within ±4 points.
+  check(Math.abs(goals("new") - goals("old")) / N < 0.04, `New ball moves conversion by ${((goals("new") - goals("old")) / N * 100).toFixed(1)} points`);
+}
+setBallPhysics("old");
+
 if (problems.length) {
   console.error(`\n${problems.length} problem(s):\n  - ${problems.join("\n  - ")}`);
   process.exit(1);
