@@ -162,7 +162,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),
-    ballPhysics: N("ballPhysics"),
+    ballPhysics: O("ballPhysics"),
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
     actionCamera: N("actionCamera"),

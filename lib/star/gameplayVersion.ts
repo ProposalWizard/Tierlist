@@ -33,7 +33,10 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "Every clearance is clean (you still see the boot fly off the screen).",
   },
   ballPhysics: {
-    label: "Ball physics",
+    label: "Ball physics (testing)",
+    // 12 Oct 2026: off by default until seen on a screen; with Keeper pro it
+    // moves the calibrated finishing/keeper numbers (finishing corner floor 68% vs 70%).
+    defaultVersion: "old",
     newText: "A real football: air drag that grows with speed, a bounce and roll like cut grass, spin that dies away, round posts and a bar that send it off at the true angle (sometimes in), a net that catches it, and the same result at every frame rate.",
     oldText: "The ball from before 11 Oct 2026.",
   },
