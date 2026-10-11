@@ -7,7 +7,8 @@ import {
   requestOf, weeksUntilAskable, type ClubReply,
 } from "@/lib/star/transferRequest";
 import { divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoneyPrecise } from "@/lib/star/money";
+import { canMoveNow, januaryAhead, januaryWindowOpen } from "@/lib/star/januaryTransfer";
 import ClubBadge from "./ClubBadge";
 import { PressButton, clubTheme } from "./ui";
 import { Screen, Kicker } from "./ui/Screen";
@@ -16,8 +17,12 @@ import { Screen, Kicker } from "./ui/Screen";
  * FIND A NEW CLUB (roadmap #2, Leo 11 Oct 2026).
  *
  * Pick a league, ask every club in it or tap one club, read the answers.
- * A yes can be accepted as it stands or talked up (NegotiationScreen); the
- * deal is signed in the summer window, top of the end-of-season offers.
+ * A yes can be accepted as it stands or talked up (NegotiationScreen). The
+ * deal is signed in the January window (Join now, januaryTransfer.ts) or the
+ * summer window, top of the end-of-season offers.
+ *
+ * The answers: yes first, best first, top 5 with "Show all"; every no folded
+ * into one line that opens.
  * All the rules live in lib/star/transferRequest.ts.
  */
 
@@ -27,24 +32,41 @@ interface Props {
   onAccept: (offer: TransferOffer) => void;
   onTalk: (offer: TransferOffer) => void;
   onCallOff: () => void;
+  /** Sign the agreed deal now, in the January window. */
+  onJoinNow?: () => void;
   onBack: () => void;
 }
+
+/** How many yes cards show before "Show all". */
+const YES_SHOWN = 5;
+
+/** A wage you can tell apart from the next one: ★1.5k, not ★1k. */
+const wageText = (w: number) => `★${formatMoneyPrecise(w)}`;
+
+const ROLE_RANK: Record<string, number> = { "Star man": 3, "First team": 2, Rotation: 1, "Squad player": 0 };
 
 const SHORT_LEAGUE: Record<CareerDivision, string> = {
   premier: "Premier", championship: "Champ'ship", league_one: "League 1", league_two: "League 2",
   national_league: "National", national_league_north: "Nat. North", national_league_south: "Nat. South",
 };
 
-export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCallOff, onBack }: Props) {
+export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCallOff, onJoinNow, onBack }: Props) {
   const req = requestOf(career);
   const [league, setLeague] = useState<CareerDivision>(req.league ?? divisionOf(career));
   const [picked, setPicked] = useState<string | null>(null);
+  const [allYes, setAllYes] = useState(false);
+  const [showNo, setShowNo] = useState(false);
   const theme = clubTheme(career.player.club, career);
   const block = canAsk(career);
   const clubs = clubsIn(career, league);
   const overall = playerOverall(career);
   const replies = req.league === league ? req.replies : [];
-  const yes = replies.filter(r => r.yes && r.offer);
+  // Best first: the bigger club, then the bigger role, then the bigger wage.
+  const yes = replies.filter(r => r.yes && r.offer).sort((a, b) =>
+    b.strength - a.strength
+    || (ROLE_RANK[b.role ?? ""] ?? 0) - (ROLE_RANK[a.role ?? ""] ?? 0)
+    || (b.offer!.wage - a.offer!.wage));
+  const yesShown = allYes ? yes : yes.slice(0, YES_SHOWN);
   const no = replies.filter(r => !r.yes);
   const boss = Math.round(career.relationships.boss);
 
@@ -56,7 +78,11 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
           <h1 className="kit-drop-in mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
             Find a new club
           </h1>
-          <p className="mt-1 text-xs font-bold text-white">Moves happen in the summer window.</p>
+          <p className="mt-1 text-xs font-bold text-white" data-transfer-window>
+            {januaryWindowOpen(career) ? "The January window is open: moves happen now."
+              : januaryAhead(career) ? "Moves happen in January or the summer."
+              : "Moves happen in the summer window."}
+          </p>
         </div>
 
         {/* Your manager's mood: the price of asking. */}
@@ -72,7 +98,7 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
         </div>
 
         {req.agreed ? (
-          <AgreedCard career={career} offer={req.agreed} onCallOff={onCallOff} />
+          <AgreedCard career={career} offer={req.agreed} onCallOff={onCallOff} onJoinNow={onJoinNow} />
         ) : (
           <>
             {/* The league. */}
@@ -92,18 +118,36 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
             {/* The answers, newest first: yes before no. */}
             {yes.length > 0 && (
               <div className="mt-3 space-y-2" data-transfer-yes>
-                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                  {yes.length === 1 ? "1 club wants you" : `${yes.length} clubs want you`}
+                <div className="flex items-baseline justify-between text-[10px] font-black uppercase tracking-widest">
+                  <span className="text-emerald-300">{yes.length === 1 ? "1 club wants you" : `${yes.length} clubs want you`}</span>
+                  <span className="text-white">You're on {wageText(career.contract.wage)} a week</span>
                 </div>
-                {yes.map(r => <YesCard key={r.club} career={career} reply={r} onAccept={onAccept} onTalk={onTalk} />)}
+                {yesShown.map(r => <YesCard key={r.club} career={career} reply={r} onAccept={onAccept} onTalk={onTalk} />)}
+                {yes.length > YES_SHOWN && (
+                  <button
+                    onClick={() => setAllYes(v => !v)}
+                    className="kib-press w-full bg-white/10 py-2 text-[12px] font-black text-white"
+                    style={{ borderRadius: 2 }}
+                    data-transfer-show-all
+                  >
+                    {allYes ? "Show the top 5" : `Show all (${yes.length})`}
+                  </button>
+                )}
               </div>
             )}
             {no.length > 0 && (
               <div className="mt-3" data-transfer-no>
-                <div className="text-[10px] font-black uppercase tracking-widest text-red-300">
-                  {no.length === 1 ? "1 said no" : `${no.length} said no`}
-                </div>
-                <div className="kit-card mt-1 divide-y divide-white/10">
+                <button
+                  onClick={() => setShowNo(v => !v)}
+                  className="kit-card kib-press flex w-full items-center justify-between px-3 py-2 text-left"
+                  data-transfer-no-toggle
+                >
+                  <span className="text-[12px] font-black text-red-300">
+                    {no.length === 1 ? "1 club said no" : `${no.length} clubs said no`}
+                  </span>
+                  <span className="text-[11px] font-black text-white">{showNo ? "Hide ▴" : "Why ▾"}</span>
+                </button>
+                {showNo && <div className="kit-card mt-1 divide-y divide-white/10">
                   {no.map(r => (
                     <div key={r.club} className="flex items-center gap-2 px-2 py-1.5">
                       <ClubBadge club={r.club} size={20} />
@@ -113,7 +157,7 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
                       </div>
                     </div>
                   ))}
-                </div>
+                </div>}
               </div>
             )}
 
@@ -151,7 +195,7 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
             {block.ok ? (
               <PressButton
                 variant="primary"
-                onClick={() => onAsk(league, picked ?? undefined)}
+                onClick={() => { setAllYes(false); setShowNo(false); onAsk(league, picked ?? undefined); }}
                 className="mt-3 w-full py-3 normal-case"
               >
                 {picked ? `Ask ${picked} (manager −${ASK_CLUB_BOSS_COST})` : `Ask every club (manager −${ASK_LEAGUE_BOSS_COST})`}
@@ -191,8 +235,8 @@ function YesCard({ career, reply, onAccept, onTalk }: {
       </div>
       <p className="mt-1 text-[11px] font-bold text-white">“{reply.message}”</p>
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
-        <Cell label="Wage" value={`★${formatMoney(o.wage)}`} tone={o.wage > career.contract.wage ? "up" : o.wage < career.contract.wage ? "down" : undefined} />
-        <Cell label="Signing" value={`★${formatMoney(o.signingFee)}`} />
+        <Cell label="Wage /wk" value={wageText(o.wage)} tone={o.wage > career.contract.wage ? "up" : o.wage < career.contract.wage ? "down" : undefined} />
+        <Cell label="Signing" value={wageText(o.signingFee)} />
         <Cell label="Years" value={`${o.seasons}`} />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -203,7 +247,10 @@ function YesCard({ career, reply, onAccept, onTalk }: {
   );
 }
 
-function AgreedCard({ career, offer, onCallOff }: { career: CareerState; offer: TransferOffer; onCallOff: () => void }) {
+function AgreedCard({ career, offer, onCallOff, onJoinNow }: {
+  career: CareerState; offer: TransferOffer; onCallOff: () => void; onJoinNow?: () => void;
+}) {
+  const now = canMoveNow(career) && !!onJoinNow;
   return (
     <div className="kit-card mt-3 p-4" data-transfer-agreed>
       <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Deal agreed</div>
@@ -212,11 +259,20 @@ function AgreedCard({ career, offer, onCallOff }: { career: CareerState; offer: 
         <span className="truncate text-lg font-black text-white">{offer.club}</span>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
-        <Cell label="Wage" value={`★${formatMoney(offer.wage)}`} tone={offer.wage > career.contract.wage ? "up" : offer.wage < career.contract.wage ? "down" : undefined} />
-        <Cell label="Signing" value={`★${formatMoney(offer.signingFee)}`} />
+        <Cell label="Wage /wk" value={wageText(offer.wage)} tone={offer.wage > career.contract.wage ? "up" : offer.wage < career.contract.wage ? "down" : undefined} />
+        <Cell label="Signing" value={wageText(offer.signingFee)} />
         <Cell label="Years" value={`${offer.seasons}`} />
       </div>
-      <p className="mt-2 text-[12px] font-bold text-white">You sign when the season ends.</p>
+      <p className="mt-2 text-[12px] font-bold text-white">
+        {now ? "The January window is open. Join them now, or wait for the summer."
+          : januaryAhead(career) ? "You can join in the January window."
+          : "You sign when the season ends."}
+      </p>
+      {now && (
+        <PressButton variant="primary" onClick={onJoinNow} className="mt-2 w-full py-3 normal-case" data-transfer-join-now>
+          Join {offer.club} now
+        </PressButton>
+      )}
       <PressButton variant="danger" size="sm" onClick={onCallOff} className="mt-2 w-full normal-case">Call it off</PressButton>
     </div>
   );

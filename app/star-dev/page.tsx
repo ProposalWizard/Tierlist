@@ -61,6 +61,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import {
   askForMove, askSeed, agreeMove, callOffMove, clearAfterWindow, summerWindowOffers, talksFailed, requestOf,
 } from "@/lib/star/transferRequest";
+import { canMoveNow, completeJanuaryMove } from "@/lib/star/januaryTransfer";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
@@ -2049,7 +2050,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // then `phase` is "transfer-signing", not "relegation-move", so reading it
   // fresh there would always read false and silently drop the forced-move
   // handling for a relegated player.
-  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean } | null>(null);
+  // `january`: a deal from a transfer request signed mid-season in the
+  // January window (januaryTransfer.ts) — no season rollover after it.
+  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean; january?: boolean } | null>(null);
 
   // Choosing a club used to complete the move immediately — no contract, no
   // signature, nothing that looked like the moment your very first pro deal
@@ -2067,6 +2070,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
+    // ── The January move: you join now, mid-season, and play on ──
+    if (pendingSignOffer.january) {
+      const joined = completeJanuaryMove(career, offer);
+      setPendingSignOffer(null);
+      if (joined === career) { setPhase("transfer-request"); return; }
+      fetchRealSquad(offer.club).then((squad) => {
+        setCareer(c => (c && c.player.club === offer.club ? { ...c, squad: ageOwnFetchedForCareer(c, offer.club, squad) } : c));
+      });
+      joined.media = generateForCareer(joined,
+        { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
+      pushNews(signingNews(joined, offer.club));
+      setCareer(joined);
+      setPhase("dashboard");
+      return;
+    }
     // The summer window has happened: any deal from a transfer request is done with.
     const moved = clearAfterWindow(acceptOffer(career, offer));
     // A club from another division (a request, or a good season's extra
@@ -2112,6 +2130,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setTalkOffer(offer);
     setPhase("transfer-request-talk");
   }, []);
+  // January window open and a deal agreed: sign it now (januaryTransfer.ts).
+  const handleJoinNow = useCallback(() => {
+    if (!career || !canMoveNow(career)) return;
+    const agreed = requestOf(career).agreed;
+    if (!agreed) return;
+    setPendingSignOffer({ offer: agreed, wasRelegationMove: false, january: true });
+    setPhase("transfer-signing");
+  }, [career]);
   const handleTransferCallOff = useCallback(() => {
     setCareer(c => (c ? callOffMove(c) : c));
   }, []);
@@ -4222,6 +4248,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onAccept={(o) => handleTransferAgree(o)}
         onTalk={handleTransferTalk}
         onCallOff={handleTransferCallOff}
+        onJoinNow={handleJoinNow}
         onBack={() => setPhase("dashboard")}
       />
     );
