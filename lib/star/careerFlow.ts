@@ -1183,7 +1183,7 @@ export function creditMatchResult(
     // numbers the manager/dressing-room/fanbase systems are built to track
     // honestly.
     // Scaled, kept as fractions and drifting to the middle (relationships.ts).
-    ...(alreadyPlayed ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
+    ...(alreadyPlayed || isInternational ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
       // Capped again after the derby scaling: one match never moves a bar more than MATCH_REL_CAP.
       const raw = { boss: capRel(stats.bossChange * derbyScale.boss), team: capRel(stats.teamChange * derbyScale.team), fans: capRel(stats.fansChange * derbyScale.fans) };
       const rel = { ...career.relationships, sponsors: newSponsorRel };
@@ -1211,10 +1211,10 @@ export function creditMatchResult(
     currentBoot,
     horse,
     squad: updatedSquad,
-    form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
+    form: alreadyPlayed || isInternational ? career.form : [stats.rating, ...career.form].slice(0, 5),
     // Item 24: the real ratings, never pulled toward 6.5 for a cameo — what
     // the shirt is judged on. Seeded from `form` on a save that predates it.
-    rawForm: alreadyPlayed ? career.rawForm
+    rawForm: alreadyPlayed || isInternational ? career.rawForm
       : [stats.rawRating ?? stats.rating, ...(career.rawForm ?? career.form)].slice(0, 5),
   };
   // Appearances at THIS club, which is what the armband is judged on — career

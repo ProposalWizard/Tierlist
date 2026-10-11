@@ -225,10 +225,6 @@ export const DATA_TEMPLATES: Template[] = [
     weight: 3,
   },
   {
-    id: "in-callup", archetype: "insider", tags: ["international"],
-    body: "🚨 {player} called up. First time in the squad. Deserved.",
-  },
-  {
     id: "in-wonderkid", archetype: "insider", events: ["wonderkid-hype"], requires: ["player", "club"],
     body: "⚠️ Been asking around about {player} at {club}. Every scout who's seen him says the same thing — this one's the real deal.",
     weight: 3,

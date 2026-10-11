@@ -418,6 +418,25 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   return out;
 }
 
+/**
+ * Your nation's own account ("England", @England), for the international
+ * career's posts (feed.ts generateForInternational). Not in `buildRoster`:
+ * it only ever posts about your nation's matches and your caps, so it is
+ * added to that one cycle rather than sitting in the club world where a
+ * fact-less career event could reach it. Drawn in the nation's colours.
+ */
+export function nationalTeamAccount(nation: string, kit: { shirt: string; trim: string }, strength = 75): MediaAccount {
+  const acc = account({
+    handle: `@${nation.replace(/[^A-Za-z]/g, "")}`, name: nation, archetype: "club", verified: true,
+    followers: Math.round(1_000_000 + Math.max(0, strength - 50) * 250_000),
+  }, `nation|${nation}`, new Set());
+  return {
+    ...acc,
+    avatar: { ...acc.avatar, initials: initialsOf(nation), tint: kit.shirt, tint2: kit.trim },
+    allegiance: { club: nation, polarity: 1 },
+  };
+}
+
 /** Your own account. Handled separately because it is you, and it posts last. */
 export function selfAccount(career: CareerState): MediaAccount {
   const name = `${career.player.firstName} ${career.player.lastName}`;
