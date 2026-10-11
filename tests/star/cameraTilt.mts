@@ -1,5 +1,5 @@
-import { buildScenario, initDefenders, SCENARIO_KINDS, type Scenario, type Viewport, type Facing } from "../../lib/star/canvasEngine";
-import { frameForNewView, keyPointsOf, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW } from "../../lib/star/matchView";
+import { buildScenario, initDefenders, SCENARIO_KINDS, type Scenario, type Viewport } from "../../lib/star/canvasEngine";
+import { frameForNewView, framingFaults, setActionFit, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW } from "../../lib/star/matchView";
 import { CAMERA_TILT_DEFAULT, tiltFor, canvasToScreen, screenToCanvas, visibleOnScreen } from "../../lib/star/cameraTilt";
 
 /**
@@ -37,6 +37,8 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.85, NEW_VIEW_MIN_HW]) {
     const tl = canvasToScreen(t, 0, 0, W, H), tr = canvasToScreen(t, 1, 0, W, H);
     check(tl.X <= 1e-6 && tr.X >= W - 1e-6 && tl.Y <= 1e-6, `${deg}° hw ${hw}: the top of the picture leaves a gap`);
     // Everything that matters stays on screen.
+    for (const camLabel of ["new", "old"] as const) {
+    setActionFit(camLabel === "new");
     let off = 0, n = 0;
     // Corners and byline crosses are never tilted (Harry, 3 Oct 2026): they
     // are watched side-on and then cut, flat.
@@ -45,16 +47,16 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.85, NEW_VIEW_MIN_HW]) {
       const r = mulberry32(s * 31 + kind.length);
       const sc: Scenario = buildScenario(kind, r, 60, 60, 60); initDefenders(sc, r);
       const cam: Viewport = frameForNewView(sc, hw, false, deg);
-      const f: Facing = sc.facing ?? "up";
-      for (const p of keyPointsOf(sc)) {
-        const fx = (p.x - cam.x1) / (cam.x2 - cam.x1), fy = (p.y - cam.y1) / (cam.y2 - cam.y1);
-        const c = f === "right" ? { sx: 1 - fy, sy: fx } : f === "left" ? { sx: fy, sy: 1 - fx } : { sx: fx, sy: fy };
-        n++;
-        if (!visibleOnScreen(t, c.sx, c.sy)) { off++; if (off < 4) problems.push(`${deg}° hw ${hw}: ${kind} seed ${s} has something off screen`); }
-      }
+      // The rule (camera round 3, Match camera: New): the action is always
+      // on screen; everyone else wholly on or clearly off. Old: everybody on.
+      const faults = framingFaults(sc, cam, hw, deg);
+      n++;
+      if (faults.length) { off++; if (off < 4) problems.push(`${deg}° hw ${hw} ${camLabel}: ${kind} seed ${s}: ${faults[0]}`); }
     }
-    check(off === 0, `${deg}° hw ${hw}: ${off}/${n} key points off screen`);
+    check(off === 0, `${deg}° hw ${hw} ${camLabel}: ${off}/${n} chances break the framing rule`);
+    }
+    setActionFit(null);
   }
 }
 if (problems.length) { console.error(problems.slice(0, 20).join("\n")); process.exit(1); }
-console.log("cameraTilt: exact inverse, top filled, ball, you, every player, keeper and posts on screen at 20° and 30°");
+console.log("cameraTilt: exact inverse, top filled; Old: everybody on screen; New: the action on screen and nobody cut in half, at 20° and 30°");

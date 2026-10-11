@@ -4,6 +4,7 @@ import { PITCH_W } from "../../lib/star/pitch";
 import {
   cameraFor, passersOf, frameForNewView, engineFrameOf, newViewCanvasHeight,
   NEW_VIEW_WIDTH_M, NEW_VIEW_KIND_WIDTH_M, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW, MATCH_VIEW_DEFAULT,
+  setActionFit, actionFitOn,
 } from "../../lib/star/matchView";
 
 /**
@@ -40,6 +41,9 @@ const EPS = 1e-6;
 const contains = (a: { x1: number; x2: number; y1: number; y2: number }, b: typeof a) =>
   a.x1 <= b.x1 + EPS && a.x2 >= b.x2 - EPS && a.y1 <= b.y1 + EPS && a.y2 >= b.y2 - EPS;
 
+const GAP: number[] = [];
+for (const camMode of ["old", "new"] as const) {
+setActionFit(camMode === "new");
 for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
   let worstFar = 0, worstNear = 0, notContained = 0, n = 0;
   for (const kind of SCENARIO_KINDS) {
@@ -94,13 +98,32 @@ for (const hw of [NEW_VIEW_MAX_HW, 1.87, NEW_VIEW_MIN_HW]) {
         check(f !== "up" || sc.viewport.y1 > 0.5, `${kind}: play area reaches the goal line`);
         // The screen IS the play area: no out line in the middle of the grass
         // (playtest, 3 Oct 2026: the ball "stops" at an invisible line).
-        if (f === "up") check(contains(a, sc.viewport) && contains(sc.viewport, a), `${kind}: the play area is not the screen`);
+        // Match camera New (camera round 3) fits a build-up to its passers
+        // (passersFit) inside the play area, which stays the engine's: the
+        // screen sits inside it. Measured: how far a ball can leave the screen
+        // before it is out (see GAP below).
+        if (f === "up" && !actionFitOn()) check(contains(a, sc.viewport) && contains(sc.viewport, a), `${kind}: the play area is not the screen`);
+        if (f === "up" && actionFitOn()) {
+          check(contains(sc.viewport, a), `${kind}: New build-up screen pokes past the play area`);
+          // Past 2 m off a touchline the engine calls it out whatever the play area says.
+          const g = Math.max(a.x1 - Math.max(-2, sc.viewport.x1), Math.min(PITCH_W + 2, sc.viewport.x2) - a.x2, a.y1 - sc.viewport.y1);
+          GAP.push(g);
+          if (g > 6 && process.env.DBG) console.log(kind, seed, hw, JSON.stringify(a), JSON.stringify(sc.viewport), JSON.stringify(engine));
+        }
       }
     }
   }
   check(notContained === 0, `hw ${hw}: ${notContained}/${n} cameras miss part of the engine frame`);
   check(worstFar <= 7.5 + EPS, `hw ${hw}: ${worstFar.toFixed(1)} m of grass past the far touchline`);
   check(worstNear <= 8 + EPS, `hw ${hw}: ${worstNear.toFixed(1)} m of grass past the near touchline`);
+}
+}
+setActionFit(null);
+{
+  GAP.sort((a, b) => a - b);
+  const q = (f: number) => GAP[Math.min(GAP.length - 1, Math.floor(GAP.length * f))];
+  check(q(1) <= 4 + 1e-6, `New build-up: a stray pass can leave the screen ${q(1).toFixed(1)} m before it is out (≤ 4 m)`);
+  console.log(`matchView: New build-up, a ball can leave the screen at a side or the top this far before it is out: median ${q(0.5).toFixed(1)} m, 90% ${q(0.9).toFixed(1)} m, worst ${q(1).toFixed(1)} m (${GAP.length} chances)`);
 }
 
 // The canvas height: between 5:8 and 38 × 83, and the room it is given.
