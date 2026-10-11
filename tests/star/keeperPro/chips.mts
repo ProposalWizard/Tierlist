@@ -1,8 +1,8 @@
 /**
  * Chips and shots at his body: a report (not a test). KEEPER=old for Old.
- *   npx tsx tests/star/keeperProChips.mts
+ *   npx tsx tests/star/keeperPro/chips.mts
  */
-import { shoot, saveRate, pctS } from "./keeperProHarness.mts";
+import { shoot, saveRate, pctS } from "./harness.mts";
 
 const store = new Map<string, string>();
 (globalThis as { localStorage?: unknown }).localStorage = {

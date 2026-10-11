@@ -1,9 +1,9 @@
 /**
  * Crosses and through balls: how often the keeper comes and what he does.
  * Not a test: a report. KEEPER=old for Settings → Keeper pro: Old. N per row.
- *   npx tsx tests/star/keeperProCrosses.mts
+ *   npx tsx tests/star/keeperPro/crosses.mts
  */
-import { deliver, pctS } from "./keeperProHarness.mts";
+import { deliver, pctS } from "./harness.mts";
 
 const store = new Map<string, string>();
 (globalThis as { localStorage?: unknown }).localStorage = {

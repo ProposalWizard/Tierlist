@@ -4,12 +4,12 @@
  * written down. Used by tests/star/keeperPro.mts (and its --report mode, which
  * prints the before/after table in docs/gameplay15/keeper.md).
  */
-import * as E from "../../lib/star/canvasEngine";
-import { makeChance } from "../../lib/star/chanceMaker";
-import { strikeKind, stepKind } from "../../lib/star/kindRules";
-import { mulberry32 } from "../../lib/star/season";
-import { CX, POST_L, POST_R, GOAL_H } from "../../lib/star/pitch";
-import * as B from "../../lib/star/keeperBrain";
+import * as E from "../../../lib/star/canvasEngine";
+import { makeChance } from "../../../lib/star/chanceMaker";
+import { strikeKind, stepKind } from "../../../lib/star/kindRules";
+import { mulberry32 } from "../../../lib/star/season";
+import { CX, POST_L, POST_R, GOAL_H } from "../../../lib/star/pitch";
+import * as B from "../../../lib/star/keeperBrain";
 
 const H = 1 / 180;
 
@@ -46,6 +46,8 @@ export interface ShotOpts {
   aim?: "any" | "corner" | "body";
   power?: [number, number];
   cy?: [number, number];
+  /** Keeper pro on/off for this shot (absent = the switch). */
+  pro?: boolean;
   /** Taker skills. */
   skill?: number;
 }
@@ -60,7 +62,7 @@ export function shoot(kind: E.ScenarioKind, seed: number, ks: number, o: ShotOpt
   const rng = mulberry32(seed);
   const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
   E.initDefenders(sc, rng);
-  B.brainSetup(sc, (seed ^ 0x4b7e) >>> 0, ks, { openPlay: 0.55 });
+  B.brainSetup(sc, (seed ^ 0x4b7e) >>> 0, ks, o.pro === undefined ? { openPlay: 0.55 } : { openPlay: 0.55, pro: o.pro });
   for (let t = 0; t < 1.5; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainAim(sc, 1 / 60); }
   const k = sc.keeper;
   const kr = mulberry32((seed ^ 0xa11ce) >>> 0);

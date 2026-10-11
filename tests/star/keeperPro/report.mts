@@ -1,10 +1,10 @@
 /**
  * The keeper's numbers, printed (docs/gameplay15/keeper.md). Not a test: run
- *   npx tsx tests/star/keeperProReport.mts            (this device's switch: New)
- *   KEEPER=old npx tsx tests/star/keeperProReport.mts (Settings → Keeper pro: Old)
+ *   npx tsx tests/star/keeperPro/report.mts            (this device's switch: New)
+ *   KEEPER=old npx tsx tests/star/keeperPro/report.mts (Settings → Keeper pro: Old)
  * N=300 shots per kind per rating by default.
  */
-import { shoot, saveRate, pctS, type ShotRec } from "./keeperProHarness.mts";
+import { shoot, saveRate, pctS, type ShotRec } from "./harness.mts";
 
 const store = new Map<string, string>();
 (globalThis as { localStorage?: unknown }).localStorage = {

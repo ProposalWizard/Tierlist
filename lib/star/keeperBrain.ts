@@ -582,7 +582,7 @@ function planSet(sc: Scenario, st: State, ball: { x: number; y: number }): { x: 
   // The walk toward the ideal spot is capped (2.2 m; 1 m in a tight angle).
   // His set error comes on top — a bad keeper can still wander further than
   // a good one walks — but never past the cap from where he was drawn.
-  const cap = st.pro && clearThrough(sc, ball) ? Math.max(walkCapFor(sc.kind), KEEPER_PRO_BRAIN.rushCap) : walkCapFor(sc.kind);
+  const cap = walkCapFor(sc.kind);
   let tx = k.x + (ideal.x - k.x) * ab.correction;
   let ty = k.y + (ideal.y - k.y) * ab.correction;
   const bad = rng() < ab.badSet ? 2.5 : 1;
@@ -778,7 +778,10 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   // ── THE OPEN-PLAY DIAL (long shots, and the through balls finished from
   // distance) ── below 1 a shot from distance is harder to read: his reads
   // start later, are worse, and stay worse (it dips and moves in the air).
-  const dial = st.pro ? Math.max(st.opts.openPlay ?? KEEPER_BRAIN.openPlay, KEEPER_PRO_BRAIN.openPlay) : st.opts.openPlay ?? KEEPER_BRAIN.openPlay;
+  const raw = st.opts.openPlay ?? KEEPER_BRAIN.openPlay;
+  // KEEPER PRO reads distance better at every setting of the dial (the
+  // Play Area's Hard / Middle / Easier still go in that order).
+  const dial = st.pro ? 1 - (1 - raw) * KEEPER_PRO_BRAIN.farReadShare : raw;
   st.farRead = sc.kind !== "penalty" ? (1 - dial) * farness(ball) : 0;
   rt += KEEPER_BRAIN.farReadLate * st.farRead;
   st.timingErr = gauss(rng) * ab.timingErr * KEEPER_BRAIN.timingScale;
@@ -1129,12 +1132,12 @@ export const KEEPER_PRO_BRAIN = {
    * dive into the corner takes about 0.5-0.7 s after it. Tuned so an
    * 80-rated keeper's save % by distance lands on the real one (docs/gameplay15/keeper.md).
    */
-  handNow: 1.0,
-  handFull: 0.55,
-  /** A man clean through: this much further off his line than for the same shot with men in the way (m). */
-  throughExtra: 0.3,
-  /** How far from the drawn spot he may come while you aim at a man clean through (m). */
-  rushCap: 3.0,
+  handNow: 1.3,
+  handFull: 0.35,
+  /** A man clean through: he is at least this far off his line (m) — real one-on-ones 2.0-2.5 m at every distance, where a scramble from 7 m finds him at 1.2 m. */
+  throughDepth: 2.3,
+  /** While a pass is on its way to a man about to be clean through, he comes off his line by up to this much (m). */
+  rushCap: 2.2,
   /** Coming forward is a run: × his side-step speed. */
   rushSpeed: 1.9,
   /** The step toward a team-mate who has received it clean through (m). */
@@ -1142,12 +1145,13 @@ export const KEEPER_PRO_BRAIN = {
   /** A defender within this many metres of the line from the ball to goal, goal-side of it, means he is not clean through. */
   coverLane: 2.0,
   /**
-   * The open-play dial (KEEPER_BRAIN.openPlay) with Keeper pro on: how well
-   * he reads a shot from distance. 0.55 left a well-struck long shot on
-   * target going in 39% of the time against an average keeper; the real
-   * game's figure for shots from outside the box on target is nearer 12-15%.
+   * The open-play dial (KEEPER_BRAIN.openPlay) with Keeper pro on: how much
+   * of the dial's "hard to read from distance" is left. Middle (0.55) plays
+   * as 0.8. Before, a well-struck shot from 22 m+ on target beat an
+   * 80-rated keeper 17-33% of the time; real Premier League keepers concede
+   * 8-10% of on-target shots from there (StatsBomb 2015/16).
    */
-  openPlay: 0.8,
+  farReadShare: 0.45,
   // ── Claims (crosses and through balls) ──
   /** How deep he commands his box for a ball in the air: a 40 → a 95 (m from his line). */
   aerialDepth: [6.0, 9.0] as [number, number],
@@ -1196,13 +1200,13 @@ const smooth01 = (a: number, b: number, v: number) => { const t = clamp((v - a) 
  * spot in the freeze frame at the strike): 1.2 m for a shot from under 8 m,
  * 1.6 m from 8-12, 2.3-2.4 m from 12-22, 1.8-1.9 m from 22 m out. The old
  * curve fell to 0.9 m for a long shot (measured 1.1 m in the game). A man
- * clean through gets `throughExtra` more (real one-on-ones: 2.0-2.5 m).
+ * clean through: at least `throughDepth` (real one-on-ones: 2.0-2.5 m).
  */
 export function proDepth(sc: Scenario, ball: { x: number; y: number }): number {
   const D = Math.hypot(ball.x - CX, ball.y);
   const ang = Math.atan2(Math.abs(ball.x - CX), Math.max(0.5, ball.y));
   let d = 1.0 + 1.4 * smooth01(5, 15, D) - 0.5 * smooth01(20, 28, D);
-  if (clearThrough(sc, ball)) d += KEEPER_PRO_BRAIN.throughExtra;
+  if (clearThrough(sc, ball)) d = Math.max(d, KEEPER_PRO_BRAIN.throughDepth);
   const wideCut = 1 - 0.45 * Math.sin(ang);
   return clamp(d * wideCut, 0.8, Math.max(0.8, ball.y - 4));
 }

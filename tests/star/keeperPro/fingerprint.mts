@@ -4,7 +4,7 @@
  * every number the keeper touched, hashed. With Settings → Keeper pro: Old the
  * game must give exactly this hash (tests/star/keeperPro.mts checks it).
  */
-import { shoot } from "./keeperProHarness.mts";
+import { shoot } from "./harness.mts";
 
 export function keeperFingerprint(): { hash: string; n: number } {
   const kinds = ["one_on_one", "through_ball", "long_range", "tight_angle", "volley", "header", "corner", "byline_cross", "cutback"] as const;
@@ -24,7 +24,7 @@ export function keeperFingerprint(): { hash: string; n: number } {
 /** The hash recorded on 11 Oct 2026, before Keeper pro existed. */
 export const KEEPER_FINGERPRINT_BEFORE = "d8dc5b7d";
 
-if (process.argv[1]?.endsWith("keeperProFingerprint.mts")) {
+if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();
   (globalThis as { localStorage?: unknown }).localStorage = {
     getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); },
