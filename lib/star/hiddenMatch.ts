@@ -279,6 +279,15 @@ export interface HiddenMatchInputs {
    * the match is exactly what it was.
    */
   context?: MatchContext;
+  /**
+   * MATCH FLOW (Leo v0.15, the match radar job; Settings → Look → Gameplay →
+   * "Match flow": New | Old). A truer unseen match: about 25 shots and 10
+   * corners a game, the ball usually worked through midfield, possession
+   * lopsided against a much better side, score effects all match and more
+   * late chances. See the MATCH FLOW constants below. Absent or false:
+   * exactly the old match, roll for roll.
+   */
+  matchFlow?: boolean;
 }
 
 /**
@@ -496,6 +505,10 @@ export interface HiddenMatchEvent {
    * shade regardless of who it is actually about.
    */
   isOpponent?: boolean;
+  /** Match flow only: this line is a shot (on, off or blocked). */
+  shot?: boolean;
+  /** Match flow only: this line is a corner being won. */
+  corner?: boolean;
 }
 
 export interface ScenarioRequest {
@@ -804,6 +817,115 @@ export function benchConversion(zone: Zone): number {
   return zone === "box" ? CONVERT_BOX : CONVERT_DEEP;
 }
 
+// ── MATCH FLOW (Leo v0.15, the match radar job) ──────────────────────────────
+//
+// Measured over 2,000 matches per matchup (docs/gameplay15/radar.md), the old
+// unseen match had 12.9 shots a game against the Premier League's ~25, no
+// corners at all except the few you take yourself (real: ~10.5), a shot
+// converting 19% of the time (real: ~11%), only a third of chances coming
+// from a move that had passed through midfield, possession of 44% for a side
+// far weaker than its opponent (real: 30-35%), and chances spread flat across
+// the ninety minutes (real: goals rise towards the end). Every constant below
+// is set against those numbers, and every one is read only with
+// `inputs.matchFlow`, so the old match is untouched roll for roll.
+
+/** Who wins a loose ball, tilted by quality (old: TURNOVER_EDGE 0.3). */
+export const FLOW_TURNOVER_EDGE = 0.3;
+/** Score effects from kick-off: the share of the late chase in force at 0'. */
+export const FLOW_EARLY_CHASE = 0.4;
+/** More happens late: chance rates × (FLOW_LATE_FROM + FLOW_LATE_SPAN × minute/90). */
+export const FLOW_LATE_FROM = 0.7;
+export const FLOW_LATE_SPAN = 0.6;
+export const flowLate = (minute: number) => FLOW_LATE_FROM + FLOW_LATE_SPAN * Math.min(1, minute / 90);
+/** Per minute in the final third / box with no chance worked: a speculative
+ *  shot (a long effort, a snatched shot, one charged down). */
+export const FLOW_SPEC_DEEP = 0.4;
+export const FLOW_SPEC_BOX = 0.55;
+/** ...and how often one goes in. Long efforts rarely do. */
+export const FLOW_SPEC_CONVERT_DEEP = 0.03;
+export const FLOW_SPEC_CONVERT_BOX = 0.07;
+/** A shot that doesn't go in is turned behind for a corner this often. */
+export const FLOW_CORNER_FROM_SHOT = 0.45;
+/** A corner leads to a shot this often (Opta: about one in three)... */
+export const FLOW_CORNER_SHOT = 0.3;
+/** ...and that header goes in this often. */
+export const FLOW_CORNER_CONVERT = 0.09;
+/** A charged-down speculative shot that the attackers win back. */
+export const FLOW_SPEC_KEEP = 0.6;
+/** A move that ends in a missed shot: the attackers win the second ball
+ *  back this often (more for the better side), and go again from outside
+ *  the box. Without it every shot handed the ball over for a whole minute,
+ *  so a side being battered still "had" 45% of the ball. */
+export const FLOW_RECYCLE = 0.3;
+export const FLOW_RECYCLE_EDGE = 0.3;
+/** Per minute in the final third / box with no shot: a cross or a run turned
+ *  behind for a corner. */
+export const FLOW_CORNER_OPEN = 0.16;
+/** A chance worked by a side that isn't you goes in this often under the
+ *  match flow (old: 9% deep, 16% in the box, plus the moments of quality). */
+export const FLOW_CONVERT_SCALE = 0.92;
+
+const SPEC_USER = [
+  "{club} try their luck from 25 yards — over the bar.",
+  "A low drive from {club} is blocked.",
+  "{club} shoot from distance — straight at the keeper.",
+  "A snap-shot from {club} skews wide.",
+  "{club} get a shot away, but it's charged down.",
+  "A curler from {club} drifts past the post.",
+];
+const SPEC_OPP = [
+  "They try their luck from 25 yards — over the bar.",
+  "A low drive from them is blocked.",
+  "They shoot from distance — straight at your keeper.",
+  "A snap-shot from them skews wide.",
+  "They get a shot away, but it's charged down.",
+  "A curler from them drifts past the post.",
+];
+const CORNER_USER = ["Corner to {club}.", "{club} win a corner.", "Turned behind — {club} have a corner."];
+const CORNER_OPP = ["Corner to them.", "They win a corner.", "Turned behind — a corner to them."];
+const CORNER_SHOT_USER = [
+  "{club}'s corner is met — headed over.",
+  "A flick-on from {club}'s corner drifts wide.",
+  "{club} get a head to the corner — the keeper gathers.",
+];
+const CORNER_SHOT_OPP = [
+  "Their corner is met — headed over.",
+  "A flick-on from their corner drifts wide.",
+  "They get a head to the corner — your keeper gathers.",
+];
+
+/**
+ * Match flow: a shot that didn't go in may be turned behind for a corner,
+ * and a corner may bring a header. Pushes the lines and moves the score. The
+ * move ends either way — the defending side clears or the keeper restarts.
+ * Returns true if the corner's header went in.
+ */
+function flowCorner(state: HiddenMatchState, attacker: Side, rng: () => number, events: HiddenMatchEvent[], won = false): boolean {
+  if (!won && rng() >= FLOW_CORNER_FROM_SHOT) return false;
+  const opp = attacker === "opponent";
+  events.push({ minute: state.minute, text: freshLine(state, opp ? CORNER_OPP : CORNER_USER, rng), isOpponent: opp, corner: true });
+  if (rng() >= FLOW_CORNER_SHOT) return false;
+  if (rng() < FLOW_CORNER_CONVERT) {
+    if (opp) { state.oppScore += 1; state.momentum = clamp1(state.momentum - 0.3); events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true, shot: true }); }
+    else { state.userScore += 1; state.momentum = clamp1(state.momentum + 0.3); events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true, shot: true }); }
+    return true;
+  }
+  events.push({ minute: state.minute, text: freshLine(state, opp ? CORNER_SHOT_OPP : CORNER_SHOT_USER, rng), isOpponent: opp, shot: true });
+  return false;
+}
+
+/** Match flow: a move is over. A missed one may be recycled — the attackers
+ *  win the second ball and go again from a zone further out. */
+function flowEndOfMove(state: HiddenMatchState, scored: boolean, attacker: Side, edge: number, rng: () => number) {
+  const own = attacker === "user" ? edge : -edge;
+  if (!scored && rng() < Math.max(0.05, Math.min(0.6, FLOW_RECYCLE + FLOW_RECYCLE_EDGE * own))) {
+    state.possession = attacker;
+    state.zone = shift(state.zone, attacker === "user" ? -1 : 1);
+    return;
+  }
+  endOfMove(state, scored, attacker);
+}
+
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
   return {
     minute: 0,
@@ -913,7 +1035,10 @@ export function tick(
     ? 0
     : Math.min(1, (state.minute - LATE_FROM) / (90 - LATE_FROM));
   const behindBy = state.oppScore - state.userScore;
-  const chase = urgency * clamp1(behindBy / 2) * CHASE_EDGE;
+  const flow = !!inputs.matchFlow;
+  // Match flow: score effects from kick-off (a side behind pushes, a side in
+  // front sits deeper), growing to the full late chase.
+  const chase = (flow ? FLOW_EARLY_CHASE + (1 - FLOW_EARLY_CHASE) * urgency : urgency) * clamp1(behindBy / 2) * CHASE_EDGE;
   // Added time and chasing: everyone forward. See FERGIE_*.
   const lateCharge = !!inputs.fergie && state.minute > inputs.fergie.from && state.minute <= inputs.fergie.to
     && ((behindBy >= 1 && behindBy <= 2)
@@ -927,7 +1052,7 @@ export function tick(
 
   // ── Possession ──
   if (rng() < TURNOVER) {
-    const userWins = rng() < 0.5 + edge * TURNOVER_EDGE + state.momentum * 0.1 + contextRegain(state, inputs, quality);
+    const userWins = rng() < 0.5 + edge * (flow ? FLOW_TURNOVER_EDGE : TURNOVER_EDGE) + state.momentum * 0.1 + contextRegain(state, inputs, quality);
     const next: Side = userWins ? "user" : "opponent";
     if (next !== state.possession) {
       state.possession = next;
@@ -975,7 +1100,9 @@ export function tick(
       * (lateCharge ? (userHasIt ? FERGIE_CHANCES : FERGIE_EXPOSED) : 1)
       // Playstyle: dropping deep, your side concedes a little less; staying
       // up, a little more (v0.26). Balanced or no context: × 1.
-      * (!userHasIt && inputs.context ? PLAYSTYLE_CONCEDE[playstyleAt(inputs.context, state.minute)] : 1);
+      * (!userHasIt && inputs.context ? PLAYSTYLE_CONCEDE[playstyleAt(inputs.context, state.minute)] : 1)
+      // Match flow: more happens late, as legs go.
+      * (flow ? flowLate(state.minute) : 1);
 
     // One roll decides both, so Medium and Low use the random stream exactly
     // as before; only High has the extra slice above the normal rate.
@@ -1061,26 +1188,56 @@ export function tick(
 
         // It fell to someone else. Reported either way, so the match reads as a
         // match rather than as a highlight reel of your own touches.
-        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng);
+        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng) * (flow ? FLOW_CONVERT_SCALE : 1);
         if (scored) {
           state.userScore += 1;
           state.momentum = clamp1(state.momentum + 0.3);
-          events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
+          events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true, ...(flow ? { shot: true } : {}) });
         } else {
-          events.push({ minute: state.minute, text: freshLine(state, MISS_USER_ALL, rng), isOpponent: false });
+          events.push({ minute: state.minute, text: freshLine(state, MISS_USER_ALL, rng), isOpponent: false, ...(flow ? { shot: true } : {}) });
         }
-        endOfMove(state, scored, "user");
+        const cornerGoal = !scored && flow && flowCorner(state, "user", rng, events);
+        if (flow) flowEndOfMove(state, scored || cornerGoal, "user", edge, rng);
+        else endOfMove(state, scored, "user");
       } else {
-        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng);
+        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng) * (flow ? FLOW_CONVERT_SCALE : 1);
         if (scored) {
           state.oppScore += 1;
           state.momentum = clamp1(state.momentum - 0.3);
-          events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true });
+          events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true, ...(flow ? { shot: true } : {}) });
         } else {
-          events.push({ minute: state.minute, text: freshLine(state, MISS_OPP_ALL, rng), isOpponent: true });
+          events.push({ minute: state.minute, text: freshLine(state, MISS_OPP_ALL, rng), isOpponent: true, ...(flow ? { shot: true } : {}) });
         }
-        endOfMove(state, scored, "opponent");
+        const cornerGoal = !scored && flow && flowCorner(state, "opponent", rng, events);
+        if (flow) flowEndOfMove(state, scored || cornerGoal, "opponent", edge, rng);
+        else endOfMove(state, scored, "opponent");
       }
+      return { events, request: null };
+    }
+    // ── Match flow: a speculative shot ──
+    // No chance worked this minute, but a side camped in the final third gets
+    // shots away anyway: from range, snatched, charged down. Low quality, so
+    // they add shots and corners far more than goals. Only with matchFlow.
+    if (flow && rng() < (inBox ? FLOW_SPEC_BOX : FLOW_SPEC_DEEP) * flowLate(state.minute)) {
+      const attacker: Side = userHasIt ? "user" : "opponent";
+      const opp = !userHasIt;
+      if (rng() < (inBox ? FLOW_SPEC_CONVERT_BOX : FLOW_SPEC_CONVERT_DEEP)) {
+        if (opp) { state.oppScore += 1; state.momentum = clamp1(state.momentum - 0.3); events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true, shot: true }); }
+        else { state.userScore += 1; state.momentum = clamp1(state.momentum + 0.3); events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true, shot: true }); }
+        endOfMove(state, true, attacker);
+        return { events, request: null };
+      }
+      events.push({ minute: state.minute, text: freshLine(state, opp ? SPEC_OPP : SPEC_USER, rng), isOpponent: opp, shot: true });
+      const cornerGoal = flowCorner(state, attacker, rng, events);
+      // Charged down and won back now and then; otherwise the move is over.
+      if (cornerGoal || rng() >= FLOW_SPEC_KEEP) flowEndOfMove(state, cornerGoal, attacker, edge, rng);
+      return { events, request: null };
+    }
+    // ── Match flow: a cross or a run turned behind ──
+    if (flow && rng() < FLOW_CORNER_OPEN) {
+      const attacker: Side = userHasIt ? "user" : "opponent";
+      const cornerGoal = flowCorner(state, attacker, rng, events, true);
+      flowEndOfMove(state, cornerGoal, attacker, edge, rng);
       return { events, request: null };
     }
   }
