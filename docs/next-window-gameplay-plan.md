@@ -154,3 +154,27 @@ A green test suite is not enough. Every job is judged on the real game's screen.
 > clips, merging to main as each passes. Playtest each job, then one final
 > playtest and patch notes Leo v0.15 with clips. Give me 3–5 quick questions
 > first if anything needs my call (e.g. dribble style), then go.
+
+## Carry-over from 11 Oct (do first)
+
+- **Camera round 3** (`lib/star/matchView.ts`, switched off: `ACTION_FIT = false`).
+  - Cause found and measured on the real screen: the camera keeps every man on
+    screen, so one straggler sets the width and the tall screen is left mostly
+    empty below.
+  - `actionOf` / `fitAction` frame only the men the chance is about. Replayed
+    on real captures, empty grass below:
+    - one-on-one: 58% → 32%
+    - long range: 37% → 15%
+    - cutback: 78% → 65%
+  - To switch it on:
+    1. Rewrite `chanceFraming`, `cameraTilt` and `emptyGrass` to the new rule
+       (the action is always on screen; everyone else is wholly on or clearly
+       off).
+    2. Find out why `deadBallFraming` fails on the cutback check.
+    3. Connect `passersFit` for build-ups.
+    4. Capture real-game stills after, and measure the drag before and after.
+  - Cutbacks and tight angles stay 44–65% empty upright. The side-on view is the
+    answer there; that is Harry's call.
+  - Captures and scripts: scratchpad `jobs/camera3/`.
+- **International duty round 2:** check the builder's branch
+  (`worktree-agent-ad641f71404e1d048`) and merge what passes.
