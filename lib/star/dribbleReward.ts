@@ -53,8 +53,9 @@ const TIER_KINDS: Record<DribbleRewardTier, [ScenarioKind, number][]> = {
  *  - passed after every wave, or clear with fewer than 7 men beaten: 3
  *  - clear having beaten 7 or more men: 4
  */
-export function dribbleRewardTier(o: { cleared: boolean; menBeaten: number; wavesBeaten: number; totalWaves: number }): DribbleRewardTier {
-  if (o.cleared) return o.menBeaten >= 7 ? 4 : 3;
+export function dribbleRewardTier(o: { cleared: boolean; menBeaten: number; wavesBeaten: number; totalWaves: number; bonusMen?: number }): DribbleRewardTier {
+  // `bonusMen`: Dribble duels runs have at most five men, so four is the clean break there.
+  if (o.cleared) return o.menBeaten >= (o.bonusMen ?? 7) ? 4 : 3;
   const total = Math.max(1, o.totalWaves);
   const f = o.wavesBeaten / total;
   if (f >= 1) return 3;
@@ -64,7 +65,7 @@ export function dribbleRewardTier(o: { cleared: boolean; menBeaten: number; wave
 }
 
 export function dribbleReward(
-  o: { cleared: boolean; menBeaten: number; wavesBeaten: number; totalWaves: number; mateX?: number },
+  o: { cleared: boolean; menBeaten: number; wavesBeaten: number; totalWaves: number; mateX?: number; bonusMen?: number },
   rng: () => number,
 ): DribbleReward {
   const tier = dribbleRewardTier(o);
