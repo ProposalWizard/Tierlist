@@ -1551,6 +1551,12 @@ export interface CareerState {
    */
   outgoingMates?: SeasonMate[];
   /**
+   * Asking for a move (lib/star/transferRequest.ts): the last answers, the
+   * clubs cooling off after a no, and a deal agreed for the summer window.
+   * Absent until the first ask.
+   */
+  transferRequest?: import("./transferRequest").TransferRequestState;
+  /**
    * Hall of Fame records already celebrated in this career (lib/star/
    * hallRecords.ts): each id once, so a record broken is a moment once.
    */
@@ -1631,6 +1637,11 @@ export type StarPhase =
   | "relationship-game"
   | "advert-shoot"
   | "season-transfer"
+  /** Asking for a move: pick a league or a club, get answers
+   *  (TransferRequest.tsx, lib/star/transferRequest.ts). */
+  | "transfer-request"
+  /** Talking terms with a club that said yes (NegotiationScreen). */
+  | "transfer-request-talk"
   | "retirement"
   /** After the Ballon d'Or night of the second-last season: "this is your
    *  final season before retirement" (CareerEnd.tsx, Leo 5 Oct 2026). */
