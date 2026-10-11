@@ -1565,6 +1565,13 @@ export interface CareerState {
    */
   transferRequest?: import("./transferRequest").TransferRequestState;
   /**
+   * Cups you are cup-tied in this season after a January move
+   * (lib/star/januaryTransfer.ts): you played in them for your old club, so
+   * the new club plays on in them without you. Only read when `season`
+   * matches the career's season.
+   */
+  cupTied?: { season: number; competitions: string[] };
+  /**
    * A world that ages (lib/star/worldAgeing.ts): the season whose rollover
    * first aged every other club's players. Absent until then (and on any
    * save from before it). A squad fetched later is aged from here to match.

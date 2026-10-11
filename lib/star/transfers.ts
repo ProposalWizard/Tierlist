@@ -71,6 +71,9 @@ export interface TransferRecord {
    *  needs it: by the time a season-end move is rolled over, the contract
    *  is already the new club's. Absent on moves from before 5 Oct 2026. */
   fromWage?: number;
+  /** "january" when signed mid-season in the January window (januaryTransfer.ts).
+   *  Absent on a summer move. */
+  window?: "january";
 }
 
 /**

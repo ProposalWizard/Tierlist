@@ -848,7 +848,11 @@ export function advanceEliminatedCups(
 
   const next = states.map((state) => {
     if (state.winner) return state;
-    if (stillIn(state, club)) return state;
+    // Cup-tied after a January move (januaryTransfer.ts): your new club is
+    // in it, but you are not, so it plays on like any cup you are out of.
+    const tied = !!career.cupTied && career.cupTied.season === career.season
+      && career.cupTied.competitions.includes(state.competition);
+    if (stillIn(state, club) && !tied) return state;
 
     let s = state;
     // Bounded the same way finishCupToWinner always was — one more than the
