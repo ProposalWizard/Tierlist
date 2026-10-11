@@ -17,6 +17,13 @@ import {
   SIX_DEPTH, BOX_DEPTH, BOX_L, BOX_R, PEN_SPOT_Y, BALL_R,
   insideGoalMouth, hitsPost,
 } from "./pitch";
+import {
+  realBallOn, integrateBallReal, coastBallReal, airDragFactor, rollDrop, bounceReal,
+  frameContact, bounceOffFrame, dragCompensate,
+} from "./ballPhysics";
+// Re-exported so a test that imports the engine flips the SAME switch the
+// engine reads (a node test can load this file and ballPhysics.ts twice).
+export { setBallPhysics, realBallOn } from "./ballPhysics";
 
 export interface Vec2 { x: number; y: number; }
 export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
@@ -3631,7 +3638,11 @@ function passLoft(scenario: Scenario, from: Vec2, to: Vec2): { speed: number; vz
     const T = d / sp, tb = blockAt / sp;
     const vz = (arriveZ - 0.08 + 0.5 * G * T * T) / T;
     const zb = 0.08 + vz * tb - 0.5 * G * tb * tb;
-    if (zb >= clearZ) return { speed: sp, vz };
+    if (zb >= clearZ) {
+      // New ball: the same landing through real air (ballPhysics.dragCompensate).
+      const c = dragCompensate(sp, vz, d);
+      return { speed: c.sh, vz: c.vz };
+    }
   }
   return null;
 }
@@ -4080,6 +4091,8 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
     const t = Math.max(dist, 2) / Sh;
     const headerTargetZ = HEADER_TARGET_Z_MIN + clamp(placement, 0, 1.6) * (HEADER_TARGET_Z_MAX - HEADER_TARGET_Z_MIN);
     vz = clamp((headerTargetZ - arrivalZ + 0.5 * G * t * t) / t, 0.3, 9);
+    // New ball: the same header through real air (no-op when Old).
+    if (realBallOn()) { const hc = dragCompensate(Sh, vz, Math.max(dist, 2), arrivalZ); Sh = hc.sh; vz = clamp(hc.vz, 0.3, 9); }
   }
   // A flat, skill-independent wobble used to be the whole of it. A real
   // finisher can bend a shot around a defender or the keeper ON PURPOSE —
@@ -4306,6 +4319,9 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
           const vy = distToKeeper / t1;
           chipSh = vy / yFrac;
           chipVz = CHIP_CLEAR_Z / t1 + 0.5 * G * t1;
+          // New ball: the same chip through real air (no-op when Old).
+          const cc = dragCompensate(chipSh, chipVz, distToGoal / yFrac, ball.z);
+          chipSh = cc.sh; chipVz = cc.vz;
         }
       }
     }
@@ -5270,10 +5286,12 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
   let x = ball.pos.x, y = ball.pos.y, z = ball.z;
   let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
   const dt = PREDICT_STEP;
+  const real = realBallOn();
   for (let s = 0; s < t - 1e-6; s += dt) {
     if (z > 0.02) {
-      const k = Math.max(0, 1 - AIR_DRAG * dt);
-      vx *= k; vy *= k;
+      // New ball: real air drag (ballPhysics.ts); Old exactly as before.
+      const k = real ? airDragFactor(vx, vy, vz, 1, dt) : Math.max(0, 1 - AIR_DRAG * dt);
+      vx *= k; vy *= k; if (real) vz *= k;
     }
     vz -= G * dt;
     z += vz * dt;
@@ -5281,10 +5299,13 @@ function predictBall(ball: Ball, t: number): { pos: Vec2; z: number } {
     y += vy * dt;
     if (z <= 0) {
       z = 0;
-      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      if (vz < -MIN_BOUNCE_VZ) {
+        if (real) { const b = bounceReal(vz, Math.hypot(vx, vy), 0, 1); vz = b.vz; vx *= b.keep; vy *= b.keep; }
+        else { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      }
       else {
         vz = 0;
-        const sp = Math.hypot(vx, vy), drop = GROUND_FRICTION * dt;
+        const sp = Math.hypot(vx, vy), drop = real ? rollDrop(sp, 1, 1, dt) : GROUND_FRICTION * dt;
         if (sp <= drop) { vx = 0; vy = 0; }
         else { const f = (sp - drop) / sp; vx *= f; vy *= f; }
       }
@@ -5320,15 +5341,19 @@ function runMeetPoint(p: Vec2, speed: number, ball: Ball): Vec2 | null {
   let x = ball.pos.x, y = ball.pos.y, z = ball.z;
   let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
   const dt = PREDICT_STEP;
+  const real = realBallOn();
   for (let s = dt; s <= RUN_MEET_T + 1e-6; s += dt) {
-    if (z > 0.02) { const k = Math.max(0, 1 - AIR_DRAG * dt); vx *= k; vy *= k; }
+    if (z > 0.02) { const k = real ? airDragFactor(vx, vy, vz, 1, dt) : Math.max(0, 1 - AIR_DRAG * dt); vx *= k; vy *= k; if (real) vz *= k; }
     vz -= G * dt; z += vz * dt; x += vx * dt; y += vy * dt;
     if (z <= 0) {
       z = 0;
-      if (vz < -MIN_BOUNCE_VZ) { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      if (vz < -MIN_BOUNCE_VZ) {
+        if (real) { const b = bounceReal(vz, Math.hypot(vx, vy), 0, 1); vz = b.vz; vx *= b.keep; vy *= b.keep; }
+        else { vz = -vz * BOUNCE_VZ; vx *= BOUNCE_H; vy *= BOUNCE_H; }
+      }
       else {
         vz = 0;
-        const sp = Math.hypot(vx, vy), drop = GROUND_FRICTION * dt;
+        const sp = Math.hypot(vx, vy), drop = real ? rollDrop(sp, 1, 1, dt) : GROUND_FRICTION * dt;
         if (sp <= drop) { vx = 0; vy = 0; } else { const f = (sp - drop) / sp; vx *= f; vy *= f; }
       }
     }
@@ -5419,16 +5444,21 @@ export function firstBounceAt(
   // a systematic offset rather than noise, because a bigger step under gravity
   // consistently overshoots. It runs once per kick, so it can afford the steps.
   const dt = 1 / 180;
+  const real = realBallOn();
+  let spin = ball.spin;
   for (let t = 0; t < horizon; t += dt) {
     const sp = Math.hypot(vx, vy);
-    if (sp > 0.01 && Math.abs(ball.spin) > 0.0001) {
-      const ax = ball.spin * CURL_K * vy;
-      const ay = ball.spin * CURL_K * -vx;
+    if (sp > 0.01 && Math.abs(spin) > 0.0001) {
+      const ax = spin * CURL_K * vy;
+      const ay = spin * CURL_K * -vx;
       vx += ax * dt; vy += ay * dt;
     }
+    if (real) spin *= Math.exp(-dt / 5);   // ballPhysics SPIN_TAU_AIR
     if (z > 0.02) {
-      const k = Math.max(0, 1 - AIR_DRAG * (conditions?.drag ?? 1) * dt);
-      vx *= k; vy *= k;
+      const k = real
+        ? airDragFactor(vx, vy, vz, conditions?.drag ?? 1, dt)
+        : Math.max(0, 1 - AIR_DRAG * (conditions?.drag ?? 1) * dt);
+      vx *= k; vy *= k; if (real) vz *= k;
       if (conditions?.wind) vx += conditions.wind * dt;
     }
     vz -= G * dt;
@@ -6587,6 +6617,11 @@ function reboundOffFrame(ball: Ball, xCross: number, rng: () => number, scenario
 export function settleBall(ball: Ball, dt: number, scenario?: Scenario) {
   if (!ball.settling || ball.resting) return;
   const cond = scenario?.conditions;
+  if (realBallOn()) {
+    // New ball: the real ball, in fixed small steps whatever the frame rate.
+    const n = Math.max(1, Math.ceil(dt * 180 - 1e-9));
+    for (let i = 0; i < n && !ball.resting; i++) coastBallReal(ball, cond, dt / n);
+  } else {
   ball.vz -= G * dt;
   ball.z += ball.vz * dt;
   ball.pos.x += ball.vel.x * dt;
@@ -6606,6 +6641,7 @@ export function settleBall(ball: Ball, dt: number, scenario?: Scenario) {
     const drop = GROUND_FRICTION * (cond?.friction ?? 1) * dt;
     if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; ball.resting = true; }
     else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
+  }
   }
 
   // ── It stops at the edge of the situation ──
@@ -6669,42 +6705,12 @@ export function stepBall(ball: Ball, scenario: Scenario, rng: () => number, dt: 
   return res;
 }
 
-function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
-  // Animation clock only (BallAction.t). Read by nothing else.
-  ball.clock = (ball.clock ?? 0) + dt;
-  // An offside offence was committed on a previous tick (the poacher playing a
-  // ball he was flagged for). The move is dead.
-  if (scenario.offsideAgainst) return "offside";
-
-  // A teammate is controlling a pass they've just received — hold the ball, then
-  // strike it. Unless he was told to do something else with it: see relayTargetFor.
-  if (ball.receiverControlT > 0) {
-    ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
-    if (ball.receiverControlT <= 0) {
-      const relay = relayTargetFor(scenario);
-      if (!playRelay(ball, scenario, relay, !relay && relayFollowerTargetFor(scenario), rng)) launchReceiverShot(ball, scenario, rng);
-    } else {
-      // A good passer plays it before the man he was told to find runs offside.
-      const relay = relayTargetFor(scenario);
-      if (relay && relayShouldGoNow(scenario, relay, ball.pos, passerQuality(scenario))) {
-        ball.receiverControlT = 0;
-        playRelay(ball, scenario, relay, false, rng);
-      }
-    }
-    return null;
-  }
-
-  // A ball that has stopped does NOT end the move. It sits on the grass and
-  // everybody walks to it (see stepReactions); whoever gets there settles it —
-  // a team-mate collects, a defender clears. The timer below is only a backstop
-  // for a ball that has somehow ended up somewhere nobody can reach.
-  if (ball.resting) ball.restT = (ball.restT ?? 0) + dt;
-
-  const prevY = ball.pos.y;
-  const prevX = ball.pos.x;
-  const prevZ = ball.z;
-  if (ball.contactCd > 0) ball.contactCd = Math.max(0, ball.contactCd - dt);
-
+/**
+ * One step of the Old ball (before 11 Oct 2026), moved here unchanged from
+ * stepBallRaw so the Old and New balls can be measured side by side
+ * (tests/star/ballPhysics.mts). The New ball is integrateBallReal (ballPhysics.ts).
+ */
+export function integrateBallOld(ball: Ball, cond: Scenario["conditions"], dt: number): boolean {
   // --- Curl (lateral bend perpendicular to travel) ---
   const speed0 = Math.hypot(ball.vel.x, ball.vel.y);
   if (speed0 > 0.01 && Math.abs(ball.spin) > 0.0001) {
@@ -6716,7 +6722,6 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   }
 
   // --- Air drag while airborne, and the wind ---
-  const cond = scenario.conditions;
   if (ball.z > 0.02) {
     const k = Math.max(0, 1 - AIR_DRAG * (cond?.drag ?? 1) * dt);
     ball.vel.x *= k;
@@ -6783,6 +6788,50 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       ball.vel.y *= f;
     }
   }
+  return bouncedThisStep;
+}
+
+function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
+  // Animation clock only (BallAction.t). Read by nothing else.
+  ball.clock = (ball.clock ?? 0) + dt;
+  // An offside offence was committed on a previous tick (the poacher playing a
+  // ball he was flagged for). The move is dead.
+  if (scenario.offsideAgainst) return "offside";
+
+  // A teammate is controlling a pass they've just received — hold the ball, then
+  // strike it. Unless he was told to do something else with it: see relayTargetFor.
+  if (ball.receiverControlT > 0) {
+    ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
+    if (ball.receiverControlT <= 0) {
+      const relay = relayTargetFor(scenario);
+      if (!playRelay(ball, scenario, relay, !relay && relayFollowerTargetFor(scenario), rng)) launchReceiverShot(ball, scenario, rng);
+    } else {
+      // A good passer plays it before the man he was told to find runs offside.
+      const relay = relayTargetFor(scenario);
+      if (relay && relayShouldGoNow(scenario, relay, ball.pos, passerQuality(scenario))) {
+        ball.receiverControlT = 0;
+        playRelay(ball, scenario, relay, false, rng);
+      }
+    }
+    return null;
+  }
+
+  // A ball that has stopped does NOT end the move. It sits on the grass and
+  // everybody walks to it (see stepReactions); whoever gets there settles it —
+  // a team-mate collects, a defender clears. The timer below is only a backstop
+  // for a ball that has somehow ended up somewhere nobody can reach.
+  if (ball.resting) ball.restT = (ball.restT ?? 0) + dt;
+
+  const prevY = ball.pos.y;
+  const prevX = ball.pos.x;
+  const prevZ = ball.z;
+  if (ball.contactCd > 0) ball.contactCd = Math.max(0, ball.contactCd - dt);
+
+  // Ball physics New | Old (lib/star/ballPhysics.ts, Settings → Gameplay).
+  // Old is the block below, byte for byte as it was.
+  const bouncedThisStep = realBallOn()
+    ? integrateBallReal(ball, scenario.conditions, dt)
+    : integrateBallOld(ball, scenario.conditions, dt);
 
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
 
@@ -7319,6 +7368,32 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     }
   }
 
+  // --- The woodwork, New ball: a real round post and bar (ballPhysics.ts) ---
+  // Checked along the whole step before the line is: a ball that clips the
+  // post meets it before it gets to the line. In off the inside of the post
+  // stays your shot and goes on to cross the line as a goal; anything that
+  // comes back out is loose, exactly as the Old rebound. Three touches of the
+  // frame in one move is pinball: the move ends there, "post".
+  if (realBallOn()) {
+    const hit = frameContact(prevX, prevY, prevZ, ball.pos.x, ball.pos.y, ball.z, scenario.goal, scenario.crossbar);
+    if (hit) {
+      ball.postHits = (ball.postHits ?? 0) + 1;
+      if (ball.postHits > 2) return "post";
+      const goingIn = bounceOffFrame(ball, prevX, prevY, prevZ, hit, scenario.goal);
+      ball.event = "post";
+      if (!goingIn) {
+        ball.loose = true;
+        ball.owner = "none";
+        ball.shot = false;
+        ball.contactCd = 0.25;
+        ball.lastTouch = "frame";
+        ball.deflected = "frame";
+      }
+      markLanding(ball, scenario);
+      return null;
+    }
+  }
+
   // --- Goal line crossing (interpolate the exact x and z at y=0) ---
   if (prevY > 0 && ball.pos.y <= 0) {
     const frac = prevY / (prevY - ball.pos.y);
@@ -7328,7 +7403,10 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // The scenario's own goal. See the note in headedForGoal.
     if (insideGoalMouth(xCross, scenario.goal.x1, scenario.goal.x2)) {
       if (zCross > crossbar + BALL_R) { ball.overBar = true; return "over"; }
-      if (zCross > crossbar - BALL_R) {
+      // New ball: the bar was met above (frameContact); a crossing this high
+      // that missed it went over the top of it.
+      if (realBallOn() && zCross > crossbar) { ball.overBar = true; return "over"; }
+      if (!realBallOn() && zCross > crossbar - BALL_R) {
         // Off the underside of the bar. It comes back down and stays live.
         const again = reboundOffFrame(ball, xCross, rng, scenario);
         if (again) { ball.z = Math.max(0.2, crossbar - 0.35); ball.vz = -Math.abs(ball.vz) * 0.5 - 1.5; return null; }
@@ -7343,10 +7421,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // the goal is SEEN rather than announced — the UI keeps stepping it while
       // the net slows it down.
       ball.inNet = true;
-      ball.vel.x *= 0.55; ball.vel.y *= 0.55; ball.vz = Math.min(ball.vz, 0);
+      // New ball: the net itself slows it (netStepReal), not a sudden chop.
+      if (!realBallOn()) { ball.vel.x *= 0.55; ball.vel.y *= 0.55; ball.vz = Math.min(ball.vz, 0); }
       return ball.loose ? "rebound" : "goal";
     }
-    if (hitsPost(xCross, scenario.goal.x1, scenario.goal.x2)) {
+    if (!realBallOn() && hitsPost(xCross, scenario.goal.x1, scenario.goal.x2)) {
       const again = reboundOffFrame(ball, xCross, rng, scenario);
       if (again) return null;
       return "post";
@@ -7452,6 +7531,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
 // Purely cosmetic — no collisions, no outcome, just the ball settling in the goal.
 export function stepBallInNet(ball: Ball, dt: number) {
   if (!ball.inNet) return;
+  if (realBallOn()) {
+    const n = Math.max(1, Math.ceil(dt * 180 - 1e-9));
+    for (let i = 0; i < n; i++) netStepReal(ball, dt / n);
+    return;
+  }
   ball.pos.x += ball.vel.x * dt;
   ball.pos.y += ball.vel.y * dt;
   ball.vz -= G * dt;
@@ -7482,6 +7566,60 @@ export function stepBallInNet(ball: Ball, dt: number) {
   else if (ball.pos.x > inR) { ball.pos.x = inR; ball.vel.x = -Math.abs(ball.vel.x) * 0.25; }
 }
 
+/**
+ * New ball: the net CATCHES it. Inside the goal the ball flies on with gravity
+ * and air drag until it meets the netting; the back and side netting give like
+ * a damped spring (it bulges about 15–25 cm, then lets go), the mesh rubs the
+ * speed off along it, and the ball drops to the grass and settles. No velocity
+ * chop at the line, nothing stops dead in the air.
+ */
+const NET_K = 420;     // spring, /s² — a 25 m/s ball sinks ~20 cm into it
+const NET_C = 38;      // damping, /s — it does not fling the ball back out
+const NET_RUB = 4;     // /s — speed along the mesh rubbed off while touching it
+function netStepReal(ball: Ball, dt: number) {
+  const back = -NET_DEPTH + 0.35;
+  const inL = POST_L + BALL_R + 0.5, inR = POST_R - BALL_R - 0.5;
+  let touching = false;
+  let ax = 0, ay = 0;
+  if (ball.pos.y < back) { ay += -NET_K * (ball.pos.y - back) - NET_C * ball.vel.y; touching = true; }
+  if (ball.pos.x < inL) { ax += -NET_K * (ball.pos.x - inL) - NET_C * ball.vel.x; touching = true; }
+  else if (ball.pos.x > inR) { ax += -NET_K * (ball.pos.x - inR) - NET_C * ball.vel.x; touching = true; }
+  ball.vel.x += ax * dt; ball.vel.y += ay * dt;
+  if (ball.pos.y > back) {
+    // Not yet at the back: still in flight.
+    const k = airDragFactor(ball.vel.x, ball.vel.y, ball.vz, 1, dt);
+    ball.vel.x *= k; ball.vel.y *= k; ball.vz *= k;
+  }
+  if (touching) {
+    const r = Math.max(0, 1 - NET_RUB * dt);
+    ball.vz *= r;
+    if (ball.pos.y < back) ball.vel.x *= r; else ball.vel.y *= r;
+  }
+  ball.vz -= G * dt;
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  ball.z += ball.vz * dt;
+  if (ball.z <= 0) {
+    ball.z = 0;
+    if (ball.vz < -0.8) {
+      const b = bounceReal(ball.vz, Math.hypot(ball.vel.x, ball.vel.y), 0, 1);
+      ball.vz = b.vz * 0.6;   // the net hangs over it, so it barely bounces
+      ball.vel.x *= b.keep; ball.vel.y *= b.keep;
+    } else {
+      ball.vz = 0;
+      const s = Math.hypot(ball.vel.x, ball.vel.y);
+      const drop = rollDrop(s, 1, 1, dt) + 2 * dt;   // the bottom of the net drags
+      if (s <= drop) { ball.vel.x = 0; ball.vel.y = 0; }
+      else { const f = (s - drop) / s; ball.vel.x *= f; ball.vel.y *= f; }
+    }
+  }
+  // Hard limits: it can bulge the net, never pass through it.
+  ball.pos.y = Math.max(ball.pos.y, -NET_DEPTH + 0.05);
+  ball.pos.x = clamp(ball.pos.x, POST_L + BALL_R, POST_R - BALL_R);
+  ball.z = Math.min(ball.z, GOAL_H - BALL_R);
+  if (ball.z >= GOAL_H - BALL_R && ball.vz > 0) ball.vz = 0;   // the roof of the net
+}
+
 // Keep a ball shot over the bar carrying on its own way after the outcome
 // has resolved — purely cosmetic, same idea as stepBallInNet, so it visibly
 // leaves the frame instead of appearing to stop dead in mid-air exactly
@@ -7489,6 +7627,13 @@ export function stepBallInNet(ball: Ball, dt: number) {
 // drag: it only has to clear the visible pitch, not land anywhere real.
 export function stepBallPastBar(ball: Ball, dt: number) {
   if (!ball.overBar) return;
+  if (realBallOn()) {
+    // New ball: same flight, real drag, and it comes down and bounces behind
+    // the goal rather than sailing on for ever.
+    const n = Math.max(1, Math.ceil(dt * 180 - 1e-9));
+    for (let i = 0; i < n; i++) coastBallReal(ball, undefined, dt / n);
+    return;
+  }
   ball.pos.x += ball.vel.x * dt;
   ball.pos.y += ball.vel.y * dt;
   ball.vz -= G * dt;
@@ -7505,6 +7650,11 @@ export function stepBallPastBar(ball: Ball, dt: number) {
 export function stepBallCleared(ball: Ball, dt: number, scenario?: Scenario) {
   if (!ball.cleared || ball.resting) return;
   const cond = scenario?.conditions;
+  if (realBallOn()) {
+    const n = Math.max(1, Math.ceil(dt * 180 - 1e-9));
+    for (let i = 0; i < n && !ball.resting; i++) coastBallReal(ball, cond, dt / n);
+    return;
+  }
   if (ball.z > 0.02) {
     const k = Math.max(0, 1 - AIR_DRAG * (cond?.drag ?? 1) * dt);
     ball.vel.x *= k; ball.vel.y *= k;

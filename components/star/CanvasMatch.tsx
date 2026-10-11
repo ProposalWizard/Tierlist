@@ -39,7 +39,8 @@ import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import Dribble3D from "./Dribble3D";
 import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldClearances, oldChances, oldKaneDrawings } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldClearances, oldChances, oldKaneDrawings, oldBallPhysics } from "@/lib/star/gameplayVersion";
+import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 import { kaneMomentsReady, loadKaneMoments } from "@/lib/star/kaneMoments";
 // Kane drawings (testing): start fetching as the match code loads, so the
 // first chance of a match can already be one.
@@ -739,6 +740,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       bodyWidth: getTuning("clearance.bodyWidth"),
       secondBalls: Math.round(getTuning("clearance.secondBalls")),
     });
+    // Ball physics New | Old (lib/star/ballPhysics.ts), read at every chance too.
+    setBallPhysics(oldBallPhysics() ? "old" : "new");
   };
   useEffect(() => { applyClearanceRules(); }, []);
   // Kane drawings (testing): fetch them in good time for the first chance.
@@ -2173,6 +2176,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
+  // New ball: flight time not yet stepped (fixed 1/180 s steps, see the loop).
+  const physAccRef = useRef(0);
   // Last-seen position per figure, so the renderer can tell who is moving and
   // put them in a running pose. Purely cosmetic — nothing reads it back.
   const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -4786,7 +4791,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // during the real strike instead, one value per substep, until it
         // runs out — which should land almost exactly on the recorded
         // outcome, since that is exactly the sequence that produced it.
-        const steps = 3;
+        // New ball (ballPhysics.ts): FIXED 1/180 s steps, as many as the
+        // frame's time holds, the rest carried to the next frame — so a 30, 60
+        // or 120 fps phone plays the exact same flight, step for step. 1/180 s
+        // is what a 60 fps phone always got (3 × 1/60 ÷ 3). Old: three steps
+        // of a third of whatever the frame took, as before.
+        const fixedStep = realBallOn() && !replaySubstepsRef.current;
+        let steps = 3;
+        if (fixedStep) {
+          physAccRef.current += dt;
+          steps = Math.floor(physAccRef.current * 180 + 1e-6);
+          physAccRef.current = Math.max(0, physAccRef.current - steps / 180);
+        }
         for (let i = 0; i < steps; i++) {
           const recorded = replaySubstepsRef.current;
           let h: number;
@@ -4794,7 +4810,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             h = recorded[replaySubstepIdxRef.current];
             replaySubstepIdxRef.current++;
           } else {
-            h = dt / steps;
+            h = fixedStep ? 1 / 180 : dt / steps;
           }
           // Recording the other half of the same fix — only while a live
           // strike (not a replay) is pending one, see handleContact and
@@ -7187,6 +7203,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // follow-up strike on a loose ball starts its own log rather than
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
+    physAccRef.current = 0;
     deflectionsRef.current = 0;
     matePlaysRef.current = [];
     // Where you struck it, for the kind of goal it was (ratings revamp, lib/star/chanceRating.ts).
