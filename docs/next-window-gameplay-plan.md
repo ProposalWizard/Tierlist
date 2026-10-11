@@ -176,5 +176,10 @@ A green test suite is not enough. Every job is judged on the real game's screen.
   - Cutbacks and tight angles stay 44–65% empty upright. The side-on view is the
     answer there; that is Harry's call.
   - Captures and scripts: scratchpad `jobs/camera3/`.
-- **International duty round 2:** check the builder's branch
-  (`worktree-agent-ad641f71404e1d048`) and merge what passes.
+- **International duty round 2:** merged on 11 Oct. Still to do:
+  - Play a whole tournament in the real game: knockout, extra time,
+    penalties, final, trophy.
+  - A score mismatch: when you are taken off late, the stats screen can show
+    one more goal for the other side than the scoreboard does. Seen 3 times. The
+    cause is somewhere in the code that plays the rest of the match without you
+    (`CanvasMatch.tsx`, around line 5925); the line was not found.
