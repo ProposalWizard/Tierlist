@@ -17,6 +17,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Top corners beat them more, weaker keepers are slower, players in front block their view, trial free kicks and penalties easier.",
     oldText: "The keepers from before 5 Oct 2026.",
   },
+  keeperPro: {
+    label: "Keeper pro",
+    newText: "Keepers hold the gentle ones and parry the hard ones somewhere believable, rush out at one-on-ones, come for crosses and overhit through balls, read long shots, and can be chipped or nutmegged.",
+    oldText: "The keepers from before 11 Oct 2026.",
+  },
   dribble: {
     label: "Dribble runs",
     newText: "Team-mates to pass to, 3–4 waves, tighter defenders, and a better chance the further you get.",
@@ -80,6 +85,7 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 }
 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
+export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
 export const oldChances = () => gameplayVersion("chanceMix") === "old";
