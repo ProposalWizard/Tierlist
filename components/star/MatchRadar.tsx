@@ -419,7 +419,7 @@ export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
           <line x1={4} x2={LW - 4} y1={11} y2={11} stroke="#fff" strokeOpacity={0.15} />
           <line x1={4 + 45 * bw} x2={4 + 45 * bw} y1={1} y2={21} stroke="#fff" strokeOpacity={0.15} strokeDasharray="2 2" />
           {ticks.map((k) => {
-            const h = Math.max(0.8, Math.abs(k.momentum) * 10);
+            const h = Math.max(0.8, Math.min(10, Math.abs(k.momentum) * 30));
             return <rect key={k.minute} x={4 + (Math.min(fullTime, k.minute) - 1) * bw} width={Math.max(0.8, bw - 0.6)} y={k.momentum >= 0 ? 11 - h : 11} height={h}
               fill={k.momentum >= 0 ? us.colour : them.colour} />;
           })}
