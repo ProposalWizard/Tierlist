@@ -39,7 +39,7 @@ import {
 import { managerTalkFor, agreedWeeklyWage, weeklyToSeason } from "@/lib/star/signingTalk";
 import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
-import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, brandScandal } from "@/lib/star/sponsorDeals";
+import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, } from "@/lib/star/sponsorDeals";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
@@ -175,6 +175,7 @@ import { setActiveFoot } from "@/lib/star/kickFoot";
 import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
 import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
+import { rollCasinoScandal, takeCasinoVisitBets, casinoBanned, casinoBanWeeksLeft } from "@/lib/star/casinoScandal";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -3174,30 +3175,42 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("skills");
   }, [career, relationshipGameKind]);
 
+  // One casino visit runs from walking in to walking out (the classic menu or
+  // the 3D room). Leaving rolls once for a press story (lib/star/casinoScandal.ts:
+  // the chance comes from the number of bets, capped at 25%). It replaces the
+  // old hidden rule (a heavy loss told your sponsors one time in four).
+  const casinoVisitStart = useRef<number | null>(null);
+  useEffect(() => {
+    const inCasino = phase === "casino-menu" || phase === "casino-3d";
+    if (inCasino && casinoVisitStart.current === null && career) {
+      casinoVisitStart.current = career.money;
+      takeCasinoVisitBets();
+    }
+  }, [phase, career]);
+  const endCasinoVisit = useCallback((c: CareerState): CareerState => {
+    const start = casinoVisitStart.current ?? c.money;
+    casinoVisitStart.current = null;
+    const bets = takeCasinoVisitBets();
+    const { career: after, story } = rollCasinoScandal(c, bets, c.money - start, Math.random());
+    if (!story) return after;
+    try {
+      return { ...after, media: generateForCareer(after, { kind: "casino-scandal", story: story.kind, step: story.step, bets: story.bets }, `casino-${after.casinoScandal?.count ?? 1}`) };
+    } catch { return after; }
+  }, []);
+
   const handleCasinoExit = useCallback((finalBank: number) => {
     if (!career) return;
     // Clamped: the casino owns the bank for the length of a session and hands
     // back a number, and a career with negative money has no way to recover.
-    // A heavy night at the tables is a story: lose more than eight weeks' wages
-    // in one visit and one time in four it reaches your sponsors.
-    const banked = { ...career, money: Math.max(0, Math.round(finalBank)) };
-    const lost = career.money - banked.money;
-    const story = lost > Math.max(1, career.contract.wage) * 8 && Math.random() < 0.25;
-    setCareer(story ? brandScandal(banked, "a casino story") : banked);
+    setCareer(endCasinoVisit({ ...career, money: Math.max(0, Math.round(finalBank)) }));
     setActiveNav("home");
     setPhase("dashboard");
-  }, [career]);
+  }, [career, endCasinoVisit]);
 
   // The 3D casino: one game closed, its bank goes back into your money and
   // you stay in the room (the same rules as leaving the classic casino).
   const handleCasinoBank = useCallback((finalBank: number) => {
-    setCareer(c => {
-      if (!c) return c;
-      const banked = { ...c, money: Math.max(0, Math.round(finalBank)) };
-      const lost = c.money - banked.money;
-      const story = lost > Math.max(1, c.contract.wage) * 8 && Math.random() < 0.25;
-      return story ? brandScandal(banked, "a casino story") : banked;
-    });
+    setCareer(c => c ? { ...c, money: Math.max(0, Math.round(finalBank)) } : c);
   }, []);
 
   const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
@@ -4296,14 +4309,27 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if ((phase === "casino-3d" || phase === "casino-menu") && career && casinoBanned(career)) {
+    // Step 4 of a casino scandal: the club has locked the doors (casinoScandal.ts).
+    const weeks = casinoBanWeeksLeft(career);
+    return (
+      <div className="min-h-screen bg-[#0b100e] text-white flex flex-col items-center justify-center gap-4 px-6 text-center" data-casino-banned>
+        <div className="text-5xl">🚫</div>
+        <div className="text-2xl font-black">The club has banned you from the casino</div>
+        <div className="text-base font-bold text-white">After the stories in the papers, the doors are locked for {weeks} more week{weeks === 1 ? "" : "s"}.</div>
+        <button className="mt-2 rounded-xl bg-emerald-600 px-6 py-3 font-black" onClick={() => { setActiveNav("home"); setPhase("dashboard"); }}>Back home</button>
+      </div>
+    );
+  }
+
   if (phase === "casino-3d" || (phase === "casino-menu" && casinoLook === "3d" && casino3dPossible())) {
     // The 3D casino room. Each station opens that one existing game over the
     // room; its doors lead out into the garden at the casino's doors.
     return (
       <Casino3D
         career={career}
-        onBack={() => { setActiveNav("home"); setPhase("dashboard"); }}
-        onDoor={() => { setGardenArrive("casino"); setPhase("garden"); }}
+        onBack={() => { if (career) setCareer(endCasinoVisit(career)); setActiveNav("home"); setPhase("dashboard"); }}
+        onDoor={() => { if (career) setCareer(endCasinoVisit(career)); setGardenArrive("casino"); setPhase("garden"); }}
         onBank={handleCasinoBank}
         renderGame={(game, done) => game
           ? <Casino hud={screenHud("casino")} bankStart={career.money} career={career} startGame={game} onExit={(bank) => { handleCasinoBank(bank); done(); }} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />

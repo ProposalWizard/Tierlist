@@ -17,6 +17,7 @@
  * to show what was rolled. Leaving hands the bank back exactly as leaving a
  * flat game does (onLeave → page.tsx handleCasinoBank).
  */
+import { noteCasinoBet } from "@/lib/star/casinoScandal";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { CasinoController } from "@/lib/star/casino3d/scene";
@@ -74,6 +75,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     );
     if (played.kind === "error") { setBusy(false); setNote(played.message); return; }
     const { winner, payout: win } = played.result;
+    noteCasinoBet();
     setBank(bank0 - stake);
     ctrl.staff("croupier");
     await ctrl.games.roulette(winner);
@@ -94,6 +96,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
       () => slotsRound(stake, Math.random),
     );
     if (played.kind === "error") { setBusy(false); setNote(played.message); return; }
+    noteCasinoBet();
     setBank(bank0 - stake);
     ctrl.pull();
     await sleep(PULL_AT * 1000);
@@ -125,6 +128,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     if (played.kind === "error") { setBusy(false); setNote(played.message); return; }
     const r = played.result;
     stakeRef.current = stake;
+    noteCasinoBet();
     setBank(bank - stake);
     await ctrl.games.bjClear();
     ctrl.staff("dealer");
@@ -195,6 +199,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     );
     if (played.kind === "error") { setBusy(false); setNote(played.message); return; }
     const { scores, payout } = played.result;
+    noteCasinoBet();
     setBank(bank - stake);
     await ctrl.games.race(scores, SILKS, p);
     if (!alive.current) return;

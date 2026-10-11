@@ -1315,6 +1315,8 @@ export interface CareerState {
   starBest?: import("./starPoints").StarBest;
   /** Wearing the armband at your current club. */
   captain?: boolean;
+  /** Casino stories this season, the cooldown and any casino ban (lib/star/casinoScandal.ts). */
+  casinoScandal?: import("./casinoScandal").CasinoScandalState;
   /** The armband was just earned (careerFlow) and the manager hasn't told you
    *  yet: his "you're my captain" moment on Home (lib/star/managerMoments.ts).
    *  Cleared when seen. Never set by the owner path (appointSelfCaptain). */

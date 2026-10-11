@@ -226,6 +226,8 @@ export interface CareerRecord {
     | { kind: "retirement"; goals: number; apps: number; trophies: number }
     /** A Hall of Fame record (your own retired careers' best) broken — lib/star/hallRecords.ts. */
     | { kind: "hall-record"; record: string; holder: string; was: number; now: number; unit: string }
+    /** A casino night reached the papers (lib/star/casinoScandal.ts). Step 1-4 is how bad it is. */
+    | { kind: "casino-scandal"; story: "spotted" | "lost" | "won"; step: 1 | 2 | 3 | 4; bets: number }
     | { kind: "season-end"; position: number; headline: string; detail: string };
 }
 
