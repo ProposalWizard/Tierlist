@@ -27,6 +27,94 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.45",
+      "title": "Leo's patch notes — the gameplay round: camera, keeper, shots, ball, radar, dribbling",
+      "publishedAt": "2026-10-12T00:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
+      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics (testing, off by default).",
+      "stats": [
+        {
+          "value": "6",
+          "label": "gameplay jobs merged"
+        },
+        {
+          "value": "39% → 28%",
+          "label": "empty grass on screen"
+        },
+        {
+          "value": "13 → 24",
+          "label": "shots a match in the game you don't play (real 25)"
+        },
+        {
+          "value": "76% → 46%",
+          "label": "take-ons won (real ~50%)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Tighter match camera",
+              "detail": "Any chance: less empty grass. Settings → Look → Match camera."
+            },
+            {
+              "title": "Late-sub score matches",
+              "detail": "Stats screen score = scoreboard."
+            },
+            {
+              "title": "Keeper pro",
+              "detail": "He holds about half his saves; parries go wide."
+            },
+            {
+              "title": "Shot cone and contact grade",
+              "detail": "Aim screen cone; CLEAN / SLICED on the strike screen."
+            },
+            {
+              "title": "Knuckleball and ⚡ power shot",
+              "detail": "⚡ button bottom-left on the aim screen."
+            },
+            {
+              "title": "Match radar",
+              "detail": "Mini-pitch above the commentary between chances."
+            },
+            {
+              "title": "Dribble duels",
+              "detail": "He jockeys; a feint at the right time beats him."
+            },
+            {
+              "title": "Top-down dribble option",
+              "detail": "Settings → Look → Dribble style."
+            },
+            {
+              "title": "Ball physics (testing, off)",
+              "detail": "Settings → Look → Ball physics: New to try."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Mostly not seen on a phone yet",
+              "detail": "Measured, not yet seen; a playtest is running."
+            },
+            {
+              "title": "Tournament not played through on screen",
+              "detail": "Grey-globe flag bug fixed."
+            },
+            {
+              "title": "Tight angles and volleys still go in too often",
+              "detail": "21% vs real 8%; 32% vs 10%."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.44",
       "title": "Leo's patch notes — the big evening: camera, careers that move, a world that ages",
       "publishedAt": "2026-10-11T20:00:00Z",
