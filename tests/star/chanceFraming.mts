@@ -1,6 +1,6 @@
 import { buildScenario, goalInView, SCENARIO_KINDS, type Scenario, type Viewport } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
-import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf } from "../../lib/star/matchView";
+import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, setActionFit, framingFaults } from "../../lib/star/matchView";
 
 /**
  * CHANCE FRAMING: Zoom | Old (lib/star/chanceFraming.ts, Harry 9 Oct 2026).
@@ -12,6 +12,13 @@ import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf } from "../.
  * - side-on chances (corners, byline crosses) and build-up are untouched;
  * - it holds the canvas's shape (the drag is read in screen px, so the same
  *   pull kicks exactly as hard).
+ *
+ * Match camera: New (camera round 3, 12 Oct 2026) changes only the "never
+ * cuts a man off" line: the ACTION (actionOf: the ball, you, the man the pass
+ * is for, team-mates in reach, defenders near the ball, marking or in the
+ * lane to goal) is never cut off; anybody else is wholly on the screen or
+ * clearly off it, never cut in half. To keep that, New may pull back a little
+ * past today's camera. Run for both settings.
  */
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -33,29 +40,50 @@ const frame = (kind: (typeof SCENARIO_KINDS)[number], seed: number, mode: "off" 
 const same = (a: Viewport, b: Viewport) => Math.abs(a.x1 - b.x1) + Math.abs(a.x2 - b.x2) + Math.abs(a.y1 - b.y1) + Math.abs(a.y2 - b.y2) < 1e-9;
 
 const zooms: Record<string, number[]> = {};
+for (const camMode of ["old", "new"] as const) {
+setActionFit(camMode === "new");
 for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (const tilt of [0, 20]) {
   const old = frame(kind, seed, "off", tilt);
   const z = frame(kind, seed, "z2", tilt);
-  check(old.k === 1, `${kind} #${seed}: Old has zoom ${old.k}`);
+  const tag = `${camMode} ${kind} #${seed} tilt ${tilt}`;
+  check(old.k === 1, `${tag}: Old has zoom ${old.k}`);
   const facing = z.sc.facing ?? "up";
-  if (facing !== "up" || !goalInView(kind)) {
-    check(same(old.cam, z.cam) && z.k === 1, `${kind} #${seed}: side-on / build-up was zoomed`);
+  if (facing !== "up") {
+    check(same(old.cam, z.cam) && z.k === 1, `${tag}: side-on was zoomed`);
     continue;
   }
-  (zooms[kind] ??= []).push(z.k);
-  check(z.k >= 1, `${kind} #${seed}: zoomed OUT (${z.k})`);
+  if (!goalInView(kind)) {
+    // Build-up: Old untouched; New fits the passers (passersFit), never wider.
+    if (camMode === "old") check(same(old.cam, z.cam) && z.k === 1, `${tag}: build-up was zoomed`);
+    else {
+      check(z.k >= 1 / 1.45 - 1e-9, `${tag}: build-up pulled back past the widest camera (${z.k})`);
+      for (const f of framingFaults(z.sc, z.cam, HW, tilt)) check(false, `${tag}: ${f}`);
+      (zooms[kind] ??= []).push(z.k);
+    }
+    continue;
+  }
+  if (camMode === "new") (zooms[kind] ??= []).push(z.k);
   const c = z.cam, w = c.x2 - c.x1, h = c.y2 - c.y1;
-  check(Math.abs(h / w - (old.cam.y2 - old.cam.y1) / (old.cam.x2 - old.cam.x1)) < 1e-6, `${kind} #${seed}: shape changed`);
-  if (z.k === 1) continue;
-  for (const p of bodiesOf(z.sc)) {
-    check(p.x >= c.x1 + 0.9 - 1e-6 && p.x <= c.x2 - 0.9 + 1e-6 && p.y >= c.y1 + 1 - 1e-6 && p.y <= c.y2 + 1e-6,
-      `${kind} #${seed} tilt ${tilt}: a man at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) is cut off`);
+  check(Math.abs(h / w - (old.cam.y2 - old.cam.y1) / (old.cam.x2 - old.cam.x1)) < 1e-6, `${tag}: shape changed`);
+  if (camMode === "old") {
+    check(z.k >= 1, `${tag}: zoomed OUT (${z.k})`);
+    if (z.k === 1) continue;
+    for (const p of bodiesOf(z.sc)) {
+      check(p.x >= c.x1 + 0.9 - 1e-6 && p.x <= c.x2 - 0.9 + 1e-6 && p.y >= c.y1 + 1 - 1e-6 && p.y <= c.y2 + 1e-6,
+        `${tag}: a man at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) is cut off`);
+    }
+  } else {
+    check(z.k >= 1 / 1.45 - 1e-9, `${tag}: pulled back past the widest camera (${z.k})`);
+    for (const f of framingFaults(z.sc, c, HW, tilt)) check(false, `${tag}: ${f}`);
+    if (z.k === 1) continue;
   }
   for (const p of [{ x: z.sc.keeper.x, y: z.sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }]) {
-    check(p.x >= c.x1 && p.x <= c.x2 && p.y >= c.y1, `${kind} #${seed}: goal or keeper cut off`);
+    check(p.x >= c.x1 && p.x <= c.x2 && p.y >= c.y1, `${tag}: goal or keeper cut off`);
   }
-  check(c.y2 - z.sc.ball.y >= 5 - 1e-6, `${kind} #${seed}: only ${(c.y2 - z.sc.ball.y).toFixed(1)} m to pull back into`);
+  check(c.y2 - z.sc.ball.y >= 5 - 1e-6, `${tag}: only ${(c.y2 - z.sc.ball.y).toFixed(1)} m to pull back into`);
 }
+}
+setActionFit(null);
 setPlayZoomOverride(null);
 
 if (problems.length) {
@@ -63,5 +91,5 @@ if (problems.length) {
   for (const p of problems.slice(0, 20)) console.log("  " + p);
   process.exit(1);
 }
-console.log("chanceFraming: zoom per kind (mean, max):",
+console.log("chanceFraming: Match camera New, zoom per kind (mean, max):",
   Object.entries(zooms).map(([k, v]) => `${k} ${(v.reduce((a, b) => a + b, 0) / v.length).toFixed(2)}/${Math.max(...v).toFixed(2)}`).join(", "));

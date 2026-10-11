@@ -17,6 +17,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Top corners beat them more, weaker keepers are slower, players in front block their view, trial free kicks and penalties easier.",
     oldText: "The keepers from before 5 Oct 2026.",
   },
+  keeperPro: {
+    label: "Keeper pro",
+    newText: "Keepers hold the gentle ones and parry the hard ones somewhere believable, rush out at one-on-ones, come for crosses and overhit through balls, read long shots, and can be chipped or nutmegged.",
+    oldText: "The keepers from before 11 Oct 2026.",
+  },
   dribble: {
     label: "Dribble runs",
     newText: "Team-mates to pass to, 3–4 waves, tighter defenders, and a better chance the further you get.",
@@ -42,6 +47,13 @@ export const GAMEPLAY_SWITCHES = {
     defaultVersion: "old",
     newText: "Chances drawn from real strikers' passes and shots (Harry Kane's dealt most often): everyone near the play stands where they really stood. Mostly easy and normal, a few hard.",
     oldText: "The game's own drawings.",
+  },
+  actionCamera: {
+    label: "Match camera",
+    // Harry, 11 Oct 2026: "the camera view shows a huge area of the pitch
+    // where no one's at". Camera round 3 (lib/star/matchView.ts fitAction).
+    newText: "The camera frames the men the chance is about, so less empty grass. Nobody else is ever cut in half.",
+    oldText: "The camera keeps every man on screen (from before 12 Oct 2026).",
   },
 } as const;
 
@@ -73,6 +85,7 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
 }
 
 export const oldKeepers = () => gameplayVersion("keepers") === "old";
+export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
 export const oldChances = () => gameplayVersion("chanceMix") === "old";
@@ -81,3 +94,4 @@ export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
 export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";
+export const oldActionCamera = () => gameplayVersion("actionCamera") === "old";

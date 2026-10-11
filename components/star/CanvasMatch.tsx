@@ -65,6 +65,7 @@ import {
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
+import { runStretch } from "@/lib/star/stretchRun";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
 import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
@@ -4614,6 +4615,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // the power a drag of (dx, dy) screen px back from the ball would give
+      // (camera tests: the same finger travel must kick as hard whatever the zoom)
+      power: (dx: number, dy: number) => {
+        const sc = scenarioRef.current, q = pitchToClient(sc.ball);
+        return powerFromDrag(pitchFromPointer(q.x + dx, q.y + dy), sc.ball);
+      },
       // the camera and everyone in the chance, on the glass (camera tests)
       frame: () => {
         const sc = scenarioRef.current, c = canvasRef.current;
@@ -5851,34 +5858,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
       resolveScenario(st, scored ? "goal" : "saved");
     }
-    let step = advanceUntilInvolved(st, baseInputs, rng, stretchEnd);
-    for (let guard = 0; guard < 20; guard++) {
-      const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
-      if (!kind || mayTake(kind) || (kind !== "free_kick" && kind !== "penalty")) break;
-      // v0.15 item 6: a penalty your side has won is taken LIVE by the team's
-      // taker (loadScenario → loadTeammatePenalty), not handed over as a line.
-      if (kind === "penalty" && step.request?.penaltyWon) break;
-
-      const label = kind === "penalty" ? "penalty" : "free kick";
-      const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
-      if (scored) {
-        // resolveScenario (below) is the one place that increments the
-        // score for a "goal" result — this used to also do it here, which
-        // counted a handed-over set piece twice on the board while only
-        // ever pushing the one event, leaving the scoreline a goal ahead
-        // of the commentary and the results page for good.
-        handedOver.push({ minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true });
-      } else {
-        handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
-      }
-      resolveScenario(st, scored ? "goal" : "saved");
-      step = advanceUntilInvolved(st, baseInputs, rng, stretchEnd);
-    }
+    // Set pieces you do not take go to whoever does, and the match runs on.
+    // runStretch keeps EVERY run's lines (lib/star/stretchRun.ts: the lost
+    // goal that put the stats screen a goal ahead of the scoreboard).
+    let step = runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
     /** Item 25: the stretch ran out because his legs did, not the clock. */
     const legsGone = !step.request && offAt < matchCeilingRef.current && st.minute >= offAt;
     if (legsGone) step = { ...step, fullTime: false };
 
-    const raw = [...handedOver, ...step.events];
+    const raw = step.events;
 
     // ── WHO SCORED ──
     //
