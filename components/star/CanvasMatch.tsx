@@ -86,6 +86,15 @@ const BALL_GRAB_FRACTION = 0.18;
  * free kicks, corners — and passes you play from your feet stay still.
  * Picked from the chance's seed, so it never draws a random number.
  */
+/** What the commentator says about a strike that came off the boot badly — or
+ *  knuckled (Shots / Knuckleball switches, lib/star/shotModel.ts). */
+const SHOT_LINES: Partial<Record<ContactRead["grade"], string>> = {
+  knuckle: "No spin on it at all — it's moving all over the place!",
+  sliced: "He's sliced it — off the side of the boot!",
+  topped: "Topped it! Straight into the turf.",
+  scuffed: "Scuffed! He's barely caught it.",
+};
+
 function contactMotion(kind: string, seed: number): BallMotion {
   if (kind === "header") return "float";
   if (kind === "volley") return "bounce";
@@ -134,6 +143,11 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
 import ContactBall, { type BallMotion } from "./ContactBall";
+import PowerShotContact from "./PowerShotContact";
+import {
+  shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, stepWindUp, aimedAtGoal, spreadDeg,
+  powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT, type ShotExtras, type ContactRead,
+} from "@/lib/star/shotModel";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
@@ -1764,6 +1778,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
+  // ── Knuckleball & power shot (lib/star/shotModel.ts; Settings → Gameplay) ──
+  // The ⚡ button arms the next shot; letting go of the drag winds up (the
+  // defence keeps closing) and then the green-circle strike screen opens.
+  const [powerArmed, setPowerArmed] = useState(false);
+  const powerArmedRef = useRef(false);
+  powerArmedRef.current = powerArmed;
+  const windUpRef = useRef<number | null>(null);
+  const [windingUp, setWindingUp] = useState(false);
+  const [powerStrike, setPowerStrike] = useState(false);
 
   // ── The run-up (lib/star/penaltyRunup.ts) — every penalty and direct free kick ──
   //
@@ -2445,7 +2468,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       matePlaysRef.current = [];
-      ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      ballRef.current = r.shot
+        ? launchShot(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng, r.shot, r.shot, launch).ball
+        : launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
       if (r.keeperBrain) {
@@ -4319,6 +4344,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // turned frame's WIDTH-sized span instead — about 60% of the metres
       // it should have had — so the exact same power looked visibly shorter
       // on every corner and cross. Reported directly.
+      // ── The spread (Shots: New, lib/star/shotModel.ts) ── a faint cone on
+      // to the goal line, as wide as this strike really scatters (1.5 sd
+      // each side: about 87 in 100 of your clean strikes land inside it). So
+      // the arrow tells the truth about where the ball goes, skill and all.
+      if (shotsPro() && aimedAtGoal(sc, { x: dx, y: dy })) {
+        const sd = spreadDeg(sc, power, skills.technique) * 0.85;
+        const half = (Math.min(25, sd * 1.5) * Math.PI) / 180;
+        const n0 = Math.hypot(dx, dy) || 1;
+        const ux0 = dx / n0, uy0 = dy / n0;
+        const reach = sc.ball.y / Math.max(0.15, -uy0);
+        const edge = (s: number) => {
+          const c = Math.cos(s * half), sn = Math.sin(s * half);
+          const ex2 = ux0 * c - uy0 * sn, ey2 = ux0 * sn + uy0 * c;
+          const t = ey2 < -0.05 ? sc.ball.y / -ey2 : reach;
+          return toPx(sc.ball.x + ex2 * t, sc.ball.y + ey2 * t);
+        };
+        const o = toPx(sc.ball.x, sc.ball.y), l = edge(-1), r = edge(1);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(o.px, o.py);
+        ctx.lineTo(l.px, l.py);
+        ctx.lineTo(r.px, r.py);
+        ctx.closePath();
+        const g = ctx.createLinearGradient(o.px, o.py, (l.px + r.px) / 2, (l.py + r.py) / 2);
+        g.addColorStop(0, "rgba(251,146,60,0.32)");
+        g.addColorStop(1, "rgba(251,146,60,0.08)");
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(255,237,213,0.55)";
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
       const heightSpan = facingRef.current === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
       const lineLen = power * sameOnScreenM(heightSpan, 1, "height") * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
@@ -4687,6 +4747,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // where he was put toward his spot for this ball. No-op when it's off.
         brainAim(scenarioRef.current, dt);
       }
+      // The power shot's wind-up: the defence closes while the leg goes back.
+      if (phaseRef.current === "aim" && windUpRef.current !== null) {
+        stepWindUp(scenarioRef.current, dt);
+        windUpRef.current -= dt;
+        if (windUpRef.current <= 0) {
+          windUpRef.current = null;
+          setWindingUp(false);
+          setPhase("contact");
+        }
+      }
       // v0.15 item 22: once the drag is committed, ordered runs
       // are under way and the presser is coming — until you let go. See
       // stepCommitted.
@@ -4835,6 +4905,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const bIn = ballRef.current;
           const incoming = { vx: bIn.vel.x, vy: bIn.vel.y, vz: bIn.vz, z: bIn.z, spin: bIn.spin };
           const mateProbe = probeMatePlays(scenarioRef.current);
+          stepKnuckle(ballRef.current, h);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           noteMatePlays(matePlaysRef.current, mateProbe, scenarioRef.current);
           // ── v0.15 item 16: a block deflects instead of ending the chance ──
@@ -6864,6 +6935,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     if (phaseRef.current !== "aim") return;
+    if (windUpRef.current !== null) return; // winding up a power shot — the shot is already chosen
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
     // ── A team-mate takes priority over the ball ──
@@ -7089,6 +7161,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     setAim({ dir, power });
+    // An armed power shot winds up first (shotModel.ts): the pitch keeps
+    // moving for POWER_SHOT_WINDUP_S, then the green-circle screen opens.
+    if (powerArmedRef.current && knucklePowerOn() && aimedAtGoal(scenarioRef.current, dir)) {
+      setPowerStrike(true);
+      setPowerArmed(false);
+      windUpRef.current = POWER_SHOT_WINDUP_S;
+      setWindingUp(true);
+      pushLine("He pulls the leg right back…");
+      return;
+    }
+    setPowerStrike(false);
     setPhase("contact");
   };
 
@@ -7142,6 +7225,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const handleContact = (
     contact: { cx: number; cy: number },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
+    extras?: ShotExtras,
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
@@ -7173,6 +7257,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // `skills` is what the ball was struck WITH, so a goal replays at the
     // pace it was scored at. Never for somebody else's kick: it is not a
     // goal of yours to save.
+    // ── Shots (lib/star/shotModel.ts; Settings → Gameplay "Shots" and
+    // "Knuckleball & power shot") ── only ever your own kick. Both Old: the
+    // plain `launch` below, exactly as before.
+    const shotPro = !auto && shotsPro();
+    const shotKnuckle = !auto && knucklePowerOn();
+    const shotRec = (shotPro || shotKnuckle || extras)
+      ? { seed: shotSeedFor(seedRef.current, rngCallCountRef.current), extras, pro: shotPro, knuckle: shotKnuckle }
+      : null;
     pendingReplayRef.current = auto ? null : {
       seed: seedRef.current,
       callsBeforeStrike: rngCallCountRef.current,
@@ -7181,6 +7273,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       power: a.power,
       contact,
       skills: launchWith,
+      ...(shotRec ? { shot: shotRec } : {}),
     };
     // Starts recording this strike's own substep sizes — see
     // GoalReplay.flightDtLog. Reset here, alongside pendingReplayRef, so a
@@ -7191,7 +7284,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     matePlaysRef.current = [];
     // Where you struck it, for the kind of goal it was (ratings revamp, lib/star/chanceRating.ts).
     strikeAtRef.current = { x: scenarioRef.current.ball.x, y: scenarioRef.current.ball.y };
-    ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
+    let shotRead: ContactRead | undefined;
+    if (shotRec) {
+      const st = launchShot(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current, shotRec, shotRec, launch);
+      ballRef.current = st.ball;
+      shotRead = st.read;
+    } else {
+      ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
+    }
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -7286,9 +7386,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // physics, which were already doing the right thing.
     if (scenarioRef.current.kind === "header" && ballRef.current.lastTouch === "defence") {
       pushLine("He gets up highest and heads it clear!");
+    } else if (shotRead && SHOT_LINES[shotRead.grade]) {
+      // How it came off the boot (Shots: New), said instead of the usual line.
+      pushLine(SHOT_LINES[shotRead.grade]!);
+      if (shotRead.grade === "knuckle") showAction("KNUCKLEBALL");
     } else {
       pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     }
+    if (extras?.powerMult) showAction(`⚡ x${extras.powerMult.toFixed(2)}`);
     playKick();
     kickPoseRef.current = KICK_POSE_S;
   };
@@ -7547,6 +7652,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         )}
 
+        {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",
+            lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
+            clear of the ball's own pull room. Its own pointer-events-auto so
+            a tap never starts an aim-drag underneath. */}
+        {knucklePowerOn() && phase === "aim" && !windingUp && !replayOf
+          && !["penalty", "free_kick", "corner", "byline_cross"].includes(scenarioRef.current.kind) && (
+          <button
+            onClick={() => setPowerArmed((v) => !v)}
+            data-power-shot={powerArmed ? "on" : "off"}
+            className={`absolute left-2 bottom-2 z-30 pointer-events-auto rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
+              powerArmed ? "bg-amber-400 text-gray-950 border-amber-200" : "bg-gray-950/70 text-amber-300 border-amber-400/60"}`}
+          >
+            ⚡ Power shot{powerArmed ? " — on" : ""}
+          </button>
+        )}
+        {windingUp && (
+          <div className="absolute inset-x-0 bottom-[12%] z-30 flex justify-center pointer-events-none">
+            <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-2xl font-black italic tracking-wider text-amber-300">
+              WINDING UP…
+            </div>
+          </div>
+        )}
+
         {/* The first-person duel — see USE_FIRST_PERSON_DRIBBLE. A full
             overlay over the canvas (it manages its own camera/render loop
             entirely), not something drawn onto it the way the old top-down
@@ -7588,9 +7716,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
-        {phase === "contact" && aim && (
+        {phase === "contact" && aim && powerStrike && (
+          <PowerShotContact power={aim.power} onStrike={(q) => {
+            // Its own seeded draw, so the match's random stream is untouched.
+            const r = mulberry32(shotSeedFor(seedRef.current ^ 0x9073, rngCallCountRef.current));
+            setPowerStrike(false);
+            handleContact(POWER_SHOT_CONTACT, undefined, { ...powerShotStrike(q, r), noKnuckle: true });
+          }} />
+        )}
+        {phase === "contact" && aim && !powerStrike && (
           <ContactBall
             power={aim.power}
+            grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
+            knuckles={knucklePowerOn()}
             onContact={(c) => handleContact(c)}
             motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}

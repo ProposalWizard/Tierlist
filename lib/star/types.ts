@@ -65,6 +65,15 @@ export interface GoalReplay {
    *  made on this device. Watching it plays the recording itself — the exact
    *  goal — rather than running the physics again from the seed above. */
   clipId?: string;
+  /** The Shots model's strike (lib/star/shotModel.ts): its own seed, the
+   *  power shot's pace and drift, and which switches were on — so the replay
+   *  strikes the same ball. Absent on a goal struck with both switches Old. */
+  shot?: {
+    seed: number;
+    extras?: { powerMult?: number; driftDeg?: number; noKnuckle?: boolean };
+    pro: boolean;
+    knuckle: boolean;
+  };
 }
 
 export interface StarPlayer {
