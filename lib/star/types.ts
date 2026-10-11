@@ -1551,6 +1551,17 @@ export interface CareerState {
    */
   outgoingMates?: SeasonMate[];
   /**
+   * A world that ages (lib/star/worldAgeing.ts): the season whose rollover
+   * first aged every other club's players. Absent until then (and on any
+   * save from before it). A squad fetched later is aged from here to match.
+   */
+  worldAgedSince?: number;
+  /**
+   * The level each club's regens are rated against: its starting-XI average
+   * the first time the world aged it, then fixed (worldAgeing.ts clubLevelOf).
+   */
+  clubLevels?: Record<string, number>;
+  /**
    * Hall of Fame records already celebrated in this career (lib/star/
    * hallRecords.ts): each id once, so a record broken is a moment once.
    */

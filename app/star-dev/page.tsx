@@ -68,6 +68,7 @@ import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStar
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos, relabelOutOfPosition, withoutPlayersElsewhere, addFullRoster } from "@/lib/star/leagueSquads";
+import { ageFetchedForCareer, ageOwnFetchedForCareer } from "@/lib/star/worldAgeing";
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
@@ -1734,7 +1735,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         const already = new Set((c.leagueSquads ?? []).map(s => s.club));
         // Nobody the career has already moved to another club comes back
         // with his day-one club too.
-        const clean = withoutPlayersElsewhere(fresh, [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])]);
+        const clean = withoutPlayersElsewhere(ageFetchedForCareer(c, fresh), [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])]);
         const leagueSquads = [...(c.leagueSquads ?? []), ...clean.filter(s => !already.has(s.club))];
         return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
       });
@@ -1782,7 +1783,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // Added to, never replaced: the club's transfers this career stay.
         const current = (c.leagueSquads ?? []).find(s => s.club === club);
         const elsewhere = [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])].filter(s => s.club !== club);
-        const merged = addFullRoster(full, current, elsewhere);
+        const merged = addFullRoster(ageFetchedForCareer(c, [full])[0], current, elsewhere);
         const already = !!current;
         const leagueSquads = already
           ? (c.leagueSquads ?? []).map(s => (s.club === club ? merged : s))
@@ -2036,7 +2037,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // move completes immediately with the generated squad acceptOffer gives it,
     // and the real one lands a moment later.
     fetchRealSquad(offer.club).then((squad) => {
-      setCareer(c => (c && c.player.club === offer.club ? { ...c, squad } : c));
+      setCareer(c => (c && c.player.club === offer.club ? { ...c, squad: ageOwnFetchedForCareer(c, offer.club, squad) } : c));
     });
     // Done deal, farewell and unveiling — three posts from one moment, and the
     // roster regenerates around the new club, so from here it is his fans
@@ -2142,7 +2143,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setCareer(c => {
         if (!c || c.player.club !== club) return c;
         const ids = new Set(real.map(p => p.sofifaId).filter(Boolean));
-        return { ...c, squad: [...real, ...(c.squad ?? []).filter(p => p.devStart && !(p.sofifaId && ids.has(p.sofifaId)))] };
+        return { ...c, squad: [...ageOwnFetchedForCareer(c, club, real), ...(c.squad ?? []).filter(p => p.devStart && !(p.sofifaId && ids.has(p.sofifaId)))] };
       });
     });
   }, [career]);
@@ -2185,9 +2186,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // Photos only: a refresh must never undo a transfer, a grown rating or
       // a signing (see refreshLeagueSquadPhotos). A failed fetch changes nothing.
       const dissolved = (club: string) => !!c.ownedClubs?.[club]?.dissolvedInto;
-      const squad = shouldUpgradeSquad(c.squad ?? []) ? mergeSquadStats(freshSquad, c.squad ?? []) : refreshSquadPhotos(freshSquad, c.squad ?? []);
-      const leagueSquads = isRealFetch(freshLeague) ? refreshLeagueSquadPhotos(c.leagueSquads ?? [], freshLeague, dissolved) : (c.leagueSquads ?? []);
-      const externalSquads = isRealFetch(freshExternal) ? refreshLeagueSquadPhotos(c.externalSquads ?? [], freshExternal, dissolved) : (c.externalSquads ?? []);
+      const squad = shouldUpgradeSquad(c.squad ?? []) ? mergeSquadStats(ageOwnFetchedForCareer(c, c.player.club, freshSquad), c.squad ?? []) : refreshSquadPhotos(freshSquad, c.squad ?? []);
+      const leagueSquads = isRealFetch(freshLeague) ? refreshLeagueSquadPhotos(c.leagueSquads ?? [], ageFetchedForCareer(c, freshLeague), dissolved) : (c.leagueSquads ?? []);
+      const externalSquads = isRealFetch(freshExternal) ? refreshLeagueSquadPhotos(c.externalSquads ?? [], ageFetchedForCareer(c, freshExternal), dissolved) : (c.externalSquads ?? []);
       return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
     });
   }, [career]);
@@ -2340,7 +2341,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (shouldUpgradeSquad(saved.squad ?? [])) {
       fetchRealSquad(saved.player.club).then((real) => {
         setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
-          ? { ...c, squad: real } : c));
+          ? { ...c, squad: ageOwnFetchedForCareer(c, saved.player.club, real) } : c));
       });
     }
 
@@ -2374,7 +2375,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           if (!c || !(c.leagueSquads ?? []).length) return c;
           const filled = relabelOutOfPosition(hydrateSquads(c.leagueSquads ?? []));
           if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
-            const leagueSquads = mergeLeagueSquadStats(fresh, filled);
+            const leagueSquads = mergeLeagueSquadStats(ageFetchedForCareer(c, fresh), filled);
             return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
           }
           return filled === c.leagueSquads ? c : { ...c, leagueSquads: filled };
@@ -2398,7 +2399,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(c => {
           if (!c || !(c.externalSquads ?? []).length) return c;
           const externalSquads = reconcileExternalSquads(
-            relabelOutOfPosition(hydrateSquads(c.externalSquads ?? [])), fresh,
+            relabelOutOfPosition(hydrateSquads(c.externalSquads ?? [])), ageFetchedForCareer(c, fresh),
             club => !!c.ownedClubs?.[club]?.dissolvedInto,
           );
           return { ...c, externalSquads };
