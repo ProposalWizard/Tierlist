@@ -322,6 +322,13 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
     const k = (today.x2 - today.x1) / (zc.x2 - zc.x1);
     // Never wider than today (the tilt fit can pull a zoomed camera back past it).
     if (z !== base && k > 1.001) { cam = zc; f.playZoom = k; }
+    // The default (Zoom): also try fitting on the glass, zoom and pan chosen
+    // together under the tilt (fitToPlay), and keep whichever is tighter.
+    if (playZoom() === "z2") {
+      const fit = fitToPlay(base, sc, hw, tiltDeg);
+      const kf = fit ? (today.x2 - today.x1) / (fit.x2 - fit.x1) : 1;
+      if (fit && kf > Math.max(1.001, f.playZoom ?? 1)) { cam = fit; f.playZoom = kf; }
+    }
   }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
   return cam;
@@ -360,14 +367,36 @@ export const ZOOM_MAX = 2.5;
 /** At least this much grass below the ball, to pull back into. */
 export const ZOOM_MIN_PULL_M = 5;
 
-/** Everyone in the chance (the follower too when he is drawn). */
+/**
+ * Is this man actually on the pitch? A man a chance does not use is walked
+ * to (-400, 400), "behind the ball and off the picture" (authoredChance.ts
+ * OFF_THE_PICTURE, scenarioEdit.ts OFF_PITCH, scenePicture.ts): a drawing
+ * with no poacher parks the follower there, and so does EVERY Kane drawing.
+ * Same test as chanceMaker.ts's `parked`.
+ */
+export function onThePitch(p: Vec2): boolean {
+  return !(p.x < -50 || p.x > PITCH_W + 50 || p.y > 150 || p.y < -50);
+}
+
+/**
+ * Everyone in the chance (the follower too when he is drawn), and nobody
+ * who has been parked off the picture.
+ *
+ * THE EMPTY-GRASS BUG (Harry, 11 Oct 2026: "the camera view where it shows a
+ * huge area of the pitch where no one's at — yeah that's just bugged"). The
+ * parked follower used to be counted as a man to keep on screen. The zoom
+ * cannot fit a man 400 m away, so it gave up and served the kind's widest
+ * camera: on 5-14% of drawn chances (one-on-ones 10%, cutbacks 9%, free kicks
+ * 9%) and on EVERY Kane drawing. Measured on Kane one-on-ones: the people
+ * covered 11% of the screen, 66% of it empty grass below them.
+ */
 export function bodiesOf(sc: Scenario): Vec2[] {
   const decorative = sc.kind === "volley" || sc.kind === "header";
   const pts: Vec2[] = [sc.ball, sc.player, ...sc.defenders, ...(decorative ? [] : sc.teammates)];
   if (sc.runner) pts.push(sc.runner.pos);
   for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
   if (sc.follower && goalInView(sc.kind)) pts.push(sc.follower);
-  return pts;
+  return pts.filter(onThePitch);
 }
 
 /**
@@ -385,7 +414,7 @@ export function zoomToPlay(cam: Viewport, sc: Scenario, hw: number): Viewport {
   void hw;
   const bodies = bodiesOf(sc).map((p) => fracOf(cam, facing, p));
   const key = goalInView(sc.kind)
-    ? [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].map((p) => fracOf(cam, facing, p))
+    ? [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].filter(onThePitch).map((p) => fracOf(cam, facing, p))
     : [];
   const ballF = fracOf(cam, facing, sc.ball);
   const low = Math.max(...bodies.map((b) => b.sy));
@@ -425,6 +454,98 @@ function zoomView(cam: Viewport, facing: Facing, k: number, p: number): Viewport
   if (facing === "up") return { x1: cam.x1 + s0 * spanX, x2: cam.x1 + s1 * spanX, y1: cam.y1, y2: cam.y1 + t1 * spanY };
   if (facing === "right") return { x1: cam.x1, x2: cam.x1 + t1 * spanX, y1: cam.y1 + (1 - s1) * spanY, y2: cam.y1 + (1 - s0) * spanY };
   return { x1: cam.x2 - t1 * spanX, x2: cam.x2, y1: cam.y1 + s0 * spanY, y2: cam.y1 + s1 * spanY };
+}
+
+/**
+ * FIT THE CAMERA TO THE PLAY, ON THE GLASS (Harry, 11 Oct 2026: "the camera
+ * view where it shows a huge area of the pitch where no one's at — that's
+ * just bugged").
+ *
+ * zoomToPlay above fits the play on the FLAT canvas, and then the tilt fit
+ * (fitCameraToTilt) pulls the whole camera back about the top of the screen
+ * until the near corners — which a tipped-back picture crops — hold everyone
+ * again. That second step undid most of the zoom: it grows the picture in
+ * every direction to rescue one man near a bottom corner, and it never pans.
+ * Measured on served chances (150 a kind, 20°, 390 px phone): grass below the
+ * lowest man was 60% of the screen on a tight angle, 54% on a cutback, 55% on
+ * a penalty, 39% on a through ball (28% flat).
+ *
+ * Here the zoom and the pan are chosen together against what the phone
+ * actually shows once tipped back: the tightest frame (zooming about the top
+ * centre, where the goal hangs, so the goal never moves on screen) that still
+ * shows, on the glass,
+ *   · every man in the chance (0.9 m off a side, 1 m off the top),
+ *   · the keeper and both posts,
+ *   · ZOOM_ROOM_M of grass below the lowest man, and
+ *   · ZOOM_MIN_PULL_M below the ball to pull back into.
+ * Among the pans that work, the one nearest the kind's own camera is taken.
+ * Nothing about the chance moves; only the camera. The canvas keeps its size
+ * and the drag is read on the glass, so the same pull kicks exactly as hard.
+ *
+ * Returns null when not even the widest allowed camera (TILT_FIT_MAX) holds
+ * them; the caller then keeps today's camera.
+ */
+export function fitToPlay(base: Viewport, sc: Scenario, hw: number, tiltDeg = 0): Viewport | null {
+  const spanX = base.x2 - base.x1, spanY = base.y2 - base.y1;
+  const H = Math.max(NEW_VIEW_MIN_HW, hw);
+  const t = tiltFor(tiltDeg, 1, H);
+  // Flat, the canvas IS the glass and the canvas checks below are the whole test.
+  const onGlass = (sx: number, sy: number, m: number): boolean => !t || visibleOnScreen(t, sx, sy, m);
+  const men = bodiesOf(sc).map((p) => fracOf(base, "up", p));
+  const goal = [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].filter(onThePitch).map((p) => fracOf(base, "up", p));
+  const ball = fracOf(base, "up", sc.ball);
+  const low = men.reduce((a, b) => (b.sy > a.sy ? b : a), men[0]);
+  const roomF = ZOOM_ROOM_M / spanY, pullF = ZOOM_MIN_PULL_M / spanY;
+  // Under the tilt the glass's own margin; flat, the same share as the tilt fit.
+  const gm = TILT_FIT_MARGIN;
+  const kHi = ZOOM_MAX, kLo = 1 / TILT_FIT_MAX;
+  for (let k = kHi; k >= kLo - 1e-9; k -= 0.01) {
+    const across = spanX / k, down = spanY / k;
+    // Canvas: every man inside, 0.9 m off a side, 1 m off the top; room below.
+    if (low.sy * k + roomF * k > 1 + 1e-9) continue;
+    if (ball.sy * k + pullF * k > 1 + 1e-9) continue;
+    const mx = ZOOM_SIDE_M / across, my = ZOOM_TOP_M / down;
+    if (men.some((b) => b.sy * k < my)) continue;
+    let pLo = -Infinity, pHi = Infinity;
+    const need = (sx: number, m: number) => {
+      const a = 0.5 + (sx - 0.5) * k;
+      pLo = Math.max(pLo, m - a); pHi = Math.min(pHi, 1 - m - a);
+    };
+    men.forEach((b) => need(b.sx, mx));
+    goal.forEach((b) => need(b.sx, 0));
+    if (pLo > pHi + 1e-12) continue;
+    // The glass: try pans from the kind's own camera (p = 0) outwards.
+    const pans: number[] = [];
+    const p0 = Math.max(pLo, Math.min(pHi, 0));
+    pans.push(p0);
+    const steps = 24;
+    for (let i = 1; i <= steps; i++) {
+      const d = ((pHi - pLo) * i) / steps;
+      if (p0 + d <= pHi + 1e-12) pans.push(p0 + d);
+      if (p0 - d >= pLo - 1e-12) pans.push(p0 - d);
+    }
+    const sxAt = (sx: number, p: number) => 0.5 + (sx - 0.5) * k + p;
+    for (const p of pans) {
+      if (t) {
+        if (!men.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
+        if (!goal.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
+        if (!onGlass(sxAt(low.sx, p), low.sy * k + roomF * k, 0)) continue;
+        if (!onGlass(sxAt(ball.sx, p), ball.sy * k + pullF * k, 0)) continue;
+      }
+      // Keep no more than EDGE_M past a touchline when that fits (as zoomToPlay).
+      let q = p;
+      const w = spanX / k;
+      const x1At = (pp: number) => base.x1 + (0.5 + (-0.5 - pp) / k) * spanX;
+      const want = Math.max(-EDGE_M, Math.min(PITCH_W + EDGE_M - w, x1At(q)));
+      const q2 = Math.max(pLo, Math.min(pHi, q - ((want - x1At(q)) / spanX) * k));
+      if (q2 !== q && (!t || (men.every((b) => onGlass(sxAt(b.sx, q2), b.sy * k, gm))
+          && goal.every((b) => onGlass(sxAt(b.sx, q2), b.sy * k, gm))
+          && onGlass(sxAt(low.sx, q2), low.sy * k + roomF * k, 0)
+          && onGlass(sxAt(ball.sx, q2), ball.sy * k + pullF * k, 0)))) q = q2;
+      return zoomView(base, "up", k, q);
+    }
+  }
+  return null;
 }
 
 /** The camera for this chance: its kind's zoom (NEW_VIEW_KIND_WIDTH_M). */
@@ -491,7 +612,9 @@ export function keyPointsOf(sc: Scenario): Vec2[] {
   if (sc.runner) pts.push(sc.runner.pos);
   for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
   if (goalInView(sc.kind)) pts.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 });
-  return pts;
+  // A parked man (or a keeper a mode has taken off, scenePicture.ts) is not
+  // in the picture: chasing him would pull the camera back to its limit.
+  return pts.filter(onThePitch);
 }
 
 /** The largest the camera may grow to keep them in view (×). */
