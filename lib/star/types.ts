@@ -1576,6 +1576,12 @@ export interface CareerState {
    */
   clubLevels?: Record<string, number>;
   /**
+   * The retirements worth a post from the last rollover (lib/star/
+   * retirementNews.ts): your team-mates and a few famous names. Replaced
+   * every rollover; read once by the media pass in page.tsx.
+   */
+  lastRetirements?: import("./retirementNews").RetirementNote[];
+  /**
    * Hall of Fame records already celebrated in this career (lib/star/
    * hallRecords.ts): each id once, so a record broken is a moment once.
    */

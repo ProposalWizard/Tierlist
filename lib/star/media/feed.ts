@@ -1,13 +1,15 @@
 import { fameOf } from "../fame";
 import type { CareerState, Fixture, LeagueResult, MatchStats } from "../types";
 import type {
-  CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
+  Archetype, CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
   MediaState, StoredPost, StoryMemory, Trend,
 } from "./types";
 import { buildMatchRecord } from "./record";
 import { detectCareer, detectMatch } from "./detect";
 import { detectLeagueWeek } from "./detect/league";
 import { detectWonderkidHype } from "./detect/wonderkids";
+import { regenEvent, retirementEvent } from "./detect/retirements";
+import { promisingRegens } from "../retirementNews";
 import { mulberry32 } from "../season";
 import { divisionOf, leagueNameFor } from "../calendar";
 import { getTuning } from "../tuningStore";
@@ -212,6 +214,49 @@ export function generateForLeagueWeek(
 }
 
 /**
+ * RETIREMENTS AND REGENS AT THE ROLLOVER.
+ *
+ * `career` is the career straight after advanceSeason: `lastRetirements`
+ * holds the retirements worth a post (lib/star/retirementNews.ts) and the
+ * squads hold this rollover's regens. One cycle per player, so each one gets
+ * his own handful of posts and lines are not used up by the man before him.
+ * Each cycle id carries the player's id, so a replayed rollover never posts
+ * twice (the same `seenCycleIds` guard every cycle uses).
+ *
+ * Your own team-mates are club news; everyone else goes to the wider tab.
+ * Only accounts that have their own lines for these events may post, and a
+ * league account only speaks for a club in its own division.
+ */
+export function generateForRollover(career: CareerState): MediaState {
+  let media = mediaOf(career);
+  const finished = career.season - 1;
+  const own = career.player.club;
+  const division = new Set(career.league.map(t => t.name));
+  const allowed = (club: string): Set<Archetype> => new Set<Archetype>(
+    division.has(club)
+      ? ["club", "league", "stats", "fan", "teammate", "tabloid", "insider"]
+      : ["club", "stats", "fan", "teammate", "tabloid", "insider"],
+  );
+  const run = (event: FootballEvent, key: string, scope: "club" | "league", maxPosts: number) => {
+    const state = media;
+    const id = `s${career.season}-w${career.week}-${key}`;
+    if (state.lastCycleId === id || alreadySeen(state, id)) return;
+    const cooled = coolThreads(state.memory);
+    const scored = scoreCareerEvents([event], cooled, fameOf(career));
+    media = commit({ ...career, media: state }, state, null, scored, cooled, id,
+      clockAt(career.season, career.week, 0), scope, allowed(String(event.facts.club ?? own)), maxPosts);
+  };
+  // A few posts each: a team-mate 4, a famous name 3, a boy to watch 2.
+  for (const n of career.lastRetirements ?? []) {
+    run(retirementEvent(n, finished), `retire-${n.id}`, n.own ? "club" : "league", n.own ? 4 : 3);
+  }
+  for (const n of promisingRegens(career, own, finished)) {
+    run(regenEvent(n, finished), `regen-${n.id}`, n.own ? "club" : "league", 2);
+  }
+  return media;
+}
+
+/**
  * Turn scored events into posts and fold them into the saved state.
  *
  * Shared by both entry points on purpose: a transfer and a hat-trick go through
@@ -227,6 +272,10 @@ function commit(
   cycleId: string,
   cycleClock: number,
   scope: "club" | "league" = "club",
+  /** Only these kinds of account may post (the rollover's own events). */
+  onlyArchetypes?: Set<Archetype>,
+  /** At most this many posts from this cycle (the rollover keeps each player to a few). */
+  maxPosts?: number,
 ): MediaState {
   // The league-wide weekly pass runs its OWN replay guard
   // (`lastLeagueCycleId`) rather than the match/career one below — it is
@@ -245,8 +294,10 @@ function commit(
     return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
 
-  const accounts = [...buildRoster(career), selfAccount(career)];
-  const pairings = selectPairings(events, accounts, cycleId, career.player.club);
+  const accounts = [...buildRoster(career), selfAccount(career)]
+    .filter(a => !onlyArchetypes || onlyArchetypes.has(a.archetype));
+  const pairings = selectPairings(events, accounts, cycleId, career.player.club)
+    .slice(0, maxPosts ?? Number.POSITIVE_INFINITY);
 
   const posts: StoredPost[] = [];
   const used: string[] = [];

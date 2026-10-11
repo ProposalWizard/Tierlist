@@ -61,6 +61,7 @@ import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { ageLeagueSquads, ageOwnSquad, clubLevelOf } from "./worldAgeing";
+import { notableRetirements } from "./retirementNews";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
@@ -1818,14 +1819,23 @@ export function advanceSeason(
         ?? (career.externalSquads ?? []).find(s => s.club === own);
       const ownLevel = levels[own] ?? (ownCopy ? clubLevelOf(levels, ownCopy) : undefined)
         ?? career.league.find(t => t.name === own)?.strength ?? 65;
-      const squad = ageOwnSquad(
+      const agedOwn = ageOwnSquad(
         (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
         own, career.season, ownLevel, tier(own),
-      ).squad;
+      );
+      const squad = agedOwn.squad;
+      // The few retirements worth a post (media at the rollover, page.tsx):
+      // read off the squads as they were before this rollover reset them.
+      const lastRetirements = notableRetirements(
+        [...agedOwn.retired, ...agedLeague.retired, ...agedExternal.retired],
+        { leagueSquads: career.leagueSquads, externalSquads: career.externalSquads, squad: career.squad },
+        own,
+      );
       return {
         leagueSquads: agedLeague.squads,
         externalSquads: agedExternal.squads,
         squad,
+        lastRetirements,
         clubLevels: levels,
         worldAgedSince: career.worldAgedSince ?? career.season,
       };
