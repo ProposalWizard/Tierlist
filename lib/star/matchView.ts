@@ -28,7 +28,7 @@ import { wideChances } from "./wideChances";
 /** Tests and measuring scripts: force Wide chances (re-exported so they set the copy this file reads). */
 export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
-import { tiltFor, visibleOnScreen } from "./cameraTilt";
+import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
 
 export type MatchView = "new" | "classic";
@@ -230,6 +230,50 @@ function passersCamera(pts: Vec2[], facing: Facing, hw: number): Viewport {
   return { x1: cx - down / 2, x2: cx + down / 2, y1: cy - across / 2, y2: cy + across / 2 };
 }
 
+/** Build-up, fitted (camera round 3): room either side of the outermost passer… */
+const PASSERS_FIT_SIDE_M = 2.5;
+/** …above the highest and below the lowest… */
+const PASSERS_FIT_END_M = 4;
+/** …and never tighter than this across. */
+const PASSERS_FIT_MIN_M = 16;
+
+/**
+ * The build-up camera fitted to the passers (camera round 3). passersCameraFor
+ * below hangs the camera from the engine's out line and keeps it at least
+ * the engine's width, so on a phone (twice as tall as wide) the passers sat
+ * in a band across the middle with empty grass above and below: 43–53% of
+ * the screen under the lowest man in the real match.
+ *
+ * Here the camera is the tightest frame at the canvas's shape that holds the
+ * passers on the glass (2.5 m off a side, 4 m above and below), pushed up
+ * towards the out line as far as the lowest passer allows. The play area is
+ * untouched (playAreaFor keeps the engine's out line), so nothing goes out
+ * sooner; a long ball past every passer may leave the top of the screen a
+ * few metres before it goes out.
+ */
+export function passersFit(sc: Scenario, engine: Viewport, hw: number, tiltDeg = 0): Viewport {
+  const pts = passersOf(sc).filter(onThePitch);
+  const H = Math.max(NEW_VIEW_MIN_HW, hw);
+  const t = tiltFor(tiltDeg, 1, H);
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const x1 = Math.min(...xs), x2 = Math.max(...xs), y1 = Math.min(...ys), y2 = Math.max(...ys);
+  const cx = (x1 + x2) / 2;
+  let across = Math.max(PASSERS_FIT_MIN_M, x2 - x1 + 2 * PASSERS_FIT_SIDE_M, (y2 - y1 + 2 * PASSERS_FIT_END_M) / H);
+  for (;; across += 0.25) {
+    const down = across * H;
+    let vx1 = cx - across / 2;
+    vx1 = Math.max(Math.min(x1 - PASSERS_FIT_SIDE_M, -EDGE_M), Math.min(Math.max(x2 + PASSERS_FIT_SIDE_M, PITCH_W + EDGE_M) - across, vx1));
+    const lo = y2 + PASSERS_FIT_END_M - down, hi = y1 - PASSERS_FIT_END_M;
+    const top = Math.max(lo, Math.min(hi, engine.y1));
+    const v: Viewport = { x1: vx1, x2: vx1 + across, y1: top, y2: top + down };
+    const fits = pts.every((p) => {
+      const c = fracOf(v, "up", p);
+      return t ? visibleOnScreen(t, c.sx, c.sy, TILT_FIT_MARGIN) : c.sx >= 0 && c.sx <= 1 && c.sy >= 0 && c.sy <= 1;
+    });
+    if (fits || across >= NEW_VIEW_WIDTH_M) return v;
+  }
+}
+
 /**
  * The build-up camera. Its top edge IS the engine's goal-side out line and it
  * is never narrower than the engine's frame, so the play area and the screen
@@ -292,6 +336,10 @@ export function newViewCamera(
   return { ...xs, y1, y2: y1 + across };
 }
 
+/** Camera round 3 (fitAction, tighter side-on and build-up cameras). */
+let ACTION_FIT = false;
+export function setActionFit(v: boolean): void { ACTION_FIT = v; }
+
 /** The scenario as CanvasMatch frames it: the engine's own frame, kept. */
 type Framed = Scenario & { engineFrame?: Viewport; playZoom?: number; wideChecked?: boolean };
 
@@ -339,6 +387,12 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
       const fit = fitToPlay(base, sc, hw, tiltDeg);
       const kf = fit ? (today.x2 - today.x1) / (fit.x2 - fit.x1) : 1;
       if (fit && kf > Math.max(1.001, f.playZoom ?? 1)) { cam = fit; f.playZoom = kf; }
+      // …and fitted to the action alone (fitAction), when that is tighter.
+      if (ACTION_FIT) {
+        const act = fitAction(base, sc, hw, tiltDeg);
+        const ka = act ? (today.x2 - today.x1) / (act.x2 - act.x1) : 1;
+        if (act && ka > Math.max(1.001, f.playZoom ?? 1)) { cam = act; f.playZoom = ka; }
+      }
     }
   }
   if (!keepPlayArea) sc.viewport = playAreaFor(sc, cam, f.engineFrame);
@@ -555,6 +609,139 @@ export function fitToPlay(base: Viewport, sc: Scenario, hw: number, tiltDeg = 0)
           && onGlass(sxAt(ball.sx, q2), ball.sy * k + pullF * k, 0)))) q = q2;
       return zoomView(base, "up", k, q);
     }
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FRAME THE ACTION, NOT EVERYBODY (camera round 3, 11 Oct 2026)
+//
+// A phone's match canvas is about twice as tall as it is wide (366 × 744 px on
+// a 390 × 844 phone). fitToPlay keeps EVERY man on the glass, so one man
+// standing out wide — a defender 9 m off the ball and behind it, a team-mate
+// on the far wing — fixes the camera's width, and the height that comes with
+// that width is mostly empty grass. Measured in the real match (390 × 844,
+// 20°): a one-on-one 35% empty below the lowest man, a tight angle 54%, a
+// through ball 28%.
+//
+// Here the camera is fitted to the people who are part of the chance (the
+// ball, you, the keeper and goal, every team-mate near enough to pass to and
+// every defender near the ball, marking a team-mate or between the ball and
+// the goal). Anyone else is shown when he fits, and never cut in half by an
+// edge: he is either wholly on the screen or clearly off it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A defender this close to the ball is in the chance. */
+export const ACTION_BALL_M = 9;
+/** A team-mate this close to the ball is a pass you can see. */
+export const ACTION_MATE_M = 15;
+/** A defender this close to a team-mate in the chance is marking him. */
+const ACTION_MARK_M = 3.5;
+/** A defender goal-side of the ball, this far either side of the line from the ball to the posts. */
+const ACTION_LANE_M = 4;
+
+/** The people a goal-facing chance is about, and everybody else on the pitch. */
+export function actionOf(sc: Scenario): { must: Vec2[]; extra: Vec2[] } {
+  const ball = sc.ball;
+  const near = (p: Vec2, r: number) => Math.hypot(p.x - ball.x, p.y - ball.y) <= r;
+  const must: Vec2[] = [ball, sc.player];
+  const extra: Vec2[] = [];
+  // A penalty is the taker, the ball and the keeper: the others wait outside the box.
+  if (sc.kind === "penalty") {
+    for (const p of bodiesOf(sc)) if (p !== ball && p !== sc.player) extra.push(p);
+    return { must: must.filter(onThePitch), extra };
+  }
+  const mates: Vec2[] = [];
+  if (sc.runner) mates.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) mates.push(r.pos);
+  if (sc.follower && goalInView(sc.kind)) mates.push(sc.follower);
+  const decorative = sc.kind === "volley" || sc.kind === "header";
+  if (!decorative) mates.push(...sc.teammates);
+  const keptMates: Vec2[] = [];
+  for (const m of mates.filter(onThePitch)) {
+    // The man the pass is aimed at is always in the picture.
+    if ((sc.runner && m === sc.runner.pos) || near(m, ACTION_MATE_M)) { must.push(m); keptMates.push(m); } else extra.push(m);
+  }
+  const loX = Math.min(ball.x, POST_L) - ACTION_LANE_M, hiX = Math.max(ball.x, POST_R) + ACTION_LANE_M;
+  for (const d of sc.defenders.filter(onThePitch)) {
+    const inLane = d.y <= ball.y + 1.5 && d.x >= loX && d.x <= hiX;
+    const marking = keptMates.some((m) => Math.hypot(d.x - m.x, d.y - m.y) <= ACTION_MARK_M);
+    if (near(d, ACTION_BALL_M) || inLane || marking) must.push(d); else extra.push(d);
+  }
+  return { must: must.filter(onThePitch), extra };
+}
+
+/** Grass kept below the lowest man in the action (he is wholly on the screen, with a strip under him). */
+export const ACTION_ROOM_M = 3.5;
+/** A man counts as clearly off the screen this far past an edge (screen widths). */
+const ACTION_OFF_EDGE = 0.04;
+
+/**
+ * The tightest camera, zooming about the top-centre as fitToPlay does, that
+ * shows on the glass every man in `actionOf(sc).must` (0.9 m off a side, 1 m
+ * off the top), the keeper and both posts, ZOOM_ROOM_M below the lowest of
+ * them and ZOOM_MIN_PULL_M below the ball, and that cuts nobody else in half.
+ * Among the pans that work it keeps the most of everybody else, then the one
+ * that centres the action. Null when even the widest camera cannot.
+ */
+export function fitAction(base: Viewport, sc: Scenario, hw: number, tiltDeg = 0): Viewport | null {
+  const spanX = base.x2 - base.x1, spanY = base.y2 - base.y1;
+  const H = Math.max(NEW_VIEW_MIN_HW, hw);
+  const t = tiltFor(tiltDeg, 1, H);
+  const { must, extra } = actionOf(sc);
+  const men = must.map((p) => fracOf(base, "up", p));
+  const others = extra.map((p) => fracOf(base, "up", p));
+  const goal = [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].filter(onThePitch).map((p) => fracOf(base, "up", p));
+  const ball = fracOf(base, "up", sc.ball);
+  const low = men.reduce((a, b) => (b.sy > a.sy ? b : a), men[0]);
+  const roomF = ACTION_ROOM_M / spanY, pullF = ZOOM_MIN_PULL_M / spanY;
+  const gm = TILT_FIT_MARGIN;
+  // On the glass, in screen widths (x 0..1, y 0..H).
+  const glass = (sx: number, sy: number) => (t ? canvasToScreen(t, sx, sy, 1, H) : { X: sx, Y: sy * H });
+  const onGlass = (sx: number, sy: number, m: number): boolean => (t ? visibleOnScreen(t, sx, sy, m) : sx >= 0 && sx <= 1 && sy >= 0 && sy <= 1);
+  const allMen = [...men, ...others];
+  const midX = (Math.min(...men.map((b) => b.sx), ...goal.map((b) => b.sx)) + Math.max(...men.map((b) => b.sx), ...goal.map((b) => b.sx))) / 2;
+  for (let k = ZOOM_MAX; k >= 1 / TILT_FIT_MAX - 1e-9; k -= 0.01) {
+    const across = spanX / k, down = spanY / k;
+    if (low.sy * k + roomF * k > 1 + 1e-9) continue;
+    if (ball.sy * k + pullF * k > 1 + 1e-9) continue;
+    const mx = ZOOM_SIDE_M / across, my = ZOOM_TOP_M / down;
+    if (men.some((b) => b.sy * k < my)) continue;
+    let pLo = -Infinity, pHi = Infinity;
+    const need = (sx: number, m: number) => {
+      const a = 0.5 + (sx - 0.5) * k;
+      pLo = Math.max(pLo, m - a); pHi = Math.min(pHi, 1 - m - a);
+    };
+    men.forEach((b) => need(b.sx, mx));
+    goal.forEach((b) => need(b.sx, 0));
+    if (pLo > pHi + 1e-12) continue;
+    const sxAt = (sx: number, p: number) => 0.5 + (sx - 0.5) * k + p;
+    const x1At = (p: number) => base.x1 + (0.5 + (-0.5 - p) / k) * spanX;
+    const pMid = Math.max(pLo, Math.min(pHi, 0.5 - (0.5 + (midX - 0.5) * k)));
+    let best: { p: number; shown: number; off: number; edge: boolean } | null = null;
+    const steps = 40;
+    for (let i = 0; i <= steps; i++) {
+      const p = pHi > pLo ? pLo + ((pHi - pLo) * i) / steps : pLo;
+      if (!men.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
+      if (!goal.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
+      if (!onGlass(sxAt(low.sx, p), low.sy * k + roomF * k, 0)) continue;
+      if (!onGlass(sxAt(ball.sx, p), ball.sy * k + pullF * k, 0)) continue;
+      // Nobody half on: wholly inside, or clearly past an edge.
+      let shown = 0, half = false;
+      for (const b of allMen) {
+        const sx = sxAt(b.sx, p), sy = b.sy * k;
+        if (onGlass(sx, sy, gm)) { shown++; continue; }
+        const g = glass(sx, sy);
+        const off = g.X < -ACTION_OFF_EDGE || g.X > 1 + ACTION_OFF_EDGE || g.Y > H + ACTION_OFF_EDGE || g.Y < -ACTION_OFF_EDGE;
+        if (!off) { half = true; break; }
+      }
+      if (half) continue;
+      // No more than EDGE_M of grass past a touchline, when that can be had.
+      const x1 = x1At(p), edge = x1 >= -EDGE_M - 1e-6 && x1 + spanX / k <= PITCH_W + EDGE_M + 1e-6;
+      const c = { p, shown, off: Math.abs(p - pMid), edge };
+      if (!best || (c.edge && !best.edge) || (c.edge === best.edge && (c.shown > best.shown || (c.shown === best.shown && c.off < best.off)))) best = c;
+    }
+    if (best) return zoomView(base, "up", k, best.p);
   }
   return null;
 }
