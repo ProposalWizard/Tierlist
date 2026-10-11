@@ -81,6 +81,8 @@ export const LOOK_ROWS = {
   chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
   animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
   keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
+  // Leo v0.15 (11 Oct 2026): the goalkeeper to "perfect" (lib/star/keeperBrain.ts KEEPER_PRO).
+  keeperPro: row("Keeper pro", "new", "old", () => gameplayVersion("keeperPro"), (v) => setGameplayVersion("keeperPro", v)),
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
@@ -154,6 +156,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     chances: CHANCE_SET_DEFAULT,
     animations: O("animations"),
     keepers: N("keepers"),
+    keeperPro: N("keeperPro"),
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),

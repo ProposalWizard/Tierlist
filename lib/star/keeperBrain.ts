@@ -60,12 +60,12 @@
  * (one for the set-up, one from the strike), so the match's own random stream
  * is untouched and a goal replay reproduces the same keeper.
  */
-import type { Ball, Scenario } from "./canvasEngine";
+import type { Ball, Scenario, KeeperClaim } from "./canvasEngine";
 import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
 import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
-import { oldKeepers } from "./gameplayVersion";
+import { oldKeepers, oldKeeperPro } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -264,6 +264,8 @@ export interface BrainOptions {
   vision?: boolean;
   /** false = no top-corner reach cut (the keeper before 5 Oct 2026; for measuring). Absent = on. */
   topCorner?: boolean;
+  /** KEEPER PRO on/off for this chance. Absent = Settings → Gameplay → Keeper pro. */
+  pro?: boolean;
 }
 
 /** The options the match sets a chance up with, on this screen. */
@@ -481,6 +483,14 @@ interface State {
   stepAtT: number | null;
   diveAtT: number | null;
   wrongFooted: boolean;
+  // ── KEEPER PRO ──
+  pro: boolean;
+  /** This delivery has been read for a claim (reset by each new strike / reception). */
+  claimRead: boolean;
+  /** He is coming for it: where, and from when (s after he read it). */
+  claimGo: { x: number; y: number; at: number; t: number } | null;
+  /** His full standing reach (m) for this shot, read at the strike. */
+  fullR: number;
 }
 
 const states = new WeakMap<Scenario, State>();
@@ -541,7 +551,13 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, leanAt: null, leanSide: 0, leaned: false, farRead: 0, blocked: 0, wrongRead: false, cutOn: false, shotX: k.x,
     lastShot: false, ownShot: false, lastRecv: null, planted: false, reason: "",
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
+    pro: sc.kind !== "penalty" && (opts.pro ?? !oldKeeperPro()), claimRead: false, claimGo: null, fullR: 2.4,
   };
+  // KEEPER PRO: the engine's half (resolveKeeperPro, keeperClaimTouch) is
+  // switched on by this one flag, and only here. Old leaves the scenario
+  // exactly as it was.
+  if (st.pro) sc.keeperPro = true; else delete sc.keeperPro;
+  k.claim = null;
   st.setTarget = planSet(sc, st, sc.ball);
   states.set(sc, st);
 }
@@ -559,14 +575,14 @@ function planSet(sc: Scenario, st: State, ball: { x: number; y: number }): { x: 
     // off his line to attack a ball dropped in front of him.
     ideal = { x: CX + Math.sign(ball.x - CX) * 1.0, y: 1.5 };
   } else {
-    const d = idealDepth(ball);
+    const d = st.pro ? proDepth(sc, ball) : idealDepth(ball);
     ideal = { x: bisectorX(ball, d), y: d };
   }
   const D = Math.hypot(ball.x - CX, ball.y);
   // The walk toward the ideal spot is capped (2.2 m; 1 m in a tight angle).
   // His set error comes on top — a bad keeper can still wander further than
   // a good one walks — but never past the cap from where he was drawn.
-  const cap = walkCapFor(sc.kind);
+  const cap = st.pro && clearThrough(sc, ball) ? Math.max(walkCapFor(sc.kind), KEEPER_PRO_BRAIN.rushCap) : walkCapFor(sc.kind);
   let tx = k.x + (ideal.x - k.x) * ab.correction;
   let ty = k.y + (ideal.y - k.y) * ab.correction;
   const bad = rng() < ab.badSet ? 2.5 : 1;
@@ -606,7 +622,9 @@ export function brainAim(sc: Scenario, dt: number): void {
   const st = states.get(sc);
   const k = sc.keeper;
   if (!st || k.done) return;
-  moveToward(sc, st, st.setTarget, st.ab.setSpeed, dt);
+  // KEEPER PRO: coming OUT at a man clean through is a run, not a side-step.
+  const fwd = st.pro && st.setTarget.y - k.y > 0.5;
+  moveToward(sc, st, st.setTarget, fwd ? st.ab.setSpeed * KEEPER_PRO_BRAIN.rushSpeed : st.ab.setSpeed, dt);
   // His lean and his scramble are measured from where he actually stands —
   // not from a spot the drawing moved him away from (the stale-startX bug).
   k.startX = k.x; k.targetX = k.x; k.adjusting = false;
@@ -748,13 +766,19 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   k.startX = k.x; k.targetX = k.x; k.adjusting = false; k.committedDir = undefined;
   sc.keeperReach = st.baseReach;
   st.shotX = k.x; st.cutOn = false;
+  if (st.pro) {
+    k.claim = null; st.claimGo = null;
+    const kr = sc.keeperReach; sc.keeperReach = st.baseReach;
+    st.fullR = keeperSaveRadius(sc);
+    sc.keeperReach = kr;
+  }
   let rt = ab.rt + gauss(rng) * ab.rtSd;
   if (rng() < ab.lateChance) rt += ab.lateExtra;
   if (st.moving) rt += KEEPER_BRAIN.caughtMoving;
   // ── THE OPEN-PLAY DIAL (long shots, and the through balls finished from
   // distance) ── below 1 a shot from distance is harder to read: his reads
   // start later, are worse, and stay worse (it dips and moves in the air).
-  const dial = st.opts.openPlay ?? KEEPER_BRAIN.openPlay;
+  const dial = st.pro ? Math.max(st.opts.openPlay ?? KEEPER_BRAIN.openPlay, KEEPER_PRO_BRAIN.openPlay) : st.opts.openPlay ?? KEEPER_BRAIN.openPlay;
   st.farRead = sc.kind !== "penalty" ? (1 - dial) * farness(ball) : 0;
   rt += KEEPER_BRAIN.farReadLate * st.farRead;
   st.timingErr = gauss(rng) * ab.timingErr * KEEPER_BRAIN.timingScale;
@@ -815,7 +839,7 @@ export function brainStrike(sc: Scenario, ball: Ball, seed: number): void {
   const shot = !!ball.shot || shootingPicture;
   st.ownShot = shot;
   if (shot) { onShot(sc, st, ball); st.lastShot = true; }
-  else { st.lastShot = false; st.phase = "set"; st.planted = false; }
+  else { st.lastShot = false; st.phase = "set"; st.planted = false; st.claimRead = false; }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -897,7 +921,7 @@ function windowReach(sc: Scenario, st: State) {
 export function brainStep(sc: Scenario, ball: Ball | null, dt: number): void {
   brainStepInner(sc, ball, dt);
   const st = states.get(sc);
-  if (st) applyTopCorner(sc, st, ball);
+  if (st) { if (st.pro) applyProReach(sc, st, ball); else applyTopCorner(sc, st, ball); }
 }
 
 /**
@@ -987,6 +1011,9 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
     // Everywhere else the brain owns him while the ball is somebody else's:
     // the engine's own reception shuffle would otherwise move him too.
     k.adjusting = false; k.targetX = k.x;
+    // KEEPER PRO: he comes for a cross or an overhit through ball he can
+    // reach first, and steps up toward a man about to be through.
+    if (st.pro && proOffBall(sc, st, ball, dt)) return;
     // Mid-read of a shot that has stopped being one (a block, a deflection):
     // he holds where he is until somebody strikes it again.
     if (st.phase !== "set") return;
@@ -997,7 +1024,8 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
       // him mid-step.
       st.lastRecv = recv;
       const ideal = planSet(sc, st, { x: recv.x, y: recv.y });
-      st.setTarget = stepToward({ x: k.x, y: k.y }, ideal, KEEPER_BRAIN.receptionStep);
+      st.setTarget = stepToward({ x: k.x, y: k.y }, ideal, st.pro && clearThrough(sc, recv) ? KEEPER_PRO_BRAIN.rushStep : KEEPER_BRAIN.receptionStep);
+      st.claimRead = false;
       st.phase = "set";
       st.planted = false;
     } else if (!recv && ball.owner === "you" && st.phase === "set" && !st.planted) {
@@ -1006,7 +1034,8 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
       st.planted = true; st.setTarget = { x: k.x, y: k.y }; st.moving = false;
     }
     if (st.phase === "set" || st.phase === "wait") {
-      moveToward(sc, st, st.setTarget, ab.setSpeed, dt);
+      const fwd = st.pro && st.setTarget.y - k.y > 0.5;
+      moveToward(sc, st, st.setTarget, fwd ? ab.setSpeed * KEEPER_PRO_BRAIN.rushSpeed : ab.setSpeed, dt);
       k.startX = k.x; k.targetX = k.x;
     }
     return;
@@ -1077,4 +1106,241 @@ export function brainRestore(sc: Scenario, s: KeeperBrainSnapshot): void {
   st.baseReach = s.baseReach ?? undefined;
   st.hopSide = s.hopSide ?? 0;
   st.hopFromX = s.hopFromX ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  KEEPER PRO (Leo v0.15, 11 Oct 2026) — positioning, rushing out, claims
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Settings → Gameplay → Keeper pro. New: everything below, plus the engine's
+// resolveKeeperPro / keeperClaimTouch (canvasEngine.ts). Old: none of it runs
+// and the keeper is exactly the one from before. Real-football numbers and
+// the before/after measurements: docs/gameplay15/keeper.md; the test:
+// tests/star/keeperPro.mts.
+
+export const KEEPER_PRO_BRAIN = {
+  /** A man clean through, centrally, inside this distance (m): the keeper comes out to meet him. */
+  rushWithin: 24,
+  rushWide: 12,
+  /**
+   * TIME TO DIVE. His reach before he has reacted: an arm's length (m)…
+   * …and the seconds from his reaction to full stretch. Sports-science
+   * figures: a keeper's reaction to a strike is about 0.2-0.3 s and a full
+   * dive into the corner takes about 0.5-0.7 s after it. Tuned so an
+   * 80-rated keeper's save % by distance lands on the real one (docs/gameplay15/keeper.md).
+   */
+  handNow: 1.0,
+  handFull: 0.55,
+  /** A man clean through: this much further off his line than for the same shot with men in the way (m). */
+  throughExtra: 0.3,
+  /** How far from the drawn spot he may come while you aim at a man clean through (m). */
+  rushCap: 3.0,
+  /** Coming forward is a run: × his side-step speed. */
+  rushSpeed: 1.9,
+  /** The step toward a team-mate who has received it clean through (m). */
+  rushStep: 1.8,
+  /** A defender within this many metres of the line from the ball to goal, goal-side of it, means he is not clean through. */
+  coverLane: 2.0,
+  /**
+   * The open-play dial (KEEPER_BRAIN.openPlay) with Keeper pro on: how well
+   * he reads a shot from distance. 0.55 left a well-struck long shot on
+   * target going in 39% of the time against an average keeper; the real
+   * game's figure for shots from outside the box on target is nearer 12-15%.
+   */
+  openPlay: 0.8,
+  // ── Claims (crosses and through balls) ──
+  /** How deep he commands his box for a ball in the air: a 40 → a 95 (m from his line). */
+  aerialDepth: [6.0, 9.0] as [number, number],
+  /** A ball on the ground: anywhere in his area. */
+  groundDepth: 16.5, groundWide: 16,
+  /** Reaction to a delivery (s), 40 → 95, and his run (m/s). */
+  react: [0.32, 0.2] as [number, number],
+  run: [4.6, 6.2] as [number, number],
+  /** He only comes if he gets there this much sooner than any attacker (s), 40 → 95. */
+  margin: [0.4, 0.15] as [number, number],
+  /** How high he can take it (m), 40 → 95. */
+  top: [2.55, 2.85] as [number, number],
+  /** Of crosses he comes for: a flap at fresh air, 40 → 95… */
+  flap: [0.08, 0.02] as [number, number],
+  /** …and a punch rather than a catch (more when an attacker is close, or it is high). */
+  punch: 0.15, punchContested: 0.22, punchHigh: 0.12, punchGood: -0.1,
+  /** An attacker can take the ball this close to him (m), up to this height (a jumping header, m), after this start (s), running this fast (m/s). Above his reach it is the keeper's: his hands go higher than any head. */
+  attackerReach: 1.0, attackerTop: 2.3, attackerStart: 0.15, attackerRun: 7.0,
+  /** In his six-yard box he takes a ball an attacker would reach up to this much sooner (s): he has hands, and it is his box. */
+  sixEdge: 0.2,
+};
+
+const proG = (r: number) => grow(clamp(r, 20, 99), 40, 95, 1.0);
+const lerp2 = (ab: [number, number], g: number) => ab[0] + (ab[1] - ab[0]) * g;
+
+/** Is a man with the ball at `at` clean through: central, close enough, nobody goal-side in the way? */
+export function clearThrough(sc: Scenario, at: { x: number; y: number }): boolean {
+  const P = KEEPER_PRO_BRAIN;
+  if (Math.abs(at.x - CX) > P.rushWide) return false;
+  const D = Math.hypot(at.x - CX, at.y);
+  if (D > P.rushWithin || D < 7) return false;
+  for (const d of sc.defenders) {
+    if (!(d.y < at.y - 0.5) || d.y < 0) continue;
+    const f = (at.y - d.y) / Math.max(0.5, at.y);
+    const lineX = at.x + (CX - at.x) * f;
+    if (Math.abs(d.x - lineX) < P.coverLane) return false;
+  }
+  return true;
+}
+
+const smooth01 = (a: number, b: number, v: number) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+/**
+ * KEEPER PRO: how far off his line he sets for a ball at `ball` — the real
+ * keepers' depth (StatsBomb, Premier League 2015/16, 9,800 shots, keeper's
+ * spot in the freeze frame at the strike): 1.2 m for a shot from under 8 m,
+ * 1.6 m from 8-12, 2.3-2.4 m from 12-22, 1.8-1.9 m from 22 m out. The old
+ * curve fell to 0.9 m for a long shot (measured 1.1 m in the game). A man
+ * clean through gets `throughExtra` more (real one-on-ones: 2.0-2.5 m).
+ */
+export function proDepth(sc: Scenario, ball: { x: number; y: number }): number {
+  const D = Math.hypot(ball.x - CX, ball.y);
+  const ang = Math.atan2(Math.abs(ball.x - CX), Math.max(0.5, ball.y));
+  let d = 1.0 + 1.4 * smooth01(5, 15, D) - 0.5 * smooth01(20, 28, D);
+  if (clearThrough(sc, ball)) d += KEEPER_PRO_BRAIN.throughExtra;
+  const wideCut = 1 - 0.45 * Math.sin(ang);
+  return clamp(d * wideCut, 0.8, Math.max(0.8, ball.y - 4));
+}
+
+interface ClaimPlan { x: number; y: number; z: number; t: number; tK: number; tA: number; aerial: boolean }
+
+/**
+ * Read a delivery (a cross, a pass, a through ball): where it will be, and
+ * whether he gets there clearly before any of our men. Returns his claim, or
+ * the spot one of ours will meet it (for stepping up to a man through), or nothing.
+ */
+function readDelivery(sc: Scenario, st: State, ball: Ball): { claim: ClaimPlan | null; meet: { x: number; y: number } | null } {
+  const P = KEEPER_PRO_BRAIN;
+  const k = sc.keeper;
+  const g = proG(st.ab.rating);
+  const react = lerp2(P.react, g), run = lerp2(P.run, g), margin = lerp2(P.margin, g), top = lerp2(P.top, g);
+  const aerialDepth = lerp2(P.aerialDepth, g);
+  const ours: { x: number; y: number }[] = [];
+  if (sc.runner) ours.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) ours.push(r.pos);
+  const f = sc.follower;
+  if (f && f.x > -100 && f.y < 200 && !f.shot) ours.push(f);
+  let x = ball.pos.x, y = ball.pos.y, z = ball.z, vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
+  const dt = 0.02;
+  for (let t = dt; t <= 2.6; t += dt) {
+    // A plain flight: gravity, a bounce, rolling friction. Good to a few
+    // tenths of a metre over the second or two that matter.
+    x += vx * dt; y += vy * dt;
+    if (z > 0 || vz > 0) {
+      vz -= 9.81 * dt; z += vz * dt;
+      if (z < 0) { z = 0; if (vz < -2) { vz = -vz * 0.5; vx *= 0.8; vy *= 0.8; } else vz = 0; }
+    } else {
+      const sp = Math.hypot(vx, vy), drop = 1.9 * dt;
+      if (sp <= drop) { vx = 0; vy = 0; } else { vx *= (sp - drop) / sp; vy *= (sp - drop) / sp; }
+    }
+    if (y < 0.2) break;
+    let tA = Infinity;
+    for (const a of ours) tA = Math.min(tA, P.attackerStart + Math.max(0, Math.hypot(a.x - x, a.y - y) - P.attackerReach) / P.attackerRun);
+    const aerial = z > 0.9;
+    const inArea = aerial
+      ? y <= aerialDepth && Math.abs(x - CX) <= 9.16
+      : y <= P.groundDepth && Math.abs(x - CX) <= P.groundWide;
+    if (inArea && z <= top) {
+      // His six-yard box is his: there a keeper who arrives with them takes it.
+      const six = y <= 5.5 && Math.abs(x - CX) <= 9.16;
+      const tK = react + Math.max(0, Math.hypot(x - k.x, y - k.y) - 0.6) / run;
+      if (tK <= t && tK + (six ? -P.sixEdge : margin) <= tA) return { claim: { x, y, z, t, tK, tA, aerial }, meet: null };
+    }
+    if (z <= P.attackerTop && tA <= t) return { claim: null, meet: { x, y } };
+    if (Math.hypot(vx, vy) < 0.3 && z === 0) break;
+  }
+  return { claim: null, meet: null };
+}
+
+/**
+ * KEEPER PRO, every substep while the ball is ours but not a shot. Returns
+ * true when it has moved him this step (the ordinary "set" logic then stands
+ * down).
+ */
+function proOffBall(sc: Scenario, st: State, ball: Ball, dt: number): boolean {
+  const P = KEEPER_PRO_BRAIN;
+  const k = sc.keeper;
+  const g = proG(st.ab.rating);
+  if (st.claimGo) {
+    const live = !!k.claim && !ball.loose && ball.lastTouch === "attack";
+    if (!live) {
+      // It is over (caught, punched, flapped at, or one of ours got there):
+      // he is where he is; he resets from there.
+      st.claimGo = null; k.claim = null;
+      st.setTarget = { x: k.x, y: k.y }; st.planted = true; st.moving = false;
+      return false;
+    }
+    st.claimGo.t += dt;
+    if (st.claimGo.t >= st.claimGo.at) {
+      moveToward(sc, st, { x: st.claimGo.x, y: st.claimGo.y }, lerp2(P.run, g), dt);
+      k.startX = k.x; k.targetX = k.x;
+    }
+    return true;
+  }
+  if (st.phase !== "set" || st.claimRead) return false;
+  if (ball.loose || ball.resting || ball.lastTouch !== "attack") return false;
+  if (Math.hypot(ball.vel.x, ball.vel.y) < 5) return false;
+  st.claimRead = true;
+  const { claim, meet } = readDelivery(sc, st, ball);
+  if (claim) {
+    const r = st.rng;
+    const flap = r() < lerp2(P.flap, g) * (claim.aerial ? 1 : 0.3);
+    const contested = claim.tA - claim.tK < 0.6;
+    const punch = claim.aerial && r() < P.punch + (contested ? P.punchContested : 0) + (claim.z > 2.2 ? P.punchHigh : 0) + P.punchGood * g;
+    const dir = (Math.sign(claim.x - CX) || (r() < 0.5 ? -1 : 1)) * (0.3 + r() * 0.9);
+    const c: KeeperClaim = {
+      x: claim.x, y: claim.y, act: flap ? "miss" : punch ? "punch" : "catch", dir, pace: r(),
+      reach: claim.aerial ? 1.0 : 1.1, top: lerp2(P.top, g),
+    };
+    k.claim = c;
+    st.claimGo = { x: claim.x, y: claim.y, at: lerp2(P.react, g), t: 0 };
+    st.reason = claim.aerial ? "came for it" : "swept up";
+    return true;
+  }
+  if (meet && clearThrough(sc, meet)) {
+    // Played through to one of ours: he comes off his line to meet him
+    // while the ball is still travelling, not after it has arrived.
+    const ideal = planSet(sc, st, meet);
+    st.setTarget = stepToward({ x: k.x, y: k.y }, ideal, P.rushCap);
+    st.reason = "comes out";
+  }
+  return false;
+}
+
+/**
+ * KEEPER PRO: his reach while a shot is coming, every substep. The engine's
+ * reach is a full-length dive from where he stands — but a dive takes time.
+ * A ball that arrives before he has reacted meets only what his hands can
+ * already cover (`handNow`, about an arm's length); from his reaction his
+ * hands spread to the full stretch over `handFull` seconds. A shot from 25 m
+ * gives him all of it; one from 8 m, struck hard, barely any. On top: the
+ * top-corner cut (KEEPER_HUMAN), and a dive's own window, as before.
+ * Computed fresh each step from his un-cut reach, so nothing compounds.
+ */
+function applyProReach(sc: Scenario, st: State, ball: Ball | null): void {
+  const k = sc.keeper;
+  const live = !!ball && !k.done
+    && (st.phase === "wait" || st.phase === "step" || st.phase === "dive")
+    && st.lastShot && k.saves === 0 && !k.scrambling
+    && ball.lastTouch === "attack" && !ball.loose && ball.pos.y > k.y;
+  if (!live) {
+    if (st.cutOn) { if (st.phase === "dive") windowReach(sc, st); else sc.keeperReach = st.baseReach; }
+    st.cutOn = false;
+    return;
+  }
+  if (st.phase === "dive") windowReach(sc, st);
+  const r0 = st.phase === "dive" ? (sc.keeperReach ?? 1) : (st.baseReach ?? 1);
+  const top = st.opts.topCorner !== false && !oldKeepers() ? topCornerReach(sc, ball!, st.shotX) : 1;
+  const P = KEEPER_PRO_BRAIN;
+  const full = Math.max(0.5, st.fullR);
+  const hand = P.handNow + (full - P.handNow) * clamp((st.t - st.rt) / P.handFull, 0, 1);
+  const time = clamp(hand / full, 0, 1);
+  const f = top * time;
+  if (f < 0.999) { sc.keeperReach = r0 * f; st.cutOn = true; }
+  else { sc.keeperReach = st.phase === "dive" ? r0 : st.baseReach; st.cutOn = false; }
 }

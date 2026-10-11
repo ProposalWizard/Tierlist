@@ -307,11 +307,30 @@ export interface Keeper {
    */
   committedDir?: number;
   /**
+   * KEEPER PRO: he has come for a ball that is not a shot (a cross, a
+   * through ball) and decided, as he went, what he will do when he gets
+   * there. Set and moved by the keeper brain; the engine only carries it out
+   * when the ball reaches his hands (keeperClaimTouch). Absent = never.
+   */
+  claim?: KeeperClaim | null;
+  /**
    * The real opposing goalkeeper, when there is one to name — see Identity.
    * Purely who to draw and who a face comes from; `keeperStrength` (Scenario)
    * is still the one number that decides how well he actually keeps.
    */
   who?: Identity;
+}
+
+/** What a keeper who has come for a cross or a through ball does with it (KEEPER PRO). */
+export interface KeeperClaim {
+  /** Where he is going to meet it (m). */
+  x: number; y: number;
+  /** catch = holds it; punch = fists it clear; miss = he gets there and flaps at fresh air. */
+  act: "catch" | "punch" | "miss";
+  /** A punch's direction across the pitch (-1 left … 1 right) and pace share 0..1 — drawn by the brain. */
+  dir: number; pace: number;
+  /** How close the ball must come to his hands (m, across the ground) and how high he can take it. */
+  reach: number; top: number;
 }
 
 // A poacher lurking for the rebound.
@@ -570,6 +589,14 @@ export interface Scenario {
    * second field here, that is a different decision and needs asking again.
    */
   keeperReach?: number;
+  /**
+   * KEEPER PRO (Leo v0.15, 11 Oct 2026; Settings → Gameplay → Keeper pro).
+   * Set only by the keeper brain (lib/star/keeperBrain.ts brainSetup) when the
+   * switch is New. Absent = exactly the keeper from before: every branch it
+   * opens in this file is a separate function (resolveKeeperPro,
+   * keeperClaimTouch) called only when this is true.
+   */
+  keeperPro?: boolean;
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
@@ -6336,6 +6363,7 @@ export function keeperAttempt(scenario: Scenario, xCross: number, zCross: number
 // Outcome only for a genuine catch (or the third-save smother) — a parry
 // and a tip both stay live and return null; see each branch below.
 function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: number, speed: number, rng: () => number): Outcome | null {
+  if (scenario.keeperPro) return resolveKeeperPro(ball, scenario, dist, reach, speed, rng);
   const k = scenario.keeper;
   k.saves += 1;
   k.flash = 0.35;
@@ -6532,6 +6560,188 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   k.targetX = ball.pos.x;
   k.scrambling = true;
   logSave("parry");
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  KEEPER PRO (Leo v0.15, 11 Oct 2026) — what he does with a ball he reaches
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Only ever called when Scenario.keeperPro is set (Settings → Gameplay →
+// Keeper pro: New); the function above is the keeper from before, untouched.
+// Numbers and sources: docs/gameplay15/keeper.md. Measured in
+// tests/star/keeperPro.mts.
+export const KEEPER_PRO = {
+  /** Held: the pace a keeper can always absorb, and the pace he almost never holds (m/s, across the ground). */
+  holdPace: [20, 33] as [number, number],
+  /** …a fierce one is still held this often (a ball hit straight into his chest). */
+  holdPaceFloor: 0.15,
+  /** Held: chest-height band he gathers best (m), and the share he keeps of it on the grass / overhead. */
+  holdBand: [0.25, 1.6] as [number, number],
+  holdGround: 0.75, holdHigh: 0.45, holdOverhead: 0.2,
+  /** Held: how far across from his body it is (m): at his body he gathers it, beyond this it is a stretch he can only palm. */
+  holdBody: [0.5, 1.5] as [number, number],
+  /** Held: a 40-rated keeper keeps this share of the above, a 95 this. */
+  holdRating: [0.72, 1.12] as [number, number],
+  holdMax: 0.95,
+  /** Not held → turned behind (corner / over the bar). Base, plus high, plus full stretch. */
+  outBase: 0.15, outHigh: 0.25, outStretch: 0.2, outMax: 0.7,
+  /** A live parry that drops back in front of goal: 40-rated → 95-rated. */
+  danger: [0.7, 0.45] as [number, number],
+  /** A goalkeeping error (the ball squirms in): base + stretch, × (1.6 − rating share). */
+  errBase: 0.002, errStretch: 0.01,
+  /** Nutmeg / under the body: a low ball at a keeper whose legs are open in a dive. 40 → 95. */
+  nutmegZ: 0.3, nutmegR: 0.4, nutmeg: [0.16, 0.05] as [number, number],
+};
+
+/** How far his body may finish from where he saved it (m): an arm and a shoulder at full stretch. */
+export const KEEPER_PRO_HAND = 1.0;
+
+/** KEEPER PRO: where his body ends up after a save at `xAt` — within an arm's length of it. */
+export function proSaveBodyX(kx: number, targetX: number, xAt: number, hand = KEEPER_PRO_HAND): number {
+  if (Math.abs(targetX - xAt) <= hand) return targetX;
+  const side = Math.sign(xAt - kx) || Math.sign(xAt - targetX) || 1;
+  return xAt - side * Math.min(hand, Math.abs(xAt - kx));
+}
+/** A ball he holds: in his arms, this close to his body (m). */
+export const KEEPER_PRO_HOLD = 0.45;
+
+/** A keeper rating as a 0..1 share (40 → 0, 95 → 1). */
+function proShare(ks: number): number { return clamp(((Number.isFinite(ks) ? ks : 62) - 40) / 55, 0, 1); }
+
+/**
+ * KEEPER PRO's version of resolveKeeper: same contract (a terminal Outcome for
+ * a ball he holds or turns behind, null for a ball still live), but whether he
+ * holds it depends on how hard, how high and how far from his body it is, a
+ * ball he can't hold goes somewhere a real save sends it, and errors are as
+ * rare as the real thing.
+ */
+function resolveKeeperPro(ball: Ball, scenario: Scenario, dist: number, reach: number, speed: number, rng: () => number): Outcome | null {
+  const P = KEEPER_PRO;
+  const k = scenario.keeper;
+  const g = proShare(scenario.keeperStrength);
+  const marginNorm = clamp((reach - dist) / reach, 0, 1);
+  const at = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
+  // ── Through the legs ── a low ball at a keeper who is mid-dive: his body
+  // is going sideways and there is a gap under it. Checked before he counts
+  // as having touched it — it was never in his hands.
+  if (ball.z < P.nutmegZ && Math.abs(ball.pos.x - k.x) < P.nutmegR && Math.abs(k.dive) > 0.5 && k.saves === 0
+      && rng() < P.nutmeg[0] + (P.nutmeg[1] - P.nutmeg[0]) * g) {
+    logBallAction(ball, { kind: "save", actor: "keeper", save: "beaten", at });
+    return null;
+  }
+  k.saves += 1;
+  k.flash = 0.35;
+  const logSave = (save: SaveResult) => logBallAction(ball, { kind: "save", actor: "keeper", save, at });
+  ball.lastTouch = "keeper";
+  ball.deflected = "keeper";
+  const hold = (): Outcome => {
+    ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
+    ball.z = 0.55;
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.pendingDone = true;
+    logSave("catch");
+    return "caught";
+  };
+
+  // ── An error ── rare: about one save in a hundred, more at full stretch
+  // and for a poorer keeper. The ball carries on, as before.
+  if (rng() < (P.errBase + (1 - marginNorm) * P.errStretch) * (1.6 - g)) { logSave("fumble"); return null; }
+  if (k.saves >= 3) return hold();
+
+  // ── Does he hold it? ──
+  const z = ball.z;
+  const pace = clamp((P.holdPace[1] - speed) / (P.holdPace[1] - P.holdPace[0]), P.holdPaceFloor, 1);
+  const height = z < P.holdBand[0] ? P.holdGround
+    : z <= P.holdBand[1] ? 1
+    : z <= 2.0 ? P.holdHigh : P.holdOverhead;
+  const body = clamp((P.holdBody[1] - Math.abs(ball.pos.x - k.x)) / (P.holdBody[1] - P.holdBody[0]), 0, 1);
+  const rate = P.holdRating[0] + (P.holdRating[1] - P.holdRating[0]) * g;
+  const pHold = Math.min(P.holdMax, pace * height * (0.1 + 0.9 * body) * rate);
+  if (rng() < pHold) return hold();
+
+  // ── Turned behind: over the bar or round the post ──
+  const pOut = Math.min(P.outMax, P.outBase + (z > 1.6 ? P.outHigh : 0) + (marginNorm < 0.25 ? P.outStretch : 0));
+  if (rng() < pOut) {
+    k.pendingDone = true;
+    logSave("push");
+    return "saved";
+  }
+
+  // ── Parried, still live ── most go wide, away from goal, the way the ball
+  // was travelling; a share drop short in front of him (the rebound a
+  // striker follows in for).
+  const dangerous = rng() < P.danger[0] + (P.danger[1] - P.danger[0]) * g;
+  const side = Math.sign(ball.vel.x) || Math.sign(ball.pos.x - k.x) || (rng() < 0.5 ? -1 : 1);
+  let dir: Vec2, sp: number;
+  if (dangerous) {
+    dir = normalize({ x: (rng() - 0.5) * 0.7, y: 1 });
+    sp = speed * (0.14 + rng() * 0.14);
+  } else {
+    dir = normalize({ x: side * (1.0 + rng() * 0.8), y: 0.3 + rng() * 0.5 });
+    sp = speed * (0.35 + rng() * 0.25);
+  }
+  ball.vel = { x: dir.x * sp, y: dir.y * sp };
+  ball.vz = 0.6 + rng() * 1.6;
+  markLanding(ball, scenario);
+  ball.spin *= 0.3;
+  ball.resting = false;
+  ball.loose = true;
+  ball.shot = false;
+  ball.contactCd = 0.28;
+  k.targetX = ball.pos.x;
+  k.scrambling = true;
+  logSave("parry");
+  return null;
+}
+
+/**
+ * KEEPER PRO: the keeper has come for a ball that is not a shot (a cross, a
+ * through ball — Keeper.claim, set by the keeper brain) and it has reached
+ * his hands. Returns an Outcome, null (live: a punch), or undefined (not yet,
+ * or not his).
+ */
+function keeperClaimTouch(ball: Ball, scenario: Scenario): Outcome | null | undefined {
+  const k = scenario.keeper;
+  const c = k.claim;
+  if (!c || k.done || ball.shot || ball.contactCd > 0) return undefined;
+  if (ball.lastTouch !== "attack" && ball.lastTouch !== undefined) return undefined;
+  if (ball.z > c.top) return undefined;
+  if (Math.hypot(ball.pos.x - k.x, ball.pos.y - k.y) > c.reach) return undefined;
+  const at = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
+  if (c.act === "miss") {
+    // He got there and flapped: the ball goes on, he is out of his goal.
+    k.claim = null;
+    logBallAction(ball, { kind: "save", actor: "keeper", save: "beaten", at });
+    return undefined;
+  }
+  k.claim = null;
+  k.saves += 1;
+  k.flash = 0.35;
+  ball.lastTouch = "keeper";
+  ball.deflected = "keeper";
+  if (c.act === "catch") {
+    ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
+    ball.z = 1.2;
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.done = true;
+    k.saveKind = "catch";
+    logBallAction(ball, { kind: "save", actor: "keeper", save: "catch", at });
+    return "caught";
+  }
+  // A punch: fisted clear, up and away from goal.
+  const dir = normalize({ x: c.dir, y: 1 });
+  const sp = 12 + 6 * c.pace;
+  ball.vel = { x: dir.x * sp, y: dir.y * sp };
+  ball.vz = 3.5 + 2.5 * c.pace;
+  ball.spin = 0;
+  ball.resting = false;
+  ball.loose = true;
+  ball.owner = "none";
+  ball.contactCd = 0.3;
+  markLanding(ball, scenario);
+  k.saveKind = "high";
+  logBallAction(ball, { kind: "save", actor: "keeper", save: "push", at });
   return null;
 }
 
@@ -6935,6 +7145,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     }
   }
 
+  // --- KEEPER PRO: he has come for it (a cross, a through ball) ---
+  if (scenario.keeperPro && k.claim) {
+    const c = keeperClaimTouch(ball, scenario);
+    if (c !== undefined) return c;
+  }
+
   // --- Pass reception, tested against the RUNNER's live position ---
   // Swept along the ball's path so a fast pass can't tunnel past the player it
   // was aimed at. This is what stops a pass visually going straight through a
@@ -7294,6 +7510,16 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // where the ball lies changes, so it lies where he is going. Outcome-
       // terminal, so nothing downstream of the save can read it.
       else if (outcome === "caught") ball.pos.x = k.targetX;
+      // KEEPER PRO: his hands meet the ball. A committed dive that would
+      // land him further than an arm's length from where the ball was
+      // stopped carries him on to it (the side he went — never a second
+      // dive back), so the save is never made by a glove that isn't there.
+      if (scenario.keeperPro) {
+        // …and a ball he holds stays where he took it: he lands with it in
+        // his arms there, rather than it jumping across to where he stood.
+        if (outcome === "caught") { k.targetX = proSaveBodyX(k.x, k.x, xAt, KEEPER_PRO_HOLD); ball.pos.x = k.targetX; }
+        else k.targetX = proSaveBodyX(k.x, k.targetX, xAt);
+      }
       if (outcome) return outcome;
     } else if (oneDive) {
       // Beaten while committed: nothing changes. He finishes the dive he
