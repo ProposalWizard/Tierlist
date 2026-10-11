@@ -86,6 +86,7 @@ export const LOOK_ROWS = {
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
+  ballPhysics: row("Ball physics", "new", "old", () => gameplayVersion("ballPhysics"), (v) => setGameplayVersion("ballPhysics", v)),
   // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
   chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
   // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
@@ -161,6 +162,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
     clearances: N("clearances"),
+    ballPhysics: N("ballPhysics"),
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
     actionCamera: N("actionCamera"),

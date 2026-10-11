@@ -32,6 +32,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Defenders sometimes miscue, a boot can hit a body and come off loose, and anyone can win that second ball.",
     oldText: "Every clearance is clean (you still see the boot fly off the screen).",
   },
+  ballPhysics: {
+    label: "Ball physics",
+    newText: "A real football: air drag that grows with speed, a bounce and roll like cut grass, spin that dies away, round posts and a bar that send it off at the true angle (sometimes in), a net that catches it, and the same result at every frame rate.",
+    oldText: "The ball from before 11 Oct 2026.",
+  },
   chanceMix: {
     label: "Chance mix (testing)",
     // Mikey, 9 Oct 2026: "the old system should still be the default and the
@@ -88,6 +93,7 @@ export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldDribble = () => gameplayVersion("dribble") === "old";
 export const oldClearances = () => gameplayVersion("clearances") === "old";
+export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldChances = () => gameplayVersion("chanceMix") === "old";
 /** Has this phone ever picked a chance mix? (For Preview picking it up once.) */
 export function chanceMixStored(): boolean {
