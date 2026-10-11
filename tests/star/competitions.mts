@@ -1,3 +1,5 @@
+import { tournamentWeek } from "../../lib/star/tournament";
+import { divisionOf } from "../../lib/star/calendar";
 import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
   internationalCallUp, tournamentFor, roundsFor, nextFixtureFor, leagueWeeks, cupRoundWeek,
@@ -466,11 +468,12 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(tournamentFor(4) !== tournamentFor(2), "and it alternates");
 
   // A tournament runs AFTER the league, which is what lets it extend a season.
+  // It is no longer opened at the start of the season (the squad is named once
+  // the club season is over — see tests/star/tournament.mts); its weeks still
+  // come after the league.
   const star: CareerState = { ...base(), season: 2, starRating: 4, league: base().league };
-  const seeded = seedSeasonKnockouts(star);
-  const intl = seeded.fixtures.find(f => f.kind === "international");
-  check(!!intl, "a well-known player in a tournament year has a tournament");
-  check(intl!.week > leagueWeeks(CLUBS.length), `and it is played after the league (week ${intl!.week})`);
+  check(seedSeasonKnockouts(star).fixtures.every(f => f.kind !== "international"), "no tournament fixture at the start of the season");
+  check(tournamentWeek(divisionOf(star), 0) > leagueWeeks(CLUBS.length), `and it is played after the league (week ${tournamentWeek(divisionOf(star), 0)})`);
 }
 
 // ── The next fixture is the next one by DATE ───────────────────────────────

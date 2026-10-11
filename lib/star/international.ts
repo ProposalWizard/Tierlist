@@ -29,6 +29,7 @@ import type { CareerState, Competition, Fixture, LeaguePlayer, MatchStats, Squad
 import { mulberry32 } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { fakeFaceFor } from "./fakeFaces";
+import { madeUpNames } from "./nationNames";
 import { displayOverall } from "./rating";
 import { divisionOf, fixtureTimestamp, weekOnWeekend, type CareerDivision } from "./calendar";
 import { nationOf, nextFixtureFor, tournamentFor } from "./competitions";
@@ -84,7 +85,7 @@ const OPPONENTS = [
   "Scotland", "Wales", "Serbia", "Hungary", "Greece", "Iceland", "Finland",
 ];
 
-const EUROPEAN = new Set([
+export const EUROPEAN = new Set([
   "England", "Scotland", "Wales", "Northern Ireland", "Republic of Ireland", "Ireland",
   "France", "Spain", "Germany", "Portugal", "Netherlands", "Italy", "Belgium", "Croatia",
   "Denmark", "Switzerland", "Norway", "Austria", "Türkiye", "Turkey", "Sweden", "Poland",
@@ -341,6 +342,46 @@ export function nationalSquad(career: CareerState): { players: SquadPlayer[]; re
 }
 
 /**
+ * The OTHER nation's squad, for the team sheet and the men on the pitch: the
+ * best real players of that nationality the save knows about (your club, the
+ * division, the wider world — never you), one per slot by position, then
+ * made-up men with names typical-ish for that nation (nationNames.ts) and a
+ * fake face each. Seeded: the same nation always fields the same filler.
+ */
+export function opponentNationSquad(career: CareerState, nation: string): LeaguePlayer[] {
+  const youName = `${career.player.firstName} ${career.player.lastName}`;
+  const pool = new Map<string, LeaguePlayer>();
+  for (const p of career.squad ?? []) {
+    if (p.nationality !== nation || p.name === youName) continue;
+    pool.set(p.name, {
+      id: `opp_${p.id}`, name: p.name, position: p.position, overall: p.overall ?? 65, goals: 0, assists: 0,
+      image: p.imageUrl, nation, age: p.age, positions: p.positions, defending: p.defending,
+    });
+  }
+  for (const sq of [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]) {
+    for (const p of sq.players) {
+      if (p.nation !== nation || p.name === youName || pool.has(p.name)) continue;
+      pool.set(p.name, { ...p, id: `opp_${p.id}`, goals: 0, assists: 0 });
+    }
+  }
+  const sorted = Array.from(pool.values()).sort((a, b) => b.overall - a.overall);
+  const used = new Set<string>();
+  const names = madeUpNames(nation, SLOTS.length);
+  const strength = nationStrength(nation);
+  return SLOTS.map((pos, i) => {
+    const pick = sorted.find(p => !used.has(p.name) && (p.position === pos || p.positions?.includes(pos)));
+    if (pick) { used.add(pick.name); return pick; }
+    const id = `opp_gen_${i}`;
+    return {
+      id, name: names[i], position: pos, goals: 0, assists: 0, nation,
+      // Starters (the first eleven slots) a shade better than the bench.
+      overall: Math.max(40, Math.min(92, strength - (i < 11 ? 4 : 9) + ((i * 5) % 7) - 3)),
+      image: fakeFaceFor(`${nation}:${id}`),
+    };
+  });
+}
+
+/**
  * The career the match engine is handed for an international: the same
  * career, but your side is the nation — its name, its squad, its strength and
  * colours. Like the farewell match's stand-in (farewell.ts), it is only what
@@ -359,7 +400,9 @@ export function internationalCareer(career: CareerState, fixture: Fixture): Care
     squad: players,
     league: [table(nation, nationStrength(nation)), table(fixture.opponent, fixture.opponentStrength ?? nationStrength(fixture.opponent))],
     leagueSquads: [],
-    externalSquads: [],
+    // The other nation, as a real squad the team sheet and the men on the
+    // pitch read (teamsheet.ts's opponentStartingXI, CanvasMatch's castDefence).
+    externalSquads: [{ club: fixture.opponent, players: opponentNationSquad(career, fixture.opponent) }],
     ownedClubs: {},
     clubKits: { ...(career.clubKits ?? {}), [nation]: nationKits(nation), [fixture.opponent]: nationKits(fixture.opponent) },
     playAs: null,

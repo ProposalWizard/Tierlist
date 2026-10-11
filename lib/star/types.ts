@@ -1129,6 +1129,10 @@ export interface CareerState {
    *  and the last few internationals (lib/star/international.ts). Absent on
    *  an older save, which starts it at the next window. */
   international?: import("./international").InternationalRecord;
+  /** This season's (or the last) summer tournament — groups, knockouts, the
+   *  winner, and whether you were in the squad (lib/star/tournament.ts).
+   *  Absent on a save from before it, and in a season with none yet. */
+  tournament?: import("./tournament").TournamentState;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
   /**
@@ -1282,6 +1286,8 @@ export interface CareerState {
     leagueCup?: string;
     championsLeague?: string;
     europaLeague?: string;
+    /** The summer tournament and its winner, in a season that had one. */
+    tournament?: { competition: string; winner: string };
   };
   /**
    * Every Player of the Month awarded, this season and the ones before it.
@@ -1672,6 +1678,8 @@ export type StarPhase =
   | "farewell-invite"
   /** An international break: called up or not (lib/star/international.ts). */
   | "intl-callup"
+  | "intl-tournament"
+  | "intl-tournament-table"
   | "farewell-sheets"
   | "farewell-walkout"
   | "farewell-match"

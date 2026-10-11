@@ -951,7 +951,10 @@ export const POSITION_NAMES: Record<Role, string> = {
  * "everybody is", and fall back to the full squad rather than to nobody.
  */
 export function startingTeammateRoles(career: CareerState, fixture: Fixture): Map<string, Role> | null {
-  if (fixture.kind === "international") return null;
+  // An international has a sheet only on the stand-in career the match is
+  // handed (international.ts's internationalCareer), which carries the other
+  // nation's squad; the real career has nothing honest to draw.
+  if (fixture.kind === "international" && !(career.externalSquads ?? []).some(s => s.club === fixture.opponent)) return null;
   try {
     // Read the same saved eleven the pre-match sheet does, or the two disagree
     // about who is playing: a man you dropped to the bench could still be
@@ -991,7 +994,10 @@ export function startingTeammateRoles(career: CareerState, fixture: Fixture): Ma
  * honest answer there too, not an invented name.
  */
 export function opponentStartingXI(career: CareerState, fixture: Fixture): SheetPlayer[] | null {
-  if (fixture.kind === "international") return null;
+  // An international has a sheet only on the stand-in career the match is
+  // handed (international.ts's internationalCareer), which carries the other
+  // nation's squad; the real career has nothing honest to draw.
+  if (fixture.kind === "international" && !(career.externalSquads ?? []).some(s => s.club === fixture.opponent)) return null;
   try {
     const saved = resolveLineupFor(career, career.player.club);
     const savedXI = saved && saved.xi.some(Boolean)

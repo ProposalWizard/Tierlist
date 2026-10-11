@@ -5,6 +5,7 @@
 // phase routing and toasts; this owns the numbers.
 
 import { recordIntlMatch } from "./international";
+import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
@@ -913,7 +914,18 @@ export function creditMatchResult(
   // had been drawn NEXT — auto-winning or auto-eliminating a round never
   // actually played, and potentially minting a duplicate trophy if that
   // phantom result happened to land on the final.
-  if (kind !== "league" && fixture.competition && !alreadyPlayed) {
+  // The summer tournament (lib/star/tournament.ts): a group game or a knockout
+  // tie of yours. Checked first — it is neither a cup nor Europe.
+  let tournament = career.tournament;
+  const tourn = !alreadyPlayed ? settleTournamentMatch(career, fixture, {
+    us: stats.homeScore, them: stats.awayScore, pens: stats.shootout, extraTime: stats.wentToExtraTime,
+  }) : null;
+  if (tourn) {
+    tournament = tourn.state;
+    extraFixtures = tourn.nextFixture ? [tourn.nextFixture] : [];
+    cupTrophy = tourn.trophy;
+    knockoutMessage = tourn.message;
+  } else if (kind !== "league" && fixture.competition && !alreadyPlayed) {
     // Real, named goals for a European match actually played — the same
     // conversion the league block above does for `yours`/`theirs`, so a
     // Champions League scout report can eventually show them the same way a
@@ -1127,6 +1139,7 @@ export function creditMatchResult(
     international: isInternational && !alreadyPlayed
       ? recordIntlMatch(career.international, career.season, fixture, stats) : career.international,
     cups,
+    tournament,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     cupState,
@@ -1486,6 +1499,8 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
     leagueCup: leagueCupWinner ?? undefined,
     championsLeague: championsLeagueWinner,
     europaLeague: europaLeagueWinner,
+    ...(career.tournament?.season === career.season && career.tournament.winner
+      ? { tournament: { competition: career.tournament.competition, winner: career.tournament.winner } } : {}),
   };
 }
 
@@ -2037,7 +2052,10 @@ export function simulateMissedFixture(
 
   const rng = mulberry32(career.season * 1000 + career.week + 7717);
   const strength = (name: string) => career.league.find((t) => t.name === name)?.strength ?? 65;
-  const mine = strength(career.player.club);
+  // At the summer tournament your side is your nation, not your club.
+  const mine = isTournamentFixture(career, fixture)
+    ? (career.tournament!.strengths[career.tournament!.nation] ?? 70)
+    : strength(career.player.club);
   // A European opponent is not in career.league at all — the domestic lookup
   // above would silently fall back to a flat 65 for every single one of
   // them. `fixture.opponentStrength` is the real number (set by euro.ts's
@@ -2074,7 +2092,15 @@ export function simulateMissedFixture(
   let cupTrophy: Trophy | null = null;
   let knockoutMessage: string | null = null;
   let cupState = career.cupState;
-  if (kind !== "league" && fixture.competition) {
+  // A tournament match you missed (injured) is simulated nation against nation.
+  let tournament = career.tournament;
+  const tourn = settleTournamentMatch(career, fixture, { us: userScore, them: oppScore });
+  if (tourn) {
+    tournament = tourn.state;
+    extraFixtures = tourn.nextFixture ? [tourn.nextFixture] : [];
+    cupTrophy = tourn.trophy;
+    knockoutMessage = tourn.message;
+  } else if (kind !== "league" && fixture.competition) {
     const settled = settleCupTie(career, fixture, userScore, oppScore);
     if (settled) {
       cupState = settled.states;
@@ -2149,6 +2175,7 @@ export function simulateMissedFixture(
     externalSquads,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
+    tournament,
     cupState,
     euroState,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
