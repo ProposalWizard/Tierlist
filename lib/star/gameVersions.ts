@@ -31,6 +31,7 @@ import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
+import { ballonDorNightLook, setBallonDorNightLook, ballonDorNightStored } from "./ballonDorNightLook";
 import { homeLook, setHomeLook } from "./homeLook";
 import { shopLook, setShopLook } from "./shopLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
@@ -106,6 +107,8 @@ export const LOOK_ROWS = {
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
   allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
+  // STAR_ROADMAP #7 (11 Oct 2026): the ceremony on a stage (New by default).
+  ballonDorNight: row("Ballon d'Or night", "new", "old", ballonDorNightLook, setBallonDorNightLook),
   homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
   shop2d: row("Shop", "new", "old", shopLook, setShopLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
@@ -171,6 +174,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),
     allSeasons: N("allSeasons"),
+    ballonDorNight: N("ballonDorNight"),
     homeScreen: N("homeScreen"),
     shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
     ovation: N("ovation"),
@@ -211,6 +215,11 @@ if (typeof window !== "undefined" && !cutsceneCameraStored()) {
 if (typeof window !== "undefined" && !houseLookStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "house" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.house.set("old");
+}
+// The Ballon d'Or night (11 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !ballonDorNightStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "ballonDorNight" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.ballonDorNight.set("old");
 }
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;

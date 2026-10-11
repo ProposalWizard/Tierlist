@@ -35,6 +35,7 @@ Preview) sets them all at once.
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
 | Manager's office | `components/star/Office3D.tsx` | `lib/star/signing3dScene.ts` with stage "office" | `/star-3d-area-dev/office` | Talk to your manager: 3D / Old (`lib/star/look3d.ts`) |
 | Farewell: guard of honour, standing ovation | `components/star/Farewell.tsx` (the farewell screens) | `lib/star/farewell3d.ts` (guard of honour, plan in `lib/star/guardOfHonour.ts`), `lib/star/ovation3d.ts` | `/star-retirement-dev` | Standing ovation (`lib/star/ovationLook.ts`); Ovation greetings (`lib/star/ovationMoves.ts`) |
+| Ballon d'Or night (host, the final three on podiums, the golden ball) | `components/star/BallonDorNight.tsx` (drawn stage inside it for a phone that can't run 3D) | `lib/star/ballonDor3d.ts` (timing: `lib/star/ballonDorNight.ts`) | `/star-retirement-dev` → "The Ballon d'Or night" | Ballon d'Or night: New / Old (`lib/star/ballonDorNightLook.ts`) |
 | Cut scenes (the director) | `components/star/CutsceneDirector.tsx` | `lib/star/cutscene/director.ts` (read `lib/star/cutscene/README.md`) | `/star-style-dev?scene=director&fixture=signing&clean=1` | Cut-scene people: New / Old (`lib/star/cutscene/look.ts`) |
 | Cut-scene people bench (faces, hands, props) | page only | `lib/star/cutscene/peopleAdapter.ts` | `/star-people-dev` | same |
 | Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
@@ -346,6 +347,7 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- Ballon d'Or night (11 Oct 2026, Leo's branch): a 3D stage at the end of every season — a generic host at a lectern, the final three walk onto podiums that stay level until the winner is named, the golden ball floats over him, see-through beams (no new lights), under the governor. Same people and clap as the guard of honour. Settings → Look → Ballon d'Or night: New | Old.
 - Clean animations in every mode: no pops when moves change fast, walk/jog/run/sprint mixed by speed on one stride clock (Free Roam, Two Touch, Headers & Volleys, garden, shop, house, casino), eased turns, a twin for a move restarted while it still shows, the Style A sprint no longer hunches (20° → 15° lean). `lib/star/three3d/animBlend.ts`.
 - Cut-scene camera + music: a film pass over every cut scene (wide first, weak moves hidden, always moving), a farewell in the stadium, five music beds; Settings → Look → Cut-scene camera (handover below).
 

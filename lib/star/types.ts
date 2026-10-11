@@ -210,7 +210,11 @@ export type Competition =
   | "World Cup"
   | "European Championship"
   /** Third to sixth in the Championship, for the last promotion place. */
-  | "Play-Offs";
+  | "Play-Offs"
+  /** International breaks (lib/star/international.ts): one match a window. */
+  | "International Friendly"
+  | "World Cup Qualifier"
+  | "Euro Qualifier";
 
 export interface Fixture {
   week: number;
@@ -1121,6 +1125,10 @@ export interface CareerState {
   europeanQualification?: Competition | null;
   caps?: number;
   internationalGoals?: number;
+  /** The international breaks: which windows were decided, call-ups, snubs
+   *  and the last few internationals (lib/star/international.ts). Absent on
+   *  an older save, which starts it at the next window. */
+  international?: import("./international").InternationalRecord;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
   /**
@@ -1551,6 +1559,23 @@ export interface CareerState {
    */
   outgoingMates?: SeasonMate[];
   /**
+   * Asking for a move (lib/star/transferRequest.ts): the last answers, the
+   * clubs cooling off after a no, and a deal agreed for the summer window.
+   * Absent until the first ask.
+   */
+  transferRequest?: import("./transferRequest").TransferRequestState;
+  /**
+   * A world that ages (lib/star/worldAgeing.ts): the season whose rollover
+   * first aged every other club's players. Absent until then (and on any
+   * save from before it). A squad fetched later is aged from here to match.
+   */
+  worldAgedSince?: number;
+  /**
+   * The level each club's regens are rated against: its starting-XI average
+   * the first time the world aged it, then fixed (worldAgeing.ts clubLevelOf).
+   */
+  clubLevels?: Record<string, number>;
+  /**
    * Hall of Fame records already celebrated in this career (lib/star/
    * hallRecords.ts): each id once, so a record broken is a moment once.
    */
@@ -1631,6 +1656,11 @@ export type StarPhase =
   | "relationship-game"
   | "advert-shoot"
   | "season-transfer"
+  /** Asking for a move: pick a league or a club, get answers
+   *  (TransferRequest.tsx, lib/star/transferRequest.ts). */
+  | "transfer-request"
+  /** Talking terms with a club that said yes (NegotiationScreen). */
+  | "transfer-request-talk"
   | "retirement"
   /** After the Ballon d'Or night of the second-last season: "this is your
    *  final season before retirement" (CareerEnd.tsx, Leo 5 Oct 2026). */
@@ -1640,6 +1670,8 @@ export type StarPhase =
    *  sheets, the guard of honour, the match, full time. A refresh goes
    *  back to the final whistle (see the phase save in page.tsx). */
   | "farewell-invite"
+  /** An international break: called up or not (lib/star/international.ts). */
+  | "intl-callup"
   | "farewell-sheets"
   | "farewell-walkout"
   | "farewell-match"

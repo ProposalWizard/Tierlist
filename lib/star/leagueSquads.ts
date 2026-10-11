@@ -409,7 +409,12 @@ function generatedSquad(club: string, avgOverall = 73): LeagueSquad {
  */
 export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
   if (squads.length === 0) return false;
-  const withNation = squads.flatMap(s => s.players).filter(p => p.nation);
+  // Regens (worldAgeing.ts, ids "rg<season>.") are invented boys with no
+  // flag or photo on purpose — a world twenty seasons old is nearly all of
+  // them, and that is not a cache from before flags existed.
+  const real = squads.flatMap(s => s.players).filter(p => !/^rg\d+\./.test(p.id));
+  if (real.length === 0) return false;
+  const withNation = real.filter(p => p.nation);
   if (withNation.length === 0) return true;
   // Below this it takes only ONE real nationality anywhere to trust the rest
   // of the import — see that exact test. The ratio below needs an actual
@@ -820,7 +825,7 @@ export function growthCeilingFor(playerId: string, worldClassPotential?: boolean
  * omitting it (existing callers, tests) keeps every wonderkid at the
  * unmodified baseline speed, same as before this existed.
  */
-const TRAINING_TIER_MULTIPLIER: Record<1 | 2 | 3, number> = { 1: 0.7, 2: 1.0, 3: 1.4 };
+export const TRAINING_TIER_MULTIPLIER: Record<1 | 2 | 3, number> = { 1: 0.7, 2: 1.0, 3: 1.4 };
 
 /**
  * Reported directly, from a real save five seasons in: two 97s, two 96s and

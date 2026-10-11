@@ -287,8 +287,8 @@ export function FarewellResult({ career, sides, stats, onDone }: {
 
 // ── The walk-out ───────────────────────────────────────────────────────────
 
-/** Your look for the 3D people (the 3D office does the same). */
-function useYouLook(career: CareerState, kit: Kit): SigningYou | null {
+/** Your look for the 3D people (the 3D office does the same; the Ballon d'Or night uses it too). */
+export function useYouLook(career: CareerState, kit: Kit): SigningYou | null {
   const faceUrl = career.player.portrait ?? DEFAULT_FAKE_FACE;
   const [fitted, setFitted] = useState<FittedHead | null | undefined>(undefined);
   useEffect(() => {

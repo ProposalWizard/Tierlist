@@ -422,7 +422,31 @@ function statRows(e: FootballEvent, r: MatchRecord | null, _memory: StoryMemory)
   return rows.slice(0, 4);
 }
 
+/** A fact is there to print: not missing, not blank, not NaN. */
+function present(v: unknown): boolean {
+  return v !== undefined && v !== null && v !== "" && !(typeof v === "number" && !Number.isFinite(v));
+}
+
+/**
+ * The headline, never with a hole in it. Every case below names facts; an
+ * event without one of them (another club's account reacting to an event
+ * with no scoreline, seen 11 Oct 2026: "Brighton & Hove Albion
+ * undefined-undefined undefined") falls back to a plain line built only
+ * from what it does have.
+ */
 function headlineFor(e: FootballEvent, you: string): string {
+  const line = headlineFrom(e, you);
+  if (!/undefined|NaN|null/.test(line)) return line;
+  const f = e.facts;
+  const short = String(f.short ?? surname(you));
+  if (present(f.headline)) return String(f.headline);
+  if (e.tags.includes("goal")) return `${present(f.scorer) ? surname(String(f.scorer)) : short} scores`;
+  if (e.tags.includes("transfer")) return "Transfer news";
+  if (e.tags.includes("manager")) return "Manager news";
+  return present(f.club) ? String(f.club) : short;
+}
+
+function headlineFrom(e: FootballEvent, you: string): string {
   const f = e.facts;
   const short = String(f.short ?? surname(you));
   switch (e.id) {

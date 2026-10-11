@@ -141,7 +141,13 @@ export function cutClip(
   const strike = [...kicks].reverse().find(e => e.kind === "shot") ?? kicks[kicks.length - 1];
   const first = kicks[0];
   const lastT = samples[samples.length - 1].t;
-  const endT = Math.min(lastT, goalT + POST_GOAL_S);
+  // Every clip carries the full POST_GOAL_S after the goal. The match often
+  // moves on before that (the result screen gives way to the commentary
+  // after 1.3-1.8 s, measured 7 Oct 2026), so the frames after the last one
+  // recorded are carried on from it: everyone eases to a stop (extendRow).
+  // Before 11 Oct 2026 the clip simply ended where the recording did.
+  const endT = goalT + POST_GOAL_S;
+  const tail = extendRow(samples, bodies.length);
   let startT = Math.max(samples[0].t, (first ? first.t : goalT - 2) - LEAD_IN_S);
   if (endT - startT > MAX_CLIP_S) startT = endT - MAX_CLIP_S;
   if (endT - startT < 0.3) return null;
@@ -153,11 +159,19 @@ export function cutClip(
   let j = 0;
   for (let k = 0; k < n; k++) {
     const T = startT + k / CLIP_FPS;
+    const base = k * stride;
+    if (T > lastT) {
+      const row = tail(T - lastT);
+      for (let c = 0; c < stride; c++) {
+        const scaled = c === discrete ? row[c] : c === stride - 2 ? row[c] * 1000 : row[c] * 100;
+        data[base + c] = Math.max(-32767, Math.min(32767, Math.round(scaled)));
+      }
+      continue;
+    }
     while (j < samples.length - 2 && samples[j + 1].t <= T) j++;
     const a = samples[j], b = samples[Math.min(j + 1, samples.length - 1)];
     const span = b.t - a.t;
     const w = span > 1e-9 ? Math.max(0, Math.min(1, (T - a.t) / span)) : 0;
-    const base = k * stride;
     for (let c = 0; c < stride; c++) {
       if (c === discrete) { data[base + c] = Math.round(w < 0.5 ? a.row[c] : b.row[c]); continue; }
       const v = a.row[c] + (b.row[c] - a.row[c]) * w;
@@ -188,5 +202,41 @@ export function cutClip(
     strikeT: at(strike ? Math.max(startT, strike.t) : goalT),
     firstKickT: at(first ? Math.max(startT, first.t) : startT),
     events: clipEvents,
+  };
+}
+
+/** How quickly everything eases to a stop after the recording ends (s). */
+const TAIL_EASE_S = 0.25;
+
+/**
+ * The frame `d` seconds after the last one recorded, in raw row units.
+ *
+ * Everyone carries on the way they were going and eases to a stop (the ball
+ * settling in the net, the runners pulling up), never a frozen still. Heights
+ * (the ball's, a wall's jump) settle to the ground; the keeper's dive is held
+ * where it got to. Pure: same samples, same frames.
+ */
+export function extendRow(samples: Sample[], bodyCount: number): (d: number) => Float32Array {
+  const last = samples[samples.length - 1];
+  // A velocity over the last ~0.1 s, not the last frame alone (phone frames
+  // are uneven, and a tiny step makes a jumpy speed).
+  let p = samples.length - 2;
+  while (p > 0 && last.t - samples[p].t < 0.1) p--;
+  const prev = samples[Math.max(0, p)];
+  const span = last.t - prev.t;
+  const stride = frameStride(bodyCount);
+  const moving = 3 + 3 * bodyCount;   // ball and bodies: x, y, z triples
+  return (d: number) => {
+    const row = new Float32Array(stride);
+    const travel = TAIL_EASE_S * (1 - Math.exp(-Math.max(0, d) / TAIL_EASE_S));
+    const settle = Math.exp(-Math.max(0, d) / TAIL_EASE_S);
+    for (let c = 0; c < stride; c++) {
+      const v = last.row[c];
+      if (c >= moving) { row[c] = v; continue; }   // the keeper: held
+      if (c % 3 === 2) { row[c] = Math.max(0, v * settle); continue; }   // heights settle
+      const vel = span > 1e-6 ? (v - prev.row[c]) / span : 0;
+      row[c] = v + vel * travel;
+    }
+    return row;
   };
 }

@@ -4,6 +4,7 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
+import { recordIntlMatch } from "./international";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
@@ -55,9 +56,11 @@ import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fix
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
-import { resolveLadder, membershipOf, type LadderOutcome } from "./promotion";
+import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
+import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
+import { ageLeagueSquads, ageOwnSquad, clubLevelOf } from "./worldAgeing";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
@@ -872,6 +875,10 @@ export function creditMatchResult(
   // double a team-mate's goal/assist tally either.
   const goalEvents = alreadyPlayed ? [] : (stats.goalEvents ?? []);
   const updatedSquad = (career.squad ?? []).map(p => {
+    // An international is played by the national squad (international.ts),
+    // not your club team-mates: a goal by a man of the same name is not a
+    // club goal.
+    if (kind === "international") return p;
     const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
     const assisted = goalEvents.filter(e => e.assist === p.name).length;
     if (scored === 0 && assisted === 0) return p;
@@ -1116,6 +1123,9 @@ export function creditMatchResult(
     // appearance in that regard.
     caps: (career.caps ?? 0) + (isInternational && !alreadyPlayed ? 1 : 0),
     internationalGoals: (career.internationalGoals ?? 0) + (isInternational && !alreadyPlayed ? stats.goals : 0),
+    // …and the match itself, for the international record on the stats page.
+    international: isInternational && !alreadyPlayed
+      ? recordIntlMatch(career.international, career.season, fixture, stats) : career.international,
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
@@ -1444,8 +1454,15 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   // own qualifying field, before anyone has actually played it out to know
   // who (if anyone) wins Europe this season — that's exactly what
   // crownWithoutYou below uses this very field to determine.
-  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
-  const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
+  // England's places come from the PREMIER LEAGUE, whatever division you
+  // play in (englishTopFlight.ts). Before 11 Oct 2026 this read your own
+  // table, so a Championship club could win the Champions League.
+  const topFlight = englishTopFlightTable(career);
+  const qualifiers = seasonQualifiers(topFlight, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  const strengthOf = (name: string) =>
+    topFlight.find(t => t.name === name)?.strength
+    ?? career.league.find(t => t.name === name)?.strength
+    ?? estimateClubStrength(career, name);
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;
 
@@ -1782,18 +1799,35 @@ export function advanceSeason(
     // after 19 seasons Man United and Wolves lined up exactly as on day one,
     // while their real players had long moved on (Mikey's playtest, 8 Oct
     // 2026). See moveSquadsWithLadder.
+    // Then the whole world gets a year older (worldAgeing.ts): ratings move
+    // along the age curve, men from 33 retire and a boy replaces each one.
+    // Your own team-mates (`squad`) get the same rolls, so a man retires
+    // from both copies of your club at once.
     ...(() => {
       const moved = moveSquadsWithLadder(career.leagueSquads ?? [], career.externalSquads ?? [], clubs);
+      const tier = (club: string) => facilitiesFor(career, club).trainingGroundTier;
+      const grownLeague = growWonderkids(
+        resetLeagueSquads(moved.leagueSquads), mulberry32(career.season * 71923 + 5), tier,
+      );
+      const grownExternal = growWonderkids(moved.externalSquads, mulberry32(career.season * 71923 + 7), tier);
+      const agedLeague = ageLeagueSquads(grownLeague, career.season, tier, career.clubLevels ?? {});
+      const agedExternal = ageLeagueSquads(grownExternal, career.season, tier, agedLeague.clubLevels);
+      const levels = agedExternal.clubLevels;
+      const own = career.player.club;
+      const ownCopy = (career.leagueSquads ?? []).find(s => s.club === own)
+        ?? (career.externalSquads ?? []).find(s => s.club === own);
+      const ownLevel = levels[own] ?? (ownCopy ? clubLevelOf(levels, ownCopy) : undefined)
+        ?? career.league.find(t => t.name === own)?.strength ?? 65;
+      const squad = ageOwnSquad(
+        (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+        own, career.season, ownLevel, tier(own),
+      ).squad;
       return {
-        leagueSquads: growWonderkids(
-          resetLeagueSquads(moved.leagueSquads),
-          mulberry32(career.season * 71923 + 5),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
-        externalSquads: growWonderkids(
-          moved.externalSquads, mulberry32(career.season * 71923 + 7),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
+        leagueSquads: agedLeague.squads,
+        externalSquads: agedExternal.squads,
+        squad,
+        clubLevels: levels,
+        worldAgedSince: career.worldAgedSince ?? career.season,
       };
     })(),
     // A fresh season — a rivalry's grace tracking is keyed off cumulative
@@ -1819,7 +1853,7 @@ export function advanceSeason(
       seasonsRemaining: career.contract.seasonsRemaining - 1,
     },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
-    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+    // `squad` (season tallies reset, a year older) is set with the squads above.
     europeanQualification: qualification,
     // Kept because the European draw seeds you into a pot off it, and by the
     // time that draw happens the table below has already been wiped.
