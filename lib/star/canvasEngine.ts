@@ -5453,7 +5453,7 @@ export function firstBounceAt(
       const ay = spin * CURL_K * -vx;
       vx += ax * dt; vy += ay * dt;
     }
-    if (real) spin *= Math.exp(-dt / 5);   // ballPhysics SPIN_TAU_AIR
+    if (real) spin *= Math.exp(-dt / 10);   // ballPhysics SPIN_TAU_AIR
     if (z > 0.02) {
       const k = real
         ? airDragFactor(vx, vy, vz, conditions?.drag ?? 1, dt)

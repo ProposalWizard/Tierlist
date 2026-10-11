@@ -17,7 +17,7 @@
  *     takes horizontal speed off on a steep bounce, up to the point it rolls
  *   rolling: ~0.85 m/s² rolling resistance on cut grass (FIFA ball-roll test:
  *     4–10 m from the ramp) + a small speed-dependent grass drag + air drag
- *   spin: decays in the air (time constant ~5 s: an estimate — measurements
+ *   spin: decays in the air (time constant ~10 s: an estimate — measurements
  *     show a kicked ball keeps most of its spin over a 1–2 s flight) and
  *     quickly on the grass (~0.7 s)
  *   posts and bar: 12 cm round (radius 6 cm), restitution 0.7 off the
