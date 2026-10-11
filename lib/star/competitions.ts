@@ -340,25 +340,15 @@ function makeRoundFixture(
  * Only the first round of each is on the calendar. The rest is earned.
  */
 export function seedSeasonKnockouts(career: CareerState): { runs: CupRun[]; fixtures: Fixture[] } {
-  const rng = mulberry32(career.season * 7919 + career.league.length);
-  const clubCount = career.league.length;
   const runs: CupRun[] = [];
   const fixtures: Fixture[] = [];
 
-  const open = (competition: Competition, kind: CupRun["kind"]) => {
-    const run: CupRun = { competition, kind, roundIndex: 0, eliminated: false, won: false };
-    runs.push(run);
-    const weeks = roundWeeks(kind, roundsFor(competition).length, clubCount, divisionOf(career));
-    fixtures.push(makeRoundFixture(run, career, weeks[0], rng));
-  };
-
   // The FA Cup and the League Cup are real draws (lib/star/cups, seedCups), and
-  // Europe is a real league phase (lib/star/euro, seedEurope). What is left here
-  // is the national team, which is still a counter-style run — and rightly so:
-  // a World Cup is five matches against five nations, and there is no table to
-  // build or draw to redo.
-  const tournament = tournamentFor(career.season);
-  if (tournament && internationalCallUp(career)) open(tournament, "international");
+  // Europe is a real league phase (lib/star/euro, seedEurope). The national
+  // team used to open a counter-style run here; the summer tournament is a
+  // real tournament now (lib/star/tournament.ts) — groups, a knockout bracket,
+  // a squad named when the club season ends. A save already carrying this
+  // season's old run still finishes it through resolveKnockout below.
 
   // …and the two matches last season earned.
   fixtures.push(...seedPreSeason(career));

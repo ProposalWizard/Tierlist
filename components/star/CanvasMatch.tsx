@@ -1032,6 +1032,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         isLevelNow: () => (firstUs + userScoreRef.current) === (firstThem + oppScoreRef.current),
       };
     }
+    // A summer-tournament knockout (lib/star/tournament.ts): extra time, then
+    // penalties. A group game, and an old save's counter-style run, can be drawn.
+    if (fixture.kind === "international" && fixture.round && !fixture.round.startsWith("Group")
+      && careerRef.current?.tournament?.season === careerRef.current?.season) {
+      return { extraTime: true, isLevelNow: () => userScoreRef.current === oppScoreRef.current };
+    }
     return null;
   };
 

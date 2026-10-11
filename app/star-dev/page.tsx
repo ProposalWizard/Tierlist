@@ -51,7 +51,7 @@ import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { type RoundupStage } from "@/components/star/KnockoutRoundup";
 import { knockoutRoundupFor } from "@/lib/star/knockoutView";
-import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, seasonStartYear, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { refreshXpConfig } from "@/lib/star/xpStore";
@@ -182,6 +182,8 @@ import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
 import { windowDue, decideCallUp, applyCallUp, internationalCareer } from "@/lib/star/international";
 import CallUpScreen from "@/components/star/CallUpScreen";
+import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
+import TournamentScreen from "@/components/star/TournamentScreen";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -910,6 +912,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase === "dashboard" && intlDue !== null) setPhase("intl-callup");
     else if (phase === "intl-callup" && intlDue === null) setPhase("dashboard");
   }, [phase, intlDue]);
+  // The summer tournament (lib/star/tournament.ts): once the club season is
+  // over in a tournament summer, the manager names his squad.
+  const tournDue = career ? tournamentDue(career) : false;
+  useEffect(() => {
+    if (phase === "dashboard" && tournDue) setPhase("intl-tournament");
+    else if (phase === "intl-tournament" && !tournDue) setPhase("dashboard");
+    else if (phase === "intl-tournament-table" && career && career.tournament?.season !== career.season) setPhase("dashboard");
+  }, [phase, tournDue, career]);
   // Every fixture played and the season not yet rolled over. The dashboard has
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
@@ -1588,6 +1598,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPendingKo(ko);
       setPhase("knockout-roundup");
       return;
+    }
+
+    // The summer tournament: your group table or the knockout road, after
+    // every one of your tournament matches.
+    if (playedFixture?.kind === "international" && playedFixture.round
+      && from.tournament?.season === from.season && playedFixture.competition === from.tournament.competition) {
+      const key = `tourn:${from.season}:${playedFixture.week}`;
+      if (!koShown.current.has(key)) {
+        koShown.current.add(key);
+        setCareer(from);
+        setPhase("intl-tournament-table");
+        return;
+      }
     }
 
     if (!skipDraw && playedFixture) {
@@ -3989,6 +4012,38 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setActiveNav("home");
           setPhase("dashboard");
         }}
+      />
+    );
+  }
+
+  if (phase === "intl-tournament" && tournDue) {
+    const opened = openTournament(career);
+    if (opened) {
+      const year = seasonStartYear(career.player.startYear, career.season) + 1;
+      return (
+        <TournamentScreen
+          // Not going: show it played out, winner and all.
+          state={opened.entered && opened.selected ? opened : (applyTournament(career, opened).tournament ?? opened)}
+          mode="squad"
+          year={year}
+          onContinue={() => {
+            setCareer(applyTournament(career, opened));
+            setActiveNav("home");
+            setPhase("dashboard");
+          }}
+        />
+      );
+    }
+  }
+
+  if (phase === "intl-tournament-table" && career.tournament?.season === career.season) {
+    return (
+      <TournamentScreen
+        state={career.tournament}
+        mode="progress"
+        year={seasonStartYear(career.player.startYear, career.season) + 1}
+        message={career.knockoutMessage}
+        onContinue={() => { setActiveNav("home"); setPhase("dashboard"); }}
       />
     );
   }
