@@ -7,6 +7,7 @@
 import { recordIntlMatch } from "./international";
 import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
+import { featsAfterMatch } from "./feats";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
@@ -1128,6 +1129,8 @@ export function creditMatchResult(
       const s = isInternational ? career.seasonStats : accrue(career.seasonStats);
       return bestsAfterMatch(career, fixture, stats, s.goals, s.assists);
     })(),
+    // Roadmap #4: the per-match tallies achievements read (lib/star/feats.ts).
+    feats: alreadyPlayed ? career.feats : featsAfterMatch(career, fixture, stats),
     thisSeasonClub: isInternational ? career.thisSeasonClub : career.player.club,
     leagueSeasonStats,
     careerLeagueStats,

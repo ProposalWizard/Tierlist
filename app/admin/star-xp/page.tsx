@@ -54,7 +54,7 @@ const MATCH_ROWS: [keyof XpConfig["match"], string, string][] = [
 const ACH_ROWS = [
   // "first-game" is a step but never lands in career.achievements (stepDone reads appearances), so it pays nothing.
   ...FIRST_STEPS.filter(s => s.id !== "first-game").map(s => ({ id: s.id as string, label: `${s.label} (first steps)`, description: s.todo })),
-  ...ACHIEVEMENTS.map(a => ({ id: a.id, label: a.label, description: a.description })),
+  ...ACHIEVEMENTS.map(a => ({ id: a.id, label: `${a.label} · ${a.group}`, description: a.description })),
 ];
 
 const STATUS_NEXT: Record<ItemStatus, ItemStatus> = { unchecked: "confirmed", confirmed: "change", change: "unchecked", idea: "idea" };
@@ -177,8 +177,8 @@ export default function XpBook() {
 
         {tab === "achievements" && (<>
           <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">What each level pays</div>
-          {(["easy", "medium", "hard"] as AchievementTier[]).map((t) => (
-            <Row book={book} key={t} k={`tier:${t}`} label={t === "easy" ? "Easy (first steps, first things)" : t === "medium" ? "Medium (a good spell)" : "Hard (a career's worth)"}
+          {(["easy", "medium", "hard", "legendary"] as AchievementTier[]).map((t) => (
+            <Row book={book} key={t} k={`tier:${t}`} label={t === "easy" ? "Easy · Bronze (first steps, first things)" : t === "medium" ? "Medium · Silver (a good spell)" : t === "hard" ? "Hard · Gold (a career's worth)" : "Legendary (once in a career)"}
               value={cfg.achievementTiers[t]} def={DEFAULT_XP.achievementTiers[t]} onValue={(n) => change({ ...cfg, achievementTiers: { ...cfg.achievementTiers, [t]: n } })} />
           ))}
           <div className="pt-3 text-[12px] font-black uppercase tracking-widest text-amber-300">Every achievement · pick its level, or type its own amount</div>
@@ -195,7 +195,7 @@ export default function XpBook() {
                     if (v === "own") change({ ...cfg, achievementXp: { ...rest, [a.id]: achievementXp(a.id, cfg) } });
                     else change({ ...cfg, achievementXp: rest, achievementTier: { ...cfg.achievementTier, [a.id]: v as AchievementTier } });
                   }} className="rounded bg-black/50 px-2 py-1.5 text-[12px] font-black text-white ring-1 ring-white/20">
-                    <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="own">Own amount</option>
+                    <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="legendary">Legendary</option><option value="own">Own amount</option>
                   </select>
                 } />
             );

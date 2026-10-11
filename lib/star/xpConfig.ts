@@ -1,4 +1,6 @@
 import type { CareerDivision } from "./calendar";
+import { ACHIEVEMENTS, type AchievementTier } from "./achievements";
+export type { AchievementTier };
 
 /**
  * THE XP BOOK — every amount of XP the game gives, in one place.
@@ -17,7 +19,6 @@ import type { CareerDivision } from "./calendar";
  */
 
 export type ItemStatus = "unchecked" | "confirmed" | "change" | "idea";
-export type AchievementTier = "easy" | "medium" | "hard";
 
 /** Something in the game that gives XP, as the XP Book lists it. */
 export interface XpNote {
@@ -122,26 +123,22 @@ export const DEFAULT_XP: XpConfig = {
   },
   ballon: { win: 720_000, top3: 300_000, top10: 120_000 },
   milestones: { firstCap: 48_000, premierDebut: 6_000 },
-  achievementTiers: { easy: 600, medium: 2_400, hard: 12_000 },
+  // Legendary added 11 Oct 2026 (Roadmap #4) for the once-a-career ones.
+  achievementTiers: { easy: 600, medium: 2_400, hard: 12_000, legendary: 30_000 },
+  // Each achievement's tier lives with it (lib/star/achievements.ts), so a new
+  // one is in the XP Book the moment it is written. The first steps are
+  // unlocks.ts's, all easy.
   achievementTier: {
-    // first steps and first things
     "first-two-sessions": "easy", "first-game": "easy", "boss-meeting": "easy", "buy-phone": "easy",
-    "first-match": "easy", "first-goal": "easy", "first-assist": "easy", "5-passes": "easy", "10-passes": "easy", "rich": "easy",
-    // a good spell
-    "hat-trick": "medium", "3-assists": "medium", "star-man": "medium", "10-goals": "medium",
-    "boss-90": "medium", "team-90": "medium", "fans-90": "medium", "star-4": "medium", "loaded": "medium",
-    "trophy-cabinet": "medium", "european-nights": "medium", "first-cap": "medium", "international-goal": "medium",
-    // a career's worth
-    "50-goals": "hard", "100-goals": "hard", "star-5": "hard", "ballon-dor": "hard",
-    "max-technique": "hard", "max-pace": "hard", "max-power": "hard", "max-vision": "hard", "max-fk": "hard",
-    "cup-winner": "hard", "champions-of-europe": "hard", "fifty-caps": "hard",
-    "world-champion": "hard", "continental-champion": "hard", "the-treble": "hard",
+    ...Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, a.tier])) as Record<string, AchievementTier>,
   },
   // Signing comes with starting a career, so it earns nothing.
   achievementXp: { "first-contract": 0 },
   records: {
     "pl-assists-season": 300_000, "pl-goals-season": 300_000, "pl-goals-match": 300_000,
     "pl-goals-career": 300_000, "pl-appearances-career": 300_000,
+    "pl-assists-career": 300_000, "pl-scoring-run": 300_000, "pl-hat-tricks-career": 300_000,
+    "pl-biggest-win": 120_000, "england-caps": 300_000,
   },
   fame: [[25, 9_000], [40, 24_000], [60, 120_000], [80, 300_000]],
   trainingStar: 360,
@@ -180,7 +177,7 @@ function mergeNums<T extends Record<string, unknown>>(base: T, over: unknown): T
 export function mergeXpConfig(saved: unknown): XpConfig {
   if (!saved || typeof saved !== "object") return DEFAULT_XP;
   const s = saved as Partial<XpConfig>;
-  const tiers = new Set<AchievementTier>(["easy", "medium", "hard"]);
+  const tiers = new Set<AchievementTier>(["easy", "medium", "hard", "legendary"]);
   const tierMap: Record<string, AchievementTier> = { ...DEFAULT_XP.achievementTier };
   for (const [k, v] of Object.entries(s.achievementTier ?? {})) if (tiers.has(v as AchievementTier)) tierMap[k] = v as AchievementTier;
   const fame = Array.isArray(s.fame) && s.fame.every(p => Array.isArray(p) && isNum(p[0]) && isNum(p[1]))

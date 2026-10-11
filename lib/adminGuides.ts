@@ -315,7 +315,7 @@ export const ADMIN_GUIDES = {
         ["The number box", "The XP it pays (or the multiplier, or a %). Type a new amount."],
         ["Was … in the code", "Shows when your amount is different from the code's."],
         ["Not checked / Confirmed ✓ / Change it", "Tap to move it on. Change it opens a note box: write what should change and it gets built from that."],
-        ["Easy / Medium / Hard / Own amount", "Achievements only: which level it pays, or Own amount to type its own XP."],
+        ["Easy / Medium / Hard / Legendary / Own amount", "Achievements only: which level it pays (Bronze, Silver, Gold, Legend on the player's list), or Own amount to type its own XP."],
       ] },
       { group: "New ideas", items: [
         ["+ Add an idea", "A new achievement, record, award or milestone: its name, how you get it, and the XP it should pay."],

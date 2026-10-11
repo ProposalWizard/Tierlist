@@ -473,6 +473,10 @@ export interface GoalEvent {
   /** Your assist only: how far YOUR pass travelled, from where you played it
    *  to where the scorer took it (metres). Absent on older saves. */
   passLength?: number;
+  /** Your goal only: how the strike was shaped when it was a chip or a curler
+   *  (the engine's own BallActionMode at the strike). Absent otherwise, and
+   *  on goals from before 11 Oct 2026. Feeds the Chip / Curler achievements. */
+  finish?: "chip" | "curl";
   /** Goal videos (Leo, 7 Oct 2026): the recording of this goal, frame by
    *  frame, kept on this device (lib/star/goalClip/store.ts). Absent for a
    *  goal nobody saw — simulated, or scored while you were off the pitch. */
@@ -758,6 +762,12 @@ export interface CareerBests {
   mostGoalsMatch?: { goals: number; season: number; opponent: string };
   mostGoalsSeason?: { goals: number; season: number };
   mostAssistsSeason?: { assists: number; season: number };
+  /** Roadmap #4 (11 Oct 2026): the earliest goal of yours in a match. */
+  fastestGoal?: { minute: number; season: number; opponent: string };
+  /** Your side's biggest winning margin in a match you played. */
+  biggestWin?: { us: number; them: number; season: number; opponent: string };
+  /** Most assists of yours in one match. */
+  mostAssistsMatch?: { assists: number; season: number; opponent: string };
 }
 
 export interface Trophy {
@@ -1612,6 +1622,9 @@ export interface CareerState {
    * cleared (lib/star/godMode.ts). Optional: absent means a clean save.
    */
   usedGodMode?: boolean;
+  /** Per-match tallies for achievements and records (lib/star/feats.ts).
+   *  Absent on a save from before 11 Oct 2026; counts from its next match. */
+  feats?: import("./feats").CareerFeats;
 }
 
 export type StarPhase =

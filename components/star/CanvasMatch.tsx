@@ -5123,6 +5123,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // while it is still your shot (a team-mate's follow-up is his). Your
     // shootout kicks count too. Credited as a
     // small reputation hit at full time (careerFlow's creditMatchResult).
+    // Roadmap #4 (achievements): was YOUR strike a chip or a curler? Read
+    // before the cheeky tag is cleared below; the curl from the ball's own
+    // action log (canvasEngine's launch() writes it). Only ever your kick.
+    const yourFinish: "chip" | "curl" | undefined = (() => {
+      if (auto) return undefined;
+      if (cheekyStrikeRef.current === "chip") return "chip";
+      const log = ballRef.current?.actionLog ?? [];
+      const last = [...log].reverse().find(a => a.kind === "shot" && a.actor === "you");
+      return last?.mode === "curl" ? "curl" : undefined;
+    })();
     {
       const ch = cheekyStrikeRef.current;
       cheekyStrikeRef.current = null;
@@ -5355,6 +5365,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(yourFinish ? { finish: yourFinish } : {}),
           ...(yourClip ? { clipId: yourClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
@@ -5369,6 +5380,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(yourFinish ? { finish: yourFinish } : {}),
           ...(soloClip ? { clipId: soloClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
