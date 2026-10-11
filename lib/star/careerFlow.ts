@@ -55,7 +55,8 @@ import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fix
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
-import { resolveLadder, membershipOf, type LadderOutcome } from "./promotion";
+import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
+import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { advanceIncumbencyWeek } from "./incumbency";
@@ -1444,8 +1445,15 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   // own qualifying field, before anyone has actually played it out to know
   // who (if anyone) wins Europe this season — that's exactly what
   // crownWithoutYou below uses this very field to determine.
-  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
-  const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
+  // England's places come from the PREMIER LEAGUE, whatever division you
+  // play in (englishTopFlight.ts). Before 11 Oct 2026 this read your own
+  // table, so a Championship club could win the Champions League.
+  const topFlight = englishTopFlightTable(career);
+  const qualifiers = seasonQualifiers(topFlight, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  const strengthOf = (name: string) =>
+    topFlight.find(t => t.name === name)?.strength
+    ?? career.league.find(t => t.name === name)?.strength
+    ?? estimateClubStrength(career, name);
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;
 

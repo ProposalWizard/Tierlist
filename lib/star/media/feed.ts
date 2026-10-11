@@ -9,6 +9,7 @@ import { detectCareer, detectMatch } from "./detect";
 import { detectLeagueWeek } from "./detect/league";
 import { detectWonderkidHype } from "./detect/wonderkids";
 import { mulberry32 } from "../season";
+import { divisionOf, leagueNameFor } from "../calendar";
 import { getTuning } from "../tuningStore";
 import { formatMoney } from "../money";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
@@ -182,8 +183,11 @@ export function generateForBoardroomSale(
 export function generateForLeagueWeek(
   career: CareerState,
   weekResults: LeagueResult[],
-  competition = "Premier League",
+  /** The division's own name; absent means the division this career plays in
+   *  (it used to be "Premier League" for every division). */
+  competitionName?: string,
 ): MediaState {
+  const competition = competitionName ?? leagueNameFor(divisionOf(career));
   const state = mediaOf(career);
   // The week these RESULTS are for — not `career.week`, which has already
   // advanced past it by the time this runs (crediting your own match moves
@@ -307,7 +311,10 @@ function highlightPosts(
   const out: StoredPost[] = [];
   const clubAcc = accounts.find(a => a.archetype === "club" && a.allegiance?.club === r.club);
   const compAcc = accounts.find(a => a.archetype === "competition" && a.name === r.competition)
-    ?? (r.competition === "Premier League" ? accounts.find(a => a.archetype === "league") : undefined);
+    // The league account is named after its division (accounts.ts), so a
+    // League Two match finds the League Two account and never the Premier
+    // League's.
+    ?? accounts.find(a => a.archetype === "league" && a.name === r.competition);
   const home = r.home ? r.club : r.opponent, away = r.home ? r.opponent : r.club;
   const hs = r.home ? r.score.us : r.score.them, as = r.home ? r.score.them : r.score.us;
   const post = (acc: MediaAccount, key: string, minutes: number, text: string, title: string, reel: { clips: string[]; synth: SynthGoal[] }): StoredPost => {
