@@ -205,10 +205,12 @@ export function selectionFor(career: CareerState): SelectionVerdict {
   // club's pecking order has nothing to say about it.
   {
     const f = nextFixtureFor(career);
-    if (f?.kind === "international" && !f.round) {
+    if (f?.kind === "international" && (!f.round || career.tournament?.season === career.season)) {
       return {
         status: "1st Team", onAt: 0, standing: selectionStanding(career),
-        reason: `Called up by ${career.player.nationality || "your country"} — you start.`,
+        reason: f.round
+          ? `In the ${career.player.nationality || "national"} squad for the ${f.competition} — you start.`
+          : `Called up by ${career.player.nationality || "your country"} — you start.`,
       };
     }
   }

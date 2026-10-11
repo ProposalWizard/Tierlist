@@ -168,7 +168,10 @@ export const TROPHIES_PER_WEEK = 1;
 export const TROPHY_LUMP = 3;
 /** Monthly and season awards in one season. */
 export const AWARDS_PER_SEASON = 30;
-export const ACHIEVEMENTS_LUMP = 10;
+/** 40, not 10, since 11 Oct 2026: the list grew from 35 to 136, and an older
+ *  save picks up every one it has already earned on its next match, in one go
+ *  (a long career: about 40). */
+export const ACHIEVEMENTS_LUMP = 40;
 export const ACHIEVEMENTS_PER_WEEK = 3;
 
 /** Star rating can sit at most this far above what its own inputs give. */

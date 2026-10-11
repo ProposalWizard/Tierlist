@@ -25,6 +25,7 @@ import {
 import { people3dLook } from "./look3d";
 import { solveArm, handWorldQuat, setBoneWorldQuat, type HandAxes } from "./signing3dRig";
 import { rememberGpu } from "./three3d/perf";
+import { loadCrestTexture } from "./crestTexture";
 import { withMeshopt } from "./three3d/meshopt";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality";
 import { governScene } from "./three3d/governThree";
@@ -44,6 +45,9 @@ export interface NightSceneOptions {
   you: SigningYou;
   /** Each finalist's kit, by rank (1..3). */
   kits: Record<number, NightKit>;
+  /** Each finalist's club crest picture (a URL, or an SVG data URL), by rank.
+   *  Drawn on the left chest; a crest that does not load leaves the shield. */
+  crests?: Record<number, string>;
   seed: number;
   /** The night's clock, seconds (the page owns it, so the words and the stage keep time). */
   clock: () => number;
@@ -57,7 +61,7 @@ export interface NightSceneHandle {
   debugInfo(): { tier: Quality3d; t: number; people: number; calls: number; triangles: number };
 }
 
-interface OnStage { f: Finalist; p: Person3D; walk: THREE.AnimationAction | null; phase: number }
+interface OnStage { f: Finalist; p: Person3D; walk: THREE.AnimationAction | null; phase: number; cheered?: boolean }
 
 const GOLD = 0xd4a017;
 
@@ -138,23 +142,84 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
   ring.position.set(0, 4.1, -2.9);
   const ring2 = add(new T.Mesh(new T.TorusGeometry(1.42, 0.018, 8, 72), glow(0xfde68a, 0.7)));
   ring2.position.copy(ring.position);
-  // The audience: one instanced block of heads and shoulders, low in front.
+  // The audience: rows of seated guests in front of the stage — shoulders
+  // and a head each (two instanced meshes), dark suits and a few gowns, each
+  // a little different in size and lean. They shift in their seats, turn to
+  // each other, and bounce and clap at the reveal (crowdPose, below).
   const CROWD = tier === "low" ? 160 : tier === "medium" ? 260 : 360;
-  // Dark suits and gowns: a silhouette band under the stage, never bright blocks.
-  const fan = add(new T.InstancedMesh(new T.BoxGeometry(0.34, 0.44, 0.3), new T.MeshStandardMaterial({ roughness: 0.95 }), CROWD));
+  const PER_ROW = 36;
+  const bodyGeo = new T.CapsuleGeometry(0.17, 0.2, 3, 8);
+  bodyGeo.scale(1, 1, 0.72);
+  const fan = add(new T.InstancedMesh(bodyGeo, new T.MeshStandardMaterial({ roughness: 0.9 }), CROWD));
+  const fanHead = add(new T.InstancedMesh(new T.SphereGeometry(0.105, 12, 9), new T.MeshStandardMaterial({ roughness: 0.8 }), CROWD));
   const m4 = new T.Matrix4();
   const col = new T.Color();
-  const suitCols = ["#07080c", "#0b0d14", "#10131c", "#151925", "#1b1410", "#0e1220", "#2a1f12"];
+  const suitCols = ["#07080c", "#0b0d14", "#10131c", "#151925", "#0e1220", "#141414", "#1a1d28"];
+  const gownCols = ["#3b0d16", "#4a3410", "#1d2a4a", "#2d1036", "#0f3326"];
+  const skinCols = ["#5a3b2a", "#8a5a3c", "#b07a52", "#3a271c"];
+  const hairCols = ["#0d0a08", "#1a120c", "#2b1b12", "#3a2a1e", "#151515", "#6b6b6b", "#8a6a3a"];
+  interface Guest { x: number; y: number; z: number; s: number; lean: number; phase: number; busy: number }
+  const guests: Guest[] = [];
   for (let i = 0; i < CROWD; i++) {
-    const row = Math.floor(i / 36), seat = i % 36;
-    const x = -8.4 + seat * 0.48 + (row % 2) * 0.24 + (guardRand(opts.seed, i, 201) - 0.5) * 0.1;
-    const z = 3.6 + row * 0.9;
-    m4.makeTranslation(x, -0.55 + row * 0.22, z);
-    fan.setMatrixAt(i, m4);
-    fan.setColorAt(i, col.set(suitCols[Math.floor(guardRand(opts.seed, i, 202) * suitCols.length)]));
+    const row = Math.floor(i / PER_ROW), seat = i % PER_ROW;
+    const r = (k: number) => guardRand(opts.seed, i, k);
+    guests.push({
+      x: -8.4 + seat * 0.48 + (row % 2) * 0.24 + (r(201) - 0.5) * 0.12,
+      y: -0.62 + row * 0.22,
+      z: 3.6 + row * 0.9 + (r(203) - 0.5) * 0.1,
+      s: 0.9 + r(204) * 0.22,
+      lean: (r(205) - 0.5) * 0.3,
+      phase: r(206) * Math.PI * 2,
+      busy: r(207),
+    });
+    const gown = r(202) < 0.22;
+    fan.setColorAt(i, col.set(gown ? gownCols[Math.floor(r(208) * gownCols.length)] : suitCols[Math.floor(r(208) * suitCols.length)]));
+    // We see the backs of their heads: mostly hair (a few bald or grey), in shadow.
+    const h = r(209);
+    fanHead.setColorAt(i, col.set(h < 0.12 ? skinCols[Math.floor(r(212) * skinCols.length)] : hairCols[Math.floor(r(212) * hairCols.length)]).multiplyScalar(0.6));
   }
-  fan.instanceMatrix.needsUpdate = true;
   if (fan.instanceColor) fan.instanceColor.needsUpdate = true;
+  if (fanHead.instanceColor) fanHead.instanceColor.needsUpdate = true;
+  // Camera flashes from the floor at the reveal: small glowing dots, on for a frame or two.
+  const FLASHES = tier === "low" ? 8 : 18;
+  const flash = add(new T.InstancedMesh(new T.SphereGeometry(0.035, 6, 4), glow(0xffffff), FLASHES));
+  const qy = new T.Quaternion();
+  const sc = new T.Vector3();
+  const pos3 = new T.Vector3();
+  const eul = new T.Euler();
+  const crowdPose = (t: number) => {
+    const revealed = t >= plan.revealAt;
+    const cheer = revealed ? Math.max(0, 1 - Math.max(0, t - plan.revealAt - 3.5) / 2.5) : 0;
+    for (let i = 0; i < CROWD; i++) {
+      const g = guests[i];
+      // A slow shift in the seat; a quarter of them turn to a neighbour now and then.
+      const sway = Math.sin(t * 0.7 + g.phase) * 0.04;
+      const turn = g.busy < 0.25 ? Math.sin(t * 0.35 + g.phase) * 0.5 : 0;
+      // At the reveal: half-up out of the seat, bouncing as they clap.
+      const bounce = cheer * (0.12 + 0.05 * Math.abs(Math.sin(t * 7 + g.phase)));
+      eul.set(0, turn, g.lean * 0.25 + sway);
+      qy.setFromEuler(eul);
+      sc.set(g.s, g.s, g.s);
+      pos3.set(g.x + sway * 0.6, g.y + bounce, g.z);
+      m4.compose(pos3, qy, sc);
+      fan.setMatrixAt(i, m4);
+      pos3.set(g.x + sway * 0.6 + (g.lean * 0.25 + sway) * -0.3 * g.s, g.y + bounce + 0.36 * g.s, g.z - 0.01);
+      m4.compose(pos3, qy, sc);
+      fanHead.setMatrixAt(i, m4);
+    }
+    fan.instanceMatrix.needsUpdate = true;
+    fanHead.instanceMatrix.needsUpdate = true;
+    for (let i = 0; i < FLASHES; i++) {
+      const slot = Math.floor(t * 9 + i * 7.3);
+      const on = revealed && cheer > 0.2 && guardRand(opts.seed + slot, i, 210) < 0.12;
+      const g = guests[Math.floor(guardRand(opts.seed + slot, i, 211) * CROWD)];
+      pos3.set(g.x, g.y + 0.62, g.z - 0.1);
+      sc.setScalar(on ? 1 : 0);
+      m4.compose(pos3, qy.identity(), sc);
+      flash.setMatrixAt(i, m4);
+    }
+    flash.instanceMatrix.needsUpdate = true;
+  };
 
   // ── The podiums: the same height until the winner is named ──
   const podiumMat = std(0x15161d, 0.4, 0.3);
@@ -176,18 +241,50 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
   }
 
   // ── The golden ball on its plinth by the lectern ──
+  // A trophy, not a sphere: a panelled gold ball (a football's panel lines
+  // pressed into it) held in a small cup on a slim gold neck, on a round base
+  // with a black band. Built from primitives; the gold is a real metal with a
+  // reflection of a soft room (an environment map, not a light).
   const plinth = add(new T.Mesh(new T.CylinderGeometry(0.16, 0.2, 1.05, 24), std(0x0b0b0f, 0.3, 0.4)));
   const plinthX = PODIUM.hostX - 1.05;
   plinth.position.set(plinthX, 0.525, 0.6);
   const ball = new T.Group();
-  const ballMesh = new T.Mesh(new T.SphereGeometry(0.17, 40, 28), goldMat);
-  const base = new T.Mesh(new T.CylinderGeometry(0.06, 0.12, 0.16, 24), std(0x0b0b0f, 0.25, 0.6));
-  base.position.y = -0.22;
-  ball.add(ballMesh, base);
+  const trophyGold = new T.MeshStandardMaterial({ color: 0xf2c14e, roughness: 0.22, metalness: 1 });
+  trophyGold.emissive = new T.Color(0x3a2400);
+  if (tier !== "low") {
+    const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
+    const pmrem = new T.PMREMGenerator(renderer);
+    trophyGold.envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    trophyGold.envMapIntensity = 1.3;
+    pmrem.dispose();
+  }
+  const BALL_R = 0.15;
+  const ballMesh = new T.Mesh(new T.SphereGeometry(BALL_R, 48, 32), trophyGold);
+  ballMesh.castShadow = prof.shadows;
+  // The panel lines: the edges of a twice-split icosahedron, a hair outside the ball.
+  const seamGeo = new T.EdgesGeometry(new T.IcosahedronGeometry(BALL_R * 1.004, 1));
+  const seams = new T.LineSegments(seamGeo, new T.LineBasicMaterial({ color: 0x6b4a10, transparent: true, opacity: 0.85 }));
+  ballMesh.add(seams);
+  const stand = new T.Group();
+  const darkBand = std(0x0b0b0f, 0.25, 0.6);
+  const cup = new T.Mesh(new T.CylinderGeometry(0.075, 0.03, 0.07, 28, 1, true), trophyGold);
+  cup.position.y = -BALL_R - 0.015;
+  const neck = new T.Mesh(new T.CylinderGeometry(0.022, 0.036, 0.2, 20), trophyGold);
+  neck.position.y = -BALL_R - 0.15;
+  const collar = new T.Mesh(new T.TorusGeometry(0.03, 0.008, 8, 24), trophyGold);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.y = -BALL_R - 0.09;
+  const band = new T.Mesh(new T.CylinderGeometry(0.1, 0.105, 0.05, 32), darkBand);
+  band.position.y = -BALL_R - 0.275;
+  const foot = new T.Mesh(new T.CylinderGeometry(0.11, 0.125, 0.03, 32), trophyGold);
+  foot.position.y = -BALL_R - 0.315;
+  stand.add(cup, neck, collar, band, foot);
+  ball.add(ballMesh, stand);
   const halo = new T.Mesh(new T.SphereGeometry(0.25, 24, 16), new T.MeshBasicMaterial({ color: 0xffb020, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false }));
   ball.add(halo);
   add(ball);
-  const ballRest = new T.Vector3(plinthX, 1.05 + 0.3, 0.6);
+  // The foot sits on the plinth (its bottom is BALL_R + 0.33 below the ball's centre).
+  const ballRest = new T.Vector3(plinthX, 1.05 + BALL_R + 0.33, 0.6);
 
   // The lectern.
   const lectern = add(new T.Mesh(new T.BoxGeometry(0.7, 1.15, 0.45), std(0x0f1016, 0.3, 0.3)));
@@ -204,11 +301,19 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
   const models: PlayerModel[] = Array.from(new Set<PlayerModel>(["player", "player-buzz", "player-long", youModel]));
   const ids = plan.finalists.map((f) => (f.entry.isPlayer ? { you: true } : { who: `bdor-${f.entry.name}` }));
   const heads = toonHeadsFor(ids);
+  // Each club's crest, as a picture for the chest (a crest that fails leaves the shield).
+  const crestTex = new Map<number, THREE.Texture>();
+  const loadCrest = async (rank: number, url: string) => {
+    const tex = await loadCrestTexture(T, url);
+    if (tex) crestTex.set(rank, tex);
+  };
   const [anims, hostGltf, ...bodies] = await Promise.all([
+    ...Object.entries(opts.crests ?? {}).map(([r, url]) => loadCrest(Number(r), url)),
+  ]).then(() => Promise.all([
     loadPeople3d(loader, "anims"),
     loadPeople3d(loader, "manager", BODY),
     ...models.map((m) => loadPeople3d(loader, m, BODY, heads)),
-  ]);
+  ]));
   const bodyOf = (m: PlayerModel): GLTF => bodies[models.indexOf(m)];
   const outline = prof.outlines ? 0.0035 : 0;
   const outlineNear = BODY === "new" ? 1.6 : undefined;
@@ -234,7 +339,7 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
     const kit = opts.kits[f.rank] ?? { shirt: "#e5e7eb", trim: "#111827" };
     if (mine) {
       dressPerson3d(T, p, {
-        skin: opts.you.skin, hair: opts.you.hair, kit, number: null,
+        skin: opts.you.skin, hair: opts.you.hair, kit, number: null, badge: crestTex.get(f.rank) ?? null,
         face: opts.you.face ?? null, faceSkin: opts.you.face?.skin, accessories: opts.you.accessories,
       });
     } else {
@@ -242,7 +347,7 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
       dressPerson3d(T, p, {
         skin: SKIN_TONES[Math.floor(guardRand(k, 2, 2) * SKIN_TONES.length)].hex,
         hair: HAIR_COLOURS[Math.floor(guardRand(k, 3, 3) * HAIR_COLOURS.length)].hex,
-        kit, number: null,
+        kit, number: null, badge: crestTex.get(f.rank) ?? null,
       });
     }
     scene.add(p.root);
@@ -286,6 +391,26 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
       if (!up || !lo || !ha) continue;
       solveArm(T, up, lo, ha, wrist, pole, w);
       setBoneWorldQuat(T, ha, handWorldQuat(T, axesOf(p, s), along, left.clone().multiplyScalar(-out)));
+    }
+  };
+
+  /** The winner: both arms straight up, fists pumping a little. Laid over
+   *  the celebrate clip after the mixer, so the stills read as a winner. */
+  const armsUp = (o: OnStage, t: number, w: number) => {
+    const p = o.p;
+    p.root.updateMatrixWorld(true);
+    const q = p.root.quaternion;
+    const fwd = v3(0, 0, 1).applyQuaternion(q);
+    const left = v3(1, 0, 0).applyQuaternion(q);
+    for (const s of ["L", "R"] as Side[]) {
+      const out = s === "L" ? 1 : -1;
+      const up = p.bones[bn(s, "Arm")], lo = p.bones[bn(s, "ForeArm")], ha = p.bones[bn(s, "Hand")];
+      if (!up || !lo || !ha) continue;
+      const shoulder = wpos(up);
+      const pump = 0.04 * Math.sin(t * 5.5 + (s === "L" ? 0 : 0.9));
+      const wrist = shoulder.clone().addScaledVector(UP, 0.5 + pump).addScaledVector(left, out * 0.2).addScaledVector(fwd, 0.06);
+      const pole = left.clone().multiplyScalar(out * 0.8).addScaledVector(fwd, -0.4);
+      solveArm(T, up, lo, ha, wrist, pole, w);
     }
   };
 
@@ -387,6 +512,9 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
       const winning = revealed && f.rank === 1;
       const celebrate = winning ? Math.min(1, (t - plan.revealAt) / 0.4) : 0;
       if (o.walk) { o.walk.setEffectiveWeight(walking * (1 - celebrate)); o.walk.timeScale = 1.05; }
+      // The celebrate clip from its start at the reveal, a touch slower so it lasts.
+      if (winning && !o.cheered && p.actions.celebrate) { p.actions.celebrate.reset().play(); p.actions.celebrate.timeScale = 0.8; o.cheered = true; }
+      if (!winning) o.cheered = false;
       p.actions.celebrate?.setEffectiveWeight(celebrate);
       p.actions.wave?.setEffectiveWeight(0);
       p.actions.idle?.setEffectiveWeight(Math.max(0, 1 - walking - celebrate));
@@ -394,6 +522,8 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
       p.root.updateMatrixWorld(true);
       // The other two clap the winner.
       if (revealed && f.rank !== 1) clap(o, t, Math.min(1, (t - plan.revealAt - 0.4) / 0.5));
+      // The winner: arms up and held there.
+      if (winning) armsUp(o, t, Math.min(1, (t - plan.revealAt - 0.25) / 0.45));
     }
 
     // The golden ball: on its plinth; at the reveal it lifts and floats over the winner.
@@ -404,10 +534,11 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
     ball.position.copy(ballRest).lerp(over, e);
     ball.position.y += Math.sin(e * Math.PI) * 0.6 + (e >= 1 ? Math.sin(t * 2.2) * 0.04 : 0);
     ball.rotation.y = t * (0.6 + 1.6 * e);
-    base.visible = e < 0.5;
     (halo.material as THREE.MeshBasicMaterial).opacity = 0.04 + 0.16 * e;
     halo.scale.setScalar(1 + 0.15 * Math.sin(t * 3));
     goldMat.emissive.setRGB(0.29 + 0.35 * e, 0.19 + 0.22 * e, 0);
+    trophyGold.emissive.setRGB(0.12 + 0.3 * e, 0.07 + 0.18 * e, 0);
+    crowdPose(t);
     // The ring behind breathes, brighter at the reveal.
     (ring.material as THREE.MeshBasicMaterial).color.setScalar(1).multiply(col.set(0xf6c445)).multiplyScalar(revealed ? 1.25 : 0.85 + 0.1 * Math.sin(t * 1.5));
     placeCam(t);
@@ -450,6 +581,8 @@ export async function createNightScene(container: HTMLElement, opts: NightSceneO
   return {
     dispose() {
       disposed = true;
+      trophyGold.envMap?.dispose();
+      for (const tx of Array.from(crestTex.values())) tx.dispose();
       cancelAnimationFrame(raf);
       ro.disconnect();
       governed.dispose();

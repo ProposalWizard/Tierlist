@@ -51,7 +51,7 @@ import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { type RoundupStage } from "@/components/star/KnockoutRoundup";
 import { knockoutRoundupFor } from "@/lib/star/knockoutView";
-import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, isRegionalDivision, leagueNameFor, seasonStartYear, type CareerDivision } from "@/lib/star/calendar";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { refreshXpConfig } from "@/lib/star/xpStore";
@@ -61,10 +61,11 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import {
   askForMove, askSeed, agreeMove, callOffMove, clearAfterWindow, summerWindowOffers, talksFailed, requestOf,
 } from "@/lib/star/transferRequest";
+import { canMoveNow, completeJanuaryMove } from "@/lib/star/januaryTransfer";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -181,6 +182,8 @@ import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
 import { windowDue, decideCallUp, applyCallUp, internationalCareer } from "@/lib/star/international";
 import CallUpScreen from "@/components/star/CallUpScreen";
+import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
+import TournamentScreen from "@/components/star/TournamentScreen";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -909,6 +912,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase === "dashboard" && intlDue !== null) setPhase("intl-callup");
     else if (phase === "intl-callup" && intlDue === null) setPhase("dashboard");
   }, [phase, intlDue]);
+  // The summer tournament (lib/star/tournament.ts): once the club season is
+  // over in a tournament summer, the manager names his squad.
+  const tournDue = career ? tournamentDue(career) : false;
+  useEffect(() => {
+    if (phase === "dashboard" && tournDue) setPhase("intl-tournament");
+    else if (phase === "intl-tournament" && !tournDue) setPhase("dashboard");
+    else if (phase === "intl-tournament-table" && career && career.tournament?.season !== career.season) setPhase("dashboard");
+  }, [phase, tournDue, career]);
   // Every fixture played and the season not yet rolled over. The dashboard has
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
@@ -1589,6 +1600,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       return;
     }
 
+    // The summer tournament: your group table or the knockout road, after
+    // every one of your tournament matches.
+    if (playedFixture?.kind === "international" && playedFixture.round
+      && from.tournament?.season === from.season && playedFixture.competition === from.tournament.competition) {
+      const key = `tourn:${from.season}:${playedFixture.week}`;
+      if (!koShown.current.has(key)) {
+        koShown.current.add(key);
+        setCareer(from);
+        setPhase("intl-tournament-table");
+        return;
+      }
+    }
+
     if (!skipDraw && playedFixture) {
       const cupCompetition = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup"
         ? playedFixture.competition : null;
@@ -1922,6 +1946,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         { kind: "season-end", position: leaguePosition(from),
           headline: next.lastSeasonJudgement.headline, detail: next.lastSeasonJudgement.detail }, "review");
     }
+    // Team-mates and famous names retiring, and the boys worth watching
+    // (lib/star/retirementNews.ts → media/detect/retirements.ts).
+    next.media = generateForRollover({ ...next, media: next.media });
     setCareer(next);
     // The Golden Boot, the trophy cabinet, a Team of the Season — shown
     // once, right here, before whatever the rollover itself has to say
@@ -2049,7 +2076,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // then `phase` is "transfer-signing", not "relegation-move", so reading it
   // fresh there would always read false and silently drop the forced-move
   // handling for a relegated player.
-  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean } | null>(null);
+  // `january`: a deal from a transfer request signed mid-season in the
+  // January window (januaryTransfer.ts) — no season rollover after it.
+  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean; january?: boolean } | null>(null);
 
   // Choosing a club used to complete the move immediately — no contract, no
   // signature, nothing that looked like the moment your very first pro deal
@@ -2067,6 +2096,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
+    // ── The January move: you join now, mid-season, and play on ──
+    if (pendingSignOffer.january) {
+      const joined = completeJanuaryMove(career, offer);
+      setPendingSignOffer(null);
+      if (joined === career) { setPhase("transfer-request"); return; }
+      fetchRealSquad(offer.club).then((squad) => {
+        setCareer(c => (c && c.player.club === offer.club ? { ...c, squad: ageOwnFetchedForCareer(c, offer.club, squad) } : c));
+      });
+      joined.media = generateForCareer(joined,
+        { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
+      pushNews(signingNews(joined, offer.club));
+      setCareer(joined);
+      setPhase("dashboard");
+      return;
+    }
     // The summer window has happened: any deal from a transfer request is done with.
     const moved = clearAfterWindow(acceptOffer(career, offer));
     // A club from another division (a request, or a good season's extra
@@ -2112,6 +2156,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setTalkOffer(offer);
     setPhase("transfer-request-talk");
   }, []);
+  // January window open and a deal agreed: sign it now (januaryTransfer.ts).
+  const handleJoinNow = useCallback(() => {
+    if (!career || !canMoveNow(career)) return;
+    const agreed = requestOf(career).agreed;
+    if (!agreed) return;
+    setPendingSignOffer({ offer: agreed, wasRelegationMove: false, january: true });
+    setPhase("transfer-signing");
+  }, [career]);
   const handleTransferCallOff = useCallback(() => {
     setCareer(c => (c ? callOffMove(c) : c));
   }, []);
@@ -3964,6 +4016,38 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "intl-tournament" && tournDue) {
+    const opened = openTournament(career);
+    if (opened) {
+      const year = seasonStartYear(career.player.startYear, career.season) + 1;
+      return (
+        <TournamentScreen
+          // Not going: show it played out, winner and all.
+          state={opened.entered && opened.selected ? opened : (applyTournament(career, opened).tournament ?? opened)}
+          mode="squad"
+          year={year}
+          onContinue={() => {
+            setCareer(applyTournament(career, opened));
+            setActiveNav("home");
+            setPhase("dashboard");
+          }}
+        />
+      );
+    }
+  }
+
+  if (phase === "intl-tournament-table" && career.tournament?.season === career.season) {
+    return (
+      <TournamentScreen
+        state={career.tournament}
+        mode="progress"
+        year={seasonStartYear(career.player.startYear, career.season) + 1}
+        message={career.knockoutMessage}
+        onContinue={() => { setActiveNav("home"); setPhase("dashboard"); }}
+      />
+    );
+  }
+
   if (phase === "post-match" && lastMatchStats && playedFixture) {
     return (
       <>
@@ -4222,6 +4306,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onAccept={(o) => handleTransferAgree(o)}
         onTalk={handleTransferTalk}
         onCallOff={handleTransferCallOff}
+        onJoinNow={handleJoinNow}
         onBack={() => setPhase("dashboard")}
       />
     );

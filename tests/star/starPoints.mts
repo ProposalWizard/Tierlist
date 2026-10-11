@@ -72,7 +72,7 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   const cup = { ...f, kind: "cup" as const, competition: "FA Cup" };
   check(tierOfFixture(c, cup) === "cup_national_league" && tierMult(tierOfFixture(c, cup)) === 1.25, "a cup tie is worth your league's multiplier, not ×4");
   check(xp().trophies["World Cup"] === 400_000 && xp().trophies["European Championship"] === 300_000 && xp().trophies["Super Cup"] === 65_000, "World Cup 400k, Euros 300k, Super Cup 65k");
-  check(achievementXp("first-match") === 600 && achievementXp("hat-trick") === 2_400 && achievementXp("ballon-dor") === 12_000 && achievementXp("first-contract") === 0, "achievements: easy 600, medium 2,400, hard 12,000, signing 0");
+  check(achievementXp("first-match") === 600 && achievementXp("hat-trick") === 2_400 && achievementXp("50-goals") === 12_000 && achievementXp("ballon-dor") === 30_000 && achievementXp("first-contract") === 0, "achievements: easy 600, medium 2,400, hard 12,000, legendary 30,000, signing 0");
 }
 
 // ── The XP Book: a saved copy changes the game, a broken one never does ──

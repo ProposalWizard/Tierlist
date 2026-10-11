@@ -18,8 +18,8 @@
  *   3. The match.
  *
  * A player left out of the squad (or injured) gets a small card instead, with
- * Watch from the stands. An international, or a squad too thin to draw, goes
- * straight into the match: there is no line-up to show.
+ * Watch from the stands. A squad too thin to draw goes straight into the
+ * match. An international shows both nations' squads (international.ts).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -32,6 +32,7 @@ import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { getSkipLineup } from "@/lib/star/lineupPrefs";
 import { matchdayFor } from "@/lib/star/teamsheet";
+import { internationalCareer } from "@/lib/star/international";
 import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import VersusScreen from "./VersusScreen";
 import KibCanIcon from "./KibCanIcon";
@@ -89,12 +90,19 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
 
   const saved = loadLineup(career.player.club);
   const savedXI = saved && saved.xi.some(Boolean) ? { formation: formationOf(saved.formation), xi: saved.xi } : undefined;
+  // An international: the sheet is drawn off the stand-in career the match is
+  // handed — your nation's squad against the other nation's (international.ts).
+  const intlCareer = useMemo(
+    () => (nextFixture.kind === "international" ? internationalCareer(career, nextFixture) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [career.season, nextFixture],
+  );
   const matchday = useMemo(
-    () => (nextFixture.kind === "international"
-      ? null
+    () => (intlCareer
+      ? matchdayFor(intlCareer, nextFixture, true, playAs ?? undefined)
       : matchdayFor(career, nextFixture, preMatchSelection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, preMatchSelection?.status === "Substitute")),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [career.player.club, nextFixture, preMatchSelection?.status, playAs],
+    [career.player.club, nextFixture, preMatchSelection?.status, playAs, intlCareer],
   );
   const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
   // "Skip the line-up" in Settings (v0.23.1, P30/P75): straight into the match.
@@ -224,7 +232,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           matchday={matchday}
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
-          clubKits={career.clubKits}
+          clubKits={(intlCareer ?? career).clubKits}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
               ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`

@@ -35,6 +35,7 @@ import { ballonDorNightLook, setBallonDorNightLook, ballonDorNightStored } from 
 import { homeLook, setHomeLook } from "./homeLook";
 import { shopLook, setShopLook } from "./shopLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
+import { wideChances, setWideChances, wideChancesStored } from "./wideChances";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
 import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
@@ -72,6 +73,8 @@ const row = <V extends string>(
 export const LOOK_ROWS = {
   matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
   chanceFraming: row("Chance framing", "zoom", "old", chanceFraming, setChanceFraming),
+  // Leo, 11 Oct 2026: tight angles, cutbacks and penalties side-on (Old by default; Harry decides).
+  wideChances: row("Wide chances", "new", "old", wideChances, setWideChances),
   matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
@@ -128,7 +131,7 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
  *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
 // Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -144,6 +147,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
   standard: {
     matchView: MATCH_VIEW_DEFAULT,
     chanceFraming: N("chanceFraming"),
+    wideChances: O("wideChances"),
     matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
@@ -199,6 +203,8 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
   // The chance mix (Mikey, 9 Oct 2026), the same way.
   ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
+  // Wide chances side-on (Leo, 11 Oct 2026), the same way.
+  ...(typeof window !== "undefined" && !wideChancesStored() ? (["wideChances"] as const) : []),
 ];
 // Player style arrived on New (its default) for every phone; a phone already on
 // Classic (every row Old) takes its Old once, so Classic stays Classic.

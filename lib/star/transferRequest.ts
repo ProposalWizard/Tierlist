@@ -30,11 +30,11 @@ import {
  * wobble. So a 60 asking a Premier League club (level ~78-86) is at best
  * −10: always no. An 85 is around 0 to +7: mostly yes.
  *
- * WHEN IT HAPPENS. A deal agreed at any point in the season is signed in the
+ * WHEN IT HAPPENS. While the January window is open, an agreed deal can be
+ * signed there and then ("Join now"): you join the new club mid-season, at
+ * the week you are at (januaryTransfer.ts). Otherwise it is signed in the
  * SUMMER window, at the end of the season: it sits at the top of the
- * end-of-season offers screen. January moves are not built — joining a new
- * club half-way through would mean rebuilding the season's fixture list
- * (attachClub restarts it at week 1).
+ * end-of-season offers screen.
  *
  * WHAT IT COSTS. Asking upsets your manager: −8 for sounding out a whole
  * league, −4 for one club. One ask a week. A club that says no can be asked

@@ -1981,8 +1981,12 @@ const STANDOFF_BACK = 0.15;    // …and level with your boots, not ahead of the
  * ball near the edge of a tight rectangle, the far side put you outside it, the
  * clamp pulled you straight back — and where it pulled you back TO was the ball.
  * You ended up standing on it, which on screen is the ball on your chest.
+ *
+ * Exported (11 Oct 2026) so a chance the camera turns side-on after it was
+ * built (matchView.ts turnWideChance, Wide chances: New) re-stands you beside
+ * the ball on the turned screen. Nothing else changes.
  */
-function standOff(sc: Scenario, lo?: number, hi?: number) {
+export function standOff(sc: Scenario, lo?: number, hi?: number) {
   // ── Beside him ON SCREEN ──
   //
   // "Beside" is a fact about the picture, not about the pitch: it is the axis
