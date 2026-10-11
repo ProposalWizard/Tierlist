@@ -368,6 +368,19 @@ function championshipCalendarWeek(week: number): number {
   return MATCHWEEKS + (week - CHAMPIONSHIP_MATCHWEEKS);
 }
 
+/**
+ * The week NUMBER whose Saturday falls on a given weekend (1-38). A Premier
+ * League week is its weekend; a 46-round division's week is a round, so this
+ * finds the Saturday round on that weekend. Used by the international breaks
+ * (lib/star/international.ts) to put a Wednesday fixture on a real weekend
+ * whatever the division.
+ */
+export function weekOnWeekend(division: CareerDivision, calendarWeek: number): number {
+  if (division === "premier") return calendarWeek;
+  const i = CHAMPIONSHIP_ROUNDS.findIndex(r => r.calendarWeek === calendarWeek && r.day === "saturday");
+  return i >= 0 ? i + 1 : calendarWeek;
+}
+
 /** A week number past the end of the Championship season. */
 export function CHAMPIONSHIP_POST_SEASON(n: number): number {
   return CHAMPIONSHIP_MATCHWEEKS + n;

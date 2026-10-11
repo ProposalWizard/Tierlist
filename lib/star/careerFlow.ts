@@ -4,6 +4,7 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
+import { recordIntlMatch } from "./international";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
@@ -872,6 +873,10 @@ export function creditMatchResult(
   // double a team-mate's goal/assist tally either.
   const goalEvents = alreadyPlayed ? [] : (stats.goalEvents ?? []);
   const updatedSquad = (career.squad ?? []).map(p => {
+    // An international is played by the national squad (international.ts),
+    // not your club team-mates: a goal by a man of the same name is not a
+    // club goal.
+    if (kind === "international") return p;
     const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
     const assisted = goalEvents.filter(e => e.assist === p.name).length;
     if (scored === 0 && assisted === 0) return p;
@@ -1116,6 +1121,9 @@ export function creditMatchResult(
     // appearance in that regard.
     caps: (career.caps ?? 0) + (isInternational && !alreadyPlayed ? 1 : 0),
     internationalGoals: (career.internationalGoals ?? 0) + (isInternational && !alreadyPlayed ? stats.goals : 0),
+    // …and the match itself, for the international record on the stats page.
+    international: isInternational && !alreadyPlayed
+      ? recordIntlMatch(career.international, career.season, fixture, stats) : career.international,
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
