@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
-  CARRY, carryLead, applyPass, wavesBeaten,
+  CARRY, carryLead, applyPass, wavesBeaten, applyFeint, type DuelEvent,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
@@ -13,6 +13,7 @@ import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { revealOnScreen } from "@/lib/revealOnScreen";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { classifyRelease } from "@/lib/star/dribbleGesture";
 
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
@@ -220,6 +221,10 @@ export interface FpDribbleResult {
   passTo?: { x: number; y: number };
   /** True when a pass was played and cut out (the run is lost). */
   passFailed?: boolean;
+  /** Duels only: a defender brought you down — a free kick, not a lost ball. */
+  fouled?: boolean;
+  /** The run was a duels run (shorter: a different reward threshold). */
+  duels?: boolean;
 }
 
 export interface FirstPersonDribbleProps {
@@ -324,6 +329,15 @@ export interface FirstPersonDribbleProps {
    * game's role colours (you green, them red). A picture only.
    */
   kits?: FpKits;
+  /**
+   * Real duels (Settings → Gameplay → Dribble duels: New; lib/star/
+   * firstPersonDribble.ts "REAL DUELS"): men jockey and show you one way, a tap
+   * drops the shoulder, a swipe down is a step-over, a flick knocks it past.
+   * Off (the default) = the run exactly as before. The real match sets it.
+   */
+  duels?: boolean;
+  /** Your dribbling (technique), 0-100. Duels only. */
+  dribbling?: number;
 }
 
 /** The New UI's top-bar edge (components/star/ui/TopHud.tsx): a dark glass
@@ -344,7 +358,7 @@ const PIP_FILL: Record<DuelPip, string> = {
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
   hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false, kits,
-  passOptions = 0, vision = 55, mateRoster,
+  passOptions = 0, vision = 55, mateRoster, duels = false, dribbling = 55,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -411,6 +425,14 @@ export default function FirstPersonDribble({
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [resultText, setResultText] = useState("");
+  // Duels: the last thing that happened ("he bites!", "knocks it past"), shown briefly.
+  const [duelNote, setDuelNote] = useState<DuelEvent | null>(null);
+  const duelNoteCountRef = useRef(0);
+  useEffect(() => {
+    if (!duelNote) return;
+    const id = window.setTimeout(() => setDuelNote(null), 1100);
+    return () => window.clearTimeout(id);
+  }, [duelNote]);
 
   // Gesture bookkeeping — steer via relative drag, burst via a flick
   // detected mid-drag (velocity, not release), and a tap-nudge decided on
@@ -444,7 +466,7 @@ export default function FirstPersonDribble({
   const reset = useCallback((startNow = false) => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster, ...(duels ? { duels: true, dribbling } : {}) });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
@@ -453,10 +475,12 @@ export default function FirstPersonDribble({
     draggingRef.current = false;
     gestureStartRef.current = null;
     setResultText("");
+    setDuelNote(null);
+    duelNoteCountRef.current = 0;
     // A fresh run waits for its tap; "Go Again" IS a tap, so it goes straight in.
     setPhase(startNow ? "run" : "ready");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions]);
+  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions, duels, dribbling]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -550,6 +574,17 @@ export default function FirstPersonDribble({
     if (!c || !run || !start || phaseRef.current !== "run") return;
     const r = c.getBoundingClientRect();
     if (r.width <= 0) return;
+    if (run.duels) {
+      // Duels: a tap on a team-mate passes; otherwise a tap drops the
+      // shoulder and a swipe down is a step-over, selling that side.
+      const g = classifyRelease(start, { x: e.clientX, y: e.clientY, t: performance.now() }, r.width, r.left);
+      if (g.kind === "shoulder") {
+        const mate = mateAt(start.x - r.left, start.y - r.top, r.width / Math.max(1, c.width));
+        if (mate >= 0) { applyPass(run, mate, visionRef.current); return; }
+      }
+      if (g.kind !== "none") applyFeint(run, g.kind, g.side);
+      return;
+    }
     const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     const heldMs = performance.now() - start.t;
     if (moved > TAP_MAX_MOVE_FRAC * r.width || heldMs > TAP_MAX_MS) return;
@@ -632,6 +667,8 @@ export default function FirstPersonDribble({
         setResultText(passName ? `Played in ${passName}!` : "Pass on!");
       } else if (pass) {
         setResultText("Pass cut out");
+      } else if (finalPhase === "fouled") {
+        setResultText("Fouled — free kick!");
       } else if (finalPhase === "clear") {
         setResultText(`Clear! Beat everyone across all ${run?.roundSizes.length ?? 3} waves.`);
       } else {
@@ -651,6 +688,8 @@ export default function FirstPersonDribble({
         totalWaves: run?.roundSizes.length ?? 0,
         ...(pass && pass.success ? { passedAfterWaves: pass.afterWaves, passTo: pass.at } : {}),
         ...(pass && !pass.success ? { passFailed: true } : {}),
+        ...(finalPhase === "fouled" ? { fouled: true } : {}),
+        ...(run?.duels ? { duels: true } : {}),
       });
     };
 
@@ -662,6 +701,10 @@ export default function FirstPersonDribble({
 
       if (phaseRef.current === "run" && run) {
         const result = stepRun(run, dt);
+        if (run.events && run.events.length !== duelNoteCountRef.current) {
+          duelNoteCountRef.current = run.events.length;
+          setDuelNote(run.events[run.events.length - 1] ?? null);
+        }
         if (result !== "running") finishRun(result);
       }
 
@@ -840,10 +883,25 @@ export default function FirstPersonDribble({
         </div>
       )}
 
+      {/* Duels: what just happened, in the middle of the screen, briefly. */}
+      {duels && phase === "run" && duelNote && (
+        <div key={`${duelNote.t}-${duelNote.text}`} className="pointer-events-none absolute inset-x-0 top-[22%] z-20 flex justify-center px-3">
+          <span
+            className="px-3 py-1 text-[15px] font-black uppercase tracking-wide"
+            style={{ ...HUD_BOX, color: duelNote.tone === "good" ? "#6ee7b7" : duelNote.tone === "bad" ? "#fca5a5" : "#fff" }}
+            data-duel-note
+          >
+            {duelNote.text}
+          </span>
+        </div>
+      )}
+
       {phase === "run" && !hideHint && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
           <p className="px-3 py-2 text-center text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
-            {passOptions > 0
+            {duels
+              ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants."
+              : passOptions > 0
               ? "Tap left or right to touch it. Flick to burst. Tap a team-mate to pass."
               : "Tap left or right to touch the ball that way. Flick to burst past him."}
           </p>
@@ -866,7 +924,9 @@ export default function FirstPersonDribble({
               Tap to start
             </span>
             <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
-              {passOptions > 0
+              {duels
+                ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants. Tap a team-mate to pass."
+                : passOptions > 0
                 ? "Flick to burst past him. Tap a team-mate to pass: green is on, red is risky."
                 : "Tap left or right to touch the ball. Flick to burst past him."}
             </span>

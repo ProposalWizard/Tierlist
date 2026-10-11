@@ -19,7 +19,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
-  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
+  type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode } from "@/lib/star/chanceMaker";
 import { chanceSet } from "@/lib/star/chanceSet";
@@ -34,12 +34,16 @@ import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weath
 import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
-import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
+import { passBand, pickWaveSizes, duelWaveSizes, newRun as newFpRun, stepRun as stepFpRun, applySteer as fpSteer, applyBurst as fpBurst, applyFeint as fpFeint, applyPass as fpPass, wavesBeaten as fpWavesBeaten, carryLead, BURST_T as FP_BURST_T, type FpRunState, type RunPhase as FpRunPhase, type DuelEvent } from "@/lib/star/firstPersonDribble";
+import { classifyRelease } from "@/lib/star/dribbleGesture";
+import { dribbleStyle } from "@/lib/star/dribbleStyleLook";
+import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import Dribble3D from "./Dribble3D";
 import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldClearances, oldChances, oldKaneDrawings } from "@/lib/star/gameplayVersion";
+import { oldDribble, oldDribbleDuels, oldClearances, oldChances, oldKaneDrawings, oldBallPhysics, oldMatchFlow } from "@/lib/star/gameplayVersion";
+import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 import { kaneMomentsReady, loadKaneMoments } from "@/lib/star/kaneMoments";
 // Kane drawings (testing): start fetching as the match code loads, so the
 // first chance of a match can already be one.
@@ -87,6 +91,15 @@ const BALL_GRAB_FRACTION = 0.18;
  * free kicks, corners — and passes you play from your feet stay still.
  * Picked from the chance's seed, so it never draws a random number.
  */
+/** What the commentator says about a strike that came off the boot badly — or
+ *  knuckled (Shots / Knuckleball switches, lib/star/shotModel.ts). */
+const SHOT_LINES: Partial<Record<ContactRead["grade"], string>> = {
+  knuckle: "No spin on it at all — it's moving all over the place!",
+  sliced: "He's sliced it — off the side of the boot!",
+  topped: "Topped it! Straight into the turf.",
+  scuffed: "Scuffed! He's barely caught it.",
+};
+
 function contactMotion(kind: string, seed: number): BallMotion {
   if (kind === "header") return "float";
   if (kind === "volley") return "bounce";
@@ -135,8 +148,17 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
 import ContactBall, { type BallMotion } from "./ContactBall";
+import PowerShotContact from "./PowerShotContact";
+import {
+  shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, stepWindUp, aimedAtGoal, spreadDeg,
+  powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT, type ShotExtras, type ContactRead,
+} from "@/lib/star/shotModel";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
+import { LiveRadar } from "./MatchRadar";
+import { useMatchRadarLook } from "@/lib/star/matchRadarLook";
+import { kitLabelOnDark } from "@/lib/star/kits";
+import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
 import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
@@ -202,7 +224,7 @@ import { drawMatchBall } from "@/lib/star/matchBall";
  * screen, you jog to the ball. On a penalty you may swing your aim and the
  * keeper may hop (the keeper brain's `brainRunUp`).
  */
-type Phase = "aim" | "runup" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble" | "shootout";
+type Phase = "aim" | "runup" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble" | "tdDribble" | "shootout";
 
 /**
  * WHICH DRIBBLE SCENARIO REAL MATCHES USE.
@@ -230,6 +252,11 @@ const USE_FIRST_PERSON_DRIBBLE = true;
 // local `MATCH_DURATION` shadow inside the component, which reads it off
 // `career.ruleBook`'s FA entry when a real career is attached.
 const DEFAULT_MATCH_DURATION = 90;
+/** A club's name short enough for the live radar's corner labels. */
+const radarShort = (club: string) => {
+  const n = CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+  return n.length > 12 ? n.slice(0, 11) + "…" : n;
+};
 
 // The figures' anatomy, their height and the keeper's lean cap all live in
 // lib/star/fiveASide/render.ts, which is the one place this game draws a
@@ -740,6 +767,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       bodyWidth: getTuning("clearance.bodyWidth"),
       secondBalls: Math.round(getTuning("clearance.secondBalls")),
     });
+    // Ball physics New | Old (lib/star/ballPhysics.ts), read at every chance too.
+    setBallPhysics(oldBallPhysics() ? "old" : "new");
   };
   useEffect(() => { applyClearanceRules(); }, []);
   // Kane drawings (testing): fetch them in good time for the first chance.
@@ -803,6 +832,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ? orderDefensively(oppXIForCast.filter(p => !p.isGK))
         .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }))
     : undefined;
+  // Read by the top-down dribble, which starts from the match loop.
+  const fpRosterRef = useRef(fpRoster);
+  fpRosterRef.current = fpRoster;
 
   /**
    * The opponent's defensive block shape for this fixture — their formation,
@@ -1247,6 +1279,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // your chances are what it hands you, and their kind is decided by where the
   // ball actually was when it found you.
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  /** The live radar (Settings → Look → Match radar): every minute the unseen
+   *  match plays, by minute (hiddenMatch.ts's radarTrace). */
+  const radarTraceRef = useRef(new Map<number, RadarTick>());
+  const radarLook = useMatchRadarLook();
   const startMinuteRef = useRef(startMinute);
   startMinuteRef.current = startMinute;
   /** The minute you actually came on. For a substitute this follows the game
@@ -1285,7 +1321,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Rolled once, the moment the scenario triggers (loadScenario), and held
   // fixed for the run's whole lifetime so re-renders while phase ===
   // "fpDribble" never reroll the waves out from under an in-progress run.
-  const fpDribbleRef = useRef<{ waveSizes: number[]; seed: number } | null>(null);
+  const fpDribbleRef = useRef<{ waveSizes: number[]; seed: number; duels?: boolean } | null>(null);
+  // Settings → Match → Dribble style: Top-down — the same run (the first-person
+  // duel's own sim, lib/star/firstPersonDribble.ts) played in this match view,
+  // stepped by the main loop below and drawn with the match's own players and
+  // ball. Kept through a lost run's "result" beat, like dribbleRef.
+  const tdRef = useRef<FpRunState | null>(null);
+  /** Top-down: waiting for the first touch before anyone moves. */
+  const tdReadyRef = useRef(false);
+  /** Top-down: the drawn ball's sideways spring, and the thumb. */
+  const tdBallRef = useRef<{ x: number; vx: number }>({ x: 0, vx: 0 });
+  const tdTouchRef = useRef<{ x: number; y: number; t: number; anchorLane: number; anchorPitchX: number; samples: { x: number; t: number }[] } | null>(null);
+  const [tdNote, setTdNote] = useState<DuelEvent | null>(null);
+  const tdNoteCountRef = useRef(0);
+  const [tdReady, setTdReady] = useState(false);
   /** Settings → Look → "Dribble runs 3D", read once per match (switching mid-run would remount it). */
   const dribble3dRef = useRef(dribble3dLook());
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -1544,6 +1593,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Settings → Match → Chance mix: New — you drop off for the ball too,
       // Kane-style (hiddenMatch.ts's DEEP_TOUCH).
       deepTouches: !oldChances(),
+      // Settings → Look → Gameplay → Match flow: New — the unseen match
+      // against real numbers (shots, corners, possession; hiddenMatch.ts).
+      matchFlow: !oldMatchFlow(),
       // The farewell match: nearly every chance is yours.
       ...(farewellRef.current ? { farewell: true } : {}),
       // v0.26: playstyle, team-mates, fans and your stats shape the chances.
@@ -1765,6 +1817,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
+  // ── Knuckleball & power shot (lib/star/shotModel.ts; Settings → Gameplay) ──
+  // The ⚡ button arms the next shot; letting go of the drag winds up (the
+  // defence keeps closing) and then the green-circle strike screen opens.
+  const [powerArmed, setPowerArmed] = useState(false);
+  const powerArmedRef = useRef(false);
+  powerArmedRef.current = powerArmed;
+  const windUpRef = useRef<number | null>(null);
+  const [windingUp, setWindingUp] = useState(false);
+  const [powerStrike, setPowerStrike] = useState(false);
 
   // ── The run-up (lib/star/penaltyRunup.ts) — every penalty and direct free kick ──
   //
@@ -2174,6 +2235,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
+  // New ball: flight time not yet stepped (fixed 1/180 s steps, see the loop).
+  const physAccRef = useRef(0);
   // Last-seen position per figure, so the renderer can tell who is moving and
   // put them in a running pose. Purely cosmetic — nothing reads it back.
   const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
@@ -2446,7 +2509,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       matePlaysRef.current = [];
-      ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      ballRef.current = r.shot
+        ? launchShot(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng, r.shot, r.shot, launch).ball
+        : launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
       if (r.keeperBrain) {
@@ -3532,6 +3597,114 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // the pitch and two thin white verticals — a diagram, and one nobody could
     // read as football. The line to reach is now a band of turf, and the sides
     // of the corridor are just the edges of the frame.
+    // ── The top-down dribble (Dribble style: Top-down) ──
+    // The duel's own run, in this view: its men, you, the ball at your feet,
+    // the line to reach. Drawn through the "result" beat too (frozen).
+    const td = tdRef.current;
+    if ((phaseRef.current === "tdDribble" || phaseRef.current === "result") && td) {
+      // The line: a lit band of turf.
+      {
+        const a1 = P(td.minX - 8, td.clearY), a2 = P(td.maxX + 8, td.clearY);
+        const b1 = P(td.minX - 8, td.clearY - 2.2), b2 = P(td.maxX + 8, td.clearY - 2.2);
+        ctx.beginPath();
+        ctx.moveTo(a1.px, a1.py); ctx.lineTo(a2.px, a2.py); ctx.lineTo(b2.px, b2.py); ctx.lineTo(b1.px, b1.py);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(52,211,153,0.18)";
+        ctx.fill();
+      }
+      const chevron = (x: number, y: number, dir: number, color: string, size: number) => {
+        const c0 = P(x, y);
+        const r = Math.max(5, unit * size);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(c0.px + dir * r, c0.py);
+        ctx.lineTo(c0.px - dir * r * 0.45, c0.py - r * 0.6);
+        ctx.lineTo(c0.px - dir * r * 0.45, c0.py + r * 0.6);
+        ctx.closePath();
+        ctx.fill();
+      };
+      // On the grass first, under everyone: the side each man shows you, and
+      // the side he is about to tackle (amber running to red).
+      for (const d of td.defenders) {
+        if (d.phase === "jockey" && d.show) chevron(d.x + d.show * 1.3, d.y + 0.3, d.show, "rgba(255,255,255,0.45)", 0.42);
+        if (d.phase === "telegraph") {
+          const f = 1 - Math.max(0, Math.min(1, d.tell / Math.max(0.01, d.tellT)));
+          chevron(d.x + d.commitSide * (0.9 + 0.5 * f), d.y, d.commitSide, `rgba(${Math.round(251 - 12 * f)},${Math.round(191 - 123 * f)},${Math.round(36 + 32 * f)},${0.6 + 0.35 * f})`, 0.55);
+        }
+      }
+      for (const m of td.mates) {
+        const c0 = P(m.x, m.y);
+        ctx.strokeStyle = PASS_RING[passBand(m.difficulty)];
+        ctx.lineWidth = Math.max(2, unit * 0.16);
+        ctx.beginPath();
+        ctx.ellipse(c0.px, c0.py, Math.max(10, unit * 1.3), Math.max(5, unit * 0.6), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      figureQueue = [];
+      td.defenders.forEach((d, i) => {
+        const lean = d.phase === "committed" ? d.commitSide * 0.5 * Math.min(1, d.lunge * 1.5)
+          : d.phase === "bitten" ? (d.leanDir ?? 0) * 0.45
+          : d.phase === "telegraph" ? d.commitSide * 0.18
+          : d.phase === "jockey" ? (d.show ?? 0) * 0.1 : 0;
+        ctx.globalAlpha = d.phase === "beaten" ? 0.55 : d.phase === "waiting" ? 0.8 : 1;
+        footballer(d.x, d.y, R, theirKit().shirt, theirKit().trim, {
+          sid: `td${i}`,
+          pose: d.phase === "waiting" ? "idle" : poseFor(`td${i}`, d.x, d.y),
+          phase: runPhase(d.x + i),
+          facing: lean || undefined,
+          face: getFaceImage(d.who?.face ?? fakeFaceFor(d.who?.id ?? `td${i}`)),
+          label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
+        });
+        ctx.globalAlpha = 1;
+      });
+      td.mates.forEach((m, i) => {
+        footballer(m.x, m.y, R, ourKit().shirt, ourKit().trim, {
+          sid: `tdm${i}`, pose: poseFor(`tdm${i}`, m.x, m.y), phase: runPhase(m.x + 7 * i),
+          face: getFaceImage(m.who?.face ?? fakeFaceFor(m.who?.id ?? `tdm${i}`)),
+        });
+      });
+      const feint = td.feint;
+      footballer(td.x, td.y, R, ourKit().shirt, ourKit().trim, {
+        sid: "you",
+        pose: feint && feint.kind === "stepover" ? "kick" : "run",
+        kickFoot: feint ? feint.dir : 1,
+        phase: (td.stride / 1.4) * Math.PI * 2,
+        facing: feint && feint.kind === "shoulder" ? feint.dir * 0.3 : td.burst ? td.burst.dir * 0.22 : undefined,
+        star: true,
+        face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE),
+      });
+      // The ball: ahead of your feet, touched on once a stride, knocked further on a burst.
+      {
+        const burst = td.burst ? Math.min(1, td.burst.t / FP_BURST_T) : 0;
+        const lead = 0.55 + 1.5 * (carryLead(td.stride, tdBallRef.current.x >= td.x ? 1 : -1, burst) - 0.42);
+        const bx = tdBallRef.current.x, by = td.y - lead;
+        const drawTdBall = () => {
+          const { px, py, scale } = toPx(bx, by);
+          const br = BALL_PX * scale;
+          if (nv && matchBallLook() === "new") { drawMatchBall(ctx, px, py, py, br, seamRef.current, 0, 1); return; }
+          ctx.beginPath();
+          ctx.ellipse(px, py, br * 1.05, br * 0.5, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(0,0,0,0.34)";
+          ctx.fill();
+          const img = ballImgRef.current;
+          if (img && img.complete && img.naturalWidth > 0) {
+            ctx.save(); ctx.translate(px, py); ctx.rotate(seamRef.current); ctx.drawImage(img, -br, -br, br * 2, br * 2); ctx.restore();
+          } else {
+            ctx.beginPath(); ctx.arc(px, py, br, 0, Math.PI * 2); ctx.fillStyle = "#fefefe"; ctx.fill();
+          }
+        };
+        figureQueue.push({ py: toPx(bx, by).py, draw: drawTdBall });
+      }
+      flushFigures();
+      // How far up the pitch you are.
+      const prog = Math.max(0, Math.min(1, (td.startY - td.y) / Math.max(1, td.startY - td.clearY)));
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84, H * 0.014);
+      ctx.fillStyle = prog > 0.75 ? "#fbbf24" : "#34d399";
+      ctx.fillRect(W * 0.08, H * 0.045, W * 0.84 * prog, H * 0.014);
+      return;
+    }
+
     const dr = dribbleRef.current;
     // Also drawn (frozen — nothing steps it once phase leaves "dribble", see
     // the physics update below) through "result": a run that ends in a
@@ -4320,6 +4493,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // turned frame's WIDTH-sized span instead — about 60% of the metres
       // it should have had — so the exact same power looked visibly shorter
       // on every corner and cross. Reported directly.
+      // ── The spread (Shots: New, lib/star/shotModel.ts) ── a faint cone on
+      // to the goal line, as wide as this strike really scatters (1.5 sd
+      // each side: about 87 in 100 of your clean strikes land inside it). So
+      // the arrow tells the truth about where the ball goes, skill and all.
+      if (shotsPro() && aimedAtGoal(sc, { x: dx, y: dy })) {
+        const sd = spreadDeg(sc, power, skills.technique) * 0.85;
+        const half = (Math.min(25, sd * 1.5) * Math.PI) / 180;
+        const n0 = Math.hypot(dx, dy) || 1;
+        const ux0 = dx / n0, uy0 = dy / n0;
+        const reach = sc.ball.y / Math.max(0.15, -uy0);
+        const edge = (s: number) => {
+          const c = Math.cos(s * half), sn = Math.sin(s * half);
+          const ex2 = ux0 * c - uy0 * sn, ey2 = ux0 * sn + uy0 * c;
+          const t = ey2 < -0.05 ? sc.ball.y / -ey2 : reach;
+          return toPx(sc.ball.x + ex2 * t, sc.ball.y + ey2 * t);
+        };
+        const o = toPx(sc.ball.x, sc.ball.y), l = edge(-1), r = edge(1);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(o.px, o.py);
+        ctx.lineTo(l.px, l.py);
+        ctx.lineTo(r.px, r.py);
+        ctx.closePath();
+        const g = ctx.createLinearGradient(o.px, o.py, (l.px + r.px) / 2, (l.py + r.py) / 2);
+        g.addColorStop(0, "rgba(251,146,60,0.32)");
+        g.addColorStop(1, "rgba(251,146,60,0.08)");
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(255,237,213,0.55)";
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
       const heightSpan = facingRef.current === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
       const lineLen = power * sameOnScreenM(heightSpan, 1, "height") * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
@@ -4564,7 +4772,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const rec = goalRecRef.current ?? (goalRecRef.current = new GoalRecorder());
     const ph = phaseRef.current;
     const sc = scenarioRef.current;
-    const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !dribbleRef.current))
+    const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !dribbleRef.current && !tdRef.current))
       && goalInView(sc.kind);
     if (live) {
       const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
@@ -4645,15 +4853,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
         };
       },
+      // the ball in flight, and a way to set it (ball-physics stills: send a
+      // real strike at the post, the bar or the net). Dev only, like the rest.
+      ballState: () => (ballRef.current ? { ...ballRef.current, pos: { ...ballRef.current.pos }, vel: { ...ballRef.current.vel } } : null),
+      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number }) => {
+        const bl = ballRef.current;
+        if (!bl || phaseRef.current !== "flight") return false;
+        bl.pos = { x: b.x, y: b.y }; bl.z = b.z; bl.vel = { x: b.vx, y: b.vy }; bl.vz = b.vz; bl.spin = b.spin ?? 0;
+        bl.landAt = undefined;
+        return true;
+      },
       // a dribble run now, while a chance is waiting to be taken (test bots:
       // the dribble chance is a roll of the hidden match, so it can take a
       // whole match to come up). The same set-up the hidden match's request does.
       dribble: () => {
         if (phaseRef.current !== "aim") return false;
         const rng = rngRef.current;
-        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) };
+        fpDribbleRef.current = rollDribbleRun(rng);
         setAim(null); setOutcome(null); dragRef.current = null; draggingRef.current = false;
-        setPhase("fpDribble");
+        setPhase(dribbleStyle() === "topdown" ? startTopDownDribble() : "fpDribble");
         return true;
       },
     };
@@ -4670,6 +4888,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       let dt = (ts - last) / 1000;
       lastTsRef.current = ts;
       dt = Math.min(dt, 0.05); // clamp big frame gaps
+
+      // Top-down dribble (Dribble style: Top-down): the duel's own sim, stepped
+      // here in the match's one loop — no loop of its own.
+      if (phaseRef.current === "tdDribble" && tdRef.current) stepTopDownPicture(tdRef.current, dt);
+      if (phaseRef.current === "tdDribble" && tdRef.current && !tdReadyRef.current) {
+        const run = tdRef.current;
+        const out = stepFpRun(run, dt);
+        if (run.events && run.events.length !== tdNoteCountRef.current) {
+          tdNoteCountRef.current = run.events.length;
+          setTdNote(run.events[run.events.length - 1] ?? null);
+        }
+        if (out !== "running") finishTopDownDribble(out);
+      }
 
       if (phaseRef.current === "dribble" && dribbleRef.current) {
         // No React state per frame: the render loop already runs every frame and
@@ -4693,6 +4924,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // …with the keeper brain he also gets set while you aim: a walk from
         // where he was put toward his spot for this ball. No-op when it's off.
         brainAim(scenarioRef.current, dt);
+      }
+      // The power shot's wind-up: the defence closes while the leg goes back.
+      if (phaseRef.current === "aim" && windUpRef.current !== null) {
+        stepWindUp(scenarioRef.current, dt);
+        windUpRef.current -= dt;
+        if (windUpRef.current <= 0) {
+          windUpRef.current = null;
+          setWindingUp(false);
+          setPhase("contact");
+        }
       }
       // v0.15 item 22: once the drag is committed, ordered runs
       // are under way and the presser is coming — until you let go. See
@@ -4793,7 +5034,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // during the real strike instead, one value per substep, until it
         // runs out — which should land almost exactly on the recorded
         // outcome, since that is exactly the sequence that produced it.
-        const steps = 3;
+        // New ball (ballPhysics.ts): FIXED 1/180 s steps, as many as the
+        // frame's time holds, the rest carried to the next frame — so a 30, 60
+        // or 120 fps phone plays the exact same flight, step for step. 1/180 s
+        // is what a 60 fps phone always got (3 × 1/60 ÷ 3). Old: three steps
+        // of a third of whatever the frame took, as before.
+        const fixedStep = realBallOn() && !replaySubstepsRef.current;
+        let steps = 3;
+        if (fixedStep) {
+          physAccRef.current += dt;
+          steps = Math.floor(physAccRef.current * 180 + 1e-6);
+          physAccRef.current = Math.max(0, physAccRef.current - steps / 180);
+        }
         for (let i = 0; i < steps; i++) {
           const recorded = replaySubstepsRef.current;
           let h: number;
@@ -4801,7 +5053,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             h = recorded[replaySubstepIdxRef.current];
             replaySubstepIdxRef.current++;
           } else {
-            h = dt / steps;
+            h = fixedStep ? 1 / 180 : dt / steps;
           }
           // Recording the other half of the same fix — only while a live
           // strike (not a replay) is pending one, see handleContact and
@@ -4842,6 +5094,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const bIn = ballRef.current;
           const incoming = { vx: bIn.vel.x, vy: bIn.vel.y, vz: bIn.vz, z: bIn.z, spin: bIn.spin };
           const mateProbe = probeMatePlays(scenarioRef.current);
+          stepKnuckle(ballRef.current, h);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           noteMatePlays(matePlaysRef.current, mateProbe, scenarioRef.current);
           // ── v0.15 item 16: a block deflects instead of ending the chance ──
@@ -5685,6 +5938,97 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   /**
+   * A dribble run's waves and seed, rolled once when it starts. Dribble duels:
+   * Old rolls exactly as before; New rolls the shorter duels run
+   * (duelWaveSizes — one man takes you on at a time, so fewer men).
+   */
+  const rollDribbleRun = (rng: () => number) => (
+    oldDribbleDuels()
+      ? { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) }
+      : { waveSizes: duelWaveSizes(rng), seed: Math.floor(rng() * 1e9), duels: true }
+  );
+
+  /**
+   * Dribble style: Top-down. The same run the first-person duel plays (same
+   * waves, same seed, same roster), built here and stepped by this component's
+   * own loop; drawn in the match view with the match's players and ball.
+   */
+  const startTopDownDribble = (): Phase => {
+    const fp = fpDribbleRef.current;
+    if (!fp) return "fpDribble";
+    const car = careerRef.current;
+    const run = newFpRun({
+      pace: fp.duels ? (car?.skills.pace ?? 60) : 100,
+      oppStrength: fp.duels ? Math.round(oppStrengthRef.current ?? 70) : 100,
+      waveSizes: fp.waveSizes, roster: fpRosterRef.current, rng: mulberry32(fp.seed),
+      mates: oldDribble() ? 0 : Math.round(getTuning("dribble.mates")),
+      ...(fp.duels ? { duels: true, dribbling: car?.skills.technique ?? 55 } : {}),
+    });
+    tdRef.current = run;
+    tdReadyRef.current = true;
+    setTdReady(true);
+    tdNoteCountRef.current = 0;
+    setTdNote(null);
+    tdBallRef.current = { x: run.x + 0.3, vx: 0 };
+    tdTouchRef.current = null;
+    facingRef.current = "up";
+    viewportRef.current = topDownViewport(run);
+    baseViewportRef.current = { ...viewportRef.current };
+    playZoomRef.current = 1;
+    return "tdDribble";
+  };
+
+  /** Top-down: the frame follows you up the pitch, about 30 m deep. */
+  const topDownViewport = (run: FpRunState) => {
+    const c = canvasRef.current;
+    const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
+    const y1 = run.y - 20, y2 = run.y + 9;
+    const w = (y2 - y1) * aspect;
+    const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, CX));
+    return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
+  };
+
+  /** One frame of the top-down picture's own bits: the camera and the drawn ball. */
+  const stepTopDownPicture = (run: FpRunState, dt: number) => {
+    const want = topDownViewport(run);
+    const vp = viewportRef.current;
+    const k = 1 - Math.exp(-4 * dt);
+    viewportRef.current = { x1: vp.x1 + (want.x1 - vp.x1) * k, x2: vp.x2 + (want.x2 - vp.x2) * k, y1: vp.y1 + (want.y1 - vp.y1) * k, y2: vp.y2 + (want.y2 - vp.y2) * k };
+    baseViewportRef.current = { ...viewportRef.current };
+    // The ball: just outside your boot, eased (a little overshoot) towards the
+    // side you are touching it to, so a change of direction is seen as a touch.
+    const b = tdBallRef.current;
+    let dir = 0;
+    if (run.burst) dir = run.burst.dir;
+    else if (run.feint) dir = run.feint.kind === "stepover" ? -run.feint.dir : run.feint.dir;
+    else if (Math.abs(run.laneTarget - run.x) > 0.15) dir = Math.sign(run.laneTarget - run.x);
+    const want2 = run.x + (dir === 0 ? 0.28 : dir * (run.burst ? 0.9 : 0.55));
+    b.vx += (90 * (want2 - b.x) - 17 * b.vx) * dt;
+    b.x += b.vx * dt;
+    seamRef.current += dt * 9;
+  };
+
+  /** Top-down: the run is over — the same ending as the first-person duel. */
+  const finishTopDownDribble = (out: FpRunPhase) => {
+    const run = tdRef.current;
+    if (!run || phaseRef.current !== "tdDribble") return;
+    const pass = run.pass;
+    const result: FpDribbleResult = {
+      cleared: out === "clear",
+      beaten: run.defenders.filter(d => d.phase === "beaten").length,
+      wavesBeaten: fpWavesBeaten(run),
+      totalWaves: run.roundSizes.length,
+      ...(pass && pass.success ? { passedAfterWaves: pass.afterWaves, passTo: pass.at } : {}),
+      ...(pass && !pass.success ? { passFailed: true } : {}),
+      ...(out === "fouled" ? { fouled: true } : {}),
+      ...(run.duels ? { duels: true } : {}),
+    };
+    // Frozen on screen through the beat that follows (cleared by loadScenario).
+    setPhase("result");
+    finishFpDribble(result);
+  };
+
+  /**
    * The first-person duel is over — see USE_FIRST_PERSON_DRIBBLE.
    *
    * Mirrors `finishDribble` above exactly on a loss. On a win, requested
@@ -5708,6 +6052,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // the run is on the same ladder (lib/star/dribbleReward.ts), and the ladder
     // picks the KIND, because a chained chance's position alone no longer
     // decides its kind while the even mix is on (lib/star/kindMix.ts).
+    // Dribble duels: he brought you down — a free kick, the way the match's
+    // own fouls are (see `fouled`): yours if you are on them, else watched.
+    if (result.fouled) {
+      const t = tallyRef.current;
+      if (result.beaten > 0) t.dribbles += 1;
+      setStats({ ...t });
+      logChance("dribble", "dribble");
+      showAction("FOUL");
+      pushLine("Brought down as he goes past him — free kick.");
+      playWhistle();
+      const gen = sceneGenRef.current;
+      if (mayTake("free_kick")) {
+        setPieceNextRef.current = "free_kick";
+        if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
+      } else if (matchModeRef.current) {
+        handoverRef.current = "free_kick";
+        window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
+      } else {
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
+      }
+      return;
+    }
     const passed = result.passedAfterWaves !== undefined;
     if (result.cleared || passed) {
       const t = tallyRef.current;
@@ -5730,6 +6097,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         wavesBeaten: result.wavesBeaten ?? (result.cleared ? 1 : 0),
         totalWaves: result.totalWaves ?? 1,
         mateX: result.passTo?.x,
+        // Duels runs are shorter (up to five men): beating four is the clean break.
+        ...(result.duels ? { bonusMen: 4 } : {}),
       }, rng);
       if (passed) {
         pushLine(reward.tier >= 3 ? "Picks out the free man — and he's in."
@@ -5805,6 +6174,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const st = matchStateRef.current;
     st.userScore = userScoreRef.current;
     st.oppScore = oppScoreRef.current;
+    // The live radar reads every minute played from here on (read-only).
+    st.radarTrace = radarTraceRef.current;
 
     if (!prior) playstyleChangesRef.current = [];
     const baseInputs: HiddenMatchInputs = prior
@@ -6275,6 +6646,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     chainRef.current = null;
     dribbleRef.current = null;
     fpDribbleRef.current = null;
+    tdRef.current = null;
 
     const ours = kick.side === info.yourSide;
     // The kicker faces the OTHER side's keeper.
@@ -6534,6 +6906,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // A new scenario loading is exactly the point its lifetime is over.
     dribbleRef.current = null;
     fpDribbleRef.current = null;
+    tdRef.current = null;
 
     // ── A penalty your side has won, and you are not on them (v0.15 item 6) ──
     // The team's taker takes it, live, and you watch. On them, you take it —
@@ -6554,7 +6927,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // waves") — with team-mates to pass to, a run is a ladder to climb,
         // and two waves left it only two rungs.
         // Settings → Gameplay → Dribble runs: Old = 2-4 waves, as before.
-        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) };
+        fpDribbleRef.current = rollDribbleRun(rng);
         setAim(null);
         runupRef.current = null;
         setContactTimerS(null);
@@ -6562,7 +6935,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         dragRef.current = null;
         draggingRef.current = false;
         facingRef.current = "up";
-        setPhase("fpDribble");
+        // Settings → Match → Dribble style: Top-down plays the same run here,
+        // in the match view; First-person (the default) as before.
+        setPhase(dribbleStyle() === "topdown" ? startTopDownDribble() : "fpDribble");
         // A dribble has no ScenarioKind, so it is reported under its own name
         // rather than left out — see `onChanceServed`.
         onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
@@ -6793,6 +7168,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     kibUsedRef.current = 0;
     setKibUsed(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
+    radarTraceRef.current = new Map();
     simContinueRef.current = null;
     stretchRef.current = null;
     pendingRequestRef.current = null;
@@ -6829,6 +7205,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     primeMatchSound();
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
+    if (phaseRef.current === "tdDribble") {
+      const run = tdRef.current;
+      if (!run) return;
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      // Nobody moves until your first touch (the run waits for you).
+      if (tdReadyRef.current) { tdReadyRef.current = false; setTdReady(false); return; }
+      const now = performance.now();
+      tdTouchRef.current = { x: e.clientX, y: e.clientY, t: now, anchorLane: run.laneTarget, anchorPitchX: pitchFromPointer(e.clientX, e.clientY).x, samples: [{ x: e.clientX, t: now }] };
+      return;
+    }
     if (phaseRef.current === "dribble") {
       flickStartRef.current = pitchFromPointer(e.clientX, e.clientY);
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -6852,6 +7238,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     if (phaseRef.current !== "aim") return;
+    if (windUpRef.current !== null) return; // winding up a power shot — the shot is already chosen
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
     // ── A team-mate takes priority over the ball ──
@@ -6913,6 +7300,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (phaseRef.current === "tdDribble") {
+      // Drag steers (your lane follows your thumb); a fast sideways flick knocks it past.
+      const run = tdRef.current, tch = tdTouchRef.current, c = canvasRef.current;
+      if (!run || !tch || !c) return;
+      fpSteer(run, tch.anchorLane + (pitchFromPointer(e.clientX, e.clientY).x - tch.anchorPitchX));
+      const now = performance.now();
+      tch.samples.push({ x: e.clientX, t: now });
+      while (tch.samples.length > 1 && now - tch.samples[0].t > 150) tch.samples.shift();
+      const o = tch.samples[0], w = c.getBoundingClientRect().width;
+      if (now - o.t > 20) {
+        const vx = (e.clientX - o.x) / ((now - o.t) / 1000);
+        if (Math.abs(vx) >= 1.6 * w && Math.abs(e.clientX - o.x) >= 0.06 * w && fpBurst(run, vx > 0 ? 1 : -1)) {
+          tch.anchorLane = run.laneTarget;
+          tch.anchorPitchX = pitchFromPointer(e.clientX, e.clientY).x;
+          tch.samples = [{ x: e.clientX, t: now }];
+          tch.t = -1e9; // a flick, not a tap or a step-over
+        }
+      }
+      return;
+    }
     if (phaseRef.current === "dribble") return;
     if (nudgeDragRef.current) {
       const ru = runupRef.current;
@@ -6965,6 +7372,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // The swing stays where you left it; another drag carries on from there.
       nudgeDragRef.current = null;
       try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
+    if (phaseRef.current === "tdDribble") {
+      const run = tdRef.current, tch = tdTouchRef.current, c = canvasRef.current;
+      tdTouchRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (!run || !tch || !c || run.phase !== "running") return;
+      const r = c.getBoundingClientRect();
+      const g = classifyRelease(tch, { x: e.clientX, y: e.clientY, t: performance.now() }, r.width, r.left);
+      if (g.kind === "shoulder") {
+        // A tap on a team-mate plays the pass.
+        const at = pitchFromPointer(tch.x, tch.y);
+        const mi = run.mates.findIndex((m) => Math.hypot(m.x - at.x, m.y - at.y) < 3);
+        if (mi >= 0) { fpPass(run, mi, visionRef.current); return; }
+        if (!run.duels) { fpSteer(run, run.laneTarget + 1.8 * g.side); return; }
+      }
+      if (g.kind !== "none" && run.duels) fpFeint(run, g.kind, g.side);
       return;
     }
     // A flick is a direction and nothing else. Short taps are ignored so a
@@ -7077,6 +7501,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     setAim({ dir, power });
+    // An armed power shot winds up first (shotModel.ts): the pitch keeps
+    // moving for POWER_SHOT_WINDUP_S, then the green-circle screen opens.
+    if (powerArmedRef.current && knucklePowerOn() && aimedAtGoal(scenarioRef.current, dir)) {
+      setPowerStrike(true);
+      setPowerArmed(false);
+      windUpRef.current = POWER_SHOT_WINDUP_S;
+      setWindingUp(true);
+      pushLine("He pulls the leg right back…");
+      return;
+    }
+    setPowerStrike(false);
     setPhase("contact");
   };
 
@@ -7130,6 +7565,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const handleContact = (
     contact: { cx: number; cy: number },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
+    extras?: ShotExtras,
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
@@ -7161,6 +7597,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // `skills` is what the ball was struck WITH, so a goal replays at the
     // pace it was scored at. Never for somebody else's kick: it is not a
     // goal of yours to save.
+    // ── Shots (lib/star/shotModel.ts; Settings → Gameplay "Shots" and
+    // "Knuckleball & power shot") ── only ever your own kick. Both Old: the
+    // plain `launch` below, exactly as before.
+    const shotPro = !auto && shotsPro();
+    const shotKnuckle = !auto && knucklePowerOn();
+    const shotRec = (shotPro || shotKnuckle || extras)
+      ? { seed: shotSeedFor(seedRef.current, rngCallCountRef.current), extras, pro: shotPro, knuckle: shotKnuckle }
+      : null;
     pendingReplayRef.current = auto ? null : {
       seed: seedRef.current,
       callsBeforeStrike: rngCallCountRef.current,
@@ -7169,17 +7613,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       power: a.power,
       contact,
       skills: launchWith,
+      ...(shotRec ? { shot: shotRec } : {}),
     };
     // Starts recording this strike's own substep sizes — see
     // GoalReplay.flightDtLog. Reset here, alongside pendingReplayRef, so a
     // follow-up strike on a loose ball starts its own log rather than
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
+    physAccRef.current = 0;
     deflectionsRef.current = 0;
     matePlaysRef.current = [];
     // Where you struck it, for the kind of goal it was (ratings revamp, lib/star/chanceRating.ts).
     strikeAtRef.current = { x: scenarioRef.current.ball.x, y: scenarioRef.current.ball.y };
-    ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
+    let shotRead: ContactRead | undefined;
+    if (shotRec) {
+      const st = launchShot(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current, shotRec, shotRec, launch);
+      ballRef.current = st.ball;
+      shotRead = st.read;
+    } else {
+      ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
+    }
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -7274,9 +7727,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // physics, which were already doing the right thing.
     if (scenarioRef.current.kind === "header" && ballRef.current.lastTouch === "defence") {
       pushLine("He gets up highest and heads it clear!");
+    } else if (shotRead && SHOT_LINES[shotRead.grade]) {
+      // How it came off the boot (Shots: New), said instead of the usual line.
+      pushLine(SHOT_LINES[shotRead.grade]!);
+      if (shotRead.grade === "knuckle") showAction("KNUCKLEBALL");
     } else {
       pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     }
+    if (extras?.powerMult) showAction(`⚡ x${extras.powerMult.toFixed(2)}`);
     playKick();
     kickPoseRef.current = KICK_POSE_S;
   };
@@ -7535,6 +7993,61 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         )}
 
+        {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",
+            lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
+            clear of the ball's own pull room. Its own pointer-events-auto so
+            a tap never starts an aim-drag underneath. */}
+        {knucklePowerOn() && phase === "aim" && !windingUp && !replayOf
+          && !["penalty", "free_kick", "corner", "byline_cross"].includes(scenarioRef.current.kind) && (
+          <button
+            onClick={() => setPowerArmed((v) => !v)}
+            data-power-shot={powerArmed ? "on" : "off"}
+            className={`absolute left-2 bottom-2 z-30 pointer-events-auto rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
+              powerArmed ? "bg-amber-400 text-gray-950 border-amber-200" : "bg-gray-950/70 text-amber-300 border-amber-400/60"}`}
+          >
+            ⚡ Power shot{powerArmed ? " — on" : ""}
+          </button>
+        )}
+        {windingUp && (
+          <div className="absolute inset-x-0 bottom-[12%] z-30 flex justify-center pointer-events-none">
+            <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-2xl font-black italic tracking-wider text-amber-300">
+              WINDING UP…
+            </div>
+          </div>
+        )}
+        {/* The top-down dribble (Dribble style: Top-down): words over the
+            canvas only — the run itself is drawn on the canvas. Never takes
+            a touch (the canvas does). */}
+        {phase === "tdDribble" && (
+          <div className="pointer-events-none absolute inset-0 z-20" data-td-dribble>
+            {tdNote && !tdReady && (
+              <div key={`${tdNote.t}-${tdNote.text}`} className="absolute inset-x-0 top-[16%] flex justify-center px-3">
+                <span className="bg-black/70 px-3 py-1 text-[15px] font-black uppercase tracking-wide" style={{ color: tdNote.tone === "good" ? "#6ee7b7" : tdNote.tone === "bad" ? "#fca5a5" : "#fff", boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.9)" }} data-duel-note>
+                  {tdNote.text}
+                </span>
+              </div>
+            )}
+            {tdReady ? (
+              <div className="absolute inset-x-0 top-[10%] flex flex-col items-center gap-1.5 px-6 text-center">
+                <span className="bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950" style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92)" }}>Tap to start</span>
+                <span className="bg-black/70 px-3 py-1.5 text-[12px] font-bold leading-snug text-white">
+                  {tdRef.current?.duels
+                    ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                    : "Drag to steer. Flick to burst past him."}
+                </span>
+              </div>
+            ) : (
+              <div className="absolute inset-x-0 bottom-0 px-2 pb-2">
+                <p className="bg-black/70 px-3 py-2 text-center text-[12px] font-bold leading-snug text-white">
+                  {tdRef.current?.duels
+                    ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants."
+                    : "Drag to steer. Flick to burst past him. Tap a team-mate to pass."}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* The first-person duel — see USE_FIRST_PERSON_DRIBBLE. A full
             overlay over the canvas (it manages its own camera/render loop
             entirely), not something drawn onto it the way the old top-down
@@ -7559,7 +8072,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             vision: visionRef.current,
             onComplete: finishFpDribble,
           };
-          if (dribble3dRef.current !== "3d") return <FirstPersonDribble embedded {...duel} />;
+          // Dribble duels: New — the career's own pace and dribbling against the
+          // real opponent; Old — exactly the props above.
+          const fpd = fpDribbleRef.current;
+          const car0 = careerRef.current;
+          const duelExtra = fpd.duels
+            ? { duels: true, dribbling: car0?.skills.technique ?? 55, pace: car0?.skills.pace ?? 60, oppStrength: Math.round(oppStrength ?? 70) }
+            : {};
+          if (dribble3dRef.current !== "3d") return <FirstPersonDribble embedded {...duel} {...duelExtra} />;
           const car = careerRef.current;
           return (
             <Dribble3D
@@ -7576,9 +8096,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
-        {phase === "contact" && aim && (
+        {phase === "contact" && aim && powerStrike && (
+          <PowerShotContact power={aim.power} onStrike={(q) => {
+            // Its own seeded draw, so the match's random stream is untouched.
+            const r = mulberry32(shotSeedFor(seedRef.current ^ 0x9073, rngCallCountRef.current));
+            setPowerStrike(false);
+            handleContact(POWER_SHOT_CONTACT, undefined, { ...powerShotStrike(q, r), noKnuckle: true });
+          }} />
+        )}
+        {phase === "contact" && aim && !powerStrike && (
           <ContactBall
             power={aim.power}
+            grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
+            knuckles={knucklePowerOn()}
             onContact={(c) => handleContact(c)}
             motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
@@ -7655,6 +8185,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onOpenScores={liveWeekRef.current && liveWeekRef.current.fixtures.length ? () => setScoresOpen(true) : undefined}
             homeTeam={homeTeam}
             userIsHome={fixture ? !!fixture.home : true}
+            radar={radarLook === "new" && matchMode ? (
+              <LiveRadar
+                trace={radarTraceRef.current}
+                minute={matchMinute}
+                stepMs={Math.round(MINUTE_TICK_MS / Math.max(1, speed))}
+                fullTime={MATCH_DURATION}
+                us={{ short: radarShort(career?.player.club ?? "You"), colour: kitLabelOnDark(ourKit().shirt, ourKit().trim) }}
+                them={{ short: radarShort(fixture?.opponent ?? "Them"), colour: kitLabelOnDark(theirKit().shirt, theirKit().trim) }}
+              />
+            ) : undefined}
             awayTeam={awayTeam}
             homeScore={homeScore}
             awayScore={awayScore}
