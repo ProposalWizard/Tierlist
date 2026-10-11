@@ -178,6 +178,8 @@ import { setActiveFoot } from "@/lib/star/kickFoot";
 import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
 import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
+import { windowDue, decideCallUp, applyCallUp, internationalCareer } from "@/lib/star/international";
+import CallUpScreen from "@/components/star/CallUpScreen";
 
 // ── Screens that download only when first opened (speed job D, 9 Oct 2026;
 // lib/star/lazyScreen.ts). Home, the title screen and the match stay in the
@@ -893,6 +895,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
   const nextFixture = career ? nextFixtureFor(career) : null;
+  // International breaks (lib/star/international.ts): the window that has
+  // come round and not been decided yet, and — for an international — the
+  // stand-in career the match is handed (your side is the nation).
+  const intlDue = career ? windowDue(career) : null;
+  const intlMatchCareer = useMemo(
+    () => (career && nextFixture?.kind === "international" ? internationalCareer(career, nextFixture) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [career?.season, career?.week, nextFixture?.week, nextFixture?.opponent, nextFixture?.kind],
+  );
+  useEffect(() => {
+    if (phase === "dashboard" && intlDue !== null) setPhase("intl-callup");
+    else if (phase === "intl-callup" && intlDue === null) setPhase("dashboard");
+  }, [phase, intlDue]);
   // Every fixture played and the season not yet rolled over. The dashboard has
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
@@ -1641,6 +1656,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setCareer(from);
       setActiveNav("home");
       setPhase("dashboard");
+      return;
+    }
+
+    // An international break has come round: the national manager names his
+    // squad before the next club match (lib/star/international.ts).
+    if (windowDue(from) !== null) {
+      setCareer(from);
+      setPhase("intl-callup");
       return;
     }
 
@@ -3872,7 +3895,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             keeperStrength={oppStrength}
             position={career.playAs ?? career.player.position}
             teamRelationship={career.relationships.team}
-            career={career}
+            career={intlMatchCareer ?? career}
             fixture={nextFixture}
             oppStrength={oppStrength}
             onComplete={handleMatchComplete}
@@ -3922,6 +3945,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           )}
         </div>
       </div>
+    );
+  }
+
+  if (phase === "intl-callup" && intlDue !== null) {
+    const decision = decideCallUp(career, intlDue);
+    return (
+      <CallUpScreen
+        decision={decision}
+        dateLabel={fixtureDateLabel(career.player.startYear, career.season, decision.fixture.week, "international", divisionOf(career))}
+        onContinue={() => {
+          setCareer(applyCallUp(career, decision));
+          setActiveNav("home");
+          setPhase("dashboard");
+        }}
+      />
     );
   }
 

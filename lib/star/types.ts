@@ -210,7 +210,11 @@ export type Competition =
   | "World Cup"
   | "European Championship"
   /** Third to sixth in the Championship, for the last promotion place. */
-  | "Play-Offs";
+  | "Play-Offs"
+  /** International breaks (lib/star/international.ts): one match a window. */
+  | "International Friendly"
+  | "World Cup Qualifier"
+  | "Euro Qualifier";
 
 export interface Fixture {
   week: number;
@@ -1121,6 +1125,10 @@ export interface CareerState {
   europeanQualification?: Competition | null;
   caps?: number;
   internationalGoals?: number;
+  /** The international breaks: which windows were decided, call-ups, snubs
+   *  and the last few internationals (lib/star/international.ts). Absent on
+   *  an older save, which starts it at the next window. */
+  international?: import("./international").InternationalRecord;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
   /**
@@ -1651,6 +1659,8 @@ export type StarPhase =
    *  sheets, the guard of honour, the match, full time. A refresh goes
    *  back to the final whistle (see the phase save in page.tsx). */
   | "farewell-invite"
+  /** An international break: called up or not (lib/star/international.ts). */
+  | "intl-callup"
   | "farewell-sheets"
   | "farewell-walkout"
   | "farewell-match"

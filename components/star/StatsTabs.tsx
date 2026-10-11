@@ -37,6 +37,7 @@ const VIEWS = [
   { id: "contract", label: "Contract", icon: "📝" },
   { id: "status", label: "Status", icon: "🩺" },
   { id: "all", label: "All seasons", icon: "🗓️" },
+  { id: "country", label: "Country", icon: "🌍" },
   { id: "records", label: "Records", icon: "🏅" },
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
@@ -77,6 +78,7 @@ export default function StatsTabs({ career, onRenew, onFindClub, onOpen, hallRec
       <RiseIn key={view}>
         {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} onFindClub={onFindClub} view={view === "season" ? "stats" : view} />}
         {view === "all" && (allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />)}
+        {view === "country" && <Country career={career} glow={glow} />}
         {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
         {view === "records" && onOpen && (
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -173,6 +175,50 @@ function AllSeasons({ career, glow }: { career: CareerState; glow: string }) {
                   <td className="text-center tabular-nums">{r.goals}</td>
                   <td className="text-center tabular-nums">{r.assists}</td>
                   <td className="text-center tabular-nums text-amber-300">{r.avgRating ? r.avgRating.toFixed(1) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </>
+  );
+}
+
+/** The international record (lib/star/international.ts): caps, goals, the last call-up. */
+function Country({ career, glow }: { career: CareerState; glow: string }) {
+  const rec = career.international;
+  const nation = career.player.nationality || "England";
+  const last = rec?.last;
+  const lastLine = !last ? "No international break yet this career."
+    : last.called ? `Called up · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`
+    : `Left out · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`;
+  return (
+    <>
+      <Card glow={glow} title={nation}>
+        <div data-intl-record className="grid grid-cols-4 gap-1">
+          <Big label="Caps" value={career.caps ?? 0} />
+          <Big label="Goals" value={career.internationalGoals ?? 0} />
+          <Big label="Call-ups" value={rec?.callUps ?? 0} />
+          <Big label="Left out" value={rec?.snubs ?? 0} />
+        </div>
+        <div className="mt-2 text-[11px] font-bold text-white/80">{lastLine}</div>
+      </Card>
+      <Card glow={glow} title="Last internationals">
+        {!rec?.matches.length ? (
+          <div className="text-[11px] font-bold text-white/50">No internationals played yet.</div>
+        ) : (
+          <table className="w-full text-[11px] font-bold text-white">
+            <tbody>
+              {rec.matches.map((m, i) => (
+                <tr key={i} className="border-t border-white/5 first:border-t-0">
+                  <td className="py-1.5">
+                    <div className="truncate">v {m.opponent}</div>
+                    <div className="truncate text-[9px] text-white/50">{m.competition}</div>
+                  </td>
+                  <td className={`text-center tabular-nums ${m.us > m.them ? "text-emerald-300" : m.us < m.them ? "text-rose-300" : "text-white"}`}>{m.us}–{m.them}</td>
+                  <td className="text-center tabular-nums">{m.goals ? `⚽${m.goals}` : ""}</td>
+                  <td className="text-center tabular-nums text-amber-300">{m.rating.toFixed(1)}</td>
                 </tr>
               ))}
             </tbody>

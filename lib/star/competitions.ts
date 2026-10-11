@@ -508,6 +508,9 @@ const COMPETITION_ABBREV: Record<Competition, string> = {
   "World Cup": "WC",
   "European Championship": "Euros",
   "Play-Offs": "Play-Off",
+  "International Friendly": "Friendly",
+  "World Cup Qualifier": "WCQ",
+  "Euro Qualifier": "Euro Q",
 };
 
 /** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather
