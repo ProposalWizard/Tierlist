@@ -56,7 +56,7 @@ for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (c
     // Build-up: Old untouched; New fits the passers (passersFit), never wider.
     if (camMode === "old") check(same(old.cam, z.cam) && z.k === 1, `${tag}: build-up was zoomed`);
     else {
-      check(z.k >= 1, `${tag}: build-up zoomed OUT (${z.k})`);
+      check(z.k >= 1 / 1.45 - 1e-9, `${tag}: build-up pulled back past the widest camera (${z.k})`);
       for (const f of framingFaults(z.sc, z.cam, HW, tilt)) check(false, `${tag}: ${f}`);
       (zooms[kind] ??= []).push(z.k);
     }

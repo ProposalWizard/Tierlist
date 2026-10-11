@@ -4615,6 +4615,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // the power a drag of (dx, dy) screen px back from the ball would give
+      // (camera tests: the same finger travel must kick as hard whatever the zoom)
+      power: (dx: number, dy: number) => {
+        const sc = scenarioRef.current, q = pitchToClient(sc.ball);
+        return powerFromDrag(pitchFromPointer(q.x + dx, q.y + dy), sc.ball);
+      },
       // the camera and everyone in the chance, on the glass (camera tests)
       frame: () => {
         const sc = scenarioRef.current, c = canvasRef.current;

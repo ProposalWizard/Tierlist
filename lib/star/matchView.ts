@@ -239,6 +239,8 @@ const PASSERS_FIT_END_M = 4;
 const PASSERS_FIT_MIN_M = 16;
 /** A stray pass leaves the screen at most this far before it is out, at a side. */
 const PASSERS_FIT_OUT_M = 4;
+/** Widest it goes to keep a passer whole at a tilted corner (the tilt fit allows 1.45x). */
+const PASSERS_FIT_MAX_M = NEW_VIEW_WIDTH_M * 1.2;
 
 /**
  * The build-up camera fitted to the passers (camera round 3). passersCameraFor
@@ -285,14 +287,14 @@ export function passersFit(sc: Scenario, engine: Viewport, hw: number, tiltDeg =
     // above it an out line sits in the visible grass (the "ball stops" bug),
     // below it a forward ball flies off the screen while still in play (both
     // seen in playtest films, 3 Oct 2026). The bottom comes up to the passers.
-    if (engine.y1 + down < y2 + PASSERS_FIT_END_M && across < NEW_VIEW_WIDTH_M) continue;
+    if (engine.y1 + down < y2 + PASSERS_FIT_END_M && across < PASSERS_FIT_MAX_M) continue;
     const top = engine.y1;
     const v: Viewport = { x1: vx1, x2: vx1 + across, y1: top, y2: top + down };
     const fits = pts.every((p) => {
-      const c = fracOf(v, "up", p);
-      return t ? visibleOnScreen(t, c.sx, c.sy, TILT_FIT_MARGIN) : c.sx >= 0 && c.sx <= 1 && c.sy >= 0 && c.sy <= 1;
+      const c = fracOf(v, "up", p), g = canvasToScreen(t, c.sx, c.sy, 1, H);
+      return Math.min(g.X, 1 - g.X, g.Y, H - g.Y) >= WHOLLY_ON_EDGE;
     }) && !halfCut(sc, v, H, tiltDeg);
-    if (fits || across >= NEW_VIEW_WIDTH_M) return v;
+    if (fits || across >= PASSERS_FIT_MAX_M) return v;
   }
 }
 
@@ -445,7 +447,10 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   if (playZoom() !== "off" && actionFitOn() && facing === "up" && acrossFor(sc.kind, f.engineFrame, "up") === "passers") {
     const pf = passersFit(sc, f.engineFrame, hw, tiltDeg);
     const k = (today.x2 - today.x1) / (pf.x2 - pf.x1);
-    if (k > 1.001 && !framingFaults(sc, pf, hw, tiltDeg).length) {
+    // Tighter and keeping the rule; or the only one keeping it (today's can
+    // cut a passer at a tilted corner), within the widest camera.
+    const pfOk = !framingFaults(sc, pf, hw, tiltDeg).length;
+    if (pfOk && (k > 1.001 || (framingFaults(sc, today, hw, tiltDeg).length && k >= 1 / TILT_FIT_MAX - 1e-9))) {
       cam = pf;
       f.playZoom = playZoom() === "z1" ? 1 : k;
     }
@@ -746,8 +751,10 @@ export function framingPromise(sc: Scenario): { must: Vec2[]; extra: Vec2[] } {
   return { must: keyPointsOf(sc), extra: [] };
 }
 
-/** A man counts as wholly on the screen this far inside an edge (screen widths)… */
-export const WHOLLY_ON_EDGE = 0.015;
+/** A man's centre counts as wholly on the screen this far inside an edge (screen
+ *  widths; a drawn figure is about 0.06 of a screen width across at any zoom,
+ *  seen on the real screen)… */
+export const WHOLLY_ON_EDGE = 0.035;
 /** …and as clearly off it this far outside one. Between the two he is cut in half. */
 export const CLEARLY_OFF_EDGE = 0.04;
 
@@ -763,9 +770,15 @@ export function framingFaults(sc: Scenario, cam: Viewport, hw: number, tiltDeg =
   const out: string[] = [];
   const { must, extra } = framingPromise(sc);
   const at = (p: Vec2) => { const c = fracOf(cam, facing, p); return canvasToScreen(t, c.sx, c.sy, 1, H); };
+  // Under New the action is promised WHOLLY on (not just its centre).
+  const goalPts = [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }];
   for (const p of must) {
     const c = fracOf(cam, facing, p);
-    if (!visibleOnScreen(t, c.sx, c.sy)) out.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) in the action is off the screen`);
+    if (!visibleOnScreen(t, c.sx, c.sy)) { out.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) in the action is off the screen`); continue; }
+    if (actionFitOn() && facing === "up" && !goalPts.some((g) => g.x === p.x && g.y === p.y)) {
+      const g = at(p);
+      if (Math.min(g.X, 1 - g.X, g.Y, H - g.Y) < WHOLLY_ON_EDGE) out.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) in the action is cut by an edge`);
+    }
   }
   for (const p of extra) {
     const g = at(p);
@@ -778,8 +791,6 @@ export function framingFaults(sc: Scenario, cam: Viewport, hw: number, tiltDeg =
 
 /** Grass kept below the lowest man in the action (he is wholly on the screen, with a strip under him). */
 export const ACTION_ROOM_M = 3.5;
-/** A man counts as clearly off the screen this far past an edge (screen widths). */
-const ACTION_OFF_EDGE = 0.04;
 
 /**
  * The tightest camera, zooming about the top-centre as fitToPlay does, that
@@ -827,18 +838,20 @@ export function fitAction(base: Viewport, sc: Scenario, hw: number, tiltDeg = 0)
     const steps = 40;
     for (let i = 0; i <= steps; i++) {
       const p = pHi > pLo ? pLo + ((pHi - pLo) * i) / steps : pLo;
-      if (!men.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
+      const whole = (b: { sx: number; sy: number }) => { const g = glass(sxAt(b.sx, p), b.sy * k); return Math.min(g.X, 1 - g.X, g.Y, H - g.Y) >= WHOLLY_ON_EDGE; };
+      if (!men.every(whole)) continue;
       if (!goal.every((b) => onGlass(sxAt(b.sx, p), b.sy * k, gm))) continue;
       if (!onGlass(sxAt(low.sx, p), low.sy * k + roomF * k, 0)) continue;
       if (!onGlass(sxAt(ball.sx, p), ball.sy * k + pullF * k, 0)) continue;
       // Nobody half on: wholly inside, or clearly past an edge.
+      // The same test framingFaults applies (a figure is about 0.06 of a
+      // screen width across, whatever the zoom).
       let shown = 0, half = false;
       for (const b of allMen) {
-        const sx = sxAt(b.sx, p), sy = b.sy * k;
-        if (onGlass(sx, sy, gm)) { shown++; continue; }
-        const g = glass(sx, sy);
-        const off = g.X < -ACTION_OFF_EDGE || g.X > 1 + ACTION_OFF_EDGE || g.Y > H + ACTION_OFF_EDGE || g.Y < -ACTION_OFF_EDGE;
-        if (!off) { half = true; break; }
+        const g = glass(sxAt(b.sx, p), b.sy * k);
+        const inside = Math.min(g.X, 1 - g.X, g.Y, H - g.Y);
+        if (inside >= WHOLLY_ON_EDGE) { shown++; continue; }
+        if (inside > -CLEARLY_OFF_EDGE) { half = true; break; }
       }
       if (half) continue;
       // No more than EDGE_M of grass past a touchline, when that can be had.
