@@ -43,6 +43,11 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Chances drawn from real strikers' passes and shots (Harry Kane's dealt most often): everyone near the play stands where they really stood. Mostly easy and normal, a few hard.",
     oldText: "The game's own drawings.",
   },
+  matchFlow: {
+    label: "Match flow",
+    newText: "The match around you plays like a real one: about 25 shots, 10 corners and 2.8 goals a game, much less of the ball against a far better side, the side behind pushing after a goal, and more happening late.",
+    oldText: "The unseen match from before 11 Oct 2026: about 13 shots a game, no corners but yours.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -80,4 +85,5 @@ export const oldChances = () => gameplayVersion("chanceMix") === "old";
 export function chanceMixStored(): boolean {
   try { return typeof localStorage !== "undefined" && localStorage.getItem(KEY("chanceMix")) !== null; } catch { return false; }
 }
+export const oldMatchFlow = () => gameplayVersion("matchFlow") === "old";
 export const oldKaneDrawings = () => gameplayVersion("kaneDrawings") === "old";

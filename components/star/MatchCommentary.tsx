@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import type { LogLine } from "@/lib/star/matchLog";
 import { labelInk, type Kit } from "@/lib/star/kits";
 import type { EnergyMode } from "@/lib/star/energy";
@@ -71,12 +71,16 @@ interface Props {
   onOpenScores?: () => void;
   /** Which side is yours, so the kick-off card can colour each name. */
   userIsHome?: boolean;
+  /** Settings → Look → Match radar: New. The live radar, drawn above the
+   *  commentary; the minute plate and Scores button sit in the gutter on
+   *  its right. Absent: the commentary exactly as before. */
+  radar?: ReactNode;
 }
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
   speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, playstyle = "balanced", onPlaystyle, kibCans = 0, onUseKib,
-  minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true,
+  minuteLabel, added = 0, regulation = 90, onOpenScores, userIsHome = true, radar,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   // Settings → UI: Old keeps this panel as it was before v0.23 — no kick-off
@@ -130,6 +134,8 @@ export default function MatchCommentary({
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.4);
         }
       `}</style>
+
+      {radar && <div className="shrink-0 pr-[3.75rem]">{radar}</div>}
 
       {/* ── The commentary ── */}
       <div

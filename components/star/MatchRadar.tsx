@@ -15,7 +15,7 @@
  * guard's rule on canvas animation loops).
  */
 import type { RadarFrame, RadarHighlight, RadarMatch, RadarSummary, RadarEvent } from "@/lib/star/matchRadar";
-import type { Zone, Lane } from "@/lib/star/hiddenMatch";
+import type { Zone, Lane, RadarTick, Side } from "@/lib/star/hiddenMatch";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
 
@@ -182,7 +182,7 @@ export function MomentumStrip({ frames, us, them, fullTime }: { frames: RadarFra
 
 const ICON: Record<RadarEvent["kind"], string> = {
   "goal-us": "⚽", "goal-them": "⚽", "chance-us": "•", "chance-them": "•", quiet: "·",
-  highlight: "⭐", "highlight-goal": "⚽", "highlight-miss": "✕", injury: "🚑",
+  highlight: "⭐", "highlight-goal": "⚽", "highlight-miss": "✕", injury: "🚑", "corner-us": "⚑", "corner-them": "⚑",
 };
 
 export function RadarFeed({ frames, us, them, clubName, rows = 5 }: { frames: RadarFrame[]; us: RadarSide; them: RadarSide; clubName: string; rows?: number }) {
@@ -190,8 +190,8 @@ export function RadarFeed({ frames, us, them, clubName, rows = 5 }: { frames: Ra
   return (
     <div style={{ display: "grid", gap: 3 }}>
       {lines.map((e, i) => {
-        const ours = e.kind === "goal-us" || e.kind === "chance-us" || e.kind.startsWith("highlight");
-        const theirs = e.kind === "goal-them" || e.kind === "chance-them";
+        const ours = e.kind === "goal-us" || e.kind === "chance-us" || e.kind === "corner-us" || e.kind.startsWith("highlight");
+        const theirs = e.kind === "goal-them" || e.kind === "chance-them" || e.kind === "corner-them";
         const tint = e.kind === "injury" ? "#ef4444" : e.kind.startsWith("highlight") ? "#fde047" : ours ? us.colour : theirs ? them.colour : "#64748b";
         const big = e.kind.startsWith("goal") || e.kind === "highlight-goal";
         return (
@@ -292,3 +292,161 @@ export function FullTime({ s, us, them }: { s: RadarSummary; us: RadarSide; them
 }
 
 export type { RadarMatch };
+
+// ── THE LIVE RADAR (Leo v0.15) ──────────────────────────────────────────────
+//
+// The same picture, small enough to sit above the commentary in the real
+// match (Settings → Look → Match radar: New). It draws the unseen match's own
+// minutes (hiddenMatch.ts writes each one into `radarTrace`) as the match
+// clock reaches them: the ball moving zone to zone in the colours of the side
+// on it, the momentum, and a flash for a shot, a corner, a goal and your own
+// chance. SVG and CSS transitions only — no canvas, no animation loop of its
+// own: it moves when the clock moves.
+
+
+export interface LiveRadarSide { short: string; colour: string }
+
+const LW = 300, LH = 150, LP = 4;
+const lx = (m: number) => LP + (m / PITCH_L) * (LW - LP * 2);
+const ly = (m: number) => LP + (m / PITCH_W) * (LH - LP * 2);
+
+/** Where the ball sits for a minute: the real area, a seeded spot inside it. */
+export function liveBallAt(t: Pick<RadarTick, "zone" | "lane" | "minute">): { x: number; y: number } {
+  const [x0, x1] = ZONE_X[t.zone], [y0, y1] = LANE_Y[t.lane];
+  return {
+    x: lx((x0 + x1) / 2 + jitter(t.minute, 1) * (x1 - x0) * 0.5),
+    y: ly((y0 + y1) / 2 + jitter(t.minute, 2) * (y1 - y0) * 0.5),
+  };
+}
+
+/** The minute to draw: the newest one the clock has reached. */
+export function liveTickAt(trace: ReadonlyMap<number, RadarTick>, minute: number): RadarTick | null {
+  for (let m = Math.floor(minute); m >= 0; m--) {
+    const t = trace.get(m);
+    if (t) return t;
+  }
+  return null;
+}
+
+export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
+  trace: ReadonlyMap<number, RadarTick>;
+  /** The match clock (what the commentary has reached). */
+  minute: number;
+  us: LiveRadarSide; them: LiveRadarSide;
+  /** How long a minute of the clock lasts now, for the ball's glide. */
+  stepMs: number;
+  fullTime?: number;
+}) {
+  const t = liveTickAt(trace, minute);
+  const ticks: RadarTick[] = [];
+  for (let m = 1; m <= Math.floor(minute); m++) { const k = trace.get(m); if (k) ticks.push(k); }
+  const ours = ticks.filter((k) => k.possession === "user").length;
+  const poss = ticks.length ? Math.round((ours / ticks.length) * 100) : 50;
+  const side = (s: Side) => (s === "user" ? us : them);
+  const col = t ? side(t.possession).colour : "#e5e7eb";
+  const at = t ? liveBallAt(t) : { x: lx(52.5), y: ly(34) };
+  const trail = ticks.slice(-6, -1).map(liveBallAt);
+  const glide = Math.round(Math.max(120, stepMs * 0.8));
+  // Only the minute the clock is on flashes — and only once it is reached.
+  const now = t && t.minute === Math.floor(minute) ? t : null;
+  const flash = now?.goal ? "goal" : now?.yours ? "yours" : now?.shot ? "shot" : now?.corner ? "corner" : null;
+  const flashSide = now ? (now.goal ?? now.shot ?? now.corner ?? "user") : "user";
+  // The goal being attacked: theirs (right) when it is your side's flash.
+  const goalX = flashSide === "user" ? lx(PITCH_L) : lx(0);
+  const zone = t ? ZONE_X[t.zone] : null, lane = t ? LANE_Y[t.lane] : null;
+  const stripe = (i: number) => (i % 2 === 0 ? "#1f7a3c" : "#1b6f36");
+  const label = flash === "goal" ? "GOAL!" : flash === "yours" ? "YOUR CHANCE" : flash === "shot" ? "SHOT" : flash === "corner" ? "CORNER" : "";
+  const labelCol = flash === "yours" ? "#fde047" : flash ? side(flashSide).colour : "#fff";
+  const bw = (LW - 8) / fullTime;
+
+  return (
+    <div data-live-radar style={{ padding: "6px 6px 4px", background: "linear-gradient(#0b1220, #0a0f1a)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <style>{`
+        @keyframes kibRadarRing { 0% { r: 3; opacity: 0.95; } 100% { r: 30; opacity: 0; } }
+        @keyframes kibRadarLabel { 0% { opacity: 0; transform: translateY(4px) scale(0.85); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes kibRadarGoal { 0% { opacity: 0.7; } 100% { opacity: 0; } }
+        .kib-radar-ring { animation: kibRadarRing 1.1s ease-out 2 both; }
+        .kib-radar-label { animation: kibRadarLabel 1.6s ease-out both; transform-box: fill-box; transform-origin: center; }
+        .kib-radar-goal { animation: kibRadarGoal 1.4s ease-out both; }
+        @media (prefers-reduced-motion: reduce) { .kib-radar-ring, .kib-radar-label, .kib-radar-goal { animation: none; } }
+      `}</style>
+      <svg viewBox={`0 0 ${LW} ${LH}`} width="100%" style={{ display: "block", borderRadius: 10 }} aria-label="Match radar">
+        <rect x={0} y={0} width={LW} height={LH} fill="#155e2f" />
+        {Array.from({ length: 10 }, (_, i) => (
+          <rect key={i} x={LP + (i * (LW - LP * 2)) / 10} y={LP} width={(LW - LP * 2) / 10} height={LH - LP * 2} fill={stripe(i)} />
+        ))}
+        {zone && lane && (
+          <rect x={lx(zone[0])} y={ly(lane[0])} width={lx(zone[1]) - lx(zone[0])} height={ly(lane[1]) - ly(lane[0])}
+            fill={col} opacity={0.24} style={{ transition: `all ${glide}ms ease-out` }} />
+        )}
+        <LiveMarkings />
+        {flash === "goal" && (
+          <rect key={`g${now!.minute}`} className="kib-radar-goal" x={0} y={0} width={LW} height={LH} fill={side(flashSide).colour} />
+        )}
+        {trail.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={1.8 + i * 0.3} fill={col} opacity={0.15 + i * 0.08} />
+        ))}
+        {(flash === "shot" || flash === "goal") && (
+          <circle key={`r${now!.minute}`} className="kib-radar-ring" cx={goalX} cy={ly(34)} r={3} fill="none" stroke={flash === "goal" ? "#fff" : side(flashSide).colour} strokeWidth={2.4} />
+        )}
+        {flash === "corner" && (
+          <g key={`c${now!.minute}`}>
+            <circle className="kib-radar-ring" cx={goalX} cy={ly(at.y < LH / 2 ? 0 : PITCH_W)} r={3} fill="none" stroke={side(flashSide).colour} strokeWidth={2} />
+          </g>
+        )}
+        <g style={{ transform: `translate(${at.x}px, ${at.y}px)`, transition: `transform ${glide}ms ease-in-out` }}>
+          {flash === "yours" && <circle key={`y${now!.minute}`} className="kib-radar-ring" r={3} fill="none" stroke="#fde047" strokeWidth={2.4} />}
+          <circle r={6.5} fill="#0b1220" opacity={0.55} />
+          <circle r={5.6} fill={col} />
+          <circle r={2.6} fill="#ffffff" />
+          {t && (
+            <path d={t.possession === "user" ? "M 8 -3 L 12 0 L 8 3" : "M -8 -3 L -12 0 L -8 3"}
+              fill="none" stroke="#ffffff" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+          )}
+        </g>
+        {flash && (
+          <text key={`l${now!.minute}${flash}`} className="kib-radar-label" x={LW / 2} y={flash === "goal" ? LH / 2 + 9 : 22} textAnchor="middle"
+            fontSize={flash === "goal" ? 26 : 13} fontWeight={900} fill={labelCol} stroke="#0b1220" strokeWidth={flash === "goal" ? 4 : 3}
+            paintOrder="stroke" letterSpacing="0.06em">{label}</text>
+        )}
+        <text x={LP + 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800}>{us.short.toUpperCase()} →</text>
+        <text x={LW - LP - 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800} textAnchor="end">← {them.short.toUpperCase()}</text>
+      </svg>
+      {/* Momentum, a bar a minute: up in your colour, down in theirs. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+        <span style={{ fontSize: 10, fontWeight: 900, color: us.colour, fontVariantNumeric: "tabular-nums", width: 28 }}>{poss}%</span>
+        <svg viewBox={`0 0 ${LW} 22`} style={{ flex: 1, display: "block", height: 20 }} preserveAspectRatio="none" aria-label="Momentum">
+          <line x1={4} x2={LW - 4} y1={11} y2={11} stroke="#fff" strokeOpacity={0.15} />
+          <line x1={4 + 45 * bw} x2={4 + 45 * bw} y1={1} y2={21} stroke="#fff" strokeOpacity={0.15} strokeDasharray="2 2" />
+          {ticks.map((k) => {
+            const h = Math.max(0.8, Math.abs(k.momentum) * 10);
+            return <rect key={k.minute} x={4 + (Math.min(fullTime, k.minute) - 1) * bw} width={Math.max(0.8, bw - 0.6)} y={k.momentum >= 0 ? 11 - h : 11} height={h}
+              fill={k.momentum >= 0 ? us.colour : them.colour} />;
+          })}
+          {ticks.filter((k) => k.goal).map((k) => (
+            <circle key={`g${k.minute}`} cx={4 + (Math.min(fullTime, k.minute) - 0.5) * bw} cy={k.goal === "user" ? 2.5 : 19.5} r={2.2} fill="#fff" />
+          ))}
+        </svg>
+        <span style={{ fontSize: 10, fontWeight: 900, color: them.colour, fontVariantNumeric: "tabular-nums", width: 28, textAlign: "right" }}>{100 - poss}%</span>
+      </div>
+    </div>
+  );
+}
+
+function LiveMarkings() {
+  const L = "#ffffff", o = 0.5, w = 1;
+  const box = (x0: number, x1: number, y0: number, y1: number) => (
+    <rect x={lx(Math.min(x0, x1))} y={ly(y0)} width={Math.abs(lx(x1) - lx(x0))} height={ly(y1) - ly(y0)} fill="none" stroke={L} strokeOpacity={o} strokeWidth={w} />
+  );
+  return (
+    <g>
+      <rect x={lx(0)} y={ly(0)} width={lx(PITCH_L) - lx(0)} height={ly(PITCH_W) - ly(0)} fill="none" stroke={L} strokeOpacity={o} strokeWidth={w * 1.2} />
+      <line x1={lx(52.5)} x2={lx(52.5)} y1={ly(0)} y2={ly(PITCH_W)} stroke={L} strokeOpacity={o} strokeWidth={w} />
+      <ellipse cx={lx(52.5)} cy={ly(34)} rx={lx(9.15) - lx(0)} ry={ly(9.15) - ly(0)} fill="none" stroke={L} strokeOpacity={o} strokeWidth={w} />
+      {box(0, 16.5, 13.85, 54.15)}{box(105, 88.5, 13.85, 54.15)}
+      {box(0, 5.5, 24.85, 43.15)}{box(105, 99.5, 24.85, 43.15)}
+      <rect x={lx(0) - 3} y={ly(30.34)} width={3} height={ly(37.66) - ly(30.34)} fill={L} fillOpacity={0.85} />
+      <rect x={lx(105)} y={ly(30.34)} width={3} height={ly(37.66) - ly(30.34)} fill={L} fillOpacity={0.85} />
+    </g>
+  );
+}

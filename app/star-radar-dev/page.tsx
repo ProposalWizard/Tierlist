@@ -28,6 +28,7 @@ import {
 import { benchConversion, type HiddenMatchInputs } from "@/lib/star/hiddenMatch";
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
+import { oldMatchFlow } from "@/lib/star/gameplayVersion";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -59,6 +60,8 @@ function inputsFor(s: Setup): HiddenMatchInputs {
   return {
     teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home,
     playerSkill: s.skill, pace: s.skill, freeKick: s.skill, position: s.position,
+    // Settings → Look → Gameplay → Match flow, as the real match reads it.
+    matchFlow: !oldMatchFlow(),
   };
 }
 

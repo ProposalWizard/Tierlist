@@ -147,6 +147,31 @@ export interface HiddenMatchState {
    * kind): no repeat weighting at all.
    */
   recentKinds?: ScenarioKind[];
+  /**
+   * THE LIVE RADAR (Leo v0.15). When a map is here, every minute `tick`
+   * plays is written into it, keyed by the minute, for the radar above the
+   * commentary to draw as the clock reaches it. Read-only for the football:
+   * nothing in the match reads it, and it never touches the random stream.
+   * A re-run of a stretch writes the same minutes again, so a Map, not a list.
+   */
+  radarTrace?: Map<number, RadarTick>;
+}
+
+/** One minute of the unseen match, as the live radar draws it. */
+export interface RadarTick {
+  minute: number;
+  possession: Side;
+  zone: Zone;
+  lane: Lane;
+  momentum: number;
+  /** A shot this minute (a goal counts), and whose. */
+  shot?: Side;
+  /** A goal this minute, and whose. */
+  goal?: Side;
+  /** A corner won this minute, and whose. */
+  corner?: Side;
+  /** The match handed you a chance this minute. */
+  yours?: boolean;
 }
 
 /** The channel the ball is in. See HiddenMatchState.lane. */
@@ -1016,6 +1041,34 @@ export function tick(
   inputs: HiddenMatchInputs,
   rng: () => number,
 ): { events: HiddenMatchEvent[]; request: ScenarioRequest | null } {
+  const u0 = state.userScore, o0 = state.oppScore;
+  const out = tickMinute(state, inputs, rng);
+  if (state.radarTrace) state.radarTrace.set(state.minute, radarTickOf(state, out.events, !!out.request, u0, o0));
+  return out;
+}
+
+/** What the radar needs from a minute. Reads the events; draws no random number. */
+function radarTickOf(state: HiddenMatchState, events: HiddenMatchEvent[], yours: boolean, u0: number, o0: number): RadarTick {
+  const t: RadarTick = {
+    minute: state.minute, possession: state.possession, zone: state.zone, lane: state.lane ?? "centre", momentum: state.momentum,
+  };
+  if (state.userScore > u0) t.goal = "user";
+  else if (state.oppScore > o0) t.goal = "opponent";
+  for (const e of events) {
+    const side: Side = e.isGoal ? (e.teammateGoal ? "user" : "opponent") : e.isOpponent ? "opponent" : "user";
+    if (e.corner) t.corner = side;
+    if (e.isGoal || e.shot || CHANCE_LINES.has(e.text)) t.shot = side;
+  }
+  if (t.goal) t.shot = t.goal;
+  if (yours) t.yours = true;
+  return t;
+}
+
+function tickMinute(
+  state: HiddenMatchState,
+  inputs: HiddenMatchInputs,
+  rng: () => number,
+): { events: HiddenMatchEvent[]; request: ScenarioRequest | null } {
   const events: HiddenMatchEvent[] = [];
   state.minute += 1;
   state.sinceInvolved += 1;
@@ -1590,7 +1643,10 @@ export function advanceUntilInvolved(
     // Item 24: a late sub's guaranteed chances arrive before the whistle.
     const owed = inputs.lateSub?.owed ?? 0;
     if (owed > 0 && fullTime - state.minute < owed * LATE_SUB_FORCE_GAP) {
-      return { events, request: lateSubChance(state, rng), fullTime: false };
+      const request = lateSubChance(state, rng);
+      const t = state.radarTrace?.get(state.minute);
+      if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
+      return { events, request, fullTime: false };
     }
   }
   return { events, request: null, fullTime: true };
