@@ -28,11 +28,13 @@ const row = <V extends string>(
   label: string, newValue: V, oldValue: V, standard: V, get: () => V, set: (v: V) => void,
 ): LookRow => ({ label, newValue, oldValue, standard, get, set: (v) => set(v as V) });
 
-const gp = (label: string, s: "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow") =>
+const gp = (label: string, s: "keepers" | "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow") =>
   row(label, "new", "old", defaultVersion(s), () => gameplayVersion(s), (v) => setGameplayVersion(s, v));
 
 /** Every New | Old row left in Settings, keyed by a short id. */
 export const LOOK_ROWS = {
+  // Harry, 12 Oct 2026: kept as a row, default New, until he has tested it more.
+  keepers: gp("Keepers", "keepers"),
   // The v0.15 gameplay round, still being tested (Old by default).
   keeperPro: gp("Keeper pro", "keeperPro"),
   shotsPro: gp("Shots", "shotsPro"),

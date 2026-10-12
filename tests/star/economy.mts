@@ -35,7 +35,8 @@ import {
   BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
   KIB_CANS_DEFAULT, PRICE_SPECS,
 } from "../../lib/star/shopDefaults";
-import { BOOTS_CATALOGUE, shopTierOf, kibCanPrice } from "../../lib/star/shopData";
+import { BOOTS_CATALOGUE, shopTierOf, kibCanPrice, BOOTS_ALL_LEVELS } from "../../lib/star/shopData";
+import { bootPriceForWage, BOOT_PRICE_REF_WAGE, typicalWeeklyWage as twWage } from "../../lib/star/economy";
 import { STARTER_BOOT_MATCHES } from "../../lib/star/careerFlow";
 
 /**
@@ -679,6 +680,25 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
       );
     }
   }
+}
+
+// Boots priced like the cans (Harry, 12 Oct 2026): the same share of YOUR
+// wage in every division, so moving up never makes a boot pocket change.
+{
+  const divs = ["national_league", "league_two", "league_one", "championship", "premier"] as const;
+  for (const b of BOOTS_ALL_LEVELS) {
+    const share = divs.map((d) => bootPriceForWage(b.price, twWage(d)) / twWage(d));
+    const ref = b.price / BOOT_PRICE_REF_WAGE;
+    for (const [i, s] of share.entries()) {
+      if (Math.abs(s / ref - 1) > 0.1 && bootPriceForWage(b.price, twWage(divs[i])) > 20) {
+        problems.push(`${b.id}: ${s.toFixed(2)} wks at ${divs[i]}, should be ~${ref.toFixed(2)} like the cans`);
+      }
+    }
+    if (bootPriceForWage(b.price, twWage("premier")) <= bootPriceForWage(b.price, twWage("league_two"))) {
+      problems.push(`${b.id}: not dearer in the Premier League than in League Two`);
+    }
+  }
+  if (bootPriceForWage(1000, BOOT_PRICE_REF_WAGE) !== 1000) problems.push("a boot's list price is its price at the reference wage");
 }
 
 if (problems.length) {

@@ -70,7 +70,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
   // A boots sponsor takes 25% off every pair (sponsorDeals.ts).
   const bootDeal = hasBootDeal(career);
-  const BOOTS_ALL_LEVELS = bootDeal ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE;
+  // Priced off your own wage (and the boot sponsor's 25%), like the cans.
+  const BOOTS_ALL_LEVELS = BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) }));
   const bannedBoots = new Set(ruleBookFor(career, "FA").bannedItems);
   const [selectedCan, setSelectedCan] = useState<KibCan | null>(KIB_CANS[0]);
 
