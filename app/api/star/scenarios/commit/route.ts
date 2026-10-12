@@ -5,7 +5,6 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isMatchScenario } from "@/lib/star/authoredScenarios";
 import { commitScenarios, removeScenariosFromRepo, resolveCommitConfig } from "@/lib/star/commitScenarios";
 import type { MatchScenario } from "@/lib/star/scenarios";
-import { newChanceMark, NEW_CHANCE_REFUSAL } from "@/lib/star/libraryMark";
 
 /**
  * COMMIT A SCENARIO INTO THE REPOSITORY.
@@ -63,10 +62,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // The New chance library stays out of the gallery (lib/star/libraryMark.ts).
-  if (raw.some((sc) => newChanceMark(sc as object))) {
-    return NextResponse.json({ ok: false, error: `${NEW_CHANCE_REFUSAL} Nothing was committed.` }, { status: 400 });
-  }
 
   const env = resolveCommitConfig(process.env as Record<string, string | undefined>);
   if (!env.config) {

@@ -26,16 +26,15 @@ check(FIGURE_SKIN_DEFAULT === "3d", "the default look is 3D");
 check(figureSkin() === "3d", "nothing chosen → 3D");
 
 // ── This device's choice, then a page's override on top ────────────────────
+// Decided, no toggle (12 Oct 2026): a stored Classic is ignored; a test
+// screen's override still works while it is open.
 setStoredFigureSkin("classic");
-check(store.get(FIGURE_SKIN_KEY) === "classic", "Settings' choice is kept on this device");
-check(figureSkin() === "classic", "a stored Classic choice is used");
-const undo = setFigureSkinOverride("3d");
-check(figureSkin() === "3d", "the test screen's override wins while it is open");
-check(storedFigureSkin() === "classic", "an override never rewrites the stored choice");
+check(figureSkin() === "3d" && storedFigureSkin() === "3d", "a stored Classic choice is ignored");
+const undo = setFigureSkinOverride("classic");
+check(figureSkin() === "classic", "the test screen's override wins while it is open");
 undo();
-check(figureSkin() === "classic", "closing the test screen hands the look back");
+check(figureSkin() === "3d", "closing the test screen hands the look back");
 setStoredFigureSkin(null);
-check(figureSkin() === "3d" && !store.has(FIGURE_SKIN_KEY), "clearing the choice goes back to 3D");
 
 // ── Hair: never bald, the same every frame, and genuinely varied ────────────
 const keys = Array.from({ length: 200 }, (_, i) => `sp_${i}`);

@@ -31,8 +31,7 @@ if (typeof window !== "undefined") {
 }
 
 export function casino3dLook(): Casino3dLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "3d"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setCasino3dLook(v: Casino3dLook): void {

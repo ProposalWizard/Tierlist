@@ -1,5 +1,4 @@
 import { CX } from "./pitch";
-import { oldDribble } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 /**
@@ -578,7 +577,7 @@ export function newRun(opts: {
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
-  const classic = opts.classic ?? oldDribble();
+  const classic = opts.classic ?? false;
   const roundCount = opts.waveSizes?.length ?? opts.rounds ?? 3;
   const roster = opts.roster && opts.roster.length > 0 ? shuffle(opts.roster, rng) : null;
   let rosterIdx = 0;

@@ -1,63 +1,33 @@
 /**
- * GAME VERSIONS — Settings → Version: Classic | Standard | Preview (Harry,
- * 8 Oct 2026, the "hybrid" Settings he picked). One tap sets every New | Old
- * look-and-feel switch at once. Each switch is still stored on this phone
- * only (its own localStorage key, in its own file); saves are never touched.
+ * GAME VERSIONS — Settings → Version: Classic | Standard (Harry, 8 Oct 2026;
+ * trimmed 12 Oct 2026). One tap sets every row below at once. Each row is
+ * still stored on this phone only (its own localStorage key, in its own file);
+ * saves are never touched.
  *
- * THE RULE for adding a look (keep to it):
- *   1. A new look goes into PREVIEW first (its new value there; its old value
- *      in Classic and Standard).
- *   2. When Harry says it has settled, move its new value into STANDARD too,
- *      and make that the switch's real default in its own file.
- *   3. CLASSIC is always every switch's OLD option. Never anything else.
- *   tests/star/gameVersions.mts checks all three: every switch is in every
- *   version, Classic = the old values, Standard = the real defaults.
+ *   Standard  what a brand-new player gets (each row's own default).
+ *   Classic   every row's OLD option.
  *
- * The picker NEVER changes preferences: sound, full screen, camera angle,
- * 3D quality, skip the line-up, faces, names, reactions and "your player in
- * open play". Those are not in this list on purpose.
+ * 12 Oct 2026 (Harry): "decide things and be done with it". Every look that
+ * was settled lost its row and is now just the game (see CLAUDE.md →
+ * "Decided, no toggle"). What is left here: the v0.15 gameplay round still
+ * being tested, the cut scenes being reworked, and UI: Old | New. (The 3D
+ * camera row went the same day, in another builder's camera round.) Preview is gone: something becomes a
+ * "Preview" only when someone asks for that in those words; everything else
+ * just goes into the game.
+ *
+ * The picker NEVER changes preferences: sound, full screen, 3D quality,
+ * Match view 3D, skip the line-up, names. Those are not in this list on purpose.
  */
-import { sprites2dLook, setSprites2dLook } from "./sprites2dLook";
 import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
-import { storedFigureSkin, setStoredFigureSkin, FIGURE_SKIN_DEFAULT } from "./figureSkin";
-import { storedMatchView, setMatchView, MATCH_VIEW_DEFAULT } from "./matchView";
-import { signing3dOn, setSigning3d, shop3dPlayerLook, setShop3dPlayerLook } from "./signing3d";
-import { people3dLook, setPeople3dLook, bossRoomLook, setBossRoomLook } from "./look3d";
-import { garden3dLook, setGarden3dLook } from "./garden3d/look";
-import { houseLook, setHouseLook, houseLookStored } from "./home3d/look";
-import { look3dStyle, setLook3dStyle } from "./look3dStyle";
-import { casino3dLook, setCasino3dLook } from "./casino3d/look";
-import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
-import { badgeLook, setBadgeLook } from "./badgeLook";
-import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
-import { ballonDorNightLook, setBallonDorNightLook, ballonDorNightStored } from "./ballonDorNightLook";
-import { homeLook, setHomeLook } from "./homeLook";
-import { shopLook, setShopLook } from "./shopLook";
-import { chanceFraming, setChanceFraming } from "./chanceFraming";
-import { wideChances, setWideChances, wideChancesStored } from "./wideChances";
-import { ovationLook, setOvationLook } from "./ovationLook";
-import { ovationMoves, setOvationMoves } from "./ovationMoves";
-import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
-import { animationsLook, setAnimationsLook } from "./animLook";
-import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
-import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
-import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
-import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
-import { matchPlayersStyleLook, setMatchPlayersStyleLook, matchPlayersStyleStored } from "./style3d/toon/matchLook";
-import { tierLook, setTierLook } from "./three3d/tierLook";
-import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook, cutsceneCameraStored } from "./cutscene/look";
-import { motionLook, setMotionLook } from "./motionLook";
-import { playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
-import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
-import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
-import { dribbleStyle, setDribbleStyle } from "./dribbleStyleLook";
+import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook } from "./cutscene/look";
+import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 
-export type GameVersion = "classic" | "standard" | "preview";
-export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
-/** The names on screen. Rename a version here, in one line (ids stay classic/standard/preview). */
-export const GAME_VERSION_LABEL: Record<GameVersion, string> = { classic: "Classic", standard: "Standard", preview: "Preview" };
+export type GameVersion = "classic" | "standard";
+export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard"];
+/** The names on screen. Rename a version here, in one line. */
+export const GAME_VERSION_LABEL: Record<GameVersion, string> = { classic: "Classic", standard: "Standard" };
 
 /** One New | Old switch: how to read it, how to set it, and its old value. */
 export interface LookRow {
@@ -65,209 +35,45 @@ export interface LookRow {
   /** Its two options, NEW first, OLD second. */
   newValue: string;
   oldValue: string;
+  /** What a brand-new phone reads. */
+  standard: string;
   get: () => string;
   set: (v: string) => void;
 }
 
 const row = <V extends string>(
-  label: string, newValue: V, oldValue: V, get: () => V, set: (v: V) => void,
-): LookRow => ({ label, newValue, oldValue, get, set: (v) => set(v as V) });
+  label: string, newValue: V, oldValue: V, standard: V, get: () => V, set: (v: V) => void,
+): LookRow => ({ label, newValue, oldValue, standard, get, set: (v) => set(v as V) });
 
-/** Every New | Old switch in Settings, keyed by a short id. */
+const gp = (label: string, s: "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow") =>
+  row(label, "new", "old", defaultVersion(s), () => gameplayVersion(s), (v) => setGameplayVersion(s, v));
+
+/** Every row the Version picker sets, keyed by a short id. */
 export const LOOK_ROWS = {
-  matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
-  chanceFraming: row("Chance framing", "zoom", "old", chanceFraming, setChanceFraming),
-  // Leo, 11 Oct 2026: tight angles, cutbacks and penalties side-on (Old by default; Harry decides).
-  wideChances: row("Wide chances", "new", "old", wideChances, setWideChances),
-  matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
-  matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
-  ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
-  chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
-  animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
-  keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
-  // Leo v0.15 (11 Oct 2026): the goalkeeper to "perfect" (lib/star/keeperBrain.ts KEEPER_PRO).
-  keeperPro: row("Keeper pro", "new", "old", () => gameplayVersion("keeperPro"), (v) => setGameplayVersion("keeperPro", v)),
-  dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
-  dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
-  // Leo, 11 Oct 2026: the duel in the match view (Top-down) or the chase camera (First-person); his call.
-  dribbleStyle: row("Dribble style", "topdown", "firstperson", dribbleStyle, setDribbleStyle),
-  dribbleDuels: row("Dribble duels", "new", "old", () => gameplayVersion("dribbleDuels"), (v) => setGameplayVersion("dribbleDuels", v)),
-  clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
-  shotsPro: row("Shots", "new", "old", () => gameplayVersion("shotsPro"), (v) => setGameplayVersion("shotsPro", v)),
-  knucklePower: row("Knuckleball & power shot", "new", "old", () => gameplayVersion("knucklePower"), (v) => setGameplayVersion("knucklePower", v)),
-  ballPhysics: row("Ball physics", "new", "old", () => gameplayVersion("ballPhysics"), (v) => setGameplayVersion("ballPhysics", v)),
-  // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
-  chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
-  // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
-  // (Standard and Preview) until it is switched on by hand.
-  kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
-  actionCamera: row("Match camera", "new", "old", () => gameplayVersion("actionCamera"), (v) => setGameplayVersion("actionCamera", v)),
-  // Leo v0.15 (11 Oct 2026): the unseen match against real numbers, and the live radar.
-  matchFlow: row("Match flow", "new", "old", () => gameplayVersion("matchFlow"), (v) => setGameplayVersion("matchFlow", v)),
-  matchRadar: row("Match radar (testing)", "new", "old", matchRadarLook, setMatchRadarLook),
-  garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
-  // Harry, 9 Oct 2026: a home of rooms you walk through (New by default).
-  house: row("House", "new", "old", houseLook, setHouseLook),
-  look3d: row("3D look", "h", "old", look3dStyle, setLook3dStyle),
-  shopPlayer: row("3D shop player", "new", "old", shop3dPlayerLook, setShop3dPlayerLook),
-  people3d: row("3D people", "new", "old", people3dLook, setPeople3dLook),
-  humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
-  playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
-  // Harry, 12 Oct 2026: "for cut scenes the Style A is good and in game the realistic players is good".
-  matchPlayers3d: row("Players in a 3D match", "styleA", "follow", matchPlayersStyleLook, setMatchPlayersStyleLook),
-  // Harry, 12 Oct 2026: "medium/low to not look terrible using every percent of optimisation we can".
-  tierLook3d: row("3D quality look", "new", "old", tierLook, setTierLook),
-  cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
-  // Harry, 9 Oct 2026: camera pass + music on every cut scene (New by default).
-  cutsceneCamera: row("Cut-scene camera", "new", "old", cutsceneCameraLook, setCutsceneCameraLook),
-  motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
-  playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
-  bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
-  casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
-  casinoLook: row("Casino look", "new", "old", casinoRoomLook, setCasinoRoomLook),
-  signing: row("Signing scene", "3d", "drawn", () => (signing3dOn() ? "3d" : "drawn"), (v) => setSigning3d(v === "3d")),
-  ui: row("UI", "new", "old", uiVersion, setUiVersion),
-  badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
-  allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
-  // STAR_ROADMAP #7 (11 Oct 2026): the ceremony on a stage (New by default).
-  ballonDorNight: row("Ballon d'Or night", "new", "old", ballonDorNightLook, setBallonDorNightLook),
-  homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
-  shop2d: row("Shop", "new", "old", shopLook, setShopLook),
-  ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
-  ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
-  drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
-  // Harry, 9 Oct 2026: the current 2D first; Style A only when chosen (Current in every preset).
-  sprites2d: row("2D players", "stylea", "current", sprites2dLook, setSprites2dLook),
+  // The v0.15 gameplay round, still being tested (Old by default).
+  keeperPro: gp("Keeper pro", "keeperPro"),
+  shotsPro: gp("Shots", "shotsPro"),
+  knucklePower: gp("Knuckleball & power shot", "knucklePower"),
+  ballPhysics: gp("Ball physics", "ballPhysics"),
+  matchFlow: gp("Match flow", "matchFlow"),
+  matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
+  // Cut scenes: no decision yet, being reworked (Harry, 12 Oct 2026).
+  cutscenePeople: row("Cut-scene people", "new", "old", "old", cutscenePeopleLook, setCutscenePeopleLook),
+  cutsceneCamera: row("Cut-scene camera", "new", "old", "new", cutsceneCameraLook, setCutsceneCameraLook),
+  ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;
 
 export type LookRowId = keyof typeof LOOK_ROWS;
 export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
 
-const N = (id: LookRowId) => LOOK_ROWS[id].newValue;
-const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
-
-/** Rows still being tested: new in Preview, old in Standard. Today: Animations, the human 3D body, cut-scene people, the real game's 3D camera and player light, Match view 3D and Dribble runs 3D (9 Oct 2026).
- *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
- *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
-// Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
-
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
 
-/**
- * THE THREE VERSIONS, row by row.
- *   Classic  every row's OLD option.
- *   Standard  what a brand-new player gets today (each file's own default).
- *   Preview   Standard, plus the rows in PREVIEW_ROWS on their new option.
- */
+/** THE TWO VERSIONS, row by row. */
 export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
-  classic: build(O),
-  standard: {
-    matchView: MATCH_VIEW_DEFAULT,
-    chanceFraming: N("chanceFraming"),
-    wideChances: O("wideChances"),
-    matchView3d: O("matchView3d"),
-    matchPlayers: N("matchPlayers"),
-    ball: N("ball"),
-    chances: CHANCE_SET_DEFAULT,
-    animations: O("animations"),
-    keepers: N("keepers"),
-    keeperPro: O("keeperPro"),
-    dribble: N("dribble"),
-    dribble3d: O("dribble3d"),
-    dribbleStyle: O("dribbleStyle"),
-    dribbleDuels: O("dribbleDuels"),
-    clearances: N("clearances"),
-    shotsPro: O("shotsPro"),
-    knucklePower: O("knucklePower"),
-    ballPhysics: O("ballPhysics"),
-    chanceMix: O("chanceMix"),
-    kaneDrawings: O("kaneDrawings"),
-    actionCamera: O("actionCamera"),
-    matchFlow: O("matchFlow"),
-    matchRadar: O("matchRadar"),
-    garden: N("garden"),
-    house: N("house"),
-    look3d: N("look3d"),
-    shopPlayer: N("shopPlayer"),
-    people3d: N("people3d"),
-    humanBody: O("humanBody"),
-    playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
-    matchPlayers3d: N("matchPlayers3d"), // Style A men in any 3D football, dressed like Home (12 Oct 2026, later; Realistic stays a choice)
-    tierLook3d: N("tierLook3d"), // Medium and Low buy High's look back cheaply (12 Oct 2026)
-    cutscenePeople: O("cutscenePeople"),
-    cutsceneCamera: N("cutsceneCamera"),
-    motion: N("motion"),
-    playerLight3d: O("playerLight3d"),
-    bossRoom: N("bossRoom"),
-    casino: N("casino"),
-    casinoLook: N("casinoLook"),
-    signing: N("signing"),
-    ui: UI_VERSION_DEFAULT,
-    badges: N("badges"),
-    allSeasons: N("allSeasons"),
-    ballonDorNight: N("ballonDorNight"),
-    homeScreen: N("homeScreen"),
-    shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
-    ovation: N("ovation"),
-    ovationMoves: N("ovationMoves"),
-    drawnStyle: FIGURE_SKIN_DEFAULT,
-    sprites2d: N("sprites2d"), // Style A 2D is the default (Harry, 9 Oct 2026)
-  },
-  preview: build((id) => (PREVIEW_ROWS.includes(id) ? N(id) : "")),
+  classic: build((id) => LOOK_ROWS[id].oldValue),
+  standard: build((id) => LOOK_ROWS[id].standard),
 };
-// Preview = Standard + the rows being tried.
-for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.preview[id] = VERSION_PRESETS.standard[id];
-
-// A phone already on Preview picks up a row added to Preview later (Match view
-// 3D, 9 Oct 2026), once: if it has never stored that row and every other row
-// already reads Preview, the new row takes its Preview value. Otherwise the
-// phone would read as "Custom" and Harry would not see the new look.
-// The same goes for the real game's 3D camera and player light, added the same day.
-// Dribble runs 3D (9 Oct 2026, later the same day) the same way, keyed on its
-// own stored choice, so a row someone already set by hand is never changed.
-const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
-  ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "playerLight3d"] as const) : []),
-  ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
-  // The chance mix (Mikey, 9 Oct 2026), the same way.
-  ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
-  // Wide chances side-on (Leo, 11 Oct 2026), the same way.
-  ...(typeof window !== "undefined" && !wideChancesStored() ? (["wideChances"] as const) : []),
-];
-// Player style arrived on New (its default) for every phone; a phone already on
-// Classic (every row Old) takes its Old once, so Classic stays Classic.
-if (typeof window !== "undefined" && !playerStyleStored()) {
-  const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
-  if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
-}
-// Players in a 3D match arrived on New (Style A since 12 Oct 2026) the same way: a Classic phone takes its Old once.
-if (typeof window !== "undefined" && !matchPlayersStyleStored()) {
-  const off = LOOK_ROW_IDS.filter((id) => id !== "matchPlayers3d" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
-  if (off.length === 0) LOOK_ROWS.matchPlayers3d.set("follow");
-}
-// Cut-scene camera arrived on New the same way: a Classic phone takes its Old once.
-if (typeof window !== "undefined" && !cutsceneCameraStored()) {
-  const off = LOOK_ROW_IDS.filter((id) => id !== "cutsceneCamera" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
-  if (off.length === 0) LOOK_ROWS.cutsceneCamera.set("old");
-}
-// House (rooms, 9 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
-if (typeof window !== "undefined" && !houseLookStored()) {
-  const off = LOOK_ROW_IDS.filter((id) => id !== "house" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
-  if (off.length === 0) LOOK_ROWS.house.set("old");
-}
-// The Ballon d'Or night (11 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
-if (typeof window !== "undefined" && !ballonDorNightStored()) {
-  const off = LOOK_ROW_IDS.filter((id) => id !== "ballonDorNight" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
-  if (off.length === 0) LOOK_ROWS.ballonDorNight.set("old");
-}
-if (LATE_PREVIEW_ROWS.length) {
-  const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
-  const off = LOOK_ROW_IDS.filter((id) => now[id] !== VERSION_PRESETS.preview[id]);
-  if (off.length > 0 && off.every((id) => LATE_PREVIEW_ROWS.includes(id))) {
-    for (const id of off) LOOK_ROWS[id].set(VERSION_PRESETS.preview[id]);
-  }
-}
 
 // ── Reading and setting ─────────────────────────────────────────────────
 
@@ -305,9 +111,9 @@ export interface VersionState {
   changes: number;
 }
 
-/** Which version the switches add up to. Ties go to Standard, then Preview. */
+/** Which version the switches add up to. Ties go to Standard. */
 export function gameVersionOf(look = readLook()): VersionState {
-  const order: GameVersion[] = ["standard", "preview", "classic"];
+  const order: GameVersion[] = ["standard", "classic"];
   let nearest: GameVersion = "standard";
   let changes = Infinity;
   for (const v of order) {

@@ -511,6 +511,51 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**Decide, don't toggle (Harry, 12 Oct 2026). This retires the old "every new
+look gets a toggle" rule.** *"We're bloating the game up so much with
+different settings ... it's best to just decide things and be done with it. If
+we need to revert, then it's in the files."* A new look or gameplay change is
+built as THE game: no new "New | Old" row in Settings. Old versions live in
+git, not in the game. Settings keeps only real player preferences (sound,
+full screen, 3D quality, faces, names and the like) and Settings → UI: Old |
+New. Something still being judged is tried on a test/dev page, not behind an
+in-game switch.
+
+**Decided, no toggle (12 Oct 2026).** Removed in commits `32f8d6c` and
+`5681ed6` (branch of this session). To see or bring back an old option, read
+the files at `ebe02ad`, the commit before both. Old phones' stored values for
+these rows are ignored. Where the old code was big it is left in the files but
+unreachable (the getter returns the kept value), marked "Decided, no toggle".
+- **Chances:** the team's drawn chances only, everywhere (match, highlights,
+  Play Area). The New chance library, its drawings, script, tests and test
+  page, and the Play Area's "Generator", were DELETED ("they're wrong").
+- **Chance mix:** the basic even mix. **Kane drawings:** the game's own.
+- **Animations:** New. **Keepers:** New (5 Oct). **Clearances:** always on.
+- **Dribble:** top-down in every match, with team-mates to pass to; Dribble
+  duels Old. The first-person duel is on `/star-dribble-dev` only.
+- **Match camera (action fit):** Old until the rebuilt camera lands.
+- **2D match:** match view New, chance framing Zoom, wide chances Old, camera
+  angle 20°, players 3D-made sprites, 2D players Style A, ball New.
+- **Your player:** hidden on shooting chances; shown on set pieces and build-up
+  (`showYouFigure`, `lib/star/newLook.ts`).
+- **Shot spread cone:** drawn in the test area only (`lib/star/testArea.ts`).
+- **3D world:** garden New, house New, 3D look H, shop player New, 3D people
+  New, body Before, player style New, players in a 3D match Style A, 3D quality
+  look New, player light Old, motion Mocap, manager's 3D office, casino 3D +
+  New look, signing 3D, 3D drill controls Auto.
+- **Screens:** badges, all seasons, Ballon d'Or night, home, shop, ovation and
+  ovation greetings New; drawn players Shaded; post-match reactions on.
+- **Rows that stay:** full screen, sound, 3D quality, skip the line-up (main
+  Settings only), Match view 3D, player names (default off), UI Old | New, the
+  v0.15 test box (keeper pro, shots, knuckleball, ball physics, match flow,
+  radar), cut-scene people and camera (being reworked). Version picker:
+  Classic | Standard; **no Preview** — something becomes a "Preview" only
+  when someone asks for that in those words.
+- **New work (Harry, 12 Oct 2026, standing):** no New | Old row and no
+  Preview entry for anything new. It goes straight into the game when Harry
+  says push. Unfinished work lives on a test page, not behind a switch in
+  the real game.
+
 **No more version toggles for new work; unfinished work lives on test pages
 (Harry, 12 Oct 2026). Replaces the toggle rule below for new work.** *"I don't
 like that system in the slightest … when I push changes, I now create a new
@@ -524,14 +569,6 @@ pages or create new test pages."*
   a test page (a `/star-*-dev` page, new or existing), not behind a switch in
   the real game. It moves into the game when it is ready, as a normal change.
 - Existing switches stay until someone decides each one. Never delete one unasked.
-
-**Every new look gets a toggle; the old one stays playable (Harry, 3 Oct 2026).**
-*(Superseded for new work by the rule above.)*
-Looks and feel only (match view, players, ball, your figure in open play,
-signing scene, 3D shop model, UI): a "New | Old" row in the shared device
-Settings "Look" group, default New, the old option exactly the old code.
-Bug fixes and economy changes just change (no toggle). Flag old options that
-have settled in the patch notes for deletion; never delete one unasked.
 
 **No test build link on patch notes (Harry, 3 Oct 2026, latest): mostly stills, clips only for gameplay.**
 *"the test build stuff doesn't work imo so stop doing that for patch notes, lets just stick to mostly stills except gameplay stuff."*

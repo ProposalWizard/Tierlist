@@ -224,6 +224,22 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts.",
   },
+  "/star-intl-dev": {
+    title: "International world",
+    what: "Every national team's competitions played out from August 2026 — Nations Leagues, qualifiers, the Euro, World Cup, Copa América, AFCON, Asian Cup, Gold Cup, OFC Nations Cup, friendlies — without playing a career.",
+    buttons: [
+      { items: [
+        ["Up to Aug (year)", "Plays the world from August 2026 to 1 August of that year."],
+        ["(nation)", "Whose tables and matches are shown, and whose flag the squad screens use."],
+        ["▶ Called up screen / ▶ Left out screen", "The squad announcement as the game shows it, with that nation's last two matches as the sample. Continue comes back here."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The world here has no career in it (no player results, no real-player strengths)."],
+    inGame: [
+      "The same world runs inside every career. Your nation's call-ups come at each international window and before each tournament; Stats → Country shows the manager bar, the ranking, your tables, your matches and Who won; Relations shows the national manager.",
+    ],
+    dev: "app/star-intl-dev/page.tsx; the world lib/star/intl (world.ts, replay.ts, build.ts, engine.ts, uefa.ts, conmebol.ts, concacaf.ts, caf.ts, afc.ts, ofc.ts, worldCup.ts, friendlies.ts, realData.ts, hosts.ts, windows.ts, nations.ts); your career on it lib/star/intl/career.ts; screens components/star/CallUpScreen.tsx, IntlWorldPanel.tsx.",
+  },
   "/star-real-moments-dev": {
     title: "Real moments",
     what: "Real match positions from StatsBomb's free data (every Premier League 2015/16 shot, every Kane touch at the 2022 World Cup and Euro 2024), each drawn as a chance in the game's camera and playable in the real match. Testing only.",
@@ -268,7 +284,6 @@ export const ADMIN_GUIDES = {
         ["▶ (on the picture)", "Plays the video. It is made on this phone in the background as soon as the post comes near the screen, so in the feed it is usually ready (and playing) by the time you reach it."],
         ["Speaker (bottom left of the video)", "Sound on or off for every goal video: the crowd, the kick, the net, the commentator's call and the co-commentator over the replay (not on the fan's phone video, which has only the crowd). Remembered on this device. The sound is inside a saved video too, where the browser can make it."],
         ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
-        ["Moves: Old / New", "Which moves the players use in the video: the older ones, or the newer 3D moves (a shot, a header, a one-handed dive). The video follows Settings → Look → Animations, like the match; these force one while this page is open (the match above follows it too)."],
       ] },
     ],
     saving: [
@@ -817,7 +832,6 @@ export const ADMIN_GUIDES = {
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
-          ["Chances: Drawings / Generator", "Drawings (the default, and the game): each chance is one of your drawings, nudged and mirrored. Generator: every player is built from the spread of all the drawings of that type, so no drawing is ever replayed. Reaches Infinite Match, Infinite Highlights and the gallery's Sim — never a career."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3 — 2 in 3 if he comes from behind you, and he goes round you, never through you: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
@@ -852,7 +866,7 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the Classic chances, whatever Settings → Chances says, so a New-library chance can never be saved or committed into the gallery. The New ones are on their own page: New Chances (/star-chances-dev).",
+      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the drawn chances, the only chances the game has (12 Oct 2026: the New chance library and the generator were deleted).",
       "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
@@ -1148,7 +1162,6 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Top", items: [
         ["‹ Play Area", "Back to the Play Area."],
-        ["New / Old", "The real Animations switch for this phone, the same one as Settings → Look. Old is the game exactly as it was before any of this."],
       ] },
       { group: "The gallery", items: [
         ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
@@ -1184,7 +1197,7 @@ export const ADMIN_GUIDES = {
       "With Settings → Look → Players: 3D, the same moments play the New 3D clips (a second picture file, fetched only when Animations is New). Old plays the old 3D clips exactly as before.",
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
-    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
   "/star-look-dev": {
     title: "Player style (Style A)",
@@ -1401,39 +1414,6 @@ export const ADMIN_GUIDES = {
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
     ],
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
-  },
-
-  "/star-chances-dev": {
-    title: "New Chances",
-    what: "The new chance library on its own: every picture the New chances can serve, per chance type. It is kept apart from the Scenario Gallery on purpose until the new set is proven.",
-    buttons: [
-      {
-        group: "The list",
-        items: [
-          ["One on one 110, Cutback 74 … (the type buttons)", "Pick a chance type. The number is how many pictures the library has of it."],
-          ["A picture", "Opens it big at the top, with which library picture it is and the drawing it came from."],
-          ["Show 24 more", "The list shows 24 at a time."],
-        ],
-      },
-      {
-        group: "The open picture",
-        items: [
-          ["▶ Play this one", "Plays that picture in the real match engine, with the New chances on for this page only. Press again (■ Stop) to go back to the picture."],
-          ["‹ Prev / Next ›", "The picture before or after it."],
-          ["Close", "Closes it."],
-        ],
-      },
-    ],
-    saving: [
-      "Nothing is saved. There is no Save and no Commit on this page.",
-      "A New chance can never go into the gallery: every Save and Commit elsewhere refuses one with \"This chance is from the new library — it can't go into the gallery.\"",
-    ],
-    inGame: [
-      "Real career matches serve these pictures only when Settings → Chances is New. Classic is the default.",
-      "Every test screen — the Play Area, Infinite Match, Infinite Highlights and the gallery's Play — plays the Classic chances whatever Settings says. This page is the only test screen that plays the New ones.",
-      "The pictures show the other side in a formation and block that change picture by picture (named under the open picture). In a match it is the real opponent's.",
-    ],
-    dev: "app/star-chances-dev/page.tsx · lib/star/{chanceLibrary,chanceLibrary.json,chanceSet,libraryMark,matchView,scenarioFrame}.ts · components/star/EnginePlay.tsx (newChances) · built by scripts/chance-library.mts",
   },
 
   "/star-sprites-dev": {

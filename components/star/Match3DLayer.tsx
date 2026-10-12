@@ -226,7 +226,7 @@ function MatchSettings({ onClose }: { onClose: () => void }) {
             <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const v = !sfxNow; setSfxOn(v); if (v) sfx("ui-confirm"); }} />
             <div className="py-2.5"><Quality3dRow when="Changes when you go back to the match." /></div>
           </SetCard>
-          <SettingsGroups glow={GLOW} />
+          <SettingsGroups glow={GLOW} inMatch />
         </div>
       </div>
     </div>

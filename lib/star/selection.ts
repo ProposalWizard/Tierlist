@@ -1,3 +1,4 @@
+import { intlSelection, awayOnDuty } from "./intl/career";
 import type { CareerState } from "./types";
 import { STYLE_SELECTION } from "./manager";
 import { getTuning } from "./tuningStore";
@@ -34,6 +35,8 @@ export interface SelectionVerdict {
   reason: string;
   /** 0-100, the standing the decision came from. Shown so it never feels arbitrary. */
   standing: number;
+  /** Not picked because you are away with your nation (lib/star/intl/career.ts). */
+  away?: boolean;
 }
 
 /** A player with no recent games is judged on a neutral performance, not a bad one. */
@@ -205,6 +208,18 @@ export function selectionFor(career: CareerState): SelectionVerdict {
   // club's pecking order has nothing to say about it.
   {
     const f = nextFixtureFor(career);
+    // The international world (lib/star/intl/career.ts): the national
+    // manager picks his side — starts, the bench, rotation.
+    if (f?.kind === "international" && f.intlId) {
+      const v = intlSelection(career, f);
+      return { status: v.status, onAt: v.onAt, standing: selectionStanding(career), reason: v.reason };
+    }
+    // Away with your nation (a League One break weekend, a winter tournament):
+    // the club plays without you.
+    if (f && f.kind !== "international") {
+      const away = awayOnDuty(career, f);
+      if (away) return { status: "Squad", onAt: 90, standing: selectionStanding(career), reason: away, away: true };
+    }
     if (f?.kind === "international" && (!f.round || career.tournament?.season === career.season)) {
       return {
         status: "1st Team", onAt: 0, standing: selectionStanding(career),

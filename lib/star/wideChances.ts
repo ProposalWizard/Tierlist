@@ -46,9 +46,7 @@ export function wideChancesStored(): boolean {
 }
 
 export function wideChances(): WideChances {
-  if (override) return override;
-  if (stored === undefined) stored = read();
-  return stored;
+  return override ?? "old"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored (a dev page can still force it).
 }
 
 export function setWideChances(v: WideChances): void {

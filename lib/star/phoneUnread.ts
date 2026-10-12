@@ -1,4 +1,5 @@
 import type { CareerState } from "@/lib/star/types";
+import { nextFixtureFor } from "./competitions";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { formatMoney } from "@/lib/star/money";
 import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
@@ -30,7 +31,7 @@ export interface Msg { from: string; icon: string; text: string; tone: [string, 
 /** Messages — a sketch of what the phone could tell you. Built from real
  *  career facts; the wording is placeholder. */
 export function buildMessages(career: CareerState): Msg[] {
-  const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+  const next = nextFixtureFor(career);
   const msgs: Msg[] = [];
   if (career.managerNews) msgs.push({ from: "The club", icon: "🏟️", text: career.managerNews, tone: ["#60a5fa", "#1d4ed8"] });
   if (next) msgs.push({ from: career.manager?.name ? `Gaffer (${career.manager.name})` : "Gaffer", icon: "🧢", text: `${short(next.opponent)} next. Be ready.`, tone: ["#34d399", "#047857"] });

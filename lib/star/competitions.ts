@@ -481,6 +481,17 @@ export function nextFixtureFor(career: CareerState): Fixture | null {
   return best;
 }
 
+/**
+ * Sort fixtures by when they are played (real dates), not by week number: an
+ * international carries its own date in its week (calendar.ts INTL_DAY_BASE)
+ * and a cup round can share a week number with a later league round.
+ */
+export function byFixtureDate(career: CareerState): (a: Fixture, b: Fixture) => number {
+  const division = divisionOf(career);
+  const t = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, division);
+  return (a, b) => t(a) - t(b);
+}
+
 /** How a fixture reads on the team sheet. */
 export function fixtureLabel(f: Fixture): string {
   if (!f.kind || f.kind === "league") return "League";
@@ -501,6 +512,17 @@ const COMPETITION_ABBREV: Record<Competition, string> = {
   "International Friendly": "Friendly",
   "World Cup Qualifier": "WCQ",
   "Euro Qualifier": "Euro Q",
+  "World Cup Play-Off": "WC PO",
+  "Nations League": "UNL",
+  "Copa América": "Copa",
+  "Africa Cup of Nations": "AFCON",
+  "AFCON Qualifier": "AFCON Q",
+  "Asian Cup": "Asian Cup",
+  "Asian Cup Qualifier": "AC Q",
+  "Gold Cup": "Gold Cup",
+  "Gold Cup Qualifier": "GC Q",
+  "CONCACAF Nations League": "CNL",
+  "OFC Nations Cup": "OFC NC",
 };
 
 /** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather

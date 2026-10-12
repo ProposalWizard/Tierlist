@@ -29,6 +29,8 @@
  * and euro.ts. This only decides when.
  */
 
+import { breakSaturdays } from "./intl/windows";
+
 // ── The slots ───────────────────────────────────────────────────────────────
 
 /** A season is thirty-eight league weeks. */
@@ -337,49 +339,102 @@ export type MatchDay = "saturday" | "tuesday" | "wednesday";
 const CHAMPIONSHIP_MIDWEEK_WEEKS = [2, 6, 10, 14, 19, 24, 27, 33];
 
 interface RoundSlot {
-  /** 1-38, the weekend this round belongs to. */
+  /** The PLAYING weekend this round belongs to (1 = the opening weekend;
+   *  in a division that stops for international breaks, a break weekend is
+   *  not a playing weekend — see `playingSaturday`). */
   calendarWeek: number;
   day: MatchDay;
 }
 
+function buildRounds(saturdays: number, midweeks: number[]): RoundSlot[] {
+  const midweek = new Set(midweeks);
+  const out: RoundSlot[] = [];
+  for (let w = 1; w <= saturdays; w++) {
+    out.push({ calendarWeek: w, day: "saturday" });
+    if (midweek.has(w)) out.push({ calendarWeek: w, day: "tuesday" });
+  }
+  return out;
+}
+
 /**
- * Round number (1-46) to the day it is actually played on.
+ * Round number (1-46) to the day it is actually played on, for League One,
+ * League Two and the National Leagues, which play through international
+ * breaks: thirty-eight Saturdays and eight Tuesdays.
  *
  * Saturday first in each calendar week, then that week's midweek round if it
  * has one — which is also the order they fall in on the clock, since
  * `fixtureDate` offsets Tuesday three days past its Saturday.
  */
-const CHAMPIONSHIP_ROUNDS: RoundSlot[] = (() => {
-  const midweek = new Set(CHAMPIONSHIP_MIDWEEK_WEEKS);
-  const out: RoundSlot[] = [];
-  for (let w = 1; w <= MATCHWEEKS; w++) {
-    out.push({ calendarWeek: w, day: "saturday" });
-    if (midweek.has(w)) out.push({ calendarWeek: w, day: "tuesday" });
-  }
-  return out;
-})();
+const CHAMPIONSHIP_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS, CHAMPIONSHIP_MIDWEEK_WEEKS);
 
-/** Which weekend a Championship week falls on. Post-season weeks carry on
- *  past the end of the league, one weekend each, the same as the Premier
- *  League's do. */
-function championshipCalendarWeek(week: number): number {
-  const slot = CHAMPIONSHIP_ROUNDS[week - 1];
-  if (slot) return slot.calendarWeek;
-  return MATCHWEEKS + (week - CHAMPIONSHIP_MATCHWEEKS);
+/**
+ * INTERNATIONAL BREAKS (Mikey, 12 Oct 2026: "leave club games out on break
+ * weekends, Premier League, Championship — yes, like real life").
+ *
+ * The Premier League and the Championship play nothing on the four weekends
+ * inside FIFA's windows (two in the Sep–Oct double window, one in November,
+ * one in March — lib/star/intl/windows.ts). To still finish on the same
+ * weekend as before, both play more midweek rounds, as the real divisions
+ * do: the Premier League four Tuesdays (December to February, weekends 17,
+ * 19, 21 and 24, clear of every cup and European midweek), the Championship
+ * twelve (clear of the cups and of Europe). League One and below play
+ * through the breaks.
+ */
+const PREMIER_MIDWEEK_WEEKS = [17, 19, 21, 24];
+const CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS = [2, 4, 6, 10, 14, 17, 19, 20, 21, 24, 27, 33];
+const PREMIER_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS - PREMIER_MIDWEEK_WEEKS.length, PREMIER_MIDWEEK_WEEKS);
+const CHAMPIONSHIP_BREAK_ROUNDS: RoundSlot[] = buildRounds(
+  CHAMPIONSHIP_MATCHWEEKS - CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS.length, CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS);
+
+/** Does this division stop for international breaks? */
+export function stopsForBreaks(division: CareerDivision): boolean {
+  return division === "premier" || division === "championship";
+}
+
+function roundsFor(division: CareerDivision): RoundSlot[] {
+  if (division === "premier") return PREMIER_ROUNDS;
+  if (division === "championship") return CHAMPIONSHIP_BREAK_ROUNDS;
+  return CHAMPIONSHIP_ROUNDS;
+}
+
+/** The last playing weekend with a league Saturday. */
+function lastLeagueWeekend(division: CareerDivision): number {
+  const r = roundsFor(division);
+  return r[r.length - 1].calendarWeek;
 }
 
 /**
- * The week NUMBER whose Saturday falls on a given weekend (1-38). A Premier
- * League week is its weekend; a 46-round division's week is a round, so this
- * finds the Saturday round on that weekend. Used by the international breaks
- * (lib/star/international.ts) to put a Wednesday fixture on a real weekend
- * whatever the division.
+ * Which playing weekend a fixture's `week` falls on.
+ *
+ *  - A league fixture's week is a ROUND: the division's table says which
+ *    weekend (and which day).
+ *  - Past the league (cup finals, play-offs): one weekend each after the
+ *    last league weekend.
+ *  - Europe: always a plain weekend number (its own continental calendar).
+ *  - The Premier League's cups: a plain weekend number. Every other
+ *    division's cups: a round (see the cup slot tables below).
+ */
+function playingWeekendOf(week: number, division: CareerDivision, kind?: string): number {
+  const league = !kind || kind === "league";
+  const rounds = roundsFor(division);
+  if (kind !== "europe" && week > rounds.length) return lastLeagueWeekend(division) + (week - rounds.length);
+  if (kind === "europe") return week;
+  if (league || division !== "premier") {
+    const slot = rounds[week - 1];
+    return slot ? slot.calendarWeek : week;
+  }
+  return week;
+}
+
+/**
+ * The week NUMBER whose Saturday falls on a given playing weekend: a league
+ * round, or the weekend itself when no league Saturday falls on it.
  */
 export function weekOnWeekend(division: CareerDivision, calendarWeek: number): number {
-  if (division === "premier") return calendarWeek;
-  const i = CHAMPIONSHIP_ROUNDS.findIndex(r => r.calendarWeek === calendarWeek && r.day === "saturday");
+  const i = roundsFor(division).findIndex(r => r.calendarWeek === calendarWeek && r.day === "saturday");
   return i >= 0 ? i + 1 : calendarWeek;
 }
+
 
 /** A week number past the end of the Championship season. */
 export function CHAMPIONSHIP_POST_SEASON(n: number): number {
@@ -436,17 +491,53 @@ export function fixtureDate(
   startYear: number, season: number, week: number, day: MatchDay,
   division: CareerDivision = "premier", kind?: string,
 ): Date {
-  const opening = openingSaturday(seasonStartYear(startYear, season));
-  // A Premier League week IS its weekend. A Championship week is a round —
-  // see CHAMPIONSHIP_ROUNDS — UNLESS it's a European fixture, which is
-  // always already a plain weekend offset (see the file note above).
-  const calendarWeek = division !== "premier" && kind !== "europe"
-    ? championshipCalendarWeek(week) : week;
-  const saturday = opening.getTime() + (calendarWeek - 1) * 7 * DAY_MS;
+  const year = seasonStartYear(startYear, season);
+  const opening = openingSaturday(year);
+  // An international on its own real date (lib/star/intl): the week is
+  // INTL_DAY_BASE plus the number of days after the opening Saturday.
+  if (week >= INTL_DAY_BASE) return new Date(opening.getTime() + (week - INTL_DAY_BASE) * DAY_MS);
   // Pre-season sits in the week BEFORE the opening Saturday, which is what
   // week 0 means: the Community Shield is played the weekend before it starts.
+  const saturday = week < 1
+    ? opening.getTime() + (week - 1) * 7 * DAY_MS
+    : playingSaturday(year, playingWeekendOf(week, division, kind), division);
   const offset = day === "saturday" ? 0 : day === "tuesday" ? 3 : 4;
   return new Date(saturday + offset * DAY_MS);
+}
+
+/**
+ * An international's fixture week: its real date, as days after the season's
+ * opening Saturday, on top of INTL_DAY_BASE. Far above every club week, so
+ * nothing mistakes it for a league round; `fixtureDate` turns it back into
+ * the date.
+ */
+export const INTL_DAY_BASE = 1000;
+
+export function intlWeek(startYear: number, season: number, date: Date): number {
+  const opening = openingSaturday(seasonStartYear(startYear, season));
+  return INTL_DAY_BASE + Math.round((date.getTime() - opening.getTime()) / DAY_MS);
+}
+
+/** Is this a fixture week that carries its own real date (an international)? */
+export function isDatedWeek(week: number): boolean {
+  return week >= INTL_DAY_BASE;
+}
+
+/**
+ * The Saturday of a playing weekend. A division that stops for international
+ * breaks skips the break Saturdays (lib/star/intl/windows.ts), so its n-th
+ * playing weekend is a little later in the autumn and spring.
+ */
+function playingSaturday(year: number, weekend: number, division: CareerDivision): number {
+  const opening = openingSaturday(year).getTime();
+  if (!stopsForBreaks(division)) return opening + (weekend - 1) * 7 * DAY_MS;
+  const breaks = new Set(breakSaturdays(year));
+  let t = opening, k = 0;
+  for (let guard = 0; guard < 200; guard++, t += 7 * DAY_MS) {
+    if (breaks.has(t)) continue;
+    if (++k === weekend) return t;
+  }
+  return t;
 }
 
 /**
@@ -460,13 +551,11 @@ export function dayFor(
   kind: string | undefined, week: number, division: CareerDivision = "premier",
 ): MatchDay {
   const league = !kind || kind === "league";
-  // Eight rounds of a 46-round season (Championship, League One, League Two,
-  // National League — all the same real 24-club shape) are played on a
-  // Tuesday — see CHAMPIONSHIP_ROUNDS. Everything else about the week is
-  // unchanged.
-  if (league && division !== "premier" && week >= 1 && week <= CHAMPIONSHIP_MATCHWEEKS) {
-    return CHAMPIONSHIP_ROUNDS[week - 1].day;
-  }
+  // Some league rounds are midweek (Tuesday): eight of a 46-round season,
+  // twelve in the Championship, four in the Premier League — see the round
+  // tables above.
+  const rounds = roundsFor(division);
+  if (league && week >= 1 && week <= rounds.length) return rounds[week - 1].day;
   if (league) return "saturday";
   if (isPostSeason(week, division)) return "saturday";
   if (kind === "europe") return "tuesday";
@@ -600,13 +689,26 @@ export const PLAY_OFF_SLOTS: CupSlot[] = [
  */
 export function leagueCupSlotsFor(division: CareerDivision): CupSlot[] {
   if (division === "premier") return LEAGUE_CUP_SLOTS;
-  if (division === "championship") return CHAMPIONSHIP_LEAGUE_CUP_SLOTS;
+  if (division === "championship") return asRounds(LEAGUE_CUP_SLOTS, CHAMPIONSHIP_LEAGUE_CUP_SLOTS, division);
   return [];
+}
+
+/**
+ * The Premier League's cup weekends, as this division's round numbers: each
+ * tie on the round whose Saturday shares the Premier League tie's weekend
+ * (the cups are on the same real dates in every division). The finals keep
+ * their post-season number. Since the Championship's twelve-midweek table
+ * (international breaks) its rounds differ from League One's, so they are
+ * worked out rather than written down.
+ */
+function asRounds(premier: CupSlot[], fallback: CupSlot[], division: CareerDivision): CupSlot[] {
+  if (!stopsForBreaks(division) || division === "premier") return fallback;
+  return premier.map((s, i) => (s.week > MATCHWEEKS ? fallback[i] : { ...s, week: weekOnWeekend(division, s.week) }));
 }
 
 /** Every one of the five divisions enters the FA Cup (real life). */
 export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
-  return division === "premier" ? FA_CUP_SLOTS : CHAMPIONSHIP_FA_CUP_SLOTS;
+  return division === "premier" ? FA_CUP_SLOTS : asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
 }
 
 // ── Months, for the award ───────────────────────────────────────────────────

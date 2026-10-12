@@ -1,0 +1,325 @@
+<title>International Football Plan</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#c3d4cb;--ink3:#93aa9e;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3b5248;--ink3:#566c62;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3b5248;--ink3:#566c62;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+  header{padding:34px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--amber);color:#1a1100;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:0 0 26px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(20px,4.6vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--amber);line-height:1.1;font-variant-numeric:tabular-nums}
+  .s span{display:block;font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.35}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .k-blue{color:var(--blue)} .k-blue i{background:var(--blue)}
+  .k-red{color:var(--red)} .k-red i{background:var(--red)}
+  .k-amb{color:var(--amber)} .k-amb i{background:var(--amber)}
+  .k-vio{color:var(--violet)} .k-vio i{background:var(--violet)}
+  .k-grn{color:var(--green)} .k-grn i{background:var(--green)}
+  .k-mut{color:var(--ink3)} .k-mut i{background:var(--ink3)}
+  .head{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:15px 16px}
+  .head .big{font-size:19px;font-weight:800;line-height:1.3;margin:0 0 6px}
+  .head p{margin:0;color:var(--ink2);font-size:14.5px}
+  /* flow */
+  .flow{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+  .flow li{position:relative;padding:9px 0 9px 30px;border-left:2px solid var(--line);margin-left:9px}
+  .flow li:last-child{border-left-color:transparent}
+  .flow li::before{content:"";position:absolute;left:-7px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--amber)}
+  .flow b{display:block}
+  .flow span{color:var(--ink2);font-size:14px}
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .bars{margin:8px 0 2px;display:flex;flex-direction:column;gap:2px}
+  .bar{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:13px;padding:5px 0}
+  .bar .lb{color:var(--ink2);grid-column:1 / -1;line-height:1.3}
+  .track{position:relative;height:14px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--amber)}
+  .fill.g{background:var(--green)} .fill.r{background:var(--red)} .fill.b{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:13px;min-width:56px;text-align:right}
+  .cap{font-size:12px;color:var(--ink3);margin-top:6px}
+  .tbl{overflow-x:auto;margin-top:8px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  td.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .neg{color:var(--red)} .pos{color:var(--green)}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin:0 0 9px}
+  .step .t{font-weight:800}
+  .step .w{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-bottom:3px}
+  .step ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13.5px;font-weight:700;color:var(--ink2);display:flex;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  details p,details li{color:var(--ink2);font-size:14px}
+  details p{margin:0 0 9px}
+  details ul{margin:0 0 6px;padding-left:18px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-word}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin:0 0 9px}
+  .q .t{font-weight:800;margin-bottom:6px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--ink2)}
+  .opt.rec{border-color:var(--green);color:var(--green)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;background:var(--card2);color:var(--amber)}
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style><div class="wrap">
+<header>
+  <span class="ver">PLAN · NOT BUILT</span>
+  <h1>International football</h1>
+  <p class="sub">Star Career · Mikey, 12 Oct 2026 · every competition rule below comes from official or well-sourced pages (listed at the bottom). Anything not yet confirmed in real life is marked <b>Not confirmed</b>.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>217</b><span>nationalities in the game's picker</span></div>
+  <div class="s"><b>211</b><span>FIFA member nations in real life</span></div>
+  <div class="s"><b>9</b><span>competitions in the plan (with their qualifying)</span></div>
+  <div class="s"><b>~15 KB</b><span>extra per save (full detail only for your own competitions)</span></div>
+</div>
+
+<div class="head">
+  <p class="big">Build every competition the real way, simulate all of it, and store full detail only for your own country.</p>
+  <p>Every nation and every qualifying match is played in the background each season. You play only your own country's matches, in the real match engine. For every other competition, the save keeps the winner, the runner-up and the final score.</p>
+</div>
+
+<h2 class="k-mut"><i></i>What the game has today (Leo, 11–12 Oct)</h2>
+<ul class="n">
+  <li><div class="hd">Four international breaks a season, one match each</div><div class="dt">September, October, November and March. The match is called a qualifier, but there are no qualifying groups or tables behind it.</div></li>
+  <li><div class="hd">A call-up roll at each break</div><div class="dt">A chance (2%–97%) from your rating against your country's level, your last 3 match ratings, and whether you were in the last squad. There is no relationship with the national manager.</div></li>
+  <li><div class="hd">A summer tournament every other year</div><div class="dt">Euros (24 teams) and World Cup (32 teams). Who qualifies is decided by team strength plus luck, with no qualifying matches. The real World Cup now has 48 teams.</div></li>
+  <li><div class="hd">Club games carry on during breaks</div><div class="dt">The England match goes on a midweek date and your club still plays at the weekend. In real life the Premier League and the Championship stop.</div></li>
+  <li><div class="hd">Your national squad = the best-rated players of your nationality</div><div class="dt">Rating only. The division they play in doesn't count, so an 83-rated player in League One would still get in.</div></li>
+  <li><div class="hd">Team strength is set for about 60 countries</div><div class="dt">Every other country gets a default strength of 60.</div></li>
+</ul>
+
+<h2 class="k-blue"><i></i>The competitions (research)</h2>
+<p class="dt" style="margin:0 0 8px">One row per competition: the real final tournament, how often it happens, and its most recent or next real edition.</p>
+<div class="tbl"><table>
+<thead><tr><th>Competition</th><th>Teams</th><th>Final tournament</th><th>How often</th></tr></thead>
+<tbody>
+<tr><td><b>World Cup</b></td><td class="num">48</td><td>12 groups of 4 → top 2 + 8 best 3rd-placed teams → Round of 32 → Round of 16, quarter-finals, semi-finals, final. 104 matches.</td><td>Every 4 years (2026, 2030)</td></tr>
+<tr><td><b>European Championship</b></td><td class="num">24</td><td>6 groups of 4 → top 2 + 4 best 3rd-placed teams → Round of 16. Extra time then penalties. No third-place match. 51 matches.</td><td>Every 4 years (2028)</td></tr>
+<tr><td><b>Copa América</b></td><td class="num">16</td><td>10 South American + 6 CONCACAF teams. 4 groups of 4 → top 2 → quarter-finals. A level knockout game goes straight to penalties; only the final has extra time. Has a third-place match. 32 matches (2024).</td><td>Every 4 years recently (2024; 2028 planned). <b>2028 host and size not confirmed.</b></td></tr>
+<tr><td><b>Africa Cup of Nations</b></td><td class="num">24</td><td>6 groups of 4 → top 2 + 4 best 3rd-placed teams → Round of 16. Has a third-place match.</td><td>2027, then 2028, then every 4 years (2032, 2036)</td></tr>
+<tr><td><b>Asian Cup</b></td><td class="num">24</td><td>6 groups of 4 → top 2 + 4 best 3rd-placed teams → Round of 16. Played in January (7 Jan–5 Feb 2027), in the middle of the club season.</td><td>Every 4 years (2027). <b>The 2027 host was taken from Saudi Arabia on 11 Oct 2026; new host not decided.</b></td></tr>
+<tr><td><b>Gold Cup</b> (North & Central America, Caribbean)</td><td class="num">16</td><td>4 groups of 4 → top 2 → quarter-finals.</td><td>Every 2 years (2025, 2027, 2029)</td></tr>
+<tr><td><b>OFC Nations Cup</b> (Oceania)</td><td class="num">8</td><td>A small qualifying round, then 2 groups → semi-finals, third-place match, final.</td><td>Every 4 years (2028)</td></tr>
+<tr><td><b>Nations League</b> (Europe)</td><td class="num">54</td><td>Leagues A–D with promotion and relegation; League A quarter-finals and finals. Its results also give some play-off places for the Euros and World Cup.</td><td>Every 2 years (2026/27, 2028/29)</td></tr>
+</tbody></table></div>
+
+<h2 class="k-blue"><i></i>How nations reach the World Cup (2026 rules)</h2>
+<div class="tbl"><table>
+<thead><tr><th>Continent</th><th>Nations</th><th>Direct places</th><th>Play-off places</th></tr></thead>
+<tbody>
+<tr><td>Europe (UEFA)</td><td class="num">54</td><td class="num">16</td><td class="num">0</td></tr>
+<tr><td>Africa (CAF)</td><td class="num">53</td><td class="num">9</td><td class="num">1</td></tr>
+<tr><td>Asia (AFC)</td><td class="num">46</td><td class="num">8</td><td class="num">1</td></tr>
+<tr><td>South America (CONMEBOL)</td><td class="num">10</td><td class="num">6</td><td class="num">1</td></tr>
+<tr><td>North & Central America, Caribbean (CONCACAF)</td><td class="num">32 + 3 hosts</td><td class="num">3 + 3 hosts</td><td class="num">2</td></tr>
+<tr><td>Oceania (OFC)</td><td class="num">11</td><td class="num">1</td><td class="num">1</td></tr>
+<tr><td><b>Total</b></td><td class="num">206 + 3 hosts</td><td class="num">46</td><td class="num">6 teams → 2 places</td></tr>
+</tbody></table></div>
+
+<div class="step"><div class="w">Europe</div><div class="t">12 groups (six of 4, six of 5), home and away</div>
+<ul><li>The 12 group winners qualify.</li><li>Play-offs: the 12 runners-up plus the 4 best Nations League group winners that didn't finish top two go into 4 paths of 4 teams.</li><li>Each path is a one-match semi-final (seeded team at home) and a one-match final. The 4 path winners qualify.</li></ul></div>
+<div class="step"><div class="w">South America</div><div class="t">One league of all 10 teams, home and away (18 matchdays over 3 years)</div>
+<ul><li>1st–6th qualify. 7th goes to the inter-continental play-off.</li></ul></div>
+<div class="step"><div class="w">Africa</div><div class="t">9 groups of 6, home and away</div>
+<ul><li>The 9 group winners qualify.</li><li>The 4 best runners-up play off; the winner goes to the inter-continental play-off.</li></ul></div>
+<div class="step"><div class="w">Asia</div><div class="t">Five rounds</div>
+<ul><li>Round 1: the 20 lowest-ranked teams play two-legged ties; 10 winners go on.</li><li>Round 2: 36 teams in 9 groups of 4; the top 2 of each group go on (and also reach the Asian Cup).</li><li>Round 3: 18 teams in 3 groups of 6; the top 2 of each group qualify (6 places).</li><li>Round 4: the 3rd- and 4th-placed teams form 2 groups of 3 (one venue); the 2 winners qualify.</li><li>Round 5: the two runners-up play home and away; the winner goes to the inter-continental play-off.</li></ul></div>
+<div class="step"><div class="w">North & Central America, Caribbean</div><div class="t">Three rounds (hosts skip it)</div>
+<ul><li>Round 1: the 4 lowest-ranked teams play two-legged ties.</li><li>Round 2: 30 teams in 6 groups of 5 (each team plays 2 home, 2 away); the top 2 of each group go on.</li><li>Round 3: 12 teams in 3 groups of 4, home and away. The 3 winners qualify; the 2 best runners-up go to the inter-continental play-off.</li></ul></div>
+<div class="step"><div class="w">Oceania</div><div class="t">Three rounds</div>
+<ul><li>Round 1: the 4 lowest-ranked teams in a mini knockout.</li><li>Round 2: 8 teams in 2 groups of 4; the top 2 of each group go on.</li><li>Round 3: semi-finals and a final. The winner qualifies; the runner-up goes to the inter-continental play-off.</li></ul></div>
+<div class="step"><div class="w">Inter-continental play-off</div><div class="t">6 teams → 2 places, one-off matches at one venue</div>
+<ul><li>The 2 highest in the FIFA ranking go straight to the two finals.</li><li>The other 4 play two semi-finals. Extra time, then penalties.</li></ul></div>
+
+<details><summary>How nations reach the other tournaments</summary>
+<ul>
+<li><b>Euros (2028 rules):</b> 12 groups of 4 or 5, home and away, 10 matchdays in 2027. The 12 winners and the 8 best runners-up qualify (20). The other places go through March play-offs (the 4 other runners-up and Nations League teams). The 4 hosts (England, Scotland, Wales, Republic of Ireland) play the qualifiers; 2 places are held back for hosts who don't qualify by right.</li>
+<li><b>Copa América (2024):</b> the 10 South American teams qualify automatically. The 6 CONCACAF teams came from the CONCACAF Nations League (4 quarter-final winners + 2 play-off winners).</li>
+<li><b>Africa Cup of Nations (2025):</b> the 8 lowest-ranked teams play a two-legged preliminary round. Then 48 teams in 12 groups of 4, home and away; the top 2 qualify (24). The host plays in a group too but is already in.</li>
+<li><b>Asian Cup (2027):</b> built into World Cup qualifying. The 18 teams from World Cup Round 2 qualify, plus the host. The other teams play a third round of 6 groups of 4; the 6 group winners qualify.</li>
+<li><b>Gold Cup (2025):</b> 8 places from the CONCACAF Nations League, 7 from a March preliminary round, and 1 invited guest.</li>
+<li><b>OFC Nations Cup (2024):</b> the lowest-ranked teams play a qualifying round; the winner joins the finals.</li>
+</ul></details>
+
+<details><summary>What changes after 2028 (not confirmed)</summary>
+<ul>
+<li><b>World Cup 2030:</b> Morocco, Portugal and Spain host; Argentina, Paraguay and Uruguay each host one opening match. All 6 qualify automatically. Number of teams: CONMEBOL announced 64 on 20 Jul 2026, but FIFA has not confirmed it. Slots per continent: not confirmed.</li>
+<li><b>European qualifying from 2028 onwards:</b> UEFA announced (20 May 2026) a two-tier system: League 1 (36 teams, 3 groups of 12, 6 matches each) and League 2 (the rest). The top team in each League 1 group qualifies; the rest go to play-offs. Final approval was due on 15 Sep 2026. Not confirmed by me.</li>
+<li><b>Nations League from 2028/29:</b> 3 leagues of 18 teams (3 groups of 6). Same announcement.</li>
+<li><b>Africa:</b> an African Nations League every Sep–Nov from 2029 (reported; first year differs between sources).</li>
+</ul></details>
+
+<h2 class="k-amb"><i></i>The calendar</h2>
+<p class="dt" style="margin:0 0 8px">Real FIFA dates. Season 1 in the game is 2026/27, so the game's seasons line up with real years.</p>
+<div class="tbl"><table>
+<thead><tr><th>Break</th><th>Matches</th><th>Dates (2027 example)</th></tr></thead>
+<tbody>
+<tr><td>September–October (one double break, new from 2026)</td><td class="num">4</td><td>20 Sep – 5 Oct</td></tr>
+<tr><td>November</td><td class="num">2</td><td>8–16 Nov</td></tr>
+<tr><td>March</td><td class="num">2</td><td>22–30 Mar</td></tr>
+<tr><td>June (after the club season)</td><td class="num">2</td><td>7–15 Jun</td></tr>
+</tbody></table></div>
+<p class="cap">That is 10 international matches a year outside tournaments, against 4 in the game today.</p>
+
+<div class="tbl" style="margin-top:12px"><table>
+<thead><tr><th>Game season</th><th>Summer tournaments</th><th>Mid-season</th></tr></thead>
+<tbody>
+<tr><td>1 · 2026/27</td><td>Africa Cup of Nations 2027, Gold Cup 2027</td><td>Asian Cup (Jan 2027)</td></tr>
+<tr><td>2 · 2027/28</td><td>Euro 2028, Copa América 2028, Africa Cup of Nations 2028, OFC Nations Cup</td><td>—</td></tr>
+<tr><td>3 · 2028/29</td><td>Gold Cup 2029</td><td>—</td></tr>
+<tr><td>4 · 2029/30</td><td>World Cup 2030</td><td>—</td></tr>
+<tr><td>5 onwards</td><td colspan="2">The same 4-year cycle repeats. Seasons 5–20 are years with no real dates yet, so the plan repeats the pattern: World Cup in seasons 4, 8, 12, 16, 20; Euros, Copa América and Africa Cup in 6, 10, 14, 18; Asian Cup in January of 5, 9, 13, 17; Gold Cup in every odd season.</td></tr>
+</tbody></table></div>
+
+<div class="step"><div class="w">Club football during a break</div><div class="t">Which divisions stop</div>
+<ul>
+<li><b>Premier League and Championship:</b> no league games on break weekends. The fixture list needs these weekends left empty.</li>
+<li><b>League One and League Two:</b> keep playing. A club with 3 or more players called up can ask to postpone. In the game: if you are called up, you miss that club game.</li>
+<li><b>National League and below:</b> keep playing. A call-up from there is very rare, but if it happens you miss the club game.</li>
+<li><b>Asian Cup (January), and an Africa Cup played in winter:</b> a called-up player misses about 3–5 weeks of club games.</li>
+</ul></div>
+
+<h2 class="k-grn"><i></i>Getting called up: the national manager bar</h2>
+<p class="dt" style="margin:0 0 8px">A new 0–100 bar on Relations, the same as your club manager's. Proposed numbers, for you to judge.</p>
+<div class="tbl"><table>
+<thead><tr><th>What moves it</th><th>How much</th></tr></thead>
+<tbody>
+<tr><td>Each club match rating (7.5+ up, under 6 down)</td><td class="num">−3 to +4, × division weight</td></tr>
+<tr><td>Starting for your club / on the bench / not in the squad (each week)</td><td class="num">+1 / 0 / −2</td></tr>
+<tr><td>A trophy, or an award (Player of the Month, Golden Boot…)</td><td class="num">+5 to +10</td></tr>
+<tr><td>Each international match rating</td><td class="num">−4 to +6</td></tr>
+<tr><td>A break you are left out of (he forgets you a little)</td><td class="num">−3</td></tr>
+<tr><td>A scandal (casino story, corruption)</td><td class="num">−5</td></tr>
+</tbody></table></div>
+<div class="tbl" style="margin-top:12px"><table>
+<thead><tr><th>Division</th><th>Weight</th></tr></thead>
+<tbody>
+<tr><td>Premier League (and the top leagues abroad)</td><td class="num">× 1.0</td></tr>
+<tr><td>Championship</td><td class="num">× 0.6</td></tr>
+<tr><td>League One</td><td class="num">× 0.35</td></tr>
+<tr><td>League Two</td><td class="num">× 0.2</td></tr>
+<tr><td>National League and below</td><td class="num">× 0.1</td></tr>
+</tbody></table></div>
+<div class="step"><div class="w">What the bar decides</div><div class="t">The same lines as your club manager</div>
+<ul>
+<li><b>Under 55:</b> not called up.</li>
+<li><b>55 or more:</b> in the squad. 55 is the same standing your club manager needs to start you.</li>
+<li><b>In the squad:</b> you start if your national standing is the best among the players in your position. Otherwise you are on the bench and come on later, using the club's substitute ladder (on at 80, 70, 60 or 50 minutes).</li>
+</ul></div>
+<p class="cap">The bar replaces today's call-up roll. A small country is easier: its bar starts higher, and the bar it needs is lower.</p>
+
+<h2 class="k-grn"><i></i>Picking the national squad</h2>
+<div class="step"><div class="w">Each player's score</div><div class="t">Rating, adjusted for the division he plays in</div>
+<ul>
+<li>Score = overall rating + a division adjustment + 2 if he starts for his club.</li>
+<li>Division adjustment: Premier League and the top leagues abroad 0, Championship −4, League One −8, League Two −11, National League −14.</li>
+<li>Example: an 83-rated League One player scores 75, so an 80-rated Premier League player is picked ahead of him.</li>
+<li>No goals or assists count. You were right that defenders and keepers would lose out.</li>
+</ul></div>
+<div class="step"><div class="w">The squad</div><div class="t">23 for a break, 26 for a tournament (at least 3 goalkeepers)</div>
+<ul>
+<li>Picked by position to fill the formation twice over, plus a third goalkeeper.</li>
+<li>If a country doesn't have enough real players, made-up players fill the gaps, as now.</li>
+</ul></div>
+<div class="step"><div class="w">Who starts, and rotation</div><div class="t">How many changes from the best XI</div>
+<div class="tbl"><table>
+<thead><tr><th>Match</th><th>Changes</th></tr></thead>
+<tbody>
+<tr><td>Friendly</td><td class="num">4–6</td></tr>
+<tr><td>Qualifier against a much weaker team (10+ strength below)</td><td class="num">2–3</td></tr>
+<tr><td>Qualifier against a close rival</td><td class="num">0–1</td></tr>
+<tr><td>Tournament group game</td><td class="num">0–1</td></tr>
+<tr><td>Third group game, already through</td><td class="num">4–6</td></tr>
+<tr><td>Knockout game</td><td class="num">0</td></tr>
+</tbody></table></div>
+<ul><li>A substitute who rates 8 or more gets a bonus toward starting the next game.</li></ul></div>
+
+<h2 class="k-vio"><i></i>What gets stored</h2>
+<ul class="n">
+<li><div class="hd">Your own country's competitions: everything</div><div class="dt">Groups, tables, every result and the full knockout draw.</div></li>
+<li><div class="hd">Every other competition: the final only</div><div class="dt">Winner, runner-up and the final score, for example "Copa América 2028: Argentina 2–1 Brazil". Shown on a "Who won" list.</div></li>
+<li><div class="hd">Size</div><div class="dt">About 15 KB more per save. A new save is about 22 KB today.</div></li>
+</ul>
+
+<h2 class="k-vio"><i></i>The countries</h2>
+<ul class="n">
+<li><div class="hd">Strength for all 211 FIFA nations</div><div class="dt">Taken from the official FIFA Men's World Ranking points at build time and turned into the game's strength scale, instead of a default of 60.</div></li>
+<li><div class="hd">Some names in the picker are not FIFA nations</div><div class="dt">For example Great Britain, Monaco, Bonaire, French Guiana, Guadeloupe, Martinique, Réunion, Saint Barthélemy and Sint Maarten. Russia is suspended. These players would get no national team. See decision 4.</div></li>
+<li><div class="hd">Each nation's continent, kit colours and flag</div><div class="dt">Flags already exist for all 217.</div></li>
+</ul>
+
+<h2 class="k-amb"><i></i>Decisions needed</h2>
+<div class="q"><div class="t">1. Which countries can you play for?</div>
+<div class="opts"><span class="opt rec">All of them · recommended</span><span class="opt">Europe only</span><span class="opt">England only</span></div>
+<p class="dt" style="margin:6px 0 0">The World Cup needs all 6 continents qualifying anyway, so making every country playable costs little extra: the same tables, plus the Africa Cup, Asian Cup, Copa América and Gold Cup screens.</p></div>
+<div class="q"><div class="t">2. Rules for seasons with no real dates yet (World Cup 2030 onwards)</div>
+<div class="opts"><span class="opt rec">Keep the 2026 World Cup and 2028 Euro rules for every future edition · recommended</span><span class="opt">Switch to the new rules once they are confirmed</span></div></div>
+<div class="q"><div class="t">3. The Nations League</div>
+<div class="opts"><span class="opt">Build it in full</span><span class="opt rec">Simulate it in the background; play only its matches · recommended</span><span class="opt">Leave it out (its play-off places go to the next-best qualifying teams)</span></div></div>
+<div class="q"><div class="t">4. A player whose nationality has no FIFA team</div>
+<div class="opts"><span class="opt rec">No international career · recommended</span><span class="opt">Hide those nationalities from the picker</span></div></div>
+<div class="q"><div class="t">5. The national manager numbers (call-up at 55, division weights, rotation)</div>
+<div class="opts"><span class="opt rec">As on this page · recommended</span><span class="opt">Change some (say which)</span></div></div>
+<div class="q"><div class="t">6. Leave club games out on break weekends (Premier League, Championship)</div>
+<div class="opts"><span class="opt rec">Yes, like real life · recommended</span><span class="opt">No, keep today's midweek match</span></div>
+<p class="dt" style="margin:6px 0 0">This changes the club fixture list, which Harry's and Leo's work also uses. It needs a word with them first.</p></div>
+
+<h2 class="k-mut"><i></i>Build order</h2>
+<ol class="flow">
+<li><b>Countries</b><span>211 strengths from the FIFA ranking, continents, kits. Small, and it unblocks everything else.</span></li>
+<li><b>The calendar</b><span>Real break weeks (4/2/2/2 matches), empty club weekends, missed club games, January Asian Cup.</span></li>
+<li><b>One general competition engine</b><span>Groups, tables, tie-breakers, best third-placed teams, two-legged ties, play-off paths. Every competition is set up as data on top of it.</span></li>
+<li><b>Qualifying and tournaments for all 6 continents</b><span>The World Cup first, then the Euros, Africa Cup, Asian Cup, Copa América, Gold Cup, OFC Nations Cup and Nations League.</span></li>
+<li><b>The national manager bar and squad picking</b><span>Replaces today's call-up roll.</span></li>
+<li><b>Screens</b><span>Your group table, fixtures, the play-off path, and the "Who won" list.</span></li>
+</ol>
+
+<details><summary>Sources</summary>
+<ul>
+<li>World Cup 2026 qualifying, all continents and the inter-continental play-off: Wikipedia, "2026 FIFA World Cup qualification" and its AFC, CAF, CONCACAF, CONMEBOL, OFC, UEFA and play-off pages (read 12 Oct 2026).</li>
+<li>Slot allocation agreed by the FIFA Council, 9 May 2017: inside.fifa.com media release "Bureau of the Council recommends slot allocation for the 2026 FIFA World Cup".</li>
+<li>World Cup 2026 squads (26, at least 3 goalkeepers): beinsports.com, "How many players can each national team call up for the 2026 FIFA World Cup".</li>
+<li>Euro 2028 and Euro 2028 qualifying: Wikipedia, "UEFA Euro 2028" and "UEFA Euro 2028 qualifying".</li>
+<li>UEFA's new formats from 2028: FIGC official news, "From 2028 a new format for men's national team matches" (20 May 2026).</li>
+<li>Copa América 2024 format and knockout rules: Wikipedia, "2024 Copa América". 2028 status: Wikipedia, "2028 Copa América".</li>
+<li>Africa Cup of Nations 2025 and its qualifying: Wikipedia. The four-year cycle from 2028: ESPN, Guardian Nigeria, eNCA (20 Dec 2025).</li>
+<li>Asian Cup 2027 and its qualifying: Wikipedia, "2027 AFC Asian Cup" and "2027 AFC Asian Cup qualification".</li>
+<li>Gold Cup 2025, OFC Nations Cup 2024: Wikipedia.</li>
+<li>FIFA International Match Calendar 2026–2030: Wikipedia, "FIFA International Match Calendar".</li>
+<li>Nations League 2026/27: UEFA regulations (documents.uefa.com, Article 12) and Wikipedia.</li>
+<li>FIFA has 211 member nations: Wikipedia, "List of FIFA member associations".</li>
+<li>League One and League Two play on through breaks; 3 or more call-ups allow a postponement: Blackpool Gazette, Portsmouth News, The League Paper (EFL rule as reported, not the rulebook itself).</li>
+</ul></details>
+
+<footer>A plan only. Nothing is built. The competition rules are researched; the call-up and squad numbers are proposals for you to judge.</footer>
+</div>

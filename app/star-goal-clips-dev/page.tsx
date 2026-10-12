@@ -22,7 +22,7 @@ import { DEFAULT_PLAY_SETTINGS, type PlaySettings } from "@/lib/star/playArea";
 import { putClip, listClips, type ClipListing } from "@/lib/star/goalClip/store";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import type { ClipStyle } from "@/lib/star/goalClip/edit";
-import { setAnimationsLookOverride, useAnimationsLook, type AnimationsLook } from "@/lib/star/animLook";
+import { useAnimationsLook } from "@/lib/star/animLook";
 
 const CHANCES: { kind: ScenarioKind; label: string }[] = [
   { kind: "penalty", label: "Penalty" },
@@ -49,10 +49,7 @@ export default function GoalClipsDevPage() {
   const [style, setStyle] = useState<ClipStyle>("broadcast");
   // Each account cuts its goals one of a few ways; this page can show each.
   const [variant, setVariant] = useState(0);
-  // The men's moves follow Settings → Look → Animations; this page can force
-  // one while it is open (the match above follows it too).
-  const [movesForced, setMovesForced] = useState<AnimationsLook | null>(null);
-  useEffect(() => setAnimationsLookOverride(movesForced), [movesForced]);
+  // The men's moves: always the New animations (decided 12 Oct 2026).
   const moves = useAnimationsLook();
   const n = useRef(0);
 
@@ -159,20 +156,6 @@ export default function GoalClipsDevPage() {
                 </button>
               ))}
               <span className="text-[11px] font-bold text-white/60">each account always uses one of these</span>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-black uppercase tracking-widest text-white/60">Moves</span>
-              {(["old", "new"] as const).map(m => (
-                <button
-                  key={m}
-                  onClick={() => setMovesForced(m)}
-                  className={`rounded px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide ${moves === m ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
-                  data-goal-clip-moves={m}
-                >
-                  {m === "old" ? "Old" : "New"}
-                </button>
-              ))}
-              <span className="text-[11px] font-bold text-white/60">{movesForced ? "forced on this page" : "from Settings → Look → Animations"}</span>
             </div>
             <div className="mt-2 flex justify-center">
               <GoalVideo

@@ -1,10 +1,11 @@
 /**
- * SETTINGS → VERSION: Classic | Standard | Preview (lib/star/gameVersions.ts).
+ * SETTINGS → VERSION: Classic | Standard (lib/star/gameVersions.ts; Preview
+ * removed 12 Oct 2026).
  *
- *  1. Every New | Old switch is in all three versions, with a real option.
+ *  1. Every New | Old switch is in both versions, with a real option.
  *  2. Classic = every switch's OLD option.
  *  3. Standard = what a brand-new phone reads (each switch's real default).
- *  4. Preview = Standard plus the rows being tried, and nothing else.
+ *  4. (Preview is gone, and so are the decided rows.)
  *  5. Applying a version, then reading back, gives that version.
  *  6. Changing one row reads as Custom (nearest version, 1 change).
  *  7. The picker never touches the preferences (sound, camera, etc.).
@@ -22,7 +23,7 @@ const store = new Map<string, string>();
 } as Storage;
 
 const {
-  LOOK_ROWS, LOOK_ROW_IDS, VERSION_PRESETS, GAME_VERSIONS, PREVIEW_ROWS,
+  LOOK_ROWS, LOOK_ROW_IDS, VERSION_PRESETS, GAME_VERSIONS,
   readLook, applyGameVersion, setLookRow, gameVersionOf, differencesFrom,
 } = await import("../../lib/star/gameVersions");
 
@@ -37,7 +38,9 @@ for (const id of LOOK_ROW_IDS) {
 check(gameVersionOf().version === "standard", `a new phone reads as ${gameVersionOf().version}, not Standard`);
 
 // 1 and 2.
-check(LOOK_ROW_IDS.length >= 20, `only ${LOOK_ROW_IDS.length} switches listed (20 in Settings on 8 Oct 2026)`);
+check(LOOK_ROW_IDS.length === 9, `${LOOK_ROW_IDS.length} switches listed (9 after the 12 Oct 2026 clean-up)`);
+check((GAME_VERSIONS as readonly string[]).join() === "classic,standard", `versions are ${GAME_VERSIONS.join()}`);
+for (const gone of ["chances", "animations", "keepers", "dribble", "clearances", "chanceMix", "actionCamera", "dribbleDuels", "matchView", "sprites2d", "badges"]) check(!(gone in LOOK_ROWS), `${gone} is decided and must not be a row`);
 for (const v of GAME_VERSIONS) {
   for (const id of LOOK_ROW_IDS) {
     const val = VERSION_PRESETS[v][id];
@@ -47,15 +50,8 @@ for (const v of GAME_VERSIONS) {
 }
 for (const id of LOOK_ROW_IDS) check(VERSION_PRESETS.classic[id] === LOOK_ROWS[id].oldValue, `Classic.${id} is not the old option`);
 
-// 4.
-for (const id of LOOK_ROW_IDS) {
-  const want = PREVIEW_ROWS.includes(id) ? LOOK_ROWS[id].newValue : VERSION_PRESETS.standard[id];
-  check(VERSION_PRESETS.preview[id] === want, `Preview.${id} is "${VERSION_PRESETS.preview[id]}", expected "${want}"`);
-}
-check(differencesFrom("standard", VERSION_PRESETS.preview).length > 0, "Preview is the same as Standard");
-
 // 5. Apply each version (in a mixed order), read it back.
-for (const v of ["classic", "preview", "standard", "classic", "standard"] as const) {
+for (const v of ["classic", "standard", "classic", "standard"] as const) {
   applyGameVersion(v);
   const now = readLook();
   for (const id of LOOK_ROW_IDS) check(now[id] === VERSION_PRESETS[v][id], `after ${v}, ${id} reads "${now[id]}"`);
@@ -65,11 +61,11 @@ for (const v of ["classic", "preview", "standard", "classic", "standard"] as con
 
 // 6. One row changed by hand → Custom, nearest Standard, 1 change.
 applyGameVersion("standard");
-setLookRow("keepers", "old");
+setLookRow("matchRadar", "new");
 const c = gameVersionOf();
 check(c.version === "custom" && c.nearest === "standard" && c.changes === 1, `one change reads ${JSON.stringify(c)}`);
 applyGameVersion("classic");
-setLookRow("ui", "new");
+setLookRow("cutscenePeople", "new");
 const c2 = gameVersionOf();
 check(c2.version === "custom" && c2.nearest === "classic" && c2.changes === 1, `Classic + 1 reads ${JSON.stringify(c2)}`);
 
@@ -86,4 +82,4 @@ if (problems.length) {
   for (const p of problems) console.log("  " + p);
   process.exit(1);
 }
-console.log(`gameVersions: ${LOOK_ROW_IDS.length} switches, 3 versions, all checks pass`);
+console.log(`gameVersions: ${LOOK_ROW_IDS.length} switches, 2 versions, all checks pass`);

@@ -34,6 +34,10 @@ import { displayOverall } from "./rating";
 import { divisionOf, fixtureTimestamp, weekOnWeekend, type CareerDivision } from "./calendar";
 import { nationOf, nextFixtureFor, tournamentFor } from "./competitions";
 import type { ClubKits } from "./kits";
+import { myNation, squadFor, squadAsLeague, nationStrengthNow } from "./intl/career";
+import { rankingStrength, nationFor } from "./intl/nations";
+
+const TOURNAMENT_NAMES = new Set(["World Cup", "European Championship", "Copa América", "Africa Cup of Nations", "Asian Cup", "Gold Cup", "OFC Nations Cup"]);
 
 // ── The windows ─────────────────────────────────────────────────────────────
 
@@ -98,7 +102,10 @@ export const EUROPEAN = new Set([
 ]);
 
 export function nationStrength(nation: string): number {
-  return NATION_STRENGTH[nation] ?? 60;
+  // FIFA ranking (lib/star/intl/nations.ts); the old hand table for anything
+  // the ranking does not know.
+  const n = nationFor(nation);
+  return n ? Math.round(rankingStrength(n.points)) : NATION_STRENGTH[nation] ?? 60;
 }
 
 /** The overall you need to be about a coin flip for the squad. */
@@ -431,6 +438,27 @@ export function opponentNationSquad(career: CareerState, nation: string): League
  */
 export function internationalCareer(career: CareerState, fixture: Fixture): CareerState {
   const nation = nationOf(career);
+  // The international world (lib/star/intl/career.ts): squads picked by the
+  // division-weighted rule, strengths from the ranking and the real players.
+  if (fixture.intlId) {
+    const n = myNation(career);
+    const tournament = /Group|Round|Final|Quarter|Semi/.test(fixture.round ?? "") && TOURNAMENT_NAMES.has(fixture.competition ?? "");
+    const table = (name: string, strength: number) => ({
+      name, strength, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0,
+    });
+    return {
+      ...career,
+      player: { ...career.player, club: n },
+      thisSeasonClub: n,
+      squad: squadFor(career, n, tournament ? 26 : 23),
+      league: [table(n, nationStrengthNow(career, n)), table(fixture.opponent, fixture.opponentStrength ?? nationStrengthNow(career, fixture.opponent))],
+      leagueSquads: [],
+      externalSquads: [{ club: fixture.opponent, players: squadAsLeague(career, fixture.opponent) }],
+      ownedClubs: {},
+      clubKits: { ...(career.clubKits ?? {}), [n]: nationKits(n), [fixture.opponent]: nationKits(fixture.opponent) },
+      playAs: null,
+    };
+  }
   const { players } = nationalSquad(career);
   const table = (name: string, strength: number) => ({
     name, strength, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0,
