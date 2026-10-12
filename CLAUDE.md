@@ -427,6 +427,11 @@ than once.
 **Progress updates follow `.claude/skills/progress-update/SKILL.md`: every 5
 minutes on every task, auto-deploy at every major update.**
 
+**3D sizes never change (Harry, 12 Oct 2026).** *"no changes in size for any
+player or goalie or goal should ever occur."* In 3D, every man, the keeper and
+the goal each have ONE fixed scale, the same in every chance and every frame.
+Never resize them per chance, per camera move or per screen.
+
 **Pictures as they come in, not in one go (Harry, 12 Oct 2026).** *"I want
 pictures constantly as they come in instead of in one go, easier to tweak
 missteps."* Builders save each finished still to the top of their output folder
