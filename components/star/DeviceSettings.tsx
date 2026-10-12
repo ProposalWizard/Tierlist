@@ -339,7 +339,7 @@ function ScreensGroup() {
       <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
       <LookRow id="ballonDorNight" look={look} tabs={NEW_OLD} note="New: the ceremony on a stage — the final three on podiums, the host calls the winner up. Old: the countdown cards." />
       <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
-      <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the showroom — one item fills the screen; swipe sideways for the next item, up and down for the next category. Old: the shop as before." />
+      <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the showroom — categories in a bar at the bottom; 1, 3 or 5 items on screen (the switch in the shop header); swipe sideways for the next item. Old: the shop as before." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
       <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
       <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />

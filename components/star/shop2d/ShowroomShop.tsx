@@ -9,7 +9,16 @@
  *   - swipe UP / DOWN   = the next / previous category (the Feed):
  *                         Cans → Boots → Drip → Gadgets → Cars → Homes → Holiday;
  *   - swipe LEFT / RIGHT = the items in that category (the Showroom), with dots;
- *   - a thin category rail at the top (tap to jump), a back chip, and a balance
+ *   - the categories as a phone-app tab bar at the BOTTOM (12 Oct 2026: Mikey
+ *     found the thin top rail hard to read; Harry: "put the menu at the bottom,
+ *     phone style"), above the iPhone home bar;
+ *   - a 1 | 3 | 5 switch in the header (lib/star/shopItemsView.ts, kept per
+ *     device, 3 by default): 1 = one item fills the screen; 3 = the centre item
+ *     big, the one before and after small and faded (tap one to bring it in);
+ *     5 = a compact list of the category (a row of cards on PC);
+ *   - each category opens, and the shop moves on after a purchase, to the
+ *     cheapest item you don't own yet (lib/star/shopNextItem.ts);
+ *   - a back chip, More (⋯: Sponsors, Casino, Store, 3D shop), and a balance
  *     chip with your fame (tap it: the fame banner drops down);
  *   - the Buy / Upgrade button pinned at the bottom with the price; tap the
  *     item for its sheet (level ladder, what you gain, View in 3D).
@@ -25,7 +34,7 @@
  * Blender models as public/shop (tools/shop2d/render_big.py); the small
  * pictures/drawings are the fallback if one is missing.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, LIFESTYLE_ALL_LEVELS, baseIdOf, type KibCan } from "@/lib/star/shopData";
@@ -45,6 +54,8 @@ import BootPicture from "../BootPicture";
 import StylePicture from "../StylePicture";
 import { weeksText } from "../ShopSheet";
 import { PhoneOpens, SaveUp } from "../StyleShop";
+import { nextUpIndex } from "@/lib/star/shopNextItem";
+import { loadShopItemsView, saveShopItemsView, type ShopItemsView } from "@/lib/star/shopItemsView";
 import { art, tierColour, rungName, LevelLadder, GiveChips, StoreSheet, GoldButton, ConfirmSheet, PurchaseMoment, type ConfirmInfo, type StoreTab } from "./parts";
 
 interface ActionResult { ok: boolean; reason?: string }
@@ -201,8 +212,38 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const stars = starsNow(career);
     return stars >= need ? null : Math.min(1, stars / need);
   } : undefined), [career]);
+  // The item to land on in a category: the cheapest one you don't own yet (lib/star/shopNextItem.ts).
+  const bootsList = useMemo(() => (hasBootDeal(career) ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE), [career]);
+  /** Yours already: the boots you have on (not worn out), a style item you own (not worn out). Cans are used up, never "owned". */
+  const isOwned = (cat: CatId, k: string): boolean => {
+    if (cat === "cans") return false;
+    if (cat === "boots") return baseIdOf(career.currentBoot) === k && career.currentBoot.matches > 0;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    return !!mine && !isWornOut(mine);
+  };
+  /** The owned tag on a 5-items card. */
+  const ownLabel = (cat: CatId, k: string): string | null => {
+    if (cat === "cans") { const n = career.kibCans[k as KibCan["id"]] ?? 0; return n > 0 ? `×${n} owned` : null; }
+    if (cat === "boots") return baseIdOf(career.currentBoot) === k ? (career.currentBoot.matches > 0 ? `On · L${career.currentBoot.level ?? 1}` : "Worn out") : null;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    if (!mine) return null;
+    if (isWornOut(mine)) return "Worn out";
+    return (STYLE_BASES.get(k)?.length ?? 1) > 1 ? `Owned · L${ownedLevelOf(mine)}` : "Owned";
+  };
+  const nextUp = (cat: CatId, from = 0): number => {
+    const keys = SHOWROOM_KEYS[cat];
+    if (cat === "cans") return Math.max(0, Math.min(keys.length - 1, from));
+    return nextUpIndex(keys.map((k) => {
+      if (cat === "boots") {
+        const l1 = bootsList.filter((b) => baseIdOf(b) === k).sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
+        return { owned: isOwned(cat, k), locked: false, price: l1?.price ?? 0 };
+      }
+      return { owned: isOwned(cat, k), locked: (lockOf?.(k) ?? null) !== null, price: STYLE_BASES.get(k)?.[0]?.price ?? 0 };
+    }), from);
+  };
   const start = useMemo(() => {
     const at = (cat: CatId, key: string) => ({ ci: SHOWROOM_CATS.findIndex((c) => c.id === cat), ii: Math.max(0, SHOWROOM_KEYS[cat].indexOf(key)) });
+    const landing = (cat: CatId) => ({ ci: SHOWROOM_CATS.findIndex((c) => c.id === cat), ii: nextUp(cat) });
     if (focus) {
       if (SHOWROOM_KEYS.cans.includes(focus.id)) return { ...at("cans", focus.id), sheet: null };
       if (SHOWROOM_KEYS.boots.includes(focus.id)) return { ...at("boots", focus.id), sheet: { cat: "boots" as CatId, key: focus.id, level: focus.level } };
@@ -212,20 +253,27 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         return { ...at(g, focus.id), sheet: lockOf?.(focus.id) == null ? { cat: g as CatId, key: focus.id, level: focus.level } : null };
       }
     }
-    if (startCat) return { ...at(startCat, SHOWROOM_KEYS[startCat][0]), sheet: null };
+    if (startCat) return { ...landing(startCat), sheet: null };
     if (kind === "kib") return { ...at("cans", "basic"), sheet: null };
-    if (kind === "boots") return { ...at("boots", baseIdOf(career.currentBoot)), sheet: null };
+    if (kind === "boots") return { ...landing("boots"), sheet: null };
     if (lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone")) return { ...at("gadgets", "phone"), sheet: null };
-    return { ...at("drip", SHOWROOM_KEYS.drip[0]), sheet: null };
+    return { ...landing("drip"), sheet: null };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [ci, setCi] = useState(start.ci);
-  const [idx, setIdx] = useState<number[]>(() => SHOWROOM_CATS.map((_, i) => (i === start.ci ? start.ii : 0)));
+  // every category opens on its next item, not only the one you start in
+  const [idx, setIdx] = useState<number[]>(() => SHOWROOM_CATS.map((c, i) => (i === start.ci ? start.ii : nextUp(c.id))));
+  // 1 | 3 | 5 items on screen (remembered on this device; 3 by default)
+  const [view, setViewState] = useState<ShopItemsView>(loadShopItemsView);
+  const setView = (v: ShopItemsView) => { setViewState(v); saveShopItemsView(v); };
+  const [moreOpen, setMoreOpen] = useState(false);
+  /** After a purchase: the category to move on to its next item once the burst closes. */
+  const jumpAfterBuy = useRef<number | null>(null);
   const [sheet, setSheet] = useState<Sheet | null>(start.sheet);
 
   // ── The buy flows (unchanged from the store) ───────────────────────────
   const bootDeal = hasBootDeal(career);
-  const boots = useMemo(() => (bootDeal ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE), [bootDeal, career]);
+  const boots = bootsList;
   const banned = new Set(ruleBookFor(career, "FA").bannedItems);
   const bootLevels = (base: string) => boots.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   const cur = career.currentBoot;
@@ -248,6 +296,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const base = baseIdOf(b);
     const done = (price: number) => {
       spend(price); setConfirm(null);
+      jumpAfterBuy.current = SHOWROOM_CATS.findIndex((c) => c.id === "boots");
       setSoldOut((s) => new Set(s).add(b.id));
       setMoment({ art: <BigPic kind="boot" base={base} level={lv} className="w-full" />, level: lv, title: `${b.name} L${lv} — ${b.matches} matches`, word: "Equipped!", fx: b.extraTouch ? "fx-touch" : b.curve ? "fx-curve" : "fx-power" });
     };
@@ -284,6 +333,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       run: () => {
         if (career.money < it.price) return "Not enough money";
         onBuyItem(it); spend(it.price); setConfirm(null);
+        jumpAfterBuy.current = SHOWROOM_CATS.findIndex((c) => c.id === styleGroupOf(it));
         setMoment({ art: <BigPic kind="style" base={base} level={lv} className="w-full" />, level: lv, title: levelName(it), word: verb === "Upgrade" ? "Upgraded!" : verb === "Repair" ? "Repaired!" : "Yours!" });
       },
     });
@@ -375,42 +425,78 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   };
 
   // ── Scrolling: native snap for touch + trackpad, drag for the mouse ────
+  // 1 and 3 items: the Feed (categories up/down) of Showroom rows (items sideways).
+  // 5 items: no Feed; one category's list, and the tab bar picks the category.
   const outer = useRef<HTMLDivElement>(null);
   const rows = useRef<(HTMLDivElement | null)[]>([]);
-  const pageW = () => outer.current?.clientWidth ?? 390;
-  const pageH = () => outer.current?.clientHeight ?? 844;
-  useLayoutEffect(() => {
-    const o = outer.current;
-    if (!o) return;
-    o.scrollTop = start.ci * o.clientHeight;
-    const r = rows.current[start.ci];
-    if (r) r.scrollLeft = start.ii * r.clientWidth;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const goCat = useCallback((c: number, smooth = true) => {
-    const o = outer.current;
-    if (!o) return;
-    const n = Math.max(0, Math.min(SHOWROOM_CATS.length - 1, c));
-    o.scrollTo({ top: n * o.clientHeight, behavior: smooth ? "smooth" : "auto" });
-  }, []);
-  const goItem = useCallback((c: number, i: number) => {
+  const list = useRef<HTMLDivElement>(null);
+  /** One step sideways: the whole width (1 item) or one slide (3 items). */
+  const stepW = (c: number) => {
     const r = rows.current[c];
-    if (!r) return;
+    if (!r) return 390;
+    return Math.max(1, r.querySelector<HTMLElement>("[data-show-item]")?.offsetWidth ?? r.clientWidth);
+  };
+  const pageH = () => outer.current?.clientHeight ?? 844;
+  // put the Feed and every row on its item: when the shop opens, and when 1 | 3 | 5 changes
+  useLayoutEffect(() => {
+    if (view === 5) return;
+    const o = outer.current;
+    if (o) o.scrollTop = ci * o.clientHeight;
+    rows.current.forEach((r, c) => { if (r) r.scrollLeft = idx[c] * stepW(c); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+  const goCat = (c: number, smooth = true) => {
+    const n = Math.max(0, Math.min(SHOWROOM_CATS.length - 1, c));
+    const o = outer.current;
+    if (!o) { setCi(n); setFameOpen(false); return; }
+    o.scrollTo({ top: n * o.clientHeight, behavior: smooth ? "smooth" : "auto" });
+  };
+  const goItem = (c: number, i: number, smooth = true) => {
     const n = Math.max(0, Math.min(SHOWROOM_KEYS[SHOWROOM_CATS[c].id].length - 1, i));
-    r.scrollTo({ left: n * r.clientWidth, behavior: "smooth" });
-  }, []);
+    const r = rows.current[c];
+    if (!r) { setIdx((a) => a.map((v, k) => (k === c ? n : v))); return; }
+    r.scrollTo({ left: n * stepW(c), behavior: smooth ? "smooth" : "auto" });
+  };
+  /** A tab in the bottom bar: open that category on its next item. */
+  const openCat = (i: number) => {
+    setMoreOpen(false);
+    const land = nextUp(SHOWROOM_CATS[i].id, idx[i]);
+    setIdx((a) => a.map((v, k) => (k === i ? land : v)));
+    const r = rows.current[i];
+    if (r) r.scrollLeft = land * stepW(i);
+    goCat(i, Math.abs(i - ci) <= 1);
+  };
   const onOuterScroll = () => {
     const o = outer.current;
     if (!o) return;
     const c = Math.round(o.scrollTop / Math.max(1, o.clientHeight));
-    if (c !== ci) { setCi(c); setFameOpen(false); }
+    if (c !== ci) { setCi(c); setFameOpen(false); setMoreOpen(false); }
   };
   const onRowScroll = (c: number) => {
     const r = rows.current[c];
     if (!r) return;
-    const i = Math.round(r.scrollLeft / Math.max(1, r.clientWidth));
+    const i = Math.round(r.scrollLeft / stepW(c));
     setIdx((a) => (a[c] === i ? a : a.map((v, k) => (k === c ? i : v))));
   };
+  // after a purchase: once the burst has gone, move on to the next item you don't own
+  useEffect(() => {
+    if (moment || confirm || sheet || jumpAfterBuy.current === null) return;
+    const c = jumpAfterBuy.current;
+    jumpAfterBuy.current = null;
+    const n = nextUp(SHOWROOM_CATS[c].id, idx[c]);
+    if (n !== idx[c]) goItem(c, n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moment, confirm, sheet, career]);
+  // 5 items: keep the item you are on (the next one, on open) in view
+  const curKey = SHOWROOM_KEYS[SHOWROOM_CATS[ci].id][idx[ci]];
+  useEffect(() => {
+    if (view !== 5) return;
+    const l = list.current;
+    const el = l?.querySelector<HTMLElement>(`[data-list-item="${curKey}"]`);
+    if (!l || !el) return;
+    const top = el.offsetTop - (l.clientHeight - el.offsetHeight) / 2;
+    l.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }, [view, curKey]);
   // keep the help pointers in step with the kind of thing on screen
   useEffect(() => {
     if (!onKind) return;
@@ -424,16 +510,16 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (busy) return;
-      if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); goCat(ci + 1); }
-      else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); goCat(ci - 1); }
+      if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); if (view === 5) openCat(ci + 1); else goCat(ci + 1); }
+      else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); if (view === 5) openCat(ci - 1); else goCat(ci - 1); }
       else if (e.key === "ArrowRight") { e.preventDefault(); goItem(ci, idx[ci] + 1); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); goItem(ci, idx[ci] - 1); }
       else if (e.key === "Escape") onBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [busy, ci, idx, goCat, goItem, onBack]);
-  // mouse drag: decide the axis after 6 px, follow the pointer, then snap one page
+  });
+  // mouse drag: decide the axis after 6 px, follow the pointer, then snap one step
   const drag = useRef<null | { x: number; y: number; axis: "x" | "y" | null; c: number; sx: number; sy: number; moved: boolean }>(null);
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || e.button !== 0) return;
@@ -462,8 +548,9 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const el = d.axis === "x" ? rows.current[d.c] : outer.current;
     if (el) { el.style.scrollSnapType = ""; el.style.scrollBehavior = ""; }
     if (d.axis === "x") {
-      const from = Math.round(d.sx / pageW());
-      goItem(d.c, from + (Math.abs(dx) > pageW() * 0.12 ? (dx < 0 ? 1 : -1) : 0));
+      const w = stepW(d.c);
+      const from = Math.round(d.sx / w);
+      goItem(d.c, from + (Math.abs(dx) > w * 0.12 ? (dx < 0 ? 1 : -1) : 0));
     } else {
       const from = Math.round(d.sy / pageH());
       goCat(from + (Math.abs(dy) > pageH() * 0.1 ? (dy < 0 ? 1 : -1) : 0));
@@ -481,9 +568,10 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const nfl = nextFameLevel(fame);
   const stuffFame = ownedFame(owned);
   const nItems = SHOWROOM_KEYS[cat.id].length;
+  const openSheet = (c: CatId, k: string) => setSheet({ cat: c, key: k, level: viewOf(c, k).level });
 
   return (
-    <div data-showroom-shop data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white" style={{ touchAction: "pan-x pan-y" }}>
+    <div data-showroom-shop data-items-view={view} data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white" style={{ touchAction: "pan-x pan-y" }}>
       <div data-star-game hidden />
       <style>{`
         [data-showroom-shop] .sr-noscroll{scrollbar-width:none}
@@ -491,49 +579,95 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         @keyframes srSpent{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(26px);opacity:0}}
         @keyframes srFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
         @keyframes srDrop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
-        @media (prefers-reduced-motion: reduce){[data-showroom-shop] *{animation:none!important;scroll-behavior:auto!important}}
+        @media (prefers-reduced-motion: reduce){[data-showroom-shop] *{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
       `}</style>
       {/* the store at night (Higgsfield shop art), darkened: the item is the light */}
       <div aria-hidden className="pointer-events-none absolute inset-[-24px]" style={{ background: `url(${art("wall")}) center 40% / cover`, filter: "blur(10px) brightness(.42) saturate(.8)" }} />
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(90% 60% at 50% 42%, rgba(5,8,15,.25), rgba(5,8,15,.8) 75%), linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.35) 40%, rgba(5,8,15,.95) 85%)" }} />
 
-      <div ref={outer} onScroll={onOuterScroll} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
-        className="sr-noscroll relative h-full w-full overflow-y-auto overflow-x-hidden" style={{ scrollSnapType: "y mandatory", overscrollBehavior: "contain" }} data-feed>
-        {SHOWROOM_CATS.map((c, cIdx) => {
-          const keys = SHOWROOM_KEYS[c.id];
-          const near = Math.abs(cIdx - ci) <= 1;
-          return (
-            <section key={c.id} data-feed-cat={c.id} className="relative h-full w-full" style={{ scrollSnapAlign: "start", scrollSnapStop: "always" }}>
-              <div ref={(el) => { rows.current[cIdx] = el; }} onScroll={() => onRowScroll(cIdx)} data-showroom-row={c.id}
-                className="sr-noscroll flex h-full w-full overflow-x-auto overflow-y-hidden" style={{ scrollSnapType: "x mandatory", overscrollBehaviorX: "contain" }}>
-                {keys.map((k, i) => {
-                  const show = near && Math.abs(i - idx[cIdx]) <= 1;
-                  return (
-                    <div key={k} data-show-item={k} className="relative h-full w-full shrink-0" style={{ scrollSnapAlign: "center", scrollSnapStop: "always" }}>
-                      {show ? <ItemPage v={viewOf(c.id, k)} accent={c.accent} catLabel={c.label} pos={`${i + 1}/${keys.length}`}
-                        next={SHOWROOM_CATS[cIdx + 1]?.label} guideCorner={guideCorner} onOpen={() => setSheet({ cat: c.id, key: k, level: viewOf(c.id, k).level })}
-                        onPickLevel={(lv) => setPick((p) => ({ ...p, [k]: lv }))} /> : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+      {view === 5 ? (
+        <div ref={list} data-shop-list={cat.id} className="sr-noscroll absolute inset-0 overflow-y-auto overflow-x-hidden"
+          style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: BOTTOM_PAD, overscrollBehavior: "contain" }}>
+          <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-2 px-3 md:grid-cols-5 md:gap-3 md:px-6 md:pt-4">
+            {(() => {
+              const keys = SHOWROOM_KEYS[cat.id];
+              const nu = cat.id === "cans" ? -1 : nextUp(cat.id, -1);
+              return keys.map((k, i) => {
+                const v = viewOf(cat.id, k);
+                const isNext = i === nu && !isOwned(cat.id, k);
+                return (
+                  <ListCard key={k} v={v} accent={cat.accent} on={i === idx[ci]} next={isNext} own={ownLabel(cat.id, k)}
+                    onTap={() => { setIdx((a) => a.map((x, c) => (c === ci ? i : x))); if (v.locked === null) openSheet(cat.id, k); }} />
+                );
+              });
+            })()}
+          </div>
+        </div>
+      ) : (
+        <div ref={outer} onScroll={onOuterScroll} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
+          className="sr-noscroll relative h-full w-full overflow-y-auto overflow-x-hidden" style={{ scrollSnapType: "y mandatory", overscrollBehavior: "contain" }} data-feed>
+          {SHOWROOM_CATS.map((c, cIdx) => {
+            const keys = SHOWROOM_KEYS[c.id];
+            const near = Math.abs(cIdx - ci) <= 1;
+            const cur = Math.max(0, Math.min(keys.length - 1, idx[cIdx]));
+            const curView = near && view === 3 ? viewOf(c.id, keys[cur]) : null;
+            return (
+              <section key={c.id} data-feed-cat={c.id} className="relative h-full w-full" style={{ scrollSnapAlign: "start", scrollSnapStop: "always" }}>
+                {view === 3 && (
+                  <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+                    background: `radial-gradient(40% 30% at 50% 42%, rgba(255,255,255,.14), transparent 70%), radial-gradient(70% 42% at 50% 44%, ${c.accent}2a, transparent 72%)`,
+                  }} />
+                )}
+                <div ref={(el) => { rows.current[cIdx] = el; }} onScroll={() => onRowScroll(cIdx)} data-showroom-row={c.id}
+                  className="sr-noscroll relative flex h-full w-full overflow-x-auto overflow-y-hidden" style={{ scrollSnapType: "x mandatory", overscrollBehaviorX: "contain" }}>
+                  {view === 3 && <div aria-hidden className="h-full shrink-0" style={{ width: SIDE_W }} />}
+                  {keys.map((k, i) => {
+                    const show = near && Math.abs(i - cur) <= (view === 3 ? 2 : 1);
+                    return (
+                      <div key={k} data-show-item={k} className="relative h-full shrink-0" style={{ width: view === 3 ? SLIDE_W : "100%", scrollSnapAlign: "center", scrollSnapStop: "always" }}>
+                        {show ? (view === 1
+                          ? <ItemPage v={viewOf(c.id, k)} accent={c.accent} catLabel={c.label} pos={`${i + 1}/${keys.length}`}
+                              next={SHOWROOM_CATS[cIdx + 1]?.label} onOpen={() => openSheet(c.id, k)}
+                              onPickLevel={(lv) => setPick((p) => ({ ...p, [k]: lv }))} />
+                          : <SideSlide v={viewOf(c.id, k)} accent={c.accent} d={i - cur}
+                              onTap={() => (i === cur ? openSheet(c.id, k) : goItem(cIdx, i))} />) : null}
+                      </div>
+                    );
+                  })}
+                  {view === 3 && <div aria-hidden className="h-full shrink-0" style={{ width: SIDE_W }} />}
+                </div>
+                {curView && (
+                  <>
+                    {curView.badges.length > 0 && <div className="pointer-events-none absolute left-3 top-[62px] z-10 flex max-w-[70%] flex-wrap gap-1">{curView.badges}</div>}
+                    <ItemInfo v={curView} accent={c.accent} catLabel={c.label} pos={`${cur + 1}/${keys.length}`} next={SHOWROOM_CATS[cIdx + 1]?.label}
+                      guideCorner={false} onOpen={() => openSheet(c.id, keys[cur])} onPickLevel={(lv) => setPick((p) => ({ ...p, [keys[cur]]: lv }))} />
+                  </>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       {/* PC arrows (pointer devices only) */}
-      <div className="pointer-events-none absolute inset-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block">
-        {idx[ci] > 0 && <button onClick={() => goItem(ci, idx[ci] - 1)} aria-label="Previous item" className="pointer-events-auto absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">‹</button>}
-        {idx[ci] < nItems - 1 && <button onClick={() => goItem(ci, idx[ci] + 1)} aria-label="Next item" className="pointer-events-auto absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">›</button>}
-      </div>
+      {view !== 5 && (
+        <div className="pointer-events-none absolute inset-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block">
+          {idx[ci] > 0 && <button onClick={() => goItem(ci, idx[ci] - 1)} aria-label="Previous item" className="pointer-events-auto absolute left-3 top-[42%] grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">‹</button>}
+          {idx[ci] < nItems - 1 && <button onClick={() => goItem(ci, idx[ci] + 1)} aria-label="Next item" className="pointer-events-auto absolute right-3 top-[42%] grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">›</button>}
+        </div>
+      )}
 
-      {/* Top: back · the category rail · balance + fame. Floats over the item. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pb-3" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      {/* Top: back · the category name · 1|3|5 · More · balance + fame. Floats over the item. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/75 via-black/35 to-transparent pb-2" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="pointer-events-auto mx-auto flex h-[46px] max-w-[820px] items-center gap-1.5 px-2.5">
           <button onClick={onBack} aria-label="Back" data-shop-back className="kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/55 text-[20px] font-black ring-1 ring-white/20 backdrop-blur">‹</button>
-          <Rail ci={ci} onJump={(i) => goCat(i)} links={links} />
-          <button onClick={() => setFameOpen((v) => !v)} data-balance-chip aria-label="Balance and fame"
+          <div className="min-w-0 flex-1 truncate pl-0.5 text-[15px] font-black uppercase tracking-wide" style={{ color: cat.accent }} data-shop-cat-title>{cat.label}</div>
+          <ViewSwitch view={view} onPick={setView} />
+          {links && links.length > 0 && (
+            <button onClick={() => { setMoreOpen((v) => !v); setFameOpen(false); }} aria-label="More: sponsors, casino, store, 3D shop" data-shop-more
+              className={`kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full text-[18px] font-black ring-1 backdrop-blur ${moreOpen ? "bg-white/20 ring-white/50" : "bg-black/55 ring-white/20"}`}>⋯</button>
+          )}
+          <button onClick={() => { setFameOpen((v) => !v); setMoreOpen(false); }} data-balance-chip aria-label="Balance and fame"
             className="kib-press relative flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-black/60 pl-2.5 pr-2 ring-1 ring-amber-300/45 backdrop-blur">
             <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</span>
             <span className="flex items-center gap-0.5 rounded-full bg-amber-300/15 px-1.5 py-0.5 text-[11px] font-black tabular-nums text-amber-100" data-fame-chip>👑{fame}</span>
@@ -541,13 +675,26 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           </button>
         </div>
         {/* the dots: where you are in this category; tap one to jump to it */}
-        <div className="pointer-events-auto mx-auto flex h-[18px] w-max items-center justify-center" data-item-dots>
-          {SHOWROOM_KEYS[cat.id].map((k, i) => (
-            <button key={k} onClick={() => goItem(ci, i)} aria-label={`Item ${i + 1}`} data-dot={i} className="flex h-[18px] items-center px-[4px]">
-              <span className="block h-[5px] rounded-full transition-all" style={{ width: i === idx[ci] ? 16 : 6, background: i === idx[ci] ? cat.accent : "rgba(255,255,255,.4)" }} />
-            </button>
-          ))}
-        </div>
+        {view !== 5 && (
+          <div className="pointer-events-auto mx-auto flex h-[18px] w-max items-center justify-center" data-item-dots>
+            {SHOWROOM_KEYS[cat.id].map((k, i) => (
+              <button key={k} onClick={() => goItem(ci, i)} aria-label={`Item ${i + 1}`} data-dot={i} className="flex h-[18px] items-center px-[4px]">
+                <span className="block h-[5px] rounded-full transition-all" style={{ width: i === idx[ci] ? 16 : 6, background: i === idx[ci] ? cat.accent : "rgba(255,255,255,.4)" }} />
+              </button>
+            ))}
+          </div>
+        )}
+        {moreOpen && links && (
+          <div className="pointer-events-auto mx-auto mt-1.5 grid max-w-[420px] grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ animation: "srDrop .18s ease-out", marginInline: 10 }} data-shop-more-menu>
+            {links.map((l) => (
+              <button key={l.id} onClick={() => { setMoreOpen(false); l.onClick(); }} data-shop-link={l.id} aria-label={l.label}
+                className={`kib-press flex flex-col items-center gap-1 rounded-[10px] bg-white/[0.06] py-2 ${l.locked ? "opacity-50" : ""}`}>
+                <span className="text-[22px] leading-none">{l.locked ? "🔒" : l.icon}</span>
+                <span className="whitespace-nowrap text-[10.5px] font-black uppercase tracking-wide text-white">{l.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {fameOpen && (
           <div className="pointer-events-auto mx-2.5 mt-1.5 rounded-[12px] bg-[#0b1222]/95 p-3 ring-1 ring-amber-300/40 backdrop-blur" style={{ animation: "srDrop .18s ease-out" }} data-fame-banner onClick={() => setFameOpen(false)}>
             <div className="flex items-center gap-3">
@@ -568,6 +715,8 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         )}
       </div>
 
+      <TabBar ci={ci} onPick={openCat} guideCorner={guideCorner} />
+
       {sheet && <DetailSheet sheet={sheet} onClose={() => setSheet(null)} onPick={(lv) => setSheet({ ...sheet, level: lv })} career={career} homeLevel={homeLevel}
         bootLevels={bootLevels} banned={banned} soldOut={soldOut} onOpen3D={onOpen3D}
         onBuy={(run) => { setSheet(null); run(); }} askBoot={askBoot} askItem={askItem} askCan={askCan} onUseCan={onUseCan} />}
@@ -577,43 +726,112 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   );
 }
 
-/** The thin category rail: icons, the one you are on with its name. */
-function Rail({ ci, onJump, links }: { ci: number; onJump: (i: number) => void; links?: ShopLink[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current?.querySelector<HTMLElement>(`[data-rail-cat="${SHOWROOM_CATS[ci].id}"]`);
-    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-  }, [ci]);
+/** The bottom bar's height (above the iPhone home bar). */
+const TAB_H = 66;
+const BOTTOM_PAD = `calc(${TAB_H + 12}px + env(safe-area-inset-bottom))`;
+/** 3 items: the centre slide's width, and the space either side of the first and last. */
+const SLIDE_W = "min(46%, 400px)";
+const SIDE_W = "calc((100% - min(46%, 400px)) / 2)";
+
+/** The categories, phone-app style: a big icon, its name, the one you are on lit up. */
+function TabBar({ ci, onPick, guideCorner }: { ci: number; onPick: (i: number) => void; guideCorner: boolean }) {
   return (
-    <div ref={ref} className="sr-noscroll flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-full bg-black/45 px-1 py-0.5 ring-1 ring-white/10 backdrop-blur" data-category-rail>
-      {SHOWROOM_CATS.map((c, i) => {
-        const on = i === ci;
-        return (
-          <button key={c.id} onClick={() => onJump(i)} data-rail-cat={c.id} aria-label={c.label}
-            className="kib-press flex h-8 shrink-0 items-center gap-1 rounded-full px-1.5 transition-all"
-            style={on ? { background: `${c.accent}2e`, boxShadow: `inset 0 0 0 1.5px ${c.accent}` } : undefined}>
-            <img src={art(c.icon)} alt="" className={`h-[22px] w-[22px] ${on ? "" : "opacity-60 saturate-50"}`} draggable={false} />
-            {on && <span className="pr-0.5 text-[11.5px] font-black uppercase tracking-wide text-white">{c.label}</span>}
-          </button>
-        );
-      })}
-      {links && links.length > 0 && <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-white/20" />}
-      {links?.map((l) => (
-        <button key={l.id} onClick={l.onClick} data-shop-link={l.id} aria-label={l.label}
-          className={`kib-press flex h-8 shrink-0 items-center gap-1 rounded-full px-2 ${l.locked ? "opacity-50" : ""}`}>
-          <span className="text-[17px] leading-none">{l.locked ? "🔒" : l.icon}</span>
-          <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-wide text-white/85">{l.label}</span>
-        </button>
+    <nav data-shop-tabs aria-label="Shop categories" className="absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#070b14]/95 backdrop-blur-md"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -10px 30px -12px rgba(0,0,0,.9)" }}>
+      <div className={`mx-auto flex max-w-[760px] ${guideCorner ? "pr-11" : ""}`} style={{ height: TAB_H }}>
+        {SHOWROOM_CATS.map((c, i) => {
+          const on = i === ci;
+          return (
+            <button key={c.id} onClick={() => onPick(i)} data-tab-cat={c.id} aria-label={c.label} aria-current={on ? "page" : undefined}
+              className="kib-press relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px]">
+              {on && <span aria-hidden className="absolute top-0 h-[3px] w-9 rounded-b-full" style={{ background: c.accent, boxShadow: `0 0 10px ${c.accent}` }} />}
+              <span className="grid h-[34px] w-[46px] place-items-center rounded-[12px] transition-all"
+                style={on ? { background: `${c.accent}33`, boxShadow: `inset 0 0 0 1.5px ${c.accent}` } : undefined}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={art(c.icon)} alt="" className={`h-[27px] w-[27px] ${on ? "" : "opacity-60 saturate-50"}`} draggable={false} />
+              </span>
+              <span className="max-w-full truncate text-[10.5px] font-extrabold leading-none tracking-tight" style={{ color: on ? c.accent : "rgba(255,255,255,.62)" }}>{c.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/** 1 | 3 | 5 items on screen. */
+function ViewSwitch({ view, onPick }: { view: ShopItemsView; onPick: (v: ShopItemsView) => void }) {
+  return (
+    <div className="flex h-9 shrink-0 items-center rounded-full bg-black/55 p-[3px] ring-1 ring-white/20 backdrop-blur" role="group" aria-label="Items on screen" data-view-switch>
+      {([1, 3, 5] as ShopItemsView[]).map((n) => (
+        <button key={n} onClick={() => onPick(n)} data-view={n} aria-label={`${n} item${n === 1 ? "" : "s"} on screen`} aria-pressed={view === n}
+          className={`kib-press grid h-[30px] w-[28px] place-items-center rounded-full text-[13px] font-black tabular-nums ${view === n ? "bg-white text-[#05080f]" : "text-white/75"}`}>{n}</button>
       ))}
     </div>
   );
 }
 
-/** One item, full screen. */
+/** 3 items: one slide. The centre is big; the ones beside it small and faded. Tap a side one to bring it in. */
+function SideSlide({ v, accent, d, onTap }: { v: View; accent: string; d: number; onTap: () => void }) {
+  const far = Math.abs(d);
+  // the centre item spills past its slide; the side ones lean in so they peek from the edges
+  const scale = far === 0 ? 1.32 : far === 1 ? 0.64 : 0.5;
+  const opacity = far === 0 ? 1 : far === 1 ? 0.4 : 0.14;
+  const lean = far === 0 ? 0 : -Math.sign(d) * (far === 1 ? 20 : 34);
+  return (
+    <button onClick={onTap} aria-label={far === 0 ? `${v.title}: details` : `Show ${v.title}`} data-item-page={v.key} data-side={d}
+      className={`absolute inset-x-0 top-[64px] flex flex-col items-center justify-center ${far === 0 && v.flash ? "kit-tile-flash" : ""}`}
+      style={{ bottom: `calc(${212 + TAB_H}px + env(safe-area-inset-bottom))` }} data-tour={far === 0 ? v.tour : undefined}>
+      <span className="relative flex h-full w-full items-center justify-center transition-[transform,opacity] duration-300 ease-out" style={{ transform: `translateX(${lean}%) scale(${scale})`, opacity }}>
+        <span aria-hidden className="absolute bottom-[16%] left-1/2 h-[30px] w-[80%] -translate-x-1/2 rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.75), transparent)" }} />
+        <span aria-hidden className="absolute bottom-[10%] left-1/2 h-[70px] w-[100%] -translate-x-1/2 rounded-[50%]" style={{ background: `radial-gradient(closest-side, ${accent}22, transparent)` }} />
+        <span className="relative flex h-full w-full items-center justify-center" style={far === 0 ? { animation: "srFloat 5s ease-in-out infinite" } : undefined}>{v.pic}</span>
+        {v.locked !== null && <span className="absolute inset-0 grid place-items-center text-[44px]">🔒</span>}
+      </span>
+      {far === 1 && (
+        <span className="pointer-events-none absolute top-[66%] inset-x-1 truncate text-center text-[11px] font-black uppercase tracking-wide text-white/55" style={{ transform: `translateX(${lean * 0.9}%)` }}>{v.title}</span>
+      )}
+    </button>
+  );
+}
+
+/** 5 items: one row (phone) or card (PC) — picture, name, price, owned / locked. Tap to open. */
+function ListCard({ v, accent, on, next, own, onTap }: { v: View; accent: string; on: boolean; next: boolean; own: string | null; onTap: () => void }) {
+  const locked = v.locked !== null;
+  const tier = v.levels > 1 ? tierColour(v.level) : accent;
+  return (
+    <button onClick={onTap} data-list-item={v.key} data-tour={v.tour} aria-label={`${v.title}: details`}
+      className={`kib-press relative flex h-[126px] items-stretch gap-3 overflow-hidden rounded-[16px] p-2 text-left md:h-auto md:flex-col md:gap-1.5 md:p-2.5 ${locked ? "opacity-60" : ""} ${v.flash ? "kit-tile-flash" : ""}`}
+      style={{ background: "linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03))", boxShadow: on ? `inset 0 0 0 2px ${accent}, 0 8px 24px -12px ${accent}` : "inset 0 0 0 1px rgba(255,255,255,.1)" }}>
+      <span className="relative flex w-[132px] shrink-0 items-center justify-center overflow-hidden rounded-[12px] md:aspect-[4/3] md:w-full"
+        style={{ background: `radial-gradient(70% 65% at 50% 45%, rgba(255,255,255,.14), transparent 70%), radial-gradient(90% 70% at 50% 55%, ${tier}2e, transparent 75%), #0a1120` }}>
+        <span className={`flex h-full w-full items-center justify-center p-1 ${locked ? "grayscale" : ""}`}>{v.pic}</span>
+        {locked && <span className="absolute inset-0 grid place-items-center text-[30px]">🔒</span>}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        <span className="flex items-center gap-1.5">
+          {next && <span className="shrink-0 rounded-full px-2 py-[3px] text-[9.5px] font-black uppercase tracking-wide text-[#05080f]" style={{ background: accent }} data-next-up>Next up</span>}
+          {own && <span className="shrink-0 rounded-full bg-emerald-800/90 px-2 py-[3px] text-[9.5px] font-black uppercase tracking-wide text-emerald-200 ring-1 ring-emerald-300/40" data-owned>{own}</span>}
+        </span>
+        <span className="truncate text-[17px] font-black leading-tight text-white md:text-[15px]">{v.title}</span>
+        <span className="truncate text-[11.5px] font-bold text-white/70">{v.sub}</span>
+        {locked ? (
+          <span className="text-[12px] font-black uppercase tracking-wide text-amber-300">Higher star rating</span>
+        ) : (
+          <span className="flex items-baseline gap-1.5">
+            <span className={`text-[11.5px] font-black uppercase ${v.button.disabled ? "text-white/55" : "text-white/85"}`}>{v.button.label}</span>
+            {v.button.price !== undefined && <span className={`text-[16px] font-black tabular-nums ${v.button.disabled ? "text-white/45" : "text-amber-300"}`}>★{formatMoney(v.button.price)}</span>}
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
+/** 1 item: one item, full screen. */
 function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCorner = false }: {
   v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
 }) {
-  const tier = v.levels > 1 ? tierColour(v.level) : accent;
   return (
     <div className="absolute inset-0" data-tour={v.tour} data-item-page={v.key}>
       {/* product-shot light: a soft cone from above, the category colour as the rim */}
@@ -621,7 +839,8 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
         background: `radial-gradient(52% 34% at 50% 44%, rgba(255,255,255,.16), transparent 70%), radial-gradient(80% 46% at 50% 46%, ${accent}2e, transparent 72%), linear-gradient(180deg, transparent 62%, ${accent}14 82%, transparent)`,
       }} />
       <button onClick={v.locked === null ? onOpen : undefined} aria-label={`${v.title}: details`} data-item-pic
-        className={`absolute inset-x-0 top-[60px] bottom-[212px] flex items-center justify-center overflow-visible ${v.flash ? "kit-tile-flash" : ""}`}>
+        className={`absolute inset-x-0 top-[60px] flex items-center justify-center overflow-visible ${v.flash ? "kit-tile-flash" : ""}`}
+        style={{ bottom: `calc(${212 + TAB_H}px + env(safe-area-inset-bottom))` }}>
         {/* the contact shadow (drawn here, not baked into the picture) */}
         <span aria-hidden className="absolute bottom-[20%] left-1/2 h-[40px] w-[74%] max-w-[620px] -translate-x-1/2 rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.75), transparent)" }} />
         <span aria-hidden className="absolute bottom-[14%] left-1/2 h-[90px] w-[96%] max-w-[900px] -translate-x-1/2 rounded-[50%]" style={{ background: `radial-gradient(closest-side, ${accent}22, transparent)` }} />
@@ -635,44 +854,52 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
         )}
       </button>
       {v.badges.length > 0 && <div className="pointer-events-none absolute left-3 top-[62px] flex max-w-[70%] flex-wrap gap-1">{v.badges}</div>}
+      <ItemInfo v={v} accent={accent} catLabel={catLabel} pos={pos} next={next} onOpen={onOpen} onPickLevel={onPickLevel} guideCorner={guideCorner} />
+    </div>
+  );
+}
 
-      {/* Bottom: the name, the level pips, what it gives, and Buy. */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent px-4 pt-10" style={{ paddingBottom: "calc(14px + env(safe-area-inset-bottom))" }}>
-        <div className="mx-auto max-w-md">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.16em]">
-            <span style={{ color: accent }}>{catLabel} · {pos}</span>
-            {next && <span className="text-white/55">⌃ {next}</span>}
-          </div>
-          <button onClick={onOpen} className="block w-full text-left">
-            <div className="truncate text-[28px] font-black leading-[1.08]" data-item-title>{v.title}</div>
-          </button>
-          <div className="mt-0.5 flex items-center gap-2">
-            <Pips level={v.level} of={v.levels} onPick={v.locked === null ? onPickLevel : undefined} accent={tier} />
-            <span className="min-w-0 truncate text-[12px] font-bold text-white/80">{v.sub}</span>
-          </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] font-black">
-            {v.stats.map((s) => <span key={s.text} style={{ color: s.color }}>{s.text}</span>)}
-          </div>
-          {v.locked === null ? (
-            <div className={`mt-2.5 flex gap-2 ${guideCorner ? "pr-11" : ""}`}>
-              <button onClick={v.button.run} disabled={v.button.disabled} data-showroom-buy
-                className="kib-press flex h-[54px] min-w-0 flex-1 items-center justify-between rounded-[12px] px-4 disabled:cursor-not-allowed"
-                style={v.button.disabled ? { background: "rgba(255,255,255,.09)", color: "rgba(255,255,255,.6)" }
-                  : v.button.danger ? { background: "linear-gradient(180deg,#f87171,#b91c1c)", color: "#fff", boxShadow: "0 8px 22px -8px rgba(220,38,38,.9)" }
-                  : v.button.blue ? { background: "linear-gradient(180deg,#7dd3fc,#0284c7)", color: "#04121f", boxShadow: "0 8px 22px -8px rgba(14,165,233,.9)" }
-                  : { background: "linear-gradient(180deg,#fde68a,#f59e0b 55%,#d97706)", color: "#1c1203", boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 8px 22px -8px rgba(245,158,11,.95)" }}>
-                <span className="truncate text-[16px] font-black uppercase">{v.button.label}</span>
-                {v.button.price !== undefined && <span className="shrink-0 text-[19px] font-black tabular-nums">★{formatMoney(v.button.price)}</span>}
-              </button>
-              {v.extra && (
-                <button onClick={v.extra.run} disabled={v.extra.disabled} data-can-use={v.key}
-                  className="kib-press h-[54px] shrink-0 rounded-[12px] px-3.5 text-[13px] font-black uppercase text-white ring-1 ring-white/25 disabled:opacity-35">{v.extra.label}</button>
-              )}
-            </div>
-          ) : (
-            <div className={`mt-2.5 grid h-[54px] place-items-center rounded-[12px] bg-white/[0.06] text-[13px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/10 ${guideCorner ? "mr-11" : ""}`}>Opens at a higher star rating</div>
-          )}
+/** Under the item: the name, the level pips, what it gives, and Buy (sits above the tab bar). */
+function ItemInfo({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCorner = false }: {
+  v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
+}) {
+  const tier = v.levels > 1 ? tierColour(v.level) : accent;
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent px-4 pt-10" style={{ paddingBottom: `calc(${TAB_H + 12}px + env(safe-area-inset-bottom))` }} data-item-info={v.key}>
+      <div className="mx-auto max-w-md">
+        <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.16em]">
+          <span style={{ color: accent }}>{catLabel} · {pos}</span>
+          {next && <span className="text-white/55">⌃ {next}</span>}
         </div>
+        <button onClick={onOpen} className="block w-full text-left">
+          <div className="truncate text-[28px] font-black leading-[1.08]" data-item-title>{v.title}</div>
+        </button>
+        <div className="mt-0.5 flex items-center gap-2">
+          <Pips level={v.level} of={v.levels} onPick={v.locked === null ? onPickLevel : undefined} accent={tier} />
+          <span className="min-w-0 truncate text-[12px] font-bold text-white/80">{v.sub}</span>
+        </div>
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] font-black">
+          {v.stats.map((s) => <span key={s.text} style={{ color: s.color }}>{s.text}</span>)}
+        </div>
+        {v.locked === null ? (
+          <div className={`mt-2.5 flex gap-2 ${guideCorner ? "pr-11" : ""}`}>
+            <button onClick={v.button.run} disabled={v.button.disabled} data-showroom-buy
+              className="kib-press flex h-[54px] min-w-0 flex-1 items-center justify-between rounded-[12px] px-4 disabled:cursor-not-allowed"
+              style={v.button.disabled ? { background: "rgba(255,255,255,.09)", color: "rgba(255,255,255,.6)" }
+                : v.button.danger ? { background: "linear-gradient(180deg,#f87171,#b91c1c)", color: "#fff", boxShadow: "0 8px 22px -8px rgba(220,38,38,.9)" }
+                : v.button.blue ? { background: "linear-gradient(180deg,#7dd3fc,#0284c7)", color: "#04121f", boxShadow: "0 8px 22px -8px rgba(14,165,233,.9)" }
+                : { background: "linear-gradient(180deg,#fde68a,#f59e0b 55%,#d97706)", color: "#1c1203", boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 8px 22px -8px rgba(245,158,11,.95)" }}>
+              <span className="truncate text-[16px] font-black uppercase">{v.button.label}</span>
+              {v.button.price !== undefined && <span className="shrink-0 text-[19px] font-black tabular-nums">★{formatMoney(v.button.price)}</span>}
+            </button>
+            {v.extra && (
+              <button onClick={v.extra.run} disabled={v.extra.disabled} data-can-use={v.key}
+                className="kib-press h-[54px] shrink-0 rounded-[12px] px-3.5 text-[13px] font-black uppercase text-white ring-1 ring-white/25 disabled:opacity-35">{v.extra.label}</button>
+            )}
+          </div>
+        ) : (
+          <div className={`mt-2.5 grid h-[54px] place-items-center rounded-[12px] bg-white/[0.06] text-[13px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/10 ${guideCorner ? "mr-11" : ""}`}>Opens at a higher star rating</div>
+        )}
       </div>
     </div>
   );
