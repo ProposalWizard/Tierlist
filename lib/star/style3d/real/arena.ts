@@ -31,6 +31,14 @@ import { tierLookNew } from "../../three3d/tierLook";
  * only a few more texture-cache misses on those two materials. Seen on the
  * round-2 stills (Medium round 1 vs round 2). Not tried: −1 (likely shimmer as the crowd bobs).
  */
+/** Round 3: the goal net fades to a flat haze where its cells get too small to draw (Medium, New look). */
+export const netFade = (tier: Quality3d) => tier === "medium" && tierLookNew();
+/** Cells per pixel where the fade starts / is complete (a cell ~7 px → ~2 px wide). */
+export const NET_FADE: [number, number] = [0.15, 0.45];
+/** The net's see-through-ness once faded: about what its lines cover, seen from afar on High. */
+export const NET_FAR_ALPHA = 0.05;
+/** At most this much faded: a trace of the mesh stays, the bands drop to under a third. */
+export const NET_FADE_MAX = 0.7;
 export const crowdMipBias = (tier: Quality3d) => (tier === "medium" && tierLookNew() ? -0.5 : 0);
 
 const GOAL_W = 7.32, GOAL_H = 2.44, NET_D = 2.0;
@@ -472,6 +480,19 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   const netTex = canvasTex(netCanvas());
   const netMat = keep(new T.MeshStandardMaterial({ map: netTex, color: "#ffffff", roughness: 0.8, alphaTest: 0.02, side: T.DoubleSide, transparent: true, depthWrite: false }));
   netMat.alphaMap = netTex;
+  // 3D quality look New, round 3 (Harry: the Medium net "shimmers"): a mesh cell under ~8 px aliases into
+  // bands at Medium's 1.5 pixel ratio + FXAA + sharpen. Far off, the net fades to its own average (a flat,
+  // see-through white) by how many cells a pixel spans: no extra texture read, two derivatives.
+  if (netFade(tier)) {
+    netTex.anisotropy = 1;
+    netMat.onBeforeCompile = (sh: any) => {
+      sh.fragmentShader = sh.fragmentShader.replace("#include <alphamap_fragment>", `#include <alphamap_fragment>
+{ float cellsPerPx = max(length(fwidth(vMapUv)), 1e-4);
+  float far = ${NET_FADE_MAX.toFixed(2)} * smoothstep(${NET_FADE[0].toFixed(3)}, ${NET_FADE[1].toFixed(3)}, cellsPerPx);
+  diffuseColor = mix(diffuseColor, vec4(vec3(1.0), ${NET_FAR_ALPHA.toFixed(3)}), far); }`);
+    };
+    netMat.customProgramCacheKey = () => "h-net-fade";
+  }
   type Net = { geo: any; base: Float32Array; hit: { x: number; y: number; amp: number; v: number } ; end: number };
   const nets: Net[] = [];
   for (const end of [0, 1]) {
