@@ -62,7 +62,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
 import { dressCasinoH, type CasinoH } from "./hRoom";
@@ -157,20 +157,20 @@ const JOG = 3.3;
 export const PULL_AT = 0.75;
 
 export async function startCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions): Promise<CasinoController> {
-  const own: { renderer?: any } = {};
+  const own: { release?: (root?: any) => void; root?: any } = {};
   try {
     const t0 = performance.now();
     const c = await buildCasino(container, cb, opts, own);
     noteSceneFiles("casino", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
     return c;
   } catch (e) {
-    const r = own.renderer;
-    if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ } }
+    // the shared renderer stays alive (three3d/perf.ts acquireRenderer); only this half-built scene goes
+    if (own.release) { try { own.release(own.root); } catch { /* already gone */ } }
     throw e;
   }
 }
 
-async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions, own: { renderer?: any }): Promise<CasinoController> {
+async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions, own: { release?: (root?: any) => void; root?: any }): Promise<CasinoController> {
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
@@ -182,8 +182,9 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // Settings → Look → "Casino look": New (./hRoom.ts) or Old (exactly as before)
   const H = casinoRoomLook() === "new";
   // ── Renderer (the shop's settings; Old: no shadow maps here) ──
-  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
-  own.renderer = renderer;
+  // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
+  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
   // New, standing still: the screen's real pixels, capped per tier (the shop's look H numbers); moving: the tier's cap
@@ -213,16 +214,12 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   renderer.toneMappingExposure = 1.15;
   renderer.shadowMap.enabled = H && prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.domElement.style.display = "block";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.touchAction = "none";
-  container.appendChild(renderer.domElement);
   let disposed = false;
   const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
   renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
+  own.root = scene;
   const BG = "#14070b";
   scene.background = new THREE.Color(BG);
   scene.fog = new THREE.Fog(BG, 16, 34);
@@ -1099,17 +1096,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       window.removeEventListener("keyup", ku);
       renderer.domElement.removeEventListener("webglcontextlost", onLost);
       marker.dispose();
-      scene.traverse((o: any) => {
-        o.geometry?.dispose?.();
-        const m = o.material;
-        (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
-      });
       envTex.dispose();
       pmrem.dispose();
-      renderer.dispose();
-      // give the phone its 3D back now (the garden and the casino swap often)
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
+      // the shared renderer stays (one context for every place); the scene is
+      // freed after the next place built the shaders both share (perf.ts release)
+      release(scene);
     },
   };
   return ctrl;

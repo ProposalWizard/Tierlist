@@ -56,7 +56,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -202,7 +202,7 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
   night: { top: "#04070f", mid: "#0c1730", low: "#1b2747", fog: "#111a30", sun: "#9db8ff", sunI: 0.45, hemi: ["#5a6f9c", "#1a2216", 0.42], exp: 1.15, dir: [0.45, 0.9, -0.5], env: 0.1, hill: "#1d2c22" },
 };
 
-async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { renderer?: any }): Promise<GardenController> {
+async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { release?: (root?: any) => void; root?: any }): Promise<GardenController> {
   // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
   // renderer (antialias is fixed when the context is made). High is the New
   // look exactly as it was on 5 Oct 2026. ──
@@ -228,8 +228,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
-  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
-  own.renderer = renderer;
+  // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
+  // keeps the same WebGL context and its compiled shaders (Mikey's video, 12 Oct:
+  // 1.5-1.7 s freezes coming back into the garden were a new context + every shader again)
+  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  own.release = release;
   rememberGpu(renderer);
   // ── LAG (Harry, 5 Oct 2026: "find ways to minimise lag") ──
   // Pixels: the tier's still cap standing still (High 1.5x a CSS pixel), its
@@ -268,16 +271,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // The sun's shadow is drawn again only when something that casts one has
   // moved (you, or a car arriving): standing still costs no shadow pass.
   renderer.shadowMap.autoUpdate = false;
-  renderer.domElement.style.display = "block";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.touchAction = "none";
-  container.appendChild(renderer.domElement);
   // iPhone Safari takes the 3D away when memory runs short: say so, cleanly.
   const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
   renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
+  own.root = scene;
   scene.fog = new THREE.Fog(look.fog, 30, 110);
   scene.background = new THREE.Color(look.fog);
   // The shop's soft room reflection, so the people and the glass are lit as
@@ -2936,18 +2935,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       impostor?.dispose();
       for (const ci of carImpostors) ci.dispose();
       marker.dispose();
-      scene.traverse((o: any) => {
-        o.geometry?.dispose?.();
-        const m = o.material;
-        (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
-      });
       envTex.dispose();
       draco.dispose();
-      renderer.dispose();
-      // give the phone its 3D back now, not whenever the page is collected
-      // (iPhone Safari allows only a few at once: the shop and garden swap often)
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
+      // the shared renderer stays (one context for every place, so no pile-up
+      // of contexts on an iPhone either); the scene is freed after the next
+      // place built the shaders both share (perf.ts release)
+      release(scene);
     },
   };
   return ctrl;
@@ -2959,17 +2952,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
  * doesn't leave a dead WebGL context behind on an iPhone).
  */
 export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
-  const own: { renderer?: any } = {};
+  const own: { release?: (root?: any) => void; root?: any } = {};
   try {
     const t0 = performance.now();
     const c = await buildGarden(container, cb, data, opts, own);
     noteSceneFiles("garden", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
     return c;
   } catch (e) {
-    const r = own.renderer;
-    if (r) {
-      try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ }
-    }
+    // the shared renderer stays alive (three3d/perf.ts acquireRenderer); only this half-built scene goes
+    if (own.release) { try { own.release(own.root); } catch { /* already gone */ } }
     throw e;
   }
 }

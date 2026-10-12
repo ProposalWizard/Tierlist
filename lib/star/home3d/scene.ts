@@ -39,7 +39,7 @@ import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor } from "../three3d/governor";
-import { DynamicResolution, rememberGpu, noteSceneFiles } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -185,20 +185,20 @@ export interface HomeController {
 
 /** Opens the home; on any failure the half-built renderer is let go before the error goes up. */
 export async function startHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions = {}): Promise<HomeController> {
-  const own: { renderer?: any } = {};
+  const own: { release?: (root?: any) => void; root?: any } = {};
   try {
     const t0 = performance.now();
     const c = await buildHome(container, cb, data, opts, own);
     noteSceneFiles("home", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
     return c;
   } catch (e) {
-    const r = own.renderer;
-    if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* gone */ } }
+    // the shared renderer stays alive (three3d/perf.ts acquireRenderer); only this half-built scene goes
+    if (own.release) { try { own.release(own.root); } catch { /* gone */ } }
     throw e;
   }
 }
 
-async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions, own: { renderer?: any }): Promise<HomeController> {
+async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions, own: { release?: (root?: any) => void; root?: any }): Promise<HomeController> {
   let tier: Quality3d = opts.quality ?? quality3dTier();
   let prof = TIER_PROFILES[tier];
   const rooms: RoomId[] = data.rooms?.length ? data.rooms : ["main"];
@@ -215,8 +215,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const lookH = opts.lookH ?? (await import("../look3dStyle")).look3dStyle() === "h";
 
   // ── Renderer (as the shop: one tier chosen first, the governor, still/moving pixels) ──
-  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
-  own.renderer = renderer;
+  // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
+  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
   let capAlways = false;
@@ -244,16 +245,12 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   renderer.shadowMap.enabled = prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate = false; // drawn again only when something under the sun moves
-  renderer.domElement.style.display = "block";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.touchAction = "none";
-  container.appendChild(renderer.domElement);
   let disposed = false;
   const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
   renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
+  own.root = scene;
   scene.background = new THREE.Color("#1a1612");
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -756,16 +753,13 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       room.dispose();
       fade.remove();
       glbCache.forEach((pr) => pr.then((g: any) => disposeGroup(g.scene)).catch(() => { /* never loaded */ }));
-      scene.traverse((o: any) => {
-        if (!o.isSkinnedMesh) o.geometry?.dispose?.();
-        const m = o.material;
-        (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
-      });
+      // skinned bodies' geometry stays (as before: shared with the people cache)
+      const keep = new Set<unknown>();
+      scene.traverse((o: any) => { if (o.isSkinnedMesh && o.geometry) keep.add(o.geometry); });
       envTex.dispose();
       pmrem.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
+      // the shared renderer stays; the scene is freed after the next place built its shaders (perf.ts release)
+      release(scene, keep);
     },
   };
   return ctrl;

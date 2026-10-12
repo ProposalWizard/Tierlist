@@ -248,7 +248,7 @@ export class DynamicResolution {
 
 // ───────────────────────── one shared renderer ─────────────────────────
 
-interface Shared { renderer: THREE.WebGLRenderer; antialias: boolean; owner: number; pending: THREE.Object3D[]; flushTimer: ReturnType<typeof setTimeout> | null }
+interface Shared { renderer: THREE.WebGLRenderer; antialias: boolean; owner: number; pending: { root: THREE.Object3D; keep?: Set<unknown> }[]; flushTimer: ReturnType<typeof setTimeout> | null }
 let shared: Shared | null = null;
 let ownerSeq = 0;
 
@@ -264,7 +264,7 @@ let ownerSeq = 0;
  * scene's warmUp, or after 3 s. So the shaders both scenes use are still
  * compiled when the next scene asks for them.
  */
-export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null) => void } {
+export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null, keep?: Set<unknown>) => void; isOwner: () => boolean } {
   installFrameMeter();
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
@@ -294,17 +294,19 @@ export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<Tie
   c.style.width = "100%";
   c.style.height = "100%";
   c.style.touchAction = "none";
+  c.style.pointerEvents = ""; // the real game's view sets "none" on it
   container.appendChild(c);
   return {
     renderer: r,
-    release: (root) => {
-      if (!shared || shared.renderer !== r) { if (root) disposeObject3D(root); return; }
+    isOwner: () => !!shared && shared.renderer === r && shared.owner === me,
+    release: (root, keep) => {
+      if (!shared || shared.renderer !== r) { if (root) disposeObject3D(root, keep); return; }
       if (shared.owner === me) {
         r.setAnimationLoop(null);
         c.remove();
       }
       if (root) {
-        shared.pending.push(root);
+        shared.pending.push({ root, keep });
         if (shared.flushTimer) clearTimeout(shared.flushTimer);
         shared.flushTimer = setTimeout(flushReleased, 3000);
       }
@@ -317,7 +319,7 @@ export function flushReleased() {
   if (!shared) return;
   if (shared.flushTimer) { clearTimeout(shared.flushTimer); shared.flushTimer = null; }
   const roots = shared.pending.splice(0);
-  for (const root of roots) disposeObject3D(root);
+  for (const p of roots) disposeObject3D(p.root, p.keep);
   shared.renderer.renderLists.dispose();
 }
 
