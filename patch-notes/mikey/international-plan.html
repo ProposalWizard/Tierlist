@@ -108,6 +108,67 @@
   a{color:var(--blue)}
 </style><div class="wrap">
 <header>
+  <span class="ver" style="background:var(--green)">LIVE · ROUNDS 3 + 4 · 12 OCT</span>
+  <h1 class="disp">International football</h1>
+  <p class="sub">Star Career · Mikey · on the live game now. Rounds 3 and 4: every international goal has a scorer, the Ballon d'Or counts club and country for everyone (Star Man out), national-duty mode, watching your nation when not picked, FIFA's real knockout tables. Round 2 and the original plan are kept below.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>2,131</b><span>international goals named in one season (855 matches), 0 by keepers</span></div>
+  <div class="s"><b>0</b><span>Ballon d'Or points for Star Man (was 3 each, and only you could get it)</span></div>
+  <div class="s"><b>21</b><span>tournaments checked against FIFA/UEFA's real knockout tables</span></div>
+  <div class="s"><b>6</b><span>Scotland games watched on TV in a Premier League test season</span></div>
+</div>
+
+<h2 class="k-amb"><i></i>Check these</h2>
+<ul class="n">
+<li><div class="hd">Ballon d'Or night: your card says "Includes X goals and Y assists for your country"</div></li>
+<li><div class="hd">Stats → Country → Scorers tab, and scorers under Matches</div></li>
+<li><div class="hd">Premier League or Championship, not picked: a "📺 Watch on TV" day in each break</div></li>
+<li><div class="hd">Called up: the League tab and Home switch to your country until the break ends</div></li>
+<li><div class="hd">A World Cup or Euro: the third-placed teams' opponents follow FIFA/UEFA's table</div></li>
+</ul>
+
+<h2 class="k-grn"><i></i>Added</h2>
+<ul class="n">
+<li><div class="hd">Every international goal has a scorer and (3 in 4) an assister</div><div class="dt">Every match in the world, not just your nation's. Picked from each nation's squad the way the league picks scorers for games nobody played: forwards most, the starting eleven far more than the bench, keepers never. The same save always names the same scorers. <span class="pill" style="color:var(--green)">measured</span></div>
+<p class="cap">One season: 855 matches, 2,131 goals, all named, 73–78% assisted, worked out in 50–75 ms. Nothing extra goes in the save. Nations are built from the players the game already loads; gaps are made-up names, and those never reach the Ballon d'Or.</p></li>
+<li><div class="hd">National-duty mode (Plan A)</div><div class="dt">While you're away, the League tab is your country's: Table, Results (← → by matchday, with scorers), Fixtures, Squad. A banner says "On international duty"; your club's tables are one tap away. Home shows your nation's dropdown and colours. <span class="pill" style="color:var(--green)">seen on the test page</span></div></li>
+<li><div class="hd">Following your nation when not picked (Plan B)</div><div class="dt">Premier League and Championship: each of your nation's break games is a "📺 Watch on TV" day. You can train or rest between them, and the screen shows the score, the scorers, the group and that day's other results. League One and below: as before, no break days. <span class="pill" style="color:var(--green)">measured + seen</span></div></li>
+<li><div class="hd">FIFA and UEFA's real knockout tables</div><div class="dt">Who the best third-placed teams play now comes from the rules' own tables: World Cup 48 (495 rows, FIFA Annex C), Euro (15 rows). The Asian Cup's table is used for AFCON too, because CAF's isn't online; it matched the 2023 draw. <span class="pill" style="color:var(--green)">measured</span></div></li>
+</ul>
+<div class="tbl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+  <figure style="margin:0"><img src="intl-img/watched.jpg" alt="Watched on TV: Croatia 0-2 England with scorers Marshall 75' and Cooper 78', the group table, and the matchday's other results with scorers under each" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Watched on TV, with scorers</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/duty.jpg" alt="On international duty: Scotland banner, Results tab with the matchday board" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">On duty: League tab (before scorers were added)</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/scorers.jpg" alt="Country page, Scorers tab, empty at the start of a career" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Country → Scorers (empty at the start)</figcaption></figure>
+</div>
+<p class="cap">Test page stills, no player database here, so every name is made up.</p>
+
+<h2 class="k-vio"><i></i>Changed</h2>
+<ul class="n">
+<li><div class="hd">Ballon d'Or: club + country, for everyone</div><div class="dt">Goals ×4 and assists ×2 now count club and international together, for you and every rival. A World Cup or Euro gives 50 trophy points to all 26 in the winning squad (was you only). <span class="pill" style="color:var(--green)">measured</span></div>
+<p class="cap">Which goals count for which night: everything played since the last Ballon d'Or night. The night comes when your last fixture is played (late May). So a summer tournament you're at counts that night; one you watch from home counts at the next one. Nothing counts twice (tested).</p></li>
+<li><div class="hd">Star Man no longer scores in the Ballon d'Or</div><div class="dt">Was ×3 per award, about +25 to +35 a season for a regular, and rivals could never get it. A top striker's international goals add about the same back (+28 for 7 goals). <span class="pill">reasoned</span></div></li>
+<li><div class="hd">Friendlies rotate the squad; 2028 Nations League in the real format; Copa América's CONCACAF six</div><div class="dt">As planned in Round 2 (below). <span class="pill" style="color:var(--green)">measured</span></div></li>
+</ul>
+
+<h2 class="k-grn"><i></i>Fixed</h2>
+<ul class="n">
+<li><div class="hd">International dates were a day late</div><div class="dt">A rounding error moved each match to the next day. Fixed. <span class="pill" style="color:var(--green)">measured</span></div></li>
+<li><div class="hd">Each international paid a full week's wage</div><div class="dt">Now only Sunday break games pay, and only in a league that stops for breaks; tournament games pay nothing. <span class="pill" style="color:var(--green)">measured</span></div></li>
+</ul>
+
+<h2 class="k-amb"><i></i>Known issues</h2>
+<ul class="n">
+<li><div class="hd">Not seen in a real career <span class="pill" style="color:var(--red)">HIGH</span></div><div class="dt">A Ballon d'Or night with international goals, Home on duty, and real player names have only been checked on the test page and in tests. The sandbox has no player database.</div></li>
+<li><div class="hd">Long scorer lists wrap <span class="pill">LOW</span></div><div class="dt">A 3-0 with three scorers can wrap to two lines on a phone.</div></li>
+</ul>
+
+<h2 class="k-mut"><i></i>Tests</h2>
+<p class="dt">337 of 339 pass. The 2 failures are old 3D tests (assets3d, wembley3d), unrelated. New: <code>tests/star/intlScorers.mts</code>.</p>
+
+<hr style="border:0;border-top:1px solid var(--line);margin:34px 0">
+<header>
   <span class="ver" style="background:var(--green)">ROUND 2 · 12 OCT</span>
   <h1 class="disp">International football</h1>
   <p class="sub">Star Career · Mikey · your review answered. Built this round: friendly rotation, the real 2028 Nations League, Copa América places, restyled screens. The first build (PR #717) and the original plan are kept at the bottom.</p>
