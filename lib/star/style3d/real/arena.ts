@@ -33,10 +33,12 @@ import { tierLookNew } from "../../three3d/tierLook";
  */
 /** Round 3: the goal net fades to a flat haze where its cells get too small to draw (Medium, New look). */
 export const netFade = (tier: Quality3d) => tier === "medium" && tierLookNew();
-/** Cells per pixel where the fade starts / is complete (a cell 8 px → 3 px wide). */
-export const NET_FADE: [number, number] = [0.125, 0.33];
+/** Cells per pixel where the fade starts / is complete (a cell ~7 px → ~2 px wide). */
+export const NET_FADE: [number, number] = [0.15, 0.45];
 /** The net's see-through-ness once faded: about what its lines cover, seen from afar on High. */
-export const NET_FAR_ALPHA = 0.14;
+export const NET_FAR_ALPHA = 0.05;
+/** At most this much faded: a trace of the mesh stays, the bands drop to under a third. */
+export const NET_FADE_MAX = 0.7;
 export const crowdMipBias = (tier: Quality3d) => (tier === "medium" && tierLookNew() ? -0.5 : 0);
 
 const GOAL_W = 7.32, GOAL_H = 2.44, NET_D = 2.0;
@@ -486,7 +488,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
     netMat.onBeforeCompile = (sh: any) => {
       sh.fragmentShader = sh.fragmentShader.replace("#include <alphamap_fragment>", `#include <alphamap_fragment>
 { float cellsPerPx = max(length(fwidth(vMapUv)), 1e-4);
-  float far = smoothstep(${NET_FADE[0].toFixed(3)}, ${NET_FADE[1].toFixed(3)}, cellsPerPx);
+  float far = ${NET_FADE_MAX.toFixed(2)} * smoothstep(${NET_FADE[0].toFixed(3)}, ${NET_FADE[1].toFixed(3)}, cellsPerPx);
   diffuseColor = mix(diffuseColor, vec4(vec3(1.0), ${NET_FAR_ALPHA.toFixed(3)}), far); }`);
     };
     netMat.customProgramCacheKey = () => "h-net-fade";
