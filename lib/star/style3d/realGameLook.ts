@@ -18,7 +18,7 @@
  *
  *   New, round 4 (Harry, 12 Oct 2026: "the framing is not exactly the same on
  *   3d and 2d"): the 3D shows the 2D's own view box (lib/star/style3d/match2dCam.ts).
- *   The broadcast camera stays reachable on test pages with ?cam2d=0.
+ *   12 Oct 2026, later: the only camera; the Old and broadcast cameras were deleted.
  *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch
  *   still look slightly flat"). New: a soft key and rim light on the players
@@ -27,7 +27,8 @@
  *
  * The camera: New by default (12 Oct 2026). The player light: being tested,
  * Preview only (lib/star/gameVersions.ts), so it defaults Old.
- * The Style Testing page can force either for that page: ?cam=new|old&plight=new|old.
+ * The Style Testing page can force the light for that page: ?plight=new|old.
+ * (The 3D camera row was removed on 12 Oct 2026: one camera, no setting.)
  */
 import { useSyncExternalStore } from "react";
 
@@ -60,14 +61,10 @@ function store(key: string, FALLBACK: RealGameLook) {
   return { get, set, preview, use };
 }
 
-// The camera is New by default since 12 Oct 2026 (Harry chose 6% / 48 degrees from the Match Lab stills); the player light stays Old.
-const cam = store("star-look-3d-camera", "new");
+// The 3D camera has no New | Old any more (Harry, 12 Oct 2026: decided things are not settings):
+// one camera, the 2D's own frame (match2dCam.ts). The player light stays a choice, Old by default.
 const light = store("star-look-3d-player-light", "old");
 
-export const realCameraLook = cam.get;
-export const setRealCameraLook = cam.set;
-export const previewRealCameraLook = cam.preview;
-export const useRealCameraLook = cam.use;
 
 export const playerLightLook = light.get;
 export const setPlayerLightLook = light.set;

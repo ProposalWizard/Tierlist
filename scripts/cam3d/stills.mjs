@@ -1,4 +1,4 @@
-// 3D stills of real chances, old camera (the broadcast camera, ?cam2d=0) vs new
+// 3D stills of real chances (one 3D camera since 12 Oct 2026; "old" = ?cam2d=0 did nothing after that)
 // (the 2D's own frame), realistic players or Style A. Reads chances.json from
 // scripts/cam3d/frames.mts. Needs the perf3d harness built and served
 // (node scripts/perf3d/build.mjs; node scripts/perf3d/serve.mjs &).

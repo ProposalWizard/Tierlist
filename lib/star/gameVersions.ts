@@ -48,7 +48,7 @@ import { matchPlayersStyleLook, setMatchPlayersStyleLook, matchPlayersStyleStore
 import { tierLook, setTierLook } from "./three3d/tierLook";
 import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook, cutsceneCameraStored } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
-import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
+import { playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
 import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
 import { dribbleStyle, setDribbleStyle } from "./dribbleStyleLook";
@@ -121,7 +121,6 @@ export const LOOK_ROWS = {
   // Harry, 9 Oct 2026: camera pass + music on every cut scene (New by default).
   cutsceneCamera: row("Cut-scene camera", "new", "old", cutsceneCameraLook, setCutsceneCameraLook),
   motion: row("Motion", "mocap", "old", motionLook, setMotionLook),
-  camera3d: row("3D camera", "new", "old", realCameraLook, setRealCameraLook),
   playerLight3d: row("3D player light", "new", "old", playerLightLook, setPlayerLightLook),
   bossRoom: row("Talk to your manager", "3d", "old", bossRoomLook, setBossRoomLook),
   casino: row("Casino", "3d", "classic", casino3dLook, setCasino3dLook),
@@ -151,7 +150,7 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
  *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
 // Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -200,7 +199,6 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     cutscenePeople: O("cutscenePeople"),
     cutsceneCamera: N("cutsceneCamera"),
     motion: N("motion"),
-    camera3d: N("camera3d"), // the broadcast camera, 6% / 48 degrees (12 Oct 2026)
     playerLight3d: O("playerLight3d"),
     bossRoom: N("bossRoom"),
     casino: N("casino"),
@@ -230,7 +228,7 @@ for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.p
 // Dribble runs 3D (9 Oct 2026, later the same day) the same way, keyed on its
 // own stored choice, so a row someone already set by hand is never changed.
 const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
-  ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
+  ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "playerLight3d"] as const) : []),
   ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
   // The chance mix (Mikey, 9 Oct 2026), the same way.
   ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),

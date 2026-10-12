@@ -20,6 +20,7 @@
  * line, z up. Three: X = x − CX, Y = z, Z = y.
  */
 import { CX } from "../pitch";
+import { SIZE3D } from "./size3d";
 import { canvasToScreen, screenToCanvas, type Tilt } from "../cameraTilt";
 import { bcProject, type BcCamera, type BcFacing, type BcPoint } from "./broadcastCam";
 
@@ -87,20 +88,22 @@ export const MATCH_SCALES = {
   /** The median of the old per-chance size (2.02×), held fixed; the keeper the same as a man (as the new camera drew him). */
   current: { man: 2.0, keeper: 2.0, goal: 1, lean: true },
   /** A: real life. Men, keeper and goal all true size, no lean: the man-to-goal ratio is real. */
-  A: { man: 1.0, keeper: 1.0, goal: 1, lean: false },
+  A: { man: SIZE3D.man, keeper: SIZE3D.keeper, goal: SIZE3D.goal, lean: false },
   /** B: men as now; the goal frame scaled up so man-to-goal on screen matches the 2D view. */
   B: { man: 2.0, keeper: 2.0, goal: 2.5, lean: true },
   /** C: halfway between A and B. */
   C: { man: 1.5, keeper: 1.5, goal: 1.75, lean: true },
 } satisfies Record<string, MatchScale>;
 export type MatchScaleId = keyof typeof MATCH_SCALES;
-/** The one tuning constant. Change it when Harry picks (A, B or C). */
+/**
+ * A: real size, the one absolute size (size3d.ts SIZE3D). B, C and `current` are only numbers the
+ * comparison script (scripts/cam3d/scale.mts) measures on paper; nothing in a game reads them,
+ * and no address-bar flag picks them any more (?mscale= removed, 12 Oct 2026).
+ */
 export const MATCH_SCALE_PICK: MatchScaleId = "A";
-/** The fixed scale in use. Test pages may pass ?mscale=A|B|C|current (stills only). */
+/** The scale in use: always A, real size. Never read from the page, the camera or the chance. */
 export function matchScale(): MatchScale {
-  const q = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("mscale");
-  const id = q && q in MATCH_SCALES ? (q as MatchScaleId) : MATCH_SCALE_PICK;
-  return MATCH_SCALES[id];
+  return MATCH_SCALES.A;
 }
 
 /** Canvas fraction (0..1 each way) -> pitch metres, for the 2D frame. */

@@ -160,7 +160,7 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
 - `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
-- 3D camera New (12 Oct 2026) frames the 2D's own view box: `lib/star/style3d/match2dCam.ts`. See "3D match camera: the 2D's own frame" below.
+- The real match's ONE 3D camera frames the 2D's own view box (`lib/star/style3d/match2dCam.ts`), with the closer set-piece camera for penalties and free kicks. The Old, broadcast and exact cameras and the "3D camera" Settings row were deleted on 12 Oct 2026. See "Sizes are absolute; the camera only moves" below.
 
 ### Movement and animation helpers
 
@@ -312,6 +312,7 @@ The body must be fitted to the game skeleton or the clips will not play on it. `
 8. **Never tell Harry to `git pull` or `git checkout` locally.** Give a link or paste the file.
 9. **Changes to the match engine file** `lib/star/canvasEngine.ts` fire a warning hook. Say so in your reply, run `node scripts/run-star-tests.mjs finishing keeper aiming outcomes`, and playtest.
 10. **Admin pages** carry a page guide. If you change a button or a save on one, load `.claude/skills/admin-page-guide/SKILL.md`.
+11. **Sizes are absolute; the camera only moves.** Every man, the keeper, the ball and the goal are real size (`SIZE3D` in `lib/star/style3d/size3d.ts`, all 1) on every 3D screen. A man's own build (playerLook height) sits on his model, never on his root. Never size anything from the screen, the camera's distance, pixels per metre, the field of view, the framing or the chance. `tests/star/size3d.mts` fails if you do.
 
 ---
 
@@ -993,3 +994,25 @@ Measured (`npx tsx scripts/cam3d/scale.mts`, 78 real chances, phone box 372×704
 **Stills:** `npx tsx scripts/cam3d/frames.mts DIR --phases` (real chances from `buildScenario`, with CanvasMatch's own penalty/free-kick stance, plus run-up and strike-screen frames) → `node scripts/cam3d/stills.mjs DIR new stylea [--q=mscale=B] [--tag=x]`; `node scripts/cam3d/cleanStill.mjs DIR NAME` draws one moment with and without `menClean`.
 
 **Not done:** none of this seen in a real career match (`/star-dev`) yet, only the harness; the open-play step-in at the strike screen not caught on a still (the harness draws a frame every 1–5 s); a free kick's wall has no set "arms in" pose (no clip); box markings are never scaled (they sit under the ball).
+
+### Sizes are absolute; the camera only moves (12 Oct 2026)
+
+Harry: "Why can't the players just have a measurement on their own? Why is it 4% of the screen? … why aren't they just a set size?"
+
+| Size path (before) | What it did | Now |
+|---|---|---|
+| New camera (2D's frame) | men, keeper, goal 1.0 (MATCH_SCALES A) | SIZE3D 1.0 |
+| Broadcast camera (`?cam2d=0`) | 1.35 (BROADCAST.fig); `?animfix=0`: 6% of the screen, 1.24–2.05 by chance | deleted |
+| Old camera, goal up | men 1.6 (TV_FIG_FIXED), keeper 1.36; `?animfix=0`: from pixels per metre (TARGET_PX 46), 1.99–2.22 | deleted |
+| Old camera, side-on / exact | men 1.3 (figScale / ENGINE_VIEW_FIG_SCALE), keeper 1.105 (× 0.85) | deleted |
+| `?fig=` / `?man=` / `?mscale=` | test flags picking a size | removed |
+| Ball | New: min(2, man size); Old: the style's 1.7–2.0 × 0.85 | SIZE3D.ball 1.0 |
+| Style page Free Roam (`gameplay.ts`) | men 2.0 (look H 1.45), ball the style's 1.7–2.0 | 1.0 |
+| Anim test page (`animGrid3d.ts`) | 1.35 | 1.0 (its camera moved closer instead) |
+| Drills / Free Roam (`play3d`) | 1.0 already | unchanged |
+
+- `lib/star/style3d/size3d.ts` is the one place. `engineView.ts`'s `figNow()` and `keeperFig()` return it; nothing else.
+- One 3D match camera: `placeCamera` = `placeMatch2D`. Old cameras are in the repo's history, not in Settings.
+- `matchScale()` always returns A; MATCH_SCALES B / C / current are paper numbers for `scripts/cam3d/scale.mts` only.
+- Left on purpose: the 2D-frame camera still keeps head room for a 5.4 m man at the top of its frame (`MATCH2D.figMax`) and returns a framing number `k`. Camera only; it never sizes anyone.
+- Test: `tests/star/size3d.mts`.
