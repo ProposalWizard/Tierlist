@@ -14,6 +14,7 @@
 import type { Quality3d } from "../../three3d/quality";
 import { envFor, type TimeOfDay } from "./assets";
 import { makeHPost, type HGrade, type HPost } from "./post";
+import { ENHANCE_GRADES, ENHANCE_LUT_AMT, gradeSlot } from "./toneGrade";
 import { safeCompileAsync } from "../../three3d/safeCompile";
 import { bakedLightNow, type BakedLight, type BakeSet } from "../../look/bakedLight";
 import { lookLut } from "../../look/params";
@@ -33,12 +34,8 @@ export interface HEnhance {
   dispose(): void;
 }
 
-const GRADES: Record<TimeOfDay | "indoor", HGrade> = {
-  day: { exposure: 1, bloom: 0.25, bloomThresh: 1.5, contrast: 1.07, sat: 1.04, tint: [1, 1, 0.99], lift: [0, 0.003, 0.008], vignette: 0.2 },
-  golden: { exposure: 1, bloom: 0.4, bloomThresh: 1.2, contrast: 1.08, sat: 1.06, tint: [1.03, 1.0, 0.95], lift: [0.008, 0.004, 0], vignette: 0.26 },
-  night: { exposure: 1, bloom: 0.7, bloomThresh: 0.9, contrast: 1.1, sat: 1.04, tint: [0.98, 1, 1.05], lift: [0, 0.003, 0.012], vignette: 0.32 },
-  indoor: { exposure: 1, bloom: 0.35, bloomThresh: 1.1, contrast: 1.06, sat: 1.05, tint: [1.02, 1, 0.97], lift: [0.004, 0.002, 0], vignette: 0.24 },
-};
+// the grades live in toneGrade.ts (Low's no-pass tone map copies them per place and time of day)
+const GRADES: Record<TimeOfDay | "indoor", HGrade> = ENHANCE_GRADES;
 
 /**
  * `tod` lights the scene from that real sky (outdoors); "indoor" keeps the
@@ -47,7 +44,7 @@ const GRADES: Record<TimeOfDay | "indoor", HGrade> = {
 export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod: TimeOfDay | "indoor", o: { exposure: number; envIntensity?: number; bake?: BakeSet | null; lutAmt?: number; msaa?: number }): HEnhance {
   // msaa: a scene may ask for real 4x antialias on Medium too (the casino: Harry's "jagged edges", 9 Oct 2026)
   const post: HPost = makeHPost(T, renderer, tier, o.msaa === undefined ? {} : { msaa: o.msaa });
-  const grade: HGrade = { ...GRADES[tod], exposure: o.exposure };
+  const grade: HGrade = { ...GRADES[tod], exposure: o.exposure, slot: o.lutAmt === undefined || tod === "indoor" ? gradeSlot("enhance", tod) : 0 };
   let dead = false;
   // the set's baked light: the garden outdoors, the shop indoors (unless told otherwise)
   const set: BakeSet | null = o.bake === undefined ? (tod === "indoor" ? "shop" : "garden") : o.bake;
@@ -72,7 +69,7 @@ export function enhanceH(T: any, renderer: any, scene: any, tier: Quality3d, tod
     }
   }
   if (tod !== "indoor") {
-    void lookLut(T, tod).then((t) => { if (!dead && t) { grade.lut = t; grade.lutAmt = o.lutAmt ?? 0.8; } });
+    void lookLut(T, tod).then((t) => { if (!dead && t) { grade.lut = t; grade.lutAmt = o.lutAmt ?? ENHANCE_LUT_AMT; } });
   }
   if (tod !== "indoor") {
     waits.push(envFor(T, renderer, tod).then((env) => {

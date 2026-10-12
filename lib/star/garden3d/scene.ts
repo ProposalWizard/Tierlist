@@ -2034,9 +2034,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let sbx = 0, sbz = 0;
   if (!prof.shadows && tierLookNew() && playerBlob) {
     const hl = Math.hypot(sunDir.x, sunDir.z) || 1e-3;
-    const len = Math.min(3.2, Math.max(0.9, (1.8 * hl) / Math.max(0.2, sunDir.y)));
-    sbx = (-sunDir.x / hl) * len * 0.5; sbz = (-sunDir.z / hl) * len * 0.5;
-    sunBlob = blob(0.55, len, player.position.x + sbx, player.position.z + sbz, 0.7);
+    // round 2: short and faint (round 1's up to 3.2 m at 0.7 read as a dark streak), like the stadium's
+    const len = Math.min(1.5, Math.max(0.7, (0.75 * hl) / Math.max(0.2, sunDir.y)));
+    sbx = (-sunDir.x / hl) * len * 0.45; sbz = (-sunDir.z / hl) * len * 0.45;
+    sunBlob = blob(0.5, len, player.position.x + sbx, player.position.z + sbz, 0.3);
     sunBlob.rotation.z = Math.atan2(sunDir.x, sunDir.z);
     sunBlob.position.y = 0.021;
   }

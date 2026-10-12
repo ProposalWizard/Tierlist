@@ -1,6 +1,6 @@
 // One still + frame cost per quality tier, Old vs New tier look (Settings → Look →
 // "3D quality look: New | Old", lib/star/three3d/tierLook.ts).
-// Usage: node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR [--port=3502]
+// Usage: node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR [--port=3502] [--tod=day|golden|night]
 // Prints one JSON line: draws, triangles, shadow draws, posts, pixel ratio, median ms a frame
 // (this machine: SwiftShader, no graphics chip — read the % change, not the ms).
 import { chromium } from "playwright";
@@ -15,7 +15,8 @@ const errs = [];
 page.on("pageerror", (e) => errs.push(String(e).slice(0, 200)));
 page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0, 200)); });
 await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&tierlook=${look}&fps=0`);
-const opts = scene === "garden" ? { quality: tier } : { tier };
+const tod = flag("tod", "");
+const opts = scene === "garden" ? { quality: tier, ...(tod ? { sky: tod } : {}) } : { tier, ...(tod ? { tod } : {}) };
 await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [scene, opts]);
 await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
 const err = await page.evaluate(() => window.__err);
@@ -33,7 +34,7 @@ const m = await page.evaluate((since) => {
   return { frames: all.length, msMed: Math.round(med(gaps) ?? 0), draws: k("draws"), tris: Math.round(k("tris") ?? 0), shadowDraws: k("shadowDraws"), posts: k("posts"),
     pr: window.__M.renderer?.getPixelRatio() };
 }, since);
-const shot = `${out}/${scene}-${tier}-${look}.png`;
+const shot = `${out}/${scene}${tod ? `-${tod}` : ""}-${tier}-${look}.png`;
 await page.screenshot({ path: shot, timeout: 240000 });
 console.log(JSON.stringify({ scene, tier, look, ...m, shot, errs: errs.slice(0, 3) }));
 await browser.close();
