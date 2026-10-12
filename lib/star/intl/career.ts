@@ -40,7 +40,7 @@ import { worldAt } from "./replay";
 import { type World, type WorldMatch, type WorldInputs, type CompKind } from "./world";
 import { nationFor, rankingStrength } from "./nations";
 import { windowFor, type WindowKind } from "./windows";
-import { winnerOf, loserOf, played, rngFor } from "./engine";
+import { winnerOf, loserOf, played, rngFor, table } from "./engine";
 import {
   divisionOf, fixtureTimestamp, seasonStartYear, intlWeek, openingSaturday, type CareerDivision,
 } from "../calendar";
@@ -583,11 +583,23 @@ export function creditIntl(
   const won = us > them || (us === them && !!pens && (nationHome ? pens.hs > pens.as : pens.as > pens.hs));
   const lost = us < them || (us === them && !!pens && !won);
   const manager = opts.keepManager ? s.manager : clamp100(s.manager + (stats.rating - 6.6) * 2.5 + (won ? 1 : lost ? -1 : 0));
-  const next: IntlState = {
+  const nextState: IntlState = {
     ...s, played: { ...s.played, [id]: res }, manager: Math.round(manager * 10) / 10,
     ...(opts.keepManager ? {} : { last: { lost, rating: stats.rating } }),
   };
-  return syncIntl({ ...career, intl: next });
+  const after = syncIntl({ ...career, intl: nextState });
+  // One line for the post-match screen at a tournament or in a knockout.
+  let knockoutMessage = after.knockoutMessage ?? null;
+  if (m && (TOURNAMENT_COMPS.includes(m.comp) || !m.group) && m.comp !== "International Friendly") {
+    const w2 = worldOf(after);
+    const nextMine = (after.fixtures ?? []).filter((x) => !x.played && x.intlId && w2.byId.get(x.intlId)?.edition === m.edition)
+      .sort((a, b) => a.week - b.week)[0];
+    const fin = w2.finals.find((x) => x.edition === m.edition);
+    if (fin && fin.winner === s.nation) knockoutMessage = `🏆 ${s.nation} win the ${m.comp}!`;
+    else if (nextMine) knockoutMessage = `${s.nation} play ${nextMine.opponent} next · ${nextMine.round}.`;
+    else if (!m.group || (fin && fin.runnerUp === s.nation)) knockoutMessage = `${s.nation} are out of the ${m.comp}.`;
+  }
+  return { ...after, knockoutMessage };
 }
 
 // ── Squads ──────────────────────────────────────────────────────────────────
@@ -665,3 +677,63 @@ export function nationStrengthNow(career: CareerState, nation: string): number {
 }
 
 export { loserOf };
+
+// ── The international page ──────────────────────────────────────────────────
+
+export interface GroupView {
+  title: string;
+  rows: { name: string; p: number; w: number; d: number; l: number; gd: number; pts: number }[];
+}
+
+/** Your nation's group tables, newest first: the live table of each group it has played in. */
+export function myGroups(career: CareerState, max = 2): GroupView[] {
+  const w = worldOf(career);
+  const nation = intlOf(career).nation;
+  const seen = new Set<string>();
+  const out: GroupView[] = [];
+  const mine = w.matches.filter((m) => m.group && (m.home === nation || m.away === nation) && played(m))
+    .sort((a, b) => b.date - a.date);
+  for (const m of mine) {
+    const k = `${m.edition}|${m.group}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const ms = w.edition(m.edition).filter((x) => x.group === m.group);
+    const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
+    const tie = m.comp === "World Cup" || m.comp === "Copa América" || m.comp.startsWith("Gold") || m.comp === "CONCACAF Nations League" ? "overall" : "h2h";
+    const rows = table(teams, ms, tie, w.rankOf).map((r) => ({ name: r.name, p: r.p, w: r.w, d: r.d, l: r.l, gd: r.gf - r.ga, pts: r.pts }));
+    const stage = m.stage.split(" · ")[0];
+    out.push({ title: `${m.comp} ${new Date(Math.max(...ms.map((x) => x.date))).getUTCFullYear()} · ${stage}`, rows });
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+export interface MatchView { date: number; comp: string; stage: string; home: string; away: string; hs?: number; as?: number; pens?: string }
+
+/** Your nation's last and next matches (the next only as far as they are drawn). */
+export function myMatches(career: CareerState): { last: MatchView[]; next: MatchView[] } {
+  const w = worldOf(career);
+  const nation = intlOf(career).nation;
+  const all = w.matches.filter((m) => m.home === nation || m.away === nation).sort((a, b) => a.date - b.date);
+  const view = (m: WorldMatch): MatchView => ({
+    date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
+    ...(m.pens ? { pens: `${m.pens.hs}-${m.pens.as} pens` } : {}),
+  });
+  return {
+    last: all.filter(played).slice(-5).reverse().map(view),
+    next: all.filter((m) => !played(m)).slice(0, 4).map(view),
+  };
+}
+
+/** FIFA ranking position and points, now. */
+export function myRanking(career: CareerState): { rank: number; points: number; nation: string } {
+  const w = worldOf(career);
+  const nation = intlOf(career).nation;
+  return { nation, rank: w.rankOf(nation), points: Math.round(w.points.get(nation) ?? 0) };
+}
+
+/** The top of the FIFA ranking now. */
+export function topRanking(career: CareerState, n = 10): { name: string; points: number }[] {
+  const w = worldOf(career);
+  return w.ranking().slice(0, n).map((name) => ({ name, points: Math.round(w.points.get(name) ?? 0) }));
+}

@@ -28,6 +28,7 @@ import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { fameOf } from "@/lib/star/fame";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { brandsOf } from "@/lib/star/sponsorDeals";
+import { intlOf, managerLine, SQUAD_AT, START_AT } from "@/lib/star/intl/career";
 import { FlatPanel, SquareBar, HelpDot, rgba, useClubTheme } from "./ui";
 import { DeltaBar, useSeen, seenScope } from "./screenKit";
 
@@ -120,6 +121,10 @@ export default function RelationsPage({ career, onPlayRelationshipGame, onOpen }
           seenKey={`${scope}:rel:fans`}
           action={game("fans")}
         />
+        {/* The national manager (lib/star/intl/career.ts): starts at 0; in
+            his squad from 34, a starter from 55 — the club manager's own lines. */}
+        <PlainRow icon="🌍" name={`${intlOf(career).nation} manager`} value={intlOf(career).manager} tone="#38bdf8"
+          help={`${managerLine(career)} He picks his squad from ${SQUAD_AT} and starts you from ${START_AT}. Good club games move him — more in a higher division, and a big nation is harder to impress.`} />
         {/* Sponsors: no bar any more — each brand has its own happiness on
             the Sponsors screen (Mikey, 4 Oct 2026). Just the way in. */}
         <PlainRow icon="🤝" name={activeDeals.length ? `Sponsors · ${activeDeals.length} deal${activeDeals.length === 1 ? "" : "s"}` : "Sponsors"} tone={CARD_TONE.sponsors} help={HELP.sponsors} onClick={() => onOpen("sponsors")} dot={offers > 0} />

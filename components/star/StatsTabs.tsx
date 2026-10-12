@@ -25,7 +25,7 @@ import { useAllSeasonsLook } from "@/lib/star/allSeasonsLook";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import { nationOf } from "@/lib/star/competitions";
-import { callUpChance, whatHoldsYouBack } from "@/lib/star/international";
+import IntlWorldPanel from "./IntlWorldPanel";
 import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
 
@@ -196,9 +196,6 @@ function Country({ career, glow }: { career: CareerState; glow: string }) {
   const lastLine = !last ? "No international break yet this career. The first is in September."
     : last.called ? `Called up · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`
     : `Left out · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`;
-  // The next squad: the same odds and the same one line as the call-up page.
-  const chance = callUpChance(career);
-  const { closeLine } = whatHoldsYouBack(career, nation);
   const honours = career.trophies.filter((t) => t.club === nation);
   const t = career.tournament;
   const tournLine = t && t.season === career.season
@@ -227,12 +224,7 @@ function Country({ career, glow }: { career: CareerState; glow: string }) {
         </div>
         {tournLine && <div className="mt-2 text-[11px] font-black text-amber-200">{tournLine}</div>}
       </ClubCard>
-      <Card glow={glow} title="Next squad">
-        <div data-intl-next>
-          <StatBar value={Math.round(chance * 100)} className="h-2.5" />
-          <div className="mt-1.5 text-[11px] font-bold text-white/80">{closeLine}</div>
-        </div>
-      </Card>
+      <IntlWorldPanel career={career} />
       <Card glow={glow} title="Last internationals">
         {!rec?.matches.length ? (
           <div className="text-[11px] font-bold text-white/60">No caps yet. Get picked at an international break to play for {nation}.</div>
