@@ -84,6 +84,10 @@ ok(hits.length === 0, `no camera-, pixel- or flag-based size left in engineView 
 const sizeLines = ev.split("\n").filter((l) => /SIZE3D\./.test(l));
 const coupled = sizeLines.filter((l) => /(SIZE3D\.\w+\s*[*/]|[*/]\s*SIZE3D)/.test(l) && /(fov|camera|\.D\b|pxPer|innerHeight|clientHeight|\bW\b|\bH\b|manShare|elev)/.test(l));
 ok(coupled.length === 0, `SIZE3D is never mixed with a camera or screen number (${coupled.length})`);
+// ONE camera (Harry, 12 Oct 2026: no New | Old for decided things): no other camera path to size for
+const otherCams = [/placeTvCamera/, /placeBroadcast/, /placeExactCamera/, /realCameraLook/, /get\("cam2d"\)/, /get\("bcam"\)/].filter((r) => r.test(ev)).map(String);
+ok(otherCams.length === 0, `one 3D camera (the 2D's frame + set pieces): no Old, broadcast or exact camera, no ?cam2d / ?bcam (${otherCams.join(", ") || "none"})`);
+ok(!/camera3d/.test(src("lib/star/gameVersions.ts")) && !/camera3d/.test(src("components/star/DeviceSettings.tsx")), "no \"3D camera: New | Old\" row in Settings");
 const m2c = src("lib/star/style3d/match2dCam.ts");
 ok(!/get\("mscale"\)/.test(m2c), "?mscale= no longer read");
 

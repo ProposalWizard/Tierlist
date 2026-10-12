@@ -47,11 +47,11 @@ import { buildStadium, type Stadium } from "./stadium";
 import type { StyleDef } from "./styles";
 import type { RealLook } from "./real/look";
 import type { TimeOfDay } from "./real/assets";
-import { realCameraLook, playerLightLook } from "./realGameLook";
+import { playerLightLook } from "./realGameLook";
 import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
-import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
+import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
 import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
@@ -124,12 +124,6 @@ const MO = {
   /** A strike near him (ball speed jumps by this, m/s): a split step, this high (m of the clip's size) for this long (s). */
   splitJump: 6, splitH: 0.045, splitS: 0.22,
 };
-/**
- * The men lean back from the camera by this share of (90° − tilt). 0: they
- * stand upright (round 3, 9 Oct 2026: leaning men read small and wrong on the
- * side-by-side with Harry's target). Kept as a number to tune, not a feature.
- */
-const LEAN_SHARE = 0;
 const SKINS = ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e", "#f1c27d", "#a0673f"];
 const BALL_R = 0.11;
 
@@ -190,66 +184,8 @@ type Body = {
   sw?: number;
 };
 
-/**
- * The TV camera's numbers. Framed like the 2D match screen (coordinator, 9 Oct
- * 2026: "the ball and the goal both in view, the action centred, figures at
- * about the same on-screen size as the 2D match, roughly 40 px").
- */
-export const TV_CAMERA = {
-  /** Vertical field of view, degrees. */
-  fov: 38,
-  /** Never closer / wider than this (metres across at the action). */
-  minViewW: 16,
-  maxViewW: 44,
-  /** Room round the outermost men at the screen's sides, CSS px. */
-  marginPx: 26,
-  /** The group's top and bottom stay inside these shares of the screen. */
-  top: 0.16,
-  /**
-   * Goal in the chance: the goal line sits this far down the screen, so only
-   * a slim strip of stand shows above the net (about 8–10%, Harry's target).
-   */
-  goalLineAt: 0.12,
-  bottom: 0.84,
-  /** Where the middle of the group sits (a touch above the middle: the stands above, the HUD below). */
-  centre: 0.47,
-}
-
-/**
- * THE NEW TV CAMERA (Settings → Look → "3D camera: New", lib/star/style3d/realGameLook.ts).
- * Harry, 9 Oct 2026: "a mix of A and B … less of it was empty grass".
- *   A: the camera a little lower (more like a TV picture): the angle dial plus `tiltAdd`.
- *   B: it frames only the ACTION (the ball, you, the nearest defenders, the keeper and
- *      goal when the goal is in the chance), so men at the edges may go off screen and
- *      the camera sits tighter. The nearest man's feet sit near `bottom`.
- * Every other number as TV_CAMERA.
- */
-export const TV_CAMERA_NEW = {
-  ...TV_CAMERA,
-  tiltAdd: 5,
-  minViewW: 12,
-  marginPx: 10,
-  goalLineAt: 0.12,
-  bottom: 0.86,
-  /** The defenders (them) kept on screen: this many nearest the ball, within `nearR` m. */
-  nearDefenders: 2,
-  nearR: 8,
-  /** Any man this near the ball stays on screen too (a team-mate in the move). */
-  closeR: 6,
-  /** Our men this near the ball stay on screen (the ones you can pass to). */
-  mateR: 22,
-  /** No goal in the chance: the nearest man's feet are pinned this far down the screen. */
-  pinBottom: 0.82,
-  /** Goal in the chance: the nearest man's feet are wanted at least this far down the screen … */
-  fillTo: 0.8,
-  /** … by bringing the goal line down, never lower than this. */
-  goalLineMax: 0.24,
-};
-
-export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
+export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
-  let tvTilt = o.tilt ?? 40;
-  const camMode = o.camera ?? "tv";
   const tier = o.tier ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   // Start-up (Harry, 9 Oct 2026: "the long load is when the game first starts"):
@@ -432,16 +368,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** Look H made and its shaders built (restyle). */
   let hReady: Promise<unknown> | null = null;
   let visible = true;
-  /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
-  // ?bcam=0 read once (this was parsed from the address bar for every man, several times a frame)
-  const bcamOff = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   /**
    * Test pages only: ?animfix=0 draws the match as it was before the 12 Oct 2026 fixes (men resized
    * with the camera, 2D jumps drawn as teleports, one-shot clips walking him off his spot, you a
    * fixed step off the ball). For before/after stills; never set in a career.
    */
   const animFix = !(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("animfix") === "0");
-  const smooth = () => camMode === "tv" && realCameraLook() === "new" && !bcamOff;
+  /** Smooth playback: always on (one camera). */
+  const smooth = () => true;
   /** The current frame's clock (f.t), for the smooth playback's dwell. */
   let nowT = 0;
 
@@ -1270,7 +1204,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: realCameraLook() === "new" }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1328,40 +1262,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const tmpV = new THREE.Vector3();
   let lean = 0;
   const down3 = new THREE.Vector3(0, 0, 1);
-  /** The 2D canvas's own camera, exactly (every spot on the grass on the same pixel). */
-  const placeExactCamera = (f: EngineFrame) => {
-    const { viewport: v, facing, tilt, W, H } = f.cam;
-    if (!(W > 0 && H > 0)) return;
-    const spanX = v.x2 - v.x1, spanY = v.y2 - v.y1;
-    // canvas right / down as pitch directions, and pixels per metre
-    let right: [number, number], down: [number, number], k: number;
-    if (facing === "right") { right = [0, -1]; down = [1, 0]; k = (W / spanY + H / spanX) / 2; }
-    else if (facing === "left") { right = [0, 1]; down = [-1, 0]; k = (W / spanY + H / spanX) / 2; }
-    else { right = [1, 0]; down = [0, 1]; k = (W / spanX + H / spanY) / 2; }
-    void right;
-    const th = tilt ? (tilt.deg * Math.PI) / 180 : 0;
-    const d = tilt ? tilt.d : 1.4 * H;
-    const s = tilt ? tilt.s : 1;
-    const D = d / (s * k);
-    const cx = (v.x1 + v.x2) / 2 - CX, cz = (v.y1 + v.y2) / 2;
-    down3.set(down[0], 0, down[1]);
-    camera.position.set(cx + down3.x * D * Math.sin(th), D * Math.cos(th), cz + down3.z * D * Math.sin(th));
-    camera.up.set(-down3.x, 0, -down3.z);
-    if (th > 1e-3) camera.up.set(-down3.x * Math.cos(th), Math.sin(th), -down3.z * Math.cos(th));
-    camera.lookAt(cx, 0, cz);
-    camera.fov = (2 * Math.atan(H / (2 * d)) * 180) / Math.PI;
-    camera.aspect = W / H;
-    camera.near = Math.max(0.1, D * 0.05);
-    camera.far = D + 500;
-    camera.updateProjectionMatrix();
-    lean = (Math.max(0, 90 - (th * 180) / Math.PI) * LEAN_SHARE * Math.PI) / 180;
-  };
-  /**
-   * THE TV CAMERA: goal at the top, the ball and you in the lower middle,
-   * about 24 m of pitch across at the action, at the page's tilt. It follows
-   * play smoothly and cuts on a new chance. Side-on chances (corners, byline
-   * crosses) keep the 2D's own side-on camera.
-   */
+  /** `init`: the camera has been placed once (touch waits for it). */
   const tv = { x: 0, z: 0, D: 60, th: 0.7, key: "", init: false };
   /**
    * SIZES ARE ABSOLUTE; THE CAMERA ONLY MOVES (Harry, 12 Oct 2026: "why aren't they just a set
@@ -1370,205 +1271,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const figNow = (): number => SIZE3D.man;
   const keeperFig = (): number => SIZE3D.keeper;
-  type TvCam = typeof TV_CAMERA & { pinBottom?: number };
-  /** The TV camera for this frame at angle `thDeg`, framing `pts` with the numbers in C. */
-  const tvSolveAt = (f: EngineFrame, C: TvCam, thDeg: number, pts: { x: number; y: number }[], nu: boolean) => {
-    const { W, H } = f.cam;
-    const th = (Math.max(5, Math.min(70, thDeg)) * Math.PI) / 180;
-    const hv = (TV_CAMERA.fov * Math.PI) / 360;
-    const hh = Math.atan(Math.tan(hv) * (W / H));
-    const vp = f.cam.viewport;
-    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of pts) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
-    const lx = Math.max(-34 + 6, Math.min(34 - 6, (x0 + x1) / 2 - CX));
-    // ground point (along the pitch) at screen share `fr` from the top: and back
-    const shareOf = (zg: number, lookZ: number, D: number) => {
-      const hc = D * Math.cos(th), camZ = lookZ + D * Math.sin(th);
-      const phi = Math.atan2(camZ - zg, hc);
-      return (1 - Math.tan(phi - th) / Math.tan(hv)) / 2;
-    };
-    const lookFor = (zg: number, fr: number, D: number) => {
-      const hc = D * Math.cos(th);
-      const phi = th + Math.atan((1 - 2 * fr) * Math.tan(hv));
-      return zg + hc * Math.tan(phi) - D * Math.sin(th);
-    };
-    const dFor = (w: number) => w / 2 / Math.tan(hh);
-    const Dmin = dFor(C.minViewW), Dmax = dFor(C.maxViewW);
-    const topAt = f.goalInView ? C.goalLineAt : C.top;
-    // where the camera looks for distance D: the goal end pinned near the top,
-    // or (no goal) the group centred — or, new camera, the nearest man pinned near the bottom
-    const lzFor = (D: number) => {
-      if (f.goalInView) return lookFor(y0, topAt, D);
-      if (nu && C.pinBottom) return lookFor(y1, C.pinBottom, D);
-      let fr = C.top;
-      for (let i = 0; i < 3; i++) {
-        const lzi = lookFor(y0, fr, D);
-        const mid = (shareOf(y0, lzi, D) + shareOf(y1, lzi, D)) / 2;
-        fr = Math.max(0.04, Math.min(0.5, fr + (C.centre - mid)));
-      }
-      return lookFor(y0, fr, D);
-    };
-    // Everyone actually on the glass (projected through this camera, not
-    // estimated at the look point: the action is beyond it, where the
-    // picture is wider). Closest camera that fits, so the men are big.
-    const tH = Math.tan(hv), tW = Math.tan(hh), sn = Math.sin(th), cs = Math.cos(th);
-    const xMargin = 1 - (2 * C.marginPx) / Math.max(1, W);
-    const shareAt = (q: { x: number; y: number }, D: number, lz: number) => {
-      const cy = D * cs, cz = lz + D * sn;
-      const vx = q.x - CX - lx, vy = -cy, vz = q.y - cz;
-      const depth = -cs * vy - sn * vz;
-      if (depth <= 0.1) return null;
-      return { nx: vx / (depth * tW), fr: (1 - (sn * vy - cs * vz) / (depth * tH)) / 2 };
-    };
-    const fitsAll = (D: number) => {
-      const lz = lzFor(D);
-      for (const q of pts) {
-        const s = shareAt(q, D, lz);
-        if (!s) return false;
-        if (Math.abs(s.nx) > xMargin || s.fr > C.bottom) return false;
-        if (nu && !f.goalInView && s.fr < C.top) return false;
-      }
-      return true;
-    };
-    let lo = Math.min(Dmin, dFor(10)), hi = Dmax;
-    if (fitsAll(lo)) hi = lo;
-    else if (!fitsAll(hi)) lo = hi;
-    else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fitsAll(m)) hi = m; else lo = m; }
-    const D = hi;
-    const lz = lzFor(D);
-    // how far the action is from the camera (the men are sized there, not at the look point)
-    const ballDepth = (() => { const cy = D * cs, cz = lz + D * sn; return Math.max(1, cs * cy - sn * (ball.y - cz)); })();
-    // the lowest point of the framed action on the screen (share of the height)
-    let low = 0;
-    for (const q of pts) { const s = shareAt(q, D, lz); if (s) low = Math.max(low, s.fr); }
-    return { x: lx, z: lz, D, th, fov: TV_CAMERA.fov, W, H, ballDepth, low };
-  };
-  const tvSolve = (f: EngineFrame) => {
-    const nu = realCameraLook() === "new";
-    const vp = f.cam.viewport;
-    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2 };
-    const extra: { x: number; y: number }[] = [];
-    if (f.goalInView) extra.push({ x: CX - 4.5, y: -0.5 }, { x: CX + 4.5, y: -0.5 });
-    // only a keeper the 2D drew frames the shot (an undrawn one is just stood in his goal)
-    if (f.keeper && f.keeper.drawn !== false) extra.push({ x: f.keeper.x, y: f.keeper.y });
-    if (!nu) {
-      // Old: everyone in the chance, the ball, and the goal mouth when the goal is in it:
-      // all of it on the screen, centred, as close as that allows.
-      const pts = [{ x: ball.x, y: ball.y }, ...f.figures.map((g) => ({ x: g.x, y: g.y })), ...extra];
-      return tvSolveAt(f, TV_CAMERA, tvTilt, pts, false);
-    }
-    // New: the action only (see TV_CAMERA_NEW); the rest may go off screen.
-    // Framed inside the part of the pitch box the phone actually shows, so the
-    // play is never under the fold (Harry, 9 Oct 2026: "you can't see the full
-    // pitch at once" — the box is taller than the screen under the test page's
-    // controls, and a touch on the pitch cannot scroll the page).
-    const vis = (() => {
-      const r = container.getBoundingClientRect();
-      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
-      const a = Math.max(0, Math.min(0.5, -r.top / r.height));
-      const b = Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height));
-      return { a, b };
-    })();
-    const sh = (v: number) => vis.a + v * (vis.b - vis.a);
-    const N = { ...TV_CAMERA_NEW, top: sh(TV_CAMERA_NEW.top), bottom: sh(TV_CAMERA_NEW.bottom), goalLineAt: sh(TV_CAMERA_NEW.goalLineAt), goalLineMax: sh(TV_CAMERA_NEW.goalLineMax), pinBottom: sh(TV_CAMERA_NEW.pinBottom), fillTo: sh(TV_CAMERA_NEW.fillTo) };
-    const near = (g: { x: number; y: number }) => Math.hypot(g.x - ball.x, g.y - ball.y);
-    const them = f.figures.filter((g) => g.team === "them" && near(g) <= N.nearR)
-      .sort((a, b) => near(a) - near(b)).slice(0, N.nearDefenders);
-    // our men in the move (the pass is to them) stay on; their far men may go
-    const action = f.figures.filter((g) => g.sid === "you" || them.includes(g) || near(g) <= N.closeR
-      || (g.team === "us" && near(g) <= N.mateR));
-    const pts = [{ x: ball.x, y: ball.y }, ...action.map((g) => ({ x: g.x, y: g.y })), ...extra];
-    const base = tvTilt + N.tiltAdd;
-    // No goal: the nearest man is pinned near the bottom (no grass under him).
-    // Goal in view: the goal line is pinned near the top and the whole goal mouth
-    // must fit across, so on a tall phone a chance 11–12 m out cannot reach the
-    // bottom. Then the goal line comes down a little (more crowd above the net,
-    // less grass under the men), never past `goalLineMax`.
-    let t = tvSolveAt(f, N, base, pts, true);
-    if (f.goalInView && t.low < N.fillTo) {
-      const g = Math.min(N.goalLineMax, N.goalLineAt + (N.fillTo - t.low));
-      t = tvSolveAt(f, { ...N, goalLineAt: g }, base, pts, true);
-    }
-    return t;
-  };
-  const placeTvCamera = (f: EngineFrame, dt: number) => {
-    const t = tvSolve(f);
-    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: t.D, thDeg: (t.th * 180) / Math.PI, low: t.low, goal: f.goalInView };
-    // a new chance (or a cut in the 2D) cuts here too
-    const vp = f.cam.viewport;
-    const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
-    if (tv.init && key !== tv.key) gov.hush(performance.now()); // a chance start / cut stalls once (new men): not slowness
-    if (!tv.init || key !== tv.key) { tv.x = t.x; tv.z = t.z; tv.D = t.D; tv.th = t.th; tv.key = key; tv.init = true; }
-    else {
-      const k = Math.min(1, dt * 2.5);
-      tv.x += (t.x - tv.x) * k; tv.z += (t.z - tv.z) * k; tv.D += (t.D - tv.D) * k;
-      // the new camera's angle moves with the play (smoothly); the old one is the dial's
-      tv.th = realCameraLook() === "new" ? tv.th + (t.th - tv.th) * k : t.th;
-    }
-    t.th = tv.th;
-    down3.set(0, 0, 1);
-    camera.position.set(tv.x, tv.D * Math.cos(t.th), tv.z + tv.D * Math.sin(t.th));
-    camera.up.set(0, Math.sin(t.th), -Math.cos(t.th));
-    camera.lookAt(tv.x, 0, tv.z);
-    camera.fov = t.fov;
-    camera.aspect = t.W / t.H;
-    camera.near = Math.max(0.1, tv.D * 0.05);
-    camera.far = tv.D + 500;
-    camera.updateProjectionMatrix();
-    lean = (Math.max(0, 90 - (t.th * 180) / Math.PI) * LEAN_SHARE * Math.PI) / 180;
-    // sizes: absolute (SIZE3D); this camera only moves (it used to set the men's size here)
-  };
-  /**
-   * THE BROADCAST CAMERA (3D camera: New, lib/star/style3d/broadcastCam.ts):
-   * one 48–50° angle for every chance kind (side-on ones turned, never top-down),
-   * the ball at 60% of the height so the drag has pitch under it, men sized to
-   * ~6% of the canvas (BROADCAST.manShare). It glides between chances and is held still while you
-   * aim (a finger down, the arrow up, or the strike screen).
-   */
-  const bc = { tx: 0, tz: 0, D: 40, ang: 0, init: false, key: "", anchor: { x: CX, y: 20 } };
-  // the camera's distance only; the men's size is SIZE3D (c.k is a framing number, never a size)
-  const BC = BROADCAST;
-  const placeBroadcast = (f: EngineFrame, dt: number) => {
-    const vp = f.cam.viewport;
-    const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2, z: 0 };
-    const key = `${f.kind}|${Math.round(vp.x1)}|${Math.round(vp.y1)}|${Math.round(vp.x2)}|${Math.round(vp.y2)}`;
-    const aiming = f.phase === "aim" || f.phase === "runup" || f.phase === "contact";
-    if (aiming || key !== bc.key) bc.anchor = { x: ball.x, y: ball.y };
-    bc.key = key;
-    const figs: BcFigure[] = f.figures.map((g) => ({ sid: g.sid, x: g.x, y: g.y, team: g.team }));
-    const pts = actionPoints({ x: ball.x, y: ball.y, z: (ball as { z?: number }).z ?? 0 }, figs, f.keeper, f.goalInView, BC);
-    const vis = (() => {
-      const r = container.getBoundingClientRect();
-      if (!(r.height > 0) || typeof window === "undefined") return { a: 0, b: 1 };
-      return { a: Math.max(0, Math.min(0.5, -r.top / r.height)), b: Math.max(0.5, Math.min(1, (window.innerHeight - r.top) / r.height)) };
-    })();
-    const c = solveBroadcast({ anchor: bc.anchor, points: pts, facing: f.cam.facing, W: f.cam.W, H: f.cam.H, vis }, BC);
-    const ang = Math.atan2(c.ax, c.az);
-    // held still while you aim: a finger on the glass, the arrow up, or the strike screen
-    const hold = bc.init && (touch.id !== -1 || !!f.aim || f.phase === "contact" || f.phase === "runup");
-    if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.init = true; }
-    else if (!hold) {
-      // a glide, never a cut (about 0.4 s to settle)
-      const e = 1 - Math.exp(-dt * (f.phase === "aim" ? 6 : 3));
-      bc.tx += (c.tx - bc.tx) * e; bc.tz += (c.tz - bc.tz) * e; bc.D += (c.D - bc.D) * e;
-      let da = ang - bc.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-      bc.ang += da * e;
-    }
-    const pose = bcPose({ ...c, tx: bc.tx, tz: bc.tz, D: bc.D, ax: Math.sin(bc.ang), az: Math.cos(bc.ang) });
-    camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
-    camera.up.set(0, 1, 0);
-    camera.lookAt(pose.look[0], 0, pose.look[2]);
-    camera.fov = c.fov;
-    camera.aspect = f.cam.W / f.cam.H;
-    camera.near = Math.max(0.1, bc.D * 0.05);
-    camera.far = bc.D + 500;
-    camera.updateProjectionMatrix();
-    down3.set(Math.sin(bc.ang), 0, Math.cos(bc.ang));
-    lean = 0;
-    tv.init = true;
-    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, fig: SIZE3D.man, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
-  };
   /**
    * THE 2D'S OWN FRAME (3D camera: New since 12 Oct 2026, lib/star/style3d/match2dCam.ts).
    * Harry: "the framing is not exactly the same on 3d and 2d … on 2d it might be able
@@ -1579,10 +1281,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
-  const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
-  /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
-  const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "" };
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
@@ -1594,7 +1292,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
   function clipArenaNearSide() {
-    if (realCameraLook() !== "new" || preMatch2D || preBroadcast) return;
     const g = scene.getObjectByName("h-arena");
     if (!g) return;
     renderer.localClippingEnabled = true;
@@ -1647,13 +1344,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };
-  const placeCamera = (f: EngineFrame, dt: number) => {
-    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) { placeMatch2D(f); return; }
-    if (arenaClip.constant !== 1e6) { arenaClip.normal.set(0, 1, 0); arenaClip.constant = 1e6; } // another camera: clip nothing
-    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
-    else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
-    else { tv.init = false; placeExactCamera(f); }
-  };
+  // ONE camera (Harry, 12 Oct 2026: no New | Old for decided things): the 2D's own frame, with the
+  // closer set-piece camera for penalties and free kicks. The old cameras are in the repo's history.
+  const placeCamera = (f: EngineFrame) => placeMatch2D(f);
 
   // ── touch: the 3D picture's grass → the 2D canvas's pixel for the same spot ──
   // The 2D canvas (invisible, underneath) is the game: every touch is handed to
@@ -1806,7 +1499,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     touch.id = -1;
     send(e.type === "pointercancel" ? "pointercancel" : "pointerup", e, at);
   };
-  if (o.canvas2d && camMode === "tv") {
+  if (o.canvas2d) {
     container.style.pointerEvents = "auto";
     container.style.touchAction = "none";
     container.addEventListener("pointerdown", onDown);
@@ -1921,7 +1614,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const cw = container.clientWidth, ch = container.clientHeight;
       if (cw !== size.w || ch !== size.h) { size = { w: cw, h: ch }; renderer.setSize(Math.max(1, cw), Math.max(1, ch), false); }
       lastFrame = f;
-      placeCamera(f, dt);
+      placeCamera(f);
       {
         // the rim light sits beyond the play, opposite the camera, low
         const lx = camera.position.x, lz = camera.position.z;
@@ -2048,8 +1741,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
     },
     setTod(t) { hTod = t; h?.setTod(t); },
-    setTilt(d) { tvTilt = d; },
-    setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
+    setTilt() { /* one camera: it takes its tilt from the 2D frame (f.cam.tilt) */ },
+    setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
       gov.dispose();
