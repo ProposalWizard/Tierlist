@@ -38,7 +38,7 @@ import { installAssetVersions } from "../three3d/assetUrl";
 import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
-import { Governor } from "../three3d/governor";
+import { Governor, sessionStartTier } from "../three3d/governor";
 import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
@@ -199,7 +199,11 @@ export async function startHome(container: HTMLElement, cb: HomeCallbacks, data:
 }
 
 async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions, own: { release?: (root?: any) => void; root?: any }): Promise<HomeController> {
-  let tier: Quality3d = opts.quality ?? quality3dTier();
+  // the scene's own tier (Settings, else Auto); built lower if this session's
+  // governor already settled lower (three3d/governor.ts sessionStartTier), so a
+  // door never opens a place too heavy for the phone and then steps it down
+  const ownTier: Quality3d = opts.quality ?? quality3dTier();
+  let tier: Quality3d = sessionStartTier(ownTier);
   let prof = TIER_PROFILES[tier];
   const rooms: RoomId[] = data.rooms?.length ? data.rooms : ["main"];
   const plan0 = roomPlan(data.tier, rooms[0], rooms);
@@ -221,7 +225,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
   let capAlways = false;
-  const gov = new Governor({ start: tier, name: "home", slowSeconds: 2, onChange: (r, _i, why) => {
+  const gov = new Governor({ start: tier, ceiling: ownTier, name: "home", slowSeconds: 2, onChange: (r, _i, why) => {
     if (why === "start") return;
     if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
     pr = stillPR(); renderer.setPixelRatio(pr);

@@ -7,7 +7,7 @@
  * frames, and
  *   - if the middle frame (the median) is slower than the budget (about
  *     22 ms at 60 a second, under ~45 fps) for 2.5 s, step DOWN one rung;
- *   - if frames hold the full rate for 8 s, step back UP one rung — never
+ *   - if frames hold the full rate for 12 s (FAST_SECONDS), step back UP one rung — never
  *     above where the scene started; after a bounce (dropped within 20 s of
  *     a step up) it may try again a minute later.
  *
@@ -28,6 +28,14 @@
  * Pure, no three.js: the scenes read `rung` and change their own renderer
  * (pixel ratio, shadow map, post) in `onChange`. Tested in
  * tests/star/perf3d.mts (the stepping).
+ *
+ * REMEMBERED FOR THE SESSION (Mikey's video, 12 Oct 2026: every door opened
+ * the next place back on its top rung, too heavy for the first seconds, then
+ * stepped down again). The rung a phone settles on is kept for the session
+ * (`settledRung`, also in sessionStorage), and the next scene OPENS there —
+ * never above its own tier, and it may still climb back to its tier when the
+ * frames say so. Climbing is the slow direction on purpose: 12 s of
+ * full-rate frames to go up one rung, 2.5 s of slow ones to go down.
  *
  * The scene also asks `shouldDraw(now, still)` each rAF tick: false while the
  * tab is hidden, the scene is paused (a menu over it), or — on a still screen
@@ -69,6 +77,8 @@ export function rungForTier(t: Quality3d): number {
 export interface GovernorOptions {
   /** The tier the scene opens at (Settings, else Auto). */
   start: Quality3d;
+  /** The highest tier it may climb back to (default: start). A scene built lower by sessionStartTier passes its own tier here. */
+  ceiling?: Quality3d;
   /** A name for the frame meter ("garden", "real game"). */
   name?: string;
   /** Called after the rung changes (also once from apply()). */
@@ -77,14 +87,48 @@ export interface GovernorOptions {
   frozen?: boolean;
   /** Seconds of slow frames before a step down (default 2.5). */
   slowSeconds?: number;
-  /** Seconds of full-rate frames before a step up (default 8). */
+  /** Seconds of full-rate frames before a step up (default FAST_SECONDS). */
   fastSeconds?: number;
+  /** Open at the rung this session settled on (default: in a browser, yes). */
+  remember?: boolean;
   /** A clock for tests. */
   now?: () => number;
 }
 
 /** A drawn frame: when, and its gap over the slow budget / the full-rate mark at the cap it aimed for. */
 interface Sample { t: number; slow: number; fast: number; ms: number }
+
+/** Full-rate seconds before one step up: climbing is slower than falling (2.5 s). */
+export const FAST_SECONDS = 12;
+
+// ── the rung this session settled on (every scene opens there) ──
+const RUNG_KEY = "kib-gov-rung";
+let settled: number | null = null;
+/** The rung the last scene ended on this session (null: none yet). */
+export function settledRung(): number | null {
+  if (settled !== null) return settled;
+  try {
+    const v = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(RUNG_KEY) : null;
+    const n = v === null ? NaN : Number(v);
+    if (Number.isInteger(n) && n >= 0 && n < GOV_LADDER.length) settled = n;
+  } catch { /* no storage: this page only */ }
+  return settled;
+}
+/** Remember a settled rung (null forgets it; the Test Area, tests). */
+export function noteSettledRung(i: number | null) {
+  settled = i;
+  try { if (typeof sessionStorage !== "undefined") { if (i === null) sessionStorage.removeItem(RUNG_KEY); else sessionStorage.setItem(RUNG_KEY, String(i)); } } catch { /* fine */ }
+}
+/**
+ * The tier a scene should BUILD at: its own (Settings / Auto), or lower if
+ * this session already settled on a lower rung. Scenes that pick their
+ * textures, shadows and pixel caps from the tier call this before building.
+ */
+export function sessionStartTier(t: Quality3d): Quality3d {
+  if (governorFrozenByUrl()) return t;
+  const r = settledRung();
+  return r !== null && r > rungForTier(t) ? GOV_LADDER[r].tier : t;
+}
 
 /** Frames this long after `hush()` (a chance start, a camera cut) are not judged. */
 export const HUSH_MS = 1000;
@@ -116,6 +160,7 @@ export class Governor {
   private hushUntil = -1e9;
   private paused = new Set<string>();
   private frozen: boolean;
+  private remember: boolean;
   /** Steps taken, for the meter and tests. */
   downs = 0;
   ups = 0;
@@ -126,9 +171,13 @@ export class Governor {
 
   constructor(private o: GovernorOptions) {
     this.name = o.name ?? "3d";
-    this.startIndex = rungForTier(o.start);
-    this.index = this.startIndex;
     this.frozen = !!o.frozen || governorFrozenByUrl();
+    this.remember = !this.frozen && (o.remember ?? typeof window !== "undefined");
+    // the ceiling: the scene's own tier (it may climb back up to it, never past)
+    this.startIndex = rungForTier(o.ceiling ?? o.start);
+    const own = Math.max(this.startIndex, rungForTier(o.start));
+    const was = this.remember ? settledRung() : null;
+    this.index = was !== null && was > own ? was : own;
     register(this);
   }
 
@@ -179,7 +228,7 @@ export class Governor {
     }
     // judged against the rate the scene aimed for at that frame (a capped scene is not slow)
     this.samples.push({ t: now, ms, slow: ms / Math.max(22, (1000 / cap) * 1.35), fast: ms / ((1000 / cap) * 1.12) });
-    const keep = Math.max(this.o.fastSeconds ?? 8, this.o.slowSeconds ?? 2.5, DEEP_SECONDS) * 1000;
+    const keep = Math.max(this.o.fastSeconds ?? FAST_SECONDS, this.o.slowSeconds ?? 2.5, DEEP_SECONDS) * 1000;
     while (this.samples.length && now - this.samples[0].t > keep) this.samples.shift();
     if (this.frozen || now < this.cooldownUntil) return false;
     const slowWin = (this.o.slowSeconds ?? 2.5) * 1000;
@@ -195,7 +244,7 @@ export class Governor {
       const deep = this.samples.filter((s) => now - s.t <= win);
       if (deep.length >= 8 && now - deep[0].t >= win * 0.9 && median(deep.map((s) => s.ms)) > 1000 / DEEP_FPS) return this.step(+1, now);
     }
-    const fastWin = (this.o.fastSeconds ?? 8) * 1000;
+    const fastWin = (this.o.fastSeconds ?? FAST_SECONDS) * 1000;
     if (now - this.bouncedAt >= RECLIMB_MS && this.index > this.startIndex && this.samples.length >= 8 && now - this.samples[0].t >= fastWin * 0.95) {
       const m = median(this.samples.map((s) => s.fast));
       if (m <= 1) return this.step(-1, now);
@@ -209,6 +258,7 @@ export class Governor {
     if (i === this.index) return;
     const why = i > this.index ? "down" : "up";
     this.index = i;
+    if (this.remember) noteSettledRung(i);
     this.o.onChange?.(this.rung, this.index, why);
   }
 
@@ -221,6 +271,7 @@ export class Governor {
       this.lastUpAt = now;
     }
     this.index += dir;
+    if (this.remember) noteSettledRung(this.index);
     this.samples.length = 0;
     this.cooldownUntil = now + 3000; // judge the new rung on its own frames
     this.o.onChange?.(this.rung, this.index, dir > 0 ? "down" : "up");

@@ -60,7 +60,7 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
-import { Governor } from "../three3d/governor";
+import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
@@ -171,7 +171,11 @@ export async function startCasino(container: HTMLElement, cb: CasinoCallbacks, o
 }
 
 async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions, own: { release?: (root?: any) => void; root?: any }): Promise<CasinoController> {
-  let tier: Quality3d = opts.quality ?? quality3dTier();
+  // the scene's own tier (Settings, else Auto); built lower if this session's
+  // governor already settled lower (three3d/governor.ts sessionStartTier), so a
+  // door never opens a place too heavy for the phone and then steps it down
+  const ownTier: Quality3d = opts.quality ?? quality3dTier();
+  let tier: Quality3d = sessionStartTier(ownTier);
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
@@ -191,7 +195,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
   // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
   // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
-  const gov = new Governor({ start: tier, name: "casino", slowSeconds: 2, onChange: (r, _i, why) => {
+  const gov = new Governor({ start: tier, ceiling: ownTier, name: "casino", slowSeconds: 2, onChange: (r, _i, why) => {
     if (why === "start") return;
     if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
     pr = stillPR(); renderer.setPixelRatio(pr);
