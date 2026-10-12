@@ -425,7 +425,16 @@ english only."* Everything below is a standing instruction, confirmed more
 than once.
 
 **Progress updates follow `.claude/skills/progress-update/SKILL.md`: every 5
-minutes on every task, auto-deploy at every major update.**
+minutes on every task.**
+
+**Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
+major update").** *"what happened to patch notes? What happened to telling me
+if I tell you to push everything currently, push it? Don't just be pushing
+stuff, because sometimes it's not ready to go."* Commit and push to the `Harry`
+branch freely, but merge to `main` (= live) ONLY when Harry says push / deploy /
+merge. Every deploy comes with patch notes. "Preview" (game version) is used
+only when someone asks for it in those words; otherwise a change goes straight
+into the game when it is deployed.
 
 **3D sizes never change (Harry, 12 Oct 2026).** *"no changes in size for any
 player or goalie or goal should ever occur."* In 3D, every man, the keeper and
