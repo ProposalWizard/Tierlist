@@ -58,7 +58,15 @@ export interface HBall {
 }
 
 /** Dress play3d's ball group in look H (its own patches hidden, a textured sphere instead). */
-export function dressHBall(T: any, ball: any, root: any): HBall {
+/**
+ * The additive light ring on the grass round the ball. Players in a 3D match: Style A switches it
+ * off (engineView): with the ball at his feet it read as a pale glow round the legs and shorts of
+ * the man on the ball (lead's review, 12 Oct 2026). Every ball dressed while it is off, and every
+ * frame after, follows it; `o.lightRing` overrides it for one ball.
+ */
+let lightRingOn = true;
+export function setHBallLightRing(on: boolean) { lightRingOn = on; }
+export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean } = {}): HBall {
   const tex = new T.CanvasTexture(ballCanvas());
   tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
   const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveIntensity: 0.06 });
@@ -73,7 +81,7 @@ export function dressHBall(T: any, ball: any, root: any): HBall {
   shadow.rotation.x = -Math.PI / 2; shadow.renderOrder = 2;
   const rTex = ringTex(T);
   const ring = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: rTex, transparent: true, depthWrite: false, opacity: 0.22, blending: T.AdditiveBlending }));
-  ring.rotation.x = -Math.PI / 2; ring.renderOrder = 2;
+  ring.rotation.x = -Math.PI / 2; ring.renderOrder = 2; ring.visible = o.lightRing ?? lightRingOn;
   const stTex = (() => {
     const c = document.createElement("canvas"); c.width = 64; c.height = 8;
     const g = c.getContext("2d")!; const gr = g.createLinearGradient(0, 0, 64, 0);
@@ -91,6 +99,7 @@ export function dressHBall(T: any, ball: any, root: any): HBall {
       const s = ball.scale.x;
       const k = Math.max(0.3, 1 - p.y / 5);
       shadow.position.set(p.x, 0.012, p.z); shadow.scale.setScalar(0.42 * s * (1.4 - k * 0.4)); shadow.material.opacity = 0.55 * k;
+      ring.visible = o.lightRing ?? lightRingOn;
       ring.position.set(p.x, 0.014, p.z); ring.scale.setScalar(0.62 * s); ring.material.opacity = 0.2 * k;
       const sp = Math.hypot(vel.x, vel.y, vel.z);
       streak.visible = sp > 12;

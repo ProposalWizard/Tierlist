@@ -17,8 +17,9 @@
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
-import { matchPlayerStyle } from "./toon/matchLook";
+import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
 import { TOON_PLAYER_HEADS } from "./toon/bodies";
+import { HOME_MATCH_BUILD } from "./toon/shader";
 import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
 import { BROADCAST } from "./broadcastCam";
 
@@ -119,7 +120,13 @@ export async function createAnimGrid(canvas: HTMLCanvasElement, tiles: AnimTile[
   type Man = { p: Person3D; clip: string | null; act: THREE.AnimationAction | null; ball: THREE.Mesh | null; x: number; tile: AnimTile; hold: boolean };
   const men: Man[] = [];
   tiles.forEach((tile, i) => {
-    const p = makePerson3d(T, SK as never, model, animG, { outline: 0 });
+    // Style A (Players in a 3D match): a head per tile, lit like the Home player as in the match (engineView homeMen)
+    const toon = matchPlayerStyle() === "new";
+    const homeMen = toon && matchPlayersStyleLook() === "styleA";
+    const p = makePerson3d(T, SK as never, model, animG, { outline: 0, toonHead: toon ? TOON_PLAYER_HEADS[i % TOON_PLAYER_HEADS.length] : undefined, toonLook: homeMen ? HOME_MATCH_BUILD.look : undefined });
+    if (homeMen) p.root.children[0]?.scale.multiply(new T.Vector3(...HOME_MATCH_BUILD.across));
+    const hu = (p.u as { uHome?: { value: { x: number } } }).uHome?.value;
+    if (hu) hu.x = homeMen ? 1 : 0;
     if (fb) addClips(T, p, fb as never);
     dressPerson3d(T, p, {
       skin: ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e"][i % 4], hair: "#1b120c",
