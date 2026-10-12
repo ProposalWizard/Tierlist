@@ -54,10 +54,10 @@ import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
 import { SMALL_MEN } from "./smallMen";
-import { camZoom, setCamZoom, camHeightTest, zoomCamera } from "./camZoom";
+import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 const OPEN_DEFAULT_K = 0.85;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1293,7 +1293,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "" };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1 };
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
   /**
@@ -1327,8 +1327,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       m2.spKey = spKey;
       const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
       // a corner: its own closer camera (match2dCam.ts CORNER_CAM), camera only
+      // the glide: start on B or C (seeded per corner), and keep the box framing (A) for after the kick
+      const glide = CORNER_CAM.pick === "glide";
+      m2.cornerStart = corner && glide ? CORNER_CAM.starts[hashOf(spKey) % CORNER_CAM.starts.length] : "";
+      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, "A") : null;
+      m2.cornerT0 = -1;
       m2.sp = corner
-        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale)
+        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, m2.cornerStart || undefined)
         : solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
     }
     if (!sp) { m2.sp = null; m2.spKey = ""; }
@@ -1340,7 +1345,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // piece's own camera, else the 2D's frame a little closer), 1 = the whole scenario, -1 = closest.
     // It only moves the camera; it keeps between chances.
     const zoom = camZoom();
-    const def = sp && m2.sp ? m2.sp : { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    let def: Match2DCamera = sp && m2.sp ? m2.sp : { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    // the corner glide: from the kick, ease to the box framing (A) in CORNER_CAM.glideS, following where the ball will land
+    if (corner && m2.sp && m2.cornerA) {
+      const struck = f.phase !== "aim" && f.phase !== "runup" && f.phase !== "contact";
+      if (struck && m2.cornerT0 < 0) m2.cornerT0 = f.t;
+      if (!struck) m2.cornerT0 = -1;
+      if (m2.cornerT0 >= 0) {
+        const u = Math.min(1, (f.t - m2.cornerT0) / CORNER_CAM.glideS);
+        const e = u * u * (3 - 2 * u); // smooth step: eased in and out
+        const land = f.landing ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
+        const A = land ? { ...m2.cornerA, tx: m2.cornerA.tx + (land.x - CX - m2.cornerA.tx) * CORNER_CAM.followLanding * 0.5, tz: m2.cornerA.tz + (land.y - m2.cornerA.tz) * CORNER_CAM.followLanding * 0.5 } : m2.cornerA;
+        def = lerpCamera(m2.sp, A, e);
+      }
+    }
     const cz = zoomCamera(def, wide, zoom);
     const elevDeg = cz.elevDeg + camHeightTest(); // the camera-height test slider (0 in the game)
     const c = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };

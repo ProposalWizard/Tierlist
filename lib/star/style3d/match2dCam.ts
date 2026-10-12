@@ -437,7 +437,18 @@ export function setPieceKeep(ball: BcPoint, figures: { sid: string; x: number; y
  * `pick` is the one in the game ("off": the 2D's own frame, as before).
  */
 export const CORNER_CAM = {
-  pick: "C" as "A" | "B" | "C" | "off",
+  /**
+   * Harry, 12 Oct 2026, on the A/B/C stills: liked B ("very cool, not executed perfectly") and C, and
+   * wants the corner to START wide (B or C) and glide to A (the box) right after the kick, while the
+   * ball is in the air. `pick` "glide" does that; "A" | "B" | "C" hold one framing; "off" = the 2D's frame.
+   */
+  pick: "glide" as "A" | "B" | "C" | "glide" | "off",
+  /** The glide: the start view (B or C) seeded per corner while Harry sees both. */
+  starts: ["B", "C"] as ("B" | "C")[],
+  /** Seconds from the kick to the box framing (eased, never a cut). */
+  glideS: 0.42,
+  /** The box framing follows the ball's landing spot this much (0 none, 1 centred on it). */
+  followLanding: 0.5,
   margin: 0.05,
   /** The box's men: within this far of the goal line and of the goal's middle, m. */
   boxDepth: 20,
@@ -447,7 +458,7 @@ export function usesCornerCam(kind: string): boolean { return kind === "corner" 
 
 export function solveCornerCam(
   f: Frame2D, ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null,
-  man: MatchScale, variant: "A" | "B" | "C" = CORNER_CAM.pick === "off" ? "C" : CORNER_CAM.pick,
+  man: MatchScale, variant: "A" | "B" | "C" = CORNER_CAM.pick === "off" || CORNER_CAM.pick === "glide" ? "C" : CORNER_CAM.pick,
 ): Match2DCamera {
   const hm = MATCH2D.manH * man.man, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
   const box: BcPoint[] = [];

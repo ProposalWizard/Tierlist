@@ -37,6 +37,15 @@ const subscribe = (f: () => void) => { listeners.add(f); return () => { listener
 export const useCamZoom = () => useSyncExternalStore(subscribe, camZoom, () => 0);
 export const useCamHeightTest = () => useSyncExternalStore(subscribe, camHeightTest, () => 0);
 
+/** Between two cameras at share `t` (0..1): spot, distance, angle, lens and turn (by the shorter way round). */
+export function lerpCamera<T extends ZoomCam>(a: T, b: ZoomCam, t: number): T {
+  const L = (p: number, q: number) => p + (q - p) * t;
+  const aa = Math.atan2(a.ax, a.az), ab = Math.atan2(b.ax, b.az);
+  let d = ab - aa; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+  const an = aa + d * t;
+  return { ...a, tx: L(a.tx, b.tx), tz: L(a.tz, b.tz), D: L(a.D, b.D), fov: L(a.fov, b.fov), elevDeg: L(a.elevDeg, b.elevDeg), minDepth: L(a.minDepth, b.minDepth), ax: Math.sin(an), az: Math.cos(an) };
+}
+
 /**
  * The camera for zoom `z`: between `def` (0) and `wide` (1, the whole scenario), or, below 0,
  * `def` pulled in towards its own look point down to `inK` of its distance at -1.
