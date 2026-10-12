@@ -4677,6 +4677,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
+        runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
       });
     }
     } catch (e) {

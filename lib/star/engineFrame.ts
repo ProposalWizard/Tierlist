@@ -137,6 +137,11 @@ export interface EngineFrame {
    * pitch and lets a tap on one of `pickable` reach the 2D canvas at his feet.
    */
   orders?: EngineFrameOrders | null;
+  /**
+   * A penalty / direct free kick run-up in progress: seconds in, and how long this
+   * taker's run-up takes (runupStyles.ts). The 3D times its run-up clip off it.
+   */
+  runup?: { t: number; runS: number } | null;
 }
 
 export interface EngineFrameOrders {
