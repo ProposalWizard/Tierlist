@@ -15,6 +15,7 @@
  * Low quality: none of it (ACES straight to the screen, as before).
  */
 import type { Quality3d } from "../../three3d/quality";
+import { tierLookNew } from "../../three3d/tierLook";
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -56,7 +57,7 @@ const FINAL = /* glsl */ `
 precision highp float;
 uniform sampler2D tColor, tDepth, tSoft, tBloom;
 uniform vec2 res;
-uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, dof, dofNear, dofFar, useDepth, lite, bloomThresh;
+uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, fxSharp, dofOnce, dof, dofNear, dofFar, useDepth, lite, bloomThresh;
 uniform vec3 tint, lift, shadowTint, lightTint;
 uniform sampler2D tLut;
 uniform float lutAmt;
@@ -77,12 +78,12 @@ float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 vec3 scene(vec2 uv) {
   vec3 c = texture2D(tColor, uv).rgb;
-  if (dof > 0.0 && useDepth > 0.5) {
+  if (dof > 0.0 && useDepth > 0.5 && dofOnce < 0.5) {
     float d = linD(texture2D(tDepth, uv).r);
     float k = smoothstep(dofNear, dofFar, d) * dof;
     c = mix(c, texture2D(tSoft, uv).rgb, k);
   }
-  if (lite < 0.5) c += texture2D(tBloom, uv).rgb * bloom;
+  if (lite < 0.5 && dofOnce < 0.5) c += texture2D(tBloom, uv).rgb * bloom;
   return toSRGB(aces(c));
 }
 void main() {
@@ -114,9 +115,22 @@ void main() {
       float lb = luma(b);
       c = (lb < lMin || lb > lMax) ? a : b;
     }
+    // 3D quality look New (12 Oct 2026): a light sharpen after the smoothing, from the four corner
+    // samples FXAA has already read (no extra texture reads)
+    if (fxSharp > 0.0) c = max(c + (c - (nw + ne + sw + se) * 0.25) * fxSharp, 0.0);
   } else if (sharpen > 0.0) {
     vec3 n = scene(vUv + vec2(0.0, px.y)) + scene(vUv - vec2(0.0, px.y)) + scene(vUv + vec2(px.x, 0.0)) + scene(vUv - vec2(px.x, 0.0));
     c = max(c + (c - n * 0.25) * sharpen, 0.0);
+  }
+  // Medium New: the bloom and the far stands' soft focus once, on the centre, added as a change to the
+  // smoothed picture (before: the bloom was read again inside every one of FXAA's 5-9 reads)
+  if (dofOnce > 0.5) {
+    vec3 raw = texture2D(tColor, vUv).rgb, lin = raw;
+    if (dof > 0.0 && useDepth > 0.5) {
+      float k = smoothstep(dofNear, dofFar, linD(texture2D(tDepth, vUv).r)) * dof;
+      if (k > 0.001) lin = mix(lin, texture2D(tSoft, vUv).rgb, k);
+    }
+    c = max(c + toSRGB(aces(lin + texture2D(tBloom, vUv).rgb * bloom)) - toSRGB(aces(raw)), 0.0);
   }
   c += glow;
   // the grade: S-curve, split tone, saturation
@@ -164,9 +178,43 @@ export interface HPost {
   dispose(): void;
 }
 
+/**
+ * The broadcast grade without a pass (3D quality look New, 12 Oct 2026): three's own
+ * ACES, then the S-curve, split tone, saturation and a touch of warmth, inside the
+ * tone map every lit material already runs. Used when the pass is off (Low, and the
+ * emergency rungs): an ALU cost per pixel, no extra target, no extra draw. Fixed
+ * numbers (golden-hour broadcast, between day and night): a shader built once keeps
+ * them, so they are not per time of day. No colour cube (it needs a texture).
+ */
+const GRADE_TONEMAP = /* glsl */ `vec3 CustomToneMapping( vec3 color ) {
+  vec3 c = ACESFilmicToneMapping( color );
+  vec3 s = pow( max( c, vec3( 0.0 ) ), vec3( 1.0 / 2.2 ) );
+  s = s * vec3( 1.025, 1.0, 0.965 ) + vec3( 0.006, 0.003, 0.0 );
+  s = mix( s, s * s * ( 3.0 - 2.0 * s ), 0.24 );
+  float l = dot( s, vec3( 0.299, 0.587, 0.114 ) );
+  s *= mix( vec3( 0.97, 1.0, 1.04 ), vec3( 1.03, 1.0, 0.97 ), smoothstep( 0.15, 0.75, l ) );
+  s = mix( vec3( dot( s, vec3( 0.299, 0.587, 0.114 ) ) ), s, 1.12 );
+  return pow( clamp( s, 0.0, 1.0 ), vec3( 2.2 ) );
+}`;
+let gradeToneMapInstalled = false;
+/** Puts the grade into three's CustomToneMapping (once a page). Returns the tone mapping to use. */
+export function gradeToneMapping(T: any): number {
+  if (!gradeToneMapInstalled && T.ShaderChunk?.tonemapping_pars_fragment) {
+    const src: string = T.ShaderChunk.tonemapping_pars_fragment;
+    const stub = "vec3 CustomToneMapping( vec3 color ) { return color; }";
+    if (src.includes(stub)) T.ShaderChunk.tonemapping_pars_fragment = src.replace(stub, GRADE_TONEMAP);
+    gradeToneMapInstalled = true;
+  }
+  return T.ShaderChunk?.tonemapping_pars_fragment?.includes("ACESFilmicToneMapping( color );") ? T.CustomToneMapping : T.ACESFilmicToneMapping;
+}
+
 export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: number } = {}): HPost {
   const msaa = renderer.capabilities?.isWebGL2 === false ? 0 : o.msaa ?? (tier === "high" ? 4 : 0);
+  // 3D quality look New: Medium buys High's look back where it costs next to nothing
+  const fresh = tierLookNew();
+  const medNew = fresh && tier === "medium";
   const levels = tier === "high" ? 5 : 3;
+  const offTM = fresh ? gradeToneMapping(T) : T.ACESFilmicToneMapping;
   const mk = (o: { depth?: boolean; samples?: number } = {}) => {
     const rt = new T.WebGLRenderTarget(4, 4, { type: T.HalfFloatType, minFilter: T.LinearFilter, magFilter: T.LinearFilter, depthBuffer: !!o.depth, samples: o.samples ?? 0 });
     if (o.depth) {
@@ -191,7 +239,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     tColor: { value: null }, tDepth: { value: null }, tSoft: { value: null }, tBloom: { value: null },
     res: { value: new T.Vector2() }, cNear: { value: 0.1 }, cFar: { value: 300 }, exposure: { value: 1 }, bloom: { value: 0.3 },
     contrast: { value: 1 }, sat: { value: 1 }, vignette: { value: 0.2 }, grain: { value: 0.012 }, time: { value: 0 },
-    sharpen: { value: tier === "high" ? 0.22 : msaa ? 0.14 : 0 }, fxaa: { value: tier === "medium" && !msaa ? 1 : 0 },
+    sharpen: { value: tier === "high" ? 0.22 : msaa ? 0.14 : 0 }, fxSharp: { value: 0 }, dofOnce: { value: 0 }, fxaa: { value: tier === "medium" && !msaa ? 1 : 0 },
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },
@@ -202,6 +250,8 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
   const t0 = performance.now();
   let depthOk = true;
   let mode: HPostMode = tier === "low" ? "off" : "full";
+  // the frame drawn straight to the screen: shaders built (compile) for the tone map it will use
+  if (mode === "off" && fresh) renderer.toneMapping = offTM;
 
   const pass = (mat: any, target: any) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
 
@@ -210,7 +260,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     sceneTarget() { return mode === "off" ? null : main; },
     render(scene, camera, g) {
       if (mode === "off") {
-        renderer.toneMapping = T.ACESFilmicToneMapping;
+        renderer.toneMapping = offTM;
         renderer.toneMappingExposure = g.exposure;
         renderer.setRenderTarget(null);
         renderer.render(scene, camera);
@@ -232,7 +282,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       if (mode === "lite") {
         fu.tColor.value = main.texture; fu.tDepth.value = main.depthTexture; fu.tSoft.value = main.texture; fu.tBloom.value = main.texture;
         fu.useDepth.value = 0; fu.lite.value = 1; fu.dof.value = 0; fu.bloomThresh.value = g.bloomThresh;
-        fu.fxaa.value = msaa ? 0 : 1; fu.sharpen.value = 0;
+        fu.fxaa.value = msaa ? 0 : 1; fu.sharpen.value = 0; fu.fxSharp.value = fresh && !msaa ? 0.12 : 0; fu.dofOnce.value = 0;
         fu.res.value.set(w, h); fu.cNear.value = camera.near; fu.cFar.value = camera.far;
         fu.exposure.value = g.exposure; fu.bloom.value = g.bloom * 0.6; fu.contrast.value = g.contrast; fu.sat.value = g.sat;
         fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000;
@@ -243,7 +293,10 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
         renderer.autoClear = auto;
         return;
       }
-      fu.lite.value = 0; fu.dof.value = tier === "high" ? 0.75 : 0; fu.fxaa.value = tier === "medium" && !msaa ? 1 : 0;
+      // Medium New: the far stands' soft focus is back (the half-size copy is drawn anyway), and a light sharpen after FXAA
+      fu.lite.value = 0; fu.dof.value = tier === "high" ? 0.75 : medNew ? 0.6 : 0; fu.fxaa.value = tier === "medium" && !msaa ? 1 : 0;
+      fu.fxSharp.value = medNew && !msaa ? 0.45 * (g.sharpen ?? 1) : 0;
+      fu.dofOnce.value = medNew ? 1 : 0;
       // half size copy, then the bloom chain
       du.tSrc.value = main.texture; du.texel.value.set(0.5 / w, 0.5 / h); du.thresh.value = 0;
       pass(downMat, soft);

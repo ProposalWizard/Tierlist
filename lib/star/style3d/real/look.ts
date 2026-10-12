@@ -30,6 +30,7 @@ import { dressHBall, type HBall } from "./ball";
 import { bakedLightNow, type BakedLight } from "../../look/bakedLight";
 import { lookLut, lookParams, lookTuneHook, lookVersion, tuneGrass, type LookParams } from "../../look/params";
 import { shadowCacheOff } from "../../three3d/shadowCache";
+import { tierLookNew } from "../../three3d/tierLook";
 import { lightReachOff } from "../../three3d/lightReach";
 import { safeCompileAsync } from "../../three3d/safeCompile";
 
@@ -240,16 +241,22 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const csGeo = new T.PlaneGeometry(1, 1);
   csGeo.rotateX(-Math.PI / 2);
   // one draw for every contact shadow (9 Oct 2026: was one draw a man, 22 in a match)
-  const CS_MAX = 40;
+  // (3D quality look New) where the men cast no live shadow (Low, the emergency rungs), each also gets a
+  // long soft shadow along the sun from the same instanced draw: no man floats, nothing more to draw
+  const CS_MAX = 80;
   const csInst = new T.InstancedMesh(csGeo, csMat, CS_MAX);
   csInst.renderOrder = 1; csInst.count = 0; csInst.frustumCulled = false;
   root.add(csInst);
   const csM = new T.Matrix4(), csQ = new T.Quaternion(), csP = new T.Vector3(), csS = new T.Vector3();
+  const UP_Y = new T.Vector3(0, 1, 0);
   const contacts: { p: Person3D }[] = [];
 
   const post: HPost = makeHPost(T, renderer, tier, o.sharp && tier !== "low" ? { msaa: tier === "high" ? 4 : 2 } : {});
-  if (o.sharp || (o.crisp && tier !== "low")) {
-    const an = Math.min(8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+  // 3D quality look New (12 Oct 2026): the pitch, crowd and boards filtered at 8x on Medium, 4x on Low.
+  // Sharp mown stripes and lines at a slant for a texture fetch, not a higher pixel ratio.
+  const freshTier = tierLookNew();
+  if (o.sharp || (o.crisp && tier !== "low") || freshTier) {
+    const an = Math.min(tier === "low" && !o.sharp ? 4 : 8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
     for (const t of [maps.col, maps.nrm, maps.orh, crowdTex, ledTex]) if (t && t.anisotropy < an) { t.anisotropy = an; t.needsUpdate = true; }
   }
   // the shadow-only pass: a 1-pixel target and a camera that sees nothing
@@ -381,6 +388,21 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         const s = r.scale.x || 1;
         csP.set(r.position.x, 0.015, r.position.z + 0.04 * s); csS.set(0.75 * s, 1, 0.75 * s);
         csInst.setMatrixAt(ci++, csM.compose(csP, csQ, csS));
+      }
+      if (freshTier && !peopleCast) {
+        // the sun's shadow on the grass: away from the sun, longer the lower it is (a 1.8 m man)
+        const hl = Math.hypot(dir.x, dir.z) || 1e-3;
+        const len = Math.min(4.2, Math.max(0.9, (1.8 * hl) / Math.max(0.2, dir.y)));
+        const sx = -dir.x / hl, sz = -dir.z / hl;
+        csQ.setFromAxisAngle(UP_Y, Math.atan2(sx, sz));
+        for (const c of contacts) {
+          const r = c.p.root;
+          if (!(r.visible && c.p.body.visible !== false) || ci >= CS_MAX) continue;
+          const s = r.scale.x || 1;
+          csP.set(r.position.x + sx * len * 0.5 * s, 0.014, r.position.z + sz * len * 0.5 * s); csS.set(0.6 * s, 1, len * s);
+          csInst.setMatrixAt(ci++, csM.compose(csP, csQ, csS));
+        }
+        csQ.identity();
       }
       csInst.count = ci;
       csInst.instanceMatrix.needsUpdate = true;
