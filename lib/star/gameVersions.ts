@@ -114,7 +114,7 @@ export const LOOK_ROWS = {
   humanBody: row("3D body", "human", "before", humanBodyLook, setHumanBodyLook),
   playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   // Harry, 12 Oct 2026: "for cut scenes the Style A is good and in game the realistic players is good".
-  matchPlayers3d: row("Players in a 3D match", "real", "follow", matchPlayersStyleLook, setMatchPlayersStyleLook),
+  matchPlayers3d: row("Players in a 3D match", "styleA", "follow", matchPlayersStyleLook, setMatchPlayersStyleLook),
   // Harry, 12 Oct 2026: "medium/low to not look terrible using every percent of optimisation we can".
   tierLook3d: row("3D quality look", "new", "old", tierLook, setTierLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
@@ -195,7 +195,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     people3d: N("people3d"),
     humanBody: O("humanBody"),
     playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
-    matchPlayers3d: N("matchPlayers3d"), // realistic players in any 3D football; Style A off the pitch (12 Oct 2026)
+    matchPlayers3d: N("matchPlayers3d"), // Style A men in any 3D football, dressed like Home (12 Oct 2026, later; Realistic stays a choice)
     tierLook3d: N("tierLook3d"), // Medium and Low buy High's look back cheaply (12 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
     cutsceneCamera: N("cutsceneCamera"),
@@ -243,7 +243,7 @@ if (typeof window !== "undefined" && !playerStyleStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "playerStyle" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.playerStyle.set("old");
 }
-// Players in a 3D match arrived on New (realistic) the same way: a Classic phone takes its Old once.
+// Players in a 3D match arrived on New (Style A since 12 Oct 2026) the same way: a Classic phone takes its Old once.
 if (typeof window !== "undefined" && !matchPlayersStyleStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "matchPlayers3d" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.matchPlayers3d.set("follow");

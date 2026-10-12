@@ -33,7 +33,7 @@ import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
-import { matchPlayerStyle } from "./toon/matchLook";
+import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
 import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
@@ -632,6 +632,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // Style A (Player style: New): a man's head is seeded by who he is, so spares are kept per head
   // (his build is a scale, set again when a spare is used).
   const toonOn = mStyle === "new";
+  // "Players in a 3D match: Style A" (toon/matchLook.ts): every man lit like the Home player, with an ink edge (toon/shader.ts HOME_LIGHT)
+  const homeMen = toonOn && matchPlayersStyleLook() === "styleA";
+  const homeLight = (p: Person3D) => { const hu = (p.u as any).uHome?.value; if (hu) hu.x = homeMen ? 1 : 0; };
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
@@ -639,6 +642,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const buildShell = (th?: ToonHead) => {
     const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
     if (fb) addClips(THREE, p, fb as any);
+    homeLight(p);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
     matchSizedMap(p);
     p.root.visible = false;
@@ -711,7 +715,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
     const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
-    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); }
+    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],

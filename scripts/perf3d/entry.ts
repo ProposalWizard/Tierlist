@@ -252,6 +252,42 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
     return true;
   },
+  /**
+   * The Home / title player exactly as ToonHomePlayer draws him (same lights, tone map, outline,
+   * camera fit, pixel ratio), at any box size: `{ w, h }` in CSS px, to set one man at Home next
+   * to one man in the match at the same height on screen (Style A match pass, 12 Oct 2026).
+   */
+  async homeman(opts: any = {}) {
+    M.t0 = performance.now();
+    const width = opts.w ?? 40, height = opts.h ?? 72;
+    const el = stage();
+    const { toonYou } = await import("@/lib/star/style3d/toon/bodies");
+    const you = toonYou();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(width, height); renderer.setClearColor(0x2f6b2a, 1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    el.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2));
+    const sun = new THREE.DirectionalLight("#ffe0b0", 2.6); sun.position.set(2.5, 4, 4); scene.add(sun);
+    const loader = await withMeshopt(new GLTFLoader());
+    const [g, anims] = await Promise.all([loadToonHead(loader as any, you.head), loadPeople3d(loader as any, "anims", "new")]);
+    const p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+    dressPerson3d(THREE as any, p, { skin: you.skin, hair: you.hair, kit: { shirt: "#c8102e", trim: "#ffffff" }, number: null });
+    p.root.rotation.y = opts.yaw ?? Math.PI;
+    scene.add(p.root);
+    const tall = 1.83 * (p.root.children[0]?.scale.y ?? 1);
+    const cam = new THREE.PerspectiveCamera(18, width / height, 0.1, 40);
+    const fit = (tall * 1.06) / 2 / Math.tan((18 * Math.PI) / 360);
+    const tl = ((opts.tilt ?? 0) * Math.PI) / 180; // 0 = level, as Home; ~45 = the match camera's look down
+    cam.position.set(0, tall * 0.53 + fit * Math.sin(tl), fit * Math.cos(tl)); cam.lookAt(0, tall * 0.53, 0);
+    let on = true;
+    const tick = () => { if (!on) return; renderer.render(scene, cam); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
   async preload(scene: string) {
     const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;

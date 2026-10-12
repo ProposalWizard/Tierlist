@@ -160,7 +160,8 @@ for (const b of TOON_HEADS) {
 // realistic bodies in football; Old follows Player style exactly as before.
 {
   const { resolveMatchPlayerStyle, MATCH_PLAYERS_STYLE_DEFAULT } = await import("../../lib/star/style3d/toon/matchLook");
-  check(MATCH_PLAYERS_STYLE_DEFAULT === "real", "the 3D match is not realistic by default");
+  check(MATCH_PLAYERS_STYLE_DEFAULT === "styleA", "the 3D match is not Style A by default");
+  check(resolveMatchPlayerStyle("styleA", "new") === "new" && resolveMatchPlayerStyle("styleA", "old") === "new", "Style A in the match follows Player style");
   check(resolveMatchPlayerStyle("real", "new") === "old" && resolveMatchPlayerStyle("real", "old") === "old", "Realistic still draws Style A in the match");
   check(resolveMatchPlayerStyle("follow", "new") === "new" && resolveMatchPlayerStyle("follow", "old") === "old", "Old does not follow Player style");
 }
