@@ -548,9 +548,16 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Rows that stay:** full screen, sound, 3D quality, skip the line-up (main
   Settings only), Match view 3D, player names (default off), UI Old | New, the
   v0.15 test box (keeper pro, shots, knuckleball, ball physics, match flow,
-  radar), cut-scene people and camera (being reworked). Version picker:
-  Classic | Standard; **no Preview** — something becomes a "Preview" only
-  when someone asks for that in those words.
+  radar). **No Version picker and no Preview** — something becomes a
+  "Preview" only when someone asks for that in those words.
+- **Cut scenes (12 Oct 2026, later):** people and camera New, no row ("the new
+  cut scenes will be staying"). The Version picker (Classic | Standard) went
+  with them; the rows left live in `lib/star/lookRows.ts`.
+- **Faces (12 Oct 2026, later):** photo faces OFF for everyone (real photos,
+  fake faces, your uploaded photo): every head is the drawn one, Style A where
+  the picture is Style A. `PHOTO_FACES` in `lib/star/faceStyle.ts`; stored
+  values ignored. The Photo picker and face editors are hidden until the photo
+  revamp; their code stays. Player names stay a row (default off).
 - **New work (Harry, 12 Oct 2026, standing):** no New | Old row and no
   Preview entry for anything new. It goes straight into the game when Harry
   says push. Unfinished work lives on a test page, not behind a switch in

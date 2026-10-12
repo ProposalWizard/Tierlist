@@ -7,10 +7,7 @@ import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
 import { GAMEPLAY_SWITCHES, type GameplaySwitch } from "@/lib/star/gameplayVersion";
-import {
-  GAME_VERSIONS, GAME_VERSION_LABEL, LOOK_ROWS, LOOK_ROW_IDS, VERSION_PRESETS,
-  applyGameVersion, gameVersionOf, setLookRow, useLook, type LookRowId,
-} from "@/lib/star/gameVersions";
+import { LOOK_ROWS, changedFromDefault, setLookRow, useLook, type LookRowId } from "@/lib/star/lookRows";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
@@ -102,59 +99,13 @@ function HomeScreenTip() {
 
 // ── SETTINGS (Harry, 8 Oct 2026; trimmed 12 Oct 2026) ──────────────────
 //
-//   Version   Classic | Standard — one tap sets every row still being tested
-//             (lib/star/gameVersions.ts). "Custom" once one is changed by hand.
 //   Quick     full screen, sound, 3D quality, skip the line-up.
-//   Groups    folded: Match, Cut scenes & 3D, Screens, then the screen's own
+//   Groups    folded: Match, 3D match camera, Screens, then the screen's own
 //             (Career & saves, or Saves on the title). One open at a time.
 // 12 Oct 2026: every settled look lost its row ("decide things and be done
-// with it"); see CLAUDE.md → "Decided, no toggle".
-
-/** The Version card: two versions, and how far this phone is from them. */
-export function VersionCard({ glow }: { glow: string }) {
-  const look = useLook();
-  const state = gameVersionOf(look);
-  const nearest = GAME_VERSION_LABEL[state.nearest];
-  return (
-    <SetCard tone={glow} className="px-3 py-2.5" data-version-card>
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="text-[15px] font-black leading-tight text-white">Version</div>
-        <div className="text-[11px] font-semibold leading-tight text-white/85">Classic = the old version of the {LOOK_ROW_IDS.length} rows still being tested</div>
-      </div>
-      <div className="mt-2">
-        <div className="grid grid-cols-2 gap-0.5 rounded-xl bg-black/30 p-1" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.5)" }} role="radiogroup" aria-label="Version">
-          {GAME_VERSIONS.map((v) => {
-            const on = state.version === v;
-            return (
-              <button
-                key={v}
-                role="radio"
-                aria-checked={on}
-                data-version={v}
-                onClick={() => applyGameVersion(v)}
-                className={`kib-press relative rounded-lg px-1.5 py-1.5 text-[11px] font-black uppercase tracking-wide ${on ? "bg-white/15 text-white" : "text-white/55"}`}
-                style={on ? { boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(0,0,0,.35)" } : undefined}
-              >
-                {GAME_VERSION_LABEL[v]}
-                {on && <span className="absolute inset-x-2 -bottom-[3px] h-[3px] rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px rgba(52,211,153,.8)" }} />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {state.version === "custom" ? (
-        <p className="mt-2 text-[12px] font-black text-amber-300" data-version-state="custom">
-          ● Custom · {nearest} + {state.changes} change{state.changes === 1 ? "" : "s"} ·{" "}
-          <button onClick={() => applyGameVersion(state.nearest)} className="kib-press underline">Undo</button>
-        </p>
-      ) : (
-        <p className="mt-2 text-[12px] font-black text-emerald-300" data-version-state={state.version}>
-          ✓ {nearest}, no changes of your own
-        </p>
-      )}
-    </SetCard>
-  );
-}
+// with it"), and the Version picker (Classic | Standard) went with the cut-
+// scene rows ("the new cut scenes will be staying"). See CLAUDE.md →
+// "Decided, no toggle".
 
 /** The first screen's switches: full screen, sound, 3D quality, skip the line-up. */
 export function QuickSwitches({ glow, fullscreen }: {
@@ -184,8 +135,7 @@ function LookRow({ id, tabs, note, look }: {
   note?: React.ReactNode;
   look: Record<LookRowId, string>;
 }) {
-  const state = gameVersionOf(look);
-  const changed = state.version === "custom" && look[id] !== VERSION_PRESETS[state.nearest][id];
+  const changed = changedFromDefault(id, look);
   return (
     <div className="border-b border-white/10 py-2 last:border-b-0" data-look-row={id}>
       <div className="flex items-center justify-between gap-2">
@@ -254,9 +204,8 @@ function MatchGroup() {
   );
 }
 
-/** Cut scenes: still being reworked, so they keep a row. */
+/** The 3D match camera: zoom, and the height test. (Cut scenes: decided New, no row.) */
 function World3dGroup() {
-  const look = useLook();
   const zoom = useCamZoom();
   const camH = useCamHeightTest();
   return (
@@ -267,8 +216,6 @@ function World3dGroup() {
       <PrefRow label="3D camera height (test)" note={`Testing only. Raises or lowers the 3D match camera (${camH > 0 ? "+" : ""}${camH}°). Leave at 0.`}>
         <input type="range" min={HEIGHT_TEST_MIN} max={HEIGHT_TEST_MAX} step={1} value={camH} onChange={(e) => setCamHeightTest(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D camera height (test)" data-cam-height-test />
       </PrefRow>
-      <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being reworked. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
-      <LookRow id="cutsceneCamera" look={look} tabs={NEW_OLD} note="Being reworked. New: opens on a wide of the place, the camera always moving a little, and music. Old: the shots as they were, no music." />
     </>
   );
 }
@@ -308,7 +255,7 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
   }
   const groups: (ExtraGroup & { card?: boolean })[] = [
     { id: "match", title: "Match", sub: "Testing (v0.15), 2D or 3D, names", count: 8, content: <MatchGroup />, card: true },
-    { id: "world", title: "Cut scenes", sub: "Being reworked", count: 2, content: <World3dGroup />, card: true },
+    { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
   ];
@@ -345,16 +292,14 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
   );
 }
 
-/** Version on top, then the quick switches: the first screen of both Settings pages. */
+/** The quick switches: the first screen of both Settings pages. */
 export function SettingsTop({ glow, fullscreen }: {
   glow: string;
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
 }) {
   return (
     <>
-      <SetSection className="mb-1.5 mt-1">Game version</SetSection>
-      <VersionCard glow={glow} />
-      <SetSection className="mb-1.5 mt-3">Quick</SetSection>
+      <SetSection className="mb-1.5 mt-1">Quick</SetSection>
       <QuickSwitches glow={glow} fullscreen={fullscreen} />
     </>
   );
