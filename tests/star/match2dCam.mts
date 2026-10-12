@@ -28,7 +28,9 @@ import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "..
 import { drawnTakerAt } from "../../lib/star/kickFoot";
 import { keepDragRoom, usesCornerCam, solveCornerCam } from "../../lib/star/style3d/match2dCam";
 import { zoomCamera } from "../../lib/star/style3d/camZoom";
-import { servedChance, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
+import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
+import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT } from "../../lib/star/style3d/match2dCam";
+import { stanceFor, shotTarget } from "../../lib/star/style3d/setPiece3d";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -208,12 +210,14 @@ if (isMain) {
             ? (["B", "C"] as const).map((v) => solveCornerCam(c.f, b, c.figs, kp, matchScale(), v))
             : usesSetPieceCam(kind)
               ? [solveSetPieceCam(c.f, setPieceKeep(b, c.figs, kp, matchScale()), b, matchScale(), SET_PIECE_CAM, kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare)]
-              : [{ ...wide, D: wide.D * OPEN_K, minDepth: wide.minDepth * OPEN_K }];
+              : usesKindCam(kind)
+                ? [solveKindCam(kind, c.f, b, c.figs, kp, matchScale())]
+                : [{ ...wide, D: wide.D * OPEN_K, minDepth: wide.minDepth * OPEN_K }];
           for (const def of defs) for (const z of [-1, -0.5, 0, 0.5, 1]) {
-            const cz = zoomCamera(def, wide, z);
+            const cz = zoomCamera(def, usesKindCam(kind) ? wideFromSide(c.f, def) : wide, z);
             const c0 = { ...cz, elev: (cz.elevDeg * Math.PI) / 180 };
             const y0 = bcProject(c0, w, h, b).fr * h;
-            const cam = usesSetPieceCam(kind) || usesCornerCam(kind) || z !== 0 ? keepDragRoom(c0, b, w, h) : c0;
+            const cam = usesSetPieceCam(kind) || usesCornerCam(kind) || usesKindCam(kind) || z !== 0 ? keepDragRoom(c0, b, w, h) : c0;
             const y1 = bcProject(cam, w, h, b).fr * h;
             n2++; kn++;
             if (y0 > h - full) { before++; kb++; }
@@ -235,7 +239,7 @@ if (isMain) {
   {
     let n3 = 0, off = 0, out = 0, worstD = 0, minEdge = 1;
     for (const kind of SERVED_KINDS) {
-      if (usesSetPieceCam(kind) || usesCornerCam(kind)) continue;
+      if (usesSetPieceCam(kind) || usesCornerCam(kind) || usesKindCam(kind)) continue;
       for (let seed = 1; seed <= 10; seed++) {
         const c = servedChance(kind, seed);
         if (!c.drawn || c.faults.length || c.sc.kind !== kind) continue;
@@ -256,6 +260,87 @@ if (isMain) {
     console.log(`3D default vs the 2D frame: ${n3} served open-play chances; ball and taker at most ${(worstD * 100).toFixed(1)}% of the screen from their 2D spot; nearest to an edge ${(minEdge * 100).toFixed(1)}%`);
     ok(off === 0, `the ball and the taker sit where the 2D puts them, within 10% of the screen (${off} not)`);
     ok(out === 0, `the ball and the taker are on the 3D screen, at least 2% in from every edge (${out} not)`);
+  }
+
+  // THE 3D-ONLY CAMERAS (Harry, 12 Oct 2026): cutbacks side-on, framed tight; tight angles from behind
+  // the taker's head (FIFA-style); byline crosses the corner's glide. Served chances that pass their
+  // kind's rules only. Ball, taker, keeper and the goal on screen; a full-power drag fits under the ball.
+  {
+    ok(usesKindCam("cutback") && usesKindCam("tight_angle") && !usesKindCam("one_on_one") && !usesKindCam("corner"), "only cutbacks and tight angles get the 3D-only kind camera");
+    ok(usesCornerCam("byline_cross") && usesCornerCam("corner") && !usesCornerCam("cutback"), "byline crosses take the corner's camera and glide");
+    const ev3 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+    ok(ev3.includes("solveKindCam(f.kind, fr2") && ev3.includes("usesKindCam(f.kind)"), "the 3D view uses the kind camera (engineView.ts)");
+    const manPx = (cam: BcCamera, p: BcPoint) => leanedManShare(cam, W, H, p, 1.8, 0) * H;
+    const ref: number[] = [];
+    for (const c of cleanServed("one_on_one", 6)) ref.push(manPx(solveMatch2D(c.f), c.sc.ball));
+    const refMed = pct(ref, 0.5);
+    const fullH = dragForFullPower(0) * 1.6 * W;
+    for (const kind of ["cutback", "tight_angle", "byline_cross"]) {
+      let n4 = 0, offS = 0, noRoom = 0, small = 0, shape = 0;
+      const px: number[] = [], before: number[] = [], Ds: number[] = [];
+      for (const c of cleanServed(kind, 10)) {
+        const b = c.sc.ball, kp = { x: c.keeper.x, y: c.keeper.y };
+        const you = c.figs.find((g) => g.sid === "you")!;
+        const cams = kind === "byline_cross"
+          ? (["B", "C"] as const).map((v) => keepDragRoom(solveCornerCam(c.f, b, c.figs, kp, matchScale(), v), b, W, H))
+          : [solveKindCam(kind, c.f, b, c.figs, kp, matchScale())];
+        for (const cam of cams) {
+          n4++;
+          const must: BcPoint[] = [b, { x: you.x, y: you.y }, { x: you.x, y: you.y, z: 1.8 }];
+          if (kind !== "byline_cross") must.push(kp, { ...kp, z: 1.8 }, { x: 34 - 3.66, y: 0 }, { x: 34 + 3.66, y: 0, z: 2.44 });
+          if (kind === "cutback") { const r0 = c.figs.find((g) => g.sid === "run0"); if (r0) must.push({ x: r0.x, y: r0.y }, { x: r0.x, y: r0.y, z: 1.8 }); }
+          for (const p of must) { const r = bcProject(cam, W, H, p); if (r.depth <= 0.3 || Math.abs(r.nx) > 0.98 || r.fr < 0.01 || r.fr > 0.99) { offS++; break; } }
+          if ((1 - bcProject(cam, W, H, b).fr) * H < fullH) noRoom++;
+          const m = manPx(cam, b); px.push(m); Ds.push(cam.D);
+          if (kind === "cutback" && !(Math.abs(cam.ax) > 0.999 && Math.sign(cam.ax) === Math.sign(b.x - 34))) shape++;
+          // behind the taker's head: he (where the 3D stands him, setPiece3d.ts stanceFor) is nearer the
+          // camera than the ball, the ball nearer than the goal, a low camera
+          if (kind === "tight_angle") {
+            const st = stanceFor(kind, b, shotTarget(kind, null, b), 1);
+            const ps = bcProject(cam, W, H, st), pb = bcProject(cam, W, H, b);
+            const dy = ps.depth, db = pb.depth, dg = bcProject(cam, W, H, { x: 34, y: 0 }).depth;
+            // over his shoulder: the ball sits beside his body on the glass, never behind it (at least ~0.35 m across)
+            const apart = (Math.abs(ps.nx - pb.nx) * W) / 2, body = (manPx(cam, st) / 1.8) * 0.35;
+            if (!(dy < db + 0.3 && db < dg && cam.elevDeg <= 36 && apart >= body)) shape++;
+          }
+          if (kind !== "byline_cross" && m < 0.8 * refMed) small++;
+        }
+        if (kind === "cutback") { const s = servedChance(kind, c.seed, W, H, true); before.push(manPx(solveMatch2D(s.f), s.sc.ball)); }
+      }
+      console.log(`${kind}: ${n4} cameras; a man at the ball ${pct(px, 0).toFixed(0)}–${pct(px, 1).toFixed(0)} px (median ${pct(px, 0.5).toFixed(0)}; one-on-one ${refMed.toFixed(0)})${before.length ? `, side-on 2D frame before ${pct(before, 0.5).toFixed(0)} px` : ""}; camera ${pct(Ds, 0).toFixed(0)}–${pct(Ds, 1).toFixed(0)} m`);
+      ok(n4 >= 10, `${kind}: ${n4} served cameras checked`);
+      ok(offS === 0, `${kind}: ball, taker${kind === "byline_cross" ? "" : ", keeper and the goal"} on screen in every camera (${offS} not)`);
+      ok(noRoom === 0, `${kind}: a full-power drag (${fullH.toFixed(0)} px) fits under the ball (${noRoom} short)`);
+      if (kind !== "byline_cross") ok(small === 0, `${kind}: men at least 80% of the one-on-one's size on screen (${small} smaller)`);
+      if (kind === "cutback") ok(shape === 0 && pct(px, 0.5) > 1.5 * pct(before, 0.5), `cutback: side-on from the ball's touchline, men ${(pct(px, 0.5) / pct(before, 0.5)).toFixed(1)}× bigger than the old side-on frame`);
+      if (kind === "tight_angle") ok(shape === 0, `tight angle: camera low (≤36°) behind the taker, over his shoulder, looking at goal; the ball beside his body (${shape} not)`);
+    }
+  }
+  // THE CAMERA SWIPE (Harry, 12 Oct 2026): turns the view round the ball, at most 45° either way; the ball
+  // keeps its spot on the glass; the drag that turns it never reaches the 2D game (no kick, no order).
+  {
+    let moved = 0, n5 = 0;
+    for (const c of cleanServed("tight_angle", 6)) {
+      const cam = solveKindCam("tight_angle", c.f, c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, matchScale());
+      const b0 = bcProject(cam, W, H, c.sc.ball);
+      for (const d of [-45, -20, 20, 45]) {
+        const o = orbitCamera(cam, c.sc.ball, d);
+        const b1 = bcProject(o, W, H, c.sc.ball);
+        n5++;
+        if (Math.hypot((b1.nx - b0.nx) * W / 2, (b1.fr - b0.fr) * H) > 0.5 || Math.abs(b1.depth - b0.depth) > 1e-6) moved++;
+      }
+    }
+    ok(n5 > 0 && moved === 0, `camera swipe: the ball keeps its spot on the screen and the camera its distance (${n5} turned views, ${moved} moved)`);
+    ok(clampOrbit(90) === ORBIT.maxDeg && clampOrbit(-90) === -ORBIT.maxDeg && ORBIT.maxDeg === 45, "camera swipe: at most 45° either way");
+    const ev4 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+    const mv = ev4.slice(ev4.indexOf("const onMove = "), ev4.indexOf("const onUp = "));
+    const up = ev4.slice(ev4.indexOf("const onUp = "), ev4.indexOf("// PINCH ZOOM"));
+    const dn = ev4.slice(ev4.indexOf("const onDown = "), ev4.indexOf("const moveTarget = "));
+    const orbitBranch = mv.slice(mv.indexOf("if (touch.orbit) {"), mv.indexOf("const at = moveTarget(e);"));
+    ok(dn.includes("touch.pend = !touch.shot && f?.phase === \"aim\";\n    if (touch.pend) return;") && dn.indexOf("if (m2 && mate)") < dn.indexOf("touch.pend ="),
+      "camera swipe: only a press on open grass can become one (the ball and a team-mate are taken first), and nothing is sent to the 2D game until it shows what it is");
+    ok(orbitBranch.length > 0 && !orbitBranch.includes("send(") && orbitBranch.includes("return;") && /if \(touch\.orbit\) \{ touch\.orbit = false; orbit\.drag = false; touch\.id = -1; return; \}/.test(up),
+      "camera swipe: a swipe sends nothing to the 2D game, moving or lifting (it can never start a kick)");
   }
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

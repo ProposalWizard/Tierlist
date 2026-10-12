@@ -192,7 +192,8 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     const tick = () => {
       if (!on) return;
       const now = performance.now() / 1000;
-      const fr = { ...fr0, t: now, keeper: fr0.keeper ? { ...fr0.keeper, idleT: now - t0 } : null };
+      // `tHold` (stills only): hold the frame's clock there, so a glide can be caught part-way (scripts/cam3d/stills.mjs --glide)
+      const fr = { ...fr0, t: typeof fr0.tHold === "number" ? fr0.tHold : now, keeper: fr0.keeper ? { ...fr0.keeper, idleT: now - t0 } : null };
       v.frame(fr);
       requestAnimationFrame(tick);
     };

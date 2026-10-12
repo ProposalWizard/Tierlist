@@ -23,6 +23,7 @@ import { CX } from "../pitch";
 import { SIZE3D } from "./size3d";
 import { canvasToScreen, screenToCanvas, type Tilt } from "../cameraTilt";
 import { bcProject, type BcCamera, type BcFacing, type BcPoint } from "./broadcastCam";
+import { stanceFor, shotTarget } from "./setPiece3d";
 
 export interface Frame2D {
   viewport: { x1: number; x2: number; y1: number; y2: number };
@@ -454,7 +455,13 @@ export const CORNER_CAM = {
   boxDepth: 20,
   boxHalfW: 24,
 };
-export function usesCornerCam(kind: string): boolean { return kind === "corner" && CORNER_CAM.pick !== "off"; }
+/**
+ * Kinds that get the corner's camera and glide in the 3D match. Harry, 12 Oct 2026: byline crosses
+ * (a deep cross from wide) "the SAME rules as a corner": start wide, glide into the box from the kick,
+ * following the landing spot. 3D only; the 2D frames them as before.
+ */
+export const CORNER_CAM_KINDS = ["corner", "byline_cross"];
+export function usesCornerCam(kind: string): boolean { return CORNER_CAM_KINDS.includes(kind) && CORNER_CAM.pick !== "off"; }
 
 export function solveCornerCam(
   f: Frame2D, ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null,
@@ -485,6 +492,157 @@ export function solveCornerCam(
   }
   const b = best!;
   return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
+
+/**
+ * THE 3D-ONLY CAMERAS FOR TWO OPEN-PLAY KINDS (Harry, 12 Oct 2026). The 2D frames these as before.
+ *  - cutback: SIDE-ON, from the touchline on the ball's side (as the side-on comparison he liked),
+ *    framed tight on the action (the one-on-one at ~38 m "looked great"; side-on at 85 m was too far).
+ *  - tight_angle: a FIFA-style broadcast angle "from over the players, behind the player's head":
+ *    low behind and above the taker, looking at goal; the goal, keeper and near defenders in view.
+ * Camera only: nothing is scaled. Pure: tests/star/match2dCam.mts.
+ */
+export const KIND_CAM = {
+  kinds: ["cutback", "tight_angle"] as string[],
+  sideOn: { elevs: [40, 45, 50], fovs: [26, 32, 38], margin: 0.05 },
+  /** The broadcast angle: degrees down; and the least angle off the goal line the camera looks from (opens the goal mouth). */
+  behind: { elevs: [26, 30, 34], fovs: [32, 38, 44], margin: 0.04, minOffLineDeg: 32, prefElev: 30, shoulderDeg: 14 },
+  /** Men kept round the goal: within this far out from the goal line and of the goal's middle, m. */
+  boxDepth: 18, boxHalfW: 20,
+  /** Tight angle: also men within this far of the ball. */
+  nearBall: 6,
+  /** Tight angle: men within this far of the line from the ball to the goal's middle are "ahead" (kept in view). */
+  aheadW: 5,
+  /** Tight angle: the ball's spot, share of the screen's height down (the taker below it, the goal above). */
+  behindBallAt: 0.7,
+  /** Tight angle: a man at the ball at most this share of the screen's height (about the one-on-one's
+   *  closeness; nearer, the camera backs off; Harry: "framed as tight as the one-on-one"). */
+  behindShare: 0.07,
+};
+function segDist(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2));
+  return Math.hypot(p.x - a.x - dx * t, p.y - a.y - dy * t);
+}
+
+/**
+ * Behind the taker: the camera's ground line runs through the ball (the ball in the screen's middle,
+ * left to right, at `behindBallAt` down), and it comes as close as `keep` allows. Width-bound on a phone.
+ */
+function fitBehind(W: number, H: number, keep: BcPoint[], ball: BcPoint, ax: number, az: number, elevDeg: number, fov: number, margin: number, minD = 4): SpCam {
+  const elev = (elevDeg * Math.PI) / 180;
+  const cam = (D: number, a: number) => ({ tx: ball.x - CX - ax * a, tz: ball.y - az * a, ax, az, elev, D, fov });
+  const at = (D: number) => {
+    let lo = -80, hi = 80;
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (bcProject(cam(D, m), W, H, ball).fr > KIND_CAM.behindBallAt) hi = m; else lo = m; }
+    return cam(D, (lo + hi) / 2);
+  };
+  const fits = (D: number) => {
+    const c = at(D);
+    for (const p of keep) { const r = bcProject(c, W, H, p); if (r.depth <= 0.5 || Math.abs(r.nx) > 1 - 2 * margin || r.fr < margin || r.fr > 1 - margin) return false; }
+    return true;
+  };
+  let lo = minD, hi = 400;
+  if (fits(lo)) hi = lo; else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fits(m)) hi = m; else lo = m; }
+  const c = at(hi);
+  let minDepth = Infinity;
+  for (const p of keep) minDepth = Math.min(minDepth, bcProject(c, W, H, p).depth);
+  return { ...c, minDepth, elevDeg };
+}
+export function usesKindCam(kind: string): boolean { return KIND_CAM.kinds.includes(kind); }
+
+type Fig = { sid: string; x: number; y: number; team: string; kickFoot?: number };
+
+/** The points the kind's camera keeps on screen: ball, taker, keeper, the goal, the men in the action. */
+export function kindCamKeep(kind: string, ball: BcPoint, figures: Fig[], keeper: BcPoint | null, man: MatchScale): BcPoint[] {
+  const hm = MATCH2D.manH * man.man, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
+  const pts: BcPoint[] = [{ ...ball, z: 0 }, { ...ball, z: 0.3 }];
+  for (const px of [CX - gw, CX + gw]) pts.push({ x: px, y: 0, z: 0 }, { x: px, y: 0, z: gh });
+  if (keeper) pts.push({ ...keeper, z: 0 }, { ...keeper, z: MATCH2D.manH * man.keeper });
+  const K = KIND_CAM;
+  for (const g of figures) {
+    const inBox = g.y < K.boxDepth && Math.abs(g.x - CX) < K.boxHalfW;
+    const near = Math.hypot(g.x - ball.x, g.y - ball.y) < K.nearBall;
+    // a tight angle: what is ahead of the taker (men on or by the line from the ball to the goal), and men at the ball
+    const ahead = segDist(g, ball, { x: CX, y: 0 }) < K.aheadW && g.y < ball.y + 1;
+    const keep = g.sid === "you" || (kind === "cutback" ? inBox || g.sid === "run0" : ahead || near);
+    if (keep) pts.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
+  }
+  // the 3D stands you behind the ball in the shot's direction (setPiece3d.ts stanceFor), either foot
+  const kf = figures.find((g) => g.sid === "you")?.kickFoot;
+  for (const foot of kf ? [kf] : [1, -1]) {
+    const s = stanceFor(kind, ball, shotTarget(kind, null, ball), foot);
+    pts.push({ ...s, z: 0 }, { ...s, z: hm });
+  }
+  return pts;
+}
+
+/** The kind's camera's ground direction (towards the camera). */
+export function kindCamAzimuth(kind: string, ball: BcPoint, foot = 1): { ax: number; az: number } {
+  if (kind === "cutback") return { ax: ball.x >= CX ? 1 : -1, az: 0 };
+  // behind the ball, on the line from the goal's middle through it, opened to at least minOffLineDeg off the goal line
+  const side = ball.x >= CX ? 1 : -1;
+  const off = Math.max((KIND_CAM.behind.minOffLineDeg * Math.PI) / 180, Math.atan2(Math.max(0, ball.y), Math.abs(ball.x - CX)));
+  let ax = side * Math.cos(off), az = Math.sin(off);
+  // over the shoulder: turned away from the side he stands on, so his body never hides the ball
+  const st = stanceFor(kind, ball, shotTarget(kind, null, ball), foot);
+  const cr = ax * (st.y - ball.y) - az * (st.x - ball.x);
+  const r = (-Math.sign(cr || 1) * KIND_CAM.behind.shoulderDeg * Math.PI) / 180;
+  [ax, az] = [ax * Math.cos(r) - az * Math.sin(r), ax * Math.sin(r) + az * Math.cos(r)];
+  return { ax, az };
+}
+
+export function solveKindCam(kind: string, f: Frame2D, ball: BcPoint, figures: Fig[], keeper: BcPoint | null, man: MatchScale): Match2DCamera {
+  const keep = kindCamKeep(kind, ball, figures, keeper, man);
+  const { ax, az } = kindCamAzimuth(kind, ball, figures.find((g) => g.sid === "you")?.kickFoot ?? 1);
+  const side = kind === "cutback";
+  const S = side ? KIND_CAM.sideOn : KIND_CAM.behind;
+  const hm = MATCH2D.manH * man.man;
+  let best: (SpCam & { share: number; score: number }) | null = null;
+  for (const e of S.elevs) for (const fov of S.fovs) {
+    let c = keepDragRoom(side ? fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin) : fitBehind(f.W, f.H, keep, ball, ax, az, e, fov, S.margin), ball, f.W, f.H);
+    // behind: closer than the one-on-one needs → back off (angle and lens kept)
+    if (!side && leanedManShare(c, f.W, f.H, ball, hm, 0) > KIND_CAM.behindShare) {
+      let lo = c.D, hi = c.D * 6;
+      for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (leanedManShare(fitBehind(f.W, f.H, keep, ball, ax, az, e, fov, S.margin, m), f.W, f.H, ball, hm, 0) > KIND_CAM.behindShare) lo = m; else hi = m; }
+      c = keepDragRoom(fitBehind(f.W, f.H, keep, ball, ax, az, e, fov, S.margin, hi), ball, f.W, f.H);
+    }
+    let off = false;
+    for (const p of keep) { const r = bcProject(c, f.W, f.H, p); if (r.depth <= 0.5 || Math.abs(r.nx) > 1 || r.fr < 0 || r.fr > 1) { off = true; break; } }
+    if (off) continue;
+    const share = leanedManShare(c, f.W, f.H, ball, hm, 0);
+    // side-on: the tightest; behind: the tightest near the preferred angle
+    const score = -share + (side ? 0 : Math.abs(e - KIND_CAM.behind.prefElev) * 0.002);
+    if (!best || score < best.score) best = { ...c, minDepth: Math.min(c.minDepth, ...keep.map((p) => bcProject(c, f.W, f.H, p).depth)), share, score };
+  }
+  if (!best) { const c = fitPoints(f.W, f.H, keep, ax, az, S.elevs[0], S.fovs[S.fovs.length - 1], S.margin); best = { ...c, share: leanedManShare(c, f.W, f.H, ball, hm, 0), score: 0 }; }
+  const b = best;
+  return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
+
+/** The whole scenario the 2D draws, seen from this camera's side (the zoom's far end for a turned camera). */
+export function wideFromSide(f: Frame2D, c: Pick<BcCamera, "ax" | "az" | "fov"> & { elevDeg: number }, P: Match2DParams = MATCH2D): Match2DCamera {
+  const pts = frame2dPoints(f, P);
+  const w = fitPoints(f.W, f.H, pts, c.ax, c.az, c.elevDeg, c.fov, P.marginPx / Math.max(1, f.H));
+  return { ...w, k: 1, man: 0, anchorShare: 0, extra: 0 } as Match2DCamera;
+}
+
+/**
+ * THE CAMERA SWIPE (Harry, 12 Oct 2026): a one-finger sideways drag that does NOT start on the ball or
+ * on a team-mate turns the view round the ball, to find the team-mate you want. At most `maxDeg` either
+ * way; a drag across the whole screen turns `degPerWidth`; when the chance ends it eases back over about
+ * `easeS`. Camera only: the ball keeps its spot on the screen, the distance and angle down are kept.
+ * Such a drag never reaches the 2D game, so it can never start a kick (engineView.ts onDown/onMove).
+ */
+export const ORBIT = { maxDeg: 45, degPerWidth: 90, easeS: 0.35, startPx: 10, sideways: 1.2 };
+export function clampOrbit(deg: number): number { return Math.max(-ORBIT.maxDeg, Math.min(ORBIT.maxDeg, deg)); }
+/** The camera turned `deg` round the ball (on the grass): the look point and the camera's side both turn. */
+export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>(c: T, ball: { x: number; y: number }, deg: number): T {
+  if (!deg) return c;
+  const r = (deg * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
+  const bx = ball.x - CX, bz = ball.y;
+  const dx = c.tx - bx, dz = c.tz - bz;
+  return { ...c, tx: bx + dx * cs - dz * sn, tz: bz + dx * sn + dz * cs, ax: c.ax * cs - c.az * sn, az: c.ax * sn + c.az * cs };
 }
 
 /**

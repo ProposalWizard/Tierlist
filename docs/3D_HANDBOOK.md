@@ -1030,6 +1030,10 @@ Harry, on a Medium crop: "I just don't like how pixely the players look … comp
 
 Only the camera moves; sizes never change.
 - **Corners** (`CORNER_CAM` in `match2dCam.ts`, `pick: "glide"`): the corner starts wide on view B (lower, turned 35°) or C (taker, ball, box, keeper and goal), seeded per corner while Harry sees both. From the kick it eases to view A (the box) in 0.42 s, following the landing spot. A, B and C can each be held with `pick`.
+- **Byline crosses** take the corner's camera and glide (`CORNER_CAM_KINDS`). 3D only.
+- **Cutbacks and tight angles** (`KIND_CAM`, `solveKindCam`, 3D only, Harry 12 Oct 2026): a cutback is side-on from the ball's touchline, framed on the action (men ~30–38 px, was ~15 px at 85 m). A tight angle is FIFA-style: low (30°) behind the taker, turned 14° over his shoulder so his body never hides the ball, the ball 70% down, the goal and keeper ahead. Both keep the drag room. Tests: `tests/star/match2dCam.mts`; numbers: `scripts/cam3d/kindCamProbe.mts`.
+- **Camera swipe** (`ORBIT`, `orbitCamera`): a one-finger sideways drag that starts on open grass while aiming turns the view round the ball, ±45°; it eases back when the chance ends. The press is held back from the 2D game until it shows what it is, so a swipe never reaches it (no kick, no order). A press on the ball or a team-mate works as before.
+- **Far, small men** (`SMALL_INK` in `smallMen.ts`): under 70 drawing px tall the ink thins, the light/shade step gets a soft edge and the face/hair map's mip bias fades. Above it, nothing changes.
 - **Zoom** (`camZoom.ts`): two-finger pinch in the match, Settings → "3D match zoom", and the mouse wheel. -1 is closest, 0 the default, 1 the whole scenario the 2D draws. It keeps between chances. A second finger lifts the first touch where it started (a zero-length drag, so no kick).
 - **"3D camera height (test)"**: degrees added to the camera's angle down. Testing only; 0 in the game.
 - **Penalty**: `SET_PIECE_CAM.penaltyShare` 0.04 (a man ~4% of the height; free kicks stay 5.5%).

@@ -24,3 +24,13 @@ export const SMALL_MEN = {
   kitNoise: false,
   mapBias: 1.5,
 };
+
+/**
+ * FAR, SMALL MEN (Harry, 12 Oct 2026: players look "blocky" when the camera is far, clear when close).
+ * Cause: Medium draws the men with no anti-aliasing (no MSAA; the post pass leaves men's insides alone),
+ * so on a man only 40–60 drawing pixels tall the 2.2 px ink and the hard light/shade step break into
+ * stair-steps and specks that are a big share of him. Below `fromPx` drawing pixels tall the ink thins
+ * (to `minK` of its width at `toPx`) and the light/shade step gets a soft edge one pixel wide
+ * (people3d.ts outline, toon/shader.ts). At `fromPx` and above nothing changes. Drawing px = CSS px × 2.5.
+ */
+export const SMALL_INK = { fromPx: 70, toPx: 35, minK: 0.6 };
