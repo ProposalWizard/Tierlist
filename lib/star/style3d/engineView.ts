@@ -50,6 +50,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
+import { solveMatch2D, MATCH2D } from "./match2dCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -1556,10 +1557,46 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     tvFig = bc.k;
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, k: bc.k, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
   };
+  /**
+   * THE 2D'S OWN FRAME (3D camera: New since 12 Oct 2026, lib/star/style3d/match2dCam.ts).
+   * Harry: "the framing is not exactly the same on 3d and 2d … on 2d it might be able
+   * to be a shot but on 3d it seems like a build up". The 3D shows the patch of grass
+   * the 2D shows on the phone (its view box, turned and tilted), 50–60° down, never
+   * turned off the 2D's facing; it moves exactly when the 2D's box moves. The angle
+   * and lens are picked once a chance (no flicker on a glide). The near clip sits just
+   * inside the nearest framed spot, so a stand between the camera and the pitch is
+   * never drawn (Harry's corner still: the roof over two thirds of the screen).
+   */
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null };
+  const placeMatch2D = (f: EngineFrame) => {
+    const { viewport: vp, facing, tilt, W, H } = f.cam;
+    if (!(W > 0 && H > 0)) return;
+    const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
+    const fr2 = { viewport: vp, facing, tilt, W, H };
+    const c = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
+    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
+    const pose = bcPose(c);
+    camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(pose.look[0], 0, pose.look[2]);
+    camera.fov = c.fov;
+    camera.aspect = W / H;
+    camera.near = Math.max(0.1, c.minDepth * 0.8);
+    camera.far = c.D + 500;
+    camera.updateProjectionMatrix();
+    down3.set(c.ax, 0, c.az);
+    lean = 0;
+    tv.init = true;
+    tvFig = MATCH2D.fig;
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing };
+  };
   /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
   const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
+  const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
   const placeCamera = (f: EngineFrame, dt: number) => {
-    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) placeMatch2D(f);
+    else if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
     else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
     else { tv.init = false; placeExactCamera(f); }
   };
