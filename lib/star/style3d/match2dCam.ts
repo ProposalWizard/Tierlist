@@ -181,6 +181,7 @@ export function groundUnder(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev"
 
 function fitAt(f: Frame2D, pts: BcPoint[], elevDeg: number, fov: number, P: Match2DParams): Match2DCamera {
   const { W, H } = f;
+  const pinBottom = framedQuad(f, P).some((p, i) => p !== visibleQuad(f)[i] && (Math.abs(p.x - visibleQuad(f)[i].x) > 1e-6 || Math.abs(p.y - visibleQuad(f)[i].y) > 1e-6));
   const { ax, az } = azimuth2D(f.facing);
   const elev = (elevDeg * Math.PI) / 180;
   const mx = 1 - (2 * P.marginPx) / Math.max(1, W), myTop = P.marginPx / Math.max(1, H), myBot = 1 - myTop;
@@ -189,12 +190,14 @@ function fitAt(f: Frame2D, pts: BcPoint[], elevDeg: number, fov: number, P: Matc
   gx /= pts.length; gy /= pts.length;
   const cam = (D: number, a: number, s: number) => ({ tx: gx - CX - ax * a - az * s, tz: gy - az * a + ax * s, ax, az, elev, D, fov });
   const centred = (D: number) => {
-    // up/down: the top and bottom points equally far from the screen's edges
+    // up/down: the top and bottom points equally far from the screen's edges, except when the
+    // 2D's view runs off the pitch on the camera's side: then the bottom sits on the screen's
+    // bottom edge (room goes above the action, never a dark band of stand base below it)
     let lo = -120, hi = 120;
     const vbal = (a: number) => {
       let mn = Infinity, mxf = -Infinity;
       for (const p of pts) { const r = bcProject(cam(D, a, 0), W, H, p); if (r.depth <= 0.1) return 9; mn = Math.min(mn, r.fr); mxf = Math.max(mxf, r.fr); }
-      return mn + mxf - 1;
+      return pinBottom ? mxf - myBot : mn + mxf - 1;
     };
     for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (vbal(m) > 0) hi = m; else lo = m; }
     const a = (lo + hi) / 2;
