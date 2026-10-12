@@ -130,7 +130,7 @@ if (isMain) {
   ok(same(ks) && same(keeperKs) && same(goalKs), `one fixed scale in every chance: men ${ks[0]}x, keeper ${keeperKs[0]}x, goal ${goalKs[0]}x (option "${MATCH_SCALE_PICK}")`);
   const ev = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
   const pm = ev.slice(ev.indexOf("const placeMatch2D"), ev.indexOf("const placeCamera"));
-  ok(pm.length > 0 && !/m2\.k\s*=\s*c\.k|tvFig\s*=\s*c\.k|=\s*c\.k\b/.test(pm) && /m2\.k = mScale\.man/.test(pm), "the 2D-frame camera never takes a size from the camera solve (c.k)");
+  ok(pm.length > 0 && !/=\s*c\.k\b/.test(pm) && /fig: SIZE3D\.man/.test(pm), "the 2D-frame camera never takes a size from the camera solve (c.k); sizes are SIZE3D (size3d.ts)");
   if (MATCH_SCALE_PICK === "A") ok(keeperBar.length > 20 && Math.max(...keeperBar) < 0.85 && Math.min(...keeperBar) > 0.68, `the keeper's height on the 3D screen sits under the bar in every chance: ${(Math.min(...keeperBar)).toFixed(2)}–${(Math.max(...keeperBar)).toFixed(2)} of the bar's (real: 1.8 / 2.44 = 0.74; ${keeperBar.length} chances with a goal)`);
   ok(Math.max(...keeperBar) < 1, `the keeper never stands taller than the bar on the screen (max ${(Math.max(...keeperBar)).toFixed(2)})`);
   for (const [id, sc] of Object.entries(MATCH_SCALES)) ok(sc.man > 0 && sc.keeper > 0 && sc.goal > 0, `scale option ${id} is a set of fixed numbers`);

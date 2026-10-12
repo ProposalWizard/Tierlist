@@ -42,6 +42,11 @@ function svgFor(f: Frame2D, c: ReturnType<typeof chanceFor>): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${f.W}" height="${f.H}" viewBox="0 0 ${f.W} ${f.H}"><rect width="100%" height="100%" fill="#2f7d32"/>${L.join("")}</svg>`;
 }
 
+// --kinds=one_on_one:1,buildup:2 : these chances instead of PICK
+{
+  const k = process.argv.find((x) => x.startsWith("--kinds="));
+  if (k) PICK.splice(0, PICK.length, ...k.slice(8).split(",").map((t) => { const [kind, sd] = t.split(":"); return [kind, Number(sd) || 1, kind.replace(/_/g, " ")] as [string, number, string]; }));
+}
 // --phases: also the run-up (penalty, free kick) and the strike screen (every kind), for the set-piece stills
 const phases = process.argv.includes("--phases");
 const list: unknown[] = [];
