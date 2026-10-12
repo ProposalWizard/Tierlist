@@ -11,7 +11,7 @@ import { useSyncExternalStore } from "react";
 
 export type MatchRadarLook = "new" | "old";
 export const MATCH_RADAR_KEY = "star-match-radar";
-export const MATCH_RADAR_DEFAULT: MatchRadarLook = "new";
+export const MATCH_RADAR_DEFAULT: MatchRadarLook = "old";
 let stored: MatchRadarLook | undefined;
 const listeners = new Set<() => void>();
 

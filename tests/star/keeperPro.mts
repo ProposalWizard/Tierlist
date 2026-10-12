@@ -35,7 +35,7 @@ store.set("star-gameplay-keeperPro", "old");
   for (let s = 1; s <= 60; s++) if (deliver("corner", s * 6151 + 3, 90).came) claims++;
   ok(claims === 0, "Old never comes for a cross");
 }
-store.delete("star-gameplay-keeperPro");
+store.set("star-gameplay-keeperPro", "new");
 
 console.log("\nNEW — SAVE % BY DISTANCE (keeper 80)");
 const kinds = ["one_on_one", "through_ball", "long_range", "tight_angle", "volley"] as const;
