@@ -32,7 +32,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-12T00:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
-      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; only the camera and the score fix are on for everyone.",
+      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
       "stats": [
         {
           "value": "6",

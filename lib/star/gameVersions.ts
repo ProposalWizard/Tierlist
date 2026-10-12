@@ -179,7 +179,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ballPhysics: O("ballPhysics"),
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
-    actionCamera: N("actionCamera"),
+    actionCamera: O("actionCamera"),
     matchFlow: O("matchFlow"),
     matchRadar: O("matchRadar"),
     garden: N("garden"),

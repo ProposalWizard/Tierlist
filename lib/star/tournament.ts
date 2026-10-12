@@ -150,7 +150,8 @@ export function tournamentField(competition: TournamentCompetition, season: numb
 }
 
 /** Pots by strength, one nation from each pot per group. */
-function drawGroups(field: string[], rng: () => number): TournamentGroup[] {
+/** Exported for the tournament test page (/star-tournament-dev). */
+export function drawGroups(field: string[], rng: () => number): TournamentGroup[] {
   const groupCount = field.length / 4;
   const ranked = [...field].sort((a, b) => tournamentStrength(b) - tournamentStrength(a));
   const pots = [0, 1, 2, 3].map(i => shuffle(ranked.slice(i * groupCount, (i + 1) * groupCount), rng));
@@ -215,7 +216,8 @@ function playTie(state: TournamentState, tie: CupTie, rng: () => number): CupTie
 }
 
 /** Play every unplayed match of group matchday `md` (yours too, unless handed in). */
-function playMatchday(state: TournamentState, md: number, rng: () => number): TournamentState {
+/** Exported for the tournament test page (/star-tournament-dev). */
+export function playMatchday(state: TournamentState, md: number, rng: () => number): TournamentState {
   const groups = state.groups.map(g => ({
     ...g,
     matches: g.matches.map(m => {
