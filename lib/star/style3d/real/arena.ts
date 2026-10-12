@@ -31,6 +31,14 @@ import { tierLookNew } from "../../three3d/tierLook";
  * only a few more texture-cache misses on those two materials. Seen on the
  * round-2 stills (Medium round 1 vs round 2). Not tried: −1 (likely shimmer as the crowd bobs).
  */
+/**
+ * The goal frame's size (× real), fixed for a whole match: the 3D match sets it from
+ * MATCH_SCALES (style3d/match2dCam.ts) before it builds its stadium, and puts it back to 1
+ * when it closes. Every other scene builds true-size goals. The pitch lines are not scaled.
+ */
+let arenaGoalScale = 1;
+export function setArenaGoalScale(s: number): void { arenaGoalScale = s > 0 ? s : 1; }
+
 /** Round 3: the goal net fades to a flat haze where its cells get too small to draw (Medium, New look). */
 export const netFade = (tier: Quality3d) => tier === "medium" && tierLookNew();
 /** Cells per pixel where the fade starts / is complete (a cell ~7 px → ~2 px wide). */
@@ -497,6 +505,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   const nets: Net[] = [];
   for (const end of [0, 1]) {
     const g = new T.Group();
+    g.name = "h-goal";
     const R = 0.06, HW = GOAL_W / 2;
     for (const sx of [-1, 1]) {
       const post = new T.Mesh(keep(new T.CylinderGeometry(R, R, GOAL_H + R, 16)), postMat);
@@ -527,6 +536,8 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       g.add(new T.Mesh(sg, netMat));
     }
     if (end) { g.rotation.y = Math.PI; g.position.z = L; }
+    // the match's one fixed goal scale (style3d/match2dCam.ts MATCH_SCALES), about the middle of its line
+    if (arenaGoalScale !== 1) g.scale.setScalar(arenaGoalScale);
     G.add(g);
     nets.push({ geo: back, base: Float32Array.from(back.attributes.position.array), hit: { x: 0, y: 1, amp: 0, v: 0 }, end });
   }

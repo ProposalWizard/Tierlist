@@ -14,13 +14,13 @@ const { W, H } = list[0].frame.cam;
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: +flag("dpr", "2") });
 await ctx.addInitScript((st) => {
   localStorage.setItem("star-look-3d-camera", "new");
-  if (st === "stylea") { localStorage.setItem("star-look-match-player-style", "follow"); localStorage.setItem("star-look-player-style", "new"); }
+  if (st === "stylea") localStorage.setItem("star-look-match-player-style2", "styleA");
   else localStorage.setItem("star-look-match-player-style", "real");
 }, style);
 const page = await ctx.newPage();
 const errs = [];
 page.on("pageerror", (e) => errs.push(String(e).slice(0, 200)));
-await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&fps=0${cam === "old" ? "&cam2d=0" : ""}`);
+await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&fps=0${cam === "old" ? "&cam2d=0" : ""}${flag("q", "") ? "&" + flag("q", "") : ""}`);
 for (const c of list) {
   await page.evaluate((fr) => {
     window.__M.ready = 0;
@@ -32,7 +32,7 @@ for (const c of list) {
   if (err) { console.log(c.name, "ERR", err); continue; }
   await page.waitForTimeout(+flag("settle", "9000"));
   const solve = await page.evaluate(() => window.__tvSolve);
-  const shot = `${dir}/raw/3d-${cam}-${style}-${c.name}.png`;
+  const shot = `${dir}/raw/3d-${cam}-${style}${flag("tag", "") ? "-" + flag("tag", "") : ""}-${c.name}.png`;
   await page.screenshot({ path: shot, timeout: 240000 });
   console.log(JSON.stringify({ name: c.name, cam, style, shot, solve }));
 }
