@@ -4,9 +4,13 @@
  * (components/star/Training3D.tsx keeps its own copy, untouched).
  */
 import { fitFace } from "../faceFit";
+import { PHOTO_FACES } from "../faceStyle";
 import type { FacePic } from "../people3d";
 
 export async function faceFromUrl(url: string | undefined): Promise<{ face: FacePic; skin: string } | null> {
+  // Photo faces are off (PHOTO_FACES, faceStyle.ts): every 3D head is the
+  // drawn Style A one. Hidden until the photo revamp (Harry, 12 Oct 2026).
+  if (!PHOTO_FACES) return null;
   if (!url || typeof createImageBitmap !== "function") return null;
   const job = fetch(url, { mode: "cors" })
     .then((r) => (r.ok ? r.blob() : null))

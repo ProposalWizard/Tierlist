@@ -1,0 +1,78 @@
+/**
+ * THE NEW | OLD ROWS STILL IN SETTINGS (Harry, 12 Oct 2026).
+ *
+ * The Version picker (Classic | Standard) is gone: "the new cut scenes will be
+ * staying", and every other settled look is just the game (CLAUDE.md →
+ * "Decided, no toggle"). What is left: the v0.15 gameplay round still being
+ * tested (Old by default) and Settings → UI: Old | New. Each row is stored on
+ * this phone only (its own localStorage key, in its own file); saves are never
+ * touched.
+ */
+import { useSyncExternalStore } from "react";
+import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
+import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
+import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
+
+/** One New | Old switch: how to read it, how to set it, and its default. */
+export interface LookRow {
+  label: string;
+  newValue: string;
+  oldValue: string;
+  /** What a brand-new phone reads. */
+  standard: string;
+  get: () => string;
+  set: (v: string) => void;
+}
+
+const row = <V extends string>(
+  label: string, newValue: V, oldValue: V, standard: V, get: () => V, set: (v: V) => void,
+): LookRow => ({ label, newValue, oldValue, standard, get, set: (v) => set(v as V) });
+
+const gp = (label: string, s: "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow") =>
+  row(label, "new", "old", defaultVersion(s), () => gameplayVersion(s), (v) => setGameplayVersion(s, v));
+
+/** Every New | Old row left in Settings, keyed by a short id. */
+export const LOOK_ROWS = {
+  // The v0.15 gameplay round, still being tested (Old by default).
+  keeperPro: gp("Keeper pro", "keeperPro"),
+  shotsPro: gp("Shots", "shotsPro"),
+  knucklePower: gp("Knuckleball & power shot", "knucklePower"),
+  ballPhysics: gp("Ball physics", "ballPhysics"),
+  matchFlow: gp("Match flow", "matchFlow"),
+  matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
+  ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
+} as const satisfies Record<string, LookRow>;
+
+export type LookRowId = keyof typeof LOOK_ROWS;
+export const LOOK_ROW_IDS = Object.keys(LOOK_ROWS) as LookRowId[];
+
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((f) => f());
+if (typeof window !== "undefined") window.addEventListener("storage", () => notify());
+
+/** Every row's value on this phone now. */
+export function readLook(): Record<LookRowId, string> {
+  return Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;
+}
+
+/** Set one row. */
+export function setLookRow(id: LookRowId, v: string): void {
+  LOOK_ROWS[id].set(v);
+  notify();
+}
+
+/** Has this phone moved a row off its default? (The amber dot in Settings.) */
+export function changedFromDefault(id: LookRowId, look = readLook()): boolean {
+  return look[id] !== LOOK_ROWS[id].standard;
+}
+
+const snapshot = () => LOOK_ROW_IDS.map((id) => LOOK_ROWS[id].get()).join("|");
+const serverSnapshot = () => LOOK_ROW_IDS.map((id) => LOOK_ROWS[id].standard).join("|");
+const subscribe = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
+
+/** The live row values, re-read whenever a row changes. */
+export function useLook(): Record<LookRowId, string> {
+  const s = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
+  const parts = s.split("|");
+  return Object.fromEntries(LOOK_ROW_IDS.map((id, i) => [id, parts[i]])) as Record<LookRowId, string>;
+}

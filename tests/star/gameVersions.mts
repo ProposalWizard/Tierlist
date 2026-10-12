@@ -1,15 +1,16 @@
 /**
- * SETTINGS → VERSION: Classic | Standard (lib/star/gameVersions.ts; Preview
- * removed 12 Oct 2026).
+ * SETTINGS: THE VERSION PICKER IS GONE (Harry, 12 Oct 2026: "the new cut
+ * scenes will be staying"). The rows left are in lib/star/lookRows.ts.
  *
- *  1. Every New | Old switch is in both versions, with a real option.
- *  2. Classic = every switch's OLD option.
- *  3. Standard = what a brand-new phone reads (each switch's real default).
- *  4. (Preview is gone, and so are the decided rows.)
- *  5. Applying a version, then reading back, gives that version.
- *  6. Changing one row reads as Custom (nearest version, 1 change).
- *  7. The picker never touches the preferences (sound, camera, etc.).
+ *  1. No Classic | Standard picker: lib/star/gameVersions.ts no longer exists
+ *     and Settings has no Version card.
+ *  2. Cut-scene people and camera are decided New, with no row; an old phone's
+ *     stored "old" is ignored.
+ *  3. The rows left: the v0.15 test box (Old by default) and UI: Old | New.
+ *  4. A brand-new phone reads every row's default; setting a row reads back.
+ *  5. Setting a row never touches the preferences (sound, skip the line-up).
  */
+import { existsSync, readFileSync } from "node:fs";
 
 // A stand-in for the browser's storage, in place before anything is read.
 const store = new Map<string, string>();
@@ -22,64 +23,55 @@ const store = new Map<string, string>();
   get length() { return store.size; },
 } as Storage;
 
-const {
-  LOOK_ROWS, LOOK_ROW_IDS, VERSION_PRESETS, GAME_VERSIONS,
-  readLook, applyGameVersion, setLookRow, gameVersionOf, differencesFrom,
-} = await import("../../lib/star/gameVersions");
+// An old phone that had picked Old for both cut-scene rows.
+store.set("star-look-cutscene-people", "old");
+store.set("star-look-cutscene-camera", "old");
+
+const { LOOK_ROWS, LOOK_ROW_IDS, readLook, setLookRow, changedFromDefault } = await import("../../lib/star/lookRows");
+const { cutscenePeopleLook, cutsceneCameraLook } = await import("../../lib/star/cutscene/look");
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
+const root = new URL("../../", import.meta.url);
+const src = (p: string) => readFileSync(new URL(p, root), "utf8");
 
-// 3 first, while storage is empty: a brand-new phone reads Standard.
+// 1.
+check(!existsSync(new URL("lib/star/gameVersions.ts", root)), "lib/star/gameVersions.ts still exists");
+const settings = src("components/star/DeviceSettings.tsx");
+check(!/VersionCard|applyGameVersion|data-version-card|data-version=|GAME_VERSION/.test(settings), "Settings still shows a Version picker");
+
+// 2.
+check(cutscenePeopleLook() === "new", `cut-scene people read "${cutscenePeopleLook()}" on an old phone`);
+check(cutsceneCameraLook() === "new", `cut-scene camera read "${cutsceneCameraLook()}" on an old phone`);
+for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations", "keepers", "dribble", "matchView", "sprites2d", "badges"]) {
+  check(!(gone in LOOK_ROWS), `${gone} is decided and must not be a row`);
+}
+check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
+
+// 3.
+const expected = ["keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar", "ui"];
+check(LOOK_ROW_IDS.join() === expected.join(), `rows are ${LOOK_ROW_IDS.join()}`);
+
+// 4.
 const fresh = readLook();
 for (const id of LOOK_ROW_IDS) {
-  check(fresh[id] === VERSION_PRESETS.standard[id], `Standard.${id} is "${VERSION_PRESETS.standard[id]}" but a new phone reads "${fresh[id]}"`);
+  const r = LOOK_ROWS[id];
+  check(fresh[id] === r.standard, `a new phone reads ${id} = "${fresh[id]}", default "${r.standard}"`);
+  check(r.standard === r.newValue || r.standard === r.oldValue, `${id} default is not one of its options`);
+  check(!changedFromDefault(id, fresh), `${id} reads as changed on a new phone`);
 }
-check(gameVersionOf().version === "standard", `a new phone reads as ${gameVersionOf().version}, not Standard`);
-
-// 1 and 2.
-check(LOOK_ROW_IDS.length === 9, `${LOOK_ROW_IDS.length} switches listed (9 after the 12 Oct 2026 clean-up)`);
-check((GAME_VERSIONS as readonly string[]).join() === "classic,standard", `versions are ${GAME_VERSIONS.join()}`);
-for (const gone of ["chances", "animations", "keepers", "dribble", "clearances", "chanceMix", "actionCamera", "dribbleDuels", "matchView", "sprites2d", "badges"]) check(!(gone in LOOK_ROWS), `${gone} is decided and must not be a row`);
-for (const v of GAME_VERSIONS) {
-  for (const id of LOOK_ROW_IDS) {
-    const val = VERSION_PRESETS[v][id];
-    const r = LOOK_ROWS[id];
-    check(val === r.newValue || val === r.oldValue, `${v}.${id} = "${val}", not one of its options`);
-  }
-}
-for (const id of LOOK_ROW_IDS) check(VERSION_PRESETS.classic[id] === LOOK_ROWS[id].oldValue, `Classic.${id} is not the old option`);
-
-// 5. Apply each version (in a mixed order), read it back.
-for (const v of ["classic", "standard", "classic", "standard"] as const) {
-  applyGameVersion(v);
-  const now = readLook();
-  for (const id of LOOK_ROW_IDS) check(now[id] === VERSION_PRESETS[v][id], `after ${v}, ${id} reads "${now[id]}"`);
-  const s = gameVersionOf();
-  check(s.version === v, `after applying ${v} it reads as ${s.version}`);
-}
-
-// 6. One row changed by hand → Custom, nearest Standard, 1 change.
-applyGameVersion("standard");
 setLookRow("matchRadar", "new");
-const c = gameVersionOf();
-check(c.version === "custom" && c.nearest === "standard" && c.changes === 1, `one change reads ${JSON.stringify(c)}`);
-applyGameVersion("classic");
-setLookRow("cutscenePeople", "new");
-const c2 = gameVersionOf();
-check(c2.version === "custom" && c2.nearest === "classic" && c2.changes === 1, `Classic + 1 reads ${JSON.stringify(c2)}`);
+check(readLook().matchRadar === "new" && changedFromDefault("matchRadar"), "setting a row does not read back");
 
-// 7. Preferences stay as they were.
-const PREFS = ["star-camera-tilt", "star-look-you", "star-sfx", "star-skip-lineup"];
-store.set("star-camera-tilt", "30");
-store.set("star-look-you", "shown");
-const before = PREFS.map((k) => store.get(k));
-for (const v of GAME_VERSIONS) applyGameVersion(v);
-check(PREFS.every((k, i) => store.get(k) === before[i]), "a version changed a preference");
+// 5.
+store.set("star-sfx", "1");
+store.set("star-skip-lineup", "1");
+for (const id of LOOK_ROW_IDS) setLookRow(id, LOOK_ROWS[id].oldValue);
+check(store.get("star-sfx") === "1" && store.get("star-skip-lineup") === "1", "a row changed a preference");
 
 if (problems.length) {
   console.log(`FAIL — ${problems.length} problem(s):`);
   for (const p of problems) console.log("  " + p);
   process.exit(1);
 }
-console.log(`gameVersions: ${LOOK_ROW_IDS.length} switches, 2 versions, all checks pass`);
+console.log(`gameVersions: picker gone, cut scenes decided New, ${LOOK_ROW_IDS.length} rows left, all checks pass`);

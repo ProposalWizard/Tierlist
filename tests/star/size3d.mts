@@ -87,7 +87,7 @@ ok(coupled.length === 0, `SIZE3D is never mixed with a camera or screen number (
 // ONE camera (Harry, 12 Oct 2026: no New | Old for decided things): no other camera path to size for
 const otherCams = [/placeTvCamera/, /placeBroadcast/, /placeExactCamera/, /realCameraLook/, /get\("cam2d"\)/, /get\("bcam"\)/].filter((r) => r.test(ev)).map(String);
 ok(otherCams.length === 0, `one 3D camera (the 2D's frame + set pieces): no Old, broadcast or exact camera, no ?cam2d / ?bcam (${otherCams.join(", ") || "none"})`);
-ok(!/camera3d/.test(src("lib/star/gameVersions.ts")) && !/camera3d/.test(src("components/star/DeviceSettings.tsx")), "no \"3D camera: New | Old\" row in Settings");
+ok(!/camera3d/.test(src("lib/star/lookRows.ts")) && !/camera3d/.test(src("components/star/DeviceSettings.tsx")), "no \"3D camera: New | Old\" row in Settings");
 const m2c = src("lib/star/style3d/match2dCam.ts");
 ok(!/get\("mscale"\)/.test(m2c), "?mscale= no longer read");
 
