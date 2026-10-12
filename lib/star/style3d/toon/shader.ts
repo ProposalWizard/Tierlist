@@ -24,6 +24,7 @@
  * dressPerson3d paints a toon body exactly as any other 3D person.
  */
 import type * as THREE from "three";
+import { SMALL_INK } from "../smallMen";
 
 type Three = typeof import("three");
 
@@ -305,7 +306,10 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = position;\nvRestN = normal;");
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", `#include <common>${head}${TOON_HEAD}`)
-      .replace("#include <map_fragment>", `${(T.ShaderChunk as Record<string, string>).map_fragment.replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, uSmall.y )")}${TOON_BODY}${accessories}`)
+      // a far, small man (smallMen.ts SMALL_INK): the skin/hair map's mip bias fades out below fromPx drawing
+      // pixels tall (the far mip is already coarse; the extra bias turned faces and hair into flat blocks)
+      .replace("#include <map_fragment>", `float tnSmallFar = 1.0 - smoothstep(${SMALL_INK.toPx.toFixed(1)}, ${SMALL_INK.fromPx.toFixed(1)}, 1.8 / max(max(length(dFdx(vViewPosition)), length(dFdy(vViewPosition))), 1e-5));
+${(T.ShaderChunk as Record<string, string>).map_fragment.replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, uSmall.y * (1.0 - tnSmallFar) )")}${TOON_BODY}${accessories}`)
       .replace("#include <lights_physical_pars_fragment>", lightsPars)
       // the shadow side: sky light a touch cooler (Style A's purple shadows)
       .replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\nreflectedLight.indirectDiffuse *= vec3(0.9, 0.9, 1.06);")
@@ -325,7 +329,10 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
     float hK = uSmall.x > 0.5 ? 0.6 : dot(normal, upV) * 0.5 + 0.5;
     vec3 hemi = mix(${v3(HOME_GROUND)}, ${v3(HOME_SKY)}, hK) * ${HOME_LIGHT.hemi.toFixed(2)} * vec3(0.9, 0.9, 1.06);
     float hSd = dot(normal, normalize(uHomeSun));
-    vec3 hSun = uSmall.x > 0.5 ? vec3(mix(0.45, 1.0, step(0.2, hSd))) : toonStep(hSd);
+    // a far, small man (smallMen.ts SMALL_INK): the step's edge softened over about a pixel, so it reads
+    // as one clean band instead of specks; at SMALL_INK.fromPx drawing pixels tall and above, the hard step
+    float hW = fwidth(hSd) * tnSmallFar + 1e-5;
+    vec3 hSun = uSmall.x > 0.5 ? vec3(mix(0.45, 1.0, smoothstep(0.2 - hW, 0.2 + hW, hSd))) : toonStep(hSd);
     vec3 hl = diffuseColor.rgb * RECIPROCAL_PI * (hemi + hSun * ${v3(HOME_SUN)} * ${HOME_LIGHT.sun.toFixed(2)});
     hl += (1.0 - uSmall.x) * step(0.72, tnF) * step(0.42, hSd) * 0.42 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb;
     hl *= 1.0 - 0.72 * smoothstep(0.80, 0.94, tnF) * uHome.y;
@@ -337,5 +344,5 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
 // (real/post.ts menClean). Opaque, so the alpha is never blended; nothing else reads it.
 if (uHome.x > 0.5) gl_FragColor.a = 0.5;`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v6";
+  mat.customProgramCacheKey = () => "people3d-toon-v7";
 }

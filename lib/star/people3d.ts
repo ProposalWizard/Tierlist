@@ -42,6 +42,7 @@ import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
 import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
+import { SMALL_INK } from "./style3d/smallMen";
 import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
 
@@ -539,10 +540,15 @@ opN = -opN;
 #endif
 vec4 opC = projectionMatrix * vec4(opN, 0.0);
 vec2 opD = length(opC.xy) > 1e-5 ? normalize(opC.xy) : vec2(0.0);
-gl_Position.xy += opD * ${px.toFixed(2)} * 2.0 / uOutlineRes * gl_Position.w;
+// a far, small man (Harry, 12 Oct 2026: "blocky" when the camera is far): the ink thins with him below
+// SMALL_INK.fromPx drawing pixels tall (down to SMALL_INK.minK of its width), so it stays a line, not a
+// dark crust round a 40-pixel man. At normal size and closer: exactly the approved width.
+float opManPx = 1.8 * projectionMatrix[1][1] * 0.5 * uOutlineRes.y / max(gl_Position.w, 1e-3);
+float opK = mix(${SMALL_INK.minK.toFixed(2)}, 1.0, smoothstep(${SMALL_INK.toPx.toFixed(1)}, ${SMALL_INK.fromPx.toFixed(1)}, opManPx));
+gl_Position.xy += opD * ${px.toFixed(2)} * opK * 2.0 / uOutlineRes * gl_Position.w;
 gl_Position.z += 0.0005 * gl_Position.w;`);
   };
-  m.customProgramCacheKey = () => `people3d-outline-px-${px.toFixed(2)}`;
+  m.customProgramCacheKey = () => `people3d-outline-px-${px.toFixed(2)}-small`;
   return m;
 }
 
