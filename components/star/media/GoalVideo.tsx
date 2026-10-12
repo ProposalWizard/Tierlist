@@ -153,11 +153,15 @@ export interface GoalVideoProps {
   /** Your own match: made at once, ahead of any other match's videos. */
   /** 2 = highlights / your goals, 1 = your match, 0 = the rest. */
   priority?: number;
+  /** Full screen, edge to edge, no buttons (the shop's For You highlights, Harry 12 Oct 2026):
+   *  the video covers its box, loops, and only a thin progress line shows it playing. */
+  fill?: boolean;
 }
 
 type Status = "idle" | "making" | "ready" | "unsupported" | "failed";
 
-export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0 }: GoalVideoProps) {
+export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, title, badge, fallback, autoStart = false, priority = 0, fill = false }: GoalVideoProps) {
+  const [played, setPlayed] = useState(0);
   const [tracks, setTracks] = useState<GoalTrack[] | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -365,6 +369,31 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     const r = await saveVideo(hit.clip, clipFileName(edit.tracks, hit.clip.ext, edit.style), title);
     setNote(r === "shared" ? "Sent to your share menu." : r === "downloaded" ? "Saved to your downloads." : null);
   };
+
+  if (fill) {
+    return (
+      <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-black" data-goal-video data-goal-video-fill data-clip-style={style} data-goal-video-status={status}>
+        {status === "ready" && url ? (
+          <video ref={videoRef} src={url} className="absolute inset-0 h-full w-full object-cover" playsInline muted loop
+            onTimeUpdate={(ev) => { const v = ev.currentTarget; setPlayed(v.duration ? v.currentTime / v.duration : 0); }}
+            onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
+            onPause={(ev) => stopSide(ev.currentTarget)}
+            data-goal-video-playing />
+        ) : (
+          <canvas ref={canvasRef} width={edit.w} height={edit.h} className="absolute inset-0 h-full w-full" style={{ objectFit: "cover" }} />
+        )}
+        {status === "making" && (
+          <div className="absolute inset-x-0 top-1/2 grid -translate-y-1/2 place-items-center">
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-white/25"><div className="h-full bg-white" style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+          </div>
+        )}
+        {/* the thin progress line along the bottom, like TikTok's */}
+        <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/25" data-goal-video-progress>
+          <div className="h-full bg-white" style={{ width: `${Math.round(played * 1000) / 10}%`, transition: played > 0.02 ? "width .26s linear" : "none" }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapRef} className={tall ? "w-[64%] max-w-[260px]" : "w-full"} data-goal-video data-clip-style={style} data-goal-video-status={status}>

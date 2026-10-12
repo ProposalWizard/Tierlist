@@ -6,7 +6,9 @@
  * Showroom + Feed shop; grid = the earlier card store (StoreShop), only here now. A sample National League career with ★1,000,000, a few cans,
  * a phone and a car; buying works on this sample only (nothing is saved).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { synthTrack } from "@/lib/star/goalClip/synth";
+import { putClip } from "@/lib/star/goalClip/store";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { LIFESTYLE_ALL_LEVELS, kibCanPrice, baseIdOf, type KibCan } from "@/lib/star/shopData";
@@ -18,18 +20,37 @@ import ShowroomShop, { type CatId } from "./ShowroomShop";
 import StoreLanding from "./StoreLanding";
 import type { StoreTab } from "./parts";
 
-function sampleCareer(): CareerState {
+function sampleCareer(locks = false): CareerState {
   const c = makeInitialCareer({
     firstName: "Sample", lastName: "Player", age: 18, skinTone: "light",
     club: "Barnet", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
   } as never, ["Barnet", "Yeovil Town"], "national_league");
   const pick = (base: string, lv: number) => LIFESTYLE_ALL_LEVELS.find((i) => baseIdOf(i) === base && (i.level ?? 1) === lv) ?? LIFESTYLE_ALL_LEVELS.find((i) => baseIdOf(i) === base);
   const owned = [pick("phone", 1), pick("car-1", 2), pick("silver", 1)].filter(Boolean) as OwnedItem[];
-  return { ...c, money: 1_000_000, kibCans: { basic: 3, premium: 1, elite: 0 }, ownedItems: owned, energy: 72, unlocks: undefined } as CareerState;
+  return { ...c, money: 1_000_000, kibCans: { basic: 3, premium: 1, elite: 0 }, ownedItems: owned, energy: 72, unlocks: locks ? c.unlocks : undefined } as CareerState;
 }
 
-export default function ShopLabPreview({ kind, look, onBack, cat }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId }) {
-  const [career, setCareer] = useState<CareerState>(sampleCareer);
+/** &democlips: put two made-up goals (goalClip/synth.ts) on this device, so the For You
+ *  feed has "your last match" highlights to show as its ad. Only this bench does this. */
+async function putDemoClips(): Promise<void> {
+  const now = Date.now();
+  const goals = [
+    { scorer: "Sample Player", scorerShort: "Player", scorerHome: true, minute: 23, scoreAfter: [1, 0] as [number, number], seed: "demo-a" },
+    { scorer: "Sample Player", scorerShort: "Player", scorerHome: true, minute: 71, scoreAfter: [2, 1] as [number, number], seed: "demo-b" },
+  ];
+  for (let i = 0; i < goals.length; i++) {
+    const g = goals[i];
+    const t = synthTrack({ ...g, home: "Barnet", away: "Yeovil Town", season: 1, week: 1 });
+    if (!t) continue;
+    t.meta.id = `demo-clip-${i}`;
+    t.meta.createdAt = new Date(now + i * 1000).toISOString();
+    await putClip(t);
+  }
+}
+
+export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", demoClips = false, locks = false, mark = "trophy", buy = "auto" }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId; bar?: "A" | "B" | "C"; demoClips?: boolean; locks?: boolean; mark?: "trophy" | "none"; buy?: "A" | "B" | "auto" }) {
+  useEffect(() => { if (demoClips) void putDemoClips(); }, [demoClips]);
+  const [career, setCareer] = useState<CareerState>(() => sampleCareer(locks));
   const [tab, setTab] = useState<StoreTab>(kind === "landing" ? "kib" : kind);
   // New look: no front page, the landing opens straight into the Showroom (as in the game).
   const [page, setPage] = useState<"landing" | "shop">(kind === "landing" && look !== "new" ? "landing" : "shop");
@@ -58,7 +79,7 @@ export default function ShopLabPreview({ kind, look, onBack, cat }: { kind: Stor
   }
   const back = kind === "landing" && look !== "new" ? () => setPage("landing") : onBack;
   if (look === "new") {
-    return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat}
+    return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat} barOption={bar} levelMark={mark} buyStyle={buy}
       onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}}
       guideCorner links={[
         { id: "sponsors", icon: "🤝", label: "Sponsors", locked: true, onClick: () => {} },

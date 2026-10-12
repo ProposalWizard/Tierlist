@@ -61,6 +61,11 @@ export default function MediaLab() {
   const [shopPreview, setShopPreview] = useState<"kib" | "boots" | "lifestyle" | "landing" | null>(null);
   const [shopLookLab, setShopLookLab] = useState<"new" | "old" | "grid">("new");
   const [shopCat, setShopCat] = useState<CatId | undefined>(undefined);
+  const [shopBar, setShopBar] = useState<"A" | "B" | "C">("A");
+  const [shopDemoClips, setShopDemoClips] = useState(false);
+  const [shopLocks, setShopLocks] = useState(false);
+  const [shopMark, setShopMark] = useState<"trophy" | "none">("trophy");
+  const [shopBuy, setShopBuy] = useState<"A" | "B" | "auto">("auto");
   // `?shopmock=A|B|C|D` (+ `&at=` a start state): the shop layout concepts (throwaway, 9 Oct 2026).
   const [shopMock, setShopMock] = useState<{ id: MockId; at?: string } | null>(null);
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
@@ -73,6 +78,12 @@ export default function MediaLab() {
     const sk = q.get("shop");
     if (sk === "kib" || sk === "boots" || sk === "lifestyle" || sk === "landing") setShopPreview(sk);
     if (q.get("look") === "old" || q.get("look") === "grid") setShopLookLab(q.get("look") as "old" | "grid");
+    const sb = q.get("bar");
+    if (sb === "B" || sb === "C") setShopBar(sb);
+    setShopDemoClips(q.has("democlips"));
+    setShopLocks(q.has("locks"));
+    if (q.get("mark") === "none") setShopMark("none");
+    if (q.get("buy") === "A" || q.get("buy") === "B") setShopBuy(q.get("buy") as "A" | "B");
     const scat = q.get("cat");
     if (scat && SHOWROOM_CATS.some((x) => x.id === scat)) setShopCat(scat as CatId);
     const sm = q.get("shopmock");
@@ -126,7 +137,7 @@ export default function MediaLab() {
   if (shopMock) return <><ShopConcepts id={shopMock.id} initial={shopMock.at} /><PageGuide page="/star-dev/media-lab" /></>;
   if (shopPreview) {
     return <>
-      <ShopLabPreview kind={shopPreview} look={shopLookLab} cat={shopCat} onBack={() => setShopPreview(null)} />
+      <ShopLabPreview kind={shopPreview} look={shopLookLab} cat={shopCat} bar={shopBar} demoClips={shopDemoClips} locks={shopLocks} mark={shopMark} buy={shopBuy} onBack={() => setShopPreview(null)} />
       <PageGuide page="/star-dev/media-lab" />
     </>;
   }
