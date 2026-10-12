@@ -34,6 +34,7 @@ import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
 import { ballonDorNightLook, setBallonDorNightLook, ballonDorNightStored } from "./ballonDorNightLook";
 import { homeLook, setHomeLook } from "./homeLook";
 import { shopLook, setShopLook } from "./shopLook";
+import { shopPicsLook, setShopPicsLook } from "./shopPicsLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
 import { wideChances, setWideChances, wideChancesStored } from "./wideChances";
 import { ovationLook, setOvationLook } from "./ovationLook";
@@ -133,6 +134,8 @@ export const LOOK_ROWS = {
   ballonDorNight: row("Ballon d'Or night", "new", "old", ballonDorNightLook, setBallonDorNightLook),
   homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
   shop2d: row("Shop", "new", "old", shopLook, setShopLook),
+  // Harry, 12 Oct 2026: the showroom's stills rendered from the 3D shop's own models (New by default).
+  shopPics: row("Shop pictures", "new", "old", shopPicsLook, setShopPicsLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
   ovationMoves: row("Ovation greetings", "new", "old", ovationMoves, setOvationMoves),
   drawnStyle: row("Drawn-player style", "3d", "classic", storedFigureSkin, setStoredFigureSkin),
@@ -210,6 +213,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ballonDorNight: N("ballonDorNight"),
     homeScreen: N("homeScreen"),
     shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
+    shopPics: N("shopPics"),
     ovation: N("ovation"),
     ovationMoves: N("ovationMoves"),
     drawnStyle: FIGURE_SKIN_DEFAULT,

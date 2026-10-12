@@ -18,7 +18,8 @@ def setup_render(res=(600, 450), samples=48, look='AgX - Punchy', view='Standard
     scn.cycles.device = 'CPU'
     scn.cycles.samples = samples
     scn.cycles.use_denoising = True
-    scn.cycles.denoiser = 'OPENIMAGEDENOISE'
+    try: scn.cycles.denoiser = 'OPENIMAGEDENOISE'
+    except TypeError: scn.cycles.use_denoising = False
     scn.cycles.use_adaptive_sampling = True
     scn.cycles.adaptive_threshold = 0.015
     scn.cycles.max_bounces = 8

@@ -212,7 +212,7 @@ const ROW_LABEL: Record<LookRowId, string> = {
   matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
   animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro (testing)", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels (testing)", clearances: "Clearances", shotsPro: "Shots (testing)", knucklePower: "Knuckleball & power shot (testing)", ballPhysics: "Ball physics (testing)", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow (testing)", matchRadar: "Match radar (testing)",
   garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", matchPlayers3d: "Players in a 3D match", tierLook3d: "3D quality look", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop", shopPics: "Shop pictures",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
 };
 
@@ -340,6 +340,7 @@ function ScreensGroup() {
       <LookRow id="ballonDorNight" look={look} tabs={NEW_OLD} note="New: the ceremony on a stage — the final three on podiums, the host calls the winner up. Old: the countdown cards." />
       <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
       <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the showroom — one item fills the screen; swipe sideways for the next item, up and down for the next category. Old: the shop as before." />
+      <LookRow id="shopPics" look={look} tabs={NEW_OLD} note="New: the shop's pictures made from the 3D shop's models. Old: the drawn pictures." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
       <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
       <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />

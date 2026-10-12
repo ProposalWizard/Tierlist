@@ -1,0 +1,672 @@
+[
+{
+"name": "car-1-L1",
+"url": "/star/shop3d/items/car-family-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#1f4fa0"
+}
+},
+{
+"name": "car-1-L2",
+"url": "/star/shop3d/items/car-family-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1f57c8",
+"from": "#1f4fa0"
+}
+},
+{
+"name": "car-1-L3",
+"url": "/star/shop3d/items/car-family-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d42020",
+"from": "#1f4fa0"
+}
+},
+{
+"name": "car-1-L4",
+"url": "/star/shop3d/items/car-family-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#1f4fa0"
+}
+},
+{
+"name": "car-1-L5",
+"url": "/star/shop3d/items/car-family-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#1f4fa0"
+}
+},
+{
+"name": "car-2-L1",
+"url": "/star/shop3d/items/car-hatch-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#c81e1e"
+}
+},
+{
+"name": "car-2-L2",
+"url": "/star/shop3d/items/car-hatch-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1f57c8",
+"from": "#c81e1e"
+}
+},
+{
+"name": "car-2-L3",
+"url": "/star/shop3d/items/car-hatch-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d42020",
+"from": "#c81e1e"
+}
+},
+{
+"name": "car-2-L4",
+"url": "/star/shop3d/items/car-hatch-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#c81e1e"
+}
+},
+{
+"name": "car-2-L5",
+"url": "/star/shop3d/items/car-hatch-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#c81e1e"
+}
+},
+{
+"name": "car-3-L1",
+"url": "/star/shop3d/items/car-sports-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#e8d24a"
+}
+},
+{
+"name": "car-3-L2",
+"url": "/star/shop3d/items/car-sports-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1f57c8",
+"from": "#e8d24a"
+}
+},
+{
+"name": "car-3-L3",
+"url": "/star/shop3d/items/car-sports-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d42020",
+"from": "#e8d24a"
+}
+},
+{
+"name": "car-3-L4",
+"url": "/star/shop3d/items/car-sports-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#e8d24a"
+}
+},
+{
+"name": "car-3-L5",
+"url": "/star/shop3d/items/car-sports-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#e8d24a"
+}
+},
+{
+"name": "car-4-L1",
+"url": "/star/shop3d/items/car-super-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#f0a030"
+}
+},
+{
+"name": "car-4-L2",
+"url": "/star/shop3d/items/car-super-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1f57c8",
+"from": "#f0a030"
+}
+},
+{
+"name": "car-4-L3",
+"url": "/star/shop3d/items/car-super-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d42020",
+"from": "#f0a030"
+}
+},
+{
+"name": "car-4-L4",
+"url": "/star/shop3d/items/car-super-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#f0a030"
+}
+},
+{
+"name": "car-4-L5",
+"url": "/star/shop3d/items/car-super-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#f0a030"
+}
+},
+{
+"name": "classic-L1",
+"url": "/star/shop3d/items/car-classic-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#1d3b2c",
+"satMin": 0.1,
+"tol": 0.16
+}
+},
+{
+"name": "classic-L2",
+"url": "/star/shop3d/items/car-classic-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1f57c8",
+"from": "#1d3b2c",
+"satMin": 0.1,
+"tol": 0.16
+}
+},
+{
+"name": "classic-L3",
+"url": "/star/shop3d/items/car-classic-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d42020",
+"from": "#1d3b2c",
+"satMin": 0.1,
+"tol": 0.16
+}
+},
+{
+"name": "classic-L4",
+"url": "/star/shop3d/items/car-classic-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#1d3b2c",
+"satMin": 0.1,
+"tol": 0.16
+}
+},
+{
+"name": "classic-L5",
+"url": "/star/shop3d/items/car-classic-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 0,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#1d3b2c",
+"satMin": 0.1,
+"tol": 0.16
+}
+},
+{
+"name": "bike-L1",
+"url": "/star/shop3d/items/bike-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 180,
+"paint": {
+"to": "#9a8f6a",
+"fade": 0.55,
+"rough": 0.85,
+"from": "#c01818"
+}
+},
+{
+"name": "bike-L2",
+"url": "/star/shop3d/items/bike-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 180,
+"paint": {
+"to": "#1f57c8",
+"from": "#c01818"
+}
+},
+{
+"name": "bike-L3",
+"url": "/star/shop3d/items/bike-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 180,
+"paint": {
+"to": "#d42020",
+"from": "#c01818"
+}
+},
+{
+"name": "bike-L4",
+"url": "/star/shop3d/items/bike-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 180,
+"paint": {
+"to": "#1a1b20",
+"rough": 0.3,
+"from": "#c01818"
+}
+},
+{
+"name": "bike-L5",
+"url": "/star/shop3d/items/bike-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"turn": 180,
+"paint": {
+"to": "#d4a63a",
+"metal": 0.9,
+"rough": 0.3,
+"from": "#c01818"
+}
+},
+{
+"name": "suv-L1",
+"url": "/star/shop3d/items/car-suv-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"tone": 1,
+"paint": {
+"from": "#00ff00",
+"to": "#00ff00",
+"fade": 0.5
+}
+},
+{
+"name": "suv-L2",
+"url": "/star/shop3d/items/car-suv-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"tone": 1
+},
+{
+"name": "suv-L3",
+"url": "/star/shop3d/items/car-suv-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"tone": 1
+},
+{
+"name": "suv-L4",
+"url": "/star/shop3d/items/car-suv-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"tone": 1
+},
+{
+"name": "suv-L5",
+"url": "/star/shop3d/items/car-suv-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 14,
+"tone": 1
+},
+{
+"name": "jet-L1",
+"url": "/star/shop3d/items/jet-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 20,
+"tone": 0.85,
+"paint": {
+"from": "#00ff00",
+"to": "#00ff00",
+"fade": 0.5
+}
+},
+{
+"name": "jet-L2",
+"url": "/star/shop3d/items/jet-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 20,
+"tone": 0.85
+},
+{
+"name": "jet-L3",
+"url": "/star/shop3d/items/jet-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 20,
+"tone": 0.85
+},
+{
+"name": "jet-L4",
+"url": "/star/shop3d/items/jet-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 20,
+"tone": 0.85
+},
+{
+"name": "jet-L5",
+"url": "/star/shop3d/items/jet-hf.glb",
+"longX": true,
+"yaw": 35,
+"elev": 20,
+"tone": 0.85
+},
+{
+"name": "flat-1-ALL",
+"url": "/star/shop3d/items/home-flat1-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "flat-2-ALL",
+"url": "/star/shop3d/items/home-flat2-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "penthouse-ALL",
+"url": "/star/shop3d/items/home-penthouse-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "stable-ALL",
+"url": "/star/shop3d/items/home-stable-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "house-1-ALL",
+"url": "/star/shop3d/items/home-house1-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "villa-ALL",
+"url": "/star/shop3d/items/home-villa-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "house-2-ALL",
+"url": "/star/shop3d/items/home-house2-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "estate-ALL",
+"url": "/star/shop3d/items/home-estate-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "island-ALL",
+"url": "/star/shop3d/items/home-island-hf.glb",
+"yaw": -35,
+"elev": 24,
+"fitH": 0.84
+},
+{
+"name": "smartwatch-ALL",
+"url": "/star/shop3d/items/watch-smart-hf.glb",
+"yaw": -15,
+"elev": 8,
+"turn": 270,
+"fitH": 0.84
+},
+{
+"name": "gold-ALL",
+"url": "/star/shop3d/items/watch-gold-hf.glb",
+"yaw": -15,
+"elev": 8,
+"turn": 270,
+"fitH": 0.84
+},
+{
+"name": "rolex-ALL",
+"url": "/star/shop3d/items/watch-luxury-hf.glb",
+"yaw": -15,
+"elev": 8,
+"turn": 270,
+"fitH": 0.84
+},
+{
+"name": "diamond-ALL",
+"url": "/star/shop3d/items/jewel-diamond-hf.glb",
+"yaw": -15,
+"elev": 8,
+"turn": 270,
+"fitH": 0.84
+},
+{
+"name": "silver-ALL",
+"url": "/star/shop3d/items/jewel-silver-hf.glb",
+"yaw": -15,
+"elev": 8,
+"turn": 270,
+"fitH": 0.84
+},
+{
+"name": "boot-starter-ALL",
+"url": "/star/shop3d/items/boot-starter-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#f4f4f2",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-control-ALL",
+"url": "/star/shop3d/items/boot-control-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#2f7bff",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-speed-ALL",
+"url": "/star/shop3d/items/boot-speed-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#ffd21f",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-curl-ALL",
+"url": "/star/shop3d/items/boot-classic-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#19c2b4",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-power-ALL",
+"url": "/star/shop3d/items/boot-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#e8322b",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-elite-ALL",
+"url": "/star/shop3d/items/boot-elite-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#1b1b1f",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+},
+{
+"name": "boot-maestro-ALL",
+"url": "/star/shop3d/items/boot-maestro-hf.glb",
+"longX": true,
+"yaw": -30,
+"elev": 12,
+"tint": "#9b4dff",
+"tintK": 1.0,
+"fitW": 0.9,
+"fitH": 0.82
+}
+]
