@@ -47,6 +47,9 @@ export interface BakeStrength {
   shade: number;
   /** Bounced light, a multiple of the bake's own measure (1 = as baked). */
   bounce: number;
+  /** The baked sun shadow raised to this power (1 = as baked). Low has no live shadow map, so this deepens
+   *  the bake's shadow the way High's map darkens it a second time (3D quality look, round 3). */
+  shadePow?: number;
 }
 
 export interface BakedLight {
@@ -110,7 +113,7 @@ uniform highp sampler3D uBkVol;
 uniform sampler2D uBkFloor;
 uniform vec3 uBkVMin, uBkVSize, uBkBounceV, uBkBounceF;
 uniform vec2 uBkFMin, uBkFSize;
-uniform float uBkFloorY, uBkOff, uBkAO, uBkShade, uBkOn, uBkHasF, uBkHasV;`;
+uniform float uBkFloorY, uBkOff, uBkAO, uBkShade, uBkShadePow, uBkOn, uBkHasF, uBkHasV;`;
 const FRAG_BODY = /* glsl */ `
 if (uBkOn > 0.5) {
   vec3 bkn = normalize(vBkN);
@@ -130,7 +133,7 @@ if (uBkOn > 0.5) {
   // the crowd: never darker than half the open sky's light (under the roof it read as a black hole)
   bkSky = max(bkSky, 0.55);
 #endif
-  float bkSun = mix(1.0, bk.g, uBkShade);
+  float bkSun = mix(1.0, pow(max(bk.g, 0.0), uBkShadePow), uBkShade);
   reflectedLight.indirectDiffuse *= bkSky;
   reflectedLight.indirectSpecular *= mix(1.0, bkSky, 0.75);
   reflectedLight.directDiffuse *= bkSun;
@@ -175,7 +178,7 @@ export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Part
     uBkVMin: { value: new T.Vector3() }, uBkVSize: { value: new T.Vector3(1, 1, 1) },
     uBkFMin: { value: new T.Vector2() }, uBkFSize: { value: new T.Vector2(1, 1) },
     uBkBounceV: { value: new T.Color(0, 0, 0) }, uBkBounceF: { value: new T.Color(0, 0, 0) },
-    uBkFloorY: { value: 0.15 }, uBkOff: { value: 0.5 }, uBkAO: { value: 1 }, uBkShade: { value: 1 },
+    uBkFloorY: { value: 0.15 }, uBkOff: { value: 0.5 }, uBkAO: { value: 1 }, uBkShade: { value: 1 }, uBkShadePow: { value: 1 },
     uBkOn: { value: 0 }, uBkHasF: { value: 0 }, uBkHasV: { value: 0 },
   };
   const st: BakeStrength = { ao: 1, shade: 1, bounce: 1, ...strength };
@@ -204,7 +207,7 @@ export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Part
     const k = (s: number) => light.intensity * s * st.bounce;
     U.uBkBounceV.value.copy(light.color).multiplyScalar(k(bounceScale.v));
     U.uBkBounceF.value.copy(light.color).multiplyScalar(k(bounceScale.f));
-    U.uBkAO.value = st.ao; U.uBkShade.value = st.shade;
+    U.uBkAO.value = st.ao; U.uBkShade.value = st.shade; U.uBkShadePow.value = st.shadePow ?? 1;
   };
   let token = 0;
   const load = async (t: BakeTod) => {

@@ -37,6 +37,20 @@ import { safeCompileAsync } from "../../three3d/safeCompile";
 
 /** Low's pitch under 3D quality look New, round 2 (see applyDials). */
 export const GRASS_LOW_RGB: [number, number, number] = [0.82, 0.92, 0.82], GRASS_LOW_STRIPES = 1.25;
+/**
+ * Round 3 (12 Oct 2026): one pitch colour per time of day, matched to High's grass on the stills
+ * (round 2's one scale left Low's day grass darker and less green than High's, golden and night too warm).
+ */
+export const GRASS_LOW_RGB_TOD: Record<TimeOfDay, [number, number, number]> = {
+  day: [0.85, 1.08, 0.95],
+  golden: [0.74, 0.95, 0.74],
+  night: [0.66, 0.92, 0.7],
+};
+/**
+ * Round 3: Low has no live shadow map, so the stands' baked sun shadow is deepened (raised to this power)
+ * the way High's live map darkens it a second time. One pow in the shader, no read, no draw.
+ */
+export const LOW_SHADE_POW = 1.8;
 const scaleHex = (hex: string, k: [number, number, number]) => {
   const n = parseInt(hex.slice(1), 16), c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
   return `#${c(((n >> 16) & 255) * k[0])}${c(((n >> 8) & 255) * k[1])}${c((n & 255) * k[2])}`;
@@ -298,9 +312,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     // High's under the same grade (measured on the stills: red 79 vs 57, green 99 vs 85). A darker, less warm
     // grass colour and stronger mown stripes: colour numbers only, nothing more drawn or read.
     const lowG = tier === "low" && freshTier;
-    const gr = (h: string) => (lowG ? scaleHex(tuneGrass(h, p), GRASS_LOW_RGB) : tuneGrass(h, p));
+    const gr = (h: string) => (lowG ? scaleHex(tuneGrass(h, p), GRASS_LOW_RGB_TOD[tod] ?? GRASS_LOW_RGB) : tuneGrass(h, p));
     pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? GRASS_LOW_STRIPES : 1) });
-    baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce });
+    baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce, shadePow: lowG ? LOW_SHADE_POW : 1 });
     baked?.setLight(sun.color, sun.intensity);
   };
   const applyTod = async () => {
