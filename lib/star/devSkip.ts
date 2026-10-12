@@ -4,7 +4,7 @@ import { nextFixtureFor } from "./competitions";
 import {
   simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, runDueTransferWindow,
 } from "./careerFlow";
-import { divisionOf, isRegionalDivision, matchweeksFor, postSeasonFor, fixtureDate, seasonStartYear } from "./calendar";
+import { divisionOf, isRegionalDivision, matchweeksFor, postSeasonFor, fixtureDate, seasonStartYear, INTL_DAY_BASE } from "./calendar";
 import { sortLeague, mulberry32 } from "./season";
 import { generateRelegationOffers } from "./relegationOffers";
 import { acceptOffer } from "./transfers";
@@ -66,7 +66,9 @@ export function skipTo(career: CareerState, target: SkipTarget): SkipResult {
     // simulated out from under you. Nothing left to play this season is the
     // other way to have arrived: there is nowhere further forward to go
     // without leaving the target season.
-    return !fx || fx.week >= target.week;
+    // An international (its week is a date, calendar.ts INTL_DAY_BASE) is
+    // never the target: it is passed like any other match on the way.
+    return !fx || (fx.week < INTL_DAY_BASE && fx.week >= target.week);
   };
 
   for (let i = 0; i < MAX_FIXTURES; i++) {
