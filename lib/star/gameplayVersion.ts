@@ -80,7 +80,9 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "The game's own drawings.",
   },
   actionCamera: {
-    label: "Match camera",
+    label: "Match camera (testing)",
+    // Leo, 12 Oct 2026: new things start on Old.
+    defaultVersion: "old",
     // Harry, 11 Oct 2026: "the camera view shows a huge area of the pitch
     // where no one's at". Camera round 3 (lib/star/matchView.ts fitAction).
     newText: "The camera frames the men the chance is about, so less empty grass. Nobody else is ever cut in half.",

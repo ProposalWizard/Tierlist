@@ -178,6 +178,13 @@ export function QuickSwitches({ glow, fullscreen }: {
 }
 
 /** One New | Old row. A dot marks a row you changed by hand. */
+/** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
+const V015_ALL_NEW: [LookRowId, string][] = [
+  ["actionCamera", "new"], ["keeperPro", "new"], ["shotsPro", "new"], ["knucklePower", "new"], ["ballPhysics", "new"],
+  ["matchFlow", "new"], ["matchRadar", "new"], ["dribbleDuels", "new"], ["dribbleStyle", "firstperson"],
+];
+const V015_ALL_OLD: [LookRowId, string][] = V015_ALL_NEW.map(([id]) => [id, id === "dribbleStyle" ? "firstperson" : "old"]);
+
 function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
   tabs: readonly (readonly [string, string])[];
@@ -241,6 +248,28 @@ function MatchGroup() {
   const gp = (k: GameplaySwitch) => (look[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
   return (
     <>
+      {/* Leo, 12 Oct 2026: every new thing from the v0.15 gameplay round in one place,
+          Old by default; "All new" = the game exactly as that round finished. */}
+      <div className="my-2 border-2 border-amber-400/70 bg-amber-400/10 px-3 py-3" data-new-round="v0.15">
+        <p className="text-[13px] font-black uppercase tracking-wider text-amber-300">New in v0.15 · testing</p>
+        <p className="mt-1 text-[12px] font-bold text-white">All start on Old (the game as before). All new = the game exactly as the v0.15 round finished.</p>
+        <div className="mt-2 flex gap-2">
+          <button className="flex-1 border-2 border-amber-300 bg-amber-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="new"
+            onClick={() => { for (const [id, v] of V015_ALL_NEW) setLookRow(id, v); }}>All new</button>
+          <button className="flex-1 border-2 border-white/40 px-2 py-1.5 text-[12px] font-black uppercase text-white" data-new-round-all="old"
+            onClick={() => { for (const [id, v] of V015_ALL_OLD) setLookRow(id, v); }}>All old</button>
+        </div>
+        <p className="mt-2 text-[12px] font-bold text-white">Try them without a career: <a href="/star-play-dev" className="text-amber-300 underline">Play Area</a> (camera, shots, keeper, ball) · <a href="/star-radar-dev" className="text-amber-300 underline">Match radar</a> · <a href="/star-dribble-dev" className="text-amber-300 underline">Dribble</a> · <a href="/star-tournament-dev" className="text-amber-300 underline">Tournament</a></p>
+      <LookRow id="actionCamera" look={look} tabs={NEW_OLD} note={gp("actionCamera")} />
+      <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
+      <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
+      <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
+      <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
+      <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
+      <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
+      <LookRow id="dribbleDuels" look={look} tabs={NEW_OLD} note={gp("dribbleDuels")} />
+      <LookRow id="dribbleStyle" look={look} tabs={[["firstperson", "1st person"], ["topdown", "Top-down"]]} note="Leo's choice. First-person: the run behind your player's shoulder. Top-down: the same run in the normal match view, with the match's players and ball." />
+      </div>
       <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
       <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
       <LookRow id="wideChances" look={look} tabs={NEW_OLD} note="New view only. New: tight angles, cutbacks and penalties are watched side-on, like corners, so the players fill the screen instead of a block of empty grass. Nobody is cut off; the players and the drag are the same." />
@@ -257,20 +286,11 @@ function MatchGroup() {
       <LookRow id="chances" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="Classic: your drawn chances. New (being tested): about 100 pictures of each chance with both full teams." />
       <LookRow id="animations" look={look} tabs={NEW_OLD} note={<>New (being tested): whoever touches the ball is seen doing it — shots, passes, headers, blocks, the keeper&apos;s catch and fumble.{tester && <> <a href="/star-animations-dev" className="font-bold text-amber-300 underline">Animation test area →</a></>}</>} />
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
-      <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
       <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
       <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
-      <LookRow id="dribbleStyle" look={look} tabs={[["firstperson", "1st person"], ["topdown", "Top-down"]]} note="Leo's choice. First-person: the run behind your player's shoulder. Top-down: the same run in the normal match view, with the match's players and ball." />
-      <LookRow id="dribbleDuels" look={look} tabs={NEW_OLD} note={gp("dribbleDuels")} />
       <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
-      <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
-      <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
-      <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
       <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
       <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
-      <LookRow id="actionCamera" look={look} tabs={NEW_OLD} note={gp("actionCamera")} />
-      <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
-      <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
       <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
       <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
       <SetToggle label="Post-match reactions" on={postMatch} onClick={flipPostMatch} last />
