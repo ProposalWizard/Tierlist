@@ -52,7 +52,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale } from "./match2dCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -272,6 +272,12 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const SK = SkU.default ?? SkU;
   if (lookMod && o.def.real) lookMod.preloadRealLook(THREE, o.tod ?? o.def.real);
   if (o.def.real) void import("./real/ball").catch(() => null);
+  // the goal frame's one fixed size (MATCH_SCALES), set before the stadium is built; only the
+  // 3D camera New (the 2D's own frame) uses it, and the match puts it back to 1 when it closes
+  if (o.def.real && camMode === "tv" && realCameraLook() === "new" && !(typeof window !== "undefined" && /[?&](cam2d|bcam)=0/.test(window.location.search))) {
+    const gs = matchScale().goal;
+    if (gs !== 1) await import("./real/arena").then((m) => m.setArenaGoalScale(gs)).catch(() => {});
+  }
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   // Settings → Look → "Players in a 3D match" (toon/matchLook.ts): realistic players by default; Style A stays in cut scenes
@@ -1203,7 +1209,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     b.p.root.position.set(b.x - CX, lift, b.y);
     b.p.root.rotation.set(0, b.yaw, 0);
-    b.p.root.scale.setScalar(figNow() * (camMode === "tv" && tv.init && realCameraLook() === "new" ? 1 : KEEPER_SHARE));
+    b.p.root.scale.setScalar(keeperFig());
     b.p.root.visible = true;
   };
 
@@ -1350,6 +1356,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** The TV camera's figure scale this frame (see TARGET_PX). */
   let tvFig = ENGINE_VIEW_FIG_SCALE;
   const figNow = () => (camMode === "tv" && tv.init ? tvFig : figScale);
+  /** The keeper's size: the new 2D-frame camera's fixed keeper scale; else a size down from the men, as before. */
+  const keeperFig = () => camMode === "tv" && tv.init && realCameraLook() === "new"
+    ? (!preMatch2D && !preBroadcast ? mScale.keeper : figNow())
+    : figNow() * KEEPER_SHARE;
   type TvCam = typeof TV_CAMERA & { pinBottom?: number };
   /** The TV camera for this frame at angle `thDeg`, framing `pts` with the numbers in C. */
   const tvSolveAt = (f: EngineFrame, C: TvCam, thDeg: number, pts: { x: number; y: number }[], nu: boolean) => {
@@ -1586,6 +1596,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
   const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig };
+  /** The one fixed scale set (lib/star/style3d/match2dCam.ts MATCH_SCALES): read once, never per chance. */
+  const mScale = matchScale();
   /**
    * The stand on the camera's side: everything of the stadium nearer the camera than
    * the bottom edge of the 2D's view (or the touchline / goal line on that side) is not drawn (a roof there sits over the grass the
@@ -1609,7 +1621,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     const fr2 = { viewport: vp, facing, tilt, W, H };
     const c = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
-    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; m2.k = c.k; } // the size: once a chance
+    // ONE fixed size for every man, the keeper and the goal, in every chance and frame (Harry, 12 Oct
+    // 2026: "no changes in size for any player or goalie or goal should ever occur"): MATCH_SCALES
+    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
+    m2.k = mScale.man;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1620,7 +1635,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
-    lean = leanFor(c.elevDeg);
+    lean = mScale.lean ? leanFor(c.elevDeg) : 0;
     tv.init = true;
     tvFig = m2.k;
     // the stadium nearer the camera than the 2D view's bottom edge (1.5 m spare) is not drawn
@@ -2007,6 +2022,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       gov.dispose();
       hball?.dispose(); hball = null;
       if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring
+      void import("./real/arena").then((m) => m.setArenaGoalScale(1)).catch(() => {});
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
       // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here

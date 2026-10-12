@@ -20,7 +20,8 @@ import { frameForNewView, turnWideChance } from "../../lib/star/matchView";
 import { hasRunup } from "../../lib/star/penaltyRunup";
 import { tiltFor } from "../../lib/star/cameraTilt";
 import { solveBroadcast, actionPoints, bcProject, BROADCAST, type BcFigure, type BcPoint, type BcCamera } from "../../lib/star/style3d/broadcastCam";
-import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, MATCH2D, type Frame2D } from "../../lib/star/style3d/match2dCam";
+import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, leanedManShare, leanFor, MATCH2D, MATCH_SCALES, MATCH_SCALE_PICK, matchScale, type Frame2D } from "../../lib/star/style3d/match2dCam";
+import fs from "node:fs";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -80,19 +81,21 @@ if (isMain) {
   const rows = process.env.MATCH2D_ROWS === "1";
   const tot = { old: { seen: 0, kept: 0, full: 0, ball: [] as number[] }, nu: { seen: 0, kept: 0, full: 0, ball: [] as number[] } };
   let n = 0, cornersOff = 0, badAngle = 0, kinds = new Set<string>();
-  const ks: number[] = [], shares: number[] = [];
+  const ks: number[] = [], shares: number[] = [], keeperKs: number[] = [], goalKs: number[] = [];
   const ratio: number[] = [], extra: number[] = [], elevs: Record<string, number> = {};
   for (const kind of SCENARIO_KINDS) {
     for (let seed = 1; seed <= 6; seed++) {
       const c = chanceFor(kind, seed);
       n++; kinds.add(kind);
       const o = oldCam(c), nu = solveMatch2D(c.f);
-      const so = score(c, o, BROADCAST.fig), sn = score(c, nu, nu.k);
+      const fixed = matchScale();
+      const so = score(c, o, BROADCAST.fig), sn = score(c, nu, fixed.man);
       for (const [k, s] of [["old", so], ["nu", sn]] as const) {
         tot[k].seen += s.seen; tot[k].kept += s.kept; tot[k].ball.push(s.ballPx); if (s.kept === s.seen) tot[k].full++;
       }
       for (const q of framedQuad(c.f)) if (!on3d(nu, q)) { cornersOff++; break; }
-      extra.push(nu.extra); ks.push(nu.k); shares.push(nu.man); elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
+      extra.push(nu.extra); ks.push(fixed.man); keeperKs.push(fixed.keeper); goalKs.push(fixed.goal);
+      shares.push(leanedManShare(nu, W, H, c.sc.ball, MATCH2D.manH * fixed.man, fixed.lean ? leanFor(nu.elevDeg) : 0)); elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
       if (nu.elevDeg < 40 || nu.elevDeg > 60) badAngle++;
       // the 2D man's height on the phone vs a life-size 3D man at the ball: the fig that would match
       const v = c.f.viewport, turned = c.f.facing !== "up";
@@ -112,7 +115,14 @@ if (isMain) {
   console.log(`fig that matches the 2D's men at this framing: p10 ${pct(ratio, 0.1).toFixed(2)}, median ${pct(ratio, 0.5).toFixed(2)}, p90 ${pct(ratio, 0.9).toFixed(2)} (set ${MATCH2D.fig})`);
   console.log(`extra grass on the 3D screen the 2D does not show: median ${(pct(extra, 0.5) * 100).toFixed(0)}%, p90 ${(pct(extra, 0.9) * 100).toFixed(0)}%; angle/lens picked ${JSON.stringify(elevs)}`);
   console.log(`men: size per chance ${pct(ks, 0).toFixed(2)}–${pct(ks, 1).toFixed(2)}× (median ${pct(ks, 0.5).toFixed(2)}), a man in the action ${(pct(shares, 0) * 100).toFixed(1)}–${(pct(shares, 1) * 100).toFixed(1)}% of the height (median ${(pct(shares, 0.5) * 100).toFixed(1)}%)`);
-  ok(pct(shares, 0.5) >= MATCH2D.manShare - 0.002 && Math.min(...shares) >= 0.035, `men readable: the median chance at the ${(MATCH2D.manShare * 100).toFixed(0)}% target, none under 3.5%`);
+  // ONE SIZE (Harry, 12 Oct 2026: "no changes in size for any player or goalie or goal should ever occur")
+  const same = (a: number[]) => a.every((v) => v === a[0]);
+  ok(same(ks) && same(keeperKs) && same(goalKs), `one fixed scale in every chance: men ${ks[0]}x, keeper ${keeperKs[0]}x, goal ${goalKs[0]}x (option "${MATCH_SCALE_PICK}")`);
+  const ev = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+  const pm = ev.slice(ev.indexOf("const placeMatch2D"), ev.indexOf("const placeCamera"));
+  ok(pm.length > 0 && !/m2\.k\s*=\s*c\.k|tvFig\s*=\s*c\.k|=\s*c\.k\b/.test(pm) && /m2\.k = mScale\.man/.test(pm), "the 2D-frame camera never takes a size from the camera solve (c.k)");
+  for (const [id, sc] of Object.entries(MATCH_SCALES)) ok(sc.man > 0 && sc.keeper > 0 && sc.goal > 0, `scale option ${id} is a set of fixed numbers`);
+  if (MATCH_SCALE_PICK === "current") ok(pct(shares, 0.5) >= MATCH2D.manShare - 0.002, `men readable: the median chance at the ${(MATCH2D.manShare * 100).toFixed(0)}% target at the fixed ${ks[0]}x (smallest ${(Math.min(...shares) * 100).toFixed(1)}%: a wide side-on chance)`);
   ok(n >= 40, `${n} chances`);
   ok(tot.nu.kept === tot.nu.seen, `every person and post the 2D shows is on the 3D screen (${share(tot.nu)}%)`);
   ok(cornersOff === 0, `the 2D view box's grass corners (up to 3 m past the pitch on the camera's side) are on the 3D screen in every chance (${cornersOff} not)`);

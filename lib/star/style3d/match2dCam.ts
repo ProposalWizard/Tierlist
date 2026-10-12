@@ -67,6 +67,41 @@ export const MATCH2D = {
 };
 export type Match2DParams = typeof MATCH2D;
 
+/**
+ * ONE SIZE FOR EVERYTHING, ALWAYS (Harry, 12 Oct 2026): "no changes in size for any player
+ * or goalie or goal should ever occur". Each object has ONE fixed scale (× real life), the
+ * same in every chance and every frame. It never follows the camera and is never worked out
+ * per chance (before: the men were sized per chance to ~6% of the screen, 1.5–3.0×).
+ * A man reads smaller on a wide side-on chance: that is the camera being further away.
+ *
+ * `lean`: men lean back from the camera by (angle − 40°) (picture only, feet planted).
+ * `goal`: the goal frame (posts, bar, net) about the middle of its line. The pitch lines
+ * stay true: they sit under the ball and the men (a scaled box would move the spot off the ball).
+ *
+ * Harry picks one of A / B / C (scripts/cam3d/scale.mts measures them); until then `current`
+ * (the old per-chance median, now fixed) is the default.
+ */
+export interface MatchScale { man: number; keeper: number; goal: number; lean: boolean }
+export const MATCH_SCALES = {
+  /** The median of the old per-chance size (2.02×), held fixed; the keeper the same as a man (as the new camera drew him). */
+  current: { man: 2.0, keeper: 2.0, goal: 1, lean: true },
+  /** A: real life. Men, keeper and goal all true size, no lean: the man-to-goal ratio is real. */
+  A: { man: 1.0, keeper: 1.0, goal: 1, lean: false },
+  /** B: men as now; the goal frame scaled up so man-to-goal on screen matches the 2D view. */
+  B: { man: 2.0, keeper: 2.0, goal: 2.5, lean: true },
+  /** C: halfway between A and B. */
+  C: { man: 1.5, keeper: 1.5, goal: 1.75, lean: true },
+} satisfies Record<string, MatchScale>;
+export type MatchScaleId = keyof typeof MATCH_SCALES;
+/** The one tuning constant. Change it when Harry picks (A, B or C). */
+export const MATCH_SCALE_PICK: MatchScaleId = "current";
+/** The fixed scale in use. Test pages may pass ?mscale=A|B|C|current (stills only). */
+export function matchScale(): MatchScale {
+  const q = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("mscale");
+  const id = q && q in MATCH_SCALES ? (q as MatchScaleId) : MATCH_SCALE_PICK;
+  return MATCH_SCALES[id];
+}
+
 /** Canvas fraction (0..1 each way) -> pitch metres, for the 2D frame. */
 export function canvasToPitch(f: Frame2D, sx: number, sy: number): BcPoint {
   const v = f.viewport;
