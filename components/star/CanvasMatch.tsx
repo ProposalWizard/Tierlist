@@ -156,7 +156,7 @@ import {
 } from "@/lib/star/penaltyRunup";
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
-  matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf,
+  matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
   NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
@@ -1032,6 +1032,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         isLevelNow: () => (firstUs + userScoreRef.current) === (firstThem + oppScoreRef.current),
       };
     }
+    // A summer-tournament knockout (lib/star/tournament.ts): extra time, then
+    // penalties. A group game, and an old save's counter-style run, can be drawn.
+    if (fixture.kind === "international" && fixture.round && !fixture.round.startsWith("Group")
+      && careerRef.current?.tournament?.season === careerRef.current?.season) {
+      return { extraTime: true, isLevelNow: () => userScoreRef.current === oppScoreRef.current };
+    }
     return null;
   };
 
@@ -1775,7 +1781,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     auto?: { contact: { cx: number; cy: number }; skills: KickSkills };
   } | null>(null);
   /** A sideways drag during the run-up: where it started, and the swing then. */
-  const nudgeDragRef = useRef<{ x0: number; base: number } | null>(null);
+  const nudgeDragRef = useRef<{ x0: number; y0: number; base: number } | null>(null);
   /** Your two run-up styles, read live (a prop can change between chances). */
   const runupStyleRef = useRef({ pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) });
   runupStyleRef.current = { pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) };
@@ -2512,9 +2518,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // which does not exist yet at this point in the match; it all goes
         // straight into the permanent log below instead.
         const named = nameTeamGoals(before, onPitch(careerRef.current?.squad ?? []), rng, false);
+        // Every goal stays in, even from before the last 14 lines: the
+        // scoreboard counts goal lines in the log (displayScore), so a goal
+        // trimmed off here vanished from it — a sub came on at 1-1 on the
+        // board in a match the stats screen then called 2-1.
+        const early = named.slice(0, Math.max(0, named.length - 14)).filter(e => e.isGoal);
         setLog([
           logLine("Kick Off", "period", 0),
-          ...linesFrom(named.slice(-14)),
+          ...linesFrom([...early, ...named.slice(-14)]),
           logLine("You are coming on.", "you", st.minute),
         ]);
         setPhase("feed");
@@ -2583,6 +2594,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * play area it was recorded with, so it replays exactly.
    */
   function frameScenario(sc: Scenario, replay = false) {
+    // Wide chances: New (lib/star/wideChances.ts) — a tight angle, a cutback
+    // or a penalty is watched side-on, like a corner. The real match and plain
+    // EnginePlay only: a feature with its own scene keeps its picture, and a
+    // goal replay keeps the facing it was recorded in.
+    if (newViewRef.current && !replay && !sceneRef.current) turnWideChance(sc, !hasRunup(sc.kind), canvasHW());
     facingRef.current = sc.facing ?? "up";
     // A feature that asks for its own close camera keeps it (scene.ownFrame).
     if (!newViewRef.current || sceneRef.current?.ownFrame) {
@@ -4598,6 +4614,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: () => scenarioRef.current.kind,
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
+      // the camera and everyone in the chance, on the glass (camera tests)
+      frame: () => {
+        const sc = scenarioRef.current, c = canvasRef.current;
+        const r = c?.getBoundingClientRect();
+        const men: { role: string; x: number; y: number; cx: number; cy: number }[] = [];
+        const add = (role: string, p: { x: number; y: number } | null | undefined) => {
+          if (!p) return;
+          const q = pitchToClient(p);
+          men.push({ role, x: p.x, y: p.y, cx: q.x, cy: q.y });
+        };
+        add("ball", sc.ball); add("you", sc.player); add("keeper", sc.keeper);
+        sc.defenders.forEach((d) => add("def", d));
+        sc.teammates.forEach((t) => add("mate", t));
+        if (sc.runner) add("runner", sc.runner.pos);
+        (sc.secondaryRunners ?? []).forEach((s) => add("runner2", s.pos));
+        if (sc.follower) add("follower", sc.follower);
+        add("postL", { x: CX - 3.66, y: 0 }); add("postR", { x: CX + 3.66, y: 0 });
+        return {
+          kind: sc.kind, facing: facingRef.current, cam: { ...viewportRef.current }, tilt: tiltDegRef.current,
+          zoom: playZoomRef.current, canvas: r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null,
+          box: (() => { const b = canvasBox(); return { x: b.left, y: b.top, w: b.width, h: b.height }; })(),
+          men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
+        };
+      },
       // a dribble run now, while a chance is waiting to be taken (test bots:
       // the dribble chance is a roll of the hidden match, so it can take a
       // whole match to come up). The same set-up the hidden match's request does.
@@ -5112,6 +5152,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // while it is still your shot (a team-mate's follow-up is his). Your
     // shootout kicks count too. Credited as a
     // small reputation hit at full time (careerFlow's creditMatchResult).
+    // Roadmap #4 (achievements): was YOUR strike a chip or a curler? Read
+    // before the cheeky tag is cleared below; the curl from the ball's own
+    // action log (canvasEngine's launch() writes it). Only ever your kick.
+    const yourFinish: "chip" | "curl" | undefined = (() => {
+      if (auto) return undefined;
+      if (cheekyStrikeRef.current === "chip") return "chip";
+      const log = ballRef.current?.actionLog ?? [];
+      const last = [...log].reverse().find(a => a.kind === "shot" && a.actor === "you");
+      return last?.mode === "curl" ? "curl" : undefined;
+    })();
     {
       const ch = cheekyStrikeRef.current;
       cheekyStrikeRef.current = null;
@@ -5344,6 +5394,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName, assist: assister?.name,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(yourFinish ? { finish: yourFinish } : {}),
           ...(yourClip ? { clipId: yourClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
@@ -5358,6 +5409,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalEventsRef.current.push({
           minute: matchMinuteRef.current, scorer: playerName,
           isUserGoal: true, how, distance: Math.round(distance),
+          ...(yourFinish ? { finish: yourFinish } : {}),
           ...(soloClip ? { clipId: soloClip } : {}),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
@@ -6807,7 +6859,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (phaseRef.current === "runup") {
       const ru = runupRef.current;
       if (!ru || ru.arrived || !ru.nudge) return;
-      nudgeDragRef.current = { x0: e.clientX, base: ru.nudgeM };
+      nudgeDragRef.current = { x0: e.clientX, y0: e.clientY, base: ru.nudgeM };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
@@ -6878,10 +6930,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const ru = runupRef.current;
       const canvas = canvasRef.current;
       if (ru && !ru.arrived && canvas) {
-        // A penalty is always watched straight on ("up"), so sideways on the
-        // screen is sideways along the goal line.
+        // Watched straight on ("up"), sideways on the screen is sideways along
+        // the goal line. Watched side-on (Wide chances: New) the goal line runs
+        // down the screen: "right" has pitch x going down, "left" going up.
         const vp = viewportRef.current;
-        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvasBox().width,
+        const f = facingRef.current;
+        const along = f === "right" ? e.clientY - nudgeDragRef.current.y0
+          : f === "left" ? nudgeDragRef.current.y0 - e.clientY
+          : e.clientX - nudgeDragRef.current.x0;
+        const m = nudgeFromDrag(along, canvasBox().width,
           // New view: the same finger nudges as far as it does in the classic frame.
           newViewRef.current ? engineFrameOf(scenarioRef.current).x2 - engineFrameOf(scenarioRef.current).x1 : vp.x2 - vp.x1);
         ru.nudgeM = Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeDragRef.current.base + m));

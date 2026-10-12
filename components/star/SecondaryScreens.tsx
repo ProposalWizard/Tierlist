@@ -8,9 +8,18 @@ import { clauseSummary, offerClauses } from "@/lib/star/contracts";
 import { willingToRenegotiate } from "@/lib/star/careerFlow";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
-import { ACHIEVEMENTS } from "@/lib/star/achievements";
+import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, type AchievementTier } from "@/lib/star/achievements";
+
+/** How rare an achievement is, as the list shows it (tier = XP Book tier). */
+const TIER_LOOK: Record<AchievementTier, { label: string; icon: string; bg: string; fg: string; glow: string }> = {
+  easy: { label: "Bronze", icon: "🥉", bg: "#92400e", fg: "#fde68a", glow: "rgba(217,119,6,.7)" },
+  medium: { label: "Silver", icon: "🥈", bg: "#475569", fg: "#f1f5f9", glow: "rgba(203,213,225,.7)" },
+  hard: { label: "Gold", icon: "🥇", bg: "#a16207", fg: "#fef9c3", glow: "rgba(251,191,36,.7)" },
+  legendary: { label: "Legend", icon: "🏆", bg: "#6d28d9", fg: "#ede9fe", glow: "rgba(167,139,250,.8)" },
+};
 import { RECORDS, recordBeaten } from "@/lib/star/records";
 import { formatMoney } from "@/lib/star/money";
+import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
 import { Screen, ScreenHeader, Rays, useLater } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
@@ -156,16 +165,30 @@ export function AchievementsScreen({ career, onBack, top }: { career: CareerStat
           <>
             {top}
             <div className="kit-card overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
-              {ACHIEVEMENTS.map((a, i) => {
-                const unlocked = career.achievements.includes(a.id);
+              {ACHIEVEMENT_GROUPS.map((g) => {
+                const list = ACHIEVEMENTS.filter(a => a.group === g);
+                const got = list.filter(a => career.achievements.includes(a.id)).length;
                 return (
-                  <div key={a.id} className={`kit-rise flex items-center gap-3 p-3 border-b border-white/[0.06] ${unlocked ? "bg-amber-400/[0.07]" : ""}`} style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                    <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`} style={unlocked ? { filter: "drop-shadow(0 0 8px rgba(251,191,36,.7))" } : undefined}>⭐</div>
-                    <div className="flex-1">
-                      <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
-                      <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
+                  <div key={g}>
+                    <div className="sticky top-0 z-10 flex items-baseline justify-between bg-black/70 px-3 py-1.5 backdrop-blur" data-ach-group={g}>
+                      <span className="text-[11px] font-black uppercase tracking-wide text-white">{g}</span>
+                      <span className="text-[10px] font-black tabular-nums text-amber-300">{got} / {list.length}</span>
                     </div>
-                    {unlocked && <div className="text-emerald-400 font-black text-lg">✓</div>}
+                    {list.map((a, i) => {
+                      const unlocked = career.achievements.includes(a.id);
+                      const t = TIER_LOOK[a.tier];
+                      return (
+                        <div key={a.id} className={`kit-rise flex items-center gap-3 p-3 border-b border-white/[0.06] ${unlocked ? "bg-amber-400/[0.07]" : ""}`} style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
+                          <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`} style={unlocked ? { filter: `drop-shadow(0 0 8px ${t.glow})` } : undefined}>{t.icon}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
+                            <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
+                          </div>
+                          <span className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase" style={{ background: t.bg, color: t.fg }}>{t.label}</span>
+                          <div className="w-5 shrink-0 text-center text-emerald-400 font-black text-lg">{unlocked ? "✓" : ""}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -463,17 +486,18 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
   // wage lives on the real-money scale. Same idea as every other wage-offer
   // formula in the game (see transfers.ts) — a good negotiation compounds
   // off your current terms, not off a fixed placeholder amount.
-  const RAISE_PCT_PER_WIN = 0.08;
-  // A single wrong guess costs a real, noticeable chunk of whatever you'd
-  // already banked — applied ONCE, on top of the wins already earned, not
-  // instead of them, so a strong run that ends in one slip still lands
-  // somewhere between "nothing gained" and "the peak you reached."
-  const LOSS_PENALTY_PCT = 0.15;
-  const offerMultiplier = (1 + RAISE_PCT_PER_WIN * wins) * (locked ? (1 - LOSS_PENALTY_PCT) : 1);
-  const currentOffer = (base: number) => Math.round(base * offerMultiplier);
+  // +8% a right guess; a single wrong guess costs 15% — applied ONCE, on top
+  // of the wins already earned, not instead of them, so a strong run that
+  // ends in one slip still lands somewhere between "nothing gained" and "the
+  // peak you reached." The numbers and the wage cap live in economy.ts
+  // (`renewalWage`): a renewal never takes a wage past PREMIER_WAGE_CAP.
+  const offeredWage = renewalWage(career.contract.wage, wins, locked);
+  // The bonuses move by the same factor the wage actually moved.
+  const factor = career.contract.wage > 0 ? offeredWage / career.contract.wage : renewalMultiplier(wins, locked);
+  const currentOffer = (base: number) => Math.round(base * factor);
 
   const finalise = () => {
-    const wage = currentOffer(career.contract.wage);
+    const wage = offeredWage;
     // The better the negotiation went, the more of the deal they will write in.
     // Seeded off the outcome so the same negotiation produces the same offer.
     const newContract: CareerState["contract"] = {
@@ -537,7 +561,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               </div>
             )}
             <div className="text-xs text-white/85 mb-3 leading-snug">
-              Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RAISE_PCT_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
+              Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RENEWAL_RAISE_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
             </div>
             <div className="kit-row rounded-xl p-3 text-xs mb-3 space-y-1">
               <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/week</span></div>
@@ -571,12 +595,12 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
                 with real, current numbers in front of you, not a guess. */}
             <div key={lostAt} className={`relative kit-row rounded-xl p-3 text-xs mb-3 space-y-1 text-left ${lostAt ? "kit-shake-x" : ""}`} style={locked ? { boxShadow: "inset 0 0 0 1px rgba(248,113,113,.45)" } : undefined}>
               <Burst trigger={wonAt} colors={["#34d399", "#fde047", "#ffffff"]} count={16} spread={0.7} className="left-3/4 top-1/2" round />
-              <FloatText trigger={wonAt} text={`+${Math.round(RAISE_PCT_PER_WIN * 100)}%`} color="#34d399" className="left-3/4 top-2" size={15} />
-              <FloatText trigger={lostAt} text={`−${Math.round(LOSS_PENALTY_PCT * 100)}%`} color="#f87171" className="left-3/4 top-2" size={15} />
+              <FloatText trigger={wonAt} text={`+${Math.round(RENEWAL_RAISE_PER_WIN * 100)}%`} color="#34d399" className="left-3/4 top-2" size={15} />
+              <FloatText trigger={lostAt} text={`−${Math.round(RENEWAL_SOURED_CUT * 100)}%`} color="#f87171" className="left-3/4 top-2" size={15} />
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">
                 {locked ? "Final offer" : "Current offer"}
               </div>
-              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.wage))}/week</span></div>
+              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(offeredWage)}/week</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
             </div>

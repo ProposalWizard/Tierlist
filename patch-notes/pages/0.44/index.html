@@ -1,0 +1,313 @@
+<title>Leo Patch Notes v0.14</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:var(--bg);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,130px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+
+  .chk i{background:var(--green)} .chk{color:var(--green)}
+  .seen i{background:var(--blue)} .seen{color:var(--blue)}
+  .dec i{background:var(--amber)} .dec{color:var(--amber)}
+  .headline{border:1px solid var(--line);border-left:3px solid var(--green);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 8px}
+  .hl-tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+  .headline h3{font-size:20px;line-height:1.2;margin:6px 0 12px;letter-spacing:-.01em}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+  .card .hd{font-size:16px;margin-bottom:8px}
+  .row{margin:0 0 10px}
+  .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:5px}
+  .row b,.mean b{color:var(--ink)}
+  .cap{color:var(--ink3);font-size:12.5px;margin:6px 0 4px}
+  .cap b{color:var(--ink2)}
+  .mean{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--ink2);margin:10px 0 2px}
+  figure{margin:10px 0 0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--ink3);font-size:12.5px;margin-top:5px}
+  figure.one{max-width:340px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pair figure{margin-top:10px}
+  ul.checks{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  ul.checks li{border-bottom:1px solid var(--line);padding:10px 13px}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks label{display:block;font-weight:700;cursor:pointer;padding-left:28px;position:relative}
+  ul.checks input{position:absolute;left:0;top:3px;width:17px;height:17px;accent-color:var(--green)}
+  .where{display:block;font-weight:400;color:var(--ink3);font-size:12.5px;margin-top:2px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 2px}
+  .tbl th{text-align:left;color:var(--ink3);font-weight:700;font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:7px 6px;border-bottom:1px solid var(--line);color:var(--ink2);font-variant-numeric:tabular-nums}
+  .tbl td.ok{color:var(--green);font-weight:700}
+  .g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  a{color:var(--blue)}
+  .safe{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:16px 15px;margin:0 0 14px}
+  .safe h3{font-size:18px;line-height:1.2;margin:6px 0 8px}
+  .safe p,.safe li{color:var(--ink2);font-size:14.5px}
+  .safe p{margin:0 0 6px}
+  .safe ul{margin:0;padding-left:18px}
+  .safe li{margin-bottom:6px}
+  .safe b{color:var(--ink)}
+
+  .clipbox{margin:12px 0 0}
+  .look{margin:0 0 8px;font-size:14.5px;background:var(--card2);border-radius:10px;padding:9px 12px;color:var(--ink2)}
+  .look b{color:var(--green);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .pane .lab{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:5px 8px;border-radius:6px;margin-bottom:6px;background:var(--green);color:var(--bg)}
+  .pane video{display:block;width:100%;max-width:390px;height:auto;max-height:80vh;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#05070d}
+  .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .spd button.on{background:var(--ink);color:var(--bg)}
+
+  .clips{display:grid;gap:14px;margin:12px 0 0}
+  .pane{margin:0}
+  .pane .cap{margin-top:6px}
+  .tallwrap video{max-width:260px}
+  .tbl td b{color:var(--ink)}
+
+  .bars{margin:10px 0 4px}
+  .bar{margin:8px 0}
+  .bar .t{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);margin-bottom:4px}
+  .bar .t b{color:var(--ink)} .bar .t s{color:var(--ink3);margin-right:6px}
+  .bar .tr{position:relative;height:10px;background:var(--line);border-radius:3px;overflow:hidden}
+  .bar .o{position:absolute;left:0;top:0;bottom:0;background:#4b5a52}
+  .bar .n{position:absolute;left:0;top:0;bottom:0;background:#34c77b;opacity:.9}
+  .bar.bad .n{background:#e2a33b}
+  .shot{display:block;max-width:360px;width:100%;border-radius:14px;margin:10px auto 4px;border:1px solid var(--line)}
+  svg.dia{display:block;width:100%;max-width:420px;margin:10px auto 2px}
+</style><style>.tb{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}.tb th,.tb td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left}.tb th{color:var(--ink2);font-weight:700}</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.14</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">The biggest round yet: 12 jobs built side by side in one evening. The empty-pitch camera, a career that moves (transfers, January, international football, tournaments), a world that ages, a real Ballon d'Or night, 136 achievements, and a bug and money sweep.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>12</b><span>jobs built and merged</span></div>
+  <div class="s"><b>11% → 51%</b><span>of the screen filled by players (Kane one-on-ones)</span></div>
+  <div class="s"><b>35 → 136</b><span>achievements</span></div>
+  <div class="s"><b>318/321</b><span>tests pass (3 fail on main too or are unrelated)</span></div>
+</div>
+
+<section class="headline">
+  <div class="hl-tag">Headline · Harry's camera bug</div>
+  <h3>The camera framed a huge area where nobody was</h3>
+  <div class="row"><div class="lbl">Problem</div><p>At the start of some chances the picture showed mostly empty grass, with the players squeezed into the top quarter.</p></div>
+  <div class="row"><div class="lbl">Why</div><p>When a chance does not use the spare striker, he is parked 400 m off the pitch. The camera still tried to fit him, gave up, and used the widest picture. This hit 5–14% of normal chances and every Kane drawing.</p></div>
+  <div class="row"><div class="lbl">Fix</div><p>The camera ignores anyone parked off the pitch, and zooms to fit what the phone really shows after the tilt. Fixed in the real match, not a separate area. Nobody is cut off (0 of 277 zoomed chances).</p></div>
+  <img class="shot" src="img/camera-kane.jpg" alt="Before and after framing">
+  <p class="cap">A drawing of the framing, not the game's own screen. Pairs left to right: one-on-one before, after; long range before, after.</p>
+  <div class="bars"><div class="bar"><div class="t"><span>Kane one-on-one: screen filled by players</span><span><s>11%</s><b>51%</b></span></div><div class="tr"><div class="o" style="width:11%"></div><div class="n" style="width:51%"></div></div></div><div class="bar"><div class="t"><span>Kane long range</span><span><s>15%</s><b>58%</b></span></div><div class="tr"><div class="o" style="width:15%"></div><div class="n" style="width:58%"></div></div></div><div class="bar"><div class="t"><span>Free kicks squeezed thin (default chances)</span><span><s>9%</s><b>0%</b></span></div><div class="tr"><div class="o" style="width:9%"></div><div class="n" style="width:0%"></div></div></div></div>
+  <div class="mean"><b>Still open, Harry's call:</b> tight angles, cutbacks and penalties stay about half empty. The players stand in a strip 25 m wide but only 7 m deep, and a phone-shaped picture that wide shows 50 m of pitch. A side-on option is built (Added, below), off by default.</div>
+</section>
+
+<h2 class="chk"><i></i>Check these</h2>
+<ul class="checks" id="checks"><li><label><input type="checkbox" data-k="camera"> Empty-pitch camera fixed<span class="where">Any match chance: the opening picture fits the players</span></label></li><li><label><input type="checkbox" data-k="league"> League account named after your division<span class="where">Post Match Reactions after a lower-league match</span></label></li><li><label><input type="checkbox" data-k="find"> Find a new club<span class="where">Stats → Contract → Find a new club</span></label></li><li><label><input type="checkbox" data-k="jan"> January moves<span class="where">Agree a deal, then in January: “Join [club] now”</span></label></li><li><label><input type="checkbox" data-k="intl"> International breaks and call-ups<span class="where">Sep / Oct / Nov / Mar: Called up or Not selected; Stats → 🌍 Country</span></label></li><li><label><input type="checkbox" data-k="tourn"> Euros and World Cup every 2 summers<span class="where">End of a tournament season: the squad screen, groups, knockouts</span></label></li><li><label><input type="checkbox" data-k="bdo"> Ballon d'Or night<span class="where">End of every season (Settings → Look → Ballon d'Or night: New | Old)</span></label></li><li><label><input type="checkbox" data-k="age"> Players age, retire and are replaced<span class="where">Next season: open any squad, ages +1, young newcomers</span></label></li><li><label><input type="checkbox" data-k="retire"> Retirement news<span class="where">Post Match Reactions at the season's end</span></label></li><li><label><input type="checkbox" data-k="ach"> 136 achievements<span class="where">Achievements screen; Stats → Records</span></label></li><li><label><input type="checkbox" data-k="money"> Renewals stop at the wage cap<span class="where">Contract → Propose renewal as a top player</span></label></li><li><label><input type="checkbox" data-k="wide"> Side-on camera for tight angles (off by default)<span class="where">Settings → Look → Wide chances: New</span></label></li></ul>
+
+<h2 class="fix"><i></i>Problems fixed</h2>
+<div class="card"><div class="hd">The league account called every division the Premier League</div><div class="row"><div class="lbl">Problem</div><p>“The League @PremierLeague” posted National League South highlights.</p></div><div class="row"><div class="lbl">Why</div><p>The game had one league account, and a league match with no competition name defaulted to Premier League.</p></div><div class="row"><div class="lbl">Fix</div><p>The account is named after your division (e.g. National League South @NationalLeagueSouth). Wrong names: 153 of 211 → 0.</p></div></div>
+<div class="card"><div class="hd">Goal videos stopped 1.5 seconds after the goal</div><div class="row"><div class="lbl">Problem</div><p>Clips cut off just after the ball went in.</p></div><div class="row"><div class="lbl">Why</div><p>The match moves on before the 2.2 s after-goal time is up, and the clip ended where recording stopped.</p></div><div class="row"><div class="lbl">Fix</div><p>Every clip runs the full 2.2 s; the players ease to a stop after the last recorded frame.</p></div></div>
+<div class="card"><div class="hd">A League One club could win the Champions League</div><div class="row"><div class="lbl">Problem</div><p>Outside the Premier League, England's European places went to clubs from your own division.</p></div><div class="row"><div class="lbl">Why</div><p>The European field was built from your division's table.</p></div><div class="row"><div class="lbl">Fix</div><p>England's places come from the real Premier League clubs (played out in the background when you are below it). Lower-division European winners in 600 test seasons: 134 → 0.</p></div></div>
+<div class="card"><div class="hd">Posts with holes in them</div><div class="row"><div class="lbl">Problem</div><p>Lines like “-. Thank you for the support today!”, an “undefined-undefined” headline, and “Reading FC FC”.</p></div><div class="row"><div class="lbl">Fix</div><p>A post is never written if its words need a fact the event doesn't have. A scan of 5,786 test posts now finds none.</p></div></div>
+<div class="card"><div class="hd">Renewals passed the ★100k wage cap</div><div class="row"><div class="lbl">Problem</div><p>A star kept renewing and reached ★271k a week by season 20.</p></div><div class="row"><div class="lbl">Fix</div><p>Renewals stop at the cap. Career income for a star: ★108.8m → ★83.1m. More money findings below.</p></div></div>
+
+<h2 class="add"><i></i>Added</h2>
+<div class="card"><div class="hd">Find a new club</div><div class="row"><div class="lbl">Where</div><p>Stats → Contract → Find a new club.</p></div><div class="row"><div class="lbl">What</div><p>Pick a division, ask every club or one. Each answers yes (role, wage, signing fee, years) or no with a reason (“You're not good enough for us yet”, “We have four strikers better than you”). Agree, or Talk terms. Asking costs manager goodwill (−4 for one club, −8 for all).</p></div><div class="row"><div class="lbl">Moves</div><p>In the summer window, or straight away in January with “Join [club] now”: you join mid-season at the same week; cup-tied in cups you have played.</p></div><img class="shot" src="img/answers.jpg" alt="Find a new club"><p class="cap">Yes answers first, best 5 shown; the no's fold into one line.</p></div>
+<div style="overflow-x:auto"><table class="tb"><tr><th>Your overall (League Two, asking the Premier League)</th><th>55–70</th><th>75</th><th>80</th><th>85</th></tr><tr><td>Clubs saying yes (of 20)</td><td>0</td><td>3</td><td>13</td><td>15</td></tr></table></div>
+<div class="card"><div class="hd">International career</div><div class="row"><div class="lbl">Breaks</div><p>Four a season: September, October, November, March. Before the next club match: CALLED UP or NOT SELECTED, with a bar showing how close you are.</p></div><div class="row"><div class="lbl">Matches</div><p>Qualifiers and friendlies, played in the real match with a national squad. Caps and goals credited once; international goals stay out of club totals. New 🌍 Country view on Stats.</p></div><div class="row"><div class="lbl">Tournaments</div><p>Euros (24 nations) and World Cup (32) every two summers: squad selection, 3 group games, then knockouts with extra time and penalties. Winning puts the trophy in your cabinet. Opposing nations now have named players with faces.</p></div><img class="shot" src="img/callup.jpg" alt="International career"><p class="cap">Seen in a test browser: the call-up page before a Euro qualifier.</p></div>
+<div style="overflow-x:auto"><table class="tb"><tr><th>England call-up chance</th><th>2.5★</th><th>3★</th><th>3.5★</th><th>4★</th><th>4.5★</th></tr><tr><td>Called up</td><td>2%</td><td>15%</td><td>57%</td><td>91%</td><td>97%</td></tr></table></div>
+<div class="card"><div class="hd">The world ages</div><div class="row"><div class="lbl">What</div><p>Every other club's players get a year older each season. Young players improve, players decline from about 30 (pace first), and retire between 33 and 40. A young newcomer with a made-up name and face replaces each one.</p></div><div class="row"><div class="lbl">Measured</div><p>Over 20 test seasons each division's average stays within 2–3 points; by season 21 only 2% of the original players are left.</p></div><div class="row"><div class="lbl">News</div><p>Team-mates and famous names who retire get farewell posts; promising youngsters get “one to watch” posts.</p></div></div>
+<div class="card"><div class="hd">A real Ballon d'Or night</div><div class="row"><div class="lbl">What</div><p>A stage, a host, the final three walk onto podiums, “And the winner is…”, the golden ball, confetti and a living audience. If you made the top three you see your place on stage; if not, a shorter version. Skip is always there.</p></div><div class="row"><div class="lbl">Switch</div><p>Settings → Look → Ballon d'Or night: New | Old. Phones that can't run 3D get a drawn version.</p></div><img class="shot" src="img/ceremony.jpg" alt="A real Ballon d'Or night"><p class="cap">Seen on the test page in a test browser (no graphics chip, so not seen moving). The numbers bottom-left are a dev-only meter.</p></div>
+<div class="card"><div class="hd">136 achievements</div><div class="row"><div class="lbl">What</div><p>35 → 136 in 10 groups: goals and how they went in, assists, big days, awards, trophies, your country, the long career, life. Every one can unlock; none twice.</p></div><div class="row"><div class="lbl">Fixed</div><p>“Save ★100” and “Save ★500” came after 1–10 matches; now ★10,000 and ★100,000, plus ★1m and ★10m. “5 Passes in a Match” read your career total.</p></div><div class="row"><div class="lbl">Records</div><p>New personal bests (fastest goal, biggest win, longest scoring run, caps) and new real-world and Hall of Fame records.</p></div></div>
+<div style="overflow-x:auto"><table class="tb"><tr><th>Achievements unlocked (of 136)</th><th>Season 1</th><th>Season 5</th><th>Season 20</th></tr><tr><td>Average player</td><td>13</td><td>30</td><td>44</td></tr><tr><td>Good player</td><td>20</td><td>39</td><td>58</td></tr><tr><td>Star player</td><td>33</td><td>55</td><td>72</td></tr></table></div>
+<div class="card"><div class="hd">Side-on camera for wide chances (off by default)</div><div class="row"><div class="lbl">What</div><p>Tight angles, penalties and about 2 in 3 cutbacks show side-on, like corners. Settings → Look → Wide chances: New | Old. Old by default; phones on the Preview version switch to New once.</p></div><div class="row"><div class="lbl">Measured</div><p>Empty grass below the players: tight angle 58% → 24%, cutback 51% → 19%, penalty 55% → 27%. The players don't fill much more of the screen: the grass is split above and below instead.</p></div><img class="shot" src="img/sideon.jpg" alt="Side-on camera for wide chances (off by default)"><p class="cap">The real game in a test browser: Old and New, two chances each. For Harry: the penalty side-on is the weakest.</p></div>
+
+<h2 class="seen"><i></i>Seen and not seen</h2>
+<p class="cap"><b>Seen in a test browser</b> (made-up squads, no graphics chip): the call-up page and an international starting; Find a new club and its answers; the tournament squad screen and a named Norway team sheet; the Ballon d'Or night on the test page; the achievements screen; side-on stills. A playtest across the first seven jobs on the real game is running as these notes go out.</p>
+<p class="cap"><b>Not seen:</b> any of it on a phone; a January move played through; a knockout or penalty shootout at a tournament; the ceremony moving; a real club crest in 3D; the retirement posts in a real career.</p>
+
+<h2 class="bug"><i></i>Known issues and decisions</h2>
+<div class="card"><div class="hd">Money: three decisions for Harry and Mikey</div><div class="row"><div class="lbl">Renewals</div><p>You can keep renewing above your club's own pay (★33k a week at Brentford, whose star is on ★15.6k). Proposed: stop renewals at the club's star wage.</p></div><div class="row"><div class="lbl">Sponsors</div><p>Deals don't follow your wage: a star's sponsors pay more than his wage. Proposed: renewal fee = today's fair fee × the mood raise.</p></div><div class="row"><div class="lbl">KIB cans</div><p>A can costs 2 weeks' wage at every level, and Basic costs twice Premium. Cans are 35–39% of a good player's spending. Proposed: 0.5 / 1 / 2 weeks.</p></div></div>
+<div style="overflow-x:auto"><table class="tb"><tr><th>Bank balance (20-season test careers)</th><th>Season 5</th><th>Season 10</th><th>Season 20</th></tr><tr><td>Average (Championship)</td><td>★1.3k</td><td>★3.1k</td><td>★17k</td></tr><tr><td>Good (mid Premier League)</td><td>★4.0k</td><td>★129k</td><td>★460k</td></tr><tr><td>Star (Liverpool)</td><td>★190k</td><td>★1.19m</td><td>★5.57m</td></tr></table></div>
+<div class="card"><div class="hd">Achievements raise the star rating faster</div><div class="row"><div class="lbl">Status</div><p>Achievements are now 7–18% of a career's XP (were 1–7%). The tier amounts in the XP Book (/admin/star-xp) are the lever.</p></div></div>
+<div class="card"><div class="hd">Three tests fail</div><div class="row"><div class="lbl">Status</div><p>Two 3D asset lists are out of date on main too (one line fixed in this round). The Wembley mini-game balance check fails; nothing here touches it.</p></div></div>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.13 — 8 Oct 2026 — smart passing, highlights first</summary>
+  <p><b>Changed:</b> good passers lay it off before your runner goes offside (14% → 4% offside) · through-balls reach the runner (14% → 48%). <b>Added:</b> a HIGHLIGHTS video after every match, pinned on top and made first · dev tools (any club, any player).</p>
+  <p>Still open from this version: a smart lay-off not yet seen on screen.</p>
+</details>
+<details>
+  <summary>v0.12 — 8 Oct 2026 — goal videos, round 3</summary>
+  <p><b>Added:</b> a two-man commentary box (78 lines, new voice) · videos made in the background, playing as you scroll · players the right size · 3 new cameras, a TikTok edit, 3 new video accounts · videos of other clubs' goals.</p>
+  <p><b>Numbers:</b> 9 → 78 commentary lines · 17 → 29 goal videos in 30 test matches · 270 tests.</p>
+  <p>Still open from this version: not heard on an iPhone · England tab videos not seen in the real game.</p>
+</details>
+<details>
+  <summary>v0.11 — 8 Oct 2026 — sound on goal videos</summary>
+  <p><b>Added:</b> crowd, kick, net and a commentator on goal videos · a speaker button (remembered) · sound inside a saved video · 9 commentator lines on the Sound Board.</p>
+  <p><b>Numbers:</b> crowd ~3× louder at the goal · 0.2 s to mix · 267 tests.</p>
+  <p>Still open from this version: the voice (replaced in v0.12) · no names · not heard on an iPhone.</p>
+</details>
+<details>
+  <summary>v0.10 — 7 Oct 2026 — goal videos in the feed</summary>
+  <p><b>Added:</b> every goal recorded as you play · real goal videos in the feed from three cameras · highlights reels · Save video · Goal Replays play the recording.</p>
+  <p><b>Numbers:</b> 7–15 KB a goal · 266 tests.</p>
+</details>
+<details>
+  <summary>v0.8 — 6 Oct 2026 — new animations: what you see matches what happens</summary>
+  <p><b>Added:</b> one-hand keeper saves, catches, parries and fumbles · team-mates take touches and shoot, pass, head, block and clear with their own legs · the Animations test page and its dials · Settings → Look → Animations: New | Old.</p>
+  <p><b>Fixed:</b> a caught ball stayed where the keeper stood while he slid away.</p>
+  <p><b>Numbers:</b> outcome counts identical over 5,200 seeded chances (a look-only change).</p>
+  <p>Still open from this version: the 3D keeper has no catch-hold or get-up · a caught ball can sit slightly off the gloves in the classic view · strikes may still be subtle on a phone · four questions for you on <a href="https://claude.ai/artifact/PhH1T34JAzEoWReV6NxWH6">that page</a>.</p>
+</details>
+<details>
+  <summary>v0.7 — 6 Oct 2026 — 20-season careers, the Hall of Fame</summary>
+  <p><b>Changed:</b> every career is 20 seasons (no "Do you go again?" from 33) · the career overview is the end screen.</p>
+  <p><b>Added:</b> "Final season" warning after season 19 · "The final whistle" after season 20 · the Hall of Fame on the title screen · the new All seasons page, with a New | Old switch.</p>
+  <p><b>Fixed:</b> the last season's Ballon d'Or and awards were never counted · a season's row named the wrong club after a summer move · three playtest finds.</p>
+  <p><b>Numbers:</b> 20 seasons · 0 careers lost by starting again · 108 → 15 KB per Hall career · 246 tests.</p>
+  <p>Still open from this version: <code>star_hall_of_fame.sql</code> to run · the world does not age.</p>
+</details>
+
+<details>
+  <summary>v0.6 — 5 Oct 2026 — keepers made human, dribble passes, new shots in the test match</summary>
+  <p><b>Fixed:</b> trial free kicks and penalties too hard · five-a-side keepers never dived · no way back from several screens · Goalie Mode scrolled.</p>
+  <p><b>Added:</b> dribble passes with green/amber/red rings · knuckleball, power shot and keeper howlers (test match only) · New / Old switches for keepers and dribble runs.</p>
+  <p><b>Numbers:</b> top corners v a 90 keeper 26% → 43% · trial free kicks 36% → 48% · 243 tests.</p>
+  <p>Still open from this version: listed under Known issues above.</p>
+</details>
+<details>
+  <summary>v0.5 — 23 Sep 2026 — five-a-side freeze, dev cheats, owning your own club</summary>
+  <p><b>Fixed:</b> five-a-side could freeze solid mid-match. <b>Added:</b> dev cheats for testing · real extra power for owning your own club.</p>
+</details>
+<details>
+  <summary>v0.4 — 22 Sep 2026 — the ice-rink pitch, other players, penalty and free kick</summary>
+  <p><b>Fixed:</b> Goalie Mode's pitch never drew. <b>Added:</b> other players on the pitch · penalty · free kick with a real wall.</p>
+</details>
+<details>
+  <summary>v0.3 — 21 Sep 2026 — cursor bug, one fixed camera, shot variety</summary>
+  <p><b>Fixed:</b> the aim sat about 0.42 m from the cursor. <b>Added:</b> first-time strike · near/far post · shot names.</p>
+</details>
+<details>
+  <summary>v0.2 — 21 Sep 2026 — Goalie Mode ships</summary>
+  <p><b>Added:</b> Goalie Mode in the Casino · a stadium behind the goal.</p>
+</details>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance formula and the gallery rebuild</summary>
+  <p><b>Fixed:</b> scoring was halved · chances match their own name. <b>Added:</b> Simulate · up to 60 versions per chance type.</p>
+</details>
+
+
+
+<footer>Branch <code>Leo</code> · 12 jobs · site version 0.44. Anything unverified says so.</footer>
+</div>
+<script>
+(function(){
+  var box=document.getElementById('checks'); if(!box) return;
+  var KEY='kib-pn-leo-0.14';
+  var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){}
+  box.querySelectorAll('input[type=checkbox]').forEach(function(c){
+    c.checked=!!saved[c.dataset.k];
+    c.addEventListener('change',function(){saved[c.dataset.k]=c.checked;try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){}});
+  });
+})();
+document.addEventListener('click',function(e){
+  var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+  var pane=r.closest('.pane'), v=pane&&pane.querySelector('video'); if(!v) return;
+  pane.querySelectorAll('.spd button').forEach(function(x){x.classList.toggle('on',x===r);});
+  var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate;
+  if(v.paused){var p=v.play(); if(p&&p.catch)p.catch(function(){});}
+});
+</script>

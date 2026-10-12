@@ -1,19 +1,22 @@
 import { fameOf } from "../fame";
 import type { CareerState, Fixture, LeagueResult, MatchStats } from "../types";
 import type {
-  CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
+  Archetype, CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
   MediaState, StoredPost, StoryMemory, Trend,
 } from "./types";
 import { buildMatchRecord } from "./record";
 import { detectCareer, detectMatch } from "./detect";
 import { detectLeagueWeek } from "./detect/league";
 import { detectWonderkidHype } from "./detect/wonderkids";
+import { regenEvent, retirementEvent } from "./detect/retirements";
+import { promisingRegens } from "../retirementNews";
 import { mulberry32 } from "../season";
+import { divisionOf, leagueNameFor } from "../calendar";
 import { getTuning } from "../tuningStore";
 import { formatMoney } from "../money";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
 import { absorbEvents, absorbMatch, coolThreads, emptyMemory, markSaid } from "./memory";
-import { buildRoster, selfAccount } from "./accounts";
+import { buildRoster, selfAccount, nationalTeamAccount } from "./accounts";
 import { selectPairings, type Pairing } from "./select";
 import { chooseAngle } from "./narrate";
 import { chooseTemplate } from "./templates";
@@ -125,6 +128,124 @@ export function generateForCareer(career: CareerState, moment: CareerRecord["mom
   return commit(career, state, null, events, memory, id, clockAt(career.season, career.week, 0));
 }
 
+/** Caps worth their own post: the landmarks a national side marks. */
+export const CAP_MILESTONES = [10, 25, 50, 75, 100, 125, 150];
+
+/**
+ * AN INTERNATIONAL, IN THE FEED.
+ *
+ * An England game used to go through `generateForMatch`, which is built
+ * around your club: Arsenal's account posted "HIGHLIGHTS | France 2-2
+ * Arsenal", a pundit said Arsenal "got exactly what they deserved", and the
+ * club's losing run set off manager talk. This makes the international's own
+ * events — the result, your cap (first, ordinary, landmark) and your goal
+ * (first or not) — and lets only the nation's account, the neutral press,
+ * the stats pages, a few fans and you post them. Club accounts, rival fans
+ * and the club's storylines are never in the cast.
+ *
+ * `before`/`after` are the real career either side of the match
+ * (creditMatchResult has already added the cap and any goals to `after`).
+ */
+export function generateForInternational(
+  before: CareerState,
+  after: CareerState,
+  fixture: Fixture,
+  stats: MatchStats,
+  nation: string,
+  nationKit: { shirt: string; trim: string },
+  nationStrength = 75,
+): MediaState {
+  const state = mediaOf(before);
+  // Your side is the nation for this record (its name on every post and
+  // video), on a two-team table so nothing reads the club's league.
+  const table = (name: string, strength: number) => ({
+    name, strength, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0,
+  });
+  const league = [table(nation, nationStrength), table(fixture.opponent, fixture.opponentStrength ?? 70)];
+  const stand = (c: CareerState): CareerState => ({ ...c, player: { ...c.player, club: nation }, league });
+  const record = buildMatchRecord(stand(before), stand(after), fixture, stats);
+  if (state.lastCycleId === record.id || alreadySeen(state, record.id)) return state;
+
+  const us = stats.homeScore, them = stats.awayScore;
+  const home = fixture.home ? nation : fixture.opponent, away = fixture.home ? fixture.opponent : nation;
+  const hs = fixture.home ? us : them, as = fixture.home ? them : us;
+  const pens = stats.shootout ? ` (${stats.shootout.home}-${stats.shootout.away} pens)` : stats.wentToExtraTime ? " (aet)" : "";
+  const name = `${after.player.firstName} ${after.player.lastName}`;
+  const competition = fixture.round ? `${fixture.competition} ${fixture.round.replace(/ · Match \d/, "")}` : (fixture.competition ?? "International");
+  const shared: Facts = {
+    club: nation, nation, opponent: fixture.opponent, competition,
+    scoreline: `${home} ${hs}-${as} ${away}${pens}`,
+    player: name, short: after.player.lastName, season: after.season, week: fixture.week,
+  };
+  const won = us > them || (us === them && !!stats.shootout && (fixture.home ? stats.shootout.home > stats.shootout.away : stats.shootout.away > stats.shootout.home));
+  const result = won ? "win" : us === them && !stats.shootout ? "draw" : "loss";
+  const caps = after.caps ?? 0;
+  const goalsBefore = before.internationalGoals ?? 0;
+  const intlGoals = after.internationalGoals ?? goalsBefore;
+  const you = { kind: "you" as const, name };
+  const events: FootballEvent[] = [
+    { id: `intl-${result}`, subject: { kind: "club", name: nation }, baseImportance: 56, tags: ["international", "stat", "opinion"],
+      facts: { ...shared, result }, window: "instant" },
+  ];
+  // The summer tournament won (tournament.ts sets yourExit on the final).
+  if (fixture.round === "Final" && after.tournament?.season === after.season && after.tournament.yourExit === "Winners") {
+    events.push({ id: "intl-trophy", subject: { kind: "club", name: nation }, baseImportance: 100, tags: ["international", "trophy"],
+      facts: { ...shared, tournament: fixture.competition ?? "tournament" }, window: "instant" });
+  }
+  if (caps === 1) {
+    events.push({ id: "intl-debut", subject: you, baseImportance: 74, tags: ["international", "debut", "milestone"], facts: { ...shared, caps }, window: "hour" });
+  } else if (CAP_MILESTONES.includes(caps)) {
+    events.push({ id: "intl-cap-milestone", subject: you, baseImportance: 70, tags: ["international", "milestone", "stat"], facts: { ...shared, caps }, window: "hour" });
+  } else if (caps > 1) {
+    events.push({ id: "intl-cap", subject: you, baseImportance: 30, tags: ["international", "stat"], facts: { ...shared, caps }, window: "hour" });
+  }
+  if (stats.goals > 0) {
+    events.push({ id: goalsBefore === 0 ? "intl-first-goal" : "intl-goal", subject: you, baseImportance: goalsBefore === 0 ? 80 : 64,
+      tags: ["international", "goal", "stat"], facts: { ...shared, intlGoals }, window: "instant" });
+  }
+
+  const cooled = coolThreads(state.memory);
+  const scored = scoreCareerEvents(events, cooled, fameOf(after));
+  const { memory, events: absorbed } = absorbEvents(cooled, scored, { season: after.season, week: fixture.week });
+  // The cast: the nation, the neutral press, stats, aggregators, pundits, the
+  // chant-catcher and supporters — and you, speaking for your country.
+  const world = [...buildRoster(after), selfAccount(after)]
+    .filter(a => !a.allegiance || a.archetype === "fan" || a.id === "@self")
+    .filter(a => a.archetype !== "league" && a.archetype !== "competition" && a.archetype !== "insider")
+    .map(a => (a.allegiance ? { ...a, allegiance: { club: nation, polarity: 1 as const } } : a));
+  const cast = [nationalTeamAccount(nation, nationKit, nationStrength), ...world];
+  return commit({ ...after, player: { ...after.player, club: nation } }, state, record, absorbed, memory, record.id,
+    clockAt(record.season, record.week, 0), "club", undefined, undefined, cast);
+}
+
+/**
+ * The squad is named and you are in it: a career moment with its own cast
+ * (your club, its fans, the press, you) and its own lines
+ * (templates/international.ts) — "first-call-up" the first time, "call-up"
+ * after. `callUps` counts this one.
+ */
+export function generateForCallUp(career: CareerState, nation: string, callUps: number, month: string, key: string): MediaState {
+  const state = mediaOf(career);
+  const id = `s${career.season}-w${career.week}-${key}`;
+  if (state.lastCycleId === id || alreadySeen(state, id)) return state;
+  const name = `${career.player.firstName} ${career.player.lastName}`;
+  const event: FootballEvent = {
+    id: callUps <= 1 ? "first-call-up" : "call-up",
+    subject: { kind: "you", name },
+    baseImportance: callUps <= 1 ? 82 : 40,
+    tags: ["international", "award"],
+    facts: { player: name, short: career.player.lastName, club: career.player.club, nation, month, season: career.season, week: career.week },
+    window: "instant",
+  };
+  const cooled = coolThreads(state.memory);
+  const scored = scoreCareerEvents([event], cooled, fameOf(career));
+  const { memory, events } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
+  // No insiders: with two of them, the second fell back to the generic
+  // "Keeping an eye on the situation at {club}" (seen in the real game).
+  const allowed = new Set<Archetype>(["club", "stats", "fan", "tabloid", "aggregator", "teammate"]);
+  return commit(career, state, null, events, memory, id, clockAt(career.season, career.week, 0), "club", allowed);
+}
+
 /**
  * A boardroom sale — a player sold out of a club YOU OWN, not one you play
  * for — is a real transfer just like any other, requested directly, 14 Sep
@@ -182,8 +303,11 @@ export function generateForBoardroomSale(
 export function generateForLeagueWeek(
   career: CareerState,
   weekResults: LeagueResult[],
-  competition = "Premier League",
+  /** The division's own name; absent means the division this career plays in
+   *  (it used to be "Premier League" for every division). */
+  competitionName?: string,
 ): MediaState {
+  const competition = competitionName ?? leagueNameFor(divisionOf(career));
   const state = mediaOf(career);
   // The week these RESULTS are for — not `career.week`, which has already
   // advanced past it by the time this runs (crediting your own match moves
@@ -208,6 +332,49 @@ export function generateForLeagueWeek(
 }
 
 /**
+ * RETIREMENTS AND REGENS AT THE ROLLOVER.
+ *
+ * `career` is the career straight after advanceSeason: `lastRetirements`
+ * holds the retirements worth a post (lib/star/retirementNews.ts) and the
+ * squads hold this rollover's regens. One cycle per player, so each one gets
+ * his own handful of posts and lines are not used up by the man before him.
+ * Each cycle id carries the player's id, so a replayed rollover never posts
+ * twice (the same `seenCycleIds` guard every cycle uses).
+ *
+ * Your own team-mates are club news; everyone else goes to the wider tab.
+ * Only accounts that have their own lines for these events may post, and a
+ * league account only speaks for a club in its own division.
+ */
+export function generateForRollover(career: CareerState): MediaState {
+  let media = mediaOf(career);
+  const finished = career.season - 1;
+  const own = career.player.club;
+  const division = new Set(career.league.map(t => t.name));
+  const allowed = (club: string): Set<Archetype> => new Set<Archetype>(
+    division.has(club)
+      ? ["club", "league", "stats", "fan", "teammate", "tabloid", "insider"]
+      : ["club", "stats", "fan", "teammate", "tabloid", "insider"],
+  );
+  const run = (event: FootballEvent, key: string, scope: "club" | "league", maxPosts: number) => {
+    const state = media;
+    const id = `s${career.season}-w${career.week}-${key}`;
+    if (state.lastCycleId === id || alreadySeen(state, id)) return;
+    const cooled = coolThreads(state.memory);
+    const scored = scoreCareerEvents([event], cooled, fameOf(career));
+    media = commit({ ...career, media: state }, state, null, scored, cooled, id,
+      clockAt(career.season, career.week, 0), scope, allowed(String(event.facts.club ?? own)), maxPosts);
+  };
+  // A few posts each: a team-mate 4, a famous name 3, a boy to watch 2.
+  for (const n of career.lastRetirements ?? []) {
+    run(retirementEvent(n, finished), `retire-${n.id}`, n.own ? "club" : "league", n.own ? 4 : 3);
+  }
+  for (const n of promisingRegens(career, own, finished)) {
+    run(regenEvent(n, finished), `regen-${n.id}`, n.own ? "club" : "league", 2);
+  }
+  return media;
+}
+
+/**
  * Turn scored events into posts and fold them into the saved state.
  *
  * Shared by both entry points on purpose: a transfer and a hat-trick go through
@@ -223,7 +390,14 @@ function commit(
   cycleId: string,
   cycleClock: number,
   scope: "club" | "league" = "club",
+  /** Only these kinds of account may post (the rollover's own events). */
+  onlyArchetypes?: Set<Archetype>,
+  /** At most this many posts from this cycle (the rollover keeps each player to a few). */
+  maxPosts?: number,
+  /** The accounts that may post, instead of the club world (an international's own cast). */
+  accountsOverride?: MediaAccount[],
 ): MediaState {
+  const world = () => accountsOverride ?? [...buildRoster(career), selfAccount(career)];
   // The league-wide weekly pass runs its OWN replay guard
   // (`lastLeagueCycleId`) rather than the match/career one below — it is
   // always called the same week as (and right after) a `generateForMatch`
@@ -236,13 +410,15 @@ function commit(
     const seenCycleIds = withSeen(state, cycleId);
     if (scope === "league") return { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds };
     // Nothing to say about it, but a match with goals still gets its videos.
-    const extra = record ? highlightPosts(career, record, [...buildRoster(career), selfAccount(career)], cycleId, cycleClock) : [];
+    const extra = record ? highlightPosts(career, record, world(), cycleId, cycleClock) : [];
     const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-POST_CAP) : state.posts;
     return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
 
-  const accounts = [...buildRoster(career), selfAccount(career)];
-  const pairings = selectPairings(events, accounts, cycleId, career.player.club);
+  const accounts = world()
+    .filter(a => !onlyArchetypes || onlyArchetypes.has(a.archetype));
+  const pairings = selectPairings(events, accounts, cycleId, career.player.club)
+    .slice(0, maxPosts ?? Number.POSITIVE_INFINITY);
 
   const posts: StoredPost[] = [];
   const used: string[] = [];
@@ -307,7 +483,10 @@ function highlightPosts(
   const out: StoredPost[] = [];
   const clubAcc = accounts.find(a => a.archetype === "club" && a.allegiance?.club === r.club);
   const compAcc = accounts.find(a => a.archetype === "competition" && a.name === r.competition)
-    ?? (r.competition === "Premier League" ? accounts.find(a => a.archetype === "league") : undefined);
+    // The league account is named after its division (accounts.ts), so a
+    // League Two match finds the League Two account and never the Premier
+    // League's.
+    ?? accounts.find(a => a.archetype === "league" && a.name === r.competition);
   const home = r.home ? r.club : r.opponent, away = r.home ? r.opponent : r.club;
   const hs = r.home ? r.score.us : r.score.them, as = r.home ? r.score.them : r.score.us;
   const post = (acc: MediaAccount, key: string, minutes: number, text: string, title: string, reel: { clips: string[]; synth: SynthGoal[] }): StoredPost => {
@@ -333,7 +512,7 @@ function highlightPosts(
     const all = matchReel(r, "all");
     const acc = compAcc ?? clubAcc;
     if (acc && (all.clips.length + all.synth.length) > 0) {
-      out.push(post(acc, "match-highlights", 3, `HIGHLIGHTS | ${home} ${hs}-${as} ${away} · ${r.round ?? `Week ${r.week}`}`, "HIGHLIGHTS", all));
+      out.push(post(acc, "match-highlights", 3, `HIGHLIGHTS | ${home} ${hs}-${as} ${away} · ${r.round ?? (r.kind === "international" ? r.competition : `Week ${r.week}`)}`, "HIGHLIGHTS", all));
     }
   }
   // Yours: your goals and the ones you set up.
@@ -342,7 +521,7 @@ function highlightPosts(
     const g = r.goals.filter(x => x.isUser).length;
     const a = r.goals.filter(x => !x.isUser && x.assist === r.you.name).length;
     const what = [g ? `${g} goal${g > 1 ? "s" : ""}` : "", a ? `${a} assist${a > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ");
-    out.push(post(clubAcc, "your-highlights", 5, `${r.you.shortName} v ${r.opponent}: ${what} 🎥 (${r.round ?? `Week ${r.week}`})`, `${r.you.shortName.toUpperCase()} | ${what.toUpperCase()}`, yours));
+    out.push(post(clubAcc, "your-highlights", 5, `${r.you.shortName} v ${r.opponent}: ${what} 🎥 (${r.round ?? (r.kind === "international" ? r.competition : `Week ${r.week}`)})`, `${r.you.shortName.toUpperCase()} | ${what.toUpperCase()}`, yours));
   }
   return out;
 }

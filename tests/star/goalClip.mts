@@ -168,7 +168,37 @@ if (recorded) {
   check(rec.recordingGoal, "still recording the moment after the goal");
   rec.begin(BODIES);                            // the next chance starts early
   const tr = rec.take()[0];
-  check(!!tr && Math.abs(trackDuration(tr) - (6.7 - 5 + LEAD_IN_S)) < 0.06, `cut where it stopped (${tr ? trackDuration(tr).toFixed(2) : "none"} s)`);
+  // 11 Oct 2026: it used to be cut where the recording stopped (0.5 s after
+  // the goal here; 1.3-1.8 s in the real match). Every clip now carries the
+  // full POST_GOAL_S, the frames after the last one easing to a stop.
+  const full = 6.2 + POST_GOAL_S - (5 - LEAD_IN_S);
+  check(!!tr && Math.abs(trackDuration(tr) - full) < 0.06, `a goal cut short still runs ${POST_GOAL_S} s past the goal (${tr ? trackDuration(tr).toFixed(2) : "none"} s, want ${full.toFixed(2)})`);
+  check(!!tr && trackDuration(tr) - tr.goalT >= POST_GOAL_S - 0.05, `after-goal time ${tr ? (trackDuration(tr) - tr.goalT).toFixed(2) : "none"} s (want ${POST_GOAL_S})`);
+  if (tr) {
+    const offset = 5 - LEAD_IN_S;
+    const stopT = 6.7 - offset;                 // clip time where the recording stopped
+    // The recorded part is still the match.
+    const before = frameAt(tr, stopT - 0.05), real = stateAt(stopT - 0.05 + offset);
+    check(Math.hypot(before.ball.x - real.ball.x, before.ball.y - real.ball.y) < 0.05, "the recorded part is unchanged");
+    // No jump at the seam, and it carries on the way it was going…
+    // Step across the seam vs the step just before it: same speed, no jump.
+    const f = 1 / CLIP_FPS;
+    const pA = frameAt(tr, stopT - 2 * f), pB = frameAt(tr, stopT - f), pC = frameAt(tr, stopT + f);
+    const jump = Math.max(
+      Math.hypot((pC.ball.x - pB.ball.x) / 2 - (pB.ball.x - pA.ball.x), (pC.ball.y - pB.ball.y) / 2 - (pB.ball.y - pA.ball.y)),
+      ...pC.bodies.map((b, i) => Math.hypot((b.x - pB.bodies[i].x) / 2 - (pB.bodies[i].x - pA.bodies[i].x), (b.y - pB.bodies[i].y) / 2 - (pB.bodies[i].y - pA.bodies[i].y))));
+    check(jump < 0.03, `no jump where the recording ended (${(jump * 100).toFixed(1)} cm off the frame-to-frame step)`);
+    const e1 = frameAt(tr, stopT + 0.1), e0 = frameAt(tr, stopT);
+    const runner = Math.hypot(e1.bodies[1].x - e0.bodies[1].x, e1.bodies[1].y - e0.bodies[1].y);
+    check(runner > 0.03, `the runner is still moving just after (${(runner * 100).toFixed(1)} cm in 0.1 s), not frozen`);
+    // …then eases to a stop, without running off.
+    const endA = frameAt(tr, trackDuration(tr) - 0.1), endB = frameAt(tr, trackDuration(tr));
+    const late = Math.hypot(endB.bodies[1].x - endA.bodies[1].x, endB.bodies[1].y - endA.bodies[1].y);
+    check(late < runner / 5, `and has nearly stopped by the end (${(late * 100).toFixed(2)} cm in the last 0.1 s)`);
+    const drift = Math.hypot(endB.bodies[1].x - e0.bodies[1].x, endB.bodies[1].y - e0.bodies[1].y);
+    check(drift < 1, `never runs off (${drift.toFixed(2)} m after the recording ended)`);
+    check(endB.ball.z >= 0, "the ball stays on or above the ground");
+  }
   check(rec.take().length === 0, "handed out once");
   // A chance with no goal makes no clip.
   play(rec, 4, () => {});

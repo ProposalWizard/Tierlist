@@ -34,6 +34,8 @@ import { formatMoney } from "@/lib/star/money";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, fixtureTimestamp, leagueNameFor } from "@/lib/star/calendar";
 import { kitsOf } from "@/lib/star/kits";
+import { hasDrawnFlag } from "@/lib/star/nationFlags";
+import { nationKits } from "@/lib/star/international";
 import KibCanIcon from "./KibCanIcon";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { isOpen } from "@/lib/star/unlocks";
@@ -78,9 +80,15 @@ export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\
 export { glowOf, cardStyle } from "./ui";
 
 interface FormResult { res: "W" | "D" | "L"; us: number; them: number; opp: string; rating?: number; week: number }
-export function lastFive(career: CareerState): FormResult[] {
+/**
+ * The last five results. `international` picks which team's form: your
+ * nation's (before an international) or your club's (every other match) —
+ * an England game used to show the club's L L L L W beside England.
+ */
+export function lastFive(career: CareerState, international = false): FormResult[] {
   return career.fixtures
-    .filter((f) => f.played && f.homeScore !== undefined && f.awayScore !== undefined)
+    .filter((f) => f.played && f.homeScore !== undefined && f.awayScore !== undefined
+      && (f.kind === "international") === international)
     .sort((a, b) => a.week - b.week)
     .slice(-5)
     .map((f) => {
@@ -192,7 +200,7 @@ export default function HomeHub(p: Props) {
 const FORM_TONE = { W: "bg-emerald-500", D: "bg-gray-500", L: "bg-red-600" } as const;
 
 function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props & { glow: string }) {
-  const five = lastFive(career);
+  const five = lastFive(career, nextFixture?.kind === "international");
   const form = five.length > 0 && (
     <span className="flex shrink-0 items-center gap-[3px]" aria-label={`Last ${five.length}: ${five.map((f) => f.res).join(" ")}`}>
       {five.map((f, i) => (
@@ -210,8 +218,10 @@ function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props &
   }
   const home = nextFixture.home ? myTeam : nextFixture.opponent;
   const away = nextFixture.home ? nextFixture.opponent : myTeam;
-  const homeKit = kitsOf(home, career.clubKits?.[home]).home;
-  const awayKit = kitsOf(away, career.clubKits?.[away]).home;
+  // A nation wears its own colours (international.ts), not the neutral kit.
+  const kitFor = (t: string) => (hasDrawnFlag(t) ? nationKits(t) : kitsOf(t, career.clubKits?.[t])).home;
+  const homeKit = kitFor(home);
+  const awayKit = kitFor(away);
   const comp = nextFixture.competition ?? leagueNameFor(divisionOf(career));
   const days = daysToNext(career, nextFixture);
   const when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`;
@@ -361,7 +371,7 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan, hallC
   const ps = career.seasonStats;
   // A win in your last match: a hop, the arms up, confetti — once per match
   // per visit, not every time the page is swiped past.
-  const last = lastFive(career).at(-1);
+  const last = [...lastFive(career), ...lastFive(career, true)].sort((a, b) => a.week - b.week).at(-1);
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
     if (!last || last.res !== "W") return;
@@ -520,7 +530,7 @@ function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyC
   const style = useAvatarStyle();
   const look = skin === "classic" ? "A1" : style;
   // A win in your last match: celebrate once per match per visit (as Old).
-  const last = lastFive(career).at(-1);
+  const last = [...lastFive(career), ...lastFive(career, true)].sort((a, b) => a.week - b.week).at(-1);
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
     if (!last || last.res !== "W") return;

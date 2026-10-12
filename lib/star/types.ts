@@ -210,7 +210,11 @@ export type Competition =
   | "World Cup"
   | "European Championship"
   /** Third to sixth in the Championship, for the last promotion place. */
-  | "Play-Offs";
+  | "Play-Offs"
+  /** International breaks (lib/star/international.ts): one match a window. */
+  | "International Friendly"
+  | "World Cup Qualifier"
+  | "Euro Qualifier";
 
 export interface Fixture {
   week: number;
@@ -469,6 +473,10 @@ export interface GoalEvent {
   /** Your assist only: how far YOUR pass travelled, from where you played it
    *  to where the scorer took it (metres). Absent on older saves. */
   passLength?: number;
+  /** Your goal only: how the strike was shaped when it was a chip or a curler
+   *  (the engine's own BallActionMode at the strike). Absent otherwise, and
+   *  on goals from before 11 Oct 2026. Feeds the Chip / Curler achievements. */
+  finish?: "chip" | "curl";
   /** Goal videos (Leo, 7 Oct 2026): the recording of this goal, frame by
    *  frame, kept on this device (lib/star/goalClip/store.ts). Absent for a
    *  goal nobody saw — simulated, or scored while you were off the pitch. */
@@ -754,6 +762,12 @@ export interface CareerBests {
   mostGoalsMatch?: { goals: number; season: number; opponent: string };
   mostGoalsSeason?: { goals: number; season: number };
   mostAssistsSeason?: { assists: number; season: number };
+  /** Roadmap #4 (11 Oct 2026): the earliest goal of yours in a match. */
+  fastestGoal?: { minute: number; season: number; opponent: string };
+  /** Your side's biggest winning margin in a match you played. */
+  biggestWin?: { us: number; them: number; season: number; opponent: string };
+  /** Most assists of yours in one match. */
+  mostAssistsMatch?: { assists: number; season: number; opponent: string };
 }
 
 export interface Trophy {
@@ -1121,6 +1135,14 @@ export interface CareerState {
   europeanQualification?: Competition | null;
   caps?: number;
   internationalGoals?: number;
+  /** The international breaks: which windows were decided, call-ups, snubs
+   *  and the last few internationals (lib/star/international.ts). Absent on
+   *  an older save, which starts it at the next window. */
+  international?: import("./international").InternationalRecord;
+  /** This season's (or the last) summer tournament — groups, knockouts, the
+   *  winner, and whether you were in the squad (lib/star/tournament.ts).
+   *  Absent on a save from before it, and in a season with none yet. */
+  tournament?: import("./tournament").TournamentState;
   /** What the last knockout tie did to the run, for the post-match screen. */
   knockoutMessage?: string | null;
   /**
@@ -1274,6 +1296,8 @@ export interface CareerState {
     leagueCup?: string;
     championsLeague?: string;
     europaLeague?: string;
+    /** The summer tournament and its winner, in a season that had one. */
+    tournament?: { competition: string; winner: string };
   };
   /**
    * Every Player of the Month awarded, this season and the ones before it.
@@ -1553,6 +1577,36 @@ export interface CareerState {
    */
   outgoingMates?: SeasonMate[];
   /**
+   * Asking for a move (lib/star/transferRequest.ts): the last answers, the
+   * clubs cooling off after a no, and a deal agreed for the summer window.
+   * Absent until the first ask.
+   */
+  transferRequest?: import("./transferRequest").TransferRequestState;
+  /**
+   * Cups you are cup-tied in this season after a January move
+   * (lib/star/januaryTransfer.ts): you played in them for your old club, so
+   * the new club plays on in them without you. Only read when `season`
+   * matches the career's season.
+   */
+  cupTied?: { season: number; competitions: string[] };
+  /**
+   * A world that ages (lib/star/worldAgeing.ts): the season whose rollover
+   * first aged every other club's players. Absent until then (and on any
+   * save from before it). A squad fetched later is aged from here to match.
+   */
+  worldAgedSince?: number;
+  /**
+   * The level each club's regens are rated against: its starting-XI average
+   * the first time the world aged it, then fixed (worldAgeing.ts clubLevelOf).
+   */
+  clubLevels?: Record<string, number>;
+  /**
+   * The retirements worth a post from the last rollover (lib/star/
+   * retirementNews.ts): your team-mates and a few famous names. Replaced
+   * every rollover; read once by the media pass in page.tsx.
+   */
+  lastRetirements?: import("./retirementNews").RetirementNote[];
+  /**
    * Hall of Fame records already celebrated in this career (lib/star/
    * hallRecords.ts): each id once, so a record broken is a moment once.
    */
@@ -1570,6 +1624,9 @@ export interface CareerState {
    * cleared (lib/star/godMode.ts). Optional: absent means a clean save.
    */
   usedGodMode?: boolean;
+  /** Per-match tallies for achievements and records (lib/star/feats.ts).
+   *  Absent on a save from before 11 Oct 2026; counts from its next match. */
+  feats?: import("./feats").CareerFeats;
 }
 
 export type StarPhase =
@@ -1633,6 +1690,11 @@ export type StarPhase =
   | "relationship-game"
   | "advert-shoot"
   | "season-transfer"
+  /** Asking for a move: pick a league or a club, get answers
+   *  (TransferRequest.tsx, lib/star/transferRequest.ts). */
+  | "transfer-request"
+  /** Talking terms with a club that said yes (NegotiationScreen). */
+  | "transfer-request-talk"
   | "retirement"
   /** After the Ballon d'Or night of the second-last season: "this is your
    *  final season before retirement" (CareerEnd.tsx, Leo 5 Oct 2026). */
@@ -1642,6 +1704,10 @@ export type StarPhase =
    *  sheets, the guard of honour, the match, full time. A refresh goes
    *  back to the final whistle (see the phase save in page.tsx). */
   | "farewell-invite"
+  /** An international break: called up or not (lib/star/international.ts). */
+  | "intl-callup"
+  | "intl-tournament"
+  | "intl-tournament-table"
   | "farewell-sheets"
   | "farewell-walkout"
   | "farewell-match"

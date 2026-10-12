@@ -200,6 +200,21 @@ export function selectionFor(career: CareerState): SelectionVerdict {
     };
   }
 
+  // An international break match (lib/star/international.ts) is only on the
+  // calendar because the national manager picked you, and he plays you. The
+  // club's pecking order has nothing to say about it.
+  {
+    const f = nextFixtureFor(career);
+    if (f?.kind === "international" && (!f.round || career.tournament?.season === career.season)) {
+      return {
+        status: "1st Team", onAt: 0, standing: selectionStanding(career),
+        reason: f.round
+          ? `In the ${career.player.nationality || "national"} squad for the ${f.competition} — you start.`
+          : `Called up by ${career.player.nationality || "your country"} — you start.`,
+      };
+    }
+  }
+
   const standing = selectionStanding(career);
   const form = recentForm(career.form);
 

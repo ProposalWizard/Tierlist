@@ -5,6 +5,8 @@ import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
 import { badgeSvg, type BadgeOverride } from "@/lib/star/clubBadge";
 import { useBadgeLook, type BadgeLook } from "@/lib/star/badgeLook";
 import { useBadgeOverrides } from "@/lib/star/badgeOverrides";
+import { hasDrawnFlag } from "@/lib/star/nationFlags";
+import NationFlag from "./NationFlag";
 
 /**
  * THE CIRCLE ITSELF — REAL BADGE WHEN ONE EXISTS, THE OLD KIT-COLOUR-PLUS-
@@ -42,6 +44,16 @@ export default function ClubBadge({ club, kit, size = 28, look: forced }: {
     });
     return () => { alive = false; };
   }, [club]);
+
+  // A nation (an international, the summer tournament): its flag, drawn —
+  // never a made-up club crest in a nation's colours (lib/star/nationFlags.ts).
+  if (hasDrawnFlag(club)) {
+    return (
+      <span className="grid shrink-0 place-items-center" style={{ height: size, width: size }}>
+        <NationFlag nation={club} width={size} rounded={Math.max(2, size / 12)} />
+      </span>
+    );
+  }
 
   // New (default): every club gets the drawn badge from Mikey's club data —
   // shape, colours, pattern, emblem, no letters (lib/star/clubBadge.ts) —

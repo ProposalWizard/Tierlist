@@ -40,6 +40,19 @@ export function bestsAfterMatch(
       if (m !== undefined && m > (b.furthestAssist?.metres ?? -1)) b.furthestAssist = { metres: m, season, opponent };
     }
   }
+  // Roadmap #4 (11 Oct 2026): fastest goal, biggest win, most assists in a match.
+  for (const e of stats.goalEvents ?? []) {
+    if (e.isUserGoal && Number.isFinite(e.minute) && e.minute >= 1 && e.minute < (b.fastestGoal?.minute ?? Infinity)) {
+      b.fastestGoal = { minute: e.minute, season, opponent };
+    }
+  }
+  {
+    const us = fixture.home ? stats.homeScore : stats.awayScore;
+    const them = fixture.home ? stats.awayScore : stats.homeScore;
+    const best = b.biggestWin ? b.biggestWin.us - b.biggestWin.them : 0;
+    if (us - them > best) b.biggestWin = { us, them, season, opponent };
+  }
+  if (stats.assists > 0 && stats.assists > (b.mostAssistsMatch?.assists ?? 0)) b.mostAssistsMatch = { assists: stats.assists, season, opponent };
   if (stats.goals > 0 && stats.goals > (b.mostGoalsMatch?.goals ?? 0)) b.mostGoalsMatch = { goals: stats.goals, season, opponent };
   if (seasonGoals > 0 && seasonGoals > (b.mostGoalsSeason?.goals ?? 0)) b.mostGoalsSeason = { goals: seasonGoals, season };
   if (seasonAssists > 0 && seasonAssists > (b.mostAssistsSeason?.assists ?? 0)) b.mostAssistsSeason = { assists: seasonAssists, season };

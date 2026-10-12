@@ -5,6 +5,7 @@ import { sortLeague } from "../season";
 import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
 import { kitsOf } from "../kits";
 import { hashSeed, initialsOf, rngFor, surname } from "./grammar";
+import { divisionOf, leagueNameFor, type CareerDivision } from "../calendar";
 
 /**
  * THE ROSTER
@@ -287,6 +288,23 @@ function clubHandle(club: string): string {
   return "@" + club.replace(/[^A-Za-z]/g, "");
 }
 
+/** How many follow each division's own account: the top flight is huge, a
+ *  regional sixth tier is a few thousand. */
+const LEAGUE_FOLLOWERS: Record<CareerDivision, number> = {
+  premier: 12_000_000, championship: 1_300_000, league_one: 420_000, league_two: 260_000,
+  national_league: 95_000, national_league_north: 28_000, national_league_south: 26_000,
+};
+
+/** The league account for the division this career plays in. */
+export function leagueAccountSeed(career: CareerState): Seed {
+  const division = divisionOf(career);
+  const name = leagueNameFor(division);
+  return {
+    handle: "@" + name.replace(/[^A-Za-z]/g, ""), name, archetype: "league",
+    verified: true, followers: LEAGUE_FOLLOWERS[division] ?? 100_000,
+  };
+}
+
 /**
  * Build the world.
  *
@@ -313,7 +331,8 @@ export function buildRoster(career: CareerState): MediaAccount[] {
     out.push({
       ...account({
         handle: clubHandle(c.name),
-        name: `${c.name} FC`,
+        // "Reading FC" is already a club's full name: no "Reading FC FC".
+        name: /\bA?FC\b/.test(c.name) ? c.name : `${c.name} FC`,
         archetype: "club",
         verified: true,
         followers: Math.round(200_000 + (strength / 100) * 8_000_000),
@@ -323,10 +342,11 @@ export function buildRoster(career: CareerState): MediaAccount[] {
     });
   }
 
-  out.push(account({
-    handle: "@PremierLeague", name: "The League", archetype: "league",
-    verified: true, followers: 12_000_000,
-  }, seedKey, used));
+  // The league account is the division you actually play in (11 Oct 2026:
+  // a National League South career had "The League @PremierLeague" posting
+  // "HIGHLIGHTS | Southport 4-1 Brackley Town"). Named exactly as the
+  // division, so a post's competition finds it (feed.ts highlightPosts).
+  out.push(account(leagueAccountSeed(career), seedKey, used));
 
   for (const comp of ["FA Cup", "Champions League", "Europa League"]) {
     out.push(account({
@@ -396,6 +416,25 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   // and opinion, not impersonation).
 
   return out;
+}
+
+/**
+ * Your nation's own account ("England", @England), for the international
+ * career's posts (feed.ts generateForInternational). Not in `buildRoster`:
+ * it only ever posts about your nation's matches and your caps, so it is
+ * added to that one cycle rather than sitting in the club world where a
+ * fact-less career event could reach it. Drawn in the nation's colours.
+ */
+export function nationalTeamAccount(nation: string, kit: { shirt: string; trim: string }, strength = 75): MediaAccount {
+  const acc = account({
+    handle: `@${nation.replace(/[^A-Za-z]/g, "")}`, name: nation, archetype: "club", verified: true,
+    followers: Math.round(1_000_000 + Math.max(0, strength - 50) * 250_000),
+  }, `nation|${nation}`, new Set());
+  return {
+    ...acc,
+    avatar: { ...acc.avatar, initials: initialsOf(nation), tint: kit.shirt, tint2: kit.trim },
+    allegiance: { club: nation, polarity: 1 },
+  };
 }
 
 /** Your own account. Handled separately because it is you, and it posts last. */
