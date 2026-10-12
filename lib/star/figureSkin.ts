@@ -56,9 +56,8 @@ if (typeof window !== "undefined") {
 
 /** The look to draw in right now. Cheap: called for every figure, every frame. */
 export function figureSkin(): FigureSkin {
-  if (override) return override;
-  if (stored === undefined) stored = readStored();
-  return stored ?? FIGURE_SKIN_DEFAULT;
+  // Decided, no toggle (12 Oct 2026): only a test screen's override changes it.
+  return override ?? FIGURE_SKIN_DEFAULT;
 }
 
 /** This browser's own choice (Settings). null clears it back to the default. */

@@ -45,7 +45,7 @@ interface Shot { goal: boolean; onTarget: boolean; zone: Zone; rt: number | null
  *  team-mates (no physics) are stood on the ball → keeper line. */
 function shot(kind: E.ScenarioKind, seed: number, ks: number, opts: B.BrainOptions = {}, plant = 0, corner = false): Shot {
   const rng = mulberry32(seed);
-  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
+  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
   E.initDefenders(sc, rng);
   for (let i = 0; i < plant; i++) {
     const t = 0.45 + 0.15 * i;
@@ -205,7 +205,7 @@ console.log("\nTHE TRIAL'S SET PIECES");
   // drill's own picture (the trial builds its own wall and keeper) gets the
   // slower one.
   const rng = mulberry32(11);
-  const served = makeChance({ source: { from: "kind", kind: "free_kick" }, rng, strength: { keeper: 62, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
+  const served = makeChance({ source: { from: "kind", kind: "free_kick" }, rng, strength: { keeper: 62, team: 60, vision: 55 }, memory: null }).sc;
   const own = E.buildScenario("free_kick", mulberry32(12), 90, 60, 55);
   ok(isMatchFreeKick(served) && !isMatchFreeKick(own), "the match's free kick is the match's; a drill's own picture is a drill's");
   let slower = 0;

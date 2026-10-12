@@ -59,9 +59,8 @@ if (typeof window !== "undefined") {
 
 /** The view to film the match in right now. */
 export function matchView(): MatchView {
-  if (override) return override;
-  if (stored === undefined) stored = readStored();
-  return stored ?? MATCH_VIEW_DEFAULT;
+  // Decided, no toggle (12 Oct 2026): only a test screen's override changes it.
+  return override ?? MATCH_VIEW_DEFAULT;
 }
 
 /** This phone's own choice (Settings). */
