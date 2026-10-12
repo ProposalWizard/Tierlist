@@ -970,3 +970,26 @@ Cost (harness career chance, Medium, same frame): Realistic 82 draws / 326k tria
 Animation grid: the harness `animgrid` scene + `scripts/perf3d/animgrid.mjs` + `animsheet.py` make a contact sheet of every match clip (35 tiles, none missing) at 0/25/50/75%.
 
 Not done: Medium's edge crunch (post.ts sharpen), positions into the frame for `playerLookFor`, long hair / mohawk / braids heads, clip work (foot slide, blending) beyond checking each clip plays on Style A.
+
+
+### One fixed size, the set-piece camera, the taker's run-up, clean men on Medium (12 Oct 2026)
+
+Harry on the penalty still: "are you drawing from scratch? We should be using the penalty animations, why is he just stood next to the ball … can you also see how off the scale of the goal is?" Then: "no changes in size for any player or goalie or goal should ever occur", and "the goalie's head is out the damn goal".
+
+**RULE: one fixed size, always.** Men, keeper and goal each have ONE scale (× real life), the same in every chance and every frame. Never size anything per chance, and never let a size follow the camera: the camera's distance does the framing. `MATCH_SCALES` / `MATCH_SCALE_PICK` in `lib/star/style3d/match2dCam.ts` (default **A = real life**: man 1, keeper 1, goal 1, no lean). B (men 2×, goal 2.5×) and C (halfway) exist only for comparison stills (`?mscale=B|C|current` on test pages). The goal scale reaches the stadium through `setArenaGoalScale` (`real/arena.ts`, 3D camera New only). Tests: `tests/star/match2dCam.mts` (one scale in every chance; the keeper's height on the screen 0.71–0.74 of the bar's, real 0.74).
+
+Measured (`npx tsx scripts/cam3d/scale.mts`, 78 real chances, phone box 372×704): before, men 1.5–3.0× chosen per chance, a man 1.94× the bar's height on the screen (real 0.74; the 2D view 0.76). A: man 0.65 of the bar, the keeper 0.73; a man in the action 2.1% of the screen height (median), 0.9% on a wide corner.
+
+**Set-piece camera.** Every kind is framed as the 2D (wide) EXCEPT a penalty and a direct free kick: `solveSetPieceCam` (`match2dCam.ts`, `SET_PIECE_CAM`) keeps the ball, the taker, the keeper, the whole goal and the wall on screen and puts the taker at ~5.5% of the screen height, by camera distance only. Worked out when the chance starts (ball spot while aiming) and held. Touch is unchanged: the 3D view maps a finger through the grass under it (`groundAt` → `to2dClient`), so the drag lands where the 2D expects it (test: the ball's spot on the glass maps back to the ball).
+
+**The man on the ball** (`lib/star/style3d/setPiece3d.ts`, engineView `takerSpot`, `moveMocap`):
+- Penalty / free kick: the 2D already stands him a few steps back (`standBackFor`) and walks him in over `runS`. The frame now carries `runup: { t, runS }` (CanvasMatch → `EngineFrame.runup`). The 3D plays the real run-up-and-strike capture `kick_r` / `kick_l` (CMU 11_01) for the last ≤1.2 s, timed so it reaches its held backswing exactly when the 2D's strike screen opens, then swings through on the tap. He is drawn onto the spot where that clip's foot meets the ball over the same stretch.
+- Corner / open play: a stance behind the ball on the line of the shot (corner 2.6 m / 35°, open play 1.3 m / 12°, the kick-foot's side), facing the ball; when the strike screen opens he takes the last steps in on the same clip (1.0 s / 0.45 s).
+- The keeper is set and on his toes from the moment a penalty taker stands over the ball.
+- Test: `tests/star/setPiece3d.mts`.
+
+**Medium: clean Style A men** (`real/post.ts` `menClean`, `toon/shader.ts`): the match men write 0.5 into the picture's alpha; Medium's final pass skips FXAA inside a man and never sharpens him; his outline on the grass is still smoothed. No extra texture read (the alphas come from FXAA's own reads), so the frame cost is the same or lower. Only with "3D quality look: New"; Old unchanged. `?menclean=0` shows before. Harry: "defo an improvement".
+
+**Stills:** `npx tsx scripts/cam3d/frames.mts DIR --phases` (real chances from `buildScenario`, with CanvasMatch's own penalty/free-kick stance, plus run-up and strike-screen frames) → `node scripts/cam3d/stills.mjs DIR new stylea [--q=mscale=B] [--tag=x]`; `node scripts/cam3d/cleanStill.mjs DIR NAME` draws one moment with and without `menClean`.
+
+**Not done:** none of this seen in a real career match (`/star-dev`) yet, only the harness; the open-play step-in at the strike screen not caught on a still (the harness draws a frame every 1–5 s); a free kick's wall has no set "arms in" pose (no clip); box markings are never scaled (they sit under the ball).
