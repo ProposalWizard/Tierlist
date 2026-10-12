@@ -216,6 +216,21 @@ export function radarSummary(m: RadarMatch): RadarSummary {
   };
 }
 
+/**
+ * WHICH WAY EACH SIDE ATTACKS on the radar. Both radars draw your goal on the
+ * left (own_box, x = 0) and theirs on the right (box, x = 105), and the ball's
+ * own arrow points right when you have it. So you attack →, they attack ←.
+ * The corner labels read "US →" and "← THEM": the way each side is going,
+ * the same way the ball's arrow points. (The test-page radar used to say
+ * "US ←", pointing at your own goal, the opposite of its own ball arrow.)
+ */
+export const ATTACK_ARROW: Record<Side, "→" | "←"> = { user: "→", opponent: "←" };
+/** "CHELSEA →" for you, "← BRIGHTON" for them. */
+export function attackLabel(short: string, side: Side): string {
+  const name = short.toUpperCase();
+  return side === "user" ? `${name} ${ATTACK_ARROW.user}` : `${ATTACK_ARROW.opponent} ${name}`;
+}
+
 // ── Bits ───────────────────────────────────────────────────────────────────
 
 function snapshot(s: HiddenMatchState, events: RadarEvent[], highlight: RadarHighlight | undefined): RadarFrame {

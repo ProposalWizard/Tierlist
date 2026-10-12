@@ -7,7 +7,8 @@
  *      your highlights, lands on exactly the same scoreline, minute by minute.
  * Then prints what a whole match looks like, for the report.
  */
-import { startRadar, stepRadar, resolveHighlight, radarOver, playRadarMatch, radarSummary } from "../../lib/star/matchRadar";
+import { startRadar, stepRadar, resolveHighlight, radarOver, playRadarMatch, radarSummary, attackLabel } from "../../lib/star/matchRadar";
+import { readFileSync } from "node:fs";
 import { newMatch, tick, resolveScenario, benchConversion, type HiddenMatchInputs } from "../../lib/star/hiddenMatch";
 import { mulberry32 } from "../../lib/star/season";
 import { injuryRiskFor } from "../../lib/star/careerFlow";
@@ -101,6 +102,33 @@ console.log("\n== injuries: the career's full-time roll, shown at full time");
     ok(marked === hurt, `start ${start}%: every injury (${hurt}) is an event on the timeline at 90' (${marked})`);
     console.log(`  start ${start}% energy → ends ~${Math.round(end / N)}%, injured ${hurt}/${N} (${(hurt / N * 100).toFixed(1)}%; career risk ${(injuryRiskFor(end / N) * 100).toFixed(1)}%)`);
   }
+}
+
+console.log("\n== which way each side attacks (labels match the pitch)");
+{
+  // Your goals come from the zones drawn on the RIGHT (attacking/box); theirs
+  // from the LEFT (defensive/own_box). Measured over real matches.
+  let usRight = 0, usAll = 0, themLeft = 0, themAll = 0;
+  for (let seed = 1; seed <= 1000; seed++) {
+    const m = playRadarMatch(70_000 + seed, inputs);
+    for (let i = 1; i < m.frames.length; i++) {
+      const before = m.frames[i - 1];
+      for (const e of m.frames[i].events) {
+        if (e.kind === "goal-us") { usAll++; if (before.zone === "attacking" || before.zone === "box") usRight++; }
+        if (e.kind === "goal-them") { themAll++; if (before.zone === "defensive" || before.zone === "own_box") themLeft++; }
+      }
+    }
+  }
+  console.log(`  your goals from their half (right): ${usRight}/${usAll}; their goals from your half (left): ${themLeft}/${themAll}`);
+  ok(usRight / usAll > 0.6 && themLeft / themAll > 0.6, "you score at the right-hand end, they score at the left-hand end");
+  ok(attackLabel("Chelsea", "user") === "CHELSEA →", `you attack right: "${attackLabel("Chelsea", "user")}"`);
+  ok(attackLabel("Brighton", "opponent") === "← BRIGHTON", `they attack left: "${attackLabel("Brighton", "opponent")}"`);
+  const src = readFileSync(new URL("../../components/star/MatchRadar.tsx", import.meta.url), "utf8");
+  ok(/box: \[88\.5, 105\]/.test(src) && /own_box: \[0, 16\.5\]/.test(src), "their box is drawn on the right, yours on the left");
+  ok(/possession === "user" \? "M 9 -3\.5 L 13\.5 0/.test(src) && /possession === "user" \? "M 8 -3 L 12 0/.test(src), "both ball arrows point right when you have it");
+  ok((src.match(/attackLabel\(us\.short, "user"\)/g) ?? []).length === 2 && (src.match(/attackLabel\(them\.short, "opponent"\)/g) ?? []).length === 2,
+    "both radars (test page and live) take their corner labels from attackLabel");
+  ok(!/short\.toUpperCase\(\)\} [←→]|[←→] \{(us|them)\.short/.test(src), "no hand-written arrow labels left");
 }
 
 if (failed) { console.log(`\n${failed} FAILED`); process.exit(1); }

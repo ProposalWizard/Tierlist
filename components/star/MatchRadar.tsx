@@ -15,6 +15,7 @@
  * guard's rule on canvas animation loops).
  */
 import type { RadarFrame, RadarHighlight, RadarMatch, RadarSummary, RadarEvent } from "@/lib/star/matchRadar";
+import { attackLabel } from "@/lib/star/matchRadar";
 import type { Zone, Lane, RadarTick, Side } from "@/lib/star/hiddenMatch";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
@@ -104,8 +105,8 @@ export function RadarPitch({ frames, us, them, pending, flashMinute, stepMs }: {
       {([21, 47] as const).map((m) => (
         <line key={m} x1={PAD} x2={VB_W - PAD} y1={sy(m)} y2={sy(m)} stroke="#ffffff" strokeOpacity={0.07} strokeDasharray="3 4" />
       ))}
-      <text x={PAD + 5} y={VB_H - PAD - 5} fill="#ffffff" fillOpacity={0.55} fontSize={8.5} fontWeight={800}>{us.short.toUpperCase()} ←</text>
-      <text x={VB_W - PAD - 5} y={VB_H - PAD - 5} fill="#ffffff" fillOpacity={0.55} fontSize={8.5} fontWeight={800} textAnchor="end">→ {them.short.toUpperCase()}</text>
+      <text x={PAD + 5} y={VB_H - PAD - 5} fill="#ffffff" fillOpacity={0.55} fontSize={8.5} fontWeight={800}>{attackLabel(us.short, "user")}</text>
+      <text x={VB_W - PAD - 5} y={VB_H - PAD - 5} fill="#ffffff" fillOpacity={0.55} fontSize={8.5} fontWeight={800} textAnchor="end">{attackLabel(them.short, "opponent")}</text>
       {trail.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={2.2 + i * 0.35} fill={col} opacity={0.12 + i * 0.07} />
       ))}
@@ -409,8 +410,8 @@ export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
             fontSize={flash === "goal" ? 26 : 13} fontWeight={900} fill={labelCol} stroke="#0b1220" strokeWidth={flash === "goal" ? 4 : 3}
             paintOrder="stroke" letterSpacing="0.06em">{label}</text>
         )}
-        <text x={LP + 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800}>{us.short.toUpperCase()} →</text>
-        <text x={LW - LP - 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800} textAnchor="end">← {them.short.toUpperCase()}</text>
+        <text x={LP + 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800}>{attackLabel(us.short, "user")}</text>
+        <text x={LW - LP - 4} y={LH - LP - 4} fill="#fff" fillOpacity={0.7} fontSize={9} fontWeight={800} textAnchor="end">{attackLabel(them.short, "opponent")}</text>
       </svg>
       {/* Momentum, a bar a minute: up in your colour, down in theirs. */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
