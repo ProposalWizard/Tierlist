@@ -78,8 +78,9 @@ export type Match2DParams = typeof MATCH2D;
  * `goal`: the goal frame (posts, bar, net) about the middle of its line. The pitch lines
  * stay true: they sit under the ball and the men (a scaled box would move the spot off the ball).
  *
- * Harry picks one of A / B / C (scripts/cam3d/scale.mts measures them); until then `current`
- * (the old per-chance median, now fixed) is the default.
+ * DEFAULT: A, real proportions (Harry on the first penalty still: "the goalie's head is out the damn goal").
+ * B and C are comparison stills only (scripts/cam3d/scale.mts measures them); `current`
+ * is the old per-chance median, fixed (for before stills).
  */
 export interface MatchScale { man: number; keeper: number; goal: number; lean: boolean }
 export const MATCH_SCALES = {
@@ -94,7 +95,7 @@ export const MATCH_SCALES = {
 } satisfies Record<string, MatchScale>;
 export type MatchScaleId = keyof typeof MATCH_SCALES;
 /** The one tuning constant. Change it when Harry picks (A, B or C). */
-export const MATCH_SCALE_PICK: MatchScaleId = "current";
+export const MATCH_SCALE_PICK: MatchScaleId = "A";
 /** The fixed scale in use. Test pages may pass ?mscale=A|B|C|current (stills only). */
 export function matchScale(): MatchScale {
   const q = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("mscale");

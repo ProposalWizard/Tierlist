@@ -81,7 +81,7 @@ if (isMain) {
   const rows = process.env.MATCH2D_ROWS === "1";
   const tot = { old: { seen: 0, kept: 0, full: 0, ball: [] as number[] }, nu: { seen: 0, kept: 0, full: 0, ball: [] as number[] } };
   let n = 0, cornersOff = 0, badAngle = 0, kinds = new Set<string>();
-  const ks: number[] = [], shares: number[] = [], keeperKs: number[] = [], goalKs: number[] = [];
+  const ks: number[] = [], shares: number[] = [], keeperKs: number[] = [], goalKs: number[] = [], keeperBar: number[] = [];
   const ratio: number[] = [], extra: number[] = [], elevs: Record<string, number> = {};
   for (const kind of SCENARIO_KINDS) {
     for (let seed = 1; seed <= 6; seed++) {
@@ -95,7 +95,13 @@ if (isMain) {
       }
       for (const q of framedQuad(c.f)) if (!on3d(nu, q)) { cornersOff++; break; }
       extra.push(nu.extra); ks.push(fixed.man); keeperKs.push(fixed.keeper); goalKs.push(fixed.goal);
-      shares.push(leanedManShare(nu, W, H, c.sc.ball, MATCH2D.manH * fixed.man, fixed.lean ? leanFor(nu.elevDeg) : 0)); elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
+      shares.push(leanedManShare(nu, W, H, c.sc.ball, MATCH2D.manH * fixed.man, fixed.lean ? leanFor(nu.elevDeg) : 0));
+      if (c.gv) {
+        // the keeper on his line against the bar, on the 3D screen (Harry: "the goalie's head is out the damn goal")
+        const kp = leanedManShare(nu, W, H, { x: c.keeper.x, y: c.keeper.y }, MATCH2D.manH * fixed.keeper, fixed.lean ? leanFor(nu.elevDeg) : 0);
+        const bar = bcProject(nu, W, H, { x: 34, y: 0 }).fr - bcProject(nu, W, H, { x: 34, y: 0, z: 2.44 * fixed.goal }).fr;
+        keeperBar.push(kp / bar);
+      } elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
       if (nu.elevDeg < 40 || nu.elevDeg > 60) badAngle++;
       // the 2D man's height on the phone vs a life-size 3D man at the ball: the fig that would match
       const v = c.f.viewport, turned = c.f.facing !== "up";
@@ -121,6 +127,8 @@ if (isMain) {
   const ev = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
   const pm = ev.slice(ev.indexOf("const placeMatch2D"), ev.indexOf("const placeCamera"));
   ok(pm.length > 0 && !/m2\.k\s*=\s*c\.k|tvFig\s*=\s*c\.k|=\s*c\.k\b/.test(pm) && /m2\.k = mScale\.man/.test(pm), "the 2D-frame camera never takes a size from the camera solve (c.k)");
+  if (MATCH_SCALE_PICK === "A") ok(keeperBar.length > 20 && Math.max(...keeperBar) < 0.85 && Math.min(...keeperBar) > 0.68, `the keeper's height on the 3D screen sits under the bar in every chance: ${(Math.min(...keeperBar)).toFixed(2)}–${(Math.max(...keeperBar)).toFixed(2)} of the bar's (real: 1.8 / 2.44 = 0.74; ${keeperBar.length} chances with a goal)`);
+  ok(Math.max(...keeperBar) < 1, `the keeper never stands taller than the bar on the screen (max ${(Math.max(...keeperBar)).toFixed(2)})`);
   for (const [id, sc] of Object.entries(MATCH_SCALES)) ok(sc.man > 0 && sc.keeper > 0 && sc.goal > 0, `scale option ${id} is a set of fixed numbers`);
   if (MATCH_SCALE_PICK === "current") ok(pct(shares, 0.5) >= MATCH2D.manShare - 0.002, `men readable: the median chance at the ${(MATCH2D.manShare * 100).toFixed(0)}% target at the fixed ${ks[0]}x (smallest ${(Math.min(...shares) * 100).toFixed(1)}%: a wide side-on chance)`);
   ok(n >= 40, `${n} chances`);
