@@ -920,3 +920,26 @@ Only the director page plays cut scenes today; a host plays music with
 **Next:** shallow depth of field is not done (the cel style has no depth pass);
 nobody has listened to the music yet (levels measured only); the real game does
 not play these cut scenes yet.
+
+### Style A men in the 3D match, like the Home player (12 Oct 2026)
+
+Harry: "I want it in style A but I don't want that blocky minecraft look. I want exactly what the model looks like in the home screen".
+Settings → Look → "Players in a 3D match: Style A | Real | Old" (`lib/star/style3d/toon/matchLook.ts`, row `matchPlayers3d`). Style A is the new default (stored key moved to `…-style2`, so every phone takes it once; a phone on Old keeps Old). Real = the realistic bodies. Old = follows Player style, exactly as before.
+
+Why the men looked blocky, measured on one man at the same on-screen height (`scripts/perf3d/styleA.mjs` + the harness `homeman` scene; stills in the session scratchpad `styleA/`):
+- Light: the stadium sun, rim, floodlights and grade washed the kit pale (shirt red read pink) and the skin yellow. Home lights him with its own soft rig.
+- Edges: Medium draws at px 1.5 then FXAA + the light sharpen (`fxSharp`, post.ts). That sharpen gives the crunchy, stepped edges; Old tier look is soft, High (px 2, MSAA) is clean. Not changed here (post.ts belongs to the look work): the next fix to try.
+- No outline on Medium (`prof.outlines` is High only); Home has one.
+- The pale glow round the legs of the man on the ball is the ball's additive light ring (`real/ball.ts`), not a halo on him.
+- Size: from 48° above a Slim man at ~6% of the screen reads thin and small-headed.
+
+What Style A does now (only in the 3D match and the animation grid):
+- `HOME_LIGHT` (`toon/shader.ts`, uniform `uHome`): the body shader lights the man with Home's own rig (hemisphere 1.2, warm sun 2.6 from the camera's upper right, cel bands, warm rim) whatever the stadium does, adds an ink line on the silhouette (no extra draw), and caps brightness under the bloom.
+- `HOME_MATCH_BUILD`: head 1.32, neck 1.4, full-size hands, ×1.14 across.
+- The ball's light ring is off (`setHBallLightRing`, back on when the match view closes).
+- Each man his own look: `lib/star/playerLook.ts` (`playerLookFor({ id, position?, skin? })`, no three.js, for the 2D re-bake later): head, build and height by role (GK/CB taller, CDM stockier, wingers slighter), flair heads (Bun, Quiff) and bleached hair more often up front, seeded skin, boot colour. The match frame has no positions yet, so only the keeper is placed by role.
+Cost (harness career chance, Medium, same frame): Realistic 82 draws / 326k triangles → Style A 82 / 267k (the same 11 skinned draws). The look adds no draw and no texture.
+
+Animation grid: the harness `animgrid` scene + `scripts/perf3d/animgrid.mjs` + `animsheet.py` make a contact sheet of every match clip (35 tiles, none missing) at 0/25/50/75%.
+
+Not done: Medium's edge crunch (post.ts sharpen), positions into the frame for `playerLookFor`, long hair / mohawk / braids heads, clip work (foot slide, blending) beyond checking each clip plays on Style A.

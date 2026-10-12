@@ -35,6 +35,7 @@ import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, ty
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
 import { HOME_MATCH_BUILD } from "./toon/shader";
+import { playerLookFor } from "../playerLook";
 import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
@@ -665,7 +666,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const LIKELY_SIDS = ["you", "keeper", "follower",
     ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((i) => [`def${i}`, `mate${i}`]),
     "run0", "run1", "run2", "run3"];
-  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined);
+  // Style A match men (homeMen): each his own head, build, height, skin, hair and boots (lib/star/playerLook.ts)
+  const manLook = (sid: string) => playerLookFor({ id: sid, position: sid === "keeper" ? "GK" : undefined });
+  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : homeMen ? manLook(sid).head : toonHeadFor(sid)) : undefined);
   const spareQueue = LIKELY_SIDS.slice(0, Math.max(6, SPARE_TARGET)).map(headOf);
   for (let i = 0; i < 6 && spareQueue.length; i++) spares.push(buildShell(spareQueue.shift()));
   const topUpSpares = () => { if (spareQueue.length && built < SPARE_TARGET + 6) spares.push(buildShell(spareQueue.shift())); };
@@ -715,18 +718,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     return { x: lx * Math.cos(b.yaw) + lz * Math.sin(b.yaw), y: -lx * Math.sin(b.yaw) + lz * Math.cos(b.yaw) };
   };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
-    const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
-    const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
+    const ml = homeMen && sid !== "you" ? manLook(sid) : null;
+    const tb = toonOn ? (sid === "you" ? toonYou().body : ml ? ml.body : toonBodyFor(sid)) : undefined;
+    const th = toonOn ? (sid === "you" ? toonYou().head : ml ? ml.head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
     const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
-    if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across));
+    if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
     const look: PersonLook = {
-      skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
-      hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
+      skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
+      hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
-      accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],
+      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : [])],
     };
     dressPerson3d(THREE, p, look);
     plainHead(p, look.skin, look.hair ?? "#1b120c");
