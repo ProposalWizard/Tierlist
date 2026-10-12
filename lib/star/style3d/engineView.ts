@@ -31,7 +31,7 @@ import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
-import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, setPeople3dOutlineRes, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
 import { HOME_MATCH_BUILD } from "./toon/shader";
@@ -53,6 +53,7 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
+import { SMALL_MEN } from "./smallMen";
 import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
@@ -213,14 +214,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const { renderer, release } = acquireRenderer(THREE, container, prof);
   // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
   installShadowCache(THREE, renderer);
-  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
+  const dprCap = tier === "high" ? 2 : tier === "medium" ? SMALL_MEN.mediumDpr : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
   // (pixel ratio, then shadows and the post pass; look H reads the rung itself).
   const gov = new Governor({
     start: tier, name: "real game",
     onChange: (r) => {
-      renderer.setPixelRatio(governedPixelRatio(dprCap, r, window.devicePixelRatio || 1));
+      // the rung's ratio scaled to this tier's cap (Medium draws at SMALL_MEN.mediumDpr at its top rung)
+      renderer.setPixelRatio(governedPixelRatio(dprCap, { ...r, pixelRatio: r.pixelRatio * Math.max(1, dprCap / prof.maxPixelRatio) }, window.devicePixelRatio || 1));
       if (!h) renderer.shadowMap.enabled = prof.shadows && r.shadows !== "off";
     },
   });
@@ -565,13 +567,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // ...and built like him: a bigger head and broader at this small size (a man is ~6% of the screen; HOME_MATCH_BUILD)
   const homeLook = homeMen ? HOME_MATCH_BUILD.look : undefined;
   if (o.def.real) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(!homeMen)).catch(() => {});
-  const homeLight = (p: Person3D) => { const hu = (p.u as any).uHome?.value; if (hu) hu.x = homeMen ? 1 : 0; };
+  const homeLight = (p: Person3D) => {
+    const pu = p.u as any, hu = pu.uHome?.value;
+    if (hu) hu.x = homeMen ? 1 : 0;
+    // a small man reads cleanly (smallMen.ts): flat cel, a softer skin/hair picture, no kit weave at 35 px
+    if (pu.uSmall?.value) pu.uSmall.value.set(homeMen && SMALL_MEN.flatCel ? 1 : 0, homeMen ? SMALL_MEN.mapBias : 0, 0, 0);
+    if (pu.uCloth?.value && homeMen && !SMALL_MEN.kitNoise) { pu.uCloth.value.x = 0; pu.uCloth.value.y = 0; }
+  };
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
   const buildShell = (th?: ToonHead) => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, outlinePx: homeMen && SMALL_MEN.outlinePx > 0 ? SMALL_MEN.outlinePx : undefined, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
     if (fb) addClips(THREE, p, fb as any);
     homeLight(p);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
@@ -653,7 +661,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const tb = toonOn ? (sid === "you" ? toonYou().body : ml ? ml.body : toonBodyFor(sid)) : undefined;
     const th = toonOn ? (sid === "you" ? toonYou().head : ml ? ml.head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, outlinePx: homeMen && SMALL_MEN.outlinePx > 0 ? SMALL_MEN.outlinePx : undefined, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
@@ -1260,6 +1268,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
 
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
+  const outlineRes = new THREE.Vector2();
   let lean = 0;
   const down3 = new THREE.Vector3(0, 0, 1);
   /** `init`: the camera has been placed once (touch waits for it). */
@@ -1613,6 +1622,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       topUpSpares();
       const cw = container.clientWidth, ch = container.clientHeight;
       if (cw !== size.w || ch !== size.h) { size = { w: cw, h: ch }; renderer.setSize(Math.max(1, cw), Math.max(1, ch), false); }
+      { const db = renderer.getDrawingBufferSize(outlineRes); setPeople3dOutlineRes(THREE, db.x, db.y); } // the ink line keeps its screen pixels (smallMen.ts)
       lastFrame = f;
       placeCamera(f);
       {

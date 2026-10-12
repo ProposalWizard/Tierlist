@@ -1,0 +1,25 @@
+/**
+ * SMALL MEN READ CLEANLY (Harry, 12 Oct 2026, on a Medium match crop: "I just don't
+ * like how pixely the players look ... compared to [the Home player] it doesn't
+ * seem the same"). A real-size man in the 3D match is ~35 px tall on a phone.
+ * Sizes stay real (size3d.ts); these only change how such a small man is drawn:
+ *
+ * - `mediumDpr`: the drawing buffer's pixel ratio on Medium (an iPhone screen is 3).
+ * - `outlinePx`: an ink line round every man, this many SCREEN pixels thick
+ *   whatever his distance (the Home player's outline, kept at its on-screen
+ *   thickness). 0: none (Medium had no outline before).
+ * - `flatCel`: flat cel colour, 2–3 tones (no sky/grass gradient, no rim).
+ * - `kitNoise`: the kit's fine weave and seam texture (mush at 35 px).
+ * - `mapBias`: mip bias on the skin/hair picture (softer, flatter far away).
+ *
+ * Looks only; nothing reads the camera to size anything. The values are the pick from the
+ * 12 Oct 2026 comparison sheets (scratchpad size1/14-*, 16-*): Harry chose 2.5 as the base, then the
+ * thicker ink (2.8 px) and map bias 2 read cleanest.
+ */
+export const SMALL_MEN = {
+  mediumDpr: 2.5,
+  outlinePx: 2.8,
+  flatCel: true,
+  kitNoise: false,
+  mapBias: 2,
+};
