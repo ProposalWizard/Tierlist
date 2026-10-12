@@ -1,4 +1,5 @@
 "use client";
+import { noteCasinoBet } from "@/lib/star/casinoScandal";
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
@@ -487,6 +488,7 @@ function HorseRacingGame(props: HorseRacingProps) {
       return;
     }
     const { scores, payout } = played.result;
+    noteCasinoBet();
     props.onSetBank(props.bank - stake);
     const lanes = lanesFrom(field.map((h, i) => ({ name: h.name, rating: h.rating, score: scores[i], duration: 0, isUser: false })));
     const winnerIdx = scores.indexOf(Math.max(...scores));
@@ -824,6 +826,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
 
   const place = (entry: BetEntrant) => {
     if (!bettingOpen || props.bank < props.bet) return;
+    noteCasinoBet();
     props.onSetBank(props.bank - props.bet);
     props.onPlaceBet({
       competition: tab, club: entry.name, odds: entry.odds, stake: props.bet, season: props.career.season,
@@ -957,6 +960,7 @@ function Blackjack(props: CasinoGameProps) {
     setDealer(r.dealer ?? [r.dealerUp!, HIDDEN_CARD]);
     setRevealedDealerCount(1); // second card hidden until Hold
     setPhase("play");
+    noteCasinoBet();
     setMessage("");
     props.onSetBank(props.bank - stake);
   };
@@ -1198,6 +1202,7 @@ function Roulette(props: CasinoGameProps) {
     );
     if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
     const { winner, payout: win } = played.result;
+    noteCasinoBet();
     props.onSetBank(bank0 - stake);
 
     // Compute rotation.
@@ -1353,6 +1358,7 @@ function Slots(props: CasinoGameProps) {
       () => slotsRound(stake, Math.random),
     );
     if (played.kind === "error") { setSpinning(false); setNote(played.message); return; }
+    noteCasinoBet();
     props.onSetBank(bank0 - stake);
     const roll = () => SLOTS_SYMBOLS[Math.floor(Math.random() * SLOTS_SYMBOLS.length)];
     let ticks = 0;

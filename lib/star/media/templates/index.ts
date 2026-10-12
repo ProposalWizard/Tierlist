@@ -6,6 +6,7 @@ import { SOCIAL_TEMPLATES } from "./social";
 import { DATA_TEMPLATES } from "./data";
 import { CHANT_TEMPLATES } from "./chants";
 import { CHEEKY_TEMPLATES } from "./cheeky";
+import { CASINO_TEMPLATES } from "./casino";
 import { RETIREMENT_TEMPLATES } from "./retirements";
 import { INTERNATIONAL_TEMPLATES } from "./international";
 
@@ -108,6 +109,7 @@ const ALL: Template[] = [
   ...DATA_TEMPLATES,
   ...CHANT_TEMPLATES,
   ...CHEEKY_TEMPLATES,
+  ...CASINO_TEMPLATES,
   ...RETIREMENT_TEMPLATES,
   ...INTERNATIONAL_TEMPLATES,
 ];
