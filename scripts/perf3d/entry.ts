@@ -175,6 +175,32 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { on = false; v.dispose(); } };
     return true;
   },
+  /**
+   * One real chance, held still: `opts.frame` is an engine frame (the camera's view box, facing,
+   * tilt and box size, the men, ball and keeper) made by scripts/cam3d/stills.mjs from a real
+   * scenario. The stage is sized to the frame's box. URL ?cam2d=0 = the broadcast camera (before).
+   */
+  async chance(opts: any = {}) {
+    M.t0 = performance.now();
+    let fr0 = opts.frame;
+    M.setFrame = (f: any) => { fr0 = f; };
+    const st = stage();
+    Object.assign(st.style, { inset: "auto", left: "0", top: "0", width: `${fr0.cam.W}px`, height: `${fr0.cam.H}px` });
+    const v = await createEngineView(st, { def: resolveStyle("real", "play"), tier: opts.tier ?? "medium", tod: opts.tod ?? "golden", tilt: 45 });
+    const t0 = performance.now() / 1000;
+    let on = true;
+    const tick = () => {
+      if (!on) return;
+      const now = performance.now() / 1000;
+      const fr = { ...fr0, t: now, keeper: fr0.keeper ? { ...fr0.keeper, idleT: now - t0 } : null };
+      v.frame(fr);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; v.dispose(); } };
+    return true;
+  },
   /** A cut scene (a fixture), held still at `at` seconds. */
   async cut(opts: any = {}) {
     M.t0 = performance.now();
