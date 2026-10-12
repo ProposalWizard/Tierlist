@@ -21,9 +21,13 @@
  *   - THE ACTION ONLY: the ball, you, the team-mates you can pass to, the
  *     nearest defenders, the keeper and goal mouth when the goal is in range.
  *     The camera comes as close as lets all of that fit.
- *   - MEN A SET SIZE: the figure scale k is picked so a man standing at the
- *     anchor is `manShare` (6%) of the canvas height (measured through this
- *     camera, not a fixed 1.6×), within [kMin, kMax].
+ *   - MEN ONE SIZE, ALWAYS (Harry, 12 Oct 2026: "the goalie and players are
+ *     changing scale based on where the camera is whereas that should never be
+ *     the case"). Every man and the keeper are `fig` × life size on every
+ *     frame of every chance. The camera's DISTANCE is what puts a man at the
+ *     anchor at `manShare` (6%) of the canvas height; a wide chance that needs
+ *     the camera further back shows the men smaller, as television does. Before:
+ *     the figure scale k was re-picked each frame (1.0–2.2×) to hold 6%.
  *
  * Pitch metres in, as engineFrame: x across (goal centre CX), y out from the
  * goal line, z up. Three: X = x − CX, Y = z, Z = y.
@@ -70,6 +74,9 @@ export const BROADCAST = {
   manShare: 0.06,
   /** A man's true height, m. */
   manH: 1.8,
+  /** Every man's and the keeper's size, × life size, on every frame (never changes with the camera). 0 = the old per-frame size (test pages' ?animfix=0, for before stills only). */
+  fig: 1.35,
+  /** Kept for the size-candidate sheet (?man=): the old per-frame scale's range. Not used to size men any more. */
   kMin: 1,
   kMax: 3.2,
   /** Side-on chances: the camera swung this far round towards behind the attack. */
@@ -224,10 +231,11 @@ function solveAt(inp: BcInput, P: BroadcastParams, ballAt: number): BcCamera {
     const c = camAt(D);
     return bcProject(c, W, H, { x: A.x, y: A.y, z: 0 }).fr - bcProject(c, W, H, { x: A.x, y: A.y, z: P.manH * k }).fr;
   };
-  // never so close that a true-size man is bigger than the target
+  // the camera as close as puts a man (at his one size, P.fig) at the target share — never closer
+  const K = P.fig > 0 ? P.fig : P.kMin;
   let lo = 2, hi = P.Dmax;
-  if (manAt(hi, P.kMin) > P.manShare) lo = hi;
-  else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (manAt(m, P.kMin) > P.manShare) lo = m; else hi = m; }
+  if (manAt(hi, K) > P.manShare) lo = hi;
+  else for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (manAt(m, K) > P.manShare) lo = m; else hi = m; }
   const Dsize = hi;
   let D = Dsize;
   if (!fits(D)) {
@@ -235,9 +243,9 @@ function solveAt(inp: BcInput, P: BroadcastParams, ballAt: number): BcCamera {
     if (!fits(b)) D = b;
     else { for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (fits(m)) b = m; else a = m; } D = b; }
   }
-  const h1 = manAt(D, 1);
-  const k = Math.max(P.kMin, Math.min(P.kMax, P.manShare / Math.max(1e-6, h1)));
   const c = camAt(D);
+  // fig 0: before stills only, the old per-frame size (it changed with the camera: the bug)
+  const k = P.fig > 0 ? K : Math.max(P.kMin, Math.min(P.kMax, P.manShare / Math.max(1e-6, manAt(D, 1))));
   return { ...c, k, man: manAt(D, k), anchorShare: bcProject(c, W, H, { x: A.x, y: A.y }).fr };
 }
 

@@ -41,6 +41,7 @@ Preview) sets them all at once.
 | Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
 | Star Pass podium | `components/star/Podium3D.tsx` | spins a GLB from `tools/star-pass-art/export_live3d.py` | on the Star Pass screens | none |
 | Style A people (every 3D person under Player style: New) | Settings → Your look (`components/star/YourLookPanel.tsx`); Home and title (`components/star/ToonHomePlayer.tsx` via `HomePlayerFigure`) | `lib/star/style3d/toon/` (shader, heads, builds, switch) through `lib/star/people3d.ts` | `/star-look-dev` (`?head=h1..h6`, `?body=c1..c3`, `?pstyle=old`) | Player style: New / Old (`lib/star/style3d/toon/look.ts`) |
+| 3D animations (every match move looping, match camera and size, a frame slider each) | page only | `lib/star/style3d/animGrid3d.ts` (one WebGL canvas, a tile each by scissor) | `/star-anim3d-dev` | none |
 | The test area index | page only | `lib/star/area3d.ts`, `lib/star/assets3dManifest.ts` | `/star-3d-area-dev` | none |
 | One of every mode in 3D skin | page only | `lib/star/figureSkin.ts`, `lib/star/figure3d.ts` | `/star-3d-dev` | Drawn-player style |
 
@@ -797,6 +798,25 @@ vs New) was the biggest visible difference on a phone; the tier second.
 phone check); KTX2 grass/crowd are ETC1S (lossy) — compare `?ktx2=0` on a
 phone before keeping them; the governor already keeps shadows and look H
 until rung 3, so it was left alone.
+
+### 3D match: one size, no teleports, the foot on the ball (12 Oct 2026)
+
+Harry: "players are kicking and jumping/ half teleporting with the ball. The goalie and players are changing scale based on where the camera is whereas that should never be the case."
+
+| Measured | Before | After |
+|---|---|---|
+| Men's and keeper's size (Match Lab stream, 919 frames, 3 chances) | 1.0–3.2 × life, variance 0.46, one frame jumped 2.2 | 1.35 every frame, variance 0 |
+| Size over 260 chances (`broadcastCam.mts`) | 1.0–2.2 | 1.35 in all; man 6% in the median chance, 3.4% in the widest |
+| A 2D jump of up to 4 m, drawn | one step | steps ≤ 0.5 m, caught up in ≤ 19 frames (`animSmoothMatch.mts`) |
+
+- **Size**: `BROADCAST.fig` (`lib/star/style3d/broadcastCam.ts`) is the one size. The camera's distance does the framing (before: the figure scale `k` did). The Old TV camera is fixed at `TV_FIG_FIXED` 1.6 (`engineView.ts`).
+- **Teleports**: `lib/star/style3d/figureFollow.ts` (`followStep`): the drawn man follows the 2D spot at ≤ 12 m/s, ≤ 3.5 m behind; over 4 m is a cut. His gait is read from the drawn move, so a 2D jump no longer flashes the sprint clip.
+- **Half teleport in a one-shot**: a pass, shot, tackle or celebration started at its contact frame, where the clip's hips are already ~1 m forward, then walked back at the end. Now the hips are held over his spot (`pinHips`) through every one-shot and 0.4 s after. Keeper dives are not held.
+- **Foot on the ball**: you stood a fixed 0.55 m / 0.42 m off the ball whatever way you faced. Now `calibrateFeet` poses each strike clip at contact once, and you stand so that foot meets the ball. Once the kick starts you are never dragged after the ball.
+- `?animfix=0` (test pages only) draws it the old way, for before stills. `window.__ev3dDiag = {}` turns on measuring (`maxStep`, `scales`, `footBall` at contact).
+- Test area: `/star-anim3d-dev`.
+
+**Not done:** foot-to-ball at contact is reasoned, not measured on a screen (the old spot put the foot ~1 m × size past the ball); before/after stills and clips of the real match; a kick clip picked at the strike (`kickStyleFor`) that differs from the aimed one still uses the aimed clip's foot spot; keeper dives still add their own sideways travel on top of the 2D lunge.
 
 ### Cut-scene camera + music (9 Oct 2026)
 

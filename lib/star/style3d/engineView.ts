@@ -46,6 +46,7 @@ import type { StyleDef } from "./styles";
 import type { RealLook } from "./real/look";
 import type { TimeOfDay } from "./real/assets";
 import { realCameraLook, playerLightLook } from "./realGameLook";
+import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
@@ -130,6 +131,8 @@ const MO = {
 };
 /** How tall a man stands on the glass at the action with the TV camera, CSS px (the 2D match screen's men, coordinator 9 Oct 2026). */
 const TARGET_PX = 46;
+/** The Old TV camera's one figure size (× life): the middle of the 1.0–2.6 it used to swing through. */
+const TV_FIG_FIXED = 1.6;
 /**
  * The men lean back from the camera by this share of (90° − tilt). 0: they
  * stand upright (round 3, 9 Oct 2026: leaning men read small and wrong on the
@@ -166,6 +169,10 @@ type Body = {
   /** A turn on the spot being played: from which way, how far, and how far the clip itself turns his hips. */
   turn?: { clip: string; start: number; d: number; theta: number; h: number };
   turnReady: number;
+  /** Hips held on his spot (no clip walking him off it) until this time (s): one-shots and a short tail after. */
+  pinUntil?: number;
+  /** You only: where each strike clip's kicking foot is at contact, his own frame (x, z at scale 1, hips held). */
+  footAt?: Record<string, [number, number]>;
   /** The kick's backswing, held while the strike screen is up. */
   windup?: string;
   /** A one-shot (celebration, head in hands) already played this result. */
@@ -434,6 +441,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** The 3D camera: New — the broadcast camera and smooth playback (Old: exactly as before). */
   // ?bcam=0 read once (this was parsed from the address bar for every man, several times a frame)
   const bcamOff = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  /**
+   * Test pages only: ?animfix=0 draws the match as it was before the 12 Oct 2026 fixes (men resized
+   * with the camera, 2D jumps drawn as teleports, one-shot clips walking him off his spot, you a
+   * fixed step off the ball). For before/after stills; never set in a career.
+   */
+  const animFix = !(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("animfix") === "0");
   const smooth = () => camMode === "tv" && realCameraLook() === "new" && !bcamOff;
   /** The current frame's clock (f.t), for the smooth playback's dwell. */
   let nowT = 0;
@@ -648,6 +661,51 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const spareQueue = LIKELY_SIDS.slice(0, Math.max(6, SPARE_TARGET)).map(headOf);
   for (let i = 0; i < 6 && spareQueue.length; i++) spares.push(buildShell(spareQueue.shift()));
   const topUpSpares = () => { if (spareQueue.length && built < SPARE_TARGET + 6) spares.push(buildShell(spareQueue.shift())); };
+  /** Hold the hips over his spot: a clip's own travel (a step into a pass, a run-up) never walks him off where the 2D put him. */
+  const pinHips = (p: Person3D) => {
+    const r0 = p.rest.get(p.bones.Hips)?.[0];
+    if (r0) { p.bones.Hips.position.x = r0.x; p.bones.Hips.position.z = r0.z; }
+  };
+  /** The strike clips you can play, and which foot meets the ball in each. */
+  const STRIKES: Record<string, "R" | "L"> = { shot_r: "R", kick_l: "L", shot_low: "R", chip: "R", volley: "R", pass_inside: "R", pass_lofted: "R", kick_r: "R" };
+  /**
+   * You only, once, as your body is made: pose each strike clip at its contact moment (hips held,
+   * as the match plays it) and note where the kicking foot is, in his own frame. You are then
+   * stood so that foot meets the ball (Harry: "kicking … with the ball").
+   */
+  const calibrateFeet = (p: Person3D): Record<string, [number, number]> => {
+    const out: Record<string, [number, number]> = {};
+    const pos = p.root.position.clone(), rot = p.root.rotation.y, sc = p.root.scale.x;
+    p.root.position.set(0, 0, 0); p.root.rotation.set(0, 0, 0); p.root.scale.setScalar(1);
+    const v = new THREE.Vector3();
+    for (const [clip, side] of Object.entries(STRIKES)) {
+      const a = p.actions[clip], foot = p.bones[side === "R" ? "RightFoot" : "LeftFoot"];
+      const c = info(clip)?.contact;
+      if (!a || !foot || c === undefined) continue;
+      a.reset(); a.play(); a.setEffectiveWeight(1); a.paused = true; a.time = c;
+      p.mixer.update(0);
+      pinHips(p);
+      p.root.updateMatrixWorld(true);
+      foot.getWorldPosition(v);
+      out[clip] = [v.x, v.z];
+      a.setEffectiveWeight(0); a.stop(); a.paused = false;
+    }
+    p.mixer.update(0);
+    p.root.position.copy(pos); p.root.rotation.set(0, rot, 0); p.root.scale.setScalar(sc);
+    return out;
+  };
+  /** Pitch metres from his root to the ball at contact in `clip`, turned by `yaw`, at size `fs` (null: not calibrated). */
+  const footToBall = (b: Body, clip: string, fs: number): { x: number; y: number } | null => {
+    const f = b.footAt?.[clip];
+    if (!f) return null;
+    // the ball sits just ahead of the foot bone (the clip's own ball spot minus its foot point, clip metres × his size)
+    const ci = info(clip);
+    const ax = ci?.ball && ci.contactPoint ? (ci.ball[0] - ci.contactPoint[0]) * b.k : 0;
+    const az = ci?.ball && ci.contactPoint ? (ci.ball[1] - ci.contactPoint[2]) * b.k : 0;
+    const lx = (f[0] + ax) * fs, lz = (f[1] + az) * fs;
+    // three: X = x - CX, Z = y; a turn of yaw about up
+    return { x: lx * Math.cos(b.yaw) + lz * Math.sin(b.yaw), y: -lx * Math.sin(b.yaw) + lz * Math.cos(b.yaw) };
+  };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
     const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
     const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
@@ -671,13 +729,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // Mocap: every man starts his idle at his own moment and breathes at his own pace (no one in step)
     const idleOff = ((hashOf(sid) * 0.6180339887) % 1 + 1) % 1;
     const rate = 0.9 + (hashOf(`${sid}~rate`) % 21) / 100;
+    const footAt = sid === "you" && animFix ? calibrateFeet(p) : undefined;
     play.play(first, { fade: 0, ...(mo ? { from: idleOff * p.actions[first].getClip().duration, speed: rate } : {}) });
     root.add(p.root);
     kit?.stylePeople([p]);
     h?.dressPeople([p]);
     const hipsRest = p.rest.get(p.bones.Hips)?.[0].y ?? p.bones.Hips.position.y;
     const k = fbHipsY > 0 ? hipsRest / fbHipsY : 1;
-    return { p, play, look, sid, kitKey: `${shirt}|${shorts}`, x: 0, y: 0, vx: 0, vy: 0, yaw: 0, state: mo ? first : "idle", onceLeft: 0, lastAct: -1, kicking: false, seen: 0, init: false, k, idleOff, rate, turnReady: 0 };
+    return { p, play, look, sid, kitKey: `${shirt}|${shorts}`, x: 0, y: 0, vx: 0, vy: 0, yaw: 0, state: mo ? first : "idle", onceLeft: 0, lastAct: -1, kicking: false, seen: 0, init: false, k, idleOff, rate, turnReady: 0, footAt };
   };
   const bodyFor = (sid: string, shirt: string, shorts: string, face?: string): Body => {
     let b = bodies.get(sid);
@@ -1000,13 +1059,18 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // this high camera (seen in the stills); at 60 px a plain head reads better.
     const b = bodyFor(fig.sid, fig.shirt, fig.shorts, faces ? fig.face : undefined);
     b.seen = frameNo;
-    const jump = Math.hypot(at.x - b.x, at.y - b.y);
-    const fresh = !b.init || jump > 4;
+    // he follows the 2D spot at a man's pace (style3d/figureFollow.ts): a jump in the 2D spot is
+    // caught up over a few frames, not drawn as a teleport; a cut (> FOLLOW.snapM) is taken at once
+    const fw = !b.init ? { x: at.x, y: at.y, snapped: true }
+      : animFix ? followStep(b, at, dt)
+      : { x: at.x, y: at.y, snapped: Math.hypot(at.x - b.x, at.y - b.y) > 4 };
+    const fresh = fw.snapped;
     if (fresh) { b.x = at.x; b.y = at.y; b.vx = 0; b.vy = 0; b.init = true; }
     else if (dt > 0) {
       const k = Math.min(1, dt * (smooth() ? MO.smoothVel : 8));
-      b.vx += ((at.x - b.x) / dt - b.vx) * k; b.vy += ((at.y - b.y) / dt - b.vy) * k;
-      b.x = at.x; b.y = at.y;
+      // his pace from how far he is DRAWN to move (a 2D jump no longer reads as a one-frame sprint)
+      b.vx += ((fw.x - b.x) / dt - b.vx) * k; b.vy += ((fw.y - b.y) / dt - b.vy) * k;
+      b.x = fw.x; b.y = fw.y;
     }
     const sp = Math.hypot(b.vx, b.vy);
     // smooth playback: a man who has just (re)appeared starts in his pose for this pace, not a fade from a stale one
@@ -1043,8 +1107,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.play.update(dt);
     b.p.mixer.update(dt);
     }
+    // a one-shot (pass, shot, tackle, header, celebration) plays on his spot: its own travel never
+    // walks him off where the 2D put him and back again (the "half teleport"); a short tail covers the fade out
+    if (animFix && b.sid !== "keeper") {
+      if (b.state.startsWith("once:") || b.state.startsWith("wind:") || b.state.startsWith("shot1:")) b.pinUntil = nowT + 0.4;
+      if (b.pinUntil !== undefined && nowT < b.pinUntil) pinHips(b.p);
+    }
     // Mocap, a left-foot kick: kick_l's ball sits further on than shot_r's, so he stands back by the difference
-    const off = mo && b.kickOff && b.state === "once:kick_l" ? b.kickOff : null;
+    // (not when you are stood off the calibrated foot: that already accounts for it)
+    const off = mo && b.kickOff && b.state === "once:kick_l" && !b.footAt?.kick_l ? b.kickOff : null;
     const fs = figNow();
     const ox = off ? (off[1] * Math.sin(b.yaw) + off[0] * Math.cos(b.yaw)) * b.k * fs : 0;
     const oz = off ? (off[1] * Math.cos(b.yaw) - off[0] * Math.sin(b.yaw)) * b.k * fs : 0;
@@ -1075,8 +1146,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
     } else if (dt > 0) {
       const kk = Math.min(1, dt * 8);
-      b.vx += ((k.x - b.x) / dt - b.vx) * kk; b.vy += ((k.y - b.y) / dt - b.vy) * kk;
-      b.x = k.x; b.y = k.y;
+      // in a dive he goes where the 2D dive puts him; otherwise at a man's pace (figureFollow.ts)
+      const fw = k.saveLunge > 0.04 || b.dive || !animFix ? { x: k.x, y: k.y } : followStep(b, k, dt);
+      b.vx += ((fw.x - b.x) / dt - b.vx) * kk; b.vy += ((fw.y - b.y) / dt - b.vy) * kk;
+      b.x = fw.x; b.y = fw.y;
     }
     let lift = 0;
     if (mo) lift = keeperMocap(b, k, f, dt, cut);
@@ -1118,6 +1191,37 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.p.root.rotation.set(0, b.yaw, 0);
     b.p.root.scale.setScalar(figNow() * (camMode === "tv" && tv.init && realCameraLook() === "new" ? 1 : KEEPER_SHARE));
     b.p.root.visible = true;
+  };
+
+  type Ev3dDiag = { frames?: number; maxStep?: number; maxStepWho?: string; steps?: number[]; scales?: Record<string, number[]>; footBall?: number[]; last?: Record<string, [number, number]>; kick?: { clip: string; t: number } };
+  const footV = new THREE.Vector3();
+  const measureFrame = (dg: Ev3dDiag, f: EngineFrame) => {
+    dg.frames = (dg.frames ?? 0) + 1;
+    dg.last ??= {}; dg.scales ??= {}; dg.steps ??= []; dg.footBall ??= [];
+    let worst = 0;
+    for (const b of list) {
+      if (!b.p.root.visible) { delete dg.last[b.sid]; continue; }
+      const x = b.p.root.position.x, z = b.p.root.position.z, l = dg.last[b.sid];
+      if (l) { const d = Math.hypot(x - l[0], z - l[1]); if (d > worst) { worst = d; if (d > (dg.maxStep ?? 0)) { dg.maxStep = d; dg.maxStepWho = `${b.sid} ${f.phase} ${f.kind}`; } } }
+      dg.last[b.sid] = [x, z];
+      (dg.scales[b.sid] ??= []).push(+b.p.root.scale.x.toFixed(4));
+      if (dg.scales[b.sid].length > 4000) dg.scales[b.sid].shift();
+    }
+    dg.steps.push(+worst.toFixed(4));
+    // your foot at the contact moment of the strike clip
+    const you = bodies.get("you");
+    if (you && f.ball && you.state.startsWith("once:")) {
+      const clip = you.state.slice(5), side = STRIKES[clip], c = info(clip)?.contact, a = you.p.actions[clip];
+      if (side && c !== undefined && a) {
+        const prev = dg.kick && dg.kick.clip === clip ? dg.kick.t : -1;
+        if (prev < c && a.time >= c) {
+          you.p.root.updateMatrixWorld(true);
+          you.p.bones[side === "R" ? "RightFoot" : "LeftFoot"].getWorldPosition(footV);
+          dg.footBall.push(+Math.hypot(footV.x - ball.position.x, footV.z - ball.position.z).toFixed(3));
+        }
+        dg.kick = { clip, t: a.time };
+      }
+    } else dg.kick = undefined;
   };
 
   // ── the look: H (style3d/real) or one of the kit styles with its stadium ──
@@ -1378,10 +1482,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.far = tv.D + 500;
     camera.updateProjectionMatrix();
     lean = (Math.max(0, 90 - (t.th * 180) / Math.PI) * LEAN_SHARE * Math.PI) / 180;
-    // men at the 2D match screen's size whatever the zoom: a man ~TARGET_PX tall at the action
-    const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
-    // an upright man is foreshortened by sin(tilt) from this camera
-    tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
+    // ONE SIZE ALWAYS (Harry, 12 Oct 2026: men and keeper "changing scale based on where the
+    // camera is … that should never be the case"). Before, this was re-worked out every frame so a
+    // man stayed ~TARGET_PX tall whatever the zoom (1.0–2.6× as the camera moved). Now the size
+    // never changes; the camera's own distance does the framing.
+    tvFig = TV_FIG_FIXED;
+    if (!animFix) {
+      const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
+      tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
+    }
     // New camera: men, keeper and ball near TRUE size against the goal (Harry, 9 Oct 2026:
     // "the players and goalie should be a lot smaller in game, with the ball as well").
     // One fixed size: 1.6 → a 2.9 m man (Harry: 1.15 was "a bit TOO small", a third of the way
@@ -1400,7 +1509,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** Test page / candidates sheet: ?man=0.08 sets the man's share of the height. */
   const BC = (() => {
     const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("man"));
-    return q >= 0.05 && q <= 0.2 ? { ...BROADCAST, manShare: q } : BROADCAST;
+    const base = animFix ? BROADCAST : { ...BROADCAST, fig: 0 };
+    return q >= 0.05 && q <= 0.2 ? { ...base, manShare: q } : base;
   })();
   const placeBroadcast = (f: EngineFrame, dt: number) => {
     const vp = f.cam.viewport;
@@ -1420,13 +1530,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const ang = Math.atan2(c.ax, c.az);
     // held still while you aim: a finger on the glass, the arrow up, or the strike screen
     const hold = bc.init && (touch.id !== -1 || !!f.aim || f.phase === "contact" || f.phase === "runup");
-    if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.k = c.k; bc.init = true; }
+    // the men's size is one number (BROADCAST.fig): set, never glided (see broadcastCam.ts)
+    if (animFix || !bc.init) bc.k = c.k;
+    if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.init = true; }
     else if (!hold) {
       // a glide, never a cut (about 0.4 s to settle)
       const e = 1 - Math.exp(-dt * (f.phase === "aim" ? 6 : 3));
       bc.tx += (c.tx - bc.tx) * e; bc.tz += (c.tz - bc.tz) * e; bc.D += (c.D - bc.D) * e;
       let da = ang - bc.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-      bc.ang += da * e; bc.k += (c.k - bc.k) * e;
+      bc.ang += da * e;
+      if (!animFix) bc.k += (c.k - bc.k) * e;
     }
     const pose = bcPose({ ...c, tx: bc.tx, tz: bc.tz, D: bc.D, ax: Math.sin(bc.ang), az: Math.cos(bc.ang) });
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
@@ -1699,7 +1812,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         if (g === you && !g.drawn && f.ball) {
           const b0 = bodies.get("you");
           const onBall = f.phase === "aim" || f.phase === "contact" || f.phase === "runup";
-          at = onBall || !b0 ? { x: f.ball.x - 0.55, y: f.ball.y + 0.42 } : { x: b0.x, y: b0.y };
+          if (!animFix) at = onBall || !b0 ? { x: f.ball.x - 0.55, y: f.ball.y + 0.42 } : { x: b0.x, y: b0.y };
+          else if (!b0 || (onBall && !b0.kicking && !b0.state.startsWith("once:"))) {
+            // stood so the kicking foot meets the ball at contact (calibrated off the clip itself),
+            // for the foot and clip he will strike with; else the old fixed step off it
+            const clip = mo ? (g.kickFoot < 0 && b0?.play.has("kick_l") ? "kick_l" : "shot_r") : "shot_r";
+            const off = b0 ? footToBall(b0, clip, figNow()) : null;
+            at = off ? { x: f.ball.x - off.x, y: f.ball.y - off.y } : { x: f.ball.x - 0.55, y: f.ball.y + 0.42 };
+          } else at = { x: b0.x, y: b0.y }; // mid-kick and after: he stays where he struck it (never dragged after the ball)
         }
         placeFigure(g, f, dt, frameNo, at);
       }
@@ -1749,6 +1869,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         hball?.update(dt, { x: fb0.vx, y: fb0.vz, z: fb0.vy });
       }
       ballShadow.visible = !!fb0 && !h;
+      // Measuring (test tools set window.__ev3dDiag = {} first; nothing runs otherwise):
+      // every man's drawn step this frame, every size, and your kicking foot to the ball at contact.
+      {
+        const dg = (window as unknown as { __ev3dDiag?: Ev3dDiag }).__ev3dDiag;
+        if (dg) measureFrame(dg, f);
+      }
       ring.visible = !!f.ring;
       if (f.ring) { ring.position.set(f.ring.x - CX, 0.02, f.ring.y); ring.scale.setScalar(figNow() * 0.8); }
       placeOrders(f);
