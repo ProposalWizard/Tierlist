@@ -496,12 +496,30 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
-**Every new look gets a toggle; the old one stays playable (Harry, 3 Oct 2026).**
-Looks and feel only (match view, players, ball, your figure in open play,
-signing scene, 3D shop model, UI): a "New | Old" row in the shared device
-Settings "Look" group, default New, the old option exactly the old code.
-Bug fixes and economy changes just change (no toggle). Flag old options that
-have settled in the patch notes for deletion; never delete one unasked.
+**Decide, don't toggle (Harry, 12 Oct 2026). This retires the old "every new
+look gets a toggle" rule.** *"We're bloating the game up so much with
+different settings ... it's best to just decide things and be done with it. If
+we need to revert, then it's in the files."* A new look or gameplay change is
+built as THE game: no new "New | Old" row in Settings. Old versions live in
+git, not in the game. Settings keeps only real player preferences (sound,
+full screen, 3D quality, faces, names and the like) and Settings → UI: Old |
+New. Something still being judged is tried on a test/dev page, not behind an
+in-game switch.
+
+**Decided, no toggle (12 Oct 2026).** Removed in commit `32f8d6c`; to see or
+bring back an old option, read the files at `ebe02ad` (the commit before it).
+Old phones' stored values for these rows are ignored.
+- **Chances:** drawn chances only, everywhere (match, highlights, Play Area).
+  The computer-made library is only on `/star-chances-dev`. (`lib/star/chanceSet.ts`)
+- **Chance mix:** removed; the basic even mix. (Kane mix code stays in
+  `kindMix.ts`/`hiddenMatch.ts`, no longer switched on by the match.)
+- **Animations:** New only. (`lib/star/animLook.ts`)
+- **Keepers:** New (today's default) only; `abilitiesBefore` deleted. (`keeperBrain.ts`)
+- **Dribble runs:** New (team-mates to pass to) only.
+- **Dribble style:** Top-down in every match. The first-person duel is on
+  `/star-dribble-dev` only; `Dribble3D.tsx` is no longer mounted anywhere.
+- **Dribble runs 3D:** removed with Dribble style.
+- **Clearances:** always on.
 
 **No test build link on patch notes (Harry, 3 Oct 2026, latest): mostly stills, clips only for gameplay.**
 *"the test build stuff doesn't work imo so stop doing that for patch notes, lets just stick to mostly stills except gameplay stuff."*
