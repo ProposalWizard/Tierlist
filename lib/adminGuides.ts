@@ -850,7 +850,7 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the drawn chances (the only chances the game serves since 12 Oct 2026), so a New-library chance can never be saved or committed into the gallery. The New ones are on their own page: New Chances (/star-chances-dev).",
+      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the drawn chances, the only chances the game has (12 Oct 2026: the New chance library and the generator were deleted).",
       "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
@@ -1398,39 +1398,6 @@ export const ADMIN_GUIDES = {
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
     ],
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
-  },
-
-  "/star-chances-dev": {
-    title: "New Chances",
-    what: "The new chance library on its own: every picture the New chances can serve, per chance type. It is kept apart from the Scenario Gallery on purpose until the new set is proven.",
-    buttons: [
-      {
-        group: "The list",
-        items: [
-          ["One on one 110, Cutback 74 … (the type buttons)", "Pick a chance type. The number is how many pictures the library has of it."],
-          ["A picture", "Opens it big at the top, with which library picture it is and the drawing it came from."],
-          ["Show 24 more", "The list shows 24 at a time."],
-        ],
-      },
-      {
-        group: "The open picture",
-        items: [
-          ["▶ Play this one", "Plays that picture in the real match engine, with the New chances on for this page only. Press again (■ Stop) to go back to the picture."],
-          ["‹ Prev / Next ›", "The picture before or after it."],
-          ["Close", "Closes it."],
-        ],
-      },
-    ],
-    saving: [
-      "Nothing is saved. There is no Save and no Commit on this page.",
-      "A New chance can never go into the gallery: every Save and Commit elsewhere refuses one with \"This chance is from the new library — it can't go into the gallery.\"",
-    ],
-    inGame: [
-      "Real career matches never serve these pictures: the game uses the drawn chances only (decided 12 Oct 2026). This page is the only place to see them.",
-      "Every test screen — the Play Area, Infinite Match, Infinite Highlights and the gallery's Play — plays the Classic chances whatever Settings says. This page is the only test screen that plays the New ones.",
-      "The pictures show the other side in a formation and block that change picture by picture (named under the open picture). In a match it is the real opponent's.",
-    ],
-    dev: "app/star-chances-dev/page.tsx · lib/star/{chanceLibrary,chanceLibrary.json,chanceSet,libraryMark,matchView,scenarioFrame}.ts · components/star/EnginePlay.tsx (newChances) · built by scripts/chance-library.mts",
   },
 
   "/star-sprites-dev": {

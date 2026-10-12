@@ -506,20 +506,36 @@ full screen, 3D quality, faces, names and the like) and Settings → UI: Old |
 New. Something still being judged is tried on a test/dev page, not behind an
 in-game switch.
 
-**Decided, no toggle (12 Oct 2026).** Removed in commit `32f8d6c`; to see or
-bring back an old option, read the files at `ebe02ad` (the commit before it).
-Old phones' stored values for these rows are ignored.
-- **Chances:** drawn chances only, everywhere (match, highlights, Play Area).
-  The computer-made library is only on `/star-chances-dev`. (`lib/star/chanceSet.ts`)
-- **Chance mix:** removed; the basic even mix. (Kane mix code stays in
-  `kindMix.ts`/`hiddenMatch.ts`, no longer switched on by the match.)
-- **Animations:** New only. (`lib/star/animLook.ts`)
-- **Keepers:** New (today's default) only; `abilitiesBefore` deleted. (`keeperBrain.ts`)
-- **Dribble runs:** New (team-mates to pass to) only.
-- **Dribble style:** Top-down in every match. The first-person duel is on
-  `/star-dribble-dev` only; `Dribble3D.tsx` is no longer mounted anywhere.
-- **Dribble runs 3D:** removed with Dribble style.
-- **Clearances:** always on.
+**Decided, no toggle (12 Oct 2026).** Removed in commits `32f8d6c` and
+`5681ed6` (branch of this session). To see or bring back an old option, read
+the files at `ebe02ad`, the commit before both. Old phones' stored values for
+these rows are ignored. Where the old code was big it is left in the files but
+unreachable (the getter returns the kept value), marked "Decided, no toggle".
+- **Chances:** the team's drawn chances only, everywhere (match, highlights,
+  Play Area). The New chance library, its drawings, script, tests and test
+  page, and the Play Area's "Generator", were DELETED ("they're wrong").
+- **Chance mix:** the basic even mix. **Kane drawings:** the game's own.
+- **Animations:** New. **Keepers:** New (5 Oct). **Clearances:** always on.
+- **Dribble:** top-down in every match, with team-mates to pass to; Dribble
+  duels Old. The first-person duel is on `/star-dribble-dev` only.
+- **Match camera (action fit):** Old until the rebuilt camera lands.
+- **2D match:** match view New, chance framing Zoom, wide chances Old, camera
+  angle 20°, players 3D-made sprites, 2D players Style A, ball New.
+- **Your player:** hidden on shooting chances; shown on set pieces and build-up
+  (`showYouFigure`, `lib/star/newLook.ts`).
+- **Shot spread cone:** drawn in the test area only (`lib/star/testArea.ts`).
+- **3D world:** garden New, house New, 3D look H, shop player New, 3D people
+  New, body Before, player style New, players in a 3D match Style A, 3D quality
+  look New, player light Old, motion Mocap, manager's 3D office, casino 3D +
+  New look, signing 3D, 3D drill controls Auto.
+- **Screens:** badges, all seasons, Ballon d'Or night, home, shop, ovation and
+  ovation greetings New; drawn players Shaded; post-match reactions on.
+- **Rows that stay:** full screen, sound, 3D quality, skip the line-up (main
+  Settings only), Match view 3D, player names (default off), UI Old | New, the
+  v0.15 test box (keeper pro, shots, knuckleball, ball physics, match flow,
+  radar), cut-scene people and camera (being reworked), 3D camera (another
+  builder's). Version picker: Classic | Standard; **no Preview** — something
+  becomes a "Preview" only when someone asks for that in those words.
 
 **No test build link on patch notes (Harry, 3 Oct 2026, latest): mostly stills, clips only for gameplay.**
 *"the test build stuff doesn't work imo so stop doing that for patch notes, lets just stick to mostly stills except gameplay stuff."*
