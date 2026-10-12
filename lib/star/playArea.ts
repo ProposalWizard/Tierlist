@@ -165,7 +165,8 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     weather: o.weather === "clear" ? "clear" : d.weather,
     // Absent on a save from before this existed: the real game.
     realKeeper: typeof o.realKeeper === "boolean" ? o.realKeeper : d.realKeeper,
-    chanceMaker: o.chanceMaker === "generator" ? "generator" : d.chanceMaker,
+    // Drawn chances only, everywhere (Harry, 12 Oct 2026): a stored "generator" is ignored.
+    chanceMaker: d.chanceMaker,
     pressure: o.pressure === "off" || o.pressure === "light" || o.pressure === "full" || o.pressure === "real"
       ? o.pressure : d.pressure,
     // `runupStyle` was this dial's name before the two sets were split.

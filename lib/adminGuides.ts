@@ -268,7 +268,6 @@ export const ADMIN_GUIDES = {
         ["▶ (on the picture)", "Plays the video. It is made on this phone in the background as soon as the post comes near the screen, so in the feed it is usually ready (and playing) by the time you reach it."],
         ["Speaker (bottom left of the video)", "Sound on or off for every goal video: the crowd, the kick, the net, the commentator's call and the co-commentator over the replay (not on the fan's phone video, which has only the crowd). Remembered on this device. The sound is inside a saved video too, where the browser can make it."],
         ["Save video", "On a phone: the share menu (Save Video puts it in Photos). On a computer: a download. If the video is not made yet, it is made first; then tap Save video again."],
-        ["Moves: Old / New", "Which moves the players use in the video: the older ones, or the newer 3D moves (a shot, a header, a one-handed dive). The video follows Settings → Look → Animations, like the match; these force one while this page is open (the match above follows it too)."],
       ] },
     ],
     saving: [
@@ -817,7 +816,6 @@ export const ADMIN_GUIDES = {
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
-          ["Chances: Drawings / Generator", "Drawings (the default, and the game): each chance is one of your drawings, nudged and mirrored. Generator: every player is built from the spread of all the drawings of that type, so no drawing is ever replayed. Reaches Infinite Match, Infinite Highlights and the gallery's Sim — never a career."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3 — 2 in 3 if he comes from behind you, and he goes round you, never through you: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
@@ -852,7 +850,7 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the Classic chances, whatever Settings → Chances says, so a New-library chance can never be saved or committed into the gallery. The New ones are on their own page: New Chances (/star-chances-dev).",
+      "Every test screen here (Infinite Match, Infinite Highlights, the gallery's Play) plays the drawn chances (the only chances the game serves since 12 Oct 2026), so a New-library chance can never be saved or committed into the gallery. The New ones are on their own page: New Chances (/star-chances-dev).",
       "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
@@ -1148,7 +1146,6 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Top", items: [
         ["‹ Play Area", "Back to the Play Area."],
-        ["New / Old", "The real Animations switch for this phone, the same one as Settings → Look. Old is the game exactly as it was before any of this."],
       ] },
       { group: "The gallery", items: [
         ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
@@ -1184,7 +1181,7 @@ export const ADMIN_GUIDES = {
       "With Settings → Look → Players: 3D, the same moments play the New 3D clips (a second picture file, fetched only when Animations is New). Old plays the old 3D clips exactly as before.",
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
-    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (New | Old) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
   "/star-look-dev": {
     title: "Player style (Style A)",
@@ -1429,7 +1426,7 @@ export const ADMIN_GUIDES = {
       "A New chance can never go into the gallery: every Save and Commit elsewhere refuses one with \"This chance is from the new library — it can't go into the gallery.\"",
     ],
     inGame: [
-      "Real career matches serve these pictures only when Settings → Chances is New. Classic is the default.",
+      "Real career matches never serve these pictures: the game uses the drawn chances only (decided 12 Oct 2026). This page is the only place to see them.",
       "Every test screen — the Play Area, Infinite Match, Infinite Highlights and the gallery's Play — plays the Classic chances whatever Settings says. This page is the only test screen that plays the New ones.",
       "The pictures show the other side in a formation and block that change picture by picture (named under the open picture). In a match it is the real opponent's.",
     ],

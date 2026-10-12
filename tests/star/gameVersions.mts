@@ -65,7 +65,7 @@ for (const v of ["classic", "preview", "standard", "classic", "standard"] as con
 
 // 6. One row changed by hand → Custom, nearest Standard, 1 change.
 applyGameVersion("standard");
-setLookRow("keepers", "old");
+setLookRow("badges", "old");
 const c = gameVersionOf();
 check(c.version === "custom" && c.nearest === "standard" && c.changes === 1, `one change reads ${JSON.stringify(c)}`);
 applyGameVersion("classic");
