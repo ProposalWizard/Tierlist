@@ -18,7 +18,9 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "The keepers from before 5 Oct 2026.",
   },
   keeperPro: {
-    label: "Keeper pro",
+    label: "Keeper pro (testing)",
+    // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
+    defaultVersion: "old",
     newText: "Keepers hold the gentle ones and parry the hard ones somewhere believable, rush out at one-on-ones, come for crosses and overhit through balls, read long shots, and can be chipped or nutmegged.",
     oldText: "The keepers from before 11 Oct 2026.",
   },
@@ -28,7 +30,9 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "The dribble run from before 5 Oct 2026: no passes, 2–4 waves.",
   },
   dribbleDuels: {
-    label: "Dribble duels",
+    label: "Dribble duels (testing)",
+    // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
+    defaultVersion: "old",
     newText: "Defenders back off and show you one way. Sell a step-over or a drop of the shoulder, then go the other way; or knock it past the moment he plants to tackle. Too early or too late and he takes it (or fouls you). Your dribbling and pace count.",
     oldText: "The duel from before 11 Oct 2026: flick away from the side he dips to.",
   },
@@ -46,12 +50,16 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "The ball from before 11 Oct 2026.",
   },
   shotsPro: {
-    label: "Shots",
+    label: "Shots (testing)",
+    // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
+    defaultVersion: "old",
     newText: "Where you hit the ball sets how high it arrives (top = low, middle = hip height, below = top corner). Real spread off your aim, shown as a cone on the arrow; harder, volleys, headers, long shots and a man in your face spread more. Clean contact is truer, a sliced or scuffed one is punished.",
     oldText: "Shots from before 11 Oct 2026: a tap in the middle of the ball often flies at the bar, and almost no spread off the arrow.",
   },
   knucklePower: {
-    label: "Knuckleball & power shot",
+    label: "Knuckleball & power shot (testing)",
+    // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
+    defaultVersion: "old",
     newText: "Hit a hard shot through the dead centre of the ball and it knuckles (wobbles late). A ⚡ Power shot button on the aim screen: wind up, then hit the green circle fast for up to 1.5x pace.",
     oldText: "No knuckleball and no power shot (test match only).",
   },
@@ -79,7 +87,9 @@ export const GAMEPLAY_SWITCHES = {
     oldText: "The camera keeps every man on screen (from before 12 Oct 2026).",
   },
   matchFlow: {
-    label: "Match flow",
+    label: "Match flow (testing)",
+    // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
+    defaultVersion: "old",
     newText: "The match around you plays like a real one: about 25 shots, 10 corners and 2.8 goals a game, much less of the ball against a far better side, the side behind pushing after a goal, and more happening late.",
     oldText: "The unseen match from before 11 Oct 2026: about 13 shots a game, no corners but yours.",
   },
