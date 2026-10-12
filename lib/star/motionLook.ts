@@ -35,8 +35,7 @@ if (typeof window !== "undefined") {
 }
 
 export function motionLook(): MotionLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "mocap"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setMotionLook(v: MotionLook): void {

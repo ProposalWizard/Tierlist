@@ -63,15 +63,6 @@ export interface PlaySettings {
    */
   realKeeper: boolean;
   /**
-   * How a chance is made (lib/star/chanceMaker.ts). "drawings" is the game:
-   * one of your drawings, nudged and mirrored. "generator" builds every figure
-   * from the spread of all the drawings of that kind — a test dial only, for
-   * Infinite Match, Infinite Highlights and the gallery's Sim; a career always
-   * plays the drawings (Harry, v0.15: the generator "stays behind a Play Area
-   * switch only").
-   */
-  chanceMaker: "drawings" | "generator";
-  /**
    * v0.15 item 22: how hard the nearest opponent closes you down while you
    * pull back. "real" follows the division (Premier League full, Championship
    * light, below that none) — lib/star/pressure.ts. Test screens only.
@@ -98,7 +89,6 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   matchMinutes: 10000,
   weather: "real",
   realKeeper: true,
-  chanceMaker: "drawings",
   pressure: "real",
   penaltyRunup: DEFAULT_PENALTY_RUNUP,
   freeKickRunup: DEFAULT_FREE_KICK_RUNUP,
@@ -165,8 +155,6 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     weather: o.weather === "clear" ? "clear" : d.weather,
     // Absent on a save from before this existed: the real game.
     realKeeper: typeof o.realKeeper === "boolean" ? o.realKeeper : d.realKeeper,
-    // Drawn chances only, everywhere (Harry, 12 Oct 2026): a stored "generator" is ignored.
-    chanceMaker: d.chanceMaker,
     pressure: o.pressure === "off" || o.pressure === "light" || o.pressure === "full" || o.pressure === "real"
       ? o.pressure : d.pressure,
     // `runupStyle` was this dial's name before the two sets were split.

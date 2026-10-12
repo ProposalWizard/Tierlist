@@ -73,8 +73,7 @@ export function setStoredFigureSkin(skin: FigureSkin | null): void {
 
 /** The stored choice only (what Settings shows), ignoring any override. */
 export function storedFigureSkin(): FigureSkin {
-  if (stored === undefined) stored = readStored();
-  return stored ?? FIGURE_SKIN_DEFAULT;
+  return "3d"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 /**

@@ -19,11 +19,7 @@ let cached: HumanBodyLook | null = null;
 const listeners = new Set<() => void>();
 
 export function humanBodyLook(): HumanBodyLook {
-  if (cached) return cached;
-  let v: string | null = null;
-  try { v = typeof localStorage === "undefined" ? null : localStorage.getItem(KEY); } catch { v = null; }
-  cached = v && (VALUES as readonly string[]).includes(v) ? (v as HumanBodyLook) : FALLBACK;
-  return cached;
+  return "before"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 /** A test page's choice for this page only: nothing is stored on the phone. */
 export function previewHumanBodyLook(v: HumanBodyLook) {

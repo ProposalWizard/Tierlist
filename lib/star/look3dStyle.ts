@@ -36,8 +36,7 @@ if (typeof window !== "undefined") {
 }
 
 export function look3dStyle(): Look3dStyle {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "h"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setLook3dStyle(v: Look3dStyle): void {

@@ -69,7 +69,7 @@ export const setRealCameraLook = cam.set;
 export const previewRealCameraLook = cam.preview;
 export const useRealCameraLook = cam.use;
 
-export const playerLightLook = light.get;
+export const playerLightLook = (): RealGameLook => "old"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 export const setPlayerLightLook = light.set;
 export const previewPlayerLightLook = light.preview;
 export const usePlayerLightLook = light.use;

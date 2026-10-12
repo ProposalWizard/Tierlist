@@ -30,7 +30,6 @@ export { setWideChancesOverride } from "./wideChances";
 import { PITCH_W, NET_DEPTH, POST_L, POST_R } from "./pitch";
 import { tiltFor, visibleOnScreen, canvasToScreen } from "./cameraTilt";
 import { chanceFraming } from "./chanceFraming";
-import { oldActionCamera } from "./gameplayVersion";
 
 export type MatchView = "new" | "classic";
 
@@ -67,8 +66,7 @@ export function matchView(): MatchView {
 
 /** This phone's own choice (Settings). */
 export function storedMatchView(): MatchView {
-  if (stored === undefined) stored = readStored();
-  return stored ?? MATCH_VIEW_DEFAULT;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setMatchView(v: MatchView): void {
@@ -366,7 +364,8 @@ export function newViewCamera(
 // test pages may force it (null: follow the setting).
 let actionFitOverride: boolean | null = null;
 export function setActionFit(v: boolean | null): void { actionFitOverride = v; }
-export function actionFitOn(): boolean { return actionFitOverride ?? !oldActionCamera(); }
+// The action camera is off in the game until the rebuilt camera lands (Harry, 12 Oct 2026); a dev page can still force it.
+export function actionFitOn(): boolean { return actionFitOverride ?? false; }
 
 /** The scenario as CanvasMatch frames it: the engine's own frame, kept. */
 type Framed = Scenario & { engineFrame?: Viewport; playZoom?: number; wideChecked?: boolean };

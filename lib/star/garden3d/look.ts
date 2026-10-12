@@ -30,8 +30,7 @@ if (typeof window !== "undefined") {
 }
 
 export function garden3dLook(): Garden3dLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setGarden3dLook(v: Garden3dLook): void {

@@ -36,8 +36,7 @@ if (typeof window !== "undefined") {
 }
 
 export function chanceFraming(): ChanceFraming {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "zoom"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setChanceFraming(v: ChanceFraming): void {
