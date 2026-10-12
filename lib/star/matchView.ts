@@ -111,6 +111,13 @@ export const NEW_OUTFIELD_SHRINK = 0.8;
 /** The ball: this much of its zoomed-out size (option D: ~7 px, now 0.8 of that). */
 export const NEW_BALL_SCALE = 0.7 * NEW_OUTFIELD_SHRINK;
 
+/** TEST ONLY: grow the men, the keeper and the ball together (goal unchanged).
+ *  Set by /star-bigger-dev (Harry, 12 Oct 2026: "make this a test, I don't want it
+ *  to just go into the game"). The real game never sets it, so it stays 1. */
+let figureGrowOverride = 1;
+export function setFigureGrowOverride(g: number | null): void { figureGrowOverride = g && g > 0 ? g : 1; }
+export function figureGrow(): number { return figureGrowOverride; }
+
 /** How far behind the goal line the frame starts (the net plus a little). */
 const BEHIND_GOAL_M = NET_DEPTH + 2.6;
 /** Grass left under the bottom of a situation's own frame, when it fits. */
