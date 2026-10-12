@@ -41,10 +41,29 @@ export const MATCH2D = {
   prefElev: 55,
   /** Room at every edge, CSS px. */
   marginPx: 3,
-  /** Every man and the keeper, × life size, always (one size: PR #710's rule). Set to match the 2D's men at the same framing: the 2D's men measure 1.58–2.60× (median 1.72) a life-size 3D man there (tests/star/match2dCam.mts prints it): 1.75 is the median. */
-  fig: 1.75,
+  /**
+   * Men's size: a man (leaned, below) at the middle of the action is this share of the
+   * screen's height. Coordinator, 12 Oct 2026 (Harry wants them clearly readable): "use at
+   * least the old 6% … size against the screen, not a fixed factor". The size is worked out
+   * ONCE when a chance starts and held for the whole chance (PR #710: never resized as the
+   * camera moves); only a new chance may pick a new size.
+   */
+  manShare: 0.06,
+  /** … within these sizes (× life): */
+  figMin: 1.5,
+  figMax: 3.0,
+  /** The size used to frame heads before the size is known (and by the tests). */
+  fig: 1.8,
   /** A man's true height, m. */
   manH: 1.8,
+  /**
+   * Men lean back from the camera (feet planted, picture only) by (angle − this)°, so a man
+   * reads about as tall as at 40° down whatever the angle (60° alone halves him; the 2D draws
+   * him upright, full height). Lead's review of the first corner sheet: "the men are tiny".
+   */
+  leanFromDeg: 40,
+  /** The grass beyond the pitch's edge on the camera's side the 3D keeps in frame, m (the 2D shows more of it; in 3D it is the stand's base: a black band). */
+  apron: 3,
 };
 export type Match2DParams = typeof MATCH2D;
 
@@ -100,10 +119,24 @@ export function inPoly(poly: BcPoint[], p: BcPoint): boolean {
   return inside;
 }
 
+/**
+ * The 2D's grass, minus what lies more than `apron` m past the pitch's edge on the
+ * camera's side (no man stands there; in 3D it is the stand's base, a dark band).
+ */
+export function framedQuad(f: Frame2D, P: Match2DParams = MATCH2D): BcPoint[] {
+  const { ax, az } = azimuth2D(f.facing);
+  const edge = Math.abs(ax) > 0.5 ? CX : 105;
+  return visibleQuad(f).map((p) => {
+    const along = (p.x - CX) * ax + p.y * az;
+    const over = along - (edge + P.apron);
+    return over > 0 ? { x: p.x - ax * over, y: p.y - az * over } : p;
+  });
+}
+
 /** The points a 2D frame makes the 3D keep on screen: its grass corners, heads on its far edge, a goal's bar. */
 export function frame2dPoints(f: Frame2D, P: Match2DParams = MATCH2D): BcPoint[] {
-  const q = visibleQuad(f);
-  const head = P.manH * P.fig;
+  const q = framedQuad(f, P);
+  const head = P.manH * P.figMax;
   const pts: BcPoint[] = [...q, { ...q[0], z: head }, { ...q[1], z: head }];
   for (const px of [CX - 3.66, CX + 3.66]) {
     const post = { x: px, y: 0 };
@@ -112,9 +145,21 @@ export function frame2dPoints(f: Frame2D, P: Match2DParams = MATCH2D): BcPoint[]
   return pts;
 }
 
+/** The men's lean back from the camera (radians) at this angle down. */
+export function leanFor(elevDeg: number, P: Match2DParams = MATCH2D): number {
+  return (Math.max(0, elevDeg - P.leanFromDeg) * Math.PI) / 180;
+}
+
+/** A man of height h at `at`, leaned back from the camera by `lean`: his share of the screen's height. */
+export function leanedManShare(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number, at: BcPoint, h: number, lean: number): number {
+  const head = { x: at.x - c.ax * h * Math.sin(lean), y: at.y - c.az * h * Math.sin(lean), z: h * Math.cos(lean) };
+  return bcProject(c, W, H, at).fr - bcProject(c, W, H, head).fr;
+}
+
 export interface Match2DCamera extends BcCamera {
   /** Share of the grass on the 3D screen that the 2D does not show (0 = the same patch exactly). */
   extra: number;
+  /** k: the men's size for this chance (× life). man: a man there, share of the height. */
   /** Nearest framed point's depth from the camera, m (the near clip sits inside it). */
   minDepth: number;
   elevDeg: number;
@@ -173,7 +218,7 @@ function fitAt(f: Frame2D, pts: BcPoint[], elevDeg: number, fov: number, P: Matc
   let lo = 4, hi = 600;
   for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fits(m)) hi = m; else lo = m; }
   const c = centred(hi);
-  const quad = visibleQuad(f);
+  const quad = framedQuad(f, P);
   let ground = 0, outside = 0;
   for (let j = 0; j < 24; j++) for (let i = 0; i < 12; i++) {
     const g = groundUnder(c, W, H, ((i + 0.5) / 12) * 2 - 1, 1 - ((j + 0.5) / 24) * 2);
@@ -183,9 +228,11 @@ function fitAt(f: Frame2D, pts: BcPoint[], elevDeg: number, fov: number, P: Matc
   }
   let minDepth = Infinity;
   for (const p of pts) minDepth = Math.min(minDepth, bcProject(c, W, H, p).depth);
-  const anchor = { x: (quad[2].x + quad[3].x) / 2, y: (quad[2].y + quad[3].y) / 2 };
-  const man = bcProject(c, W, H, anchor).fr - bcProject(c, W, H, { ...anchor, z: P.manH * P.fig }).fr;
-  return { ...c, k: P.fig, man, anchorShare: bcProject(c, W, H, anchor).fr, extra: ground ? outside / ground : 0, minDepth, elevDeg };
+  // the middle of the action: the grass 65% down the screen
+  const anchor = groundUnder(c, W, H, 0, -0.3) ?? { x: (quad[2].x + quad[3].x) / 2, y: (quad[2].y + quad[3].y) / 2 };
+  const life = leanedManShare(c, W, H, anchor, P.manH, leanFor(elevDeg, P));
+  const k = Math.max(P.figMin, Math.min(P.figMax, P.manShare / Math.max(1e-6, life)));
+  return { ...c, k, man: life * k, anchorShare: bcProject(c, W, H, anchor).fr, extra: ground ? outside / ground : 0, minDepth, elevDeg };
 }
 
 /**

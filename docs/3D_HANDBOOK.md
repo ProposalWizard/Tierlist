@@ -160,6 +160,7 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
 - `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
+- 3D camera New (12 Oct 2026) frames the 2D's own view box: `lib/star/style3d/match2dCam.ts`. See "3D match camera: the 2D's own frame" below.
 
 ### Movement and animation helpers
 
@@ -818,6 +819,19 @@ Harry: "players are kicking and jumping/ half teleporting with the ball. The goa
 - Test area: `/star-anim3d-dev`.
 
 **Not done:** foot-to-ball at contact is reasoned, not measured on a screen (the old spot put the foot ~1 m × size past the ball); before/after stills and clips of the real match; a kick clip picked at the strike (`kickStyleFor`) that differs from the aimed one still uses the aimed clip's foot spot; keeper dives still add their own sideways travel on top of the 2D lunge.
+### 3D match camera: the 2D's own frame (12 Oct 2026)
+
+Harry (iPhone, Medium): "the framing is not exactly the same on 3d and 2d … on 2d it might be able to be a shot but on 3d it seems like a build up." One corner still had the camera inside the near stand, its roof over two thirds of the screen.
+
+**The rule: the 3D camera shows the patch of grass the 2D shows, nothing cut, as little extra as the angle allows.** Settings → Look → "3D camera: New" (`lib/star/style3d/match2dCam.ts`, `placeMatch2D` in `engineView.ts`). Old is untouched; the broadcast camera (New before) is `?cam2d=0` on test pages.
+- `visibleQuad`: the 2D's view box (`cam.viewport`), turned by `facing`, through the canvas tilt (`screenToCanvas`): 4 pitch points, exactly what the phone shows.
+- `solveMatch2D`: the 2D's own facing (never turned), 50/55/60° down × lens 26/32/38°, each fitted so the quad's corners, a man's head on its far edge and a goal's bar touch the screen's edges; the one with the least extra grass wins (a small cost off 55°). Angle and lens are held for a chance; the position follows the 2D's box every frame (the 2D glides, so the 3D does).
+- Stands: the near clip sits at 0.8 × the nearest framed spot, and every stadium material (`h-arena`) is clipped by a plane at the 2D view's bottom edge + 1.5 m, so nothing between the camera and the pitch is drawn. Shadows keep the whole stadium (`clipShadows` off).
+- Men: one size, `MATCH2D.fig` 1.75 × life, the median of what the 2D's men measure at the same framing (p10 1.60, p90 2.71).
+- Measured (`tests/star/match2dCam.mts`, 78 chances, all 13 kinds, phone box 372×704): people and posts the 2D shows that are on the 3D screen, 81.9% → 100%; ball's distance from its 2D spot, median 172 → 30 px; extra grass, median 13%, p90 29% (side-on chances: the 2D looks straight down there, the 3D at 60°).
+- Stills: `scripts/cam3d/frames.mts` (real chances, framed as CanvasMatch does) → `scripts/cam3d/stills.mjs` (perf3d harness `H.chance`) → `scripts/cam3d/sheet.mjs`.
+- 3D quality: also in the in-match ⚙ and Settings → Match; a change rebuilds the 3D view when you tap "Back to the match" (`Match3DLayer.tsx`).
+
 ### 3D quality look: Medium and Low (12 Oct 2026)
 
 Harry: "we need a way for say medium/low to not look terrible using every percent of optimisation we can". Every iPhone opens on Medium; weaker phones on Low. Rule: buy the look cheaply, never switch it off; keep or beat the frame time. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`, New in Standard). Old = each tier exactly as before.

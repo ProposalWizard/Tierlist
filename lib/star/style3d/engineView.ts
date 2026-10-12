@@ -50,7 +50,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
-import { solveMatch2D, visibleQuad, MATCH2D } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D } from "./match2dCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -1572,10 +1572,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
   const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig };
   /**
    * The stand on the camera's side: everything of the stadium nearer the camera than
-   * the bottom edge of the 2D's view is not drawn (a roof there sits over the grass the
+   * the bottom edge of the 2D's view (or the touchline / goal line on that side) is not drawn (a roof there sits over the grass the
    * 2D shows: Harry's corner still). Shadows are untouched (clipShadows stays off).
    * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
    */
@@ -1585,9 +1585,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = scene.getObjectByName("h-arena");
     if (!g) return;
     renderer.localClippingEnabled = true;
-    g.traverse((o: THREE.Object3D) => {
-      const raw = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; (m as THREE.ShaderMaterial).clipping = true; m.needsUpdate = true; }
+    g.traverse((o: { material?: unknown }) => {
+      const raw = o.material as { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean } | { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean }[] | undefined;
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; m.clipping = true; m.needsUpdate = true; }
     });
   }
   const placeMatch2D = (f: EngineFrame) => {
@@ -1596,7 +1596,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     const fr2 = { viewport: vp, facing, tilt, W, H };
     const c = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
-    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
+    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; m2.k = c.k; } // the size: once a chance
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1607,18 +1607,21 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
-    lean = 0;
+    lean = leanFor(c.elevDeg);
     tv.init = true;
-    tvFig = MATCH2D.fig;
+    tvFig = m2.k;
     // the stadium nearer the camera than the 2D view's bottom edge (1.5 m spare) is not drawn
     {
       const q = visibleQuad(fr2);
       let far = -Infinity;
       for (const p of q) far = Math.max(far, (p.x - CX) * c.ax + p.y * c.az);
+      // … and never past the pitch's own edge on that side (the stand's front, its roof and truss
+      // otherwise hang over the touchline the 2D shows: a corner's taker sat under the truss)
+      const edge = Math.abs(c.ax) > 0.5 ? CX : 105;
       arenaClip.normal.set(-c.ax, 0, -c.az);
-      arenaClip.constant = far + 1.5;
+      arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
     }
-    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing };
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: m2.k, man: c.man };
   };
   const placeCamera = (f: EngineFrame, dt: number) => {
     if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) { placeMatch2D(f); return; }
