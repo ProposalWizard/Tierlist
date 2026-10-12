@@ -174,7 +174,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT, figureGrow,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -2746,7 +2746,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const turned = facingRef.current !== "up";
     const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
     const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
-    const ballPx = newViewRef.current ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
+    const ballPx = newViewRef.current ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE * figureGrow()) : Math.max(4.5, unit * 0.5);
     const { px, py, scale } = toPx(b.pos.x, b.pos.y);
     const h = Math.max(0, b.z);
     const by = py - h * uy * scale;
@@ -3120,7 +3120,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // is exaggerated a little and floored at a readable pixel size.
     // New view (option D): the zoom already shrinks it; 0.7 of that again.
     const nv = newViewRef.current;
-    const BALL_PX = nv ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE) : Math.max(4.5, unit * 0.5);
+    const BALL_PX = nv ? Math.max(3, (unit / figZoomDiv()) * 0.5 * NEW_BALL_SCALE * figureGrow()) : Math.max(4.5, unit * 0.5);
 
     // Pitch-space drawing helpers — everything below goes through these so the
     // markings sit exactly where the physics thinks they are.
@@ -3518,7 +3518,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // New view (option D): 0.8 of the zoomed-out size, then 0.8 again for the
     // outfield men (~18 px on a phone). The keeper is put back to full size below.
     // Chance framing "Zoom": divided by the zoom, so the men stay today's size.
-    const R = (unit / (nv ? figZoomDiv() : 1)) * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK : 1);
+    const R = (unit / (nv ? figZoomDiv() : 1)) * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK * figureGrow() : 1);
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over
