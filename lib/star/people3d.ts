@@ -38,7 +38,8 @@ import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "./hum
 import { humanBodyLook } from "./human3d/look";
 import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
-import { playerStyleLook } from "./style3d/toon/look";
+import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
+import { matchPlayerStyle } from "./style3d/toon/matchLook";
 import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
@@ -228,10 +229,11 @@ export function toonHeadsFor(people: readonly { who?: string; you?: boolean; sui
 }
 
 /** Load (once per page) a body or the clips. `body` "new" is the one body. */
-export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old", heads?: readonly ToonHead[]): Promise<GLTF> {
+export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>; parseAsync?(data: ArrayBuffer, path: string): Promise<unknown> }, which: keyof typeof PEOPLE3D_FILES, body: PeopleBody = "old", heads?: readonly ToonHead[], style: PlayerStyleLook = playerStyleLook()): Promise<GLTF> {
   // Style A (Settings → Look → "Player style: New", the default): every head
   // (players' and the suits'); makePerson3d picks one per person.
-  if (which !== "anims" && playerStyleLook() === "new") {
+  // A football scene passes its own `style` (toon/matchLook.ts: realistic players in a match).
+  if (which !== "anims" && style === "new") {
     // only the heads this scene needs (a manager: the suits); a head not loaded falls back (makePerson3d)
     const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
     const all = Promise.all(TOON_HEADS.map((b) => {
@@ -289,9 +291,10 @@ function people3dPlainFiles(): string[] {
     try { return localStorage.getItem("star-look-3d-people") === "old" /* look3d.ts people3dLook (its key; not imported: it pulls in React) */ ? "old" : "new"; } catch { return "new"; }
   })();
   const anims = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).anims;
-  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), anims];
-  if (body === "new" && humanBodyLook() === "human") return [HUMAN3D_FILE, anims];
-  return [(body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player, anims];
+  const plain = body === "new" && humanBodyLook() === "human" ? HUMAN3D_FILE : (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player;
+  // the 3D match draws realistic players (toon/matchLook.ts) while the rest of the game is Style A: fetch both
+  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), ...(matchPlayerStyle() === "old" ? [plain] : []), anims];
+  return [plain, anims];
 }
 let warming: Promise<void> | null = null;
 export function warmPeople3d(): Promise<void> {

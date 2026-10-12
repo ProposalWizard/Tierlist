@@ -156,6 +156,15 @@ for (const b of TOON_HEADS) {
   check(j.extensionsUsed?.includes("EXT_meshopt_compression"), `${f}: not packed (scripts/perf3d/shrink-models.mjs)`);
 }
 
+// Players in a 3D match (toon/matchLook.ts, 12 Oct 2026): Realistic always draws the
+// realistic bodies in football; Old follows Player style exactly as before.
+{
+  const { resolveMatchPlayerStyle, MATCH_PLAYERS_STYLE_DEFAULT } = await import("../../lib/star/style3d/toon/matchLook");
+  check(MATCH_PLAYERS_STYLE_DEFAULT === "real", "the 3D match is not realistic by default");
+  check(resolveMatchPlayerStyle("real", "new") === "old" && resolveMatchPlayerStyle("real", "old") === "old", "Realistic still draws Style A in the match");
+  check(resolveMatchPlayerStyle("follow", "new") === "new" && resolveMatchPlayerStyle("follow", "old") === "old", "Old does not follow Player style");
+}
+
 if (problems.length) {
   console.log(`FAIL — ${problems.length} problem(s):`);
   for (const p of problems) console.log("  " + p);

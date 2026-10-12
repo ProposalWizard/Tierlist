@@ -757,6 +757,43 @@ outline and shadow, as Old); every new look behind New | Old.
 `?pstyle=old` for Old). Stand-alone stills without Next.js:
 `tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
 
+### Match Lab vs the real game: why the 3D looked worse (12 Oct 2026)
+
+Harry: "how come in game the 3D doesn't look like this at all?" (a Match Lab still).
+Then: "for cut scenes the Style A is good and in game the realistic players is good".
+
+The Match Lab (`/star-style-dev?scene=real`, `RealGame3D.tsx`) and the career
+match (`Match3DLayer.tsx`) call `createEngineView` with the SAME options. Every
+difference comes from the device and its Settings, not the mount:
+
+| What | Match Lab still | Career on an iPhone (before) |
+|---|---|---|
+| Quality tier | High (a desktop browser) | Medium (Auto on every iPhone) |
+| Post pass | MSAA 4×, sharpen, depth blur, 5 bloom levels | FXAA, no sharpen, no depth blur, 3 bloom levels |
+| Pixel ratio / shadow map | 2.0 / 2048 | 1.5 / 1024 |
+| 3D camera | New (page forced `?cam=new`) | Old (Standard default): wide, half the screen empty grass |
+| Grass/crowd filtering | 4× | 4× |
+
+Same chance, 390×844: `scratchpad/look3d/` stills of the round. The camera (Old
+vs New) was the biggest visible difference on a phone; the tier second.
+
+**Done:**
+- Settings → Look → "Players in a 3D match: Realistic | Old" (`lib/star/style3d/toon/matchLook.ts`,
+  row `matchPlayers3d`). Realistic (default) = every 3D football scene loads the
+  non-Style-A bodies: `engineView.ts`, `play3d/scene.ts`, `training3d/scene.ts`,
+  `style3d/gameplay.ts` pass `matchPlayerStyle()` as `loadPeople3d`'s new 5th
+  argument. Old = follows "Player style" exactly as before. Cut scenes, garden,
+  shop, house and Home keep "Player style" (Style A). Classic phones take Old once.
+  The Home preload fetches the realistic body too when both are in use.
+- "3D camera" New is now the default (`realGameLook.ts`, Standard preset).
+- Camera New also asks look H for `crisp` (`real/look.ts`): grass, crowd and
+  boards at up to 8× anisotropy. No draw, no MSAA, no triangle added.
+
+**Not done:** MSAA 2× on Medium (the iPhone memory / context-loss risk, needs a
+phone check); KTX2 grass/crowd are ETC1S (lossy) — compare `?ktx2=0` on a
+phone before keeping them; the governor already keeps shadows and look H
+until rung 3, so it was left alone.
+
 ### Cut-scene camera + music (9 Oct 2026)
 
 Harry: "do a pass of camera angles in the cut scenes, hide bad animations with

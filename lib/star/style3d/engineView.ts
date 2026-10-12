@@ -33,7 +33,7 @@ import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
-import { playerStyleLook } from "./toon/look";
+import { matchPlayerStyle } from "./toon/matchLook";
 import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
@@ -264,8 +264,10 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   if (o.def.real) void import("./real/ball").catch(() => null);
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
+  // Settings → Look → "Players in a 3D match" (toon/matchLook.ts): realistic players by default; Style A stays in cut scenes
+  const mStyle = matchPlayerStyle();
   const [model, animG, fb] = await Promise.all([
-    loadPeople3d(loader, "player", body, TOON_PLAYER_HEADS), loadPeople3d(loader, "anims", body), // a match has no suits: the six player heads only
+    loadPeople3d(loader, "player", body, TOON_PLAYER_HEADS, mStyle), loadPeople3d(loader, "anims", body), // a match has no suits: the six player heads only
     loadAnims3d(loader, "football").catch(() => null),
   ]);
 
@@ -616,7 +618,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const SPARE_TARGET = 24;
   // Style A (Player style: New): a man's head is seeded by who he is, so spares are kept per head
   // (his build is a scale, set again when a spare is used).
-  const toonOn = playerStyleLook() === "new";
+  const toonOn = mStyle === "new";
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
@@ -1129,7 +1131,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" } }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: realCameraLook() === "new" }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;

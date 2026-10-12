@@ -21,7 +21,8 @@
  *   only, darker undersides and feet, less flat fill, a tight shadow under
  *   each man. Old: the players lit exactly as before.
  *
- * Being tested: Preview only (lib/star/gameVersions.ts), so both default Old.
+ * The camera: New by default (12 Oct 2026). The player light: being tested,
+ * Preview only (lib/star/gameVersions.ts), so it defaults Old.
  * The Style Testing page can force either for that page: ?cam=new|old&plight=new|old.
  */
 import { useSyncExternalStore } from "react";
@@ -29,9 +30,8 @@ import { useSyncExternalStore } from "react";
 export type RealGameLook = "new" | "old";
 
 const VALUES: readonly RealGameLook[] = ["new", "old"];
-const FALLBACK: RealGameLook = "old";
 
-function store(key: string) {
+function store(key: string, FALLBACK: RealGameLook) {
   let cached: RealGameLook | null = null;
   const listeners = new Set<() => void>();
   const get = (): RealGameLook => {
@@ -56,8 +56,9 @@ function store(key: string) {
   return { get, set, preview, use };
 }
 
-const cam = store("star-look-3d-camera");
-const light = store("star-look-3d-player-light");
+// The camera is New by default since 12 Oct 2026 (Harry chose 6% / 48 degrees from the Match Lab stills); the player light stays Old.
+const cam = store("star-look-3d-camera", "new");
+const light = store("star-look-3d-player-light", "old");
 
 export const realCameraLook = cam.get;
 export const setRealCameraLook = cam.set;

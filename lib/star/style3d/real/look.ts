@@ -69,6 +69,13 @@ export interface RealLookOptions {
    * so they hold up at a low angle instead of going to mush.
    */
   sharp?: boolean;
+  /**
+   * Crisp (the real game's 3D camera New, 12 Oct 2026): only the anisotropy
+   * half of `sharp`: the grass, crowd and boards filtered at up to 8x so the
+   * mown stripes and the crowd hold at the 48 degree broadcast angle. No MSAA,
+   * no extra draw: a texture-filter setting.
+   */
+  crisp?: boolean;
 }
 
 export interface RealLook {
@@ -241,7 +248,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const contacts: { p: Person3D }[] = [];
 
   const post: HPost = makeHPost(T, renderer, tier, o.sharp && tier !== "low" ? { msaa: tier === "high" ? 4 : 2 } : {});
-  if (o.sharp) {
+  if (o.sharp || (o.crisp && tier !== "low")) {
     const an = Math.min(8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
     for (const t of [maps.col, maps.nrm, maps.orh, crowdTex, ledTex]) if (t && t.anisotropy < an) { t.anisotropy = an; t.needsUpdate = true; }
   }
