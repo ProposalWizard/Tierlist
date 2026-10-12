@@ -22,6 +22,9 @@ import { tiltFor } from "../../lib/star/cameraTilt";
 import { solveBroadcast, actionPoints, bcProject, BROADCAST, type BcFigure, type BcPoint, type BcCamera } from "../../lib/star/style3d/broadcastCam";
 import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, leanedManShare, leanFor, MATCH2D, MATCH_SCALES, MATCH_SCALE_PICK, matchScale, type Frame2D } from "../../lib/star/style3d/match2dCam";
 import fs from "node:fs";
+import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder } from "../../lib/star/style3d/match2dCam";
+import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
+import { drawnTakerAt } from "../../lib/star/kickFoot";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -136,5 +139,30 @@ if (isMain) {
   ok(cornersOff === 0, `the 2D view box's grass corners (up to 3 m past the pitch on the camera's side) are on the 3D screen in every chance (${cornersOff} not)`);
   ok(badAngle === 0, `every camera 40–60° down (${badAngle} not)`);
   ok(pct(tot.nu.ball, 0.5) < pct(tot.old.ball, 0.5), `the ball sits nearer its 2D spot than before`);
+
+  // THE SET-PIECE CAMERA (Harry: penalties and free kicks closer; every other kind as the 2D)
+  ok(SCENARIO_KINDS.filter((k) => usesSetPieceCam(k)).sort().join() === "free_kick,penalty", "only penalties and free kicks get the closer camera");
+  const spShares: number[] = [];
+  let spOff = 0, spDrag = 0, spN = 0;
+  const fixedS = matchScale();
+  for (const kind of ["penalty", "free_kick"]) for (let seed = 1; seed <= 6; seed++) {
+    const c = chanceFor(kind, seed);
+    const id = kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP;
+    const you = c.figs.find((g) => g.sid === "you")!;
+    const st = drawnTakerAt(c.sc.ball, standBackFor(id, c.sc.ball, c.sc.player, c.f.viewport), 1).at;
+    you.x = st.x; you.y = st.y;
+    const keep = setPieceKeep(c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, fixedS);
+    const cam = solveSetPieceCam(c.f, keep, c.sc.ball, fixedS);
+    spN++; spShares.push(cam.man);
+    for (const p of keep) { const r = bcProject(cam, W, H, p); if (r.depth <= 0.3 || Math.abs(r.nx) > 1 || r.fr < 0 || r.fr > 1) { spOff++; break; } }
+    // the drag: a finger on the ball's picture finds the ball's own spot on the grass (the 3D view's touch → 2D mapping)
+    const b = bcProject(cam, W, H, c.sc.ball);
+    const g = groundUnder(cam, W, H, b.nx, 1 - 2 * b.fr);
+    if (!g || Math.hypot(g.x - c.sc.ball.x, g.y - c.sc.ball.y) > 0.05) spDrag++;
+  }
+  console.log(`set-piece camera: a man at the ball ${(pct(spShares, 0) * 100).toFixed(1)}–${(pct(spShares, 1) * 100).toFixed(1)}% of the height (median ${(pct(spShares, 0.5) * 100).toFixed(1)}%), ${spN} chances`);
+  ok(spOff === 0, `ball, taker, keeper, the whole goal and the wall on screen in every penalty and free kick (${spOff} not)`);
+  ok(pct(spShares, 0.5) >= 0.045 && pct(spShares, 1) <= 0.065, "taker readable: about 5–6% of the screen's height (camera distance only)");
+  ok(spDrag === 0, `the ball's spot on the glass maps back to the ball on the grass (the drag), ${spDrag} off`);
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

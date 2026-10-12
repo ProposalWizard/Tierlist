@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import { chanceFor } from "../../tests/star/match2dCam.mts";
 import { pitchTo2dScreen, type Frame2D } from "../../lib/star/style3d/match2dCam";
-import { hasRunup } from "../../lib/star/penaltyRunup";
+import { hasRunup, plantBeside } from "../../lib/star/penaltyRunup";
 import { standBackFor, planRunup, runupPositionAt, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, RUNUP_MOTION } from "../../lib/star/runupStyles";
 import { drawnTakerAt } from "../../lib/star/kickFoot";
 import { SET_PIECE_KINDS } from "../../lib/star/newLook";
@@ -77,7 +77,10 @@ for (const [kind, seed, label] of PICK) {
       const figures = frame.figures.map((g) => (g.sid === "you" ? { ...g, x: at.x, y: at.y } : g));
       list.push({ name: `${name}-runup`, label: `${label}, run-up (0.6 s before the plant)`, frame: { ...frame, figures, phase: "runup", runup: { t: runS - 0.6, runS } } });
     }
-    list.push({ name: `${name}-contact`, label: `${label}, strike screen up`, frame: { ...frame, phase: "contact" } });
+    // the strike screen: a penalty / free kick taker is where the 2D's run-up ends (beside the ball)
+    const plantAt = hasRunup(kind) && standAt ? drawnTakerAt(c.sc.ball, plantBeside(c.sc.ball, standAt), 1).at : null;
+    const cfig = plantAt ? frame.figures.map((g) => (g.sid === "you" ? { ...g, x: plantAt.x, y: plantAt.y } : g)) : frame.figures;
+    list.push({ name: `${name}-contact`, label: `${label}, strike screen up`, frame: { ...frame, figures: cfig, phase: "contact" } });
   }
 }
 fs.writeFileSync(`${out}/raw/chances.json`, JSON.stringify(list));

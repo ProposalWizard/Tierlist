@@ -21,7 +21,7 @@ export const SET_PIECE_3D = {
   /** Corner: this far back from the ball, this many degrees off the line behind it (the kick-foot's side). */
   cornerBack: 2.6, cornerAngleDeg: 35,
   /** Open play: a short set stance behind the ball. */
-  openBack: 1.1, openAngleDeg: 25,
+  openBack: 1.3, openAngleDeg: 12,
   /** The last steps into the ball once the strike screen opens, seconds (corner / open play). */
   cornerApproachS: 1.0, openApproachS: 0.45,
   /** The run-up clip is used for at most this long before the plant (the 2D's walk-in does the rest with the gait). */

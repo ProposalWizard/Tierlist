@@ -290,3 +290,114 @@ export function solveMatch2D(f: Frame2D, P: Match2DParams = MATCH2D, pick?: { el
   }
   return best!;
 }
+
+/**
+ * THE SET-PIECE CAMERA (Harry, 12 Oct 2026): every chance is framed like the 2D (wide) EXCEPT
+ * a penalty and a direct free kick, which get a closer camera: the ball, the taker, the keeper,
+ * the whole goal and the wall stay on screen, and the taker and keeper read at about
+ * `targetShare` of the screen's height. Only the camera moves: nothing is scaled (the one fixed
+ * scale, MATCH_SCALES, still holds). Touch still lands right: the 3D view maps every touch
+ * through the grass under the finger (engineView.ts groundAt → to2dClient).
+ */
+export const SET_PIECE_CAM = {
+  kinds: ["penalty", "free_kick"] as string[],
+  elevs: [45, 50, 55, 60] as number[],
+  fovs: [26, 32, 38] as number[],
+  /** A man at the ball, share of the screen's height, aimed for (Harry: "about 5–6%"). */
+  targetShare: 0.055,
+  /** Room at every edge, share of the screen (the goal's posts, the taker's feet). */
+  margin: 0.04,
+};
+
+type SpCam = Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth: number; elevDeg: number };
+export function usesSetPieceCam(kind: string): boolean { return SET_PIECE_CAM.kinds.includes(kind); }
+
+/**
+ * Fit a camera from this azimuth to `pts` (all on screen, centred), at angle `elevDeg` and lens
+ * `fov`, no nearer than `minD`. Returns the camera and the nearest point's depth.
+ */
+export function fitPoints(W: number, H: number, pts: BcPoint[], ax: number, az: number, elevDeg: number, fov: number, margin: number, minD = 4): SpCam {
+  const elev = (elevDeg * Math.PI) / 180;
+  let gx = 0, gy = 0;
+  for (const p of pts) { gx += p.x; gy += p.y; }
+  gx /= pts.length; gy /= pts.length;
+  const cam = (D: number, a: number, s: number) => ({ tx: gx - CX - ax * a - az * s, tz: gy - az * a + ax * s, ax, az, elev, D, fov });
+  const centred = (D: number) => {
+    let lo = -120, hi = 120;
+    const vbal = (a: number) => {
+      let mn = Infinity, mxf = -Infinity;
+      for (const p of pts) { const r = bcProject(cam(D, a, 0), W, H, p); if (r.depth <= 0.1) return 9; mn = Math.min(mn, r.fr); mxf = Math.max(mxf, r.fr); }
+      return mn + mxf - 1;
+    };
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (vbal(m) > 0) hi = m; else lo = m; }
+    const a = (lo + hi) / 2;
+    let sl = -120, sh = 120;
+    const hbal = (s: number) => {
+      let mn = Infinity, mxn = -Infinity;
+      for (const p of pts) { const r = bcProject(cam(D, a, s), W, H, p); mn = Math.min(mn, r.nx); mxn = Math.max(mxn, r.nx); }
+      return mn + mxn;
+    };
+    for (let i = 0; i < 40; i++) { const m = (sl + sh) / 2; if (hbal(m) > 0) sh = m; else sl = m; }
+    return cam(D, a, (sl + sh) / 2);
+  };
+  const mx = 1 - 2 * margin, my0 = margin, my1 = 1 - margin;
+  const fits = (D: number) => {
+    const c = centred(D);
+    for (const p of pts) {
+      const r = bcProject(c, W, H, p);
+      if (r.depth <= 0.5 || Math.abs(r.nx) > mx || r.fr < my0 || r.fr > my1) return false;
+    }
+    return true;
+  };
+  let lo = minD, hi = 600;
+  if (!fits(lo)) { for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fits(m)) hi = m; else lo = m; } } else hi = lo;
+  const c = centred(hi);
+  let minDepth = Infinity;
+  for (const p of pts) minDepth = Math.min(minDepth, bcProject(c, W, H, p).depth);
+  return { ...c, minDepth, elevDeg };
+}
+
+/**
+ * The closer camera for a penalty or a free kick. `keep` = the points that must stay on screen
+ * (ball, taker, keeper, the goal's posts and bar, the wall: feet and heads). Tries each angle and
+ * lens; keeps the one whose man at the ball is nearest `targetShare` (never nearer than all of
+ * `keep` allows). Facing as the 2D. Pure: tests/star/match2dCam.mts.
+ */
+export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM): Match2DCamera {
+  const { ax, az } = azimuth2D(f.facing);
+  let best: (SpCam & { share: number }) | null = null, bestScore = Infinity;
+  for (const e of S.elevs) for (const fov of S.fovs) {
+    let c = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin);
+    const lean = man.lean ? leanFor(e) : 0;
+    let share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
+    // closer than the target needs: back off (more room round the action), the angle and lens kept
+    if (share > S.targetShare) {
+      let lo = c.D, hi = c.D * 4;
+      for (let i = 0; i < 30; i++) {
+        const m = (lo + hi) / 2;
+        const cm = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin, m);
+        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > S.targetShare) lo = m; else hi = m;
+      }
+      c = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin, hi);
+      share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
+    }
+    const score = Math.abs(share - S.targetShare) + Math.abs(e - 50) * 0.0004;
+    if (score < bestScore) { bestScore = score; best = { ...c, share }; }
+  }
+  const b = best!;
+  return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
+
+/** What a penalty / free kick camera must keep on screen, from the frame's own men. */
+export function setPieceKeep(ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null, man: MatchScale): BcPoint[] {
+  const hm = MATCH2D.manH * man.man, hk = MATCH2D.manH * man.keeper, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
+  const pts: BcPoint[] = [{ ...ball, z: 0 }, { ...ball, z: 0.3 }];
+  for (const px of [CX - gw, CX + gw]) pts.push({ x: px, y: 0, z: 0 }, { x: px, y: 0, z: gh });
+  if (keeper) pts.push({ ...keeper, z: 0 }, { ...keeper, z: hk });
+  for (const g of figures) {
+    // the taker, and the wall: their men between the ball and the goal, near the line of the kick
+    const wall = g.team === "them" && g.y < ball.y + 1 && g.y > 1 && Math.abs(g.x - ball.x) < 14;
+    if (g.sid === "you" || wall) pts.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
+  }
+  return pts;
+}

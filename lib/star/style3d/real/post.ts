@@ -218,6 +218,7 @@ export function gradeToneMapping(T: any): number {
 
 /** Medium (3D quality look New): leave the Style A men out of FXAA's insides and the sharpen. ?menclean=0 on test pages shows before. */
 export const MEN_CLEAN = { on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("menclean") !== "0" };
+if (typeof window !== "undefined") (window as unknown as { __menClean?: typeof MEN_CLEAN }).__menClean = MEN_CLEAN;
 
 export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: number } = {}): HPost {
   const msaa = renderer.capabilities?.isWebGL2 === false ? 0 : o.msaa ?? (tier === "high" ? 4 : 0);

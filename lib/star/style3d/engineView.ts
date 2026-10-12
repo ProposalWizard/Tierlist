@@ -52,7 +52,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1631,7 +1631,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
   const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig, sp: null as Match2DCamera | null, spKey: "" };
   /** The one fixed scale set (lib/star/style3d/match2dCam.ts MATCH_SCALES): read once, never per chance. */
   const mScale = matchScale();
   /**
@@ -1654,9 +1654,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const placeMatch2D = (f: EngineFrame) => {
     const { viewport: vp, facing, tilt, W, H } = f.cam;
     if (!(W > 0 && H > 0)) return;
+    const sp = usesSetPieceCam(f.kind) && !!f.ball;
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
+    // a new set piece: a new ball spot while aiming (a shootout's next kick from the same spot keeps its camera)
+    const spKey = sp && f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : m2.spKey;
     const fr2 = { viewport: vp, facing, tilt, W, H };
-    const c = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
+    // a penalty / free kick: the closer set-piece camera (match2dCam.ts SET_PIECE_CAM), worked out
+    // once when the chance starts and held (the taker walks in inside it); every other kind: the 2D's own frame
+    if (sp && f.ball && (spKey !== m2.spKey || !m2.sp)) {
+      m2.spKey = spKey;
+      const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
+      m2.sp = solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale);
+    }
+    if (!sp) { m2.sp = null; m2.spKey = ""; }
+    const c = sp && m2.sp ? m2.sp : key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
     // ONE fixed size for every man, the keeper and the goal, in every chance and frame (Harry, 12 Oct
     // 2026: "no changes in size for any player or goalie or goal should ever occur"): MATCH_SCALES
     if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
@@ -1667,7 +1678,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.lookAt(pose.look[0], 0, pose.look[2]);
     camera.fov = c.fov;
     camera.aspect = W / H;
-    camera.near = Math.max(0.1, c.minDepth * 0.8);
+    camera.near = sp ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8);
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
