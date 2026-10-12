@@ -52,6 +52,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
+import { SIZE3D } from "./size3d";
 import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
@@ -61,25 +62,14 @@ export interface EngineView {
   frame(f: EngineFrame): void;
   setStyle(def: StyleDef): void;
   setTod(t: TimeOfDay): void;
-  /** Men drawn this many times life size (the 2D game draws them big too). */
-  setFigureScale(k: number): void;
   /** The TV camera's angle, degrees from straight down. */
   setTilt(deg: number): void;
   setVisible(on: boolean): void;
   dispose(): void;
 }
 
-/**
- * Men drawn bigger than life on the match camera, as every top-down football
- * game does (a true 1.8 m man is a speck from up there). With the TV camera
- * (24 m across) 1.3 puts a man at about 40 px on a 390 px phone, the 2D
- * match's own size (coordinator, 9 Oct 2026).
- */
-export const ENGINE_VIEW_FIG_SCALE = 1.3;
-/** The keeper a size down, so he still fits his goal (the 2D draws him small on purpose too). */
 /** How long a new 3D match waits for look H before it opens on the kit look instead (lag pass 4). */
 const H_WAIT_MS = 4000;
-const KEEPER_SHARE = 0.85;
 /**
  * Motion: Mocap's numbers (Harry, 9 Oct 2026: the on-pitch motion "isn't 100%").
  * Motion: Old never reads them.
@@ -134,10 +124,6 @@ const MO = {
   /** A strike near him (ball speed jumps by this, m/s): a split step, this high (m of the clip's size) for this long (s). */
   splitJump: 6, splitH: 0.045, splitS: 0.22,
 };
-/** How tall a man stands on the glass at the action with the TV camera, CSS px (the 2D match screen's men, coordinator 9 Oct 2026). */
-const TARGET_PX = 46;
-/** The Old TV camera's one figure size (× life): the middle of the 1.0–2.6 it used to swing through. */
-const TV_FIG_FIXED = 1.6;
 /**
  * The men lean back from the camera by this share of (90° − tilt). 0: they
  * stand upright (round 3, 9 Oct 2026: leaning men read small and wrong on the
@@ -252,8 +238,6 @@ export const TV_CAMERA_NEW = {
   closeR: 6,
   /** Our men this near the ball stay on screen (the ones you can pass to). */
   mateR: 22,
-  /** The men, the keeper and the ball, this many times life size (1 = true size). */
-  fig: 1.6,
   /** No goal in the chance: the nearest man's feet are pinned this far down the screen. */
   pinBottom: 0.82,
   /** Goal in the chance: the nearest man's feet are wanted at least this far down the screen … */
@@ -262,7 +246,7 @@ export const TV_CAMERA_NEW = {
   goalLineMax: 0.24,
 };
 
-export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; figScale?: number; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
+export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; camera?: "tv" | "exact"; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
   let tvTilt = o.tilt ?? 40;
   const camMode = o.camera ?? "tv";
@@ -278,12 +262,8 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const SK = SkU.default ?? SkU;
   if (lookMod && o.def.real) lookMod.preloadRealLook(THREE, o.tod ?? o.def.real);
   if (o.def.real) void import("./real/ball").catch(() => null);
-  // the goal frame's one fixed size (MATCH_SCALES), set before the stadium is built; only the
-  // 3D camera New (the 2D's own frame) uses it, and the match puts it back to 1 when it closes
-  if (o.def.real && camMode === "tv" && realCameraLook() === "new" && !(typeof window !== "undefined" && /[?&](cam2d|bcam)=0/.test(window.location.search))) {
-    const gs = matchScale().goal;
-    if (gs !== 1) await import("./real/arena").then((m) => m.setArenaGoalScale(gs)).catch(() => {});
-  }
+  // the goal frame: real size (SIZE3D.goal) with every camera, set before the stadium is built
+  if (o.def.real && SIZE3D.goal !== 1) await import("./real/arena").then((m) => m.setArenaGoalScale(SIZE3D.goal)).catch(() => {});
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   // Settings → Look → "Players in a 3D match" (toon/matchLook.ts): realistic players by default; Style A stays in cut scenes
@@ -444,7 +424,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const camera = new THREE.PerspectiveCamera(39, 0.5, 0.1, 700);
 
   let def = o.def;
-  let figScale = o.figScale ?? ENGINE_VIEW_FIG_SCALE;
   let kit: StyleKit | null = createStyleKit(THREE, renderer, scene, tier, def);
   let stadium: Stadium | null = null;
   let h: RealLook | null = null;
@@ -1068,7 +1047,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         if (a.time >= dur - 0.05) { b.dive = undefined; b.state = ""; startLoopM(b, "ready_shuffle", 0.3); }
       } else b.dive = undefined;
     } else {
-      const fs = figNow() * KEEPER_SHARE;
+      const fs = keeperFig();
       if (k.act && k.act.start !== b.lastAct) {
         b.lastAct = k.act.start;
         if (k.act.save === "catch" && f.ball && f.ball.z > 1.5) startOnce(b, "high_claim", Math.max(0, f.t - k.act.start));
@@ -1101,7 +1080,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     b.play.update(dt);
     b.p.mixer.update(dt);
-    if (b.splitT !== undefined && !b.dive) lift += MO.splitH * b.k * figNow() * KEEPER_SHARE * Math.sin((b.splitT / MO.splitS) * Math.PI);
+    if (b.splitT !== undefined && !b.dive) lift += MO.splitH * b.k * keeperFig() * Math.sin((b.splitT / MO.splitS) * Math.PI);
     return lift;
   };
 
@@ -1384,18 +1363,13 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * crosses) keep the 2D's own side-on camera.
    */
   const tv = { x: 0, z: 0, D: 60, th: 0.7, key: "", init: false };
-  /** The new camera's men, keeper and ball (× life size). Test page: ?fig=1 (true size) to compare. */
-  const FIG_NEW = (() => {
-    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("fig"));
-    return q >= 0.8 && q <= 2.6 ? q : TV_CAMERA_NEW.fig;
-  })();
-  /** The TV camera's figure scale this frame (see TARGET_PX). */
-  let tvFig = ENGINE_VIEW_FIG_SCALE;
-  const figNow = () => (camMode === "tv" && tv.init ? tvFig : figScale);
-  /** The keeper's size: the new 2D-frame camera's fixed keeper scale; else a size down from the men, as before. */
-  const keeperFig = () => camMode === "tv" && tv.init && realCameraLook() === "new"
-    ? (!preMatch2D && !preBroadcast ? mScale.keeper : figNow())
-    : figNow() * KEEPER_SHARE;
+  /**
+   * SIZES ARE ABSOLUTE; THE CAMERA ONLY MOVES (Harry, 12 Oct 2026: "why aren't they just a set
+   * size?"). Every man, the keeper and the ball are real size (size3d.ts SIZE3D) with every camera,
+   * on every screen: nothing here reads the camera, the screen, pixels per metre or the chance.
+   */
+  const figNow = (): number => SIZE3D.man;
+  const keeperFig = (): number => SIZE3D.keeper;
   type TvCam = typeof TV_CAMERA & { pinBottom?: number };
   /** The TV camera for this frame at angle `thDeg`, framing `pts` with the numbers in C. */
   const tvSolveAt = (f: EngineFrame, C: TvCam, thDeg: number, pts: { x: number; y: number }[], nu: boolean) => {
@@ -1543,21 +1517,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.far = tv.D + 500;
     camera.updateProjectionMatrix();
     lean = (Math.max(0, 90 - (t.th * 180) / Math.PI) * LEAN_SHARE * Math.PI) / 180;
-    // ONE SIZE ALWAYS (Harry, 12 Oct 2026: men and keeper "changing scale based on where the
-    // camera is … that should never be the case"). Before, this was re-worked out every frame so a
-    // man stayed ~TARGET_PX tall whatever the zoom (1.0–2.6× as the camera moved). Now the size
-    // never changes; the camera's own distance does the framing.
-    tvFig = TV_FIG_FIXED;
-    if (!animFix) {
-      const pxPerM = t.H / (2 * t.ballDepth * Math.tan((t.fov * Math.PI) / 360));
-      tvFig = Math.max(1, Math.min(2.6, TARGET_PX / (1.8 * pxPerM * Math.max(0.35, Math.sin(t.th)))));
-    }
-    // New camera: men, keeper and ball near TRUE size against the goal (Harry, 9 Oct 2026:
-    // "the players and goalie should be a lot smaller in game, with the ball as well").
-    // One fixed size: 1.6 → a 2.9 m man (Harry: 1.15 was "a bit TOO small", a third of the way
-    // back towards the old size; the old camera drew him
-    // 1.3–2.6× → 2.3–4.7 m, the keeper 0.85 of that).
-    if (realCameraLook() === "new") tvFig = FIG_NEW;
+    // sizes: absolute (SIZE3D); this camera only moves (it used to set the men's size here)
   };
   /**
    * THE BROADCAST CAMERA (3D camera: New, lib/star/style3d/broadcastCam.ts):
@@ -1566,13 +1526,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * ~6% of the canvas (BROADCAST.manShare). It glides between chances and is held still while you
    * aim (a finger down, the arrow up, or the strike screen).
    */
-  const bc = { tx: 0, tz: 0, D: 40, ang: 0, k: 1.6, init: false, key: "", anchor: { x: CX, y: 20 } };
-  /** Test page / candidates sheet: ?man=0.08 sets the man's share of the height. */
-  const BC = (() => {
-    const q = typeof window === "undefined" ? NaN : Number(new URLSearchParams(window.location.search).get("man"));
-    const base = animFix ? BROADCAST : { ...BROADCAST, fig: 0 };
-    return q >= 0.05 && q <= 0.2 ? { ...base, manShare: q } : base;
-  })();
+  const bc = { tx: 0, tz: 0, D: 40, ang: 0, init: false, key: "", anchor: { x: CX, y: 20 } };
+  // the camera's distance only; the men's size is SIZE3D (c.k is a framing number, never a size)
+  const BC = BROADCAST;
   const placeBroadcast = (f: EngineFrame, dt: number) => {
     const vp = f.cam.viewport;
     const ball = f.ball ?? { x: (vp.x1 + vp.x2) / 2, y: (vp.y1 + vp.y2) / 2, z: 0 };
@@ -1591,8 +1547,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const ang = Math.atan2(c.ax, c.az);
     // held still while you aim: a finger on the glass, the arrow up, or the strike screen
     const hold = bc.init && (touch.id !== -1 || !!f.aim || f.phase === "contact" || f.phase === "runup");
-    // the men's size is one number (BROADCAST.fig): set, never glided (see broadcastCam.ts)
-    if (animFix || !bc.init) bc.k = c.k;
     if (!bc.init) { bc.tx = c.tx; bc.tz = c.tz; bc.D = c.D; bc.ang = ang; bc.init = true; }
     else if (!hold) {
       // a glide, never a cut (about 0.4 s to settle)
@@ -1600,7 +1554,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       bc.tx += (c.tx - bc.tx) * e; bc.tz += (c.tz - bc.tz) * e; bc.D += (c.D - bc.D) * e;
       let da = ang - bc.ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
       bc.ang += da * e;
-      if (!animFix) bc.k += (c.k - bc.k) * e;
     }
     const pose = bcPose({ ...c, tx: bc.tx, tz: bc.tz, D: bc.D, ax: Math.sin(bc.ang), az: Math.cos(bc.ang) });
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
@@ -1614,8 +1567,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     down3.set(Math.sin(bc.ang), 0, Math.cos(bc.ang));
     lean = 0;
     tv.init = true;
-    tvFig = bc.k;
-    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, k: bc.k, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, fig: SIZE3D.man, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
   };
   /**
    * THE 2D'S OWN FRAME (3D camera: New since 12 Oct 2026, lib/star/style3d/match2dCam.ts).
@@ -1631,8 +1583,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
   /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
   const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig, sp: null as Match2DCamera | null, spKey: "" };
-  /** The one fixed scale set (lib/star/style3d/match2dCam.ts MATCH_SCALES): read once, never per chance. */
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "" };
+  /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
   /**
    * The stand on the camera's side: everything of the stadium nearer the camera than
@@ -1668,10 +1620,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     if (!sp) { m2.sp = null; m2.spKey = ""; }
     const c = sp && m2.sp ? m2.sp : key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
-    // ONE fixed size for every man, the keeper and the goal, in every chance and frame (Harry, 12 Oct
-    // 2026: "no changes in size for any player or goalie or goal should ever occur"): MATCH_SCALES
+    // the angle and lens are held through a chance; sizes are absolute (SIZE3D), never from c
     if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
-    m2.k = mScale.man;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1684,7 +1634,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     down3.set(c.ax, 0, c.az);
     lean = mScale.lean ? leanFor(c.elevDeg) : 0;
     tv.init = true;
-    tvFig = m2.k;
     // the stadium nearer the camera than the 2D view's bottom edge (1.5 m spare) is not drawn
     {
       const q = visibleQuad(fr2);
@@ -1696,7 +1645,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       arenaClip.normal.set(-c.ax, 0, -c.az);
       arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
     }
-    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: m2.k, man: c.man };
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };
   const placeCamera = (f: EngineFrame, dt: number) => {
     if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) { placeMatch2D(f); return; }
@@ -2033,7 +1982,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       ball.visible = !!fb0;
       if (fb0) {
         // New camera: the ball at the men's own scale (0.22 m × the men's size: true proportions)
-        const bs = camMode === "tv" && tv.init && realCameraLook() === "new" ? Math.min(2, figNow()) : def.ballScale * 0.85;
+        const bs = SIZE3D.ball; // real size with every camera (was up to 2x on New, the style's 1.7-2.0 x 0.85 on Old)
         ball.scale.setScalar(bs);
         const v = ballV.set(fb0.x - CX, Math.max(0, fb0.z) + BALL_R * bs, fb0.y);
         const dd = Number.isFinite(lastBall.x) ? v.distanceTo(lastBall) : 0;
@@ -2099,7 +2048,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
     },
     setTod(t) { hTod = t; h?.setTod(t); },
-    setFigureScale(k) { figScale = k; },
     setTilt(d) { tvTilt = d; },
     setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d && camMode === "tv" ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {

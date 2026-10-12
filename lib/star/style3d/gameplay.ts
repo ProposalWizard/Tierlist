@@ -10,6 +10,7 @@
  *   - "2D": the same play with every man drawn as a flat card (flatFigure.ts),
  *     plain heads, no faces.
  */
+import { SIZE3D } from "./size3d";
 import { drillById, type DrillSession } from "../play3d/drills";
 import type { Person3 } from "../play3d/freeRoam";
 import type { Play3DBuilt, Play3DController, Play3DPerson } from "../play3d/scene";
@@ -61,10 +62,10 @@ export function numberTexture(T: any, n: number) {
   return t;
 }
 
-/** Players drawn this much bigger than life on the fixed camera (a top-down man is mostly head and shoulders). */
-const FIG_SCALE = 2.0;
-/** Look H: a closer camera and men nearer life size (a man stands just above the crossbar, not twice its height). */
-const H_FIG_SCALE = 1.45, H_VIEW_W = 18;
+/** Players: real size (size3d.ts, Harry 12 Oct 2026: "why aren't they just a set size?"). Was 2.0, or 1.45 in look H. */
+const FIG_SCALE = SIZE3D.man;
+/** Look H: a closer camera (camera only; the men are real size in every look). */
+const H_VIEW_W = 18;
 const SKINS = ["#c68642", "#8d5524", "#e0ac69", "#5c3a1e", "#f1c27d"];
 
 export interface StyleGameplayOptions {
@@ -140,7 +141,7 @@ export async function createStyleGameplay(container: HTMLElement, o: StyleGamepl
    * stand sit at the top; further out it follows the ball.
    */
   const VFOV = 36;
-  const figS = () => (def.real ? H_FIG_SCALE : FIG_SCALE);
+  const figS = (): number => FIG_SCALE;
   const rig = () => {
     const b = world.ball;
     const th = (Math.max(3, Math.min(75, tilt)) * Math.PI) / 180;
@@ -210,7 +211,7 @@ export async function createStyleGameplay(container: HTMLElement, o: StyleGamepl
       p.body.visible = !flat; if (flat) p.outline.visible = false;
       p.root.scale.set(figS() * ch, figS(), figS() * ch);
     }
-    built.ball.scale.setScalar(def.ballScale);
+    built.ball.scale.setScalar(SIZE3D.ball); // real size (was the style's 1.7-2.0)
     sparks.material.color.set(def.ballSparks ?? "#ffffff");
     aura.material.color.set(def.aura ?? "#ffffff");
     rebuildFlats();
