@@ -3,7 +3,8 @@
 // box shows on the phone (lines, men, ball, goal), drawn through the 2D's own
 // tilt. Usage: npx tsx scripts/cam3d/frames.mts OUTDIR   (writes chances.json + 2d-*.svg)
 import fs from "node:fs";
-import { cleanServed, SERVED_KINDS, type Served } from "./served.mts";
+import { cleanServed, servedChance, SERVED_KINDS, type Served } from "./served.mts";
+import { setWideChancesOverride } from "../../lib/star/wideChances";
 import { pitchTo2dScreen, type Frame2D } from "../../lib/star/style3d/match2dCam";
 import { hasRunup, plantBeside } from "../../lib/star/penaltyRunup";
 import { standBackFor, planRunup, runupPositionAt, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, RUNUP_MOTION } from "../../lib/star/runupStyles";
@@ -48,9 +49,17 @@ function svgFor(f: Frame2D, c: Served): string {
 }
 // --phases: also the run-up (penalty, free kick) and the strike screen (every kind), for the set-piece stills
 const phases = process.argv.includes("--phases");
+// --wide=new : Wide chances side-on (the code still in matchView.ts; not in the game). Names get "-sideon".
+const sideOn = process.argv.includes("--wide=new") || process.argv.includes("--wide=force");
+if (sideOn) setWideChancesOverride("new");
+// --wide=force : side-on even where turnWideChance refuses (it turns only when side-on is tighter)
+const force = process.argv.includes("--wide=force");
+// --seed : the --kinds numbers are served seeds, not the n-th clean chance (to compare one chance two ways)
+const bySeed = process.argv.includes("--seed");
 const list: unknown[] = [];
 for (const [kind, nth, kindLabel] of PICK) {
-  const c = cleanServed(kind, nth)[nth - 1];
+  const s0 = bySeed ? { ...servedChance(kind, nth, 372, 704, force), seed: nth } : null;
+  const c = s0 && s0.faults.length === 0 && s0.sc.kind === kind ? s0 : bySeed ? undefined : cleanServed(kind, nth)[nth - 1];
   if (!c || !c.drawn) { console.log(`skip ${kind}: ${!c ? "no served chance passes its rules" : "not served from drawings"}`); continue; }
   const seed = c.seed;
   const label = `${kindLabel} · rules: ok · served seed ${seed}`;
@@ -73,7 +82,7 @@ for (const [kind, nth, kindLabel] of PICK) {
     keeper: { x: c.keeper.x, y: c.keeper.y, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: 0, shirt: "#16a34a", shorts: "#111111", drawn: c.keeper.drawn },
     figures: c.figs.map((g) => fig(g.sid, g.x, g.y, g.team)), aim: null, ring: { x: c.sc.ball.x, y: c.sc.ball.y }, goalSide: null, goalInView: c.gv, orders: null,
   };
-  const name = `${kind}-${seed}`;
+  const name = `${kind}-${seed}${sideOn ? "-sideon" : ""}`;
   fs.writeFileSync(`${out}/raw/2d-${name}.svg`, svgFor(f, c));
   list.push({ name, label, frame });
   if (phases) {

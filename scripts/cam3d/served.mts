@@ -2,11 +2,11 @@
 // framed as CanvasMatch frames them in the new view, each checked against its kind's own rules
 // (baseScenario.ts scenarioFaults). The 3D stills and tests/star/match2dCam.mts use these, never a raw build.
 // Usage: npx tsx scripts/cam3d/served.mts   (prints, per kind, how many of 60 served chances break their rules)
-import { initDefenders, goalInView, type Scenario } from "../../lib/star/canvasEngine";
+import { initDefenders, goalInView, standOff, type Scenario } from "../../lib/star/canvasEngine";
 import { makeChance, servesDrawings } from "../../lib/star/chanceMaker";
 import { scenarioFaults } from "../../lib/star/baseScenario";
 import { mulberry32 } from "../../lib/star/season";
-import { frameForNewView, turnWideChance } from "../../lib/star/matchView";
+import { frameForNewView, turnWideChance, sideOnFacing } from "../../lib/star/matchView";
 import { hasRunup } from "../../lib/star/penaltyRunup";
 import { tiltFor } from "../../lib/star/cameraTilt";
 import { EVEN_KINDS } from "../../lib/star/kindMix";
@@ -22,12 +22,14 @@ export interface Served {
 }
 
 /** One served chance of `kind` (seeded), on a W × H pitch box (the 3D match's box on a 390×844 phone: 372×704). */
-export function servedChance(kind: string, seed: number, W = 372, H = 704): Served {
+/** `forceSideOn`: comparison stills only. Turn the chance side-on the way Wide chances "new" would, even where
+ *  turnWideChance refuses (it only turns when side-on is the tighter picture). Never used by the game. */
+export function servedChance(kind: string, seed: number, W = 372, H = 704, forceSideOn = false): Served {
   const rng = mulberry32(seed * 977 + kind.length * 13);
   const made = makeChance({ source: { from: "kind", kind: kind as Scenario["kind"] }, rng, strength: { keeper: 40 + (seed * 7) % 55, team: 60, vision: 55 } });
   const sc = made.sc;
   initDefenders(sc, rng);
-  turnWideChance(sc, !hasRunup(sc.kind), H / W);
+  if (forceSideOn) { sc.facing = sideOnFacing(sc); standOff(sc); } else turnWideChance(sc, !hasRunup(sc.kind), H / W);
   const facing = sc.facing ?? "up";
   const tiltDeg = sc.kind === "corner" || sc.kind === "byline_cross" || facing !== "up" ? 0 : 20;
   const vp = frameForNewView(sc, H / W, false, tiltDeg);
